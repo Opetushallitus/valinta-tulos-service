@@ -4,7 +4,7 @@
     <parent>
         <groupId>fi.vm.sade</groupId>
         <artifactId>valinta-tulos-service-parent</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0_feature-ehdollinen-hyvaksynta-SNAPSHOT</version>
     </parent>
     <groupId>fi.vm.sade</groupId>
     <artifactId>valinta-tulos-service</artifactId>
@@ -237,7 +237,7 @@
         <dependency>
             <groupId>fi.vm.sade.sijoittelu</groupId>
             <artifactId>sijoittelu-tulos-service</artifactId>
-            <version>2.0-SNAPSHOT</version>
+            <version>2.0_feature-ehdollinen-hyvaksynta-SNAPSHOT</version>
             <exclusions>
                 <exclusion>
                   <groupId>com.wordnik</groupId>
@@ -284,13 +284,13 @@
         <dependency>
             <groupId>fi.vm.sade.valintaperusteet</groupId>
             <artifactId>valintaperusteet</artifactId>
-            <version>2.0-SNAPSHOT</version>
+            <version>2.0_feature-ehdollinen-hyvaksynta-SNAPSHOT</version>
             <type>pom</type>
         </dependency>
         <dependency>
             <groupId>fi.vm.sade.sijoittelu</groupId>
             <artifactId>sijoittelu-algoritmi-domain</artifactId>
-            <version>2.0-SNAPSHOT</version>
+            <version>2.0_feature-ehdollinen-hyvaksynta-SNAPSHOT</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
