@@ -28,7 +28,7 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
     valintarekisteriDb, valintarekisteriDb, appConfig.sijoitteluContext.valintatulosRepository)
   lazy val valintatulokset = new ValintatulosMongoCollection(appConfig.settings.valintatulosMongoConfig)
   lazy val poller = new MailPoller(valintatulokset, valintatulosService, hakuService, appConfig.ohjausparametritService, limit = 3)
-  lazy val mailDecorator = new MailDecorator(new HakemusRepository(), valintatulokset)
+  lazy val mailDecorator = new MailDecorator(new HakemusRepository(), valintatulokset, hakuService)
 
   "Hakujen filtteröinti" in {
     "korkeakouluhaku -> mukaan" in {

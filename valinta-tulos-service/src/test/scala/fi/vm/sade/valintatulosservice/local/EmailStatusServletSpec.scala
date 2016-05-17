@@ -14,14 +14,14 @@ class EmailStatusServletSpec extends ServletSpecification with TimeWarp {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakemusFixtures = List("00000441369"))
 
       withFixedDateTime("10.10.2014 12:00") {
-        expectEmails("""[{"hakemusOid":"1.2.246.562.11.00000441369","hakijaOid":"1.2.246.562.24.14229104472","asiointikieli":"FI","etunimi":"Teppo","email":"teppo@testaaja.fi","deadline":"2100-01-10T10:00:00Z","hakukohteet":[{"oid":"1.2.246.562.5.72607738902","ehdollisestiHyvaksyttavissa":false}]}]""")
+        expectEmails("""[{"hakemusOid":"1.2.246.562.11.00000441369","hakijaOid":"1.2.246.562.24.14229104472","asiointikieli":"FI","etunimi":"Teppo","email":"teppo@testaaja.fi","deadline":"2100-01-10T10:00:00Z","hakukohteet":[{"oid":"1.2.246.562.5.72607738902","ehdollisestiHyvaksyttavissa":false,"hakukohteenNimet":{"kieli_fi":"Lukion ilmaisutaitolinja"},"tarjoajaNimet":{"fi":"Kallion lukio"}}],"haku":{"oid":"1.2.246.562.5.2013080813081926341928","nimi":{"kieli_sv":"Högskolornas gemensamma ansökan hösten 2014","kieli_en":"Joint application to higher education autumn 2014","kieli_fi":"Korkeakoulujen yhteishaku syksy 2014"}}}]""")
       }
     }
     "Lista sisältää tiedon ehdollisesta vastaanotosta" in {
       useFixture("hyvaksytty-ehdollisesti-kesken-julkaistavissa.json", hakemusFixtures = List("00000441369"))
 
       withFixedDateTime("10.10.2014 12:00") {
-        expectEmails("""[{"hakemusOid":"1.2.246.562.11.00000441369","hakijaOid":"1.2.246.562.24.14229104472","asiointikieli":"FI","etunimi":"Teppo","email":"teppo@testaaja.fi","deadline":"2100-01-10T10:00:00Z","hakukohteet":[{"oid":"1.2.246.562.5.72607738902","ehdollisestiHyvaksyttavissa":true}]}]""")
+        expectEmails("""[{"hakemusOid":"1.2.246.562.11.00000441369","hakijaOid":"1.2.246.562.24.14229104472","asiointikieli":"FI","etunimi":"Teppo","email":"teppo@testaaja.fi","deadline":"2100-01-10T10:00:00Z","hakukohteet":[{"oid":"1.2.246.562.5.72607738902","ehdollisestiHyvaksyttavissa":true,"hakukohteenNimet":{"kieli_fi":"Lukion ilmaisutaitolinja"},"tarjoajaNimet":{"fi":"Kallion lukio"}}],"haku":{"oid":"1.2.246.562.5.2013080813081926341928","nimi":{"kieli_sv":"Högskolornas gemensamma ansökan hösten 2014","kieli_en":"Joint application to higher education autumn 2014","kieli_fi":"Korkeakoulujen yhteishaku syksy 2014"}}}]""")
       }
     }
     "Tyhjä lista lähetettävistä sähköposteista, kun ei lähetettävää" in {

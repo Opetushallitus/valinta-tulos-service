@@ -82,9 +82,11 @@ class HakukohdeRecordServiceSpec extends Specification with MockitoMatchers with
     val luonnosKoulutus = Koulutus("1.2.246.562.17.53513994722", Kausi("2017S"), "LUONNOS", Some(koodi))
     val julkaistuKoulutus = Koulutus("1.2.246.562.17.42423443434", Kausi("2016S"), "JULKAISTU", Some(koodi))
 
-    val hakukohdeFromTarjonta = Hakukohde(hakukohdeOid, hakuOid, List(julkaistuKoulutus.oid), "KORKEAKOULUTUS", "TUTKINTO")
+    val hakukohdeFromTarjonta = Hakukohde(hakukohdeOid, hakuOid, List(julkaistuKoulutus.oid), "KORKEAKOULUTUS", "TUTKINTO",
+      Map("kieli_fi" -> "Hakukohteen nimi"), Map("fi" -> "Tarjoajan nimi"))
     val hakuFromTarjonta: Haku = Haku(hakuOid, korkeakoulu = true, yhteishaku = true, varsinainenhaku = true,
       lisähaku = false, käyttääSijoittelua = true, varsinaisenHaunOid = None, sisältyvätHaut = Set(), hakuAjat = Nil,
-      Some(Kausi("2016K")), YhdenPaikanSaanto(voimassa = true, "Korkeakoulutus ilman kohdejoukon tarkennetta"))
+      Some(Kausi("2016K")), YhdenPaikanSaanto(voimassa = true, "Korkeakoulutus ilman kohdejoukon tarkennetta"),
+      Map("kieli_fi" -> "Haun nimi"))
   }
 }

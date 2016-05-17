@@ -36,7 +36,8 @@ object HakuService {
 
 case class Haku(oid: String, korkeakoulu: Boolean, yhteishaku: Boolean, varsinainenhaku: Boolean, lisähaku: Boolean,
                 käyttääSijoittelua: Boolean, varsinaisenHaunOid: Option[String], sisältyvätHaut: Set[String],
-                hakuAjat: List[Hakuaika], koulutuksenAlkamiskausi: Option[Kausi], yhdenPaikanSaanto: YhdenPaikanSaanto)
+                hakuAjat: List[Hakuaika], koulutuksenAlkamiskausi: Option[Kausi], yhdenPaikanSaanto: YhdenPaikanSaanto,
+                nimi: Map[String, String])
 case class Hakuaika(hakuaikaId: String, alkuPvm: Option[Long], loppuPvm: Option[Long]) {
   def hasStarted = alkuPvm match {
     case Some(alku) => new DateTime().isAfter(new DateTime(alku))
@@ -45,7 +46,8 @@ case class Hakuaika(hakuaikaId: String, alkuPvm: Option[Long], loppuPvm: Option[
 }
 
 case class Hakukohde(oid: String, hakuOid: String, hakukohdeKoulutusOids: List[String],
-                     koulutusAsteTyyppi: String, koulutusmoduuliTyyppi: String)
+                     koulutusAsteTyyppi: String, koulutusmoduuliTyyppi: String,
+                     hakukohteenNimet: Map[String, String], tarjoajaNimet: Map[String, String])
 
 case class Koulutus(oid: String, koulutuksenAlkamiskausi: Kausi, tila: String, koulutusKoodi: Option[Koodi]) {
   def johtaaTutkintoon: Boolean = {
@@ -101,7 +103,7 @@ protected trait JsonHakuService {
     } else None
 
     Haku(haku.oid, korkeakoulu, yhteishaku, varsinainenhaku, lisähaku, haku.sijoittelu, haku.parentHakuOid,
-      haku.sisaltyvatHaut, haku.hakuaikas, kausi, haku.yhdenPaikanSaanto)
+      haku.sisaltyvatHaut, haku.hakuaikas, kausi, haku.yhdenPaikanSaanto, haku.nimi)
   }
 }
 
@@ -123,7 +125,8 @@ private case class HakuTarjonnassa(oid: String, hakutapaUri: String, hakutyyppiU
                                    koulutuksenAlkamisVuosi: Option[Int], koulutuksenAlkamiskausiUri: Option[String],
                                    sijoittelu: Boolean,
                                    parentHakuOid: Option[String], sisaltyvatHaut: Set[String], tila: String,
-                                   hakuaikas: List[Hakuaika], yhdenPaikanSaanto: YhdenPaikanSaanto) {
+                                   hakuaikas: List[Hakuaika], yhdenPaikanSaanto: YhdenPaikanSaanto,
+                                   nimi: Map[String, String]) {
   def julkaistu = {
     tila == "JULKAISTU"
   }

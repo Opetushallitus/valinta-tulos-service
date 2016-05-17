@@ -58,9 +58,11 @@ object HakuFixtures extends HakuService with JsonHakuService {
     val hakuOid = hakuOids.head
     // TODO: Saner / more working test data
     if (activeFixture == toinenAsteYhteishaku || activeFixture == toinenAsteErillishakuEiSijoittelua) {
-      Some(Hakukohde(oid, hakuOid, List("koulu.tus.oid"), "AMMATILLINEN_PERUSKOULUTUS", "TUTKINTO_OHJELMA"))
+      Some(Hakukohde(oid, hakuOid, List("koulu.tus.oid"), "AMMATILLINEN_PERUSKOULUTUS", "TUTKINTO_OHJELMA",
+        Map("kieli_fi" -> "Lukion ilmaisutaitolinja"), Map("fi" -> "Kallion lukio")))
     } else {
-      Some(Hakukohde(oid, hakuOid, List("koulu.tus.oid"), "KORKEAKOULUTUS", "TUTKINTO"))
+      Some(Hakukohde(oid, hakuOid, List("koulu.tus.oid"), "KORKEAKOULUTUS", "TUTKINTO",
+        Map("kieli_fi" -> "Lukion ilmaisutaitolinja"), Map("fi" -> "Kallion lukio")))
     }
   }
 

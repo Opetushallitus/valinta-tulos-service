@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import java.util.Date
 
-case class HakemusMailStatus(hakemusOid: String, hakukohteet: List[HakukohdeMailStatus]) {
+case class HakemusMailStatus(hakemusOid: String, hakukohteet: List[HakukohdeMailStatus], hakuOid: String) {
   def anyMailToBeSent = hakukohteet.find(_.shouldMail).nonEmpty
 }
 

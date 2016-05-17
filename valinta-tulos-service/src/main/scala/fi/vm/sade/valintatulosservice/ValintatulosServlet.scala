@@ -28,7 +28,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
         Haku("5.5.5.5", true, true, true, false, true, None, Set(),
           List(Hakuaika("12345", Some(System.currentTimeMillis()), Some(System.currentTimeMillis()))),
           Some(Kausi("2016S")),
-          YhdenPaikanSaanto(false, "")),
+          YhdenPaikanSaanto(false, ""), Map("kieli_fi" -> "Haun nimi")),
         Some(Ohjausparametrit(None, Some(DateTime.now().plusDays(10)), Some(DateTime.now().plusDays(30)), Some(DateTime.now().plusDays(60)))))
     )
   )
