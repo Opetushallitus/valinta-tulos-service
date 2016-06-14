@@ -5,7 +5,7 @@
     <parent>
         <groupId>fi.vm.sade</groupId>
         <artifactId>valinta-tulos-service-parent</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0_valintojen_tulosten_julkistaminen_parametri-SNAPSHOT</version>
     </parent>
     <artifactId>valinta-tulos-henkiloviite-synchronizer</artifactId>
     <packaging>jar</packaging>
