@@ -43,9 +43,8 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
     parameter pathParam[String]("hakuOid").description("Haku oid")
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid"))
   get("/valintatulos/haku/:hakuOid/hakemus/:hakemusOid", operation(getValintatuloksetByHakemusSwagger)) {
-    val hakuOid = params("hakuOid")
     val hakemusOid = params("hakemusOid")
-    Ok(javaObjectToJsonString(valintatulosService.findValintaTuloksetForVirkailijaByHakemus(hakuOid, hakemusOid)))
+    Ok(javaObjectToJsonString(valintatulosService.findValintaTuloksetForVirkailijaByHakemus(hakemusOid)))
   }
 
   val getValintatuloksetByHakukohdeSwagger: OperationBuilder = (apiOperation[Unit]("getValintatuloksetByHakukohde")
