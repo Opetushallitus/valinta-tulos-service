@@ -43,9 +43,8 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid, jonka tulokset halutaan")
   )
   get("/:hakuOid/hakemus/:hakemusOid", operation(getHakemusSwagger)) {
-    val hakuOid = params("hakuOid")
     val hakemusOid = params("hakemusOid")
-    valintatulosService.hakemuksentulos(hakuOid, hakemusOid) match {
+    valintatulosService.hakemuksentulos(hakemusOid) match {
       case Some(tulos) => tulos
       case _ => NotFound("error" -> "Not found")
     }
@@ -110,7 +109,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     val hakemusOid = params("hakemusOid")
     val ilmoittautuminen = parsedBody.extract[Ilmoittautuminen]
 
-    ilmoittautumisService.ilmoittaudu(hakuOid, hakemusOid, ilmoittautuminen)
+    ilmoittautumisService.ilmoittaudu(hakemusOid, ilmoittautuminen)
   }
 
   lazy val getHaunSijoitteluajonTuloksetSwagger: OperationBuilder = (apiOperation[Unit]("getHaunSijoitteluajonTuloksetSwagger")
