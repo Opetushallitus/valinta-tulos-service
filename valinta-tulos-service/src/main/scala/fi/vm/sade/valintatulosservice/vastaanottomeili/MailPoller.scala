@@ -188,7 +188,7 @@ class MailPoller(valintatulosCollection: ValintatulosMongoCollection, valintatul
 
   private def fetchHakemuksentulos(id: HakemusIdentifier): Option[Hakemuksentulos] = {
     try {
-      valintatulosService.hakemuksentulos(id.hakuOid, id.hakemusOid)
+      valintatulosService.hakemuksentulos(id.hakemusOid)
     } catch {
       case e: Exception =>
         logger.error("Error fetching data for email polling. Candidate identifier=" + id, e)
