@@ -25,7 +25,7 @@ class ValintatulosIntegrationTest extends Specification {
           SijoittelunTulosRestClient(appConfig))
         val valintatulosService = new ValintatulosService(null, sijoittelutulosService, null, hakuService, null, null)
 
-        val tulos: Hakemuksentulos = valintatulosService.hakemuksentulos("1.2.246.562.29.92175749016", "1.2.246.562.11.00000000330").get
+        val tulos: Hakemuksentulos = valintatulosService.hakemuksentulos("1.2.246.562.11.00000000330").get
 
         tulos.hakutoiveet.length must_== 2
       } else {

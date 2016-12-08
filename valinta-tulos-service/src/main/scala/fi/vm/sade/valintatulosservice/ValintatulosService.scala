@@ -63,13 +63,11 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
     }
   }
 
-  def hakemuksentulos(hakuOid: String, hakemusOid: String): Option[Hakemuksentulos] = {
-    val vastaanottoaikataulu = sijoittelutulosService.findAikatauluFromOhjausparametritService(hakuOid)
-
+  def hakemuksentulos(hakemusOid: String): Option[Hakemuksentulos] = {
     for {
-      haku <- hakuService.getHaku(hakuOid).right.toOption
-      latestSijoitteluAjo = sijoittelutulosService.findLatestSijoitteluAjoForHaku(hakuOid)
       h <- hakemusRepository.findHakemus(hakemusOid).right.toOption
+      haku <- hakuService.getHaku(h.hakuOid).right.toOption
+      latestSijoitteluAjo = sijoittelutulosService.findLatestSijoitteluAjoForHaku(h.hakuOid)
       hakukohdeRecords <- hakukohdeRecordService.getHakukohdeRecords(h.toiveet.map(_.oid)).right.toOption
       uniqueKaudet <- Right(hakukohdeRecords.filter(_.yhdenPaikanSaantoVoimassa)
         .map(_.koulutuksenAlkamiskausi)).right.toOption
@@ -81,7 +79,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
         hakijaOidsByHakemusOids => sijoittelutulosService.hakemuksenTulos(haku,
           hakemusOid,
           hakijaOidsByHakemusOids.get(hakemusOid),
-          vastaanottoaikataulu,
+          sijoittelutulosService.findAikatauluFromOhjausparametritService(h.hakuOid),
           latestSijoitteluAjo).toSeq,
         vastaanottoKaudella = hakukohdeOid => {
           hakukohdeRecords.find(_.oid == hakukohdeOid) match {
@@ -286,9 +284,10 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
   }
 
 
-  def findValintaTuloksetForVirkailijaByHakemus(hakuOid: String, hakemusOid: String): util.List[Valintatulos] = {
-    val hakemuksenTulos = hakemuksentulos(hakuOid, hakemusOid)
-      .getOrElse(throw new IllegalArgumentException(s"Not hakemuksen tulos for hakemus $hakemusOid in haku $hakuOid"))
+  def findValintaTuloksetForVirkailijaByHakemus(hakemusOid: String): util.List[Valintatulos] = {
+    val hakemuksenTulos = hakemuksentulos(hakemusOid)
+      .getOrElse(throw new IllegalArgumentException(s"Not hakemuksen tulos for hakemus $hakemusOid"))
+    val hakuOid = hakemuksenTulos.hakuOid
     val henkiloOid = hakemuksenTulos.hakijaOid
     val vastaanotot = virkailijaVastaanottoRepository.runBlocking(virkailijaVastaanottoRepository.findHenkilonVastaanototHaussa(henkiloOid, hakuOid))
     val valintatulokset: util.List[Valintatulos] = valintatulosDao.loadValintatuloksetForHakemus(hakemusOid)
@@ -354,7 +353,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
   }
 
   def sijoittelunTulosHakemukselle(hakuOid: String, sijoitteluajoId: String, hakemusOid: String): Option[HakijaDTO] = {
-    val hakemuksenTulosOption = hakemuksentulos(hakuOid, hakemusOid)
+    val hakemuksenTulosOption = hakemuksentulos(hakemusOid)
     val hakijaOidFromHakemusOption = hakemusRepository.findHakemus(hakemusOid).right.map(_.henkiloOid)
 
     sijoittelutulosService.findSijoitteluAjo(hakuOid, sijoitteluajoId) match {
