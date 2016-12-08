@@ -65,7 +65,7 @@ class ValintatulosServiceLisahakuSpec extends ITSpecification with TimeWarp {
   def getHakutoive(hakukohdeOidSuffix: String) = hakemuksenTulos.hakutoiveet.find{_.hakukohdeOid.endsWith(hakukohdeOidSuffix)}.get
 
   def hakemuksenTulos = {
-    valintatulosService.hakemuksentulos(hakuOid, hakemusOid).get
+    valintatulosService.hakemuksentulos(hakemusOid).get
   }
 
   def checkHakutoiveState(hakuToive: Hakutoiveentulos, expectedTila: Valintatila, vastaanottoTila: Vastaanottotila, vastaanotettavuustila: Vastaanotettavuustila, julkaistavissa: Boolean) = {
