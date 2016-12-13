@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId, ZonedDateTime}
 
-import fi.vm.sade.valintatulosservice.domain.Ilmoittautumistila
+import fi.vm.sade.utils.slf4j.Logging
 import org.json4s.DefaultFormats
 import org.scalatra._
 import org.scalatra.json.JacksonJsonSupport
@@ -13,15 +13,14 @@ import scala.util.control.NonFatal
 
 case class ValinnanTulos(hakemusOid: String, ilmoittautumistila: String)
 
-case class IlmoittautuminenPatch(hakemusOid: String, ilmoittautumistila: String)
+case class ValinnanTulosPatch(hakemusOid: String, ilmoittautumistila: String)
 
 class ValinnanTulosServlet(ilmoittautumisService: IlmoittautumisService)
                           (implicit val swagger: Swagger)
-  extends ScalatraServlet with JacksonJsonSupport with SwaggerSupport {
+  extends ScalatraServlet with JacksonJsonSupport with SwaggerSupport with Logging {
 
   override val applicationName = Some("auth/valinnan-tulos")
   override val applicationDescription = "Valinnan tuloksen REST API"
-  override val swaggerConsumes = List("application/ilmoittautuminen+json")
 
   override protected implicit def jsonFormats = DefaultFormats
 
@@ -54,11 +53,11 @@ class ValinnanTulosServlet(ilmoittautumisService: IlmoittautumisService)
   }
 
   val sample = DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.of("GMT")))
-  val valinnanTuloksenMuutosSwagger: OperationBuilder = (apiOperation[Unit]("valinnanTuloksenMuutos")
-    summary "Valinnan tuloksen muutos"
+  val valinnanTuloksenMuutosSwagger: OperationBuilder = (apiOperation[Unit]("muokkaaValinnanTulosta")
+    summary "Muokkaa valinnan tulosta"
     parameter pathParam[String]("valintatapajonoOid").description("Valintatapajonon OID")
     parameter headerParam[String]("If-Unmodified-Since").description(s"Timestamp in RFC 1123 format: $sample").required
-    parameter bodyParam[List[IlmoittautuminenPatch]].description("").required
+    parameter bodyParam[List[ValinnanTulosPatch]].description("Muutos valinnan tulokseen").required
     )
   patch("/:valintatapajonoOid", operation(valinnanTuloksenMuutosSwagger)) {
     if (!request.headers.contains("If-Unmodified-Since")) {
@@ -73,22 +72,13 @@ class ValinnanTulosServlet(ilmoittautumisService: IlmoittautumisService)
     val userOid = session.as[String]("personOid")
     val valintatapajonoOid = params("valintatapajonoOid")
 
-    request.contentType match {
-      case Some(s) if s.startsWith("application/ilmoittautuminen+json") =>
-        parsedBody.extract[List[IlmoittautuminenPatch]].foreach(muutos => {
-          ilmoittautumisService.setIlmoittautumistila(
-            muutos.hakemusOid,
-            valintatapajonoOid,
-            Ilmoittautumistila.withName(muutos.ilmoittautumistila),
-            userOid,
-            ifUnmodifiedSince
-          )
-        })
-        NoContent()
-      case Some(s) =>
-        UnsupportedMediaType("error" -> s"Unsupported media type ${request.contentType.get}.")
-      case None =>
-        BadRequest("error" -> "Content-Type required.")
-    }
+    parsedBody.extract[List[ValinnanTulosPatch]].foreach(muutos => {
+      val (edellinenTila, lastModified) = ilmoittautumisService.getIlmoittautumistila(muutos.hakemusOid, valintatapajonoOid)
+      if (lastModified.isAfter(ifUnmodifiedSince)) {
+        logger.info(s"Stale read of hakemus ${muutos.hakemusOid} in valintatapajono $valintatapajonoOid, last modified $lastModified, read $ifUnmodifiedSince")
+      }
+      logger.info(s"User $userOid changed ilmoittautumistila of hakemus ${muutos.hakemusOid} in valintatapajono $valintatapajonoOid from $edellinenTila to ${muutos.ilmoittautumistila}")
+    })
+    NoContent()
   }
 }

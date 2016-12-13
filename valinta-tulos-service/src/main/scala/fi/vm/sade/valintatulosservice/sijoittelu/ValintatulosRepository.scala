@@ -16,14 +16,6 @@ class ValintatulosRepository(dao: ValintatulosDao) {
     }
   }
 
-  def modifyValintatulos(valintatapajonoOid: String,
-                         hakemusOid: String,
-                         block: (Valintatulos => Unit)): Either[Throwable, Unit] = {
-    val valintatulos = findValintatulos(valintatapajonoOid, hakemusOid)
-    valintatulos.right.foreach(block)
-    valintatulos.right.flatMap(storeValintatulos)
-  }
-
   def modifyValintatulos(hakukohdeOid: String, valintatapajonoOid: String, hakemusOid: String,
                          block: (Valintatulos => Unit)): Either[Throwable, Unit] = {
     val valintatulos = findValintatulos(hakukohdeOid, valintatapajonoOid, hakemusOid)
