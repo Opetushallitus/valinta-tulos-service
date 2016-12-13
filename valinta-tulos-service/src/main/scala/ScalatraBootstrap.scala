@@ -80,7 +80,7 @@ class ScalatraBootstrap extends LifeCycle {
         appConfig.securityContext.casClient,
         appConfig.securityContext.casServiceIdentifier,
         appConfig.securityContext.directoryClient
-      ), "/login")
+      ), "/auth/login")
       context.mount(new ValinnanTulosServlet(ilmoittautumisService), "/auth/valinnan-tulos")
     }
     context.mount(new HakukohdeRefreshServlet(valintarekisteriDb, hakukohdeRecordService), "/virkistys")
