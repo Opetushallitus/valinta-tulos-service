@@ -9,8 +9,6 @@ class AuthenticationFilter(loginUrl: String) extends ScalatraFilter {
       if (request.requestMethod == org.scalatra.Get) {
         session += ("redirect_to" -> requestPath)
       }
-    }
-    if (!session.as[Boolean]("authenticated")) {
       redirect(loginUrl)
     }
   }
