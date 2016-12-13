@@ -24,28 +24,9 @@ class IlmoittautumisService(valintatulosService: ValintatulosService,
         )
   }
 
-  def setIlmoittautumistila(hakemusOid: String,
-                            valintatapajonoOid: String,
-                            tila: Ilmoittautumistila,
-                            muokkaaja: String,
-                            ifUnmodifiedSince: Instant): Unit = {
-    tulokset.modifyValintatulos(
-      valintatapajonoOid,
-      hakemusOid,
-      valintatulos => {
-        val lastModified = Option(valintatulos.getViimeinenMuutos)
-          .map(_.toInstant).getOrElse(Instant.EPOCH)
-          .truncatedTo(ChronoUnit.SECONDS)
-        if (lastModified.isAfter(ifUnmodifiedSince)) {
-          throw new IllegalStateException("stale read")
-        }
-        valintatulos.setIlmoittautumisTila(
-          IlmoittautumisTila.valueOf(tila.toString),
-          "Ilmoittautumistilan muutos",
-          muokkaaja
-        )
-      }
-    ).left.foreach(e => throw e)
+  def getIlmoittautumistila(hakemusOid: String, valintatapajonoOid: String): (Ilmoittautumistila, Instant) = {
+    val v = tulokset.findValintatulos(valintatapajonoOid, hakemusOid).right.get
+    (Ilmoittautumistila.withName(v.getIlmoittautumisTila.toString), Option(v.getViimeinenMuutos).map(_.toInstant).getOrElse(Instant.EPOCH))
   }
 
   def ilmoittaudu(hakemusOid: String, ilmoittautuminen: Ilmoittautuminen) {
