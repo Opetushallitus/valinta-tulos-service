@@ -1,7 +1,10 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
+import java.sql.JDBCType
+import java.util.UUID
+
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import slick.jdbc.GetResult
+import slick.jdbc.{GetResult, PositionedParameters, SetParameter}
 
 abstract class ValintarekisteriResultExtractors {
 
@@ -119,4 +122,10 @@ abstract class ValintarekisteriResultExtractors {
     textSv = r.nextStringOption,
     textEn = r.nextStringOption
   ))
+
+  implicit object SetUUID extends SetParameter[UUID] {
+    def apply(v: UUID, pp: PositionedParameters) {
+      pp.setObject(v, JDBCType.BINARY.getVendorTypeNumber)
+    }
+  }
 }

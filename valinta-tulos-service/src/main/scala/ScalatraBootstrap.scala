@@ -1,7 +1,7 @@
 import java.util
 import javax.servlet.{DispatcherType, ServletContext}
 
-import fi.vm.sade.security.{AuthenticationFilter, CasLogin}
+import fi.vm.sade.security.CasLogin
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.{Dev, IT, VtsAppConfig}
@@ -68,14 +68,15 @@ class ScalatraBootstrap extends LifeCycle {
         .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/*")
       context.mount(new PublicValintatulosServlet(valintatulosService, vastaanottoService, ilmoittautumisService), "/cas/haku")
 
-      context.addFilter("auth", new AuthenticationFilter(s"${appConfig.settings.securitySettings.casUrl}/login?service=${appConfig.securityContext.casServiceIdentifier}"))
-        .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/auth/*")
+      val loginUrl = s"${appConfig.settings.securitySettings.casUrl}/login?service=${appConfig.securityContext.casServiceIdentifier}"
       context.mount(new CasLogin(
         appConfig.securityContext.casClient,
         appConfig.securityContext.casServiceIdentifier,
-        appConfig.securityContext.directoryClient
+        appConfig.securityContext.directoryClient,
+        loginUrl,
+        valintarekisteriDb
       ), "/auth/login")
-      context.mount(new ValinnanTulosServlet(ilmoittautumisService), "/auth/valinnan-tulos")
+      context.mount(new ValinnanTulosServlet(ilmoittautumisService, valintarekisteriDb), "/auth/valinnan-tulos")
     }
     context.mount(new HakukohdeRefreshServlet(valintarekisteriDb, hakukohdeRecordService), "/virkistys")
 

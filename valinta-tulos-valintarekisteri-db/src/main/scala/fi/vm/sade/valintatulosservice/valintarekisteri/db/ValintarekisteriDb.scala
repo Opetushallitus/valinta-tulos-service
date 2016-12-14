@@ -1,13 +1,14 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
 import java.sql.{PreparedStatement, Timestamp, Types}
-import java.util.Date
+import java.util.{Date, UUID}
 import java.util.concurrent.TimeUnit
 
 import com.typesafe.config.{Config, ConfigValueFactory}
 import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatapajono, Hakemus => SijoitteluHakemus, _}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
+import fi.vm.sade.valintatulosservice.security.{CasSession, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.flywaydb.core.Flyway
 import org.postgresql.util.PSQLException
@@ -21,7 +22,7 @@ import scala.util.control.NonFatal
 
 class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends ValintarekisteriResultExtractors
   with HakijaVastaanottoRepository with SijoitteluRepository with HakukohdeRepository
-  with VirkailijaVastaanottoRepository with ValintarekisteriService with Logging with PerformanceLogger {
+  with VirkailijaVastaanottoRepository with SessionRepository with ValintarekisteriService with Logging with PerformanceLogger {
 
   val user = if (dbConfig.hasPath("user")) dbConfig.getString("user") else null
   val password = if (dbConfig.hasPath("password")) dbConfig.getString("password") else null
@@ -841,5 +842,42 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
       }
     }
     readPistetiedot()
+  }
+
+  override def store(session: Session): UUID = session match {
+    case CasSession(ServiceTicket(ticket), personOid, roles) =>
+      val id = UUID.randomUUID()
+      val a: List[DBIO[Int]] = roles.map(role =>
+        sqlu"""insert into roolit (sessio, rooli) values ($id, $role)"""
+      )
+      runBlocking(DBIO.seq(
+        sqlu"""insert into sessiot (id, cas_tiketti, henkilo)
+               values ($id, $ticket, $personOid)""",
+        DBIO.sequence(a)
+      ))
+      id
+  }
+
+  override def delete(id: UUID): Unit = {
+    runBlocking(sqlu"""delete from sessiot where id = $id""")
+  }
+
+  override def delete(ticket: ServiceTicket): Unit = {
+    runBlocking(sqlu"""delete from sessiot where cas_tiketti = ${ticket.s}""")
+  }
+
+  override def get(id: UUID): Option[Session] = {
+    runBlocking(
+      sql"""select cas_tiketti, henkilo, rooli from sessiot as s
+            join roolit as r on s.id = r.sessio
+            where s.id = $id and s.viimeksi_luettu > now() - interval '30 minutes'""".as[(Option[String], String, String)]
+        .flatMap {
+          case (casTicket, personOid, rooli) +: ss =>
+            sqlu"""update sessiot set viimeksi_luettu = now() where id = $id"""
+              .andThen(DBIO.successful(Some(CasSession(ServiceTicket(casTicket.get), personOid, rooli +: ss.map(_._3).toList))))
+          case _ =>
+            sqlu"""delete from sessiot where id = $id""".andThen(DBIO.successful(None))
+        }.transactionally
+    )
   }
 }
