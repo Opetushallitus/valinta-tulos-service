@@ -1,8 +1,10 @@
 package fi.vm.sade.valintatulosservice
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId, ZonedDateTime}
+import java.util.UUID
 
 import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import org.json4s.DefaultFormats
 import org.scalatra._
 import org.scalatra.json.JacksonJsonSupport
@@ -15,7 +17,7 @@ case class ValinnanTulos(hakemusOid: String, ilmoittautumistila: String)
 
 case class ValinnanTulosPatch(hakemusOid: String, ilmoittautumistila: String)
 
-class ValinnanTulosServlet(ilmoittautumisService: IlmoittautumisService)
+class ValinnanTulosServlet(ilmoittautumisService: IlmoittautumisService, sessionRepository: SessionRepository)
                           (implicit val swagger: Swagger)
   extends ScalatraServlet with JacksonJsonSupport with SwaggerSupport with Logging {
 
@@ -32,7 +34,7 @@ class ValinnanTulosServlet(ilmoittautumisService: IlmoittautumisService)
   }
 
   before() {
-    if (!session.as[Boolean]("authenticated")) {
+    if (cookies.get("session").map(UUID.fromString).flatMap(sessionRepository.get).isEmpty) {
       halt(Forbidden("error" -> "forbidden"))
     }
     contentType = formats("json")
