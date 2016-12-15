@@ -53,7 +53,7 @@ class ValinnanTulosServlet(valintatulosService: ValintatulosService,
   private def parseIfUnmodifiedSince: Instant = {
     request.headers.get("If-Unmodified-Since") match {
       case Some(s) =>
-        Try(Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(s)).truncatedTo(ChronoUnit.SECONDS)).recoverWith {
+        Try(Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(s))).recoverWith {
           case e => Failure(new IllegalArgumentException(s"Ei voitu jäsentää otsaketta If-Unmodified-Since muodossa $sample.", e))
         }.get
       case None => throw new IllegalArgumentException("Otsake If-Unmodified-Since on pakollinen.")
