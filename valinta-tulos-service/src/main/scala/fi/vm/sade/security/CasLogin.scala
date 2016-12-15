@@ -42,7 +42,7 @@ class CasLogin(casClient: CasClient, casServiceIdentifier: String, ldapClient: D
 
   private def createSession(ticket: String, user: LdapUser): ActionResult = {
     val id = sessionRepository.store(CasSession(ServiceTicket(ticket), user.oid, user.roles))
-    implicit val cookieOptions = CookieOptions(secure = true, httpOnly = true)
+    implicit val cookieOptions = CookieOptions(path = "/valinta-tulos-service", secure = false, httpOnly = true)
     cookies += ("session" -> id.toString)
     Ok(Map("personOid" -> user.oid))
   }
