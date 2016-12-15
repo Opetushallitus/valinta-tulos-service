@@ -8,7 +8,7 @@ import com.typesafe.config.{Config, ConfigValueFactory}
 import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatapajono, Hakemus => SijoitteluHakemus, _}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
-import fi.vm.sade.valintatulosservice.security.{CasSession, ServiceTicket, Session}
+import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.flywaydb.core.Flyway
 import org.postgresql.util.PSQLException
@@ -847,13 +847,12 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
   override def store(session: Session): UUID = session match {
     case CasSession(ServiceTicket(ticket), personOid, roles) =>
       val id = UUID.randomUUID()
-      val a: List[DBIO[Int]] = roles.map(role =>
-        sqlu"""insert into roolit (sessio, rooli) values ($id, $role)"""
-      )
       runBlocking(DBIO.seq(
         sqlu"""insert into sessiot (id, cas_tiketti, henkilo)
                values ($id, $ticket, $personOid)""",
-        DBIO.sequence(a)
+        DBIO.sequence(roles.map(role =>
+          sqlu"""insert into roolit (sessio, rooli) values ($id, ${role.s})"""
+        ).toSeq)
       ))
       id
   }
@@ -874,7 +873,7 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
         .flatMap {
           case (casTicket, personOid, rooli) +: ss =>
             sqlu"""update sessiot set viimeksi_luettu = now() where id = $id"""
-              .andThen(DBIO.successful(Some(CasSession(ServiceTicket(casTicket.get), personOid, rooli +: ss.map(_._3).toList))))
+              .andThen(DBIO.successful(Some(CasSession(ServiceTicket(casTicket.get), personOid, ss.map(t => Role(t._3)).toSet + Role(rooli)))))
           case _ =>
             sqlu"""delete from sessiot where id = $id""".andThen(DBIO.successful(None))
         }.transactionally
