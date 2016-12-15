@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.sijoittelu
 import fi.vm.sade.sijoittelu.domain.Valintatulos
 import fi.vm.sade.sijoittelu.tulos.dao.ValintatulosDao
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
 
 class ValintatulosNotFoundException(msg: String) extends RuntimeException(msg)
@@ -11,7 +11,7 @@ class ValintatulosNotFoundException(msg: String) extends RuntimeException(msg)
 class ValintatulosRepository(dao: ValintatulosDao) {
   def findValintatulokset(valintatapajonoOid: String): Either[Throwable, Seq[Valintatulos]] = {
     Try(dao.loadValintatuloksetForValintatapajono(valintatapajonoOid)) match {
-      case Success(valintatulokset) => Right(valintatulokset.toList)
+      case Success(valintatulokset) => Right(valintatulokset.asScala)
       case Failure(e) => Left(e)
     }
   }
