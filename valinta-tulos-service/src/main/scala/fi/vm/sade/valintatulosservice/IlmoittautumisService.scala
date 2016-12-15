@@ -15,18 +15,19 @@ import org.json4s.jackson.Serialization
 class IlmoittautumisService(valintatulosService: ValintatulosService,
                             tulokset: ValintatulosRepository,
                             hakijaVastaanottoRepository: HakijaVastaanottoRepository) extends JsonFormats {
-  def getIlmoittautumistilat(valintatapajonoOid: String): Seq[(String, Ilmoittautumistila, Instant)] = {
-    tulokset.findValintatulokset(valintatapajonoOid).right.get
-      .map(v => (
-        v.getHakemusOid,
-        Ilmoittautumistila.withName(v.getIlmoittautumisTila.toString),
-        Option(v.getViimeinenMuutos).map(_.toInstant).getOrElse(Instant.EPOCH).truncatedTo(ChronoUnit.SECONDS))
-        )
+  def getIlmoittautumistilat(valintatapajonoOid: String): Either[Throwable, Seq[(String, Ilmoittautumistila, Instant)]] = {
+    tulokset.findValintatulokset(valintatapajonoOid).right.map(_.map(v => (
+      v.getHakemusOid,
+      Ilmoittautumistila.withName(v.getIlmoittautumisTila.toString),
+      Option(v.getViimeinenMuutos).map(_.toInstant).getOrElse(Instant.EPOCH).truncatedTo(ChronoUnit.SECONDS))
+    ))
   }
 
-  def getIlmoittautumistila(hakemusOid: String, valintatapajonoOid: String): (Ilmoittautumistila, Instant) = {
-    val v = tulokset.findValintatulos(valintatapajonoOid, hakemusOid).right.get
-    (Ilmoittautumistila.withName(v.getIlmoittautumisTila.toString), Option(v.getViimeinenMuutos).map(_.toInstant).getOrElse(Instant.EPOCH))
+  def getIlmoittautumistila(hakemusOid: String, valintatapajonoOid: String): Either[Throwable, (Ilmoittautumistila, Instant)] = {
+    tulokset.findValintatulos(valintatapajonoOid, hakemusOid).right.map(v =>
+      (Ilmoittautumistila.withName(v.getIlmoittautumisTila.toString),
+        Option(v.getViimeinenMuutos).map(_.toInstant).getOrElse(Instant.EPOCH))
+    )
   }
 
   def ilmoittaudu(hakemusOid: String, ilmoittautuminen: Ilmoittautuminen) {
