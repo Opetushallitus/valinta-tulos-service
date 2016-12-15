@@ -4,10 +4,10 @@ import java.time.temporal.ChronoUnit
 import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.UUID
 
-import fi.vm.sade.security.AuthenticationFailedException
+import fi.vm.sade.security.{AuthenticationFailedException, AuthorizationFailedException}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.domain.Ilmoittautumistila
-import fi.vm.sade.valintatulosservice.security.Session
+import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila
 import org.json4s.DefaultFormats
@@ -36,6 +36,9 @@ class ValinnanTulosServlet(valintatulosService: ValintatulosService,
   error {
     case e: AuthenticationFailedException =>
       logger.warn("authentication failed", e)
+      Forbidden("error" -> "Forbidden")
+    case e: AuthorizationFailedException =>
+      logger.warn("authorization failed", e)
       Forbidden("error" -> "Forbidden")
     case e: IllegalArgumentException =>
       logger.warn("bad request", e)
@@ -75,6 +78,9 @@ class ValinnanTulosServlet(valintatulosService: ValintatulosService,
   get("/:valintatapajonoOid", operation(valinnanTulosSwagger)) {
     contentType = formats("json")
     val session = getSession
+    if (!session.hasAnyRole(Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))) {
+      throw new AuthorizationFailedException()
+    }
     val valintatapajonoOid = parseValintatapajonoOid
     val vastaanottotilat = valintatulosService.findValintaTuloksetForVirkailijaWithoutTilaHakijalle(valintatapajonoOid)
       .map(p => p._1 -> (p._2, p._3)).toMap
@@ -102,6 +108,9 @@ class ValinnanTulosServlet(valintatulosService: ValintatulosService,
   patch("/:valintatapajonoOid", operation(valinnanTuloksenMuutosSwagger)) {
     contentType = null
     val session = getSession
+    if (!session.hasAnyRole(Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))) {
+      throw new AuthorizationFailedException()
+    }
     val valintatapajonoOid = parseValintatapajonoOid
     val ifUnmodifiedSince = parseIfUnmodifiedSince
     val vastaanottotilat = valintatulosService.findValintaTuloksetForVirkailijaWithoutTilaHakijalle(valintatapajonoOid)
