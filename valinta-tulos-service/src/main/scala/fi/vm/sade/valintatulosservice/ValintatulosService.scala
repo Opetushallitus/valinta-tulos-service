@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
+import java.time.Instant
 import java.util
 
 import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
@@ -15,6 +16,7 @@ import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, Ohjaus
 import fi.vm.sade.valintatulosservice.sijoittelu.{SijoittelutulosService, StreamingHakijaDtoClient}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, VastaanottoRecord, VirkailijaVastaanottoRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeRecord, Kausi, MerkitseMyohastyneeksi, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import org.apache.commons.lang3.StringUtils
@@ -248,6 +250,33 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
 
     setValintatuloksetTilat(hakuOid, valintatulokset.asScala, mapHakemustenTuloksetByHakemusOid(hakemustenTulokset), haunVastaanotot)
     valintatulokset
+  }
+
+  def findValintaTuloksetForVirkailijaWithoutTilaHakijalle(valintatapajonoOid: String): Seq[(String, Vastaanottotila, Instant)] = {
+    val valintatulokset = timed(s"Fetch plain valintatulokset for valintatapajono $valintatapajonoOid", 1000) {
+      valintatulosDao.loadValintatuloksetForValintatapajono(valintatapajonoOid).asScala
+    }
+    if (valintatulokset.isEmpty) {
+      return Seq()
+    }
+    val (hakuOid, hakukohdeOid) = valintatulokset.headOption.map(v => (v.getHakuOid, v.getHakukohdeOid)).get
+    val haunVastaanotot: Map[String, Set[VastaanottoRecord]] = timed(s"Fetch vastaanotto records for haku $hakuOid", 1000) {
+      virkailijaVastaanottoRepository.findHaunVastaanotot(hakuOid).groupBy(_.henkiloOid)
+    }
+    lazy val hakemusOidsByHakijaOids = timed(s"Fetch hakija oids by hakemus oids for haku $hakuOid and hakukohde $hakukohdeOid", 1000) {
+      hakemusRepository.findPersonOids(hakuOid, hakukohdeOid)
+    }
+    val (haku, kaudenVastaanotot) = timed(s"Fetch YPS related kauden vastaanotot for haku $hakuOid", 1000) {
+      hakuJaSenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid)
+    }
+
+    valintatulokset.map(v => {
+      val hakijaOid = if (StringUtils.isNotBlank(v.getHakijaOid)) v.getHakijaOid else hakemusOidsByHakijaOids(v.getHakemusOid)
+      val henkilonVastaanotot = haunVastaanotot.get(hakijaOid)
+      val hakijanVastaanototHakukohteeseen: List[VastaanottoRecord] = henkilonVastaanotot.map(_.filter(_.hakukohdeOid == hakukohdeOid)).toList.flatten
+      val tilaVirkailijalle: ValintatuloksenTila = paatteleVastaanottotilaVirkailijaaVarten(hakijaOid, hakijanVastaanototHakukohteeseen, haku, kaudenVastaanotot)
+      (v.getHakemusOid, tilaVirkailijalle.toString, v.getViimeinenMuutos.toInstant)
+    })
   }
 
   def findValintaTuloksetForVirkailijaWithoutTilaHakijalle(hakuOid: String, hakukohdeOid: String): util.List[Valintatulos] = {
