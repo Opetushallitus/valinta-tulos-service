@@ -5,7 +5,7 @@ import java.util.UUID
 import fi.vm.sade.security.ldap.{DirectoryClient, LdapUser}
 import fi.vm.sade.utils.cas.{CasClient, CasLogout}
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.security.{CasSession, ServiceTicket}
+import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import org.json4s.DefaultFormats
 import org.scalatra.json.JacksonJsonSupport
@@ -41,7 +41,7 @@ class CasLogin(casClient: CasClient, casServiceIdentifier: String, ldapClient: D
   }
 
   private def createSession(ticket: String, user: LdapUser): ActionResult = {
-    val id = sessionRepository.store(CasSession(ServiceTicket(ticket), user.oid, user.roles))
+    val id = sessionRepository.store(CasSession(ServiceTicket(ticket), user.oid, user.roles.map(Role(_)).toSet))
     implicit val cookieOptions = CookieOptions(path = "/valinta-tulos-service", secure = false, httpOnly = true)
     cookies += ("session" -> id.toString)
     Ok(Map("personOid" -> user.oid))
