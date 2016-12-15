@@ -49,14 +49,14 @@ class ValinnanTulosServlet(ilmoittautumisService: IlmoittautumisService, session
     request.headers.get("If-Unmodified-Since") match {
       case Some(s) =>
         Try(Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(s))).recoverWith {
-          case e => Failure(new IllegalArgumentException(s"Could not parse If-Unmodified-Since in format $sample.", e))
+          case e => Failure(new IllegalArgumentException(s"Ei voitu jäsentää otsaketta If-Unmodified-Since muodossa $sample.", e))
         }.get
-      case None => throw new IllegalArgumentException("If-Unmodified-Since is required.")
+      case None => throw new IllegalArgumentException("Otsake If-Unmodified-Since on pakollinen.")
     }
   }
 
   private def parseValintatapajonoOid: String = {
-    params.getOrElse("valintatapajonoOid", throw new IllegalArgumentException("Valintatapajono OID is required."))
+    params.getOrElse("valintatapajonoOid", throw new IllegalArgumentException("URL parametri Valintatapajono OID on pakollinen."))
   }
 
   private def renderHttpDate(instant: Instant): String = {
@@ -82,8 +82,8 @@ class ValinnanTulosServlet(ilmoittautumisService: IlmoittautumisService, session
   val valinnanTuloksenMuutosSwagger: OperationBuilder = (apiOperation[Unit]("muokkaaValinnanTulosta")
     summary "Muokkaa valinnan tulosta"
     parameter pathParam[String]("valintatapajonoOid").description("Valintatapajonon OID")
-    parameter headerParam[String]("If-Unmodified-Since").description(s"Timestamp in RFC 1123 format: $sample").required
-    parameter bodyParam[List[ValinnanTulosPatch]].description("Muutos valinnan tulokseen").required
+    parameter headerParam[String]("If-Unmodified-Since").description(s"Aikaleima RFC 1123 määrittelemässä muodossa $sample").required
+    parameter bodyParam[List[ValinnanTulosPatch]].description("Muutokset valinnan tulokseen").required
     )
   patch("/:valintatapajonoOid", operation(valinnanTuloksenMuutosSwagger)) {
     contentType = null
@@ -93,12 +93,12 @@ class ValinnanTulosServlet(ilmoittautumisService: IlmoittautumisService, session
     parsedBody.extract[List[ValinnanTulosPatch]].foreach(muutos => {
       val (edellinenTila, lastModified) = ilmoittautumisService.getIlmoittautumistila(muutos.hakemusOid, valintatapajonoOid).right.get
       if (lastModified.isAfter(ifUnmodifiedSince)) {
-        logger.info(s"Stale read of hakemus ${muutos.hakemusOid} in valintatapajono $valintatapajonoOid, " +
-          s"last modified $lastModified, read $ifUnmodifiedSince")
+        logger.warn(s"Hakemus ${muutos.hakemusOid} valintatapajonossa $valintatapajonoOid " +
+          s"on muuttunut $lastModified lukemisajan $ifUnmodifiedSince jälkeen.")
       }
-      logger.info(s"User ${session.personOid} changed ilmoittautumistila " +
-        s"of hakemus ${muutos.hakemusOid} in valintatapajono $valintatapajonoOid " +
-        s"from $edellinenTila to ${muutos.ilmoittautumistila}")
+      logger.info(s"Käyttäjä ${session.personOid} muokkasi " +
+        s"hakemuksen ${muutos.hakemusOid} ilmoittautumistilaa valintatapajonossa $valintatapajonoOid " +
+        s"tilasta $edellinenTila tilaan ${muutos.ilmoittautumistila}")
     })
     NoContent()
   }
