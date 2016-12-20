@@ -4,29 +4,27 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 import fi.vm.sade.sijoittelu.domain.IlmoittautumisTila
-import fi.vm.sade.valintatulosservice.domain.Ilmoittautumistila.Ilmoittautumistila
-import fi.vm.sade.valintatulosservice.domain.{Ilmoittautuminen, Ilmoittautumistila}
+import fi.vm.sade.valintatulosservice.domain.Ilmoittautuminen
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.sijoittelu.ValintatulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakijaVastaanottoRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.VastaanotaSitovasti
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{SijoitteluajonIlmoittautumistila, VastaanotaSitovasti}
 import org.json4s.jackson.Serialization
 
 class IlmoittautumisService(valintatulosService: ValintatulosService,
                             tulokset: ValintatulosRepository,
                             hakijaVastaanottoRepository: HakijaVastaanottoRepository) extends JsonFormats {
-  def getIlmoittautumistilat(valintatapajonoOid: String): Either[Throwable, Seq[(String, Ilmoittautumistila, Instant)]] = {
+  def getIlmoittautumistilat(valintatapajonoOid: String): Either[Throwable, Seq[(String, SijoitteluajonIlmoittautumistila, Instant)]] = {
     tulokset.findValintatulokset(valintatapajonoOid).right.map(_.map(v => (
       v.getHakemusOid,
-      Ilmoittautumistila.withName(v.getIlmoittautumisTila.toString),
+      SijoitteluajonIlmoittautumistila(v.getIlmoittautumisTila),
       Option(v.getViimeinenMuutos).map(_.toInstant).getOrElse(Instant.EPOCH).truncatedTo(ChronoUnit.SECONDS))
     ))
   }
 
-  def getIlmoittautumistila(hakemusOid: String, valintatapajonoOid: String): Either[Throwable, (Ilmoittautumistila, Instant)] = {
+  def getIlmoittautumistila(hakemusOid: String, valintatapajonoOid: String): Either[Throwable, (SijoitteluajonIlmoittautumistila, Instant)] = {
     tulokset.findValintatulos(valintatapajonoOid, hakemusOid).right.map(v =>
-      (Ilmoittautumistila.withName(v.getIlmoittautumisTila.toString),
-        Option(v.getViimeinenMuutos).map(_.toInstant).getOrElse(Instant.EPOCH))
+      (SijoitteluajonIlmoittautumistila(v.getIlmoittautumisTila), Option(v.getViimeinenMuutos).map(_.toInstant).getOrElse(Instant.EPOCH))
     )
   }
 
@@ -35,7 +33,11 @@ class IlmoittautumisService(valintatulosService: ValintatulosService,
     val hakutoive = hakemuksenTulos.findHakutoive(ilmoittautuminen.hakukohdeOid).map(_._1).getOrElse(throw new IllegalArgumentException("Hakutoivetta ei löydy"))
 
     if (!hakutoive.ilmoittautumistila.ilmoittauduttavissa)  {
-      throw new IllegalStateException(s"""Hakutoive ${ilmoittautuminen.hakukohdeOid} ei ole ilmoittauduttavissa: ilmoittautumisaika: ${Serialization.write(hakutoive.ilmoittautumistila.ilmoittautumisaika)}, ilmoittautumistila: ${hakutoive.ilmoittautumistila.ilmoittautumistila}, valintatila: ${hakutoive.valintatila}, vastaanottotila: ${hakutoive.vastaanottotila}""")
+      throw new IllegalStateException(s"Hakutoive ${ilmoittautuminen.hakukohdeOid} ei ole ilmoittauduttavissa: " +
+        s"ilmoittautumisaika: ${Serialization.write(hakutoive.ilmoittautumistila.ilmoittautumisaika)}, " +
+        s"ilmoittautumistila: ${hakutoive.ilmoittautumistila.ilmoittautumistila.ilmoittautumistila}, " +
+        s"valintatila: ${hakutoive.valintatila}, " +
+        s"vastaanottotila: ${hakutoive.vastaanottotila}")
     }
 
     val vastaanotto = hakijaVastaanottoRepository.runBlocking(hakijaVastaanottoRepository.findHenkilonVastaanototHaussa(hakemuksenTulos.hakijaOid, hakemuksenTulos.hakuOid))
@@ -51,7 +53,7 @@ class IlmoittautumisService(valintatulosService: ValintatulosService,
       hakemusOid,
       valintatulos =>
         valintatulos.setIlmoittautumisTila(
-          IlmoittautumisTila.valueOf(ilmoittautuminen.tila.toString),
+          ilmoittautuminen.tila.ilmoittautumistila,
           ilmoittautuminen.selite,
           ilmoittautuminen.muokkaaja
         )
