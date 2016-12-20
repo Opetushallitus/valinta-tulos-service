@@ -5,6 +5,7 @@ import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.UUID
 
 import fi.vm.sade.security.{AuthenticationFailedException, AuthorizationFailedException}
+import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
@@ -13,7 +14,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiTehty, Sijoitte
 import org.scalatra._
 import org.scalatra.json.JacksonJsonSupport
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
-import org.scalatra.swagger.{Swagger, SwaggerSupport}
+import org.scalatra.swagger._
 
 import scala.util.{Failure, Try}
 
@@ -45,6 +46,10 @@ class ValinnanTulosServlet(valintatulosService: ValintatulosService,
       InternalServerError("error" -> "Internal server error")
   }
 
+  private def ilmoittautumistilaModelProperty(mp: ModelProperty) = {
+    ModelProperty(DataType.String, mp.position, required = true, allowableValues = AllowableValues(IlmoittautumisTila.values().toList.map(_.toString)))
+  }
+
   private def getSession: Session = {
     cookies.get("session").map(UUID.fromString).flatMap(sessionRepository.get)
       .getOrElse(throw new AuthenticationFailedException)
@@ -72,6 +77,10 @@ class ValinnanTulosServlet(valintatulosService: ValintatulosService,
     summary "Valinnan tulos"
     parameter pathParam[String]("valintatapajonoOid").description("Valintatapajonon OID")
     )
+  models.update("ValinnanTulos", models("ValinnanTulos").copy(properties = models("ValinnanTulos").properties.map {
+    case ("ilmoittautumistila", mp) => ("ilmoittautumistila", ilmoittautumistilaModelProperty(mp))
+    case p => p
+  }))
   get("/:valintatapajonoOid", operation(valinnanTulosSwagger)) {
     contentType = formats("json")
     val session = getSession
@@ -102,6 +111,10 @@ class ValinnanTulosServlet(valintatulosService: ValintatulosService,
     parameter headerParam[String]("If-Unmodified-Since").description(s"Aikaleima RFC 1123 määrittelemässä muodossa $sample").required
     parameter bodyParam[List[ValinnanTulosPatch]].description("Muutokset valinnan tulokseen").required
     )
+  models.update("ValinnanTulosPatch", models("ValinnanTulosPatch").copy(properties = models("ValinnanTulosPatch").properties.map {
+    case ("ilmoittautumistila", mp) => ("ilmoittautumistila", ilmoittautumistilaModelProperty(mp))
+    case p => p
+  }))
   patch("/:valintatapajonoOid", operation(valinnanTuloksenMuutosSwagger)) {
     contentType = null
     val session = getSession
