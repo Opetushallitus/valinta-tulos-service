@@ -478,7 +478,7 @@ object SijoitteluajonIlmoittautumistila {
     throw new IllegalArgumentException(s"Unknown ilmoittautumistila '$value', expected one of $values")
   })
 
-  def getIlmoittautumistila(ilmoittautumistila: IlmoittautumisTila) = ilmoittautumistila match {
+  def apply(ilmoittautumistila: IlmoittautumisTila): SijoitteluajonIlmoittautumistila = ilmoittautumistila match {
     case IlmoittautumisTila.EI_TEHTY => EiTehty
     case IlmoittautumisTila.LASNA_KOKO_LUKUVUOSI => LasnaKokoLukuvuosi
     case IlmoittautumisTila.POISSA_KOKO_LUKUVUOSI => PoissaKokoLukuvuosi
@@ -487,8 +487,10 @@ object SijoitteluajonIlmoittautumistila {
     case IlmoittautumisTila.POISSA_SYKSY => PoissaSyksy
     case IlmoittautumisTila.LASNA => Lasna
     case IlmoittautumisTila.POISSA => Poissa
-    case null => EiTehty
   }
+
+  def apply(ilmoittautumistila: fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila): SijoitteluajonIlmoittautumistila =
+    SijoitteluajonIlmoittautumistila(IlmoittautumisTila.valueOf(ilmoittautumistila.toString))
 }
 
 case class SijoitteluajonValinnantulosWrapper(
@@ -529,7 +531,7 @@ object SijoitteluajonValinnantulosWrapper extends OptionConverter {
     valintatulos.getHyvaksyttyVarasijalta,
     valintatulos.getHyvaksyPeruuntunut,
     convert[IlmoittautumisTila, SijoitteluajonIlmoittautumistila](valintatulos.getIlmoittautumisTila,
-      SijoitteluajonIlmoittautumistila.getIlmoittautumistila),
+      SijoitteluajonIlmoittautumistila.apply),
     Option(valintatulos.getOriginalLogEntries.asScala.toList),
     valintatulos.getMailStatus)
 }

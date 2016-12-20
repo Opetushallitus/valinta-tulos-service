@@ -4,7 +4,7 @@ import fi.vm.sade.security.mock.MockSecurityContext
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{LasnaKokoLukuvuosi, Vastaanottotila}
 import org.joda.time.DateTime
 import org.json4s.JValue
 import org.json4s.jackson.Serialization
@@ -173,7 +173,7 @@ class ValintaTulosServletSpec extends ServletSpecification {
 
           get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
             val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
-            tulos.hakutoiveet.head.ilmoittautumistila must_== HakutoiveenIlmoittautumistila(Ilmoittautumisaika(None, Some(new DateTime(2100, 1, 10, 23, 59, 59))), None, Ilmoittautumistila.läsnä_koko_lukuvuosi, false)
+            tulos.hakutoiveet.head.ilmoittautumistila must_== HakutoiveenIlmoittautumistila(Ilmoittautumisaika(None, Some(new DateTime(2100, 1, 10, 23, 59, 59))), None, LasnaKokoLukuvuosi, false)
           }
         }
       }
