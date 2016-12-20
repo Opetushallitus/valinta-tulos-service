@@ -1,17 +1,16 @@
 package fi.vm.sade.valintatulosservice.domain
 
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.domain.Ilmoittautumistila.Ilmoittautumistila
 import fi.vm.sade.valintatulosservice.domain.LanguageMap.LanguageMap
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiTehty, SijoitteluajonIlmoittautumistila, Vastaanottotila}
 import org.joda.time.DateTime
 
 case class HakutoiveenIlmoittautumistila(
   ilmoittautumisaika: Ilmoittautumisaika,
   ilmoittautumistapa: Option[Ilmoittautumistapa],
-  ilmoittautumistila: Ilmoittautumistila,
+  ilmoittautumistila: SijoitteluajonIlmoittautumistila,
   ilmoittauduttavissa: Boolean
 )
 
@@ -39,7 +38,7 @@ object HakutoiveenIlmoittautumistila {
       None
     }
     val ilmottautumisaika = Ilmoittautumisaika(None, ohjausparametrit.flatMap(_.ilmoittautuminenPaattyy.map(new DateTime(_).withTime(23,59,59,999))))
-    val ilmottauduttavissa = appConfig.settings.ilmoittautuminenEnabled && sijoitteluTila.vastaanottotila == Vastaanottotila.vastaanottanut && ilmottautumisaika.aktiivinen && sijoitteluTila.ilmoittautumistila == Ilmoittautumistila.ei_tehty
+    val ilmottauduttavissa = appConfig.settings.ilmoittautuminenEnabled && sijoitteluTila.vastaanottotila == Vastaanottotila.vastaanottanut && ilmottautumisaika.aktiivinen && sijoitteluTila.ilmoittautumistila == EiTehty
     HakutoiveenIlmoittautumistila(ilmottautumisaika, ilmoittautumistapa, sijoitteluTila.ilmoittautumistila, ilmottauduttavissa)
   }
 }

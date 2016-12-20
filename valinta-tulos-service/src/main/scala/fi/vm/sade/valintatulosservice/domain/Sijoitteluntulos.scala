@@ -2,10 +2,9 @@ package fi.vm.sade.valintatulosservice.domain
 
 import java.util.Date
 
-import fi.vm.sade.valintatulosservice.domain.Ilmoittautumistila._
 import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila._
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiTehty, SijoitteluajonIlmoittautumistila, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
 
 case class HakemuksenSijoitteluntulos (
@@ -20,7 +19,7 @@ case class HakutoiveenSijoitteluntulos(
   hakijanTilat: HakutoiveenSijoittelunTilaTieto,
   virkailijanTilat: HakutoiveenSijoittelunTilaTieto,
   vastaanottoDeadline: Option[Date],
-  ilmoittautumistila: Ilmoittautumistila,
+  ilmoittautumistila: SijoitteluajonIlmoittautumistila,
   viimeisinHakemuksenTilanMuutos: Option[Date],
   viimeisinValintatuloksenMuutos: Option[Date],
   jonosija: Option[Int],
@@ -47,7 +46,7 @@ object HakutoiveenSijoitteluntulos {
       hakijanTilat = tilat,
       virkailijanTilat = tilat,
       vastaanottoDeadline = None,
-      Ilmoittautumistila.ei_tehty,
+      EiTehty,
       viimeisinHakemuksenTilanMuutos = None,
       viimeisinValintatuloksenMuutos = None,
       jonosija = None,

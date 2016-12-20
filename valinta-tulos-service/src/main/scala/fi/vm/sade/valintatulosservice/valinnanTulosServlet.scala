@@ -6,11 +6,10 @@ import java.util.UUID
 
 import fi.vm.sade.security.{AuthenticationFailedException, AuthorizationFailedException}
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.domain.Ilmoittautumistila
+import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila
-import org.json4s.DefaultFormats
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiTehty, SijoitteluajonIlmoittautumistila, Vastaanottotila}
 import org.scalatra._
 import org.scalatra.json.JacksonJsonSupport
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
@@ -18,20 +17,18 @@ import org.scalatra.swagger.{Swagger, SwaggerSupport}
 
 import scala.util.{Failure, Try}
 
-case class ValinnanTulos(hakemusOid: String, vastaanottotila: String, ilmoittautumistila: String)
+case class ValinnanTulos(hakemusOid: String, vastaanottotila: String, ilmoittautumistila: SijoitteluajonIlmoittautumistila)
 
-case class ValinnanTulosPatch(hakemusOid: String, vastaanottotila: String, ilmoittautumistila: String)
+case class ValinnanTulosPatch(hakemusOid: String, vastaanottotila: String, ilmoittautumistila: SijoitteluajonIlmoittautumistila)
 
 class ValinnanTulosServlet(valintatulosService: ValintatulosService,
                            ilmoittautumisService: IlmoittautumisService,
                            sessionRepository: SessionRepository)
                           (implicit val swagger: Swagger)
-  extends ScalatraServlet with JacksonJsonSupport with SwaggerSupport with Logging {
+  extends ScalatraServlet with JacksonJsonSupport with SwaggerSupport with Logging with JsonFormats {
 
   override val applicationName = Some("auth/valinnan-tulos")
   override val applicationDescription = "Valinnan tuloksen REST API"
-
-  override protected implicit def jsonFormats = DefaultFormats
 
   error {
     case e: AuthenticationFailedException =>
@@ -92,7 +89,7 @@ class ValinnanTulosServlet(valintatulosService: ValintatulosService,
         .map(hakemusOid => ValinnanTulos(
           hakemusOid,
           vastaanottotilat.getOrElse(hakemusOid, (Vastaanottotila.kesken, null))._1.toString,
-          ilmoittautumistilat.getOrElse(hakemusOid, (Ilmoittautumistila.ei_tehty, null))._1.toString
+          ilmoittautumistilat.getOrElse(hakemusOid, (EiTehty, null))._1
         )),
       headers = Map("Last-Modified" -> renderHttpDate(lastModified))
     )
@@ -119,7 +116,7 @@ class ValinnanTulosServlet(valintatulosService: ValintatulosService,
       .map(p => p._1 -> (p._2, p._3)).toMap
     parsedBody.extract[List[ValinnanTulosPatch]].foreach(muutos => {
       val (edellinenVastaanottotila, vLastModified) = vastaanottotilat.getOrElse(muutos.hakemusOid, (Vastaanottotila.kesken, Instant.MIN))
-      val (edellinenIlmoittautumistila, iLastModified) = ilmoittautumistilat.getOrElse(muutos.hakemusOid, (Ilmoittautumistila.ei_tehty, Instant.MIN))
+      val (edellinenIlmoittautumistila, iLastModified) = ilmoittautumistilat.getOrElse(muutos.hakemusOid, (EiTehty, Instant.MIN))
       val lastModified = List(vLastModified, iLastModified).max.truncatedTo(ChronoUnit.SECONDS)
       if (lastModified.isAfter(ifUnmodifiedSince)) {
         logger.warn(s"Hakemus ${muutos.hakemusOid} valintatapajonossa $valintatapajonoOid " +
