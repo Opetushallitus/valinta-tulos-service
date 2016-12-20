@@ -2,7 +2,6 @@ package fi.vm.sade.valintatulosservice.local
 
 import fi.vm.sade.sijoittelu.domain.{LogEntry, Valintatulos}
 import fi.vm.sade.valintatulosservice._
-import fi.vm.sade.valintatulosservice.domain.Ilmoittautumistila.{Ilmoittautumistila, läsnä_koko_lukuvuosi}
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
@@ -151,24 +150,24 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
           vastaanota(hakuOid, hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.perunut, muokkaaja, selite, personOid)
           hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.perunut
           expectFailure(Some("""Hakutoive 1.2.246.562.5.72607738902 ei ole ilmoittauduttavissa: ilmoittautumisaika: {"loppu":"2100-01-10T21:59:59Z"}, ilmoittautumistila: EI_TEHTY, valintatila: PERUNUT, vastaanottotila: PERUNUT"""))
-            {ilmoittaudu(hakemusOid, vastaanotettavissaHakuKohdeOid, läsnä_koko_lukuvuosi, muokkaaja, selite)}
+            {ilmoittaudu(hakemusOid, vastaanotettavissaHakuKohdeOid, LasnaKokoLukuvuosi, muokkaaja, selite)}
         }
 
         "ilmoittautuminen ilman vastaanottoa" in {
           useFixture("hyvaksytty-ilmoitettu.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
           expectFailure(Some("""Hakutoive 1.2.246.562.5.72607738902 ei ole ilmoittauduttavissa: ilmoittautumisaika: {"loppu":"2100-01-10T21:59:59Z"}, ilmoittautumistila: EI_TEHTY, valintatila: HYVAKSYTTY, vastaanottotila: KESKEN"""))
-            {ilmoittaudu(hakemusOid, vastaanotettavissaHakuKohdeOid, läsnä_koko_lukuvuosi, muokkaaja, selite)}
+            {ilmoittaudu(hakemusOid, vastaanotettavissaHakuKohdeOid, LasnaKokoLukuvuosi, muokkaaja, selite)}
         }
 
         "kahteen kertaan ilmoittautuminen" in {
           useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
           vastaanota(hakuOid, hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
           hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
-          ilmoittaudu(hakemusOid, vastaanotettavissaHakuKohdeOid, läsnä_koko_lukuvuosi, muokkaaja, selite)
-          hakemuksenTulos.hakutoiveet(0).ilmoittautumistila.ilmoittautumistila must_== Ilmoittautumistila.läsnä_koko_lukuvuosi
+          ilmoittaudu(hakemusOid, vastaanotettavissaHakuKohdeOid, LasnaKokoLukuvuosi, muokkaaja, selite)
+          hakemuksenTulos.hakutoiveet(0).ilmoittautumistila.ilmoittautumistila must_== LasnaKokoLukuvuosi
           hakemuksenTulos.hakutoiveet(0).ilmoittautumistila.ilmoittauduttavissa must_== false
           expectFailure(Some("""Hakutoive 1.2.246.562.5.72607738902 ei ole ilmoittauduttavissa: ilmoittautumisaika: {"loppu":"2100-01-10T21:59:59Z"}, ilmoittautumistila: LASNA_KOKO_LUKUVUOSI, valintatila: HYVAKSYTTY, vastaanottotila: VASTAANOTTANUT_SITOVASTI"""))
-            {ilmoittaudu(hakemusOid, vastaanotettavissaHakuKohdeOid, läsnä_koko_lukuvuosi, muokkaaja, selite)}
+            {ilmoittaudu(hakemusOid, vastaanotettavissaHakuKohdeOid, LasnaKokoLukuvuosi, muokkaaja, selite)}
         }
       }
     }
@@ -414,23 +413,23 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
       "onnistuu ja tarjotaaan oilia, jos vastaanottanut" in {
         useFixture("hyvaksytty-vastaanottanut.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
         hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
-        hakemuksenTulos.hakutoiveet(0).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, Some(HakutoiveenIlmoittautumistila.oili), Ilmoittautumistila.ei_tehty, true)
-        ilmoittaudu(hakemusOid, "1.2.246.562.5.72607738902", läsnä_koko_lukuvuosi, muokkaaja, selite)
-        hakemuksenTulos.hakutoiveet(0).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, Some(HakutoiveenIlmoittautumistila.oili), Ilmoittautumistila.läsnä_koko_lukuvuosi, false)
+        hakemuksenTulos.hakutoiveet(0).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, Some(HakutoiveenIlmoittautumistila.oili), EiTehty, true)
+        ilmoittaudu(hakemusOid, "1.2.246.562.5.72607738902", LasnaKokoLukuvuosi, muokkaaja, selite)
+        hakemuksenTulos.hakutoiveet(0).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, Some(HakutoiveenIlmoittautumistila.oili), LasnaKokoLukuvuosi, false)
       }
       "ei onnistu, jos vastaanottanut ehdollisesti" in {
         useFixture("hyvaksytty-vastaanottanut-ehdollisesti.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
         hakemuksenTulos.hakutoiveet(1).vastaanottotila must_== Vastaanottotila.ehdollisesti_vastaanottanut
-        hakemuksenTulos.hakutoiveet(1).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, Some(HakutoiveenIlmoittautumistila.oili), Ilmoittautumistila.ei_tehty, false)
-        expectFailure{ilmoittaudu(hakemusOid, "1.2.246.562.5.16303028779", läsnä_koko_lukuvuosi, muokkaaja, selite)}
+        hakemuksenTulos.hakutoiveet(1).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, Some(HakutoiveenIlmoittautumistila.oili), EiTehty, false)
+        expectFailure{ilmoittaudu(hakemusOid, "1.2.246.562.5.16303028779", LasnaKokoLukuvuosi, muokkaaja, selite)}
       }
       "onnistuu viime hetkeen asti" in {
         withFixedDateTime(ilmoittautumisaikaPaattyy2100.loppu.get.minusMinutes(1).getMillis) {
           useFixture("hyvaksytty-vastaanottanut.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
           hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
           hakemuksenTulos.hakutoiveet(0).ilmoittautumistila.ilmoittauduttavissa must_== true
-          ilmoittaudu(hakemusOid, "1.2.246.562.5.72607738902", läsnä_koko_lukuvuosi, muokkaaja, selite)
-          hakemuksenTulos.hakutoiveet(0).ilmoittautumistila.ilmoittautumistila must_== Ilmoittautumistila.läsnä_koko_lukuvuosi
+          ilmoittaudu(hakemusOid, "1.2.246.562.5.72607738902", LasnaKokoLukuvuosi, muokkaaja, selite)
+          hakemuksenTulos.hakutoiveet(0).ilmoittautumistila.ilmoittautumistila must_== LasnaKokoLukuvuosi
           hakemuksenTulos.hakutoiveet(0).ilmoittautumistila.ilmoittauduttavissa must_== false
         }
       }
@@ -439,7 +438,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
           useFixture("hyvaksytty-vastaanottanut.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
           hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
           hakemuksenTulos.hakutoiveet(0).ilmoittautumistila.ilmoittauduttavissa must_== false
-          expectFailure{ilmoittaudu(hakemusOid, "1.2.246.562.5.16303028779", läsnä_koko_lukuvuosi, muokkaaja, selite)}
+          expectFailure{ilmoittaudu(hakemusOid, "1.2.246.562.5.16303028779", LasnaKokoLukuvuosi, muokkaaja, selite)}
         }
       }
     }
@@ -479,9 +478,9 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
       "onnistuu jos vastaanottanut, ei tarjota ilmoittautumistapaa" in {
         useFixture("hyvaksytty-vastaanottanut.json", hakuFixture = hakuFixture)
         hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
-        hakemuksenTulos.hakutoiveet(0).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, None, Ilmoittautumistila.ei_tehty, true)
-        ilmoittaudu(hakemusOid, "1.2.246.562.5.72607738902", läsnä_koko_lukuvuosi, muokkaaja, selite)
-        hakemuksenTulos.hakutoiveet(0).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, None, Ilmoittautumistila.läsnä_koko_lukuvuosi, false)
+        hakemuksenTulos.hakutoiveet(0).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, None, EiTehty, true)
+        ilmoittaudu(hakemusOid, "1.2.246.562.5.72607738902", LasnaKokoLukuvuosi, muokkaaja, selite)
+        hakemuksenTulos.hakutoiveet(0).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, None, LasnaKokoLukuvuosi, false)
       }
     }
   }
@@ -517,7 +516,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
     vastaanottoService.vastaanotaVirkailijana(List(VastaanottoEventDto(valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid, hakuOid, tila, ilmoittaja, "testiselite")))
   }
 
-  private def ilmoittaudu(hakemusOid: String, hakukohdeOid: String, tila: Ilmoittautumistila, muokkaaja: String, selite: String) = {
+  private def ilmoittaudu(hakemusOid: String, hakukohdeOid: String, tila: SijoitteluajonIlmoittautumistila, muokkaaja: String, selite: String) = {
     ilmoittautumisService.ilmoittaudu(hakemusOid, Ilmoittautuminen(hakukohdeOid, tila, muokkaaja, selite))
     success
   }
