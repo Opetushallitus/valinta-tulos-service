@@ -1,12 +1,13 @@
 package fi.vm.sade.valintatulosservice
 
+import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.json.{JsonFormats, JsonStreamWriter, StreamingFailureException}
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, Hakuaika, YhdenPaikanSaanto}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Kausi, PriorAcceptanceException}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Kausi, LasnaKokoLukuvuosi, PriorAcceptanceException, SijoitteluajonIlmoittautumistila}
 import org.joda.time.DateTime
 import org.json4s.Extraction
 import org.scalatra._
@@ -95,11 +96,11 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     pretty(Extraction.decompose(
       Ilmoittautuminen(
         "1.2.3.4",
-        Ilmoittautumistila.läsnä_koko_lukuvuosi,
+        LasnaKokoLukuvuosi,
         "henkilö: 5.5.5.5",
         "kuvaus mitä kautta muokkaus tehty"
       )
-    )) + ".\nMahdolliset ilmoittautumistilat: " + Ilmoittautumistila.values
+    )) + ".\nMahdolliset ilmoittautumistilat: " + IlmoittautumisTila.values().toList.map(_.toString)
 
     parameter pathParam[String]("hakuOid").description("Haun oid")
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid, jonka vastaanottotilaa ollaan muokkaamassa")
