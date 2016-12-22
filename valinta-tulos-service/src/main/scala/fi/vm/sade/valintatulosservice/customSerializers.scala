@@ -1,7 +1,8 @@
 package fi.vm.sade.valintatulosservice
 
+import fi.vm.sade.sijoittelu.domain.HakemuksenTila
 import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakijanVastaanottoAction, SijoitteluajonIlmoittautumistila, VirkailijanVastaanottoAction}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakijanVastaanottoAction, SijoitteluajonIlmoittautumistila, Valinnantila, VirkailijanVastaanottoAction}
 import org.json4s.JsonAST.{JField, JString, JValue}
 import org.json4s.jackson.compactJson
 import org.json4s.{CustomSerializer, Formats, JObject, MappingException}
@@ -39,5 +40,13 @@ class IlmoittautumistilaSerializer extends CustomSerializer[SijoitteluajonIlmoit
     case json: JString => SijoitteluajonIlmoittautumistila(IlmoittautumisTila.valueOf(json.s))
   }, {
     case i: SijoitteluajonIlmoittautumistila => JString(i.ilmoittautumistila.toString)
+  })
+})
+
+class ValinnantilaSerializer extends CustomSerializer[Valinnantila]((format: Formats) => {
+  ({
+    case json: JString => Valinnantila(HakemuksenTila.valueOf(json.s))
+  }, {
+    case i: Valinnantila => JString(i.valinnantila.toString)
   })
 })
