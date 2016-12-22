@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
 import java.sql.JDBCType
+import java.time.Instant
 import java.util.UUID
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -122,6 +123,23 @@ abstract class ValintarekisteriResultExtractors {
     textSv = r.nextStringOption,
     textEn = r.nextStringOption
   ))
+
+  protected implicit val getValinnanTulosResult: GetResult[ValinnanTulos] = GetResult(r => ValinnanTulos(
+    hakukohdeOid = r.nextString,
+    valintatapajonoOid = r.nextString,
+    hakemusOid = r.nextString,
+    valinnantila = Valinnantila(r.nextString),
+    ehdollisestiHyvaksyttavissa = r.nextBoolean,
+    julkaistavissa = r.nextBoolean,
+    hyvaksyttyVarasijalta = r.nextBoolean,
+    hyvaksyPeruuntunut = r.nextBoolean,
+    vastaanottotila = r.nextStringOption.map(VastaanottoAction(_)).getOrElse(Poista),
+    ilmoittautumistila = r.nextStringOption.map(SijoitteluajonIlmoittautumistila(_)).getOrElse(EiTehty)
+  ))
+
+  protected implicit val getValinnanTulosWithLastModifiedResult: GetResult[(Instant, ValinnanTulos)] = GetResult(r => (
+    (List(r.nextDate()) ++ r.nextDateOption() ++ r.nextDateOption()).map(_.toInstant).max,
+    getValinnanTulosResult(r)))
 
   implicit object SetUUID extends SetParameter[UUID] {
     def apply(v: UUID, pp: PositionedParameters) {

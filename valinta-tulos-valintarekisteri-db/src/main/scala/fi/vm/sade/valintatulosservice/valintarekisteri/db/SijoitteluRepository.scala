@@ -1,11 +1,16 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
+import java.time.Instant
+
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import slick.dbio.DBIO
 import slick.driver.PostgresDriver.backend.Database
 
 trait SijoitteluRepository {
   val db: Database
   def storeSijoittelu(sijoittelu:SijoitteluWrapper)
+
+  def getValinnanTuloksetForValintatapajono(valintatapajonoOid: String): DBIO[List[(Instant, ValinnanTulos)]]
 
   def getLatestSijoitteluajoId(hakuOid:String): Option[Long]
   def getSijoitteluajo(sijoitteluajoId:Long): Option[SijoitteluajoRecord]
