@@ -221,7 +221,7 @@ object Valinnantila {
     throw new IllegalArgumentException(s"Unknown valinnantila '$value', expected one of $values")
   })
 
-  def getValinnantila(valinnantila: HakemuksenTila) = valinnantila match {
+  def apply(valinnantila: HakemuksenTila) = valinnantila match {
     case HakemuksenTila.HYLATTY => Hylatty
     case HakemuksenTila.HYVAKSYTTY => Hyvaksytty
     case HakemuksenTila.PERUNUT => Perunut
@@ -398,7 +398,7 @@ object SijoitteluajonHakemusWrapper extends OptionConverter {
       hakemus.getTasasijaJonosija,
       hakemus.isHyvaksyttyHarkinnanvaraisesti,
       hakemus.getSiirtynytToisestaValintatapajonosta,
-      Valinnantila.getValinnantila(hakemus.getTila),
+      Valinnantila(hakemus.getTila),
       Option(hakemus.getTilanKuvaukset.asScala.toMap),
       ValinnantilanTarkenne.getValinnantilanTarkenne(hakemus.getTilankuvauksenTarkenne),
       convert[javaString, String](hakemus.getTarkenteenLisatieto, string),
@@ -420,7 +420,7 @@ case class TilahistoriaWrapper(tila: Valinnantila, luotu: Date) {
 object TilahistoriaWrapper {
   def apply(tilahistoria: TilaHistoria): TilahistoriaWrapper = {
     TilahistoriaWrapper(
-      Valinnantila.getValinnantila(tilahistoria.getTila),
+      Valinnantila(tilahistoria.getTila),
       tilahistoria.getLuotu
     )
   }
