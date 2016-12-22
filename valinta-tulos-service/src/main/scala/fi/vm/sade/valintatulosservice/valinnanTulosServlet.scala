@@ -3,26 +3,28 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.security.{AuthenticationFailedException, AuthorizationFailedException}
 import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiTehty, SijoitteluajonIlmoittautumistila, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SessionRepository, SijoitteluRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra._
 import org.scalatra.json.JacksonJsonSupport
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 import scala.util.{Failure, Try}
-
-case class ValinnanTulos(hakemusOid: String, vastaanottotila: String, ilmoittautumistila: SijoitteluajonIlmoittautumistila)
 
 case class ValinnanTulosPatch(hakemusOid: String, vastaanottotila: String, ilmoittautumistila: SijoitteluajonIlmoittautumistila)
 
-class ValinnanTulosServlet(valintatulosService: ValintatulosService,
+class ValinnanTulosServlet(sijoitteluRepository: SijoitteluRepository,
+                           valintatulosService: ValintatulosService,
                            ilmoittautumisService: IlmoittautumisService,
                            sessionRepository: SessionRepository)
                           (implicit val swagger: Swagger)
@@ -88,19 +90,12 @@ class ValinnanTulosServlet(valintatulosService: ValintatulosService,
       throw new AuthorizationFailedException()
     }
     val valintatapajonoOid = parseValintatapajonoOid
-    val vastaanottotilat = valintatulosService.findValintaTuloksetForVirkailijaWithoutTilaHakijalle(valintatapajonoOid)
-      .map(p => p._1 -> (p._2, p._3)).toMap
-    val ilmoittautumistilat = ilmoittautumisService.getIlmoittautumistilat(valintatapajonoOid).right.get
-      .map(p => p._1 -> (p._2, p._3)).toMap
-    val lastModified = (vastaanottotilat.values.map(_._2) ++ ilmoittautumistilat.values.map(_._2)).max
+    val valinnanTulokset = Await.result(
+      sijoitteluRepository.db.run(sijoitteluRepository.getValinnanTuloksetForValintatapajono(valintatapajonoOid)),
+      Duration(1, TimeUnit.SECONDS))
     Ok(
-      body = (vastaanottotilat.keySet ++ ilmoittautumistilat.keySet)
-        .map(hakemusOid => ValinnanTulos(
-          hakemusOid,
-          vastaanottotilat.getOrElse(hakemusOid, (Vastaanottotila.kesken, null))._1.toString,
-          ilmoittautumistilat.getOrElse(hakemusOid, (EiTehty, null))._1
-        )),
-      headers = Map("Last-Modified" -> renderHttpDate(lastModified))
+      body = valinnanTulokset.map(_._2),
+      headers = if (valinnanTulokset.nonEmpty) Map("Last-Modified" -> renderHttpDate(valinnanTulokset.map(_._1).max)) else Map()
     )
   }
 
