@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
 import java.sql.{PreparedStatement, Timestamp, Types}
+import java.time.Instant
 import java.util.{Date, UUID}
 import java.util.concurrent.TimeUnit
 
@@ -347,6 +348,30 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
 
   override def aliases(henkiloOid: String): DBIO[Set[String]] = {
     sql"""select linked_oid from henkiloviitteet where person_oid = ${henkiloOid}""".as[String].map(_.toSet)
+  }
+
+  override def getValinnanTuloksetForValintatapajono(valintatapajonoOid: String): DBIO[List[(Instant, ValinnanTulos)]] = {
+    sql"""select lower(t.system_time),
+              v.timestamp,
+              i.timestamp,
+              t.hakukohde_oid,
+              t.valintatapajono_oid,
+              t.hakemus_oid,
+              t.henkilo_oid,
+              t.tila,
+              t.ehdollisesti_hyvaksyttavissa,
+              t.julkaistavissa,
+              t.hyvaksytty_varasijalta,
+              t.hyvaksy_peruuntunut,
+              v.action,
+              i.tila
+          from valinnantulokset as t
+          left join vastaanotot as v on v.hakukohde = t.hakukohde_oid
+              and v.henkilo = t.henkilo_oid
+          left join ilmoittautumiset as i on i.hakukohde = t.hakukohde_oid
+              and i.henkilo = t.henkilo_oid
+          where t.valintatapajono_oid = ${valintatapajonoOid}
+       """.as[(Instant, ValinnanTulos)].map(_.toList)
   }
 
   import scala.collection.JavaConverters._
