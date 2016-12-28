@@ -135,6 +135,10 @@ class ValinnanTulosServlet(sijoitteluRepository: SijoitteluRepository,
               s"hakemuksen ${muutos.hakemusOid} valinnan tulosta valintatapajonossa $valintatapajonoOid " +
               s"vastaanottotilasta $edellinenVastaanottotila tilaan ${muutos.vastaanottotila} ja " +
               s"ilmoittautumistilasta $edellinenIlmoittautumistila tilaan ${muutos.ilmoittautumistila}.")
+            Await.result(sijoitteluRepository.db.run(sijoitteluRepository.storeIlmoittautuminen(
+              v._2.henkiloOid,
+              Ilmoittautuminen(v._2.hakukohdeOid, muutos.ilmoittautumistila, session.personOid, "selite")
+            )), Duration(1, TimeUnit.SECONDS))
           }
         case None =>
           logger.warn(s"Hakemuksen ${muutos.hakemusOid} valinnan tulosta ei löydy " +
