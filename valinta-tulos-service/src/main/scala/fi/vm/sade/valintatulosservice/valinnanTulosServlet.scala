@@ -1,6 +1,5 @@
 package fi.vm.sade.valintatulosservice
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -118,22 +117,29 @@ class ValinnanTulosServlet(sijoitteluRepository: SijoitteluRepository,
     }
     val valintatapajonoOid = parseValintatapajonoOid
     val ifUnmodifiedSince = parseIfUnmodifiedSince
-    val vastaanottotilat = valintatulosService.findValintaTuloksetForVirkailijaWithoutTilaHakijalle(valintatapajonoOid)
-      .map(p => p._1 -> (p._2, p._3)).toMap
-    val ilmoittautumistilat = ilmoittautumisService.getIlmoittautumistilat(valintatapajonoOid).right.get
-      .map(p => p._1 -> (p._2, p._3)).toMap
+    val valinnanTulokset = Await.result(
+      sijoitteluRepository.db.run(sijoitteluRepository.getValinnanTuloksetForValintatapajono(valintatapajonoOid)),
+      Duration(1, TimeUnit.SECONDS)
+    ).map(v => v._2.hakemusOid -> v).toMap
     parsedBody.extract[List[ValinnanTulosPatch]].foreach(muutos => {
-      val (edellinenVastaanottotila, vLastModified) = vastaanottotilat.getOrElse(muutos.hakemusOid, (Vastaanottotila.kesken, Instant.MIN))
-      val (edellinenIlmoittautumistila, iLastModified) = ilmoittautumistilat.getOrElse(muutos.hakemusOid, (EiTehty, Instant.MIN))
-      val lastModified = List(vLastModified, iLastModified).max.truncatedTo(ChronoUnit.SECONDS)
-      if (lastModified.isAfter(ifUnmodifiedSince)) {
-        logger.warn(s"Hakemus ${muutos.hakemusOid} valintatapajonossa $valintatapajonoOid " +
-          s"on muuttunut $lastModified lukemisajan $ifUnmodifiedSince jälkeen.")
+      valinnanTulokset.get(muutos.hakemusOid) match {
+        case Some(v) =>
+          val lastModified = v._1
+          val edellinenVastaanottotila = v._2.vastaanottotila
+          val edellinenIlmoittautumistila = v._2.ilmoittautumistila
+          if (lastModified.isAfter(ifUnmodifiedSince)) {
+            logger.warn(s"Hakemus ${muutos.hakemusOid} valintatapajonossa $valintatapajonoOid " +
+              s"on muuttunut $lastModified lukemisajan $ifUnmodifiedSince jälkeen.")
+          } else {
+            logger.info(s"Käyttäjä ${session.personOid} muokkasi " +
+              s"hakemuksen ${muutos.hakemusOid} valinnan tulosta valintatapajonossa $valintatapajonoOid " +
+              s"vastaanottotilasta $edellinenVastaanottotila tilaan ${muutos.vastaanottotila} ja " +
+              s"ilmoittautumistilasta $edellinenIlmoittautumistila tilaan ${muutos.ilmoittautumistila}.")
+          }
+        case None =>
+          logger.warn(s"Hakemuksen ${muutos.hakemusOid} valinnan tulosta ei löydy " +
+            s"valintatapajonosta $valintatapajonoOid.")
       }
-      logger.info(s"Käyttäjä ${session.personOid} muokkasi " +
-        s"hakemuksen ${muutos.hakemusOid} valinnan tulosta valintatapajonossa $valintatapajonoOid " +
-        s"vastaanottotilasta $edellinenVastaanottotila tilaan ${muutos.vastaanottotila} ja " +
-        s"ilmoittautumistilasta $edellinenIlmoittautumistila tilaan ${muutos.ilmoittautumistila}")
     })
     NoContent()
   }
