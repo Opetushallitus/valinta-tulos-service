@@ -128,6 +128,7 @@ abstract class ValintarekisteriResultExtractors {
     hakukohdeOid = r.nextString,
     valintatapajonoOid = r.nextString,
     hakemusOid = r.nextString,
+    henkiloOid = r.nextString,
     valinnantila = Valinnantila(r.nextString),
     ehdollisestiHyvaksyttavissa = r.nextBoolean,
     julkaistavissa = r.nextBoolean,

@@ -15,7 +15,7 @@ import org.flywaydb.core.Flyway
 import org.postgresql.util.PSQLException
 import slick.dbio.{DBIO => _, _}
 import slick.driver.PostgresDriver.api.{Database, _}
-import slick.jdbc.TransactionIsolation
+import slick.jdbc.TransactionIsolation.Serializable
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
@@ -210,7 +210,7 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
   def runAsSerialized[T](retries: Int, wait: Duration, description: String, action: DBIO[T]): Either[Throwable, T] = {
     val SERIALIZATION_VIOLATION = "40001"
     try {
-      Right(runBlocking(action.transactionally.withTransactionIsolation(TransactionIsolation.Serializable)))
+      Right(runBlocking(action.transactionally.withTransactionIsolation(Serializable)))
     } catch {
       case e: PSQLException if e.getSQLState == SERIALIZATION_VIOLATION =>
         if (retries > 0) {
@@ -372,6 +372,21 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
               and i.henkilo = t.henkilo_oid
           where t.valintatapajono_oid = ${valintatapajonoOid}
        """.as[(Instant, ValinnanTulos)].map(_.toList)
+  }
+
+  override def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen): DBIO[Unit] = {
+    DBIO.seq(
+      sqlu"""update ilmoittautumiset set deleted = overriden_ilmoittautuminen_deleted_id()
+             where (henkilo = ${henkiloOid}
+                    or henkilo in (select linked_oid from henkiloviitteet where person_oid = ${henkiloOid}))
+                   and hakukohde = ${ilmoittautuminen.hakukohdeOid}
+                   and deleted is null""",
+      sqlu"""insert into ilmoittautumiset (henkilo, hakukohde, tila, ilmoittaja, selite)
+             values (${henkiloOid},
+                     ${ilmoittautuminen.hakukohdeOid},
+                     ${ilmoittautuminen.tila.toString}::ilmoittautumistila,
+                     ${ilmoittautuminen.muokkaaja},
+                     ${ilmoittautuminen.selite})""").transactionally.withTransactionIsolation(Serializable)
   }
 
   import scala.collection.JavaConverters._
