@@ -4,11 +4,10 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 import fi.vm.sade.sijoittelu.domain.IlmoittautumisTila
-import fi.vm.sade.valintatulosservice.domain.Ilmoittautuminen
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.sijoittelu.ValintatulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakijaVastaanottoRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{SijoitteluajonIlmoittautumistila, VastaanotaSitovasti}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Ilmoittautuminen, SijoitteluajonIlmoittautumistila, VastaanotaSitovasti}
 import org.json4s.jackson.Serialization
 
 class IlmoittautumisService(valintatulosService: ValintatulosService,
