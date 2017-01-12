@@ -16,7 +16,6 @@ import org.scalatra.json.JacksonJsonSupport
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 
-import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Try}
 
@@ -89,9 +88,10 @@ class ValinnanTulosServlet(sijoitteluRepository: SijoitteluRepository,
       throw new AuthorizationFailedException()
     }
     val valintatapajonoOid = parseValintatapajonoOid
-    val valinnanTulokset = Await.result(
-      sijoitteluRepository.db.run(sijoitteluRepository.getValinnanTuloksetForValintatapajono(valintatapajonoOid)),
-      Duration(1, TimeUnit.SECONDS))
+    val valinnanTulokset = sijoitteluRepository.runBlocking(
+      sijoitteluRepository.getValinnanTuloksetForValintatapajono(valintatapajonoOid),
+      Duration(1, TimeUnit.SECONDS)
+    )
     Ok(
       body = valinnanTulokset.map(_._2),
       headers = if (valinnanTulokset.nonEmpty) Map("Last-Modified" -> renderHttpDate(valinnanTulokset.map(_._1).max)) else Map()
@@ -117,8 +117,8 @@ class ValinnanTulosServlet(sijoitteluRepository: SijoitteluRepository,
     }
     val valintatapajonoOid = parseValintatapajonoOid
     val ifUnmodifiedSince = parseIfUnmodifiedSince
-    val valinnanTulokset = Await.result(
-      sijoitteluRepository.db.run(sijoitteluRepository.getValinnanTuloksetForValintatapajono(valintatapajonoOid)),
+    val valinnanTulokset = sijoitteluRepository.runBlocking(
+      sijoitteluRepository.getValinnanTuloksetForValintatapajono(valintatapajonoOid),
       Duration(1, TimeUnit.SECONDS)
     ).map(v => v._2.hakemusOid -> v).toMap
     parsedBody.extract[List[ValinnanTulosPatch]].foreach(muutos => {
@@ -135,10 +135,11 @@ class ValinnanTulosServlet(sijoitteluRepository: SijoitteluRepository,
               s"hakemuksen ${muutos.hakemusOid} valinnan tulosta valintatapajonossa $valintatapajonoOid " +
               s"vastaanottotilasta $edellinenVastaanottotila tilaan ${muutos.vastaanottotila} ja " +
               s"ilmoittautumistilasta $edellinenIlmoittautumistila tilaan ${muutos.ilmoittautumistila}.")
-            Await.result(sijoitteluRepository.db.run(sijoitteluRepository.storeIlmoittautuminen(
-              v._2.henkiloOid,
-              Ilmoittautuminen(v._2.hakukohdeOid, muutos.ilmoittautumistila, session.personOid, "selite")
-            )), Duration(1, TimeUnit.SECONDS))
+            sijoitteluRepository.runBlocking(
+              sijoitteluRepository.storeIlmoittautuminen(v._2.henkiloOid,
+                Ilmoittautuminen(v._2.hakukohdeOid, muutos.ilmoittautumistila, session.personOid, "selite")),
+              Duration(1, TimeUnit.SECONDS)
+            )
           }
         case None =>
           logger.warn(s"Hakemuksen ${muutos.hakemusOid} valinnan tulosta ei löydy " +
