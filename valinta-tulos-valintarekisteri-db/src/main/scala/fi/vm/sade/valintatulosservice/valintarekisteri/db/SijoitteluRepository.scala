@@ -4,10 +4,8 @@ import java.time.Instant
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.dbio.DBIO
-import slick.driver.PostgresDriver.backend.Database
 
-trait SijoitteluRepository {
-  val db: Database
+trait SijoitteluRepository extends VastaanottoRepository {
   def storeSijoittelu(sijoittelu:SijoitteluWrapper)
   def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen): DBIO[Unit]
 
