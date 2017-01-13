@@ -8,7 +8,7 @@ import slick.driver.PostgresDriver.backend.Database
 
 import scala.concurrent.duration.Duration
 
-trait HakijaVastaanottoRepository extends VastaanottoRepository {
+trait HakijaVastaanottoRepository extends ValintarekisteriRepository {
   val db: Database
   def findVastaanottoHistoryHaussa(henkiloOid: String, hakuOid: String): Set[VastaanottoRecord]
   def findHenkilonVastaanototHaussa(henkiloOid: String, hakuOid: String): DBIO[Set[VastaanottoRecord]]
