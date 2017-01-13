@@ -9,7 +9,7 @@ import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SessionRepository, SijoitteluRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SessionRepository, SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra._
 import org.scalatra.json.JacksonJsonSupport
@@ -21,8 +21,8 @@ import scala.util.{Failure, Try}
 
 case class ValinnanTulosPatch(hakemusOid: String, vastaanottotila: String, ilmoittautumistila: SijoitteluajonIlmoittautumistila)
 
-class ValinnanTulosServlet(sijoitteluRepository: SijoitteluRepository,
-                           valintatulosService: ValintatulosService,
+class ValinnanTulosServlet(valinnantulosRepository: ValinnantulosRepository,
+                           valinnantulosService: ValinnantulosService,
                            ilmoittautumisService: IlmoittautumisService,
                            sessionRepository: SessionRepository)
                           (implicit val swagger: Swagger)
@@ -88,8 +88,8 @@ class ValinnanTulosServlet(sijoitteluRepository: SijoitteluRepository,
       throw new AuthorizationFailedException()
     }
     val valintatapajonoOid = parseValintatapajonoOid
-    val valinnanTulokset = sijoitteluRepository.runBlocking(
-      sijoitteluRepository.getValinnanTuloksetForValintatapajono(valintatapajonoOid),
+    val valinnanTulokset = valinnantulosRepository.runBlocking(
+      valinnantulosRepository.getValinnanTuloksetForValintatapajono(valintatapajonoOid),
       Duration(1, TimeUnit.SECONDS)
     )
     Ok(
@@ -116,36 +116,10 @@ class ValinnanTulosServlet(sijoitteluRepository: SijoitteluRepository,
       throw new AuthorizationFailedException()
     }
     val valintatapajonoOid = parseValintatapajonoOid
-    val ifUnmodifiedSince = parseIfUnmodifiedSince
-    val valinnanTulokset = sijoitteluRepository.runBlocking(
-      sijoitteluRepository.getValinnanTuloksetForValintatapajono(valintatapajonoOid),
-      Duration(1, TimeUnit.SECONDS)
-    ).map(v => v._2.hakemusOid -> v).toMap
-    parsedBody.extract[List[ValinnanTulosPatch]].foreach(muutos => {
-      valinnanTulokset.get(muutos.hakemusOid) match {
-        case Some(v) =>
-          val lastModified = v._1
-          val edellinenVastaanottotila = v._2.vastaanottotila
-          val edellinenIlmoittautumistila = v._2.ilmoittautumistila
-          if (lastModified.isAfter(ifUnmodifiedSince)) {
-            logger.warn(s"Hakemus ${muutos.hakemusOid} valintatapajonossa $valintatapajonoOid " +
-              s"on muuttunut $lastModified lukemisajan $ifUnmodifiedSince jälkeen.")
-          } else {
-            logger.info(s"Käyttäjä ${session.personOid} muokkasi " +
-              s"hakemuksen ${muutos.hakemusOid} valinnan tulosta valintatapajonossa $valintatapajonoOid " +
-              s"vastaanottotilasta $edellinenVastaanottotila tilaan ${muutos.vastaanottotila} ja " +
-              s"ilmoittautumistilasta $edellinenIlmoittautumistila tilaan ${muutos.ilmoittautumistila}.")
-            sijoitteluRepository.runBlocking(
-              sijoitteluRepository.storeIlmoittautuminen(v._2.henkiloOid,
-                Ilmoittautuminen(v._2.hakukohdeOid, muutos.ilmoittautumistila, session.personOid, "selite")),
-              Duration(1, TimeUnit.SECONDS)
-            )
-          }
-        case None =>
-          logger.warn(s"Hakemuksen ${muutos.hakemusOid} valinnan tulosta ei löydy " +
-            s"valintatapajonosta $valintatapajonoOid.")
-      }
-    })
+    val ifUnmodifiedSince: Instant = parseIfUnmodifiedSince
+    val valinnantulokset = parsedBody.extract[List[ValinnanTulosPatch]]
+    valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
+      valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, session.personOid)
     NoContent()
   }
 }
