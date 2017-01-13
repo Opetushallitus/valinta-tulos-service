@@ -83,7 +83,7 @@ class ScalatraBootstrap extends LifeCycle {
         loginUrl,
         valintarekisteriDb
       ), "/auth/login")
-      context.mount(new ValinnanTulosServlet(valintarekisteriDb, valinnantulosService, ilmoittautumisService, valintarekisteriDb), "/auth/valinnan-tulos")
+      context.mount(new ValinnantulosServlet(valintarekisteriDb, valinnantulosService, ilmoittautumisService, valintarekisteriDb), "/auth/valinnan-tulos")
     }
     context.mount(new HakukohdeRefreshServlet(valintarekisteriDb, hakukohdeRecordService), "/virkistys")
 
