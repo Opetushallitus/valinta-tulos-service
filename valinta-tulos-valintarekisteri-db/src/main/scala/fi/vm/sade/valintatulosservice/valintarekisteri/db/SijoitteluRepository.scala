@@ -1,15 +1,9 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
-import java.time.Instant
-
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import slick.dbio.DBIO
 
-trait SijoitteluRepository extends VastaanottoRepository {
+trait SijoitteluRepository extends ValintarekisteriRepository {
   def storeSijoittelu(sijoittelu:SijoitteluWrapper)
-  def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen): DBIO[Unit]
-
-  def getValinnanTuloksetForValintatapajono(valintatapajonoOid: String): DBIO[List[(Instant, ValinnanTulos)]]
 
   def getLatestSijoitteluajoId(hakuOid:String): Option[Long]
   def getSijoitteluajo(sijoitteluajoId:Long): Option[SijoitteluajoRecord]

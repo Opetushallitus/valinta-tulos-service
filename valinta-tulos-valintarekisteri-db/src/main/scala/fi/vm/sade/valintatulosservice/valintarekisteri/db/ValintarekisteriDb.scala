@@ -23,7 +23,8 @@ import scala.util.control.NonFatal
 
 class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends ValintarekisteriResultExtractors
   with HakijaVastaanottoRepository with SijoitteluRepository with HakukohdeRepository
-  with VirkailijaVastaanottoRepository with SessionRepository with ValintarekisteriService with Logging with PerformanceLogger {
+  with VirkailijaVastaanottoRepository with SessionRepository with ValintarekisteriService
+  with ValinnantulosRepository with Logging with PerformanceLogger {
 
   val user = if (dbConfig.hasPath("user")) dbConfig.getString("user") else null
   val password = if (dbConfig.hasPath("password")) dbConfig.getString("password") else null
