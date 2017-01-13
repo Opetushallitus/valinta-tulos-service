@@ -50,6 +50,7 @@ class ScalatraBootstrap extends LifeCycle {
     lazy val valintatulosCollection = new ValintatulosMongoCollection(appConfig.settings.valintatulosMongoConfig)
     lazy val mailPoller = new MailPoller(valintatulosCollection, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 100)
     lazy val sijoitteluService = new ValintarekisteriService(valintarekisteriDb, hakukohdeRecordService)
+    lazy val valinnantulosService = new ValinnantulosService(valintarekisteriDb)
 
 
     val migrationMode = System.getProperty("valinta-rekisteri-migration-mode")
@@ -82,7 +83,7 @@ class ScalatraBootstrap extends LifeCycle {
         loginUrl,
         valintarekisteriDb
       ), "/auth/login")
-      context.mount(new ValinnanTulosServlet(valintarekisteriDb, valintatulosService, ilmoittautumisService, valintarekisteriDb), "/auth/valinnan-tulos")
+      context.mount(new ValinnanTulosServlet(valintarekisteriDb, valinnantulosService, ilmoittautumisService, valintarekisteriDb), "/auth/valinnan-tulos")
     }
     context.mount(new HakukohdeRefreshServlet(valintarekisteriDb, hakukohdeRecordService), "/virkistys")
 
