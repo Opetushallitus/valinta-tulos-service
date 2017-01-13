@@ -12,11 +12,11 @@ import scala.concurrent.duration.Duration
 class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository) extends Logging {
 
   def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid:String,
-                                               valinnantulokset: List[ValinnanTulosPatch],
+                                               valinnantulokset: List[ValinnantulosPatch],
                                                ifUnmodifiedSince: Instant,
                                                muokkaaja:String) = {
     val valinnanTulokset = valinnantulosRepository.runBlocking(
-      valinnantulosRepository.getValinnanTuloksetForValintatapajono(valintatapajonoOid),
+      valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid),
       Duration(1, TimeUnit.SECONDS)
     ).map(v => v._2.hakemusOid -> v).toMap
     valinnantulokset.foreach(muutos => {

@@ -19,9 +19,9 @@ import org.scalatra.swagger._
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Try}
 
-case class ValinnanTulosPatch(hakemusOid: String, vastaanottotila: String, ilmoittautumistila: SijoitteluajonIlmoittautumistila)
+case class ValinnantulosPatch(hakemusOid: String, vastaanottotila: String, ilmoittautumistila: SijoitteluajonIlmoittautumistila)
 
-class ValinnanTulosServlet(valinnantulosRepository: ValinnantulosRepository,
+class ValinnantulosServlet(valinnantulosRepository: ValinnantulosRepository,
                            valinnantulosService: ValinnantulosService,
                            ilmoittautumisService: IlmoittautumisService,
                            sessionRepository: SessionRepository)
@@ -29,7 +29,7 @@ class ValinnanTulosServlet(valinnantulosRepository: ValinnantulosRepository,
   extends ScalatraServlet with JacksonJsonSupport with SwaggerSupport with Logging with JsonFormats {
 
   override val applicationName = Some("auth/valinnan-tulos")
-  override val applicationDescription = "Valinnan tuloksen REST API"
+  override val applicationDescription = "Valinnantuloksen REST API"
 
   error {
     case e: AuthenticationFailedException =>
@@ -73,15 +73,15 @@ class ValinnanTulosServlet(valinnantulosRepository: ValinnantulosRepository,
     DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant(instant, ZoneId.of("GMT")))
   }
 
-  val valinnanTulosSwagger: OperationBuilder = (apiOperation[List[ValinnanTulos]]("valinnanTulos")
-    summary "Valinnan tulos"
+  val valinnantulosSwagger: OperationBuilder = (apiOperation[List[Valinnantulos]]("valinnantulos")
+    summary "Valinnantulos"
     parameter pathParam[String]("valintatapajonoOid").description("Valintatapajonon OID")
     )
-  models.update("ValinnanTulos", models("ValinnanTulos").copy(properties = models("ValinnanTulos").properties.map {
+  models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
     case ("ilmoittautumistila", mp) => ("ilmoittautumistila", ilmoittautumistilaModelProperty(mp))
     case p => p
   }))
-  get("/:valintatapajonoOid", operation(valinnanTulosSwagger)) {
+  get("/:valintatapajonoOid", operation(valinnantulosSwagger)) {
     contentType = formats("json")
     val session = getSession
     if (!session.hasAnyRole(Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))) {
@@ -89,7 +89,7 @@ class ValinnanTulosServlet(valinnantulosRepository: ValinnantulosRepository,
     }
     val valintatapajonoOid = parseValintatapajonoOid
     val valinnanTulokset = valinnantulosRepository.runBlocking(
-      valinnantulosRepository.getValinnanTuloksetForValintatapajono(valintatapajonoOid),
+      valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid),
       Duration(1, TimeUnit.SECONDS)
     )
     Ok(
@@ -99,17 +99,17 @@ class ValinnanTulosServlet(valinnantulosRepository: ValinnantulosRepository,
   }
 
   val sample = renderHttpDate(Instant.EPOCH)
-  val valinnanTuloksenMuutosSwagger: OperationBuilder = (apiOperation[Unit]("muokkaaValinnanTulosta")
-    summary "Muokkaa valinnan tulosta"
+  val valinnantulosMuutosSwagger: OperationBuilder = (apiOperation[Unit]("muokkaaValinnantulosta")
+    summary "Muokkaa valinnantulosta"
     parameter pathParam[String]("valintatapajonoOid").description("Valintatapajonon OID")
     parameter headerParam[String]("If-Unmodified-Since").description(s"Aikaleima RFC 1123 määrittelemässä muodossa $sample").required
-    parameter bodyParam[List[ValinnanTulosPatch]].description("Muutokset valinnan tulokseen").required
+    parameter bodyParam[List[ValinnantulosPatch]].description("Muutokset valinnan tulokseen").required
     )
-  models.update("ValinnanTulosPatch", models("ValinnanTulosPatch").copy(properties = models("ValinnanTulosPatch").properties.map {
+  models.update("ValinnantulosPatch", models("ValinnantulosPatch").copy(properties = models("ValinnantulosPatch").properties.map {
     case ("ilmoittautumistila", mp) => ("ilmoittautumistila", ilmoittautumistilaModelProperty(mp))
     case p => p
   }))
-  patch("/:valintatapajonoOid", operation(valinnanTuloksenMuutosSwagger)) {
+  patch("/:valintatapajonoOid", operation(valinnantulosMuutosSwagger)) {
     contentType = null
     val session = getSession
     if (!session.hasAnyRole(Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))) {
@@ -117,7 +117,7 @@ class ValinnanTulosServlet(valinnantulosRepository: ValinnantulosRepository,
     }
     val valintatapajonoOid = parseValintatapajonoOid
     val ifUnmodifiedSince: Instant = parseIfUnmodifiedSince
-    val valinnantulokset = parsedBody.extract[List[ValinnanTulosPatch]]
+    val valinnantulokset = parsedBody.extract[List[ValinnantulosPatch]]
     valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
       valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, session.personOid)
     NoContent()
