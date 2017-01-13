@@ -124,7 +124,7 @@ abstract class ValintarekisteriResultExtractors {
     textEn = r.nextStringOption
   ))
 
-  protected implicit val getValinnanTulosResult: GetResult[ValinnanTulos] = GetResult(r => ValinnanTulos(
+  protected implicit val getValinnanTulosResult: GetResult[Valinnantulos] = GetResult(r => Valinnantulos(
     hakukohdeOid = r.nextString,
     valintatapajonoOid = r.nextString,
     hakemusOid = r.nextString,
@@ -138,7 +138,7 @@ abstract class ValintarekisteriResultExtractors {
     ilmoittautumistila = r.nextStringOption.map(SijoitteluajonIlmoittautumistila(_)).getOrElse(EiTehty)
   ))
 
-  protected implicit val getValinnanTulosWithLastModifiedResult: GetResult[(Instant, ValinnanTulos)] = GetResult(r => (
+  protected implicit val getValinnanTulosWithLastModifiedResult: GetResult[(Instant, Valinnantulos)] = GetResult(r => (
     (List(r.nextDate()) ++ r.nextDateOption() ++ r.nextDateOption()).map(_.toInstant).max,
     getValinnanTulosResult(r)))
 
