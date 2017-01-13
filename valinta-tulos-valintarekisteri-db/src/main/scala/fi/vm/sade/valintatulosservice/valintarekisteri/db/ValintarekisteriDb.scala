@@ -351,7 +351,7 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
     sql"""select linked_oid from henkiloviitteet where person_oid = ${henkiloOid}""".as[String].map(_.toSet)
   }
 
-  override def getValinnanTuloksetForValintatapajono(valintatapajonoOid: String): DBIO[List[(Instant, ValinnanTulos)]] = {
+  override def getValinnantuloksetForValintatapajono(valintatapajonoOid: String): DBIO[List[(Instant, Valinnantulos)]] = {
     sql"""select lower(t.system_time),
               v.timestamp,
               i.timestamp,
@@ -372,7 +372,7 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
           left join ilmoittautumiset as i on i.hakukohde = t.hakukohde_oid
               and i.henkilo = t.henkilo_oid
           where t.valintatapajono_oid = ${valintatapajonoOid}
-       """.as[(Instant, ValinnanTulos)].map(_.toList)
+       """.as[(Instant, Valinnantulos)].map(_.toList)
   }
 
   override def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen): DBIO[Unit] = {
