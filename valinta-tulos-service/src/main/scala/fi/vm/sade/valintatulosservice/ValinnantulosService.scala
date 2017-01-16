@@ -5,14 +5,14 @@ import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Ilmoittautuminen
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Ilmoittautuminen, Valinnantulos}
 
 import scala.concurrent.duration.Duration
 
 class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository) extends Logging {
 
   def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid:String,
-                                               valinnantulokset: List[ValinnantulosPatch],
+                                               valinnantulokset: List[Valinnantulos],
                                                ifUnmodifiedSince: Instant,
                                                muokkaaja:String) = {
     val valinnanTulokset = valinnantulosRepository.runBlocking(
