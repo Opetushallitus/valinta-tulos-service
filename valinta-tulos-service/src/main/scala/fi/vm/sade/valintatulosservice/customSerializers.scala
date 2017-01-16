@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.sijoittelu.domain.HakemuksenTila
 import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakijanVastaanottoAction, SijoitteluajonIlmoittautumistila, Valinnantila, VirkailijanVastaanottoAction}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.JsonAST.{JField, JString, JValue}
 import org.json4s.jackson.compactJson
 import org.json4s.{CustomSerializer, Formats, JObject, MappingException}
@@ -32,6 +32,14 @@ class VirkailijanVastaanottoActionSerializer extends CustomSerializer[Virkailija
     case json: JValue => throw new UnsupportedOperationException(s"Deserializing ${classOf[VirkailijanVastaanottoAction].getSimpleName} not supported yet.")
   }, {
     case x: VirkailijanVastaanottoAction => JString(x.toString)
+  })
+})
+
+class VastaanottoActionSerializer extends CustomSerializer[VastaanottoAction]((formats: Formats) => {
+  ( {
+    case json: JString => VirkailijanVastaanottoAction.getVirkailijanVastaanottoAction(json.s)
+  }, {
+    case x: VirkailijanVastaanottoAction => JString(x.valintatuloksenTila.toString)
   })
 })
 
