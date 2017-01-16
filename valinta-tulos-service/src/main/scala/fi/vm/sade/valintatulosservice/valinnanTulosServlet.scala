@@ -5,7 +5,7 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.security.{AuthenticationFailedException, AuthorizationFailedException}
-import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
+import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, IlmoittautumisTila}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
@@ -51,6 +51,10 @@ class ValinnantulosServlet(valinnantulosRepository: ValinnantulosRepository,
     ModelProperty(DataType.String, mp.position, required = true, allowableValues = AllowableValues(IlmoittautumisTila.values().toList.map(_.toString)))
   }
 
+  private def valinnantilaModelProperty(mp: ModelProperty) = {
+    ModelProperty(DataType.String, mp.position, required = true, allowableValues = AllowableValues(HakemuksenTila.values().toList.map(_.toString)))
+  }
+
   private def getSession: Session = {
     cookies.get("session").map(UUID.fromString).flatMap(sessionRepository.get)
       .getOrElse(throw new AuthenticationFailedException)
@@ -80,6 +84,7 @@ class ValinnantulosServlet(valinnantulosRepository: ValinnantulosRepository,
     )
   models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
     case ("ilmoittautumistila", mp) => ("ilmoittautumistila", ilmoittautumistilaModelProperty(mp))
+    case ("valinnantila", mp) => ("valinnantila", valinnantilaModelProperty(mp))
     case p => p
   }))
   get("/:valintatapajonoOid", operation(valinnantulosSwagger)) {
@@ -108,6 +113,7 @@ class ValinnantulosServlet(valinnantulosRepository: ValinnantulosRepository,
     )
   models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
     case ("ilmoittautumistila", mp) => ("ilmoittautumistila", ilmoittautumistilaModelProperty(mp))
+    case ("valinnantila", mp) => ("valinnantila", valinnantilaModelProperty(mp))
     case p => p
   }))
   patch("/:valintatapajonoOid", operation(valinnantulosMuutosSwagger)) {
