@@ -14,12 +14,12 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository) ext
   def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid:String,
                                                valinnantulokset: List[Valinnantulos],
                                                ifUnmodifiedSince: Instant,
-                                               muokkaaja:String) = {
+                                               muokkaaja:String): List[ValinnantulosUpdateStatus] = {
     val valinnanTulokset = valinnantulosRepository.runBlocking(
       valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid),
       Duration(1, TimeUnit.SECONDS)
     ).map(v => v._2.hakemusOid -> v).toMap
-    valinnantulokset.foreach(muutos => {
+    valinnantulokset.map(muutos => {
       valinnanTulokset.get(muutos.hakemusOid) match {
         case Some(v) =>
           val lastModified = v._1
@@ -28,6 +28,7 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository) ext
           if (lastModified.isAfter(ifUnmodifiedSince)) {
             logger.warn(s"Hakemus ${muutos.hakemusOid} valintatapajonossa $valintatapajonoOid " +
               s"on muuttunut $lastModified lukemisajan $ifUnmodifiedSince jälkeen.")
+            ValinnantulosUpdateStatus(409, s"Not unmodified since ${ifUnmodifiedSince}", muutos.valintatapajonoOid, muutos.hakemusOid)
           } else {
             logger.info(s"Käyttäjä ${muokkaaja} muokkasi " +
               s"hakemuksen ${muutos.hakemusOid} valinnan tulosta valintatapajonossa $valintatapajonoOid " +
@@ -38,12 +39,15 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository) ext
                 Ilmoittautuminen(v._2.hakukohdeOid, muutos.ilmoittautumistila, muokkaaja, "selite")),
               Duration(1, TimeUnit.SECONDS)
             )
+            ValinnantulosUpdateStatus(200, s"Ok", muutos.valintatapajonoOid, muutos.hakemusOid)
           }
-        case None =>
+        case None => {
           logger.warn(s"Hakemuksen ${muutos.hakemusOid} valinnan tulosta ei löydy " +
             s"valintatapajonosta $valintatapajonoOid.")
+          ValinnantulosUpdateStatus(404, s"Not found", muutos.valintatapajonoOid, muutos.hakemusOid)
+        }
       }
-    })
+    }).filter(_.status != 200)
   }
 
 

@@ -19,6 +19,8 @@ import org.scalatra.swagger._
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Try}
 
+case class ValinnantulosUpdateStatus(status:Int, message:String, valintatapajonoOid:String, hakemusOid:String)
+
 class ValinnantulosServlet(valinnantulosRepository: ValinnantulosRepository,
                            valinnantulosService: ValinnantulosService,
                            ilmoittautumisService: IlmoittautumisService,
@@ -117,8 +119,9 @@ class ValinnantulosServlet(valinnantulosRepository: ValinnantulosRepository,
     val valintatapajonoOid = parseValintatapajonoOid
     val ifUnmodifiedSince: Instant = parseIfUnmodifiedSince
     val valinnantulokset = parsedBody.extract[List[Valinnantulos]]
-    valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
-      valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, session.personOid)
-    NoContent()
+    Ok(
+      valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
+        valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, session.personOid)
+    )
   }
 }
