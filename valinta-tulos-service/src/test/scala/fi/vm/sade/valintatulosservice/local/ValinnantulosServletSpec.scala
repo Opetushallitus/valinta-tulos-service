@@ -26,7 +26,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
 
   lazy val now = ZonedDateTime.now.format(DateTimeFormatter.RFC_1123_DATE_TIME)
 
-  lazy val expectedValinnantulos = Valinnantulos(
+  lazy val valinnantulos = Valinnantulos(
     hakukohdeOid = "1.2.246.562.20.26643418986",
     valintatapajonoOid = "14538080612623056182813241345174",
     hakemusOid = "1.2.246.562.11.00006169123",
@@ -58,9 +58,9 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
         body.isEmpty mustEqual false
         val result = parse(body).extract[List[Valinnantulos]]
         result.size mustEqual 15
-        val actual = result.filter(_.hakemusOid == expectedValinnantulos.hakemusOid)
+        val actual = result.filter(_.hakemusOid == valinnantulos.hakemusOid)
         actual.size mustEqual 1
-        actual.head mustEqual expectedValinnantulos
+        actual.head mustEqual valinnantulos
       }
     }
   }
@@ -73,16 +73,14 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
       }
     }
     "palauttaa 204, jos valinnantulos on muuttunut lukemisajan jälkeen" in {
-      val patchValinnantulos = expectedValinnantulos.copy(ilmoittautumistila = Lasna)
-      patchJSON("auth/valinnan-tulos/14538080612623056182813241345174", write(List(patchValinnantulos)),
+      patchJSON("auth/valinnan-tulos/14538080612623056182813241345174", write(List(valinnantulos.copy(ilmoittautumistila = Lasna))),
         Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> "Tue, 3 Jun 2008 11:05:30 GMT")) {
         status must_== 204
         body.isEmpty mustEqual true
       }
     }
     "palauttaa 204, jos ilmoittautumista päivitettiin onnistuneesti" in {
-      val patchValinnantulos = expectedValinnantulos.copy(ilmoittautumistila = Lasna)
-      patchJSON("auth/valinnan-tulos/14538080612623056182813241345174", write(List(patchValinnantulos)),
+      patchJSON("auth/valinnan-tulos/14538080612623056182813241345174", write(List(valinnantulos.copy(ilmoittautumistila = Lasna))),
         Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> now)) {
         status must_== 204
         body.isEmpty mustEqual true
