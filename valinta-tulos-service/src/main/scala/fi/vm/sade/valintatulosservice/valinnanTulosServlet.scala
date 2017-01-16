@@ -28,6 +28,7 @@ class ValinnantulosServlet(valinnantulosRepository: ValinnantulosRepository,
                           (implicit val swagger: Swagger)
   extends ScalatraServlet with JacksonJsonSupport with SwaggerSupport with Logging with JsonFormats {
 
+
   override val applicationName = Some("auth/valinnan-tulos")
   override val applicationDescription = "Valinnantuloksen REST API"
 
@@ -110,7 +111,7 @@ class ValinnantulosServlet(valinnantulosRepository: ValinnantulosRepository,
     case p => p
   }))
   patch("/:valintatapajonoOid", operation(valinnantulosMuutosSwagger)) {
-    contentType = null
+    contentType = formats("json")
     val session = getSession
     if (!session.hasAnyRole(Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))) {
       throw new AuthorizationFailedException()
