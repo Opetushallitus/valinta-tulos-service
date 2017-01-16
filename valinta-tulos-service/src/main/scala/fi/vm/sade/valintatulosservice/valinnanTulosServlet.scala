@@ -19,8 +19,6 @@ import org.scalatra.swagger._
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Try}
 
-case class ValinnantulosPatch(hakemusOid: String, vastaanottotila: String, ilmoittautumistila: SijoitteluajonIlmoittautumistila)
-
 class ValinnantulosServlet(valinnantulosRepository: ValinnantulosRepository,
                            valinnantulosService: ValinnantulosService,
                            ilmoittautumisService: IlmoittautumisService,
@@ -104,9 +102,9 @@ class ValinnantulosServlet(valinnantulosRepository: ValinnantulosRepository,
     summary "Muokkaa valinnantulosta"
     parameter pathParam[String]("valintatapajonoOid").description("Valintatapajonon OID")
     parameter headerParam[String]("If-Unmodified-Since").description(s"Aikaleima RFC 1123 määrittelemässä muodossa $sample").required
-    parameter bodyParam[List[ValinnantulosPatch]].description("Muutokset valinnan tulokseen").required
+    parameter bodyParam[List[Valinnantulos]].description("Muutokset valinnan tulokseen").required
     )
-  models.update("ValinnantulosPatch", models("ValinnantulosPatch").copy(properties = models("ValinnantulosPatch").properties.map {
+  models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
     case ("ilmoittautumistila", mp) => ("ilmoittautumistila", ilmoittautumistilaModelProperty(mp))
     case p => p
   }))
@@ -118,7 +116,7 @@ class ValinnantulosServlet(valinnantulosRepository: ValinnantulosRepository,
     }
     val valintatapajonoOid = parseValintatapajonoOid
     val ifUnmodifiedSince: Instant = parseIfUnmodifiedSince
-    val valinnantulokset = parsedBody.extract[List[ValinnantulosPatch]]
+    val valinnantulokset = parsedBody.extract[List[Valinnantulos]]
     valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
       valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, session.personOid)
     NoContent()
