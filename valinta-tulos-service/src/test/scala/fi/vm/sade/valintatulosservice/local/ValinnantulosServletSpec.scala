@@ -75,15 +75,17 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     "palauttaa 204, jos valinnantulos on muuttunut lukemisajan jälkeen" in {
       patchJSON("auth/valinnan-tulos/14538080612623056182813241345174", write(List(valinnantulos.copy(ilmoittautumistila = Lasna))),
         Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> "Tue, 3 Jun 2008 11:05:30 GMT")) {
-        status must_== 204
-        body.isEmpty mustEqual true
+        status must_== 200
+        val result = parse(body).extract[List[ValinnantulosUpdateStatus]]
+        result.size mustEqual 1
+        result.head.status mustEqual 409
       }
     }
     "palauttaa 204, jos ilmoittautumista päivitettiin onnistuneesti" in {
       patchJSON("auth/valinnan-tulos/14538080612623056182813241345174", write(List(valinnantulos.copy(ilmoittautumistila = Lasna))),
         Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> now)) {
-        status must_== 204
-        body.isEmpty mustEqual true
+        status must_== 200
+        parse(body).extract[List[ValinnantulosUpdateStatus]].size mustEqual 0
       }
     }
   }
