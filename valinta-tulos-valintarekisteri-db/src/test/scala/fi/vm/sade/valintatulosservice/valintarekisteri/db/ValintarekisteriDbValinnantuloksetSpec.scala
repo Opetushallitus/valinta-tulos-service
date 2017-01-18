@@ -8,7 +8,7 @@ import org.specs2.runner.JUnitRunner
 import slick.driver.PostgresDriver.api.actionBasedSQLInterpolation
 
 @RunWith(classOf[JUnitRunner])
-class ValintarekisteriDbIlmoittautumisetSpec extends Specification with ITSetup with ValintarekisteriDbTools {
+class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup with ValintarekisteriDbTools {
   sequential
   val henkiloOid = "henkiloOid"
   val hakukohdeOid = "hakukohdeOid"
