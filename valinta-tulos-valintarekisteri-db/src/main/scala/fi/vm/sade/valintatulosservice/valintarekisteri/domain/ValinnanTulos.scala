@@ -10,4 +10,21 @@ case class Valinnantulos(hakukohdeOid: String,
                          hyvaksyttyVarasijalta: Boolean,
                          hyvaksyPeruuntunut: Boolean,
                          vastaanottotila: VastaanottoAction,
-                         ilmoittautumistila: SijoitteluajonIlmoittautumistila)
+                         ilmoittautumistila: SijoitteluajonIlmoittautumistila) {
+
+  def hasChange(other:Valinnantulos) =
+    !(other.valinnantila == valinnantila &&
+    other.ehdollisestiHyvaksyttavissa == ehdollisestiHyvaksyttavissa &&
+    other.julkaistavissa == julkaistavissa &&
+    other.hyvaksyttyVarasijalta == hyvaksyttyVarasijalta &&
+    other.hyvaksyttyVarasijalta == hyvaksyttyVarasijalta &&
+    other.hyvaksyPeruuntunut == hyvaksyPeruuntunut &&
+    other.vastaanottotila == vastaanottotila &&
+    other.ilmoittautumistila == ilmoittautumistila)
+
+  def isSameValinnantulos(other:Valinnantulos) =
+    other.hakukohdeOid == hakukohdeOid &&
+    other.valintatapajonoOid == valintatapajonoOid &&
+    other.hakemusOid == hakemusOid &&
+    other.henkiloOid == henkiloOid
+}
