@@ -127,7 +127,7 @@ class ValinnantulosServlet(valinnantulosRepository: ValinnantulosRepository,
     val valinnantulokset = parsedBody.extract[List[Valinnantulos]]
     Ok(
       valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
-        valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, session.personOid)
+        valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, session)
     )
   }
 }
