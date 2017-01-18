@@ -375,6 +375,13 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
        """.as[(Instant, Valinnantulos)].map(_.toList)
   }
 
+  override def getTarjoajaForHakukohde(hakukohdeOid: String): String = {
+    runBlocking(
+      sql"""select tarjoaja_oid from sijoitteluajon_hakukohteet
+            where hakukohde_oid = ${hakukohdeOid}
+            order by sijoitteluajo_id desc limit 1""".as[String], Duration(1, TimeUnit.SECONDS)).head
+  }
+
   override def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen): DBIO[Unit] = {
     DBIO.seq(
       sqlu"""update ilmoittautumiset set deleted = overriden_ilmoittautuminen_deleted_id()
