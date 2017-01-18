@@ -11,4 +11,6 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
 
   def getValinnantuloksetForValintatapajono(valintatapajonoOid: String): DBIO[List[(Instant, Valinnantulos)]]
 
+  def getTarjoajaForHakukohde(hakukohdeOid: String): String
+
 }
