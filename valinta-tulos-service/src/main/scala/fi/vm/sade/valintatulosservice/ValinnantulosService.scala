@@ -17,7 +17,7 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository) ext
                                                ifUnmodifiedSince: Instant,
                                                session: Session): List[ValinnantulosUpdateStatus] = {
     val vanhatValinnantulokset = getValinnantuloksetGroupedByHakemusOid(valintatapajonoOid)
-    val tarjoajaOid = valinnantulosRepository.getTarjoajaForHakukohde(vanhatValinnantulokset.head._2._2.hakukohdeOid)
+    lazy val tarjoajaOid = valinnantulosRepository.getTarjoajaForHakukohde(vanhatValinnantulokset.head._2._2.hakukohdeOid)
     valinnantulokset.map(uusiValinnantulos => {
       vanhatValinnantulokset.get(uusiValinnantulos.hakemusOid) match {
         case Some((_, vanhaValinnantulos)) if !uusiValinnantulos.hasChange(vanhaValinnantulos) => Right()
@@ -76,6 +76,8 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository) ext
       ilmoittautumistila <- validateIlmoittautumistila(vanha, uusi, session, tarjoajaOid).right
     } yield ilmoittautumistila
   }
+
+  //TODO different statuses for authorization fails / conflicts
 
   private def validateValinnantila(vanha: Valinnantulos, uusi: Valinnantulos, session: Session, tarjoajaOid: String): Either[ValinnantulosUpdateStatus, Unit] =
     uusi.valinnantila match {
