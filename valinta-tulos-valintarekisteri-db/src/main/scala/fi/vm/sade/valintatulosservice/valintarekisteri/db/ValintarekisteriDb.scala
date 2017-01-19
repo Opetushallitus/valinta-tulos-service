@@ -352,26 +352,29 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
   }
 
   override def getValinnantuloksetForValintatapajono(valintatapajonoOid: String): DBIO[List[(Instant, Valinnantulos)]] = {
-    sql"""select lower(t.system_time),
+    sql"""select lower(tu.system_time),
+              lower(ti.system_time),
               v.timestamp,
               i.timestamp,
-              t.hakukohde_oid,
-              t.valintatapajono_oid,
-              t.hakemus_oid,
-              t.henkilo_oid,
-              t.tila,
-              t.ehdollisesti_hyvaksyttavissa,
-              t.julkaistavissa,
-              t.hyvaksytty_varasijalta,
-              t.hyvaksy_peruuntunut,
+              tu.hakukohde_oid,
+              tu.valintatapajono_oid,
+              tu.hakemus_oid,
+              tu.henkilo_oid,
+              ti.tila,
+              tu.ehdollisesti_hyvaksyttavissa,
+              tu.julkaistavissa,
+              tu.hyvaksytty_varasijalta,
+              tu.hyvaksy_peruuntunut,
               v.action,
               i.tila
-          from valinnantulokset as t
-          left join vastaanotot as v on v.hakukohde = t.hakukohde_oid
-              and v.henkilo = t.henkilo_oid
-          left join ilmoittautumiset as i on i.hakukohde = t.hakukohde_oid
-              and i.henkilo = t.henkilo_oid
-          where t.valintatapajono_oid = ${valintatapajonoOid}
+          from valinnantulokset as tu
+          left join valinnantilat as ti on ti.hakemus_oid = tu.hakemus_oid
+              and ti.valintatapajono_oid = tu.valintatapajono_oid
+          left join vastaanotot as v on v.hakukohde = tu.hakukohde_oid
+              and v.henkilo = tu.henkilo_oid
+          left join ilmoittautumiset as i on i.hakukohde = tu.hakukohde_oid
+              and i.henkilo = tu.henkilo_oid
+          where tu.valintatapajono_oid = ${valintatapajonoOid}
        """.as[(Instant, Valinnantulos)].map(_.toList)
   }
 
