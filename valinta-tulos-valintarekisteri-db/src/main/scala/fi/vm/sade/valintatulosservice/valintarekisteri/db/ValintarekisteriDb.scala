@@ -1,8 +1,8 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
 import java.sql.{PreparedStatement, Timestamp, Types}
-import java.time.Instant
-import java.util.{Date, UUID}
+import java.time.{Instant, ZonedDateTime}
+import java.util.{ConcurrentModificationException, Date, UUID}
 import java.util.concurrent.TimeUnit
 
 import com.typesafe.config.{Config, ConfigValueFactory}
@@ -13,7 +13,7 @@ import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket,
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.flywaydb.core.Flyway
 import org.postgresql.util.PSQLException
-import slick.dbio.{DBIO => _, _}
+import slick.dbio.{DBIOAction, DBIO => _, _}
 import slick.driver.PostgresDriver.api.{Database, _}
 import slick.jdbc.TransactionIsolation.Serializable
 
@@ -351,8 +351,8 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
     sql"""select linked_oid from henkiloviitteet where person_oid = ${henkiloOid}""".as[String].map(_.toSet)
   }
 
-  override def getValinnantuloksetForValintatapajono(valintatapajonoOid: String): DBIO[List[(Instant, Valinnantulos)]] = {
-    sql"""select lower(tu.system_time),
+  override def getValinnantuloksetForValintatapajono(valintatapajonoOid: String, duration:Duration = Duration(1, TimeUnit.SECONDS)): List[(Instant, Valinnantulos)] = {
+    runBlocking( sql"""select lower(tu.system_time),
               lower(ti.system_time),
               v.timestamp,
               i.timestamp,
@@ -375,7 +375,7 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
           left join ilmoittautumiset as i on i.hakukohde = tu.hakukohde_oid
               and i.henkilo = tu.henkilo_oid
           where tu.valintatapajono_oid = ${valintatapajonoOid}
-       """.as[(Instant, Valinnantulos)].map(_.toList)
+       """.as[(Instant, Valinnantulos)].map(_.toList), duration)
   }
 
   override def getTarjoajaForHakukohde(hakukohdeOid: String): String = {
@@ -385,7 +385,23 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
             order by sijoitteluajo_id desc limit 1""".as[String], Duration(1, TimeUnit.SECONDS)).head
   }
 
-  override def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen): DBIO[Unit] = {
+  override def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, duration:Duration = Duration(1, TimeUnit.SECONDS)) = {
+    runBlocking(
+      storeIlmoittautuminen(henkiloOid, ilmoittautuminen).transactionally.withTransactionIsolation(Serializable), duration)
+  }
+
+  private def storeIlmoittautuminen(henkiloOid:String, ilmoittautuminen:Ilmoittautuminen, ifNotUpdatedSince:Instant): DBIOAction[Unit, NoStream, Effect] = {
+      sql"""select timestamp from ilmoittatuminen
+            where (henkilo = ${henkiloOid}
+              or henkilo in (select linked_oid from henkiloviitteet where person_oid = ${henkiloOid}))
+              and hakukohde = ${ilmoittautuminen.hakukohdeOid}
+              and deleted is null""".as[Timestamp].flatMap {
+        case x if ( 0 == x.size || x.map(_.toInstant).max.compareTo(ifNotUpdatedSince) <= 0 ) => storeIlmoittautuminen(henkiloOid, ilmoittautuminen)
+        case _ => throw new ConcurrentModificationException(s"Ilmoittautumista ${ilmoittautuminen} ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti")
+    }
+  }
+
+  private def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen): DBIOAction[Unit, NoStream, Effect] = {
     DBIO.seq(
       sqlu"""update ilmoittautumiset set deleted = overriden_ilmoittautuminen_deleted_id()
              where (henkilo = ${henkiloOid}
@@ -397,7 +413,7 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
                      ${ilmoittautuminen.hakukohdeOid},
                      ${ilmoittautuminen.tila.toString}::ilmoittautumistila,
                      ${ilmoittautuminen.muokkaaja},
-                     ${ilmoittautuminen.selite})""").transactionally.withTransactionIsolation(Serializable)
+                     ${ilmoittautuminen.selite})""")
   }
 
   import scala.collection.JavaConverters._
