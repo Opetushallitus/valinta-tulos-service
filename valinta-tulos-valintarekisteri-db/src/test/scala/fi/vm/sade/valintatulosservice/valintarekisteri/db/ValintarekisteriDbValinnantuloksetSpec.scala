@@ -22,22 +22,22 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
 
   "ValintarekisteriDb" should {
     "store ilmoittautuminen" in {
-      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeIlmoittautuminen(
+      singleConnectionValintarekisteriDb.storeIlmoittautuminen(
         henkiloOid,
         Ilmoittautuminen(hakukohdeOid, Lasna, "muokkaaja", "selite")
-      ))
+      )
       singleConnectionValintarekisteriDb.runBlocking(sql"""select henkilo, selite from ilmoittautumiset where deleted is null""".as[(String, String)]).head must_== (henkiloOid, "selite")
     }
 
     "update ilmoittautuminen" in {
-      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeIlmoittautuminen(
+      singleConnectionValintarekisteriDb.storeIlmoittautuminen(
         henkiloOid,
         Ilmoittautuminen(hakukohdeOid, Lasna, "muokkaaja", "selite")
-      ))
-      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeIlmoittautuminen(
+      )
+      singleConnectionValintarekisteriDb.storeIlmoittautuminen(
         henkiloOid,
         Ilmoittautuminen(hakukohdeOid, PoissaSyksy, "muokkaaja", "syksyn poissa")
-      ))
+      )
       singleConnectionValintarekisteriDb.runBlocking(sql"""select henkilo, selite from ilmoittautumiset where deleted is null""".as[(String, String)]).head must_== (henkiloOid, "syksyn poissa")
       singleConnectionValintarekisteriDb.runBlocking(sql"""select henkilo from ilmoittautumiset where selite = 'selite'""".as[String]).head must_== henkiloOid
     }
