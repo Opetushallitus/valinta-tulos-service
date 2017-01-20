@@ -95,8 +95,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     val valinnantulosRepository = mock[ValinnantulosRepository]
     val service = new ValinnantulosService(valinnantulosRepository)
 
-    valinnantulosRepository.runBlocking(any[DBIO[List[(Instant, Valinnantulos)]]], any[Duration]) returns result
     valinnantulosRepository.getTarjoajaForHakukohde(anyString) returns tarjoajaOid
-    valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid) returns DBIOAction.successful(result)
+    valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid) returns result
   }
 }
