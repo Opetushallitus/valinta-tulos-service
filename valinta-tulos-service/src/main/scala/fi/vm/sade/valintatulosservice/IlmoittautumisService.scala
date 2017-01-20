@@ -6,13 +6,17 @@ import java.time.temporal.ChronoUnit
 import fi.vm.sade.sijoittelu.domain.IlmoittautumisTila
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.sijoittelu.ValintatulosRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakijaVastaanottoRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{ValinnantulosRepository, HakijaVastaanottoRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Ilmoittautuminen, SijoitteluajonIlmoittautumistila, VastaanotaSitovasti}
 import org.json4s.jackson.Serialization
+import org.slf4j.LoggerFactory
+
+import scala.util.Try
 
 class IlmoittautumisService(valintatulosService: ValintatulosService,
                             tulokset: ValintatulosRepository,
-                            hakijaVastaanottoRepository: HakijaVastaanottoRepository) extends JsonFormats {
+                            hakijaVastaanottoRepository: HakijaVastaanottoRepository, valinnantulosRepository: ValinnantulosRepository) extends JsonFormats {
+  private val logger = LoggerFactory.getLogger(classOf[IlmoittautumisService])
   def getIlmoittautumistilat(valintatapajonoOid: String): Either[Throwable, Seq[(String, SijoitteluajonIlmoittautumistila, Instant)]] = {
     tulokset.findValintatulokset(valintatapajonoOid).right.map(_.map(v => (
       v.getHakemusOid,
@@ -57,5 +61,10 @@ class IlmoittautumisService(valintatulosService: ValintatulosService,
           ilmoittautuminen.muokkaaja
         )
     ).left.foreach(e => throw e)
+    Try(valinnantulosRepository.storeIlmoittautuminen(hakemuksenTulos.hakijaOid, ilmoittautuminen)).recover {
+      case e =>
+        logger.error(s"Hakijan ${hakemuksenTulos.hakijaOid} ilmoittautumista ei saatu SQL-kantaan!",e)
+    }
+
   }
 }
