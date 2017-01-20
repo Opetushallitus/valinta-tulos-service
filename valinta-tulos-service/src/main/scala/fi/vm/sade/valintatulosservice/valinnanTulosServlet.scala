@@ -94,10 +94,7 @@ class ValinnantulosServlet(valinnantulosRepository: ValinnantulosRepository,
       throw new AuthorizationFailedException()
     }
     val valintatapajonoOid = parseValintatapajonoOid
-    val valinnanTulokset = valinnantulosRepository.runBlocking(
-      valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid),
-      Duration(1, TimeUnit.SECONDS)
-    )
+    val valinnanTulokset = valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid)
     Ok(
       body = valinnanTulokset.map(_._2),
       headers = if (valinnanTulokset.nonEmpty) Map("Last-Modified" -> renderHttpDate(valinnanTulokset.map(_._1).max)) else Map()

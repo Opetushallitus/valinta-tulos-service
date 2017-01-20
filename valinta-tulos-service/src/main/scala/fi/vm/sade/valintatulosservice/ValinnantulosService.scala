@@ -43,10 +43,7 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository) ext
   }
 
   private def getValinnantuloksetGroupedByHakemusOid(valintatapajonoOid: String): Map[String, (Instant, Valinnantulos)] = {
-    valinnantulosRepository.runBlocking(
-      valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid),
-      Duration(1, TimeUnit.SECONDS)
-    ).map(v => v._2.hakemusOid -> v).toMap
+    valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid).map(v => v._2.hakemusOid -> v).toMap
   }
 
   private def updateValinnantulos(valintatapajonoOid: String,
@@ -57,10 +54,8 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository) ext
       s"hakemuksen ${uusi.hakemusOid} valinnan tulosta valintatapajonossa $valintatapajonoOid " +
       s"vastaanottotilasta ${vanha.vastaanottotila} tilaan ${uusi.vastaanottotila} ja " +
       s"ilmoittautumistilasta ${vanha.ilmoittautumistila} tilaan ${uusi.ilmoittautumistila}.")
-    valinnantulosRepository.runBlocking(
-      valinnantulosRepository.storeIlmoittautuminen(vanha.henkiloOid,
-        Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, "selite")),
-      Duration(1, TimeUnit.SECONDS)
+    valinnantulosRepository.storeIlmoittautuminen(vanha.henkiloOid,
+        Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, "selite")
     )
     Right()
   }
