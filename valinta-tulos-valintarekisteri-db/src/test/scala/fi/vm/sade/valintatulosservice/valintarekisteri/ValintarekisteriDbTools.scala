@@ -78,6 +78,7 @@ trait ValintarekisteriDbTools extends Specification {
       sqlu"truncate table hakijaryhman_hakemukset cascade",
       sqlu"truncate table hakijaryhmat cascade",
       sqlu"truncate table ilmoittautumiset cascade",
+      sqlu"truncate table ilmoittautumiset_history cascade",
       sqlu"truncate table pistetiedot cascade",
       sqlu"truncate table valinnantulokset cascade",
       sqlu"truncate table valinnantulokset_history cascade",

@@ -355,7 +355,7 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
     runBlocking( sql"""select lower(tu.system_time),
               lower(ti.system_time),
               v.timestamp,
-              i.timestamp,
+              lower(i.system_time),
               tu.hakukohde_oid,
               tu.valintatapajono_oid,
               tu.hakemus_oid,
@@ -385,35 +385,23 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
             order by sijoitteluajo_id desc limit 1""".as[String], Duration(1, TimeUnit.SECONDS)).head
   }
 
-  override def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, duration:Duration = Duration(1, TimeUnit.SECONDS)) = {
-    runBlocking(
-      storeIlmoittautuminen(henkiloOid, ilmoittautuminen).transactionally.withTransactionIsolation(Serializable), duration)
-  }
-
-  private def storeIlmoittautuminen(henkiloOid:String, ilmoittautuminen:Ilmoittautuminen, ifNotUpdatedSince:Instant): DBIOAction[Unit, NoStream, Effect] = {
-      sql"""select timestamp from ilmoittatuminen
-            where (henkilo = ${henkiloOid}
-              or henkilo in (select linked_oid from henkiloviitteet where person_oid = ${henkiloOid}))
-              and hakukohde = ${ilmoittautuminen.hakukohdeOid}
-              and deleted is null""".as[Timestamp].flatMap {
-        case x if ( 0 == x.size || x.map(_.toInstant).max.compareTo(ifNotUpdatedSince) <= 0 ) => storeIlmoittautuminen(henkiloOid, ilmoittautuminen)
-        case _ => throw new ConcurrentModificationException(s"Ilmoittautumista ${ilmoittautuminen} ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti")
-    }
-  }
-
-  private def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen): DBIOAction[Unit, NoStream, Effect] = {
-    DBIO.seq(
-      sqlu"""update ilmoittautumiset set deleted = overriden_ilmoittautuminen_deleted_id()
-             where (henkilo = ${henkiloOid}
-                    or henkilo in (select linked_oid from henkiloviitteet where person_oid = ${henkiloOid}))
-                   and hakukohde = ${ilmoittautuminen.hakukohdeOid}
-                   and deleted is null""",
+  override def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
       sqlu"""insert into ilmoittautumiset (henkilo, hakukohde, tila, ilmoittaja, selite)
              values (${henkiloOid},
                      ${ilmoittautuminen.hakukohdeOid},
                      ${ilmoittautuminen.tila.toString}::ilmoittautumistila,
                      ${ilmoittautuminen.muokkaaja},
-                     ${ilmoittautuminen.selite})""")
+                     ${ilmoittautuminen.selite})
+             on conflict on constraint ilmoittautumiset_pkey do update
+             set tila = excluded.tila,
+                 ilmoittaja = excluded.ilmoittaja,
+                 selite = excluded.selite
+             where ilmoittautumiset.tila <> excluded.tila
+                 and (${ifUnmodifiedSince}::timestamptz is null
+                      or ilmoittautumiset.system_time @> ${ifUnmodifiedSince})""".flatMap {
+        case 1 => DBIO.successful(())
+        case _ => DBIO.failed(new ConcurrentModificationException(s"Ilmoittautumista $ilmoittautuminen ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti"))
+      }
   }
 
   import scala.collection.JavaConverters._
