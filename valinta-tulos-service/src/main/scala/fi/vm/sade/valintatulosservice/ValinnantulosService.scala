@@ -9,6 +9,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepositor
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
 import scala.concurrent.duration.Duration
+import scala.util.{Failure, Success, Try}
 
 class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository) extends Logging {
 
@@ -27,7 +28,7 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository) ext
           Left(ValinnantulosUpdateStatus(409, s"Not unmodified since ${ifUnmodifiedSince}", uusiValinnantulos.valintatapajonoOid, uusiValinnantulos.hakemusOid))
         }
         case Some((_, vanhaValinnantulos)) => validateMuutos(vanhaValinnantulos, uusiValinnantulos, session, tarjoajaOid) match {
-          case x if x.isRight => updateValinnantulos(valintatapajonoOid, vanhaValinnantulos, uusiValinnantulos, session.personOid)
+          case x if x.isRight => updateValinnantulos(valintatapajonoOid, vanhaValinnantulos, uusiValinnantulos, session.personOid, ifUnmodifiedSince)
           case x if x.isLeft => x
         }
         case None => {
@@ -49,15 +50,21 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository) ext
   private def updateValinnantulos(valintatapajonoOid: String,
                                   vanha: Valinnantulos,
                                   uusi: Valinnantulos,
-                                  muokkaaja: String): Either[ValinnantulosUpdateStatus, Unit] = {
+                                  muokkaaja: String,
+                                  ifUnmodifiedSince: Instant): Either[ValinnantulosUpdateStatus, Unit] = {
     logger.info(s"Käyttäjä ${muokkaaja} muokkasi " +
       s"hakemuksen ${uusi.hakemusOid} valinnan tulosta valintatapajonossa $valintatapajonoOid " +
       s"vastaanottotilasta ${vanha.vastaanottotila} tilaan ${uusi.vastaanottotila} ja " +
       s"ilmoittautumistilasta ${vanha.ilmoittautumistila} tilaan ${uusi.ilmoittautumistila}.")
-    valinnantulosRepository.storeIlmoittautuminen(vanha.henkiloOid,
-        Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, "selite")
-    )
-    Right()
+    Try(valinnantulosRepository.runBlocking(valinnantulosRepository.storeIlmoittautuminen(vanha.henkiloOid,
+      Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, "selite"),
+      Some(ifUnmodifiedSince)
+    ))) match {
+      case Success(_) => Right()
+      case Failure(t) =>
+        logger.warn(s"Valinnantuloksen $uusi tallennus epäonnistui", t)
+        Left(ValinnantulosUpdateStatus(500, s"Unexpected error", valintatapajonoOid, uusi.hakemusOid))
+    }
   }
 
   private def validateMuutos(vanha: Valinnantulos, uusi: Valinnantulos, session: Session, tarjoajaOid: String): Either[ValinnantulosUpdateStatus, Unit] = {
