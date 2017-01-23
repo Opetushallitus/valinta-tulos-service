@@ -61,7 +61,7 @@ class IlmoittautumisService(valintatulosService: ValintatulosService,
           ilmoittautuminen.muokkaaja
         )
     ).left.foreach(e => throw e)
-    Try(valinnantulosRepository.storeIlmoittautuminen(hakemuksenTulos.hakijaOid, ilmoittautuminen)).recover {
+    Try(valinnantulosRepository.runBlocking(valinnantulosRepository.storeIlmoittautuminen(hakemuksenTulos.hakijaOid, ilmoittautuminen))).recover {
       case e =>
         logger.error(s"Hakijan ${hakemuksenTulos.hakijaOid} ilmoittautumista ei saatu SQL-kantaan!",e)
     }
