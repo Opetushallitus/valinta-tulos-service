@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
-import java.sql.JDBCType
-import java.time.Instant
+import java.sql.{JDBCType, Timestamp}
+import java.time.{Instant, OffsetDateTime, ZoneId}
 import java.util.UUID
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -145,6 +145,19 @@ abstract class ValintarekisteriResultExtractors {
   implicit object SetUUID extends SetParameter[UUID] {
     def apply(v: UUID, pp: PositionedParameters) {
       pp.setObject(v, JDBCType.BINARY.getVendorTypeNumber)
+    }
+  }
+
+  implicit object SetInstant extends SetParameter[Instant] {
+    def apply(v: Instant, pp: PositionedParameters): Unit = {
+      pp.setObject(OffsetDateTime.ofInstant(v, ZoneId.of("Europe/Helsinki")), JDBCType.TIMESTAMP_WITH_TIMEZONE.getVendorTypeNumber)
+    }
+  }
+
+  implicit object SetOptionInstant extends SetParameter[Option[Instant]] {
+    def apply(v: Option[Instant], pp: PositionedParameters): Unit = v match {
+      case Some(i) => SetInstant.apply(i, pp)
+      case None => pp.setNull(JDBCType.TIMESTAMP_WITH_TIMEZONE.getVendorTypeNumber)
     }
   }
 }
