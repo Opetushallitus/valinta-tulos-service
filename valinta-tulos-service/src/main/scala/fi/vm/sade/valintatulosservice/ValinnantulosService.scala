@@ -56,7 +56,8 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository) ext
       s"hakemuksen ${uusi.hakemusOid} valinnan tulosta valintatapajonossa $valintatapajonoOid " +
       s"vastaanottotilasta ${vanha.vastaanottotila} tilaan ${uusi.vastaanottotila} ja " +
       s"ilmoittautumistilasta ${vanha.ilmoittautumistila} tilaan ${uusi.ilmoittautumistila}.")
-    Try(valinnantulosRepository.runBlocking(valinnantulosRepository.storeIlmoittautuminen(vanha.henkiloOid,
+
+    Try(valinnantulosRepository.runBlockingTransactionally(valinnantulosRepository.storeIlmoittautuminen(vanha.henkiloOid,
       Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, "selite"),
       Some(ifUnmodifiedSince)
     ))) match {
