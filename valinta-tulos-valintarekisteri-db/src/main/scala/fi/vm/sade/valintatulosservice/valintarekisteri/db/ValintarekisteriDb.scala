@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
 import java.sql.{PreparedStatement, Timestamp, Types}
-import java.time.{Instant, ZonedDateTime}
+import java.time.Instant
 import java.util.{ConcurrentModificationException, Date, UUID}
 import java.util.concurrent.TimeUnit
 
@@ -13,7 +13,6 @@ import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket,
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.flywaydb.core.Flyway
 import org.postgresql.util.PSQLException
-import slick.dbio.{DBIOAction, DBIO => _, _}
 import slick.driver.PostgresDriver.api.{Database, _}
 import slick.jdbc.TransactionIsolation.Serializable
 
