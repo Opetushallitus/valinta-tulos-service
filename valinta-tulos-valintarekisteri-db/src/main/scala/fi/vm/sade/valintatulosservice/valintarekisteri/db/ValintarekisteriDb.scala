@@ -358,7 +358,7 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
               tu.hakukohde_oid,
               tu.valintatapajono_oid,
               tu.hakemus_oid,
-              tu.henkilo_oid,
+              ti.henkilo_oid,
               ti.tila,
               tu.ehdollisesti_hyvaksyttavissa,
               tu.julkaistavissa,
@@ -366,13 +366,13 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
               tu.hyvaksy_peruuntunut,
               v.action,
               i.tila
-          from valinnantulokset as tu
-          left join valinnantilat as ti on ti.hakemus_oid = tu.hakemus_oid
-              and ti.valintatapajono_oid = tu.valintatapajono_oid
+          from valinnantilat as ti
+          left join valinnantulokset as tu on tu.hakemus_oid = ti.hakemus_oid
+              and tu.valintatapajono_oid = ti.valintatapajono_oid
           left join vastaanotot as v on v.hakukohde = tu.hakukohde_oid
-              and v.henkilo = tu.henkilo_oid
+              and v.henkilo = ti.henkilo_oid
           left join ilmoittautumiset as i on i.hakukohde = tu.hakukohde_oid
-              and i.henkilo = tu.henkilo_oid
+              and i.henkilo = ti.henkilo_oid
           where tu.valintatapajono_oid = ${valintatapajonoOid}
        """.as[(Instant, Valinnantulos)].map(_.toList), duration)
   }
