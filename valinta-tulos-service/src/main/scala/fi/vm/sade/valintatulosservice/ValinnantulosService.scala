@@ -8,7 +8,6 @@ import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
-import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
 class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository) extends Logging {
@@ -57,10 +56,16 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository) ext
       s"vastaanottotilasta ${vanha.vastaanottotila} tilaan ${uusi.vastaanottotila} ja " +
       s"ilmoittautumistilasta ${vanha.ilmoittautumistila} tilaan ${uusi.ilmoittautumistila}.")
 
-    Try(valinnantulosRepository.runBlockingTransactionally(valinnantulosRepository.storeIlmoittautuminen(vanha.henkiloOid,
-      Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, "selite"),
-      Some(ifUnmodifiedSince)
-    ))) match {
+    val operations = List(
+      Option(uusi.hasOhjausChanged(vanha)).collect{ case true => valinnantulosRepository.storeValinnantuloksenOhjaus(
+        ValinnantuloksenOhjaus(uusi, muokkaaja, "Virkailijan tallennus"), Some(ifUnmodifiedSince))},
+      Option(uusi.ilmoittautumistila == vanha.ilmoittautumistila).collect{ case true => valinnantulosRepository.storeIlmoittautuminen(
+        vanha.henkiloOid, Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, "Virkailijan tallennus"), Some(ifUnmodifiedSince))}
+    ).flatten
+
+    Try(valinnantulosRepository.runBlockingTransactionally(
+      slick.dbio.DBIO.seq(operations: _*)
+    )) match {
       case Success(_) => Right()
       case Failure(t) =>
         logger.warn(s"Valinnantuloksen $uusi tallennus epäonnistui", t)
