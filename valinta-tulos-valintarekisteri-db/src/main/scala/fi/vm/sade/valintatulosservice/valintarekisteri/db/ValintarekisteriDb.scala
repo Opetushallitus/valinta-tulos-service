@@ -384,6 +384,28 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
             order by sijoitteluajo_id desc limit 1""".as[String], Duration(1, TimeUnit.SECONDS)).head
   }
 
+  override def storeValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+    sqlu"""update valinnantulokset
+           set julkaistavissa = ${ohjaus.julkaistavissa},
+              ehdollisesti_hyvaksyttavissa = ${ohjaus.ehdollisestiHyvaksyttavissa},
+              hyvaksytty_varasijalta = ${ohjaus.hyvaksyttyVarasijalta},
+              hyvaksy_peruuntunut = ${ohjaus.hyvaksyPeruuntunut},
+              ilmoittaja = ${ohjaus.muokkaaja},
+              selite = ${ohjaus.selite}
+           where valintatapajono_oid = ${ohjaus.valintatapajonoOid} and hakemus_oid = ${ohjaus.hakemusOid} and (
+              julkaistavissa <> ${ohjaus.julkaistavissa} or
+              ehdollisesti_hyvaksyttavissa <> ${ohjaus.ehdollisestiHyvaksyttavissa} or
+              hyvaksytty_varasijalta <> ${ohjaus.hyvaksyttyVarasijalta} or
+              hyvaksy_peruuntunut <> ${ohjaus.hyvaksyPeruuntunut}
+           ) and (
+              ${ifUnmodifiedSince}::timestamptz is null or
+              system_time @> ${ifUnmodifiedSince}
+           )""".flatMap {
+      case 1 => DBIO.successful(())
+      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ohjausta $ohjaus ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti"))
+    }
+  }
+
   override def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
       sqlu"""insert into ilmoittautumiset (henkilo, hakukohde, tila, ilmoittaja, selite)
              values (${henkiloOid},
