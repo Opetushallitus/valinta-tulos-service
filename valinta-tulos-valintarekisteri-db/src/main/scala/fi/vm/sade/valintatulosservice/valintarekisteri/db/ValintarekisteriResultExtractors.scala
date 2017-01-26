@@ -124,7 +124,7 @@ abstract class ValintarekisteriResultExtractors {
     textEn = r.nextStringOption
   ))
 
-  protected implicit val getValinnanTulosResult: GetResult[Valinnantulos] = GetResult(r => Valinnantulos(
+  protected implicit val getValinnantulosResult: GetResult[Valinnantulos] = GetResult(r => Valinnantulos(
     hakukohdeOid = r.nextString,
     valintatapajonoOid = r.nextString,
     hakemusOid = r.nextString,
@@ -138,9 +138,9 @@ abstract class ValintarekisteriResultExtractors {
     ilmoittautumistila = r.nextStringOption.map(SijoitteluajonIlmoittautumistila(_)).getOrElse(EiTehty)
   ))
 
-  protected implicit val getValinnanTulosWithLastModifiedResult: GetResult[(Instant, Valinnantulos)] = GetResult(r => (
+  protected implicit val getValinnantulosWithLastModifiedResult: GetResult[(Instant, Valinnantulos)] = GetResult(r => (
     (new java.util.Date((List(r.nextDate) ++ List(r.nextDate) ++ r.nextDateOption ++ r.nextDateOption).map(_.getTime).max)).toInstant,
-    getValinnanTulosResult(r)))
+    getValinnantulosResult(r)))
 
   implicit object SetUUID extends SetParameter[UUID] {
     def apply(v: UUID, pp: PositionedParameters) {
