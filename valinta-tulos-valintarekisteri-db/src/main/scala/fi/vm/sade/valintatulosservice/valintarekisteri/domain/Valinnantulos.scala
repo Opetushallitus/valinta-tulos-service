@@ -17,7 +17,6 @@ case class Valinnantulos(hakukohdeOid: String,
     other.ehdollisestiHyvaksyttavissa == ehdollisestiHyvaksyttavissa &&
     other.julkaistavissa == julkaistavissa &&
     other.hyvaksyttyVarasijalta == hyvaksyttyVarasijalta &&
-    other.hyvaksyttyVarasijalta == hyvaksyttyVarasijalta &&
     other.hyvaksyPeruuntunut == hyvaksyPeruuntunut &&
     other.vastaanottotila == vastaanottotila &&
     other.ilmoittautumistila == ilmoittautumistila)
@@ -27,4 +26,10 @@ case class Valinnantulos(hakukohdeOid: String,
     other.valintatapajonoOid == valintatapajonoOid &&
     other.hakemusOid == hakemusOid &&
     other.henkiloOid == henkiloOid
+
+  def hasOhjausChanged(other:Valinnantulos) =
+    !(other.ehdollisestiHyvaksyttavissa == ehdollisestiHyvaksyttavissa &&
+      other.julkaistavissa == julkaistavissa &&
+      other.hyvaksyttyVarasijalta == hyvaksyttyVarasijalta &&
+      other.hyvaksyPeruuntunut == hyvaksyPeruuntunut)
 }

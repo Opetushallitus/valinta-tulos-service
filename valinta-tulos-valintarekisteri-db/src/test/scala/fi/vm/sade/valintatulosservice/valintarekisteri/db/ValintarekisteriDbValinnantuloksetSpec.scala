@@ -1,6 +1,10 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Ilmoittautuminen, Lasna, PoissaSyksy}
+import java.sql.Timestamp
+import java.time.ZonedDateTime
+import java.util.ConcurrentModificationException
+
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Ilmoittautuminen, Lasna, PoissaSyksy, ValinnantuloksenOhjaus}
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
@@ -14,6 +18,9 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
   val henkiloOid = "henkiloOid"
   val hakukohdeOid = "hakukohdeOid"
   val hakuOid = "hakuOid"
+  val valintatapajonoOid = "valintatapajonoOid"
+  val hakemusOid = "hakemusOid"
+  val muutos = new Timestamp(System.currentTimeMillis)
 
   step(appConfig.start)
   override def before: Any = {
@@ -31,7 +38,6 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       ))
       singleConnectionValintarekisteriDb.runBlocking(sql"""select henkilo, selite from ilmoittautumiset""".as[(String, String)]).head must_== (henkiloOid, "selite")
     }
-
     "update ilmoittautuminen" in {
       singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeIlmoittautuminen(
         henkiloOid,
@@ -43,6 +49,47 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       ))
       singleConnectionValintarekisteriDb.runBlocking(sql"""select henkilo, selite from ilmoittautumiset""".as[(String, String)]).head must_== (henkiloOid, "syksyn poissa")
       singleConnectionValintarekisteriDb.runBlocking(sql"""select henkilo from ilmoittautumiset_history where selite = 'selite'""".as[String]).head must_== henkiloOid
+    }
+    "update valinnantuloksen ohjaustiedot" in {
+      storeValinnantilaAndValinnantulos
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid).head._2.ehdollisestiHyvaksyttavissa mustEqual false
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.storeValinnantuloksenOhjaus(ValinnantuloksenOhjaus(hakemusOid,
+          valintatapajonoOid, true, false, false, false, "virkailija", "Virkailijan tallennus"))
+      )
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid).head._2.ehdollisestiHyvaksyttavissa mustEqual true
+    }
+    "not update valinnantuloksen ohjaustiedot if modified" in {
+      val notModifiedSince = ZonedDateTime.now.minusDays(1).toInstant
+      storeValinnantilaAndValinnantulos
+
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.storeValinnantuloksenOhjaus(ValinnantuloksenOhjaus(hakemusOid,
+          valintatapajonoOid, true, false, false, false, "virkailija", "Virkailijan tallennus"), Some(notModifiedSince))
+      ) must throwA[ConcurrentModificationException]
+    }
+
+    def storeValinnantilaAndValinnantulos() = {
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"""insert into valinnantilat (
+           hakukohde_oid,
+           valintatapajono_oid,
+           hakemus_oid,
+           tila,
+           tilan_viimeisin_muutos,
+           ilmoittaja,
+           henkilo_oid
+       ) values (${hakukohdeOid}, ${valintatapajonoOid}, ${hakemusOid}, 'Hyvaksytty'::valinnantila, ${muutos}, 122344555::text, ${henkiloOid})""")
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"""insert into valinnantulokset(
+           valintatapajono_oid,
+           hakemus_oid,
+           hakukohde_oid,
+           julkaistavissa,
+           ehdollisesti_hyvaksyttavissa,
+           hyvaksytty_varasijalta,
+           hyvaksy_peruuntunut,
+           ilmoittaja,
+           selite
+       ) values (${valintatapajonoOid}, ${hakemusOid}, ${hakukohdeOid}, false, false, false, false, 122344555::text, 'Sijoittelun tallennus')""")
     }
   }
 }
