@@ -59,7 +59,7 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository) ext
     val operations = List(
       Option(uusi.hasOhjausChanged(vanha)).collect{ case true => valinnantulosRepository.storeValinnantuloksenOhjaus(
         ValinnantuloksenOhjaus(uusi, muokkaaja, "Virkailijan tallennus"), Some(ifUnmodifiedSince))},
-      Option(uusi.ilmoittautumistila == vanha.ilmoittautumistila).collect{ case true => valinnantulosRepository.storeIlmoittautuminen(
+      Option(uusi.ilmoittautumistila != vanha.ilmoittautumistila).collect{ case true => valinnantulosRepository.storeIlmoittautuminen(
         vanha.henkiloOid, Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, "Virkailijan tallennus"), Some(ifUnmodifiedSince))}
     ).flatten
 
