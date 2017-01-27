@@ -59,7 +59,11 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     "no status for succesfully modified valinnantulos" in new ValinnantulosServiceWithMocks {
       override def result = List((ZonedDateTime.now.toInstant, valinnantulos))
       val valinnantulokset = List(valinnantulos.copy(julkaistavissa = true))
-      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, ZonedDateTime.now.toInstant, session) mustEqual List()
+      val notModifiedSince = ZonedDateTime.now.toInstant
+
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, notModifiedSince, session) mustEqual List()
+      there was one (valinnantulosRepository).storeValinnantuloksenOhjaus(ValinnantuloksenOhjaus(valinnantulokset(0), session.personOid, "Virkailijan tallennus"), Some(notModifiedSince))
+      there was no (valinnantulosRepository).storeIlmoittautuminen(any[String], any[Ilmoittautuminen], any[Option[Instant]])
     }
     "different statuses for all failing valinnantulokset" in new ValinnantulosServiceWithMocks {
       override def result = List(
