@@ -39,6 +39,12 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     vastaanottotila = Poista,
     ilmoittautumistila = EiTehty)
 
+  lazy val hyvaksyttyValinnantulos = valinnantulos.copy(
+    hakemusOid = "1.2.246.562.11.00006926939",
+    henkiloOid = "1.2.246.562.24.19795717550",
+    valinnantila = Hyvaksytty
+  )
+
   "GET /auth/valinnan-tulos/:valintatapajonoOid" should {
     "palauttaa 403, jos käyttäjä ei ole autentikoitunut" in {
       get("auth/valinnan-tulos/14538080612623056182813241345174") {
@@ -53,15 +59,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
       }
     }
     "hakee valinnantulokset valintatapajonolle" in {
-      get("auth/valinnan-tulos/14538080612623056182813241345174", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
-        status must_== 200
-        body.isEmpty mustEqual false
-        val result = parse(body).extract[List[Valinnantulos]]
-        result.size mustEqual 15
-        val actual = result.filter(_.hakemusOid == valinnantulos.hakemusOid)
-        actual.size mustEqual 1
-        actual.head mustEqual valinnantulos
-      }
+      hae(valinnantulos)
     }
   }
 
@@ -97,6 +95,36 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
         result.head.status mustEqual 403
       }
     }
+    "palauttaa 200 ja päivittää sekä ohjaustietoja että ilmoittautumista" in {
+      hae(hyvaksyttyValinnantulos)
+
+      singleConnectionValintarekisteriDb.store(HakijanVastaanotto(henkiloOid = "1.2.246.562.24.19795717550",
+        hakemusOid = "1.2.246.562.11.00006926939", hakukohdeOid = "1.2.246.562.20.26643418986", action = VastaanotaSitovasti))
+
+      val uusiValinnantulos = hyvaksyttyValinnantulos.copy(julkaistavissa = true, ilmoittautumistila = Lasna, vastaanottotila = VastaanotaSitovasti)
+
+      patchJSON("auth/valinnan-tulos/14538080612623056182813241345174", write(List(uusiValinnantulos)),
+        Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> now)) {
+        status must_== 200
+        val foo = parse(body).extract[List[ValinnantulosUpdateStatus]]
+        foo.size mustEqual 0
+      }
+
+      hae(uusiValinnantulos)
+    }
   }
+
+  def hae(tulos:Valinnantulos) = {
+    get("auth/valinnan-tulos/14538080612623056182813241345174", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
+      status must_== 200
+      body.isEmpty mustEqual false
+      val result = parse(body).extract[List[Valinnantulos]]
+      result.size mustEqual 15
+      val actual = result.filter(_.hakemusOid == tulos.hakemusOid)
+      actual.size mustEqual 1
+      actual.head mustEqual tulos
+    }
+  }
+
   step(deleteAll)
 }
