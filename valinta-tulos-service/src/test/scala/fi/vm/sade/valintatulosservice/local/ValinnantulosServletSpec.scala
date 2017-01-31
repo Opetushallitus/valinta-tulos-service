@@ -1,9 +1,10 @@
 package fi.vm.sade.valintatulosservice.local
 
-import java.time.{LocalDate, LocalDateTime, ZonedDateTime}
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 import fi.vm.sade.valintatulosservice._
+import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket}
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -12,6 +13,8 @@ import org.specs2.runner.JUnitRunner
 import org.json4s.DefaultFormats
 import org.json4s.native.JsonMethods._
 import org.json4s.jackson.Serialization._
+import org.mockserver.integration.ClientAndServer
+import org.mockserver.model.{HttpRequest, HttpResponse}
 
 @RunWith(classOf[JUnitRunner])
 class ValinnantulosServletSpec extends ServletSpecification with ValintarekisteriDbTools {
@@ -19,12 +22,19 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     new DateSerializer, new TilankuvauksenTarkenneSerializer, new IlmoittautumistilaSerializer, new VastaanottoActionSerializer)
   step(singleConnectionValintarekisteriDb.storeSijoittelu(loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")))
 
-  def createTestSession(roles:Set[Role] = Set(Role.SIJOITTELU_CRUD)) =
+  def createTestSession(roles:Set[Role] = Set(Role.SIJOITTELU_CRUD, Role(s"${Role.SIJOITTELU_CRUD.s}_1.2.246.562.10.39804091914"))) =
     singleConnectionValintarekisteriDb.store(CasSession(ServiceTicket("myFakeTicket"), "123.123.123", roles)).toString
 
   lazy val testSession = createTestSession()
 
   lazy val now = ZonedDateTime.now.format(DateTimeFormatter.RFC_1123_DATE_TIME)
+
+  val organisaatioService:ClientAndServer = ClientAndServer.startClientAndServer(VtsAppConfig.organisaatioMockPort)
+
+  organisaatioService.when(new HttpRequest().withPath(
+    s"/organisaatio-service/rest/organisaatio/1.2.246.562.10.83122281013/parentoids"
+  )).respond(new HttpResponse().withStatusCode(200).withBody(
+    "1.2.246.562.10.00000000001/1.2.246.562.10.39804091914/1.2.246.562.10.16758825075/1.2.246.562.10.83122281013"))
 
   lazy val valinnantulos = Valinnantulos(
     hakukohdeOid = "1.2.246.562.20.26643418986",
@@ -65,12 +75,22 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
 
   "PATCH /auth/valinnan-tulos/:valintatapajonoOid" should {
     "palauttaa 403, jos käyttäjällä ei ole kirjoitusoikeuksia" in {
-      patch("auth/valinnan-tulos/14538080612623056182813241345174", Seq.empty, Map("Cookie" -> s"session=${createTestSession(Set(Role.SIJOITTELU_READ))}")) {
+      patch("auth/valinnan-tulos/14538080612623056182813241345174", Seq.empty,
+        Map("Cookie" -> s"session=${createTestSession(Set(Role.SIJOITTELU_READ))}")) {
+        status must_== 403
+        body mustEqual "{\"error\":\"Forbidden\"}"
+      }
+    }
+    "palauttaa 403, jos käyttäjällä ei ole kirjoitusoikeuksia organisaatioon" in {
+      patch("auth/valinnan-tulos/14538080612623056182813241345174", Seq.empty,
+        Map("Cookie" -> s"session=${createTestSession(Set(Role.SIJOITTELU_CRUD))}",
+          "If-Unmodified-Since" -> now)) {
         status must_== 403
         body mustEqual "{\"error\":\"Forbidden\"}"
       }
     }
     "palauttaa 200 ja virhestatuksen, jos valinnantulos on muuttunut lukemisajan jälkeen" in {
+
       patchJSON("auth/valinnan-tulos/14538080612623056182813241345174", write(List(valinnantulos.copy(julkaistavissa = true))),
         Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> "Tue, 3 Jun 2008 11:05:30 GMT")) {
         status must_== 200
@@ -80,6 +100,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
       }
     }
     "palauttaa 200, jos julkaistavissa-tietoa päivitettiin onnistuneesti" in {
+
       patchJSON("auth/valinnan-tulos/14538080612623056182813241345174", write(List(valinnantulos.copy(julkaistavissa = true))),
         Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> now)) {
         status must_== 200
