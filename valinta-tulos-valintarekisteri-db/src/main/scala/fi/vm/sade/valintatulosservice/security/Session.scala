@@ -16,6 +16,7 @@ object Role {
 sealed trait Session {
   def hasAnyRole(roles: Set[Role]): Boolean
   def personOid: String
+  def roles: Set[Role]
 }
 
 case class ServiceTicket(s: String)
