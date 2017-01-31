@@ -1,7 +1,7 @@
 import java.util
 import javax.servlet.{DispatcherType, ServletContext}
 
-import fi.vm.sade.security.CasLogin
+import fi.vm.sade.security.{CasLogin, OrganisationHierarchyAuthorizer, OrganizationHierarchyAuthorizer}
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.{Dev, IT, VtsAppConfig}
@@ -46,7 +46,7 @@ class ScalatraBootstrap extends LifeCycle {
     lazy val valintatulosCollection = new ValintatulosMongoCollection(appConfig.settings.valintatulosMongoConfig)
     lazy val mailPoller = new MailPoller(valintatulosCollection, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 100)
     lazy val sijoitteluService = new ValintarekisteriService(valintarekisteriDb, hakukohdeRecordService)
-    lazy val valinnantulosService = new ValinnantulosService(valintarekisteriDb)
+    lazy val valinnantulosService = new ValinnantulosService(valintarekisteriDb, new OrganizationHierarchyAuthorizer(appConfig))
 
 
     val migrationMode = System.getProperty("valinta-rekisteri-migration-mode")

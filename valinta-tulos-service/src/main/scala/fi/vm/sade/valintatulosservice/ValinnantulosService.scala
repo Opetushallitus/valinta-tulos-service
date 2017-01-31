@@ -1,8 +1,8 @@
 package fi.vm.sade.valintatulosservice
 
 import java.time.Instant
-import java.util.concurrent.TimeUnit
 
+import fi.vm.sade.security.OrganizationHierarchyAuthorizer
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
@@ -10,14 +10,27 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
 import scala.util.{Failure, Success, Try}
 
-class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository) extends Logging {
+class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository, authorizer:OrganizationHierarchyAuthorizer) extends Logging {
 
   def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid: String,
                                                valinnantulokset: List[Valinnantulos],
                                                ifUnmodifiedSince: Instant,
                                                session: Session): List[ValinnantulosUpdateStatus] = {
     val vanhatValinnantulokset = getValinnantuloksetGroupedByHakemusOid(valintatapajonoOid)
-    lazy val tarjoajaOid = valinnantulosRepository.getTarjoajaForHakukohde(vanhatValinnantulokset.head._2._2.hakukohdeOid)
+    val tarjoajaOid = vanhatValinnantulokset.headOption.map(x => valinnantulosRepository.getTarjoajaForHakukohde(x._2._2.hakukohdeOid)).getOrElse("")
+
+      //valinnantulosRepository.getTarjoajaForHakukohde(vanhatValinnantulokset.head._2._2.hakukohdeOid)
+
+    if(!vanhatValinnantulokset.isEmpty) {
+      authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) match {
+        case Failure(e) => {
+          logger.warn(s"Käyttäjällä ${session.personOid} ei ole oikeuksia päivittää valinnantuloksia valintatapajonossa $valintatapajonoOid")
+          throw e
+        }
+        case Success(x) => x
+      }
+    }
+
     valinnantulokset.map(uusiValinnantulos => {
       vanhatValinnantulokset.get(uusiValinnantulos.hakemusOid) match {
         case Some((_, vanhaValinnantulos)) if !uusiValinnantulos.hasChange(vanhaValinnantulos) => Right()

@@ -30,6 +30,8 @@ cas.url={{cas_url}}
 valinta-tulos-service.cas.service=https://{{host_virkailija}}/valinta-tulos-service
 valinta-tulos-service.cas.username={{omatsivut_haku_app_username}}
 valinta-tulos-service.cas.password={{omatsivut_haku_app_password}}
+cas.service.organisaatio-service=https://${host_virkailija}/organisaatio-service
+root.organisaatio.oid=1.2.246.562.10.00000000001
 
 # LDAP
 ldap.server.host={{host_ldap}}

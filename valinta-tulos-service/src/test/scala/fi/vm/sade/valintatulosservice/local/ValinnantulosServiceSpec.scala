@@ -2,8 +2,10 @@ package fi.vm.sade.valintatulosservice.local
 
 import java.time.{Instant, ZonedDateTime}
 
+import fi.vm.sade.generic.service.exception.NotAuthorizedException
+import fi.vm.sade.security.OrganizationHierarchyAuthorizer
 import fi.vm.sade.valintatulosservice.{ValinnantulosService, ValinnantulosUpdateStatus}
-import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket}
+import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.junit.runner.RunWith
@@ -16,6 +18,7 @@ import org.specs2.specification.Scope
 import slick.dbio.{DBIO, DBIOAction}
 
 import scala.concurrent.duration.Duration
+import scala.util.{Failure, Success}
 
 @RunWith(classOf[JUnitRunner])
 class ValinnantulosServiceSpec extends Specification with MockitoMatchers with MockitoStubs {
@@ -38,25 +41,25 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
   val session = CasSession(ServiceTicket("myFakeTicket"), "123.123.123", Set(Role.SIJOITTELU_CRUD))
 
   "ValinnantulosService" in {
-    "status is 404 if valinnantulos is not found" in new ValinnantulosServiceWithMocks {
+    "status is 404 if valinnantulos is not found" in new AuthorizedValinnantulosServiceWithMocks {
       override def result = List()
       val valinnantulokset = List(valinnantulos, valinnantulos.copy(hakemusOid = s"${hakemusOids(1)}"))
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, ZonedDateTime.now.toInstant, session) mustEqual
         List(ValinnantulosUpdateStatus(404, s"Not found", valintatapajonoOid, hakemusOids(0)), ValinnantulosUpdateStatus(404, s"Not found", valintatapajonoOid, hakemusOids(1)))
     }
-    "status is 409 if valinnantulos has been modified" in new ValinnantulosServiceWithMocks {
+    "status is 409 if valinnantulos has been modified" in new AuthorizedValinnantulosServiceWithMocks {
       override def result = List((ZonedDateTime.now.toInstant, valinnantulos))
       val notModifiedSince = ZonedDateTime.now.minusDays(2).toInstant
       val valinnantulokset = List(valinnantulos.copy(julkaistavissa = true))
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, notModifiedSince, session) mustEqual
         List(ValinnantulosUpdateStatus(409, s"Not unmodified since ${notModifiedSince}", valintatapajonoOid, hakemusOids(0)))
     }
-    "no status for unmodified valinnantulos" in new ValinnantulosServiceWithMocks {
+    "no status for unmodified valinnantulos" in new AuthorizedValinnantulosServiceWithMocks {
       override def result = List((ZonedDateTime.now.toInstant, valinnantulos))
       val valinnantulokset = List(valinnantulos)
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, ZonedDateTime.now.toInstant, session) mustEqual List()
     }
-    "no status for succesfully modified valinnantulos" in new ValinnantulosServiceWithMocks {
+    "no status for succesfully modified valinnantulos" in new AuthorizedValinnantulosServiceWithMocks {
       override def result = List((ZonedDateTime.now.toInstant, valinnantulos))
       val valinnantulokset = List(valinnantulos.copy(julkaistavissa = true))
       val notModifiedSince = ZonedDateTime.now.toInstant
@@ -65,7 +68,12 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       there was one (valinnantulosRepository).storeValinnantuloksenOhjaus(ValinnantuloksenOhjaus(valinnantulokset(0), session.personOid, "Virkailijan tallennus"), Some(notModifiedSince))
       there was no (valinnantulosRepository).storeIlmoittautuminen(any[String], any[Ilmoittautuminen], any[Option[Instant]])
     }
-    "different statuses for all failing valinnantulokset" in new ValinnantulosServiceWithMocks {
+    "exception is thrown, if no authorization" in new NotAuthorizedValinnantulosServiceWithMocks {
+      override def result = List((ZonedDateTime.now.toInstant, valinnantulos))
+      val valinnantulokset = List(valinnantulos)
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, ZonedDateTime.now.toInstant, session) must throwA[NotAuthorizedException]
+    }
+    "different statuses for all failing valinnantulokset" in new AuthorizedValinnantulosServiceWithMocks {
       override def result = List(
         (ZonedDateTime.now.toInstant, valinnantulos),
         (ZonedDateTime.now.toInstant, valinnantulos.copy(hakemusOid = hakemusOids(1))),
@@ -97,9 +105,18 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     def result:List[(Instant, Valinnantulos)]
 
     val valinnantulosRepository = mock[ValinnantulosRepository]
-    val service = new ValinnantulosService(valinnantulosRepository)
+    val authorizer = mock[OrganizationHierarchyAuthorizer]
+    val service = new ValinnantulosService(valinnantulosRepository, authorizer)
 
     valinnantulosRepository.getTarjoajaForHakukohde(anyString) returns tarjoajaOid
     valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid) returns result
+  }
+
+  trait NotAuthorizedValinnantulosServiceWithMocks extends ValinnantulosServiceWithMocks {
+    authorizer.checkAccess(any[Session], any[String], any[List[Role]]) returns Failure(new NotAuthorizedException("moi"))
+  }
+
+  trait AuthorizedValinnantulosServiceWithMocks extends ValinnantulosServiceWithMocks {
+    authorizer.checkAccess(any[Session], any[String], any[List[Role]]) returns Success(Unit)
   }
 }

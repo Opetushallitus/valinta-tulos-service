@@ -10,7 +10,7 @@ import fi.vm.sade.utils.cas.CasClient
 import fi.vm.sade.utils.config.{ApplicationSettingsLoader, ConfigTemplateProcessor}
 import fi.vm.sade.utils.mongo.EmbeddedMongo
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.utils.tcp.PortFromSystemPropertyOrFindFree
+import fi.vm.sade.utils.tcp.{PortChecker, PortFromSystemPropertyOrFindFree}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusFixtures
 import fi.vm.sade.valintatulosservice.ohjausparametrit._
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoitteluSpringContext
@@ -20,6 +20,7 @@ object VtsAppConfig extends Logging {
   private implicit val settingsParser = VtsApplicationSettingsParser
   private val embeddedMongoPortChooser = new PortFromSystemPropertyOrFindFree("valintatulos.embeddedmongo.port")
   private val itPostgresPortChooser = new PortFromSystemPropertyOrFindFree("valintatulos.it.postgres.port")
+  lazy val organisaatioMockPort = PortChecker.findFreeLocalPort
 
   def fromOptionalString(profile: Option[String]) = {
     fromString(profile.getOrElse(getProfileProperty))
@@ -99,6 +100,7 @@ object VtsAppConfig extends Logging {
       .withOverride("valinta-tulos-service.valintarekisteri.db.url", s"jdbc:postgresql://localhost:${itPostgresPortChooser.chosenPort}/valintarekisteri")
       .withoutPath("valinta-tulos-service.valintarekisteri.db.user")
       .withoutPath("valinta-tulos-service.valintarekisteri.db.password")
+      .withOverride(("cas.service.organisaatio-service", s"http://localhost:${organisaatioMockPort}/organisaatio-service"))
   }
 
   /**
