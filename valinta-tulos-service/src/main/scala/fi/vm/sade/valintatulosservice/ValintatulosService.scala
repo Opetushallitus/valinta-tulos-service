@@ -723,7 +723,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
   }
 
   private def ehdollinenVastaanottoMahdollista(ohjausparametritOption: Option[Ohjausparametrit]): Boolean = {
-    val ohjausparametrit: Ohjausparametrit = ohjausparametritOption.getOrElse(Ohjausparametrit(None, None, None, None, None, None))
+    val ohjausparametrit: Ohjausparametrit = ohjausparametritOption.getOrElse(Ohjausparametrit(None, None, None, None, None, None, None))
     val now: DateTime = new DateTime()
     val varasijaSaannotVoimassa = ohjausparametrit.varasijaSaannotAstuvatVoimaan match {
       case None => true

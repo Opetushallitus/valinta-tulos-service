@@ -384,6 +384,14 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
             order by sijoitteluajo_id desc limit 1""".as[String], Duration(1, TimeUnit.SECONDS)).head
   }
 
+  override def getHakuForHakukohde(hakukohdeOid:String): String = {
+    runBlocking(
+      sql"""select a.haku_oid from sijoitteluajot a
+            inner join sijoitteluajon_hakukohteet h on a.id = h.sijoitteluajo_id
+            where h.hakukohde_oid = ${hakukohdeOid}
+            order by sijoitteluajo_id desc limit 1""".as[String], Duration(1, TimeUnit.SECONDS)).head
+  }
+
   override def storeValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
     sqlu"""update valinnantulokset
            set julkaistavissa = ${ohjaus.julkaistavissa},
