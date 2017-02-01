@@ -27,7 +27,8 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
 
   lazy val testSession = createTestSession()
 
-  lazy val now = ZonedDateTime.now.format(DateTimeFormatter.RFC_1123_DATE_TIME)
+  //Don't use exactly current time, because millis is not included and thus concurrent modification exception might be thrown by db
+  def now() = ZonedDateTime.now.plusMinutes(2).format(DateTimeFormatter.RFC_1123_DATE_TIME)
 
   val organisaatioService:ClientAndServer = ClientAndServer.startClientAndServer(VtsAppConfig.organisaatioMockPort)
 
