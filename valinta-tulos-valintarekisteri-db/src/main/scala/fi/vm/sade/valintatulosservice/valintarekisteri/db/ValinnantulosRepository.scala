@@ -16,5 +16,6 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
   def getValinnantuloksetForValintatapajono(valintatapajonoOid:String, duration:Duration = Duration(1, TimeUnit.SECONDS)): List[(Instant, Valinnantulos)]
 
   def getTarjoajaForHakukohde(hakukohdeOid:String): String
+  def getHakuForHakukohde(hakukohdeOid:String): String
 
 }
