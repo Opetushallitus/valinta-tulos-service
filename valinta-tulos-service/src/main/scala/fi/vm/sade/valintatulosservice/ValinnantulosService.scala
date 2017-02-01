@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice
 
 import java.time.Instant
 
-import fi.vm.sade.security.OrganizationHierarchyAuthorizer
+import fi.vm.sade.security.{AuthorizationFailedException, OrganizationHierarchyAuthorizer}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
@@ -18,8 +18,6 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository, aut
                                                session: Session): List[ValinnantulosUpdateStatus] = {
     val vanhatValinnantulokset = getValinnantuloksetGroupedByHakemusOid(valintatapajonoOid)
     val tarjoajaOid = vanhatValinnantulokset.headOption.map(x => valinnantulosRepository.getTarjoajaForHakukohde(x._2._2.hakukohdeOid)).getOrElse("")
-
-      //valinnantulosRepository.getTarjoajaForHakukohde(vanhatValinnantulokset.head._2._2.hakukohdeOid)
 
     if(!vanhatValinnantulokset.isEmpty) {
       authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) match {
@@ -132,8 +130,8 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository, aut
   private def validateHyvaksyPeruuntunut(vanha: Valinnantulos, uusi: Valinnantulos, session: Session, tarjoajaOid: String): Either[ValinnantulosUpdateStatus, Unit] =
     (uusi.hyvaksyPeruuntunut, uusi.valinnantila, uusi.julkaistavissa) match {
       case (vanha.hyvaksyPeruuntunut, _, _) => Right()
-      case (_, Hyvaksytty, false) if vanha.hyvaksyPeruuntunut && allowPeruuntuneidenHyvaksynta(session) => Right()
-      case (_, Peruuntunut, false) if allowPeruuntuneidenHyvaksynta(session) => Right()
+      case (_, Hyvaksytty, false) if vanha.hyvaksyPeruuntunut && allowPeruuntuneidenHyvaksynta(session, tarjoajaOid) => Right()
+      case (_, Peruuntunut, false) if allowPeruuntuneidenHyvaksynta(session, tarjoajaOid) => Right()
       case (_, _, _) => Left(ValinnantulosUpdateStatus(403, s"HyväksyPeruuntunut value cannot be changed", uusi.valintatapajonoOid, uusi.hakemusOid))
   }
 
@@ -144,7 +142,15 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository, aut
       case (_, _) => Left(ValinnantulosUpdateStatus(403, s"Ilmoittautumista ei voida muuttaa", uusi.valintatapajonoOid, uusi.hakemusOid))
   }
 
-  private def allowPeruuntuneidenHyvaksynta(session:Session) = session.hasAnyRole(Set(Role.SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH))
+  private def allowPeruuntuneidenHyvaksynta(session:Session, tarjoajaOid:String) =
+    authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH)) match {
+      case Failure(e) => {
+        logger.warn(s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä peruuntuneita", e)
+        false
+      }
+      case Success(_) => true
+    }
+
   private def allowOphUpdate(session:Session) = session.hasAnyRole(Set(Role.SIJOITTELU_CRUD_OPH))
   private def allowOrgUpdate(session:Session, tarjoajaOid:String) = session.hasAnyRole(Set(Role.sijoitteluCrudOrg(tarjoajaOid), Role.sijoitteluUpdateOrg(tarjoajaOid)))
   private def allowMusiikkiUpdate(session:Session, tarjoajaOid:String) = session.hasAnyRole(Set(Role.musiikkialanValintaToinenAste(tarjoajaOid)))
