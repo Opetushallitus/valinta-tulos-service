@@ -4,13 +4,21 @@ import java.time.Instant
 
 import fi.vm.sade.security.{AuthorizationFailedException, OrganizationHierarchyAuthorizer}
 import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
+import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import org.joda.time.DateTime
 
 import scala.util.{Failure, Success, Try}
 
-class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository, authorizer:OrganizationHierarchyAuthorizer) extends Logging {
+class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository,
+                           authorizer:OrganizationHierarchyAuthorizer,
+                           hakuService: HakuService,
+                           ohjausparametritService: OhjausparametritService,
+                           appConfig: VtsAppConfig) extends Logging {
 
   def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid: String,
                                                valinnantulokset: List[Valinnantulos],
@@ -18,6 +26,7 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository, aut
                                                session: Session): List[ValinnantulosUpdateStatus] = {
     val vanhatValinnantulokset = getValinnantuloksetGroupedByHakemusOid(valintatapajonoOid)
     val tarjoajaOid = vanhatValinnantulokset.headOption.map(x => valinnantulosRepository.getTarjoajaForHakukohde(x._2._2.hakukohdeOid)).getOrElse("")
+    val hakuOid = vanhatValinnantulokset.headOption.map(x => valinnantulosRepository.getHakuForHakukohde(x._2._2.hakukohdeOid)).getOrElse("")
 
     if(!vanhatValinnantulokset.isEmpty) {
       authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) match {
@@ -37,7 +46,7 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository, aut
             s"on muuttunut $lastModified lukemisajan $ifUnmodifiedSince jälkeen.")
           Left(ValinnantulosUpdateStatus(409, s"Not unmodified since ${ifUnmodifiedSince}", uusiValinnantulos.valintatapajonoOid, uusiValinnantulos.hakemusOid))
         }
-        case Some((_, vanhaValinnantulos)) => validateMuutos(vanhaValinnantulos, uusiValinnantulos, session, tarjoajaOid) match {
+        case Some((_, vanhaValinnantulos)) => validateMuutos(vanhaValinnantulos, uusiValinnantulos, session, tarjoajaOid, hakuOid) match {
           case x if x.isRight => updateValinnantulos(valintatapajonoOid, vanhaValinnantulos, uusiValinnantulos, session.personOid, ifUnmodifiedSince)
           case x if x.isLeft => x
         }
@@ -84,11 +93,11 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository, aut
     }
   }
 
-  private def validateMuutos(vanha: Valinnantulos, uusi: Valinnantulos, session: Session, tarjoajaOid: String): Either[ValinnantulosUpdateStatus, Unit] = {
+  private def validateMuutos(vanha: Valinnantulos, uusi: Valinnantulos, session: Session, tarjoajaOid: String, hakuOid:String): Either[ValinnantulosUpdateStatus, Unit] = {
     for {
       valinnantila <- validateValinnantila(vanha, uusi, session, tarjoajaOid).right
       ehdollisestiHyvaksyttavissa <- validateEhdollisestiHyvaksyttavissa(vanha, uusi, session, tarjoajaOid).right
-      julkaistavissa <- validateJulkaistavissa(vanha, uusi, session, tarjoajaOid).right
+      julkaistavissa <- validateJulkaistavissa(vanha, uusi, session, tarjoajaOid, hakuOid).right
       hyvaksyttyVarasijalta <- validateHyvaksyttyVarasijalta(vanha, uusi, session, tarjoajaOid).right
       hyvaksyPeruuntunut <- validateHyvaksyPeruuntunut(vanha, uusi, session, tarjoajaOid).right
       //TODO vastaanotto <- validateVastaanotto(vanha, uusi, session, tarjoajaOid).right
@@ -111,12 +120,36 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository, aut
       case _ => Left(ValinnantulosUpdateStatus(403, s"Ehdollisesti hyväksyttävissä -arvon muuttaminen ei ole sallittua", uusi.valintatapajonoOid, uusi.hakemusOid))
     }
 
-  private def validateJulkaistavissa(vanha: Valinnantulos, uusi: Valinnantulos, session: Session, tarjoajaOid: String): Either[ValinnantulosUpdateStatus, Unit] =
+  private def validateJulkaistavissa(vanha: Valinnantulos, uusi: Valinnantulos, session: Session, tarjoajaOid: String, hakuOid:String): Either[ValinnantulosUpdateStatus, Unit] =
     (uusi.julkaistavissa, uusi.vastaanottotila) match {
       case (vanha.julkaistavissa, _) => Right()
       case (false, vastaanotto) if List(MerkitseMyohastyneeksi, Poista).contains(vastaanotto) => Right()
-      case (true, _) => Right()
+      case (true, _) if allowJulkaistavissaUpdate(session, hakuOid) => Right()
       case (_, _) => Left(ValinnantulosUpdateStatus(403, s"Julkaistavissa-arvon muuttaminen ei ole sallittua", uusi.valintatapajonoOid, uusi.hakemusOid))
+  }
+
+  private def allowJulkaistavissaUpdate(session:Session, hakuOid:String): Boolean = {
+    def ophCrudAccess() = authorizer.checkAccess(session, appConfig.settings.rootOrganisaatioOid, List(Role.SIJOITTELU_CRUD)).isSuccess
+
+    def valintaesitysHyvaksyttavissa(ohjausparametrit: Ohjausparametrit) = ohjausparametrit.valintaesitysHyvaksyttavissa match {
+      case None => ophCrudAccess
+      case Some(valintaesitysHyvaksyttavissa) if valintaesitysHyvaksyttavissa.isAfterNow => ophCrudAccess
+      case Some(_) => true
+    }
+
+    def ohjausparametrit = ohjausparametritService.ohjausparametrit(hakuOid).right.toOption match {
+      case None => throw new RuntimeException(s"Haulle ${hakuOid} ei löydy ohjausparametreja.")
+      case Some(ohjausparametritOption) if ohjausparametritOption.isEmpty => true
+      case Some(ohjausparametritOption) => valintaesitysHyvaksyttavissa(ohjausparametritOption.get)
+    }
+
+    def korkeakouluhaku() = hakuService.getHaku(hakuOid).right.toOption match {
+      case None => throw new RuntimeException(s"Hakua ${hakuOid} ei löytynyt Tarjonnasta.")
+      case Some(haku) if haku.korkeakoulu => true
+      case Some(haku) => ohjausparametrit
+    }
+
+    korkeakouluhaku
   }
 
   private def validateHyvaksyttyVarasijalta(vanha: Valinnantulos, uusi: Valinnantulos, session: Session, tarjoajaOid: String): Either[ValinnantulosUpdateStatus, Unit] =
