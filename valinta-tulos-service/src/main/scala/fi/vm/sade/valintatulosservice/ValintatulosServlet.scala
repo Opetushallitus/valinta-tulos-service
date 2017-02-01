@@ -31,7 +31,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
           List(Hakuaika("12345", Some(System.currentTimeMillis()), Some(System.currentTimeMillis()))),
           Some(Kausi("2016S")),
           YhdenPaikanSaanto(false, ""), Map("kieli_fi" -> "Haun nimi")),
-        Some(Ohjausparametrit(None, Some(DateTime.now().plusDays(10)), Some(DateTime.now().plusDays(30)), Some(DateTime.now().plusDays(60)), None, None)))
+        Some(Ohjausparametrit(None, Some(DateTime.now().plusDays(10)), Some(DateTime.now().plusDays(30)), Some(DateTime.now().plusDays(60)), None, None, None)))
     )
   )
 
