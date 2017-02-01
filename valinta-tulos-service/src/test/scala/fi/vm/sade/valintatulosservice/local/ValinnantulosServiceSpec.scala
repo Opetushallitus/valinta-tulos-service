@@ -99,6 +99,30 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
         ValinnantulosUpdateStatus(403, s"Ilmoittautumista ei voida muuttaa", valintatapajonoOid, valinnantulokset(5).hakemusOid)
       )
     }
+    "no authorization to change hyvaksyPeruuntunut" in new ValinnantulosServiceWithMocks {
+      override def result = List((ZonedDateTime.now.toInstant, valinnantulos.copy( valinnantila = Peruuntunut)))
+      authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Success(Unit)
+      authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH)) returns Failure(new NotAuthorizedException("moi"))
+
+      val notModifiedSince = ZonedDateTime.now.toInstant
+      val modification = valinnantulos.copy( valinnantila = Peruuntunut, hyvaksyPeruuntunut = true)
+
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(modification), notModifiedSince, session) mustEqual List(
+        ValinnantulosUpdateStatus(403, s"HyväksyPeruuntunut value cannot be changed", valintatapajonoOid, valinnantulos.hakemusOid))
+      there was no (valinnantulosRepository).storeValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
+    }
+    "authorization to change hyvaksyPeruuntunut" in new ValinnantulosServiceWithMocks {
+      override def result = List((ZonedDateTime.now.toInstant, valinnantulos.copy( valinnantila = Peruuntunut)))
+      authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Success(Unit)
+      authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH)) returns Success(Unit)
+
+      val notModifiedSince = ZonedDateTime.now.toInstant
+      val modification = valinnantulos.copy( valinnantila = Peruuntunut, hyvaksyPeruuntunut = true)
+
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(modification), notModifiedSince, session) mustEqual List()
+      there was one (valinnantulosRepository).storeValinnantuloksenOhjaus(ValinnantuloksenOhjaus(modification, session.personOid, "Virkailijan tallennus"), Some(notModifiedSince))
+
+    }
   }
 
   trait ValinnantulosServiceWithMocks extends Mockito with Scope with MustThrownExpectations {
