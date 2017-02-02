@@ -27,6 +27,9 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
 
   lazy val testSession = createTestSession()
 
+  lazy val ophTestSession = createTestSession(Set(Role.SIJOITTELU_CRUD, Role(s"${Role.SIJOITTELU_CRUD.s}_1.2.246.562.10.39804091914"),
+    Role(s"${Role.SIJOITTELU_CRUD.s}_${appConfig.settings.rootOrganisaatioOid}")))
+
   //Don't use exactly current time, because millis is not included and thus concurrent modification exception might be thrown by db
   def now() = ZonedDateTime.now.plusMinutes(2).format(DateTimeFormatter.RFC_1123_DATE_TIME)
 
@@ -36,6 +39,10 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     s"/organisaatio-service/rest/organisaatio/1.2.246.562.10.83122281013/parentoids"
   )).respond(new HttpResponse().withStatusCode(200).withBody(
     "1.2.246.562.10.00000000001/1.2.246.562.10.39804091914/1.2.246.562.10.16758825075/1.2.246.562.10.83122281013"))
+
+  organisaatioService.when(new HttpRequest().withPath(
+    s"/organisaatio-service/rest/organisaatio/${appConfig.settings.rootOrganisaatioOid}/parentoids"
+  )).respond(new HttpResponse().withStatusCode(200).withBody("1.2.246.562.10.00000000001"))
 
   lazy val valinnantulos = Valinnantulos(
     hakukohdeOid = "1.2.246.562.20.26643418986",
@@ -103,7 +110,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     "palauttaa 200, jos julkaistavissa-tietoa päivitettiin onnistuneesti" in {
 
       patchJSON("auth/valinnan-tulos/14538080612623056182813241345174", write(List(valinnantulos.copy(julkaistavissa = true))),
-        Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> now)) {
+        Map("Cookie" -> s"session=${ophTestSession}", "If-Unmodified-Since" -> now)) {
         status must_== 200
         parse(body).extract[List[ValinnantulosUpdateStatus]].size mustEqual 0
       }
@@ -126,7 +133,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
       val uusiValinnantulos = hyvaksyttyValinnantulos.copy(julkaistavissa = true, ilmoittautumistila = Lasna, vastaanottotila = VastaanotaSitovasti)
 
       patchJSON("auth/valinnan-tulos/14538080612623056182813241345174", write(List(uusiValinnantulos)),
-        Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> now)) {
+        Map("Cookie" -> s"session=${ophTestSession}", "If-Unmodified-Since" -> now)) {
         status must_== 200
         parse(body).extract[List[ValinnantulosUpdateStatus]] mustEqual List()
       }
