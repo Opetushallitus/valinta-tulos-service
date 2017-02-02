@@ -60,6 +60,13 @@ class ScalatraBootstrap extends LifeCycle {
 
     } else {
       context.mount(new BuildInfoServlet, "/")
+      context.mount(new CasLogin(
+        appConfig.securityContext.casClient,
+        appConfig.settings.securitySettings.casUrl,
+        appConfig.securityContext.casServiceIdentifier + "/auth/login",
+        appConfig.securityContext.directoryClient,
+        valintarekisteriDb
+      ), "/auth/login")
 
       context.mount(new VirkailijanVastaanottoServlet(valintatulosService, vastaanottoService), "/virkailija")
       context.mount(new PrivateValintatulosServlet(valintatulosService, vastaanottoService, ilmoittautumisService), "/haku")
@@ -75,14 +82,6 @@ class ScalatraBootstrap extends LifeCycle {
       context.mount(new KelaServlet(new KelaService(HakijaResolver(appConfig), hakuService, organisaatioService, valintarekisteriDb)), "/cas/kela")
 
 
-      val loginUrl = s"${appConfig.settings.securitySettings.casUrl}/login?service=${appConfig.securityContext.casServiceIdentifier}"
-      context.mount(new CasLogin(
-        appConfig.securityContext.casClient,
-        appConfig.securityContext.casServiceIdentifier,
-        appConfig.securityContext.directoryClient,
-        loginUrl,
-        valintarekisteriDb
-      ), "/auth/login")
       context.mount(new ValinnantulosServlet(valintarekisteriDb, valinnantulosService, ilmoittautumisService, valintarekisteriDb), "/auth/valinnan-tulos")
     }
     context.mount(new HakukohdeRefreshServlet(valintarekisteriDb, hakukohdeRecordService), "/virkistys")
