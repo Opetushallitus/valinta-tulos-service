@@ -128,8 +128,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
       patchJSON("auth/valinnan-tulos/14538080612623056182813241345174", write(List(uusiValinnantulos)),
         Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> now)) {
         status must_== 200
-        val foo = parse(body).extract[List[ValinnantulosUpdateStatus]]
-        foo.size mustEqual 0
+        parse(body).extract[List[ValinnantulosUpdateStatus]] mustEqual List()
       }
 
       hae(uusiValinnantulos)
