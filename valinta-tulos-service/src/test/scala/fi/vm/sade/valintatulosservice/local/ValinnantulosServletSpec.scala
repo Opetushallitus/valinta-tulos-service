@@ -114,7 +114,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
         status must_== 200
         val result = parse(body).extract[List[ValinnantulosUpdateStatus]]
         result.size mustEqual 1
-        result.head.status mustEqual 403
+        result.head.status mustEqual 409
       }
     }
     "palauttaa 200 ja päivittää sekä ohjaustietoja että ilmoittautumista" in {

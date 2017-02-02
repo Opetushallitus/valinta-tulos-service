@@ -50,14 +50,14 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       override def result = List()
       val valinnantulokset = List(valinnantulos, valinnantulos.copy(hakemusOid = s"${hakemusOids(1)}"))
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, ZonedDateTime.now.toInstant, session) mustEqual
-        List(ValinnantulosUpdateStatus(404, s"Not found", valintatapajonoOid, hakemusOids(0)), ValinnantulosUpdateStatus(404, s"Not found", valintatapajonoOid, hakemusOids(1)))
+        List(ValinnantulosUpdateStatus(404, s"Valinnantulosta ei löydy", valintatapajonoOid, hakemusOids(0)), ValinnantulosUpdateStatus(404, s"Valinnantulosta ei löydy", valintatapajonoOid, hakemusOids(1)))
     }
     "status is 409 if valinnantulos has been modified" in new AuthorizedValinnantulosServiceWithMocks {
       override def result = List((ZonedDateTime.now.toInstant, valinnantulos))
       val notModifiedSince = ZonedDateTime.now.minusDays(2).toInstant
       val valinnantulokset = List(valinnantulos.copy(julkaistavissa = true))
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, notModifiedSince, session) mustEqual
-        List(ValinnantulosUpdateStatus(409, s"Not unmodified since ${notModifiedSince}", valintatapajonoOid, hakemusOids(0)))
+        List(ValinnantulosUpdateStatus(409, s"Hakemus on muuttunut lukemisajan ${notModifiedSince} jälkeen", valintatapajonoOid, hakemusOids(0)))
     }
     "no status for unmodified valinnantulos" in new AuthorizedValinnantulosServiceWithMocks {
       override def result = List((ZonedDateTime.now.toInstant, valinnantulos))
@@ -99,11 +99,11 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       )
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, ZonedDateTime.now.toInstant, session) mustEqual List(
         ValinnantulosUpdateStatus(403, s"Valinnantilan muutos ei ole sallittu", valintatapajonoOid, valinnantulokset(0).hakemusOid),
-        ValinnantulosUpdateStatus(403, s"Ehdollisesti hyväksyttävissä -arvon muuttaminen ei ole sallittua", valintatapajonoOid, valinnantulokset(1).hakemusOid),
-        ValinnantulosUpdateStatus(403, s"Julkaistavissa-arvon muuttaminen ei ole sallittua", valintatapajonoOid, valinnantulokset(2).hakemusOid),
-        ValinnantulosUpdateStatus(403, s"Hyväksytty varasijalta -arvon muuttaminen ei ole sallittua", valintatapajonoOid, valinnantulokset(3).hakemusOid),
-        ValinnantulosUpdateStatus(403, s"HyväksyPeruuntunut value cannot be changed", valintatapajonoOid, valinnantulokset(4).hakemusOid),
-        ValinnantulosUpdateStatus(403, s"Ilmoittautumista ei voida muuttaa", valintatapajonoOid, valinnantulokset(5).hakemusOid)
+        ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä ehdollisesti", valintatapajonoOid, valinnantulokset(1).hakemusOid),
+        ValinnantulosUpdateStatus(409, s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sillä on vastaanotto", valintatapajonoOid, valinnantulokset(2).hakemusOid),
+        ValinnantulosUpdateStatus(409, s"Ei voida hyväksyä varasijalta", valintatapajonoOid, valinnantulokset(3).hakemusOid),
+        ValinnantulosUpdateStatus(409, s"Hyväksy peruuntunut -arvoa ei voida muuttaa valinnantulokselle", valintatapajonoOid, valinnantulokset(4).hakemusOid),
+        ValinnantulosUpdateStatus(409, s"Ilmoittautumista ei voida muuttaa, koska vastaanotto ei ole sitova", valintatapajonoOid, valinnantulokset(5).hakemusOid)
       )
     }
     "no authorization to change hyvaksyPeruuntunut" in new ValinnantulosServiceWithMocks {
@@ -114,8 +114,8 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       val notModifiedSince = ZonedDateTime.now.toInstant
       val modification = valinnantulos.copy( valinnantila = Peruuntunut, hyvaksyPeruuntunut = true)
 
-      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(modification), notModifiedSince, session) mustEqual List(
-        ValinnantulosUpdateStatus(403, s"HyväksyPeruuntunut value cannot be changed", valintatapajonoOid, valinnantulos.hakemusOid))
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(modification), notModifiedSince, session)  mustEqual List(
+        ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä peruuntunutta", valintatapajonoOid, valinnantulos.hakemusOid))
       there was no (valinnantulosRepository).storeValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
     }
     "authorization to change hyvaksyPeruuntunut" in new ValinnantulosServiceWithMocks {
@@ -135,7 +135,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       ohjausparametritService.ohjausparametrit(any[String]) returns Right(Some(Ohjausparametrit(None, None, None, None, None, None, Some(DateTime.now().plusDays(2)))))
 
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(valinnantulos.copy(julkaistavissa = true)), ZonedDateTime.now.toInstant, session) mustEqual List(
-        ValinnantulosUpdateStatus(403, s"Julkaistavissa-arvon muuttaminen ei ole sallittua", valintatapajonoOid, valinnantulos.hakemusOid)
+        ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia julkaista valinnantulosta", valintatapajonoOid, valinnantulos.hakemusOid)
       )
       there was no (valinnantulosRepository).storeValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
       there was no (valinnantulosRepository).storeIlmoittautuminen(any[String], any[Ilmoittautuminen], any[Option[Instant]])
