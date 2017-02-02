@@ -44,7 +44,7 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository,
         case Some((lastModified, _)) if lastModified.isAfter(ifUnmodifiedSince) => {
           logger.warn(s"Hakemus ${uusiValinnantulos.hakemusOid} valintatapajonossa $valintatapajonoOid " +
             s"on muuttunut $lastModified lukemisajan $ifUnmodifiedSince jälkeen.")
-          Left(ValinnantulosUpdateStatus(409, s"Not unmodified since ${ifUnmodifiedSince}", uusiValinnantulos.valintatapajonoOid, uusiValinnantulos.hakemusOid))
+          Left(ValinnantulosUpdateStatus(409, s"Hakemus on muuttunut lukemisajan ${ifUnmodifiedSince} jälkeen", uusiValinnantulos.valintatapajonoOid, uusiValinnantulos.hakemusOid))
         }
         case Some((_, vanhaValinnantulos)) => validateMuutos(vanhaValinnantulos, uusiValinnantulos, session, tarjoajaOid, hakuOid) match {
           case x if x.isRight => updateValinnantulos(valintatapajonoOid, vanhaValinnantulos, uusiValinnantulos, session.personOid, ifUnmodifiedSince)
@@ -53,7 +53,7 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository,
         case None => {
           logger.warn(s"Hakemuksen ${uusiValinnantulos.hakemusOid} valinnan tulosta ei löydy " +
             s"valintatapajonosta $valintatapajonoOid.")
-          Left(ValinnantulosUpdateStatus(404, s"Not found", uusiValinnantulos.valintatapajonoOid, uusiValinnantulos.hakemusOid))
+          Left(ValinnantulosUpdateStatus(404, s"Valinnantulosta ei löydy", uusiValinnantulos.valintatapajonoOid, uusiValinnantulos.hakemusOid))
         }
       }
     }).map{
@@ -89,7 +89,7 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository,
       case Success(_) => Right()
       case Failure(t) =>
         logger.warn(s"Valinnantuloksen $uusi tallennus epäonnistui", t)
-        Left(ValinnantulosUpdateStatus(500, s"Unexpected error", valintatapajonoOid, uusi.hakemusOid))
+        Left(ValinnantulosUpdateStatus(500, s"Valinnantuloksen tallennus epäonnistui", valintatapajonoOid, uusi.hakemusOid))
     }
   }
 
@@ -117,15 +117,16 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository,
     uusi.ehdollisestiHyvaksyttavissa match {
       case vanha.ehdollisestiHyvaksyttavissa => Right()
       case _ if allowOrgUpdate(session, tarjoajaOid) => Right()
-      case _ => Left(ValinnantulosUpdateStatus(403, s"Ehdollisesti hyväksyttävissä -arvon muuttaminen ei ole sallittua", uusi.valintatapajonoOid, uusi.hakemusOid))
+      case _ => Left(ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä ehdollisesti", uusi.valintatapajonoOid, uusi.hakemusOid))
     }
 
   private def validateJulkaistavissa(vanha: Valinnantulos, uusi: Valinnantulos, session: Session, tarjoajaOid: String, hakuOid:String): Either[ValinnantulosUpdateStatus, Unit] =
     (uusi.julkaistavissa, uusi.vastaanottotila) match {
       case (vanha.julkaistavissa, _) => Right()
       case (false, vastaanotto) if List(MerkitseMyohastyneeksi, Poista).contains(vastaanotto) => Right()
+      case (false, _) => Left(ValinnantulosUpdateStatus(409, s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sillä on vastaanotto", uusi.valintatapajonoOid, uusi.hakemusOid))
       case (true, _) if allowJulkaistavissaUpdate(session, hakuOid) => Right()
-      case (_, _) => Left(ValinnantulosUpdateStatus(403, s"Julkaistavissa-arvon muuttaminen ei ole sallittua", uusi.valintatapajonoOid, uusi.hakemusOid))
+      case (_, _) => Left(ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia julkaista valinnantulosta", uusi.valintatapajonoOid, uusi.hakemusOid))
   }
 
   private def allowJulkaistavissaUpdate(session:Session, hakuOid:String): Boolean = {
@@ -156,32 +157,30 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository,
     (uusi.hyvaksyttyVarasijalta, uusi.valinnantila) match {
       case (vanha.hyvaksyttyVarasijalta, _) => Right()
       case (true, Varalla) if (allowOphUpdate(session) || allowMusiikkiUpdate(session, tarjoajaOid)) => Right()
+      case (true, x) if x != Varalla => Left(ValinnantulosUpdateStatus(409, s"Ei voida hyväksyä varasijalta", uusi.valintatapajonoOid, uusi.hakemusOid))
       case (false, _) if (allowOphUpdate(session) || allowMusiikkiUpdate(session, tarjoajaOid)) => Right()
-      case (_, _) => Left(ValinnantulosUpdateStatus(403, s"Hyväksytty varasijalta -arvon muuttaminen ei ole sallittua", uusi.valintatapajonoOid, uusi.hakemusOid))
+      case (_, _) => Left(ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä varasijalta", uusi.valintatapajonoOid, uusi.hakemusOid))
   }
 
   private def validateHyvaksyPeruuntunut(vanha: Valinnantulos, uusi: Valinnantulos, session: Session, tarjoajaOid: String): Either[ValinnantulosUpdateStatus, Unit] =
     (uusi.hyvaksyPeruuntunut, uusi.valinnantila, uusi.julkaistavissa) match {
       case (vanha.hyvaksyPeruuntunut, _, _) => Right()
-      case (_, Hyvaksytty, false) if vanha.hyvaksyPeruuntunut && allowPeruuntuneidenHyvaksynta(session, tarjoajaOid) => Right()
-      case (_, Peruuntunut, false) if allowPeruuntuneidenHyvaksynta(session, tarjoajaOid) => Right()
-      case (_, _, _) => Left(ValinnantulosUpdateStatus(403, s"HyväksyPeruuntunut value cannot be changed", uusi.valintatapajonoOid, uusi.hakemusOid))
+      case (_, Hyvaksytty, false) if vanha.hyvaksyPeruuntunut => allowPeruuntuneidenHyvaksynta(session, tarjoajaOid, uusi)
+      case (_, Peruuntunut, false) => allowPeruuntuneidenHyvaksynta(session, tarjoajaOid, uusi)
+      case (_, _, _) => Left(ValinnantulosUpdateStatus(409, s"Hyväksy peruuntunut -arvoa ei voida muuttaa valinnantulokselle", uusi.valintatapajonoOid, uusi.hakemusOid))
   }
 
   private def validateIlmoittautumistila(vanha: Valinnantulos, uusi: Valinnantulos, session: Session, tarjoajaOid: String): Either[ValinnantulosUpdateStatus, Unit] =
     (uusi.ilmoittautumistila, uusi.vastaanottotila) match {
       case (vanha.ilmoittautumistila, _) => Right()
       case (_, VastaanotaSitovasti) => Right()
-      case (_, _) => Left(ValinnantulosUpdateStatus(403, s"Ilmoittautumista ei voida muuttaa", uusi.valintatapajonoOid, uusi.hakemusOid))
+      case (_, _) => Left(ValinnantulosUpdateStatus(409, s"Ilmoittautumista ei voida muuttaa, koska vastaanotto ei ole sitova", uusi.valintatapajonoOid, uusi.hakemusOid))
   }
 
-  private def allowPeruuntuneidenHyvaksynta(session:Session, tarjoajaOid:String) =
+  private def allowPeruuntuneidenHyvaksynta(session:Session, tarjoajaOid:String, uusi: Valinnantulos): Either[ValinnantulosUpdateStatus, Unit] =
     authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH)) match {
-      case Failure(e) => {
-        logger.warn(s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä peruuntuneita", e)
-        false
-      }
-      case Success(_) => true
+      case Failure(e) => Left(ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä peruuntunutta", uusi.valintatapajonoOid, uusi.hakemusOid))
+      case Success(_) => Right()
     }
 
   private def allowOphUpdate(session:Session) = session.hasAnyRole(Set(Role.SIJOITTELU_CRUD_OPH))
