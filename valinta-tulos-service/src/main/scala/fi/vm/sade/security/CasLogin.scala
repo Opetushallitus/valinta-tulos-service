@@ -1,18 +1,20 @@
 package fi.vm.sade.security
 
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.security.ldap.{DirectoryClient, LdapUser}
 import fi.vm.sade.utils.cas.{CasClient, CasLogout}
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket}
+import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import org.json4s.DefaultFormats
-import org.scalatra.json.JacksonJsonSupport
 import org.scalatra._
+import org.scalatra.json.JacksonJsonSupport
 
+import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success, Try}
+import scalaz.concurrent.Task
 
 class CasLogin(casClient: CasClient, casServiceIdentifier: String, ldapClient: DirectoryClient, loginUrl: String, sessionRepository: SessionRepository)
   extends ScalatraServlet with JacksonJsonSupport with Logging {
@@ -24,44 +26,45 @@ class CasLogin(casClient: CasClient, casServiceIdentifier: String, ldapClient: D
   }
 
   error {
+    case e: AuthenticationFailedException =>
+      logger.warn("CAS login failed", e)
+      halt(Forbidden("error" -> "Forbidden"))
     case NonFatal(e) =>
-      logger.error("internal server error", e)
-      halt(InternalServerError("error" -> e.getMessage))
+      logger.error("CAS login failed unexpectedly", e)
+      halt(InternalServerError("error" -> "Internal server error"))
   }
 
-  private def validateTicket(ticket: String): Try[LdapUser] = {
-    Try(casClient.validateServiceTicket(casServiceIdentifier)(ticket).run).recoverWith({
-      case t => Failure(new IllegalArgumentException(s"Cas ticket $ticket rejected", t))
-    }).flatMap(uid => {
-      ldapClient.findUser(uid) match {
-        case Some(user) => Success(user)
-        case None => Failure(new IllegalStateException(s"User $uid not found in LDAP"))
-      }
-    })
+  private def validateTicket(ticket: String): LdapUser = {
+    val uid = casClient.validateServiceTicket(casServiceIdentifier)(ticket).handleWith {
+      case NonFatal(t) => Task.fail(new AuthenticationFailedException(s"Failed to validate service ticket $ticket", t))
+    }.runFor(Duration(1, TimeUnit.SECONDS))
+    ldapClient.findUser(uid).getOrElse(throw new AuthenticationFailedException(s"Failed to find user $uid from LDAP"))
   }
 
-  private def createSession(ticket: String, user: LdapUser): ActionResult = {
-    val id = sessionRepository.store(CasSession(ServiceTicket(ticket), user.oid, user.roles.map(Role(_)).toSet))
+  private def createSession(ticket:String, user: LdapUser): (UUID, Session) = {
+    val session = CasSession(ServiceTicket(ticket), user.oid, user.roles.map(Role(_)).toSet)
+    (sessionRepository.store(session), session)
+  }
+
+  private def renderSession(s: Session): ActionResult = {
+    Ok(Map("personOid" -> s.personOid))
+  }
+
+  private def setSessionCookie(id: UUID): Unit = {
     implicit val cookieOptions = CookieOptions(path = "/valinta-tulos-service", secure = false, httpOnly = true)
     cookies += ("session" -> id.toString)
-    Ok(Map("personOid" -> user.oid))
   }
 
   get("/") {
-    val currentSession = cookies.get("session").map(UUID.fromString).flatMap(id => sessionRepository.get(id).map((id, _)))
-    (params.get("ticket"), currentSession) match {
-      case (Some(ticket), None) => validateTicket(ticket) match {
-        case Success(user) => createSession(ticket, user)
-        case Failure(t) => Forbidden("error" -> t.getMessage)
-      }
-      case (Some(ticket), Some((id, s))) => validateTicket(ticket) match {
-        case Success(user) =>
-          sessionRepository.delete(id)
-          createSession(ticket, user)
-        case Failure(t) => Ok(Map("personOid" -> s.personOid))
-      }
-      case (None, Some((_, s))) => Ok(Map("personOid" -> s.personOid))
-      case (None, None) => Found(loginUrl)
+    (params.get("ticket"), cookies.get("session").map(UUID.fromString).flatMap(sessionRepository.get)) match {
+      case (Some(ticket), None) =>
+        val (id, session) = createSession(ticket, validateTicket(ticket))
+        setSessionCookie(id)
+        renderSession(session)
+      case (_, Some(session)) =>
+        renderSession(session)
+      case (None, None) =>
+        Found(loginUrl)
     }
   }
 
