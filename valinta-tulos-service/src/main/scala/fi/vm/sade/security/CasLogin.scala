@@ -16,25 +16,23 @@ import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 import scalaz.concurrent.Task
 
-class CasLogin(casClient: CasClient, casServiceIdentifier: String, ldapClient: DirectoryClient, loginUrl: String, sessionRepository: SessionRepository)
+class CasLogin(casClient: CasClient, casUrl: String, casServiceIdentifier: String, ldapClient: DirectoryClient, sessionRepository: SessionRepository)
   extends ScalatraServlet with JacksonJsonSupport with Logging {
 
   override protected implicit def jsonFormats = DefaultFormats
 
-  before() {
-    contentType = formats("json")
-  }
-
   error {
     case e: AuthenticationFailedException =>
-      logger.warn("CAS login failed", e)
+      logger.warn("Login failed", e)
+      contentType = formats("json")
       halt(Forbidden("error" -> "Forbidden"))
     case NonFatal(e) =>
-      logger.error("CAS login failed unexpectedly", e)
+      logger.error("Login failed unexpectedly", e)
+      contentType = formats("json")
       halt(InternalServerError("error" -> "Internal server error"))
   }
 
-  private def validateTicket(ticket: String): LdapUser = {
+  private def validateServiceTicket(ticket: String): LdapUser = {
     val uid = casClient.validateServiceTicket(casServiceIdentifier)(ticket).handleWith {
       case NonFatal(t) => Task.fail(new AuthenticationFailedException(s"Failed to validate service ticket $ticket", t))
     }.runFor(Duration(1, TimeUnit.SECONDS))
@@ -47,6 +45,7 @@ class CasLogin(casClient: CasClient, casServiceIdentifier: String, ldapClient: D
   }
 
   private def renderSession(s: Session): ActionResult = {
+    contentType = formats("json")
     Ok(Map("personOid" -> s.personOid))
   }
 
@@ -58,13 +57,13 @@ class CasLogin(casClient: CasClient, casServiceIdentifier: String, ldapClient: D
   get("/") {
     (params.get("ticket"), cookies.get("session").map(UUID.fromString).flatMap(sessionRepository.get)) match {
       case (Some(ticket), None) =>
-        val (id, session) = createSession(ticket, validateTicket(ticket))
+        val (id, session) = createSession(ticket, validateServiceTicket(ticket))
         setSessionCookie(id)
         renderSession(session)
       case (_, Some(session)) =>
         renderSession(session)
       case (None, None) =>
-        Found(loginUrl)
+        Found(s"$casUrl/login?service=$casServiceIdentifier")
     }
   }
 
