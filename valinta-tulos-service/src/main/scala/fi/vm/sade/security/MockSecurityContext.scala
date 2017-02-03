@@ -4,12 +4,13 @@ import fi.vm.sade.security.SecurityContext
 import fi.vm.sade.security.ldap.{LdapUser, MockDirectoryClient}
 import fi.vm.sade.utils.cas.CasClient._
 import fi.vm.sade.utils.cas._
+import fi.vm.sade.valintatulosservice.security.Role
 import org.http4s._
 import org.http4s.client.Client
 
 import scalaz.concurrent.Task
 
-class MockSecurityContext(val casServiceIdentifier: String, val requiredLdapRoles: List[String], users: Map[String, LdapUser]) extends SecurityContext {
+class MockSecurityContext(val casServiceIdentifier: String, val requiredLdapRoles: Set[Role], users: Map[String, LdapUser]) extends SecurityContext {
   val directoryClient = new MockDirectoryClient(users)
 
   val casClient = new CasClient("", fakeHttpClient) {
