@@ -1,7 +1,7 @@
 import java.util
 import javax.servlet.{DispatcherType, ServletContext}
 
-import fi.vm.sade.security.{CasLogin, OrganisationHierarchyAuthorizer, OrganizationHierarchyAuthorizer}
+import fi.vm.sade.security._
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.{Dev, IT, VtsAppConfig}
@@ -57,11 +57,13 @@ class ScalatraBootstrap extends LifeCycle {
     } else {
       context.mount(new BuildInfoServlet, "/")
       context.mount(new CasLogin(
-        appConfig.securityContext.casClient,
         appConfig.settings.securitySettings.casUrl,
-        appConfig.securityContext.casServiceIdentifier + "/auth/login",
-        appConfig.securityContext.directoryClient,
-        valintarekisteriDb
+        new CasSessionService(
+          appConfig.securityContext.casClient,
+          appConfig.securityContext.casServiceIdentifier + "/auth/login",
+          appConfig.securityContext.directoryClient,
+          valintarekisteriDb
+        )
       ), "/auth/login")
 
       context.mount(new VirkailijanVastaanottoServlet(valintatulosService, vastaanottoService), "/virkailija")
@@ -71,7 +73,15 @@ class ScalatraBootstrap extends LifeCycle {
       context.mount(new HakijanVastaanottoServlet(vastaanottoService), "/vastaanotto")
       context.mount(new SijoitteluServlet(sijoitteluService), "/sijoittelu")
 
-      val securityFilter = appConfig.securityContext.securityFilter
+      val securityFilter = new CasLdapFilter(
+        new CasSessionService(
+          appConfig.securityContext.casClient,
+          appConfig.securityContext.casServiceIdentifier,
+          appConfig.securityContext.directoryClient,
+          valintarekisteriDb
+        ),
+        appConfig.securityContext.requiredLdapRoles
+      )
       context.addFilter("cas", securityFilter)
         .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/*")
       context.mount(new PublicValintatulosServlet(valintatulosService, vastaanottoService, ilmoittautumisService), "/cas/haku")
