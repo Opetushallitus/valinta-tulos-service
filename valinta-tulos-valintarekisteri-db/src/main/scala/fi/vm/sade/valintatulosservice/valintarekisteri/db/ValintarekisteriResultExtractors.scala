@@ -130,10 +130,10 @@ abstract class ValintarekisteriResultExtractors {
     hakemusOid = r.nextString,
     henkiloOid = r.nextString,
     valinnantila = Valinnantila(r.nextString),
-    ehdollisestiHyvaksyttavissa = r.nextBoolean,
-    julkaistavissa = r.nextBoolean,
-    hyvaksyttyVarasijalta = r.nextBoolean,
-    hyvaksyPeruuntunut = r.nextBoolean,
+    ehdollisestiHyvaksyttavissa = r.nextBooleanOption,
+    julkaistavissa = r.nextBooleanOption,
+    hyvaksyttyVarasijalta = r.nextBooleanOption,
+    hyvaksyPeruuntunut = r.nextBooleanOption,
     vastaanottotila = r.nextStringOption.map(VastaanottoAction(_)).getOrElse(Poista),
     ilmoittautumistila = r.nextStringOption.map(SijoitteluajonIlmoittautumistila(_)).getOrElse(EiTehty)
   ))
