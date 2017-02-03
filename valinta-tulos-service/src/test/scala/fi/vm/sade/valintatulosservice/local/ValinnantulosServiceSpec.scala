@@ -37,13 +37,23 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     hakemusOid = hakemusOids(0),
     henkiloOid = "1.2.246.562.24.48294633106",
     valinnantila = Hylatty,
+    ehdollisestiHyvaksyttavissa = None,
+    julkaistavissa = None,
+    hyvaksyttyVarasijalta = None,
+    hyvaksyPeruuntunut = None,
+    vastaanottotila = Poista,
+    ilmoittautumistila = EiTehty)
+  val session = CasSession(ServiceTicket("myFakeTicket"), "123.123.123", Set(Role.SIJOITTELU_CRUD))
+
+  lazy val valinnantuloksetOhjaus = ValinnantuloksenOhjaus(
+    hakemusOid = valinnantulos.hakemusOid,
+    valintatapajonoOid = valinnantulos.valintatapajonoOid,
     ehdollisestiHyvaksyttavissa = false,
     julkaistavissa = false,
     hyvaksyttyVarasijalta = false,
     hyvaksyPeruuntunut = false,
-    vastaanottotila = Poista,
-    ilmoittautumistila = EiTehty)
-  val session = CasSession(ServiceTicket("myFakeTicket"), "123.123.123", Set(Role.SIJOITTELU_CRUD))
+    muokkaaja = session.personOid,
+    selite = "Virkailijan tallennus")
 
   "ValinnantulosService" in {
     "status is 404 if valinnantulos is not found" in new AuthorizedValinnantulosServiceWithMocks {
@@ -55,7 +65,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     "status is 409 if valinnantulos has been modified" in new AuthorizedValinnantulosServiceWithMocks {
       override def result = List((ZonedDateTime.now.toInstant, valinnantulos))
       val notModifiedSince = ZonedDateTime.now.minusDays(2).toInstant
-      val valinnantulokset = List(valinnantulos.copy(julkaistavissa = true))
+      val valinnantulokset = List(valinnantulos.copy(julkaistavissa = Some(true)))
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, notModifiedSince, session) mustEqual
         List(ValinnantulosUpdateStatus(409, s"Hakemus on muuttunut lukemisajan ${notModifiedSince} jälkeen", valintatapajonoOid, hakemusOids(0)))
     }
@@ -66,13 +76,13 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     }
     "no status for succesfully modified valinnantulos" in new AuthorizedValinnantulosServiceWithMocks {
       override def result = List((ZonedDateTime.now.toInstant, valinnantulos))
-      val valinnantulokset = List(valinnantulos.copy(julkaistavissa = true))
+      val valinnantulokset = List(valinnantulos.copy(julkaistavissa = Some(true)))
       val notModifiedSince = ZonedDateTime.now.toInstant
 
       hakuService.getHaku(any[String]) returns Right(Haku("hakuOid", true, true, None, Set(), List(), None, YhdenPaikanSaanto(false, "moi"), Map()))
 
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, notModifiedSince, session) mustEqual List()
-      there was one (valinnantulosRepository).storeValinnantuloksenOhjaus(ValinnantuloksenOhjaus(valinnantulokset(0), session.personOid, "Virkailijan tallennus"), Some(notModifiedSince))
+      there was one (valinnantulosRepository).storeValinnantuloksenOhjaus(valinnantuloksetOhjaus.copy(julkaistavissa = true), Some(notModifiedSince))
       there was no (valinnantulosRepository).storeIlmoittautuminen(any[String], any[Ilmoittautuminen], any[Option[Instant]])
     }
     "exception is thrown, if no authorization" in new NotAuthorizedValinnantulosServiceWithMocks {
@@ -84,17 +94,17 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       override def result = List(
         (ZonedDateTime.now.toInstant, valinnantulos),
         (ZonedDateTime.now.toInstant, valinnantulos.copy(hakemusOid = hakemusOids(1))),
-        (ZonedDateTime.now.toInstant, valinnantulos.copy(hakemusOid = hakemusOids(2), julkaistavissa = true)),
+        (ZonedDateTime.now.toInstant, valinnantulos.copy(hakemusOid = hakemusOids(2), julkaistavissa = Some(true))),
         (ZonedDateTime.now.toInstant, valinnantulos.copy(hakemusOid = hakemusOids(3))),
         (ZonedDateTime.now.toInstant, valinnantulos.copy(hakemusOid = hakemusOids(4))),
         (ZonedDateTime.now.toInstant, valinnantulos.copy(hakemusOid = hakemusOids(5)))
       )
       val valinnantulokset = List(
         valinnantulos.copy(valinnantila = Hyvaksytty),
-        valinnantulos.copy(hakemusOid = hakemusOids(1), ehdollisestiHyvaksyttavissa = true),
-        valinnantulos.copy(hakemusOid = hakemusOids(2), vastaanottotila = VastaanotaSitovasti),
-        valinnantulos.copy(hakemusOid = hakemusOids(3), hyvaksyttyVarasijalta = true),
-        valinnantulos.copy(hakemusOid = hakemusOids(4), hyvaksyPeruuntunut = true),
+        valinnantulos.copy(hakemusOid = hakemusOids(1), ehdollisestiHyvaksyttavissa = Some(true)),
+        valinnantulos.copy(hakemusOid = hakemusOids(2), vastaanottotila = VastaanotaSitovasti, julkaistavissa = Some(false)),
+        valinnantulos.copy(hakemusOid = hakemusOids(3), hyvaksyttyVarasijalta = Some(true)),
+        valinnantulos.copy(hakemusOid = hakemusOids(4), hyvaksyPeruuntunut = Some(true)),
         valinnantulos.copy(hakemusOid = hakemusOids(5), ilmoittautumistila = Lasna)
       )
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, ZonedDateTime.now.toInstant, session) mustEqual List(
@@ -112,7 +122,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH)) returns Failure(new NotAuthorizedException("moi"))
 
       val notModifiedSince = ZonedDateTime.now.toInstant
-      val modification = valinnantulos.copy( valinnantila = Peruuntunut, hyvaksyPeruuntunut = true)
+      val modification = valinnantulos.copy( valinnantila = Peruuntunut, hyvaksyPeruuntunut = Some(true))
 
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(modification), notModifiedSince, session)  mustEqual List(
         ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä peruuntunutta", valintatapajonoOid, valinnantulos.hakemusOid))
@@ -124,17 +134,17 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH)) returns Success(Unit)
 
       val notModifiedSince = ZonedDateTime.now.toInstant
-      val modification = valinnantulos.copy( valinnantila = Peruuntunut, hyvaksyPeruuntunut = true)
+      val modification = valinnantulos.copy( valinnantila = Peruuntunut, hyvaksyPeruuntunut = Some(true))
 
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(modification), notModifiedSince, session) mustEqual List()
-      there was one (valinnantulosRepository).storeValinnantuloksenOhjaus(ValinnantuloksenOhjaus(modification, session.personOid, "Virkailijan tallennus"), Some(notModifiedSince))
+      there was one (valinnantulosRepository).storeValinnantuloksenOhjaus(valinnantuloksetOhjaus.copy(hyvaksyPeruuntunut = true), Some(notModifiedSince))
   }
     "no authorization to change julkaistavissa" in new ValinnantulosServiceWithMocksForJulkaistavissaTests {
       override def result = List((ZonedDateTime.now.toInstant, valinnantulos))
       authorizer.checkAccess(session, "1.2.1.2.1.2", List(Role.SIJOITTELU_CRUD)) returns Failure(new NotAuthorizedException("moi"))
       ohjausparametritService.ohjausparametrit(any[String]) returns Right(Some(Ohjausparametrit(None, None, None, None, None, None, Some(DateTime.now().plusDays(2)))))
 
-      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(valinnantulos.copy(julkaistavissa = true)), ZonedDateTime.now.toInstant, session) mustEqual List(
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(valinnantulos.copy(julkaistavissa = Some(true))), ZonedDateTime.now.toInstant, session) mustEqual List(
         ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia julkaista valinnantulosta", valintatapajonoOid, valinnantulos.hakemusOid)
       )
       there was no (valinnantulosRepository).storeValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
@@ -145,11 +155,11 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       authorizer.checkAccess(session, "1.2.1.2.1.2", List(Role.SIJOITTELU_CRUD)) returns Failure(new NotAuthorizedException("moi"))
       ohjausparametritService.ohjausparametrit(any[String]) returns Right(Some(Ohjausparametrit(None, None, None, None, None, None, Some(DateTime.now().minusDays(2)))))
 
-      val valinnantulokset = List(valinnantulos.copy(julkaistavissa = true))
+      val valinnantulokset = List(valinnantulos.copy(julkaistavissa = Some(true)))
       val notModifiedSince = ZonedDateTime.now.toInstant
 
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, notModifiedSince, session) mustEqual List()
-      there was one (valinnantulosRepository).storeValinnantuloksenOhjaus(ValinnantuloksenOhjaus(valinnantulokset(0), session.personOid, "Virkailijan tallennus"), Some(notModifiedSince))
+      there was one (valinnantulosRepository).storeValinnantuloksenOhjaus(valinnantuloksetOhjaus.copy(julkaistavissa = true), Some(notModifiedSince))
       there was no (valinnantulosRepository).storeIlmoittautuminen(any[String], any[Ilmoittautuminen], any[Option[Instant]])
     }
     "authorization to change julkaistavissa" in new ValinnantulosServiceWithMocksForJulkaistavissaTests {
@@ -157,11 +167,11 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       authorizer.checkAccess(session, "1.2.1.2.1.2", List(Role.SIJOITTELU_CRUD)) returns Success(Unit)
       ohjausparametritService.ohjausparametrit(any[String]) returns Right(Some(Ohjausparametrit(None, None, None, None, None, None, None)))
 
-      val valinnantulokset = List(valinnantulos.copy(julkaistavissa = true))
+      val valinnantulokset = List(valinnantulos.copy(julkaistavissa = Some(true)))
       val notModifiedSince = ZonedDateTime.now.toInstant
 
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, notModifiedSince, session) mustEqual List()
-      there was one (valinnantulosRepository).storeValinnantuloksenOhjaus(ValinnantuloksenOhjaus(valinnantulokset(0), session.personOid, "Virkailijan tallennus"), Some(notModifiedSince))
+      there was one (valinnantulosRepository).storeValinnantuloksenOhjaus(valinnantuloksetOhjaus.copy(julkaistavissa = true), Some(notModifiedSince))
       there was no (valinnantulosRepository).storeIlmoittautuminen(any[String], any[Ilmoittautuminen], any[Option[Instant]])
     }
   }
