@@ -52,12 +52,12 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
     }
     "update valinnantuloksen ohjaustiedot" in {
       storeValinnantilaAndValinnantulos
-      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid).head._2.ehdollisestiHyvaksyttavissa mustEqual false
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid).head._2.ehdollisestiHyvaksyttavissa mustEqual Some(false)
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.storeValinnantuloksenOhjaus(ValinnantuloksenOhjaus(hakemusOid,
           valintatapajonoOid, true, false, false, false, "virkailija", "Virkailijan tallennus"))
       )
-      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid).head._2.ehdollisestiHyvaksyttavissa mustEqual true
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid).head._2.ehdollisestiHyvaksyttavissa mustEqual Some(true)
     }
     "not update valinnantuloksen ohjaustiedot if modified" in {
       val notModifiedSince = ZonedDateTime.now.minusDays(1).toInstant
