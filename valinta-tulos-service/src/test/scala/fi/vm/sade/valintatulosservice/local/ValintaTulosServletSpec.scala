@@ -210,7 +210,7 @@ class ValintaTulosServletSpec extends ServletSpecification {
 
       ilmoittaudu("LASNA_KOKO_LUKUVUOSI", juuri = "cas/haku") {
         status must_== 401
-        body must_== """{"error":"CAS ticket required"}"""
+        body must_== """{"error":"Unauthorized"}"""
       }
     }
 
