@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice
 
 import java.time.Instant
 
-import fi.vm.sade.security.{AuthorizationFailedException, OrganizationHierarchyAuthorizer}
+import fi.vm.sade.security.OrganizationHierarchyAuthorizer
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
@@ -10,8 +10,6 @@ import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import org.joda.time.DateTime
-
 import scala.util.{Failure, Success, Try}
 
 class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository,
@@ -40,7 +38,7 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository,
 
     valinnantulokset.map(uusiValinnantulos => {
       vanhatValinnantulokset.get(uusiValinnantulos.hakemusOid) match {
-        case Some((_, vanhaValinnantulos)) if !uusiValinnantulos.hasChange(vanhaValinnantulos) => Right()
+        case Some((_, vanhaValinnantulos)) if !uusiValinnantulos.hasChanged(vanhaValinnantulos) => Right()
         case Some((lastModified, _)) if lastModified.isAfter(ifUnmodifiedSince) => {
           logger.warn(s"Hakemus ${uusiValinnantulos.hakemusOid} valintatapajonossa $valintatapajonoOid " +
             s"on muuttunut $lastModified lukemisajan $ifUnmodifiedSince jälkeen.")
@@ -78,7 +76,7 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository,
 
     val operations = List(
       Option(uusi.hasOhjausChanged(vanha)).collect{ case true => valinnantulosRepository.storeValinnantuloksenOhjaus(
-        ValinnantuloksenOhjaus(uusi, muokkaaja, "Virkailijan tallennus"), Some(ifUnmodifiedSince))},
+        uusi.getValinnantuloksenOhjauksenMuutos(vanha, muokkaaja, "Virkailijan tallennus"), Some(ifUnmodifiedSince))},
       Option(uusi.ilmoittautumistila != vanha.ilmoittautumistila).collect{ case true => valinnantulosRepository.storeIlmoittautuminen(
         vanha.henkiloOid, Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, "Virkailijan tallennus"), Some(ifUnmodifiedSince))}
     ).flatten
@@ -115,17 +113,17 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository,
 
   private def validateEhdollisestiHyvaksyttavissa(vanha: Valinnantulos, uusi: Valinnantulos, session: Session, tarjoajaOid: String): Either[ValinnantulosUpdateStatus, Unit] =
     uusi.ehdollisestiHyvaksyttavissa match {
-      case vanha.ehdollisestiHyvaksyttavissa => Right()
+      case None | vanha.ehdollisestiHyvaksyttavissa => Right()
       case _ if allowOrgUpdate(session, tarjoajaOid) => Right()
       case _ => Left(ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä ehdollisesti", uusi.valintatapajonoOid, uusi.hakemusOid))
     }
 
   private def validateJulkaistavissa(vanha: Valinnantulos, uusi: Valinnantulos, session: Session, tarjoajaOid: String, hakuOid:String): Either[ValinnantulosUpdateStatus, Unit] =
     (uusi.julkaistavissa, uusi.vastaanottotila) match {
-      case (vanha.julkaistavissa, _) => Right()
-      case (false, vastaanotto) if List(MerkitseMyohastyneeksi, Poista).contains(vastaanotto) => Right()
-      case (false, _) => Left(ValinnantulosUpdateStatus(409, s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sillä on vastaanotto", uusi.valintatapajonoOid, uusi.hakemusOid))
-      case (true, _) if allowJulkaistavissaUpdate(session, hakuOid) => Right()
+      case (None, _) | (vanha.julkaistavissa, _) => Right()
+      case (Some(false), vastaanotto) if List(MerkitseMyohastyneeksi, Poista).contains(vastaanotto) => Right()
+      case (Some(false), _) => Left(ValinnantulosUpdateStatus(409, s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sillä on vastaanotto", uusi.valintatapajonoOid, uusi.hakemusOid))
+      case (Some(true), _) if allowJulkaistavissaUpdate(session, hakuOid) => Right()
       case (_, _) => Left(ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia julkaista valinnantulosta", uusi.valintatapajonoOid, uusi.hakemusOid))
   }
 
@@ -155,19 +153,25 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository,
 
   private def validateHyvaksyttyVarasijalta(vanha: Valinnantulos, uusi: Valinnantulos, session: Session, tarjoajaOid: String): Either[ValinnantulosUpdateStatus, Unit] =
     (uusi.hyvaksyttyVarasijalta, uusi.valinnantila) match {
-      case (vanha.hyvaksyttyVarasijalta, _) => Right()
-      case (true, Varalla) if (allowOphUpdate(session) || allowMusiikkiUpdate(session, tarjoajaOid)) => Right()
-      case (true, x) if x != Varalla => Left(ValinnantulosUpdateStatus(409, s"Ei voida hyväksyä varasijalta", uusi.valintatapajonoOid, uusi.hakemusOid))
-      case (false, _) if (allowOphUpdate(session) || allowMusiikkiUpdate(session, tarjoajaOid)) => Right()
+      case (None, _) | (vanha.hyvaksyttyVarasijalta, _) => Right()
+      case (Some(true), Varalla) if (allowOphUpdate(session) || allowMusiikkiUpdate(session, tarjoajaOid)) => Right()
+      case (Some(true), x) if x != Varalla => Left(ValinnantulosUpdateStatus(409, s"Ei voida hyväksyä varasijalta", uusi.valintatapajonoOid, uusi.hakemusOid))
+      case (Some(false), _) if (allowOphUpdate(session) || allowMusiikkiUpdate(session, tarjoajaOid)) => Right()
       case (_, _) => Left(ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä varasijalta", uusi.valintatapajonoOid, uusi.hakemusOid))
   }
 
   private def validateHyvaksyPeruuntunut(vanha: Valinnantulos, uusi: Valinnantulos, session: Session, tarjoajaOid: String): Either[ValinnantulosUpdateStatus, Unit] =
-    (uusi.hyvaksyPeruuntunut, uusi.valinnantila, uusi.julkaistavissa) match {
-      case (vanha.hyvaksyPeruuntunut, _, _) => Right()
-      case (_, Hyvaksytty, false) if vanha.hyvaksyPeruuntunut => allowPeruuntuneidenHyvaksynta(session, tarjoajaOid, uusi)
+    (uusi.hyvaksyPeruuntunut, uusi.valinnantila, isJulkaistavissa(vanha, uusi)) match {
+      case (None, _, _) | (vanha.hyvaksyPeruuntunut, _, _) => Right()
+      case (_, Hyvaksytty, false) if vanha.hyvaksyPeruuntunut == Some(true) => allowPeruuntuneidenHyvaksynta(session, tarjoajaOid, uusi)
       case (_, Peruuntunut, false) => allowPeruuntuneidenHyvaksynta(session, tarjoajaOid, uusi)
       case (_, _, _) => Left(ValinnantulosUpdateStatus(409, s"Hyväksy peruuntunut -arvoa ei voida muuttaa valinnantulokselle", uusi.valintatapajonoOid, uusi.hakemusOid))
+  }
+
+  private def isJulkaistavissa(vanha: Valinnantulos, uusi: Valinnantulos): Boolean =
+    (uusi.julkaistavissa, vanha.julkaistavissa) match {
+      case (None, Some(true)) | (Some(true), _) => true
+      case (_, _) => false
   }
 
   private def validateIlmoittautumistila(vanha: Valinnantulos, uusi: Valinnantulos, session: Session, tarjoajaOid: String): Either[ValinnantulosUpdateStatus, Unit] =
