@@ -50,10 +50,10 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     hakemusOid = "1.2.246.562.11.00006169123",
     henkiloOid = "1.2.246.562.24.48294633106",
     valinnantila = Hylatty,
-    ehdollisestiHyvaksyttavissa = false,
-    julkaistavissa = false,
-    hyvaksyttyVarasijalta = false,
-    hyvaksyPeruuntunut = false,
+    ehdollisestiHyvaksyttavissa = None,
+    julkaistavissa = None,
+    hyvaksyttyVarasijalta = None,
+    hyvaksyPeruuntunut = None,
     vastaanottotila = Poista,
     ilmoittautumistila = EiTehty)
 
@@ -99,7 +99,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     }
     "palauttaa 200 ja virhestatuksen, jos valinnantulos on muuttunut lukemisajan jälkeen" in {
 
-      patchJSON("auth/valinnan-tulos/14538080612623056182813241345174", write(List(valinnantulos.copy(julkaistavissa = true))),
+      patchJSON("auth/valinnan-tulos/14538080612623056182813241345174", write(List(valinnantulos.copy(julkaistavissa = Some(true)))),
         Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> "Tue, 3 Jun 2008 11:05:30 GMT")) {
         status must_== 200
         val result = parse(body).extract[List[ValinnantulosUpdateStatus]]
@@ -109,7 +109,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     }
     "palauttaa 200, jos julkaistavissa-tietoa päivitettiin onnistuneesti" in {
 
-      patchJSON("auth/valinnan-tulos/14538080612623056182813241345174", write(List(valinnantulos.copy(julkaistavissa = true))),
+      patchJSON("auth/valinnan-tulos/14538080612623056182813241345174", write(List(valinnantulos.copy(julkaistavissa = Some(true)))),
         Map("Cookie" -> s"session=${ophTestSession}", "If-Unmodified-Since" -> now)) {
         status must_== 200
         parse(body).extract[List[ValinnantulosUpdateStatus]].size mustEqual 0
@@ -130,7 +130,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
       singleConnectionValintarekisteriDb.store(HakijanVastaanotto(henkiloOid = "1.2.246.562.24.19795717550",
         hakemusOid = "1.2.246.562.11.00006926939", hakukohdeOid = "1.2.246.562.20.26643418986", action = VastaanotaSitovasti))
 
-      val uusiValinnantulos = hyvaksyttyValinnantulos.copy(julkaistavissa = true, ilmoittautumistila = Lasna, vastaanottotila = VastaanotaSitovasti)
+      val uusiValinnantulos = hyvaksyttyValinnantulos.copy(julkaistavissa = Some(true), ilmoittautumistila = Lasna, vastaanottotila = VastaanotaSitovasti)
 
       patchJSON("auth/valinnan-tulos/14538080612623056182813241345174", write(List(uusiValinnantulos)),
         Map("Cookie" -> s"session=${ophTestSession}", "If-Unmodified-Since" -> now)) {
@@ -150,7 +150,11 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
       result.size mustEqual 15
       val actual = result.filter(_.hakemusOid == tulos.hakemusOid)
       actual.size mustEqual 1
-      actual.head mustEqual tulos
+      actual.head mustEqual tulos.copy(
+        ehdollisestiHyvaksyttavissa = Option(tulos.ehdollisestiHyvaksyttavissa.getOrElse(false)),
+        hyvaksyttyVarasijalta = Option(tulos.hyvaksyttyVarasijalta.getOrElse(false)),
+        hyvaksyPeruuntunut = Option(tulos.hyvaksyPeruuntunut.getOrElse(false)),
+        julkaistavissa = Option(tulos.julkaistavissa.getOrElse(false)))
     }
   }
 
