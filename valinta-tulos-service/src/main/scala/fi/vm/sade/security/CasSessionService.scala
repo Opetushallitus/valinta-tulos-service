@@ -54,7 +54,10 @@ class CasSessionService(casClient: CasClient, val serviceIdentifier: String, lda
     (ticket, id) match {
       case (None, None) => Left(new AuthenticationFailedException(s"No credentials given"))
       case (None, Some(i)) => getSession(i)
-      case (Some(t), Some(i)) => getSession(i).left.flatMap(_ => createSession(t))
+      case (Some(t), Some(i)) => getSession(i).left.flatMap {
+        case _: AuthenticationFailedException => createSession(t)
+        case t => Left(t)
+      }
       case (Some(t), None) => createSession(t)
     }
   }
