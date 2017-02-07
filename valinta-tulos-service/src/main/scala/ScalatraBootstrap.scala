@@ -10,6 +10,8 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.kela.KelaService
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.{HakijaResolver, MigraatioServlet}
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
+import fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos.SijoittelunTulosMigraatioServlet
+import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.MigraatioServlet
 import fi.vm.sade.valintatulosservice.sijoittelu.{SijoitteluFixtures, SijoittelunTulosRestClient, SijoittelutulosService}
 import fi.vm.sade.valintatulosservice.tarjonta.{TarjontaHakuService, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValintarekisteriDb
@@ -57,7 +59,7 @@ class ScalatraBootstrap extends LifeCycle {
 
     if(null != migrationMode && "true".equalsIgnoreCase(migrationMode)) {
       context.mount(new MigraatioServlet(hakukohdeRecordService, valintarekisteriDb, new HakemusRepository(), appConfig.sijoitteluContext.raportointiService, hakuService), "/migraatio")
-
+      context.mount(new SijoittelunTulosMigraatioServlet(), "/sijoittelun-tulos-migraatio")
     } else {
       context.mount(new BuildInfoServlet, "/")
       context.mount(new CasLogin(
