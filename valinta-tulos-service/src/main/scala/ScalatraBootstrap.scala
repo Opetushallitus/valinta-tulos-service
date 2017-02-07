@@ -87,7 +87,7 @@ class ScalatraBootstrap extends LifeCycle {
         .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/*")
       context.mount(new PublicValintatulosServlet(valintatulosService, vastaanottoService, ilmoittautumisService), "/cas/haku")
 
-      context.mount(new ValinnantulosServlet(valintarekisteriDb, valinnantulosService, ilmoittautumisService, valintarekisteriDb), "/auth/valinnan-tulos")
+      context.mount(new ValinnantulosServlet(valinnantulosService, valintarekisteriDb), "/auth/valinnan-tulos")
     }
     context.mount(new HakukohdeRefreshServlet(valintarekisteriDb, hakukohdeRecordService), "/virkistys")
 
