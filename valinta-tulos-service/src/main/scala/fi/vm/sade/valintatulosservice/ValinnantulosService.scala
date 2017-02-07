@@ -7,9 +7,10 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
-import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService}
+import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+
 import scala.util.{Failure, Success, Try}
 
 class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository,
@@ -17,6 +18,10 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository,
                            hakuService: HakuService,
                            ohjausparametritService: OhjausparametritService,
                            appConfig: VtsAppConfig) extends Logging {
+
+  def getValinnantuloksetForValintatapajono(valintatapajonoOid: String): List[(Instant, Valinnantulos)] = {
+    valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+  }
 
   def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid: String,
                                                valinnantulokset: List[Valinnantulos],
