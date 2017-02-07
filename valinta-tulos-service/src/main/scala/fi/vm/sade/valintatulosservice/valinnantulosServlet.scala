@@ -2,28 +2,24 @@ package fi.vm.sade.valintatulosservice
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.UUID
-import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.security.{AuthenticationFailedException, AuthorizationFailedException}
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, IlmoittautumisTila}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SessionRepository, SijoitteluRepository, ValinnantulosRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra._
 import org.scalatra.json.JacksonJsonSupport
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 
-import scala.concurrent.duration.Duration
 import scala.util.{Failure, Try}
 
 case class ValinnantulosUpdateStatus(status:Int, message:String, valintatapajonoOid:String, hakemusOid:String)
 
-class ValinnantulosServlet(valinnantulosRepository: ValinnantulosRepository,
-                           valinnantulosService: ValinnantulosService,
-                           ilmoittautumisService: IlmoittautumisService,
+class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
                            sessionRepository: SessionRepository)
                           (implicit val swagger: Swagger)
   extends ScalatraServlet with JacksonJsonSupport with SwaggerSupport with Logging with JsonFormats {
@@ -94,7 +90,7 @@ class ValinnantulosServlet(valinnantulosRepository: ValinnantulosRepository,
       throw new AuthorizationFailedException()
     }
     val valintatapajonoOid = parseValintatapajonoOid
-    val valinnanTulokset = valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+    val valinnanTulokset = valinnantulosService.getValinnantuloksetForValintatapajono(valintatapajonoOid)
     Ok(
       body = valinnanTulokset.map(_._2),
       headers = if (valinnanTulokset.nonEmpty) Map("Last-Modified" -> renderHttpDate(valinnanTulokset.map(_._1).max)) else Map()
