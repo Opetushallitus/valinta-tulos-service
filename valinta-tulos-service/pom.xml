@@ -303,6 +303,11 @@
             <version>0.1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
+            <groupId>fi.vm.sade</groupId>
+            <artifactId>auditlogger</artifactId>
+            <version>7.0.0-rc1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
             <groupId>org.mock-server</groupId>
             <artifactId>mockserver-netty</artifactId>
             <version>3.10.4</version>

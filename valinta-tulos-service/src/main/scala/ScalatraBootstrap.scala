@@ -1,6 +1,7 @@
 import java.util
 import javax.servlet.{DispatcherType, ServletContext}
 
+import fi.vm.sade.auditlog.{ApplicationType, Audit}
 import fi.vm.sade.security._
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
@@ -24,6 +25,7 @@ class ScalatraBootstrap extends LifeCycle {
   var globalConfig: Option[VtsAppConfig] = None
 
   override def init(context: ServletContext) {
+    val audit = new Audit("valinta-tulos-service", ApplicationType.BACKEND)
     implicit val appConfig: VtsAppConfig = VtsAppConfig.fromOptionalString(Option(context.getAttribute("valintatulos.profile").asInstanceOf[String]))
     globalConfig = Some(appConfig)
     appConfig.start
@@ -47,7 +49,7 @@ class ScalatraBootstrap extends LifeCycle {
     lazy val valintatulosCollection = new ValintatulosMongoCollection(appConfig.settings.valintatulosMongoConfig)
     lazy val mailPoller = new MailPoller(valintatulosCollection, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 100)
     lazy val sijoitteluService = new ValintarekisteriService(valintarekisteriDb, hakukohdeRecordService)
-    lazy val valinnantulosService = new ValinnantulosService(valintarekisteriDb, new OrganizationHierarchyAuthorizer(appConfig), hakuService, appConfig.ohjausparametritService, appConfig)
+    lazy val valinnantulosService = new ValinnantulosService(valintarekisteriDb, new OrganizationHierarchyAuthorizer(appConfig), hakuService, appConfig.ohjausparametritService, appConfig, audit)
 
 
     val migrationMode = System.getProperty("valinta-rekisteri-migration-mode")
