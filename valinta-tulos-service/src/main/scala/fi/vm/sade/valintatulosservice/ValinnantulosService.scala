@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice
 
 import java.time.Instant
 
+import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
@@ -17,16 +18,23 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository,
                            authorizer:OrganizationHierarchyAuthorizer,
                            hakuService: HakuService,
                            ohjausparametritService: OhjausparametritService,
-                           appConfig: VtsAppConfig) extends Logging {
+                           appConfig: VtsAppConfig,
+                           audit: Audit) extends Logging {
 
-  def getValinnantuloksetForValintatapajono(valintatapajonoOid: String): List[(Instant, Valinnantulos)] = {
-    valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+  def getValinnantuloksetForValintatapajono(valintatapajonoOid: String, auditInfo: AuditInfo): List[(Instant, Valinnantulos)] = {
+    val r = valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+    audit.log(auditInfo.user, ValinnantuloksenLuku,
+      new Target.Builder().setField("valintatapajono", valintatapajonoOid).build(),
+      new Changes.Builder().build()
+    )
+    r
   }
 
   def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid: String,
                                                valinnantulokset: List[Valinnantulos],
                                                ifUnmodifiedSince: Instant,
-                                               session: Session): List[ValinnantulosUpdateStatus] = {
+                                               auditInfo: AuditInfo): List[ValinnantulosUpdateStatus] = {
+    val session = auditInfo.session._2
     val vanhatValinnantulokset = getValinnantuloksetGroupedByHakemusOid(valintatapajonoOid)
     val tarjoajaOid = vanhatValinnantulokset.headOption.map(x => valinnantulosRepository.getTarjoajaForHakukohde(x._2._2.hakukohdeOid)).getOrElse("")
     val hakuOid = vanhatValinnantulokset.headOption.map(x => valinnantulosRepository.getHakuForHakukohde(x._2._2.hakukohdeOid)).getOrElse("")
@@ -50,7 +58,7 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository,
           Left(ValinnantulosUpdateStatus(409, s"Hakemus on muuttunut lukemisajan ${ifUnmodifiedSince} jälkeen", uusiValinnantulos.valintatapajonoOid, uusiValinnantulos.hakemusOid))
         }
         case Some((_, vanhaValinnantulos)) => validateMuutos(vanhaValinnantulos, uusiValinnantulos, session, tarjoajaOid, hakuOid) match {
-          case x if x.isRight => updateValinnantulos(valintatapajonoOid, vanhaValinnantulos, uusiValinnantulos, session.personOid, ifUnmodifiedSince)
+          case x if x.isRight => updateValinnantulos(valintatapajonoOid, vanhaValinnantulos, uusiValinnantulos, auditInfo, ifUnmodifiedSince)
           case x if x.isLeft => x
         }
         case None => {
@@ -72,9 +80,10 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository,
   private def updateValinnantulos(valintatapajonoOid: String,
                                   vanha: Valinnantulos,
                                   uusi: Valinnantulos,
-                                  muokkaaja: String,
+                                  auditInfo: AuditInfo,
                                   ifUnmodifiedSince: Instant): Either[ValinnantulosUpdateStatus, Unit] = {
-    logger.info(s"Käyttäjä ${muokkaaja} muokkasi " +
+    val muokkaaja = auditInfo.session._2.personOid
+    logger.info(s"Käyttäjä $muokkaaja muokkasi " +
       s"hakemuksen ${uusi.hakemusOid} valinnan tulosta valintatapajonossa $valintatapajonoOid " +
       s"vastaanottotilasta ${vanha.vastaanottotila} tilaan ${uusi.vastaanottotila} ja " +
       s"ilmoittautumistilasta ${vanha.ilmoittautumistila} tilaan ${uusi.ilmoittautumistila}.")
@@ -89,7 +98,24 @@ class ValinnantulosService(valinnantulosRepository: ValinnantulosRepository,
     Try(valinnantulosRepository.runBlockingTransactionally(
       slick.dbio.DBIO.seq(operations: _*)
     )) match {
-      case Success(_) => Right()
+      case Success(_) =>
+        audit.log(auditInfo.user, ValinnantuloksenMuokkaus,
+          new Target.Builder()
+            .setField("hakukohde", vanha.hakukohdeOid)
+            .setField("valintatapajono", vanha.valintatapajonoOid)
+            .setField("hakemus", vanha.hakemusOid)
+            .build(),
+          new Changes.Builder()
+            .updated("valinnantila", vanha.valinnantila.toString, uusi.valinnantila.toString)
+            .updated("ehdollisestiHyvaksyttavissa", vanha.ehdollisestiHyvaksyttavissa.getOrElse(false).toString, uusi.ehdollisestiHyvaksyttavissa.getOrElse(false).toString)
+            .updated("julkaistavissa", vanha.julkaistavissa.getOrElse(false).toString, uusi.julkaistavissa.getOrElse(false).toString)
+            .updated("hyvaksyttyVarasijalta", vanha.hyvaksyttyVarasijalta.getOrElse(false).toString, uusi.hyvaksyttyVarasijalta.getOrElse(false).toString)
+            .updated("hyvaksyPeruuntunut", vanha.hyvaksyPeruuntunut.getOrElse(false).toString, uusi.hyvaksyPeruuntunut.getOrElse(false).toString)
+            .updated("vastaanottotila", vanha.vastaanottotila.toString, uusi.vastaanottotila.toString)
+            .updated("ilmoittautumistila", vanha.ilmoittautumistila.toString, uusi.ilmoittautumistila.toString)
+            .build()
+        )
+        Right()
       case Failure(t) =>
         logger.warn(s"Valinnantuloksen $uusi tallennus epäonnistui", t)
         Left(ValinnantulosUpdateStatus(500, s"Valinnantuloksen tallennus epäonnistui", valintatapajonoOid, uusi.hakemusOid))
