@@ -1,4 +1,5 @@
 package fi.vm.sade.valintatulosservice
+import java.net.InetAddress
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.UUID
@@ -23,7 +24,6 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
                            sessionRepository: SessionRepository)
                           (implicit val swagger: Swagger)
   extends ScalatraServlet with JacksonJsonSupport with SwaggerSupport with Logging with JsonFormats {
-
 
   override val applicationName = Some("auth/valinnan-tulos")
   override val applicationDescription = "Valinnantuloksen REST API"
@@ -51,8 +51,8 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     ModelProperty(DataType.String, mp.position, required = true, allowableValues = AllowableValues(HakemuksenTila.values().toList.map(_.toString)))
   }
 
-  private def getSession: Session = {
-    cookies.get("session").map(UUID.fromString).flatMap(sessionRepository.get)
+  private def getSession: (UUID, Session) = {
+    cookies.get("session").map(UUID.fromString).flatMap(id => sessionRepository.get(id).map((id, _)))
       .getOrElse(throw new AuthenticationFailedException)
   }
 
@@ -74,6 +74,17 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant(instant, ZoneId.of("GMT")))
   }
 
+  private def parseAuditInfo(session: (UUID, Session)): AuditInfo = {
+    AuditInfo(
+      session,
+      InetAddress.getByName(request.headers.get("X-Forwarded-For").getOrElse({
+        logger.warn("X-Forwarded-For was not set. Are we not running behind a load balancer?")
+        request.getRemoteAddr
+      })),
+      request.headers.get("User-Agent").getOrElse(throw new IllegalArgumentException("Otsake User-Agent on pakollinen."))
+    )
+  }
+
   val valinnantulosSwagger: OperationBuilder = (apiOperation[List[Valinnantulos]]("valinnantulos")
     summary "Valinnantulos"
     parameter pathParam[String]("valintatapajonoOid").description("Valintatapajonon OID")
@@ -85,12 +96,13 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
   }))
   get("/:valintatapajonoOid", operation(valinnantulosSwagger)) {
     contentType = formats("json")
-    val session = getSession
+    val (id, session) = getSession
+    val auditInfo = parseAuditInfo((id, session))
     if (!session.hasAnyRole(Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))) {
       throw new AuthorizationFailedException()
     }
     val valintatapajonoOid = parseValintatapajonoOid
-    val valinnanTulokset = valinnantulosService.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+    val valinnanTulokset = valinnantulosService.getValinnantuloksetForValintatapajono(valintatapajonoOid, auditInfo)
     Ok(
       body = valinnanTulokset.map(_._2),
       headers = if (valinnanTulokset.nonEmpty) Map("Last-Modified" -> renderHttpDate(valinnanTulokset.map(_._1).max)) else Map()
@@ -111,7 +123,8 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
   }))
   patch("/:valintatapajonoOid", operation(valinnantulosMuutosSwagger)) {
     contentType = formats("json")
-    val session = getSession
+    val (id, session) = getSession
+    val auditInfo = parseAuditInfo((id, session))
     if (!session.hasAnyRole(Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))) {
       throw new AuthorizationFailedException()
     }
@@ -120,7 +133,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     val valinnantulokset = parsedBody.extract[List[Valinnantulos]]
     Ok(
       valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
-        valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, session)
+        valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, auditInfo)
     )
   }
 }
