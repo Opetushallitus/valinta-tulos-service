@@ -18,4 +18,5 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
   def getTarjoajaForHakukohde(hakukohdeOid:String): String
   def getHakuForHakukohde(hakukohdeOid:String): String
 
+  //def deleteValinnantulokset()
 }
