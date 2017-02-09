@@ -64,8 +64,11 @@ class ScalatraBootstrap extends LifeCycle {
 
       val securityFilter = appConfig.securityContext.securityFilter
       context.addFilter("cas", securityFilter)
-        .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/*")
+        .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/haku/*")
       context.mount(new PublicValintatulosServlet(valintatulosService, vastaanottoService, ilmoittautumisService), "/cas/haku")
+      context.mount(new KelaServlet(), "/cas/kela")
+
+
     }
     context.mount(new HakukohdeRefreshServlet(valintarekisteriDb, hakukohdeRecordService), "/virkistys")
 
