@@ -15,8 +15,8 @@ import org.scalatra._
 import org.scalatra.json.JacksonJsonSupport
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
-
-import scala.util.{Failure, Try}
+import scala.concurrent.duration.Duration
+import scala.util.{Failure, Success, Try}
 
 case class ValinnantulosUpdateStatus(status:Int, message:String, valintatapajonoOid:String, hakemusOid:String)
 
@@ -68,6 +68,11 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
 
   private def parseValintatapajonoOid: String = {
     params.getOrElse("valintatapajonoOid", throw new IllegalArgumentException("URL parametri Valintatapajono OID on pakollinen."))
+  }
+
+  private def parseErillishaku: Option[Boolean] = Try(params.get("erillishaku").map(_.toBoolean)) match {
+    case Success(erillishaku) => erillishaku
+    case Failure(e) => throw new IllegalArgumentException("Parametri erillishaku pitää olla true tai false", e)
   }
 
   private def renderHttpDate(instant: Instant): String = {
@@ -128,12 +133,13 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     if (!session.hasAnyRole(Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))) {
       throw new AuthorizationFailedException()
     }
+    val erillishaku = parseErillishaku
     val valintatapajonoOid = parseValintatapajonoOid
     val ifUnmodifiedSince: Instant = parseIfUnmodifiedSince
     val valinnantulokset = parsedBody.extract[List[Valinnantulos]]
     Ok(
       valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
-        valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, auditInfo)
+        valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, auditInfo, erillishaku.getOrElse(false))
     )
   }
 }
