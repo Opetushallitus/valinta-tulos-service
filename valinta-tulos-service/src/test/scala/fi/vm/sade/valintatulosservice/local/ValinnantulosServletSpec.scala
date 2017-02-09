@@ -64,10 +64,10 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
   )
 
   "GET /auth/valinnan-tulos/:valintatapajonoOid" should {
-    "palauttaa 403, jos käyttäjä ei ole autentikoitunut" in {
+    "palauttaa 401, jos käyttäjä ei ole autentikoitunut" in {
       get("auth/valinnan-tulos/14538080612623056182813241345174") {
-        status must_== 403
-        body mustEqual "{\"error\":\"Forbidden\"}"
+        status must_== 401
+        body mustEqual "{\"error\":\"Unauthorized\"}"
       }
     }
     "ei valauta valinnantuloksia, jos valintatapajono on tuntematon" in {
