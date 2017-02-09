@@ -28,6 +28,7 @@ import scala.util.{Failure, Success}
 
 @RunWith(classOf[JUnitRunner])
 class ValinnantulosServiceSpec extends Specification with MockitoMatchers with MockitoStubs {
+  val hakuOid = "1.1.1.1.1"
   val tarjoajaOid = "1.2.3.4.5"
   val valintatapajonoOid = "14538080612623056182813241345174"
   val hakemusOids = List("1.2.246.562.11.00006169120", "1.2.246.562.11.00006169121", "1.2.246.562.11.00006169122",
@@ -191,6 +192,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
 
     val service = new ValinnantulosService(valinnantulosRepository, authorizer, hakuService, ohjausparametritService, appConfig, audit)
 
+    valinnantulosRepository.getHakuForHakukohde(anyString) returns hakuOid
     valinnantulosRepository.getTarjoajaForHakukohde(anyString) returns tarjoajaOid
     valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid) returns result
   }
@@ -208,6 +210,6 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     val settings = mock[VtsApplicationSettings]
     appConfig.settings returns settings
     settings.rootOrganisaatioOid returns "1.2.1.2.1.2"
-    hakuService.getHaku(any[String]) returns Right(Haku("hakuOid", korkeakoulu = false, true, None, Set(), List(), None, YhdenPaikanSaanto(false, "moi"), Map()))
+    hakuService.getHaku(any[String]) returns Right(Haku(hakuOid, korkeakoulu = false, true, None, Set(), List(), None, YhdenPaikanSaanto(false, "moi"), Map()))
   }
 }
