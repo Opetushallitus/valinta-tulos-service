@@ -31,7 +31,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
   error {
     case e: AuthenticationFailedException =>
       logger.warn("authentication failed", e)
-      Forbidden("error" -> "Forbidden")
+      Unauthorized("error" -> "Unauthorized")
     case e: AuthorizationFailedException =>
       logger.warn("authorization failed", e)
       Forbidden("error" -> "Forbidden")
