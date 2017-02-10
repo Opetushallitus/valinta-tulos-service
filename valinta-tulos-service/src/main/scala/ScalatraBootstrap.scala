@@ -67,7 +67,7 @@ class ScalatraBootstrap extends LifeCycle {
       context.addFilter("cas", securityFilter)
         .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/*")
       context.mount(new PublicValintatulosServlet(valintatulosService, vastaanottoService, ilmoittautumisService), "/cas/haku")
-      context.mount(new KelaServlet(new KelaService(new TarjontaHakuService(appConfig), valintarekisteriDb)), "/cas/kela")
+      context.mount(new KelaServlet(new KelaService(hakuService, valintarekisteriDb)), "/cas/kela")
 
 
     }
