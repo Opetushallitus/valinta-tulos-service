@@ -93,9 +93,9 @@ Urleja lokaaliin testaukseen eri konfiguraatioilla
 ```
 Luokka: http://localhost:8097/valinta-tulos-service/haku/1.2.246.562.29.92478804245/hakemus/1.2.246.562.11.00000441369
 Reppu (plain): http://localhost:8097/valinta-tulos-service/haku/1.2.246.562.5.2014022413473526465435/hakemus/1.2.246.562.11.00000442406
-Reppu (CAS, korvaa tiketti uudella): http://localhost:8097/valinta-tulos-service/cas/haku/1.2.246.562.5.2014022413473526465435/hakemus/1.2.246.562.11.00000442406?ticket=xxx
+Reppu (CAS, korvaa tiketti uudella): http://localhost:8097/valinta-tulos-service/cas/haku/1.2.246.562.5.2014022413473526465435/hakemus/1.2.246.562.11.00000442406?ticket=mock-ticket-http://itest-virkailija.oph.ware.fi/valinta-tulos-service-testuser
 QA: https://testi.virkailija.opintopolku.fi/valinta-tulos-service/haku/1.2.246.562.29.173465377510/hakemus/1.2.246.562.11.00001021871
-QA (CAS, korvaa tiketti uudella): https://testi.virkailija.opintopolku.fi/valinta-tulos-service/cas/haku/1.2.246.562.29.173465377510/hakemus/1.2.246.562.11.00001021871?ticket=xxx
+QA (CAS, korvaa tiketti uudella): https://testi.virkailija.opintopolku.fi/valinta-tulos-service/cas/haku/1.2.246.562.29.173465377510/hakemus/1.2.246.562.11.00001021871?ticket=mock-ticket-https://testi.virkailija.opintopolku.fi/valinta-tulos-service-testuser
 ```
 
 ## Vastaanottosähköpostit
