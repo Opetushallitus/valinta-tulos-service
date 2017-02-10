@@ -42,7 +42,7 @@ case class Hakuaika(hakuaikaId: String, alkuPvm: Option[Long], loppuPvm: Option[
   }
 }
 
-case class Hakukohde(oid: String, hakuOid: String, hakukohdeKoulutusOids: List[String],
+case class Hakukohde(oid: String, hakuOid: String, tarjoajaOids: Seq[String], hakukohdeKoulutusOids: List[String],
                      koulutusAsteTyyppi: String, koulutusmoduuliTyyppi: String,
                      hakukohteenNimet: Map[String, String], tarjoajaNimet: Map[String, String], yhdenPaikanSaanto: YhdenPaikanSaanto,
                      tutkintoonJohtava:Boolean, koulutuksenAlkamiskausiUri:String, koulutuksenAlkamisvuosi:Int)
@@ -110,7 +110,9 @@ private case class HakuTarjonnassa(oid: String, hakutapaUri: String, hakutyyppiU
                                    sijoittelu: Boolean,
                                    parentHakuOid: Option[String], sisaltyvatHaut: Set[String], tila: String,
                                    hakuaikas: List[Hakuaika], yhdenPaikanSaanto: YhdenPaikanSaanto,
-                                   nimi: Map[String, String]) {
+                                   nimi: Map[String, String],
+                                   organisaatioOids: Seq[String],
+                                   tarjoajaOids: Seq[String]) {
   def julkaistu = {
     tila == "JULKAISTU"
   }
