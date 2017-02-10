@@ -3,7 +3,6 @@ package fi.vm.sade.valintatulosservice.config
 import com.typesafe.config.Config
 import fi.vm.sade.utils.config.MongoConfig
 import fi.vm.sade.valintatulosservice.SecuritySettings
-import fi.vm.sade.valintatulosservice.OphUrlProperties.ophProperties
 import org.apache.commons.lang3.BooleanUtils
 
 case class VtsApplicationSettings(config: Config) extends ApplicationSettings(config) {
