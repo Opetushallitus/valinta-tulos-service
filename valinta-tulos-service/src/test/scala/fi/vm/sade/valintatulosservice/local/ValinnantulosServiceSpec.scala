@@ -11,7 +11,7 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
-import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, YhdenPaikanSaanto}
+import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde, YhdenPaikanSaanto}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantulosService, ValinnantulosUpdateStatus}
@@ -180,6 +180,40 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     }
   }
 
+  "Erillishaku / ValinnantulosService" in {
+    "status is 409 if valinnantulos has been modified" in new AuthorizedValinnantulosServiceWithMocks with ErillishakuMocks {
+      override def result = List((ZonedDateTime.now.toInstant, valinnantulos))
+      val notModifiedSince = ZonedDateTime.now.minusDays(2).toInstant
+      val valinnantulokset = List(valinnantulos.copy(julkaistavissa = Some(true)))
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, notModifiedSince, auditInfo, true) mustEqual
+        List(ValinnantulosUpdateStatus(409, s"Hakemus on muuttunut lukemisajan ${notModifiedSince} jälkeen", valintatapajonoOid, hakemusOids(0)))
+    }
+    "exception is thrown, if no authorization" in new NotAuthorizedValinnantulosServiceWithMocks with ErillishakuMocks {
+      override def result = List()
+      val valinnantulokset = List(valinnantulos)
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, ZonedDateTime.now.toInstant, auditInfo, true) must throwA[NotAuthorizedException]
+    }
+    "different statuses for invalid valinnantulokset" in new AuthorizedValinnantulosServiceWithMocks with ErillishakuMocks {
+      override def result = List()
+      val valinnantulokset = List(
+        valinnantulos.copy(ilmoittautumistila = Lasna),
+        valinnantulos.copy(hakemusOid = hakemusOids(1), valinnantila = Hyvaksytty, ilmoittautumistila = Lasna),
+        valinnantulos.copy(hakemusOid = hakemusOids(2), valinnantila = Peruutettu, vastaanottotila = VastaanotaSitovasti),
+        valinnantulos.copy(hakemusOid = hakemusOids(3), valinnantila = Peruutettu, vastaanottotila = Peru),
+        valinnantulos.copy(hakemusOid = hakemusOids(4), valinnantila = Varalla, vastaanottotila = VastaanotaSitovasti),
+        valinnantulos.copy(hakemusOid = hakemusOids(5), valinnantila = Perunut, vastaanottotila = VastaanotaSitovasti)
+      )
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, ZonedDateTime.now.toInstant, auditInfo, true) mustEqual List(
+        ValinnantulosUpdateStatus(409, s"Ilmoittautumistieto voi olla ainoastaan hyväksytyillä ja vastaanottaneilla hakijoilla", valintatapajonoOid, valinnantulokset(0).hakemusOid),
+        ValinnantulosUpdateStatus(409, s"Ilmoittautumistieto voi olla ainoastaan hyväksytyillä ja vastaanottaneilla hakijoilla", valintatapajonoOid, valinnantulokset(1).hakemusOid),
+        ValinnantulosUpdateStatus(409, s"Peruneella vastaanottajalla ei voi olla vastaanottotilaa", valintatapajonoOid, valinnantulokset(2).hakemusOid),
+        ValinnantulosUpdateStatus(409, s"Vastaanottaneen tai peruneen hakijan tulisi olla hyväksyttynä", valintatapajonoOid, valinnantulokset(3).hakemusOid),
+        ValinnantulosUpdateStatus(409, s"Hylätty tai varalla oleva hakija ei voi olla ilmoittautunut tai vastaanottanut", valintatapajonoOid, valinnantulokset(4).hakemusOid),
+        ValinnantulosUpdateStatus(409, s"Peruneella vastaanottajalla ei voi olla vastaanottotilaa", valintatapajonoOid, valinnantulokset(5).hakemusOid)
+      )
+    }
+  }
+
   trait ValinnantulosServiceWithMocks extends Mockito with Scope with MustThrownExpectations {
     def result:List[(Instant, Valinnantulos)]
 
@@ -211,5 +245,10 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     appConfig.settings returns settings
     settings.rootOrganisaatioOid returns "1.2.1.2.1.2"
     hakuService.getHaku(any[String]) returns Right(Haku(hakuOid, korkeakoulu = false, true, None, Set(), List(), None, YhdenPaikanSaanto(false, "moi"), Map()))
+  }
+
+  trait ErillishakuMocks extends ValinnantulosServiceWithMocks {
+    hakuService.getHakukohde(any[String]) returns Right(Hakukohde(valinnantulos.hakukohdeOid, hakuOid, List(),
+      "", "", Map(), Map(), YhdenPaikanSaanto(false, "moi"), true, "", 2017, List("123.123.123.1")))
   }
 }
