@@ -12,6 +12,7 @@ import org.json4s.JsonAST.JValue
 import org.json4s.JsonDSL._
 import org.json4s._
 import org.json4s.native.JsonMethods._
+import scala.concurrent.duration._
 
 import scala.util.{Failure, Success, Try}
 import scalaz.concurrent.Task
@@ -25,8 +26,33 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
   case class HakemusHenkilo(personOid: Option[String], hetu: String, etunimet: String, sukunimi: String, kutsumanimet: String,
                             syntymaaika: String, aidinkieli: String, sukupuoli: String)
 
-  def findPersonOidByHakemusOid(hakemusOid: String): Option[String] = {
+  case class Henkilo(oidHenkilo: String, hetu: String, etunimet: String, sukunimi: String, kutsumanimi: String,
+                            syntymaaika: String)
 
+  private def findPersonOidByHetu(hetu: String): Option[String] = findPersonByHetu(hetu).map(_.oidHenkilo)
+
+  def findPersonByHetu(hetu: String, timeout: Duration = 60 seconds): Option[Henkilo] = {
+    implicit val henkiloReader = new Reader[Henkilo] {
+      override def read(v: JValue): Henkilo = {
+        val henkilotiedot = (v \\ "results")
+        Henkilo( (v \\ "oidHenkilo").extract[String], (henkilotiedot \ "hetu").extract[String],
+          (henkilotiedot \ "etunimet").extract[String], (henkilotiedot \ "sukunimi").extract[String],
+          (henkilotiedot \ "kutsumanimi").extract[String], (henkilotiedot \ "syntymaaika").extract[String])
+      }
+    }
+
+    implicit val henkiloDecoder = org.http4s.json4s.native.jsonOf[Henkilo]
+
+    Try(henkiloClient.prepare(createUri(henkiloPalveluUrlBase + "?q=", hetu)).timed(timeout).flatMap {
+      case r if 200 == r.status.code => r.as[Henkilo]
+      case r => Task.fail(new RuntimeException(r.toString))
+    }.run) match {
+      case Success(henkilo) => Some(henkilo)
+      case Failure(t) => handleFailure(t, "searching person oid by hetu")
+    }
+  }
+
+  def findPersonOidByHakemusOid(hakemusOid: String): Option[String] = {
     implicit val hakemusHenkiloReader = new Reader[HakemusHenkilo] {
       override def read(v: JValue): HakemusHenkilo = {
         val result: JValue = (v \\ "answers")
@@ -86,18 +112,6 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
         Some(response)
       }
       case Failure(t) => handleFailure(t, "creating person")
-    }
-  }
-
-  private def findPersonOidByHetu(hetu: String): Option[String] = {
-    def parsePersonOid(response: String): Option[String] = (parse(response) \ "results" \\ "oidHenkilo").extractOpt[String]
-
-    Try(henkiloClient.prepare(createUri(henkiloPalveluUrlBase + "?q=", hetu)).flatMap {
-      case r if 200 == r.status.code => r.as[String]
-      case r => Task.fail(new RuntimeException(r.toString))
-    }.run) match {
-      case Success(response) => parsePersonOid(response)
-      case Failure(t) => handleFailure(t, "searching person oid by hetu")
     }
   }
 
