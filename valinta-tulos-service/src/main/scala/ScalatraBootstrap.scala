@@ -1,7 +1,7 @@
 import java.util
 import javax.servlet.{DispatcherType, ServletContext}
 
-import fi.vm.sade.auditlog.{ApplicationType, Audit}
+import fi.vm.sade.auditlog.{ApplicationType, Audit, Logger}
 import fi.vm.sade.security._
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
@@ -17,6 +17,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecord
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.ValintarekisteriService
 import fi.vm.sade.valintatulosservice.vastaanottomeili.{MailDecorator, MailPoller, ValintatulosMongoCollection}
 import org.scalatra._
+import org.slf4j.LoggerFactory
 
 class ScalatraBootstrap extends LifeCycle {
 
@@ -25,7 +26,11 @@ class ScalatraBootstrap extends LifeCycle {
   var globalConfig: Option[VtsAppConfig] = None
 
   override def init(context: ServletContext) {
-    val audit = new Audit("valinta-tulos-service", ApplicationType.BACKEND)
+    val auditLogger = new Logger {
+      private val logger = LoggerFactory.getLogger(classOf[Audit])
+      override def log(msg: String): Unit = logger.info(msg)
+    }
+    val audit = new Audit(auditLogger, "valinta-tulos-service", ApplicationType.BACKEND)
     implicit val appConfig: VtsAppConfig = VtsAppConfig.fromOptionalString(Option(context.getAttribute("valintatulos.profile").asInstanceOf[String]))
     globalConfig = Some(appConfig)
     appConfig.start
