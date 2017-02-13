@@ -2,9 +2,13 @@ package fi.vm.sade.valintatulosservice.valinnantulos
 
 import java.time.Instant
 
-import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantulosUpdateStatus}
+import fi.vm.sade.auditlog.{Changes, Target}
+import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantuloksenMuokkaus, ValinnantulosUpdateStatus}
 import fi.vm.sade.valintatulosservice.security.Session
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import slick.dbio
+
+import scala.util.{Failure, Success, Try}
 
 trait ErillishaunValinnantulosStrategy extends ValinnantulosStrategy {
 
@@ -24,7 +28,61 @@ trait ErillishaunValinnantulosStrategy extends ValinnantulosStrategy {
       ))
     ).getOrElse(throw new RuntimeException(s"Hakukohdetta ${hakukohdeOid} ei löydy tarjonnasta"))
 
-    def save(uusi: Valinnantulos, vanha: Option[Valinnantulos]) = Right()
+    def save(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]) = {
+      val muokkaaja = session.personOid
+
+      def createOperations(): Seq[dbio.DBIO[Unit]] = vanhaOpt match {
+        case None => List(
+            Some(valinnantulosRepository.storeValinnantila(uusi.getValinnantilanTallennus(muokkaaja), Some(ifUnmodifiedSince))),
+            Some(valinnantulosRepository.storeValinnantuloksenOhjaus(uusi.getValinnantuloksenOhjaus(muokkaaja, "Erillishaun tallennus"), Some(ifUnmodifiedSince))),
+            Option(uusi.ilmoittautumistila != EiTehty).collect { case true => valinnantulosRepository.storeIlmoittautuminen(
+                uusi.henkiloOid, Ilmoittautuminen(uusi.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, "Erillishaun tallennus"), Some(ifUnmodifiedSince))
+            }
+          ).flatten
+        case Some(vanha) => List(
+            Option(uusi.valinnantila != vanha.valinnantila).collect { case true =>
+              valinnantulosRepository.storeValinnantila(uusi.getValinnantilanTallennus(muokkaaja), Some(ifUnmodifiedSince))
+            },
+            Option(uusi.hasOhjausChanged(vanha)).collect { case true => valinnantulosRepository.updateValinnantuloksenOhjaus(
+              uusi.getValinnantuloksenOhjauksenMuutos(vanha, muokkaaja, "Erillishaun tallennus"), Some(ifUnmodifiedSince))
+            },
+            Option(uusi.ilmoittautumistila != vanha.ilmoittautumistila).collect { case true => valinnantulosRepository.storeIlmoittautuminen(
+              vanha.henkiloOid, Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, "Erillishaun tallennus"), Some(ifUnmodifiedSince))
+            }
+          ).flatten
+      }
+
+      //logger.info(s"Käyttäjä ${muokkaaja} muokkasi " +
+      //  s"hakemuksen ${uusi.hakemusOid} valinnan tulosta valintatapajonossa $uusi.valintatapajonoOid " +
+     //  s"vastaanottotilasta ${vanha.vastaanottotila} tilaan ${uusi.vastaanottotila} ja " +
+     //  s"ilmoittautumistilasta ${vanha.ilmoittautumistila} tilaan ${uusi.ilmoittautumistila}.")
+
+      Try(valinnantulosRepository.runBlockingTransactionally(
+        slick.dbio.DBIO.seq(createOperations: _*)
+      )) match {
+        case Success(_) =>
+          audit.log(auditInfo.user, ValinnantuloksenMuokkaus,
+            new Target.Builder()
+              .setField("hakukohde", uusi.hakukohdeOid)
+              .setField("valintatapajono", uusi.valintatapajonoOid)
+              .setField("hakemus", uusi.hakemusOid)
+              .build(),
+            new Changes.Builder()
+              .updated("valinnantila", vanhaOpt.map(_.valinnantila.toString).getOrElse("Ei valinnantilaa"), uusi.valinnantila.toString)
+              .updated("ehdollisestiHyvaksyttavissa", vanhaOpt.map(_.ehdollisestiHyvaksyttavissa).getOrElse(false).toString, uusi.ehdollisestiHyvaksyttavissa.getOrElse(false).toString)
+              .updated("julkaistavissa", vanhaOpt.map(_.julkaistavissa).getOrElse(false).toString, uusi.julkaistavissa.getOrElse(false).toString)
+              .updated("hyvaksyttyVarasijalta", vanhaOpt.map(_.hyvaksyttyVarasijalta).getOrElse(false).toString, uusi.hyvaksyttyVarasijalta.getOrElse(false).toString)
+              .updated("hyvaksyPeruuntunut", vanhaOpt.map(_.hyvaksyPeruuntunut).getOrElse(false).toString, uusi.hyvaksyPeruuntunut.getOrElse(false).toString)
+              .updated("vastaanottotila", vanhaOpt.map(_.vastaanottotila.toString).getOrElse("Ei vastaanottoa"), uusi.vastaanottotila.toString)
+              .updated("ilmoittautumistila", vanhaOpt.map(_.ilmoittautumistila.toString).getOrElse("Ei ilmoittautumista"), uusi.ilmoittautumistila.toString)
+              .build()
+          )
+          Right()
+        case Failure(t) =>
+          logger.warn(s"Valinnantuloksen $uusi tallennus epäonnistui", t)
+          Left(ValinnantulosUpdateStatus(500, s"Valinnantuloksen tallennus epäonnistui", valintatapajonoOid, uusi.hakemusOid))
+      }
+    }
 
     def validate(uusi: Valinnantulos, vanha: Option[Valinnantulos]) = {
       def ilmoittautunut(ilmoittautuminen: SijoitteluajonIlmoittautumistila) = ilmoittautuminen != EiTehty
