@@ -30,37 +30,51 @@ trait ErillishaunValinnantulosStrategy extends ValinnantulosStrategy {
 
     def save(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]) = {
       val muokkaaja = session.personOid
+      val selite = "Erillishaun tallennus"
 
-      def createOperations(): Seq[dbio.DBIO[Unit]] = vanhaOpt match {
-        case None => List(
-            Some(valinnantulosRepository.storeValinnantila(uusi.getValinnantilanTallennus(muokkaaja), Some(ifUnmodifiedSince))),
-            Some(valinnantulosRepository.storeValinnantuloksenOhjaus(uusi.getValinnantuloksenOhjaus(muokkaaja, "Erillishaun tallennus"), Some(ifUnmodifiedSince))),
-            Option(uusi.ilmoittautumistila != EiTehty).collect { case true => valinnantulosRepository.storeIlmoittautuminen(
-                uusi.henkiloOid, Ilmoittautuminen(uusi.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, "Erillishaun tallennus"), Some(ifUnmodifiedSince))
-            }
-          ).flatten
-        case Some(vanha) => List(
-            Option(uusi.valinnantila != vanha.valinnantila).collect { case true =>
-              valinnantulosRepository.storeValinnantila(uusi.getValinnantilanTallennus(muokkaaja), Some(ifUnmodifiedSince))
-            },
-            Option(uusi.hasOhjausChanged(vanha)).collect { case true => valinnantulosRepository.updateValinnantuloksenOhjaus(
-              uusi.getValinnantuloksenOhjauksenMuutos(vanha, muokkaaja, "Erillishaun tallennus"), Some(ifUnmodifiedSince))
-            },
-            Option(uusi.ilmoittautumistila != vanha.ilmoittautumistila).collect { case true => valinnantulosRepository.storeIlmoittautuminen(
-              vanha.henkiloOid, Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, "Erillishaun tallennus"), Some(ifUnmodifiedSince))
-            }
-          ).flatten
+      def createInsertOperations() = {
+        List(
+          Some(valinnantulosRepository.storeValinnantila(uusi.getValinnantilanTallennus(muokkaaja), Some(ifUnmodifiedSince))),
+          Some(valinnantulosRepository.storeValinnantuloksenOhjaus(uusi.getValinnantuloksenOhjaus(muokkaaja, selite), Some(ifUnmodifiedSince))),
+          Option(uusi.ilmoittautumistila != EiTehty).collect { case true => valinnantulosRepository.storeIlmoittautuminen(
+            uusi.henkiloOid, Ilmoittautuminen(uusi.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), Some(ifUnmodifiedSince))
+          }
+        ).flatten
       }
 
-      //logger.info(s"Käyttäjä ${muokkaaja} muokkasi " +
-      //  s"hakemuksen ${uusi.hakemusOid} valinnan tulosta valintatapajonossa $uusi.valintatapajonoOid " +
-     //  s"vastaanottotilasta ${vanha.vastaanottotila} tilaan ${uusi.vastaanottotila} ja " +
-     //  s"ilmoittautumistilasta ${vanha.ilmoittautumistila} tilaan ${uusi.ilmoittautumistila}.")
+      def createUpdateOperations(vanha:Valinnantulos) = {
+        List(
+          Option(uusi.valinnantila != vanha.valinnantila).collect { case true =>
+            valinnantulosRepository.storeValinnantila(uusi.getValinnantilanTallennus(muokkaaja), Some(ifUnmodifiedSince))
+          },
+          Option(uusi.hasOhjausChanged(vanha)).collect { case true => valinnantulosRepository.updateValinnantuloksenOhjaus(
+            uusi.getValinnantuloksenOhjauksenMuutos(vanha, muokkaaja, selite), Some(ifUnmodifiedSince))
+          },
+          Option(uusi.ilmoittautumistila != vanha.ilmoittautumistila).collect { case true => valinnantulosRepository.storeIlmoittautuminen(
+            vanha.henkiloOid, Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), Some(ifUnmodifiedSince))
+          }
+        ).flatten
+      }
+      
+      val operations = vanhaOpt match {
+        case None => logger.info(s"Käyttäjä ${muokkaaja} lisäsi " +
+          s"hakemukselle ${uusi.hakemusOid} valinnantuloksen erillishaun valintatapajonossa ${uusi.valintatapajonoOid}:" +
+          s"vastaanottotila on ${uusi.vastaanottotila} ja " +
+          s"valinnantila on ${uusi.valinnantila} ja " +
+          s"ilmoittautumistila on ${uusi.ilmoittautumistila}.")
+          valinnantulokset.map(_.hakukohdeOid).foreach(hakukohdeRecordService.getHakukohdeRecord(_))
+          createInsertOperations
 
-      valinnantulokset.map(_.hakukohdeOid).foreach(hakukohdeRecordService.getHakukohdeRecord(_))
+        case Some(vanha) => logger.info(s"Käyttäjä ${muokkaaja} muokkasi " +
+          s"hakemuksen ${uusi.hakemusOid} valinnan tulosta erillishaun valintatapajonossa ${uusi.valintatapajonoOid}" +
+          s"valinnantilasta ${vanha.valinnantila} tilaan ${uusi.valinnantila} ja " +
+          s"vastaanottotilasta ${vanha.vastaanottotila} tilaan ${uusi.vastaanottotila} ja " +
+          s"ilmoittautumistilasta ${vanha.ilmoittautumistila} tilaan ${uusi.ilmoittautumistila}.")
+          createUpdateOperations(vanha)
+      }
 
       Try(valinnantulosRepository.runBlockingTransactionally(
-        slick.dbio.DBIO.seq(createOperations: _*)
+        slick.dbio.DBIO.seq(operations: _*)
       )) match {
         case Success(_) =>
           audit.log(auditInfo.user, ValinnantuloksenMuokkaus,
