@@ -19,9 +19,9 @@ object OrganisaatioService {
   def apply(appConfig: AppConfig): OrganisaatioService = new CachedOrganisaatioService(new RealOrganisaatioService(appConfig))
 }
 class CachedOrganisaatioService(realOrganisaatioService: RealOrganisaatioService) extends OrganisaatioService {
-  private val cache = TTLOptionalMemoize.memoize[String, Organisaatiot](oid => realOrganisaatioService.hae(oid), 4 * 60 * 60)
+  //private val cache = TTLOptionalMemoize.memoize[String, Organisaatiot](oid => realOrganisaatioService.hae(oid), 4 * 60 * 60)
 
-  def hae(oid:String) = cache(oid)
+  def hae(oid:String) = realOrganisaatioService.hae(oid)
 
 }
 
