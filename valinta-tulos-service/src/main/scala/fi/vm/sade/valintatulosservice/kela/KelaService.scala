@@ -6,7 +6,7 @@ import java.util.Date
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.{HakijaResolver}
 import fi.vm.sade.valintatulosservice.organisaatio.{Organisaatio, Organisaatiot, OrganisaatioService}
-import fi.vm.sade.valintatulosservice.tarjonta.{Hakukohde, Haku, HakuService}
+import fi.vm.sade.valintatulosservice.tarjonta.{Koulutus, Hakukohde, Haku, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoRecord, ValintarekisteriService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra.swagger.Swagger
@@ -18,7 +18,7 @@ class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, orga
   private val fetchPersonTimeout = 5 seconds
 
 
-  private def convertToVastaanotto(haku: Haku, hakukohde: Hakukohde, organisaatiot: Organisaatiot, vastaanotto: VastaanottoRecord): fi.vm.sade.valintatulosservice.kela.Vastaanotto = {
+  private def convertToVastaanotto(haku: Haku, hakukohde: Hakukohde, organisaatiot: Organisaatiot, koulutuses: Seq[Koulutus], vastaanotto: VastaanottoRecord): fi.vm.sade.valintatulosservice.kela.Vastaanotto = {
     def findOppilaitos(o: Organisaatio): Option[String] =
       o.oppilaitosKoodi.orElse(o.children.flatMap(findOppilaitos).headOption)
 
@@ -78,7 +78,8 @@ class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, orga
     val (hakuOid, vastaanotot) = entry
     def hakukohdeAndOrganisaatioForVastaanotto(vastaanotto: VastaanottoRecord, haku: Haku): Either[Throwable, fi.vm.sade.valintatulosservice.kela.Vastaanotto] = {
       for(hakukohde <- hakuService.getHakukohde(vastaanotto.hakukohdeOid).right;
-          organisaatiot <- organisaatioService.hae(hakukohde.tarjoajaOids.head).right) yield convertToVastaanotto(haku, hakukohde, organisaatiot, vastaanotto)
+          koulutuses <- hakuService.getKoulutuses(hakukohde.hakukohdeKoulutusOids).right;
+          organisaatiot <- organisaatioService.hae(hakukohde.tarjoajaOids.head).right) yield convertToVastaanotto(haku, hakukohde, organisaatiot, koulutuses, vastaanotto)
     }
     hakuService.getHaku(hakuOid) match {
       case Right(haku) =>

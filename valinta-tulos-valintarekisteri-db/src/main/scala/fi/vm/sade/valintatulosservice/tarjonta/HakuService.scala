@@ -17,6 +17,7 @@ import scalaj.http.HttpOptions
 trait HakuService {
   def getHaku(oid: String): Either[Throwable, Haku]
   def getHakukohde(oid: String): Either[Throwable, Hakukohde]
+  def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]]
   def getHakukohdes(oids: Seq[String]): Either[Throwable, Seq[Hakukohde]]
   def getHakukohdesForHaku(hakuOid: String): Either[Throwable, Seq[Hakukohde]]
   def getHakukohdeOids(hakuOid:String): Either[Throwable, Seq[String]]
@@ -97,6 +98,7 @@ class CachedHakuService(wrappedService: HakuService) extends HakuService {
 
   override def getHaku(oid: String): Either[Throwable, Haku] = byOid(oid)
   override def getHakukohde(oid: String): Either[Throwable, Hakukohde] = wrappedService.getHakukohde(oid)
+  override def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]] = wrappedService.getKoulutuses(koulutusOids)
   override def getHakukohdes(oids: Seq[String]): Either[Throwable, Seq[Hakukohde]] = wrappedService.getHakukohdes(oids)
   override def getHakukohdeOids(hakuOid:String): Either[Throwable, Seq[String]] = wrappedService.getHakukohdeOids(hakuOid)
   override def getHakukohdesForHaku(hakuOid: String): Either[Throwable, Seq[Hakukohde]] = wrappedService.getHakukohdesForHaku(hakuOid)
@@ -179,7 +181,16 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
     }
   }
 
-  def getKoulutus(koulutusOid: String): Either[Throwable, Koulutus] = {
+  def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]] = {
+    def sequence[A, B](s: Seq[Either[A, B]]): Either[A, Seq[B]] =
+      s.foldRight(Right(Nil): Either[A, List[B]]) {
+        (e, acc) => for (xs <- acc.right; x <- e.right) yield x :: xs
+      }
+
+    sequence(koulutusOids.map(getKoulutus))
+  }
+
+  private def getKoulutus(koulutusOid: String): Either[Throwable, Koulutus] = {
     val koulutusUrl = s"${appConfig.settings.tarjontaUrl}/rest/v1/koulutus/$koulutusOid"
     fetch(koulutusUrl) { response =>
       (parse(response) \ "result").extract[Koulutus]
