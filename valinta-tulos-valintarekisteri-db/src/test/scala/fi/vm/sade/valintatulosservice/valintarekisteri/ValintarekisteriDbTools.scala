@@ -348,17 +348,18 @@ trait ValintarekisteriDbTools extends Specification {
     singleConnectionValintarekisteriDb.runBlocking(
       sql"""select j.hakemus_oid, j.hakija_oid, j.etunimi, j.sukunimi, j.prioriteetti, j.jonosija, j.varasijan_numero,
             j.onko_muuttunut_viime_sijoittelussa, j.pisteet, j.tasasijajonosija, j.hyvaksytty_harkinnanvaraisesti,
-            j.siirtynyt_toisesta_valintatapajonosta, vt.tila, v.tilankuvaus_hash, v.tarkenteen_lisatieto, t.tilan_tarkenne, v.tarkenteen_lisatieto, array_to_string(array_agg(hr.oid) , ',')
+            j.siirtynyt_toisesta_valintatapajonosta, vt.tila, t_k.tilankuvaus_hash, v.tarkenteen_lisatieto, t.tilan_tarkenne, v.tarkenteen_lisatieto, array_to_string(array_agg(hr.oid) , ',')
             from jonosijat j
             left join hakijaryhman_hakemukset as hh on hh.hakemus_oid = j.hakemus_oid
             left join hakijaryhmat as hr on hr.oid = hh.hakijaryhma_oid and hr.sijoitteluajo_id = hh.sijoitteluajo_id
             left join valinnantulokset v on j.valintatapajono_oid = v.valintatapajono_oid and j.hakemus_oid = v.hakemus_oid
             left join valinnantilat as vt on vt.hakukohde_oid = v.hakukohde_oid and vt.valintatapajono_oid = v.valintatapajono_oid and vt.hakemus_oid = v.hakemus_oid
-            left join valinnantilan_kuvaukset as t on t.hash = v.tilankuvaus_hash
+            left join tilat_kuvaukset as t_k on t_k.hakemus_oid = v.hakemus_oid and t_k.valintatapajono_oid = v.valintatapajono_oid
+            left join valinnantilan_kuvaukset as t on t.hash = t_k.tilankuvaus_hash
             where j.valintatapajono_oid = ${valintatapajonoOid}
             group by j.hakemus_oid, j.hakija_oid, j.etunimi, j.sukunimi, j.prioriteetti, j.jonosija, j.varasijan_numero,
             j.onko_muuttunut_viime_sijoittelussa, j.pisteet, j.tasasijajonosija, j.hyvaksytty_harkinnanvaraisesti,
-            j.siirtynyt_toisesta_valintatapajonosta, vt.tila, v.tilankuvaus_hash, t.tilan_tarkenne, v.tarkenteen_lisatieto
+            j.siirtynyt_toisesta_valintatapajonosta, vt.tila, t_k.tilankuvaus_hash, t.tilan_tarkenne, v.tarkenteen_lisatieto
          """.as[Hakemus])
   }
 
@@ -371,8 +372,9 @@ trait ValintarekisteriDbTools extends Specification {
   private def findJonosijanTilaAndtilankuvaukset(hakemusOid:String, sijoitteluajoId:Long, valintatapajonoOid:String) = {
     singleConnectionValintarekisteriDb.runBlocking(
       sql"""select tila, tilankuvaus_hash, tarkenteen_lisatieto
-            from jonosijat
-            where hakemus_oid = ${hakemusOid} and sijoitteluajo_id = ${sijoitteluajoId} and valintatapajono_oid = ${valintatapajonoOid}
+            from jonosijat j
+              left join tilat_kuvaukset t_k on t_k.hakemus_oid = j.hakemus_oid and t_k.valintatapajono_oid = j.valintatapajono_oid
+            where j.hakemus_oid = ${hakemusOid} and sijoitteluajo_id = ${sijoitteluajoId} and j.valintatapajono_oid = ${valintatapajonoOid}
          """.as[JonosijanTilankuvauksetResult]).head
   }
 
