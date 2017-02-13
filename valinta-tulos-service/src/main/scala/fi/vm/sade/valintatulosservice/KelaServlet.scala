@@ -16,6 +16,10 @@ class KelaServlet(kelaService: KelaService)(override implicit val swagger: Swagg
 
   protected val applicationDescription = "Julkinen Kela REST API"
 
+  override protected def checkJsonContentType() {
+
+  }
+
   post("/vastaanotot/henkilo") {
     parseParams() match {
       case HetuQuery(henkilotunnus, startingAt) =>
