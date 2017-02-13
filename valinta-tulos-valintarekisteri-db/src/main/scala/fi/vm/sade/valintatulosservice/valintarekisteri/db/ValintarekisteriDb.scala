@@ -355,9 +355,9 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
               lower(ti.system_time),
               v.timestamp,
               lower(i.system_time),
-              tu.hakukohde_oid,
-              tu.valintatapajono_oid,
-              tu.hakemus_oid,
+              ti.hakukohde_oid,
+              ti.valintatapajono_oid,
+              ti.hakemus_oid,
               ti.henkilo_oid,
               ti.tila,
               tu.ehdollisesti_hyvaksyttavissa,
@@ -373,7 +373,7 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
               and v.henkilo = ti.henkilo_oid
           left join ilmoittautumiset as i on i.hakukohde = tu.hakukohde_oid
               and i.henkilo = ti.henkilo_oid
-          where tu.valintatapajono_oid = ${valintatapajonoOid}
+          where ti.valintatapajono_oid = ${valintatapajonoOid}
        """.as[(Instant, Valinnantulos)].map(_.toList), duration)
   }
 
@@ -392,7 +392,7 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
             order by sijoitteluajo_id desc limit 1""".as[String], Duration(1, TimeUnit.SECONDS)).head
   }
 
-  override def storeValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+  override def updateValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
     sqlu"""update valinnantulokset
            set julkaistavissa = ${ohjaus.julkaistavissa},
               ehdollisesti_hyvaksyttavissa = ${ohjaus.ehdollisestiHyvaksyttavissa},
@@ -409,6 +409,76 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
               ${ifUnmodifiedSince}::timestamptz is null or
               system_time @> ${ifUnmodifiedSince}
            )""".flatMap {
+      case 1 => DBIO.successful(())
+      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ohjausta $ohjaus ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti"))
+    }
+  }
+
+  override def storeValinnantila(tila:ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+    val tilanViimeisinMuutos = new Timestamp(System.currentTimeMillis)
+
+    sqlu"""insert into valinnantilat(
+             valintatapajono_oid,
+             hakemus_oid,
+             hakukohde_oid,
+             ilmoittaja,
+             henkilo_oid,
+             tila,
+             tilan_viimeisin_muutos
+           ) values (${tila.valintatapajonoOid},
+              ${tila.hakemusOid},
+              ${tila.hakukohdeOid},
+              ${tila.muokkaaja},
+              ${tila.henkiloOid},
+              ${tila.valinnantila.toString}::valinnantila,
+              ${tilanViimeisinMuutos})
+           on conflict on constraint valinnantilat_pkey do update set
+             tila = excluded.tila,
+             tilan_viimeisin_muutos = excluded.tilan_viimeisin_muutos,
+             ilmoittaja = excluded.ilmoittaja
+           where valinnantilat.tila <> excluded.tila
+             and (
+              ${ifUnmodifiedSince}::timestamptz is null or
+              valinnantilat.system_time @> ${ifUnmodifiedSince})""".flatMap {
+      case 1 => DBIO.successful(())
+      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantilaa $tila ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti"))
+    }
+  }
+
+  override def storeValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+    sqlu"""insert into valinnantulokset(
+             valintatapajono_oid,
+             hakemus_oid,
+             hakukohde_oid,
+             ilmoittaja,
+             selite,
+             julkaistavissa,
+             ehdollisesti_hyvaksyttavissa,
+             hyvaksytty_varasijalta,
+             hyvaksy_peruuntunut
+           ) values (${ohjaus.valintatapajonoOid},
+              ${ohjaus.hakemusOid},
+              ${ohjaus.hakukohdeOid},
+              ${ohjaus.muokkaaja},
+              ${ohjaus.selite},
+              ${ohjaus.julkaistavissa},
+              ${ohjaus.ehdollisestiHyvaksyttavissa},
+              ${ohjaus.hyvaksyttyVarasijalta},
+              ${ohjaus.hyvaksyPeruuntunut})
+           on conflict on constraint valinnantulokset_pkey do update set
+             julkaistavissa = excluded.julkaistavissa,
+             ilmoittaja = excluded.ilmoittaja,
+             selite = excluded.selite,
+             ehdollisesti_hyvaksyttavissa = excluded.ehdollisesti_hyvaksyttavissa,
+             hyvaksytty_varasijalta = excluded.hyvaksytty_varasijalta,
+             hyvaksy_peruuntunut = excluded.hyvaksy_peruuntunut
+           where ( valinnantulokset.julkaistavissa <> excluded.julkaistavissa
+             or valinnantulokset.ehdollisesti_hyvaksyttavissa <> excluded.ehdollisesti_hyvaksyttavissa
+             or valinnantulokset.hyvaksytty_varasijalta <> excluded.hyvaksytty_varasijalta
+             or valinnantulokset.hyvaksy_peruuntunut <> excluded.hyvaksy_peruuntunut )
+             and (
+              ${ifUnmodifiedSince}::timestamptz is null or
+              valinnantulokset.system_time @> ${ifUnmodifiedSince})""".flatMap {
       case 1 => DBIO.successful(())
       case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ohjausta $ohjaus ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti"))
     }
