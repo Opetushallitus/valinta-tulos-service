@@ -139,7 +139,7 @@ abstract class ValintarekisteriResultExtractors {
   ))
 
   protected implicit val getValinnantulosWithLastModifiedResult: GetResult[(Instant, Valinnantulos)] = GetResult(r => (
-    (new java.util.Date((List(r.nextDate) ++ List(r.nextDate) ++ r.nextDateOption ++ r.nextDateOption).map(_.getTime).max)).toInstant,
+    (new java.util.Date((r.nextDateOption ++ List(r.nextDate) ++ r.nextDateOption ++ r.nextDateOption).map(_.getTime).max)).toInstant,
     getValinnantulosResult(r)))
 
   implicit object SetUUID extends SetParameter[UUID] {
