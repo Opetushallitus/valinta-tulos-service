@@ -2,6 +2,7 @@ set session_replication_role = replica; -- disable triggers for this session
 
 create table tilat_kuvaukset (
     tilankuvaus_hash bigint not null,
+    tarkenteen_lisatieto character varying null,
     hakukohde_oid character varying not null,
     valintatapajono_oid character varying not null,
     hakemus_oid character varying not null,
@@ -13,12 +14,14 @@ create table tilat_kuvaukset_history (like tilat_kuvaukset);
 
 insert into tilat_kuvaukset_history (
     tilankuvaus_hash,
+    tarkenteen_lisatieto,
     hakukohde_oid,
     valintatapajono_oid,
     hakemus_oid,
     transaction_id,
     system_time
 ) select tilankuvaus_hash,
+    tarkenteen_lisatieto,
     hakukohde_oid,
     valintatapajono_oid,
     hakemus_oid,
@@ -28,12 +31,14 @@ insert into tilat_kuvaukset_history (
 
 insert into tilat_kuvaukset (
     tilankuvaus_hash,
+    tarkenteen_lisatieto,
     hakukohde_oid,
     valintatapajono_oid,
     hakemus_oid,
     transaction_id,
     system_time
 ) select tilankuvaus_hash,
+    tarkenteen_lisatieto,
     hakukohde_oid,
     valintatapajono_oid,
     hakemus_oid,
@@ -42,8 +47,11 @@ insert into tilat_kuvaukset (
   from valinnantulokset where tilankuvaus_hash is not null;
 
 alter table jonosijat drop column tilankuvaus_hash;
+alter table jonosijat drop column tarkenteen_lisatieto;
 alter table valinnantulokset_history drop column tilankuvaus_hash;
+alter table valinnantulokset_history drop column tarkenteen_lisatieto;
 alter table valinnantulokset drop column tilankuvaus_hash;
+alter table valinnantulokset drop column tarkenteen_lisatieto;
 
 alter table tilat_kuvaukset add primary key (valintatapajono_oid, hakemus_oid, hakukohde_oid);
 
@@ -62,6 +70,7 @@ $$
 begin
     insert into tilat_kuvaukset_history (
         tilankuvaus_hash,
+        tarkenteen_lisatieto,
         hakukohde_oid,
         valintatapajono_oid,
         hakemus_oid,
@@ -69,6 +78,7 @@ begin
         system_time
     ) values (
         old.tilankuvaus_hash,
+        old.tarkenteen_lisatieto,
         old.hakukohde_oid,
         old.valintatapajono_oid,
         old.hakemus_oid,
@@ -100,7 +110,6 @@ begin
         hakukohde_oid,
         valintatapajono_oid,
         hakemus_oid,
-        tarkenteen_lisatieto,
         julkaistavissa,
         ehdollisesti_hyvaksyttavissa,
         hyvaksytty_varasijalta,
@@ -113,7 +122,6 @@ begin
         old.hakukohde_oid,
         old.valintatapajono_oid,
         old.hakemus_oid,
-        old.tarkenteen_lisatieto,
         old.julkaistavissa,
         old.ehdollisesti_hyvaksyttavissa,
         old.hyvaksytty_varasijalta,

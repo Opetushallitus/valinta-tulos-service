@@ -348,7 +348,7 @@ trait ValintarekisteriDbTools extends Specification {
     singleConnectionValintarekisteriDb.runBlocking(
       sql"""select j.hakemus_oid, j.hakija_oid, j.etunimi, j.sukunimi, j.prioriteetti, j.jonosija, j.varasijan_numero,
             j.onko_muuttunut_viime_sijoittelussa, j.pisteet, j.tasasijajonosija, j.hyvaksytty_harkinnanvaraisesti,
-            j.siirtynyt_toisesta_valintatapajonosta, vt.tila, t_k.tilankuvaus_hash, v.tarkenteen_lisatieto, t.tilan_tarkenne, v.tarkenteen_lisatieto, array_to_string(array_agg(hr.oid) , ',')
+            j.siirtynyt_toisesta_valintatapajonosta, vt.tila, t_k.tilankuvaus_hash, t_k.tarkenteen_lisatieto, t.tilan_tarkenne, t_k.tarkenteen_lisatieto, array_to_string(array_agg(hr.oid) , ',')
             from jonosijat j
             left join hakijaryhman_hakemukset as hh on hh.hakemus_oid = j.hakemus_oid
             left join hakijaryhmat as hr on hr.oid = hh.hakijaryhma_oid and hr.sijoitteluajo_id = hh.sijoitteluajo_id
@@ -359,7 +359,7 @@ trait ValintarekisteriDbTools extends Specification {
             where j.valintatapajono_oid = ${valintatapajonoOid}
             group by j.hakemus_oid, j.hakija_oid, j.etunimi, j.sukunimi, j.prioriteetti, j.jonosija, j.varasijan_numero,
             j.onko_muuttunut_viime_sijoittelussa, j.pisteet, j.tasasijajonosija, j.hyvaksytty_harkinnanvaraisesti,
-            j.siirtynyt_toisesta_valintatapajonosta, vt.tila, t_k.tilankuvaus_hash, t.tilan_tarkenne, v.tarkenteen_lisatieto
+            j.siirtynyt_toisesta_valintatapajonosta, vt.tila, t_k.tilankuvaus_hash, t.tilan_tarkenne, t_k.tarkenteen_lisatieto
          """.as[Hakemus])
   }
 
