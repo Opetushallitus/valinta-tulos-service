@@ -520,6 +520,7 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
         val valinnantulosStatement = createValinnantulosStatement(session.connection)
         val valinnantilaStatement = createValinnantilaStatement(session.connection)
         val tilankuvausStatement = createTilankuvausStatement(session.connection)
+        val tilaKuvausMappingStatement = createTilaKuvausMappingStatement(session.connection)
         sijoittelu.hakukohteet.foreach(hakukohde => {
           hakukohde.getValintatapajonot.asScala.foreach(valintatapajono => {
             valintatapajono.getHakemukset.asScala.foreach(hakemus => {
@@ -532,7 +533,8 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
                 pistetietoStatement,
                 valinnantulosStatement,
                 valinnantilaStatement,
-                tilankuvausStatement
+                tilankuvausStatement,
+                tilaKuvausMappingStatement
               )
             })
           })
@@ -542,11 +544,13 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
         time(s"Haun $hakuOid pistetietojen tallennus") { pistetietoStatement.executeBatch }
         time(s"Haun $hakuOid valinnantilojen tallennus") { valinnantilaStatement.executeBatch }
         time(s"Haun $hakuOid valinnantulosten tallennus") { valinnantulosStatement.executeBatch }
+        time(s"Haun $hakuOid tilankuvaus-mäppäysten tallennus") { tilaKuvausMappingStatement.executeBatch }
         tilankuvausStatement.close()
         jonosijaStatement.close()
         pistetietoStatement.close()
         valinnantilaStatement.close()
         valinnantulosStatement.close()
+        tilaKuvausMappingStatement.close()
       })
       .andThen(DBIO.sequence(
         sijoittelu.hakukohteet.flatMap(_.getHakijaryhmat.asScala).map(insertHakijaryhma(sijoitteluajoId, _))))
@@ -586,20 +590,22 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
                                            pistetietoStatement: PreparedStatement,
                                            valinnantulosStatement: PreparedStatement,
                                            valinnantilaStatement: PreparedStatement,
-                                           tilankuvausStatement: PreparedStatement) = {
+                                           tilankuvausStatement: PreparedStatement,
+                                           tilaKuvausMappingStatement: PreparedStatement) = {
     val hakemusWrapper = SijoitteluajonHakemusWrapper(hakemus)
     createJonosijaInsertRow(sijoitteluajoId, hakukohdeOid, valintatapajonoOid, hakemusWrapper, jonosijaStatement)
     hakemus.getPistetiedot.asScala.foreach(createPistetietoInsertRow(sijoitteluajoId, valintatapajonoOid, hakemus.getHakemusOid, _, pistetietoStatement))
     createValinnantilanKuvausInsertRow(hakemusWrapper, tilankuvausStatement)
     createValinnantilaInsertRow(hakukohdeOid, valintatapajonoOid, sijoitteluajoId, hakemusWrapper, valinnantilaStatement)
     createValinnantulosInsertRow(hakemusWrapper, sijoitteluajoId, hakukohdeOid, valintatapajonoOid, valinnantulosStatement)
+    createTilaKuvausMappingInsertRow(hakemusWrapper, hakukohdeOid, valintatapajonoOid, tilaKuvausMappingStatement)
   }
 
   private def createStatement(sql:String) = (connection:java.sql.Connection) => connection.prepareStatement(sql)
 
   private def createJonosijaStatement = createStatement("""insert into jonosijat (valintatapajono_oid, sijoitteluajo_id, hakukohde_oid, hakemus_oid, hakija_oid, etunimi, sukunimi, prioriteetti,
           jonosija, varasijan_numero, onko_muuttunut_viime_sijoittelussa, pisteet, tasasijajonosija, hyvaksytty_harkinnanvaraisesti,
-          siirtynyt_toisesta_valintatapajonosta, tila, tarkenteen_lisatieto, tilankuvaus_hash) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::valinnantila, ?, ?)""")
+          siirtynyt_toisesta_valintatapajonosta, tila, tarkenteen_lisatieto) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::valinnantila, ?)""")
 
   private def createJonosijaInsertRow(sijoitteluajoId: Long, hakukohdeOid: String, valintatapajonoOid: String, hakemus: SijoitteluajonHakemusWrapper, statement: PreparedStatement) = {
     val SijoitteluajonHakemusWrapper(hakemusOid, hakijaOid, etunimi, sukunimi, prioriteetti, jonosija, varasijanNumero,
@@ -620,14 +626,13 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
       case _ => statement.setNull(10, Types.INTEGER)
     }
     statement.setBoolean(11, onkoMuuttunutViimeSijoittelussa)
-    statement.setBigDecimal(12, pisteet.map(_.bigDecimal).getOrElse(null))
+    statement.setBigDecimal(12, pisteet.map(_.bigDecimal).orNull)
     statement.setInt(13, tasasijaJonosija)
     statement.setBoolean(14, hyvaksyttyHarkinnanvaraisesti)
     statement.setBoolean(15, siirtynytToisestaValintatapajonosta)
     statement.setString(16, valinnantila.toString)
     statement.setString(17, tarkenteenLisatieto.orNull)
-    statement.setInt(18, hakemus.tilankuvauksenHash)
-    statement.addBatch
+    statement.addBatch()
   }
 
   private def createPistetietoStatement = createStatement("""insert into pistetiedot (sijoitteluajo_id, hakemus_oid, valintatapajono_oid,
@@ -652,20 +657,15 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
            valintatapajono_oid,
            hakemus_oid,
            hakukohde_oid,
-           tilankuvaus_hash,
            tarkenteen_lisatieto,
            ilmoittaja,
            selite
-       ) values (?, ?, ?, ?, ?, ?::text, 'Sijoittelun tallennus')
+       ) values (?, ?, ?, ?, ?::text, 'Sijoittelun tallennus')
        on conflict on constraint valinnantulokset_pkey do update set
-           tilankuvaus_hash = excluded.tilankuvaus_hash,
            tarkenteen_lisatieto = excluded.tarkenteen_lisatieto,
            ilmoittaja = excluded.ilmoittaja,
            selite = excluded.selite
-       where (valinnantulokset.tilankuvaus_hash is null and excluded.tilankuvaus_hash is not null)
-           or (valinnantulokset.tilankuvaus_hash is not null and excluded.tilankuvaus_hash is null)
-           or valinnantulokset.tilankuvaus_hash <> excluded.tilankuvaus_hash
-           or (valinnantulokset.tarkenteen_lisatieto is null and excluded.tarkenteen_lisatieto is not null)
+       where (valinnantulokset.tarkenteen_lisatieto is null and excluded.tarkenteen_lisatieto is not null)
            or (valinnantulokset.tarkenteen_lisatieto is not null and excluded.tarkenteen_lisatieto is null)
            or valinnantulokset.tarkenteen_lisatieto <> excluded.tarkenteen_lisatieto""")
 
@@ -677,9 +677,8 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
     valinnantulosStatement.setString(1, valintatapajonoOid)
     valinnantulosStatement.setString(2, hakemus.hakemusOid)
     valinnantulosStatement.setString(3, hakukohdeOid)
-    valinnantulosStatement.setInt(4, hakemus.tilankuvauksenHash)
-    valinnantulosStatement.setString(5, hakemus.tarkenteenLisatieto.orNull)
-    valinnantulosStatement.setLong(6, sijoitteluajoId)
+    valinnantulosStatement.setString(4, hakemus.tarkenteenLisatieto.orNull)
+    valinnantulosStatement.setLong(5, sijoitteluajoId)
     valinnantulosStatement.addBatch()
   }
 
@@ -719,6 +718,28 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
     statement.setLong(6, sijoitteluajoId)
     statement.setString(7, hakemus.hakijaOid.orNull)
 
+    statement.addBatch()
+  }
+
+  private def createTilaKuvausMappingStatement = createStatement(
+    """insert into tilat_kuvaukset (
+          tilankuvaus_hash,
+          hakukohde_oid,
+          valintatapajono_oid,
+          hakemus_oid) values (?, ?, ?, ?)
+       on conflict on constraint tilat_kuvaukset_pkey do update set
+           tilankuvaus_hash = excluded.tilankuvaus_hash
+       where tilat_kuvaukset.tilankuvaus_hash <> excluded.tilankuvaus_hash
+    """)
+
+  private def createTilaKuvausMappingInsertRow(hakemusWrapper: SijoitteluajonHakemusWrapper,
+                                                hakukohdeOid: String,
+                                          valintatapajonoOid: String,
+                                          statement: PreparedStatement) = {
+    statement.setInt(1, hakemusWrapper.tilankuvauksenHash)
+    statement.setString(2, hakukohdeOid)
+    statement.setString(3, valintatapajonoOid)
+    statement.setString(4, hakemusWrapper.hakemusOid)
     statement.addBatch()
   }
 
@@ -843,7 +864,7 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
   override def getSijoitteluajonHakemukset(sijoitteluajoId:Long): List[HakemusRecord] = {
     runBlocking(
       sql"""select j.hakija_oid, j.hakemus_oid, j.pisteet, j.etunimi, j.sukunimi, j.prioriteetti, j.jonosija,
-            j.tasasijajonosija, vt.tila, v.tilankuvaus_hash, v.tarkenteen_lisatieto, j.hyvaksytty_harkinnanvaraisesti, j.varasijan_numero,
+            j.tasasijajonosija, vt.tila, t_k.tilankuvaus_hash, v.tarkenteen_lisatieto, j.hyvaksytty_harkinnanvaraisesti, j.varasijan_numero,
             j.onko_muuttunut_viime_sijoittelussa,
             j.siirtynyt_toisesta_valintatapajonosta, j.valintatapajono_oid
             from jonosijat as j
@@ -855,6 +876,9 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
             on vt.valintatapajono_oid = v.valintatapajono_oid
               and vt.hakemus_oid = v.hakemus_oid
               and vt.hakukohde_oid = v.hakukohde_oid
+            join tilat_kuvaukset t_k
+            on v.valintatapajono_oid = t_k.valintatapajono_oid
+              and v.hakemus_oid = t_k.hakemus_oid
             where j.sijoitteluajo_id = ${sijoitteluajoId}""".as[HakemusRecord], Duration(30, TimeUnit.SECONDS)).toList
   }
 
@@ -865,7 +889,7 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
                        select oid from valintatapajonot where sijoitteluajo_id = ${sijoitteluajoId}
                        order by oid desc limit ${chunkSize} offset ${offset} )
                        select j.hakija_oid, j.hakemus_oid, j.pisteet, j.etunimi, j.sukunimi, j.prioriteetti, j.jonosija,
-            j.tasasijajonosija, vt.tila, v.tilankuvaus_hash, v.tarkenteen_lisatieto, j.hyvaksytty_harkinnanvaraisesti, j.varasijan_numero,
+            j.tasasijajonosija, vt.tila, t_k.tilankuvaus_hash, v.tarkenteen_lisatieto, j.hyvaksytty_harkinnanvaraisesti, j.varasijan_numero,
             j.onko_muuttunut_viime_sijoittelussa,
             j.siirtynyt_toisesta_valintatapajonosta, j.valintatapajono_oid
             from jonosijat as j
@@ -878,6 +902,9 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
               and vt.hakemus_oid = v.hakemus_oid
               and vt.hakukohde_oid = v.hakukohde_oid
             inner join vj on vj.oid = j.valintatapajono_oid
+            join tilat_kuvaukset t_k
+            on v.valintatapajono_oid = t_k.valintatapajono_oid
+              and v.hakemus_oid = t_k.hakemus_oid
             where j.sijoitteluajo_id = ${sijoitteluajoId}""".as[HakemusRecord]).toList match {
         case result if result.size == 0 => result
         case result => result ++ readHakemukset(offset + chunkSize)
