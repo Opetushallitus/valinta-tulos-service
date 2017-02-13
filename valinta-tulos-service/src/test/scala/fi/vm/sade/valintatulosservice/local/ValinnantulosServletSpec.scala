@@ -44,6 +44,10 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     s"/organisaatio-service/rest/organisaatio/${appConfig.settings.rootOrganisaatioOid}/parentoids"
   )).respond(new HttpResponse().withStatusCode(200).withBody("1.2.246.562.10.00000000001"))
 
+  organisaatioService.when(new HttpRequest().withPath(
+    s"/organisaatio-service/rest/organisaatio/123.123.123.123/parentoids"
+  )).respond(new HttpResponse().withStatusCode(200).withBody("1.2.246.562.10.00000000001/1.2.246.562.10.39804091914/123.123.123.123"))
+
   lazy val valinnantulos = Valinnantulos(
     hakukohdeOid = "1.2.246.562.20.26643418986",
     valintatapajonoOid = "14538080612623056182813241345174",
@@ -62,6 +66,19 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     henkiloOid = "1.2.246.562.24.19795717550",
     valinnantila = Hyvaksytty
   )
+
+  lazy val erillishaunValinnantulos = Valinnantulos(
+    hakukohdeOid = "randomHakukohdeOid",
+    valintatapajonoOid = "1234567",
+    hakemusOid = "randomHakemusOid",
+    henkiloOid = "randomHenkiloOid",
+    valinnantila = Hyvaksytty,
+    ehdollisestiHyvaksyttavissa = None,
+    julkaistavissa = Some(true),
+    hyvaksyttyVarasijalta = None,
+    hyvaksyPeruuntunut = None,
+    vastaanottotila = VastaanotaSitovasti,
+    ilmoittautumistila = Lasna)
 
   "GET /auth/valinnan-tulos/:valintatapajonoOid" should {
     "palauttaa 401, jos käyttäjä ei ole autentikoitunut" in {
@@ -139,6 +156,53 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
       }
 
       hae(uusiValinnantulos)
+    }
+  }
+
+  "PATCH /auth/valinnan-tulos/:valintatapajonoOid?erillishaku=true" should {
+    "palauttaa 403, jos käyttäjällä ei ole kirjoitusoikeuksia" in {
+      patch("auth/valinnan-tulos/1234567?erillishaku=true", Seq.empty,
+        Map("Cookie" -> s"session=${createTestSession(Set(Role.SIJOITTELU_READ))}")) {
+        status must_== 403
+        body mustEqual "{\"error\":\"Forbidden\"}"
+      }
+    }
+    "palauttaa 403, jos käyttäjällä ei ole kirjoitusoikeuksia organisaatioon" in {
+      patch("auth/valinnan-tulos/1234567?erillishaku=true", write(List(erillishaunValinnantulos)),
+        Map("Cookie" -> s"session=${createTestSession(Set(Role.SIJOITTELU_CRUD))}",
+          "If-Unmodified-Since" -> now)) {
+        status must_== 403
+        body mustEqual "{\"error\":\"Forbidden\"}"
+      }
+    }
+    "palauttaa 200 ja virhestatuksen, jos valinnantulos on ristiriitainen" in {
+      patchJSON("auth/valinnan-tulos/1234567?erillishaku=true", write(List(erillishaunValinnantulos.copy(valinnantila = Hylatty))),
+        Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> "Tue, 3 Jun 2008 11:05:30 GMT")) {
+        status must_== 200
+        val result = parse(body).extract[List[ValinnantulosUpdateStatus]]
+        result.size mustEqual 1
+        result.head.status mustEqual 409
+      }
+    }
+    "palauttaa 200 ja päivittää valinnan tilaa, ohjaustietoja ja ilmoittautumista" in {
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono("1234567") mustEqual List()
+      singleConnectionValintarekisteriDb.storeHakukohde(HakukohdeRecord("randomHakukohdeOid", "123", false, false, Kevat(2018)))
+
+      patchJSON("auth/valinnan-tulos/1234567?erillishaku=true", write(List(erillishaunValinnantulos)),
+        Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> "Tue, 3 Jun 2008 11:05:30 GMT")) {
+        status must_== 200
+        val result = parse(body).extract[List[ValinnantulosUpdateStatus]]
+        result.size mustEqual 0
+      }
+
+      val result = singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono("1234567")
+      result.size mustEqual 1
+      result.head._2 mustEqual erillishaunValinnantulos.copy(
+        ehdollisestiHyvaksyttavissa = Option(false),
+        hyvaksyttyVarasijalta = Option(false),
+        hyvaksyPeruuntunut = Option(false),
+        vastaanottotila = Poista
+      )
     }
   }
 

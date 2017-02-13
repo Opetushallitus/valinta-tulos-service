@@ -44,6 +44,7 @@ case class Valinnantulos(hakukohdeOid: String,
   def getValinnantuloksenOhjauksenMuutos(vanha:Valinnantulos, muokkaaja:String, selite:String) = ValinnantuloksenOhjaus(
     this.hakemusOid,
     this.valintatapajonoOid,
+    this.hakukohdeOid,
     getBooleanOptionChange(this.ehdollisestiHyvaksyttavissa, vanha.ehdollisestiHyvaksyttavissa),
     getBooleanOptionChange(this.julkaistavissa, vanha.julkaistavissa),
     getBooleanOptionChange(this.hyvaksyttyVarasijalta, vanha.hyvaksyttyVarasijalta),
@@ -51,4 +52,42 @@ case class Valinnantulos(hakukohdeOid: String,
     muokkaaja,
     selite
   )
+
+  def getValinnantuloksenOhjaus(muokkaaja:String, selite:String) = ValinnantuloksenOhjaus(
+    this.hakemusOid,
+    this.valintatapajonoOid,
+    this.hakukohdeOid,
+    this.ehdollisestiHyvaksyttavissa.getOrElse(false),
+    this.julkaistavissa.getOrElse(false),
+    this.hyvaksyttyVarasijalta.getOrElse(false),
+    this.hyvaksyPeruuntunut.getOrElse(false),
+    muokkaaja,
+    selite
+  )
+
+  def getValinnantilanTallennus(muokkaaja:String) = ValinnantilanTallennus(
+    this.hakemusOid,
+    this.valintatapajonoOid,
+    this.hakukohdeOid,
+    this.henkiloOid,
+    this.valinnantila,
+    muokkaaja
+  )
 }
+
+case class ValinnantuloksenOhjaus(hakemusOid: String,
+                                  valintatapajonoOid: String,
+                                  hakukohdeOid:String,
+                                  ehdollisestiHyvaksyttavissa: Boolean,
+                                  julkaistavissa: Boolean,
+                                  hyvaksyttyVarasijalta: Boolean,
+                                  hyvaksyPeruuntunut: Boolean,
+                                  muokkaaja: String,
+                                  selite: String)
+
+case class ValinnantilanTallennus(hakemusOid: String,
+                                  valintatapajonoOid: String,
+                                  hakukohdeOid:String,
+                                  henkiloOid:String,
+                                  valinnantila: Valinnantila,
+                                  muokkaaja: String)
