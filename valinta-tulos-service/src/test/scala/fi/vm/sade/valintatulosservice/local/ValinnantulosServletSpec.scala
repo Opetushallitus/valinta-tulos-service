@@ -186,7 +186,6 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     }
     "palauttaa 200 ja päivittää valinnan tilaa, ohjaustietoja ja ilmoittautumista" in {
       singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono("1234567") mustEqual List()
-      singleConnectionValintarekisteriDb.storeHakukohde(HakukohdeRecord("randomHakukohdeOid", "123", false, false, Kevat(2018)))
 
       patchJSON("auth/valinnan-tulos/1234567?erillishaku=true", write(List(erillishaunValinnantulos)),
         Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> "Tue, 3 Jun 2008 11:05:30 GMT")) {
