@@ -45,7 +45,7 @@ alter table jonosijat drop column tilankuvaus_hash;
 alter table valinnantulokset_history drop column tilankuvaus_hash;
 alter table valinnantulokset drop column tilankuvaus_hash;
 
-alter table tilat_kuvaukset add primary key (tilankuvaus_hash, valintatapajono_oid, hakemus_oid);
+alter table tilat_kuvaukset add primary key (valintatapajono_oid, hakemus_oid, hakukohde_oid);
 
 create trigger set_temporal_columns_on_tilat_kuvaukset_on_insert
 before insert on tilat_kuvaukset
@@ -90,8 +90,8 @@ after delete on tilat_kuvaukset
 for each row
 execute procedure update_tilat_kuvaukset_history();
 
-alter table tilat_kuvaukset add foreign key (hakukohde_oid, valintatapajono_oid, hakemus_oid)
-references valinnantilat (hakukohde_oid, valintatapajono_oid, hakemus_oid);
+alter table tilat_kuvaukset add foreign key (valintatapajono_oid, hakemus_oid, hakukohde_oid)
+references valinnantilat (valintatapajono_oid, hakemus_oid, hakukohde_oid);
 
 create or replace function update_valinnantulokset_history() returns trigger as
 $$
@@ -127,5 +127,6 @@ begin
 end;
 $$ language plpgsql;
 
+analyze tilat_kuvaukset;
 
 set session_replication_role = default; -- enable triggers for this session
