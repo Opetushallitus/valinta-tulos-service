@@ -4,6 +4,7 @@ import java.net.URLEncoder
 
 import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasParams}
 import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.config.{StubbedExternalDeps, AppConfig}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import org.http4s._
@@ -17,7 +18,28 @@ import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 import scalaz.concurrent.Task
 
-class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with Logging {
+case class Henkilo(oidHenkilo: String, hetu: String, etunimet: String, sukunimi: String, kutsumanimi: String,
+                   syntymaaika: String)
+
+trait HakijaResolver {
+  def findPersonByHetu(hetu: String, timeout: Duration = 60 seconds): Option[Henkilo]
+}
+
+object HakijaResolver {
+  def apply(appConfig: VtsAppConfig): HakijaResolver = appConfig match {
+    case _:StubbedExternalDeps => new HakijaResolver {
+      override def findPersonByHetu(hetu: String, timeout: Duration): Option[Henkilo] = hetu match {
+        case "face-beef" =>
+          Some(Henkilo("1.2.3.4", "face-beef", "Test", "Henkilo", "Test", ""))
+        case _ =>
+          None
+      }
+    }
+    case _ => new MissingHakijaOidResolver(appConfig)
+  }
+}
+
+class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with Logging with HakijaResolver {
   private val hakuClient = createCasClient(appConfig, "/haku-app")
   private val henkiloClient = createCasClient(appConfig, "/authentication-service")
   private val hakuUrlBase = appConfig.settings.config.getString("valinta-tulos-service.haku-app-url") + "/applications/listfull?q="
@@ -26,12 +48,11 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
   case class HakemusHenkilo(personOid: Option[String], hetu: String, etunimet: String, sukunimi: String, kutsumanimet: String,
                             syntymaaika: String, aidinkieli: String, sukupuoli: String)
 
-  case class Henkilo(oidHenkilo: String, hetu: String, etunimet: String, sukunimi: String, kutsumanimi: String,
-                            syntymaaika: String)
+
 
   private def findPersonOidByHetu(hetu: String): Option[String] = findPersonByHetu(hetu).map(_.oidHenkilo)
 
-  def findPersonByHetu(hetu: String, timeout: Duration = 60 seconds): Option[Henkilo] = {
+  override def findPersonByHetu(hetu: String, timeout: Duration = 60 seconds): Option[Henkilo] = {
     implicit val henkiloReader = new Reader[Henkilo] {
       override def read(v: JValue): Henkilo = {
         val henkilotiedot = (v \\ "results")

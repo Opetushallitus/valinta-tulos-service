@@ -3,20 +3,18 @@ package fi.vm.sade.valintatulosservice.kela
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.MissingHakijaOidResolver
+import fi.vm.sade.valintatulosservice.migraatio.vastaanotot
+import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.{HakijaResolver}
 import fi.vm.sade.valintatulosservice.organisaatio.{Organisaatio, Organisaatiot, OrganisaatioService}
 import fi.vm.sade.valintatulosservice.tarjonta.{Hakukohde, Haku, HakuService}
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoAction, VastaanottoRecord, ValintarekisteriService}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoRecord, ValintarekisteriService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra.swagger.Swagger
-
 import scala.concurrent.{Future, Await}
 import scala.util.Try
 import scala.concurrent.duration._
 
-class KelaService(hakuService: HakuService, organisaatioService: OrganisaatioService, valintarekisteriService: ValintarekisteriService)(implicit val appConfig: VtsAppConfig) {
-  private val missingHakijaOidResolver = new MissingHakijaOidResolver(appConfig)
+class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, organisaatioService: OrganisaatioService, valintarekisteriService: ValintarekisteriService) {
   private val fetchPersonTimeout = 5 seconds
 
 
@@ -48,7 +46,7 @@ class KelaService(hakuService: HakuService, organisaatioService: OrganisaatioSer
 
 
   def fetchVastaanototForPersonWithHetu(hetu: String, alkaen: Option[Date]): Option[Henkilo] = {
-    val henkilo: Option[missingHakijaOidResolver.Henkilo] = missingHakijaOidResolver.findPersonByHetu(hetu, fetchPersonTimeout)
+    val henkilo: Option[vastaanotot.Henkilo] = hakijaResolver.findPersonByHetu(hetu, fetchPersonTimeout)
     // missingHakijaOidResolver.Henkilo("1.2.3.4", hetu, "Joku", "Joku", "Joku","111190")
     henkilo match {
       case Some(henkilo) =>
@@ -62,7 +60,7 @@ class KelaService(hakuService: HakuService, organisaatioService: OrganisaatioSer
         ))*/
 
 
-        Some(Henkilo(
+        Some(fi.vm.sade.valintatulosservice.kela.Henkilo(
           henkilotunnus = henkilo.hetu,
           sukunimi = henkilo.sukunimi,
           etunimet = henkilo.etunimet,
