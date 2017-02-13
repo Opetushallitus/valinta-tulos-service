@@ -11,12 +11,14 @@ import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valinnantulos.{ErillishaunValinnantulosStrategy, SijoittelunValinnantulosStrategy}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 
 
 class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
                            val authorizer:OrganizationHierarchyAuthorizer,
                            val hakuService: HakuService,
                            val ohjausparametritService: OhjausparametritService,
+                           val hakukohdeRecordService: HakukohdeRecordService,
                            val appConfig: VtsAppConfig,
                            val audit: Audit) extends Logging with ErillishaunValinnantulosStrategy with SijoittelunValinnantulosStrategy {
 

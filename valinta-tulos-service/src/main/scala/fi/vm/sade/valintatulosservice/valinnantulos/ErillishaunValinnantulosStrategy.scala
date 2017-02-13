@@ -57,6 +57,8 @@ trait ErillishaunValinnantulosStrategy extends ValinnantulosStrategy {
      //  s"vastaanottotilasta ${vanha.vastaanottotila} tilaan ${uusi.vastaanottotila} ja " +
      //  s"ilmoittautumistilasta ${vanha.ilmoittautumistila} tilaan ${uusi.ilmoittautumistila}.")
 
+      valinnantulokset.map(_.hakukohdeOid).foreach(hakukohdeRecordService.getHakukohdeRecord(_))
+
       Try(valinnantulosRepository.runBlockingTransactionally(
         slick.dbio.DBIO.seq(createOperations: _*)
       )) match {
