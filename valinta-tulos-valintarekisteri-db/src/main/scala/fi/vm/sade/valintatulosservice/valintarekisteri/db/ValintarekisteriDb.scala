@@ -901,10 +901,11 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
             on vt.valintatapajono_oid = v.valintatapajono_oid
               and vt.hakemus_oid = v.hakemus_oid
               and vt.hakukohde_oid = v.hakukohde_oid
-            inner join vj on vj.oid = j.valintatapajono_oid
             join tilat_kuvaukset t_k
-            on v.valintatapajono_oid = t_k.valintatapajono_oid
-              and v.hakemus_oid = t_k.hakemus_oid
+            on t_k.valintatapajono_oid = vt.valintatapajono_oid
+              and t_k.hakemus_oid = vt.hakemus_oid
+              and t_k.hakukohde_oid = vt.hakukohde_oid
+            inner join vj on vj.oid = j.valintatapajono_oid
             where j.sijoitteluajo_id = ${sijoitteluajoId}""".as[HakemusRecord]).toList match {
         case result if result.size == 0 => result
         case result => result ++ readHakemukset(offset + chunkSize)
