@@ -55,14 +55,14 @@ trait ErillishaunValinnantulosStrategy extends ValinnantulosStrategy {
           }
         ).flatten
       }
-      
+
       val operations = vanhaOpt match {
         case None => logger.info(s"Käyttäjä ${muokkaaja} lisäsi " +
           s"hakemukselle ${uusi.hakemusOid} valinnantuloksen erillishaun valintatapajonossa ${uusi.valintatapajonoOid}:" +
           s"vastaanottotila on ${uusi.vastaanottotila} ja " +
           s"valinnantila on ${uusi.valinnantila} ja " +
           s"ilmoittautumistila on ${uusi.ilmoittautumistila}.")
-          valinnantulokset.map(_.hakukohdeOid).foreach(hakukohdeRecordService.getHakukohdeRecord(_))
+          hakukohdeRecordService.getHakukohdeRecord(uusi.hakukohdeOid)
           createInsertOperations
 
         case Some(vanha) => logger.info(s"Käyttäjä ${muokkaaja} muokkasi " +
