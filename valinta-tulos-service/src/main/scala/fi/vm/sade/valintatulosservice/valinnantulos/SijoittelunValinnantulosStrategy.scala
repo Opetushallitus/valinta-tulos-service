@@ -38,7 +38,7 @@ trait SijoittelunValinnantulosStrategy extends ValinnantulosStrategy with Loggin
         s"ilmoittautumistilasta ${vanha.ilmoittautumistila} tilaan ${uusi.ilmoittautumistila}.")
 
       val operations = List(
-        Option(uusi.hasOhjausChanged(vanha)).collect { case true => valinnantulosRepository.storeValinnantuloksenOhjaus(
+        Option(uusi.hasOhjausChanged(vanha)).collect { case true => valinnantulosRepository.updateValinnantuloksenOhjaus(
           uusi.getValinnantuloksenOhjauksenMuutos(vanha, muokkaaja, "Virkailijan tallennus"), Some(ifUnmodifiedSince))
         },
         Option(uusi.ilmoittautumistila != vanha.ilmoittautumistila).collect { case true => valinnantulosRepository.storeIlmoittautuminen(
