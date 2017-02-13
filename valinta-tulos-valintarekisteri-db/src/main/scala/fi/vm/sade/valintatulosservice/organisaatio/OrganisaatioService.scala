@@ -34,7 +34,7 @@ class RealOrganisaatioService(appConfig:AppConfig) extends OrganisaatioService{
     val url = s"$base/rest/organisaatio/hae?vainAktiiviset=true&vainLakkautetut=false&suunnitellut=false&oid=$oid"
 
     fetch(url){ response =>
-      (parse(response) \ "result").extract[Organisaatiot]
+      (parse(response)).extract[Organisaatiot]
     }.left.map {
       case e: IllegalArgumentException => new IllegalArgumentException(s"No organisaatio $oid found", e)
       case e: IllegalStateException => new IllegalStateException(s"Parsing organisaatio $oid failed", e)
