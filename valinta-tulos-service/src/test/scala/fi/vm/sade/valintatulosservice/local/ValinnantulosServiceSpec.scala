@@ -14,6 +14,7 @@ import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket,
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde, YhdenPaikanSaanto}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantulosService, ValinnantulosUpdateStatus}
 import org.joda.time.DateTime
 import org.junit.runner.RunWith
@@ -259,8 +260,9 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     val hakuService = mock[HakuService]
     val ohjausparametritService = mock[OhjausparametritService]
     val audit = mock[Audit]
+    val hakukohdeRecordService = mock[HakukohdeRecordService]
 
-    val service = new ValinnantulosService(valinnantulosRepository, authorizer, hakuService, ohjausparametritService, appConfig, audit)
+    val service = new ValinnantulosService(valinnantulosRepository, authorizer, hakuService, ohjausparametritService, hakukohdeRecordService, appConfig, audit)
 
     valinnantulosRepository.getHakuForHakukohde(anyString) returns hakuOid
     valinnantulosRepository.getTarjoajaForHakukohde(anyString) returns tarjoajaOid
