@@ -12,6 +12,7 @@ import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 
 import scala.util.{Failure, Success}
 
@@ -21,6 +22,7 @@ trait ValinnantulosStrategy extends Logging {
   val authorizer:OrganizationHierarchyAuthorizer
   val hakuService: HakuService
   val ohjausparametritService: OhjausparametritService
+  val hakukohdeRecordService: HakukohdeRecordService
   val appConfig: VtsAppConfig
   val audit: Audit
 
