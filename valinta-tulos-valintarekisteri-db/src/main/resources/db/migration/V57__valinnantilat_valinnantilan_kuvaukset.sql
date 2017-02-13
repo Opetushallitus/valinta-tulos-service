@@ -2,9 +2,9 @@ set session_replication_role = replica; -- disable triggers for this session
 
 create table tilat_kuvaukset (
     tilankuvaus_hash bigint not null,
-    hakukohde_oid text not null,
-    valintatapajono_oid text not null,
-    hakemus_oid text not null,
+    hakukohde_oid character varying not null,
+    valintatapajono_oid character varying not null,
+    hakemus_oid character varying not null,
     transaction_id bigint not null default txid_current(),
     system_time tstzrange not null default tstzrange(now(), null, '[)')
 );
