@@ -59,7 +59,7 @@ class ScalatraBootstrap extends LifeCycle {
     lazy val valintatulosCollection = new ValintatulosMongoCollection(appConfig.settings.valintatulosMongoConfig)
     lazy val mailPoller = new MailPoller(valintatulosCollection, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 100)
     lazy val sijoitteluService = new ValintarekisteriService(valintarekisteriDb, hakukohdeRecordService)
-    lazy val valinnantulosService = new ValinnantulosService(valintarekisteriDb, new OrganizationHierarchyAuthorizer(appConfig), hakuService, appConfig.ohjausparametritService, appConfig, audit)
+    lazy val valinnantulosService = new ValinnantulosService(valintarekisteriDb, new OrganizationHierarchyAuthorizer(appConfig), hakuService, appConfig.ohjausparametritService, hakukohdeRecordService, appConfig, audit)
 
 
     val migrationMode = System.getProperty("valinta-rekisteri-migration-mode")
