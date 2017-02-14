@@ -8,7 +8,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Kausi, Kevat, Syk
 import org.joda.time.DateTime
 import org.json4s.JsonAST.{JBool, JInt, JObject, JString}
 import org.json4s.jackson.JsonMethods._
-import org.json4s.{CustomSerializer, Formats, MappingException}
+import org.json4s.{JValue, CustomSerializer, Formats, MappingException}
 
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -47,8 +47,11 @@ case class Hakukohde(oid: String, hakuOid: String, tarjoajaOids: Seq[String], ha
                      koulutusAsteTyyppi: String, koulutusmoduuliTyyppi: String,
                      hakukohteenNimet: Map[String, String], tarjoajaNimet: Map[String, String], yhdenPaikanSaanto: YhdenPaikanSaanto,
                      tutkintoonJohtava:Boolean, koulutuksenAlkamiskausiUri:String, koulutuksenAlkamisvuosi:Int)
-
-case class Koulutus(oid: String, koulutuksenAlkamiskausi: Kausi, tila: String, johtaaTutkintoon: Boolean)
+case class Koodi(uri: String, arvo: String)
+case class Koulutus(oid: String, koulutuksenAlkamiskausi: Kausi, tila: String, johtaaTutkintoon: Boolean,
+                    koulutuskoodi: Option[Koodi],
+                    koulutusaste: Option[Koodi],
+                    opintojenLaajuusarvo: Option[Koodi])
 
 class KoulutusSerializer extends CustomSerializer[Koulutus]((formats: Formats) => {
   implicit val f = formats
@@ -65,7 +68,13 @@ class KoulutusSerializer extends CustomSerializer[Koulutus]((formats: Formats) =
       }
       val koulutusUriOpt = (o \ "koulutuskoodi" \ "uri").extractOpt[String]
       val koulutusVersioOpt = (o \ "koulutuskoodi" \ "versio").extractOpt[Int]
-      Koulutus(oid, kausi, tila, johtaaTutkintoon)
+      val vads: JValue = (o \ "koulutuskoodi")
+      def extractKoodi(j: JValue) = Try(Koodi((j \ "uri").extract[String], (j \ "arvo").extract[String])).toOption
+
+      Koulutus(oid, kausi, tila, johtaaTutkintoon,
+        koulutuskoodi = extractKoodi((o \ "koulutuskoodi")),
+          koulutusaste = extractKoodi((o \ "koulutusaste")),
+          opintojenLaajuusarvo = extractKoodi((o \ "opintojenLaajuusarvo")))
   }, { case o => ??? })
 })
 
