@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
 trait SijoitteluRepository extends ValintarekisteriRepository {
