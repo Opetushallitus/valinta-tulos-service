@@ -10,6 +10,7 @@ import fi.vm.sade.valintatulosservice.tarjonta.{Koulutus, Hakukohde, Haku, HakuS
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoRecord, ValintarekisteriService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra.swagger.Swagger
+import scala.collection.parallel.ParSeq
 import scala.concurrent.{Future, Await}
 import scala.util.Try
 import scala.concurrent.duration._
@@ -83,12 +84,12 @@ class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, orga
     }
     hakuService.getHaku(hakuOid) match {
       case Right(haku) =>
-        vastaanotot.map(hakukohdeAndOrganisaatioForVastaanotto(_, haku) match {
+        vastaanotot.par.map(hakukohdeAndOrganisaatioForVastaanotto(_, haku) match {
           case Right(vastaanotto) =>
             vastaanotto
           case Left(e) =>
             throw new RuntimeException(s"Unable to get hakukohde or organisaatio! ${e.getMessage}")
-        })
+        }).seq
       case Left(e) =>
         throw new RuntimeException(s"Unable to get haku ${hakuOid}! ${e.getMessage}")
     }
