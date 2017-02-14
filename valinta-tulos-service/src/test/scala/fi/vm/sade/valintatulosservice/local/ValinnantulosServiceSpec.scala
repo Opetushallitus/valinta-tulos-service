@@ -25,8 +25,6 @@ import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.Scope
 
-import scala.util.{Failure, Success}
-
 @RunWith(classOf[JUnitRunner])
 class ValinnantulosServiceSpec extends Specification with MockitoMatchers with MockitoStubs {
   val hakuOid = "1.1.1.1.1"
@@ -124,8 +122,8 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     }
     "no authorization to change hyvaksyPeruuntunut" in new ValinnantulosServiceWithMocks {
       override def result = List((ZonedDateTime.now.toInstant, valinnantulos.copy( valinnantila = Peruuntunut)))
-      authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Success(Unit)
-      authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH)) returns Failure(new NotAuthorizedException("moi"))
+      authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Right(())
+      authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH)) returns Left(new NotAuthorizedException("moi"))
 
       val notModifiedSince = ZonedDateTime.now.toInstant
       val modification = valinnantulos.copy( valinnantila = Peruuntunut, hyvaksyPeruuntunut = Some(true))
@@ -136,8 +134,8 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     }
     "authorization to change hyvaksyPeruuntunut" in new ValinnantulosServiceWithMocks {
       override def result = List((ZonedDateTime.now.toInstant, valinnantulos.copy( valinnantila = Peruuntunut)))
-      authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Success(Unit)
-      authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH)) returns Success(Unit)
+      authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Right(())
+      authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH)) returns Right(())
 
       val notModifiedSince = ZonedDateTime.now.toInstant
       val modification = valinnantulos.copy( valinnantila = Peruuntunut, hyvaksyPeruuntunut = Some(true))
@@ -147,7 +145,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
   }
     "no authorization to change julkaistavissa" in new ValinnantulosServiceWithMocksForJulkaistavissaTests {
       override def result = List((ZonedDateTime.now.toInstant, valinnantulos))
-      authorizer.checkAccess(session, "1.2.1.2.1.2", List(Role.SIJOITTELU_CRUD)) returns Failure(new NotAuthorizedException("moi"))
+      authorizer.checkAccess(session, "1.2.1.2.1.2", List(Role.SIJOITTELU_CRUD)) returns Left(new NotAuthorizedException("moi"))
       ohjausparametritService.ohjausparametrit(any[String]) returns Right(Some(Ohjausparametrit(None, None, None, None, None, None, Some(DateTime.now().plusDays(2)))))
 
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(valinnantulos.copy(julkaistavissa = Some(true))), ZonedDateTime.now.toInstant, auditInfo) mustEqual List(
@@ -158,7 +156,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     }
     "no authorization to change julkaistavissa but valintaesitys is hyväksyttävissä" in new ValinnantulosServiceWithMocksForJulkaistavissaTests {
       override def result = List((ZonedDateTime.now.toInstant, valinnantulos))
-      authorizer.checkAccess(session, "1.2.1.2.1.2", List(Role.SIJOITTELU_CRUD)) returns Failure(new NotAuthorizedException("moi"))
+      authorizer.checkAccess(session, "1.2.1.2.1.2", List(Role.SIJOITTELU_CRUD)) returns Left(new NotAuthorizedException("moi"))
       ohjausparametritService.ohjausparametrit(any[String]) returns Right(Some(Ohjausparametrit(None, None, None, None, None, None, Some(DateTime.now().minusDays(2)))))
 
       val valinnantulokset = List(valinnantulos.copy(julkaistavissa = Some(true)))
@@ -170,7 +168,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     }
     "authorization to change julkaistavissa" in new ValinnantulosServiceWithMocksForJulkaistavissaTests {
       override def result = List((ZonedDateTime.now.toInstant, valinnantulos))
-      authorizer.checkAccess(session, "1.2.1.2.1.2", List(Role.SIJOITTELU_CRUD)) returns Success(Unit)
+      authorizer.checkAccess(session, "1.2.1.2.1.2", List(Role.SIJOITTELU_CRUD)) returns Right(())
       ohjausparametritService.ohjausparametrit(any[String]) returns Right(Some(Ohjausparametrit(None, None, None, None, None, None, None)))
 
       val valinnantulokset = List(valinnantulos.copy(julkaistavissa = Some(true)))
@@ -270,15 +268,15 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
   }
 
   trait NotAuthorizedValinnantulosServiceWithMocks extends ValinnantulosServiceWithMocks {
-    authorizer.checkAccess(any[Session], any[String], any[List[Role]]) returns Failure(new NotAuthorizedException("moi"))
+    authorizer.checkAccess(any[Session], any[String], any[List[Role]]) returns Left(new NotAuthorizedException("moi"))
   }
 
   trait AuthorizedValinnantulosServiceWithMocks extends ValinnantulosServiceWithMocks {
-    authorizer.checkAccess(any[Session], any[String], any[List[Role]]) returns Success(Unit)
+    authorizer.checkAccess(any[Session], any[String], any[List[Role]]) returns Right(())
   }
 
   trait ValinnantulosServiceWithMocksForJulkaistavissaTests extends ValinnantulosServiceWithMocks {
-    authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Success(Unit)
+    authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Right(())
     val settings = mock[VtsApplicationSettings]
     appConfig.settings returns settings
     settings.rootOrganisaatioOid returns "1.2.1.2.1.2"
