@@ -1,5 +1,3 @@
-set session_replication_role = replica; -- disable triggers for this session
-
 create table tilat_kuvaukset (
     tilankuvaus_hash bigint not null,
     tarkenteen_lisatieto character varying null,
@@ -136,5 +134,3 @@ end;
 $$ language plpgsql;
 
 analyze tilat_kuvaukset;
-
-set session_replication_role = default; -- enable triggers for this session
