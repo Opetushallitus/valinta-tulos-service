@@ -4,18 +4,17 @@ import javax.servlet.{DispatcherType, ServletContext}
 import fi.vm.sade.auditlog.{ApplicationType, Audit, Logger}
 import fi.vm.sade.security._
 import fi.vm.sade.valintatulosservice._
-import fi.vm.sade.valintatulosservice.config.{OhjausparametritAppConfig, VtsAppConfig}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.{Dev, IT, VtsAppConfig}
+import fi.vm.sade.valintatulosservice.config.{OhjausparametritAppConfig, VtsAppConfig}
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.kela.KelaService
+import fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos.SijoittelunTulosMigraatioServlet
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.{HakijaResolver, MigraatioServlet}
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
-import fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos.SijoittelunTulosMigraatioServlet
-import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.MigraatioServlet
 import fi.vm.sade.valintatulosservice.sijoittelu.{SijoitteluFixtures, SijoittelunTulosRestClient, SijoittelutulosService}
-import fi.vm.sade.valintatulosservice.tarjonta.{TarjontaHakuService, HakuService}
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.tarjonta.HakuService
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.ValintarekisteriService
 import fi.vm.sade.valintatulosservice.vastaanottomeili.{MailDecorator, MailPoller, ValintatulosMongoCollection}

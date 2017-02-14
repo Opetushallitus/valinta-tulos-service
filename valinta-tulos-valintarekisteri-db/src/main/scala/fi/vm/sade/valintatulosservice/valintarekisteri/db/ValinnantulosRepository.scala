@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Ilmoittautuminen, ValinnantilanTallennus, ValinnantuloksenOhjaus, Valinnantulos}
 import slick.dbio.DBIO
 
@@ -20,4 +21,8 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
 
   def getTarjoajaForHakukohde(hakukohdeOid:String): String
   def getHakuForHakukohde(hakukohdeOid:String): String
+
+  /*def deleteValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
+  def deleteValinnantila(tila:ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
+  def deleteIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]*/
 }

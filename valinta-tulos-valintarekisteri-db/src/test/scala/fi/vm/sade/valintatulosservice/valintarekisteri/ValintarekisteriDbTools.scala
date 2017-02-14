@@ -5,7 +5,7 @@ import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain._
 import fi.vm.sade.sijoittelu.tulos.dto.SijoitteluajoDTO
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Tasasijasaanto
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.JsonAST._

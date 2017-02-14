@@ -8,7 +8,8 @@ import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakutoiveDTO}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.ValintarekisteriAppConfig
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValintarekisteriDb}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.SijoitteluRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{SijoitteluRecordToDTO, SijoitteluWrapper, TilankuvausRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 

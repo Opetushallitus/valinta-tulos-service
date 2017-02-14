@@ -1,15 +1,17 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
 import java.util.Date
+import java.util.concurrent.TimeUnit
 
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Kausi
 import slick.dbio.DBIO
 import slick.driver.PostgresDriver.backend.Database
 
 import scala.concurrent.duration.Duration
 
-trait HakijaVastaanottoRepository extends ValintarekisteriRepository {
-  val db: Database
+trait HakijaVastaanottoRepository {
+  def runBlocking[R](operations: DBIO[R], timeout: Duration = Duration(20, TimeUnit.SECONDS)): R
   def findVastaanottoHistoryHaussa(henkiloOid: String, hakuOid: String): Set[VastaanottoRecord]
   def findHenkilonVastaanototHaussa(henkiloOid: String, hakuOid: String): DBIO[Set[VastaanottoRecord]]
   def findHenkilonVastaanottoHakukohteeseen(henkiloOid: String, hakukohdeOid: String): DBIO[Option[VastaanottoRecord]]
