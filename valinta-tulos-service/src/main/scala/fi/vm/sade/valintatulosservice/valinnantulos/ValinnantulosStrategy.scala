@@ -47,11 +47,11 @@ trait ValinnantulosStrategy extends Logging {
     def getVanhatValinnantulokset() = valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid).map(v => v._2.hakemusOid -> v).toMap
 
     def checkAccess() = authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) match {
-      case Failure(e) => {
+      case Left(e) => {
         logger.warn(s"Käyttäjällä ${session.personOid} ei ole oikeuksia päivittää valinnantuloksia valintatapajonossa ${valintatapajonoOid}")
         throw e
       }
-      case Success(x) => x
+      case Right(x) => x
     }
 
     def handle():List[ValinnantulosUpdateStatus] = {
