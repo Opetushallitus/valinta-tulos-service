@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.ensikertalaisuus
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet._
 import fi.vm.sade.valintatulosservice.json.JsonFormats
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValintarekisteriService
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.EnsikertalaisuusRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Ensikertalaisuus, Kausi, VastaanottoHistoria}
 import fi.vm.sade.valintatulosservice.{VtsServletBase, VtsSwaggerBase}
 import org.json4s.Formats
@@ -11,7 +11,7 @@ import org.json4s.jackson.Serialization.read
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 
-class EnsikertalaisuusServlet(valintarekisteriService: ValintarekisteriService, maxHenkiloOids: Int)(implicit val swagger: Swagger, appConfig: VtsAppConfig)
+class EnsikertalaisuusServlet(ensikertalaisuusRepository: EnsikertalaisuusRepository, maxHenkiloOids: Int)(implicit val swagger: Swagger, appConfig: VtsAppConfig)
   extends VtsServletBase with EnsikertalaisuusSwagger {
   override implicit val jsonFormats: Formats = EnsikertalaisuusServlet.ensikertalaisuusJsonFormats
 
@@ -21,18 +21,18 @@ class EnsikertalaisuusServlet(valintarekisteriService: ValintarekisteriService, 
   }
 
   get("/:henkilo", operation(getEnsikertalaisuusSwagger)) {
-    valintarekisteriService.findEnsikertalaisuus(henkiloOid(params("henkilo")), parseKausi(params("koulutuksenAlkamiskausi")))
+    ensikertalaisuusRepository.findEnsikertalaisuus(henkiloOid(params("henkilo")), parseKausi(params("koulutuksenAlkamiskausi")))
   }
 
   get("/:henkilo/historia", operation(getVastaanottoHistoriaSwagger)) {
-    valintarekisteriService.findVastaanottoHistory(henkiloOid(params("henkilo")))
+    ensikertalaisuusRepository.findVastaanottoHistory(henkiloOid(params("henkilo")))
   }
 
   post("/", operation(postEnsikertalaisuusSwagger)) {
     val henkilot = read[Set[String]](request.body).map(henkiloOid)
     if (henkilot.size > maxHenkiloOids) throw new IllegalArgumentException(s"Too many henkilo oids (limit is $maxHenkiloOids, got ${henkilot.size})")
 
-    valintarekisteriService.findEnsikertalaisuus(henkilot, parseKausi(params("koulutuksenAlkamiskausi")))
+    ensikertalaisuusRepository.findEnsikertalaisuus(henkilot, parseKausi(params("koulutuksenAlkamiskausi")))
   }
 }
 

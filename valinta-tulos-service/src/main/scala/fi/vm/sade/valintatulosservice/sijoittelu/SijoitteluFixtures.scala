@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit.SECONDS
 
 import com.mongodb.DB
 import fi.vm.sade.sijoittelu.tulos.testfixtures.MongoMockData
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.DefaultFormats
 import org.json4s.JsonAST.JArray
