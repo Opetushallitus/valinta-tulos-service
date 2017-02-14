@@ -4,19 +4,15 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot
-import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.{HakijaResolver}
-import fi.vm.sade.valintatulosservice.organisaatio.{Organisaatio, Organisaatiot, OrganisaatioService}
+import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
+import fi.vm.sade.valintatulosservice.organisaatio.{Organisaatio, OrganisaatioService, Organisaatiot}
 import fi.vm.sade.valintatulosservice.tarjonta._
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoRecord, ValintarekisteriService}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoRecord, VirkailijaVastaanottoRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import org.scalatra.swagger.Swagger
-import scala.collection.parallel.ParSeq
-import scala.concurrent.{Future, Await}
-import scala.util.Try
-import scala.concurrent.duration._
-import scala.util.matching.Regex
 
-class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, organisaatioService: OrganisaatioService, valintarekisteriService: ValintarekisteriService) {
+import scala.concurrent.duration._
+
+class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, organisaatioService: OrganisaatioService, valintarekisteriService: VirkailijaVastaanottoRepository) {
   private val fetchPersonTimeout = 5 seconds
 
   private def convertToVastaanotto(haku: Haku, hakukohde: Hakukohde, organisaatiot: Organisaatiot, koulutuses: Seq[Koulutus], vastaanotto: VastaanottoRecord): Option[fi.vm.sade.valintatulosservice.kela.Vastaanotto] = {

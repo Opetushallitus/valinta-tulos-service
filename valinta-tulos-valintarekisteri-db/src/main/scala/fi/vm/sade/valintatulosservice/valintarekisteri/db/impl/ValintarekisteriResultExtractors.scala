@@ -1,13 +1,14 @@
-package fi.vm.sade.valintatulosservice.valintarekisteri.db
+package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
-import java.sql.{JDBCType, Timestamp}
+import java.sql.JDBCType
 import java.time.{Instant, OffsetDateTime, ZoneId}
 import java.util.UUID
 
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoAction, VastaanottoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.jdbc.{GetResult, PositionedParameters, SetParameter}
 
-abstract class ValintarekisteriResultExtractors {
+trait ValintarekisteriResultExtractors {
 
   protected implicit val getVastaanottoResult = GetResult(r => VastaanottoRecord(
     henkiloOid = r.nextString,
