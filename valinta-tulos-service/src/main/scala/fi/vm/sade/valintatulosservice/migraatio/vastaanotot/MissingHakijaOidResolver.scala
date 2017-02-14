@@ -18,8 +18,7 @@ import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 import scalaz.concurrent.Task
 
-case class Henkilo(oidHenkilo: String, hetu: String, etunimet: String, sukunimi: String, kutsumanimi: String,
-                   syntymaaika: String)
+case class Henkilo(oidHenkilo: String, hetu: String, etunimet: String, sukunimi: String)
 
 trait HakijaResolver {
   def findPersonByHetu(hetu: String, timeout: Duration = 60 seconds): Option[Henkilo]
@@ -30,7 +29,7 @@ object HakijaResolver {
     case _:StubbedExternalDeps => new HakijaResolver {
       override def findPersonByHetu(hetu: String, timeout: Duration): Option[Henkilo] = hetu match {
         case "face-beef" =>
-          Some(Henkilo("1.2.3.4", "face-beef", "Test", "Henkilo", "Test", ""))
+          Some(Henkilo("1.2.3.4", "face-beef", "Test", "Henkilo"))
         case _ =>
           None
       }
@@ -57,8 +56,7 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
       override def read(v: JValue): Henkilo = {
         val henkilotiedot = (v \\ "results")
         Henkilo( (v \\ "oidHenkilo").extract[String], (henkilotiedot \ "hetu").extract[String],
-          (henkilotiedot \ "etunimet").extract[String], (henkilotiedot \ "sukunimi").extract[String],
-          (henkilotiedot \ "kutsumanimi").extract[String], (henkilotiedot \ "syntymaaika").extract[String])
+          (henkilotiedot \ "etunimet").extract[String], (henkilotiedot \ "sukunimi").extract[String])
       }
     }
 
