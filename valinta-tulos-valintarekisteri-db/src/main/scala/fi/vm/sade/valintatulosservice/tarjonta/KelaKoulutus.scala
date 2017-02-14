@@ -11,12 +11,12 @@ trait KelaLaajuus {
 trait KelaTutkinnontaso {
   val tutkinnontaso: Option[String]
 }
-private case class MuuTutkinto(val tutkinnontaso: Option[String] = None, val tutkinnonlaajuus1: String, val tutkinnonlaajuus2: Option[String] = None) extends KelaTutkinnontaso with KelaLaajuus
-private case class AlempiKKTutkinto(val tutkinnontaso: Option[String] = Some("050"), val tutkinnonlaajuus1: String, val tutkinnonlaajuus2: Option[String] = None) extends KelaTutkinnontaso with KelaLaajuus
-private case class AlempiYlempiKKTutkinto(val tutkinnontaso: Option[String] = Some("060"), val tutkinnonlaajuus1: String, val tutkinnonlaajuus2: Option[String] = None) extends KelaTutkinnontaso with KelaLaajuus
-private case class ErillinenYlempiKKTutkinto(val tutkinnontaso: Option[String] = Some("061"), val tutkinnonlaajuus1: String, val tutkinnonlaajuus2: Option[String] = None) extends KelaTutkinnontaso with KelaLaajuus
-private case class LääketieteenLisensiaatti(val tutkinnontaso: Option[String] = Some("070"), val tutkinnonlaajuus1: String, val tutkinnonlaajuus2: Option[String] = None) extends KelaTutkinnontaso with KelaLaajuus
-private case class HammaslääketieteenLisensiaatti(val tutkinnontaso: Option[String] = Some("071"), val tutkinnonlaajuus1: String, val tutkinnonlaajuus2: Option[String] = None) extends KelaTutkinnontaso with KelaLaajuus
+private case class MuuTutkinto(val tutkinnontaso: Option[String] = None, val tutkinnonlaajuus1: String, val tutkinnonlaajuus2: Option[String] = None) extends KelaKoulutus
+private case class AlempiKKTutkinto(val tutkinnontaso: Option[String] = Some("050"), val tutkinnonlaajuus1: String, val tutkinnonlaajuus2: Option[String] = None) extends KelaKoulutus
+private case class AlempiYlempiKKTutkinto(val tutkinnontaso: Option[String] = Some("060"), val tutkinnonlaajuus1: String, val tutkinnonlaajuus2: Option[String] = None) extends KelaKoulutus
+private case class ErillinenYlempiKKTutkinto(val tutkinnontaso: Option[String] = Some("061"), val tutkinnonlaajuus1: String, val tutkinnonlaajuus2: Option[String] = None) extends KelaKoulutus
+private case class LääketieteenLisensiaatti(val tutkinnontaso: Option[String] = Some("070"), val tutkinnonlaajuus1: String, val tutkinnonlaajuus2: Option[String] = None) extends KelaKoulutus
+private case class HammaslääketieteenLisensiaatti(val tutkinnontaso: Option[String] = Some("071"), val tutkinnonlaajuus1: String, val tutkinnonlaajuus2: Option[String] = None) extends KelaKoulutus
 
 object KelaKoulutus {
 
@@ -36,21 +36,21 @@ object KelaKoulutus {
       case m: Muu => 5
     } match {
       case Ylempi(laajuus) :: Nil =>
-        ErillinenYlempiKKTutkinto(tutkinnonlaajuus1 = laajuus.getOrElse(""))
+        Some(ErillinenYlempiKKTutkinto(tutkinnonlaajuus1 = laajuus.getOrElse("")))
       case Alempi(laajuus1) :: Ylempi(laajuus2) :: Nil =>
-        AlempiYlempiKKTutkinto(tutkinnonlaajuus1 = laajuus1.getOrElse(""), tutkinnonlaajuus2 = laajuus2)
+        Some(AlempiYlempiKKTutkinto(tutkinnonlaajuus1 = laajuus1.getOrElse(""), tutkinnonlaajuus2 = laajuus2))
       case Alempi(laajuus) :: Nil =>
-        AlempiKKTutkinto(tutkinnonlaajuus1 = laajuus.getOrElse(""))
+        Some(AlempiKKTutkinto(tutkinnonlaajuus1 = laajuus.getOrElse("")))
       case Lääkis(laajuus) :: _ =>
-        LääketieteenLisensiaatti(tutkinnonlaajuus1 = laajuus.getOrElse(""))
+        Some(LääketieteenLisensiaatti(tutkinnonlaajuus1 = laajuus.getOrElse("")))
       case Hammas(laajuus) :: _ =>
-        HammaslääketieteenLisensiaatti(tutkinnonlaajuus1 = laajuus.getOrElse(""))
+        Some(HammaslääketieteenLisensiaatti(tutkinnonlaajuus1 = laajuus.getOrElse("")))
       case Muu(laajuus) :: _ =>
-        MuuTutkinto(tutkinnonlaajuus1 = laajuus.getOrElse(""))
+        Some(MuuTutkinto(tutkinnonlaajuus1 = laajuus.getOrElse("")))
       case _ =>
         None
     }
-    None
+
   }
   private def toTaso(k: Koulutus): Option[Taso] = {
     implicit class Regex(sc: StringContext) {
