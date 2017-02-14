@@ -6,6 +6,7 @@ import java.util.Date
 import com.typesafe.config.{Config, ConfigValueFactory}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db._
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriRepository
 import org.flywaydb.core.Flyway
 import slick.driver.PostgresDriver.api.{Database, _}
 import slick.jdbc.GetResult

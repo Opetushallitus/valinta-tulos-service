@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri
 
 import com.typesafe.config.ConfigValueFactory
 import fi.vm.sade.valintatulosservice.config.ValintarekisteriAppConfig
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 
 trait ITSetup {
