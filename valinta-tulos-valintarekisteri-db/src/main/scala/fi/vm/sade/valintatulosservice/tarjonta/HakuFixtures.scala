@@ -44,7 +44,9 @@ object HakuFixtures extends HakuService with JsonHakuService {
       getFixtureAsStream(activeFixture)
     }
   }
-
+  def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]] = {
+    Left(new RuntimeException("Not implemented!"))
+  }
   private def getFixtureAsStream(baseFilename: String) = {
     Option(getClass.getResourceAsStream("/fixtures/tarjonta/haku/" + baseFilename + ".json"))
   }
