@@ -107,7 +107,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
       }
     }
     "palauttaa 403, jos käyttäjällä ei ole kirjoitusoikeuksia organisaatioon" in {
-      patch("auth/valinnan-tulos/14538080612623056182813241345174", Seq.empty,
+      patchJSON("auth/valinnan-tulos/14538080612623056182813241345174", write(List(valinnantulos.copy(julkaistavissa = Some(true)))),
         Map("Cookie" -> s"session=${createTestSession(Set(Role.SIJOITTELU_CRUD))}",
           "If-Unmodified-Since" -> now)) {
         status must_== 403
