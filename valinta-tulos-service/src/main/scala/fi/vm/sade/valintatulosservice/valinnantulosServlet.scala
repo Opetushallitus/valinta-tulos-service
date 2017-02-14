@@ -38,6 +38,9 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     case e: IllegalArgumentException =>
       logger.warn("bad request", e)
       BadRequest("error" -> s"Bad request. ${e.getMessage}")
+    case e: IllegalStateException =>
+      logger.error("internal server error", e)
+      InternalServerError("error" -> "Internal server error")
     case e: Throwable =>
       logger.error("internal server error", e)
       InternalServerError("error" -> "Internal server error")
