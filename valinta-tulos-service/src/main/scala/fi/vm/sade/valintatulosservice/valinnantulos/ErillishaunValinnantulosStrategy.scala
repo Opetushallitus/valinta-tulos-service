@@ -19,27 +19,46 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
                                        audit: Audit) extends ValinnantulosStrategy with Logging {
   private val session = auditInfo.session._2
 
-  def validate(uusi: Valinnantulos, vanha: Option[Valinnantulos]): Either[ValinnantulosUpdateStatus, Unit] = {
-    def ilmoittautunut(ilmoittautuminen: SijoitteluajonIlmoittautumistila) = ilmoittautuminen != EiTehty
-    def hyvaksytty(tila: Valinnantila) = List(Hyvaksytty, HyvaksyttyVarasijalta).contains(tila) //TODO entäs täyttyjonosäännöllä hyväksytty?
-    def vastaanotto(vastaanotto: VastaanottoAction) = vastaanotto != Poista
-    def vastaanottoEiMyohastynyt(vastaanotto: VastaanottoAction) = vastaanotto != Poista && vastaanotto != MerkitseMyohastyneeksi
-    def hylattyTaiVaralla(tila: Valinnantila) = Hylatty == tila || Varalla == tila
-    def vastaanottaneena(tila: VastaanottoAction) = List(VastaanotaSitovasti, VastaanotaEhdollisesti, MerkitseMyohastyneeksi).contains(tila)
-    def peruneena(tila: Valinnantila) = List(Perunut, Peruuntunut, Peruutettu).contains(tila)
-    def keskenTaiPerunut(tila: VastaanottoAction) = List(Poista, Peruuta, Peru, MerkitseMyohastyneeksi).contains(tila)
+  def hasChange(uusi:Valinnantulos, vanha:Valinnantulos) = uusi.hasChanged(vanha) || uusi.poistettava.getOrElse(false)
 
-    (uusi.valinnantila, uusi.vastaanottotila, uusi.ilmoittautumistila) match {
-      case (t, v, i) if ilmoittautunut(i) && !(hyvaksytty(t) && vastaanotto(v)) => Left(ValinnantulosUpdateStatus(409,
-        s"Ilmoittautumistieto voi olla ainoastaan hyväksytyillä ja vastaanottaneilla hakijoilla", uusi.valintatapajonoOid, uusi.hakemusOid))
-      case (t, v, i) if hylattyTaiVaralla(t) && (vastaanottaneena(v) || ilmoittautunut(i)) => Left(ValinnantulosUpdateStatus(409,
-        s"Hylätty tai varalla oleva hakija ei voi olla ilmoittautunut tai vastaanottanut", uusi.valintatapajonoOid, uusi.hakemusOid))
-      case (t, v, i) if peruneena(t) && !keskenTaiPerunut(v) => Left(ValinnantulosUpdateStatus(409,
-        s"Peruneella vastaanottajalla ei voi olla vastaanottotilaa", uusi.valintatapajonoOid, uusi.hakemusOid))
-      case (t, v, i) if vastaanottoEiMyohastynyt(v) && !hyvaksytty(t) => Left(ValinnantulosUpdateStatus(409,
-        s"Vastaanottaneen tai peruneen hakijan tulisi olla hyväksyttynä", uusi.valintatapajonoOid, uusi.hakemusOid))
-      case (_, _, _) => Right()
+  def validate(uusi: Valinnantulos, vanha: Option[Valinnantulos]) = {
+    def validateTilat() = {
+      def ilmoittautunut(ilmoittautuminen: SijoitteluajonIlmoittautumistila) = ilmoittautuminen != EiTehty
+      def hyvaksytty(tila: Valinnantila) = List(Hyvaksytty, HyvaksyttyVarasijalta).contains(tila) //TODO entäs täyttyjonosäännöllä hyväksytty?
+      def vastaanotto(vastaanotto: VastaanottoAction) = vastaanotto != Poista
+      def vastaanottoEiMyohastynyt(vastaanotto: VastaanottoAction) = vastaanotto != Poista && vastaanotto != MerkitseMyohastyneeksi
+      def hylattyTaiVaralla(tila: Valinnantila) = Hylatty == tila || Varalla == tila
+      def vastaanottaneena(tila: VastaanottoAction) = List(VastaanotaSitovasti, VastaanotaEhdollisesti, MerkitseMyohastyneeksi).contains(tila)
+      def peruneena(tila: Valinnantila) = List(Perunut, Peruuntunut, Peruutettu).contains(tila)
+      def keskenTaiPerunut(tila: VastaanottoAction) = List(Poista, Peruuta, Peru, MerkitseMyohastyneeksi).contains(tila)
+
+      (uusi.valinnantila, uusi.vastaanottotila, uusi.ilmoittautumistila) match {
+        case (t, v, i) if ilmoittautunut(i) && !(hyvaksytty(t) && vastaanotto(v)) => Left(ValinnantulosUpdateStatus(409,
+          s"Ilmoittautumistieto voi olla ainoastaan hyväksytyillä ja vastaanottaneilla hakijoilla", uusi.valintatapajonoOid, uusi.hakemusOid))
+        case (t, v, i) if hylattyTaiVaralla(t) && (vastaanottaneena(v) || ilmoittautunut(i)) => Left(ValinnantulosUpdateStatus(409,
+          s"Hylätty tai varalla oleva hakija ei voi olla ilmoittautunut tai vastaanottanut", uusi.valintatapajonoOid, uusi.hakemusOid))
+        case (t, v, i) if peruneena(t) && !keskenTaiPerunut(v) => Left(ValinnantulosUpdateStatus(409,
+          s"Peruneella vastaanottajalla ei voi olla vastaanottotilaa", uusi.valintatapajonoOid, uusi.hakemusOid))
+        case (t, v, i) if vastaanottoEiMyohastynyt(v) && !hyvaksytty(t) => Left(ValinnantulosUpdateStatus(409,
+          s"Vastaanottaneen tai peruneen hakijan tulisi olla hyväksyttynä", uusi.valintatapajonoOid, uusi.hakemusOid))
+        case (_, _, _) => Right()
+      }
     }
+
+    def validatePoisto() = (uusi.poistettava.getOrElse(false), vanha) match {
+      case (true, None) => Left(ValinnantulosUpdateStatus(404,
+        s"Valinnantulosta ei voida poistaa, koska sitä ei ole olemassa", uusi.valintatapajonoOid, uusi.hakemusOid))
+      case (_, _) => Right()
+    }
+
+    def validateMuutos() = {
+      for {
+        poisto <- validatePoisto.right
+        tilat <- validateTilat.right
+      } yield tilat
+    }
+
+    validateMuutos()
   }
 
   def save(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): DBIO[Unit] = {
@@ -56,7 +75,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
       ).flatten
     }
 
-    def createUpdateOperations(vanha:Valinnantulos) = {
+    def createUpdateOperations(vanha: Valinnantulos) = {
       List(
         Option(uusi.valinnantila != vanha.valinnantila).collect { case true =>
           valinnantulosRepository.storeValinnantila(uusi.getValinnantilanTallennus(muokkaaja), Some(ifUnmodifiedSince))
@@ -70,8 +89,17 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
       ).flatten
     }
 
-    val operations = vanhaOpt match {
-      case None => logger.info(s"Käyttäjä $muokkaaja lisäsi " +
+    def createDeleteOperations(vanha:Valinnantulos) = {
+      List(
+        Some(valinnantulosRepository.deleteValinnantulos(muokkaaja, uusi, Some(ifUnmodifiedSince))),
+        Option(vanha.ilmoittautumistila != EiTehty).collect { case true => valinnantulosRepository.deleteIlmoittautuminen(
+          uusi.henkiloOid, Ilmoittautuminen(uusi.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), Some(ifUnmodifiedSince)
+        )}
+      ).flatten
+    }
+
+    val operations = ( uusi.poistettava.getOrElse(false), vanhaOpt ) match {
+      case (false, None) => logger.info(s"Käyttäjä $muokkaaja lisäsi " +
         s"hakemukselle ${uusi.hakemusOid} valinnantuloksen erillishaun valintatapajonossa ${uusi.valintatapajonoOid}:" +
         s"vastaanottotila on ${uusi.vastaanottotila} ja " +
         s"valinnantila on ${uusi.valinnantila} ja " +
@@ -81,12 +109,26 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
           case Left(t) => List(DBIO.failed(t))
         }
 
-      case Some(vanha) => logger.info(s"Käyttäjä $muokkaaja muokkasi " +
+      case (false, Some(vanha)) => logger.info(s"Käyttäjä ${muokkaaja} muokkasi " +
         s"hakemuksen ${uusi.hakemusOid} valinnan tulosta erillishaun valintatapajonossa ${uusi.valintatapajonoOid}" +
         s"valinnantilasta ${vanha.valinnantila} tilaan ${uusi.valinnantila} ja " +
         s"vastaanottotilasta ${vanha.vastaanottotila} tilaan ${uusi.vastaanottotila} ja " +
         s"ilmoittautumistilasta ${vanha.ilmoittautumistila} tilaan ${uusi.ilmoittautumistila}.")
         createUpdateOperations(vanha)
+
+      case (true, Some(vanha)) => logger.info(s"Käyttäjä ${muokkaaja} poisti " +
+        s"hakemuksen ${uusi.hakemusOid} valinnan tuloksen erillishaun valintatapajonossa ${uusi.valintatapajonoOid}" +
+        s"vastaanottotila on ${vanha.vastaanottotila} ja " +
+        s"valinnantila on ${vanha.valinnantila} ja " +
+        s"ilmoittautumistila on ${vanha.ilmoittautumistila}.")
+        createDeleteOperations(vanha)
+
+      case (true, None) => logger.warn(s"Käyttäjä ${muokkaaja} yritti poistaa " +
+        s"hakemuksen ${uusi.hakemusOid} valinnan tuloksen erillishaun valintatapajonossa ${uusi.valintatapajonoOid}" +
+        s"mutta sitä ei ole olemassa.")
+        List(DBIO.failed(new InternalError(s"Käyttäjä ${muokkaaja} yritti poistaa " +
+          s"hakemuksen ${uusi.hakemusOid} valinnan tuloksen erillishaun valintatapajonossa ${uusi.valintatapajonoOid}" +
+          s"mutta sitä ei ole olemassa.")))
     }
 
     DBIO.sequence(operations).map(_ =>
