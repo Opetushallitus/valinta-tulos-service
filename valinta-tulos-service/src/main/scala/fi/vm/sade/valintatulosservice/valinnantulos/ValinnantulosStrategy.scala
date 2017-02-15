@@ -7,4 +7,5 @@ import slick.dbio.DBIO
 trait ValinnantulosStrategy {
   def validate(uusi: Valinnantulos, vanha: Option[Valinnantulos]): Either[ValinnantulosUpdateStatus, Unit]
   def save(uusi: Valinnantulos, vanha: Option[Valinnantulos]): DBIO[Unit]
+  def hasChange(uusi:Valinnantulos, vanha:Valinnantulos): Boolean
 }
