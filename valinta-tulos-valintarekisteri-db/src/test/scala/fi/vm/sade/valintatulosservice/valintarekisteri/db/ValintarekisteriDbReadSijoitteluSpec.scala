@@ -30,7 +30,6 @@ class ValintarekisteriDbReadSijoitteluSpec extends Specification with ITSetup wi
       res.size mustEqual 1
       res.head.hakutoive mustEqual 6
       res.head.valintatuloksenTila mustEqual "Hyvaksytty"
-      res.head.tarjoajaOid mustEqual "1.2.246.562.10.83122281013"
     }
 
     "get hakijan pistetiedot" in {
