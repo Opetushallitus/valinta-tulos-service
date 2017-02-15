@@ -19,8 +19,6 @@ object ValintarekisteriAppConfig extends Logging {
 
   class Default(config:Config) extends ValintarekisteriAppConfig {
     val settings = settingsParser.parse(config)
-    val virkailijaHost = if (settings.config.hasPath("host.virkailija")) settings.config.getString("host.virkailija") else ""
-    ValintarekisteriOphUrlProperties.ophProperties.addOverride("host.virkailija", virkailijaHost)
   }
 
   class IT extends ExampleTemplatedProps {
@@ -41,8 +39,6 @@ object ValintarekisteriAppConfig extends Logging {
   trait ExternalProps {
     def configFile = System.getProperty("user.home") + "/oph-configuration/valinta-tulos-service.properties"
     val settings = ApplicationSettingsLoader.loadSettings(configFile)
-    val virkailijaHost = if (settings.config.hasPath("host.virkailija")) settings.config.getString("host.virkailija") else ""
-    ValintarekisteriOphUrlProperties.ophProperties.addOverride("host.virkailija", virkailijaHost)
   }
 
   trait ExampleTemplatedProps extends ValintarekisteriAppConfig with TemplatedProps {
@@ -53,11 +49,9 @@ object ValintarekisteriAppConfig extends Logging {
     logger.info("Using template variables from " + templateAttributesURL)
     val settings = loadSettings
     def loadSettings = {
-      val settings = ConfigTemplateProcessor.createSettings(
-      getClass.getResource("/oph-configuration/valinta-tulos-service-devtest.properties.template"), templateAttributesURL)
-      val virkailijaHost = if (settings.config.hasPath("host.virkailija")) settings.config.getString("host.virkailija") else ""
-      ValintarekisteriOphUrlProperties.ophProperties.addOverride("host.virkailija", virkailijaHost)
-      settings
+      ConfigTemplateProcessor.createSettings(
+        getClass.getResource("/oph-configuration/valinta-tulos-service-devtest.properties.template"),
+        templateAttributesURL)
     }
 
     def templateAttributesURL: URL
@@ -81,4 +75,5 @@ trait StubbedExternalDeps {
 object ValintarekisteriOphUrlProperties {
   val ophProperties: OphProperties = new OphProperties("/oph-configuration/valinta-tulos-valintarekisteri-db-oph.properties")
     .addOptionalFiles(Paths.get(sys.props.getOrElse("user.home", ""), "/oph-configuration/common.properties").toString)
+    .addOptionalFiles(Paths.get(sys.props.getOrElse("user.home", ""), "/oph-configuration/valinta-tulos-service.properties").toString)
 }

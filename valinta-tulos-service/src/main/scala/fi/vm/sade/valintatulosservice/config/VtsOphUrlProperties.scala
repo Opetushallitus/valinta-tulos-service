@@ -11,4 +11,5 @@ import fi.vm.sade.properties.OphProperties
 object VtsOphUrlProperties {
   val ophProperties = new OphProperties("/oph-configuration/valinta-tulos-service-oph.properties")
     .addOptionalFiles(Paths.get(sys.props.getOrElse("user.home", ""), "/oph-configuration/common.properties").toString)
+    .addOptionalFiles(Paths.get(sys.props.getOrElse("user.home", ""), "/oph-configuration/valinta-tulos-service.properties").toString)
 }
