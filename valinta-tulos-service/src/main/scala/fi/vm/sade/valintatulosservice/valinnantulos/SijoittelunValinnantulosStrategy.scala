@@ -27,6 +27,8 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
                                        audit: Audit) extends ValinnantulosStrategy with Logging {
   private val session = auditInfo.session._2
 
+  def hasChange(uusi:Valinnantulos, vanha:Valinnantulos) = uusi.hasChanged(vanha)
+
   def validate(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): Either[ValinnantulosUpdateStatus, Unit] = {
     if (vanhaOpt.isEmpty) {
       logger.warn(s"Hakemuksen ${uusi.hakemusOid} valinnan tulosta ei löydy " +

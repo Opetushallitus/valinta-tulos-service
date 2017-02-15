@@ -193,24 +193,39 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
         val result = parse(body).extract[List[ValinnantulosUpdateStatus]]
         result.size mustEqual 0
       }
+      hae(erillishaunValinnantulos.copy(vastaanottotila = Poista), 1)
+    }
+    "palauttaa 200 ja poistaa valinnan tilan, ohjaustiedon sekä ilmoittautumisen" in {
+      val poistettavaValinnantulos = erillishaunValinnantulos.copy(valintatapajonoOid = "12345678", hakukohdeOid = "555")
 
-      val result = singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono("1234567")
-      result.size mustEqual 1
-      result.head._2 mustEqual erillishaunValinnantulos.copy(
-        ehdollisestiHyvaksyttavissa = Option(false),
-        hyvaksyttyVarasijalta = Option(false),
-        hyvaksyPeruuntunut = Option(false),
-        vastaanottotila = Poista
-      )
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(poistettavaValinnantulos.valintatapajonoOid) mustEqual List()
+
+      patchJSON("auth/valinnan-tulos/12345678?erillishaku=true", write(List(poistettavaValinnantulos)),
+        Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> "Tue, 3 Jun 2008 11:05:30 GMT")) {
+        status must_== 200
+        val result = parse(body).extract[List[ValinnantulosUpdateStatus]]
+        result.size mustEqual 0
+      }
+
+      hae(poistettavaValinnantulos.copy(vastaanottotila = Poista), 1)
+
+      patchJSON("auth/valinnan-tulos/12345678?erillishaku=true", write(List(poistettavaValinnantulos.copy(poistettava = Some(true)))),
+        Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> now)) {
+        status must_== 200
+        val result = parse(body).extract[List[ValinnantulosUpdateStatus]]
+        result.size mustEqual 0
+      }
+
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(poistettavaValinnantulos.valintatapajonoOid) mustEqual List()
     }
   }
 
-  def hae(tulos:Valinnantulos) = {
-    get("auth/valinnan-tulos/14538080612623056182813241345174", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
+  def hae(tulos:Valinnantulos, expectedResultSize:Int = 15) = {
+    get(s"auth/valinnan-tulos/${tulos.valintatapajonoOid}", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
       status must_== 200
       body.isEmpty mustEqual false
       val result = parse(body).extract[List[Valinnantulos]]
-      result.size mustEqual 15
+      result.size mustEqual expectedResultSize
       val actual = result.filter(_.hakemusOid == tulos.hakemusOid)
       actual.size mustEqual 1
       actual.head mustEqual tulos.copy(
