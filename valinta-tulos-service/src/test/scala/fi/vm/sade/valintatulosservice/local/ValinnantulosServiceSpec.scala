@@ -325,7 +325,6 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     val service = new ValinnantulosService(valinnantulosRepository, authorizer, hakuService, ohjausparametritService, hakukohdeRecordService, appConfig, audit)
 
     valinnantulosRepository.getHakuForHakukohde(anyString) returns korkeakouluHakuOid
-    valinnantulosRepository.getTarjoajaForHakukohde(anyString) returns tarjoajaOid
     valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid) returns result
   }
 
