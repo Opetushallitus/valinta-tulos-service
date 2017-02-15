@@ -17,7 +17,7 @@ import slick.dbio.DBIO
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
-                                       tarjoajaOid: String,
+                                       tarjoajaOids: Set[String],
                                        haku: Haku,
                                        ohjausparametrit: Option[Ohjausparametrit],
                                        authorizer: OrganizationHierarchyAuthorizer,
@@ -56,7 +56,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
       def validateEhdollisestiHyvaksyttavissa() = uusi.ehdollisestiHyvaksyttavissa match {
         case None | vanha.ehdollisestiHyvaksyttavissa => Right()
-        case _ if allowOrgUpdate(session, tarjoajaOid) => Right()
+        case _ if allowOrgUpdate(session, tarjoajaOids) => Right()
         case _ => Left(ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä ehdollisesti", uusi.valintatapajonoOid, uusi.hakemusOid))
       }
 
@@ -69,7 +69,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
       }
 
       def allowJulkaistavissaUpdate(): Boolean = {
-        def ophCrudAccess() = authorizer.checkAccess(session, appConfig.settings.rootOrganisaatioOid, List(Role.SIJOITTELU_CRUD)).isRight
+        def ophCrudAccess() = authorizer.checkAccess(session, appConfig.settings.rootOrganisaatioOid, Set(Role.SIJOITTELU_CRUD)).isRight
 
         def valintaesitysHyvaksyttavissa(ohjausparametrit: Ohjausparametrit) = ohjausparametrit.valintaesitysHyvaksyttavissa match {
           case None => ophCrudAccess
@@ -88,9 +88,9 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
       def validateHyvaksyttyVarasijalta() = (uusi.hyvaksyttyVarasijalta, uusi.valinnantila) match {
         case (None, _) | (vanha.hyvaksyttyVarasijalta, _) => Right()
-        case (Some(true), Varalla) if (allowOphUpdate(session) || allowMusiikkiUpdate(session, tarjoajaOid)) => Right()
+        case (Some(true), Varalla) if (allowOphUpdate(session) || allowMusiikkiUpdate(session, tarjoajaOids)) => Right()
         case (Some(true), x) if x != Varalla => Left(ValinnantulosUpdateStatus(409, s"Ei voida hyväksyä varasijalta", uusi.valintatapajonoOid, uusi.hakemusOid))
-        case (Some(false), _) if (allowOphUpdate(session) || allowMusiikkiUpdate(session, tarjoajaOid)) => Right()
+        case (Some(false), _) if (allowOphUpdate(session) || allowMusiikkiUpdate(session, tarjoajaOids)) => Right()
         case (_, _) => Left(ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä varasijalta", uusi.valintatapajonoOid, uusi.hakemusOid))
       }
 
@@ -113,14 +113,16 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
         case (_, _) => Left(ValinnantulosUpdateStatus(409, s"Ilmoittautumista ei voida muuttaa, koska vastaanotto ei ole sitova", uusi.valintatapajonoOid, uusi.hakemusOid))
       }
 
-      def allowPeruuntuneidenHyvaksynta() = authorizer.checkAccess(session, tarjoajaOid, List(Role.SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH))
+      def allowPeruuntuneidenHyvaksynta() = authorizer.checkAccess(session, tarjoajaOids, Set(Role.SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH))
         .left.map(_ => ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä peruuntunutta", uusi.valintatapajonoOid, uusi.hakemusOid))
 
       def allowOphUpdate(session: Session) = session.hasAnyRole(Set(Role.SIJOITTELU_CRUD_OPH))
 
-      def allowOrgUpdate(session: Session, tarjoajaOid: String) = session.hasAnyRole(Set(Role.sijoitteluCrudOrg(tarjoajaOid), Role.sijoitteluUpdateOrg(tarjoajaOid)))
+      def allowOrgUpdate(session: Session, tarjoajaOids: Set[String]) =
+        tarjoajaOids.exists(tarjoajaOid => session.hasAnyRole(Set(Role.sijoitteluCrudOrg(tarjoajaOid), Role.sijoitteluUpdateOrg(tarjoajaOid))))
 
-      def allowMusiikkiUpdate(session: Session, tarjoajaOid: String) = session.hasAnyRole(Set(Role.musiikkialanValintaToinenAste(tarjoajaOid)))
+      def allowMusiikkiUpdate(session: Session, tarjoajaOids: Set[String]) =
+        tarjoajaOids.exists(tarjoajaOid => session.hasAnyRole(Set(Role.musiikkialanValintaToinenAste(tarjoajaOid))))
 
       validateMuutos()
     }
