@@ -11,13 +11,12 @@ case class SijoitteluajoRecord(sijoitteluajoId:Long, hakuOid:String, startMils:L
 
 case class HakijaRecord(etunimi:String, sukunimi:String, hakemusOid:String, hakijaOid:String)
 
-case class HakutoiveRecord(hakemusOid:String, hakutoive:Int, hakukohdeOid:String,
-                           tarjoajaOid:String, valintatuloksenTila:String, kaikkiJonotsijoiteltu:Boolean)
+case class HakutoiveRecord(hakemusOid: String, hakutoive: Int, hakukohdeOid: String, valintatuloksenTila: String, kaikkiJonotsijoiteltu: Boolean)
 
 case class PistetietoRecord(valintatapajonoOid:String, hakemusOid:String, tunniste:String,
                             arvo:String, laskennallinenArvo:String, osallistuminen:String)
 
-case class SijoittelunHakukohdeRecord(sijoitteluajoId:Long, oid:String, tarjoajaOid:String, kaikkiJonotsijoiteltu:Boolean)
+case class SijoittelunHakukohdeRecord(sijoitteluajoId: Long, oid: String, kaikkiJonotsijoiteltu: Boolean)
 
 case class ValintatapajonoRecord(tasasijasaanto:String, oid:String, nimi:String, prioriteetti:Int, aloituspaikat:Option[Int],
                                  alkuperaisetAloituspaikat:Option[Int], alinHyvaksyttyPistemaara:BigDecimal,
@@ -60,7 +59,6 @@ abstract class SijoitteluRecordToDTO {
     val hakutoiveDTO = new HakutoiveDTO
     hakutoiveDTO.setHakutoive(hakutoive.hakutoive)
     hakutoiveDTO.setHakukohdeOid(hakutoive.hakukohdeOid)
-    hakutoiveDTO.setTarjoajaOid(hakutoive.tarjoajaOid)
     //  TODO mites tämä? hakutoiveDTO.setVastaanottotieto(hakutoive.valintatuloksenTila)
 
     val pistetietoDTOs = pistetiedot.map(p => pistetietoRecordToTDO(p))
@@ -98,7 +96,6 @@ abstract class SijoitteluRecordToDTO {
     val hakukohdeDTO = new HakukohdeDTO
     hakukohdeDTO.setSijoitteluajoId(hakukohde.sijoitteluajoId)
     hakukohdeDTO.setOid(hakukohde.oid)
-    hakukohdeDTO.setTarjoajaOid(hakukohde.tarjoajaOid)
     hakukohdeDTO.setKaikkiJonotSijoiteltu(hakukohde.kaikkiJonotsijoiteltu)
     hakukohdeDTO
   }
