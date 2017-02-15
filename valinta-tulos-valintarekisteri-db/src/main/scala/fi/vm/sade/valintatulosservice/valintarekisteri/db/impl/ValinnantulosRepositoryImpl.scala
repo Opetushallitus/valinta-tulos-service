@@ -79,8 +79,10 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   }
 
   override def storeValinnantila(tila:ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
-    val tilanViimeisinMuutos = new Timestamp(System.currentTimeMillis)
+    storeValinnantilaOverridingTimestamp(tila, ifUnmodifiedSince, new Timestamp(System.currentTimeMillis))
+  }
 
+  override def storeValinnantilaOverridingTimestamp(tila: ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant], tilanViimeisinMuutos: Timestamp) = {
     sqlu"""insert into valinnantilat(
              valintatapajono_oid,
              hakemus_oid,
