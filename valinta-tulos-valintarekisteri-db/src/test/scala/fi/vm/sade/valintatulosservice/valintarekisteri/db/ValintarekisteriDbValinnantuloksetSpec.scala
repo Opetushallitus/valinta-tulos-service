@@ -28,8 +28,11 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
     hakemusOid, valintatapajonoOid, hakukohdeOid, henkiloOid, Hyvaksytty, muokkaaja)
   val valinnantuloksenOhjaus = ValinnantuloksenOhjaus(
     hakemusOid, valintatapajonoOid, hakukohdeOid, false, false, false, false, muokkaaja, selite)
+  val valinnantulos = Valinnantulos(hakukohdeOid, valintatapajonoOid, hakemusOid, henkiloOid,
+    Hyvaksytty, Some(false), Some(false), Some(false), Some(false), Poista, EiTehty, None)
+  val ilmoittautuminen = Ilmoittautuminen(hakukohdeOid, Lasna, "muokkaaja", "selite")
 
-  step(appConfig.start)
+    step(appConfig.start)
   override def before: Any = {
     deleteAll()
     singleConnectionValintarekisteriDb.runBlocking(
@@ -39,23 +42,23 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
 
   "ValintarekisteriDb" should {
     "store ilmoittautuminen" in {
-      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeIlmoittautuminen(
-        henkiloOid,
-        Ilmoittautuminen(hakukohdeOid, Lasna, "muokkaaja", "selite")
-      ))
+      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeIlmoittautuminen(henkiloOid, ilmoittautuminen))
       singleConnectionValintarekisteriDb.runBlocking(sql"""select henkilo, selite from ilmoittautumiset""".as[(String, String)]).head must_== (henkiloOid, "selite")
     }
     "update ilmoittautuminen" in {
-      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeIlmoittautuminen(
-        henkiloOid,
-        Ilmoittautuminen(hakukohdeOid, Lasna, "muokkaaja", "selite")
-      ))
-      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeIlmoittautuminen(
-        henkiloOid,
-        Ilmoittautuminen(hakukohdeOid, PoissaSyksy, "muokkaaja", "syksyn poissa")
-      ))
+      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeIlmoittautuminen(henkiloOid, ilmoittautuminen))
+      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeIlmoittautuminen(henkiloOid, ilmoittautuminen.copy(tila = PoissaSyksy, selite = "syksyn poissa")))
       singleConnectionValintarekisteriDb.runBlocking(sql"""select henkilo, selite from ilmoittautumiset""".as[(String, String)]).head must_== (henkiloOid, "syksyn poissa")
       singleConnectionValintarekisteriDb.runBlocking(sql"""select henkilo from ilmoittautumiset_history where selite = 'selite'""".as[String]).head must_== henkiloOid
+    }
+    "delete ilmoittautuminen" in {
+      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeIlmoittautuminen(henkiloOid, ilmoittautuminen))
+      singleConnectionValintarekisteriDb.runBlocking(sql"""select henkilo, selite from ilmoittautumiset""".as[(String, String)]).head must_== (henkiloOid, "selite")
+      singleConnectionValintarekisteriDb.runBlocking(sql"""select henkilo, selite from ilmoittautumiset""".as[(String, String)]).head must_== (henkiloOid, "selite")
+      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.deleteIlmoittautuminen(henkiloOid, ilmoittautuminen))
+      singleConnectionValintarekisteriDb.runBlocking(sql"""select henkilo, selite from ilmoittautumiset""".as[(String, String)]).size must_== 0
+      singleConnectionValintarekisteriDb.runBlocking(sql"""select henkilo from ilmoittautumiset_history where selite = 'selite'""".as[String]).head must_== henkiloOid
+
     }
     "update valinnantuloksen ohjaustiedot" in {
       storeValinnantilaAndValinnantulos
@@ -134,6 +137,12 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.storeValinnantuloksenOhjaus(valinnantuloksenOhjaus.copy(julkaistavissa = true))
       ) must throwA[PSQLException]
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid) mustEqual List()
+    }
+    "delete valinnantulos" in {
+      storeValinnantilaAndValinnantulos
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid).size mustEqual 1
+      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.deleteValinnantulos(muokkaaja, valinnantulos.copy(poistettava = Some(true))))
       singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid) mustEqual List()
     }
 
