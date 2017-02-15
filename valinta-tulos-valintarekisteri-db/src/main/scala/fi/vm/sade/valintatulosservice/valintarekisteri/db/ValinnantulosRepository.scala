@@ -21,7 +21,6 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
 
   def getValinnantuloksetForValintatapajono(valintatapajonoOid:String, duration:Duration = Duration(1, TimeUnit.SECONDS)): List[(Instant, Valinnantulos)]
 
-  def getTarjoajaForHakukohde(hakukohdeOid:String): String
   def getHakuForHakukohde(hakukohdeOid:String): String
 
   def deleteValinnantulos(muokkaaja:String, valinnantulos:Valinnantulos, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
