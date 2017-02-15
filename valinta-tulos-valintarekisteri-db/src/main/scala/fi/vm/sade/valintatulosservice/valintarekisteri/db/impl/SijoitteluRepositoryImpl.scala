@@ -272,9 +272,9 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
   }
 
   private def insertHakukohde(hakuOid: String, hakukohde:Hakukohde) = {
-    val SijoitteluajonHakukohdeWrapper(sijoitteluajoId, oid, tarjoajaOid, kaikkiJonotSijoiteltu) = SijoitteluajonHakukohdeWrapper(hakukohde)
-    sqlu"""insert into sijoitteluajon_hakukohteet (sijoitteluajo_id, haku_oid, hakukohde_oid, tarjoaja_oid, kaikki_jonot_sijoiteltu)
-             values (${sijoitteluajoId}, ${hakuOid}, ${oid}, ${tarjoajaOid}, ${kaikkiJonotSijoiteltu})"""
+    val SijoitteluajonHakukohdeWrapper(sijoitteluajoId, oid, kaikkiJonotSijoiteltu) = SijoitteluajonHakukohdeWrapper(hakukohde)
+    sqlu"""insert into sijoitteluajon_hakukohteet (sijoitteluajo_id, haku_oid, hakukohde_oid, kaikki_jonot_sijoiteltu)
+             values (${sijoitteluajoId}, ${hakuOid}, ${oid}, ${kaikkiJonotSijoiteltu})"""
   }
 
   private def insertValintatapajono(sijoitteluajoId:Long, hakukohdeOid:String, valintatapajono:Valintatapajono) = {
@@ -350,10 +350,10 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
 
   override def getSijoitteluajonHakukohteet(sijoitteluajoId: Long): List[SijoittelunHakukohdeRecord] = {
     runBlocking(
-      sql"""select sh.sijoitteluajo_id, sh.hakukohde_oid, sh.tarjoaja_oid, sh.kaikki_jonot_sijoiteltu
+      sql"""select sh.sijoitteluajo_id, sh.hakukohde_oid, sh.kaikki_jonot_sijoiteltu
             from sijoitteluajon_hakukohteet sh
             where sh.sijoitteluajo_id = ${sijoitteluajoId}
-            group by sh.sijoitteluajo_id, sh.hakukohde_oid, sh.tarjoaja_oid, sh.kaikki_jonot_sijoiteltu""".as[SijoittelunHakukohdeRecord]).toList
+            group by sh.sijoitteluajo_id, sh.hakukohde_oid, sh.kaikki_jonot_sijoiteltu""".as[SijoittelunHakukohdeRecord]).toList
   }
 
   override def getSijoitteluajonValintatapajonot(sijoitteluajoId: Long): List[ValintatapajonoRecord] = {
@@ -485,7 +485,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
   override def getHakemuksenHakutoiveet(hakemusOid: String, sijoitteluajoId: Long): List[HakutoiveRecord] = {
     runBlocking(
       sql"""with j as (select * from jonosijat where hakemus_oid = ${hakemusOid} and sijoitteluajo_id = ${sijoitteluajoId})
-            select j.hakemus_oid, j.prioriteetti, v.hakukohde_oid, sh.tarjoaja_oid, vt.tila, sh.kaikki_jonot_sijoiteltu
+            select j.hakemus_oid, j.prioriteetti, v.hakukohde_oid, vt.tila, sh.kaikki_jonot_sijoiteltu
             from j
             left join valinnantulokset as v on v.hakemus_oid = j.hakemus_oid
                 and v.valintatapajono_oid = j.valintatapajono_oid

@@ -43,17 +43,12 @@ object SijoitteluajoWrapper {
   }
 }
 
-case class SijoitteluajonHakukohdeWrapper(
-                                           sijoitteluajoId: Long,
-                                           oid: String,
-                                           tarjoajaOid: String,
-                                           kaikkiJonotSijoiteltu: Boolean) {
+case class SijoitteluajonHakukohdeWrapper(sijoitteluajoId: Long, oid: String, kaikkiJonotSijoiteltu: Boolean) {
 
   val hakukohde: Hakukohde = {
     val hakukohde = new Hakukohde
     hakukohde.setSijoitteluajoId(sijoitteluajoId)
     hakukohde.setOid(oid)
-    hakukohde.setTarjoajaOid(tarjoajaOid)
     hakukohde.setKaikkiJonotSijoiteltu(kaikkiJonotSijoiteltu)
     hakukohde
   }
@@ -61,12 +56,7 @@ case class SijoitteluajonHakukohdeWrapper(
 
 object SijoitteluajonHakukohdeWrapper {
   def apply(hakukohde: Hakukohde): SijoitteluajonHakukohdeWrapper = {
-    SijoitteluajonHakukohdeWrapper(
-      hakukohde.getSijoitteluajoId,
-      hakukohde.getOid,
-      hakukohde.getTarjoajaOid,
-      hakukohde.isKaikkiJonotSijoiteltu
-    )
+    SijoitteluajonHakukohdeWrapper(hakukohde.getSijoitteluajoId, hakukohde.getOid, hakukohde.isKaikkiJonotSijoiteltu)
   }
 }
 
