@@ -88,7 +88,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
   private def handle(s: ValinnantulosStrategy, valinnantulokset: List[Valinnantulos], vanhatValinnantulokset: Map[String, (Instant, Valinnantulos)], ifUnmodifiedSince: Instant): List[ValinnantulosUpdateStatus] = {
     valinnantulokset.map(uusiValinnantulos => {
       vanhatValinnantulokset.get(uusiValinnantulos.hakemusOid) match {
-        case Some((_, vanhaValinnantulos)) if !uusiValinnantulos.hasChanged(vanhaValinnantulos) => Right()
+        case Some((_, vanhaValinnantulos)) if !s.hasChange(uusiValinnantulos, vanhaValinnantulos) => Right()
         case Some((lastModified, _)) if lastModified.isAfter(ifUnmodifiedSince) =>
           logger.warn(s"Hakemus ${uusiValinnantulos.hakemusOid} valintatapajonossa ${uusiValinnantulos.valintatapajonoOid} " +
             s"on muuttunut $lastModified lukemisajan $ifUnmodifiedSince jälkeen.")
