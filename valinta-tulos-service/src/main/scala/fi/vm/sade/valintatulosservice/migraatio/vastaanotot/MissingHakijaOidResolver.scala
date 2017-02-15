@@ -4,8 +4,8 @@ import java.net.URLEncoder
 
 import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasParams}
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.config.OphUrlProperties.ophProperties
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.config.VtsOphUrlProperties.ophProperties
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import org.http4s._
 import org.http4s.headers.`Content-Type`

@@ -1,8 +1,10 @@
 package fi.vm.sade.valintatulosservice.config
 
 import java.net.URL
+import java.nio.file.Paths
 
 import com.typesafe.config.{Config, ConfigFactory}
+import fi.vm.sade.properties.OphProperties
 import fi.vm.sade.utils.config.{ApplicationSettingsLoader, ConfigTemplateProcessor}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.utils.tcp.PortFromSystemPropertyOrFindFree
@@ -46,10 +48,14 @@ object ValintarekisteriAppConfig extends Logging {
   trait TemplatedProps {
     logger.info("Using template variables from " + templateAttributesURL)
     lazy val settings = loadSettings
-    def loadSettings = ConfigTemplateProcessor.createSettings(
-      getClass.getResource("/oph-configuration/valinta-tulos-service-devtest.properties.template"),
-      templateAttributesURL
-    )
+    def loadSettings = {
+      val settings = ConfigTemplateProcessor.createSettings(
+      getClass.getResource("/oph-configuration/valinta-tulos-service-devtest.properties.template"), templateAttributesURL)
+      val virkailijaHost = if (settings.config.hasPath("host.virkailija")) settings.config.getString("host.virkailija") else ""
+      ValintarekisteriOphUrlProperties.ophProperties.addOverride("host.virkailija", virkailijaHost)
+      settings
+    }
+
     def templateAttributesURL: URL
   }
 
@@ -68,3 +74,7 @@ trait StubbedExternalDeps {
 
 }
 
+object ValintarekisteriOphUrlProperties {
+  val ophProperties: OphProperties = new OphProperties("/oph-configuration/valinta-tulos-valintarekisteri-db-oph.properties")
+    .addOptionalFiles(Paths.get(sys.props.getOrElse("user.home", ""), "/oph-configuration/common.properties").toString)
+}

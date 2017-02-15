@@ -41,7 +41,7 @@ object VtsAppConfig extends Logging {
       case name => throw new IllegalArgumentException("Unknown value for valintatulos.profile: " + name);
     }
     val virkailijaUrl = config.properties.getOrElse("host.virkailija", "")
-    OphUrlProperties.ophProperties.addOverride("host.virkailija", virkailijaUrl)
+    VtsOphUrlProperties.ophProperties.addOverride("host.virkailija", virkailijaUrl)
     config
   }
 
@@ -147,10 +147,14 @@ object VtsAppConfig extends Logging {
   trait TemplatedProps {
     logger.info("Using template variables from " + templateAttributesURL)
     lazy val settings = loadSettings
-    def loadSettings = ConfigTemplateProcessor.createSettings(
-      getClass.getResource("/oph-configuration/valinta-tulos-service-devtest.properties.template"),
-      templateAttributesURL
-    )
+    def loadSettings = {
+      val settings = ConfigTemplateProcessor.createSettings(
+        getClass.getResource("/oph-configuration/valinta-tulos-service-devtest.properties.template"),
+        templateAttributesURL
+      )
+      VtsOphUrlProperties.ophProperties.addOverride("host.virkailija", settings.config.getString("host.virkailija"))
+      settings
+    }
     def templateAttributesURL: URL
   }
 

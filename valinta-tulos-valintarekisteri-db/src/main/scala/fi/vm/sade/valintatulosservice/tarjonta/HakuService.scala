@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.tarjonta
 
 import fi.vm.sade.utils.http.DefaultHttpClient
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.config.{AppConfig, StubbedExternalDeps}
+import fi.vm.sade.valintatulosservice.config.{AppConfig, StubbedExternalDeps, ValintarekisteriOphUrlProperties}
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Kausi, Kevat, Syksy}
 import org.joda.time.DateTime
@@ -127,7 +127,7 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
   }
 
   def getHaku(oid: String): Either[Throwable, Haku] = {
-    val url = appConfig.settings.tarjontaUrl + "/rest/v1/haku/" + oid
+    val url = ValintarekisteriOphUrlProperties.ophProperties.url("tarjonta-service.haku", oid)
     fetch(url) { response =>
       val hakuTarjonnassa = (parse(response) \ "result").extract[HakuTarjonnassa]
       toHaku(hakuTarjonnassa)
@@ -139,14 +139,16 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
   }
 
   def getHakukohdeOids(hakuOid:String): Either[Throwable, Seq[String]] = {
-    val url = appConfig.settings.tarjontaUrl + "/rest/v1/haku/" + hakuOid
+    val url = ValintarekisteriOphUrlProperties.ophProperties.url("tarjonta-service.haku", hakuOid)
     fetch(url) { response =>
       (parse(response) \ "result" \ "hakukohdeOids" ).extract[List[String]]
     }
   }
 
   override def getArbitraryPublishedHakukohdeOid(hakuOid: String): Either[Throwable, String] = {
-    val url = appConfig.settings.tarjontaUrl + s"/rest/v1/hakukohde/search?tila=VALMIS&tila=JULKAISTU&hakuOid=$hakuOid&offset=0&limit=1"
+    ValintarekisteriOphUrlProperties.ophProperties.url("tarjonta-service.hakukohde.search", hakuOid)
+
+    val url = ValintarekisteriOphUrlProperties.ophProperties.url("tarjonta-service.hakukohde.search", hakuOid)
     fetch(url) { response =>
       (parse(response) \ "result" \ "tulokset" \ "tulokset" \ "oid" ).extractOpt[String]
     }.right.flatMap(_.toRight(new IllegalArgumentException(s"No hakukohde found for haku $hakuOid")))
@@ -155,7 +157,8 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
     sequence(for{oid <- oids.toStream} yield getHakukohde(oid))
   }
   def getHakukohde(hakukohdeOid: String): Either[Throwable, Hakukohde] = {
-    val hakukohdeUrl = s"${appConfig.settings.tarjontaUrl}/rest/v1/hakukohde/$hakukohdeOid?populateAdditionalKomotoFields=true"
+    //todo move concat to property instead
+    val hakukohdeUrl = ValintarekisteriOphUrlProperties.ophProperties.url("tarjonta-service.hakukohde", hakukohdeOid) + "populateAdditionalKomotoFields=true"
     fetch(hakukohdeUrl) { response =>
       (parse(response) \ "result").extract[Hakukohde]
     }.left.map {
@@ -170,7 +173,7 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
   }
 
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = {
-    val url = appConfig.settings.tarjontaUrl + "/rest/v1/haku/find?addHakuKohdes=false"
+    val url = ValintarekisteriOphUrlProperties.ophProperties.url("tarjonta-service.find")
     fetch(url) { response =>
       val haut = (parse(response) \ "result").extract[List[HakuTarjonnassa]]
       haut.filter(_.julkaistu).map(toHaku(_))
@@ -178,7 +181,7 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
   }
 
   def getKoulutus(koulutusOid: String): Either[Throwable, Koulutus] = {
-    val koulutusUrl = s"${appConfig.settings.tarjontaUrl}/rest/v1/koulutus/$koulutusOid"
+    val koulutusUrl = ValintarekisteriOphUrlProperties.ophProperties.url("tarjonta-service.koulutus", koulutusOid)
     fetch(koulutusUrl) { response =>
       (parse(response) \ "result").extract[Koulutus]
     }

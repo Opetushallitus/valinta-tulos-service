@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice.sijoittelu
 
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.config.VtsOphUrlProperties
 import fi.vm.sade.valintatulosservice.json.StreamingJsonArrayRetriever
 
 class StreamingHakijaDtoClient(appConfig: VtsAppConfig) {
@@ -12,6 +13,6 @@ class StreamingHakijaDtoClient(appConfig: VtsAppConfig) {
   }
 
   private def url(hakuOid: String, sijoitteluajoId: String): String = {
-    s"${appConfig.settings.sijoitteluServiceRestUrl}/resources/sijoittelu/$hakuOid/sijoitteluajo/$sijoitteluajoId/hakemukset"
+    VtsOphUrlProperties.ophProperties.url("sijoittelu-service.all.hakemus.for.sijoittelu", hakuOid, sijoitteluajoId)
   }
 }
