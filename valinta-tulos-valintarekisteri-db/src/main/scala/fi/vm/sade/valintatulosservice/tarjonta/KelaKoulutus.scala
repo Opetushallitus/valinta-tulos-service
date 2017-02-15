@@ -69,7 +69,7 @@ object KelaKoulutus {
           case r"7.*" =>
             Some(Ylempi(laajuusarvo = arvo))
           case _ =>
-            Some(Muu(laajuusarvo = arvo))
+            None
         }
       case _ =>
         None
