@@ -2,8 +2,7 @@ package fi.vm.sade.valintatulosservice.kela
 
 case class Henkilo(henkilotunnus: String, sukunimi: String, etunimet: String, vastaanotot: Seq[Vastaanotto])
 
-case class Vastaanotto(tutkintotyyppi: String,
-                       organisaatio: String,
+case class Vastaanotto(organisaatio: String,
                        oppilaitos: String,
                        hakukohde: String,
                        tutkinnonlaajuus1: String,

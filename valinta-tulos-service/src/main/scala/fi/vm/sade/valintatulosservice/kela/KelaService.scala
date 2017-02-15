@@ -35,14 +35,13 @@ class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, orga
     (kelaKoulutus, kausi) match {
       case (Some(kela), Some(kausi)) =>
         Some(fi.vm.sade.valintatulosservice.kela.Vastaanotto(
-          tutkintotyyppi = "",
           organisaatio = hakukohde.tarjoajaOids.head,
           oppilaitos = oppilaitos,
           hakukohde = vastaanotto.hakukohdeOid,
           tutkinnonlaajuus1 = kela.tutkinnonlaajuus1,
           tutkinnonlaajuus2 = kela.tutkinnonlaajuus2,
           tutkinnontaso = kela.tutkinnontaso,
-          vastaaottoaika = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(vastaanotto.timestamp),
+          vastaaottoaika = new SimpleDateFormat("yyyy-MM-dd").format(vastaanotto.timestamp),
           alkamiskausipvm = kausi))
       case _ =>
         None
