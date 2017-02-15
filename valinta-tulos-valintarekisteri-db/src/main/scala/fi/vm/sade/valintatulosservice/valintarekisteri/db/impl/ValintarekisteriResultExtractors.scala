@@ -35,7 +35,6 @@ trait ValintarekisteriResultExtractors {
     hakemusOid = r.nextString,
     hakutoive = r.nextInt,
     hakukohdeOid = r.nextString,
-    tarjoajaOid = r.nextString,
     valintatuloksenTila = r.nextString,
     kaikkiJonotsijoiteltu = r.nextBoolean))
 
@@ -56,7 +55,6 @@ trait ValintarekisteriResultExtractors {
   protected implicit val getSijoitteluajoHakukohteetResult = GetResult(r => SijoittelunHakukohdeRecord(
     sijoitteluajoId = r.nextLong,
     oid = r.nextString,
-    tarjoajaOid = r.nextString,
     kaikkiJonotsijoiteltu = r.nextBoolean))
 
   protected implicit val getValintatapajonotResult = GetResult(r => ValintatapajonoRecord(

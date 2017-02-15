@@ -41,13 +41,6 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
        """.as[(Instant, Valinnantulos)].map(_.toList), duration)
   }
 
-  override def getTarjoajaForHakukohde(hakukohdeOid: String): String = {
-    runBlocking(
-      sql"""select tarjoaja_oid from sijoitteluajon_hakukohteet
-            where hakukohde_oid = ${hakukohdeOid}
-            order by sijoitteluajo_id desc limit 1""".as[String], Duration(1, TimeUnit.SECONDS)).head
-  }
-
   override def getHakuForHakukohde(hakukohdeOid:String): String = {
     runBlocking(
       sql"""select a.haku_oid from sijoitteluajot a
