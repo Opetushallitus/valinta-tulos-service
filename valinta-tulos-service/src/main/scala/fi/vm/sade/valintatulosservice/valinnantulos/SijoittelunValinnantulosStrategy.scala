@@ -128,13 +128,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
   def save(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): DBIO[Unit] = {
     val muokkaaja = session.personOid
-    val vanha = vanhaOpt.getOrElse(throw new RuntimeException("Foo"))
-
-    logger.info(s"Käyttäjä ${muokkaaja} muokkasi " +
-      s"hakemuksen ${uusi.hakemusOid} valinnan tulosta valintatapajonossa $uusi.valintatapajonoOid " +
-      s"vastaanottotilasta ${vanha.vastaanottotila} tilaan ${uusi.vastaanottotila} ja " +
-      s"ilmoittautumistilasta ${vanha.ilmoittautumistila} tilaan ${uusi.ilmoittautumistila}.")
-
+    val vanha = vanhaOpt.getOrElse(throw new IllegalStateException(s"Vain valinnantuloksen muokkaus sallittu haussa ${haku.oid}"))
     val updateOhjaus = if (uusi.hasOhjausChanged(vanha)) {
       valinnantulosRepository.updateValinnantuloksenOhjaus(
         uusi.getValinnantuloksenOhjauksenMuutos(vanha, muokkaaja, "Virkailijan tallennus"), Some(ifUnmodifiedSince))
@@ -144,27 +138,29 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
     val updateIlmoittautuminen = if (uusi.ilmoittautumistila != vanha.ilmoittautumistila) {
       valinnantulosRepository.storeIlmoittautuminen(
         vanha.henkiloOid, Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, "Virkailijan tallennus"), Some(ifUnmodifiedSince))
-        .map(_ => true)
     } else {
-      DBIO.successful(false)
+      DBIO.successful(())
     }
-    updateOhjaus.andThen(updateIlmoittautuminen).map(wasUpdate => if (wasUpdate) {
-      audit.log(auditInfo.user, ValinnantuloksenMuokkaus,
-        new Target.Builder()
-          .setField("hakukohde", vanha.hakukohdeOid)
-          .setField("valintatapajono", vanha.valintatapajonoOid)
-          .setField("hakemus", vanha.hakemusOid)
-          .build(),
-        new Changes.Builder()
-          .updated("valinnantila", vanha.valinnantila.toString, uusi.valinnantila.toString)
-          .updated("ehdollisestiHyvaksyttavissa", vanha.ehdollisestiHyvaksyttavissa.getOrElse(false).toString, uusi.ehdollisestiHyvaksyttavissa.getOrElse(false).toString)
-          .updated("julkaistavissa", vanha.julkaistavissa.getOrElse(false).toString, uusi.julkaistavissa.getOrElse(false).toString)
-          .updated("hyvaksyttyVarasijalta", vanha.hyvaksyttyVarasijalta.getOrElse(false).toString, uusi.hyvaksyttyVarasijalta.getOrElse(false).toString)
-          .updated("hyvaksyPeruuntunut", vanha.hyvaksyPeruuntunut.getOrElse(false).toString, uusi.hyvaksyPeruuntunut.getOrElse(false).toString)
-          .updated("vastaanottotila", vanha.vastaanottotila.toString, uusi.vastaanottotila.toString)
-          .updated("ilmoittautumistila", vanha.ilmoittautumistila.toString, uusi.ilmoittautumistila.toString)
-          .build()
-      )
-    })
+    updateOhjaus.andThen(updateIlmoittautuminen)
+  }
+
+  def audit(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): Unit = {
+    val vanha = vanhaOpt.getOrElse(throw new IllegalStateException(s"Vain valinnantuloksen muokkaus sallittu haussa ${haku.oid}"))
+    audit.log(auditInfo.user, ValinnantuloksenMuokkaus,
+      new Target.Builder()
+        .setField("hakukohde", vanha.hakukohdeOid)
+        .setField("valintatapajono", vanha.valintatapajonoOid)
+        .setField("hakemus", vanha.hakemusOid)
+        .build(),
+      new Changes.Builder()
+        .updated("valinnantila", vanha.valinnantila.toString, uusi.valinnantila.toString)
+        .updated("ehdollisestiHyvaksyttavissa", vanha.ehdollisestiHyvaksyttavissa.getOrElse(false).toString, uusi.ehdollisestiHyvaksyttavissa.getOrElse(false).toString)
+        .updated("julkaistavissa", vanha.julkaistavissa.getOrElse(false).toString, uusi.julkaistavissa.getOrElse(false).toString)
+        .updated("hyvaksyttyVarasijalta", vanha.hyvaksyttyVarasijalta.getOrElse(false).toString, uusi.hyvaksyttyVarasijalta.getOrElse(false).toString)
+        .updated("hyvaksyPeruuntunut", vanha.hyvaksyPeruuntunut.getOrElse(false).toString, uusi.hyvaksyPeruuntunut.getOrElse(false).toString)
+        .updated("vastaanottotila", vanha.vastaanottotila.toString, uusi.vastaanottotila.toString)
+        .updated("ilmoittautumistila", vanha.ilmoittautumistila.toString, uusi.ilmoittautumistila.toString)
+        .build()
+    )
   }
 }
