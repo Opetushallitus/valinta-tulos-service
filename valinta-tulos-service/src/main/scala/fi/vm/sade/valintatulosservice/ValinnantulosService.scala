@@ -42,7 +42,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
     val hakukohdeOid = valinnantulokset.head.hakukohdeOid // FIXME käyttäjän syötettä, tarvittaisiin jono-hakukohde tieto valintaperusteista
     (for {
       hakukohde <- hakuService.getHakukohde(hakukohdeOid).right
-      _ <- authorizer.checkAccess(auditInfo.session._2, hakukohde.tarjoajaOids.head, List(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).right
+      _ <- authorizer.checkAccess(auditInfo.session._2, hakukohde.tarjoajaOids, Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).right
       haku <- hakuService.getHaku(hakukohde.hakuOid).right
       ohjausparametrit <- ohjausparametritService.ohjausparametrit(hakukohde.hakuOid).right
     } yield {
@@ -58,7 +58,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
       } else {
         new SijoittelunValinnantulosStrategy(
           auditInfo,
-          hakukohde.tarjoajaOids.head,
+          hakukohde.tarjoajaOids,
           haku,
           ohjausparametrit,
           authorizer,
