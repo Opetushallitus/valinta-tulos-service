@@ -29,7 +29,7 @@ object ValintarekisteriAppConfig extends Logging {
       itPostgres.start()
     }
 
-    override lazy val settings = loadSettings
+    override val settings = loadSettings
       .withOverride(("valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids", "100"))
       .withOverride("valinta-tulos-service.valintarekisteri.db.url", s"jdbc:postgresql://localhost:${itPostgresPortChooser.chosenPort}/valintarekisteri")
       .withoutPath("valinta-tulos-service.valintarekisteri.db.user")
@@ -38,7 +38,7 @@ object ValintarekisteriAppConfig extends Logging {
 
   trait ExternalProps {
     def configFile = System.getProperty("user.home") + "/oph-configuration/valinta-tulos-service.properties"
-    lazy val settings = ApplicationSettingsLoader.loadSettings(configFile)
+    val settings = ApplicationSettingsLoader.loadSettings(configFile)
   }
 
   trait ExampleTemplatedProps extends ValintarekisteriAppConfig with TemplatedProps {
@@ -47,7 +47,7 @@ object ValintarekisteriAppConfig extends Logging {
 
   trait TemplatedProps {
     logger.info("Using template variables from " + templateAttributesURL)
-    lazy val settings = loadSettings
+    val settings = loadSettings
     def loadSettings = {
       val settings = ConfigTemplateProcessor.createSettings(
       getClass.getResource("/oph-configuration/valinta-tulos-service-devtest.properties.template"), templateAttributesURL)
