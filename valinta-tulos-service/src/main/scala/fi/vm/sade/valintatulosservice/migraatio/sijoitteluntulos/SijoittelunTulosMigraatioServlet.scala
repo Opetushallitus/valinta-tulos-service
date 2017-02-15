@@ -32,14 +32,12 @@ class SijoittelunTulosMigraatioServlet()(implicit val swagger: Swagger, appConfi
 
   logger.warn("Mountataan Valintarekisterin sijoittelun tuloksien migraatioservlet!")
 
-  val postHakukohdeMigration: OperationBuilder = (apiOperation[Int]("migroiHakukohde")
-    summary "Migroi sijoitteludb:stä valintarekisteriin hakukohteita, jos niiden tiedot ovat muuttuneet"
+  val postHakukohdeMigrationTiming: OperationBuilder = (apiOperation[Int]("migroiHakukohde")
+    summary "Laske hieman lukuja siitä, kauanko sijoittelun tulosten lukeminen sijoitteludb:stä valintarekisteriin migroimista saattaisi kestää"
     // Real body param type cannot be used because of unsupported scala enumerations: https://github.com/scalatra/scalatra/issues/343
-    parameter queryParam[Boolean]("dryrun").defaultValue(true).description("Dry run logittaa hakukohteet, joiden tila on muuttunut, Mongossa mutta ei päivitä kantaa.")
     parameter bodyParam[Set[String]]("hakuOids").description("Virkistettävien hakujen oidit. Huom, tyhjä lista virkistää kaikki!"))
-  post("/hakukohteet", operation(postHakukohdeMigration)) {
+  post("/kellota-hakukohteet", operation(postHakukohdeMigrationTiming)) {
     val start = System.currentTimeMillis()
-    val dryRun = params("dryrun").toBoolean
     val hakuOids = read[Set[String]](request.body)
 
     System.out.println("EXCELIIN\t$sijoitteluAjoId\t$cursorHasNextTotal\t$cursorNextTotal\t$toStringTotal\t$digestTotal\t$marshalTotal\t$printTotal")
