@@ -32,7 +32,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
   val tarjoajaOid = "1.2.3.4.5"
   val valintatapajonoOid = "14538080612623056182813241345174"
   val hakemusOids = List("1.2.246.562.11.00006169120", "1.2.246.562.11.00006169121", "1.2.246.562.11.00006169122",
-    "1.2.246.562.11.00006169123", "1.2.246.562.11.00006169124", "1.2.246.562.11.00006169125")
+    "1.2.246.562.11.00006169123", "1.2.246.562.11.00006169124", "1.2.246.562.11.00006169125", "1.2.246.562.11.00006169126")
   val korkeakouluHakukohdeOid = "1.2.246.562.20.26643418986"
   val korkeakouluhaku = Haku(
     korkeakouluHakuOid,
@@ -68,6 +68,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     null,
     null
   )
+
   lazy val valinnantulos = Valinnantulos(
     hakukohdeOid = korkeakouluHakukohdeOid,
     valintatapajonoOid = valintatapajonoOid,
@@ -180,7 +181,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       valinnantulosRepository.updateValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]]) returns DBIO.successful(())
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(modification), notModifiedSince, auditInfo) mustEqual List()
       there was one (valinnantulosRepository).updateValinnantuloksenOhjaus(valinnantuloksetOhjaus.copy(hyvaksyPeruuntunut = true), Some(notModifiedSince))
-  }
+    }
     "no authorization to change julkaistavissa" in new ValinnantulosServiceWithMocksForJulkaistavissaTests {
       override def result = List((ZonedDateTime.now.toInstant, valinnantulos))
       authorizer.checkAccess(session, "1.2.1.2.1.2", List(Role.SIJOITTELU_CRUD)) returns Left(new NotAuthorizedException("moi"))
@@ -241,7 +242,8 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
         valinnantulos.copy(hakemusOid = hakemusOids(2), valinnantila = Peruutettu, vastaanottotila = VastaanotaSitovasti),
         valinnantulos.copy(hakemusOid = hakemusOids(3), valinnantila = Peruutettu, vastaanottotila = Peru),
         valinnantulos.copy(hakemusOid = hakemusOids(4), valinnantila = Varalla, vastaanottotila = VastaanotaSitovasti),
-        valinnantulos.copy(hakemusOid = hakemusOids(5), valinnantila = Perunut, vastaanottotila = VastaanotaSitovasti)
+        valinnantulos.copy(hakemusOid = hakemusOids(5), valinnantila = Perunut, vastaanottotila = VastaanotaSitovasti),
+        valinnantulos.copy(hakemusOid = hakemusOids(6), poistettava = Some(true))
       )
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, ZonedDateTime.now.toInstant, auditInfo, true) mustEqual List(
         ValinnantulosUpdateStatus(409, s"Ilmoittautumistieto voi olla ainoastaan hyväksytyillä ja vastaanottaneilla hakijoilla", valintatapajonoOid, valinnantulokset(0).hakemusOid),
@@ -249,7 +251,8 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
         ValinnantulosUpdateStatus(409, s"Peruneella vastaanottajalla ei voi olla vastaanottotilaa", valintatapajonoOid, valinnantulokset(2).hakemusOid),
         ValinnantulosUpdateStatus(409, s"Vastaanottaneen tai peruneen hakijan tulisi olla hyväksyttynä", valintatapajonoOid, valinnantulokset(3).hakemusOid),
         ValinnantulosUpdateStatus(409, s"Hylätty tai varalla oleva hakija ei voi olla ilmoittautunut tai vastaanottanut", valintatapajonoOid, valinnantulokset(4).hakemusOid),
-        ValinnantulosUpdateStatus(409, s"Peruneella vastaanottajalla ei voi olla vastaanottotilaa", valintatapajonoOid, valinnantulokset(5).hakemusOid)
+        ValinnantulosUpdateStatus(409, s"Peruneella vastaanottajalla ei voi olla vastaanottotilaa", valintatapajonoOid, valinnantulokset(5).hakemusOid),
+        ValinnantulosUpdateStatus(404, s"Valinnantulosta ei voida poistaa, koska sitä ei ole olemassa", valintatapajonoOid, valinnantulokset(6).hakemusOid)
       )
     }
     "no status for succesfully modified valinnantulos" in new AuthorizedValinnantulosServiceWithMocks with ErillishakuMocks {
@@ -258,6 +261,21 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       val notModifiedSince = ZonedDateTime.now.toInstant
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, notModifiedSince, auditInfo, true) mustEqual List()
       there was one (valinnantulosRepository).updateValinnantuloksenOhjaus(valinnantulokset(0).getValinnantuloksenOhjaus(session.personOid, "Erillishaun tallennus"), Some(notModifiedSince))
+      there was no (valinnantulosRepository).storeValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
+      there was no (valinnantulosRepository).storeIlmoittautuminen(any[String], any[Ilmoittautuminen], any[Option[Instant]])
+      there was no (valinnantulosRepository).storeValinnantila(any[ValinnantilanTallennus], any[Option[Instant]])
+    }
+    "no status for succesfully deleted valinnantulos" in new AuthorizedValinnantulosServiceWithMocks with ErillishakuMocks {
+      def validiValinnantulos = valinnantulos.copy(valinnantila = Hyvaksytty, vastaanottotila = VastaanotaSitovasti, ilmoittautumistila = Lasna)
+      override def result = List((ZonedDateTime.now.toInstant, validiValinnantulos))
+
+      val valinnantulokset = List(validiValinnantulos.copy(poistettava = Some(true)))
+      val notModifiedSince = ZonedDateTime.now.toInstant
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, notModifiedSince, auditInfo, true) mustEqual List()
+      there was one (valinnantulosRepository).deleteValinnantulos(session.personOid, valinnantulokset(0), Some(notModifiedSince))
+      there was one (valinnantulosRepository).deleteIlmoittautuminen(validiValinnantulos.henkiloOid, Ilmoittautuminen(validiValinnantulos.hakukohdeOid, validiValinnantulos.ilmoittautumistila,
+        session.personOid, "Erillishaun tallennus"), Some(notModifiedSince))
+      there was no (valinnantulosRepository).updateValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
       there was no (valinnantulosRepository).storeValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
       there was no (valinnantulosRepository).storeIlmoittautuminen(any[String], any[Ilmoittautuminen], any[Option[Instant]])
       there was no (valinnantulosRepository).storeValinnantila(any[ValinnantilanTallennus], any[Option[Instant]])
@@ -312,7 +330,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
   }
 
   trait NotAuthorizedValinnantulosServiceWithMocks extends ValinnantulosServiceWithMocks {
-    authorizer.checkAccess(any[Session], any[String], any[List[Role]]) returns Left(new NotAuthorizedException("moi"))
+    authorizer.checkAccess(any[Session], any[String], any[List[Role]]) returns Left(new AuthorizationFailedException("moi"))
   }
 
   trait AuthorizedValinnantulosServiceWithMocks extends ValinnantulosServiceWithMocks {
