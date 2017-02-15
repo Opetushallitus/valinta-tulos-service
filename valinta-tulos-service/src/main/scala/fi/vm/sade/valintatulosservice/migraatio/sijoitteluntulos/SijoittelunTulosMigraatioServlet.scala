@@ -10,16 +10,17 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.VtsServletBase
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosRepository}
 import org.json4s.jackson.Serialization.read
 import org.scalatra.Ok
 import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 
 /**
-  * Work in progress. This code does not do anything very meaningful yet, just
-  * takes some performance statistics for same operations bound to be used in the migration.
+  * Work in progress.
   */
-class SijoittelunTulosMigraatioServlet()(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
+class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepository,
+                                       valinnantulosRepository: ValinnantulosRepository)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
   override val applicationName = Some("sijoittelun-tulos-migraatio")
 
   override protected def applicationDescription: String = "REST-API sijoittelun tuloksien migroinniksi valintarekisteriin"
@@ -29,8 +30,25 @@ class SijoittelunTulosMigraatioServlet()(implicit val swagger: Swagger, appConfi
   private val adapter = new HexBinaryAdapter()
 
   private val sijoittelunTulosRestClient = new SijoittelunTulosRestClient(appConfig)
+  private val mongoClient = new SioittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient, appConfig, sijoitteluRepository, valinnantulosRepository)
 
   logger.warn("Mountataan Valintarekisterin sijoittelun tuloksien migraatioservlet!")
+
+  val postHakukohdeMigration: OperationBuilder = (apiOperation[Int]("migroiHakukohde")
+    summary "Migroi sijoitteludb:stä valintarekisteriin hakukohteita. Toistaiseksi ei välitä siitä, ovatko tiedot muuttuneet"
+    parameter queryParam[Boolean]("dryrun").defaultValue(true).description("Dry run logittaa hakukohteet, joiden tila on muuttunut, Mongossa mutta ei päivitä kantaa.")
+    parameter bodyParam[Set[String]]("hakuOids").description("Virkistettävien hakujen oidit. Huom, tyhjä lista virkistää kaikki!"))
+  post("/hakukohteet", operation(postHakukohdeMigration)) {
+    val start = System.currentTimeMillis()
+    val dryRun = params("dryrun").toBoolean
+    val hakuOids = read[Set[String]](request.body)
+
+    hakuOids.foreach { mongoClient.migrate(_, dryRun) }
+
+    val msg = s"postHakukohdeMigration DONE in ${System.currentTimeMillis - start} ms"
+    logger.info(msg)
+    Ok(-1)
+  }
 
   val postHakukohdeMigrationTiming: OperationBuilder = (apiOperation[Int]("migroiHakukohde")
     summary "Laske hieman lukuja siitä, kauanko sijoittelun tulosten lukeminen sijoitteludb:stä valintarekisteriin migroimista saattaisi kestää"
