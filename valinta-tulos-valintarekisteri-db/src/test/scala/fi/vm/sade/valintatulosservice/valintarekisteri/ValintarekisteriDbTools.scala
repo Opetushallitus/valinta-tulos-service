@@ -275,12 +275,12 @@ trait ValintarekisteriDbTools extends Specification {
   }
 
   private implicit val getSijoitteluajonHakukohdeResult = GetResult(r => {
-    SijoitteluajonHakukohdeWrapper(r.nextLong, r.nextString, r.nextString, r.nextBoolean).hakukohde
+    SijoitteluajonHakukohdeWrapper(r.nextLong, r.nextString, r.nextBoolean).hakukohde
   })
 
   def findSijoitteluajonHakukohteet(sijoitteluajoId:Long): Seq[Hakukohde] = {
     singleConnectionValintarekisteriDb.runBlocking(
-      sql"""select sijoitteluajo_id, hakukohde_oid as oid, tarjoaja_oid, kaikki_jonot_sijoiteltu
+      sql"""select sijoitteluajo_id, hakukohde_oid as oid, kaikki_jonot_sijoiteltu
             from sijoitteluajon_hakukohteet
             where sijoitteluajo_id = ${sijoitteluajoId}""".as[Hakukohde])
   }
@@ -456,7 +456,7 @@ trait ValintarekisteriDbTools extends Specification {
     var valinnantulokset:IndexedSeq[SijoitteluajonValinnantulosWrapper] = IndexedSeq()
     val hakukohteet = (1 to size par).map(i => {
       val hakukohdeOid = hakuOid + "." + i
-      val hakukohde = SijoitteluajonHakukohdeWrapper(sijoitteluajoId, hakukohdeOid, hakukohdeOid, true).hakukohde
+      val hakukohde = SijoitteluajonHakukohdeWrapper(sijoitteluajoId, hakukohdeOid, true).hakukohde
       hakukohde.setValintatapajonot(
       (1 to 4 par).map( k => {
         val valintatapajonoOid = hakukohdeOid + "." + k
