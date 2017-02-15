@@ -158,7 +158,7 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
   }
   def getHakukohde(hakukohdeOid: String): Either[Throwable, Hakukohde] = {
     //todo move concat to property instead
-    val hakukohdeUrl = ValintarekisteriOphUrlProperties.ophProperties.url("tarjonta-service.hakukohde", hakukohdeOid) + "populateAdditionalKomotoFields=true"
+    val hakukohdeUrl = ValintarekisteriOphUrlProperties.ophProperties.url("tarjonta-service.hakukohde", hakukohdeOid) + "?populateAdditionalKomotoFields=true"
     fetch(hakukohdeUrl) { response =>
       (parse(response) \ "result").extract[Hakukohde]
     }.left.map {
