@@ -7,7 +7,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
-import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantuloksenMuokkaus, ValinnantulosUpdateStatus}
+import fi.vm.sade.valintatulosservice._
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -131,7 +131,11 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
           s"mutta sitä ei ole olemassa.")))
     }
 
-    DBIO.sequence(operations).map(_ =>
+    DBIO.sequence(operations).map(_ => ())
+  }
+
+  def audit(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): Unit = (uusi.poistettava.getOrElse(false), vanhaOpt) match {
+    case (false, Some(vanha)) =>
       audit.log(auditInfo.user, ValinnantuloksenMuokkaus,
         new Target.Builder()
           .setField("hakukohde", uusi.hakukohdeOid)
@@ -139,15 +143,50 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
           .setField("hakemus", uusi.hakemusOid)
           .build(),
         new Changes.Builder()
-          .updated("valinnantila", vanhaOpt.map(_.valinnantila.toString).getOrElse("Ei valinnantilaa"), uusi.valinnantila.toString)
-          .updated("ehdollisestiHyvaksyttavissa", vanhaOpt.map(_.ehdollisestiHyvaksyttavissa).getOrElse(false).toString, uusi.ehdollisestiHyvaksyttavissa.getOrElse(false).toString)
-          .updated("julkaistavissa", vanhaOpt.map(_.julkaistavissa).getOrElse(false).toString, uusi.julkaistavissa.getOrElse(false).toString)
-          .updated("hyvaksyttyVarasijalta", vanhaOpt.map(_.hyvaksyttyVarasijalta).getOrElse(false).toString, uusi.hyvaksyttyVarasijalta.getOrElse(false).toString)
-          .updated("hyvaksyPeruuntunut", vanhaOpt.map(_.hyvaksyPeruuntunut).getOrElse(false).toString, uusi.hyvaksyPeruuntunut.getOrElse(false).toString)
-          .updated("vastaanottotila", vanhaOpt.map(_.vastaanottotila.toString).getOrElse("Ei vastaanottoa"), uusi.vastaanottotila.toString)
-          .updated("ilmoittautumistila", vanhaOpt.map(_.ilmoittautumistila.toString).getOrElse("Ei ilmoittautumista"), uusi.ilmoittautumistila.toString)
+          .updated("valinnantila", vanha.valinnantila.toString, uusi.valinnantila.toString)
+          .updated("ehdollisestiHyvaksyttavissa", vanha.ehdollisestiHyvaksyttavissa.getOrElse(false).toString, uusi.ehdollisestiHyvaksyttavissa.getOrElse(false).toString)
+          .updated("julkaistavissa", vanha.julkaistavissa.getOrElse(false).toString, uusi.julkaistavissa.getOrElse(false).toString)
+          .updated("hyvaksyttyVarasijalta", vanha.hyvaksyttyVarasijalta.getOrElse(false).toString, uusi.hyvaksyttyVarasijalta.getOrElse(false).toString)
+          .updated("hyvaksyPeruuntunut", vanha.hyvaksyPeruuntunut.getOrElse(false).toString, uusi.hyvaksyPeruuntunut.getOrElse(false).toString)
+          .updated("vastaanottotila", vanha.vastaanottotila.toString, uusi.vastaanottotila.toString)
+          .updated("ilmoittautumistila", vanha.ilmoittautumistila.toString, uusi.ilmoittautumistila.toString)
           .build()
       )
-    )
+    case (false, None) =>
+      audit.log(auditInfo.user, ValinnantuloksenLisays,
+        new Target.Builder()
+          .setField("hakukohde", uusi.hakukohdeOid)
+          .setField("valintatapajono", uusi.valintatapajonoOid)
+          .setField("hakemus", uusi.hakemusOid)
+          .build(),
+        new Changes.Builder()
+          .added("valinnantila", uusi.valinnantila.toString)
+          .added("ehdollisestiHyvaksyttavissa", uusi.ehdollisestiHyvaksyttavissa.getOrElse(false).toString)
+          .added("julkaistavissa", uusi.julkaistavissa.getOrElse(false).toString)
+          .added("hyvaksyttyVarasijalta", uusi.hyvaksyttyVarasijalta.getOrElse(false).toString)
+          .added("hyvaksyPeruuntunut", uusi.hyvaksyPeruuntunut.getOrElse(false).toString)
+          .added("vastaanottotila", uusi.vastaanottotila.toString)
+          .added("ilmoittautumistila", uusi.ilmoittautumistila.toString)
+          .build()
+      )
+    case (true, Some(vanha)) =>
+      audit.log(auditInfo.user, ValinnantuloksenPoisto,
+        new Target.Builder()
+          .setField("hakukohde", uusi.hakukohdeOid)
+          .setField("valintatapajono", uusi.valintatapajonoOid)
+          .setField("hakemus", uusi.hakemusOid)
+          .build(),
+        new Changes.Builder()
+          .removed("valinnantila", vanha.valinnantila.toString)
+          .removed("ehdollisestiHyvaksyttavissa", vanha.ehdollisestiHyvaksyttavissa.getOrElse(false).toString)
+          .removed("julkaistavissa", vanha.julkaistavissa.getOrElse(false).toString)
+          .removed("hyvaksyttyVarasijalta", vanha.hyvaksyttyVarasijalta.getOrElse(false).toString)
+          .removed("hyvaksyPeruuntunut", vanha.hyvaksyPeruuntunut.getOrElse(false).toString)
+          .removed("vastaanottotila", vanha.vastaanottotila.toString)
+          .removed("ilmoittautumistila", vanha.ilmoittautumistila.toString)
+          .build()
+      )
+    case (true, None) =>
+      throw new IllegalStateException("Ei voida poistaa olematonta valinnantulosta")
   }
 }
