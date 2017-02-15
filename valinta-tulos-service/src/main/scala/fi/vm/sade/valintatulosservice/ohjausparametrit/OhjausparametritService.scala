@@ -44,7 +44,7 @@ class RemoteOhjausparametritService(implicit appConfig: VtsAppConfig) extends Oh
   import org.json4s.jackson.JsonMethods._
 
   def ohjausparametrit(asId: String): Either[Throwable, Option[Ohjausparametrit]] = {
-    val url = VtsOphUrlProperties.ophProperties.url("ohjausparametrit-service.url",asId)
+    val url = VtsOphUrlProperties.ophProperties.url("ohjausparametrit-service.parametri",asId)
     Try(DefaultHttpClient.httpGet(url).responseWithHeaders match {
       case (200, _, body) =>
         Try(Right(Some(OhjausparametritParser.parseOhjausparametrit(parse(body))))).recover {
