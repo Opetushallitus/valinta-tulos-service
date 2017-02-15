@@ -19,6 +19,8 @@ object ValintarekisteriAppConfig extends Logging {
 
   class Default(config:Config) extends ValintarekisteriAppConfig {
     val settings = settingsParser.parse(config)
+    val virkailijaHost = if (settings.config.hasPath("host.virkailija")) settings.config.getString("host.virkailija") else ""
+    ValintarekisteriOphUrlProperties.ophProperties.addOverride("host.virkailija", virkailijaHost)
   }
 
   class IT extends ExampleTemplatedProps {
@@ -39,6 +41,8 @@ object ValintarekisteriAppConfig extends Logging {
   trait ExternalProps {
     def configFile = System.getProperty("user.home") + "/oph-configuration/valinta-tulos-service.properties"
     val settings = ApplicationSettingsLoader.loadSettings(configFile)
+    val virkailijaHost = if (settings.config.hasPath("host.virkailija")) settings.config.getString("host.virkailija") else ""
+    ValintarekisteriOphUrlProperties.ophProperties.addOverride("host.virkailija", virkailijaHost)
   }
 
   trait ExampleTemplatedProps extends ValintarekisteriAppConfig with TemplatedProps {

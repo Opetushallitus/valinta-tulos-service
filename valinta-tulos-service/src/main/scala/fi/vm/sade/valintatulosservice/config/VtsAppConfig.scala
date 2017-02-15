@@ -138,6 +138,8 @@ object VtsAppConfig extends Logging {
   trait ExternalProps {
     def configFile = System.getProperty("user.home") + "/oph-configuration/valinta-tulos-service.properties"
     lazy val settings = ApplicationSettingsLoader.loadSettings(configFile)
+    val virkailijaHost = if (settings.config.hasPath("host.virkailija")) settings.config.getString("host.virkailija") else ""
+    VtsOphUrlProperties.ophProperties.addOverride("host.virkailija", virkailijaHost)
   }
 
   trait ExampleTemplatedProps extends VtsAppConfig with TemplatedProps {
