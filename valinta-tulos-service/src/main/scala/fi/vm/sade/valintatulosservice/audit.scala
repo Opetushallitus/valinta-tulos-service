@@ -15,6 +15,14 @@ case object ValinnantuloksenLuku extends Operation {
   def name: String = "VALINNANTULOKSEN_LUKU"
 }
 
+case object ValinnantuloksenLisays extends Operation {
+  def name: String = "VALINNANTULOKSEN_LISAYS"
+}
+
 case object ValinnantuloksenMuokkaus extends Operation {
   def name: String = "VALINNANTULOKSEN_MUOKKAUS"
+}
+
+case object ValinnantuloksenPoisto extends Operation {
+  def name: String = "VALINNANTULOKSEN_POISTO"
 }
