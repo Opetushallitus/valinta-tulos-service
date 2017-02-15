@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
+import java.sql.Timestamp
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 
@@ -14,6 +15,7 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
   def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
   def storeValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
   def storeValinnantila(tila:ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
+  def storeValinnantilaOverridingTimestamp(tila:ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None, tilanViimeisinMuutos: Timestamp): DBIO[Unit]
 
   def updateValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
 
