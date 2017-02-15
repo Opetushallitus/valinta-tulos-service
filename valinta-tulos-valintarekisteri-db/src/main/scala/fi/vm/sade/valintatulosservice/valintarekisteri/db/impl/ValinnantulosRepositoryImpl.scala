@@ -145,8 +145,8 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               valinnantulokset.system_time @> ${ifUnmodifiedSince})""".flatMap {
       case 1 => DBIO.successful(())
       case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ohjausta $ohjaus ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti"))
-    }
-  }
+}
+}
 
   override def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
     sqlu"""insert into ilmoittautumiset (henkilo, hakukohde, tila, ilmoittaja, selite)
@@ -167,4 +167,45 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     }
   }
 
+  override def deleteValinnantulos(muokkaaja:String, valinnantulos: Valinnantulos, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
+      deleteValinnantuloksenOhjaus(valinnantulos.getValinnantuloksenOhjaus(muokkaaja, "Valinnantuloksen poisto")
+        ).andThen(deleteValinnantila(valinnantulos.getValinnantilanTallennus(muokkaaja)))
+  }
+
+  def deleteValinnantila(tila: ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+      sqlu"""delete from valinnantilat
+               where hakukohde_oid = ${tila.hakukohdeOid}
+               and hakemus_oid = ${tila.hakemusOid}
+               and valintatapajono_oid = ${tila.valintatapajonoOid}
+               and tila = ${tila.valinnantila.toString}::valinnantila
+               and (${ifUnmodifiedSince}::timestamptz is null
+                   or system_time @> ${ifUnmodifiedSince})""".flatMap {
+        case 1 => DBIO.successful(())
+        case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantilaa $tila ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti"))
+      }
+  }
+
+  def deleteValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+    sqlu"""delete from valinnantulokset
+               where hakukohde_oid = ${ohjaus.hakukohdeOid}
+               and hakemus_oid = ${ohjaus.hakemusOid}
+               and valintatapajono_oid = ${ohjaus.valintatapajonoOid}
+               and (${ifUnmodifiedSince}::timestamptz is null
+                   or system_time @> ${ifUnmodifiedSince})""".flatMap {
+      case 1 => DBIO.successful(())
+      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ohjausta $ohjaus ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti"))
+    }
+  }
+
+  override def deleteIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+    sqlu"""delete from ilmoittautumiset
+              where henkilo = ${henkiloOid}
+              and hakukohde = ${ilmoittautuminen.hakukohdeOid}
+              and tila = ${ilmoittautuminen.tila.toString}::ilmoittautumistila
+              and (${ifUnmodifiedSince}::timestamptz is null
+                   or system_time @> ${ifUnmodifiedSince})""".flatMap {
+      case 1 => DBIO.successful(())
+      case _ => DBIO.failed(new ConcurrentModificationException(s"Ilmoittautumista $ilmoittautuminen ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti"))
+    }
+  }
 }
