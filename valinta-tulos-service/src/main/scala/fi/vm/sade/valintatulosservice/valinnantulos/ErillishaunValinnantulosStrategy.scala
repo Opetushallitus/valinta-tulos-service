@@ -134,14 +134,18 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
     DBIO.sequence(operations).map(_ => ())
   }
 
+  private def target(uusi: Valinnantulos): Target = {
+    new Target.Builder()
+      .setField("hakukohde", uusi.hakukohdeOid)
+      .setField("valintatapajono", uusi.valintatapajonoOid)
+      .setField("hakemus", uusi.hakemusOid)
+      .build()
+  }
+
   def audit(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): Unit = (uusi.poistettava.getOrElse(false), vanhaOpt) match {
     case (false, Some(vanha)) =>
       audit.log(auditInfo.user, ValinnantuloksenMuokkaus,
-        new Target.Builder()
-          .setField("hakukohde", uusi.hakukohdeOid)
-          .setField("valintatapajono", uusi.valintatapajonoOid)
-          .setField("hakemus", uusi.hakemusOid)
-          .build(),
+        target(uusi),
         new Changes.Builder()
           .updated("valinnantila", vanha.valinnantila.toString, uusi.valinnantila.toString)
           .updated("ehdollisestiHyvaksyttavissa", vanha.ehdollisestiHyvaksyttavissa.getOrElse(false).toString, uusi.ehdollisestiHyvaksyttavissa.getOrElse(false).toString)
@@ -154,11 +158,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
       )
     case (false, None) =>
       audit.log(auditInfo.user, ValinnantuloksenLisays,
-        new Target.Builder()
-          .setField("hakukohde", uusi.hakukohdeOid)
-          .setField("valintatapajono", uusi.valintatapajonoOid)
-          .setField("hakemus", uusi.hakemusOid)
-          .build(),
+        target(uusi),
         new Changes.Builder()
           .added("valinnantila", uusi.valinnantila.toString)
           .added("ehdollisestiHyvaksyttavissa", uusi.ehdollisestiHyvaksyttavissa.getOrElse(false).toString)
@@ -171,11 +171,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
       )
     case (true, Some(vanha)) =>
       audit.log(auditInfo.user, ValinnantuloksenPoisto,
-        new Target.Builder()
-          .setField("hakukohde", uusi.hakukohdeOid)
-          .setField("valintatapajono", uusi.valintatapajonoOid)
-          .setField("hakemus", uusi.hakemusOid)
-          .build(),
+        target(uusi),
         new Changes.Builder()
           .removed("valinnantila", vanha.valinnantila.toString)
           .removed("ehdollisestiHyvaksyttavissa", vanha.ehdollisestiHyvaksyttavissa.getOrElse(false).toString)
