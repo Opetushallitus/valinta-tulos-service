@@ -66,7 +66,7 @@ class VastaanotettavuusServiceSpec extends Specification with MockitoMatchers wi
     val koulutusOid = "1.2.246.562.17.00000000000"
     val hakukohde = Hakukohde("1.2.246.562.20.00000000000", haku.oid, List(koulutusOid), "KORKEAKOULUTUS", "TUTKINTO",
       Map("kieli_fi" -> "Hakukohteen nimi"), Map("fi" -> "Tarjoajan nimi"), yhdenPaikanSaanto = haku.yhdenPaikanSaanto, true, "S", 2016,
-      List("123.123.123.123"))
+      Set("123.123.123.123"))
     val kausi = Syksy(2015)
     val previousVastaanottoRecord = VastaanottoRecord(
       henkiloOid,
@@ -87,7 +87,7 @@ class VastaanotettavuusServiceSpec extends Specification with MockitoMatchers wi
     val koulutusOid = "1.2.246.562.17.00000000001"
     val hakukohde = Hakukohde("1.2.246.562.20.00000000001", haku.oid, List(koulutusOid), "AMMATILLINEN_PERUSKOULUTUS",
       "TUTKINTO_OHJELMA", Map("kieli_fi" -> "Hakukohteen nimi"), Map("fi" -> "Tarjoajan nimi"), yhdenPaikanSaanto = haku.yhdenPaikanSaanto, false, "S", 2016,
-        List("123.123.123.123"))
+        Set("123.123.123.123"))
     val kausi = Syksy(2015)
     val previousVastaanottoRecord = VastaanottoRecord(
       henkiloOid,
