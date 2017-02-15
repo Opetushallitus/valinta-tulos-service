@@ -77,7 +77,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
 
   private def handle(s: ValinnantulosStrategy, uusi: Valinnantulos, vanha: Option[Valinnantulos]) = s.validate(uusi, vanha) match {
     case x if x.isRight => Try(valinnantulosRepository.runBlockingTransactionally(s.save(uusi, vanha))) match {
-      case Success(_) => Right(())
+      case Success(_) => Right(s.audit(uusi, vanha))
       case Failure(t) =>
         logger.warn(s"Valinnantuloksen $uusi tallennus epäonnistui", t)
         Left(ValinnantulosUpdateStatus(500, s"Valinnantuloksen tallennus epäonnistui", uusi.valintatapajonoOid, uusi.hakemusOid))
