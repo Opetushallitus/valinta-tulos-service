@@ -5,7 +5,6 @@ import java.net.URLEncoder
 import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasParams}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.config.VtsOphUrlProperties.ophProperties
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import org.http4s._
 import org.http4s.headers.`Content-Type`
@@ -20,8 +19,8 @@ import scalaz.concurrent.Task
 class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with Logging {
   private val hakuClient = createCasClient(appConfig, "/haku-app")
   private val henkiloClient = createCasClient(appConfig, "/authentication-service")
-  private val hakuUrlBase = ophProperties.url("haku-app.listfull.queryBase")
-  private val henkiloPalveluUrlBase = ophProperties.url("authentication-service.henkilo")
+  private val hakuUrlBase = appConfig.settings.ophUrlProperties.url("haku-app.listfull.queryBase")
+  private val henkiloPalveluUrlBase = appConfig.settings.ophUrlProperties.url("authentication-service.henkilo")
 
   case class HakemusHenkilo(personOid: Option[String], hetu: String, etunimet: String, sukunimi: String, kutsumanimet: String,
                             syntymaaika: String, aidinkieli: String, sukupuoli: String)

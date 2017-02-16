@@ -40,7 +40,7 @@ class SijoittelunTulosRestClient(appConfig: VtsAppConfig) {
   }
 
   private def latestSijoitteluAjoUrl(hakuOid: String, hakukohdeOidOption: Option[String]): String = {
-    val latestUrlForHaku = VtsOphUrlProperties.ophProperties.url("sijoittelu-service.latest.url.for.haku", hakuOid)
+    val latestUrlForHaku = appConfig.settings.ophUrlProperties.url("sijoittelu-service.latest.url.for.haku", hakuOid)
     hakukohdeOidOption match {
       case Some(hakukohdeOid) => latestUrlForHaku + "?hakukohdeOid=" + hakukohdeOid
       case None => latestUrlForHaku
@@ -49,7 +49,7 @@ class SijoittelunTulosRestClient(appConfig: VtsAppConfig) {
 
   def fetchHakemuksenTulos(sijoitteluAjo: SijoitteluAjo, hakemusOid: String): Option[HakijaDTO] = {
     val hakuOid = sijoitteluAjo.getHakuOid
-    val url = VtsOphUrlProperties.ophProperties.url("sijoittelu-service.hakemus.for.sijoittelu", hakuOid, sijoitteluAjo.getSijoitteluajoId, hakemusOid)
+    val url = appConfig.settings.ophUrlProperties.url("sijoittelu-service.hakemus.for.sijoittelu", hakuOid, sijoitteluAjo.getSijoitteluajoId, hakemusOid)
     var result: HakijaDTO = null
     val processor: HakijaDTO => HakijaDTO = { h =>
       result = h

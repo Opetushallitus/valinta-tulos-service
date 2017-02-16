@@ -34,10 +34,6 @@ object ValintarekisteriAppConfig extends Logging {
       .withOverride("valinta-tulos-service.valintarekisteri.db.url", s"jdbc:postgresql://localhost:${itPostgresPortChooser.chosenPort}/valintarekisteri")
       .withoutPath("valinta-tulos-service.valintarekisteri.db.user")
       .withoutPath("valinta-tulos-service.valintarekisteri.db.password")
-
-    // Include url for tests since properties files are not present
-    val hostVirkailija: String = settings.config.getString("host.virkailija")
-    ValintarekisteriOphUrlProperties.ophProperties.addOverride("host.virkailija", hostVirkailija)
   }
 
   trait ExternalProps {
@@ -76,8 +72,20 @@ trait StubbedExternalDeps {
 
 }
 
-object ValintarekisteriOphUrlProperties {
-  val ophProperties: OphProperties = new OphProperties("/oph-configuration/valinta-tulos-valintarekisteri-db-oph.properties")
-    .addOptionalFiles(Paths.get(sys.props.getOrElse("user.home", ""), "/oph-configuration/common.properties").toString)
-    .addOptionalFiles(Paths.get(sys.props.getOrElse("user.home", ""), "/oph-configuration/valinta-tulos-service.properties").toString)
+private[config] class ValintarekisteriOphUrlProperties(confs: Config)
+  extends OphProperties("/oph-configuration/valinta-tulos-valintarekisteri-db-oph.properties")
+  with Logging {
+  addOptionalFiles(Paths.get(sys.props.getOrElse("user.home", ""), "/oph-configuration/common.properties").toString)
+  addOptionalFiles(Paths.get(sys.props.getOrElse("user.home", ""), "/oph-configuration/valinta-tulos-service.properties").toString)
+
+  private val virkailijaHost =
+    if (confs.hasPath("host.virkailija")){
+      confs.getString("host.virkailija")
+    }
+    else {
+      logger.error("host.virkailija not defined in config, using localhost in oph.properties")
+      "localhost"
+    }
+
+  addDefault("host.virkailija", virkailijaHost)
 }

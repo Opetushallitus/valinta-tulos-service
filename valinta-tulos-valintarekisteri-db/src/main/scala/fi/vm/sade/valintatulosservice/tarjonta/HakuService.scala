@@ -127,7 +127,7 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
   }
 
   def getHaku(oid: String): Either[Throwable, Haku] = {
-    val url = ValintarekisteriOphUrlProperties.ophProperties.url("tarjonta-service.haku", oid)
+    val url = appConfig.settings.ophUrlProperties.url("tarjonta-service.haku", oid)
     fetch(url) { response =>
       val hakuTarjonnassa = (parse(response) \ "result").extract[HakuTarjonnassa]
       toHaku(hakuTarjonnassa)
@@ -139,16 +139,16 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
   }
 
   def getHakukohdeOids(hakuOid:String): Either[Throwable, Seq[String]] = {
-    val url = ValintarekisteriOphUrlProperties.ophProperties.url("tarjonta-service.haku", hakuOid)
+    val url = appConfig.settings.ophUrlProperties.url("tarjonta-service.haku", hakuOid)
     fetch(url) { response =>
       (parse(response) \ "result" \ "hakukohdeOids" ).extract[List[String]]
     }
   }
 
   override def getArbitraryPublishedHakukohdeOid(hakuOid: String): Either[Throwable, String] = {
-    ValintarekisteriOphUrlProperties.ophProperties.url("tarjonta-service.hakukohde.search", hakuOid)
+    appConfig.settings.ophUrlProperties.url("tarjonta-service.hakukohde.search", hakuOid)
 
-    val url = ValintarekisteriOphUrlProperties.ophProperties.url("tarjonta-service.hakukohde.search", hakuOid)
+    val url = appConfig.settings.ophUrlProperties.url("tarjonta-service.hakukohde.search", hakuOid)
     fetch(url) { response =>
       (parse(response) \ "result" \ "tulokset" \ "tulokset" \ "oid" ).extractOpt[String]
     }.right.flatMap(_.toRight(new IllegalArgumentException(s"No hakukohde found for haku $hakuOid")))
@@ -157,7 +157,7 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
     sequence(for{oid <- oids.toStream} yield getHakukohde(oid))
   }
   def getHakukohde(hakukohdeOid: String): Either[Throwable, Hakukohde] = {
-    val hakukohdeUrl = ValintarekisteriOphUrlProperties.ophProperties.url("tarjonta-service.hakukohde", hakukohdeOid)
+    val hakukohdeUrl = appConfig.settings.ophUrlProperties.url("tarjonta-service.hakukohde", hakukohdeOid)
     fetch(hakukohdeUrl) { response =>
       (parse(response) \ "result").extract[Hakukohde]
     }.left.map {
@@ -172,7 +172,7 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
   }
 
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = {
-    val url = ValintarekisteriOphUrlProperties.ophProperties.url("tarjonta-service.find")
+    val url = appConfig.settings.ophUrlProperties.url("tarjonta-service.find")
     fetch(url) { response =>
       val haut = (parse(response) \ "result").extract[List[HakuTarjonnassa]]
       haut.filter(_.julkaistu).map(toHaku(_))
@@ -180,7 +180,7 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
   }
 
   def getKoulutus(koulutusOid: String): Either[Throwable, Koulutus] = {
-    val koulutusUrl = ValintarekisteriOphUrlProperties.ophProperties.url("tarjonta-service.koulutus", koulutusOid)
+    val koulutusUrl = appConfig.settings.ophUrlProperties.url("tarjonta-service.koulutus", koulutusOid)
     fetch(koulutusUrl) { response =>
       (parse(response) \ "result").extract[Koulutus]
     }

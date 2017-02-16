@@ -1,11 +1,13 @@
 package fi.vm.sade.valintatulosservice.config
 
 import com.typesafe.config.Config
+import fi.vm.sade.properties.OphProperties
 import fi.vm.sade.utils.config.MongoConfig
 import fi.vm.sade.valintatulosservice.SecuritySettings
 import org.apache.commons.lang3.BooleanUtils
 
 case class VtsApplicationSettings(config: Config) extends ApplicationSettings(config) {
+  override val ophUrlProperties: OphProperties = new VtsOphUrlProperties(config)
   val hakemusMongoConfig: MongoConfig = getMongoConfig(config.getConfig("hakemus.mongodb"))
   val valintatulosMongoConfig: MongoConfig = getMongoConfig(config.getConfig("sijoittelu-service.mongodb"))
   val securitySettings = new SecuritySettings(config)

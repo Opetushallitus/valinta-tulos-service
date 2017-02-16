@@ -13,6 +13,6 @@ class StreamingHakijaDtoClient(appConfig: VtsAppConfig) {
   }
 
   private def url(hakuOid: String, sijoitteluajoId: String): String = {
-    VtsOphUrlProperties.ophProperties.url("sijoittelu-service.all.hakemus.for.sijoittelu", hakuOid, sijoitteluajoId)
+    appConfig.settings.ophUrlProperties.url("sijoittelu-service.all.hakemus.for.sijoittelu", hakuOid, sijoitteluajoId)
   }
 }
