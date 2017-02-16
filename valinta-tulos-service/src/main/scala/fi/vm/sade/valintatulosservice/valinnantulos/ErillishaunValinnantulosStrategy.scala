@@ -8,11 +8,14 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepositor
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice._
+import fi.vm.sade.valintatulosservice.security.{Role, Session}
+import fi.vm.sade.valintatulosservice.tarjonta.Haku
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
+                                       haku: Haku,
                                        valinnantulosRepository: ValinnantulosRepository,
                                        hakukohdeRecordService: HakukohdeRecordService,
                                        ifUnmodifiedSince: Instant,
@@ -22,6 +25,41 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
   def hasChange(uusi:Valinnantulos, vanha:Valinnantulos) = uusi.hasChanged(vanha) || uusi.poistettava.getOrElse(false)
 
   def validate(uusi: Valinnantulos, vanha: Option[Valinnantulos]) = {
+
+    def validateValinnantila() = (uusi.valinnantila, uusi.vastaanottotila) match {
+      case (Hylatty, Poista) | (Varalla, Poista) | (Peruuntunut, Poista) | (Perunut, MerkitseMyohastyneeksi) | //TODO (Peruuntunut, OttanutVastaanToisenPaikan)
+           (VarasijaltaHyvaksytty, Poista) | (VarasijaltaHyvaksytty, VastaanotaEhdollisesti) | (VarasijaltaHyvaksytty, VastaanotaSitovasti) |
+           (Hyvaksytty, Poista) | (Hyvaksytty, VastaanotaEhdollisesti) | (Hyvaksytty, VastaanotaSitovasti) |
+           (Perunut, Peru) | (Peruutettu, Peruuta) | (_, Poista) => Right()
+      case (_, _) => Left(ValinnantulosUpdateStatus(409,
+        s"Hakemuksen tila ${uusi.valinnantila} ja vastaanotto ${uusi.vastaanottotila} ovat ristiriitaiset.", uusi.valintatapajonoOid, uusi.hakemusOid))
+    }
+
+    def validateEhdollisestiHyvaksyttavissa() = {
+      def notModified() = uusi.ehdollisestiHyvaksyttavissa.getOrElse(false) == vanha.exists(_.ehdollisestiHyvaksyttavissa.getOrElse(false))
+
+      if(notModified()) {
+        Right()
+      } else if(haku.toinenAste) {
+        Left(ValinnantulosUpdateStatus(409, s"Toisen asteen haussa ei voida hyväksyä ehdollisesti", uusi.valintatapajonoOid, uusi.hakemusOid))
+      } else {
+        Right()
+      }
+    }
+
+    def validateJulkaistavissa() = (uusi.julkaistavissa, uusi.vastaanottotila) match {
+      case (None, Poista) | (Some(false), Poista) => Right()
+      case (None, _) | (Some(false), _) => Left(ValinnantulosUpdateStatus(409, s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sillä on vastaanotto", uusi.valintatapajonoOid, uusi.hakemusOid))
+      case (Some(true), _) => Right()
+    }
+
+    def validateIlmoittautuminen() = (uusi.ilmoittautumistila, uusi.vastaanottotila, uusi.julkaistavissa) match {
+      case (x, _, _) if vanha.isDefined && vanha.get.ilmoittautumistila == x => Right()
+      case (EiTehty, _, _) | (_, VastaanotaSitovasti, Some(true)) => Right()
+      case (_, _, _) => Left(ValinnantulosUpdateStatus(409,
+        s"Ilmoittautumistila ${uusi.ilmoittautumistila} ei ole sallittu, kun vastaanotto on ${uusi.vastaanottotila} ja julkaistavissa tieto on ${uusi.julkaistavissa}", uusi.valintatapajonoOid, uusi.hakemusOid))
+    }
+
     def validateTilat() = {
       def ilmoittautunut(ilmoittautuminen: SijoitteluajonIlmoittautumistila) = ilmoittautuminen != EiTehty
       def hyvaksytty(tila: Valinnantila) = List(Hyvaksytty, HyvaksyttyVarasijalta).contains(tila) //TODO entäs täyttyjonosäännöllä hyväksytty?
@@ -55,7 +93,12 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
       for {
         poisto <- validatePoisto.right
         tilat <- validateTilat.right
-      } yield tilat
+        valinnantila <- validateValinnantila.right
+        ehdollinenHyvaksynta <- validateEhdollisestiHyvaksyttavissa.right
+        //TODO vastaanotto <- validateVastaanotto.right
+        julkaistavissa <- validateJulkaistavissa.right
+        ilmoittautuminen <- validateIlmoittautuminen.right
+      } yield ilmoittautuminen
     }
 
     validateMuutos()
