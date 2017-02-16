@@ -7,7 +7,7 @@ import org.apache.commons.lang3.BooleanUtils
 abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.config.ApplicationSettings(config) {
   val valintaRekisteriDbConfig = withConfig(_.getConfig("valinta-tulos-service.valintarekisteri.db"))
   val lenientTarjontaDataParsing: Boolean = BooleanUtils.isTrue(withConfig(_.getBoolean("valinta-tulos-service.parseleniently.tarjonta")))
-  val ophUrlProperties: OphProperties = new ValintarekisteriOphUrlProperties(config)
+  val ophUrlProperties: OphProperties
   protected def withConfig[T](operation: Config => T): T = {
     try {
       operation(config)
@@ -20,7 +20,9 @@ abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.conf
   }
 }
 
-case class ValintarekisteriApplicationSettings(config: Config) extends ApplicationSettings(config) {}
+case class ValintarekisteriApplicationSettings(config: Config) extends ApplicationSettings(config) {
+  val ophUrlProperties = new ValintarekisteriOphUrlProperties(config)
+}
 
 object ValintarekisteriApplicationSettingsParser extends fi.vm.sade.utils.config.ApplicationSettingsParser[ValintarekisteriApplicationSettings] {
   override def parse(config: Config) = ValintarekisteriApplicationSettings(config)
