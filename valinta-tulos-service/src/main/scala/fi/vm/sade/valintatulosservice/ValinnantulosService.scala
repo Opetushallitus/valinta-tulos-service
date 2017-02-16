@@ -50,6 +50,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
       val strategy = if (erillishaku) {
         new ErillishaunValinnantulosStrategy(
           auditInfo,
+          haku,
           valinnantulosRepository,
           hakukohdeRecordService,
           ifUnmodifiedSince,
