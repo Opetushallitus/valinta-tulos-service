@@ -34,6 +34,10 @@ object ValintarekisteriAppConfig extends Logging {
       .withOverride("valinta-tulos-service.valintarekisteri.db.url", s"jdbc:postgresql://localhost:${itPostgresPortChooser.chosenPort}/valintarekisteri")
       .withoutPath("valinta-tulos-service.valintarekisteri.db.user")
       .withoutPath("valinta-tulos-service.valintarekisteri.db.password")
+
+    // Include url for tests since properties files are not present
+    val hostVirkailija: String = settings.config.getString("host.virkailija")
+    ValintarekisteriOphUrlProperties.ophProperties.addOverride("host.virkailija", hostVirkailija)
   }
 
   trait ExternalProps {
