@@ -22,7 +22,7 @@ class CasLdapFilter(casClient: CasClient, ldapClient: DirectoryClient, casServic
   protected implicit val jsonFormats: Formats = DefaultFormats
 
   before() {
-    //contentType = formats("json")
+    contentType = formats("json")
     params.get("ticket").orElse(request.header("ticket")) match {
       case Some(ticket) =>
         Try(casClient.validateServiceTicket(casServiceIdentifier)(ticket).run) match {
