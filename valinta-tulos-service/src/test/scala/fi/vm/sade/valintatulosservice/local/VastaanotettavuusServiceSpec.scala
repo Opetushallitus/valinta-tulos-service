@@ -61,7 +61,7 @@ class VastaanotettavuusServiceSpec extends Specification with MockitoMatchers wi
 
   trait YhdenPaikanSaantoVoimassa extends Mockito with Scope with MustThrownExpectations { this: VastaanotettavuusServiceWithMocks =>
     val henkiloOid = "1.2.246.562.24.00000000000"
-    val haku = Haku("1.2.246.562.29.00000000000", korkeakoulu = true, käyttääSijoittelua = true, None, Set(), List(),
+    val haku = Haku("1.2.246.562.29.00000000000", korkeakoulu = true, toinenAste = false, käyttääSijoittelua = true, None, Set(), List(),
       Some(Kausi("2016S")), YhdenPaikanSaanto(true, "kk haku ilman kohdejoukon tarkennetta"), Map("kieli_fi" -> "Haun nimi"))
     val koulutusOid = "1.2.246.562.17.00000000000"
     val hakukohde = Hakukohde("1.2.246.562.20.00000000000", haku.oid, List(koulutusOid), "KORKEAKOULUTUS", "TUTKINTO",
@@ -82,7 +82,7 @@ class VastaanotettavuusServiceSpec extends Specification with MockitoMatchers wi
   trait IlmanYhdenPaikanSaantoa extends Mockito with Scope with MustThrownExpectations { this: VastaanotettavuusServiceWithMocks =>
     val henkiloOid = "1.2.246.562.24.00000000000"
     val hakemusOid = "1.2.246.562.99.00000000000"
-    val haku = Haku("1.2.246.562.29.00000000001", true, true, None, Set(), List(),
+    val haku = Haku("1.2.246.562.29.00000000001", true, toinenAste = false, true, None, Set(), List(),
       Some(Kausi("2016S")), YhdenPaikanSaanto(false, "ei kk haku"), Map("kieli_fi" -> "Haun nimi"))
     val koulutusOid = "1.2.246.562.17.00000000001"
     val hakukohde = Hakukohde("1.2.246.562.20.00000000001", haku.oid, List(koulutusOid), "AMMATILLINEN_PERUSKOULUTUS",

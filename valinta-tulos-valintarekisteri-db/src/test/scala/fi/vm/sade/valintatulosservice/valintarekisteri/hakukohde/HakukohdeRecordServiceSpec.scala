@@ -80,7 +80,7 @@ class HakukohdeRecordServiceSpec extends Specification with MockitoMatchers with
       Map("kieli_fi" -> "Hakukohteen nimi"), Map("fi" -> "Tarjoajan nimi"), yhdenPaikanSaanto = yhdenpaikansaanto, true, "kausi_k#1", 2016,
       Set("123.123.123.123"))
 
-    val hakuFromTarjonta: Haku = Haku(hakuOid, korkeakoulu = true, käyttääSijoittelua = true, varsinaisenHaunOid = None,
+    val hakuFromTarjonta: Haku = Haku(hakuOid, korkeakoulu = true, toinenAste = false, käyttääSijoittelua = true, varsinaisenHaunOid = None,
       sisältyvätHaut = Set(), hakuAjat = Nil, Some(Kausi("2016K")), yhdenpaikansaanto, Map("kieli_fi" -> "Haun nimi"))
   }
 }

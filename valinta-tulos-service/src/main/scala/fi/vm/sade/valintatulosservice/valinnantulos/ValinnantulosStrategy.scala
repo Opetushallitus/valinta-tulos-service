@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.valinnantulos
 
 import fi.vm.sade.valintatulosservice.ValinnantulosUpdateStatus
+import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.dbio.DBIO
 

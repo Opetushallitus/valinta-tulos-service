@@ -31,7 +31,7 @@ object HakuService {
   }
 }
 
-case class Haku(oid: String, korkeakoulu: Boolean,
+case class Haku(oid: String, korkeakoulu: Boolean, toinenAste: Boolean,
                 käyttääSijoittelua: Boolean, varsinaisenHaunOid: Option[String], sisältyvätHaut: Set[String],
                 hakuAjat: List[Hakuaika], koulutuksenAlkamiskausi: Option[Kausi], yhdenPaikanSaanto: YhdenPaikanSaanto,
                 nimi: Map[String, String])
@@ -78,6 +78,7 @@ protected trait JsonHakuService {
     val yhteishaku: Boolean = haku.hakutapaUri.startsWith("hakutapa_01#")
     val varsinainenhaku: Boolean = haku.hakutyyppiUri.startsWith("hakutyyppi_01#1")
     val lisähaku: Boolean = haku.hakutyyppiUri.startsWith("hakutyyppi_03#1")
+    val toinenAste: Boolean = Option(haku.kohdejoukkoUri).exists(k => k.contains("_11") || k.contains("_17") || k.contains("_20"))
     val koulutuksenAlkamisvuosi = haku.koulutuksenAlkamisVuosi
     val kausi = if (haku.koulutuksenAlkamiskausiUri.isDefined && haku.koulutuksenAlkamisVuosi.isDefined) {
       if (haku.koulutuksenAlkamiskausiUri.get.startsWith("kausi_k")) {
@@ -87,7 +88,7 @@ protected trait JsonHakuService {
           } else throw new MappingException(s"Haku ${haku.oid} has unrecognized kausi URI '${haku.koulutuksenAlkamiskausiUri.get}' . Full data of haku: $haku")
     } else None
 
-    Haku(haku.oid, korkeakoulu, haku.sijoittelu, haku.parentHakuOid,
+    Haku(haku.oid, korkeakoulu, toinenAste, haku.sijoittelu, haku.parentHakuOid,
       haku.sisaltyvatHaut, haku.hakuaikas, kausi, haku.yhdenPaikanSaanto, haku.nimi)
   }
 }
