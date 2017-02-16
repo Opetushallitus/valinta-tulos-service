@@ -36,6 +36,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
   val korkeakouluhaku = Haku(
     korkeakouluHakuOid,
     true,
+    false,
     true,
     null,
     null,
@@ -119,7 +120,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       val valinnantulokset = List(valinnantulos.copy(julkaistavissa = Some(true)))
       val notModifiedSince = ZonedDateTime.now.toInstant
 
-      hakuService.getHaku(any[String]) returns Right(Haku("hakuOid", true, true, None, Set(), List(), None, YhdenPaikanSaanto(false, "moi"), Map()))
+      hakuService.getHaku(any[String]) returns Right(Haku("hakuOid", true, false, true, None, Set(), List(), None, YhdenPaikanSaanto(false, "moi"), Map()))
 
       valinnantulosRepository.updateValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]]) returns DBIO.successful(())
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, notModifiedSince, auditInfo) mustEqual List()
@@ -265,7 +266,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       there was no (valinnantulosRepository).storeValinnantila(any[ValinnantilanTallennus], any[Option[Instant]])
     }
     "no status for succesfully deleted valinnantulos" in new AuthorizedValinnantulosServiceWithMocks with ErillishakuMocks {
-      def validiValinnantulos = valinnantulos.copy(valinnantila = Hyvaksytty, vastaanottotila = VastaanotaSitovasti, ilmoittautumistila = Lasna)
+      def validiValinnantulos = valinnantulos.copy(julkaistavissa = Some(true), valinnantila = Hyvaksytty, vastaanottotila = VastaanotaSitovasti, ilmoittautumistila = Lasna)
       override def result = List((ZonedDateTime.now.toInstant, validiValinnantulos))
 
       val valinnantulokset = List(validiValinnantulos.copy(poistettava = Some(true)))
@@ -294,6 +295,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
         ilmoittautumistila = Lasna)
 
       override def result = List()
+      hakuService.getHakukohde(erillishaunValinnantulos.hakukohdeOid) returns Right(korkeakouluhakukohde)
       valinnantulosRepository.getValinnantuloksetForValintatapajono("erillisjonoOid") returns result
       val valinnantulokset = List(erillishaunValinnantulos)
       val notModifiedSince = ZonedDateTime.now.toInstant
@@ -341,7 +343,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     appConfig.settings returns settings
     settings.rootOrganisaatioOid returns "1.2.1.2.1.2"
     hakuService.getHakukohde(valinnantulos.hakukohdeOid) returns Right(korkeakouluhakukohde)
-    hakuService.getHaku(any[String]) returns Right(Haku(korkeakouluHakuOid, korkeakoulu = false, true, None, Set(), List(), None, YhdenPaikanSaanto(false, "moi"), Map()))
+    hakuService.getHaku(any[String]) returns Right(Haku(korkeakouluHakuOid, korkeakoulu = false, toinenAste = false, true, None, Set(), List(), None, YhdenPaikanSaanto(false, "moi"), Map()))
     ohjausparametritService.ohjausparametrit(korkeakouluHakuOid) returns Right(Some(korkeakouluohjausparametrit))
   }
 
