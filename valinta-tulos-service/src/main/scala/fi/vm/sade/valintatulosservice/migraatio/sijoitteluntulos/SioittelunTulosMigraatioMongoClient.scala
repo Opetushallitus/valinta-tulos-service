@@ -1,7 +1,9 @@
 package fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos
 
 import java.sql.Timestamp
+import java.util
 
+import fi.vm.sade.sijoittelu.domain.{Hakemus, Hakukohde, TilaHistoria, Valintatulos}
 import fi.vm.sade.sijoittelu.tulos.dao.{HakukohdeDao, ValintatulosDao}
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
@@ -9,9 +11,10 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import slick.dbio.DBIOAction
+import slick.dbio.{DBIO, DBIOAction}
 
 import scala.collection.JavaConverters._
+import scala.collection.immutable.Seq
 
 class SioittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: SijoittelunTulosRestClient,
                                           appConfig: VtsAppConfig,
@@ -25,45 +28,10 @@ class SioittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittelu
       val sijoitteluajoId = sijoitteluAjo.getSijoitteluajoId
       logger.info(s"Latest sijoitteluajoId from haku $hakuOid is $sijoitteluajoId")
 
-      val hakukohteet = timed(s"Loading hakukohteet for sijoitteluajo $sijoitteluajoId of haku $hakuOid") { hakukohdeDao.getHakukohdeForSijoitteluajo(sijoitteluajoId) }
+      val hakukohteet: util.List[Hakukohde] = timed(s"Loading hakukohteet for sijoitteluajo $sijoitteluajoId of haku $hakuOid") { hakukohdeDao.getHakukohdeForSijoitteluajo(sijoitteluajoId) }
       logger.info(s"Loaded ${hakukohteet.size()} hakukohde objects for sijoitteluajo $sijoitteluajoId of haku $hakuOid")
-      val kaikkiHakemukset = for {
-        hakukohde <- hakukohteet.asScala.toList
-        jono <- hakukohde.getValintatapajonot.asScala.toList
-        hakemus <- jono.getHakemukset.asScala
-      } yield hakemus
-      logger.info(s"Found ${kaikkiHakemukset.length} hakemus objects for sijoitteluajo $sijoitteluajoId of haku $hakuOid")
-      val hakemuksetOideittain = kaikkiHakemukset.groupBy(_.getHakemusOid)
       val valintatulokset = timed(s"Loading valintatulokset for sijoitteluajo $sijoitteluajoId of haku $hakuOid") { valintatulosDao.loadValintatulokset(hakuOid) }
-      val allSaves = valintatulokset.asScala.toList.flatMap { v =>
-        val hakemusOid = v.getHakemusOid
-        val hakemus = hakemuksetOideittain(hakemusOid).head
-        val hakemuksenTuloksenTilahistoriaOldestFirst = hakemus.getTilaHistoria.asScala.toList.sortBy(_.getLuotu)
-        val logEntriesOldestFirst = v.getLogEntries.asScala.toList.sortBy(_.getLuotu)
-
-        val valintatapajonoOid = v.getValintatapajonoOid
-        val hakukohdeOid = v.getHakukohdeOid
-        val henkiloOid = v.getHakijaOid
-
-        val valinnanTilaSaves = hakemuksenTuloksenTilahistoriaOldestFirst.map { tilaHistoriaEntry =>
-          val valinnantila = Valinnantila(tilaHistoriaEntry.getTila)
-          val muokkaaja = "Sijoittelun tulokset -migraatio"
-          valinnantulosRepository.storeValinnantilaOverridingTimestamp(ValinnantilanTallennus(hakemusOid, valintatapajonoOid, hakukohdeOid, henkiloOid, valinnantila, muokkaaja),
-            None, new Timestamp(tilaHistoriaEntry.getLuotu.getTime))
-        }
-
-        val ohjausSaves = logEntriesOldestFirst.map { logEntry =>
-          valinnantulosRepository.storeValinnantuloksenOhjaus(ValinnantuloksenOhjaus(hakemusOid, valintatapajonoOid, hakukohdeOid,
-            v.getEhdollisestiHyvaksyttavissa, v.getJulkaistavissa, v.getHyvaksyttyVarasijalta, v.getHyvaksyPeruuntunut,
-            logEntry.getMuokkaaja, logEntry.getSelite))
-        }
-
-        val ilmoittautuminenSave = logEntriesOldestFirst.reverse.find(_.getMuutos.contains("ilmoittautuminen")).map { latestIlmoittautuminenLogEntry =>
-          valinnantulosRepository.storeIlmoittautuminen(henkiloOid, Ilmoittautuminen(hakukohdeOid, SijoitteluajonIlmoittautumistila(v.getIlmoittautumisTila),
-            latestIlmoittautuminenLogEntry.getMuokkaaja, latestIlmoittautuminenLogEntry.getSelite))
-        }
-        valinnanTilaSaves ++ ohjausSaves ++ ilmoittautuminenSave.toSeq
-      }
+      val allSaves = createSaveActions(hakukohteet, valintatulokset)
 
       if (dryRun) {
         logger.warn("dryRun : NOT updating the database")
@@ -76,5 +44,61 @@ class SioittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittelu
         }
       }
     }
+  }
+
+  private def createSaveActions(hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]): Seq[DBIO[Unit]] = {
+    val hakemuksetOideittain: Map[(String, String), List[(Hakemus, String)]]  = groupHakemusResultsByHakemusOidAndJonoOid(hakukohteet)
+
+    valintatulokset.asScala.toList.flatMap { v =>
+      val hakuOid = v.getHakuOid
+      val hakemusOid = v.getHakemusOid
+      val valintatapajonoOid = v.getValintatapajonoOid
+      val hakukohdeOid = v.getHakukohdeOid
+      val hakemus: Option[Hakemus] = {
+        val hs = hakemuksetOideittain.get((hakemusOid, valintatapajonoOid)).toSeq.flatMap(_.map(_._1))
+        if (hs.isEmpty) {
+          logger.warn(s"Ei löytynyt sijoittelun tulosta kombolle hakuoid=$hakuOid / hakukohdeoid=$hakukohdeOid" +
+            s" / valintatapajonooid=$valintatapajonoOid / hakemusoid=$hakemusOid ")
+        }
+        if (hs.size > 1) {
+          throw new IllegalStateException(s"Löytyi liian monta hakemusta kombolle hakuoid=${hakuOid} / hakukohdeoid=$hakukohdeOid" +
+            s" / valintatapajonooid=$valintatapajonoOid / hakemusoid=$hakemusOid ")
+        }
+        hs.headOption
+      }
+      val hakemuksenTuloksenTilahistoriaOldestFirst: Iterable[TilaHistoria] = hakemus.map(_.getTilaHistoria.asScala.toList.sortBy(_.getLuotu)).toSeq.flatten
+      val logEntriesOldestFirst = v.getLogEntries.asScala.toList.sortBy(_.getLuotu)
+
+      val henkiloOid = v.getHakijaOid
+
+      val valinnanTilaSaves = hakemuksenTuloksenTilahistoriaOldestFirst.map { tilaHistoriaEntry =>
+        val valinnantila = Valinnantila(tilaHistoriaEntry.getTila)
+        val muokkaaja = "Sijoittelun tulokset -migraatio"
+        valinnantulosRepository.storeValinnantilaOverridingTimestamp(ValinnantilanTallennus(hakemusOid, valintatapajonoOid, hakukohdeOid, henkiloOid, valinnantila, muokkaaja),
+          None, new Timestamp(tilaHistoriaEntry.getLuotu.getTime))
+      }
+
+      val ohjausSaves = logEntriesOldestFirst.map { logEntry =>
+        valinnantulosRepository.storeValinnantuloksenOhjaus(ValinnantuloksenOhjaus(hakemusOid, valintatapajonoOid, hakukohdeOid,
+          v.getEhdollisestiHyvaksyttavissa, v.getJulkaistavissa, v.getHyvaksyttyVarasijalta, v.getHyvaksyPeruuntunut,
+          logEntry.getMuokkaaja, logEntry.getSelite))
+      }
+
+      val ilmoittautuminenSave = logEntriesOldestFirst.reverse.find(_.getMuutos.contains("ilmoittautuminen")).map { latestIlmoittautuminenLogEntry =>
+        valinnantulosRepository.storeIlmoittautuminen(henkiloOid, Ilmoittautuminen(hakukohdeOid, SijoitteluajonIlmoittautumistila(v.getIlmoittautumisTila),
+          latestIlmoittautuminenLogEntry.getMuokkaaja, latestIlmoittautuminenLogEntry.getSelite))
+      }
+      valinnanTilaSaves ++ ohjausSaves ++ ilmoittautuminenSave.toSeq
+    }
+  }
+
+  private def groupHakemusResultsByHakemusOidAndJonoOid(hakukohteet: util.List[Hakukohde]) = {
+    val kaikkiHakemuksetJaJonoOidit = for {
+      hakukohde <- hakukohteet.asScala.toList
+      jono <- hakukohde.getValintatapajonot.asScala.toList
+      hakemus <- jono.getHakemukset.asScala
+    } yield (hakemus, jono.getOid)
+    logger.info(s"Found ${kaikkiHakemuksetJaJonoOidit.length} hakemus objects for sijoitteluajo")
+    kaikkiHakemuksetJaJonoOidit.groupBy { case (hakemus, jonoOid) => (hakemus.getHakemusOid, jonoOid) }
   }
 }
