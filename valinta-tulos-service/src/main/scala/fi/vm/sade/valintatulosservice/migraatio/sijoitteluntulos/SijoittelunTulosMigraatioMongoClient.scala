@@ -17,10 +17,10 @@ import slick.dbio.{DBIO, DBIOAction}
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Seq
 
-class SioittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: SijoittelunTulosRestClient,
-                                          appConfig: VtsAppConfig,
-                                          sijoitteluRepository: SijoitteluRepository,
-                                          valinnantulosRepository: ValinnantulosRepository) extends Logging {
+class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: SijoittelunTulosRestClient,
+                                           appConfig: VtsAppConfig,
+                                           sijoitteluRepository: SijoitteluRepository,
+                                           valinnantulosRepository: ValinnantulosRepository) extends Logging {
   private val hakukohdeDao: HakukohdeDao = appConfig.sijoitteluContext.hakukohdeDao
   private val valintatulosDao: ValintatulosDao = appConfig.sijoitteluContext.valintatulosDao
 
