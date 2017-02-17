@@ -59,7 +59,7 @@ object VtsAppConfig extends Logging {
    * Dev profile, uses local mongo db
    */
   class Dev extends VtsAppConfig with ExampleTemplatedProps with CasLdapSecurity with StubbedExternalDeps {
-    override val settings = loadSettings
+    override lazy val settings = loadSettings
       .withOverride(("hakemus.mongodb.uri", "mongodb://localhost:27017"))
       .withOverride(("sijoittelu-service.mongodb.uri", "mongodb://localhost:27017"))
       .withOverride("sijoittelu-service.mongodb.dbname", "sijoittelu")
@@ -91,7 +91,7 @@ object VtsAppConfig extends Logging {
       HakemusFixtures()(this).clear.importDefaultFixtures
     }
 
-    override val settings = loadSettings
+    override lazy val settings = loadSettings
       .withOverride(("hakemus.mongodb.uri", "mongodb://localhost:" + embeddedMongoPortChooser.chosenPort))
       .withOverride(("sijoittelu-service.mongodb.uri", "mongodb://localhost:" + embeddedMongoPortChooser.chosenPort))
       .withOverride(("sijoittelu-service.mongodb.dbname", "sijoittelu"))
@@ -105,7 +105,7 @@ object VtsAppConfig extends Logging {
    * IT profile, uses embedded mongo for sijoittelu, external mongo for Hakemus and stubbed external deps
    */
   class IT_externalHakemus extends IT {
-    override val settings = loadSettings
+    override lazy val settings = loadSettings
       .withOverride("hakemus.mongodb.uri", "mongodb://localhost:" + System.getProperty("hakemus.embeddedmongo.port", "28018"))
       .withOverride(("sijoittelu-service.mongodb.uri", "mongodb://localhost:" + embeddedMongoPortChooser.chosenPort))
       .withOverride(("sijoittelu-service.mongodb.dbname", "sijoittelu"))
@@ -118,7 +118,7 @@ object VtsAppConfig extends Logging {
   }
 
   class IT_localSijoitteluMongo extends IT {
-    override val settings = loadSettings
+    override lazy val settings = loadSettings
       .withOverride(("hakemus.mongodb.uri", "mongodb://localhost:" + embeddedMongoPortChooser.chosenPort))
       .withOverride(("sijoittelu-service.mongodb.uri", "mongodb://localhost:27017"))
       .withOverride(("sijoittelu-service.mongodb.dbname", "sijoitteludb"))
@@ -129,7 +129,7 @@ object VtsAppConfig extends Logging {
   }
 
   class IT_disabledIlmoittautuminen extends IT {
-    override val settings = loadSettings.withOverride("valinta-tulos-service.ilmoittautuminen.enabled", "")
+    override lazy val settings = loadSettings.withOverride("valinta-tulos-service.ilmoittautuminen.enabled", "")
   }
 
   trait ExternalProps {
@@ -143,7 +143,7 @@ object VtsAppConfig extends Logging {
 
   trait TemplatedProps {
     logger.info("Using template variables from " + templateAttributesURL)
-    val settings = loadSettings
+    lazy val settings = loadSettings
     def loadSettings = {
       ConfigTemplateProcessor.createSettings(
         getClass.getResource("/oph-configuration/valinta-tulos-service-devtest.properties.template"),
