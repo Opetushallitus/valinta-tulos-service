@@ -46,7 +46,10 @@ class RemoteOhjausparametritService(implicit appConfig: VtsAppConfig) extends Oh
   def ohjausparametrit(asId: String): Either[Throwable, Option[Ohjausparametrit]] = {
 
     val url = appConfig.settings.ophUrlProperties.url("ohjausparametrit-service.parametri",asId)
-    Try(DefaultHttpClient.httpGet(url).responseWithHeaders match {
+    Try(DefaultHttpClient.httpGet(url)
+      .header("clientSubSystemCode", "valinta-tulos-service")
+      .header("Caller-id", "valinta-tulos-service")
+      .responseWithHeaders match {
       case (200, _, body) =>
         Try(Right(Some(OhjausparametritParser.parseOhjausparametrit(parse(body))))).recover {
           case NonFatal(e) => Left(new IllegalStateException(s"Parsing result $body of GET $url failed", e))

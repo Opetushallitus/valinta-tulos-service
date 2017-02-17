@@ -11,6 +11,7 @@ import scala.collection.JavaConverters._
 
 class SijoittelunTulosRestClient(appConfig: VtsAppConfig) {
   private val retriever = new StreamingJsonArrayRetriever(appConfig)
+  private val targetService = appConfig.settings.ophUrlProperties.url("sijoittelu-service.suffix")
 
   def fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid: String, hakukohdeOid: Option[String]): Option[SijoitteluAjo] = {
     val ajo = new SijoitteluAjo
@@ -23,7 +24,7 @@ class SijoittelunTulosRestClient(appConfig: VtsAppConfig) {
       ajo
     }
 
-    retriever.processStreaming[SijoitteluajoDTO,SijoitteluAjo]("/sijoittelu-service", latestSijoitteluAjoUrl(hakuOid, hakukohdeOid), classOf[SijoitteluajoDTO],
+    retriever.processStreaming[SijoitteluajoDTO,SijoitteluAjo](targetService, latestSijoitteluAjoUrl(hakuOid, hakukohdeOid), classOf[SijoitteluajoDTO],
       processor, responseIsArray = false)
 
     if (ajo.getSijoitteluajoId == null) { // empty object was created in SijoitteluResourceImpl
@@ -55,7 +56,7 @@ class SijoittelunTulosRestClient(appConfig: VtsAppConfig) {
       result = h
       h
     }
-    retriever.processStreaming[HakijaDTO,HakijaDTO]("/sijoittelu-service", url, classOf[HakijaDTO], processor, responseIsArray = false)
+    retriever.processStreaming[HakijaDTO,HakijaDTO](targetService, url, classOf[HakijaDTO], processor, responseIsArray = false)
     Option(result)
   }
 }
