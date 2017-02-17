@@ -10,7 +10,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValintarekisteriDb
 
 trait ITSetup {
   implicit val appConfig = new VtsAppConfig.IT
-  implicit val dynamicAppConfig: VtsDynamicAppConfig = VtsAppConfig.MockDynamicAppConfig()
+  implicit val dynamicAppConfig: VtsDynamicAppConfig = VtsAppConfig.MockDynamicAppConfig(näytetäänSiirryKelaanURL= false)
   val dbConfig = appConfig.settings.valintaRekisteriDbConfig
 
   lazy val singleConnectionValintarekisteriDb = new ValintarekisteriDb(
