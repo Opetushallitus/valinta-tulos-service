@@ -53,3 +53,6 @@ valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids=1000000
 # Valintarekisterin migraatio
 valinta-tulos-service.haku-app-url=https://{{host_virkailija}}/haku-app
 valinta-tulos-service.authentication-service-url=https://{{host_virkailija}}/authentication-service
+
+# KELA
+valinta-tulos-service.kela.url=https://easiointi.kela.fi/eOTh/EOThApplication?reitti=oph

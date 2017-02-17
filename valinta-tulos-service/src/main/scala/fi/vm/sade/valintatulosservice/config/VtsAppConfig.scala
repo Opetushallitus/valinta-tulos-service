@@ -55,6 +55,10 @@ object VtsAppConfig extends Logging {
     override def templateAttributesURL = new File(templateAttributesFile).toURI.toURL
   }
 
+  case class MockDynamicAppConfig() extends VtsDynamicAppConfig {
+    override def näytetäänSiirryKelaanURL: Boolean = true
+  }
+
   /**
    * Dev profile, uses local mongo db
    */

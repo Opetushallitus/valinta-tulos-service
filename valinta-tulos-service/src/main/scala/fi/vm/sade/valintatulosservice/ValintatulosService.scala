@@ -8,6 +8,7 @@ import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationO
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.config.VtsDynamicAppConfig
 import fi.vm.sade.valintatulosservice.domain.Valintatila.isHyväksytty
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
@@ -31,13 +32,13 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
                           virkailijaVastaanottoRepository: VirkailijaVastaanottoRepository,
                           hakuService: HakuService,
                           hakijaVastaanottoRepository: HakijaVastaanottoRepository,
-                          hakukohdeRecordService: HakukohdeRecordService)(implicit appConfig: VtsAppConfig) extends Logging {
+                          hakukohdeRecordService: HakukohdeRecordService)(implicit appConfig: VtsAppConfig, dynamicAppConfig: VtsDynamicAppConfig) extends Logging {
   def this(vastaanotettavuusService: VastaanotettavuusService,
            sijoittelutulosService: SijoittelutulosService,
            virkailijaVastaanottoRepository: VirkailijaVastaanottoRepository,
            hakuService: HakuService,
            hakijaVastaanottoRepository: HakijaVastaanottoRepository,
-           hakukohdeRecordService: HakukohdeRecordService)(implicit appConfig: VtsAppConfig) =
+           hakukohdeRecordService: HakukohdeRecordService)(implicit appConfig: VtsAppConfig, dynamicAppConfig: VtsDynamicAppConfig) =
     this(vastaanotettavuusService, sijoittelutulosService, appConfig.ohjausparametritService, new HakemusRepository(), virkailijaVastaanottoRepository, hakuService, hakijaVastaanottoRepository, hakukohdeRecordService)
 
 
@@ -507,7 +508,8 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
       .map(asetaVastaanotettavuusValintarekisterinPerusteella(vastaanottoKaudella))
       .tulokset
 
-    Hakemuksentulos(haku.oid, h.oid, sijoitteluTulos.hakijaOid.getOrElse(h.henkiloOid), ohjausparametrit.flatMap(_.vastaanottoaikataulu), lopullisetTulokset)
+    val kelaURL = Some(appConfig.settings.kelaURL).filter(_ => dynamicAppConfig.näytetäänSiirryKelaanURL)
+    Hakemuksentulos(haku.oid, h.oid, sijoitteluTulos.hakijaOid.getOrElse(h.henkiloOid), ohjausparametrit.flatMap(_.vastaanottoaikataulu), kelaURL, lopullisetTulokset)
   }
 
   def tyhjäHakemuksenTulos(hakemusOid: String, aikataulu: Option[Vastaanottoaikataulu]) = HakemuksenSijoitteluntulos(hakemusOid, None, Nil)

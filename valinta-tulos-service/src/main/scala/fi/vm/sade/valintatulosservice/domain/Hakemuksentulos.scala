@@ -10,7 +10,7 @@ import fi.vm.sade.valintatulosservice.tarjonta.Haku
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 
-case class Hakemuksentulos(hakuOid: String, hakemusOid: String, hakijaOid: String, aikataulu: Option[Vastaanottoaikataulu], hakutoiveet: List[Hakutoiveentulos]) {
+case class Hakemuksentulos(hakuOid: String, hakemusOid: String, hakijaOid: String, aikataulu: Option[Vastaanottoaikataulu], kelaLinkki: Option[String], hakutoiveet: List[Hakutoiveentulos]) {
   def findHakutoive(hakukohdeOid: String): Option[(Hakutoiveentulos, Int)] =
     (for {
       (toive, indeksi) <- hakutoiveet.zipWithIndex

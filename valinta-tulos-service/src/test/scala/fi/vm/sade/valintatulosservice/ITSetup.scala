@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice
 
 import com.typesafe.config.ConfigValueFactory
-import fi.vm.sade.valintatulosservice.config.VtsAppConfig
+import fi.vm.sade.valintatulosservice.config.{VtsDynamicAppConfig, VtsAppConfig}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusFixtures
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoitteluFixtures
@@ -10,6 +10,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValintarekisteriDb
 
 trait ITSetup {
   implicit val appConfig = new VtsAppConfig.IT
+  implicit val dynamicAppConfig: VtsDynamicAppConfig = VtsAppConfig.MockDynamicAppConfig()
   val dbConfig = appConfig.settings.valintaRekisteriDbConfig
 
   lazy val singleConnectionValintarekisteriDb = new ValintarekisteriDb(
