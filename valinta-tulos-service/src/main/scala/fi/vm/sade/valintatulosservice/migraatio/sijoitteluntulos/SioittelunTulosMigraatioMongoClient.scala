@@ -2,8 +2,9 @@ package fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos
 
 import java.sql.Timestamp
 import java.util
+import java.util.Date
 
-import fi.vm.sade.sijoittelu.domain.{Hakemus, Hakukohde, TilaHistoria, Valintatulos}
+import fi.vm.sade.sijoittelu.domain._
 import fi.vm.sade.sijoittelu.tulos.dao.{HakukohdeDao, ValintatulosDao}
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
@@ -32,6 +33,7 @@ class SioittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittelu
       logger.info(s"Loaded ${hakukohteet.size()} hakukohde objects for sijoitteluajo $sijoitteluajoId of haku $hakuOid")
       val valintatulokset = timed(s"Loading valintatulokset for sijoitteluajo $sijoitteluajoId of haku $hakuOid") { valintatulosDao.loadValintatulokset(hakuOid) }
       val allSaves = createSaveActions(hakukohteet, valintatulokset)
+      kludgeStartAndEndToSijoitteluAjoIfMissing(sijoitteluAjo, hakukohteet)
 
       if (dryRun) {
         logger.warn("dryRun : NOT updating the database")
@@ -100,5 +102,25 @@ class SioittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittelu
     } yield (hakemus, jono.getOid)
     logger.info(s"Found ${kaikkiHakemuksetJaJonoOidit.length} hakemus objects for sijoitteluajo")
     kaikkiHakemuksetJaJonoOidit.groupBy { case (hakemus, jonoOid) => (hakemus.getHakemusOid, jonoOid) }
+  }
+
+  private def kludgeStartAndEndToSijoitteluAjoIfMissing(sijoitteluAjo: SijoitteluAjo, hakukohteet: util.List[Hakukohde]) {
+    if (sijoitteluAjo.getStartMils != null && sijoitteluAjo.getEndMils != null) {
+      return
+    }
+    if (sijoitteluAjo.getStartMils == null) {
+      val startMillis = sijoitteluAjo.getSijoitteluajoId
+      logger.warn(s"Setting sijoitteluAjo.setStartMils($startMillis) (${new Date(startMillis)}) for ajo ${sijoitteluAjo.getSijoitteluajoId}")
+      sijoitteluAjo.setStartMils(startMillis)
+    }
+    if (sijoitteluAjo.getEndMils == null) {
+      val endDate: Date = hakukohteet.asScala.map(_.getId.getDate).sorted.headOption.getOrElse {
+        logger.warn(s"Could not find any hakukohde for sijoitteluajo ${sijoitteluAjo.getSijoitteluajoId} , setting 0 as startmillis")
+        new Date(0)
+      }
+      val endMillis = endDate.getTime
+      logger.warn(s"Setting sijoitteluAjo.setEndMils($endMillis) ($endDate) for ajo ${sijoitteluAjo.getSijoitteluajoId}")
+      sijoitteluAjo.setEndMils(endMillis)
+    }
   }
 }
