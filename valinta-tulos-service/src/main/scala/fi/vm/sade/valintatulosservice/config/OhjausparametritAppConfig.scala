@@ -13,7 +13,7 @@ trait VtsDynamicAppConfig {
 }
 
 class OhjausparametritAppConfig(ohjausparametrit: OhjausparametritService) extends VtsDynamicAppConfig {
-  private val vtsOhjausparametrit = new AtomicReference[ValintaTulosServiceOhjausparametrit](ValintaTulosServiceOhjausparametrit(true))
+  private val vtsOhjausparametrit = new AtomicReference[ValintaTulosServiceOhjausparametrit](ValintaTulosServiceOhjausparametrit(false))
   private val pollVtsDuration = 30 seconds
   val updateVtsOhjausparametrit = new Runnable {
     override def run(): Unit = {
