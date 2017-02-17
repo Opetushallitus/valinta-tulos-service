@@ -5,6 +5,7 @@ import java.math.{BigDecimal => javaBigDecimal}
 import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain.{Hakemus => SijoitteluHakemus, Tasasijasaanto => SijoitteluTasasijasaanto, _}
+import org.apache.commons.lang3.BooleanUtils
 
 import scala.collection.JavaConverters._
 
@@ -148,9 +149,9 @@ object SijoitteluajonValintatapajonoWrapper extends OptionConverter {
       Tasasijasaanto.getTasasijasaanto(valintatapajono.getTasasijasaanto),
       convert[javaInt, Int](valintatapajono.getAloituspaikat(), int),
       convert[javaInt, Int](valintatapajono.getAlkuperaisetAloituspaikat(), int),
-      valintatapajono.getEiVarasijatayttoa(),
-      valintatapajono.getKaikkiEhdonTayttavatHyvaksytaan(),
-      valintatapajono.getPoissaOlevaTaytto(),
+      BooleanUtils.isTrue(valintatapajono.getEiVarasijatayttoa),
+      BooleanUtils.isTrue(valintatapajono.getKaikkiEhdonTayttavatHyvaksytaan),
+      BooleanUtils.isTrue(valintatapajono.getPoissaOlevaTaytto),
       convert[javaInt, Int](valintatapajono.getVarasijat(), int),
       convert[javaInt, Int](valintatapajono.getVarasijaTayttoPaivat(), int),
       convert[Date, Date](valintatapajono.getVarasijojaKaytetaanAlkaen(), date),
@@ -383,7 +384,7 @@ object SijoitteluajonHakemusWrapper extends OptionConverter {
       hakemus.getPrioriteetti,
       hakemus.getJonosija,
       convert[javaInt, Int](hakemus.getVarasijanNumero, int),
-      hakemus.isOnkoMuuttunutViimeSijoittelussa,
+      BooleanUtils.isTrue(hakemus.isOnkoMuuttunutViimeSijoittelussa),
       convert[javaBigDecimal, BigDecimal](hakemus.getPisteet, bigDecimal),
       hakemus.getTasasijaJonosija,
       hakemus.isHyvaksyttyHarkinnanvaraisesti,
