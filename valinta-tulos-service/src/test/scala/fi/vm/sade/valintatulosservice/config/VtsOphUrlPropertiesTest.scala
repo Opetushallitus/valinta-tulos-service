@@ -12,7 +12,7 @@ import org.specs2.runner.JUnitRunner
 class VtsOphUrlPropertiesTest extends Specification {
   "Properties" should {
     "resolve all" in {
-      val appConfig: VtsAppConfig = new VtsAppConfig.Default
+      val appConfig: VtsAppConfig = new VtsAppConfig.IT
       val urlprops = appConfig.settings.ophUrlProperties
       val keys = urlprops.config.load().keySet().toSet
       val fn = {
