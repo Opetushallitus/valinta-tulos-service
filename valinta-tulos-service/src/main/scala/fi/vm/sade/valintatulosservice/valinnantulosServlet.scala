@@ -145,4 +145,21 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
         valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, auditInfo, erillishaku.getOrElse(false))
     )
   }
+
+  post("/:valintatapajonoOid", operation(valinnantulosMuutosSwagger)) {
+    contentType = formats("json")
+    val (id, session) = getSession
+    val auditInfo = parseAuditInfo((id, session))
+    if (!session.hasAnyRole(Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))) {
+      throw new AuthorizationFailedException()
+    }
+    val erillishaku = parseErillishaku
+    val valintatapajonoOid = parseValintatapajonoOid
+    val ifUnmodifiedSince: Instant = parseIfUnmodifiedSince
+    val valinnantulokset = parsedBody.extract[List[Valinnantulos]]
+    Ok(
+      valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
+        valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, auditInfo, erillishaku.getOrElse(false))
+    )
+  }
 }
