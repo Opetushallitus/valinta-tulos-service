@@ -76,14 +76,14 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
-  private def handle(s: ValinnantulosStrategy, uusi: Valinnantulos, vanha: Option[Valinnantulos]) = s.validate(uusi, vanha) match {
-    case x if x.isRight => Try(valinnantulosRepository.runBlockingTransactionally(s.save(uusi, vanha))) match {
-      case Success(_) => Right(s.audit(uusi, vanha))
-      case Failure(t) =>
+  private def handle(s: ValinnantulosStrategy, uusi: Valinnantulos, vanha: Option[Valinnantulos]) = {
+    for {
+      _ <- s.validate(uusi, vanha).right
+      _ <- valinnantulosRepository.runBlockingTransactionally(s.save(uusi, vanha)).left.map(t => {
         logger.warn(s"Valinnantuloksen $uusi tallennus epäonnistui", t)
-        Left(ValinnantulosUpdateStatus(500, s"Valinnantuloksen tallennus epäonnistui", uusi.valintatapajonoOid, uusi.hakemusOid))
-    }
-    case x if x.isLeft => x
+        ValinnantulosUpdateStatus(500, s"Valinnantuloksen tallennus epäonnistui", uusi.valintatapajonoOid, uusi.hakemusOid)
+      }).right
+    } yield s.audit(uusi, vanha)
   }
 
   private def handle(s: ValinnantulosStrategy, valinnantulokset: List[Valinnantulos], vanhatValinnantulokset: Map[String, (Instant, Valinnantulos)], ifUnmodifiedSince: Instant): List[ValinnantulosUpdateStatus] = {
