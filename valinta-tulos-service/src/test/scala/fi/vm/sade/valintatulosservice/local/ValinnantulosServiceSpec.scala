@@ -25,6 +25,8 @@ import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.Scope
 
+import scala.concurrent.duration.Duration
+
 @RunWith(classOf[JUnitRunner])
 class ValinnantulosServiceSpec extends Specification with MockitoMatchers with MockitoStubs {
   val korkeakouluHakuOid = "1.1.1.1.1"
@@ -325,6 +327,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
 
     val service = new ValinnantulosService(valinnantulosRepository, authorizer, hakuService, ohjausparametritService, hakukohdeRecordService, appConfig, audit)
 
+    valinnantulosRepository.runBlockingTransactionally(any[DBIO[Unit]], any[Duration]) returns Right[Throwable, Unit](())
     valinnantulosRepository.getHakuForHakukohde(anyString) returns korkeakouluHakuOid
     valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid) returns result
   }
