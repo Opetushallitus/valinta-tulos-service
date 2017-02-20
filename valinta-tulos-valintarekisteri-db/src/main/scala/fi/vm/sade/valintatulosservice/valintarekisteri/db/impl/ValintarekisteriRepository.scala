@@ -11,6 +11,7 @@ import slick.jdbc.TransactionIsolation.Serializable
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import scala.util.{Failure, Success, Try}
 
 trait ValintarekisteriRepository extends ValintarekisteriResultExtractors with Logging with PerformanceLogger {
   val db: Database
@@ -20,7 +21,10 @@ trait ValintarekisteriRepository extends ValintarekisteriResultExtractors with L
       timeout + Duration(1, TimeUnit.SECONDS)
     )
   }
-  def runBlockingTransactionally[R](operations: DBIO[R], timeout: Duration = Duration(20, TimeUnit.SECONDS)): R = {
-    runBlocking(operations.transactionally.withTransactionIsolation(Serializable), timeout)
+  def runBlockingTransactionally[R](operations: DBIO[R], timeout: Duration = Duration(20, TimeUnit.SECONDS)): Either[Throwable, R] = {
+    Try(runBlocking(operations.transactionally.withTransactionIsolation(Serializable), timeout)) match {
+      case Success(r) => Right(r)
+      case Failure(t) => Left(t)
+    }
   }
 }
