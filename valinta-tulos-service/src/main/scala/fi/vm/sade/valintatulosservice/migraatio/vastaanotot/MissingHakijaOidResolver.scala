@@ -67,7 +67,9 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
       case r => Task.fail(new RuntimeException(r.toString))
     }.run) match {
       case Success(henkilo) => Some(henkilo)
-      case Failure(t) => handleFailure(t, "searching person oid by hetu " + Option(hetu).map(_.replaceAll(".","*")))
+      case Failure(t) =>
+        handleFailure(t, "searching person oid by hetu " + Option(hetu).map(_.replaceAll(".","*")))
+        throw t
     }
   }
 
