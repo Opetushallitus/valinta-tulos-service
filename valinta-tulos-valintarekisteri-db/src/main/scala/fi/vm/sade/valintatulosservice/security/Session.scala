@@ -25,3 +25,7 @@ case class CasSession(casTicket: ServiceTicket, personOid: String, roles: Set[Ro
   override def hasAnyRole(roles: Set[Role]): Boolean = this.roles.intersect(roles).nonEmpty
   override def hasEveryRole(roles: Set[Role]): Boolean = roles.subsetOf(this.roles)
 }
+case class AuditSession(personOid:String, roles:Set[Role]) extends Session {
+  override def hasAnyRole(roles: Set[Role]): Boolean = this.roles.intersect(roles).nonEmpty
+  override def hasEveryRole(roles: Set[Role]): Boolean = roles.subsetOf(this.roles)
+}
