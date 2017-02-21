@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import java.util.UUID
 
-import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
+import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session, AuditSession}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import slick.driver.PostgresDriver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -10,6 +10,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 trait SessionRepositoryImpl extends SessionRepository with ValintarekisteriRepository {
 
   override def store(session: Session): UUID = session match {
+    case AuditSession(_, _) => throw new IllegalArgumentException("Audit-sessiota ei voi tallentaa")
     case CasSession(ServiceTicket(ticket), personOid, roles) =>
       val id = UUID.randomUUID()
       runBlocking(DBIO.seq(

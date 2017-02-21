@@ -11,7 +11,7 @@ import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantuloksenMuokkaus, ValinnantulosUpdateStatus}
+import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantuloksenMuokkaus}
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
