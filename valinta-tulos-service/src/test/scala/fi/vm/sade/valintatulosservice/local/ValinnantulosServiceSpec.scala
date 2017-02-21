@@ -14,7 +14,7 @@ import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde, Yh
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
-import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantulosService, ValinnantulosUpdateStatus}
+import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantulosService}
 import slick.dbio.DBIO
 import org.joda.time.DateTime
 import org.junit.runner.RunWith
