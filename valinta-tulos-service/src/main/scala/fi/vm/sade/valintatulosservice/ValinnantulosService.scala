@@ -36,7 +36,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
 
   def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid: String,
                                                valinnantulokset: List[Valinnantulos],
-                                               ifUnmodifiedSince: Instant,
+                                               ifUnmodifiedSince: Option[Instant],
                                                auditInfo: AuditInfo,
                                                erillishaku:Boolean = false): List[ValinnantulosUpdateStatus] = {
     val hakukohdeOid = valinnantulokset.head.hakukohdeOid // FIXME käyttäjän syötettä, tarvittaisiin jono-hakukohde tieto valintaperusteista
@@ -65,7 +65,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
           authorizer,
           appConfig,
           valinnantulosRepository,
-          ifUnmodifiedSince,
+          ifUnmodifiedSince.getOrElse(throw new IllegalArgumentException("If-Unmodified-Since on pakollinen otsake valinnantulosten tallennukselle")),
           audit
         )
       }
@@ -86,14 +86,14 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
     } yield s.audit(uusi, vanha)
   }
 
-  private def handle(s: ValinnantulosStrategy, valinnantulokset: List[Valinnantulos], vanhatValinnantulokset: Map[String, (Instant, Valinnantulos)], ifUnmodifiedSince: Instant): List[ValinnantulosUpdateStatus] = {
+  private def handle(s: ValinnantulosStrategy, valinnantulokset: List[Valinnantulos], vanhatValinnantulokset: Map[String, (Instant, Valinnantulos)], ifUnmodifiedSince: Option[Instant]): List[ValinnantulosUpdateStatus] = {
     valinnantulokset.map(uusiValinnantulos => {
       vanhatValinnantulokset.get(uusiValinnantulos.hakemusOid) match {
         case Some((_, vanhaValinnantulos)) if !s.hasChange(uusiValinnantulos, vanhaValinnantulos) => Right()
-        case Some((lastModified, _)) if lastModified.isAfter(ifUnmodifiedSince) =>
+        case Some((lastModified, _)) if ifUnmodifiedSince.isDefined && lastModified.isAfter(ifUnmodifiedSince.get) =>
           logger.warn(s"Hakemus ${uusiValinnantulos.hakemusOid} valintatapajonossa ${uusiValinnantulos.valintatapajonoOid} " +
-            s"on muuttunut $lastModified lukemisajan $ifUnmodifiedSince jälkeen.")
-          Left(ValinnantulosUpdateStatus(409, s"Hakemus on muuttunut lukemisajan $ifUnmodifiedSince jälkeen", uusiValinnantulos.valintatapajonoOid, uusiValinnantulos.hakemusOid))
+            s"on muuttunut $lastModified lukemisajan ${ifUnmodifiedSince.get} jälkeen.")
+          Left(ValinnantulosUpdateStatus(409, s"Hakemus on muuttunut lukemisajan ${ifUnmodifiedSince.get} jälkeen", uusiValinnantulos.valintatapajonoOid, uusiValinnantulos.hakemusOid))
         case Some((_, vanhaValinnantulos)) => handle(s, uusiValinnantulos, Some(vanhaValinnantulos))
         case None => handle(s, uusiValinnantulos, None)
       }
