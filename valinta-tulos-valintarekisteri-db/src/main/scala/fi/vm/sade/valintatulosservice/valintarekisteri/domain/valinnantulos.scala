@@ -1,5 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.domain
 
+case class ValinnantulosUpdateStatus(status:Int, message:String, valintatapajonoOid:String, hakemusOid:String)
+
 case class Valinnantulos(hakukohdeOid: String,
                          valintatapajonoOid: String,
                          hakemusOid: String,
