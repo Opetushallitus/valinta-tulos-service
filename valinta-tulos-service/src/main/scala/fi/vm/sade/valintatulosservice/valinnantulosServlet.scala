@@ -42,14 +42,18 @@ trait ValinnantulosServletBase extends ScalatraServlet with JacksonJsonSupport w
   }
 
   val sample = renderHttpDate(Instant.EPOCH)
-  protected def parseIfUnmodifiedSince: Instant = {
-    request.headers.get("If-Unmodified-Since") match {
-      case Some(s) =>
-        Try(Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(s))).recoverWith {
-          case e => Failure(new IllegalArgumentException(s"Ei voitu jäsentää otsaketta If-Unmodified-Since muodossa $sample.", e))
-        }.get
-      case None => throw new IllegalArgumentException("Otsake If-Unmodified-Since on pakollinen.")
-    }
+  protected def parseIfUnmodifiedSince: Option[Instant] = request.headers.get("If-Unmodified-Since") match {
+    case Some(s) =>
+      Try(Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(s))) match {
+        case x if x.isSuccess => Some(x.get)
+        case Failure(e) => throw new IllegalArgumentException(s"Ei voitu jäsentää otsaketta If-Unmodified-Since muodossa $sample.", e)
+      }
+    case None => None
+  }
+
+  protected def getIfUnmodifiedSince: Instant = parseIfUnmodifiedSince match {
+    case Some(s) => s
+    case None => throw new IllegalArgumentException("Otsake If-Unmodified-Since on pakollinen.")
   }
 
   protected def parseAuditInfo(session: (UUID, Session)): AuditInfo = {
@@ -139,11 +143,11 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     }
     val erillishaku = parseErillishaku
     val valintatapajonoOid = parseValintatapajonoOid
-    val ifUnmodifiedSince: Instant = parseIfUnmodifiedSince
+    val ifUnmodifiedSince: Instant = getIfUnmodifiedSince
     val valinnantulokset = parsedBody.extract[List[Valinnantulos]]
     Ok(
       valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
-        valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, auditInfo, erillishaku.getOrElse(false))
+        valintatapajonoOid, valinnantulokset, Some(ifUnmodifiedSince), auditInfo, erillishaku.getOrElse(false))
     )
   }
 }
@@ -187,7 +191,7 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService)(implicit va
       throw new AuthorizationFailedException()
     }
     val valintatapajonoOid = parseValintatapajonoOid
-    val ifUnmodifiedSince: Instant = parseIfUnmodifiedSince
+    val ifUnmodifiedSince: Option[Instant] = parseIfUnmodifiedSince
     val valinnantulokset = parsedBody.extract[ValinnantulosRequest].valinnantulokset
     Ok(
       valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
