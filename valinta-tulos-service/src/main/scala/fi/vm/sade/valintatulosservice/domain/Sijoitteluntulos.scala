@@ -28,6 +28,10 @@ case class HakutoiveenSijoitteluntulos(
   varasijanumero: Option[Int],
   julkaistavissa: Boolean,
   ehdollisestiHyvaksyttavissa: Boolean,
+  ehdollisenHyvaksymisenEhtoKoodi: Option[String],
+  ehdollisenHyvaksymisenEhtoFI: Option[String],
+  ehdollisenHyvaksymisenEhtoSV: Option[String],
+  ehdollisenHyvaksymisenEhtoEN: Option[String],
   tilanKuvaukset: Map[String, String],
   pisteet: Option[BigDecimal]
 ) {
@@ -55,6 +59,10 @@ object HakutoiveenSijoitteluntulos {
       varasijanumero = None,
       julkaistavissa = false,
       ehdollisestiHyvaksyttavissa = false,
+      ehdollisenHyvaksymisenEhtoKoodi = None,
+      ehdollisenHyvaksymisenEhtoFI = None,
+      ehdollisenHyvaksymisenEhtoSV = None,
+      ehdollisenHyvaksymisenEhtoEN = None,
       tilanKuvaukset = Map(),
       pisteet = None
     )

@@ -36,6 +36,10 @@ class HakutoiveentulosSerializer extends CustomSerializer[Hakutoiveentulos]((for
       varasijanumero = (x \ "varasijanumero").extractOpt[Int],
       julkaistavissa = (x \ "julkaistavissa").extract[Boolean],
       ehdollisestiHyvaksyttavissa = (x \ "ehdollisestiHyvaksyttavissa").extract[Boolean],
+      ehdollisenHyvaksymisenEhtoKoodi = (x \ "ehdollisenHyvaksymisenEhtoKoodi").extractOpt[String],
+      ehdollisenHyvaksymisenEhtoFI = (x \ "ehdollisenHyvaksymisenEhtoFI").extractOpt[String],
+      ehdollisenHyvaksymisenEhtoSV = (x \ "ehdollisenHyvaksymisenEhtoSV").extractOpt[String],
+      ehdollisenHyvaksymisenEhtoEN = (x \ "ehdollisenHyvaksymisenEhtoEN").extractOpt[String],
       tilanKuvaukset = (x \ "tilanKuvaukset").extract[Map[String, String]],
       pisteet = (x \ "pisteet").extractOpt[BigDecimal],
       virkailijanTilat = HakutoiveenSijoittelunTilaTieto(valintatila, vastaanottotila, vastaanotettavuustila))
@@ -58,6 +62,10 @@ class HakutoiveentulosSerializer extends CustomSerializer[Hakutoiveentulos]((for
       ("varasijanumero" -> tulos.varasijanumero) ~
       ("julkaistavissa" -> tulos.julkaistavissa) ~
       ("ehdollisestiHyvaksyttavissa" -> tulos.ehdollisestiHyvaksyttavissa) ~
+      ("ehdollisenHyvaksymisenEhtoKoodi" -> tulos.ehdollisenHyvaksymisenEhtoKoodi) ~
+      ("ehdollisenHyvaksymisenEhtoFI" -> tulos.ehdollisenHyvaksymisenEhtoFI) ~
+      ("ehdollisenHyvaksymisenEhtoSV" -> tulos.ehdollisenHyvaksymisenEhtoSV) ~
+      ("ehdollisenHyvaksymisenEhtoEN" -> tulos.ehdollisenHyvaksymisenEhtoEN) ~
       ("tilanKuvaukset" -> tulos.tilanKuvaukset) ~
       ("kelaURL" -> tulos.kelaURL) ~
       ("pisteet" -> tulos.pisteet)
