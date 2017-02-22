@@ -17,7 +17,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
                                        haku: Haku,
                                        valinnantulosRepository: ValinnantulosRepository,
                                        hakukohdeRecordService: HakukohdeRecordService,
-                                       ifUnmodifiedSince: Instant,
+                                       ifUnmodifiedSince: Option[Instant],
                                        audit: Audit) extends ValinnantulosStrategy with Logging {
   private val session = auditInfo.session._2
 
@@ -109,10 +109,10 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
 
     def createInsertOperations = {
       List(
-        Some(valinnantulosRepository.storeValinnantila(uusi.getValinnantilanTallennus(muokkaaja), Some(ifUnmodifiedSince))),
-        Some(valinnantulosRepository.storeValinnantuloksenOhjaus(uusi.getValinnantuloksenOhjaus(muokkaaja, selite), Some(ifUnmodifiedSince))),
+        Some(valinnantulosRepository.storeValinnantila(uusi.getValinnantilanTallennus(muokkaaja), ifUnmodifiedSince)),
+        Some(valinnantulosRepository.storeValinnantuloksenOhjaus(uusi.getValinnantuloksenOhjaus(muokkaaja, selite), ifUnmodifiedSince)),
         Option(uusi.ilmoittautumistila != EiTehty).collect { case true => valinnantulosRepository.storeIlmoittautuminen(
-          uusi.henkiloOid, Ilmoittautuminen(uusi.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), Some(ifUnmodifiedSince))
+          uusi.henkiloOid, Ilmoittautuminen(uusi.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), ifUnmodifiedSince)
         }
       ).flatten
     }
@@ -120,22 +120,22 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
     def createUpdateOperations(vanha: Valinnantulos) = {
       List(
         Option(uusi.valinnantila != vanha.valinnantila).collect { case true =>
-          valinnantulosRepository.storeValinnantila(uusi.getValinnantilanTallennus(muokkaaja), Some(ifUnmodifiedSince))
+          valinnantulosRepository.storeValinnantila(uusi.getValinnantilanTallennus(muokkaaja), ifUnmodifiedSince)
         },
         Option(uusi.hasOhjausChanged(vanha)).collect { case true => valinnantulosRepository.updateValinnantuloksenOhjaus(
-          uusi.getValinnantuloksenOhjauksenMuutos(vanha, muokkaaja, selite), Some(ifUnmodifiedSince))
+          uusi.getValinnantuloksenOhjauksenMuutos(vanha, muokkaaja, selite), ifUnmodifiedSince)
         },
         Option(uusi.ilmoittautumistila != vanha.ilmoittautumistila).collect { case true => valinnantulosRepository.storeIlmoittautuminen(
-          vanha.henkiloOid, Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), Some(ifUnmodifiedSince))
+          vanha.henkiloOid, Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), ifUnmodifiedSince)
         }
       ).flatten
     }
 
     def createDeleteOperations(vanha:Valinnantulos) = {
       List(
-        Some(valinnantulosRepository.deleteValinnantulos(muokkaaja, uusi, Some(ifUnmodifiedSince))),
+        Some(valinnantulosRepository.deleteValinnantulos(muokkaaja, uusi, ifUnmodifiedSince)),
         Option(vanha.ilmoittautumistila != EiTehty).collect { case true => valinnantulosRepository.deleteIlmoittautuminen(
-          uusi.henkiloOid, Ilmoittautuminen(uusi.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), Some(ifUnmodifiedSince)
+          uusi.henkiloOid, Ilmoittautuminen(uusi.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), ifUnmodifiedSince
         )}
       ).flatten
     }
