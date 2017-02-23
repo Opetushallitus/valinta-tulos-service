@@ -192,8 +192,6 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
     }
   }
 
-  def getKoulutus(koulutusOid: String): Either[Throwable, Koulutus] = {
-    val koulutusUrl = appConfig.settings.ophUrlProperties.url("tarjonta-service.koulutus", koulutusOid)
   def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]] = {
     def sequence[A, B](s: Seq[Either[A, B]]): Either[A, Seq[B]] =
       s.foldRight(Right(Nil): Either[A, List[B]]) {

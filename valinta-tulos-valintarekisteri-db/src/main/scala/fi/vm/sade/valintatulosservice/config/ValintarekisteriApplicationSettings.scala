@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.config
 
 import com.typesafe.config.Config
+import fi.vm.sade.properties.OphProperties
 import org.apache.commons.lang3.BooleanUtils
 
 abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.config.ApplicationSettings(config) {
@@ -8,6 +9,7 @@ abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.conf
   val tarjontaUrl = withConfig(_.getString("tarjonta-service.url"))
   val valintaRekisteriDbConfig = withConfig(_.getConfig("valinta-tulos-service.valintarekisteri.db"))
   val lenientTarjontaDataParsing: Boolean = BooleanUtils.isTrue(withConfig(_.getBoolean("valinta-tulos-service.parseleniently.tarjonta")))
+  val ophUrlProperties: OphProperties
   protected def withConfig[T](operation: Config => T): T = {
     try {
       operation(config)
