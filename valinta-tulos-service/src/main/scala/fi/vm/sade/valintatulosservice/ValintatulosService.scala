@@ -507,8 +507,8 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
       .map(piilotaKuvauksetKeskeneräisiltä)
       .map(asetaVastaanotettavuusValintarekisterinPerusteella(vastaanottoKaudella))
       .tulokset
-
-    val kelaURL = Some(appConfig.settings.kelaURL).filter(_ => dynamicAppConfig.näytetäänSiirryKelaanURL)
+    val hakukierrosOnPäättynyt: Option[Boolean] = ohjausparametrit.flatMap(_.hakukierrosPaattyy).map(_.isBefore(DateTime.now()))
+    val kelaURL = Some(appConfig.settings.kelaURL).filter(_ => dynamicAppConfig.näytetäänSiirryKelaanURL && !hakukierrosOnPäättynyt.getOrElse(false))
     Hakemuksentulos(haku.oid, h.oid, sijoitteluTulos.hakijaOid.getOrElse(h.henkiloOid), ohjausparametrit.flatMap(_.vastaanottoaikataulu), kelaURL, lopullisetTulokset)
   }
 
