@@ -8,7 +8,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Kausi, Kevat, Syk
 import org.joda.time.DateTime
 import org.json4s.JsonAST.{JBool, JInt, JObject, JString}
 import org.json4s.jackson.JsonMethods._
-import org.json4s.{CustomSerializer, Formats, MappingException}
+import org.json4s.{JValue, CustomSerializer, Formats, MappingException}
 
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -17,6 +17,7 @@ import scalaj.http.HttpOptions
 trait HakuService {
   def getHaku(oid: String): Either[Throwable, Haku]
   def getHakukohde(oid: String): Either[Throwable, Hakukohde]
+  def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]]
   def getHakukohdes(oids: Seq[String]): Either[Throwable, Seq[Hakukohde]]
   def getHakukohdesForHaku(hakuOid: String): Either[Throwable, Seq[Hakukohde]]
   def getHakukohdeOids(hakuOid:String): Either[Throwable, Seq[String]]
@@ -42,12 +43,15 @@ case class Hakuaika(hakuaikaId: String, alkuPvm: Option[Long], loppuPvm: Option[
   }
 }
 
-case class Hakukohde(oid: String, hakuOid: String, hakukohdeKoulutusOids: List[String],
+case class Hakukohde(oid: String, hakuOid: String, tarjoajaOids: Seq[String], hakukohdeKoulutusOids: List[String],
                      koulutusAsteTyyppi: String, koulutusmoduuliTyyppi: String,
                      hakukohteenNimet: Map[String, String], tarjoajaNimet: Map[String, String], yhdenPaikanSaanto: YhdenPaikanSaanto,
                      tutkintoonJohtava:Boolean, koulutuksenAlkamiskausiUri:String, koulutuksenAlkamisvuosi:Int)
-
-case class Koulutus(oid: String, koulutuksenAlkamiskausi: Kausi, tila: String, johtaaTutkintoon: Boolean)
+case class Koodi(uri: String, arvo: String)
+case class Koulutus(oid: String, koulutuksenAlkamiskausi: Kausi, tila: String, johtaaTutkintoon: Boolean,
+                    koulutuskoodi: Option[Koodi],
+                    koulutusaste: Option[Koodi],
+                    opintojenLaajuusarvo: Option[Koodi])
 
 class KoulutusSerializer extends CustomSerializer[Koulutus]((formats: Formats) => {
   implicit val f = formats
@@ -64,7 +68,13 @@ class KoulutusSerializer extends CustomSerializer[Koulutus]((formats: Formats) =
       }
       val koulutusUriOpt = (o \ "koulutuskoodi" \ "uri").extractOpt[String]
       val koulutusVersioOpt = (o \ "koulutuskoodi" \ "versio").extractOpt[Int]
-      Koulutus(oid, kausi, tila, johtaaTutkintoon)
+      val vads: JValue = (o \ "koulutuskoodi")
+      def extractKoodi(j: JValue) = Try(Koodi((j \ "uri").extract[String], (j \ "arvo").extract[String])).toOption
+
+      Koulutus(oid, kausi, tila, johtaaTutkintoon,
+        koulutuskoodi = extractKoodi((o \ "koulutuskoodi")),
+          koulutusaste = extractKoodi((o \ "koulutusaste")),
+          opintojenLaajuusarvo = extractKoodi((o \ "opintojenLaajuusarvo")))
   }, { case o => ??? })
 })
 
@@ -97,6 +107,7 @@ class CachedHakuService(wrappedService: HakuService) extends HakuService {
 
   override def getHaku(oid: String): Either[Throwable, Haku] = byOid(oid)
   override def getHakukohde(oid: String): Either[Throwable, Hakukohde] = wrappedService.getHakukohde(oid)
+  override def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]] = wrappedService.getKoulutuses(koulutusOids)
   override def getHakukohdes(oids: Seq[String]): Either[Throwable, Seq[Hakukohde]] = wrappedService.getHakukohdes(oids)
   override def getHakukohdeOids(hakuOid:String): Either[Throwable, Seq[String]] = wrappedService.getHakukohdeOids(hakuOid)
   override def getHakukohdesForHaku(hakuOid: String): Either[Throwable, Seq[Hakukohde]] = wrappedService.getHakukohdesForHaku(hakuOid)
@@ -110,7 +121,9 @@ private case class HakuTarjonnassa(oid: String, hakutapaUri: String, hakutyyppiU
                                    sijoittelu: Boolean,
                                    parentHakuOid: Option[String], sisaltyvatHaut: Set[String], tila: String,
                                    hakuaikas: List[Hakuaika], yhdenPaikanSaanto: YhdenPaikanSaanto,
-                                   nimi: Map[String, String]) {
+                                   nimi: Map[String, String],
+                                   organisaatioOids: Seq[String],
+                                   tarjoajaOids: Seq[String]) {
   def julkaistu = {
     tila == "JULKAISTU"
   }
@@ -181,6 +194,17 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
 
   def getKoulutus(koulutusOid: String): Either[Throwable, Koulutus] = {
     val koulutusUrl = appConfig.settings.ophUrlProperties.url("tarjonta-service.koulutus", koulutusOid)
+  def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]] = {
+    def sequence[A, B](s: Seq[Either[A, B]]): Either[A, Seq[B]] =
+      s.foldRight(Right(Nil): Either[A, List[B]]) {
+        (e, acc) => for (xs <- acc.right; x <- e.right) yield x :: xs
+      }
+
+    sequence(koulutusOids.map(getKoulutus))
+  }
+
+  private def getKoulutus(koulutusOid: String): Either[Throwable, Koulutus] = {
+    val koulutusUrl = s"${appConfig.settings.tarjontaUrl}/rest/v1/koulutus/$koulutusOid"
     fetch(koulutusUrl) { response =>
       (parse(response) \ "result").extract[Koulutus]
     }
