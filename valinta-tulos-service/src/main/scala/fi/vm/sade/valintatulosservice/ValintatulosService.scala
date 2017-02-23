@@ -16,6 +16,7 @@ import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, Ohjaus
 import fi.vm.sade.valintatulosservice.sijoittelu.{SijoittelutulosService, StreamingHakijaDtoClient}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, VastaanottoRecord, VirkailijaVastaanottoRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.vastaanottanut
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeRecord, Kausi, MerkitseMyohastyneeksi, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import org.apache.commons.lang3.StringUtils
@@ -507,9 +508,12 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
       .map(piilotaKuvauksetKeskeneräisiltä)
       .map(asetaVastaanotettavuusValintarekisterinPerusteella(vastaanottoKaudella))
       .tulokset
-    val hakukierrosOnPäättynyt: Option[Boolean] = ohjausparametrit.flatMap(_.hakukierrosPaattyy).map(_.isBefore(DateTime.now()))
-    val kelaURL = Some(appConfig.settings.kelaURL).filter(_ => dynamicAppConfig.näytetäänSiirryKelaanURL && !hakukierrosOnPäättynyt.getOrElse(false))
-    Hakemuksentulos(haku.oid, h.oid, sijoitteluTulos.hakijaOid.getOrElse(h.henkiloOid), ohjausparametrit.flatMap(_.vastaanottoaikataulu), kelaURL, lopullisetTulokset)
+    val hakijallaOnSitovaVastaanotto = lopullisetTulokset.exists(vastaanottanut == _.vastaanottotila)
+    val hakukierrosEiOlePäättynyt = !(ohjausparametrit.flatMap(_.hakukierrosPaattyy).map(_.isBefore(DateTime.now())).getOrElse(false))
+    val näytetäänSiirryKelaanURL = dynamicAppConfig.näytetäänSiirryKelaanURL
+    val näytetäänKelaURL = if (hakijallaOnSitovaVastaanotto&&hakukierrosEiOlePäättynyt&&näytetäänSiirryKelaanURL) Some(appConfig.settings.kelaURL) else None
+
+    Hakemuksentulos(haku.oid, h.oid, sijoitteluTulos.hakijaOid.getOrElse(h.henkiloOid), ohjausparametrit.flatMap(_.vastaanottoaikataulu), näytetäänKelaURL, lopullisetTulokset)
   }
 
   def tyhjäHakemuksenTulos(hakemusOid: String, aikataulu: Option[Vastaanottoaikataulu]) = HakemuksenSijoitteluntulos(hakemusOid, None, Nil)
@@ -546,7 +550,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
     hakutoiveetGroupedByKausi.flatMap {
       case (Some((kausi, vastaanotto)), kaudenTulokset) =>
         val ehdollinenVastaanottoTallaHakemuksella = kaudenTulokset.exists(x => Vastaanottotila.ehdollisesti_vastaanottanut == x.vastaanottotila)
-        val sitovaVastaanottoTallaHakemuksella = kaudenTulokset.exists(x => Vastaanottotila.vastaanottanut == x.vastaanottotila)
+        val sitovaVastaanottoTallaHakemuksella = kaudenTulokset.exists(x => vastaanottanut == x.vastaanottotila)
         if (ehdollinenVastaanottoTallaHakemuksella) {
           kaudenTulokset
         } else if (sitovaVastaanottoTallaHakemuksella) {
@@ -611,7 +615,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
   private def sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja(tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) = {
     if (haku.korkeakoulu && haku.käyttääSijoittelua) {
       val firstVaralla = tulokset.indexWhere(_.valintatila == Valintatila.varalla)
-      val firstVastaanotettu = tulokset.indexWhere(_.vastaanottotila == Vastaanottotila.vastaanottanut)
+      val firstVastaanotettu = tulokset.indexWhere(_.vastaanottotila == vastaanottanut)
       val firstKesken = tulokset.indexWhere(_.valintatila == Valintatila.kesken)
       val indexedTulokset = tulokset.zipWithIndex
       val firstHyvaksyttyUnderFirstVaralla = if (firstVaralla >= 0) {
