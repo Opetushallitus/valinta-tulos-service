@@ -1,11 +1,12 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import java.sql.Timestamp
-import java.time.Instant
+import java.time.format.DateTimeFormatter
+import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.ConcurrentModificationException
 import java.util.concurrent.TimeUnit
-import slick.driver.PostgresDriver.api._
 
+import slick.driver.PostgresDriver.api._
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Ilmoittautuminen, ValinnantilanTallennus, ValinnantuloksenOhjaus, Valinnantulos}
 
@@ -67,7 +68,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               system_time @> ${ifUnmodifiedSince}
            )""".flatMap {
       case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ohjausta $ohjaus ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti"))
+      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ohjausta $ohjaus ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
     }
   }
 
@@ -100,7 +101,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               ${ifUnmodifiedSince}::timestamptz is null or
               valinnantilat.system_time @> ${ifUnmodifiedSince})""".flatMap {
       case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantilaa $tila ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti"))
+      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantilaa $tila ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
     }
   }
 
@@ -139,7 +140,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               ${ifUnmodifiedSince}::timestamptz is null or
               valinnantulokset.system_time @> ${ifUnmodifiedSince})""".flatMap {
       case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ohjausta $ohjaus ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti"))
+      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ohjausta $ohjaus ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
 }
 }
 
@@ -158,7 +159,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                  and (${ifUnmodifiedSince}::timestamptz is null
                       or ilmoittautumiset.system_time @> ${ifUnmodifiedSince})""".flatMap {
       case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Ilmoittautumista $ilmoittautuminen ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti"))
+      case _ => DBIO.failed(new ConcurrentModificationException(s"Ilmoittautumista $ilmoittautuminen ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
     }
   }
 
@@ -176,7 +177,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                and (${ifUnmodifiedSince}::timestamptz is null
                    or system_time @> ${ifUnmodifiedSince})""".flatMap {
         case 1 => DBIO.successful(())
-        case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantilaa $tila ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti"))
+        case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantilaa $tila ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
       }
   }
 
@@ -188,7 +189,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                and (${ifUnmodifiedSince}::timestamptz is null
                    or system_time @> ${ifUnmodifiedSince})""".flatMap {
       case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ohjausta $ohjaus ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti"))
+      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ohjausta $ohjaus ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
     }
   }
 
@@ -200,7 +201,10 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               and (${ifUnmodifiedSince}::timestamptz is null
                    or system_time @> ${ifUnmodifiedSince})""".flatMap {
       case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Ilmoittautumista $ilmoittautuminen ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti"))
+      case _ => DBIO.failed(new ConcurrentModificationException(s"Ilmoittautumista $ilmoittautuminen ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
     }
   }
+
+  private def format(ifUnmodifiedSince: Option[Instant] = None) = ifUnmodifiedSince.map(i =>
+    DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant(i, ZoneId.of("GMT")))).getOrElse("None")
 }
