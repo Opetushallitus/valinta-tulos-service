@@ -220,6 +220,31 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     }
   }
 
+  "Last-Modified päivämäärä pitäisi olla validi If-Unmodified-Since (" in {
+    val fooValinnantulos = erillishaunValinnantulos.copy(valintatapajonoOid = "1234577", hakukohdeOid = "999")
+    singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono("1234577") mustEqual List()
+
+    patchJSON("auth/valinnan-tulos/1234577?erillishaku=true", write(List(fooValinnantulos.copy(ilmoittautumistila = Poissa))),
+      Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> "Tue, 3 Jun 2008 11:05:30 GMT")) {
+      status must_== 200
+      val result = parse(body).extract[List[ValinnantulosUpdateStatus]]
+      result.size mustEqual 0
+    }
+    get(s"auth/valinnan-tulos/1234577", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
+      status must_== 200
+      body.isEmpty mustEqual false
+      val result = parse(body).extract[List[Valinnantulos]]
+      val foo = header("Last-Modified")
+
+      patchJSON("auth/valinnan-tulos/1234577?erillishaku=true", write(List(fooValinnantulos)),
+        Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> foo)) {
+        status must_== 200
+        val result = parse(body).extract[List[ValinnantulosUpdateStatus]]
+        result.size mustEqual 0
+      }
+    }
+  }
+
   def hae(tulos:Valinnantulos, expectedResultSize:Int = 15) = {
     get(s"auth/valinnan-tulos/${tulos.valintatapajonoOid}", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
       status must_== 200
