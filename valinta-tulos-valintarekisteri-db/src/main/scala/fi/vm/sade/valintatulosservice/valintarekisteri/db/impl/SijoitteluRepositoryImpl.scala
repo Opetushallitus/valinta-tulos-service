@@ -8,6 +8,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.SijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.driver.PostgresDriver.api._
 import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatapajono, Hakemus => SijoitteluHakemus, _}
+import slick.profile.SqlAction
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -518,5 +519,72 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
       }
     }
     readPistetiedot()
+  }
+
+  override def deleteSijoittelunTulokset(hakuOid: String): Unit = {
+    val deleteOperationsWithDescriptions: Seq[(String, SqlAction[Int, NoStream, Effect])] = Seq(
+      ("disable tilat_kuvaukset_triggers", sqlu"alter table tilat_kuvaukset disable trigger all"),
+      ("disable valinnantilat triggers", sqlu"alter table valinnantilat disable trigger all"),
+      ("disable valinnantulokset triggers", sqlu"alter table valinnantulokset disable trigger all"),
+      ("disable ilmoittautumiset triggers", sqlu"alter table ilmoittautumiset disable trigger all"),
+
+      ("disable hakijaryhman_hakemukset triggers", sqlu"alter table hakijaryhman_hakemukset disable trigger all"),
+      ("disable pistetiedot triggers", sqlu"alter table pistetiedot disable trigger all"),
+      ("disable jonosijat triggers", sqlu"alter table jonosijat disable trigger all"),
+
+      ("create tmp table sijoitteluajo_ids_to_delete", sqlu"create temporary table sijoitteluajo_ids_to_delete (id bigint primary key) on commit drop"),
+      ("create tmp table hakukohde_oids_to_delete", sqlu"create temporary table hakukohde_oids_to_delete (oid character varying primary key) on commit drop"),
+      ("create tmp table jono_oids_to_delete", sqlu"create temporary table jono_oids_to_delete (oid character varying primary key) on commit drop"),
+      ("populate sijoitteluajo_ids_to_delete", sqlu"insert into sijoitteluajo_ids_to_delete (select id from sijoitteluajot where haku_oid = ${hakuOid})"),
+      ("populate hakukohde_oids_to_delete", sqlu"""insert into hakukohde_oids_to_delete (
+               select sa_hk.hakukohde_oid from sijoitteluajon_hakukohteet sa_hk
+               join sijoitteluajo_ids_to_delete sitd on sitd.id = sa_hk.sijoitteluajo_id)"""),
+      ("populate jono_oids_to_delete", sqlu"insert into jono_oids_to_delete (select j.oid from valintatapajonot j join hakukohde_oids_to_delete hotd on hotd.oid = j.hakukohde_oid)"),
+
+      ("delete hakijaryhman_hakemukset", sqlu"delete from hakijaryhman_hakemukset where sijoitteluajo_id in ( select id from sijoitteluajo_ids_to_delete)"),
+      ("delete hakijaryhmat", sqlu"delete from hakijaryhmat where sijoitteluajo_id in ( select id from sijoitteluajo_ids_to_delete)"),
+      ("delete pistetiedot", sqlu"delete from pistetiedot where sijoitteluajo_id in ( select id from sijoitteluajo_ids_to_delete)"),
+      ("delete jonosijat", sqlu"""delete from jonosijat where (sijoitteluajo_id, valintatapajono_oid, hakukohde_oid) in
+            ( select sitd.id, jotd.oid, hotd.oid
+              from sijoitteluajo_ids_to_delete sitd
+              join jono_oids_to_delete jotd on 1=1
+              join hakukohde_oids_to_delete hotd on 1=1)"""),
+      ("delete valintatapajonot", sqlu"delete from valintatapajonot where sijoitteluajo_id in ( select id from sijoitteluajo_ids_to_delete)"),
+      ("delete sijoitteluajon_hakukohteet", sqlu"delete from sijoitteluajon_hakukohteet where sijoitteluajo_id in ( select id from sijoitteluajo_ids_to_delete)"),
+      ("delete sijoitteluajot", sqlu"delete from sijoitteluajot where id in ( select id from sijoitteluajo_ids_to_delete)"),
+
+      ("delete tilat_kuvaukset_history", sqlu"delete from tilat_kuvaukset_history where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete tilat_kuvaukset", sqlu"delete from tilat_kuvaukset where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete viestinnan_ohjaus", sqlu"delete from viestinnan_ohjaus where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete valinnantulokset_history", sqlu"delete from valinnantulokset_history where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete valinnantulokset", sqlu"delete from valinnantulokset where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete valinnantilat_history", sqlu"delete from valinnantilat_history where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete valinnantilat", sqlu"delete from valinnantilat where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+
+      ("delete ilmoittautumiset_history", sqlu"delete from ilmoittautumiset_history where hakukohde in (select oid from hakukohde_oids_to_delete)"),
+      ("delete ilmoittautumiset", sqlu"delete from ilmoittautumiset where hakukohde in (select oid from hakukohde_oids_to_delete)"),
+
+      ("enable jonosijat triggers", sqlu"alter table jonosijat enable trigger all"),
+      ("enable pistetiedot triggers", sqlu"alter table pistetiedot enable trigger all"),
+      ("enable hakijaryhman_hakemukset triggers", sqlu"alter table hakijaryhman_hakemukset enable trigger all"),
+
+      ("enable tilat_kuvaukset triggers", sqlu"alter table tilat_kuvaukset enable trigger all"),
+      ("enable valinnantilat triggers", sqlu"alter table valinnantilat enable trigger all"),
+      ("enable valinnantulokset triggers", sqlu"alter table valinnantulokset enable trigger all"),
+      ("enable ilmoittautumiset triggers", sqlu"alter table ilmoittautumiset enable trigger all")
+    )
+
+    val (descriptions, sqls) = deleteOperationsWithDescriptions.unzip
+
+    time(s"Delete sijoittelu contents of haku $hakuOid") {
+      runBlockingTransactionally(DBIO.sequence(sqls), timeout = Duration(30, TimeUnit.MINUTES)) match {
+        case Right(rowCounts) =>
+          logger.info(s"Delete of haku $hakuOid successful. " +
+            s"Lines affected:\n\t${descriptions.zip(rowCounts).mkString("\n\t")}")
+        case Left(t) =>
+          logger.error(s"Could not delete haku $hakuOid", t)
+          throw t
+      }
+    }
   }
 }
