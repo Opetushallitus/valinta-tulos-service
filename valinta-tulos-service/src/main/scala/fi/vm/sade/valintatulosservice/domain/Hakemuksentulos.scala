@@ -10,7 +10,7 @@ import fi.vm.sade.valintatulosservice.tarjonta.Haku
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 
-case class Hakemuksentulos(hakuOid: String, hakemusOid: String, hakijaOid: String, aikataulu: Option[Vastaanottoaikataulu], kelaURL: Option[String], hakutoiveet: List[Hakutoiveentulos]) {
+case class Hakemuksentulos(hakuOid: String, hakemusOid: String, hakijaOid: String, aikataulu: Option[Vastaanottoaikataulu], hakutoiveet: List[Hakutoiveentulos]) {
   def findHakutoive(hakukohdeOid: String): Option[(Hakutoiveentulos, Int)] =
     (for {
       (toive, indeksi) <- hakutoiveet.zipWithIndex
@@ -38,7 +38,8 @@ case class Hakutoiveentulos(hakukohdeOid: String,
                             ehdollisestiHyvaksyttavissa: Boolean,
                             tilanKuvaukset: Map[String, String],
                             pisteet: Option[BigDecimal],
-                            virkailijanTilat: HakutoiveenSijoittelunTilaTieto
+                            virkailijanTilat: HakutoiveenSijoittelunTilaTieto,
+                            kelaURL: Option[String] = None
                             ) {
 
   def toKesken = {

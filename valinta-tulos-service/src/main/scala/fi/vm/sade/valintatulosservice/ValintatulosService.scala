@@ -507,15 +507,23 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
       .map(näytäAlemmatPeruutuneetKeskeneräisinäJosYlemmätKeskeneräisiä)
       .map(piilotaKuvauksetKeskeneräisiltä)
       .map(asetaVastaanotettavuusValintarekisterinPerusteella(vastaanottoKaudella))
+      .map(asetaKelaURL)
       .tulokset
-    val hakijallaOnSitovaVastaanotto = lopullisetTulokset.exists(vastaanottanut == _.vastaanottotila)
+
+    Hakemuksentulos(haku.oid, h.oid, sijoitteluTulos.hakijaOid.getOrElse(h.henkiloOid), ohjausparametrit.flatMap(_.vastaanottoaikataulu), lopullisetTulokset)
+  }
+  private def asetaKelaURL(tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]): List[Hakutoiveentulos] = {
     val hakukierrosEiOlePäättynyt = !(ohjausparametrit.flatMap(_.hakukierrosPaattyy).map(_.isBefore(DateTime.now())).getOrElse(false))
     val näytetäänSiirryKelaanURL = dynamicAppConfig.näytetäänSiirryKelaanURL
-    val näytetäänKelaURL = if (hakijallaOnSitovaVastaanotto&&hakukierrosEiOlePäättynyt&&näytetäänSiirryKelaanURL) Some(appConfig.settings.kelaURL) else None
+    val näytetäänKelaURL = if (hakukierrosEiOlePäättynyt&&näytetäänSiirryKelaanURL) Some(appConfig.settings.kelaURL) else None
 
-    Hakemuksentulos(haku.oid, h.oid, sijoitteluTulos.hakijaOid.getOrElse(h.henkiloOid), ohjausparametrit.flatMap(_.vastaanottoaikataulu), näytetäänKelaURL, lopullisetTulokset)
+    tulokset.map {
+      case tulos if vastaanottanut == tulos.vastaanottotila =>
+        tulos.copy(kelaURL = näytetäänKelaURL)
+      case tulos =>
+        tulos
+    }
   }
-
   def tyhjäHakemuksenTulos(hakemusOid: String, aikataulu: Option[Vastaanottoaikataulu]) = HakemuksenSijoitteluntulos(hakemusOid, None, Nil)
 
   private def asetaVastaanotettavuusValintarekisterinPerusteella(vastaanottoKaudella: String => Option[(Kausi, Boolean)])(tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]): List[Hakutoiveentulos] = {
