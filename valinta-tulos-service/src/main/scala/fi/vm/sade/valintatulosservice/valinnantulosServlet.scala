@@ -37,6 +37,14 @@ trait ValinnantulosServletBase extends ScalatraServlet with JacksonJsonSupport w
     case Failure(e) => throw new IllegalArgumentException("Parametri erillishaku pitää olla true tai false", e)
   }
 
+  protected def createLastModifiedHeader(instant: Instant): String = {
+    //- system_time range in database is of form ["2017-02-28 13:40:02.442277+02",)
+    //- RFC-1123 date-time format used in headers has no millis
+    //- if Last-Modified/If-Unmodified-Since header is set to 2017-02-28 13:40:02, it will never be inside system_time range
+    //-> this is why we wan't to set it to 2017-02-28 13:40:03 instead
+    renderHttpDate(instant.truncatedTo(java.time.temporal.ChronoUnit.SECONDS).plusSeconds(1))
+  }
+
   protected def renderHttpDate(instant: Instant): String = {
     DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant(instant, ZoneId.of("GMT")))
   }
@@ -119,7 +127,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     val valinnanTulokset = valinnantulosService.getValinnantuloksetForValintatapajono(valintatapajonoOid, auditInfo)
     Ok(
       body = valinnanTulokset.map(_._2),
-      headers = if (valinnanTulokset.nonEmpty) Map("Last-Modified" -> renderHttpDate(valinnanTulokset.map(_._1).max)) else Map()
+      headers = if (valinnanTulokset.nonEmpty) Map("Last-Modified" -> createLastModifiedHeader(valinnanTulokset.map(_._1).max)) else Map()
     )
   }
 
