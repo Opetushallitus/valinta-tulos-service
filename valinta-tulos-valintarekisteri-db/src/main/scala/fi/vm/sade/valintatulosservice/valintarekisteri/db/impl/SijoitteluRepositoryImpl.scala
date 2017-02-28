@@ -259,11 +259,6 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
     s.addBatch()
   }
 
-  private def newJavaSqlDateOrNull(date:Option[Date]) = date match {
-    case Some(x) => new java.sql.Timestamp(x.getTime)
-    case _ => null
-  }
-
   private def insertSijoitteluajo(sijoitteluajo:SijoitteluAjo) = {
     val SijoitteluajoWrapper(sijoitteluajoId, hakuOid, startMils, endMils) = SijoitteluajoWrapper(sijoitteluajo)
     sqlu"""insert into sijoitteluajot (id, haku_oid, "start", "end")
@@ -294,11 +289,6 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
            ${poissaOlevaTaytto}, ${eiVarasijatayttoa}, ${varasijat}, ${varasijaTayttoPaivat},
            ${varasijojaKaytetaanAlkaenTs}, ${varasijojaTaytetaanAstiTs}, ${tayttojono},
            ${hyvaksytty}, ${varalla}, ${alinHyvaksyttyPistemaara}, ${valintaesitysHyvaksytty})"""
-  }
-
-  private def dateToTimestamp(date:Option[Date]): Timestamp = date match {
-    case Some(d) => new java.sql.Timestamp(d.getTime)
-    case None => null
   }
 
   private def insertHakijaryhma(sijoitteluajoId:Long, hakijaryhma:Hakijaryhma) = {
