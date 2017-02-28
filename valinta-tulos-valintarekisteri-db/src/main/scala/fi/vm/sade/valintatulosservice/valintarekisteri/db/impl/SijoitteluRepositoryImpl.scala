@@ -11,12 +11,11 @@ import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatapajono, 
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.collection.JavaConverters._
 
 trait SijoitteluRepositoryImpl extends SijoitteluRepository with ValintarekisteriRepository {
 
-  import scala.collection.JavaConverters._
-
-  override def storeSijoittelu(sijoittelu: SijoitteluWrapper) = {
+  override def storeSijoittelu(sijoittelu: SijoitteluWrapper): Unit = {
     val sijoitteluajoId = sijoittelu.sijoitteluajo.getSijoitteluajoId
     val hakuOid = sijoittelu.sijoitteluajo.getHakuOid
     runBlocking(insertSijoitteluajo(sijoittelu.sijoitteluajo)
@@ -159,7 +158,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
     statement.setString(5, arvo.orNull)
     statement.setString(6, laskennallinenArvo.orNull)
     statement.setString(7, osallistuminen.orNull)
-    statement.addBatch
+    statement.addBatch()
   }
 
   private def createValinnantulosStatement = createStatement(
@@ -524,7 +523,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
                                 from  pistetiedot p
                                 inner join v on p.valintatapajono_oid = v.oid
                                 where p.sijoitteluajo_id = ${sijoitteluajoId}""".as[PistetietoRecord]).toList match {
-        case result if result.size == 0 => result
+        case result if result.isEmpty => result
         case result => result ++ readPistetiedot(offset + chunkSize)
       }
     }
