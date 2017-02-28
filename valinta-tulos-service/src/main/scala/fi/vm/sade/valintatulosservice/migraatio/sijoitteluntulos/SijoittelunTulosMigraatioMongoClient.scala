@@ -41,8 +41,8 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
         if (dryRun) {
           logger.warn(s"dryRun : NOT removing existing sijoitteluajo $sijoitteluajoId data.")
         } else {
-          logger.warn(s"Existing sijoitteluajo $sijoitteluajoId found, deleting results:")
-          //sijoitteluRepository.deleteSijoitteluAjo(sijoitteluajoId) // TODO: Implement
+          logger.warn(s"Existing sijoitteluajo $sijoitteluajoId found, deleting results of haku $hakuOid:")
+          sijoitteluRepository.deleteSijoittelunTulokset(hakuOid)
         }
       } else {
         logger.info(s"Sijoitteluajo $sijoitteluajoId does not seem to stored to Postgres db yet.")
