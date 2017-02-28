@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos
 
 import java.sql.Timestamp
 import java.util
-import java.util.Date
+import java.util.{Date, Optional}
 
 import fi.vm.sade.sijoittelu.domain._
 import fi.vm.sade.sijoittelu.tulos.dao.{HakukohdeDao, ValintatulosDao}
@@ -23,11 +23,30 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
                                            valinnantulosRepository: ValinnantulosRepository) extends Logging {
   private val hakukohdeDao: HakukohdeDao = appConfig.sijoitteluContext.hakukohdeDao
   private val valintatulosDao: ValintatulosDao = appConfig.sijoitteluContext.valintatulosDao
+  private val sijoitteluDao = appConfig.sijoitteluContext.sijoitteluDao
 
   def migrate(hakuOid: String, dryRun: Boolean): Unit = {
     sijoittelunTulosRestClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None).foreach { sijoitteluAjo =>
+      val sijoitteluOptional: Optional[Sijoittelu] = sijoitteluDao.getSijoitteluByHakuOid(hakuOid)
+      if (!sijoitteluOptional.isPresent) {
+        throw new IllegalStateException(s"sijoittelu not found for haku $hakuOid even though latest sijoitteluajo is found. This is impossible :)")
+      }
+      val sijoittelu = sijoitteluOptional.get()
+      val sijoitteluType = sijoittelu.getSijoitteluType
       val sijoitteluajoId = sijoitteluAjo.getSijoitteluajoId
-      logger.info(s"Latest sijoitteluajoId from haku $hakuOid is $sijoitteluajoId")
+      logger.info(s"Latest sijoitteluajoId from haku $hakuOid is $sijoitteluajoId , sijoitteluType is $sijoitteluType")
+
+      val existingSijoitteluajo = sijoitteluRepository.getSijoitteluajo(sijoitteluajoId)
+      if (existingSijoitteluajo.isDefined) {
+        if (dryRun) {
+          logger.warn(s"dryRun : NOT removing existing sijoitteluajo $sijoitteluajoId data.")
+        } else {
+          logger.warn(s"Existing sijoitteluajo $sijoitteluajoId found, deleting results:")
+          //sijoitteluRepository.deleteSijoitteluAjo(sijoitteluajoId) // TODO: Implement
+        }
+      } else {
+        logger.info(s"Sijoitteluajo $sijoitteluajoId does not seem to stored to Postgres db yet.")
+      }
 
       val hakukohteet: util.List[Hakukohde] = timed(s"Loading hakukohteet for sijoitteluajo $sijoitteluajoId of haku $hakuOid") { hakukohdeDao.getHakukohdeForSijoitteluajo(sijoitteluajoId) }
       logger.info(s"Loaded ${hakukohteet.size()} hakukohde objects for sijoitteluajo $sijoitteluajoId of haku $hakuOid")
@@ -38,9 +57,11 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
       if (dryRun) {
         logger.warn("dryRun : NOT updating the database")
       } else {
+        logger.info(s"Starting to store sijoitteluajo $sijoitteluajoId of haku $hakuOid...")
         timed(s"Stored sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
           sijoitteluRepository.storeSijoittelu(SijoitteluWrapper(sijoitteluAjo, hakukohteet, valintatulokset))
         }
+        logger.info(s"Starting to save valinta data sijoitteluajo $sijoitteluajoId of haku $hakuOid...")
         timed(s"Saving valinta data for sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
           valinnantulosRepository.runBlocking(DBIOAction.sequence(allSaves))
         }
@@ -80,17 +101,21 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
           None, new Timestamp(tilaHistoriaEntry.getLuotu.getTime))
       }
 
-      val ohjausSaves = logEntriesOldestFirst.map { logEntry =>
-        valinnantulosRepository.storeValinnantuloksenOhjaus(ValinnantuloksenOhjaus(hakemusOid, valintatapajonoOid, hakukohdeOid,
-          v.getEhdollisestiHyvaksyttavissa, v.getJulkaistavissa, v.getHyvaksyttyVarasijalta, v.getHyvaksyPeruuntunut,
-          logEntry.getMuokkaaja, logEntry.getSelite))
-      }
+      if (valinnanTilaSaves.isEmpty) {
+        Nil
+      } else {
+        val ohjausSaves = logEntriesOldestFirst.map { logEntry =>
+          valinnantulosRepository.storeValinnantuloksenOhjaus(ValinnantuloksenOhjaus(hakemusOid, valintatapajonoOid, hakukohdeOid,
+            v.getEhdollisestiHyvaksyttavissa, v.getJulkaistavissa, v.getHyvaksyttyVarasijalta, v.getHyvaksyPeruuntunut,
+            logEntry.getMuokkaaja, logEntry.getSelite))
+        }
 
-      val ilmoittautuminenSave = logEntriesOldestFirst.reverse.find(_.getMuutos.contains("ilmoittautuminen")).map { latestIlmoittautuminenLogEntry =>
-        valinnantulosRepository.storeIlmoittautuminen(henkiloOid, Ilmoittautuminen(hakukohdeOid, SijoitteluajonIlmoittautumistila(v.getIlmoittautumisTila),
-          latestIlmoittautuminenLogEntry.getMuokkaaja, latestIlmoittautuminenLogEntry.getSelite))
+        val ilmoittautuminenSave = logEntriesOldestFirst.reverse.find(_.getMuutos.contains("ilmoittautuminen")).map { latestIlmoittautuminenLogEntry =>
+          valinnantulosRepository.storeIlmoittautuminen(henkiloOid, Ilmoittautuminen(hakukohdeOid, SijoitteluajonIlmoittautumistila(v.getIlmoittautumisTila),
+            latestIlmoittautuminenLogEntry.getMuokkaaja, latestIlmoittautuminenLogEntry.getSelite))
+        }
+        valinnanTilaSaves ++ ohjausSaves ++ ilmoittautuminenSave.toSeq
       }
-      valinnanTilaSaves ++ ohjausSaves ++ ilmoittautuminenSave.toSeq
     }
   }
 
