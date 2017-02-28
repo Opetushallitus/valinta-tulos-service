@@ -14,9 +14,6 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepositor
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 
-import scala.util.{Failure, Success, Try}
-
-
 class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
                            val authorizer:OrganizationHierarchyAuthorizer,
                            val hakuService: HakuService,
