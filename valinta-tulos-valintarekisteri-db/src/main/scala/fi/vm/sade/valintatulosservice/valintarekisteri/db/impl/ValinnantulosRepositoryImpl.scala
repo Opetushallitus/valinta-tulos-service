@@ -15,10 +15,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with ValintarekisteriRepository {
 
-  override def getValinnantuloksetForValintatapajono(valintatapajonoOid: String, duration:Duration = Duration(1, TimeUnit.SECONDS)): List[(Instant, Valinnantulos)] = {
+  override def getValinnantuloksetForValintatapajono(valintatapajonoOid: String, duration:Duration = Duration(1, TimeUnit.SECONDS), forUpdate:Boolean = false): List[(Instant, Valinnantulos)] = {
     runBlocking( sql"""select lower(tu.system_time),
               lower(ti.system_time),
-              v.timestamp,
+              case ${forUpdate}
+                when false then coalesce(dv.timestamp, v.timestamp)
+                else null end as timestamp,
               lower(i.system_time),
               ti.hakukohde_oid,
               ti.valintatapajono_oid,
@@ -29,13 +31,14 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               tu.julkaistavissa,
               tu.hyvaksytty_varasijalta,
               tu.hyvaksy_peruuntunut,
-              v.action,
+              case when v.deleted is null then v.action else null end as action,
               i.tila
           from valinnantilat as ti
           left join valinnantulokset as tu on tu.hakemus_oid = ti.hakemus_oid
               and tu.valintatapajono_oid = ti.valintatapajono_oid
           left join vastaanotot as v on v.hakukohde = tu.hakukohde_oid
               and v.henkilo = ti.henkilo_oid
+          left join deleted_vastaanotot as dv on v.deleted = dv.id
           left join ilmoittautumiset as i on i.hakukohde = tu.hakukohde_oid
               and i.henkilo = ti.henkilo_oid
           where ti.valintatapajono_oid = ${valintatapajonoOid}

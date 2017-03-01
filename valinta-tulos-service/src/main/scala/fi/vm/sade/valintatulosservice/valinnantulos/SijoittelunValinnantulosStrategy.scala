@@ -44,9 +44,16 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
           julkaistavissa <- validateJulkaistavissa().right
           hyvaksyttyVarasijalta <- validateHyvaksyttyVarasijalta().right
           hyvaksyPeruuntunut <- validateHyvaksyPeruuntunut().right
+          vastaanottoNotChanged <- validateVastaanottoNotChanged().right
           //TODO vastaanotto <- validateVastaanotto(vanha, uusi, session, tarjoajaOid).right
           ilmoittautumistila <- validateIlmoittautumistila().right
         } yield ilmoittautumistila
+      }
+
+      def validateVastaanottoNotChanged() = vanha.vastaanottotila match {
+        case uusi.vastaanottotila => Right()
+        case _ => Left(ValinnantulosUpdateStatus(404,
+          s"Valinnantulosta ei voida päivittää, koska vastaanottoa ${uusi.vastaanottotila} on muutettu samanaikaisesti tilaan ${vanha.vastaanottotila}", uusi.valintatapajonoOid, uusi.hakemusOid))
       }
 
       def validateValinnantila() = uusi.valinnantila match {

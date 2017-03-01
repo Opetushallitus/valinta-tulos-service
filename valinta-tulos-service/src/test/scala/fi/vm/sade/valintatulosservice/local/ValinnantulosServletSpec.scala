@@ -15,6 +15,7 @@ import org.json4s.native.JsonMethods._
 import org.json4s.jackson.Serialization._
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.model.{HttpRequest, HttpResponse}
+import org.specs2.matcher.MatchResult
 
 @RunWith(classOf[JUnitRunner])
 class ValinnantulosServletSpec extends ServletSpecification with ValintarekisteriDbTools {
@@ -176,72 +177,157 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
       }
     }
     "palauttaa 200 ja virhestatuksen, jos valinnantulos on ristiriitainen" in {
-      patchJSON("auth/valinnan-tulos/1234567?erillishaku=true", write(List(erillishaunValinnantulos.copy(valinnantila = Hylatty))),
-        Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> "Tue, 3 Jun 2008 11:05:30 GMT")) {
-        status must_== 200
+      patchErillishakuJson(List(erillishaunValinnantulos.copy(valinnantila = Hylatty)), 200, (result:List[ValinnantulosUpdateStatus]) => {
         val result = parse(body).extract[List[ValinnantulosUpdateStatus]]
         result.size mustEqual 1
         result.head.status mustEqual 409
-      }
+      })
     }
     "palauttaa 200 ja päivittää valinnan tilaa, ohjaustietoja ja ilmoittautumista" in {
-      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono("1234567") mustEqual List()
-
-      patchJSON("auth/valinnan-tulos/1234567?erillishaku=true", write(List(erillishaunValinnantulos)),
-        Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> "Tue, 3 Jun 2008 11:05:30 GMT")) {
-        status must_== 200
-        val result = parse(body).extract[List[ValinnantulosUpdateStatus]]
-        result.size mustEqual 0
-      }
+      val v = erillishaunValinnantulos
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(v.valintatapajonoOid) mustEqual List()
+      patchErillishakuJson(List(v))
       hae(erillishaunValinnantulos.copy(vastaanottotila = Poista), 1)
     }
     "palauttaa 200 ja poistaa valinnan tilan, ohjaustiedon sekä ilmoittautumisen" in {
-      val poistettavaValinnantulos = erillishaunValinnantulos.copy(valintatapajonoOid = "12345678", hakukohdeOid = "555")
+      val v = erillishaunValinnantulos.copy(valintatapajonoOid = "poistettavaValinnantulosJono", hakukohdeOid = "poistettavaValinnantulosHakukohde")
 
-      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(poistettavaValinnantulos.valintatapajonoOid) mustEqual List()
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(v.valintatapajonoOid) mustEqual List()
 
-      patchJSON("auth/valinnan-tulos/12345678?erillishaku=true", write(List(poistettavaValinnantulos)),
-        Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> "Tue, 3 Jun 2008 11:05:30 GMT")) {
-        status must_== 200
-        val result = parse(body).extract[List[ValinnantulosUpdateStatus]]
-        result.size mustEqual 0
-      }
+      singleConnectionValintarekisteriDb.storeHakukohde(HakukohdeRecord(v.hakukohdeOid, "hakuOid", false, false, Kevat(2017)))
+      singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto("hakuOid", v.valintatapajonoOid, v.henkiloOid, v.hakemusOid, v.hakukohdeOid, VastaanotaSitovasti, "ilmoittaja", "selite"))
 
-      hae(poistettavaValinnantulos.copy(vastaanottotila = Poista), 1)
+      patchErillishakuJson(List(v))
 
-      patchJSON("auth/valinnan-tulos/12345678?erillishaku=true", write(List(poistettavaValinnantulos.copy(poistettava = Some(true)))),
-        Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> now)) {
-        status must_== 200
-        val result = parse(body).extract[List[ValinnantulosUpdateStatus]]
-        result.size mustEqual 0
-      }
+      hae(v, 1)
 
-      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(poistettavaValinnantulos.valintatapajonoOid) mustEqual List()
+      patchErillishakuJson(List(v.copy(poistettava = Some(true))), ifUnmodifiedSince = now)
+
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(v.valintatapajonoOid) mustEqual List()
     }
   }
 
-  "Last-Modified päivämäärä pitäisi olla validi If-Unmodified-Since (" in {
-    val fooValinnantulos = erillishaunValinnantulos.copy(valintatapajonoOid = "1234577", hakukohdeOid = "999")
-    singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono("1234577") mustEqual List()
+  "Last-Modified" should {
+    "olla validi If-Unmodified-Since" in {
+      val v = erillishaunValinnantulos.copy(valintatapajonoOid = "lastModifiedJono", hakukohdeOid = "lastModifiedHakukohde", vastaanottotila = Poista, ilmoittautumistila = EiTehty)
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono("lastModifiedJono") mustEqual List()
 
-    patchJSON("auth/valinnan-tulos/1234577?erillishaku=true", write(List(fooValinnantulos.copy(ilmoittautumistila = Poissa))),
-      Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> "Tue, 3 Jun 2008 11:05:30 GMT")) {
-      status must_== 200
-      val result = parse(body).extract[List[ValinnantulosUpdateStatus]]
-      result.size mustEqual 0
+      patchErillishakuJson(List(v.copy(julkaistavissa = None)))
+
+      patchErillishakuJson(List(v), ifUnmodifiedSince = getLastModified(v.valintatapajonoOid))
     }
-    get(s"auth/valinnan-tulos/1234577", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
+    "lukea poistetun vastaanoton päivämäärä" in {
+      val v = erillishaunValinnantulos.copy(valintatapajonoOid = "deletedVastaanottoJono", hakukohdeOid = "deletedVastaanottoHakukohde")
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono("deletedVastaanottoJono") mustEqual List()
+
+      patchErillishakuJson(List(v.copy(vastaanottotila = Poista, ilmoittautumistila = EiTehty)))
+
+      val lastModified1 = getLastModified(v.valintatapajonoOid)
+
+      Thread.sleep(1000)
+
+      singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto("hakuOid", v.valintatapajonoOid, v.henkiloOid, v.hakemusOid, v.hakukohdeOid, VastaanotaSitovasti, "ilmoittaja", "selite"))
+
+      lastModified1 mustNotEqual getLastModified(v.valintatapajonoOid)
+
+      Thread.sleep(1000)
+
+      patchErillishakuJson(List(v.copy(vastaanottotila = VastaanotaSitovasti, ilmoittautumistila = Lasna)), ifUnmodifiedSince = lastModified1)
+
+      val lastModified2 = getLastModified(v.valintatapajonoOid)
+
+      lastModified2 mustNotEqual lastModified1
+
+      Thread.sleep(1000)
+
+      lastModified2 mustEqual getLastModified(v.valintatapajonoOid)
+
+      singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto("hakuOid", v.valintatapajonoOid, v.henkiloOid, v.hakemusOid, v.hakukohdeOid, Poista, "ilmoittaja", "selite"))
+
+      lastModified2 mustNotEqual getLastModified(v.valintatapajonoOid)
+    }
+  }
+
+  def getLastModified(valintatapajono:String):String = {
+    get(s"auth/valinnan-tulos/$valintatapajono", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
       status must_== 200
       body.isEmpty mustEqual false
       val result = parse(body).extract[List[Valinnantulos]]
-      val foo = header("Last-Modified")
+      header("Last-Modified")
+    }
+  }
 
-      patchJSON("auth/valinnan-tulos/1234577?erillishaku=true", write(List(fooValinnantulos)),
-        Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> foo)) {
-        status must_== 200
-        val result = parse(body).extract[List[ValinnantulosUpdateStatus]]
-        result.size mustEqual 0
-      }
+  "Vastaanoton päivittäminen ennen PATCH-kutsua" should {
+    "palauttaa 200, jos vastaanoton tila on sama" in {
+      val v = erillishaunValinnantulos.copy(valintatapajonoOid = "vastaanotonTallennusJono", hakukohdeOid = "vastaanotonTallennusJono")
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono("vastaanotonTallennusJono") mustEqual List()
+
+      patchErillishakuJson(List(v.copy(vastaanottotila = Poista, ilmoittautumistila = EiTehty)))
+
+      var lastModified = getLastModified(v.valintatapajonoOid)
+
+      Thread.sleep(1000)
+
+      singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto("hakuOid", v.valintatapajonoOid, v.henkiloOid, v.hakemusOid, v.hakukohdeOid, VastaanotaSitovasti, "ilmoittaja", "selite"))
+
+      patchErillishakuJson(List(v.copy(vastaanottotila = VastaanotaSitovasti, ilmoittautumistila = Lasna)), ifUnmodifiedSince = lastModified)
+    }
+    "palauttaa 200, jos vastaanotto on poistettu ja vastaanoton tila on sama" in {
+      val v = erillishaunValinnantulos.copy(valintatapajonoOid = "vastaanotonTallennusJono2", hakukohdeOid = "vastaanotonTallennusJono2")
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono("vastaanotonTallennusJono2") mustEqual List()
+
+      patchErillishakuJson(List(v.copy(vastaanottotila = Poista, ilmoittautumistila = EiTehty)))
+
+      var lastModified = getLastModified(v.valintatapajonoOid)
+
+      Thread.sleep(1000)
+
+      singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto("hakuOid", v.valintatapajonoOid, v.henkiloOid, v.hakemusOid, v.hakukohdeOid, VastaanotaSitovasti, "ilmoittaja", "selite"))
+
+      patchErillishakuJson(List(v.copy(vastaanottotila = VastaanotaSitovasti, ilmoittautumistila = Lasna)), ifUnmodifiedSince = lastModified)
+
+      lastModified = getLastModified(v.valintatapajonoOid)
+
+      Thread.sleep(1000)
+
+      singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto("hakuOid", v.valintatapajonoOid, v.henkiloOid, v.hakemusOid, v.hakukohdeOid, Poista, "ilmoittaja", "selite"))
+
+      patchErillishakuJson(List(v.copy(vastaanottotila = Poista, ilmoittautumistila = EiTehty)), ifUnmodifiedSince = lastModified)
+    }
+    "palauttaa 200 ja virhekoodin, jos vastaanoton tila ei ole sama" in {
+      val v = erillishaunValinnantulos.copy(valintatapajonoOid = "vastaanotonTallennusVirheJono", hakukohdeOid = "vastaanotonTallennusVirheJono")
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono("vastaanotonTallennusVirheJono") mustEqual List()
+
+      patchErillishakuJson(List(v.copy(vastaanottotila = Poista, ilmoittautumistila = EiTehty)))
+
+      var lastModified = getLastModified(v.valintatapajonoOid)
+
+      Thread.sleep(1000)
+
+      singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto("hakuOid", v.valintatapajonoOid, v.henkiloOid, v.hakemusOid, v.hakukohdeOid, Peruuta, "ilmoittaja", "selite"))
+
+      patchErillishakuJson(List(v.copy(vastaanottotila = VastaanotaSitovasti, ilmoittautumistila = Lasna)), 200, (result:List[ValinnantulosUpdateStatus]) => {
+        result.size mustEqual 1
+        result.head.status mustEqual 409
+        result.head.message mustEqual "Valinnantulosta ei voida päivittää, koska vastaanottoa VastaanotaSitovasti on muutettu samanaikaisesti tilaan Peruuta"
+      }, ifUnmodifiedSince = lastModified)
+    }
+  }
+
+
+
+  def okResult(result:List[ValinnantulosUpdateStatus]) = result.size mustEqual 0
+
+  def patchErillishakuJson(tulokset:List[Valinnantulos], expectedStatus:Int = 200,
+                           validate:(List[ValinnantulosUpdateStatus]) => (MatchResult[Any]) = okResult,
+                           ifUnmodifiedSince:String = "Tue, 3 Jun 2008 11:05:30 GMT" ) = {
+    patchJSON(s"auth/valinnan-tulos/${tulokset.head.valintatapajonoOid}?erillishaku=true", write(tulokset),
+      Map("Cookie" -> s"session=${testSession}", "If-Unmodified-Since" -> ifUnmodifiedSince)) {
+      status must_== expectedStatus
+      val result = parse(body).extract[List[ValinnantulosUpdateStatus]]
+      println(ifUnmodifiedSince)
+      println(result)
+      validate(result)
     }
   }
 
