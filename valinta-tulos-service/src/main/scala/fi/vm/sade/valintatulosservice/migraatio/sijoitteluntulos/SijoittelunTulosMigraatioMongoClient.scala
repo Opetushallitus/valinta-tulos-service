@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos
 
 import java.sql.Timestamp
 import java.util
+import java.util.concurrent.TimeUnit.MINUTES
 import java.util.{Date, Optional}
 
 import fi.vm.sade.sijoittelu.domain._
@@ -17,8 +18,9 @@ import slick.dbio._
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Seq
 import scala.compat.Platform.ConcurrentModificationException
-import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
+import scala.util.{Failure, Success}
 
 class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: SijoittelunTulosRestClient,
                                            appConfig: VtsAppConfig,
@@ -66,7 +68,7 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
         }
         logger.info(s"Starting to save valinta data sijoitteluajo $sijoitteluajoId of haku $hakuOid...")
         timed(s"Saving valinta data for sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
-          valinnantulosRepository.runBlocking(DBIOAction.sequence(allSaves))
+          valinnantulosRepository.runBlocking(DBIOAction.sequence(allSaves), Duration(15, MINUTES))
         }
       }
     }
@@ -101,7 +103,7 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
         hs.headOption
       }
       val hakemuksenTuloksenTilahistoriaOldestFirst: Iterable[TilaHistoria] = hakemus.map(_.getTilaHistoria.asScala.toList.sortBy(_.getLuotu)).toSeq.flatten
-      val logEntriesOldestFirst = v.getLogEntries.asScala.toList.sortBy(_.getLuotu)
+      val logEntriesLatestFirst = v.getLogEntries.asScala.toList.sortBy(_.getLuotu)
 
       val henkiloOid = v.getHakijaOid
 
@@ -115,17 +117,17 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
       if (valinnanTilaSaves.isEmpty) {
         Nil
       } else {
-        val ohjausSaves = logEntriesOldestFirst.map { logEntry =>
+        val ohjausSaves = logEntriesLatestFirst.headOption.map { logEntry =>
           valinnantulosRepository.storeValinnantuloksenOhjaus(ValinnantuloksenOhjaus(hakemusOid, valintatapajonoOid, hakukohdeOid,
             v.getEhdollisestiHyvaksyttavissa, v.getJulkaistavissa, v.getHyvaksyttyVarasijalta, v.getHyvaksyPeruuntunut,
             logEntry.getMuokkaaja, logEntry.getSelite))
-        }
+        }.map(ignoreErrorsFromDataAlreadySavedBySijoittelunTulos)
 
-        val ilmoittautuminenSave = logEntriesOldestFirst.reverse.find(_.getMuutos.contains("ilmoittautuminen")).map { latestIlmoittautuminenLogEntry =>
+        val ilmoittautuminenSave = logEntriesLatestFirst.reverse.find(_.getMuutos.contains("ilmoittautuminen")).map { latestIlmoittautuminenLogEntry =>
           valinnantulosRepository.storeIlmoittautuminen(henkiloOid, Ilmoittautuminen(hakukohdeOid, SijoitteluajonIlmoittautumistila(v.getIlmoittautumisTila),
             latestIlmoittautuminenLogEntry.getMuokkaaja, latestIlmoittautuminenLogEntry.getSelite))
         }
-        valinnanTilaSaves ++ ohjausSaves ++ ilmoittautuminenSave.toSeq
+        valinnanTilaSaves ++ ohjausSaves.toSeq ++ ilmoittautuminenSave.toSeq
       }
     }
   }
