@@ -329,7 +329,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
 
     valinnantulosRepository.runBlockingTransactionally(any[DBIO[Unit]], any[Duration]) returns Right[Throwable, Unit](())
     valinnantulosRepository.getHakuForHakukohde(anyString) returns korkeakouluHakuOid
-    valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid) returns result
+    valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid, forUpdate = true) returns result
   }
 
   trait NotAuthorizedValinnantulosServiceWithMocks extends ValinnantulosServiceWithMocks {
