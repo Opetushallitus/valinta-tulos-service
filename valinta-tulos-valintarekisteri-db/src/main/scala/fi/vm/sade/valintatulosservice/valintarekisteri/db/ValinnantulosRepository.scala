@@ -19,7 +19,7 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
 
   def updateValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
 
-  def getValinnantuloksetForValintatapajono(valintatapajonoOid:String, duration:Duration = Duration(1, TimeUnit.SECONDS)): List[(Instant, Valinnantulos)]
+  def getValinnantuloksetForValintatapajono(valintatapajonoOid:String, duration:Duration = Duration(1, TimeUnit.SECONDS), forUpdate:Boolean = false): List[(Instant, Valinnantulos)]
 
   def getHakuForHakukohde(hakukohdeOid:String): String
 
