@@ -14,6 +14,8 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepositor
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 
+
+
 class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
                            val authorizer:OrganizationHierarchyAuthorizer,
                            val hakuService: HakuService,
@@ -43,7 +45,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
       haku <- hakuService.getHaku(hakukohde.hakuOid).right
       ohjausparametrit <- ohjausparametritService.ohjausparametrit(hakukohde.hakuOid).right
     } yield {
-      val vanhatValinnantulokset = valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid).map(v => v._2.hakemusOid -> v).toMap
+      val vanhatValinnantulokset = valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid, forUpdate = true).map(v => v._2.hakemusOid -> v).toMap
       val strategy = if (erillishaku) {
         new ErillishaunValinnantulosStrategy(
           auditInfo,
