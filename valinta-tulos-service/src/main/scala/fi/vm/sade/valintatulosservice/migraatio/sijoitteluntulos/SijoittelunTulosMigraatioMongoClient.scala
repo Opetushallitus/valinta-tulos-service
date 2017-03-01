@@ -12,10 +12,13 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import slick.dbio.{DBIO, DBIOAction}
+import slick.dbio._
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Seq
+import scala.compat.Platform.ConcurrentModificationException
+import scala.util.{Failure, Success}
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: SijoittelunTulosRestClient,
                                            appConfig: VtsAppConfig,
@@ -70,6 +73,14 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
   }
 
   private def createSaveActions(hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]): Seq[DBIO[Unit]] = {
+    def ignoreErrorsFromDataAlreadySavedBySijoittelunTulos(save: DBIO[Unit]): DBIO[Unit] = {
+      save.asTry.flatMap {
+        case Failure(cme: ConcurrentModificationException) => DBIO.successful()
+        case Failure(e) => DBIO.failed(e)
+        case Success(x) => DBIO.successful(x)
+      }
+    }
+
     val hakemuksetOideittain: Map[(String, String), List[(Hakemus, String)]]  = groupHakemusResultsByHakemusOidAndJonoOid(hakukohteet)
 
     valintatulokset.asScala.toList.flatMap { v =>
@@ -99,7 +110,7 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
         val muokkaaja = "Sijoittelun tulokset -migraatio"
         valinnantulosRepository.storeValinnantilaOverridingTimestamp(ValinnantilanTallennus(hakemusOid, valintatapajonoOid, hakukohdeOid, henkiloOid, valinnantila, muokkaaja),
           None, new Timestamp(tilaHistoriaEntry.getLuotu.getTime))
-      }
+      }.map(ignoreErrorsFromDataAlreadySavedBySijoittelunTulos)
 
       if (valinnanTilaSaves.isEmpty) {
         Nil
