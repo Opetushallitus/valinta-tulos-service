@@ -39,7 +39,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   }
 
   override def getLastModifiedForValintatapajono(valintatapajonoOid:String):DBIO[Option[Instant]] = {
-    sql"""select greatest(max(lower(ti.system_time)), max(lower(ti.system_time)), max(lower(il.system_time)),
+    sql"""select greatest(max(lower(ti.system_time)), max(lower(tu.system_time)), max(lower(il.system_time)),
                           max(upper(ih.system_time)), max(va.timestamp), max(vh.timestamp))
           from valinnantilat ti
           left join valinnantulokset tu on ti.valintatapajono_oid = tu.valintatapajono_oid
@@ -51,7 +51,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   }
 
   override def getLastModifiedForValintatapajononHakemukset(valintatapajonoOid:String):DBIO[Vector[(String, Instant)]] = {
-    sql"""select ti.hakemus_oid, greatest(max(lower(ti.system_time)), max(lower(ti.system_time)), max(lower(il.system_time)), max(upper(ih.system_time)))
+    sql"""select ti.hakemus_oid, greatest(max(lower(ti.system_time)), max(lower(tu.system_time)), max(lower(il.system_time)), max(upper(ih.system_time)))
           from valinnantilat ti
           left join valinnantulokset tu on ti.valintatapajono_oid = tu.valintatapajono_oid
           left join ilmoittautumiset il on ti.henkilo_oid = il.henkilo and ti.hakukohde_oid = il.hakukohde
