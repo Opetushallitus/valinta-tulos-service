@@ -126,8 +126,8 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     val valintatapajonoOid = parseValintatapajonoOid
     val valinnanTulokset = valinnantulosService.getValinnantuloksetForValintatapajono(valintatapajonoOid, auditInfo)
     Ok(
-      body = valinnanTulokset.map(_._2),
-      headers = if (valinnanTulokset.nonEmpty) Map("Last-Modified" -> createLastModifiedHeader(valinnanTulokset.map(_._1).max)) else Map()
+      body = valinnanTulokset._2,
+      headers = if (valinnanTulokset._1.nonEmpty) Map("Last-Modified" -> createLastModifiedHeader(valinnanTulokset._1.get)) else Map()
     )
   }
 

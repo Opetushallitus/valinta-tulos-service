@@ -88,7 +88,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
         body mustEqual "{\"error\":\"Unauthorized\"}"
       }
     }
-    "ei valauta valinnantuloksia, jos valintatapajono on tuntematon" in {
+    "ei palauta valinnantuloksia, jos valintatapajono on tuntematon" in {
       get("auth/valinnan-tulos/14538080612623056182813241345175", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
         status must_== 200
         body mustEqual "[]"
@@ -185,14 +185,14 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     }
     "palauttaa 200 ja päivittää valinnan tilaa, ohjaustietoja ja ilmoittautumista" in {
       val v = erillishaunValinnantulos
-      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(v.valintatapajonoOid) mustEqual List()
+      getValinnantuloksetForValintatapajono(v.valintatapajonoOid) mustEqual List()
       patchErillishakuJson(List(v))
       hae(erillishaunValinnantulos.copy(vastaanottotila = Poista), 1)
     }
     "palauttaa 200 ja poistaa valinnan tilan, ohjaustiedon sekä ilmoittautumisen" in {
       val v = erillishaunValinnantulos.copy(valintatapajonoOid = "poistettavaValinnantulosJono", hakukohdeOid = "poistettavaValinnantulosHakukohde")
 
-      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(v.valintatapajonoOid) mustEqual List()
+      getValinnantuloksetForValintatapajono(v.valintatapajonoOid) mustEqual List()
 
       singleConnectionValintarekisteriDb.storeHakukohde(HakukohdeRecord(v.hakukohdeOid, "hakuOid", false, false, Kevat(2017)))
       singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto("hakuOid", v.valintatapajonoOid, v.henkiloOid, v.hakemusOid, v.hakukohdeOid, VastaanotaSitovasti, "ilmoittaja", "selite"))
@@ -203,14 +203,14 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
 
       patchErillishakuJson(List(v.copy(poistettava = Some(true))), ifUnmodifiedSince = now)
 
-      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(v.valintatapajonoOid) mustEqual List()
+      getValinnantuloksetForValintatapajono(v.valintatapajonoOid) mustEqual List()
     }
   }
 
   "Last-Modified" should {
     "olla validi If-Unmodified-Since" in {
       val v = erillishaunValinnantulos.copy(valintatapajonoOid = "lastModifiedJono", hakukohdeOid = "lastModifiedHakukohde", vastaanottotila = Poista, ilmoittautumistila = EiTehty)
-      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono("lastModifiedJono") mustEqual List()
+      getValinnantuloksetForValintatapajono("lastModifiedJono") mustEqual List()
 
       patchErillishakuJson(List(v.copy(julkaistavissa = None)))
 
@@ -218,7 +218,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     }
     "lukea poistetun vastaanoton päivämäärä" in {
       val v = erillishaunValinnantulos.copy(valintatapajonoOid = "deletedVastaanottoJono", hakukohdeOid = "deletedVastaanottoHakukohde")
-      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono("deletedVastaanottoJono") mustEqual List()
+      getValinnantuloksetForValintatapajono("deletedVastaanottoJono") mustEqual List()
 
       patchErillishakuJson(List(v.copy(vastaanottotila = Poista, ilmoittautumistila = EiTehty)))
 
@@ -248,6 +248,10 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     }
   }
 
+  def getValinnantuloksetForValintatapajono(valintatapajonoOid:String) = singleConnectionValintarekisteriDb.runBlocking(
+    singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono("valintatapajonoOid")
+  )
+
   def getLastModified(valintatapajono:String):String = {
     get(s"auth/valinnan-tulos/$valintatapajono", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
       status must_== 200
@@ -260,7 +264,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
   "Vastaanoton päivittäminen ennen PATCH-kutsua" should {
     "palauttaa 200, jos vastaanoton tila on sama" in {
       val v = erillishaunValinnantulos.copy(valintatapajonoOid = "vastaanotonTallennusJono", hakukohdeOid = "vastaanotonTallennusJono")
-      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono("vastaanotonTallennusJono") mustEqual List()
+      getValinnantuloksetForValintatapajono("vastaanotonTallennusJono") mustEqual List()
 
       patchErillishakuJson(List(v.copy(vastaanottotila = Poista, ilmoittautumistila = EiTehty)))
 
@@ -274,7 +278,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     }
     "palauttaa 200, jos vastaanotto on poistettu ja vastaanoton tila on sama" in {
       val v = erillishaunValinnantulos.copy(valintatapajonoOid = "vastaanotonTallennusJono2", hakukohdeOid = "vastaanotonTallennusJono2")
-      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono("vastaanotonTallennusJono2") mustEqual List()
+      getValinnantuloksetForValintatapajono("vastaanotonTallennusJono2") mustEqual List()
 
       patchErillishakuJson(List(v.copy(vastaanottotila = Poista, ilmoittautumistila = EiTehty)))
 
@@ -296,7 +300,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     }
     "palauttaa 200 ja virhekoodin, jos vastaanoton tila ei ole sama" in {
       val v = erillishaunValinnantulos.copy(valintatapajonoOid = "vastaanotonTallennusVirheJono", hakukohdeOid = "vastaanotonTallennusVirheJono")
-      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono("vastaanotonTallennusVirheJono") mustEqual List()
+      getValinnantuloksetForValintatapajono("vastaanotonTallennusVirheJono") mustEqual List()
 
       patchErillishakuJson(List(v.copy(vastaanottotila = Poista, ilmoittautumistila = EiTehty)))
 
