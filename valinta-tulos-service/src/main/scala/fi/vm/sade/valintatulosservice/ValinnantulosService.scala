@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
+import java.io.Serializable
 import java.time.Instant
 
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
@@ -13,6 +14,7 @@ import fi.vm.sade.valintatulosservice.valinnantulos._
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
+import slick.dbio.DBIO
 
 
 
@@ -24,8 +26,8 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
                            val appConfig: VtsAppConfig,
                            val audit: Audit) extends Logging {
 
-  def getValinnantuloksetForValintatapajono(valintatapajonoOid: String, auditInfo: AuditInfo): List[(Instant, Valinnantulos)] = {
-    val r = valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+  def getValinnantuloksetForValintatapajono(valintatapajonoOid: String, auditInfo: AuditInfo): (Option[Instant], List[Valinnantulos]) = {
+    val r = valinnantulosRepository.getValinnantuloksetAndLastModifiedDateForValintatapajono(valintatapajonoOid)
     audit.log(auditInfo.user, ValinnantuloksenLuku,
       new Target.Builder().setField("valintatapajono", valintatapajonoOid).build(),
       new Changes.Builder().build()
@@ -45,7 +47,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
       haku <- hakuService.getHaku(hakukohde.hakuOid).right
       ohjausparametrit <- ohjausparametritService.ohjausparametrit(hakukohde.hakuOid).right
     } yield {
-      val vanhatValinnantulokset = valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid, forUpdate = true).map(v => v._2.hakemusOid -> v).toMap
+      val vanhatValinnantulokset = valinnantulosRepository.getValinnantuloksetAndLastModifiedDatesForValintatapajono(valintatapajonoOid)
       val strategy = if (erillishaku) {
         new ErillishaunValinnantulosStrategy(
           auditInfo,
