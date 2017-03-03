@@ -62,12 +62,16 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
     }
     "update valinnantuloksen ohjaustiedot" in {
       storeValinnantilaAndValinnantulos
-      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid).head._2.ehdollisestiHyvaksyttavissa mustEqual Some(false)
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+      ).head.ehdollisestiHyvaksyttavissa mustEqual Some(false)
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.updateValinnantuloksenOhjaus(ValinnantuloksenOhjaus(hakemusOid,
           valintatapajonoOid, hakukohdeOid, true, false, false, false, "virkailija", "Virkailijan tallennus"))
       )
-      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid).head._2.ehdollisestiHyvaksyttavissa mustEqual Some(true)
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+      ).head.ehdollisestiHyvaksyttavissa mustEqual Some(true)
     }
     "not update valinnantuloksen ohjaustiedot if modified" in {
       val notModifiedSince = ZonedDateTime.now.minusDays(1).toInstant
@@ -79,7 +83,9 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       ) must throwA[ConcurrentModificationException]
     }
     "store valinnantila" in {
-      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid) mustEqual List()
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+      ) mustEqual List()
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.storeValinnantila(valinnantilanTallennus)
       )
@@ -106,9 +112,11 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.storeValinnantila(valinnantilanTallennus)
       )
-      val result = singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+      val result = singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+      )
       result.size mustEqual 1
-      (result.head._2.julkaistavissa, result.head._2.ehdollisestiHyvaksyttavissa, result.head._2.hyvaksyPeruuntunut, result.head._2.hyvaksyttyVarasijalta) mustEqual (None, None, None, None)
+      (result.head.julkaistavissa, result.head.ehdollisestiHyvaksyttavissa, result.head.hyvaksyPeruuntunut, result.head.hyvaksyttyVarasijalta) mustEqual (None, None, None, None)
 
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.storeValinnantuloksenOhjaus(valinnantuloksenOhjaus.copy(julkaistavissa = true))
@@ -133,29 +141,41 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       assertValinnantuloksenOhjaus(valinnantuloksenOhjaus)
     }
     "not store valinnantuloksen ohjaustiedot if valinnantila doesn't exist" in {
-      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid) mustEqual List()
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+      ) mustEqual List()
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.storeValinnantuloksenOhjaus(valinnantuloksenOhjaus.copy(julkaistavissa = true))
       ) must throwA[PSQLException]
-      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid) mustEqual List()
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+      ) mustEqual List()
     }
     "delete valinnantulos" in {
       storeValinnantilaAndValinnantulos
-      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid).size mustEqual 1
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+      ).size mustEqual 1
       singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.deleteValinnantulos(muokkaaja, valinnantulos.copy(poistettava = Some(true))))
-      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid) mustEqual List()
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+      ) mustEqual List()
     }
 
     def assertValinnantila(valinnantilanTallennus:ValinnantilanTallennus) = {
-      val result = singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+      val result = singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+      )
       result.size mustEqual 1
-      result.head._2.getValinnantilanTallennus(muokkaaja) mustEqual valinnantilanTallennus
+      result.head.getValinnantilanTallennus(muokkaaja) mustEqual valinnantilanTallennus
     }
 
     def assertValinnantuloksenOhjaus(valinnantuloksenOhjaus: ValinnantuloksenOhjaus) = {
-      val result = singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+      val result = singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+      )
       result.size mustEqual 1
-      result.head._2.getValinnantuloksenOhjaus(muokkaaja, selite) mustEqual valinnantuloksenOhjaus
+      result.head.getValinnantuloksenOhjaus(muokkaaja, selite) mustEqual valinnantuloksenOhjaus
     }
 
     def storeValinnantilaAndValinnantulos() = {
