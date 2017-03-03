@@ -11,6 +11,7 @@ import fi.vm.sade.valintatulosservice.VtsServletBase
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import org.json4s.jackson.Serialization.read
 import org.scalatra.Ok
 import org.scalatra.swagger.Swagger
@@ -20,7 +21,8 @@ import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
   * Work in progress.
   */
 class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepository,
-                                       valinnantulosRepository: ValinnantulosRepository)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
+                                       valinnantulosRepository: ValinnantulosRepository,
+                                       hakukohdeRecordService: HakukohdeRecordService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
   override val applicationName = Some("sijoittelun-tulos-migraatio")
 
   override protected def applicationDescription: String = "REST-API sijoittelun tuloksien migroinniksi valintarekisteriin"
@@ -30,7 +32,8 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
   private val adapter = new HexBinaryAdapter()
 
   private val sijoittelunTulosRestClient = new SijoittelunTulosRestClient(appConfig)
-  private val mongoClient = new SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient, appConfig, sijoitteluRepository, valinnantulosRepository)
+  private val mongoClient = new SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient, appConfig,
+    sijoitteluRepository, valinnantulosRepository, hakukohdeRecordService)
 
   logger.warn("Mountataan Valintarekisterin sijoittelun tuloksien migraatioservlet!")
 
