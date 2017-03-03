@@ -137,9 +137,9 @@ trait ValintarekisteriResultExtractors {
     ilmoittautumistila = r.nextStringOption.map(SijoitteluajonIlmoittautumistila(_)).getOrElse(EiTehty)
   ))
 
-  protected implicit val getValinnantulosWithLastModifiedResult: GetResult[(Instant, Valinnantulos)] = GetResult(r => (
-    (new java.util.Date((r.nextTimestampOption ++ List(r.nextTimestamp) ++ r.nextTimestampOption ++ r.nextTimestampOption).map(_.getTime).max)).toInstant,
-    getValinnantulosResult(r)))
+  protected implicit val getInstantOptionResult: GetResult[Option[Instant]] = GetResult(r => r.nextTimestampOption().map(_.toInstant))
+
+  protected implicit val getInstantResult: GetResult[Instant] = GetResult(r => r.nextTimestamp().toInstant)
 
   implicit object SetUUID extends SetParameter[UUID] {
     def apply(v: UUID, pp: PositionedParameters) {
