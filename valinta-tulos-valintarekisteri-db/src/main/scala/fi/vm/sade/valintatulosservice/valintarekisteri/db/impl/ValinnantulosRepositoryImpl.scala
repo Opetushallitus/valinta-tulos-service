@@ -15,14 +15,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with ValintarekisteriRepository {
 
-  override def getValinnantuloksetForValintatapajono(valintatapajonoOid: String, duration:Duration = Duration(1, TimeUnit.SECONDS), forUpdate:Boolean = false): List[(Instant, Valinnantulos)] = {
-    runBlocking( sql"""select lower(tu.system_time),
-              lower(ti.system_time),
-              case ${forUpdate}
-                when false then coalesce(dv.timestamp, v.timestamp)
-                else null end as timestamp,
-              lower(i.system_time),
-              ti.hakukohde_oid,
+  override def getValinnantuloksetForValintatapajono(valintatapajonoOid: String): DBIO[List[Valinnantulos]] = {
+    sql"""select ti.hakukohde_oid,
               ti.valintatapajono_oid,
               ti.hakemus_oid,
               ti.henkilo_oid,
@@ -31,18 +25,39 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               tu.julkaistavissa,
               tu.hyvaksytty_varasijalta,
               tu.hyvaksy_peruuntunut,
-              case when v.deleted is null then v.action else null end as action,
+              v.action,
               i.tila
           from valinnantilat as ti
           left join valinnantulokset as tu on tu.hakemus_oid = ti.hakemus_oid
               and tu.valintatapajono_oid = ti.valintatapajono_oid
           left join vastaanotot as v on v.hakukohde = tu.hakukohde_oid
-              and v.henkilo = ti.henkilo_oid
-          left join deleted_vastaanotot as dv on v.deleted = dv.id
+              and v.henkilo = ti.henkilo_oid and v.deleted is null
           left join ilmoittautumiset as i on i.hakukohde = tu.hakukohde_oid
               and i.henkilo = ti.henkilo_oid
           where ti.valintatapajono_oid = ${valintatapajonoOid}
-       """.as[(Instant, Valinnantulos)].map(_.toList), duration)
+       """.as[Valinnantulos].map(_.toList)
+  }
+
+  override def getLastModifiedForValintatapajono(valintatapajonoOid:String):DBIO[Option[Instant]] = {
+    sql"""select greatest(max(lower(ti.system_time)), max(lower(ti.system_time)), max(lower(il.system_time)),
+                          max(upper(ih.system_time)), max(va.timestamp), max(vh.timestamp))
+          from valinnantilat ti
+          left join valinnantulokset tu on ti.valintatapajono_oid = tu.valintatapajono_oid
+          left join ilmoittautumiset il on ti.henkilo_oid = il.henkilo and ti.hakukohde_oid = il.hakukohde
+          left join ilmoittautumiset_history ih on ti.henkilo_oid = ih.henkilo and ti.hakukohde_oid = ih.hakukohde
+          left join vastaanotot va on ti.henkilo_oid = va.henkilo and ti.hakukohde_oid = va.hakukohde
+          left join deleted_vastaanotot vh on va.deleted = vh.id and vh.id >= 0
+          where ti.valintatapajono_oid = ${valintatapajonoOid}""".as[Option[Instant]].head
+  }
+
+  override def getLastModifiedForValintatapajononHakemukset(valintatapajonoOid:String):DBIO[Vector[(String, Instant)]] = {
+    sql"""select ti.hakemus_oid, greatest(max(lower(ti.system_time)), max(lower(ti.system_time)), max(lower(il.system_time)), max(upper(ih.system_time)))
+          from valinnantilat ti
+          left join valinnantulokset tu on ti.valintatapajono_oid = tu.valintatapajono_oid
+          left join ilmoittautumiset il on ti.henkilo_oid = il.henkilo and ti.hakukohde_oid = il.hakukohde
+          left join ilmoittautumiset_history ih on ti.henkilo_oid = ih.henkilo and ti.hakukohde_oid = ih.hakukohde
+          where ti.valintatapajono_oid = ${valintatapajonoOid}
+          group by ti.hakemus_oid""".as[(String, Instant)]
   }
 
   override def getHakuForHakukohde(hakukohdeOid:String): String = {
