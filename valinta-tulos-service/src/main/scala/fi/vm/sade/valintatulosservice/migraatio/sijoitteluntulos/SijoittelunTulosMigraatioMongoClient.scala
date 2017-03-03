@@ -13,6 +13,7 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import slick.dbio._
 
 import scala.collection.JavaConverters._
@@ -25,7 +26,8 @@ import scala.util.{Failure, Success}
 class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: SijoittelunTulosRestClient,
                                            appConfig: VtsAppConfig,
                                            sijoitteluRepository: SijoitteluRepository,
-                                           valinnantulosRepository: ValinnantulosRepository) extends Logging {
+                                           valinnantulosRepository: ValinnantulosRepository,
+                                           hakukohdeRecordService: HakukohdeRecordService) extends Logging {
   private val hakukohdeDao: HakukohdeDao = appConfig.sijoitteluContext.hakukohdeDao
   private val valintatulosDao: ValintatulosDao = appConfig.sijoitteluContext.valintatulosDao
   private val sijoitteluDao = appConfig.sijoitteluContext.sijoitteluDao
@@ -63,6 +65,9 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
         logger.warn("dryRun : NOT updating the database")
       } else {
         logger.info(s"Starting to store sijoitteluajo $sijoitteluajoId of haku $hakuOid...")
+        timed(s"Ensuring hakukohteet for sijoitteluajo $sijoitteluajoId of $hakuOid are in db") {
+          hakukohteet.asScala.map(_.getOid).foreach(hakukohdeRecordService.getHakukohdeRecord)
+        }
         timed(s"Stored sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
           sijoitteluRepository.storeSijoittelu(SijoitteluWrapper(sijoitteluAjo, hakukohteet, valintatulokset))
         }
