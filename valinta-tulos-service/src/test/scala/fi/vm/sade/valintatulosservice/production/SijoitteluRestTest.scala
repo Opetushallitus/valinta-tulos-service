@@ -1,22 +1,25 @@
 package fi.vm.sade.valintatulosservice.production
 
+import java.io.File
+
 import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasClient, CasParams}
-import fi.vm.sade.utils.http.{DefaultHttpClient, DefaultHttpRequest}
+import fi.vm.sade.utils.http.DefaultHttpRequest
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
+import org.apache.commons.io.FileUtils
 import org.http4s.client.Client
 import org.http4s.{Method, Request, Uri}
 import org.json4s.DefaultFormats
 import org.json4s.native.JsonMethods._
 import org.junit.Ignore
 import org.junit.runner.RunWith
+import org.specs2.matcher.MatcherMacros
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
-import org.specs2.matcher.MatcherMacros
 
-import scalaj.http.{HttpOptions, Http}
-import scalaz.concurrent.Task
 import scala.language.experimental.macros
+import scalaj.http.{Http, HttpOptions}
+import scalaz.concurrent.Task
 
 @Ignore
 @RunWith(classOf[JUnitRunner])
@@ -25,9 +28,11 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
   val cas_user = System.getProperty("cas_user")
   val cas_password = System.getProperty("cas_password")
   val cas_url = host + "/cas"
-  val haku_oid = "1.2.246.562.29.75203638285"
+  //val haku_oid = "1.2.246.562.29.75203638285"
   //val haku_oid = "1.2.246.562.29.14662042044"
   //val haku_oid = "1.2.246.562.29.95390561488"
+  //val haku_oid = "1.2.246.562.29.28924613947"
+  val haku_oid = "1.2.246.562.29.87593180141"
 
   val infoOn = true
   val debugOn = false
@@ -45,12 +50,10 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
       val vanhaSijoittelu = time("Create vanha sijoittelu") { createVanhaSijoitteluajo() }
 
       info(s"Sijoittelut valmiina")
-      uusiSijoittelu must matchA[Sijoitteluajo]
-        .sijoitteluajoId(vanhaSijoittelu.sijoitteluajoId)
-        .hakuOid(vanhaSijoittelu.hakuOid)
-        .startMils(vanhaSijoittelu.startMils)
-        .endMils(vanhaSijoittelu.endMils)
-
+      uusiSijoittelu.sijoitteluajoId mustEqual vanhaSijoittelu.sijoitteluajoId
+      uusiSijoittelu.hakuOid mustEqual vanhaSijoittelu.hakuOid
+      uusiSijoittelu.startMils mustEqual vanhaSijoittelu.startMils
+      uusiSijoittelu.endMils mustEqual vanhaSijoittelu.endMils
       uusiSijoittelu.hakukohteet.size mustEqual vanhaSijoittelu.hakukohteet.size
 
       var valintatapajonot = 0
@@ -61,12 +64,11 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
       uusiSijoittelu.hakukohteet.foreach(uusiHakukohde => {
         debug(s"Hakukohde ${uusiHakukohde.oid}")
         val vanhaHakukohde = vanhaSijoittelu.hakukohteet.find(_.oid.equals(uusiHakukohde.oid)).get
-        uusiHakukohde must matchA[Hakukohde]
-          .sijoitteluajoId(vanhaHakukohde.sijoitteluajoId)
-          .tila(vanhaHakukohde.tila)
-          .tarjoajaOid(vanhaHakukohde.tarjoajaOid)
-          .kaikkiJonotSijoiteltu(vanhaHakukohde.kaikkiJonotSijoiteltu)
-          .ensikertalaisuusHakijaryhmanAlimmatHyvaksytytPisteet(vanhaHakukohde.ensikertalaisuusHakijaryhmanAlimmatHyvaksytytPisteet)
+        uusiHakukohde.sijoitteluajoId mustEqual vanhaHakukohde.sijoitteluajoId
+        uusiHakukohde.tila mustEqual vanhaHakukohde.tila
+        uusiHakukohde.tarjoajaOid mustEqual None // tarjoaja oids are only fetched from tarjonta on demand these days
+        uusiHakukohde.kaikkiJonotSijoiteltu mustEqual vanhaHakukohde.kaikkiJonotSijoiteltu
+        uusiHakukohde.ensikertalaisuusHakijaryhmanAlimmatHyvaksytytPisteet mustEqual vanhaHakukohde.ensikertalaisuusHakijaryhmanAlimmatHyvaksytytPisteet
 
         uusiHakukohde.valintatapajonot.size mustEqual vanhaHakukohde.valintatapajonot.size
         valintatapajonot = valintatapajonot + uusiHakukohde.valintatapajonot.size
@@ -137,6 +139,11 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
 
             debug(s"Tilahistoria ${uusiHakemus.tilaHistoria}")
 
+            if (uusiHakemus.tilaHistoria.size > vanhaHakemus.tilaHistoria.size) {
+              // TODO: Something fishy here
+              System.err.println(s"vanhaHakemus.tilaHistoria: ${vanhaHakemus.hakemusOid} / ${vanhaHakemus.valintatapajonoOid} : ${vanhaHakemus.tilaHistoria}")
+              System.err.println(s"uusiHakemus.tilaHistoria: ${uusiHakemus.hakemusOid} / ${uusiHakemus.valintatapajonoOid} : ${uusiHakemus.tilaHistoria}")
+            }
             uusiHakemus.tilaHistoria.size must be_<=(vanhaHakemus.tilaHistoria.size)
               for((uusiTilahistoria, i) <- uusiHakemus.tilaHistoria.reverse.zipWithIndex) {
                 val vanhaTilahistoria = vanhaHakemus.tilaHistoria.reverse(i)
@@ -188,10 +195,11 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
 
   private def getNewSijoittelu() = {
     val (_, _, result) = time("Uuden sijoittelun haku") {
-      new DefaultHttpRequest(Http(s"${host}/valinta-tulos-service/sijoittelu/${haku_oid}/sijoitteluajo/latest")
+      new DefaultHttpRequest(Http(s"http://localhost:8097/valinta-tulos-service/sijoittelu/${haku_oid}/sijoitteluajo/latest")
         .method("GET")
         .options(Seq(HttpOptions.connTimeout(10000), HttpOptions.readTimeout(120000)))
         .header("Content-Type", "application/json")).responseWithHeaders() }
+    FileUtils.writeStringToFile(new File("/tmp/lol.json"), result)
     result
   }
 
