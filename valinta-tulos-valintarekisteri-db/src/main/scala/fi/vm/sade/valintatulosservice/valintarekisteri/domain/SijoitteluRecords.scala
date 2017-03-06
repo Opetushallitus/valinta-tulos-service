@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.domain
 import java.util.Date
 
 import fi.vm.sade.sijoittelu.tulos.dto._
-import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakutoiveDTO}
+import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakutoiveDTO, HakutoiveenValintatapajonoDTO}
 
 import scala.collection.JavaConverters._
 
@@ -172,6 +172,29 @@ abstract class SijoitteluRecordToDTO {
     hakijaRyhma.valintatapajonoOid.foreach(ryhmaDTO.setValintatapajonoOid(_))
     ryhmaDTO.setHakijaryhmatyyppikoodiUri(hakijaRyhma.hakijaryhmatyyppikoodiUri)
     ryhmaDTO
+  }
+
+  /**
+    * NB: Does not populate hakemus specific fields
+    */
+  def jonoRecordToDTO(jonoRecord: ValintatapajonoRecord): HakutoiveenValintatapajonoDTO = {
+    val jonoDto = new HakutoiveenValintatapajonoDTO()
+    if (jonoRecord.alinHyvaksyttyPistemaara != null) {
+      jonoDto.setAlinHyvaksyttyPistemaara(jonoRecord.alinHyvaksyttyPistemaara.bigDecimal)
+    }
+    jonoDto.setEiVarasijatayttoa(jonoRecord.eiVarasijatayttoa)
+    jonoDto.setHakeneet(jonoRecord.hakeneet)
+    jonoDto.setHyvaksytty(jonoRecord.hyvaksytty)
+    jonoRecord.tayttoJono.foreach(jonoDto.setTayttojono)
+    jonoDto.setValintatapajonoNimi(jonoRecord.nimi)
+    jonoDto.setValintatapajonoOid(jonoRecord.oid)
+    jonoDto.setValintatapajonoPrioriteetti(jonoRecord.prioriteetti)
+    jonoDto.setVaralla(jonoRecord.varalla)
+    jonoRecord.varasijat.foreach(jonoDto.setVarasijat(_))
+    jonoRecord.varasijanTayttoPaivat.foreach(jonoDto.setVarasijaTayttoPaivat(_))
+    jonoRecord.varasijojaKaytetaanAlkaen.foreach(jonoDto.setVarasijojaKaytetaanAlkaen(_))
+    jonoRecord.varasijojaKaytetaanAsti.foreach(jonoDto.setVarasijojaTaytetaanAsti(_))
+    jonoDto
   }
 
   def hakijaryhmaRecordToDTO(hakijaRyhma: HakijaryhmaRecord, hakemusOidit:List[String]): HakijaryhmaDTO = {

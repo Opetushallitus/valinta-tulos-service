@@ -5,13 +5,13 @@ import java.util.Comparator
 
 import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatulos}
 import fi.vm.sade.sijoittelu.tulos.dto.SijoitteluajoDTO
-import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakutoiveDTO}
+import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakutoiveDTO, HakutoiveenValintatapajonoDTO}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.ValintarekisteriAppConfig
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{SijoitteluRecordToDTO, SijoitteluWrapper, TilankuvausRecord}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{SijoitteluRecordToDTO, SijoitteluWrapper, TilankuvausRecord, ValintatapajonoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 
 import scala.collection.JavaConverters._
@@ -121,8 +121,16 @@ abstract class Valintarekisteri extends SijoitteluRecordToDTO with Logging with 
 
     val hakutoiveet = sijoitteluRepository.getHakemuksenHakutoiveet(hakemusOid, latestId)
     val pistetiedot = sijoitteluRepository.getHakemuksenPistetiedot(hakemusOid, latestId)
+    val kaikkiValintatapajonot = sijoitteluRepository.getSijoitteluajonValintatapajonot(latestId) // NB: Not very optimal
 
-    val hakutoiveDTOs: Seq[HakutoiveDTO] = hakutoiveet.map(h => hakutoiveRecordToDTO(h, pistetiedot.filter(_.hakemusOid == h.hakemusOid)))
+    val hakutoiveDTOs: Seq[HakutoiveDTO] = hakutoiveet.map { h =>
+      val hakutoiveDTO = hakutoiveRecordToDTO(h, pistetiedot.filter(_.hakemusOid == h.hakemusOid))
+      val toiveenJonot: java.util.List[HakutoiveenValintatapajonoDTO] = {
+        kaikkiValintatapajonot.filter(_.hakukohdeOid == h.hakukohdeOid).map(jonoRecordToDTO).asJava
+      }
+      hakutoiveDTO.setHakutoiveenValintatapajonot(toiveenJonot)
+      hakutoiveDTO
+    }
     val sortedJavaHakutoiveSet = new util.TreeSet[HakutoiveDTO](new Comparator[HakutoiveDTO] {
       override def compare(o1: HakutoiveDTO, o2: HakutoiveDTO): Int = o1.getHakutoive.compareTo(o2.getHakutoive)
     })
