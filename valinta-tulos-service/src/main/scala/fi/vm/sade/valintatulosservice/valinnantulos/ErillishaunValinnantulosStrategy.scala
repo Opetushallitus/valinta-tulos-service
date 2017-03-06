@@ -92,6 +92,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
     def validateVastaanottoNotChanged() = vanha.map(_.vastaanottotila) match {
       case Some(uusi.vastaanottotila) => Right()
       case None => Right() //Ohitetaan vastaanoton tarkistus, jos insert
+      case Some(x) if uusi.ohitaVastaanotto.getOrElse(false) => Right()
       case Some(x) => Left(ValinnantulosUpdateStatus(409,
         s"Valinnantulosta ei voida päivittää, koska vastaanottoa ${uusi.vastaanottotila} on muutettu samanaikaisesti tilaan ${x}", uusi.valintatapajonoOid, uusi.hakemusOid))
     }
