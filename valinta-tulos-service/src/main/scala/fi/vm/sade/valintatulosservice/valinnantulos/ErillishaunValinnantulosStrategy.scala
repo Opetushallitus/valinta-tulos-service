@@ -30,6 +30,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
            (VarasijaltaHyvaksytty, Poista) | (VarasijaltaHyvaksytty, VastaanotaEhdollisesti) | (VarasijaltaHyvaksytty, VastaanotaSitovasti) |
            (Hyvaksytty, Poista) | (Hyvaksytty, VastaanotaEhdollisesti) | (Hyvaksytty, VastaanotaSitovasti) |
            (Perunut, Peru) | (Peruutettu, Peruuta) | (_, Poista) => Right()
+      case (_, _) if uusi.ohitaVastaanotto.getOrElse(false) => Right()
       case (_, _) => Left(ValinnantulosUpdateStatus(409,
         s"Hakemuksen tila ${uusi.valinnantila} ja vastaanotto ${uusi.vastaanottotila} ovat ristiriitaiset.", uusi.valintatapajonoOid, uusi.hakemusOid))
     }
@@ -37,7 +38,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
     def validateEhdollisestiHyvaksyttavissa() = {
       def notModified() = uusi.ehdollisestiHyvaksyttavissa.getOrElse(false) == vanha.exists(_.ehdollisestiHyvaksyttavissa.getOrElse(false))
 
-      if(notModified()) {
+      if(notModified() || uusi.ohitaVastaanotto.getOrElse(false)) {
         Right()
       } else if(haku.toinenAste) {
         Left(ValinnantulosUpdateStatus(409, s"Toisen asteen haussa ei voida hyväksyä ehdollisesti", uusi.valintatapajonoOid, uusi.hakemusOid))
@@ -53,6 +54,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
     }
 
     def validateIlmoittautuminen() = (uusi.ilmoittautumistila, uusi.vastaanottotila, uusi.julkaistavissa) match {
+      case (_, _, _) if uusi.ohitaIlmoittautuminen.getOrElse(false) => Right()
       case (x, _, _) if vanha.isDefined && vanha.get.ilmoittautumistila == x => Right()
       case (EiTehty, _, _) | (_, VastaanotaSitovasti, Some(true)) => Right()
       case (_, _, _) => Left(ValinnantulosUpdateStatus(409,
@@ -70,6 +72,10 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
       def keskenTaiPerunut(tila: VastaanottoAction) = List(Poista, Peruuta, Peru, MerkitseMyohastyneeksi).contains(tila)
 
       (uusi.valinnantila, uusi.vastaanottotila, uusi.ilmoittautumistila) match {
+        case (t, _, _) if uusi.ohitaVastaanotto.getOrElse(false) && uusi.ohitaIlmoittautuminen.getOrElse(false) => Right()
+        case (t, v, _) if hyvaksytty(t) && keskenTaiPerunut(v) && uusi.ohitaIlmoittautuminen.getOrElse(false) => Right()
+        case (_, _, _) if uusi.ohitaVastaanotto.getOrElse(false) || uusi.ohitaIlmoittautuminen.getOrElse(false) => Left(ValinnantulosUpdateStatus(409,
+          s"Vastaanoton tai ilmoittautumisen tallennusta ei voida ohittaa", uusi.valintatapajonoOid, uusi.hakemusOid))
         case (t, v, i) if ilmoittautunut(i) && !(hyvaksytty(t) && vastaanotto(v)) => Left(ValinnantulosUpdateStatus(409,
           s"Ilmoittautumistieto voi olla ainoastaan hyväksytyillä ja vastaanottaneilla hakijoilla", uusi.valintatapajonoOid, uusi.hakemusOid))
         case (t, v, i) if hylattyTaiVaralla(t) && (vastaanottaneena(v) || ilmoittautunut(i)) => Left(ValinnantulosUpdateStatus(409,
@@ -135,8 +141,9 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         Option(uusi.hasOhjausChanged(vanha)).collect { case true => valinnantulosRepository.updateValinnantuloksenOhjaus(
           uusi.getValinnantuloksenOhjauksenMuutos(vanha, muokkaaja, selite), ifUnmodifiedSince)
         },
-        Option(uusi.ilmoittautumistila != vanha.ilmoittautumistila).collect { case true => valinnantulosRepository.storeIlmoittautuminen(
-          vanha.henkiloOid, Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), ifUnmodifiedSince)
+        Option(uusi.ilmoittautumistila != vanha.ilmoittautumistila && !uusi.ohitaIlmoittautuminen.getOrElse(false)).collect {
+          case true => valinnantulosRepository.storeIlmoittautuminen(
+            vanha.henkiloOid, Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), ifUnmodifiedSince)
         }
       ).flatten
     }
