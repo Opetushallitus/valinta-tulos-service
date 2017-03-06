@@ -14,7 +14,8 @@ case class Valinnantulos(hakukohdeOid: String,
                          vastaanottotila: VastaanottoAction,
                          ilmoittautumistila: SijoitteluajonIlmoittautumistila,
                          poistettava: Option[Boolean] = None,
-                         ohitaVastaanotto: Option[Boolean] = None) {
+                         ohitaVastaanotto: Option[Boolean] = None,
+                         ohitaIlmoittautuminen: Option[Boolean] = None) {
 
   def hasChanged(other:Valinnantulos) =
     other.valinnantila != valinnantila ||
