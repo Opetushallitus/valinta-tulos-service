@@ -24,10 +24,12 @@ import scalaz.concurrent.Task
 @Ignore
 @RunWith(classOf[JUnitRunner])
 class SijoitteluRestTest extends Specification with MatcherMacros with Logging with PerformanceLogger {
-  val host = "https://testi.virkailija.opintopolku.fi"
+  val oldHost = "https://testi.virkailija.opintopolku.fi"
+  private val newHost = "http://localhost:8097"
+
   val cas_user = System.getProperty("cas_user")
   val cas_password = System.getProperty("cas_password")
-  val cas_url = host + "/cas"
+  val cas_url = oldHost + "/cas"
   //val haku_oid = "1.2.246.562.29.75203638285"
   //val haku_oid = "1.2.246.562.29.14662042044"
   //val haku_oid = "1.2.246.562.29.95390561488"
@@ -36,6 +38,7 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
 
   val infoOn = true
   val debugOn = false
+  val fileForStoringNewResponse = Some("/tmp/lol.json")
 
   def info(message:String) = if(infoOn) logger.info(message)
   def debug(message:String) = if(debugOn) logger.info(message)
@@ -190,16 +193,19 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
 
   private def get[T](fetch:() => String)(implicit m: Manifest[T]): T = parse(fetch()).extract[T]
 
-  private def getSijoitteluajo():String = getOld(s"${host}/sijoittelu-service/resources/sijoittelu/${haku_oid}/sijoitteluajo/latest")
-  private def getHakukohde(oid:String) = () => getOld(s"${host}/sijoittelu-service/resources/sijoittelu/${haku_oid}/sijoitteluajo/latest/hakukohde/${oid}")
+  private def getSijoitteluajo():String = getOld(s"${oldHost}/sijoittelu-service/resources/sijoittelu/${haku_oid}/sijoitteluajo/latest")
+  private def getHakukohde(oid:String) = () => getOld(s"${oldHost}/sijoittelu-service/resources/sijoittelu/${haku_oid}/sijoitteluajo/latest/hakukohde/${oid}")
 
   private def getNewSijoittelu() = {
     val (_, _, result) = time("Uuden sijoittelun haku") {
-      new DefaultHttpRequest(Http(s"http://localhost:8097/valinta-tulos-service/sijoittelu/${haku_oid}/sijoitteluajo/latest")
+      new DefaultHttpRequest(Http(newHost + s"/valinta-tulos-service/sijoittelu/${haku_oid}/sijoitteluajo/latest")
         .method("GET")
         .options(Seq(HttpOptions.connTimeout(10000), HttpOptions.readTimeout(120000)))
         .header("Content-Type", "application/json")).responseWithHeaders() }
-    FileUtils.writeStringToFile(new File("/tmp/lol.json"), result)
+    fileForStoringNewResponse.foreach { f =>
+      info(s"Tallennetaan uuden APIn vastaus (${result.size} tavua) tiedostoon $f")
+      FileUtils.writeStringToFile(new File(f), result)
+    }
     result
   }
 
