@@ -40,7 +40,7 @@ abstract class Valintarekisteri extends SijoitteluRecordToDTO with Logging with 
     try {
       val sijoittelu = SijoitteluWrapper(sijoitteluajo, hakukohteet, valintatulokset)
       logger.info(s"Tallennetaan hakukohteet haulle")
-      sijoittelu.hakukohteet.map(_.getOid).foreach(hakukohdeRecordService.getHakukohdeRecord(_))
+      sijoittelu.hakukohteet.map(_.getOid).foreach(hakukohdeRecordService.getHakukohdeRecord)
       logger.info(s"Tallennetaan sijoittelu")
       sijoitteluRepository.storeSijoittelu(sijoittelu)
       logger.info(s"Sijoitteluajon tallennus onnistui haulle: ${sijoitteluajo.getHakuOid}")
@@ -70,10 +70,10 @@ abstract class Valintarekisteri extends SijoitteluRecordToDTO with Logging with 
       val hakukohteet = time (s"${latestId} hakukohteiden haku") { sijoitteluRepository.getSijoitteluajonHakukohteet(latestId).map(sijoittelunHakukohdeRecordToDTO) }
 
       hakukohteet.foreach(h => {
-        h.setValintatapajonot(valintatapajonotByHakukohde.get(h.getOid).getOrElse(List()).asJava)
-        h.setHakijaryhmat(hakijaryhmatByHakukohde.get(h.getOid).getOrElse(List()).asJava)
+        h.setValintatapajonot(valintatapajonotByHakukohde.getOrElse(h.getOid, List()).asJava)
+        h.setHakijaryhmat(hakijaryhmatByHakukohde.getOrElse(h.getOid, List()).asJava)
       })
-      (sijoitteluajoRecordToDto(sijoitteluajo, hakukohteet))
+      sijoitteluajoRecordToDto(sijoitteluajo, hakukohteet)
     }).getOrElse(throw new IllegalArgumentException(s"Sijoitteluajoa $sijoitteluajoId ei löytynyt haulle $hakuOid"))
   }
 
@@ -106,8 +106,8 @@ abstract class Valintarekisteri extends SijoitteluRecordToDTO with Logging with 
         case _ => Map()
       }
       hakemusRecordToDTO(hakemus, hakijaryhmat.getOrElse(hakemus.hakemusOid, Set()), hakemuksenTilankuvaukset,
-        tilahistoriat.get((hakemus.hakemusOid, hakemus.valintatapajonoOid)).getOrElse(List()),
-        pistetiedot.get((hakemus.hakemusOid, hakemus.valintatapajonoOid)).getOrElse(List()))
+        tilahistoriat.getOrElse((hakemus.hakemusOid, hakemus.valintatapajonoOid), List()),
+        pistetiedot.getOrElse((hakemus.hakemusOid, hakemus.valintatapajonoOid), List()))
     })
   }
 
