@@ -1,9 +1,10 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
 import java.util
+import java.util.Comparator
 
 import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatulos}
-import fi.vm.sade.sijoittelu.tulos.dto.{PistetietoDTO, SijoitteluajoDTO}
+import fi.vm.sade.sijoittelu.tulos.dto.SijoitteluajoDTO
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakutoiveDTO}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.ValintarekisteriAppConfig
@@ -14,7 +15,8 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{SijoitteluRecordT
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 
 import scala.collection.JavaConverters._
-import scala.util.{Failure, Success, Try}
+import scala.collection.immutable.Seq
+import scala.util.Try
 
 class ValintarekisteriForSijoittelu(appConfig:ValintarekisteriAppConfig.ValintarekisteriAppConfig) extends Valintarekisteri {
 
@@ -120,10 +122,13 @@ abstract class Valintarekisteri extends SijoitteluRecordToDTO with Logging with 
     val hakutoiveet = sijoitteluRepository.getHakemuksenHakutoiveet(hakemusOid, latestId)
     val pistetiedot = sijoitteluRepository.getHakemuksenPistetiedot(hakemusOid, latestId)
 
-    val hakutoiveDTOs = hakutoiveet.map(h => hakutoiveRecordToDTO(h, pistetiedot.filter(_.hakemusOid == h.hakemusOid)))
-    hakutoiveDTOs.sortBy(_.getHakutoive)
+    val hakutoiveDTOs: Seq[HakutoiveDTO] = hakutoiveet.map(h => hakutoiveRecordToDTO(h, pistetiedot.filter(_.hakemusOid == h.hakemusOid)))
+    val sortedJavaHakutoiveSet = new util.TreeSet[HakutoiveDTO](new Comparator[HakutoiveDTO] {
+      override def compare(o1: HakutoiveDTO, o2: HakutoiveDTO): Int = o1.getHakutoive.compareTo(o2.getHakutoive)
+    })
+    sortedJavaHakutoiveSet.addAll(hakutoiveDTOs.asJava)
+    hakija.setHakutoiveet(sortedJavaHakutoiveSet)
 
-    hakija.setHakutoiveet(hakutoiveDTOs.asInstanceOf[util.SortedSet[HakutoiveDTO]])
     hakija
   }
 

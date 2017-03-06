@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice.local
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
 import org.json4s.DefaultFormats
+import org.json4s.jackson.JsonMethods
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 
@@ -20,5 +21,16 @@ class SijoitteluServletSpec extends ServletSpecification with ValintarekisteriDb
       }
     }
   }
+
+  "GET /sijoittelu/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakemus/:hakemusOid" should {
+    "Hakee hakemuksen tuloksen" in {
+      get("sijoittelu/1.2.246.562.29.75203638285/sijoitteluajo/1476936450191/hakemus/1.2.246.562.11.00004875684") {
+        status must_== 200
+        val hakemusJson = JsonMethods.parse(body)
+        (hakemusJson \ "hakemusOid").extract[String] mustEqual "1.2.246.562.11.00004875684"
+      }
+    }
+  }
+
   step(deleteAll)
 }
