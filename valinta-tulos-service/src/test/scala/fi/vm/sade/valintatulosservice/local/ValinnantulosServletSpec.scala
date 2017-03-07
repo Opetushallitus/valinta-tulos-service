@@ -189,6 +189,14 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
       patchErillishakuJson(List(v))
       hae(erillishaunValinnantulos.copy(vastaanottotila = Poista), 1)
     }
+    "palauttaa 200 ja päivittää valinnantilaa, ohjaustietoa ja ilmoittautumista, kun hakija on hyväksytty varasijalta" in {
+      val v = erillishaunValinnantulos.copy(valintatapajonoOid = "varasijaltaHyvaksytynJono", hakukohdeOid = "varasijaltaHyvaksytynHakukohde",
+        valinnantila = VarasijaltaHyvaksytty, hyvaksyttyVarasijalta = Some(true)
+      )
+      getValinnantuloksetForValintatapajono(v.valintatapajonoOid) mustEqual List()
+      patchErillishakuJson(List(v))
+      hae(erillishaunValinnantulos.copy(vastaanottotila = Poista), 1)
+    }
     "palauttaa 200 ja poistaa valinnan tilan, ohjaustiedon sekä ilmoittautumisen" in {
       val v = erillishaunValinnantulos.copy(valintatapajonoOid = "poistettavaValinnantulosJono", hakukohdeOid = "poistettavaValinnantulosHakukohde")
 

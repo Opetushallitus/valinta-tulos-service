@@ -63,7 +63,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
 
     def validateTilat() = {
       def ilmoittautunut(ilmoittautuminen: SijoitteluajonIlmoittautumistila) = ilmoittautuminen != EiTehty
-      def hyvaksytty(tila: Valinnantila) = List(Hyvaksytty, HyvaksyttyVarasijalta).contains(tila) //TODO entäs täyttyjonosäännöllä hyväksytty?
+      def hyvaksytty(tila: Valinnantila) = List(Hyvaksytty, VarasijaltaHyvaksytty).contains(tila) //TODO entäs täyttyjonosäännöllä hyväksytty?
       def vastaanotto(vastaanotto: VastaanottoAction) = vastaanotto != Poista
       def vastaanottoEiMyohastynyt(vastaanotto: VastaanottoAction) = vastaanotto != Poista && vastaanotto != MerkitseMyohastyneeksi
       def hylattyTaiVaralla(tila: Valinnantila) = Hylatty == tila || Varalla == tila
