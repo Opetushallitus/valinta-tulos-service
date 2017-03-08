@@ -36,23 +36,3 @@ trait CasAuthenticatedServlet { this:ScalatraServlet with Logging =>
 }
 
 case class Authenticated(id: UUID, session: Session)
-
-trait ErrorHandlingServlet { this:ScalatraServlet with Logging =>
-  error {
-    case e: AuthenticationFailedException =>
-      logger.warn("authentication failed", e)
-      Unauthorized("error" -> "Unauthorized")
-    case e: AuthorizationFailedException =>
-      logger.warn("authorization failed", e)
-      Forbidden("error" -> "Forbidden")
-    case e: IllegalArgumentException =>
-      logger.warn("bad request", e)
-      BadRequest("error" -> s"Bad request. ${e.getMessage}")
-    case e: IllegalStateException =>
-      logger.error("internal server error", e)
-      InternalServerError("error" -> "Internal server error")
-    case e: Throwable =>
-      logger.error("internal server error", e)
-      InternalServerError("error" -> "Internal server error")
-  }
-}
