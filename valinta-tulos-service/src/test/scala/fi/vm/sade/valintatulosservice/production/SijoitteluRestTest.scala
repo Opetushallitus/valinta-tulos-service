@@ -215,7 +215,7 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
   private def getHakukohde(hakuOid: String, hakukohdeOid: String) = () => getOld(s"$oldHost/sijoittelu-service/resources/sijoittelu/$hakuOid/sijoitteluajo/latest/hakukohde/$hakukohdeOid")
 
   private def getNewSijoittelu(hakuOid: String) = {
-    val url = newHost + s"/valinta-tulos-service/sijoittelu/$hakuOid/sijoitteluajo/latest"
+    val url = newHost + s"/valinta-tulos-service/auth/sijoittelu/$hakuOid/sijoitteluajo/latest"
     val (statusCode, responseHeaders, result) = time("Uuden sijoittelun haku") {
       new DefaultHttpRequest(Http(url)
         .method("GET")
