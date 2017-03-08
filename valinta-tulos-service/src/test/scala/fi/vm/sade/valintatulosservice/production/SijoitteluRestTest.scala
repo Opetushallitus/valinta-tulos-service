@@ -141,11 +141,9 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
             })
 
             debug(s"Tilahistoria ${uusiHakemus.tilaHistoria}")
-
             if (uusiHakemus.tilaHistoria.size > vanhaHakemus.tilaHistoria.size) {
-              // TODO: Something fishy here
-              System.err.println(s"vanhaHakemus.tilaHistoria: ${vanhaHakemus.hakemusOid} / ${vanhaHakemus.valintatapajonoOid} : ${vanhaHakemus.tilaHistoria}")
-              System.err.println(s"uusiHakemus.tilaHistoria: ${uusiHakemus.hakemusOid} / ${uusiHakemus.valintatapajonoOid} : ${uusiHakemus.tilaHistoria}")
+              debug(s"vanhaHakemus.tilaHistoria: ${vanhaHakemus.hakemusOid} / ${vanhaHakemus.valintatapajonoOid} : ${vanhaHakemus.tilaHistoria}")
+              debug(s"uusiHakemus.tilaHistoria: ${uusiHakemus.hakemusOid} / ${uusiHakemus.valintatapajonoOid} : ${uusiHakemus.tilaHistoria}")
             }
             uusiHakemus.tilaHistoria.size must be_<=(vanhaHakemus.tilaHistoria.size)
               for((uusiTilahistoria, i) <- uusiHakemus.tilaHistoria.reverse.zipWithIndex) {
