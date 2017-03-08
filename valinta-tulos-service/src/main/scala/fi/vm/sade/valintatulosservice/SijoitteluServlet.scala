@@ -11,7 +11,7 @@ import org.scalatra.{NotImplemented, Ok}
 
 class SijoitteluServlet(sijoitteluService: ValintarekisteriService, val sessionRepository: SessionRepository)
                        (implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase
-                       with CasAuthenticatedServlet with ErrorHandlingServlet {
+                       with CasAuthenticatedServlet {
 
   override val applicationName = Some("sijoittelu")
 
@@ -48,6 +48,7 @@ class SijoitteluServlet(sijoitteluService: ValintarekisteriService, val sessionR
     parameter pathParam[String]("sijoitteluajoId").description("Sijoitteluajon yksilöllinen tunniste, tai 'latest' avainsana."))
   get("/:hakuOid/sijoitteluajo/:sijoitteluajoId", operation(getSijoitteluajoSwagger)) {
     implicit val authenticated = authenticate
+
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
     val hakuOid = params("hakuOid")
     val sijoitteluajoId = params("sijoitteluajoId")
