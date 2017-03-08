@@ -26,7 +26,7 @@ import scalaz.concurrent.Task
 class SijoitteluRestTest extends Specification with MatcherMacros with Logging with PerformanceLogger {
   val oldHost = "https://testi.virkailija.opintopolku.fi"
   //private val newHost = "https://testi.virkailija.opintopolku.fi"
-  //private val newHost = "http://localhost:8097"
+  private val newHost = "http://localhost:8097"
 
   val cas_user = System.getProperty("cas_user")
   val cas_password = System.getProperty("cas_password")
