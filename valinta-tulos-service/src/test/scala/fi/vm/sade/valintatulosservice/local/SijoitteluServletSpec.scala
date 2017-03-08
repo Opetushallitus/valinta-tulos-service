@@ -12,9 +12,11 @@ class SijoitteluServletSpec extends ServletSpecification with ValintarekisteriDb
   override implicit val formats = DefaultFormats ++ List(new NumberLongSerializer, new TasasijasaantoSerializer, new ValinnantilaSerializer, new DateSerializer, new TilankuvauksenTarkenneSerializer)
   step(singleConnectionValintarekisteriDb.storeSijoittelu(loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")))
 
+  lazy val testSession = createTestSession()
+
   "GET /sijoittelu/:hakuOid/sijoitteluajo/:sijoitteluajoOid" should {
     "Hakee sijoittelun" in {
-      get("sijoittelu/1.2.246.562.29.75203638285/sijoitteluajo/1476936450191") {
+      get("auth/sijoittelu/1.2.246.562.29.75203638285/sijoitteluajo/1476936450191", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
         status must_== 200
         body.isEmpty mustEqual false
         body.startsWith("{\"sijoitteluajoId\":1476936450191,\"hakuOid\":\"1.2.246.562.29.75203638285\"") mustEqual true
@@ -24,7 +26,7 @@ class SijoitteluServletSpec extends ServletSpecification with ValintarekisteriDb
 
   "GET /sijoittelu/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakemus/:hakemusOid" should {
     "Hakee hakemuksen tuloksen" in {
-      get("sijoittelu/1.2.246.562.29.75203638285/sijoitteluajo/1476936450191/hakemus/1.2.246.562.11.00004875684") {
+      get("auth/sijoittelu/1.2.246.562.29.75203638285/sijoitteluajo/1476936450191/hakemus/1.2.246.562.11.00004875684", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
         status must_== 200
         val hakemusJson = JsonMethods.parse(body)
         (hakemusJson \ "hakemusOid").extract[String] mustEqual "1.2.246.562.11.00004875684"

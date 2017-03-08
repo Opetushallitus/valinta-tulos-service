@@ -5,6 +5,7 @@ import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain._
 import fi.vm.sade.sijoittelu.tulos.dto.SijoitteluajoDTO
+import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Tasasijasaanto
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -22,6 +23,9 @@ import scala.collection.immutable.IndexedSeq
 trait ValintarekisteriDbTools extends Specification {
 
   val singleConnectionValintarekisteriDb:ValintarekisteriDb
+
+  def createTestSession(roles:Set[Role] = Set(Role.SIJOITTELU_CRUD, Role(s"${Role.SIJOITTELU_CRUD.s}_1.2.246.562.10.39804091914"))) =
+    singleConnectionValintarekisteriDb.store(CasSession(ServiceTicket("myFakeTicket"), "1.2.246.562.24.1", roles)).toString
 
   class NumberLongSerializer extends CustomSerializer[Long](format => ( {
     case JObject(List(JField("$numberLong", JString(longValue)))) => longValue.toLong
