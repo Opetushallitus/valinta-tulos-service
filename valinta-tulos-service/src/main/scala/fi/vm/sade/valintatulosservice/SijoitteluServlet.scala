@@ -2,12 +2,16 @@ package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
+import fi.vm.sade.valintatulosservice.security.Role
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.ValintarekisteriService
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 import org.scalatra.{NotImplemented, Ok}
 
-class SijoitteluServlet(sijoitteluService: ValintarekisteriService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
+class SijoitteluServlet(sijoitteluService: ValintarekisteriService, val sessionRepository: SessionRepository)
+                       (implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase
+                       with CasAuthenticatedServlet with ErrorHandlingServlet {
 
   override val applicationName = Some("sijoittelu")
 
@@ -43,6 +47,8 @@ class SijoitteluServlet(sijoitteluService: ValintarekisteriService)(implicit val
     parameter pathParam[String]("hakuOid").description("Haun yksilöllinen tunniste") //TODO tarpeeton?
     parameter pathParam[String]("sijoitteluajoId").description("Sijoitteluajon yksilöllinen tunniste, tai 'latest' avainsana."))
   get("/:hakuOid/sijoitteluajo/:sijoitteluajoId", operation(getSijoitteluajoSwagger)) {
+    implicit val authenticated = authenticate
+    authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
     val hakuOid = params("hakuOid")
     val sijoitteluajoId = params("sijoitteluajoId")
     streamOk(sijoitteluService.getSijoitteluajo(hakuOid, sijoitteluajoId))
@@ -65,6 +71,8 @@ class SijoitteluServlet(sijoitteluService: ValintarekisteriService)(implicit val
     parameter pathParam[String]("sijoitteluajoId").description("Sijoitteluajon yksilöllinen tunniste, tai 'latest' avainsana.")
     parameter pathParam[String]("hakemusOid").description("Hakemuksen yksilöllinen tunniste"))
   get("/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakemus/:hakemusOid", operation(getHakemusBySijoitteluajoSwagger)) {
+    implicit val authenticated = authenticate
+    authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD) //TODO: organization hierarchy check?!?!
     val hakuOid = params("hakuOid")
     val sijoitteluajoId = params("sijoitteluajoId")
     val hakemusOid = params("hakemusOid")

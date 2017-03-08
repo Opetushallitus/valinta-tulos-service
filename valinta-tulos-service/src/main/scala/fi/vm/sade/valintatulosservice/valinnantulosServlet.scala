@@ -4,7 +4,7 @@ import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.UUID
 
-import fi.vm.sade.security.{AuthenticationFailedException, AuthorizationFailedException}
+import fi.vm.sade.security.AuthorizationFailedException
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, IlmoittautumisTila}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.json.JsonFormats
@@ -16,7 +16,6 @@ import org.scalatra.json.JacksonJsonSupport
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 
-import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
 trait ValinnantulosServletBase extends ScalatraServlet with JacksonJsonSupport with SwaggerSupport with Logging with JsonFormats {
@@ -63,49 +62,15 @@ trait ValinnantulosServletBase extends ScalatraServlet with JacksonJsonSupport w
     case Some(s) => s
     case None => throw new IllegalArgumentException("Otsake If-Unmodified-Since on pakollinen.")
   }
-
-  protected def parseAuditInfo(session: (UUID, Session)): AuditInfo = {
-    AuditInfo(
-      session,
-      InetAddress.getByName(request.headers.get("X-Forwarded-For").getOrElse({
-        logger.warn("X-Forwarded-For was not set. Are we not running behind a load balancer?")
-        request.getRemoteAddr
-      })),
-      request.headers.get("User-Agent").getOrElse(throw new IllegalArgumentException("Otsake User-Agent on pakollinen."))
-    )
-  }
 }
 
 class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
-                           sessionRepository: SessionRepository)
+                           val sessionRepository: SessionRepository)
                           (implicit val swagger: Swagger)
-  extends ValinnantulosServletBase {
+  extends ValinnantulosServletBase with CasAuthenticatedServlet with ErrorHandlingServlet {
 
   override val applicationName = Some("auth/valinnan-tulos")
   override val applicationDescription = "Valinnantuloksen REST API"
-
-  error {
-    case e: AuthenticationFailedException =>
-      logger.warn("authentication failed", e)
-      Unauthorized("error" -> "Unauthorized")
-    case e: AuthorizationFailedException =>
-      logger.warn("authorization failed", e)
-      Forbidden("error" -> "Forbidden")
-    case e: IllegalArgumentException =>
-      logger.warn("bad request", e)
-      BadRequest("error" -> s"Bad request. ${e.getMessage}")
-    case e: IllegalStateException =>
-      logger.error("internal server error", e)
-      InternalServerError("error" -> "Internal server error")
-    case e: Throwable =>
-      logger.error("internal server error", e)
-      InternalServerError("error" -> "Internal server error")
-  }
-
-  private def getSession: (UUID, Session) = {
-    cookies.get("session").map(UUID.fromString).flatMap(id => sessionRepository.get(id).map((id, _)))
-      .getOrElse(throw new AuthenticationFailedException)
-  }
 
   val valinnantulosSwagger: OperationBuilder = (apiOperation[List[Valinnantulos]]("valinnantulos")
     summary "Valinnantulos"
@@ -118,11 +83,8 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
   }))
   get("/:valintatapajonoOid", operation(valinnantulosSwagger)) {
     contentType = formats("json")
-    val (id, session) = getSession
-    val auditInfo = parseAuditInfo((id, session))
-    if (!session.hasAnyRole(Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))) {
-      throw new AuthorizationFailedException()
-    }
+    implicit val authenticated = authenticate
+    authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
     val valintatapajonoOid = parseValintatapajonoOid
     val valinnanTulokset = valinnantulosService.getValinnantuloksetForValintatapajono(valintatapajonoOid, auditInfo)
     Ok(
@@ -144,11 +106,8 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
   }))
   patch("/:valintatapajonoOid", operation(valinnantulosMuutosSwagger)) {
     contentType = formats("json")
-    val (id, session) = getSession
-    val auditInfo = parseAuditInfo((id, session))
-    if (!session.hasAnyRole(Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))) {
-      throw new AuthorizationFailedException()
-    }
+    implicit val authenticated = authenticate
+    authorize(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
     val erillishaku = parseErillishaku
     val valintatapajonoOid = parseValintatapajonoOid
     val ifUnmodifiedSince: Instant = getIfUnmodifiedSince
@@ -161,7 +120,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
 }
 
 class ErillishakuServlet(valinnantulosService: ValinnantulosService)(implicit val swagger: Swagger)
-  extends ValinnantulosServletBase {
+  extends ValinnantulosServletBase with ErrorHandlingServlet {
 
   override val applicationName = Some("erillishaku/valinnan-tulos")
   override val applicationDescription = "Erillishaun valinnantuloksen REST API"
