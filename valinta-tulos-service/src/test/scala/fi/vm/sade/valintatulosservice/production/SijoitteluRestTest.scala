@@ -25,16 +25,17 @@ import scalaz.concurrent.Task
 @RunWith(classOf[JUnitRunner])
 class SijoitteluRestTest extends Specification with MatcherMacros with Logging with PerformanceLogger {
   val oldHost = "https://testi.virkailija.opintopolku.fi"
-  private val newHost = "http://localhost:8097"
+  //private val newHost = "https://testi.virkailija.opintopolku.fi"
+  //private val newHost = "http://localhost:8097"
 
   val cas_user = System.getProperty("cas_user")
   val cas_password = System.getProperty("cas_password")
   val cas_url = oldHost + "/cas"
-  //val haku_oid = "1.2.246.562.29.75203638285"
-  //val haku_oid = "1.2.246.562.29.14662042044"
-  //val haku_oid = "1.2.246.562.29.95390561488"
-  //val haku_oid = "1.2.246.562.29.28924613947"
-  val haku_oid = "1.2.246.562.29.87593180141"
+  //val haku_oid = "1.2.246.562.29.75203638285" // Kevään 2016 kk-yhteishaku
+  //val haku_oid = "1.2.246.562.29.14662042044" // Kevään 2016 2. asteen yhteishaku
+  //val haku_oid = "1.2.246.562.29.95390561488" // Kevään 2015 kk-yhteishaku
+  val haku_oid = "1.2.246.562.29.28924613947" // Haku ammatilliseen opettajankoulutukseen 2017
+  //val haku_oid = "1.2.246.562.29.87593180141" // Syksyn 2016 kk-yhteishaku
 
   val infoOn = true
   val debugOn = false
@@ -69,7 +70,7 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
         val vanhaHakukohde = vanhaSijoittelu.hakukohteet.find(_.oid.equals(uusiHakukohde.oid)).get
         uusiHakukohde.sijoitteluajoId mustEqual vanhaHakukohde.sijoitteluajoId
         uusiHakukohde.tila mustEqual vanhaHakukohde.tila
-        uusiHakukohde.tarjoajaOid mustEqual None // tarjoaja oids are only fetched from tarjonta on demand these days
+        uusiHakukohde.tarjoajaOid mustEqual vanhaHakukohde.tarjoajaOid // tarjoaja oids are only fetched from tarjonta on demand these days
         uusiHakukohde.kaikkiJonotSijoiteltu mustEqual vanhaHakukohde.kaikkiJonotSijoiteltu
         uusiHakukohde.ensikertalaisuusHakijaryhmanAlimmatHyvaksytytPisteet mustEqual vanhaHakukohde.ensikertalaisuusHakijaryhmanAlimmatHyvaksytytPisteet
 
@@ -155,6 +156,12 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
 
           })
         })
+        if (uusiHakukohde.hakijaryhmat.size != vanhaHakukohde.hakijaryhmat.size) {
+          debug("uusiHakukohde.hakijaryhmat:")
+          uusiHakukohde.hakijaryhmat.foreach { h => debug(s"\t$h")}
+          debug("vanhaHakukohde.hakijaryhmat:")
+          vanhaHakukohde.hakijaryhmat.foreach { h => debug(s"\t$h")}
+        }
         uusiHakukohde.hakijaryhmat.size mustEqual vanhaHakukohde.hakijaryhmat.size
         hakijaryhmat = hakijaryhmat + uusiHakukohde.hakijaryhmat.size
         uusiHakukohde.hakijaryhmat.foreach(uusiHakijaryhma => {
