@@ -215,11 +215,15 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
   private def getHakukohde(hakuOid: String, hakukohdeOid: String) = () => getOld(s"$oldHost/sijoittelu-service/resources/sijoittelu/$hakuOid/sijoitteluajo/latest/hakukohde/$hakukohdeOid")
 
   private def getNewSijoittelu(hakuOid: String) = {
-    val (_, _, result) = time("Uuden sijoittelun haku") {
-      new DefaultHttpRequest(Http(newHost + s"/valinta-tulos-service/sijoittelu/$hakuOid/sijoitteluajo/latest")
+    val url = newHost + s"/valinta-tulos-service/sijoittelu/$hakuOid/sijoitteluajo/latest"
+    val (statusCode, responseHeaders, result) = time("Uuden sijoittelun haku") {
+      new DefaultHttpRequest(Http(url)
         .method("GET")
         .options(Seq(HttpOptions.connTimeout(10000), HttpOptions.readTimeout(120000)))
         .header("Content-Type", "application/json")).responseWithHeaders() }
+    if (statusCode != 200) {
+      throw new RuntimeException(s"Got status $statusCode from $url with headers $responseHeaders and body $result")
+    }
     fileForStoringNewResponse.foreach { f =>
       info(s"Tallennetaan uuden APIn vastaus (${result.size} tavua) tiedostoon $f")
       FileUtils.writeStringToFile(new File(f), result)
