@@ -58,7 +58,10 @@ where exists (
 ));
 create index historiaduplikaatit_pkey on historiaduplikaatit (valintatapajono_oid, hakemus_oid, tila, tilan_viimeisin_muutos);
 
-alter table valinnantilat disable trigger all;
+alter table valinnantilat disable trigger set_system_time_on_valinnantilat_on_update;
+alter table valinnantilat disable trigger delete_valinnantilat_history;
+alter table valinnantilat disable trigger set_system_time_on_valinnantilat_on_insert;
+alter table valinnantilat disable trigger update_valinnantilat_history;
 
 update valinnantilat v
   set system_time = TSTZRANGE(
@@ -86,5 +89,8 @@ where exists (
   and lower(v.system_time) = lower(vh.system_time)
 );
 
-alter table valinnantilat enable trigger all;
+alter table valinnantilat enable trigger set_system_time_on_valinnantilat_on_update;
+alter table valinnantilat enable trigger delete_valinnantilat_history;
+alter table valinnantilat enable trigger set_system_time_on_valinnantilat_on_insert;
+alter table valinnantilat enable trigger update_valinnantilat_history;
 
