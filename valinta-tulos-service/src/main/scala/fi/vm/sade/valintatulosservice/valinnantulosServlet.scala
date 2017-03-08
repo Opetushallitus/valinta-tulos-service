@@ -18,7 +18,7 @@ import org.scalatra.swagger._
 
 import scala.util.{Failure, Success, Try}
 
-trait ValinnantulosServletBase extends ScalatraServlet with JacksonJsonSupport with SwaggerSupport with Logging with JsonFormats {
+trait ValinnantulosServletBase extends VtsServletBase {
   protected def ilmoittautumistilaModelProperty(mp: ModelProperty) = {
     ModelProperty(DataType.String, mp.position, required = true, allowableValues = AllowableValues(IlmoittautumisTila.values().toList.map(_.toString)))
   }
@@ -67,7 +67,7 @@ trait ValinnantulosServletBase extends ScalatraServlet with JacksonJsonSupport w
 class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
                            val sessionRepository: SessionRepository)
                           (implicit val swagger: Swagger)
-  extends ValinnantulosServletBase with CasAuthenticatedServlet with ErrorHandlingServlet {
+  extends ValinnantulosServletBase with CasAuthenticatedServlet {
 
   override val applicationName = Some("auth/valinnan-tulos")
   override val applicationDescription = "Valinnantuloksen REST API"
@@ -120,7 +120,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
 }
 
 class ErillishakuServlet(valinnantulosService: ValinnantulosService)(implicit val swagger: Swagger)
-  extends ValinnantulosServletBase with ErrorHandlingServlet {
+  extends ValinnantulosServletBase {
 
   override val applicationName = Some("erillishaku/valinnan-tulos")
   override val applicationDescription = "Erillishaun valinnantuloksen REST API"
