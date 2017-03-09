@@ -39,7 +39,7 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
   //val haku_oid = "1.2.246.562.29.95390561488" // Kevään 2015 kk-yhteishaku
   //val haku_oid = "1.2.246.562.29.28924613947" // Haku ammatilliseen opettajankoulutukseen 2017
 //  val haku_oid = "1.2.246.562.29.87593180141" // Syksyn 2016 kk-yhteishaku
-  val hakuOidsToTest = Seq("1.2.246.562.29.669559278110")
+  val hakuOidsToTest = Seq("1.2.246.562.29.669559278110","1.2.246.562.29.28924613947")
 
   val infoOn = true
   val debugOn = false
