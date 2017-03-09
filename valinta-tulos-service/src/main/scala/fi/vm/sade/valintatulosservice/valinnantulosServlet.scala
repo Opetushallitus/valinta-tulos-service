@@ -5,7 +5,7 @@ import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.UUID
 
 import fi.vm.sade.security.AuthorizationFailedException
-import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, IlmoittautumisTila}
+import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, IlmoittautumisTila, ValintatuloksenTila}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
@@ -25,6 +25,10 @@ trait ValinnantulosServletBase extends VtsServletBase {
 
   protected def valinnantilaModelProperty(mp: ModelProperty) = {
     ModelProperty(DataType.String, mp.position, required = true, allowableValues = AllowableValues(HakemuksenTila.values().toList.map(_.toString)))
+  }
+
+  protected def vastaanottotilaModelProperty(mp: ModelProperty) = {
+    ModelProperty(DataType.String, mp.position, required = true, allowableValues = AllowableValues(ValintatuloksenTila.values().toList.map(_.toString)))
   }
 
   protected def parseValintatapajonoOid: String = {
@@ -102,6 +106,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
   models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
     case ("ilmoittautumistila", mp) => ("ilmoittautumistila", ilmoittautumistilaModelProperty(mp))
     case ("valinnantila", mp) => ("valinnantila", valinnantilaModelProperty(mp))
+    case ("vastaanottotila", mp) => ("vastaanottotila", vastaanottotilaModelProperty(mp))
     case p => p
   }))
   patch("/:valintatapajonoOid", operation(valinnantulosMuutosSwagger)) {
@@ -146,11 +151,12 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService)(implicit va
     parameter headerParam[String]("If-Unmodified-Since").description(s"Aikaleima RFC 1123 määrittelemässä muodossa $sample").required
     parameter bodyParam[List[ValinnantulosRequest]].description("Muutokset valinnan tulokseen ja kirjautumistieto").required
     )
-  /*models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
+  models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
     case ("ilmoittautumistila", mp) => ("ilmoittautumistila", ilmoittautumistilaModelProperty(mp))
     case ("valinnantila", mp) => ("valinnantila", valinnantilaModelProperty(mp))
+    case ("vastaanottotila", mp) => ("vastaanottotila", vastaanottotilaModelProperty(mp))
     case p => p
-  }))*/
+  }))
   post("/:valintatapajonoOid", operation(erillishaunValinnantulosMuutosSwagger)) {
     contentType = formats("json")
     val auditInfo = getAuditInfo

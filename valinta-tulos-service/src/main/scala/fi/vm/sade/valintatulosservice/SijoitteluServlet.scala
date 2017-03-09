@@ -13,7 +13,7 @@ class SijoitteluServlet(sijoitteluService: ValintarekisteriService, val sessionR
                        (implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase
                        with CasAuthenticatedServlet {
 
-  override val applicationName = Some("sijoittelu")
+  override val applicationName = Some("auth/sijoittelu")
 
   override protected def applicationDescription: String = "Sijoittelun REST API"
 
