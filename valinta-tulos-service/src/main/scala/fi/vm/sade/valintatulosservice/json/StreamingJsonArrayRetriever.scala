@@ -27,8 +27,12 @@ class StreamingJsonArrayRetriever(appConfig: VtsAppConfig) extends Logging {
     val casParams = createCasParams(appConfig, targetService)
     val jsessionId = authenticate(casParams)
 
-    val request: HttpRequest = Http(url).header(HttpHeaders.COOKIE, s"JSESSIONID=$jsessionId").compress(false).
-      timeout(Duration(1, TimeUnit.MINUTES).toMillis.toInt, Duration(60, TimeUnit.MINUTES).toMillis.toInt)
+    val request: HttpRequest = Http(url)
+      .header(HttpHeaders.COOKIE, s"JSESSIONID=$jsessionId")
+      .header("clientSubSystemCode", "valinta-tulos-service")
+      .header("Caller-id", "valinta-tulos-service")
+      .compress(false)
+      .timeout(Duration(1, TimeUnit.MINUTES).toMillis.toInt, Duration(60, TimeUnit.MINUTES).toMillis.toInt)
 
     var count = 0
     val response: HttpResponse[Unit] = request.execute[Unit](inputStream => {

@@ -1,8 +1,10 @@
 package fi.vm.sade.valintatulosservice.config
 
 import java.net.URL
+import java.nio.file.Paths
 
 import com.typesafe.config.{Config, ConfigFactory}
+import fi.vm.sade.properties.OphProperties
 import fi.vm.sade.utils.config.{ApplicationSettingsLoader, ConfigTemplateProcessor}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.utils.tcp.PortFromSystemPropertyOrFindFree
@@ -27,7 +29,7 @@ object ValintarekisteriAppConfig extends Logging {
       itPostgres.start()
     }
 
-    override lazy val settings = loadSettings
+    override val settings = loadSettings
       .withOverride(("valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids", "100"))
       .withOverride("valinta-tulos-service.valintarekisteri.db.url", s"jdbc:postgresql://localhost:${itPostgresPortChooser.chosenPort}/valintarekisteri")
       .withoutPath("valinta-tulos-service.valintarekisteri.db.user")
@@ -36,7 +38,7 @@ object ValintarekisteriAppConfig extends Logging {
 
   trait ExternalProps {
     def configFile = System.getProperty("user.home") + "/oph-configuration/valinta-tulos-service.properties"
-    lazy val settings = ApplicationSettingsLoader.loadSettings(configFile)
+    val settings = ApplicationSettingsLoader.loadSettings(configFile)
   }
 
   trait ExampleTemplatedProps extends ValintarekisteriAppConfig with TemplatedProps {
@@ -45,11 +47,13 @@ object ValintarekisteriAppConfig extends Logging {
 
   trait TemplatedProps {
     logger.info("Using template variables from " + templateAttributesURL)
-    lazy val settings = loadSettings
-    def loadSettings = ConfigTemplateProcessor.createSettings(
-      getClass.getResource("/oph-configuration/valinta-tulos-service-devtest.properties.template"),
-      templateAttributesURL
-    )
+    val settings = loadSettings
+    def loadSettings = {
+      ConfigTemplateProcessor.createSettings(
+        getClass.getResource("/oph-configuration/valinta-tulos-service-devtest.properties.template"),
+        templateAttributesURL)
+    }
+
     def templateAttributesURL: URL
   }
 
@@ -68,3 +72,20 @@ trait StubbedExternalDeps {
 
 }
 
+private[config] class ValintarekisteriOphUrlProperties(confs: Config)
+  extends OphProperties("/oph-configuration/valinta-tulos-valintarekisteri-db-oph.properties")
+  with Logging {
+  addOptionalFiles(Paths.get(sys.props.getOrElse("user.home", ""), "/oph-configuration/common.properties").toString)
+  addOptionalFiles(Paths.get(sys.props.getOrElse("user.home", ""), "/oph-configuration/valinta-tulos-service.properties").toString)
+
+  private val virkailijaHost =
+    if (confs.hasPath("host.virkailija")){
+      confs.getString("host.virkailija")
+    }
+    else {
+      logger.error("host.virkailija not defined in config, using localhost in oph.properties")
+      "localhost"
+    }
+
+  addDefault("host.virkailija", virkailijaHost)
+}
