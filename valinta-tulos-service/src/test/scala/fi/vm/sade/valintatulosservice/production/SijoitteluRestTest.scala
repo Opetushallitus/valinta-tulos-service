@@ -2,13 +2,15 @@ package fi.vm.sade.valintatulosservice.production
 
 import java.io.File
 
-import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasClient, CasParams}
+import fi.vm.sade.utils.cas.CasClient.TGTUrl
+import fi.vm.sade.utils.cas._
 import fi.vm.sade.utils.http.DefaultHttpRequest
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import org.apache.commons.io.FileUtils
 import org.http4s.client.Client
-import org.http4s.{Method, Request, Uri}
+import org.http4s.dsl.{POST, resolve, uri}
+import org.http4s.{Method, Request, Uri, client, _}
 import org.json4s.DefaultFormats
 import org.json4s.native.JsonMethods._
 import org.junit.Ignore
@@ -20,6 +22,16 @@ import org.specs2.runner.JUnitRunner
 import scala.language.experimental.macros
 import scalaj.http.{Http, HttpOptions}
 import scalaz.concurrent.Task
+import org.http4s.Status.Created
+import org.http4s.client._
+import org.http4s.dsl._
+import org.http4s.headers.{Location, `Set-Cookie`}
+
+import scala.xml._
+import scalaz.concurrent.Task
+import scalaz.stream.{Channel, async, channel}
+
+
 
 @Ignore
 @RunWith(classOf[JUnitRunner])
@@ -51,6 +63,10 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
 
   "New sijoittelu (valintarekisteri) and old sijoittelu (sijoitteluDb)" should {
     "contain same information" in {
+
+      val vtsClient = new VtsAuthenticatingClient(oldHost, "/valinta-tulos-service", cas_user, cas_password)
+      val vtsSessionCookie = vtsClient.getVtsSession(newHost)
+
       hakuOidsToTest.foreach { oid =>
         info(s"*** Tarkistetaan haku $oid")
         compareOldAndNewSijoitteluResults(oid)
@@ -59,7 +75,7 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
 
       def compareOldAndNewSijoitteluResults(hakuOid: String) = {
         val uusiSijoittelu: Sijoitteluajo = time("Create uusi sijoittelu") {
-          get[Sijoitteluajo](() => getNewSijoittelu(hakuOid))
+          get[Sijoitteluajo](() => getNewSijoittelu(hakuOid, vtsSessionCookie))
         }
         val vanhaSijoittelu = time("Create vanha sijoittelu") {
           createVanhaSijoitteluajo(hakuOid)
@@ -214,13 +230,15 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
   private def getSijoitteluajo(hakuOid: String): String = getOld(s"$oldHost/sijoittelu-service/resources/sijoittelu/$hakuOid/sijoitteluajo/latest")
   private def getHakukohde(hakuOid: String, hakukohdeOid: String) = () => getOld(s"$oldHost/sijoittelu-service/resources/sijoittelu/$hakuOid/sijoitteluajo/latest/hakukohde/$hakukohdeOid")
 
-  private def getNewSijoittelu(hakuOid: String) = {
+  private def getNewSijoittelu(hakuOid: String, vtsSessionCookie: String) = {
     val url = newHost + s"/valinta-tulos-service/auth/sijoittelu/$hakuOid/sijoitteluajo/latest"
     val (statusCode, responseHeaders, result) = time("Uuden sijoittelun haku") {
       new DefaultHttpRequest(Http(url)
         .method("GET")
         .options(Seq(HttpOptions.connTimeout(10000), HttpOptions.readTimeout(120000)))
-        .header("Content-Type", "application/json")).responseWithHeaders() }
+        .header("Content-Type", "application/json")
+        .header("Cookie", s"session=$vtsSessionCookie")
+      ).responseWithHeaders() }
     if (statusCode != 200) {
       throw new RuntimeException(s"Got status $statusCode from $url with headers $responseHeaders and body $result")
     }
