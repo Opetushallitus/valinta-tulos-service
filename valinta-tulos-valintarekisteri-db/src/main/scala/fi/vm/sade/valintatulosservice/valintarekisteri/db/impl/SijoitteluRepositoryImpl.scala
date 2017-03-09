@@ -522,15 +522,19 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
   }
 
   override def deleteSijoittelunTulokset(hakuOid: String): Unit = {
-    val deleteOperationsWithDescriptions: Seq[(String, SqlAction[Int, NoStream, Effect])] = Seq(
-      ("disable tilat_kuvaukset_triggers", sqlu"alter table tilat_kuvaukset disable trigger all"),
-      ("disable valinnantilat triggers", sqlu"alter table valinnantilat disable trigger all"),
-      ("disable valinnantulokset triggers", sqlu"alter table valinnantulokset disable trigger all"),
-      ("disable ilmoittautumiset triggers", sqlu"alter table ilmoittautumiset disable trigger all"),
+    val tablesWithTriggers = Seq(
+      "tilat_kuvaukset",
+      "valinnantilat",
+      "valinnantulokset",
+      "ilmoittautumiset",
+      "hakijaryhman_hakemukset",
+      "pistetiedot",
+      "jonosijat")
 
-      ("disable hakijaryhman_hakemukset triggers", sqlu"alter table hakijaryhman_hakemukset disable trigger all"),
-      ("disable pistetiedot triggers", sqlu"alter table pistetiedot disable trigger all"),
-      ("disable jonosijat triggers", sqlu"alter table jonosijat disable trigger all"),
+    val disableTriggers: DBIO[Seq[Int]] = DbUtils.disableTriggers(tablesWithTriggers)
+
+    val deleteOperationsWithDescriptions: Seq[(String, DBIO[Any])] = Seq(
+      (s"disable triggers of $tablesWithTriggers", DbUtils.disableTriggers(tablesWithTriggers)),
 
       ("create tmp table sijoitteluajo_ids_to_delete", sqlu"create temporary table sijoitteluajo_ids_to_delete (id bigint primary key) on commit drop"),
       ("create tmp table hakukohde_oids_to_delete", sqlu"create temporary table hakukohde_oids_to_delete (oid character varying primary key) on commit drop"),
@@ -564,14 +568,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
       ("delete ilmoittautumiset_history", sqlu"delete from ilmoittautumiset_history where hakukohde in (select oid from hakukohde_oids_to_delete)"),
       ("delete ilmoittautumiset", sqlu"delete from ilmoittautumiset where hakukohde in (select oid from hakukohde_oids_to_delete)"),
 
-      ("enable jonosijat triggers", sqlu"alter table jonosijat enable trigger all"),
-      ("enable pistetiedot triggers", sqlu"alter table pistetiedot enable trigger all"),
-      ("enable hakijaryhman_hakemukset triggers", sqlu"alter table hakijaryhman_hakemukset enable trigger all"),
-
-      ("enable tilat_kuvaukset triggers", sqlu"alter table tilat_kuvaukset enable trigger all"),
-      ("enable valinnantilat triggers", sqlu"alter table valinnantilat enable trigger all"),
-      ("enable valinnantulokset triggers", sqlu"alter table valinnantulokset enable trigger all"),
-      ("enable ilmoittautumiset triggers", sqlu"alter table ilmoittautumiset enable trigger all")
+      (s"enable triggers of $tablesWithTriggers", DbUtils.enableTriggers(tablesWithTriggers))
     )
 
     val (descriptions, sqls) = deleteOperationsWithDescriptions.unzip
