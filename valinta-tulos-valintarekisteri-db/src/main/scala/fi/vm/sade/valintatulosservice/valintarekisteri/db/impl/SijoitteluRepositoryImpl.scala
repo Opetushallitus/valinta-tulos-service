@@ -541,7 +541,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
       ("create tmp table jono_oids_to_delete", sqlu"create temporary table jono_oids_to_delete (oid character varying primary key) on commit drop"),
       ("populate sijoitteluajo_ids_to_delete", sqlu"insert into sijoitteluajo_ids_to_delete (select id from sijoitteluajot where haku_oid = ${hakuOid})"),
       ("populate hakukohde_oids_to_delete", sqlu"""insert into hakukohde_oids_to_delete (
-               select sa_hk.hakukohde_oid from sijoitteluajon_hakukohteet sa_hk
+               select distinct sa_hk.hakukohde_oid from sijoitteluajon_hakukohteet sa_hk
                join sijoitteluajo_ids_to_delete sitd on sitd.id = sa_hk.sijoitteluajo_id)"""),
       ("populate jono_oids_to_delete", sqlu"insert into jono_oids_to_delete (select j.oid from valintatapajonot j join hakukohde_oids_to_delete hotd on hotd.oid = j.hakukohde_oid)"),
 
