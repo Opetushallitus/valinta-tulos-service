@@ -8,6 +8,7 @@ import org.http4s.dsl._
 import org.http4s.headers.`Set-Cookie`
 
 import scalaz.concurrent.Task
+import scalaz.{-\/, \/-}
 
 class VtsAuthenticatingClient(virkailijaBaseUrlForCas: String,
                               relativeServiceUrl: String,
@@ -40,24 +41,20 @@ class VtsAuthenticatingClient(virkailijaBaseUrlForCas: String,
 }
 
 object VtsSessionDecoder extends Logging {
-  private val vtsSessionDecoder: EntityDecoder[String] = EntityDecoder.decodeBy[String](MediaRange.`*/*`) { (msg) =>
-    msg.headers.collectFirst {
-      case `Set-Cookie`(`Set-Cookie`(cookie)) if cookie.name == "session" => DecodeResult.success(cookie.content)
-    }.getOrElse(DecodeResult.failure(ParseFailure("Decoding session failed", "no cookie found for session")))
+  private def findSessionCookie(headers: Headers): Option[String] = {
+    headers.collectFirst {
+      case `Set-Cookie`(`Set-Cookie`(cookie)) if cookie.name == "session" => cookie.content
+    }
   }
 
   def decodeVtsSession(response: Response): Task[String] = {
-    DecodeResult.success(response).flatMap[String] {
-      case resp if resp.status.isSuccess =>
-        vtsSessionDecoder.decode(resp)
-      case resp =>
-        DecodeResult.failure(EntityDecoder.text.decode(resp).fold((_) =>
-          ParseFailure("Decoding session failed",
-            s"service returned non-ok status code ${resp.status.code}"),
-          (body) => ParseFailure("Decoding session failed", s"service returned non-ok status code ${resp.status.code}: $body")))
-    }.fold(e => {
-      logger.error(e.details)
-      throw ParseException(e)
-    }, identity)
+    if (response.status.isSuccess) {
+      findSessionCookie(response.headers).fold[Task[String]](Task.fail(new IllegalStateException("no cookie found for session")))(Task.now)
+    } else {
+      EntityDecoder.text.decode(response).run.map {
+        case -\/(e) => new IllegalStateException(s"service returned non-ok status code ${response.status.code}: ${e.details}")
+        case \/-(body) => new IllegalStateException(s"service returned non-ok status code ${response.status.code}: $body")
+      }.flatMap(Task.fail)
+    }
   }
 }
