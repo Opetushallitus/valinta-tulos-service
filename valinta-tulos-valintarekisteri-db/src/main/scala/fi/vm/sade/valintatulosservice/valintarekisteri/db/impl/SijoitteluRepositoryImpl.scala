@@ -522,6 +522,12 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
   }
 
   override def deleteSijoittelunTulokset(hakuOid: String): Unit = {
+    val sijoitteluAjoIds = runBlocking(sql"select id from sijoitteluajot where haku_oid = ${hakuOid} order by id asc".as[Long])
+    logger.info(s"Found ${sijoitteluAjoIds.length} sijoitteluajos to delete of haku $hakuOid : $sijoitteluAjoIds")
+    sijoitteluAjoIds.foreach(deleteSingleSijoitteluAjo(hakuOid, _))
+  }
+
+  private def deleteSingleSijoitteluAjo(hakuOid: String, sijoitteluajoId: Long): Unit = {
     val tablesWithTriggers = Seq(
       "tilat_kuvaukset",
       "valinnantilat",
@@ -536,26 +542,22 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
     val deleteOperationsWithDescriptions: Seq[(String, DBIO[Any])] = Seq(
       (s"disable triggers of $tablesWithTriggers", DbUtils.disableTriggers(tablesWithTriggers)),
 
-      ("create tmp table sijoitteluajo_ids_to_delete", sqlu"create temporary table sijoitteluajo_ids_to_delete (id bigint primary key) on commit drop"),
       ("create tmp table hakukohde_oids_to_delete", sqlu"create temporary table hakukohde_oids_to_delete (oid character varying primary key) on commit drop"),
       ("create tmp table jono_oids_to_delete", sqlu"create temporary table jono_oids_to_delete (oid character varying primary key) on commit drop"),
-      ("populate sijoitteluajo_ids_to_delete", sqlu"insert into sijoitteluajo_ids_to_delete (select id from sijoitteluajot where haku_oid = ${hakuOid})"),
       ("populate hakukohde_oids_to_delete", sqlu"""insert into hakukohde_oids_to_delete (
-               select distinct sa_hk.hakukohde_oid from sijoitteluajon_hakukohteet sa_hk
-               join sijoitteluajo_ids_to_delete sitd on sitd.id = sa_hk.sijoitteluajo_id)"""),
+               select distinct sa_hk.hakukohde_oid from sijoitteluajon_hakukohteet sa_hk where sa_hk.sijoitteluajo_id = ${sijoitteluajoId})"""),
       ("populate jono_oids_to_delete", sqlu"insert into jono_oids_to_delete (select distinct j.oid from valintatapajonot j join hakukohde_oids_to_delete hotd on hotd.oid = j.hakukohde_oid)"),
 
-      ("delete hakijaryhman_hakemukset", sqlu"delete from hakijaryhman_hakemukset where sijoitteluajo_id in ( select id from sijoitteluajo_ids_to_delete)"),
-      ("delete hakijaryhmat", sqlu"delete from hakijaryhmat where sijoitteluajo_id in ( select id from sijoitteluajo_ids_to_delete)"),
-      ("delete pistetiedot", sqlu"delete from pistetiedot where sijoitteluajo_id in ( select id from sijoitteluajo_ids_to_delete)"),
+      ("delete hakijaryhman_hakemukset", sqlu"delete from hakijaryhman_hakemukset where sijoitteluajo_id = ${sijoitteluajoId}"),
+      ("delete hakijaryhmat", sqlu"delete from hakijaryhmat where sijoitteluajo_id = ${sijoitteluajoId}"),
+      ("delete pistetiedot", sqlu"delete from pistetiedot where sijoitteluajo_id = ${sijoitteluajoId}"),
       ("delete jonosijat", sqlu"""delete from jonosijat where (sijoitteluajo_id, valintatapajono_oid, hakukohde_oid) in
-            ( select sitd.id, jotd.oid, hotd.oid
-              from sijoitteluajo_ids_to_delete sitd
-              join jono_oids_to_delete jotd on 1=1
+            ( select ${sijoitteluajoId}, jotd.oid, hotd.oid
+              from jono_oids_to_delete jotd
               join hakukohde_oids_to_delete hotd on 1=1)"""),
-      ("delete valintatapajonot", sqlu"delete from valintatapajonot where sijoitteluajo_id in ( select id from sijoitteluajo_ids_to_delete)"),
-      ("delete sijoitteluajon_hakukohteet", sqlu"delete from sijoitteluajon_hakukohteet where sijoitteluajo_id in ( select id from sijoitteluajo_ids_to_delete)"),
-      ("delete sijoitteluajot", sqlu"delete from sijoitteluajot where id in ( select id from sijoitteluajo_ids_to_delete)"),
+      ("delete valintatapajonot", sqlu"delete from valintatapajonot where sijoitteluajo_id = ${sijoitteluajoId}"),
+      ("delete sijoitteluajon_hakukohteet", sqlu"delete from sijoitteluajon_hakukohteet where sijoitteluajo_id = ${sijoitteluajoId}"),
+      ("delete sijoitteluajo", sqlu"delete from sijoitteluajot where id = ${sijoitteluajoId}"),
 
       ("delete tilat_kuvaukset_history", sqlu"delete from tilat_kuvaukset_history where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
       ("delete tilat_kuvaukset", sqlu"delete from tilat_kuvaukset where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
@@ -573,13 +575,14 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
 
     val (descriptions, sqls) = deleteOperationsWithDescriptions.unzip
 
-    time(s"Delete sijoittelu contents of haku $hakuOid") {
+    time(s"Delete sijoittelu contents of sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
+      logger.info(s"Deleting sijoitteluajo $sijoitteluajoId of haku $hakuOid ...")
       runBlockingTransactionally(DBIO.sequence(sqls), timeout = Duration(30, TimeUnit.MINUTES)) match {
         case Right(rowCounts) =>
           logger.info(s"Delete of haku $hakuOid successful. " +
             s"Lines affected:\n\t${descriptions.zip(rowCounts).mkString("\n\t")}")
         case Left(t) =>
-          logger.error(s"Could not delete haku $hakuOid", t)
+          logger.error(s"Could not delete sijoitteluajo $sijoitteluajoId of haku $hakuOid", t)
           throw t
       }
     }
