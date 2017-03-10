@@ -57,8 +57,10 @@ class ScalatraBootstrap extends LifeCycle {
       appConfig.sijoitteluContext.valintatulosRepository, valintarekisteriDb, valintarekisteriDb)
     lazy val valintatulosCollection = new ValintatulosMongoCollection(appConfig.settings.valintatulosMongoConfig)
     lazy val mailPoller = new MailPoller(valintatulosCollection, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 100)
-    lazy val sijoitteluService = new ValintarekisteriService(valintarekisteriDb, hakukohdeRecordService)
-    lazy val valinnantulosService = new ValinnantulosService(valintarekisteriDb, new OrganizationHierarchyAuthorizer(appConfig), hakuService, appConfig.ohjausparametritService, hakukohdeRecordService, appConfig, audit)
+    lazy val valintarekisteriService = new ValintarekisteriService(valintarekisteriDb, hakukohdeRecordService)
+    lazy val authorizer = new OrganizationHierarchyAuthorizer(appConfig)
+    lazy val sijoitteluService = new SijoitteluService(valintarekisteriDb, authorizer, hakuService)
+    lazy val valinnantulosService = new ValinnantulosService(valintarekisteriDb, authorizer, hakuService, appConfig.ohjausparametritService, hakukohdeRecordService, appConfig, audit)
 
 
     val migrationMode = System.getProperty("valinta-rekisteri-migration-mode")
@@ -101,7 +103,7 @@ class ScalatraBootstrap extends LifeCycle {
 
 
       context.mount(new ValinnantulosServlet(valinnantulosService, valintarekisteriDb), "/auth/valinnan-tulos")
-      context.mount(new SijoitteluServlet(sijoitteluService, valintarekisteriDb), "/auth/sijoittelu")
+      context.mount(new SijoitteluServlet(sijoitteluService, valintarekisteriService, valintarekisteriDb), "/auth/sijoittelu")
     }
     context.mount(new HakukohdeRefreshServlet(valintarekisteriDb, hakukohdeRecordService), "/virkistys")
 
