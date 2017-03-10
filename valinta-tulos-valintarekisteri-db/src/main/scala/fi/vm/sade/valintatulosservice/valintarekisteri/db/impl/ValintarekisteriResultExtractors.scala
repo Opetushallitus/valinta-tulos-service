@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import java.sql.JDBCType
 import java.time.{Instant, OffsetDateTime, ZoneId}
-import java.util.UUID
+import java.util.{Date, UUID}
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoAction, VastaanottoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._

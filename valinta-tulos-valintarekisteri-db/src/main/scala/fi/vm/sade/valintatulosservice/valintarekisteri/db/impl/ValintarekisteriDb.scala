@@ -1,6 +1,9 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
+import java.util.Date
+
 import com.typesafe.config.{Config, ConfigValueFactory}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.VastaanottoRecord
 import org.flywaydb.core.Flyway
 import slick.driver.PostgresDriver.api.{Database, _}
 

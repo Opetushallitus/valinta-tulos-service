@@ -167,4 +167,20 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
     }
   }
 
+  override def findHenkilonVastaanotot(personOid: String, alkuaika: Option[Date] = None): Set[VastaanottoRecord] = {
+    alkuaika match {
+      case Some(t) =>
+        val timestamp = new java.sql.Timestamp(t.getTime)
+        runBlocking(sql"""select henkilo, haku_oid, hakukohde, action, ilmoittaja, "timestamp"
+          from newest_vastaanotto_events
+          where henkilo = $personOid
+              and "timestamp" >= ${timestamp}
+              and action = 'VastaanotaSitovasti'""".as[VastaanottoRecord].map(_.toSet))
+      case _ =>
+        runBlocking(sql"""select henkilo, haku_oid, hakukohde, action, ilmoittaja, "timestamp"
+          from newest_vastaanotto_events
+          where henkilo = $personOid
+              and action = 'VastaanotaSitovasti'""".as[VastaanottoRecord].map(_.toSet))
+    }
+  }
 }

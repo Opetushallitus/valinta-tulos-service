@@ -11,6 +11,8 @@ import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatapajono, 
 import slick.profile.SqlAction
 
 import scala.concurrent.duration.Duration
+import scala.util.control.NonFatal
+import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.JavaConverters._
 

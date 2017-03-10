@@ -38,7 +38,8 @@ case class Hakutoiveentulos(hakukohdeOid: String,
                             ehdollisestiHyvaksyttavissa: Boolean,
                             tilanKuvaukset: Map[String, String],
                             pisteet: Option[BigDecimal],
-                            virkailijanTilat: HakutoiveenSijoittelunTilaTieto
+                            virkailijanTilat: HakutoiveenSijoittelunTilaTieto,
+                            kelaURL: Option[String] = None
                             ) {
 
   def toKesken = {

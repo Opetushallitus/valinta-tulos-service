@@ -8,7 +8,7 @@ import org.apache.commons.lang3.BooleanUtils
 
 case class VtsApplicationSettings(config: Config) extends ApplicationSettings(config) {
   val ophUrlProperties: OphProperties = new VtsOphUrlProperties(config)
-  
+
   val hakemusMongoConfig: MongoConfig = getMongoConfig(config.getConfig("hakemus.mongodb"))
   val valintatulosMongoConfig: MongoConfig = getMongoConfig(config.getConfig("sijoittelu-service.mongodb"))
   val securitySettings = new SecuritySettings(config)
@@ -16,6 +16,7 @@ case class VtsApplicationSettings(config: Config) extends ApplicationSettings(co
   val lenientSijoitteluntuloksetParsing: Boolean = BooleanUtils.isTrue(withConfig(_.getBoolean("valinta-tulos-service.parseleniently.sijoitteluajontulos")))
   val organisaatioServiceUrl = withConfig(_.getString("cas.service.organisaatio-service"))
   val rootOrganisaatioOid = withConfig(_.getString("root.organisaatio.oid"))
+  val kelaURL = withConfig(_.getString("valinta-tulos-service.kela.url"))
 
   val ilmoittautuminenEnabled = {
     val value = config.getString("valinta-tulos-service.ilmoittautuminen.enabled")
