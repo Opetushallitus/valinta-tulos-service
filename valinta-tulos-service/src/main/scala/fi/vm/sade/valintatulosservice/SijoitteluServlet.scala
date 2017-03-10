@@ -9,7 +9,9 @@ import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 import org.scalatra.{NotImplemented, Ok}
 
-class SijoitteluServlet(sijoitteluService: ValintarekisteriService, val sessionRepository: SessionRepository)
+class SijoitteluServlet(sijoitteluService: SijoitteluService,
+                        valintarekisteriService: ValintarekisteriService,
+                        val sessionRepository: SessionRepository)
                        (implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase
                        with CasAuthenticatedServlet {
 
@@ -52,7 +54,7 @@ class SijoitteluServlet(sijoitteluService: ValintarekisteriService, val sessionR
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
     val hakuOid = params("hakuOid")
     val sijoitteluajoId = params("sijoitteluajoId")
-    streamOk(sijoitteluService.getSijoitteluajo(hakuOid, sijoitteluajoId))
+    streamOk(valintarekisteriService.getSijoitteluajo(hakuOid, sijoitteluajoId))
   }
 
   lazy val getHakemusetBySijoitteluajoSwagger: OperationBuilder = (apiOperation[Unit]("getHakemusetBySijoitteluajoSwagger")
@@ -89,8 +91,11 @@ class SijoitteluServlet(sijoitteluService: ValintarekisteriService, val sessionR
     val hakuOid = params("hakuOid")
     val sijoitteluajoId = params("sijoitteluajoId")
     val hakukohdeOid = params("hakukohdeOid")
-    // TODO Ok(sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid))
-    NotImplemented()
+
+    implicit val authenticated = authenticate
+    authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
+
+    Ok(sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session))
   }
 
   lazy val getHakukohdeErillissijoitteluSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohdeErillissijoitteluSwagger")
