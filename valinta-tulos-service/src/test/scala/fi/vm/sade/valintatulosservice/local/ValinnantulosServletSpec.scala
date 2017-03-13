@@ -356,5 +356,6 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     }
   }
 
+  step(organisaatioService.stop())
   step(deleteAll)
 }
