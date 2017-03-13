@@ -76,7 +76,7 @@ class SijoitteluService(sijoitteluRepository: SijoitteluRepository,
     }
 
     hakukohde.dto(
-      valintatapajonot = valintatapajonot.map(v => v.dto(
+      valintatapajonot.map(v => v.dto(
         hakemukset.getOrElse(v.oid, List()).map(h =>
           h.dto(
             hakemuksenHakijaryhmat(h.hakemusOid),
