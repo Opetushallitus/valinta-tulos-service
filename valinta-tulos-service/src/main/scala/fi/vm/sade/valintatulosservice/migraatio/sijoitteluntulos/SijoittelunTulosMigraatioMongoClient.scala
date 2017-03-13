@@ -14,6 +14,7 @@ import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
+import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.Valintarekisteri
 import slick.dbio._
 
 import scala.collection.JavaConverters._
@@ -67,6 +68,9 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
         logger.info(s"Starting to store sijoitteluajo $sijoitteluajoId of haku $hakuOid...")
         timed(s"Ensuring hakukohteet for sijoitteluajo $sijoitteluajoId of $hakuOid are in db") {
           hakukohteet.asScala.map(_.getOid).foreach(hakukohdeRecordService.getHakukohdeRecord)
+        }
+        timed(s"Removed jono based hakijaryhmät referring to jonos not in sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
+          Valintarekisteri.poistaValintatapajonokohtaisetHakijaryhmatJoidenJonoaEiSijoiteltu(hakukohteet)
         }
         timed(s"Stored sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
           sijoitteluRepository.storeSijoittelu(SijoitteluWrapper(sijoitteluAjo, hakukohteet, valintatulokset))
