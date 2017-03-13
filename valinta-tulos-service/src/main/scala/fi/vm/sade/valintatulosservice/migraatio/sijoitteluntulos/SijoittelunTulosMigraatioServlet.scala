@@ -13,7 +13,7 @@ import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import org.json4s.jackson.Serialization.read
-import org.scalatra.Ok
+import org.scalatra.{InternalServerError, Ok}
 import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 
@@ -46,7 +46,15 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
     val dryRun = params("dryrun").toBoolean
     val hakuOids = read[Set[String]](request.body)
 
-    hakuOids.foreach { mongoClient.migrate(_, dryRun) }
+    try {
+      hakuOids.foreach {
+        mongoClient.migrate(_, dryRun)
+      }
+    } catch {
+      case e: Exception =>
+        logger.error("Migraatio epäonnistui", e)
+        InternalServerError("Migraatio epäonnistui", reason = e.getMessage)
+    }
 
     val msg = s"postHakukohdeMigration DONE in ${System.currentTimeMillis - start} ms"
     logger.info(msg)
