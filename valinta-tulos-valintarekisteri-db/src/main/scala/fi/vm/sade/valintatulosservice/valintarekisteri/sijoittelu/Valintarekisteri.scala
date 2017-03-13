@@ -2,8 +2,10 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
 import java.util
 import java.util.Comparator
+import java.util.function.{Consumer, Predicate}
+import java.util.stream.Collectors
 
-import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatulos}
+import fi.vm.sade.sijoittelu.domain._
 import fi.vm.sade.sijoittelu.tulos.dto.SijoitteluajoDTO
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakutoiveDTO, HakutoiveenValintatapajonoDTO}
 import fi.vm.sade.utils.slf4j.Logging
@@ -39,6 +41,8 @@ abstract class Valintarekisteri extends SijoitteluRecordToDTO with Logging with 
 
   def tallennaSijoittelu(sijoitteluajo:SijoitteluAjo, hakukohteet:java.util.List[Hakukohde], valintatulokset:java.util.List[Valintatulos]): Unit = {
     logger.info(s"Tallennetaan sijoitteluajo haulle: ${sijoitteluajo.getHakuOid}")
+    logger.info(s"Poistetaan haun ${sijoitteluajo.getHakuOid} tuloksen hakukohteista hakijaryhmät, joiden jonoja ei ole sijoiteltu")
+    Valintarekisteri.poistaValintatapajonokohtaisetHakijaryhmatJoidenJonoaEiSijoiteltu(hakukohteet)
     try {
       val sijoittelu = SijoitteluWrapper(sijoitteluajo, hakukohteet, valintatulokset)
       logger.info(s"Tallennetaan hakukohteet haulle")
@@ -143,5 +147,35 @@ abstract class Valintarekisteri extends SijoitteluRecordToDTO with Logging with 
       .getOrElse(throw new IllegalArgumentException(s"Yhtään sijoitteluajoa ei löytynyt haulle $hakuOid"))
     case x => Try(x.toLong).toOption
       .getOrElse(throw new IllegalArgumentException(s"Väärän tyyppinen sijoitteluajon ID: $sijoitteluajoId"))
+  }
+}
+
+object Valintarekisteri extends Logging {
+  /**
+    * @param hakukohteet Sijoitteluajon hakukohteet, joiden hakijaryhmat-collectioneista poistetaan ne jonokohtaiset
+    *                    ryhmät, joita ei ole sijoiteltu tässä sijoitteluajossa.
+    */
+  def poistaValintatapajonokohtaisetHakijaryhmatJoidenJonoaEiSijoiteltu(hakukohteet: util.List[Hakukohde]) {
+    val processHakukohde = new Consumer[Hakukohde] {
+      override def accept(h: Hakukohde): Unit = {
+        var excluded: Int = 0
+        val sijoitellutJonot: Set[String] = h.getValintatapajonot.asScala.map(_.getOid).toSet
+        h.setHakijaryhmat(h.getHakijaryhmat.stream()
+          .filter(new Predicate[Hakijaryhma] {
+            override def test(ryhma: Hakijaryhma): Boolean = {
+              val include = ryhma.getValintatapajonoOid == null || sijoitellutJonot.contains(ryhma.getValintatapajonoOid)
+              if (!include) {
+                excluded = excluded + 1
+              }
+              include
+            }
+          }).collect(Collectors.toList[Hakijaryhma]))
+        if (excluded > 0) {
+          logger.info(s"Poistettiin $excluded hakijaryhmää, jotka viittasivat jonoihin, joita ei ollut " +
+            s"kohteen ${h.getOid} sijoittelussa.")
+        }
+      }
+    }
+    hakukohteet.forEach(processHakukohde)
   }
 }
