@@ -1,8 +1,9 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
 import java.sql.Timestamp
+import java.text.SimpleDateFormat
 
-import fi.vm.sade.sijoittelu.domain.{Hakemus => SijoitteluHakemus}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Hylatty, Hyvaksytty, SijoittelunHakukohdeRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
@@ -70,6 +71,53 @@ class ValintarekisteriDbReadSijoitteluSpec extends Specification with ITSetup wi
       val hakemus = getHakemusInfo("1.2.246.562.11.00004663595").get
       hakemus.selite mustEqual "Sijoittelun tallennus"
       hakemus.tilanViimeisinMuutos mustEqual dateStringToTimestamp("2016-10-12T04:11:20.527+0000")
+    }
+
+    "get sijoitteluajon hakukohde" in {
+      singleConnectionValintarekisteriDb.getSijoitteluajonHakukohde(1476936450191L, "1.2.246.562.20.26643418986") mustEqual
+        Some(SijoittelunHakukohdeRecord(1476936450191L, "1.2.246.562.20.26643418986", true))
+    }
+
+    "get hakukohteen hakijaryhmat" in {
+      val hakijaryhmat = singleConnectionValintarekisteriDb.getHakukohteenHakijaryhmat(1476936450191L, "1.2.246.562.20.26643418986")
+      hakijaryhmat.size mustEqual 2
+      hakijaryhmat.find(h => h.oid == "14521594993758343217655058789845" && h.nimi == "Ensikertalaisten hakijaryhmä").isDefined mustEqual true
+      hakijaryhmat.find(h => h.oid == "1476103764898-8837999876477636603" && h.nimi == "testiryhmä").isDefined mustEqual true
+    }
+
+    "get hakukohteen valintatapajonot" in {
+      val valintatapajonot = singleConnectionValintarekisteriDb.getHakukohteenValintatapajonot(1476936450191L, "1.2.246.562.20.26643418986")
+      valintatapajonot.size mustEqual 1
+      valintatapajonot.head.oid mustEqual "14538080612623056182813241345174"
+      valintatapajonot.head.nimi mustEqual "Marata YAMK yhteispisteet (yhteistyö)"
+    }
+
+    "get hakukohteen pistetiedot" in {
+      val pistetiedot = singleConnectionValintarekisteriDb.getHakukohteenPistetiedot(1476936450191L, "1.2.246.562.20.26643418986")
+      pistetiedot.size mustEqual 15
+      pistetiedot.map(_.valintatapajonoOid).distinct mustEqual List("14538080612623056182813241345174")
+      pistetiedot.filter(_.osallistuminen == "OSALLISTUI").size mustEqual 9
+      pistetiedot.filter(_.osallistuminen == "MERKITSEMATTA").size mustEqual 4
+      pistetiedot.filter(_.osallistuminen == "EI_OSALLISTUNUT").size mustEqual 2
+    }
+
+    "get hakukohteen hakemukset" in {
+      val hakemukset = singleConnectionValintarekisteriDb.getHakukohteenHakemukset(1476936450191L, "1.2.246.562.20.26643418986")
+      hakemukset.map(_.hakemusOid).diff(List("1.2.246.562.11.00006926939", "1.2.246.562.11.00006398091",
+        "1.2.246.562.11.00005808388", "1.2.246.562.11.00006110910", "1.2.246.562.11.00006117104", "1.2.246.562.11.00005927476",
+        "1.2.246.562.11.00006574307", "1.2.246.562.11.00006185372", "1.2.246.562.11.00005678479", "1.2.246.562.11.00006560353",
+        "1.2.246.562.11.00006769293", "1.2.246.562.11.00006736611", "1.2.246.562.11.00006558530", "1.2.246.562.11.00006940339",
+        "1.2.246.562.11.00006169123")) mustEqual List()
+    }
+
+    "get hakukohteen tilahistoria" in {
+      val tilahistoria = singleConnectionValintarekisteriDb.getHakukohteenTilahistoriat(1476936450191L, "1.2.246.562.20.26643418986")
+      val hakemus1 = tilahistoria.find(_.hakemusOid == "1.2.246.562.11.00006926939")
+      hakemus1.get.tila mustEqual Hyvaksytty
+      hakemus1.get.luotu.getTime mustEqual (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS XXX")).parse("2016-10-17 12:08:50.400 +03:00").getTime
+      val hakemus2 = tilahistoria.find(_.hakemusOid == "1.2.246.562.11.00006736611")
+      hakemus2.get.tila mustEqual Hylatty
+      hakemus2.get.luotu.getTime mustEqual (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS XXX")).parse("2016-10-12 07:11:19.328 +03:00").getTime
     }
   }
 
