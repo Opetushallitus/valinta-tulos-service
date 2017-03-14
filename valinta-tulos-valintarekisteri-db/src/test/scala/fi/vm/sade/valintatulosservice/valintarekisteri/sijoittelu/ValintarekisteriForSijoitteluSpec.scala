@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
-import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, Hakemus}
+import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, Hakemus, Hakijaryhma, Valintatapajono, Hakukohde}
 import fi.vm.sade.sijoittelu.tulos.dto.{SijoitteluDTO, SijoitteluajoDTO}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
@@ -159,6 +159,53 @@ class ValintarekisteriForSijoitteluSpec extends Specification with ITSetup with 
     findTilahistoria(ensimmainen, hakukohdeOid, valintatapajonoOid, hakemusOid2).size mustEqual 1
     findTilahistoria(toinen, hakukohdeOid, valintatapajonoOid, hakemusOid1).size mustEqual 2
     findTilahistoria(toinen, hakukohdeOid, valintatapajonoOid, hakemusOid2).size mustEqual 1
+  }
+  "Poista hakijaryhmät, joiden jonoa ei ole sijoiteltu" in {
+    def createHakijaryhma(oid:String, valintatapajonoOid:String) = {
+      val hakijaryhma:Hakijaryhma = new Hakijaryhma()
+      hakijaryhma.setOid(oid)
+      hakijaryhma.setValintatapajonoOid(valintatapajonoOid)
+      hakijaryhma
+    }
+
+    def createValintatapajono(oid:String) = {
+      val valintatapajono:Valintatapajono = new Valintatapajono()
+      valintatapajono.setOid(oid)
+      valintatapajono
+    }
+
+    def createHakukohde(oid:String, valintatapajonot:java.util.List[Valintatapajono], hakijaryhmat:java.util.List[Hakijaryhma]) = {
+      val hakukohde:Hakukohde = new Hakukohde()
+      hakukohde.setOid(oid)
+      hakukohde.setValintatapajonot(valintatapajonot)
+      hakukohde.setHakijaryhmat(hakijaryhmat)
+      hakukohde
+    }
+
+    import scala.collection.JavaConverters._
+
+    val hakukohteet = List(
+      createHakukohde("h1",
+        List(createValintatapajono("v1"), createValintatapajono("v2"), createValintatapajono("v3")).asJava,
+        List(createHakijaryhma("r1", "v1"), createHakijaryhma("r2", null), createHakijaryhma("r3", "puuttuva")).asJava),
+      createHakukohde("h2",
+        List(createValintatapajono("v1"), createValintatapajono("v2"), createValintatapajono("v3")).asJava,
+        List(createHakijaryhma("r1", "v1"), createHakijaryhma("r2", "v2"), createHakijaryhma("r3", "v3")).asJava),
+      createHakukohde("h3",
+        List(createValintatapajono("v1"), createValintatapajono("v2"), createValintatapajono("v3")).asJava,
+        List(createHakijaryhma("r1", null), createHakijaryhma("r2", "puuttuva"), createHakijaryhma("r3", "puuttuva")).asJava)
+    )
+
+    Valintarekisteri.poistaValintatapajonokohtaisetHakijaryhmatJoidenJonoaEiSijoiteltu(hakukohteet.asJava)
+
+    hakukohteet.size mustEqual 3
+    hakukohteet.map(_.getOid).diff(List("h1", "h2", "h3")) mustEqual List()
+    hakukohteet.find(_.getOid == "h1").get.getHakijaryhmat.size mustEqual 2
+    hakukohteet.find(_.getOid == "h2").get.getHakijaryhmat.size mustEqual 3
+    hakukohteet.find(_.getOid == "h3").get.getHakijaryhmat.size mustEqual 1
+    hakukohteet.find(_.getOid == "h1").get.getHakijaryhmat.asScala.map(_.getOid).diff(List("r1", "r2")) mustEqual List()
+    hakukohteet.find(_.getOid == "h2").get.getHakijaryhmat.asScala.map(_.getOid).diff(List("r1", "r2", "r3")) mustEqual List()
+    hakukohteet.find(_.getOid == "h3").get.getHakijaryhmat.asScala.map(_.getOid).diff(List("r1")) mustEqual List()
   }
 
   override protected def before: Unit = {
