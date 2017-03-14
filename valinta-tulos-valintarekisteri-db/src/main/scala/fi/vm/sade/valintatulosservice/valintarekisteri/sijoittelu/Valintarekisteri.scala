@@ -132,26 +132,18 @@ object Valintarekisteri extends Logging {
     *                    ryhmät, joita ei ole sijoiteltu tässä sijoitteluajossa.
     */
   def poistaValintatapajonokohtaisetHakijaryhmatJoidenJonoaEiSijoiteltu(hakukohteet: util.List[Hakukohde]) {
-    val processHakukohde = new Consumer[Hakukohde] {
-      override def accept(h: Hakukohde): Unit = {
-        var excluded: Int = 0
-        val sijoitellutJonot: Set[String] = h.getValintatapajonot.asScala.map(_.getOid).toSet
-        h.setHakijaryhmat(h.getHakijaryhmat.stream()
-          .filter(new Predicate[Hakijaryhma] {
-            override def test(ryhma: Hakijaryhma): Boolean = {
-              val include = ryhma.getValintatapajonoOid == null || sijoitellutJonot.contains(ryhma.getValintatapajonoOid)
-              if (!include) {
-                excluded = excluded + 1
-              }
-              include
-            }
-          }).collect(Collectors.toList[Hakijaryhma]))
-        if (excluded > 0) {
-          logger.info(s"Poistettiin $excluded hakijaryhmää, jotka viittasivat jonoihin, joita ei ollut " +
-            s"kohteen ${h.getOid} sijoittelussa.")
-        }
+    hakukohteet.asScala.foreach(h => {
+      val original = h.getHakijaryhmat.size
+
+      h.setHakijaryhmat(h.getHakijaryhmat.asScala.filter(r =>
+        null == r.getValintatapajonoOid || h.getValintatapajonot.asScala.map(_.getOid).contains(r.getValintatapajonoOid)
+      ).asJava)
+
+      (original - h.getHakijaryhmat.size) match {
+        case x:Int if x > 0 => logger.info(s"Poistettiin $x hakijaryhmää, jotka viittasivat jonoihin, joita ei ollut " +
+          s"kohteen ${h.getOid} sijoittelussa.")
+        case _ => Unit
       }
-    }
-    hakukohteet.forEach(processHakukohde)
+    })
   }
 }
