@@ -11,6 +11,7 @@ import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
+import fi.vm.sade.valintatulosservice.tarjonta.TarjontaHakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
@@ -28,7 +29,8 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
                                            appConfig: VtsAppConfig,
                                            sijoitteluRepository: SijoitteluRepository,
                                            valinnantulosRepository: ValinnantulosRepository,
-                                           hakukohdeRecordService: HakukohdeRecordService) extends Logging {
+                                           hakukohdeRecordService: HakukohdeRecordService,
+                                           tarjontaHakuService: TarjontaHakuService) extends Logging {
   private val hakukohdeDao: HakukohdeDao = appConfig.sijoitteluContext.hakukohdeDao
   private val valintatulosDao: ValintatulosDao = appConfig.sijoitteluContext.valintatulosDao
   private val sijoitteluDao = appConfig.sijoitteluContext.sijoitteluDao
@@ -72,14 +74,24 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
         timed(s"Removed jono based hakijaryhmät referring to jonos not in sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
           Valintarekisteri.poistaValintatapajonokohtaisetHakijaryhmatJoidenJonoaEiSijoiteltu(hakukohteet)
         }
-        timed(s"Stored sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
-          sijoitteluRepository.storeSijoittelu(SijoitteluWrapper(sijoitteluAjo, hakukohteet, valintatulokset))
+        tarjontaHakuService.getHaku(hakuOid) match {
+          case Right(haku) => {
+            haku.käyttääSijoittelua match {
+              case true => timed(s"Stored sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
+                sijoitteluRepository.storeSijoittelu(SijoitteluWrapper(sijoitteluAjo, hakukohteet, valintatulokset))
+              }
+              case _ => logger.info(s"Haku $hakuOid does not use sijoittelu. Skipping saving sijoittelu $sijoitteluajoId")
+            }
+          }
+          case Left(e) => logger.error(e.getMessage)
         }
+
         logger.info(s"Starting to save valinta data sijoitteluajo $sijoitteluajoId of haku $hakuOid...")
         timed(s"Saving valinta data for sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
           valinnantulosRepository.runBlocking(DBIOAction.sequence(allSaves), Duration(15, MINUTES))
         }
       }
+      logger.info("-----------------------------------------------------------")
     }
   }
 
@@ -129,12 +141,12 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
         val ohjausSaves = logEntriesLatestFirst.headOption.map { logEntry =>
           valinnantulosRepository.storeValinnantuloksenOhjaus(ValinnantuloksenOhjaus(hakemusOid, valintatapajonoOid, hakukohdeOid,
             v.getEhdollisestiHyvaksyttavissa, v.getJulkaistavissa, v.getHyvaksyttyVarasijalta, v.getHyvaksyPeruuntunut,
-            logEntry.getMuokkaaja, logEntry.getSelite))
+            logEntry.getMuokkaaja, Option(logEntry.getSelite).getOrElse("")))
         }.map(ignoreErrorsFromDataAlreadySavedBySijoittelunTulos)
 
         val ilmoittautuminenSave = logEntriesLatestFirst.reverse.find(_.getMuutos.contains("ilmoittautuminen")).map { latestIlmoittautuminenLogEntry =>
           valinnantulosRepository.storeIlmoittautuminen(henkiloOid, Ilmoittautuminen(hakukohdeOid, SijoitteluajonIlmoittautumistila(v.getIlmoittautumisTila),
-            latestIlmoittautuminenLogEntry.getMuokkaaja, latestIlmoittautuminenLogEntry.getSelite))
+            latestIlmoittautuminenLogEntry.getMuokkaaja, Option(latestIlmoittautuminenLogEntry.getSelite).getOrElse("")))
         }
         valinnanTilaSaves ++ ohjausSaves.toSeq ++ ilmoittautuminenSave.toSeq
       }
