@@ -10,6 +10,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.VtsServletBase
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
+import fi.vm.sade.valintatulosservice.tarjonta.TarjontaHakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import org.json4s.jackson.Serialization.read
@@ -22,7 +23,8 @@ import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
   */
 class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepository,
                                        valinnantulosRepository: ValinnantulosRepository,
-                                       hakukohdeRecordService: HakukohdeRecordService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
+                                       hakukohdeRecordService: HakukohdeRecordService,
+                                       tarjontaHakuService: TarjontaHakuService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
   override val applicationName = Some("sijoittelun-tulos-migraatio")
 
   override protected def applicationDescription: String = "REST-API sijoittelun tuloksien migroinniksi valintarekisteriin"
@@ -33,15 +35,15 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
 
   private val sijoittelunTulosRestClient = new SijoittelunTulosRestClient(appConfig)
   private val mongoClient = new SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient, appConfig,
-    sijoitteluRepository, valinnantulosRepository, hakukohdeRecordService)
+    sijoitteluRepository, valinnantulosRepository, hakukohdeRecordService, tarjontaHakuService)
 
   logger.warn("Mountataan Valintarekisterin sijoittelun tuloksien migraatioservlet!")
 
-  val postHakukohdeMigration: OperationBuilder = (apiOperation[Int]("migroiHakukohde")
-    summary "Migroi sijoitteludb:stä valintarekisteriin hakukohteita. Toistaiseksi ei välitä siitä, ovatko tiedot muuttuneet"
-    parameter queryParam[Boolean]("dryrun").defaultValue(true).description("Dry run logittaa hakukohteet, joiden tila on muuttunut, Mongossa mutta ei päivitä kantaa.")
+  val postHakuMigration: OperationBuilder = (apiOperation[Int]("migroiHakukohde")
+    summary "Migroi sijoitteludb:stä valintarekisteriin hakuja. Toistaiseksi ei välitä siitä, ovatko tiedot muuttuneet"
+    parameter queryParam[Boolean]("dryrun").defaultValue(true).description("Dry run logittaa haut, joiden tila on muuttunut, Mongossa mutta ei päivitä kantaa.")
     parameter bodyParam[Set[String]]("hakuOids").description("Virkistettävien hakujen oidit. Huom, tyhjä lista virkistää kaikki!"))
-  post("/hakukohteet", operation(postHakukohdeMigration)) {
+  post("/haut", operation(postHakuMigration)) {
     val start = System.currentTimeMillis()
     val dryRun = params("dryrun").toBoolean
     val hakuOids = read[Set[String]](request.body)
@@ -56,7 +58,7 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
         InternalServerError("Migraatio epäonnistui", reason = e.getMessage)
     }
 
-    val msg = s"postHakukohdeMigration DONE in ${System.currentTimeMillis - start} ms"
+    val msg = s"postHakuMigration DONE in ${System.currentTimeMillis - start} ms"
     logger.info(msg)
     Ok(-1)
   }
