@@ -50,7 +50,7 @@ class StreamingJsonArrayRetriever(appConfig: VtsAppConfig) extends Logging {
         logger.info(s"No objects found in response")
       } else {
         while (currentToken == JsonToken.START_OBJECT) {
-          val parsed = parseObject(mapper, jsonParser, targetClass).getOrElse(throw new RuntimeException(s"Could not parse $targetClass object"))
+          val parsed = parseObject(mapper, jsonParser, targetClass, count).getOrElse(throw new RuntimeException(s"Could not parse $targetClass object"))
           currentToken = jsonParser.nextToken()
           processSingleItem(parsed)
           count = count + 1
@@ -78,10 +78,11 @@ class StreamingJsonArrayRetriever(appConfig: VtsAppConfig) extends Logging {
     response.code == Status.Found.code
   }
 
-  private def parseObject[T](mapper: ObjectMapper, jsonParser: JsonParser, targetClass: Class[T]): Option[T] = try {
+  private def parseObject[T](mapper: ObjectMapper, jsonParser: JsonParser, targetClass: Class[T], count: Int): Option[T] = try {
     Some(mapper.readValue(jsonParser, targetClass))
   } catch {
     case e: Exception =>
+      logger.error(s"Error at: $count")
       logger.error(s"Could not parse $targetClass", e)
       None
   }
