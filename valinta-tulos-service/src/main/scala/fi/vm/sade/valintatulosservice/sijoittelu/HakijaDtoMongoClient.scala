@@ -7,6 +7,7 @@ import java.util.function.Consumer
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationObject}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.sijoittelu.domain.SijoitteluAjo
+import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.slf4j.Logging
 /**
   * Fetches HakijaDTOs directly from mongodb database
@@ -15,20 +16,29 @@ class HakijaDtoMongoClient(appConfig: VtsAppConfig) extends StreamingHakijaDtoCl
   private val raportointiService = appConfig.sijoitteluContext.raportointiService
 
   override def processSijoittelunTulokset[T](hakuOid: String, sijoitteluajoId: String, processor: HakijaDTO => T): Unit = {
-    val sijoitteluAjo: Optional[SijoitteluAjo] = getSijoitteluAjo(sijoitteluajoId, hakuOid)
-    val hakijat: util.List[HakijaDTO] = raportointiService
-      .hakemukset(sijoitteluAjo.get(), null, null, null, null, null, null).getResults
+    val sijoitteluAjo: Optional[SijoitteluAjo] =
+      Timer.timed(s"${getClass.getSimpleName}: Retrieve sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
+        getSijoitteluAjo(sijoitteluajoId, hakuOid)
+      }
+
+    val hakijat: util.List[HakijaDTO] = Timer.timed(
+      s"Run raportointiService query for hakemukset of $sijoitteluajoId of $hakuOid") {
+        raportointiService.hakemukset(sijoitteluAjo.get(), null, null, null, null, null, null).getResults
+     }
 
     var count: Int = 0
-    hakijat.forEach(new Consumer[HakijaDTO] {
-      override def accept(t: HakijaDTO): Unit = {
-        count += 1
-        processor(t)
-        if (count % 1000 == 0) {
-          logger.info(s"...processed $count items so far...")
+    Timer.timed(s"${getClass.getSimpleName}: Process hakemukset of sijoitteluajo $sijoitteluAjo of haku $hakuOid") {
+      hakijat.forEach(new Consumer[HakijaDTO] {
+        override def accept(t: HakijaDTO): Unit = {
+          count += 1
+          processor(t)
+          if (count % 1000 == 0) {
+            logger.info(s"...processed $count items so far...")
+          }
         }
-      }
-    })
+      })
+      logger.info(s"...processed $count items in total.")
+    }
   }
 
   private def getSijoitteluAjo(sijoitteluajoId: String, hakuOid: String): Optional[SijoitteluAjo] = {
