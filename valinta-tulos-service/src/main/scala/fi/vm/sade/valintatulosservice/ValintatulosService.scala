@@ -387,16 +387,27 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
     }
     logger.info(s"Found ${hakutoiveidenTuloksetByHakemusOid.keySet.size} hakemus objects for sijoitteluajo $sijoitteluajoId of haku $hakuOid")
 
+    val processor = { hakijaDto: HakijaDTO =>
+      hakutoiveidenTuloksetByHakemusOid.get(hakijaDto.getHakemusOid) match {
+        case Some((hakijaOid, hakutoiveidenTulokset)) =>
+          hakijaDto.setHakijaOid(hakijaOid)
+          populateVastaanottotieto(hakijaDto, hakutoiveidenTulokset)
+          writeResult(hakijaDto)
+        case None => crashOrLog(s"Hakemus ${hakijaDto.getHakemusOid} not found in hakemusten tulokset for haku $hakuOid")
+      }
+    }
+
     try {
-      hakijaDtoMongoClient.processSijoittelunTulokset(hakuOid, sijoitteluajoId, { hakijaDto: HakijaDTO =>
-        hakutoiveidenTuloksetByHakemusOid.get(hakijaDto.getHakemusOid) match {
-          case Some((hakijaOid, hakutoiveidenTulokset)) =>
-            hakijaDto.setHakijaOid(hakijaOid)
-            populateVastaanottotieto(hakijaDto, hakutoiveidenTulokset)
-            writeResult(hakijaDto)
-          case None => crashOrLog(s"Hakemus ${hakijaDto.getHakemusOid} not found in hakemusten tulokset for haku $hakuOid")
-        }
-      })
+      // Keväiden 2015-2017 suuret haut haetaan suoraan mongosta - käyttää huommattavan määrän muistia,
+      // mutta vältytään epäonnistuvalta pyynnöltä sijoittelu-serviceen (ks. BUG-1334 & BUG-1341).
+      if (hakuOid == "1.2.246.562.29.95390561488" ||
+          hakuOid == "1.2.246.562.29.75203638285" ||
+          hakuOid == "1.2.246.562.29.59856749474") {
+        logger.info(s"Exceptionally fetching HakijaDTO's directly from database for haku: $hakuOid")
+        hakijaDtoMongoClient.processSijoittelunTulokset(hakuOid, sijoitteluajoId, processor)
+      } else {
+        streamingHakijaDtoClient.processSijoittelunTulokset(hakuOid, sijoitteluajoId, processor)
+      }
     } catch {
       case e: Exception =>
         logger.error(s"Sijoitteluajon $sijoitteluajoId hakemuksia ei saatu palautettua haulle $hakuOid", e)
