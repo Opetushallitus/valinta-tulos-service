@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.performance
 
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.ValintatulosService
-import fi.vm.sade.valintatulosservice.config.{ValintarekisteriAppConfig, VtsAppConfig}
+import fi.vm.sade.valintatulosservice.config.{VtsDynamicAppConfig, ValintarekisteriAppConfig, VtsAppConfig}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.sijoittelu.{DirectMongoSijoittelunTulosRestClient, SijoittelutulosService}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
@@ -10,6 +10,7 @@ import fi.vm.sade.valintatulosservice.vastaanottomeili.{HakemusMailStatus, Lahet
 
 object MailPollerPerformanceTester extends App with Logging {
   implicit val appConfig: VtsAppConfig = new VtsAppConfig.Dev
+  implicit val dynamicAppConfig: VtsDynamicAppConfig = VtsAppConfig.MockDynamicAppConfig()
   val hakuService = HakuService(appConfig)
   lazy val sijoittelutulosService = new SijoittelutulosService(appConfig.sijoitteluContext.raportointiService,
     appConfig.ohjausparametritService, null, new DirectMongoSijoittelunTulosRestClient(appConfig))

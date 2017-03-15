@@ -24,6 +24,9 @@
 tarjonta-service.url=https://{{host_virkailija}}/tarjonta-service
 valinta-tulos-service.parseleniently.tarjonta={{valintatulosservice_parseleniently_tarjonta}}
 
+# ORGANISAATIO
+organisaatio-service.url=https://{{host_virkailija}}/organisaatio-service
+
 # CAS
 #cas.url={{cas_url}}
 #valinta-tulos-service.cas.service=https://{{host_virkailija}}/valinta-tulos-service
