@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice.local
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
+import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket}
@@ -20,7 +21,7 @@ import org.specs2.matcher.MatchResult
 @RunWith(classOf[JUnitRunner])
 class ValinnantulosServletSpec extends ServletSpecification with ValintarekisteriDbTools {
   override implicit val formats = DefaultFormats ++ List(new NumberLongSerializer, new TasasijasaantoSerializer, new ValinnantilaSerializer,
-    new DateSerializer, new TilankuvauksenTarkenneSerializer, new IlmoittautumistilaSerializer, new VastaanottoActionSerializer)
+    new DateSerializer, new TilankuvauksenTarkenneSerializer, new IlmoittautumistilaSerializer, new VastaanottoActionSerializer, new ValintatuloksenTilaSerializer)
   step(singleConnectionValintarekisteriDb.storeSijoittelu(loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")))
 
   lazy val testSession = createTestSession()
@@ -56,7 +57,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     julkaistavissa = None,
     hyvaksyttyVarasijalta = None,
     hyvaksyPeruuntunut = None,
-    vastaanottotila = Poista,
+    vastaanottotila = ValintatuloksenTila.KESKEN,
     ilmoittautumistila = EiTehty)
 
   lazy val hyvaksyttyValinnantulos = valinnantulos.copy(
@@ -75,7 +76,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     julkaistavissa = Some(true),
     hyvaksyttyVarasijalta = None,
     hyvaksyPeruuntunut = None,
-    vastaanottotila = VastaanotaSitovasti,
+    vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI,
     ilmoittautumistila = Lasna)
 
   "GET /auth/valinnan-tulos/:valintatapajonoOid" should {
@@ -145,7 +146,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
       singleConnectionValintarekisteriDb.store(HakijanVastaanotto(henkiloOid = "1.2.246.562.24.19795717550",
         hakemusOid = "1.2.246.562.11.00006926939", hakukohdeOid = "1.2.246.562.20.26643418986", action = VastaanotaSitovasti))
 
-      val uusiValinnantulos = hyvaksyttyValinnantulos.copy(julkaistavissa = Some(true), ilmoittautumistila = Lasna, vastaanottotila = VastaanotaSitovasti)
+      val uusiValinnantulos = hyvaksyttyValinnantulos.copy(julkaistavissa = Some(true), ilmoittautumistila = Lasna, vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
 
       patchJSON("auth/valinnan-tulos/14538080612623056182813241345174", write(List(uusiValinnantulos)),
         Map("Cookie" -> s"session=${ophTestSession}", "If-Unmodified-Since" -> now)) {
@@ -184,7 +185,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
       val v = erillishaunValinnantulos
       getValinnantuloksetForValintatapajono(v.valintatapajonoOid) mustEqual List()
       patchErillishakuJson(List(v))
-      hae(erillishaunValinnantulos.copy(vastaanottotila = Poista), 1)
+      hae(erillishaunValinnantulos.copy(vastaanottotila = ValintatuloksenTila.KESKEN), 1)
     }
     "palauttaa 200 ja päivittää valinnantilaa, ohjaustietoa ja ilmoittautumista, kun hakija on hyväksytty varasijalta" in {
       val v = erillishaunValinnantulos.copy(valintatapajonoOid = "varasijaltaHyvaksytynJono", hakukohdeOid = "varasijaltaHyvaksytynHakukohde",
@@ -192,7 +193,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
       )
       getValinnantuloksetForValintatapajono(v.valintatapajonoOid) mustEqual List()
       patchErillishakuJson(List(v))
-      hae(erillishaunValinnantulos.copy(vastaanottotila = Poista), 1)
+      hae(erillishaunValinnantulos.copy(vastaanottotila = ValintatuloksenTila.KESKEN), 1)
     }
     "palauttaa 200 ja poistaa valinnan tilan, ohjaustiedon sekä ilmoittautumisen" in {
       val v = erillishaunValinnantulos.copy(valintatapajonoOid = "poistettavaValinnantulosJono", hakukohdeOid = "poistettavaValinnantulosHakukohde")
@@ -214,7 +215,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
 
   "Last-Modified" should {
     "olla validi If-Unmodified-Since" in {
-      val v = erillishaunValinnantulos.copy(valintatapajonoOid = "lastModifiedJono", hakukohdeOid = "lastModifiedHakukohde", vastaanottotila = Poista, ilmoittautumistila = EiTehty)
+      val v = erillishaunValinnantulos.copy(valintatapajonoOid = "lastModifiedJono", hakukohdeOid = "lastModifiedHakukohde", vastaanottotila = ValintatuloksenTila.KESKEN, ilmoittautumistila = EiTehty)
       getValinnantuloksetForValintatapajono("lastModifiedJono") mustEqual List()
 
       patchErillishakuJson(List(v.copy(julkaistavissa = None)))
@@ -225,7 +226,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
       val v = erillishaunValinnantulos.copy(valintatapajonoOid = "deletedVastaanottoJono", hakukohdeOid = "deletedVastaanottoHakukohde")
       getValinnantuloksetForValintatapajono("deletedVastaanottoJono") mustEqual List()
 
-      patchErillishakuJson(List(v.copy(vastaanottotila = Poista, ilmoittautumistila = EiTehty)))
+      patchErillishakuJson(List(v.copy(vastaanottotila = ValintatuloksenTila.KESKEN, ilmoittautumistila = EiTehty)))
 
       val lastModified1 = getLastModified(v.valintatapajonoOid)
 
@@ -237,7 +238,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
 
       Thread.sleep(1000)
 
-      patchErillishakuJson(List(v.copy(vastaanottotila = VastaanotaSitovasti, ilmoittautumistila = Lasna)), ifUnmodifiedSince = lastModified1)
+      patchErillishakuJson(List(v.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, ilmoittautumistila = Lasna)), ifUnmodifiedSince = lastModified1)
 
       val lastModified2 = getLastModified(v.valintatapajonoOid)
 
@@ -271,7 +272,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
       val v = erillishaunValinnantulos.copy(valintatapajonoOid = "vastaanotonTallennusJono", hakukohdeOid = "vastaanotonTallennusJono")
       getValinnantuloksetForValintatapajono("vastaanotonTallennusJono") mustEqual List()
 
-      patchErillishakuJson(List(v.copy(vastaanottotila = Poista, ilmoittautumistila = EiTehty)))
+      patchErillishakuJson(List(v.copy(vastaanottotila = ValintatuloksenTila.KESKEN, ilmoittautumistila = EiTehty)))
 
       var lastModified = getLastModified(v.valintatapajonoOid)
 
@@ -279,13 +280,13 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
 
       singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto("hakuOid", v.valintatapajonoOid, v.henkiloOid, v.hakemusOid, v.hakukohdeOid, VastaanotaSitovasti, "ilmoittaja", "selite"))
 
-      patchErillishakuJson(List(v.copy(vastaanottotila = VastaanotaSitovasti, ilmoittautumistila = Lasna)), ifUnmodifiedSince = lastModified)
+      patchErillishakuJson(List(v.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, ilmoittautumistila = Lasna)), ifUnmodifiedSince = lastModified)
     }
     "palauttaa 200, jos vastaanotto on poistettu ja vastaanoton tila on sama" in {
       val v = erillishaunValinnantulos.copy(valintatapajonoOid = "vastaanotonTallennusJono2", hakukohdeOid = "vastaanotonTallennusJono2")
       getValinnantuloksetForValintatapajono("vastaanotonTallennusJono2") mustEqual List()
 
-      patchErillishakuJson(List(v.copy(vastaanottotila = Poista, ilmoittautumistila = EiTehty)))
+      patchErillishakuJson(List(v.copy(vastaanottotila = ValintatuloksenTila.KESKEN, ilmoittautumistila = EiTehty)))
 
       var lastModified = getLastModified(v.valintatapajonoOid)
 
@@ -293,7 +294,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
 
       singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto("hakuOid", v.valintatapajonoOid, v.henkiloOid, v.hakemusOid, v.hakukohdeOid, VastaanotaSitovasti, "ilmoittaja", "selite"))
 
-      patchErillishakuJson(List(v.copy(vastaanottotila = VastaanotaSitovasti, ilmoittautumistila = Lasna)), ifUnmodifiedSince = lastModified)
+      patchErillishakuJson(List(v.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, ilmoittautumistila = Lasna)), ifUnmodifiedSince = lastModified)
 
       lastModified = getLastModified(v.valintatapajonoOid)
 
@@ -301,13 +302,13 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
 
       singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto("hakuOid", v.valintatapajonoOid, v.henkiloOid, v.hakemusOid, v.hakukohdeOid, Poista, "ilmoittaja", "selite"))
 
-      patchErillishakuJson(List(v.copy(vastaanottotila = Poista, ilmoittautumistila = EiTehty)), ifUnmodifiedSince = lastModified)
+      patchErillishakuJson(List(v.copy(vastaanottotila = ValintatuloksenTila.KESKEN, ilmoittautumistila = EiTehty)), ifUnmodifiedSince = lastModified)
     }
     "palauttaa 200 ja virhekoodin, jos vastaanoton tila ei ole sama" in {
       val v = erillishaunValinnantulos.copy(valintatapajonoOid = "vastaanotonTallennusVirheJono", hakukohdeOid = "vastaanotonTallennusVirheJono")
       getValinnantuloksetForValintatapajono("vastaanotonTallennusVirheJono") mustEqual List()
 
-      patchErillishakuJson(List(v.copy(vastaanottotila = Poista, ilmoittautumistila = EiTehty)))
+      patchErillishakuJson(List(v.copy(vastaanottotila = ValintatuloksenTila.KESKEN, ilmoittautumistila = EiTehty)))
 
       var lastModified = getLastModified(v.valintatapajonoOid)
 
@@ -315,10 +316,10 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
 
       singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto("hakuOid", v.valintatapajonoOid, v.henkiloOid, v.hakemusOid, v.hakukohdeOid, Peruuta, "ilmoittaja", "selite"))
 
-      patchErillishakuJson(List(v.copy(vastaanottotila = VastaanotaSitovasti, ilmoittautumistila = Lasna)), 200, (result:List[ValinnantulosUpdateStatus]) => {
+      patchErillishakuJson(List(v.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, ilmoittautumistila = Lasna)), 200, (result:List[ValinnantulosUpdateStatus]) => {
         result.size mustEqual 1
         result.head.status mustEqual 409
-        result.head.message mustEqual "Valinnantulosta ei voida päivittää, koska vastaanottoa VastaanotaSitovasti on muutettu samanaikaisesti tilaan Peruuta"
+        result.head.message mustEqual "Valinnantulosta ei voida päivittää, koska vastaanottoa VASTAANOTTANUT_SITOVASTI on muutettu samanaikaisesti tilaan PERUUTETTU"
       }, ifUnmodifiedSince = lastModified)
     }
   }

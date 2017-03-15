@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
-import fi.vm.sade.sijoittelu.domain.HakemuksenTila
+import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, ValintatuloksenTila}
 import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.JsonAST.{JField, JString, JValue}
@@ -56,5 +56,13 @@ class ValinnantilaSerializer extends CustomSerializer[Valinnantila]((format: For
     case json: JString => Valinnantila(HakemuksenTila.valueOf(json.s))
   }, {
     case i: Valinnantila => JString(i.valinnantila.toString)
+  })
+})
+
+class ValintatuloksenTilaSerializer extends CustomSerializer[ValintatuloksenTila]((_: Formats) => {
+  ({
+    case json: JString => ValintatuloksenTila.valueOf(json.s)
+  },{
+    case v: ValintatuloksenTila => JString(v.name())
   })
 })
