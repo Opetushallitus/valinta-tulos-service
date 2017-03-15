@@ -41,8 +41,8 @@ object HakijaResolver {
 class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with Logging with HakijaResolver {
   private val hakuClient = createCasClient(appConfig, "/haku-app")
   private val henkiloClient = createCasClient(appConfig, "/authentication-service")
-  private val hakuUrlBase = appConfig.settings.config.getString("valinta-tulos-service.haku-app-url") + "/applications/listfull?q="
-  private val henkiloPalveluUrlBase = appConfig.settings.config.getString("valinta-tulos-service.authentication-service-url") + "/resources/henkilo"
+  private val hakuUrlBase = appConfig.settings.ophUrlProperties.url("haku-app.listfull.queryBase")
+  private val henkiloPalveluUrlBase = appConfig.settings.ophUrlProperties.url("authentication-service.henkilo")
 
   case class HakemusHenkilo(personOid: Option[String], hetu: String, etunimet: String, sukunimi: String, kutsumanimet: String,
                             syntymaaika: String, aidinkieli: String, sukupuoli: String)

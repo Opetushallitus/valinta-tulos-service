@@ -146,10 +146,12 @@ object VtsAppConfig extends Logging {
   trait TemplatedProps {
     logger.info("Using template variables from " + templateAttributesURL)
     lazy val settings = loadSettings
-    def loadSettings = ConfigTemplateProcessor.createSettings(
-      getClass.getResource("/oph-configuration/valinta-tulos-service-devtest.properties.template"),
-      templateAttributesURL
-    )
+    def loadSettings = {
+      ConfigTemplateProcessor.createSettings(
+        getClass.getResource("/oph-configuration/valinta-tulos-service-devtest.properties.template"),
+        templateAttributesURL
+      )
+    }
     def templateAttributesURL: URL
   }
 
