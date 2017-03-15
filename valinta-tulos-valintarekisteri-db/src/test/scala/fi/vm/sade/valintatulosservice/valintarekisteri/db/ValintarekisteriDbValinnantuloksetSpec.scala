@@ -4,6 +4,7 @@ import java.sql.Timestamp
 import java.time.{Instant, ZonedDateTime}
 import java.util.ConcurrentModificationException
 
+import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
 import org.junit.runner.RunWith
@@ -29,7 +30,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
   val valinnantuloksenOhjaus = ValinnantuloksenOhjaus(
     hakemusOid, valintatapajonoOid, hakukohdeOid, false, false, false, false, muokkaaja, selite)
   val valinnantulos = Valinnantulos(hakukohdeOid, valintatapajonoOid, hakemusOid, henkiloOid,
-    Hyvaksytty, Some(false), Some(false), Some(false), Some(false), Poista, EiTehty, None)
+    Hyvaksytty, Some(false), Some(false), Some(false), Some(false), ValintatuloksenTila.KESKEN, EiTehty, None)
   val ilmoittautuminen = Ilmoittautuminen(hakukohdeOid, Lasna, "muokkaaja", "selite")
 
     step(appConfig.start)
