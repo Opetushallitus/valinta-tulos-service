@@ -72,3 +72,7 @@ omatsivut.fi=https://{{host_haku}}/omatsivut/hakutoiveidenMuokkaus.html#/token/
 omatsivut.en=https://{{host_haku_en}}/omatsivut/hakutoiveidenMuokkaus.html#/token/
 omatsivut.sv=https://{{host_haku_sv}}/omatsivut/hakutoiveidenMuokkaus.html#/token/
 omatsivut.oili.hetutonUrl={{oili_hetuton_url}}
+
+# Keväiden 2015-2017 suuret haut haetaan suoraan mongosta - käyttää huommattavan määrän muistia,
+# mutta vältytään epäonnistuvalta pyynnöltä sijoittelu-serviceen (ks. BUG-1334 & BUG-1341).
+valinta-tulos-service.directmongo.hakuoids=1.2.246.562.29.95390561488,1.2.246.562.29.75203638285,1.2.246.562.29.59856749474

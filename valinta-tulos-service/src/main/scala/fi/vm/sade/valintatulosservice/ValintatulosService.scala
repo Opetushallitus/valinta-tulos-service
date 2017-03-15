@@ -433,11 +433,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
     }
 
     try {
-      // Keväiden 2015-2017 suuret haut haetaan suoraan mongosta - käyttää huommattavan määrän muistia,
-      // mutta vältytään epäonnistuvalta pyynnöltä sijoittelu-serviceen (ks. BUG-1334 & BUG-1341).
-      if (hakuOid == "1.2.246.562.29.95390561488" ||
-          hakuOid == "1.2.246.562.29.75203638285" ||
-          hakuOid == "1.2.246.562.29.59856749474") {
+      if (appConfig.settings.hakuOidsToLoadDirectlyFromMongo.contains(hakuOid)) {
         logger.info(s"Exceptionally fetching HakijaDTO's directly from database for haku: $hakuOid")
         hakijaDtoMongoClient.processSijoittelunTulokset(hakuOid, sijoitteluajoId, processor)
       } else {
