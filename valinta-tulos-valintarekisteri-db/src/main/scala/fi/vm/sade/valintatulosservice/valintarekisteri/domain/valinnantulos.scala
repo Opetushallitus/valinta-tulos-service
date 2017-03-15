@@ -1,5 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.domain
 
+import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
+
 case class ValinnantulosUpdateStatus(status:Int, message:String, valintatapajonoOid:String, hakemusOid:String)
 
 case class Valinnantulos(hakukohdeOid: String,
@@ -11,7 +13,7 @@ case class Valinnantulos(hakukohdeOid: String,
                          julkaistavissa: Option[Boolean],
                          hyvaksyttyVarasijalta: Option[Boolean],
                          hyvaksyPeruuntunut: Option[Boolean],
-                         vastaanottotila: VastaanottoAction,
+                         vastaanottotila: ValintatuloksenTila,
                          ilmoittautumistila: SijoitteluajonIlmoittautumistila,
                          poistettava: Option[Boolean] = None,
                          ohitaVastaanotto: Option[Boolean] = None,

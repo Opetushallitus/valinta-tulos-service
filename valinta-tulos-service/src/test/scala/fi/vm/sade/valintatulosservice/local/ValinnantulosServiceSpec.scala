@@ -6,6 +6,7 @@ import java.util.UUID
 
 import fi.vm.sade.auditlog.Audit
 import fi.vm.sade.security.{AuthorizationFailedException, OrganizationHierarchyAuthorizer}
+import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
@@ -81,7 +82,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     julkaistavissa = None,
     hyvaksyttyVarasijalta = None,
     hyvaksyPeruuntunut = None,
-    vastaanottotila = Poista,
+    vastaanottotila = ValintatuloksenTila.KESKEN,
     ilmoittautumistila = EiTehty)
   val session = CasSession(ServiceTicket("myFakeTicket"), "1.2.246.562.24.1", Set(Role.SIJOITTELU_CRUD))
   val sessionId = UUID.randomUUID()
@@ -146,7 +147,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       val valinnantulokset = List(
         valinnantulos.copy(valinnantila = Hyvaksytty),
         valinnantulos.copy(hakemusOid = hakemusOids(1), ehdollisestiHyvaksyttavissa = Some(true)),
-        valinnantulos.copy(hakemusOid = hakemusOids(2), vastaanottotila = VastaanotaSitovasti, julkaistavissa = Some(false)),
+        valinnantulos.copy(hakemusOid = hakemusOids(2), vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, julkaistavissa = Some(false)),
         valinnantulos.copy(hakemusOid = hakemusOids(3), hyvaksyttyVarasijalta = Some(true)),
         valinnantulos.copy(hakemusOid = hakemusOids(4), hyvaksyPeruuntunut = Some(true)),
         valinnantulos.copy(hakemusOid = hakemusOids(5), ilmoittautumistila = Lasna)
@@ -241,10 +242,10 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       val valinnantulokset = List(
         valinnantulos.copy(ilmoittautumistila = Lasna),
         valinnantulos.copy(hakemusOid = hakemusOids(1), valinnantila = Hyvaksytty, ilmoittautumistila = Lasna),
-        valinnantulos.copy(hakemusOid = hakemusOids(2), valinnantila = Peruutettu, vastaanottotila = VastaanotaSitovasti),
-        valinnantulos.copy(hakemusOid = hakemusOids(3), valinnantila = Peruutettu, vastaanottotila = Peru),
-        valinnantulos.copy(hakemusOid = hakemusOids(4), valinnantila = Varalla, vastaanottotila = VastaanotaSitovasti),
-        valinnantulos.copy(hakemusOid = hakemusOids(5), valinnantila = Perunut, vastaanottotila = VastaanotaSitovasti),
+        valinnantulos.copy(hakemusOid = hakemusOids(2), valinnantila = Peruutettu, vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI),
+        valinnantulos.copy(hakemusOid = hakemusOids(3), valinnantila = Peruutettu, vastaanottotila = ValintatuloksenTila.PERUNUT),
+        valinnantulos.copy(hakemusOid = hakemusOids(4), valinnantila = Varalla, vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI),
+        valinnantulos.copy(hakemusOid = hakemusOids(5), valinnantila = Perunut, vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI),
         valinnantulos.copy(hakemusOid = hakemusOids(6), poistettava = Some(true))
       )
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(ZonedDateTime.now.toInstant), auditInfo, true) mustEqual List(
@@ -268,7 +269,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       there was no (valinnantulosRepository).storeValinnantila(any[ValinnantilanTallennus], any[Option[Instant]])
     }
     "no status for succesfully deleted valinnantulos" in new AuthorizedValinnantulosServiceWithMocks with ErillishakuMocks {
-      def validiValinnantulos = valinnantulos.copy(julkaistavissa = Some(true), valinnantila = Hyvaksytty, vastaanottotila = VastaanotaSitovasti, ilmoittautumistila = Lasna)
+      def validiValinnantulos = valinnantulos.copy(julkaistavissa = Some(true), valinnantila = Hyvaksytty, vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, ilmoittautumistila = Lasna)
       override def result = Map(validiValinnantulos.hakemusOid -> (ZonedDateTime.now.toInstant, validiValinnantulos))
 
       val valinnantulokset = List(validiValinnantulos.copy(poistettava = Some(true)))
@@ -293,7 +294,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
         julkaistavissa = Some(true),
         hyvaksyttyVarasijalta = Some(false),
         hyvaksyPeruuntunut = Some(false),
-        vastaanottotila = VastaanotaSitovasti,
+        vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI,
         ilmoittautumistila = Lasna)
 
       override def result = Map()
