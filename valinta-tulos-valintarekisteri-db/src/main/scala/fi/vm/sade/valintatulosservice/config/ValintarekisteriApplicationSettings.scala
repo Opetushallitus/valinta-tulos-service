@@ -3,10 +3,13 @@ package fi.vm.sade.valintatulosservice.config
 import com.typesafe.config.Config
 import fi.vm.sade.properties.OphProperties
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.DbConfig
+import fi.vm.sade.utils.slf4j.Logging
 import org.apache.commons.lang3.BooleanUtils
 
-abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.config.ApplicationSettings(config) {
+import scala.util.Try
 
+abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.config.ApplicationSettings(config)
+  with Logging {
   val tarjontaUrl = withConfig(_.getString("tarjonta-service.url"))
   val valintaRekisteriDbConfig = DbConfig(
     url = config.getString("valinta-tulos-service.valintarekisteri.db.url"),
@@ -21,6 +24,7 @@ abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.conf
   )
   withConfig(_.getConfig("valinta-tulos-service.valintarekisteri.db"))
   val lenientTarjontaDataParsing: Boolean = BooleanUtils.isTrue(withConfig(_.getBoolean("valinta-tulos-service.parseleniently.tarjonta")))
+  val hakuOidsToLoadDirectlyFromMongo: Set[String] = parseStringSet("valinta-tulos-service.directmongo.hakuoids")
   protected def withConfig[T](operation: Config => T): T = {
     try {
       operation(config)
