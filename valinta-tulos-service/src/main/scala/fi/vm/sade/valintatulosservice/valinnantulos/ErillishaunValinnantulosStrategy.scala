@@ -3,8 +3,9 @@ package fi.vm.sade.valintatulosservice.valinnantulos
 import java.time.Instant
 
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
+import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantuloksenMuokkaus, ValinnantuloksenPoisto, ValinnantuloksenLisays}
+import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantuloksenLisays, ValinnantuloksenMuokkaus, ValinnantuloksenPoisto}
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -26,10 +27,19 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
   def validate(uusi: Valinnantulos, vanha: Option[Valinnantulos]) = {
 
     def validateValinnantila() = (uusi.valinnantila, uusi.vastaanottotila) match {
-      case (Hylatty, Poista) | (Varalla, Poista) | (Peruuntunut, Poista) | (Perunut, MerkitseMyohastyneeksi) | //TODO (Peruuntunut, OttanutVastaanToisenPaikan)
-           (VarasijaltaHyvaksytty, Poista) | (VarasijaltaHyvaksytty, VastaanotaEhdollisesti) | (VarasijaltaHyvaksytty, VastaanotaSitovasti) |
-           (Hyvaksytty, Poista) | (Hyvaksytty, VastaanotaEhdollisesti) | (Hyvaksytty, VastaanotaSitovasti) |
-           (Perunut, Peru) | (Peruutettu, Peruuta) | (_, Poista) => Right()
+      case (Hylatty, ValintatuloksenTila.KESKEN) |
+           (Varalla, ValintatuloksenTila.KESKEN) |
+           (Peruuntunut, ValintatuloksenTila.KESKEN) |
+           (Perunut, ValintatuloksenTila.EI_VASTAANOTETTU_MAARA_AIKANA) | //TODO (Peruuntunut, OttanutVastaanToisenPaikan)
+           (VarasijaltaHyvaksytty, ValintatuloksenTila.KESKEN) |
+           (VarasijaltaHyvaksytty, ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT) |
+           (VarasijaltaHyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI) |
+           (Hyvaksytty, ValintatuloksenTila.KESKEN) |
+           (Hyvaksytty, ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT) |
+           (Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI) |
+           (Perunut, ValintatuloksenTila.PERUNUT) |
+           (Peruutettu, ValintatuloksenTila.PERUUTETTU) |
+           (_, ValintatuloksenTila.KESKEN) => Right()
       case (_, _) if uusi.ohitaVastaanotto.getOrElse(false) => Right()
       case (_, _) => Left(ValinnantulosUpdateStatus(409,
         s"Hakemuksen tila ${uusi.valinnantila} ja vastaanotto ${uusi.vastaanottotila} ovat ristiriitaiset.", uusi.valintatapajonoOid, uusi.hakemusOid))
@@ -48,7 +58,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
     }
 
     def validateJulkaistavissa() = (uusi.julkaistavissa, uusi.vastaanottotila) match {
-      case (None, Poista) | (Some(false), Poista) => Right()
+      case (None, ValintatuloksenTila.KESKEN) | (Some(false), ValintatuloksenTila.KESKEN) => Right()
       case (None, _) | (Some(false), _) => Left(ValinnantulosUpdateStatus(409, s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sillä on vastaanotto", uusi.valintatapajonoOid, uusi.hakemusOid))
       case (Some(true), _) => Right()
     }
@@ -56,7 +66,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
     def validateIlmoittautuminen() = (uusi.ilmoittautumistila, uusi.vastaanottotila, uusi.julkaistavissa) match {
       case (_, _, _) if uusi.ohitaIlmoittautuminen.getOrElse(false) => Right()
       case (x, _, _) if vanha.isDefined && vanha.get.ilmoittautumistila == x => Right()
-      case (EiTehty, _, _) | (_, VastaanotaSitovasti, Some(true)) => Right()
+      case (EiTehty, _, _) | (_, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, Some(true)) => Right()
       case (_, _, _) => Left(ValinnantulosUpdateStatus(409,
         s"Ilmoittautumistila ${uusi.ilmoittautumistila} ei ole sallittu, kun vastaanotto on ${uusi.vastaanottotila} ja julkaistavissa tieto on ${uusi.julkaistavissa}", uusi.valintatapajonoOid, uusi.hakemusOid))
     }
@@ -64,12 +74,12 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
     def validateTilat() = {
       def ilmoittautunut(ilmoittautuminen: SijoitteluajonIlmoittautumistila) = ilmoittautuminen != EiTehty
       def hyvaksytty(tila: Valinnantila) = List(Hyvaksytty, VarasijaltaHyvaksytty).contains(tila) //TODO entäs täyttyjonosäännöllä hyväksytty?
-      def vastaanotto(vastaanotto: VastaanottoAction) = vastaanotto != Poista
-      def vastaanottoEiMyohastynyt(vastaanotto: VastaanottoAction) = vastaanotto != Poista && vastaanotto != MerkitseMyohastyneeksi
+      def vastaanotto(vastaanotto: ValintatuloksenTila) = vastaanotto != ValintatuloksenTila.KESKEN
+      def vastaanottoEiMyohastynyt(vastaanotto: ValintatuloksenTila) = vastaanotto != ValintatuloksenTila.KESKEN && vastaanotto != ValintatuloksenTila.EI_VASTAANOTETTU_MAARA_AIKANA
       def hylattyTaiVaralla(tila: Valinnantila) = Hylatty == tila || Varalla == tila
-      def vastaanottaneena(tila: VastaanottoAction) = List(VastaanotaSitovasti, VastaanotaEhdollisesti, MerkitseMyohastyneeksi).contains(tila)
+      def vastaanottaneena(tila: ValintatuloksenTila) = List(ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT, ValintatuloksenTila.EI_VASTAANOTETTU_MAARA_AIKANA).contains(tila)
       def peruneena(tila: Valinnantila) = List(Perunut, Peruuntunut, Peruutettu).contains(tila)
-      def keskenTaiPerunut(tila: VastaanottoAction) = List(Poista, Peruuta, Peru, MerkitseMyohastyneeksi).contains(tila)
+      def keskenTaiPerunut(tila: ValintatuloksenTila) = List(ValintatuloksenTila.KESKEN, ValintatuloksenTila.PERUUTETTU, ValintatuloksenTila.PERUNUT, ValintatuloksenTila.EI_VASTAANOTETTU_MAARA_AIKANA).contains(tila)
 
       (uusi.valinnantila, uusi.vastaanottotila, uusi.ilmoittautumistila) match {
         case (t, _, _) if uusi.ohitaVastaanotto.getOrElse(false) && uusi.ohitaIlmoittautuminen.getOrElse(false) => Right()
@@ -82,7 +92,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
           s"Hylätty tai varalla oleva hakija ei voi olla ilmoittautunut tai vastaanottanut", uusi.valintatapajonoOid, uusi.hakemusOid))
         case (t, v, i) if peruneena(t) && !keskenTaiPerunut(v) => Left(ValinnantulosUpdateStatus(409,
           s"Peruneella vastaanottajalla ei voi olla vastaanottotilaa", uusi.valintatapajonoOid, uusi.hakemusOid))
-        case (t, v, i) if ( t == Perunut && v == Peru ) || (t == Peruutettu && v == Peruuta) => Right()
+        case (t, v, i) if ( t == Perunut && v == ValintatuloksenTila.PERUNUT ) || (t == Peruutettu && v == ValintatuloksenTila.PERUUTETTU) => Right()
         case (t, v, i) if vastaanottoEiMyohastynyt(v) && !hyvaksytty(t) => Left(ValinnantulosUpdateStatus(409,
           s"Vastaanottaneen tai peruneen hakijan tulisi olla hyväksyttynä", uusi.valintatapajonoOid, uusi.hakemusOid))
         case (_, _, _) => Right()

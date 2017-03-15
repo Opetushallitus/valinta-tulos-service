@@ -4,6 +4,7 @@ import java.sql.JDBCType
 import java.time.{Instant, OffsetDateTime, ZoneId}
 import java.util.UUID
 
+import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoAction, VastaanottoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.jdbc.{GetResult, PositionedParameters, SetParameter}
@@ -133,7 +134,7 @@ trait ValintarekisteriResultExtractors {
     julkaistavissa = r.nextBooleanOption,
     hyvaksyttyVarasijalta = r.nextBooleanOption,
     hyvaksyPeruuntunut = r.nextBooleanOption,
-    vastaanottotila = r.nextStringOption.map(VastaanottoAction(_)).getOrElse(Poista),
+    vastaanottotila = r.nextStringOption.map(VastaanottoAction(_).valintatuloksenTila).getOrElse(ValintatuloksenTila.KESKEN),
     ilmoittautumistila = r.nextStringOption.map(SijoitteluajonIlmoittautumistila(_)).getOrElse(EiTehty)
   ))
 
