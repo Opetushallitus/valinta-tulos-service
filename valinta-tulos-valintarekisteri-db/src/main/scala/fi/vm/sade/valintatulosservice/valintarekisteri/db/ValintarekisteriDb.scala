@@ -155,7 +155,22 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
               where deleted is null) as t
           order by id""".as[VastaanottoRecord].map(_.toSet)
   }
-
+  override def findHenkilonVastaanotot(personOid: String, alkuaika: Option[Date] = None): Set[VastaanottoRecord] = {
+    alkuaika match {
+      case Some(t) =>
+        val timestamp = new java.sql.Timestamp(t.getTime)
+        runBlocking(sql"""select henkilo, haku_oid, hakukohde, action, ilmoittaja, "timestamp"
+          from newest_vastaanotto_events
+          where henkilo = $personOid
+              and "timestamp" >= ${timestamp}
+              and action = 'VastaanotaSitovasti'""".as[VastaanottoRecord].map(_.toSet))
+      case _ =>
+        runBlocking(sql"""select henkilo, haku_oid, hakukohde, action, ilmoittaja, "timestamp"
+          from newest_vastaanotto_events
+          where henkilo = $personOid
+              and action = 'VastaanotaSitovasti'""".as[VastaanottoRecord].map(_.toSet))
+    }
+  }
   override def findHaunVastaanotot(hakuOid: String): Set[VastaanottoRecord] = {
     runBlocking(sql"""select henkilo, haku_oid, hakukohde, action, ilmoittaja, "timestamp"
                       from newest_vastaanotto_events

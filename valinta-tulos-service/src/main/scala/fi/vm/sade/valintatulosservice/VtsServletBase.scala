@@ -73,7 +73,7 @@ trait VtsServletBase extends ScalatraServlet with Logging with JacksonJsonSuppor
     BadRequest("error" -> e.getMessage)
   }
 
-  private def checkJsonContentType() {
+  protected def checkJsonContentType() {
     if (request.requestMethod == Post && request.contentType.forall(!_.contains("application/json"))) {
       halt(415, "error" -> "Only application/json accepted")
     }
