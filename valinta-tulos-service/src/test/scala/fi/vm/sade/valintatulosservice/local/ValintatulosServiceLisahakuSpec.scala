@@ -51,7 +51,7 @@ class ValintatulosServiceLisahakuSpec extends ITSpecification with TimeWarp {
 
   step(valintarekisteriDb.db.shutdown)
 
-  lazy val hakuService = HakuService(appConfig)
+  lazy val hakuService = HakuService(appConfig.hakuServiceConfig)
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
   lazy val sijoittelutulosService = new SijoittelutulosService(appConfig.sijoitteluContext.raportointiService, appConfig.ohjausparametritService,
     valintarekisteriDb, new DirectMongoSijoittelunTulosRestClient(appConfig))

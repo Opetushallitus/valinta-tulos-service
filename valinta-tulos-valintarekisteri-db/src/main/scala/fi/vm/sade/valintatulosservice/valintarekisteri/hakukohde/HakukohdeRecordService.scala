@@ -121,7 +121,7 @@ class HakukohdeRecordService(hakuService: HakuService, hakukohdeRepository: Haku
 object HakukohdeRecordService {
 
   def apply(valintarekisteriDb: ValintarekisteriDb, appConfig: AppConfig) = {
-    val hakuService = HakuService(appConfig)
+    val hakuService = HakuService(appConfig.hakuServiceConfig)
     new HakukohdeRecordService(hakuService, valintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing)
   }
 }
