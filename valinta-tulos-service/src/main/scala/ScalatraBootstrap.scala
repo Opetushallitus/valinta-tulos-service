@@ -41,7 +41,7 @@ class ScalatraBootstrap extends LifeCycle {
       SijoitteluFixtures(appConfig.sijoitteluContext.database, valintarekisteriDb).importFixture("hyvaksytty-kesken-julkaistavissa.json")
     }
     implicit lazy val dynamicAppConfig = new OhjausparametritAppConfig(appConfig.ohjausparametritService)
-    lazy val hakuService = HakuService(appConfig)
+    lazy val hakuService = HakuService(appConfig.hakuServiceConfig)
     lazy val organisaatioService = OrganisaatioService(appConfig)
     lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig, appConfig.isInstanceOf[IT])
     lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing)
@@ -61,7 +61,7 @@ class ScalatraBootstrap extends LifeCycle {
     lazy val authorizer = new OrganizationHierarchyAuthorizer(appConfig)
     lazy val sijoitteluService = new SijoitteluService(valintarekisteriDb, authorizer, hakuService)
     lazy val valinnantulosService = new ValinnantulosService(valintarekisteriDb, authorizer, hakuService, appConfig.ohjausparametritService, hakukohdeRecordService, appConfig, audit)
-    lazy val tarjontaHakuService = new TarjontaHakuService(appConfig)
+    lazy val tarjontaHakuService = new TarjontaHakuService(appConfig.hakuServiceConfig)
 
     val migrationMode = System.getProperty("valinta-rekisteri-migration-mode")
 
