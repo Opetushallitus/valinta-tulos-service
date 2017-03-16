@@ -13,7 +13,7 @@ import fi.vm.sade.valintatulosservice.domain.Valintatila.isHyväksytty
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
-import fi.vm.sade.valintatulosservice.sijoittelu.{SijoittelutulosService, StreamingHakijaDtoClient}
+import fi.vm.sade.valintatulosservice.sijoittelu.{HakijaDtoMongoClient, SijoittelutulosService, StreamingHakijaDtoClient}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, VastaanottoRecord, VirkailijaVastaanottoRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.vastaanottanut
@@ -45,6 +45,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
 
   val valintatulosDao = appConfig.sijoitteluContext.valintatulosDao
   private val streamingHakijaDtoClient = new StreamingHakijaDtoClient(appConfig)
+  private val hakijaDtoMongoClient = new HakijaDtoMongoClient(appConfig)
 
   def haunKoulutuksenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid: String) : Set[VastaanottoRecord] = {
     hakuJaSenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid)._2
@@ -386,16 +387,23 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
     }
     logger.info(s"Found ${hakutoiveidenTuloksetByHakemusOid.keySet.size} hakemus objects for sijoitteluajo $sijoitteluajoId of haku $hakuOid")
 
+    val processor = { hakijaDto: HakijaDTO =>
+      hakutoiveidenTuloksetByHakemusOid.get(hakijaDto.getHakemusOid) match {
+        case Some((hakijaOid, hakutoiveidenTulokset)) =>
+          hakijaDto.setHakijaOid(hakijaOid)
+          populateVastaanottotieto(hakijaDto, hakutoiveidenTulokset)
+          writeResult(hakijaDto)
+        case None => crashOrLog(s"Hakemus ${hakijaDto.getHakemusOid} not found in hakemusten tulokset for haku $hakuOid")
+      }
+    }
+
     try {
-      streamingHakijaDtoClient.processSijoittelunTulokset(hakuOid, sijoitteluajoId, { hakijaDto: HakijaDTO =>
-        hakutoiveidenTuloksetByHakemusOid.get(hakijaDto.getHakemusOid) match {
-          case Some((hakijaOid, hakutoiveidenTulokset)) =>
-            hakijaDto.setHakijaOid(hakijaOid)
-            populateVastaanottotieto(hakijaDto, hakutoiveidenTulokset)
-            writeResult(hakijaDto)
-          case None => crashOrLog(s"Hakemus ${hakijaDto.getHakemusOid} not found in hakemusten tulokset for haku $hakuOid")
-        }
-      })
+      if (appConfig.settings.hakuOidsToLoadDirectlyFromMongo.contains(hakuOid)) {
+        logger.info(s"Exceptionally fetching HakijaDTOs directly from database for haku: $hakuOid")
+        hakijaDtoMongoClient.processSijoittelunTulokset(hakuOid, sijoitteluajoId, processor)
+      } else {
+        streamingHakijaDtoClient.processSijoittelunTulokset(hakuOid, sijoitteluajoId, processor)
+      }
     } catch {
       case e: Exception =>
         logger.error(s"Sijoitteluajon $sijoitteluajoId hakemuksia ei saatu palautettua haulle $hakuOid", e)
