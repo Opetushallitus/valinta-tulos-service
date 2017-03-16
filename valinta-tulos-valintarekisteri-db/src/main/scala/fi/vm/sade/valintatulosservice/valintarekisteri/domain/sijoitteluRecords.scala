@@ -4,7 +4,7 @@ import java.util
 import java.util.{Comparator, Date}
 
 import fi.vm.sade.sijoittelu.tulos.dto._
-import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakutoiveDTO, HakutoiveenValintatapajonoDTO}
+import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakutoiveDTO, HakutoiveenValintatapajonoDTO, HakijaryhmaDTO => HakutoiveenHakijaryhmaDTO}
 
 import scala.collection.JavaConverters._
 
@@ -42,14 +42,83 @@ case class HakijaRecord(etunimi:String, sukunimi:String, hakemusOid:String, haki
 
 case class HakutoiveRecord(hakemusOid: String, hakutoive: Int, hakukohdeOid: String, valintatuloksenTila: String, kaikkiJonotsijoiteltu: Boolean) {
 
-  def dto(valintatapajonot:List[HakutoiveenValintatapajonoDTO], pistetiedot:List[PistetietoDTO]) = {
+  def dto(valintatapajonot:List[HakutoiveenValintatapajonoDTO], pistetiedot:List[PistetietoDTO], hakijaryhmat:List[HakutoiveenHakijaryhmaDTO]) = {
     val hakutoiveDTO = new HakutoiveDTO
     hakutoiveDTO.setHakutoive(hakutoive)
     hakutoiveDTO.setHakukohdeOid(hakukohdeOid)
     //  TODO hakutoiveDTO.setVastaanottotieto(valintatuloksenTila) ?
     hakutoiveDTO.setPistetiedot(pistetiedot.asJava)
     hakutoiveDTO.setHakutoiveenValintatapajonot(valintatapajonot.asJava)
+    hakutoiveDTO.setHakijaryhmat(hakijaryhmat.asJava)
     hakutoiveDTO
+  }
+}
+
+case class HakutoiveenValintatapajonoRecord(hakukohdeOid:String, valintatapajonoPrioriteetti:Int, valintatapajonoOid:String,
+    valintatapajonoNimi:String, eiVarasijatayttoa:Boolean, jonosija:Int,
+    varasijanNumero:Option[Int], tila:Valinnantila, ilmoittautumisTila:SijoitteluajonIlmoittautumistila,
+    hyvaksyttyHarkinnanvaraisesti:Boolean, tasasijaJonosija:Int, pisteet:Option[BigDecimal], alinHyvaksyttyPistemaara:Option[BigDecimal],
+    hyvaksytty:Int, varalla:Int, varasijat:Option[Int], varasijaTayttoPaivat:Option[Int], varasijojaKaytetaanAlkaen:Option[Date],
+    varasijojaTaytetaanAsti:Option[Date], tayttojono:Option[String], julkaistavissa:Boolean, ehdollisestiHyvaksyttavissa:Boolean,
+    hyvaksyttyVarasijalta:Boolean, valintatuloksenViimeisinMuutos:Option[Date], hakemuksenTilanViimeisinMuutos:Date,
+    tilankuvausHash:Int, tarkenteenLisatieto:Option[String], hakeneet:Int) {
+
+  def dto(tilankuvaukset:Map[String,String]) = {
+    val hakutoiveenValintatapajonoDto = new HakutoiveenValintatapajonoDTO()
+    hakutoiveenValintatapajonoDto.setValintatapajonoPrioriteetti(valintatapajonoPrioriteetti)
+    hakutoiveenValintatapajonoDto.setValintatapajonoOid(valintatapajonoOid)
+    hakutoiveenValintatapajonoDto.setValintatapajonoNimi(valintatapajonoNimi)
+    hakutoiveenValintatapajonoDto.setEiVarasijatayttoa(eiVarasijatayttoa)
+    hakutoiveenValintatapajonoDto.setJonosija(jonosija)
+    //todo paasyJasoveltuvuuskokeentulos
+    varasijanNumero.foreach(hakutoiveenValintatapajonoDto.setVarasijanNumero(_))
+    hakutoiveenValintatapajonoDto.setTila(HakemuksenTila.valueOf(tila.valinnantila.name))
+    hakutoiveenValintatapajonoDto.setIlmoittautumisTila(IlmoittautumisTila.valueOf(ilmoittautumisTila.ilmoittautumistila.name))
+    hakutoiveenValintatapajonoDto.setHyvaksyttyHarkinnanvaraisesti(hyvaksyttyHarkinnanvaraisesti)
+    hakutoiveenValintatapajonoDto.setTasasijaJonosija(tasasijaJonosija)
+    pisteet.foreach(p => hakutoiveenValintatapajonoDto.setPisteet(bigDecimal(p)))
+    alinHyvaksyttyPistemaara.foreach(p => hakutoiveenValintatapajonoDto.setAlinHyvaksyttyPistemaara(bigDecimal(p)))
+    //todo hakeneet
+    hakutoiveenValintatapajonoDto.setHyvaksytty(hyvaksytty)
+    hakutoiveenValintatapajonoDto.setVaralla(varalla)
+    varasijat.foreach(hakutoiveenValintatapajonoDto.setVarasijat(_))
+    varasijaTayttoPaivat.foreach(hakutoiveenValintatapajonoDto.setVarasijaTayttoPaivat(_))
+    varasijojaKaytetaanAlkaen.foreach(hakutoiveenValintatapajonoDto.setVarasijojaKaytetaanAlkaen(_))
+    varasijojaTaytetaanAsti.foreach(hakutoiveenValintatapajonoDto.setVarasijojaTaytetaanAsti(_))
+    tayttojono.foreach(hakutoiveenValintatapajonoDto.setTayttojono)
+    hakutoiveenValintatapajonoDto.setJulkaistavissa(julkaistavissa)
+    hakutoiveenValintatapajonoDto.setEhdollisestiHyvaksyttavissa(ehdollisestiHyvaksyttavissa)
+    hakutoiveenValintatapajonoDto.setHyvaksyttyVarasijalta(hyvaksyttyVarasijalta)
+    valintatuloksenViimeisinMuutos.foreach(hakutoiveenValintatapajonoDto.setValintatuloksenViimeisinMuutos(_))
+    hakutoiveenValintatapajonoDto.setHakemuksenTilanViimeisinMuutos(hakemuksenTilanViimeisinMuutos)
+    hakutoiveenValintatapajonoDto.setTilanKuvaukset(tilankuvaukset.asJava)
+    hakutoiveenValintatapajonoDto.setHakeneet(hakeneet)
+    hakutoiveenValintatapajonoDto
+  }
+
+  def tilankuvaukset(tilankuvaus:Option[TilankuvausRecord]):Map[String,String] = tilankuvaus match {
+    case Some(x) if tarkenteenLisatieto.isDefined => x.tilankuvaukset.mapValues(_.replace("<lisatieto>", tarkenteenLisatieto.get))
+    case Some(x) => x.tilankuvaukset
+    case _ => Map()
+  }
+
+  def bigDecimal(bigDecimal:BigDecimal): java.math.BigDecimal = bigDecimal match {
+    case i: BigDecimal => i.bigDecimal
+    case _ => null
+  }
+}
+
+case class HakutoiveenHakijaryhmaRecord(oid:String, nimi:String, hakukohdeOid:String, valintatapajonoOid:Option[String], kiintio:Int,
+                                        hyvaksyttyHakijaryhmasta:Boolean, hakijaryhmaTyyppikoodiUri:Option[String]) {
+  def dto = {
+    val hakutoiveenHakijaryhmaDTO = new HakutoiveenHakijaryhmaDTO()
+    hakutoiveenHakijaryhmaDTO.setOid(oid)
+    hakutoiveenHakijaryhmaDTO.setNimi(nimi)
+    valintatapajonoOid.foreach(hakutoiveenHakijaryhmaDTO.setValintatapajonoOid)
+    hakutoiveenHakijaryhmaDTO.setKiintio(kiintio)
+    hakutoiveenHakijaryhmaDTO.setHyvaksyttyHakijaryhmasta(hyvaksyttyHakijaryhmasta)
+    hakijaryhmaTyyppikoodiUri.foreach(hakutoiveenHakijaryhmaDTO.setHakijaryhmatyyppikoodiUri)
+    hakutoiveenHakijaryhmaDTO
   }
 }
 
@@ -63,6 +132,23 @@ case class PistetietoRecord(valintatapajonoOid:String, hakemusOid:String, tunnis
     pistetietoDTO.setTunniste(tunniste)
     pistetietoDTO
   }
+}
+
+case class HakutoiveenPistetietoRecord(tunniste:String, arvo:String, laskennallinenArvo:String, osallistuminen:String) {
+  def dto = {
+    val pistetietoDTO = new PistetietoDTO
+    pistetietoDTO.setArvo(arvo)
+    pistetietoDTO.setLaskennallinenArvo(laskennallinenArvo)
+    pistetietoDTO.setOsallistuminen(osallistuminen)
+    pistetietoDTO.setTunniste(tunniste)
+    pistetietoDTO
+  }
+}
+
+object HakutoiveenPistetietoRecord {
+  def apply(pistetietoRecord: PistetietoRecord):HakutoiveenPistetietoRecord = HakutoiveenPistetietoRecord(
+    pistetietoRecord.tunniste, pistetietoRecord.arvo, pistetietoRecord.laskennallinenArvo, pistetietoRecord.osallistuminen
+  )
 }
 
 case class SijoittelunHakukohdeRecord(sijoitteluajoId: Long, oid: String, kaikkiJonotsijoiteltu: Boolean) {
@@ -115,27 +201,6 @@ case class ValintatapajonoRecord(tasasijasaanto:String, oid:String, nimi:String,
     valintatapajonoDTO.setHakemukset(hakemukset.asJava)
     valintatapajonoDTO.setHakeneet(hakemukset.size)
     valintatapajonoDTO
-  }
-
-  //TODO: Does not populate hakemus specific fields
-  def hakutoiveenDto() = {
-    val hakutoiveenValintatapajonoDto = new HakutoiveenValintatapajonoDTO()
-    if (alinHyvaksyttyPistemaara != null) {
-      hakutoiveenValintatapajonoDto.setAlinHyvaksyttyPistemaara(alinHyvaksyttyPistemaara.bigDecimal)
-    }
-    hakutoiveenValintatapajonoDto.setEiVarasijatayttoa(eiVarasijatayttoa)
-    hakutoiveenValintatapajonoDto.setHakeneet(hakeneet)
-    hakutoiveenValintatapajonoDto.setHyvaksytty(hyvaksytty)
-    tayttoJono.foreach(hakutoiveenValintatapajonoDto.setTayttojono)
-    hakutoiveenValintatapajonoDto.setValintatapajonoNimi(nimi)
-    hakutoiveenValintatapajonoDto.setValintatapajonoOid(oid)
-    hakutoiveenValintatapajonoDto.setValintatapajonoPrioriteetti(prioriteetti)
-    hakutoiveenValintatapajonoDto.setVaralla(varalla)
-    varasijat.foreach(hakutoiveenValintatapajonoDto.setVarasijat(_))
-    varasijanTayttoPaivat.foreach(hakutoiveenValintatapajonoDto.setVarasijaTayttoPaivat(_))
-    varasijojaKaytetaanAlkaen.foreach(hakutoiveenValintatapajonoDto.setVarasijojaKaytetaanAlkaen)
-    varasijojaKaytetaanAsti.foreach(hakutoiveenValintatapajonoDto.setVarasijojaTaytetaanAsti)
-    hakutoiveenValintatapajonoDto
   }
 }
 

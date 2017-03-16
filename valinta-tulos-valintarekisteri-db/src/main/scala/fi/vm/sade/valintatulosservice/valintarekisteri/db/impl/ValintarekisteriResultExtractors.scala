@@ -39,6 +39,47 @@ trait ValintarekisteriResultExtractors {
     valintatuloksenTila = r.nextString,
     kaikkiJonotsijoiteltu = r.nextBoolean))
 
+  protected implicit val getHakutoiveenValintatapajonoResult = GetResult(r => HakutoiveenValintatapajonoRecord(
+    hakukohdeOid = r.nextString,
+    valintatapajonoPrioriteetti = r.nextInt,
+    valintatapajonoOid = r.nextString,
+    valintatapajonoNimi = r.nextString,
+    eiVarasijatayttoa = r.nextBoolean,
+    jonosija = r.nextInt,
+    varasijanNumero = r.nextIntOption,
+    tila = Valinnantila(r.nextString),
+    ilmoittautumisTila = r.nextStringOption.map(SijoitteluajonIlmoittautumistila(_)).getOrElse(EiTehty),
+    hyvaksyttyHarkinnanvaraisesti = r.nextBoolean,
+    tasasijaJonosija = r.nextInt,
+    pisteet = r.nextBigDecimalOption,
+    alinHyvaksyttyPistemaara = r.nextBigDecimalOption,
+    hyvaksytty = r.nextInt,
+    varalla = r.nextInt,
+    varasijat = r.nextIntOption,
+    varasijaTayttoPaivat = r.nextIntOption,
+    varasijojaKaytetaanAlkaen = r.nextTimestampOption,
+    varasijojaTaytetaanAsti = r.nextTimestampOption,
+    tayttojono = r.nextStringOption,
+    julkaistavissa = r.nextBoolean,
+    ehdollisestiHyvaksyttavissa = r.nextBoolean,
+    hyvaksyttyVarasijalta = r.nextBoolean,
+    valintatuloksenViimeisinMuutos = r.nextTimestampOption,
+    hakemuksenTilanViimeisinMuutos = r.nextTimestamp,
+    tilankuvausHash = r.nextInt,
+    tarkenteenLisatieto = r.nextStringOption,
+    hakeneet = r.nextInt
+  ))
+
+  protected implicit val getHakutoiveenHakijaryhmaResult = GetResult(r => HakutoiveenHakijaryhmaRecord(
+    oid = r.nextString,
+    nimi = r.nextString,
+    hakukohdeOid = r.nextString,
+    valintatapajonoOid = r.nextStringOption,
+    kiintio = r.nextInt,
+    hyvaksyttyHakijaryhmasta = r.nextBoolean,
+    hakijaryhmaTyyppikoodiUri = r.nextStringOption
+  ))
+
   protected implicit val getPistetiedotResult = GetResult(r => PistetietoRecord(
     valintatapajonoOid = r.nextString,
     hakemusOid = r.nextString,
