@@ -14,7 +14,7 @@ object PollerTester extends App with Logging with TimeWarp {
   implicit val dynamicAppConfig: VtsDynamicAppConfig = VtsAppConfig.MockDynamicAppConfig()
   appConfig.start
 
-  val hakuService = HakuService(appConfig)
+  val hakuService = HakuService(appConfig.hakuServiceConfig)
   lazy val sijoittelutulosService = new SijoittelutulosService(appConfig.sijoitteluContext.raportointiService,
     appConfig.ohjausparametritService, null, new DirectMongoSijoittelunTulosRestClient(appConfig))
   lazy val valintatulosService = new ValintatulosService(null, sijoittelutulosService, null, hakuService, null, null)
