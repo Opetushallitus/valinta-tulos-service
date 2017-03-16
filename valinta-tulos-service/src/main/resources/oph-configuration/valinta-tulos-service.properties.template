@@ -59,7 +59,3 @@ valinta-tulos-service.authentication-service-url=https://{{host_virkailija}}/aut
 
 # KELA
 valinta-tulos-service.kela.url=https://easiointi.kela.fi/eOTh/EOThApplication?reitti=oph
-
-# Keväiden 2015-2017 suuret haut haetaan suoraan mongosta - käyttää huommattavan määrän muistia,
-# mutta vältytään epäonnistuvalta pyynnöltä sijoittelu-serviceen (ks. BUG-1334 & BUG-1341).
-valinta-tulos-service.directmongo.hakuoids=1.2.246.562.29.95390561488,1.2.246.562.29.75203638285,1.2.246.562.29.59856749474
