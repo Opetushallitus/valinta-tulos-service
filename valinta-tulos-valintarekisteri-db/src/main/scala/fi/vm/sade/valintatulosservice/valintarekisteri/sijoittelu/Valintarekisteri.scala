@@ -10,6 +10,7 @@ import fi.vm.sade.sijoittelu.tulos.dto.SijoitteluajoDTO
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.ValintarekisteriAppConfig
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
+import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.SijoitteluWrapper
@@ -24,7 +25,8 @@ class ValintarekisteriForSijoittelu(appConfig:ValintarekisteriAppConfig.Valintar
   def this(properties:java.util.Properties) = this(ValintarekisteriAppConfig.getDefault(properties))
 
   override val sijoitteluRepository = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
-  override val hakukohdeRecordService: HakukohdeRecordService = HakukohdeRecordService(sijoitteluRepository, appConfig)
+  private val hakuService = HakuService(appConfig.hakuServiceConfig)
+  override val hakukohdeRecordService: HakukohdeRecordService = new HakukohdeRecordService(hakuService, sijoitteluRepository, appConfig.settings.lenientTarjontaDataParsing)
 }
 
 class ValintarekisteriService(override val sijoitteluRepository:SijoitteluRepository,
