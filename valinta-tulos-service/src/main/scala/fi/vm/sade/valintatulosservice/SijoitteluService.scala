@@ -96,16 +96,29 @@ class SijoitteluService(sijoitteluRepository: SijoitteluRepository,
       .orElse(throw new IllegalArgumentException(s"Hakijaa ei löytynyt hakemukselle $hakemusOid, sijoitteluajoid: $latestId")).get
 
     val hakutoiveet = sijoitteluRepository.getHakemuksenHakutoiveet(hakemusOid, latestId)
-    val pistetiedot = sijoitteluRepository.getHakemuksenPistetiedot(hakemusOid, latestId).groupBy(_.hakemusOid)
-    val valintatapajonot = sijoitteluRepository.getSijoitteluajonValintatapajonot(latestId).groupBy(_.hakukohdeOid) // NB: Not very optimal
+    val valintatapajonot = sijoitteluRepository.getHakemuksenHakutoiveidenValintatapajonot(hakemusOid, latestId).groupBy(_.hakukohdeOid)
+    val pistetiedot = sijoitteluRepository.getHakemuksenPistetiedot(hakemusOid, latestId).groupBy(_.valintatapajonoOid)
+    val hakijaryhmat = sijoitteluRepository.getHakemuksenHakutoiveidenHakijaryhmat(hakemusOid, latestId).groupBy(_.hakukohdeOid)
+
+    val tilankuvaukset = sijoitteluRepository.getValinnantilanKuvaukset(
+      valintatapajonot.values.flatten.map(_.tilankuvausHash).toList.distinct
+    )
 
     hakija.dto(
-      hakutoiveet.map { h =>
+      hakutoiveet.map { h => {
+        val (valintatapajonoOidit, valintatapajonoDtot) = {
+          val jonot = valintatapajonot.getOrElse(h.hakukohdeOid, List())
+          (jonot.map(_.valintatapajonoOid), jonot.map(v => v.dto(v.tilankuvaukset(tilankuvaukset.get(v.tilankuvausHash)))))
+        }
+        val hakutoiveenPistetiedot = pistetiedot.filterKeys(valintatapajonoOidit.contains).values.flatten.map(HakutoiveenPistetietoRecord(_)).toList.distinct.map(_.dto)
+        val hakutoiveenHakijaryhmat = hakijaryhmat.getOrElse(h.hakukohdeOid, List()).map(_.dto)
+
         h.dto(
-          valintatapajonot.getOrElse(h.hakukohdeOid, List()).map(_.hakutoiveenDto),
-          pistetiedot.getOrElse(h.hakemusOid, List()).map(_.dto)
+          valintatapajonoDtot,
+          hakutoiveenPistetiedot,
+          hakutoiveenHakijaryhmat
         )
-      }
+      }}
     )
   }
 

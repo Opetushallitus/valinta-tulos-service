@@ -33,6 +33,8 @@ trait SijoitteluRepository extends ValintarekisteriRepository {
   def getHakemuksenHakija(hakemusOid:String, sijoitteluajoId:Long): Option[HakijaRecord]
   def getHakemuksenHakutoiveet(hakemusOid:String, sijoitteluajoId:Long): List[HakutoiveRecord]
   def getHakemuksenPistetiedot(hakemusOid:String, sijoitteluajoId:Long): List[PistetietoRecord]
+  def getHakemuksenHakutoiveidenValintatapajonot(hakemusOid:String, sijoitteluajoId:Long): List[HakutoiveenValintatapajonoRecord]
+  def getHakemuksenHakutoiveidenHakijaryhmat(hakemusOid:String, sijoitteluajoId:Long): List[HakutoiveenHakijaryhmaRecord]
 
   def getSijoitteluajonHakukohde(sijoitteluajoId:Long, hakukohdeOid:String): Option[SijoittelunHakukohdeRecord]
   def getHakukohteenHakijaryhmat(sijoitteluajoId:Long, hakukohdeOid:String): List[HakijaryhmaRecord]
