@@ -559,6 +559,45 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
         """.as[HakutoiveRecord]).toList
   }
 
+  override def getHakemuksenHakutoiveidenValintatapajonot(hakemusOid:String, sijoitteluajoId:Long): List[HakutoiveenValintatapajonoRecord] = {
+    runBlocking(
+      sql"""with hakeneet as (
+              select valintatapajono_oid, count(hakemus_oid) hakeneet
+                from jonosijat
+                where sijoitteluajo_id = ${sijoitteluajoId}
+                group by valintatapajono_oid
+            )
+            select j.hakukohde_oid, v.prioriteetti, v.oid, v.nimi, v.ei_varasijatayttoa, j.jonosija,
+                j.varasijan_numero, ti.tila, i.tila,
+                j.hyvaksytty_harkinnanvaraisesti, j.tasasijajonosija, j.pisteet, v.alin_hyvaksytty_pistemaara,
+                v.hyvaksytty, v.varalla, v.varasijat, v.varasijatayttopaivat,
+                v.varasijoja_kaytetaan_alkaen, v.varasijoja_taytetaan_asti, v.tayttojono,
+                tu.julkaistavissa, tu.ehdollisesti_hyvaksyttavissa, tu.hyvaksytty_varasijalta,
+                vo.timestamp, ti.tilan_viimeisin_muutos, tk.tilankuvaus_hash, tk.tarkenteen_lisatieto,
+                h.hakeneet
+              from jonosijat j
+              inner join valintatapajonot v on j.valintatapajono_oid = v.oid and j.sijoitteluajo_id = v.sijoitteluajo_id
+              inner join hakeneet h on v.oid = h.valintatapajono_oid
+              inner join valinnantilat ti on ti.valintatapajono_oid = v.oid and ti.hakemus_oid = j.hakemus_oid and ti.hakukohde_oid = j.hakukohde_oid
+              inner join valinnantulokset tu on tu.valintatapajono_oid = v.oid and tu.hakemus_oid = j.hakemus_oid and tu.hakukohde_oid = j.hakukohde_oid
+              inner join tilat_kuvaukset tk on tk.valintatapajono_oid = v.oid and tk.hakemus_oid = j.hakemus_oid and tk.hakukohde_oid = j.hakukohde_oid
+              left join ilmoittautumiset i on i.henkilo = j.hakija_oid and i.hakukohde = j.hakukohde_oid
+              left join vastaanotot vo on vo.henkilo = j.hakija_oid and vo.hakukohde = j.hakukohde_oid and vo.deleted is null
+              where j.sijoitteluajo_id = ${sijoitteluajoId} and j.hakemus_oid = ${hakemusOid}""".as[HakutoiveenValintatapajonoRecord]).toList
+  }
+
+  override def getHakemuksenHakutoiveidenHakijaryhmat(hakemusOid:String, sijoitteluajoId:Long): List[HakutoiveenHakijaryhmaRecord] = {
+    runBlocking(
+      sql"""
+           select h.oid, h.nimi, h.hakukohde_oid, h.valintatapajono_oid,
+           h.kiintio, hh.hyvaksytty_hakijaryhmasta, h.hakijaryhmatyyppikoodi_uri
+           from hakijaryhman_hakemukset hh
+           inner join hakijaryhmat h on hh.hakijaryhma_oid = h.oid and hh.sijoitteluajo_id = h.sijoitteluajo_id
+           where hh.hakemus_oid = ${hakemusOid} and hh.sijoitteluajo_id = ${sijoitteluajoId}
+         """.as[HakutoiveenHakijaryhmaRecord]
+    ).toList
+  }
+
   override def getHakemuksenPistetiedot(hakemusOid:String, sijoitteluajoId:Long): List[PistetietoRecord] = {
     runBlocking(
       sql"""
