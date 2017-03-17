@@ -1,10 +1,20 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
-import com.typesafe.config.{Config, ConfigValueFactory}
+import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import org.flywaydb.core.Flyway
 import slick.driver.PostgresDriver.api.{Database, _}
 
-class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends ValintarekisteriRepository
+case class DbConfig(url: String,
+                    user: Option[String],
+                    password: Option[String],
+                    maxConnections: Option[Int],
+                    minConnections: Option[Int],
+                    numThreads: Option[Int],
+                    queueSize: Option[Int],
+                    registerMbeans: Option[Boolean],
+                    initializationFailFast: Option[Boolean])
+
+class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends ValintarekisteriRepository
   with VastaanottoRepositoryImpl
   with SijoitteluRepositoryImpl
   with HakukohdeRepositoryImpl
@@ -12,13 +22,22 @@ class ValintarekisteriDb(dbConfig: Config, isItProfile:Boolean = false) extends 
   with EnsikertalaisuusRepositoryImpl
   with ValinnantulosRepositoryImpl {
 
-  val user = if (dbConfig.hasPath("user")) dbConfig.getString("user") else null
-  val password = if (dbConfig.hasPath("password")) dbConfig.getString("password") else null
-  logger.info(s"Database configuration: ${dbConfig.withValue("password", ConfigValueFactory.fromAnyRef("***"))}")
+  logger.info(s"Database configuration: ${config.copy(password = Some("***"))}")
   val flyway = new Flyway()
-  flyway.setDataSource(dbConfig.getString("url"), user, password)
+  flyway.setDataSource(config.url, config.user.orNull, config.password.orNull)
   flyway.migrate()
-  override val db = Database.forConfig("", dbConfig)
+  override val db = {
+    val c = new HikariConfig()
+    c.setJdbcUrl(config.url)
+    config.user.foreach(c.setUsername)
+    config.password.foreach(c.setPassword)
+    config.maxConnections.foreach(c.setMaximumPoolSize)
+    config.minConnections.foreach(c.setMinimumIdle)
+    config.registerMbeans.foreach(c.setRegisterMbeans)
+    config.initializationFailFast.foreach(c.setInitializationFailFast)
+    val executor = AsyncExecutor("valintarekisteri", config.numThreads.getOrElse(20), config.queueSize.getOrElse(1000))
+    Database.forDataSource(new HikariDataSource(c), executor)
+  }
   if(isItProfile) {
     logger.warn("alter table public.schema_version owner to oph")
     runBlocking(sqlu"""alter table public.schema_version owner to oph""")

@@ -11,7 +11,7 @@ trait ITSetup {
   val dbConfig = appConfig.settings.valintaRekisteriDbConfig
 
   lazy val singleConnectionValintarekisteriDb = new ValintarekisteriDb(
-    dbConfig.withValue("connectionPool", ConfigValueFactory.fromAnyRef("disabled")))
+    dbConfig.copy(maxConnections = Some(1), minConnections = Some(1)))
 
   lazy val valintarekisteriDbWithPool = new ValintarekisteriDb(dbConfig, true)
 
