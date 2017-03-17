@@ -11,6 +11,7 @@ import fi.vm.sade.valintatulosservice.VtsServletBase
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
 import fi.vm.sade.valintatulosservice.tarjonta.TarjontaHakuService
+import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import org.json4s.jackson.Serialization.read
@@ -24,7 +25,8 @@ import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepository,
                                        valinnantulosRepository: ValinnantulosRepository,
                                        hakukohdeRecordService: HakukohdeRecordService,
-                                       tarjontaHakuService: TarjontaHakuService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
+                                       tarjontaHakuService: TarjontaHakuService,
+                                       valintalaskentakoostepalveluService: ValintalaskentakoostepalveluService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
   override val applicationName = Some("sijoittelun-tulos-migraatio")
 
   override protected def applicationDescription: String = "REST-API sijoittelun tuloksien migroinniksi valintarekisteriin"
@@ -35,7 +37,7 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
 
   private val sijoittelunTulosRestClient = new SijoittelunTulosRestClient(appConfig)
   private val mongoClient = new SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient, appConfig,
-    sijoitteluRepository, valinnantulosRepository, hakukohdeRecordService, tarjontaHakuService)
+    sijoitteluRepository, valinnantulosRepository, hakukohdeRecordService, tarjontaHakuService, valintalaskentakoostepalveluService)
 
   logger.warn("Mountataan Valintarekisterin sijoittelun tuloksien migraatioservlet!")
 
