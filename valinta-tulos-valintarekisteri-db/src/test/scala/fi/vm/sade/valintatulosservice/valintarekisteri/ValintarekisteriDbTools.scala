@@ -329,42 +329,87 @@ trait ValintarekisteriDbTools extends Specification {
     )
   }
 
-  private implicit val getSijoitteluajonJonosijaResult = GetResult(r => {
-    SijoitteluajonHakemusWrapper(r.nextString, r.nextStringOption, r.nextStringOption, r.nextStringOption, r.nextInt,
-      r.nextInt, r.nextIntOption, r.nextBoolean, r.nextBigDecimalOption, r.nextInt, r.nextBoolean, r.nextBoolean,
-      Valinnantila(r.nextString), getHakemuksenTilankuvaukset(r.nextInt, r.nextStringOption), ValinnantilanTarkenne(r.nextString),
-      r.nextStringOption, hakijaryhmaOidsToSet(r.nextStringOption), List()).hakemus
-  })
-
-  private def getHakemuksenTilankuvaukset(hash:Int, tarkenteenLisatieto:Option[String]): Option[Map[String,String]] = {
-    Option(
-      singleConnectionValintarekisteriDb.getValinnantilanKuvaukset(List(hash)).get(hash) match {
-        case Some(kuvaukset: TilankuvausRecord) if tarkenteenLisatieto.isDefined => {
-          kuvaukset.tilankuvaukset.mapValues(_.replace("<lisatieto>", tarkenteenLisatieto.get))
-        }
-        case Some(kuvaukset: TilankuvausRecord) => kuvaukset.tilankuvaukset
-        case _ => Map()
-      }
-    )
-  }
+  implicit val getHakemuksetForValintatapajonosResult = GetResult(r => HakemusRecord(
+    hakijaOid = r.nextStringOption,
+    hakemusOid = r.nextString,
+    pisteet = r.nextBigDecimalOption,
+    etunimi = r.nextStringOption,
+    sukunimi = r.nextStringOption,
+    prioriteetti = r.nextInt,
+    jonosija = r.nextInt,
+    tasasijaJonosija = r.nextInt,
+    tila = Valinnantila(r.nextString),
+    tilankuvausHash = r.nextInt,
+    tarkenteenLisatieto = r.nextStringOption,
+    hyvaksyttyHarkinnanvaraisesti = r.nextBoolean,
+    varasijaNumero = r.nextIntOption,
+    onkoMuuttunutviimesijoittelusta = r.nextBoolean,
+    siirtynytToisestaValintatapaJonosta = r.nextBoolean,
+    valintatapajonoOid = r.nextString))
 
   private def findValintatapajononJonosijat(valintatapajonoOid:String): Seq[Hakemus] = {
-    singleConnectionValintarekisteriDb.runBlocking(
-      sql"""select j.hakemus_oid, j.hakija_oid, j.etunimi, j.sukunimi, j.prioriteetti, j.jonosija, j.varasijan_numero,
-            j.onko_muuttunut_viime_sijoittelussa, j.pisteet, j.tasasijajonosija, j.hyvaksytty_harkinnanvaraisesti,
-            j.siirtynyt_toisesta_valintatapajonosta, vt.tila, t_k.tilankuvaus_hash, t_k.tarkenteen_lisatieto, t.tilan_tarkenne, t_k.tarkenteen_lisatieto, array_to_string(array_agg(hr.oid) , ',')
-            from jonosijat j
-            left join hakijaryhman_hakemukset as hh on hh.hakemus_oid = j.hakemus_oid
-            left join hakijaryhmat as hr on hr.oid = hh.hakijaryhma_oid and hr.sijoitteluajo_id = hh.sijoitteluajo_id
-            left join valinnantulokset v on j.valintatapajono_oid = v.valintatapajono_oid and j.hakemus_oid = v.hakemus_oid
-            left join valinnantilat as vt on vt.hakukohde_oid = v.hakukohde_oid and vt.valintatapajono_oid = v.valintatapajono_oid and vt.hakemus_oid = v.hakemus_oid
-            left join tilat_kuvaukset as t_k on t_k.hakemus_oid = v.hakemus_oid and t_k.valintatapajono_oid = v.valintatapajono_oid
-            left join valinnantilan_kuvaukset as t on t.hash = t_k.tilankuvaus_hash
+    val hakemukset = singleConnectionValintarekisteriDb.runBlocking(
+      sql"""select
+                j.hakija_oid,
+                j.hakemus_oid,
+                j.pisteet,
+                j.etunimi,
+                j.sukunimi,
+                j.prioriteetti,
+                j.jonosija,
+                j.tasasijajonosija,
+                vt.tila,
+                t_k.tilankuvaus_hash,
+                t_k.tarkenteen_lisatieto,
+                j.hyvaksytty_harkinnanvaraisesti,
+                j.varasijan_numero,
+                j.onko_muuttunut_viime_sijoittelussa,
+                j.siirtynyt_toisesta_valintatapajonosta,
+                j.valintatapajono_oid
+            from jonosijat as j
+            join valinnantulokset as v on v.valintatapajono_oid = j.valintatapajono_oid
+                and v.hakemus_oid = j.hakemus_oid
+                and v.hakukohde_oid = j.hakukohde_oid
+            join valinnantilat as vt on vt.valintatapajono_oid = v.valintatapajono_oid
+                and vt.hakemus_oid = v.hakemus_oid
+                and vt.hakukohde_oid = v.hakukohde_oid
+            join tilat_kuvaukset t_k on v.valintatapajono_oid = t_k.valintatapajono_oid
+                and v.hakemus_oid = t_k.hakemus_oid
             where j.valintatapajono_oid = ${valintatapajonoOid}
-            group by j.hakemus_oid, j.hakija_oid, j.etunimi, j.sukunimi, j.prioriteetti, j.jonosija, j.varasijan_numero,
-            j.onko_muuttunut_viime_sijoittelussa, j.pisteet, j.tasasijajonosija, j.hyvaksytty_harkinnanvaraisesti,
-            j.siirtynyt_toisesta_valintatapajonosta, vt.tila, t_k.tilankuvaus_hash, t.tilan_tarkenne, t_k.tarkenteen_lisatieto
-         """.as[Hakemus])
+        """.as[HakemusRecord]
+    ).toList
+    val hakijaryhmaoidit = singleConnectionValintarekisteriDb.runBlocking(
+      sql"""select distinct
+               j.hakemus_oid,
+               hh.hakijaryhma_oid
+            from jonosijat j
+            join hakijaryhman_hakemukset as hh on hh.hakemus_oid = j.hakemus_oid
+            where j.valintatapajono_oid = ${valintatapajonoOid}
+        """.as[(String, String)]
+    ).groupBy(_._1).mapValues(_.map(_._2).toSet)
+    val tilankuvaukset = singleConnectionValintarekisteriDb.getValinnantilanKuvaukset(hakemukset.map(_.tilankuvausHash))
+    hakemukset.map(h => {
+      SijoitteluajonHakemusWrapper(
+        hakemusOid = h.hakemusOid,
+        hakijaOid = h.hakijaOid,
+        etunimi = h.etunimi,
+        sukunimi = h.sukunimi,
+        prioriteetti = h.prioriteetti,
+        jonosija = h.jonosija,
+        varasijanNumero = h.varasijaNumero,
+        onkoMuuttunutViimeSijoittelussa = h.onkoMuuttunutviimesijoittelusta,
+        pisteet = h.pisteet,
+        tasasijaJonosija = h.tasasijaJonosija,
+        hyvaksyttyHarkinnanvaraisesti = h.hyvaksyttyHarkinnanvaraisesti,
+        siirtynytToisestaValintatapajonosta = h.siirtynytToisestaValintatapaJonosta,
+        tila = h.tila,
+        tilanKuvaukset = Some(h.tilankuvaukset(tilankuvaukset.get(h.tilankuvausHash))),
+        tilankuvauksenTarkenne = tilankuvaukset(h.tilankuvausHash).tilankuvauksenTarkenne,
+        tarkenteenLisatieto = h.tarkenteenLisatieto,
+        hyvaksyttyHakijaryhmista = hakijaryhmaoidit.getOrElse(h.hakemusOid, Set()),
+        tilaHistoria = List()
+      ).hakemus
+    }).toSeq
   }
 
   case class JonosijanTilankuvauksetResult(tila:Valinnantila, tilankuvausHash:Long, tarkenteenLisatieto:Option[String])
