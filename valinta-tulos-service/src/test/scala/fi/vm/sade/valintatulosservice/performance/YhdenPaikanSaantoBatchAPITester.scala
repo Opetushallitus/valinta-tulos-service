@@ -23,7 +23,7 @@ object YhdenPaikanSaantoBatchAPITester extends App with Logging {
   implicit val appConfig = new VtsAppConfig.IT
   private val dbConfig = appConfig.settings.valintaRekisteriDbConfig
   lazy val valintarekisteriDb = new ValintarekisteriDb(
-    dbConfig.withValue("connectionPool", ConfigValueFactory.fromAnyRef("disabled"))).db
+    dbConfig.copy(maxConnections = Some(1), minConnections = Some(1))).db
   SharedJetty.start
   private val testDataSize = 50000
 

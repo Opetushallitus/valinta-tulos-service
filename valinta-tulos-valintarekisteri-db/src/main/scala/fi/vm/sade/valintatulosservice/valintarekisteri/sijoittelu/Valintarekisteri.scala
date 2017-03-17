@@ -1,10 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
 import java.util
-import java.util.function.{Consumer, Predicate}
-import java.util.stream.Collectors
 
-import fi.vm.sade.sijoittelu.domain._
 import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatulos}
 import fi.vm.sade.sijoittelu.tulos.dto.SijoitteluajoDTO
 import fi.vm.sade.utils.slf4j.Logging
