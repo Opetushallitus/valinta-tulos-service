@@ -90,11 +90,12 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
     val valintatapajonoOid = parseValintatapajonoOid
-    val valinnanTulokset = valinnantulosService.getValinnantuloksetForValintatapajono(valintatapajonoOid, auditInfo)
-    Ok(
-      body = valinnanTulokset._2,
-      headers = if (valinnanTulokset._1.nonEmpty) Map("Last-Modified" -> createLastModifiedHeader(valinnanTulokset._1.get)) else Map()
-    )
+    valinnantulosService.getValinnantuloksetForValintatapajono(valintatapajonoOid, auditInfo) match {
+      case Some((lastModified, valinnantulokset)) =>
+        Ok(body = valinnantulokset, headers = Map("Last-Modified" -> createLastModifiedHeader(lastModified)))
+      case None =>
+        Ok(List())
+    }
   }
 
   val valinnantulosMuutosSwagger: OperationBuilder = (apiOperation[Unit]("muokkaaValinnantulosta")
