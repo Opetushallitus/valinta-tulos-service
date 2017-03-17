@@ -12,6 +12,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
 import fi.vm.sade.valintatulosservice.tarjonta.TarjontaHakuService
+import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
@@ -30,7 +31,8 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
                                            sijoitteluRepository: SijoitteluRepository,
                                            valinnantulosRepository: ValinnantulosRepository,
                                            hakukohdeRecordService: HakukohdeRecordService,
-                                           tarjontaHakuService: TarjontaHakuService) extends Logging {
+                                           tarjontaHakuService: TarjontaHakuService,
+                                           valintalaskentakoostepalveluService: ValintalaskentakoostepalveluService) extends Logging {
   private val hakukohdeDao: HakukohdeDao = appConfig.sijoitteluContext.hakukohdeDao
   private val valintatulosDao: ValintatulosDao = appConfig.sijoitteluContext.valintatulosDao
   private val sijoitteluDao = appConfig.sijoitteluContext.sijoitteluDao
@@ -71,6 +73,7 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
         timed(s"Ensuring hakukohteet for sijoitteluajo $sijoitteluajoId of $hakuOid are in db") {
           hakukohteet.asScala.map(_.getOid).foreach(hakukohdeRecordService.getHakukohdeRecord)
         }
+        hakukohteet.asScala.map(_.getOid).foreach(valintalaskentakoostepalveluService.hakukohdeUsesLaskenta)
         timed(s"Removed jono based hakijaryhmät referring to jonos not in sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
           Valintarekisteri.poistaValintatapajonokohtaisetHakijaryhmatJoidenJonoaEiSijoiteltu(hakukohteet)
         }
