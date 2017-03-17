@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Kausi
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeRecord, Kausi}
 import slick.dbio.DBIO
 
 import scala.concurrent.duration.Duration
@@ -16,5 +16,6 @@ trait VirkailijaVastaanottoRepository {
   def findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(kausi: Kausi): Set[VastaanottoRecord]
   def findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(kaudet: Set[Kausi]): Map[Kausi, Set[VastaanottoRecord]] =
     kaudet.map(kausi => kausi -> findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(kausi)).toMap
+  def findYpsVastaanotot(kausi: Kausi, henkiloOids: Set[String]): Set[(String, HakukohdeRecord, VastaanottoRecord)]
   def aliases(henkiloOid: String): DBIO[Set[String]]
 }

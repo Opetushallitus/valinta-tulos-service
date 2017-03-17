@@ -4,13 +4,14 @@ import java.time.Instant
 
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
+import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valinnantulos._
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{ValinnantulosRepository, VastaanottoRecord, VirkailijaVastaanottoRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 
@@ -19,11 +20,18 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
                            val hakuService: HakuService,
                            val ohjausparametritService: OhjausparametritService,
                            val hakukohdeRecordService: HakukohdeRecordService,
+                           virkailijaVastaanottoRepository: VirkailijaVastaanottoRepository,
                            val appConfig: VtsAppConfig,
                            val audit: Audit) extends Logging {
 
   def getValinnantuloksetForValintatapajono(valintatapajonoOid: String, auditInfo: AuditInfo): Option[(Instant, List[Valinnantulos])] = {
-    val r = valinnantulosRepository.getValinnantuloksetAndLastModifiedDateForValintatapajono(valintatapajonoOid)
+    val r = valinnantulosRepository.getValinnantuloksetAndLastModifiedDateForValintatapajono(valintatapajonoOid).map(t => {
+      val valinnantulokset = t._2
+      val hakijat = valinnantulokset.map(_.henkiloOid).toSet
+      val hakukohde = hakukohdeRecordService.getHakukohdeRecord(t._2.head.hakukohdeOid).fold(throw _, x => x)
+      val vastaanotot = virkailijaVastaanottoRepository.findYpsVastaanotot(hakukohde.koulutuksenAlkamiskausi, hakijat)
+      (t._1, valinnantulokset.map(ottanutVastaanToisenPaikan(hakukohde, vastaanotot, _)))
+    })
     audit.log(auditInfo.user, ValinnantuloksenLuku,
       new Target.Builder().setField("valintatapajono", valintatapajonoOid).build(),
       new Changes.Builder().build()
@@ -70,6 +78,26 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
     }) match {
       case Right(l) => l
       case Left(t) => throw t
+    }
+  }
+
+  private def ottanutVastaanToisenPaikan(hakukohde: HakukohdeRecord,
+                                         vastaanotot: Set[(String, HakukohdeRecord, VastaanottoRecord)],
+                                         valinnantulos: Valinnantulos): Valinnantulos = {
+    val ypsVastaanotot = vastaanotot.filter(t =>
+      t._3.henkiloOid == valinnantulos.henkiloOid &&
+        t._2.yhdenPaikanSaantoVoimassa &&
+        t._2.koulutuksenAlkamiskausi == hakukohde.koulutuksenAlkamiskausi)
+    val sitovaVastaanotto = ypsVastaanotot.exists(t => t._3.action == VastaanotaSitovasti)
+    val ehdollinenVastaanottoToisellaHakemuksella = ypsVastaanotot.exists(t =>
+      t._3.action == VastaanotaEhdollisesti && t._1 != valinnantulos.hakemusOid)
+    if (hakukohde.yhdenPaikanSaantoVoimassa &&
+      valinnantulos.vastaanottotila == ValintatuloksenTila.KESKEN &&
+      Set[Valinnantila](Hyvaksytty, VarasijaltaHyvaksytty, Varalla).contains(valinnantulos.valinnantila) &&
+      (sitovaVastaanotto || ehdollinenVastaanottoToisellaHakemuksella)) {
+      valinnantulos.copy(vastaanottotila = ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)
+    } else {
+      valinnantulos
     }
   }
 
