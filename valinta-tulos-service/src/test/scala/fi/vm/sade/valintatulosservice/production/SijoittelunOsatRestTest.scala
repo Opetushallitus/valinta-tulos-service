@@ -125,6 +125,26 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
     true mustEqual true
   }
 
+  "New sijoitteluajon perustiedot should equal to old sijoitteluajo" in {
+    logger.info(s"SIJOITTELUAJO ${hakuOid}")
+    val uusiSijoittelu = time("Get uusi sijoitteluajo") { get[Sijoitteluajo](() => getNewSijoitteluajo(hakuOid, vtsSessionCookie)) }
+    val vanhaSijoittelu = time("Get vanha sijoitteluajo") { get[Sijoitteluajo](() => getOld(s"$oldSijoitteluHost/sijoittelu-service/resources/sijoittelu/$hakuOid/sijoitteluajo/latest")) }
+
+    uusiSijoittelu.sijoitteluajoId mustEqual vanhaSijoittelu.sijoitteluajoId
+    uusiSijoittelu.hakuOid mustEqual vanhaSijoittelu.hakuOid
+    uusiSijoittelu.startMils mustEqual vanhaSijoittelu.startMils
+    uusiSijoittelu.endMils mustEqual vanhaSijoittelu.endMils
+    uusiSijoittelu.hakukohteet.size mustEqual vanhaSijoittelu.hakukohteet.size
+
+    logger.info(s"Hakukohteita ${uusiSijoittelu.hakukohteet.size}")
+    uusiSijoittelu.hakukohteet.filter(_.kaikkiJonotSijoiteltu).size mustEqual vanhaSijoittelu.hakukohteet.filter(_.kaikkiJonotSijoiteltu).size
+
+    uusiSijoittelu.hakukohteet.foreach(uusiHakukohde => {
+      vanhaSijoittelu.hakukohteet.find(_.oid.equals(uusiHakukohde.oid)).isDefined must be_==(true).setMessage(s"Hakukohde ${uusiHakukohde.oid} puuttuu")
+    })
+    true mustEqual true
+  }
+
   "Hakukohde in new sijoittelu should equal to hakukohde in old sijoittelu" in {
     logger.info(s"HAKUKOHDE ${hakukohdeOid}")
     val uusiHakukohde = time("Get uusi hakukohde") { get[Hakukohde](() => getNewHakukohde(hakuOid, hakukohdeOid, vtsSessionCookie))}
@@ -245,6 +265,13 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
 
   override def getOld(uriString:String) = {
     val result = super.getOld(uriString)
+    println(result)
+    result
+  }
+
+  private def getNewSijoitteluajo(hakuOid:String, vtsSessionCookie: String) = {
+    val url = vtsHost + s"/valinta-tulos-service/auth/sijoittelu/$hakuOid/sijoitteluajo/latest/perustiedot"
+    val result = time("Uuden sijoitteluajon perustietojen haku") { getNew(url, vtsSessionCookie) }
     println(result)
     result
   }
