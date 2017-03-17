@@ -30,11 +30,14 @@ class RealOrganisaatioService(appConfig:AppConfig) extends OrganisaatioService{
   implicit val formats = DefaultFormats
 
   override def hae(oid: String): Either[Throwable, Organisaatiot] = {
-    val base = appConfig.settings.organisaatioUrl
-    val url = s"$base/rest/organisaatio/hae?vainAktiiviset=true&vainLakkautetut=false&suunnitellut=false&oid=$oid"
+    val url = appConfig.settings.ophUrlProperties.url("organisaatio-service.organisaatio.hae", Map(
+      "vainAktiiviset" -> true,
+      "vainLakkautetut" -> false,
+      "suunnitellut" -> false,
+      "oid" -> oid))
 
     fetch(url){ response =>
-      (parse(response)).extract[Organisaatiot]
+      parse(response).extract[Organisaatiot]
     }.left.map {
       case e: IllegalArgumentException => new IllegalArgumentException(s"No organisaatio $oid found", e)
       case e: IllegalStateException => new IllegalStateException(s"Parsing organisaatio $oid failed", e)
