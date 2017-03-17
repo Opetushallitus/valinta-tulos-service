@@ -10,6 +10,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Ilmoittautuminen,
 import slick.dbio.DBIO
 
 import scala.concurrent.duration.Duration
+import scala.concurrent.ExecutionContext.Implicits.global
 
 trait ValinnantulosRepository extends ValintarekisteriRepository {
 
@@ -35,7 +36,7 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
     runBlockingTransactionally(
       getLastModifiedForValintatapajono(valintatapajonoOid)
         .flatMap {
-          case Some(lastModified) => getValinnantuloksetForValintatapajono(valintatapajonoOid).map((lastModified, _))
+          case Some(lastModified) => getValinnantuloksetForValintatapajono(valintatapajonoOid).map(vs => Some((lastModified, vs)))
           case None => DBIO.successful(None)
         },
       timeout = timeout

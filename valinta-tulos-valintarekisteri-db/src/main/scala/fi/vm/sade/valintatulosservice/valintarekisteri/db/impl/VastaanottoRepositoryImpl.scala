@@ -4,7 +4,7 @@ import java.util.Date
 import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.db._
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{ConflictingAcceptancesException, Kausi, Poista}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{ConflictingAcceptancesException, HakukohdeRecord, Kausi, Poista}
 import org.postgresql.util.PSQLException
 import slick.driver.PostgresDriver.api._
 import slick.jdbc.TransactionIsolation.Serializable
@@ -27,6 +27,35 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
             from newest_vastaanotot
             where koulutuksen_alkamiskausi = ${kausi.toKausiSpec}
                 and yhden_paikan_saanto_voimassa""".as[VastaanottoRecord]).toSet
+  }
+
+  override def findYpsVastaanotot(kausi: Kausi, henkiloOids: Set[String]): Set[(String, HakukohdeRecord, VastaanottoRecord)] = {
+    val vastaanotot = findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(kausi)
+    val hakukohteet = runBlocking(
+      sql"""select hakukohde_oid,
+                   haku_oid,
+                   yhden_paikan_saanto_voimassa,
+                   kk_tutkintoon_johtava,
+                   koulutuksen_alkamiskausi
+            from hakukohteet
+            where koulutuksen_alkamiskausi = ${kausi.toKausiSpec}
+        """.as[HakukohdeRecord]
+    ).map(h => h.oid -> h).toMap
+    val hakemusoidit = runBlocking(
+      sql"""select distinct
+                 vt.henkilo_oid,
+                 vt.hakukohde_oid,
+                 vt.hakemus_oid
+            from valinnantilat as vt
+            join vastaanotot as v on v.hakukohde = vt.hakukohde_oid
+                and v.henkilo = vt.henkilo_oid
+            join hakukohteet as h on h.hakukohde_oid = vt.hakukohde_oid
+            where h.koulutuksen_alkamiskausi = ${kausi.toKausiSpec}
+        """.as[(String, String, String)]
+    ).map(t => (t._1, t._2) -> t._3).toMap
+    vastaanotot
+      .filter(v => henkiloOids.contains(v.henkiloOid))
+      .map(v => (hakemusoidit((v.henkiloOid, v.hakukohdeOid)), hakukohteet(v.hakukohdeOid), v))
   }
 
   override def aliases(henkiloOid: String): DBIO[Set[String]] = {
