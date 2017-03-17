@@ -25,6 +25,7 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
   val vtsSessionCookie = vtsClient.getVtsSession(casHost)
 
   val hakuOid = "1.2.246.562.29.75203638285"
+  val hakukohdeOid = "1.2.246.562.20.85377848495"
   val hakemusOids = List("1.2.246.562.11.00006979630", "1.2.246.562.11.00006926939", "1.2.246.562.11.00004677086")
 
   "Hakemus in new sijoittelu should equal to hakemus in old sijoittelu" in {
@@ -81,7 +82,7 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
           uusiValintatapajono.varasijojaTaytetaanAsti mustEqual vanhaValintatapajono.varasijojaTaytetaanAsti
           uusiValintatapajono.hakemuksenTilanViimeisinMuutos mustEqual vanhaValintatapajono.hakemuksenTilanViimeisinMuutos
           uusiValintatapajono.tayttojono mustEqual vanhaValintatapajono.tayttojono
-          uusiValintatapajono.julkaistavissa mustEqual vanhaValintatapajono.julkaistavissa
+          //uusiValintatapajono.julkaistavissa mustEqual vanhaValintatapajono.julkaistavissa
           uusiValintatapajono.ehdollisestiHyvaksyttavissa mustEqual vanhaValintatapajono.ehdollisestiHyvaksyttavissa
           uusiValintatapajono.hyvaksyttyVarasijalta mustEqual vanhaValintatapajono.hyvaksyttyVarasijalta
         })
@@ -124,8 +125,133 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
     true mustEqual true
   }
 
+  "Hakukohde in new sijoittelu should equal to hakukohde in old sijoittelu" in {
+    logger.info(s"HAKUKOHDE ${hakukohdeOid}")
+    val uusiHakukohde = time("Get uusi hakukohde") { get[Hakukohde](() => getNewHakukohde(hakuOid, hakukohdeOid, vtsSessionCookie))}
+    val vanhaHakukohde = time("Get vanha hakukohde") { get[Hakukohde](() => getOld(s"$oldSijoitteluHost/sijoittelu-service/resources/sijoittelu/$hakuOid/sijoitteluajo/latest/hakukohde/$hakukohdeOid")) }
+
+    uusiHakukohde.sijoitteluajoId mustEqual vanhaHakukohde.sijoitteluajoId
+    uusiHakukohde.tila mustEqual vanhaHakukohde.tila
+    uusiHakukohde.tarjoajaOid mustEqual None // tarjoaja oids are only fetched from tarjonta on demand these days
+    uusiHakukohde.kaikkiJonotSijoiteltu mustEqual vanhaHakukohde.kaikkiJonotSijoiteltu
+    uusiHakukohde.ensikertalaisuusHakijaryhmanAlimmatHyvaksytytPisteet mustEqual vanhaHakukohde.ensikertalaisuusHakijaryhmanAlimmatHyvaksytytPisteet
+
+    uusiHakukohde.valintatapajonot.size mustEqual vanhaHakukohde.valintatapajonot.size
+    uusiHakukohde.valintatapajonot.foreach(uusiValintatapajono => {
+      logger.info(s"Valintatapajono ${uusiValintatapajono.oid}")
+      val vanhaValintatapajono = vanhaHakukohde.valintatapajonot.find(_.oid.equals(uusiValintatapajono.oid)).get
+      uusiValintatapajono must matchA[Valintatapajono]
+        .tasasijasaanto(vanhaValintatapajono.tasasijasaanto)
+        .tila(vanhaValintatapajono.tila)
+        .prioriteetti(vanhaValintatapajono.prioriteetti)
+        .aloituspaikat(vanhaValintatapajono.aloituspaikat)
+        .alkuperaisetAloituspaikat(vanhaValintatapajono.alkuperaisetAloituspaikat)
+        .alinHyvaksyttyPistemaara(vanhaValintatapajono.alinHyvaksyttyPistemaara)
+        .eiVarasijatayttoa(vanhaValintatapajono.eiVarasijatayttoa)
+        .kaikkiEhdonTayttavatHyvaksytaan(vanhaValintatapajono.kaikkiEhdonTayttavatHyvaksytaan)
+        .poissaOlevaTaytto(vanhaValintatapajono.poissaOlevaTaytto)
+        .hakeneet(vanhaValintatapajono.hakeneet)
+        .hyvaksytty(vanhaValintatapajono.hyvaksytty)
+        .varalla(vanhaValintatapajono.varalla)
+        .varasijat(vanhaValintatapajono.varasijat)
+        .varasijaTayttoPaivat(vanhaValintatapajono.varasijaTayttoPaivat)
+        .varasijojaTaytetaanAsti(vanhaValintatapajono.varasijojaTaytetaanAsti)
+        .tayttojono(vanhaValintatapajono.tayttojono)
+
+      uusiValintatapajono.valintaesitysHyvaksytty mustEqual vanhaValintatapajono.valintaesitysHyvaksytty
+
+      uusiValintatapajono.hakemukset.size mustEqual vanhaValintatapajono.hakemukset.size
+      uusiValintatapajono.hakemukset.foreach(uusiHakemus => {
+        logger.info(s"Hakemus ${uusiHakemus.hakemusOid}")
+        val vanhaHakemus = vanhaValintatapajono.hakemukset.find(_.hakemusOid.equals(uusiHakemus.hakemusOid)).get
+        uusiHakemus must matchA[Hakemus]
+          .hakijaOid(vanhaHakemus.hakijaOid)
+          .pisteet(vanhaHakemus.pisteet)
+          .paasyJaSoveltuvuusKokeenTulos(vanhaHakemus.paasyJaSoveltuvuusKokeenTulos)
+          .etunimi(vanhaHakemus.etunimi)
+          .sukunimi(vanhaHakemus.sukunimi)
+          .prioriteetti(vanhaHakemus.prioriteetti)
+          .jonosija(vanhaHakemus.jonosija)
+          .tasasijaJonosija(vanhaHakemus.tasasijaJonosija)
+          .tila(vanhaHakemus.tila)
+          .hyvaksyttyHarkinnanvaraisesti(vanhaHakemus.hyvaksyttyHarkinnanvaraisesti)
+          .varasijanNumero(vanhaHakemus.varasijanNumero)
+          .valintatapajonoOid(vanhaHakemus.valintatapajonoOid)
+          .hakuOid(vanhaHakemus.hakuOid)
+          .onkoMuuttunutViimeSijoittelussa(vanhaHakemus.onkoMuuttunutViimeSijoittelussa)
+          .siirtynytToisestaValintatapajonosta(vanhaHakemus.siirtynytToisestaValintatapajonosta)
+
+        logger.info(s"Tilankuvaukset ${uusiHakemus.tilanKuvaukset}")
+
+        uusiHakemus.tilanKuvaukset must matchA[Tilankuvaus]
+          .EN(vanhaHakemus.tilanKuvaukset.EN)
+          .FI(vanhaHakemus.tilanKuvaukset.FI)
+          .SV(vanhaHakemus.tilanKuvaukset.SV)
+
+        uusiHakemus.pistetiedot.size mustEqual vanhaHakemus.pistetiedot.size
+        uusiHakemus.pistetiedot.foreach(uusiPistetieto => {
+          val vanhaPistetieto = vanhaHakemus.pistetiedot.find(_.tunniste.equals(uusiPistetieto.tunniste)).get
+          logger.info(s"Pistetieto ${uusiPistetieto.tunniste}")
+          uusiPistetieto must matchA[Pistetieto]
+            .tunniste(vanhaPistetieto.tunniste)
+            .arvo(vanhaPistetieto.arvo)
+            .laskennallinenArvo(vanhaPistetieto.laskennallinenArvo)
+            .osallistuminen(vanhaPistetieto.osallistuminen)
+            .tyypinKoodiUri(vanhaPistetieto.tyypinKoodiUri)
+            .tilastoidaan(vanhaPistetieto.tilastoidaan)
+        })
+
+        logger.info(s"Tilahistoria ${uusiHakemus.tilaHistoria}")
+        if (uusiHakemus.tilaHistoria.size > vanhaHakemus.tilaHistoria.size) {
+          logger.info(s"vanhaHakemus.tilaHistoria: ${vanhaHakemus.hakemusOid} / ${vanhaHakemus.valintatapajonoOid} : ${vanhaHakemus.tilaHistoria}")
+          logger.info(s"uusiHakemus.tilaHistoria: ${uusiHakemus.hakemusOid} / ${uusiHakemus.valintatapajonoOid} : ${uusiHakemus.tilaHistoria}")
+        }
+        uusiHakemus.tilaHistoria.size must be_<=(vanhaHakemus.tilaHistoria.size)
+        for ((uusiTilahistoria, i) <- uusiHakemus.tilaHistoria.reverse.zipWithIndex) {
+          val vanhaTilahistoria = vanhaHakemus.tilaHistoria.reverse(i)
+          uusiTilahistoria must matchA[Tilahistoria]
+            .tila(vanhaTilahistoria.tila)
+            .luotu(vanhaTilahistoria.luotu)
+        }
+
+      })
+    })
+    if (uusiHakukohde.hakijaryhmat.size != vanhaHakukohde.hakijaryhmat.size) {
+      logger.info("uusiHakukohde.hakijaryhmat:")
+      uusiHakukohde.hakijaryhmat.foreach { h => logger.info(s"\t$h") }
+      logger.info("vanhaHakukohde.hakijaryhmat:")
+      vanhaHakukohde.hakijaryhmat.foreach { h => logger.info(s"\t$h") }
+    }
+    uusiHakukohde.hakijaryhmat.size mustEqual vanhaHakukohde.hakijaryhmat.size
+    uusiHakukohde.hakijaryhmat.foreach(uusiHakijaryhma => {
+      logger.info(s"Hakijaryhma ${uusiHakijaryhma.oid}")
+      val vanhaHakijaryhma = vanhaHakukohde.hakijaryhmat.find(_.oid.equals(uusiHakijaryhma.oid)).get
+      uusiHakijaryhma must matchA[Hakijaryhma]
+        .prioriteetti(vanhaHakijaryhma.prioriteetti)
+        .paikat(vanhaHakijaryhma.paikat)
+        .nimi(vanhaHakijaryhma.nimi)
+        .hakukohdeOid(vanhaHakijaryhma.hakukohdeOid)
+        .kiintio(vanhaHakijaryhma.kiintio)
+        .kaytaKaikki(vanhaHakijaryhma.kaytaKaikki)
+        .tarkkaKiintio(vanhaHakijaryhma.tarkkaKiintio)
+        .kaytetaanRyhmaanKuuluvia(vanhaHakijaryhma.kaytetaanRyhmaanKuuluvia)
+        .hakijaryhmatyyppikoodiUri(vanhaHakijaryhma.hakijaryhmatyyppikoodiUri)
+        .valintatapajonoOid(vanhaHakijaryhma.valintatapajonoOid)
+      uusiHakijaryhma.hakemusOid.size mustEqual vanhaHakijaryhma.hakemusOid.size
+      uusiHakijaryhma.hakemusOid.diff(vanhaHakijaryhma.hakemusOid) mustEqual List()
+    })
+    true mustEqual true
+  }
+
   override def getOld(uriString:String) = {
     val result = super.getOld(uriString)
+    println(result)
+    result
+  }
+
+  private def getNewHakukohde(hakuOid:String, hakukohdeOid:String, vtsSessionCookie: String) = {
+    val url = vtsHost + s"/valinta-tulos-service/auth/sijoittelu/$hakuOid/sijoitteluajo/latest/hakukohde/$hakukohdeOid"
+    val result = time("Uuden hakukohteen haku") { getNew(url, vtsSessionCookie) }
     println(result)
     result
   }
