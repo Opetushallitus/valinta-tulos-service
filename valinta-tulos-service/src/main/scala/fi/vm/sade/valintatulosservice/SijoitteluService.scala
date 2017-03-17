@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
-import fi.vm.sade.sijoittelu.tulos.dto.{HakukohdeDTO, TilaHistoriaDTO}
+import fi.vm.sade.sijoittelu.tulos.dto.{HakukohdeDTO, SijoitteluajoDTO, TilaHistoriaDTO}
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
@@ -120,6 +120,19 @@ class SijoitteluService(sijoitteluRepository: SijoitteluRepository,
         )
       }}
     )
+  }
+
+  def getSijoitteluajonPerustiedot(hakuOid:String, sijoitteluajoId:String): SijoitteluajoDTO = {
+    val latestId = getLatestSijoitteluajoId(sijoitteluajoId, hakuOid)
+    sijoitteluRepository.getSijoitteluajo(latestId).map(sijoitteluajo => {
+
+      val hakukohteet = sijoitteluRepository.getSijoitteluajonHakukohteet(latestId).map{hakukohde =>
+        val dto = new HakukohdeDTO()
+        dto.setOid(hakukohde.oid)
+        dto
+      }
+      sijoitteluajo.dto(hakukohteet)
+    }).getOrElse(throw new IllegalArgumentException(s"Sijoitteluajoa $sijoitteluajoId ei löytynyt haulle $hakuOid"))
   }
 
   private def getLatestSijoitteluajoId(sijoitteluajoId:String, hakuOid:String) =
