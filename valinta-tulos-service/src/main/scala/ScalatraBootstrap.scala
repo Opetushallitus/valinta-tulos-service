@@ -14,6 +14,7 @@ import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.{HakijaResolver, Mig
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.sijoittelu.{SijoitteluFixtures, SijoittelunTulosRestClient, SijoittelutulosService}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, TarjontaHakuService}
+import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.ValintarekisteriService
@@ -62,12 +63,13 @@ class ScalatraBootstrap extends LifeCycle {
     lazy val sijoitteluService = new SijoitteluService(valintarekisteriDb, authorizer, hakuService)
     lazy val valinnantulosService = new ValinnantulosService(valintarekisteriDb, authorizer, hakuService, appConfig.ohjausparametritService, hakukohdeRecordService, appConfig, audit)
     lazy val tarjontaHakuService = new TarjontaHakuService(appConfig.hakuServiceConfig)
+    lazy val valintalaskentakoostepalveluService = new ValintalaskentakoostepalveluService(appConfig)
 
     val migrationMode = System.getProperty("valinta-rekisteri-migration-mode")
 
     if(null != migrationMode && "true".equalsIgnoreCase(migrationMode)) {
       context.mount(new MigraatioServlet(hakukohdeRecordService, valintarekisteriDb, new HakemusRepository(), appConfig.sijoitteluContext.raportointiService, hakuService), "/migraatio")
-      context.mount(new SijoittelunTulosMigraatioServlet(valintarekisteriDb, valintarekisteriDb, hakukohdeRecordService, tarjontaHakuService), "/sijoittelun-tulos-migraatio")
+      context.mount(new SijoittelunTulosMigraatioServlet(valintarekisteriDb, valintarekisteriDb, hakukohdeRecordService, tarjontaHakuService, valintalaskentakoostepalveluService), "/sijoittelun-tulos-migraatio")
     } else {
       context.mount(new BuildInfoServlet, "/")
       context.mount(new CasLogin(
