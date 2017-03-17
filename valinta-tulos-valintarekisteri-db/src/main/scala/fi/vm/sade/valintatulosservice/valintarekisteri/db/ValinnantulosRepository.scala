@@ -31,8 +31,15 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
   def deleteValinnantulos(muokkaaja:String, valinnantulos:Valinnantulos, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
   def deleteIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
 
-  def getValinnantuloksetAndLastModifiedDateForValintatapajono(valintatapajonoOid:String, timeout:Duration = Duration(2, TimeUnit.SECONDS)):(Option[Instant], List[Valinnantulos]) =
-    runBlockingTransactionally(getLastModifiedForValintatapajono(valintatapajonoOid).zip(getValinnantuloksetForValintatapajono(valintatapajonoOid)), timeout = timeout) match {
+  def getValinnantuloksetAndLastModifiedDateForValintatapajono(valintatapajonoOid:String, timeout:Duration = Duration(2, TimeUnit.SECONDS)):Option[(Instant, List[Valinnantulos])] =
+    runBlockingTransactionally(
+      getLastModifiedForValintatapajono(valintatapajonoOid)
+        .flatMap {
+          case Some(lastModified) => getValinnantuloksetForValintatapajono(valintatapajonoOid).map((lastModified, _))
+          case None => DBIO.successful(None)
+        },
+      timeout = timeout
+    ) match {
       case Right(result) => result
       case Left(error) => throw error
     }
