@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
-import fi.vm.sade.sijoittelu.tulos.dto.HakukohdeDTO
+import fi.vm.sade.sijoittelu.tulos.dto.{HakukohdeDTO, TilaHistoriaDTO}
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
@@ -39,16 +39,16 @@ class SijoitteluService(sijoitteluRepository: SijoitteluRepository,
     lazy val kaikkiHakemukset = getHakemukset
     lazy val tilankuvausHashit = kaikkiHakemukset.map(_.tilankuvausHash).distinct
 
-    def getPistetiedotGroupedByHakemusOid = {
+    def getPistetiedotGroupedByValintatapajonoOidAndHakemusOid = {
       time(s"$latestId hakukohteen ${hakukohde.oid} pistetietojen haku") {
         sijoitteluRepository.getHakukohteenPistetiedot(latestId, hakukohde.oid)
-      }.groupBy(_.hakemusOid).mapValues(_.map(_.dto))
+      }.groupBy(_.valintatapajonoOid).mapValues(_.groupBy(_.hakemusOid).mapValues(_.map(_.dto)))
     }
 
-    def getTilahistoriatGroupedByHakemusOid = {
+    def getTilahistoriatGroupedByValintatapajonoOidAndHakemusOid = {
       time(s"$latestId hakukohteen ${hakukohde.oid} tilahistorioiden haku") {
         sijoitteluRepository.getHakukohteenTilahistoriat(latestId, hakukohde.oid)
-      }.groupBy(_.hakemusOid).mapValues(_.map(_.dto))
+      }.groupBy(_.valintatapajonoOid).mapValues(_.groupBy(_.hakemusOid).mapValues(_.map(_.dto)))
     }
 
     def getHakijaryhmatJaHakemukset = {
@@ -65,8 +65,8 @@ class SijoitteluService(sijoitteluRepository: SijoitteluRepository,
 
 
     val valintatapajonot = getValintatapajonot
-    val pistetiedot = getPistetiedotGroupedByHakemusOid
-    val tilahistoriat = getTilahistoriatGroupedByHakemusOid
+    val pistetiedot = getPistetiedotGroupedByValintatapajonoOidAndHakemusOid
+    val tilahistoriat = getTilahistoriatGroupedByValintatapajonoOidAndHakemusOid
     val hakijaryhmat = getHakijaryhmatJaHakemukset
     val hakemukset = kaikkiHakemukset.groupBy(_.valintatapajonoOid)
     val tilankuvaukset = getTilankuvaukset
@@ -81,8 +81,8 @@ class SijoitteluService(sijoitteluRepository: SijoitteluRepository,
           h.dto(
             hakemuksenHakijaryhmat(h.hakemusOid),
             h.tilankuvaukset(tilankuvaukset.get(h.tilankuvausHash)),
-            tilahistoriat.getOrElse(h.hakemusOid, List()),
-            pistetiedot.getOrElse(h.hakemusOid, List())
+            tilahistoriat.getOrElse(h.valintatapajonoOid, Map()).getOrElse(h.hakemusOid, List()),
+            pistetiedot.getOrElse(h.valintatapajonoOid, Map()).getOrElse(h.hakemusOid, List())
           )
         )
       )),
