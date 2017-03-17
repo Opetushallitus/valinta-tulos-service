@@ -23,7 +23,7 @@ object EnsikertalaisuusBatchAPITester extends App with Logging {
   implicit val appConfig = new VtsAppConfig.IT
   private val dbConfig = appConfig.settings.valintaRekisteriDbConfig
   lazy val valintarekisteriDb = new ValintarekisteriDb(
-    dbConfig.withValue("connectionPool", ConfigValueFactory.fromAnyRef("disabled"))).db
+    dbConfig.copy(maxConnections = Some(1), minConnections = Some(1))).db
   SharedJetty.start
   private val testDataSize = appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids
   val oids = 1.to(testDataSize).map(i => s"1.2.246.562.24.$i")
