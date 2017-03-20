@@ -9,7 +9,6 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeRecord, 
 import scala.util.{Failure, Success, Try}
 
 class HakukohdeRecordService(hakuService: HakuService, hakukohdeRepository: HakukohdeRepository, parseLeniently: Boolean) extends Logging {
-  private val koulutusTilasToSkipInStrictParsing = List("POISTETTU") // See TarjontaTila in tarjonta-api
 
   def getHaunHakukohdeRecords(oid: String): Either[Throwable, Seq[HakukohdeRecord]] = {
     hakuService.getHakukohdeOids(oid).right.flatMap(getHakukohdeRecords)
@@ -97,17 +96,6 @@ class HakukohdeRecordService(hakuService: HakuService, hakukohdeRepository: Haku
       haku.koulutuksenAlkamiskausi.toRight(new IllegalStateException(s"No koulutuksen alkamiskausi on haku $haku"))
     }
     case _ => Left(new IllegalStateException(s"No alkamiskausi for hakukohde ${hakukohde.oid}."))
-  }
-
-  private def hakukohdeJohtaaKkTutkintoon(hakukohde: Hakukohde, koulutukset: Seq[Koulutus]): Boolean = {
-    hakukohde.koulutusAsteTyyppi == "KORKEAKOULUTUS" && koulutukset.exists(_.johtaaTutkintoon)
-  }
-
-  private def unique[A](kaudet: Seq[A]): Option[A] = {
-    kaudet match {
-      case x::rest if rest.forall(x == _) => Some(x)
-      case _ => None
-    }
   }
 
   private def sequence[A, B](xs: Stream[Either[B, A]]): Either[B, List[A]] = xs match {
