@@ -5,6 +5,7 @@ import java.net.URLEncoder
 import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasParams}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import org.http4s.{Method, Request, Uri}
+import org.json4s._
 import org.json4s.jackson.JsonMethods.parse
 
 import scala.util.{Failure, Success, Try}
@@ -14,23 +15,30 @@ import scalaz.concurrent.Task
   * Created by heikki.honkanen on 15/03/2017.
   */
 class ValintalaskentakoostepalveluService (appConfig: VtsAppConfig) {
-  import org.json4s._
   implicit val formats = DefaultFormats
   private val valintalaskentakoosteClient = createCasClient(appConfig, "/valintalaskentakoostepalvelu/")
 
-  def hakukohdeUsesLaskenta(hakukohdeOid: String) = {
-    val path = s"resources/valintaperusteet/hakukohde/$hakukohdeOid/kayttaaValintalaskentaa"
+  def hakukohdeUsesLaskenta(hakukohdeOid: String): Boolean = {
+    implicit val hakukohdeResponseReader = new Reader[HakukohdeResponse] {
+      override def read(v: JValue): HakukohdeResponse = {
+        HakukohdeResponse((v \ "kayttaaValintalaskentaa").extract[Boolean])
+      }
+    }
+
+    implicit val hakukohdeResponseDecoder =  org.http4s.json4s.native.jsonOf[HakukohdeResponse]
+
+    val url = appConfig.settings.ophUrlProperties.url("valintalaskentakoostepalvelu.valintaperusteet.resource.hakukohde", hakukohdeOid)
     Try(
       valintalaskentakoosteClient.prepare({
-        Request(method = Method.GET, uri = createUri("valintalaskentakoostepalvelu/", path))
+        Request(method = Method.GET, uri = createUri(url, ""))
       }
       ).flatMap {
-        case r if 200 == r.status.code => r.as[String]
+        case r if 200 == r.status.code => r.as[HakukohdeResponse]
         case r => Task.fail(new RuntimeException(r.toString))
       }.run
     ) match {
-      case Success(response) => Some(response)
-      case Failure(t) => new Exception(t)
+      case Success(response) => response.kayttaaValintalaskentaa
+      case Failure(t) => throw t
     }
   }
 
@@ -49,4 +57,6 @@ class ValintalaskentakoostepalveluService (appConfig: VtsAppConfig) {
       status <- (parse(json) \ "status").extractOpt[String]
     } yield status
   }
+
+  case class HakukohdeResponse(kayttaaValintalaskentaa: Boolean)
 }
