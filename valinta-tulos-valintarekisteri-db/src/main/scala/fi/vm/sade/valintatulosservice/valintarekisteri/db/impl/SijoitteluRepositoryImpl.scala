@@ -672,10 +672,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
       ("delete hakijaryhman_hakemukset", sqlu"delete from hakijaryhman_hakemukset where sijoitteluajo_id = ${sijoitteluajoId}"),
       ("delete hakijaryhmat", sqlu"delete from hakijaryhmat where sijoitteluajo_id = ${sijoitteluajoId}"),
       ("delete pistetiedot", sqlu"delete from pistetiedot where sijoitteluajo_id = ${sijoitteluajoId}"),
-      ("delete jonosijat", sqlu"""delete from jonosijat where (sijoitteluajo_id, valintatapajono_oid, hakukohde_oid) in
-            ( select ${sijoitteluajoId}, jotd.oid, hotd.oid
-              from jono_oids_to_delete jotd
-              join hakukohde_oids_to_delete hotd on 1=1)"""),
+      ("delete jonosijat", sqlu"delete from jonosijat where sijoitteluajo_id = ${sijoitteluajoId}"),
       ("delete valintatapajonot", sqlu"delete from valintatapajonot where sijoitteluajo_id = ${sijoitteluajoId}"),
       ("delete sijoitteluajon_hakukohteet", sqlu"delete from sijoitteluajon_hakukohteet where sijoitteluajo_id = ${sijoitteluajoId}"),
       ("delete sijoitteluajo", sqlu"delete from sijoitteluajot where id = ${sijoitteluajoId}"),
