@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos
 
+import java.lang.Long
 import java.sql.Timestamp
 import java.util
 import java.util.concurrent.TimeUnit.MINUTES
@@ -73,17 +74,15 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
         timed(s"Ensuring hakukohteet for sijoitteluajo $sijoitteluajoId of $hakuOid are in db") {
           hakukohteet.asScala.map(_.getOid).foreach(hakukohdeRecordService.getHakukohdeRecord)
         }
-        hakukohteet.asScala.map(_.getOid).foreach(valintalaskentakoostepalveluService.hakukohdeUsesLaskenta)
         timed(s"Removed jono based hakijaryhmät referring to jonos not in sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
           Valintarekisteri.poistaValintatapajonokohtaisetHakijaryhmatJoidenJonoaEiSijoiteltu(hakukohteet)
         }
         tarjontaHakuService.getHaku(hakuOid) match {
           case Right(haku) => {
-            haku.käyttääSijoittelua match {
-              case true => timed(s"Stored sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
-                sijoitteluRepository.storeSijoittelu(SijoitteluWrapper(sijoitteluAjo, hakukohteet, valintatulokset))
-              }
-              case _ => logger.info(s"Haku $hakuOid does not use sijoittelu. Skipping saving sijoittelu $sijoitteluajoId")
+            if (haku.käyttääSijoittelua || timed(s"Checking if haku uses valintalaskenta") { sijoitteluUsesLaskenta(hakukohteet) }) {
+              storeSijoittelu(hakuOid, sijoitteluAjo, hakukohteet, valintatulokset)
+            } else {
+              logger.info(s"Haku $hakuOid does not use sijoittelu. Skipping saving sijoittelu $sijoitteluajoId")
             }
           }
           case Left(e) => logger.error(e.getMessage)
@@ -96,6 +95,21 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
       }
       logger.info("-----------------------------------------------------------")
     }
+  }
+
+  private def storeSijoittelu(hakuOid: String, sijoitteluAjo: SijoitteluAjo, hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]) = {
+    timed(s"Stored sijoitteluajo ${sijoitteluAjo.getSijoitteluajoId} of haku $hakuOid") {
+      sijoitteluRepository.storeSijoittelu(SijoitteluWrapper(sijoitteluAjo, hakukohteet, valintatulokset))
+    }
+  }
+
+  private def sijoitteluUsesLaskenta(hakukohteet: util.List[Hakukohde]): Boolean = {
+    hakukohteet.asScala.map(_.getOid).foreach(oid => {
+      if (valintalaskentakoostepalveluService.hakukohdeUsesLaskenta(oid)) {
+        return true
+      }
+    })
+    false
   }
 
   private def createSaveActions(hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]): Seq[DBIO[Unit]] = {
