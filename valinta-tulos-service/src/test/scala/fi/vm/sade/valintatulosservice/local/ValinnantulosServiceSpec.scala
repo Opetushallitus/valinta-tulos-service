@@ -333,6 +333,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     valinnantulosRepository.runBlockingTransactionally(any[DBIO[Unit]], any[Duration]) returns Right[Throwable, Unit](())
     valinnantulosRepository.getHakuForHakukohde(anyString) returns korkeakouluHakuOid
     valinnantulosRepository.getValinnantuloksetAndLastModifiedDatesForValintatapajono(valintatapajonoOid) returns result
+    yhdenPaikanSaannos.apply(any[Set[Valinnantulos]]) answers { _ match { case vs: Set[Valinnantulos] => Right(vs) } }
   }
 
   trait NotAuthorizedValinnantulosServiceWithMocks extends ValinnantulosServiceWithMocks {

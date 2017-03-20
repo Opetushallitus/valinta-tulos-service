@@ -48,7 +48,9 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
       ohjausparametrit <- ohjausparametritService.ohjausparametrit(hakukohde.hakuOid).right
     } yield {
       val vanhatValinnantulokset = valinnantulosRepository.getValinnantuloksetAndLastModifiedDatesForValintatapajono(valintatapajonoOid)
-        .map(v => v._2.hakemusOid -> v).toMap
+      val lastModifiedByHakemusOid = vanhatValinnantulokset.map(t => t._2.hakemusOid -> t._1).toMap
+      val vanhatValinnantuloksetByHakemusOid = yhdenPaikanSaannos(vanhatValinnantulokset.map(_._2))
+        .fold(throw _, vs => vs.map(v => v.hakemusOid -> (lastModifiedByHakemusOid(v.hakemusOid), v)).toMap)
       val strategy = if (erillishaku) {
         new ErillishaunValinnantulosStrategy(
           auditInfo,
@@ -71,7 +73,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
           audit
         )
       }
-      handle(strategy, valinnantulokset, vanhatValinnantulokset, ifUnmodifiedSince)
+      handle(strategy, valinnantulokset, vanhatValinnantuloksetByHakemusOid, ifUnmodifiedSince)
     }) match {
       case Right(l) => l
       case Left(t) => throw t
