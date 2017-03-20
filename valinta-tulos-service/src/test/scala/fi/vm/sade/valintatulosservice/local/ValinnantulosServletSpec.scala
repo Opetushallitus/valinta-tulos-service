@@ -6,20 +6,22 @@ import java.time.format.DateTimeFormatter
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
-import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket}
+import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import org.junit.runner.RunWith
-import org.specs2.runner.JUnitRunner
 import org.json4s.DefaultFormats
-import org.json4s.native.JsonMethods._
 import org.json4s.jackson.Serialization._
+import org.json4s.native.JsonMethods._
+import org.junit.runner.RunWith
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.model.{HttpRequest, HttpResponse}
 import org.specs2.matcher.MatchResult
+import org.specs2.runner.JUnitRunner
+import org.specs2.specification.BeforeExample
+import slick.driver.PostgresDriver.api._
 
 @RunWith(classOf[JUnitRunner])
-class ValinnantulosServletSpec extends ServletSpecification with ValintarekisteriDbTools {
+class ValinnantulosServletSpec extends ServletSpecification with ValintarekisteriDbTools with BeforeExample {
   override implicit val formats = DefaultFormats ++ List(new NumberLongSerializer, new TasasijasaantoSerializer, new ValinnantilaSerializer,
     new DateSerializer, new TilankuvauksenTarkenneSerializer, new IlmoittautumistilaSerializer, new VastaanottoActionSerializer, new ValintatuloksenTilaSerializer)
   step(singleConnectionValintarekisteriDb.storeSijoittelu(loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")))
@@ -324,7 +326,11 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     }
   }
 
-
+  override protected def before: Unit = {
+    singleConnectionValintarekisteriDb.runBlocking(
+      sqlu"""delete from vastaanotot"""
+    )
+  }
 
   def okResult(result:List[ValinnantulosUpdateStatus]) = result.size mustEqual 0
 
