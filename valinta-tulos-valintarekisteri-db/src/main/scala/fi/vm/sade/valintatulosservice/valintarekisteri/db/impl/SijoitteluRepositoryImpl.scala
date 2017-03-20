@@ -663,6 +663,10 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
     val deleteOperationsWithDescriptions: Seq[(String, DBIO[Any])] = Seq(
       (s"disable triggers of $tablesWithTriggers", DbUtils.disableTriggers(tablesWithTriggers)),
 
+      ("drop constraint jonosijat_valintatapajonot", sqlu"alter table jonosijat drop constraint jonosijat_valintatapajonot"),
+      ("drop constraint jonosijat_pistetiedot", sqlu"alter table jonosijat drop constraint jonosijat_pistetiedot"),
+      ("drop foreign key constraint pistetiedot_sijoitteluajo_id_fkey", sqlu"alter table pistetiedot drop constraint pistetiedot_sijoitteluajo_id_fkey"),
+
       ("create tmp table hakukohde_oids_to_delete", sqlu"create temporary table hakukohde_oids_to_delete (oid character varying primary key) on commit drop"),
       ("create tmp table jono_oids_to_delete", sqlu"create temporary table jono_oids_to_delete (oid character varying primary key) on commit drop"),
       ("populate hakukohde_oids_to_delete", sqlu"""insert into hakukohde_oids_to_delete (
@@ -687,6 +691,15 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
 
       ("delete ilmoittautumiset_history", sqlu"delete from ilmoittautumiset_history where hakukohde in (select oid from hakukohde_oids_to_delete)"),
       ("delete ilmoittautumiset", sqlu"delete from ilmoittautumiset where hakukohde in (select oid from hakukohde_oids_to_delete)"),
+
+      ("create constraint jonosijat_valintatapajonot", sqlu"""alter table jonosijat add constraint jonosijat_valintatapajonot
+        foreign key (valintatapajono_oid, sijoitteluajo_id, hakukohde_oid)
+        references valintatapajonot(oid, sijoitteluajo_id, hakukohde_oid)"""),
+      ("create constraint jonosijat_pistetiedot", sqlu"alter table jonosijat add constraint jonosijat_pistetiedot unique (sijoitteluajo_id, valintatapajono_oid, hakemus_oid)"),
+      ("add foreign key constraint pistetiedot_sijoitteluajo_id_fkey",
+        sqlu"""alter table pistetiedot
+              add constraint pistetiedot_sijoitteluajo_id_fkey foreign key (sijoitteluajo_id, hakemus_oid, valintatapajono_oid)
+              references jonosijat (sijoitteluajo_id, hakemus_oid, valintatapajono_oid)"""),
 
       (s"enable triggers of $tablesWithTriggers", DbUtils.enableTriggers(tablesWithTriggers))
     )
