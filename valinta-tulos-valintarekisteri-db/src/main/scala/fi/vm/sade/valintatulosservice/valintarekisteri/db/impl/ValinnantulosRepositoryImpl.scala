@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with ValintarekisteriRepository {
 
-  override def getValinnantuloksetForValintatapajono(valintatapajonoOid: String): DBIO[List[Valinnantulos]] = {
+  override def getValinnantuloksetForValintatapajono(valintatapajonoOid: String): DBIO[Set[Valinnantulos]] = {
     sql"""select ti.hakukohde_oid,
               ti.valintatapajono_oid,
               ti.hakemus_oid,
@@ -35,7 +35,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
           left join ilmoittautumiset as i on i.hakukohde = tu.hakukohde_oid
               and i.henkilo = ti.henkilo_oid
           where ti.valintatapajono_oid = ${valintatapajonoOid}
-       """.as[Valinnantulos].map(_.toList)
+       """.as[Valinnantulos].map(_.toSet)
   }
 
   override def getLastModifiedForValintatapajono(valintatapajonoOid:String):DBIO[Option[Instant]] = {

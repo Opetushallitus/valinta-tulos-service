@@ -12,6 +12,7 @@ import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde, YhdenPaikanSaanto}
+import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{ValinnantulosRepository, VirkailijaVastaanottoRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
@@ -325,9 +326,9 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     val ohjausparametritService = mock[OhjausparametritService]
     val audit = mock[Audit]
     val hakukohdeRecordService = mock[HakukohdeRecordService]
-    val virkailijaVastaanottoRepository = mock[VirkailijaVastaanottoRepository]
+    val yhdenPaikanSaannos = mock[YhdenPaikanSaannos]
 
-    val service = new ValinnantulosService(valinnantulosRepository, authorizer, hakuService, ohjausparametritService, hakukohdeRecordService, virkailijaVastaanottoRepository, appConfig, audit)
+    val service = new ValinnantulosService(valinnantulosRepository, authorizer, hakuService, ohjausparametritService, hakukohdeRecordService, yhdenPaikanSaannos, appConfig, audit)
 
     valinnantulosRepository.runBlockingTransactionally(any[DBIO[Unit]], any[Duration]) returns Right[Throwable, Unit](())
     valinnantulosRepository.getHakuForHakukohde(anyString) returns korkeakouluHakuOid
