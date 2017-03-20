@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import fi.vm.sade.utils.Timer
 import org.flywaydb.core.Flyway
 import slick.driver.PostgresDriver.api.{Database, _}
 
@@ -25,7 +26,7 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
   logger.info(s"Database configuration: ${config.copy(password = Some("***"))}")
   val flyway = new Flyway()
   flyway.setDataSource(config.url, config.user.orNull, config.password.orNull)
-  flyway.migrate()
+  Timer.timed("Flyway migration") { flyway.migrate() }
   override val db = {
     val c = new HikariConfig()
     c.setJdbcUrl(config.url)
