@@ -46,7 +46,7 @@ case class Hakuaika(hakuaikaId: String, alkuPvm: Option[Long], loppuPvm: Option[
 case class Hakukohde(oid: String, hakuOid: String, tarjoajaOids: Seq[String], hakukohdeKoulutusOids: List[String],
                      koulutusAsteTyyppi: String, koulutusmoduuliTyyppi: String,
                      hakukohteenNimet: Map[String, String], tarjoajaNimet: Map[String, String], yhdenPaikanSaanto: YhdenPaikanSaanto,
-                     tutkintoonJohtava:Boolean, koulutuksenAlkamiskausiUri: Option[String], koulutuksenAlkamisvuosi: Option[Int])
+                     tutkintoonJohtava:Boolean, koulutuksenAlkamiskausiUri:String, koulutuksenAlkamisvuosi:Int)
 case class Koodi(uri: String, arvo: String)
 case class Koulutus(oid: String, koulutuksenAlkamiskausi: Kausi, tila: String, johtaaTutkintoon: Boolean,
                     koulutuskoodi: Option[Koodi],

@@ -64,11 +64,11 @@ object HakuFixtures extends HakuService with JsonHakuService {
     // TODO: Saner / more working test data
     if (activeFixture == toinenAsteYhteishaku || activeFixture == toinenAsteErillishakuEiSijoittelua) {
       Right(Hakukohde(oid, hakuOid, Seq(), List("koulu.tus.oid"), "AMMATILLINEN_PERUSKOULUTUS", "TUTKINTO_OHJELMA",
-        Map("kieli_fi" -> "Lukion ilmaisutaitolinja"), Map("fi" -> "Kallion lukio"), YhdenPaikanSaanto(false, "testihakukohde"), false, Some("kausi_k#1"), Some(2016)))
+        Map("kieli_fi" -> "Lukion ilmaisutaitolinja"), Map("fi" -> "Kallion lukio"), YhdenPaikanSaanto(false, "testihakukohde"), false, "kausi_k#1", 2016))
     } else {
       Right(Hakukohde(oid, hakuOid, Seq(), List("koulu.tus.oid"), "KORKEAKOULUTUS", "TUTKINTO",
         Map("kieli_fi" -> "Lukion ilmaisutaitolinja"), Map("fi" -> "Kallion lukio"), YhdenPaikanSaanto(
-          activeFixture != korkeakouluErillishakuEiYhdenPaikanSaantoa, "testihakukohde"), true, Some("kausi_k#1"), Some(2016)))
+          activeFixture != korkeakouluErillishakuEiYhdenPaikanSaantoa, "testihakukohde"), true, "kausi_k#1", 2016))
     }
   }
 
