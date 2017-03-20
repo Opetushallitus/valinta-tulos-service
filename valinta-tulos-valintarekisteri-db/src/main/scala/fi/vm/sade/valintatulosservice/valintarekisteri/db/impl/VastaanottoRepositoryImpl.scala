@@ -39,6 +39,7 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
                    koulutuksen_alkamiskausi
             from hakukohteet
             where koulutuksen_alkamiskausi = ${kausi.toKausiSpec}
+                and yhden_paikan_saanto_voimassa
         """.as[HakukohdeRecord]
     ).map(h => h.oid -> h).toMap
     val hakemusoidit = runBlocking(
@@ -47,10 +48,11 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
                  vt.hakukohde_oid,
                  vt.hakemus_oid
             from valinnantilat as vt
-            join vastaanotot as v on v.hakukohde = vt.hakukohde_oid
-                and v.henkilo = vt.henkilo_oid
-            join hakukohteet as h on h.hakukohde_oid = vt.hakukohde_oid
-            where h.koulutuksen_alkamiskausi = ${kausi.toKausiSpec}
+            where exists (select 1 from newest_vastaanotot as v
+                          where v.hakukohde = vt.hakukohde_oid
+                              and v.henkilo = vt.henkilo_oid
+                              and v.koulutuksen_alkamiskausi = ${kausi.toKausiSpec}
+                              and v.yhden_paikan_saanto_voimassa)
         """.as[(String, String, String)]
     ).map(t => (t._1, t._2) -> t._3).toMap
     vastaanotot
