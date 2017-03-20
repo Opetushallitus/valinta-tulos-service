@@ -50,14 +50,14 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
           where ti.valintatapajono_oid = ${valintatapajonoOid}""".as[Option[Instant]].head
   }
 
-  override def getLastModifiedForValintatapajononHakemukset(valintatapajonoOid:String):DBIO[Vector[(String, Instant)]] = {
+  override def getLastModifiedForValintatapajononHakemukset(valintatapajonoOid:String):DBIO[Set[(String, Instant)]] = {
     sql"""select ti.hakemus_oid, greatest(max(lower(ti.system_time)), max(lower(tu.system_time)), max(lower(il.system_time)), max(upper(ih.system_time)))
           from valinnantilat ti
           left join valinnantulokset tu on ti.valintatapajono_oid = tu.valintatapajono_oid
           left join ilmoittautumiset il on ti.henkilo_oid = il.henkilo and ti.hakukohde_oid = il.hakukohde
           left join ilmoittautumiset_history ih on ti.henkilo_oid = ih.henkilo and ti.hakukohde_oid = ih.hakukohde
           where ti.valintatapajono_oid = ${valintatapajonoOid}
-          group by ti.hakemus_oid""".as[(String, Instant)]
+          group by ti.hakemus_oid""".as[(String, Instant)].map(_.toSet)
   }
 
   override def getHakuForHakukohde(hakukohdeOid:String): String = {

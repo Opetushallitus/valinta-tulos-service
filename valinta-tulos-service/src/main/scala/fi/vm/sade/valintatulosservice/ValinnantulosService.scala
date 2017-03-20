@@ -48,6 +48,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
       ohjausparametrit <- ohjausparametritService.ohjausparametrit(hakukohde.hakuOid).right
     } yield {
       val vanhatValinnantulokset = valinnantulosRepository.getValinnantuloksetAndLastModifiedDatesForValintatapajono(valintatapajonoOid)
+        .map(v => v._2.hakemusOid -> v).toMap
       val strategy = if (erillishaku) {
         new ErillishaunValinnantulosStrategy(
           auditInfo,

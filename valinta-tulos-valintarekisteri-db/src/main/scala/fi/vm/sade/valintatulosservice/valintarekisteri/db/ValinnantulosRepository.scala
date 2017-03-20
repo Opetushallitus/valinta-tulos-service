@@ -24,7 +24,7 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
 
   def getLastModifiedForValintatapajono(valintatapajonoOid:String):DBIO[Option[Instant]]
 
-  def getLastModifiedForValintatapajononHakemukset(valintatapajonoOid:String):DBIO[Vector[(String, Instant)]]
+  def getLastModifiedForValintatapajononHakemukset(valintatapajonoOid:String): DBIO[Set[(String, Instant)]]
 
   def getHakuForHakukohde(hakukohdeOid:String): String
 
@@ -44,9 +44,14 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
       case Left(error) => throw error
     }
 
-  def getValinnantuloksetAndLastModifiedDatesForValintatapajono(valintatapajonoOid:String, timeout:Duration = Duration(2, TimeUnit.SECONDS)):Map[String, (Instant, Valinnantulos)] =
-    runBlockingTransactionally(getLastModifiedForValintatapajononHakemukset(valintatapajonoOid).zip(getValinnantuloksetForValintatapajono(valintatapajonoOid)), timeout = timeout) match {
-      case Right(result) => result._1.map{case (hakemusOid,lastModified) => (hakemusOid, (lastModified, result._2.find(_.hakemusOid == hakemusOid).get))}.toMap
+  def getValinnantuloksetAndLastModifiedDatesForValintatapajono(valintatapajonoOid:String, timeout:Duration = Duration(2, TimeUnit.SECONDS)):Set[(Instant, Valinnantulos)] =
+    runBlockingTransactionally(
+      getLastModifiedForValintatapajononHakemukset(valintatapajonoOid).zip(getValinnantuloksetForValintatapajono(valintatapajonoOid)),
+      timeout = timeout
+    ) match {
+      case Right((lastModifieds, valinnantulokset)) =>
+        val lm = lastModifieds.toMap
+        valinnantulokset.map(v => lm(v.hakemusOid) -> v)
       case Left(error) => throw error
     }
 }
