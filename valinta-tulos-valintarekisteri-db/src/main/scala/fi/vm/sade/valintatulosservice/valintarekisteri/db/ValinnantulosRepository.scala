@@ -1,6 +1,5 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
-import java.io.Serializable
 import java.sql.Timestamp
 import java.time.Instant
 import java.util.concurrent.TimeUnit
@@ -9,8 +8,8 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriR
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Ilmoittautuminen, ValinnantilanTallennus, ValinnantuloksenOhjaus, Valinnantulos}
 import slick.dbio.DBIO
 
-import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
 
 trait ValinnantulosRepository extends ValintarekisteriRepository {
 
@@ -21,7 +20,7 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
 
   def updateValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
 
-  def getValinnantuloksetForValintatapajono(valintatapajonoOid:String): DBIO[List[Valinnantulos]]
+  def getValinnantuloksetForValintatapajono(valintatapajonoOid:String): DBIO[Set[Valinnantulos]]
 
   def getLastModifiedForValintatapajono(valintatapajonoOid:String):DBIO[Option[Instant]]
 
@@ -32,7 +31,7 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
   def deleteValinnantulos(muokkaaja:String, valinnantulos:Valinnantulos, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
   def deleteIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
 
-  def getValinnantuloksetAndLastModifiedDateForValintatapajono(valintatapajonoOid:String, timeout:Duration = Duration(2, TimeUnit.SECONDS)):Option[(Instant, List[Valinnantulos])] =
+  def getValinnantuloksetAndLastModifiedDateForValintatapajono(valintatapajonoOid:String, timeout:Duration = Duration(2, TimeUnit.SECONDS)):Option[(Instant, Set[Valinnantulos])] =
     runBlockingTransactionally(
       getLastModifiedForValintatapajono(valintatapajonoOid)
         .flatMap {
