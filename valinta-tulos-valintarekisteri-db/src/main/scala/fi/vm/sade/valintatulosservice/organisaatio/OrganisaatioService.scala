@@ -9,6 +9,7 @@ import org.json4s.jackson.JsonMethods._
 import scala.util.Try
 import scala.util.control.NonFatal
 import scalaj.http.HttpOptions
+import scala.collection.JavaConversions._
 
 trait OrganisaatioService {
 
@@ -30,11 +31,11 @@ class RealOrganisaatioService(appConfig:AppConfig) extends OrganisaatioService{
   implicit val formats = DefaultFormats
 
   override def hae(oid: String): Either[Throwable, Organisaatiot] = {
-    val url = appConfig.settings.ophUrlProperties.url("organisaatio-service.organisaatio.hae", Map(
+    val url = appConfig.settings.ophUrlProperties.url("organisaatio-service.organisaatio.hae", mapAsJavaMap(Map(
       "vainAktiiviset" -> true,
       "vainLakkautetut" -> false,
       "suunnitellut" -> false,
-      "oid" -> oid))
+      "oid" -> oid)))
 
     fetch(url){ response =>
       parse(response).extract[Organisaatiot]

@@ -9,6 +9,7 @@ import org.joda.time.DateTime
 import org.json4s.JsonAST.{JBool, JInt, JObject, JString}
 import org.json4s.jackson.JsonMethods._
 import org.json4s.{JValue, CustomSerializer, Formats, MappingException}
+import scala.collection.JavaConversions._
 
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -159,13 +160,13 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
   }
 
   override def getArbitraryPublishedHakukohdeOid(hakuOid: String): Either[Throwable, String] = {
-    val url = appConfig.settings.ophUrlProperties.url("tarjonta-service.hakukohde.search", Map(
+    val url = appConfig.settings.ophUrlProperties.url("tarjonta-service.hakukohde.search", mapAsJavaMap(Map(
       "tila" -> "VALMIS",
       "tila" -> "JULKAISTU",
       "hakuOid" -> hakuOid,
       "offset" -> 0,
       "limit" -> 1
-    ))
+    )))
     fetch(url) { response =>
       (parse(response) \ "result" \ "tulokset" \ "tulokset" \ "oid" ).extractOpt[String]
     }.right.flatMap(_.toRight(new IllegalArgumentException(s"No hakukohde found for haku $hakuOid")))
@@ -174,10 +175,11 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
     sequence(for{oid <- oids.toStream} yield getHakukohde(oid))
   }
   def getHakukohde(hakukohdeOid: String): Either[Throwable, Hakukohde] = {
+
     val hakukohdeUrl = appConfig.settings.ophUrlProperties.url(
-      "tarjonta-service.hakukohde", hakukohdeOid, Map(
+      "tarjonta-service.hakukohde", hakukohdeOid, mapAsJavaMap(Map(
         "populateAdditionalKomotoFields" -> true
-      ))
+      )))
     fetch(hakukohdeUrl) { response =>
       (parse(response) \ "result").extract[Hakukohde]
     }.left.map {
@@ -192,9 +194,9 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
   }
 
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = {
-    val url = appConfig.settings.ophUrlProperties.url("tarjonta-service.find", Map(
+    val url = appConfig.settings.ophUrlProperties.url("tarjonta-service.find", mapAsJavaMap(Map(
       "addHakuKohdes" -> false
-    ))
+    )))
     fetch(url) { response =>
       val haut = (parse(response) \ "result").extract[List[HakuTarjonnassa]]
       haut.filter(_.julkaistu).map(toHaku(_))
