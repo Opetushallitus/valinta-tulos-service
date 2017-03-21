@@ -6,9 +6,9 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.DbConfig
 import org.apache.commons.lang3.BooleanUtils
 
 abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.config.ApplicationSettings(config) {
-  val omatsivutUrlEn = withConfig(_.getString("omatsivut.email.application.modify.link.en"))
-  val omatsivutUrlFi = withConfig(_.getString("omatsivut.email.application.modify.link.fi"))
-  val omatsivutUrlSv = withConfig(_.getString("omatsivut.email.application.modify.link.sv"))
+  val omatsivutUrlEn = withConfig(_.getString("omatsivut.en"))
+  val omatsivutUrlFi = withConfig(_.getString("omatsivut.fi"))
+  val omatsivutUrlSv = withConfig(_.getString("omatsivut.sv"))
   val oppijanTunnistusUrl = withConfig(_.getString("oppijan-tunnistus-service.url"))
   val tarjontaUrl = withConfig(_.getString("tarjonta-service.url"))
   val valintaRekisteriDbConfig = DbConfig(
