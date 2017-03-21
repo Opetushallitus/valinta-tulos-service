@@ -690,6 +690,8 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
       ("delete ilmoittautumiset_history", sqlu"delete from ilmoittautumiset_history where hakukohde in (select oid from hakukohde_oids_to_delete)"),
       ("delete ilmoittautumiset", sqlu"delete from ilmoittautumiset where hakukohde in (select oid from hakukohde_oids_to_delete)"),
 
+      /* This is a dangerous operation that we need for performance reasons. Future changes to this constraint
+       * must be reflected here! */
       ("add foreign key constraint pistetiedot_sijoitteluajo_id_fkey",
         sqlu"""alter table pistetiedot
               add constraint pistetiedot_sijoitteluajo_id_fkey foreign key (sijoitteluajo_id, hakemus_oid, valintatapajono_oid)
