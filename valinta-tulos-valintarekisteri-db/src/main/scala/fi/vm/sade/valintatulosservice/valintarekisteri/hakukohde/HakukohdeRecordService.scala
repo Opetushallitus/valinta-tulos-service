@@ -85,7 +85,7 @@ class HakukohdeRecordService(hakuService: HakuService, hakukohdeRepository: Haku
       hakukohde <- hakuService.getHakukohde(oid).right
       haku <- hakuService.getHaku(hakukohde.hakuOid).right
       alkamiskausi <- resolveKoulutuksenAlkamiskausi(hakukohde, haku).right
-    } yield HakukohdeRecord(hakukohde.oid, haku.oid, hakukohde.yhdenPaikanSaanto.voimassa, hakukohde.tutkintoonJohtava, alkamiskausi)
+    } yield HakukohdeRecord(hakukohde.oid, haku.oid, hakukohde.yhdenPaikanSaanto.voimassa, hakukohde.kkTutkintoonJohtava, alkamiskausi)
   }
 
   private def resolveKoulutuksenAlkamiskausi(hakukohde: Hakukohde, haku: Haku): Either[Throwable, Kausi] = hakukohde.koulutuksenAlkamiskausiUri match {
