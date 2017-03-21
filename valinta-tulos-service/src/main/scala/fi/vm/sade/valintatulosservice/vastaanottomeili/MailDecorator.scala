@@ -3,28 +3,40 @@ package fi.vm.sade.valintatulosservice.vastaanottomeili
 import java.util.Date
 
 import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.config.AppConfig
 import fi.vm.sade.valintatulosservice.domain.{Hakemus, Henkilotiedot}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
+import fi.vm.sade.valintatulosservice.oppijantunnistus.{OppijanTunnistus, OppijanTunnistusService}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 
 class HakukohdeNotFoundException(message: String) extends RuntimeException(message)
 
 class HakuNotFoundException(message: String) extends RuntimeException(message)
 
-class MailDecorator(hakemusRepository: HakemusRepository, valintatulosCollection: ValintatulosMongoCollection, hakuService: HakuService) extends Logging {
+class MailDecorator(hakemusRepository: HakemusRepository, valintatulosCollection: ValintatulosMongoCollection, hakuService: HakuService, oppijanTunnistusService: OppijanTunnistusService) extends Logging {
   def statusToMail(status: HakemusMailStatus): Option[Ilmoitus] = {
     status.anyMailToBeSent match {
       case true => {
         hakemusRepository.findHakemus(status.hakemusOid) match {
-          case Right(Hakemus(_, _, henkiloOid, asiointikieli, _, Henkilotiedot(Some(kutsumanimi), Some(email), true))) =>
+          case Right(Hakemus(_, _, henkiloOid, asiointikieli, _, Henkilotiedot(Some(kutsumanimi), Some(email), henkilötunnuksellinen))) =>
             val mailables = status.hakukohteet.filter(_.shouldMail)
             val deadline: Option[Date] = mailables.flatMap(_.deadline).sorted.headOption
 
             try {
-              Some(Ilmoitus(
-                status.hakemusOid, henkiloOid, asiointikieli, kutsumanimi, email, deadline, mailables.map(toHakukohde),
-                toHaku(status.hakuOid)
-              ))
+              val ilmoitus = Ilmoitus(
+                status.hakemusOid, henkiloOid, None, asiointikieli, kutsumanimi, email, deadline, mailables.map(toHakukohde),
+                toHaku(status.hakuOid))
+              if(henkilötunnuksellinen) {
+                Some(ilmoitus)
+              } else {
+                oppijanTunnistusService.luoSecureLink(henkiloOid, status.hakemusOid, email, "fi") match {
+                  case Right(OppijanTunnistus(securelink)) =>
+                    Some(ilmoitus.copy(secureLink = Some(securelink)))
+                  case Left(e) =>
+                    logger.error("Hakemukselle ei lähetetty vastaanottomeiliä, koska securelinkkiä ei saatu! " + status.hakemusOid, e)
+                    None
+                }
+              }
             } catch {
               case e: Exception =>
                 status.hakukohteet.filter(_.shouldMail).foreach {
