@@ -1,6 +1,5 @@
 package fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos
 
-import java.lang.Long
 import java.sql.Timestamp
 import java.util
 import java.util.concurrent.TimeUnit.MINUTES
@@ -11,9 +10,9 @@ import fi.vm.sade.sijoittelu.tulos.dao.{HakukohdeDao, ValintatulosDao}
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
 import fi.vm.sade.valintatulosservice.tarjonta.TarjontaHakuService
-import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
