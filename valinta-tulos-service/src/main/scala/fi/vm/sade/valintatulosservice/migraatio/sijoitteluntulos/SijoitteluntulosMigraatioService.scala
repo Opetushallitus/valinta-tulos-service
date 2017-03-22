@@ -75,9 +75,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       }
       tarjontaHakuService.getHaku(hakuOid) match {
         case Right(haku) =>
-          if (haku.käyttääSijoittelua || timed(s"Checking if haku uses valintalaskenta") {
-            sijoitteluUsesLaskenta(hakukohteet)
-          }) {
+          if (haku.käyttääSijoittelua || timed(s"Check if haku uses laskenta") { sijoitteluUsesLaskenta(hakukohteet) }) {
             storeSijoittelu(hakuOid, ajoFromMongo, hakukohteet, valintatulokset)
           } else {
             logger.info(s"Haku $hakuOid does not use sijoittelu. Skipping saving sijoittelu $mongoSijoitteluAjoId")
