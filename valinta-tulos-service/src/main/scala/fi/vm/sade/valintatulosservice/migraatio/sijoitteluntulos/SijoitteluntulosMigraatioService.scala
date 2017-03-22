@@ -44,12 +44,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
   }
 
   private def migrate(hakuOid: String, ajoFromMongo: SijoitteluAjo, dryRun: Boolean) = {
-    val sijoitteluOptional: Optional[Sijoittelu] = sijoitteluDao.getSijoitteluByHakuOid(hakuOid)
-    if (!sijoitteluOptional.isPresent) {
-      throw new IllegalStateException(s"sijoittelu not found in Mongodb for haku $hakuOid " +
-        s"even though latest sijoitteluajo is found. This is impossible :) Or you need to reboot sijoittelu-service.")
-    }
-    val sijoittelu = sijoitteluOptional.get()
+    val sijoittelu = findSijoittelu(hakuOid)
     val sijoitteluType = sijoittelu.getSijoitteluType
     val mongoSijoitteluAjoId = ajoFromMongo.getSijoitteluajoId
     logger.info(s"Latest sijoitteluajoId for haku $hakuOid in Mongodb is $mongoSijoitteluAjoId , sijoitteluType is $sijoitteluType")
@@ -94,6 +89,15 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       }
     }
     logger.info("-----------------------------------------------------------")
+  }
+
+  private def findSijoittelu(hakuOid: String): Sijoittelu = {
+    val sijoitteluOptional: Optional[Sijoittelu] = sijoitteluDao.getSijoitteluByHakuOid(hakuOid)
+    if (!sijoitteluOptional.isPresent) {
+      throw new IllegalStateException(s"sijoittelu not found in Mongodb for haku $hakuOid " +
+        s"even though latest sijoitteluajo is found. This is impossible :) Or you need to reboot sijoittelu-service.")
+    }
+    sijoitteluOptional.get()
   }
 
   private def deleteExistingResultsFromPostgres(hakuOid: String, dryRun: Boolean) = {
