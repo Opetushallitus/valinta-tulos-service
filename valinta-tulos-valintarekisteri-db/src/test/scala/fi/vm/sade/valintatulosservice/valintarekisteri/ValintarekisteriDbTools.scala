@@ -194,8 +194,8 @@ trait ValintarekisteriDbTools extends Specification {
             dpistetieto.getArvo mustEqual wpistetieto.getArvo
             dpistetieto.getLaskennallinenArvo mustEqual wpistetieto.getLaskennallinenArvo
             dpistetieto.getOsallistuminen mustEqual wpistetieto.getOsallistuminen
-            dpistetieto.getTyypinKoodiUri mustEqual wpistetieto.getTyypinKoodiUri
-            dpistetieto.isTilastoidaan mustEqual wpistetieto.isTilastoidaan
+            dpistetieto.getTyypinKoodiUri mustEqual null
+            dpistetieto.isTilastoidaan mustEqual null
           })
         })
       })
