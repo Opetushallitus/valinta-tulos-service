@@ -79,7 +79,7 @@ case class Hakemus(hakijaOid:Option[String], hakemusOid:String, pisteet:Option[L
                    hakuOid:Option[String], onkoMuuttunutViimeSijoittelussa:Option[Boolean], siirtynytToisestaValintatapajonosta:Option[Boolean],
                    tilanKuvaukset:Tilankuvaus, pistetiedot:List[Pistetieto], tilaHistoria:List[Tilahistoria])
 
-case class Pistetieto(tunniste:String, arvo:String, laskennallinenArvo:String, osallistuminen:String, tyypinKoodiUri:String, tilastoidaan:Boolean)
+case class Pistetieto(tunniste:String, arvo:String, laskennallinenArvo:String, osallistuminen:String, tyypinKoodiUri:Option[String], tilastoidaan:Option[Boolean])
 
 case class Tilankuvaus(SV:Option[String], FI:Option[String], EN:Option[String])
 

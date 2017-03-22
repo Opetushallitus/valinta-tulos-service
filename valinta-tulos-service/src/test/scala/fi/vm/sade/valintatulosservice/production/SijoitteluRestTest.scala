@@ -140,8 +140,10 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
                 compareFields(uusiPistetieto.arvo, vanhaPistetieto.arvo, "pistetieto.arvo")
                 compareFields(uusiPistetieto.laskennallinenArvo, vanhaPistetieto.laskennallinenArvo, "pistetieto.laskennallinenArvo")
                 compareFields(uusiPistetieto.osallistuminen, vanhaPistetieto.osallistuminen, "pistetieto.osallistuminen")
-                compareFields(uusiPistetieto.tyypinKoodiUri, vanhaPistetieto.tyypinKoodiUri, "pistetieto.tyypinKoodiUri")
-                compareFields(uusiPistetieto.tilastoidaan, vanhaPistetieto.tilastoidaan, "pistetieto.tilastoidaan")
+
+                // These fields are not supposed to be in the new API response
+                compareFields(uusiPistetieto.tyypinKoodiUri, None, "pistetieto.tyypinKoodiUri")
+                compareFields(uusiPistetieto.tilastoidaan, None, "pistetieto.tilastoidaan")
               })
 
               debug(s"Tilahistoria ${uusiHakemus.tilaHistoria}")
