@@ -30,10 +30,11 @@ class RealOppijanTunnistusService(appConfig:AppConfig) extends OppijanTunnistusS
       case "sv" => appConfig.settings.omatsivutUrlSv
       case _ => appConfig.settings.omatsivutUrlFi
     }
-    fetch(url, OppijanTunnistusCreate(callbackUrl,email,lang,Metadata(hakemusOid, personOid))){ response =>
+    val oppijanTunnistusBody = OppijanTunnistusCreate(callbackUrl,email,lang,Metadata(hakemusOid, personOid))
+    fetch(url, oppijanTunnistusBody){ response =>
       (parse(response)).extract[OppijanTunnistus]
     }.left.map {
-      case e: Exception => new RuntimeException(s"Failed to get securelink $personOid", e)
+      case e: Exception => new RuntimeException(s"Failed to get securelink for ${write(oppijanTunnistusBody)}", e)
     }
   }
 
