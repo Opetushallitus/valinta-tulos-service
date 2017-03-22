@@ -44,7 +44,7 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
     }
   }
 
-  private def migrate(hakuOid: String, sijoitteluAjo: SijoitteluAjo, dryRun: Boolean) = {
+  private def migrate(hakuOid: String, ajoFromMongo: SijoitteluAjo, dryRun: Boolean) = {
     val sijoitteluOptional: Optional[Sijoittelu] = sijoitteluDao.getSijoitteluByHakuOid(hakuOid)
     if (!sijoitteluOptional.isPresent) {
       throw new IllegalStateException(s"sijoittelu not found in Mongodb for haku $hakuOid " +
@@ -52,7 +52,7 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
     }
     val sijoittelu = sijoitteluOptional.get()
     val sijoitteluType = sijoittelu.getSijoitteluType
-    val sijoitteluajoId = sijoitteluAjo.getSijoitteluajoId
+    val sijoitteluajoId = ajoFromMongo.getSijoitteluajoId
     logger.info(s"Latest sijoitteluajoId for haku $hakuOid in Mongodb is $sijoitteluajoId , sijoitteluType is $sijoitteluType")
 
     val existingSijoitteluajo = sijoitteluRepository.getLatestSijoitteluajoId(hakuOid)
@@ -75,7 +75,7 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
       valintatulosDao.loadValintatulokset(hakuOid)
     }
     val allSaves = createSaveActions(hakukohteet, valintatulokset)
-    kludgeStartAndEndToSijoitteluAjoIfMissing(sijoitteluAjo, hakukohteet)
+    kludgeStartAndEndToSijoitteluAjoIfMissing(ajoFromMongo, hakukohteet)
 
     if (dryRun) {
       logger.warn("dryRun : NOT updating the database")
@@ -92,7 +92,7 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
           if (haku.käyttääSijoittelua || timed(s"Checking if haku uses valintalaskenta") {
             sijoitteluUsesLaskenta(hakukohteet)
           }) {
-            storeSijoittelu(hakuOid, sijoitteluAjo, hakukohteet, valintatulokset)
+            storeSijoittelu(hakuOid, ajoFromMongo, hakukohteet, valintatulokset)
           } else {
             logger.info(s"Haku $hakuOid does not use sijoittelu. Skipping saving sijoittelu $sijoitteluajoId")
           }
