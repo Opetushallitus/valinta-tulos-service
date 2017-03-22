@@ -1,12 +1,13 @@
 package fi.vm.sade.valintatulosservice
 
+import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.json.{JsonFormats, JsonStreamWriter, StreamingFailureException}
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, Hakuaika, YhdenPaikanSaanto}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Kausi, PriorAcceptanceException}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.joda.time.DateTime
 import org.json4s.Extraction
 import org.scalatra._
@@ -26,11 +27,11 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
       Hakutoiveentulos.julkaistavaVersioSijoittelunTuloksesta(
         HakutoiveenSijoitteluntulos.kesken("1.2.3.4", "4.4.4.4"),
         Hakutoive("1.2.3.4", "4.4.4.4", "Hakukohde1", "Tarjoaja1"),
-        Haku("5.5.5.5", korkeakoulu = true, käyttääSijoittelua = true, None, Set(),
+        Haku("5.5.5.5", korkeakoulu = true, toinenAste = false, käyttääSijoittelua = true, None, Set(),
           List(Hakuaika("12345", Some(System.currentTimeMillis()), Some(System.currentTimeMillis()))),
           Some(Kausi("2016S")),
           YhdenPaikanSaanto(false, ""), Map("kieli_fi" -> "Haun nimi")),
-        Some(Ohjausparametrit(None, Some(DateTime.now().plusDays(10)), Some(DateTime.now().plusDays(30)), Some(DateTime.now().plusDays(60)), None, None)))
+        Some(Ohjausparametrit(None, Some(DateTime.now().plusDays(10)), Some(DateTime.now().plusDays(30)), Some(DateTime.now().plusDays(60)), None, None, None)))
     )
   )
 
@@ -43,9 +44,8 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid, jonka tulokset halutaan")
   )
   get("/:hakuOid/hakemus/:hakemusOid", operation(getHakemusSwagger)) {
-    val hakuOid = params("hakuOid")
     val hakemusOid = params("hakemusOid")
-    valintatulosService.hakemuksentulos(hakuOid, hakemusOid) match {
+    valintatulosService.hakemuksentulos(hakemusOid) match {
       case Some(tulos) => tulos
       case _ => NotFound("error" -> "Not found")
     }
@@ -96,11 +96,11 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     pretty(Extraction.decompose(
       Ilmoittautuminen(
         "1.2.3.4",
-        Ilmoittautumistila.läsnä_koko_lukuvuosi,
+        LasnaKokoLukuvuosi,
         "henkilö: 5.5.5.5",
         "kuvaus mitä kautta muokkaus tehty"
       )
-    )) + ".\nMahdolliset ilmoittautumistilat: " + Ilmoittautumistila.values
+    )) + ".\nMahdolliset ilmoittautumistilat: " + IlmoittautumisTila.values().toList.map(_.toString)
 
     parameter pathParam[String]("hakuOid").description("Haun oid")
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid, jonka vastaanottotilaa ollaan muokkaamassa")
@@ -110,7 +110,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     val hakemusOid = params("hakemusOid")
     val ilmoittautuminen = parsedBody.extract[Ilmoittautuminen]
 
-    ilmoittautumisService.ilmoittaudu(hakuOid, hakemusOid, ilmoittautuminen)
+    ilmoittautumisService.ilmoittaudu(hakemusOid, ilmoittautuminen)
   }
 
   lazy val getHaunSijoitteluajonTuloksetSwagger: OperationBuilder = (apiOperation[Unit]("getHaunSijoitteluajonTuloksetSwagger")

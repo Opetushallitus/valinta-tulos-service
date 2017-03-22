@@ -6,7 +6,7 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusFixtures
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoitteluFixtures
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 
 trait ITSetup {
   implicit val appConfig = new VtsAppConfig.IT
@@ -14,7 +14,7 @@ trait ITSetup {
   val dbConfig = appConfig.settings.valintaRekisteriDbConfig
 
   lazy val singleConnectionValintarekisteriDb = new ValintarekisteriDb(
-    dbConfig.withValue("connectionPool", ConfigValueFactory.fromAnyRef("disabled")))
+    dbConfig.copy(maxConnections = Some(1), minConnections = Some(1)))
 
   lazy val valintarekisteriDbWithPool = new ValintarekisteriDb(dbConfig)
 

@@ -1,15 +1,21 @@
 package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.json.JsonFormats._
+import fi.vm.sade.valintatulosservice.json.JsonFormats
+import fi.vm.sade.valintatulosservice.security.Role
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.ValintarekisteriService
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 import org.scalatra.{NotImplemented, Ok}
 
-class SijoitteluServlet(sijoitteluService: ValintarekisteriService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
+class SijoitteluServlet(sijoitteluService: SijoitteluService,
+                        valintarekisteriService: ValintarekisteriService,
+                        val sessionRepository: SessionRepository)
+                       (implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase
+                       with CasAuthenticatedServlet {
 
-  override val applicationName = Some("sijoittelu")
+  override val applicationName = Some("auth/sijoittelu")
 
   override protected def applicationDescription: String = "Sijoittelun REST API"
 
@@ -39,13 +45,29 @@ class SijoitteluServlet(sijoitteluService: ValintarekisteriService)(implicit val
   }
 
   lazy val getSijoitteluajoSwagger: OperationBuilder = (apiOperation[Unit]("getSijoitteluajoSwagger")
-    summary "Hakee sijoitteluajon tiedot. Pääsiallinen kaytto sijoitteluun osallistuvien hakukohteiden hakemiseen."
+    summary "Hakee koko sijoitteluajon tiedot."
     parameter pathParam[String]("hakuOid").description("Haun yksilöllinen tunniste") //TODO tarpeeton?
     parameter pathParam[String]("sijoitteluajoId").description("Sijoitteluajon yksilöllinen tunniste, tai 'latest' avainsana."))
   get("/:hakuOid/sijoitteluajo/:sijoitteluajoId", operation(getSijoitteluajoSwagger)) {
+    implicit val authenticated = authenticate
+    authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
+
     val hakuOid = params("hakuOid")
     val sijoitteluajoId = params("sijoitteluajoId")
-    streamOk(sijoitteluService.getSijoitteluajo(hakuOid, sijoitteluajoId))
+    streamOk(valintarekisteriService.getSijoitteluajo(hakuOid, sijoitteluajoId))
+  }
+
+  lazy val getSijoitteluajonPerustiedotSwagger: OperationBuilder = (apiOperation[Unit]("getSijoitteluajoSwagger")
+    summary "Hakee sijoitteluajon perustiedot ja hakukohteiden oidit."
+    parameter pathParam[String]("hakuOid").description("Haun yksilöllinen tunniste") //TODO tarpeeton?
+    parameter pathParam[String]("sijoitteluajoId").description("Sijoitteluajon yksilöllinen tunniste, tai 'latest' avainsana."))
+  get("/:hakuOid/sijoitteluajo/:sijoitteluajoId/perustiedot", operation(getSijoitteluajoSwagger)) {
+    implicit val authenticated = authenticate
+    authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
+
+    val hakuOid = params("hakuOid")
+    val sijoitteluajoId = params("sijoitteluajoId")
+    Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getSijoitteluajonPerustiedot(hakuOid, sijoitteluajoId)))
   }
 
   lazy val getHakemusetBySijoitteluajoSwagger: OperationBuilder = (apiOperation[Unit]("getHakemusetBySijoitteluajoSwagger")
@@ -65,10 +87,12 @@ class SijoitteluServlet(sijoitteluService: ValintarekisteriService)(implicit val
     parameter pathParam[String]("sijoitteluajoId").description("Sijoitteluajon yksilöllinen tunniste, tai 'latest' avainsana.")
     parameter pathParam[String]("hakemusOid").description("Hakemuksen yksilöllinen tunniste"))
   get("/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakemus/:hakemusOid", operation(getHakemusBySijoitteluajoSwagger)) {
+    implicit val authenticated = authenticate
+    authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD) //TODO: organization hierarchy check?!?!
     val hakuOid = params("hakuOid")
     val sijoitteluajoId = params("sijoitteluajoId")
     val hakemusOid = params("hakemusOid")
-    Ok(sijoitteluService.getHakemusBySijoitteluajo(hakuOid, sijoitteluajoId, hakemusOid))
+    Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakemusBySijoitteluajo(hakuOid, sijoitteluajoId, hakemusOid)))
   }
 
   lazy val getHakukohdeBySijoitteluajoSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohdeBySijoitteluajoSwagger")
@@ -80,8 +104,11 @@ class SijoitteluServlet(sijoitteluService: ValintarekisteriService)(implicit val
     val hakuOid = params("hakuOid")
     val sijoitteluajoId = params("sijoitteluajoId")
     val hakukohdeOid = params("hakukohdeOid")
-    // TODO Ok(sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid))
-    NotImplemented()
+
+    implicit val authenticated = authenticate
+    authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
+
+    Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session)))
   }
 
   lazy val getHakukohdeErillissijoitteluSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohdeErillissijoitteluSwagger")

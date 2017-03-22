@@ -1,21 +1,27 @@
 import java.util
 import javax.servlet.{DispatcherType, ServletContext}
 
+import fi.vm.sade.auditlog.{ApplicationType, Audit, Logger}
+import fi.vm.sade.security._
 import fi.vm.sade.valintatulosservice._
-import fi.vm.sade.valintatulosservice.config.{OhjausparametritAppConfig, VtsAppConfig}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.{Dev, IT, VtsAppConfig}
+import fi.vm.sade.valintatulosservice.config.{OhjausparametritAppConfig, VtsAppConfig}
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.kela.KelaService
+import fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos.SijoittelunTulosMigraatioServlet
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.{HakijaResolver, MigraatioServlet}
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.sijoittelu.{SijoitteluFixtures, SijoittelunTulosRestClient, SijoittelutulosService}
-import fi.vm.sade.valintatulosservice.tarjonta.{TarjontaHakuService, HakuService}
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, TarjontaHakuService}
+import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
+import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.ValintarekisteriService
 import fi.vm.sade.valintatulosservice.vastaanottomeili.{MailDecorator, MailPoller, ValintatulosMongoCollection}
 import org.scalatra._
+import org.slf4j.LoggerFactory
 
 class ScalatraBootstrap extends LifeCycle {
 
@@ -24,6 +30,11 @@ class ScalatraBootstrap extends LifeCycle {
   var globalConfig: Option[VtsAppConfig] = None
 
   override def init(context: ServletContext) {
+    val auditLogger = new Logger {
+      private val logger = LoggerFactory.getLogger(classOf[Audit])
+      override def log(msg: String): Unit = logger.info(msg)
+    }
+    val audit = new Audit(auditLogger, "valinta-tulos-service", ApplicationType.BACKEND)
     implicit val appConfig: VtsAppConfig = VtsAppConfig.fromOptionalString(Option(context.getAttribute("valintatulos.profile").asInstanceOf[String]))
     globalConfig = Some(appConfig)
     appConfig.start
@@ -32,7 +43,7 @@ class ScalatraBootstrap extends LifeCycle {
       SijoitteluFixtures(appConfig.sijoitteluContext.database, valintarekisteriDb).importFixture("hyvaksytty-kesken-julkaistavissa.json")
     }
     implicit lazy val dynamicAppConfig = new OhjausparametritAppConfig(appConfig.ohjausparametritService)
-    lazy val hakuService = HakuService(appConfig)
+    lazy val hakuService = HakuService(appConfig.hakuServiceConfig)
     lazy val organisaatioService = OrganisaatioService(appConfig)
     lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig, appConfig.isInstanceOf[IT])
     lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing)
@@ -45,34 +56,58 @@ class ScalatraBootstrap extends LifeCycle {
       appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository(),
       appConfig.sijoitteluContext.valintatulosRepository)
     lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService,
-      appConfig.sijoitteluContext.valintatulosRepository, valintarekisteriDb)
+      appConfig.sijoitteluContext.valintatulosRepository, valintarekisteriDb, valintarekisteriDb)
     lazy val valintatulosCollection = new ValintatulosMongoCollection(appConfig.settings.valintatulosMongoConfig)
     lazy val mailPoller = new MailPoller(valintatulosCollection, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 100)
-    lazy val sijoitteluService = new ValintarekisteriService(valintarekisteriDb, hakukohdeRecordService)
-
+    lazy val valintarekisteriService = new ValintarekisteriService(valintarekisteriDb, hakukohdeRecordService)
+    lazy val authorizer = new OrganizationHierarchyAuthorizer(appConfig)
+    lazy val sijoitteluService = new SijoitteluService(valintarekisteriDb, authorizer, hakuService)
+    lazy val yhdenPaikanSaannos = new YhdenPaikanSaannos(hakuService, valintarekisteriDb)
+    lazy val valinnantulosService = new ValinnantulosService(valintarekisteriDb, authorizer, hakuService, appConfig.ohjausparametritService, hakukohdeRecordService, yhdenPaikanSaannos, appConfig, audit)
+    lazy val tarjontaHakuService = new TarjontaHakuService(appConfig.hakuServiceConfig)
+    lazy val valintalaskentakoostepalveluService = new ValintalaskentakoostepalveluService(appConfig)
 
     val migrationMode = System.getProperty("valinta-rekisteri-migration-mode")
 
     if(null != migrationMode && "true".equalsIgnoreCase(migrationMode)) {
       context.mount(new MigraatioServlet(hakukohdeRecordService, valintarekisteriDb, new HakemusRepository(), appConfig.sijoitteluContext.raportointiService, hakuService), "/migraatio")
-
+      context.mount(new SijoittelunTulosMigraatioServlet(valintarekisteriDb, valintarekisteriDb, hakukohdeRecordService, tarjontaHakuService, valintalaskentakoostepalveluService), "/sijoittelun-tulos-migraatio")
     } else {
       context.mount(new BuildInfoServlet, "/")
+      context.mount(new CasLogin(
+        appConfig.settings.securitySettings.casUrl,
+        new CasSessionService(
+          appConfig.securityContext.casClient,
+          appConfig.securityContext.casServiceIdentifier + "/auth/login",
+          appConfig.securityContext.directoryClient,
+          valintarekisteriDb
+        )
+      ), "/auth/login")
 
       context.mount(new VirkailijanVastaanottoServlet(valintatulosService, vastaanottoService), "/virkailija")
       context.mount(new PrivateValintatulosServlet(valintatulosService, vastaanottoService, ilmoittautumisService), "/haku")
       context.mount(new EmailStatusServlet(mailPoller, valintatulosCollection, new MailDecorator(new HakemusRepository(), valintatulosCollection, hakuService)), "/vastaanottoposti")
       context.mount(new EnsikertalaisuusServlet(valintarekisteriDb, appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus")
       context.mount(new HakijanVastaanottoServlet(vastaanottoService), "/vastaanotto")
-      context.mount(new SijoitteluServlet(sijoitteluService), "/sijoittelu")
+      context.mount(new ErillishakuServlet(valinnantulosService), "/erillishaku/valinnan-tulos")
 
-      val securityFilter = appConfig.securityContext.securityFilter
+      val securityFilter = new CasLdapFilter(
+        new CasSessionService(
+          appConfig.securityContext.casClient,
+          appConfig.securityContext.casServiceIdentifier,
+          appConfig.securityContext.directoryClient,
+          valintarekisteriDb
+        ),
+        appConfig.securityContext.requiredLdapRoles
+      )
       context.addFilter("cas", securityFilter)
         .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/*")
       context.mount(new PublicValintatulosServlet(valintatulosService, vastaanottoService, ilmoittautumisService), "/cas/haku")
       context.mount(new KelaServlet(new KelaService(HakijaResolver(appConfig), hakuService, organisaatioService, valintarekisteriDb)), "/cas/kela")
 
 
+      context.mount(new ValinnantulosServlet(valinnantulosService, valintarekisteriDb), "/auth/valinnan-tulos")
+      context.mount(new SijoitteluServlet(sijoitteluService, valintarekisteriService, valintarekisteriDb), "/auth/sijoittelu")
     }
     context.mount(new HakukohdeRefreshServlet(valintarekisteriDb, hakukohdeRecordService), "/virkistys")
 

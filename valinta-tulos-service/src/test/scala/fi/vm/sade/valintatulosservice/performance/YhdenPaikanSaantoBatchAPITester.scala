@@ -8,7 +8,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.SharedJetty
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.generatedfixtures.{GeneratedFixture, SimpleGeneratedHakuFixture2}
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import org.json4s.jackson.Serialization
 import org.json4s.{DefaultFormats, JValue}
 import slick.driver.PostgresDriver.api._
@@ -23,7 +23,7 @@ object YhdenPaikanSaantoBatchAPITester extends App with Logging {
   implicit val appConfig = new VtsAppConfig.IT
   private val dbConfig = appConfig.settings.valintaRekisteriDbConfig
   lazy val valintarekisteriDb = new ValintarekisteriDb(
-    dbConfig.withValue("connectionPool", ConfigValueFactory.fromAnyRef("disabled"))).db
+    dbConfig.copy(maxConnections = Some(1), minConnections = Some(1))).db
   SharedJetty.start
   private val testDataSize = 50000
 

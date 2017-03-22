@@ -1,25 +1,49 @@
 package fi.vm.sade.valintatulosservice
 
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+
 import fi.vm.sade.sijoittelu.domain.IlmoittautumisTila
-import fi.vm.sade.valintatulosservice.domain.Ilmoittautuminen
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.sijoittelu.ValintatulosRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakijaVastaanottoRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.VastaanotaSitovasti
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{ValinnantulosRepository, HakijaVastaanottoRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Ilmoittautuminen, SijoitteluajonIlmoittautumistila, VastaanotaSitovasti}
 import org.json4s.jackson.Serialization
+import org.slf4j.LoggerFactory
+
+import scala.util.Try
 
 class IlmoittautumisService(valintatulosService: ValintatulosService,
                             tulokset: ValintatulosRepository,
-                            hakijaVastaanottoRepository: HakijaVastaanottoRepository) extends JsonFormats {
-  def ilmoittaudu(hakuOid: String, hakemusOid: String, ilmoittautuminen: Ilmoittautuminen) {
-    val hakemuksenTulos = valintatulosService.hakemuksentulos(hakuOid, hakemusOid).getOrElse(throw new IllegalArgumentException("Hakemusta ei löydy"))
+                            hakijaVastaanottoRepository: HakijaVastaanottoRepository, valinnantulosRepository: ValinnantulosRepository) extends JsonFormats {
+  private val logger = LoggerFactory.getLogger(classOf[IlmoittautumisService])
+  def getIlmoittautumistilat(valintatapajonoOid: String): Either[Throwable, Seq[(String, SijoitteluajonIlmoittautumistila, Instant)]] = {
+    tulokset.findValintatulokset(valintatapajonoOid).right.map(_.map(v => (
+      v.getHakemusOid,
+      SijoitteluajonIlmoittautumistila(v.getIlmoittautumisTila),
+      Option(v.getViimeinenMuutos).map(_.toInstant).getOrElse(Instant.EPOCH).truncatedTo(ChronoUnit.SECONDS))
+    ))
+  }
+
+  def getIlmoittautumistila(hakemusOid: String, valintatapajonoOid: String): Either[Throwable, (SijoitteluajonIlmoittautumistila, Instant)] = {
+    tulokset.findValintatulos(valintatapajonoOid, hakemusOid).right.map(v =>
+      (SijoitteluajonIlmoittautumistila(v.getIlmoittautumisTila), Option(v.getViimeinenMuutos).map(_.toInstant).getOrElse(Instant.EPOCH))
+    )
+  }
+
+  def ilmoittaudu(hakemusOid: String, ilmoittautuminen: Ilmoittautuminen) {
+    val hakemuksenTulos = valintatulosService.hakemuksentulos(hakemusOid).getOrElse(throw new IllegalArgumentException("Hakemusta ei löydy"))
     val hakutoive = hakemuksenTulos.findHakutoive(ilmoittautuminen.hakukohdeOid).map(_._1).getOrElse(throw new IllegalArgumentException("Hakutoivetta ei löydy"))
 
     if (!hakutoive.ilmoittautumistila.ilmoittauduttavissa)  {
-      throw new IllegalStateException(s"""Hakutoive ${ilmoittautuminen.hakukohdeOid} ei ole ilmoittauduttavissa: ilmoittautumisaika: ${Serialization.write(hakutoive.ilmoittautumistila.ilmoittautumisaika)}, ilmoittautumistila: ${hakutoive.ilmoittautumistila.ilmoittautumistila}, valintatila: ${hakutoive.valintatila}, vastaanottotila: ${hakutoive.vastaanottotila}""")
+      throw new IllegalStateException(s"Hakutoive ${ilmoittautuminen.hakukohdeOid} ei ole ilmoittauduttavissa: " +
+        s"ilmoittautumisaika: ${Serialization.write(hakutoive.ilmoittautumistila.ilmoittautumisaika)}, " +
+        s"ilmoittautumistila: ${hakutoive.ilmoittautumistila.ilmoittautumistila.ilmoittautumistila}, " +
+        s"valintatila: ${hakutoive.valintatila}, " +
+        s"vastaanottotila: ${hakutoive.vastaanottotila}")
     }
 
-    val vastaanotto = hakijaVastaanottoRepository.runBlocking(hakijaVastaanottoRepository.findHenkilonVastaanototHaussa(hakemuksenTulos.hakijaOid, hakuOid))
+    val vastaanotto = hakijaVastaanottoRepository.runBlocking(hakijaVastaanottoRepository.findHenkilonVastaanototHaussa(hakemuksenTulos.hakijaOid, hakemuksenTulos.hakuOid))
     if (!vastaanotto.exists(v => {
       v.action == VastaanotaSitovasti && v.hakukohdeOid == ilmoittautuminen.hakukohdeOid
     })) {
@@ -32,10 +56,15 @@ class IlmoittautumisService(valintatulosService: ValintatulosService,
       hakemusOid,
       valintatulos =>
         valintatulos.setIlmoittautumisTila(
-          IlmoittautumisTila.valueOf(ilmoittautuminen.tila.toString),
+          ilmoittautuminen.tila.ilmoittautumistila,
           ilmoittautuminen.selite,
           ilmoittautuminen.muokkaaja
         )
     ).left.foreach(e => throw e)
+    Try(valinnantulosRepository.runBlocking(valinnantulosRepository.storeIlmoittautuminen(hakemuksenTulos.hakijaOid, ilmoittautuminen))).recover {
+      case e =>
+        logger.error(s"Hakijan ${hakemuksenTulos.hakijaOid} ilmoittautumista ei saatu SQL-kantaan!",e)
+    }
+
   }
 }

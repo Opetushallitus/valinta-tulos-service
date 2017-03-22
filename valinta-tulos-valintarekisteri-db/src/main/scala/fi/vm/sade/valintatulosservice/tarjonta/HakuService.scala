@@ -1,16 +1,16 @@
 package fi.vm.sade.valintatulosservice.tarjonta
 
+import fi.vm.sade.properties.OphProperties
 import fi.vm.sade.utils.http.DefaultHttpClient
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.config.{AppConfig, StubbedExternalDeps, ValintarekisteriOphUrlProperties}
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Kausi, Kevat, Syksy}
 import org.joda.time.DateTime
-import org.json4s.JsonAST.{JBool, JInt, JObject, JString}
+import org.json4s.JsonAST.{JInt, JObject, JString}
 import org.json4s.jackson.JsonMethods._
-import org.json4s.{JValue, CustomSerializer, Formats, MappingException}
-import scala.collection.JavaConversions._
+import org.json4s.{CustomSerializer, Formats, JValue, MappingException}
 
+import scala.collection.JavaConversions._
 import scala.util.Try
 import scala.util.control.NonFatal
 import scalaj.http.HttpOptions
@@ -26,14 +26,17 @@ trait HakuService {
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]]
 }
 
+case class HakuServiceConfig(ophProperties: OphProperties, stubbedExternalDeps: Boolean)
+
 object HakuService {
-  def apply(appConfig: AppConfig): HakuService = appConfig match {
-    case _:StubbedExternalDeps => HakuFixtures
-    case _ => new CachedHakuService(new TarjontaHakuService(appConfig))
+  def apply(config: HakuServiceConfig): HakuService = if (config.stubbedExternalDeps) {
+    HakuFixtures
+  } else {
+    new CachedHakuService(new TarjontaHakuService(config))
   }
 }
 
-case class Haku(oid: String, korkeakoulu: Boolean,
+case class Haku(oid: String, korkeakoulu: Boolean, toinenAste: Boolean,
                 käyttääSijoittelua: Boolean, varsinaisenHaunOid: Option[String], sisältyvätHaut: Set[String],
                 hakuAjat: List[Hakuaika], koulutuksenAlkamiskausi: Option[Kausi], yhdenPaikanSaanto: YhdenPaikanSaanto,
                 nimi: Map[String, String])
@@ -44,12 +47,19 @@ case class Hakuaika(hakuaikaId: String, alkuPvm: Option[Long], loppuPvm: Option[
   }
 }
 
-case class Hakukohde(oid: String, hakuOid: String, tarjoajaOids: Seq[String], hakukohdeKoulutusOids: List[String],
+case class Hakukohde(oid: String, hakuOid: String, tarjoajaOids: Set[String], hakukohdeKoulutusOids: List[String],
                      koulutusAsteTyyppi: String, koulutusmoduuliTyyppi: String,
                      hakukohteenNimet: Map[String, String], tarjoajaNimet: Map[String, String], yhdenPaikanSaanto: YhdenPaikanSaanto,
                      tutkintoonJohtava:Boolean, koulutuksenAlkamiskausiUri:String, koulutuksenAlkamisvuosi:Int) {
   def kkTutkintoonJohtava: Boolean = koulutusAsteTyyppi == "KORKEAKOULUTUS" && tutkintoonJohtava
+
+  def koulutuksenAlkamiskausi: Either[Throwable, Kausi] = koulutuksenAlkamiskausiUri match {
+    case uri if uri.matches("""kausi_k#\d+""") => Right(Kevat(koulutuksenAlkamisvuosi))
+    case uri if uri.matches("""kausi_s#\d+""") => Right(Syksy(koulutuksenAlkamisvuosi))
+    case _ => Left(new IllegalStateException(s"Could not deduce koulutuksen alkamiskausi for hakukohde $this"))
+  }
 }
+
 case class Koodi(uri: String, arvo: String)
 case class Koulutus(oid: String, koulutuksenAlkamiskausi: Kausi, tila: String, johtaaTutkintoon: Boolean,
                     koulutuskoodi: Option[Koodi],
@@ -90,6 +100,7 @@ protected trait JsonHakuService {
     val yhteishaku: Boolean = haku.hakutapaUri.startsWith("hakutapa_01#")
     val varsinainenhaku: Boolean = haku.hakutyyppiUri.startsWith("hakutyyppi_01#1")
     val lisähaku: Boolean = haku.hakutyyppiUri.startsWith("hakutyyppi_03#1")
+    val toinenAste: Boolean = Option(haku.kohdejoukkoUri).exists(k => k.contains("_11") || k.contains("_17") || k.contains("_20"))
     val koulutuksenAlkamisvuosi = haku.koulutuksenAlkamisVuosi
     val kausi = if (haku.koulutuksenAlkamiskausiUri.isDefined && haku.koulutuksenAlkamisVuosi.isDefined) {
       if (haku.koulutuksenAlkamiskausiUri.get.startsWith("kausi_k")) {
@@ -99,7 +110,7 @@ protected trait JsonHakuService {
           } else throw new MappingException(s"Haku ${haku.oid} has unrecognized kausi URI '${haku.koulutuksenAlkamiskausiUri.get}' . Full data of haku: $haku")
     } else None
 
-    Haku(haku.oid, korkeakoulu, haku.sijoittelu, haku.parentHakuOid,
+    Haku(haku.oid, korkeakoulu, toinenAste, haku.sijoittelu, haku.parentHakuOid,
       haku.sisaltyvatHaut, haku.hakuaikas, kausi, haku.yhdenPaikanSaanto, haku.nimi)
   }
 }
@@ -134,7 +145,7 @@ private case class HakuTarjonnassa(oid: String, hakutapaUri: String, hakutyyppiU
 
 case class YhdenPaikanSaanto(voimassa: Boolean, syy: String)
 
-class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHakuService with Logging {
+class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with JsonHakuService with Logging {
 
   def parseStatus(json: String): Option[String] = {
     for {
@@ -143,7 +154,7 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
   }
 
   def getHaku(oid: String): Either[Throwable, Haku] = {
-    val url = appConfig.settings.ophUrlProperties.url("tarjonta-service.haku", oid)
+    val url = config.ophProperties.url("tarjonta-service.haku", oid)
     fetch(url) { response =>
       val hakuTarjonnassa = (parse(response) \ "result").extract[HakuTarjonnassa]
       toHaku(hakuTarjonnassa)
@@ -155,14 +166,14 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
   }
 
   def getHakukohdeOids(hakuOid:String): Either[Throwable, Seq[String]] = {
-    val url = appConfig.settings.ophUrlProperties.url("tarjonta-service.haku", hakuOid)
+    val url = config.ophProperties.url("tarjonta-service.haku", hakuOid)
     fetch(url) { response =>
       (parse(response) \ "result" \ "hakukohdeOids" ).extract[List[String]]
     }
   }
 
   override def getArbitraryPublishedHakukohdeOid(hakuOid: String): Either[Throwable, String] = {
-    val url = appConfig.settings.ophUrlProperties.url("tarjonta-service.hakukohde.search", mapAsJavaMap(Map(
+    val url = config.ophProperties.url("tarjonta-service.hakukohde.search", mapAsJavaMap(Map(
       "tila" -> "VALMIS",
       "tila" -> "JULKAISTU",
       "hakuOid" -> hakuOid,
@@ -177,8 +188,7 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
     sequence(for{oid <- oids.toStream} yield getHakukohde(oid))
   }
   def getHakukohde(hakukohdeOid: String): Either[Throwable, Hakukohde] = {
-
-    val hakukohdeUrl = appConfig.settings.ophUrlProperties.url(
+    val hakukohdeUrl = config.ophProperties.url(
       "tarjonta-service.hakukohde", hakukohdeOid, mapAsJavaMap(Map(
         "populateAdditionalKomotoFields" -> true
       )))
@@ -196,7 +206,7 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
   }
 
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = {
-    val url = appConfig.settings.ophUrlProperties.url("tarjonta-service.find", mapAsJavaMap(Map(
+    val url = config.ophProperties.url("tarjonta-service.find", mapAsJavaMap(Map(
       "addHakuKohdes" -> false
     )))
     fetch(url) { response =>
@@ -215,7 +225,7 @@ class TarjontaHakuService(appConfig:AppConfig) extends HakuService with JsonHaku
   }
 
   private def getKoulutus(koulutusOid: String): Either[Throwable, Koulutus] = {
-    val koulutusUrl = appConfig.settings.ophUrlProperties.url("tarjonta-service.koulutus", koulutusOid)
+    val koulutusUrl = config.ophProperties.url("tarjonta-service.koulutus", koulutusOid)
     fetch(koulutusUrl) { response =>
       (parse(response) \ "result").extract[Koulutus]
     }

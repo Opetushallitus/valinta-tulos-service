@@ -200,15 +200,9 @@ class VastaanottoService(hakuService: HakuService,
   }
 
   private def findHakutoive(hakemusOid: String, hakukohdeOid: String): Try[(Hakutoiveentulos, Int)] = {
-    hakuService.getHakukohde(hakukohdeOid) match {
-      case Left(e) =>
-        logger.error(s"Cannot find hakukohde with oid: $hakukohdeOid", e)
-        Failure(e)
-      case Right(hakukohde) =>
-      Try {
-        val hakemuksenTulos = valintatulosService.hakemuksentulos(hakukohde.hakuOid, hakemusOid).getOrElse(throw new IllegalArgumentException("Hakemusta ei löydy"))
-        hakemuksenTulos.findHakutoive(hakukohdeOid).getOrElse(throw new IllegalArgumentException("Hakutoivetta ei löydy"))
-      }
+    Try {
+      val hakemuksenTulos = valintatulosService.hakemuksentulos(hakemusOid).getOrElse(throw new IllegalArgumentException("Hakemusta ei löydy"))
+      hakemuksenTulos.findHakutoive(hakukohdeOid).getOrElse(throw new IllegalArgumentException("Hakutoivetta ei löydy"))
     }
   }
   private def aiempiVastaanottoKausilla(hakukohdes: Seq[HakukohdeRecord],
