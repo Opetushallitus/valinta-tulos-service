@@ -21,17 +21,18 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
   //private val newHost = "https://testi.virkailija.opintopolku.fi"
   private val newHost = "http://localhost:8097"
 
-  //val cas_user = System.getProperty("cas_user")
-  //val cas_password = System.getProperty("cas_password")
   override val cas_url = oldHost + "/cas"
-  //val haku_oid = "1.2.246.562.29.75203638285" // Kevään 2016 kk-yhteishaku
-  //val haku_oid = "1.2.246.562.29.14662042044" // Kevään 2016 2. asteen yhteishaku
-  //val haku_oid = "1.2.246.562.29.95390561488" // Kevään 2015 kk-yhteishaku
-  //val haku_oid = "1.2.246.562.29.28924613947" // Haku ammatilliseen opettajankoulutukseen 2017
-//  val haku_oid = "1.2.246.562.29.87593180141" // Syksyn 2016 kk-yhteishaku
-  val hakuOidsToTest = Seq("1.2.246.562.29.669559278110","1.2.246.562.29.28924613947")
 
-  val infoOn = true
+  /* Hakuoideja
+     "1.2.246.562.29.75203638285" - Kevään 2016 kk-yhteishaku
+     "1.2.246.562.29.14662042044" - Kevään 2016 2. asteen yhteishaku
+     "1.2.246.562.29.95390561488" - Kevään 2015 kk-yhteishaku
+     "1.2.246.562.29.28924613947" - Haku ammatilliseen opettajankoulutukseen 2017
+     "1.2.246.562.29.87593180141" - Syksyn 2016 kk-yhteishaku */
+
+  val hakuOidsToTest = Seq("1.2.246.562.29.59856749474")
+
+  val infoOn = false
   val debugOn = false
   val fileForStoringNewResponse: Option[String] = /*None  //  */ Some("/tmp/lol.json")
 
