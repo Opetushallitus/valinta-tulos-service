@@ -54,19 +54,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     val mongoSijoitteluAjoId = ajoFromMongo.getSijoitteluajoId
     logger.info(s"Latest sijoitteluajoId for haku $hakuOid in Mongodb is $mongoSijoitteluAjoId , sijoitteluType is $sijoitteluType")
 
-    val latestAjoIdFromPostgresOpt = sijoitteluRepository.getLatestSijoitteluajoId(hakuOid)
-    if (latestAjoIdFromPostgresOpt.isDefined) {
-      val latestAjoIdFromPostgres = latestAjoIdFromPostgresOpt.get
-      logger.info(s"Existing sijoitteluajo $latestAjoIdFromPostgres found in Postgres, deleting results of haku $hakuOid:")
-      if (dryRun) {
-        logger.warn(s"dryRun : NOT removing existing sijoitteluajo $latestAjoIdFromPostgres data.")
-      } else {
-        logger.warn(s"Existing sijoitteluajo $latestAjoIdFromPostgres found, deleting all results of haku $hakuOid:")
-        sijoitteluRepository.deleteSijoittelunTulokset(hakuOid)
-      }
-    } else {
-      logger.info(s"No Sijoitteluajo for haku $hakuOid seems to be stored to Postgres db yet.")
-    }
+    deleteExistingResultsFromPostgres(hakuOid, dryRun)
 
     val hakukohteet: util.List[Hakukohde] = timed(s"Loading hakukohteet for sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid") {
       hakukohdeDao.getHakukohdeForSijoitteluajo(mongoSijoitteluAjoId)
@@ -106,6 +94,22 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       }
     }
     logger.info("-----------------------------------------------------------")
+  }
+
+  private def deleteExistingResultsFromPostgres(hakuOid: String, dryRun: Boolean) = {
+    val latestAjoIdFromPostgresOpt = sijoitteluRepository.getLatestSijoitteluajoId(hakuOid)
+    if (latestAjoIdFromPostgresOpt.isDefined) {
+      val latestAjoIdFromPostgres = latestAjoIdFromPostgresOpt.get
+      logger.info(s"Existing sijoitteluajo $latestAjoIdFromPostgres found in Postgres, deleting results of haku $hakuOid:")
+      if (dryRun) {
+        logger.warn(s"dryRun : NOT removing existing sijoitteluajo $latestAjoIdFromPostgres data.")
+      } else {
+        logger.warn(s"Existing sijoitteluajo $latestAjoIdFromPostgres found, deleting all results of haku $hakuOid:")
+        sijoitteluRepository.deleteSijoittelunTulokset(hakuOid)
+      }
+    } else {
+      logger.info(s"No Sijoitteluajo for haku $hakuOid seems to be stored to Postgres db yet.")
+    }
   }
 
   private def storeSijoittelu(hakuOid: String, sijoitteluAjo: SijoitteluAjo, hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]) = {
