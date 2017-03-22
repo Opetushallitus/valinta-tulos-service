@@ -567,12 +567,10 @@ object MailStatusWrapper extends OptionConverter {
   )
 }
 
-case class SijoitteluajonPistetietoWrapper(
-                                            tunniste: String,
-                                            arvo: Option[String],
-                                            laskennallinenArvo: Option[String],
-                                            osallistuminen: Option[String]
-                                          ) {
+case class SijoitteluajonPistetietoWrapper(tunniste: String,
+                                           arvo: Option[String],
+                                           laskennallinenArvo: Option[String],
+                                           osallistuminen: Option[String]) {
   val pistetieto: Pistetieto = {
     val pistetieto = new Pistetieto()
     pistetieto.setTunniste(tunniste)

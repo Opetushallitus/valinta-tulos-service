@@ -78,13 +78,12 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
           Valintarekisteri.poistaValintatapajonokohtaisetHakijaryhmatJoidenJonoaEiSijoiteltu(hakukohteet)
         }
         tarjontaHakuService.getHaku(hakuOid) match {
-          case Right(haku) => {
+          case Right(haku) =>
             if (haku.käyttääSijoittelua || timed(s"Checking if haku uses valintalaskenta") { sijoitteluUsesLaskenta(hakukohteet) }) {
               storeSijoittelu(hakuOid, sijoitteluAjo, hakukohteet, valintatulokset)
             } else {
               logger.info(s"Haku $hakuOid does not use sijoittelu. Skipping saving sijoittelu $sijoitteluajoId")
             }
-          }
           case Left(e) => logger.error(e.getMessage)
         }
 
