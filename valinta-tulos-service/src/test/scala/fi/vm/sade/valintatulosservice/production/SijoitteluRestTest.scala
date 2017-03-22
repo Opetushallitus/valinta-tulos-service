@@ -14,7 +14,6 @@ import org.specs2.runner.JUnitRunner
 
 import scala.language.experimental.macros
 
-
 @Ignore
 @RunWith(classOf[JUnitRunner])
 class SijoitteluRestTest extends Specification with MatcherMacros with Logging with PerformanceLogger with RestTestHelper {
@@ -60,11 +59,11 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
         }
 
         info(s"Sijoittelut valmiina")
-        uusiSijoittelu.sijoitteluajoId mustEqual vanhaSijoittelu.sijoitteluajoId
-        uusiSijoittelu.hakuOid mustEqual vanhaSijoittelu.hakuOid
-        uusiSijoittelu.startMils mustEqual vanhaSijoittelu.startMils
-        uusiSijoittelu.endMils mustEqual vanhaSijoittelu.endMils
-        uusiSijoittelu.hakukohteet.size mustEqual vanhaSijoittelu.hakukohteet.size
+        compareFields(uusiSijoittelu.sijoitteluajoId, vanhaSijoittelu.sijoitteluajoId, "sijoittelu.sijoitteluajoId")
+        compareFields(uusiSijoittelu.hakuOid, vanhaSijoittelu.hakuOid, "sijoittelu.hakuOid")
+        compareFields(uusiSijoittelu.startMils, vanhaSijoittelu.startMils, "sijoittelu.startMills")
+        compareFields(uusiSijoittelu.endMils, vanhaSijoittelu.endMils, "sijoittelu.endMills")
+        compareFields(uusiSijoittelu.hakukohteet.size, vanhaSijoittelu.hakukohteet.size, "hakukohteet.size")
 
         var valintatapajonot = 0
         var hakemukset = 0
@@ -74,77 +73,74 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
         uusiSijoittelu.hakukohteet.foreach(uusiHakukohde => {
           debug(s"Hakukohde ${uusiHakukohde.oid}")
           val vanhaHakukohde = vanhaSijoittelu.hakukohteet.find(_.oid.equals(uusiHakukohde.oid)).get
-          uusiHakukohde.sijoitteluajoId mustEqual vanhaHakukohde.sijoitteluajoId
-          uusiHakukohde.tila mustEqual vanhaHakukohde.tila
-          uusiHakukohde.tarjoajaOid mustEqual None // tarjoaja oids are only fetched from tarjonta on demand these days
-          uusiHakukohde.kaikkiJonotSijoiteltu mustEqual vanhaHakukohde.kaikkiJonotSijoiteltu
-          uusiHakukohde.ensikertalaisuusHakijaryhmanAlimmatHyvaksytytPisteet mustEqual vanhaHakukohde.ensikertalaisuusHakijaryhmanAlimmatHyvaksytytPisteet
+          compareFields(uusiHakukohde.sijoitteluajoId, vanhaHakukohde.sijoitteluajoId, "hakukohteen.sijoitteluajoId")
+          compareFields(uusiHakukohde.tila, vanhaHakukohde.tila, "hakukohde.tila")
+          compareFields(uusiHakukohde.tarjoajaOid, None, "hakukohde.tarjoajaOid") // tarjoaja oids are only fetched from tarjonta on demand these days
+          compareFields(uusiHakukohde.kaikkiJonotSijoiteltu, vanhaHakukohde.kaikkiJonotSijoiteltu, "hakukohde.kaikkiJonotSijoiteltu")
+          compareFields(uusiHakukohde.ensikertalaisuusHakijaryhmanAlimmatHyvaksytytPisteet,
+            vanhaHakukohde.ensikertalaisuusHakijaryhmanAlimmatHyvaksytytPisteet, "hakukohde.ensikertalaisuusHakijaryhmanAlimmatHyvaksytytPisteet")
 
-          uusiHakukohde.valintatapajonot.size mustEqual vanhaHakukohde.valintatapajonot.size
+          compareFields(uusiHakukohde.valintatapajonot.size, vanhaHakukohde.valintatapajonot.size, "hakukohde.valintatapajonot.size")
           valintatapajonot = valintatapajonot + uusiHakukohde.valintatapajonot.size
           uusiHakukohde.valintatapajonot.foreach(uusiValintatapajono => {
             debug(s"Valintatapajono ${uusiValintatapajono.oid}")
             val vanhaValintatapajono = vanhaHakukohde.valintatapajonot.find(_.oid.equals(uusiValintatapajono.oid)).get
-            uusiValintatapajono must matchA[Valintatapajono]
-              .tasasijasaanto(vanhaValintatapajono.tasasijasaanto)
-              .tila(vanhaValintatapajono.tila)
-              .prioriteetti(vanhaValintatapajono.prioriteetti)
-              .aloituspaikat(vanhaValintatapajono.aloituspaikat)
-              .alkuperaisetAloituspaikat(vanhaValintatapajono.alkuperaisetAloituspaikat)
-              .alinHyvaksyttyPistemaara(vanhaValintatapajono.alinHyvaksyttyPistemaara)
-              .eiVarasijatayttoa(vanhaValintatapajono.eiVarasijatayttoa)
-              .kaikkiEhdonTayttavatHyvaksytaan(vanhaValintatapajono.kaikkiEhdonTayttavatHyvaksytaan)
-              .poissaOlevaTaytto(vanhaValintatapajono.poissaOlevaTaytto)
-              .hakeneet(vanhaValintatapajono.hakeneet)
-              .hyvaksytty(vanhaValintatapajono.hyvaksytty)
-              .varalla(vanhaValintatapajono.varalla)
-              .varasijat(vanhaValintatapajono.varasijat)
-              .varasijaTayttoPaivat(vanhaValintatapajono.varasijaTayttoPaivat)
-              .varasijojaTaytetaanAsti(vanhaValintatapajono.varasijojaTaytetaanAsti)
-              .tayttojono(vanhaValintatapajono.tayttojono)
+            compareFields(uusiValintatapajono.tasasijasaanto, vanhaValintatapajono.tasasijasaanto, "valintatapajono.tasasijasaanto")
+            compareFields(uusiValintatapajono.tila, vanhaValintatapajono.tila, "valintatapajono.tila")
+            compareFields(uusiValintatapajono.prioriteetti, vanhaValintatapajono.prioriteetti, "valintatapajono.prioriteetti")
+            compareFields(uusiValintatapajono.aloituspaikat, vanhaValintatapajono.aloituspaikat, "valintatapajono.aloituspaikat")
+            compareFields(uusiValintatapajono.alkuperaisetAloituspaikat, vanhaValintatapajono.alkuperaisetAloituspaikat, "valintatapajono.alkuperaisetAloituspaikat")
+            compareFields(uusiValintatapajono.alinHyvaksyttyPistemaara, vanhaValintatapajono.alinHyvaksyttyPistemaara, "valintatapajono.alinHyvaksyttyPistemaara")
+            compareFields(uusiValintatapajono.eiVarasijatayttoa, vanhaValintatapajono.eiVarasijatayttoa, "valintatapajono.eiVarasijatayttoa")
+            compareFields(uusiValintatapajono.kaikkiEhdonTayttavatHyvaksytaan, vanhaValintatapajono.kaikkiEhdonTayttavatHyvaksytaan, "valintatapajono.kaikkiEhdonTayttavatHyvaksytaan")
+            compareFields(uusiValintatapajono.poissaOlevaTaytto, vanhaValintatapajono.poissaOlevaTaytto, "valintatapajono.poissaOlevaTaytto")
+            compareFields(uusiValintatapajono.hakeneet, vanhaValintatapajono.hakeneet, "valintatapajono.hakeneet")
+            compareFields(uusiValintatapajono.hyvaksytty, vanhaValintatapajono.hyvaksytty, "valintatapajono.hyvaksytty")
+            compareFields(uusiValintatapajono.varalla, vanhaValintatapajono.varalla, "valintatapajono.varalla")
+            compareFields(uusiValintatapajono.varasijat, vanhaValintatapajono.varasijat, "valintatapajono.varasijat")
+            compareFields(uusiValintatapajono.varasijaTayttoPaivat, vanhaValintatapajono.varasijaTayttoPaivat, "valintatapajono.varasijaTayttoPaivat")
+            compareFields(uusiValintatapajono.varasijojaTaytetaanAsti, vanhaValintatapajono.varasijojaTaytetaanAsti, "valintatapajono.varasijojaTaytetaanAsti")
+            compareFields(uusiValintatapajono.tayttojono, vanhaValintatapajono.tayttojono, "valintatapajono.tayttojono")
 
-            uusiValintatapajono.valintaesitysHyvaksytty mustEqual vanhaValintatapajono.valintaesitysHyvaksytty
+            compareFields(uusiValintatapajono.valintaesitysHyvaksytty, vanhaValintatapajono.valintaesitysHyvaksytty, "valintatapajono.valintaesitysHyvaksytty")
 
-            uusiValintatapajono.hakemukset.size mustEqual vanhaValintatapajono.hakemukset.size
+            compareFields(uusiValintatapajono.hakemukset.size, vanhaValintatapajono.hakemukset.size, "valintatapajono.hakemukset.size")
             hakemukset = hakemukset + uusiValintatapajono.hakemukset.size
             uusiValintatapajono.hakemukset.foreach(uusiHakemus => {
               debug(s"Hakemus ${uusiHakemus.hakemusOid}")
               val vanhaHakemus = vanhaValintatapajono.hakemukset.find(_.hakemusOid.equals(uusiHakemus.hakemusOid)).get
-              uusiHakemus must matchA[Hakemus]
-                .hakijaOid(vanhaHakemus.hakijaOid)
-                .pisteet(vanhaHakemus.pisteet)
-                .paasyJaSoveltuvuusKokeenTulos(vanhaHakemus.paasyJaSoveltuvuusKokeenTulos)
-                .etunimi(vanhaHakemus.etunimi)
-                .sukunimi(vanhaHakemus.sukunimi)
-                .prioriteetti(vanhaHakemus.prioriteetti)
-                .jonosija(vanhaHakemus.jonosija)
-                .tasasijaJonosija(vanhaHakemus.tasasijaJonosija)
-                .tila(vanhaHakemus.tila)
-                .hyvaksyttyHarkinnanvaraisesti(vanhaHakemus.hyvaksyttyHarkinnanvaraisesti)
-                .varasijanNumero(vanhaHakemus.varasijanNumero)
-                .valintatapajonoOid(vanhaHakemus.valintatapajonoOid)
-                .hakuOid(vanhaHakemus.hakuOid)
-                .onkoMuuttunutViimeSijoittelussa(vanhaHakemus.onkoMuuttunutViimeSijoittelussa)
-                .siirtynytToisestaValintatapajonosta(vanhaHakemus.siirtynytToisestaValintatapajonosta)
+              compareFields(uusiHakemus.hakijaOid, vanhaHakemus.hakijaOid, "hakemus.hakijaOid")
+              compareFields(uusiHakemus.pisteet, vanhaHakemus.pisteet, "hakemus.pisteet")
+              compareFields(uusiHakemus.paasyJaSoveltuvuusKokeenTulos, vanhaHakemus.paasyJaSoveltuvuusKokeenTulos, "hakemus.paasyJaSoveltuvuusKokeenTulos")
+              compareFields(uusiHakemus.etunimi, vanhaHakemus.etunimi, "hakemus.etunimi")
+              compareFields(uusiHakemus.sukunimi, vanhaHakemus.sukunimi, "hakemus.sukunimi")
+              compareFields(uusiHakemus.prioriteetti, vanhaHakemus.prioriteetti, "hakemus.prioriteetti")
+              compareFields(uusiHakemus.jonosija, vanhaHakemus.jonosija, "hakemus.jonosija")
+              compareFields(uusiHakemus.tasasijaJonosija, vanhaHakemus.tasasijaJonosija, "hakemus.tasasijaJonosija")
+              compareFields(uusiHakemus.tila, vanhaHakemus.tila, "hakemus.tila")
+              compareFields(uusiHakemus.hyvaksyttyHarkinnanvaraisesti, vanhaHakemus.hyvaksyttyHarkinnanvaraisesti, "hakemus.hyvaksyttyHarkinnanvaraisesti")
+              compareFields(uusiHakemus.varasijanNumero, vanhaHakemus.varasijanNumero, "hakemus.varasijanNumero")
+              compareFields(uusiHakemus.valintatapajonoOid, vanhaHakemus.valintatapajonoOid, "hakemus.valintatapajonoOid")
+              compareFields(uusiHakemus.hakuOid, vanhaHakemus.hakuOid, "hakemus.hakuOid")
+              compareFields(uusiHakemus.onkoMuuttunutViimeSijoittelussa, vanhaHakemus.onkoMuuttunutViimeSijoittelussa, "hakemus.onkoMuuttunutViimeSijoittelussa")
+              compareFields(uusiHakemus.siirtynytToisestaValintatapajonosta, vanhaHakemus.siirtynytToisestaValintatapajonosta, "hakemus.siirtynytToisestaValintatapajonosta")
 
               debug(s"Tilankuvaukset ${uusiHakemus.tilanKuvaukset}")
 
-              uusiHakemus.tilanKuvaukset must matchA[Tilankuvaus]
-                .EN(vanhaHakemus.tilanKuvaukset.EN)
-                .FI(vanhaHakemus.tilanKuvaukset.FI)
-                .SV(vanhaHakemus.tilanKuvaukset.SV)
+              compareFields(uusiHakemus.tilanKuvaukset.EN, vanhaHakemus.tilanKuvaukset.EN, "hakemus.tilankuvaukset.EN")
+              compareFields(uusiHakemus.tilanKuvaukset.FI, vanhaHakemus.tilanKuvaukset.FI, "hakemus.tilankuvaukset.FI")
+              compareFields(uusiHakemus.tilanKuvaukset.SV, vanhaHakemus.tilanKuvaukset.SV, "hakemus.tilankuvaukset.SV")
 
-              uusiHakemus.pistetiedot.size mustEqual vanhaHakemus.pistetiedot.size
+              compareFields(uusiHakemus.pistetiedot.size, vanhaHakemus.pistetiedot.size, "hakemus.pistetiedot.size")
               uusiHakemus.pistetiedot.foreach(uusiPistetieto => {
                 val vanhaPistetieto = vanhaHakemus.pistetiedot.find(_.tunniste.equals(uusiPistetieto.tunniste)).get
                 debug(s"Pistetieto ${uusiPistetieto.tunniste}")
-                uusiPistetieto must matchA[Pistetieto]
-                  .tunniste(vanhaPistetieto.tunniste)
-                  .arvo(vanhaPistetieto.arvo)
-                  .laskennallinenArvo(vanhaPistetieto.laskennallinenArvo)
-                  .osallistuminen(vanhaPistetieto.osallistuminen)
-                  .tyypinKoodiUri(vanhaPistetieto.tyypinKoodiUri)
-                  .tilastoidaan(vanhaPistetieto.tilastoidaan)
+                compareFields(uusiPistetieto.tunniste, vanhaPistetieto.tunniste, "pistetieto.tunniste")
+                compareFields(uusiPistetieto.arvo, vanhaPistetieto.arvo, "pistetieto.arvo")
+                compareFields(uusiPistetieto.laskennallinenArvo, vanhaPistetieto.laskennallinenArvo, "pistetieto.laskennallinenArvo")
+                compareFields(uusiPistetieto.osallistuminen, vanhaPistetieto.osallistuminen, "pistetieto.osallistuminen")
+                compareFields(uusiPistetieto.tyypinKoodiUri, vanhaPistetieto.tyypinKoodiUri, "pistetieto.tyypinKoodiUri")
+                compareFields(uusiPistetieto.tilastoidaan, vanhaPistetieto.tilastoidaan, "pistetieto.tilastoidaan")
               })
 
               debug(s"Tilahistoria ${uusiHakemus.tilaHistoria}")
@@ -155,9 +151,8 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
               uusiHakemus.tilaHistoria.size must be_<=(vanhaHakemus.tilaHistoria.size)
               for ((uusiTilahistoria, i) <- uusiHakemus.tilaHistoria.reverse.zipWithIndex) {
                 val vanhaTilahistoria = vanhaHakemus.tilaHistoria.reverse(i)
-                uusiTilahistoria must matchA[Tilahistoria]
-                  .tila(vanhaTilahistoria.tila)
-                  .luotu(vanhaTilahistoria.luotu)
+                compareFields(uusiTilahistoria.tila, vanhaTilahistoria.tila, "tilahistoria.tila")
+                compareFields(uusiTilahistoria.luotu, vanhaTilahistoria.luotu, "tilahistoria.luotu")
               }
 
             })
@@ -168,24 +163,23 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
             debug("vanhaHakukohde.hakijaryhmat:")
             vanhaHakukohde.hakijaryhmat.foreach { h => debug(s"\t$h") }
           }
-          uusiHakukohde.hakijaryhmat.size mustEqual vanhaHakukohde.hakijaryhmat.size
+          compareFields(uusiHakukohde.hakijaryhmat.size, vanhaHakukohde.hakijaryhmat.size, "hakijaryhmat.size")
           hakijaryhmat = hakijaryhmat + uusiHakukohde.hakijaryhmat.size
           uusiHakukohde.hakijaryhmat.foreach(uusiHakijaryhma => {
             debug(s"Hakijaryhma ${uusiHakijaryhma.oid}")
             val vanhaHakijaryhma = vanhaHakukohde.hakijaryhmat.find(_.oid.equals(uusiHakijaryhma.oid)).get
-            uusiHakijaryhma must matchA[Hakijaryhma]
-              .prioriteetti(vanhaHakijaryhma.prioriteetti)
-              .paikat(vanhaHakijaryhma.paikat)
-              .nimi(vanhaHakijaryhma.nimi)
-              .hakukohdeOid(vanhaHakijaryhma.hakukohdeOid)
-              .kiintio(vanhaHakijaryhma.kiintio)
-              .kaytaKaikki(vanhaHakijaryhma.kaytaKaikki)
-              .tarkkaKiintio(vanhaHakijaryhma.tarkkaKiintio)
-              .kaytetaanRyhmaanKuuluvia(vanhaHakijaryhma.kaytetaanRyhmaanKuuluvia)
-              .hakijaryhmatyyppikoodiUri(vanhaHakijaryhma.hakijaryhmatyyppikoodiUri)
-              .valintatapajonoOid(vanhaHakijaryhma.valintatapajonoOid)
-            uusiHakijaryhma.hakemusOid.size mustEqual vanhaHakijaryhma.hakemusOid.size
-            uusiHakijaryhma.hakemusOid.diff(vanhaHakijaryhma.hakemusOid) mustEqual List()
+            compareFields(uusiHakijaryhma.prioriteetti, vanhaHakijaryhma.prioriteetti, "hakijaryhma.prioriteetti")
+            compareFields(uusiHakijaryhma.paikat, vanhaHakijaryhma.paikat, "hakijaryhma.paikat")
+            compareFields(uusiHakijaryhma.nimi, vanhaHakijaryhma.nimi, "hakijaryhma.nimi")
+            compareFields(uusiHakijaryhma.hakukohdeOid, vanhaHakijaryhma.hakukohdeOid, "hakijaryhma.hakukohdeOid")
+            compareFields(uusiHakijaryhma.kiintio, vanhaHakijaryhma.kiintio, "hakijaryhma.kiintio")
+            compareFields(uusiHakijaryhma.kaytaKaikki, vanhaHakijaryhma.kaytaKaikki, "hakijaryhma.kaytaKaikki")
+            compareFields(uusiHakijaryhma.tarkkaKiintio, vanhaHakijaryhma.tarkkaKiintio, "hakijaryhma.tarkkaKiintio")
+            compareFields(uusiHakijaryhma.kaytetaanRyhmaanKuuluvia, vanhaHakijaryhma.kaytetaanRyhmaanKuuluvia, "hakijaryhma.kaytetaanRyhmaanKuuluvia")
+            compareFields(uusiHakijaryhma.hakijaryhmatyyppikoodiUri, vanhaHakijaryhma.hakijaryhmatyyppikoodiUri, "hakijaryhma.hakijaryhmatyyppikoodiUri")
+            compareFields(uusiHakijaryhma.valintatapajonoOid, vanhaHakijaryhma.valintatapajonoOid, "hakijaryhma.valintatapajonoOid")
+            compareFields(uusiHakijaryhma.hakemusOid.size, vanhaHakijaryhma.hakemusOid.size, "hakijaryhma.hakemukset.size")
+            compareFields(uusiHakijaryhma.hakemusOid.diff(vanhaHakijaryhma.hakemusOid), List(), "hakijaryhma.hakemukset.diff")
           })
         })
 
@@ -195,6 +189,12 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
 
       }
       true must beTrue
+    }
+  }
+
+  private def compareFields(expected: Any, actual: Any, fieldName: String) = {
+    if (expected != actual) {
+      logger.error(s"Mismatch in $fieldName: $expected != $actual")
     }
   }
 
