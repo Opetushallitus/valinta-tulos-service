@@ -9,6 +9,7 @@ import fi.vm.sade.security.{AuthorizationFailedException, OrganizationHierarchyA
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
+import fi.vm.sade.valintatulosservice.domain.Vastaanottoaikataulu
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde, YhdenPaikanSaanto}
@@ -189,7 +190,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     "no authorization to change julkaistavissa" in new ValinnantulosServiceWithMocksForJulkaistavissaTests {
       override def result = Set((ZonedDateTime.now.toInstant, valinnantulos))
       authorizer.checkAccess(session, appConfig.settings.rootOrganisaatioOid, Set(Role.SIJOITTELU_CRUD)) returns Left(new AuthorizationFailedException("moi"))
-      ohjausparametritService.ohjausparametrit(any[String]) returns Right(Some(Ohjausparametrit(None, None, None, None, None, None, Some(DateTime.now().plusDays(2)))))
+      ohjausparametritService.ohjausparametrit(any[String]) returns Right(Some(Ohjausparametrit(Vastaanottoaikataulu(None, None), None, None, None, None, None, Some(DateTime.now().plusDays(2)))))
 
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(valinnantulos.copy(julkaistavissa = Some(true))), Some(ZonedDateTime.now.toInstant), auditInfo) mustEqual List(
         ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia julkaista valinnantulosta", valintatapajonoOid, valinnantulos.hakemusOid)
@@ -200,7 +201,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     "no authorization to change julkaistavissa but valintaesitys is hyväksyttävissä" in new ValinnantulosServiceWithMocksForJulkaistavissaTests {
       override def result = Set((ZonedDateTime.now.toInstant, valinnantulos))
       authorizer.checkAccess(session, appConfig.settings.rootOrganisaatioOid, Set(Role.SIJOITTELU_CRUD)) returns Left(new AuthorizationFailedException("moi"))
-      ohjausparametritService.ohjausparametrit(any[String]) returns Right(Some(Ohjausparametrit(None, None, None, None, None, None, Some(DateTime.now().minusDays(2)))))
+      ohjausparametritService.ohjausparametrit(any[String]) returns Right(Some(Ohjausparametrit(Vastaanottoaikataulu(None, None), None, None, None, None, None, Some(DateTime.now().minusDays(2)))))
 
       val valinnantulokset = List(valinnantulos.copy(julkaistavissa = Some(true)))
       val notModifiedSince = ZonedDateTime.now.toInstant
@@ -213,7 +214,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     "authorization to change julkaistavissa" in new ValinnantulosServiceWithMocksForJulkaistavissaTests {
       override def result = Set((ZonedDateTime.now.toInstant, valinnantulos))
       authorizer.checkAccess(session, appConfig.settings.rootOrganisaatioOid, Set(Role.SIJOITTELU_CRUD)) returns Right(())
-      ohjausparametritService.ohjausparametrit(any[String]) returns Right(Some(Ohjausparametrit(None, None, None, None, None, None, None)))
+      ohjausparametritService.ohjausparametrit(any[String]) returns Right(Some(Ohjausparametrit(Vastaanottoaikataulu(None, None), None, None, None, None, None, None)))
 
       val valinnantulokset = List(valinnantulos.copy(julkaistavissa = Some(true)))
       val notModifiedSince = ZonedDateTime.now.toInstant

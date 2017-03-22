@@ -13,7 +13,7 @@ class OhjausparametritIntegrationTest extends Specification {
       implicit val testConfig = new IT
       val parametri: Ohjausparametrit = new RemoteOhjausparametritService().ohjausparametrit("1.2.246.562.29.52925694235").right.get.get
       parametri.ilmoittautuminenPaattyy must_== None
-      parametri.vastaanottoaikataulu.get.vastaanottoEnd.get.getMillis must_== 1500033600000L
+      parametri.vastaanottoaikataulu.vastaanottoEnd.get.getMillis must_== 1500033600000L
     }
   }
 

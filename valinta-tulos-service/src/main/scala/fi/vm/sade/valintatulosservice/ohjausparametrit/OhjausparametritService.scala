@@ -15,7 +15,7 @@ import scala.util.control.NonFatal
 
 case class ValintaTulosServiceOhjausparametrit(näytetäänköSiirryKelaanURL: Boolean)
 case class Ohjausparametrit(
-  vastaanottoaikataulu: Option[Vastaanottoaikataulu],
+  vastaanottoaikataulu: Vastaanottoaikataulu,
   varasijaSaannotAstuvatVoimaan: Option[DateTime],
   ilmoittautuminenPaattyy: Option[DateTime],
   hakukierrosPaattyy: Option[DateTime],
@@ -115,7 +115,7 @@ private object OhjausparametritParser extends JsonFormats {
       obj <- (json \ "PH_HPVOA").toOption
       end <- (obj \ "value").extractOpt[Int]
     } yield end
-    Some(Vastaanottoaikataulu(vastaanottoEnd, vastaanottoBufferDays))
+    Vastaanottoaikataulu(vastaanottoEnd, vastaanottoBufferDays)
   }
 
   private def parseTulostenJulkistus(json: JValue) = {

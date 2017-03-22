@@ -68,7 +68,7 @@ class SijoittelutulosService(raportointiService: RaportointiService,
   def findAikatauluFromOhjausparametritService(hakuOid: String): Option[Vastaanottoaikataulu] = {
     Timer.timed("findAikatauluFromOhjausparametritService -> ohjausparametritService.ohjausparametrit", 100) {
       ohjausparametritService.ohjausparametrit(hakuOid) match {
-        case Right(o) => o.flatMap(_.vastaanottoaikataulu)
+        case Right(o) => o.map(_.vastaanottoaikataulu)
         case Left(e) => throw e
       }
     }
