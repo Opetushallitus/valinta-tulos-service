@@ -505,7 +505,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
       ).map(t => (t.hakemusOid, t)).toMap
     }
     hakemukset.map(hakemus => {
-      val sijoitteluTulos = sijoitteluTulokset.getOrElse(hakemus.oid, tyhjäHakemuksenTulos(hakemus.oid, ohjausparametrit.flatMap(_.vastaanottoaikataulu)))
+      val sijoitteluTulos = sijoitteluTulokset.getOrElse(hakemus.oid, tyhjäHakemuksenTulos(hakemus.oid, ohjausparametrit.map(_.vastaanottoaikataulu)))
       val hakemuksenVastaanototKaudella: String => Option[(Kausi, Boolean)] = hakukohdeOid =>
         vastaanottoKaudella(hakukohdeOid).map(a => (a._1, a._2.contains(hakemus.henkiloOid)))
 
@@ -538,7 +538,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
       .map(asetaKelaURL)
       .tulokset
 
-    Hakemuksentulos(haku.oid, h.oid, sijoitteluTulos.hakijaOid.getOrElse(h.henkiloOid), ohjausparametrit.flatMap(_.vastaanottoaikataulu), lopullisetTulokset)
+    Hakemuksentulos(haku.oid, h.oid, sijoitteluTulos.hakijaOid.getOrElse(h.henkiloOid), ohjausparametrit.map(_.vastaanottoaikataulu), lopullisetTulokset)
   }
   private def asetaKelaURL(tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]): List[Hakutoiveentulos] = {
     val hakukierrosEiOlePäättynyt = !(ohjausparametrit.flatMap(_.hakukierrosPaattyy).map(_.isBefore(DateTime.now())).getOrElse(false))
@@ -736,17 +736,10 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
     }
   }
 
-  private def ehdollinenVastaanottoMahdollista(ohjausparametritOption: Option[Ohjausparametrit]): Boolean = {
-    val ohjausparametrit: Ohjausparametrit = ohjausparametritOption.getOrElse(Ohjausparametrit(None, None, None, None, None, None, None))
+  private def ehdollinenVastaanottoMahdollista(ohjausparametrit: Option[Ohjausparametrit]): Boolean = {
     val now: DateTime = new DateTime()
-    val varasijaSaannotVoimassa = ohjausparametrit.varasijaSaannotAstuvatVoimaan match {
-      case None => true
-      case Some(varasijaSaannotAstuvatVoimaan) => varasijaSaannotAstuvatVoimaan.isBefore(now)
-    }
-    val kaikkiJonotSijoittelussa = ohjausparametrit.kaikkiJonotSijoittelussa match {
-      case None => true
-      case Some(kaikkiJonotSijoittelussa) => kaikkiJonotSijoittelussa.isBefore(now)
-    }
+    val varasijaSaannotVoimassa = ohjausparametrit.flatMap(_.varasijaSaannotAstuvatVoimaan).fold(true)(_.isBefore(now))
+    val kaikkiJonotSijoittelussa = ohjausparametrit.flatMap(_.kaikkiJonotSijoittelussa).fold(true)(_.isBefore(now))
     varasijaSaannotVoimassa && kaikkiJonotSijoittelussa
   }
 
