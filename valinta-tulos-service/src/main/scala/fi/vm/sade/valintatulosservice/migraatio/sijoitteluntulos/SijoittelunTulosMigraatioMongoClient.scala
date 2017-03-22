@@ -50,7 +50,7 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
       val sijoitteluajoId = sijoitteluAjo.getSijoitteluajoId
       logger.info(s"Latest sijoitteluajoId for haku $hakuOid in Mongodb is $sijoitteluajoId , sijoitteluType is $sijoitteluType")
 
-      val existingSijoitteluajo = sijoitteluRepository.getSijoitteluajo(sijoitteluajoId)
+      val existingSijoitteluajo = sijoitteluRepository.getLatestSijoitteluajoId(hakuOid)
       if (existingSijoitteluajo.isDefined) {
         if (dryRun) {
           logger.warn(s"dryRun : NOT removing existing sijoitteluajo $sijoitteluajoId data.")
