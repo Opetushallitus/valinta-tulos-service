@@ -40,61 +40,71 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
 
   def migrate(hakuOid: String, dryRun: Boolean): Unit = {
     sijoittelunTulosRestClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None).foreach { sijoitteluAjo =>
-      val sijoitteluOptional: Optional[Sijoittelu] = sijoitteluDao.getSijoitteluByHakuOid(hakuOid)
-      if (!sijoitteluOptional.isPresent) {
-        throw new IllegalStateException(s"sijoittelu not found in Mongodb for haku $hakuOid " +
-          s"even though latest sijoitteluajo is found. This is impossible :) Or you need to reboot sijoittelu-service.")
-      }
-      val sijoittelu = sijoitteluOptional.get()
-      val sijoitteluType = sijoittelu.getSijoitteluType
-      val sijoitteluajoId = sijoitteluAjo.getSijoitteluajoId
-      logger.info(s"Latest sijoitteluajoId for haku $hakuOid in Mongodb is $sijoitteluajoId , sijoitteluType is $sijoitteluType")
-
-      val existingSijoitteluajo = sijoitteluRepository.getLatestSijoitteluajoId(hakuOid)
-      if (existingSijoitteluajo.isDefined) {
-        if (dryRun) {
-          logger.warn(s"dryRun : NOT removing existing sijoitteluajo $sijoitteluajoId data.")
-        } else {
-          logger.warn(s"Existing sijoitteluajo $sijoitteluajoId found, deleting results of haku $hakuOid:")
-          sijoitteluRepository.deleteSijoittelunTulokset(hakuOid)
-        }
-      } else {
-        logger.info(s"Sijoitteluajo $sijoitteluajoId does not seem to stored to Postgres db yet.")
-      }
-
-      val hakukohteet: util.List[Hakukohde] = timed(s"Loading hakukohteet for sijoitteluajo $sijoitteluajoId of haku $hakuOid") { hakukohdeDao.getHakukohdeForSijoitteluajo(sijoitteluajoId) }
-      logger.info(s"Loaded ${hakukohteet.size()} hakukohde objects for sijoitteluajo $sijoitteluajoId of haku $hakuOid")
-      val valintatulokset = timed(s"Loading valintatulokset for sijoitteluajo $sijoitteluajoId of haku $hakuOid") { valintatulosDao.loadValintatulokset(hakuOid) }
-      val allSaves = createSaveActions(hakukohteet, valintatulokset)
-      kludgeStartAndEndToSijoitteluAjoIfMissing(sijoitteluAjo, hakukohteet)
-
-      if (dryRun) {
-        logger.warn("dryRun : NOT updating the database")
-      } else {
-        logger.info(s"Starting to store sijoitteluajo $sijoitteluajoId of haku $hakuOid...")
-        timed(s"Ensuring hakukohteet for sijoitteluajo $sijoitteluajoId of $hakuOid are in db") {
-          hakukohteet.asScala.map(_.getOid).foreach(hakukohdeRecordService.getHakukohdeRecord)
-        }
-        timed(s"Removed jono based hakijaryhmät referring to jonos not in sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
-          Valintarekisteri.poistaValintatapajonokohtaisetHakijaryhmatJoidenJonoaEiSijoiteltu(hakukohteet)
-        }
-        tarjontaHakuService.getHaku(hakuOid) match {
-          case Right(haku) =>
-            if (haku.käyttääSijoittelua || timed(s"Checking if haku uses valintalaskenta") { sijoitteluUsesLaskenta(hakukohteet) }) {
-              storeSijoittelu(hakuOid, sijoitteluAjo, hakukohteet, valintatulokset)
-            } else {
-              logger.info(s"Haku $hakuOid does not use sijoittelu. Skipping saving sijoittelu $sijoitteluajoId")
-            }
-          case Left(e) => logger.error(e.getMessage)
-        }
-
-        logger.info(s"Starting to save valinta data sijoitteluajo $sijoitteluajoId of haku $hakuOid...")
-        timed(s"Saving valinta data for sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
-          valinnantulosRepository.runBlocking(DBIOAction.sequence(allSaves), Duration(15, MINUTES))
-        }
-      }
-      logger.info("-----------------------------------------------------------")
+      migrate(hakuOid, sijoitteluAjo, dryRun)
     }
+  }
+
+  private def migrate(hakuOid: String, sijoitteluAjo: SijoitteluAjo, dryRun: Boolean) = {
+    val sijoitteluOptional: Optional[Sijoittelu] = sijoitteluDao.getSijoitteluByHakuOid(hakuOid)
+    if (!sijoitteluOptional.isPresent) {
+      throw new IllegalStateException(s"sijoittelu not found in Mongodb for haku $hakuOid " +
+        s"even though latest sijoitteluajo is found. This is impossible :) Or you need to reboot sijoittelu-service.")
+    }
+    val sijoittelu = sijoitteluOptional.get()
+    val sijoitteluType = sijoittelu.getSijoitteluType
+    val sijoitteluajoId = sijoitteluAjo.getSijoitteluajoId
+    logger.info(s"Latest sijoitteluajoId for haku $hakuOid in Mongodb is $sijoitteluajoId , sijoitteluType is $sijoitteluType")
+
+    val existingSijoitteluajo = sijoitteluRepository.getLatestSijoitteluajoId(hakuOid)
+    if (existingSijoitteluajo.isDefined) {
+      if (dryRun) {
+        logger.warn(s"dryRun : NOT removing existing sijoitteluajo $sijoitteluajoId data.")
+      } else {
+        logger.warn(s"Existing sijoitteluajo $sijoitteluajoId found, deleting results of haku $hakuOid:")
+        sijoitteluRepository.deleteSijoittelunTulokset(hakuOid)
+      }
+    } else {
+      logger.info(s"Sijoitteluajo $sijoitteluajoId does not seem to stored to Postgres db yet.")
+    }
+
+    val hakukohteet: util.List[Hakukohde] = timed(s"Loading hakukohteet for sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
+      hakukohdeDao.getHakukohdeForSijoitteluajo(sijoitteluajoId)
+    }
+    logger.info(s"Loaded ${hakukohteet.size()} hakukohde objects for sijoitteluajo $sijoitteluajoId of haku $hakuOid")
+    val valintatulokset = timed(s"Loading valintatulokset for sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
+      valintatulosDao.loadValintatulokset(hakuOid)
+    }
+    val allSaves = createSaveActions(hakukohteet, valintatulokset)
+    kludgeStartAndEndToSijoitteluAjoIfMissing(sijoitteluAjo, hakukohteet)
+
+    if (dryRun) {
+      logger.warn("dryRun : NOT updating the database")
+    } else {
+      logger.info(s"Starting to store sijoitteluajo $sijoitteluajoId of haku $hakuOid...")
+      timed(s"Ensuring hakukohteet for sijoitteluajo $sijoitteluajoId of $hakuOid are in db") {
+        hakukohteet.asScala.map(_.getOid).foreach(hakukohdeRecordService.getHakukohdeRecord)
+      }
+      timed(s"Removed jono based hakijaryhmät referring to jonos not in sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
+        Valintarekisteri.poistaValintatapajonokohtaisetHakijaryhmatJoidenJonoaEiSijoiteltu(hakukohteet)
+      }
+      tarjontaHakuService.getHaku(hakuOid) match {
+        case Right(haku) =>
+          if (haku.käyttääSijoittelua || timed(s"Checking if haku uses valintalaskenta") {
+            sijoitteluUsesLaskenta(hakukohteet)
+          }) {
+            storeSijoittelu(hakuOid, sijoitteluAjo, hakukohteet, valintatulokset)
+          } else {
+            logger.info(s"Haku $hakuOid does not use sijoittelu. Skipping saving sijoittelu $sijoitteluajoId")
+          }
+        case Left(e) => logger.error(e.getMessage)
+      }
+
+      logger.info(s"Starting to save valinta data sijoitteluajo $sijoitteluajoId of haku $hakuOid...")
+      timed(s"Saving valinta data for sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
+        valinnantulosRepository.runBlocking(DBIOAction.sequence(allSaves), Duration(15, MINUTES))
+      }
+    }
+    logger.info("-----------------------------------------------------------")
   }
 
   private def storeSijoittelu(hakuOid: String, sijoitteluAjo: SijoitteluAjo, hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]) = {
