@@ -42,12 +42,13 @@ class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: Sijoittel
     sijoittelunTulosRestClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None).foreach { sijoitteluAjo =>
       val sijoitteluOptional: Optional[Sijoittelu] = sijoitteluDao.getSijoitteluByHakuOid(hakuOid)
       if (!sijoitteluOptional.isPresent) {
-        throw new IllegalStateException(s"sijoittelu not found for haku $hakuOid even though latest sijoitteluajo is found. This is impossible :)")
+        throw new IllegalStateException(s"sijoittelu not found in Mongodb for haku $hakuOid " +
+          s"even though latest sijoitteluajo is found. This is impossible :) Or you need to reboot sijoittelu-service.")
       }
       val sijoittelu = sijoitteluOptional.get()
       val sijoitteluType = sijoittelu.getSijoitteluType
       val sijoitteluajoId = sijoitteluAjo.getSijoitteluajoId
-      logger.info(s"Latest sijoitteluajoId from haku $hakuOid is $sijoitteluajoId , sijoitteluType is $sijoitteluType")
+      logger.info(s"Latest sijoitteluajoId for haku $hakuOid in Mongodb is $sijoitteluajoId , sijoitteluType is $sijoitteluType")
 
       val existingSijoitteluajo = sijoitteluRepository.getSijoitteluajo(sijoitteluajoId)
       if (existingSijoitteluajo.isDefined) {
