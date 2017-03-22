@@ -46,6 +46,7 @@ class RealOppijanTunnistusService(appConfig:AppConfig) extends OppijanTunnistusS
       HttpOptions.readTimeout(120000)
     ).header("clientSubSystemCode", "valinta-tulos-service")
       .header("Caller-id", "valinta-tulos-service")
+      .header("Content-Type", "application/json")
       .responseWithHeaders match {
       case (404, _, resultString) =>
         Left(new IllegalArgumentException(s"POST $url failed with status 404: $resultString"))
