@@ -27,13 +27,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success}
 
-class SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient: SijoittelunTulosRestClient,
-                                           appConfig: VtsAppConfig,
-                                           sijoitteluRepository: SijoitteluRepository,
-                                           valinnantulosRepository: ValinnantulosRepository,
-                                           hakukohdeRecordService: HakukohdeRecordService,
-                                           tarjontaHakuService: TarjontaHakuService,
-                                           valintalaskentakoostepalveluService: ValintalaskentakoostepalveluService) extends Logging {
+class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTulosRestClient,
+                                       appConfig: VtsAppConfig,
+                                       sijoitteluRepository: SijoitteluRepository,
+                                       valinnantulosRepository: ValinnantulosRepository,
+                                       hakukohdeRecordService: HakukohdeRecordService,
+                                       tarjontaHakuService: TarjontaHakuService,
+                                       valintalaskentakoostepalveluService: ValintalaskentakoostepalveluService) extends Logging {
   private val hakukohdeDao: HakukohdeDao = appConfig.sijoitteluContext.hakukohdeDao
   private val valintatulosDao: ValintatulosDao = appConfig.sijoitteluContext.valintatulosDao
   private val sijoitteluDao = appConfig.sijoitteluContext.sijoitteluDao

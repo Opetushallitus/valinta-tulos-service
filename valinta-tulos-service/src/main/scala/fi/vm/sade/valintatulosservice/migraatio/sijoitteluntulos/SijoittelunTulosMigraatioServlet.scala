@@ -36,7 +36,7 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
   private val adapter = new HexBinaryAdapter()
 
   private val sijoittelunTulosRestClient = new SijoittelunTulosRestClient(appConfig)
-  private val mongoClient = new SijoittelunTulosMigraatioMongoClient(sijoittelunTulosRestClient, appConfig,
+  private val mongoClient = new SijoitteluntulosMigraatioService(sijoittelunTulosRestClient, appConfig,
     sijoitteluRepository, valinnantulosRepository, hakukohdeRecordService, tarjontaHakuService, valintalaskentakoostepalveluService)
 
   logger.warn("Mountataan Valintarekisterin sijoittelun tuloksien migraatioservlet!")
