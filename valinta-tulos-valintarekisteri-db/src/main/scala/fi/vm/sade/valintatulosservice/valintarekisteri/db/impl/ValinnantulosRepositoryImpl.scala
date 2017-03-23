@@ -1,17 +1,20 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
-import java.sql.Timestamp
+import java.sql.{Timestamp, Types}
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.ConcurrentModificationException
 import java.util.concurrent.TimeUnit
 
-import slick.driver.PostgresDriver.api._
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Ilmoittautuminen, ValinnantilanTallennus, ValinnantuloksenOhjaus, Valinnantulos}
+import org.springframework.jdbc.core.namedparam.{MapSqlParameterSource, NamedParameterJdbcTemplate, SqlParameterSource}
+import slick.dbio.DBIO
+import slick.driver.PostgresDriver.api._
+import slick.jdbc.{DataSourceJdbcDataSource, JdbcBackend}
 
-import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
 
 trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with ValintarekisteriRepository {
 
@@ -220,6 +223,45 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                    or system_time @> ${ifUnmodifiedSince})""".flatMap {
       case 1 => DBIO.successful(())
       case _ => DBIO.failed(new ConcurrentModificationException(s"Ilmoittautumista $ilmoittautuminen ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
+    }
+  }
+
+  override def storeBatch(valinnantilat: Seq[(ValinnantilanTallennus, TilanViimeisinMuutos)],
+                 valinnantuloksenOhjaukset: Seq[ValinnantuloksenOhjaus],
+                 ilmoittautumiset: Seq[(Ilmoittautuminen, HenkiloOid)]): DBIO[Unit] = {
+    SimpleDBIO { (session: JdbcBackend#JdbcActionContext) =>
+      val dataSource = session.session.database.source.asInstanceOf[DataSourceJdbcDataSource].ds
+      val template = new NamedParameterJdbcTemplate(dataSource)
+      val paramsList: Array[SqlParameterSource] = valinnantilat.map { case (valinnantilanTallennus, viimeisinMuutos) =>
+        new MapSqlParameterSource()
+          .addValue("valintatapajonoOid", valinnantilanTallennus.valintatapajonoOid, Types.VARCHAR)
+          .addValue("hakemusOid", valinnantilanTallennus.hakemusOid, Types.VARCHAR)
+          .addValue("hakukohdeOid", valinnantilanTallennus.hakukohdeOid, Types.VARCHAR)
+          .addValue("muokkaaja", valinnantilanTallennus.muokkaaja, Types.VARCHAR)
+          .addValue("henkiloOid", valinnantilanTallennus.henkiloOid, Types.VARCHAR)
+          .addValue("valinnantila", valinnantilanTallennus.valinnantila, Types.VARCHAR)
+          .addValue("tilanViimeisinMuutos", viimeisinMuutos, Types.TIMESTAMP)
+      }.toArray
+      template.batchUpdate("""insert into valinnantilat(
+                         valintatapajono_oid,
+                         hakemus_oid,
+                         hakukohde_oid,
+                         ilmoittaja,
+                         henkilo_oid,
+                         tila,
+                         tilan_viimeisin_muutos
+                       ) values (:valintatapajonoOid,
+                          :hakemusOid,
+                          :hakukohdeOid,
+                          :muokkaaja,
+                          :henkiloOid,
+                          :valinnantila::valinnantila,
+                          :tilanViimeisinMuutos)
+                       on conflict on constraint valinnantilat_pkey do update set
+                         tila = excluded.tila,
+                         tilan_viimeisin_muutos = excluded.tilan_viimeisin_muutos,
+                         ilmoittaja = excluded.ilmoittaja
+                       where valinnantilat.tila <> excluded.tila""", paramsList)
     }
   }
 

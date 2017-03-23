@@ -100,6 +100,19 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       )
       assertValinnantila(valinnantilanTallennus.copy(valinnantila = VarasijaltaHyvaksytty))
     }
+    "update valinnantulos objects in batches" in {
+      storeValinnantilaAndValinnantulos()
+      assertValinnantila(valinnantilanTallennus)
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.storeBatch(
+          Seq(
+            (valinnantilanTallennus.copy(valinnantila = VarasijaltaHyvaksytty), new Timestamp(System.currentTimeMillis() - 1000)),
+            (valinnantilanTallennus.copy(valinnantila = Peruutettu), new Timestamp(System.currentTimeMillis()))),
+          Nil,
+          Nil)
+      )
+      assertValinnantila(valinnantilanTallennus.copy(valinnantila = Peruutettu))
+    }
     "not update existing valinnantila if modified" in {
       val notModifiedSince = ZonedDateTime.now.minusDays(1).toInstant
       storeValinnantilaAndValinnantulos
