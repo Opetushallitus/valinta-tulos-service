@@ -44,4 +44,7 @@ trait SijoitteluRepository extends ValintarekisteriRepository {
   def getHakukohteenHakemukset(sijoitteluajoId:Long, hakukohdeOid:String): List[HakemusRecord]
 
   def deleteSijoittelunTulokset(hakuOid: String): Unit
+
+  def saveSijoittelunHash(hakuOid: String, hash: String): Unit
+  def getSijoitteluHash(hakuOid: String, hash: String): Option[String]
 }

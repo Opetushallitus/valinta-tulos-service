@@ -705,4 +705,16 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
       }
     }
   }
+
+  override def saveSijoittelunHash(hakuOid: String, hash: String): Unit = {
+    runBlocking(
+      sqlu"""insert into mongo_sijoittelu_hashes values (${hakuOid}, ${hash})
+              on conflict (haku_oid) do update set hash = ${hash}""")
+  }
+
+  override def getSijoitteluHash(hakuOid: String, hash: String): Option[String] = {
+    runBlocking(
+      sql"""select * from mongo_sijoittelu_hashes
+            where haku_oid = ${hakuOid} and hash = ${hash}""".as[String]).headOption
+  }
 }

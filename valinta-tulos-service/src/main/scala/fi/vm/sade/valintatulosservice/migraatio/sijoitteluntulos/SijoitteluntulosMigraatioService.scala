@@ -218,4 +218,6 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       sijoitteluAjo.setEndMils(endMillis)
     }
   }
+
+
 }

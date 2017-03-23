@@ -3,21 +3,19 @@ package fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos
 import java.security.MessageDigest
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.mongodb.{BasicDBObjectBuilder, DBCursor}
 import fi.vm.sade.utils.Timer
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.VtsServletBase
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
 import fi.vm.sade.valintatulosservice.tarjonta.TarjontaHakuService
-import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import org.json4s.jackson.Serialization.read
-import org.scalatra.{InternalServerError, Ok}
 import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
+import org.scalatra.{InternalServerError, Ok}
 
 /**
   * Work in progress.
@@ -31,7 +29,6 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
 
   override protected def applicationDescription: String = "REST-API sijoittelun tuloksien migroinniksi valintarekisteriin"
 
-  private val objectMapper = new ObjectMapper()
   private val digester = MessageDigest.getInstance("MD5")
   private val adapter = new HexBinaryAdapter()
 
@@ -80,8 +77,16 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
         sijoittelunTulosRestClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None).map(_.getSijoitteluajoId) match {
           case Some(sijoitteluajoId) =>
             logger.info(s"Latest sijoitteluajoId from haku $hakuOid is $sijoitteluajoId")
-            val hash: String = getSijoitteluHash(sijoitteluajoId, hakuOid)
-            hakuOidsSijoitteluHashes += (hakuOid -> hash)
+            val newHash: String = getSijoitteluHash(sijoitteluajoId, hakuOid)
+            sijoitteluRepository.getSijoitteluHash(hakuOid, newHash) match {
+              case Some(_) =>
+                logger.info(s"Haku $hakuOid hash is up to date, skipping saving its sijoittelu.")
+              case _ =>
+                hakuOidsSijoitteluHashes += (hakuOid -> newHash)
+                logger.info(s"Hash for haku $hakuOid didn't exist yet or has changed, saving sijoittelu.")
+                sijoitteluRepository.saveSijoittelunHash(hakuOid, newHash)
+            }
+
           case _ => logger.info(s"No sijoittelus for haku $hakuOid")
         }
       }
