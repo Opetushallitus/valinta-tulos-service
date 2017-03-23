@@ -66,6 +66,6 @@ valinta-tulos-service.kela.url=https://easiointi.kela.fi/eOTh/EOThApplication?re
 oppijan-tunnistus-service.url=https://{{host_virkailija}}/oppijan-tunnistus/api/v1/only_token
 
 # Omatsivut
-omatsivut.fi={{host_haku}}/omatsivut/hakutoiveidenMuokkaus.html#/token/
-omatsivut.en={{host_haku_en}}/omatsivut/hakutoiveidenMuokkaus.html#/token/
-omatsivut.sv={{host_haku_sv}}/omatsivut/hakutoiveidenMuokkaus.html#/token/
+omatsivut.fi=https://{{host_haku}}/omatsivut/hakutoiveidenMuokkaus.html#/token/
+omatsivut.en=https://{{host_haku_en}}/omatsivut/hakutoiveidenMuokkaus.html#/token/
+omatsivut.sv=https://{{host_haku_sv}}/omatsivut/hakutoiveidenMuokkaus.html#/token/
