@@ -1,0 +1,1 @@
+alter table pistetiedot drop constraint pistetiedot_sijoitteluajo_id_fkey;
