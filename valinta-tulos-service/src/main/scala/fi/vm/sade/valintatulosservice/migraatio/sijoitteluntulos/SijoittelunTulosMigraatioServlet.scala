@@ -4,7 +4,7 @@ import java.security.MessageDigest
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.mongodb.BasicDBObjectBuilder
+import com.mongodb.{BasicDBObjectBuilder, DBCursor}
 import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.VtsServletBase
@@ -72,178 +72,58 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
   post("/kellota-hakukohteet", operation(postHakukohdeMigrationTiming)) {
     val start = System.currentTimeMillis()
     val hakuOids = read[Set[String]](request.body)
-
-    System.out.println("EXCELIIN\t$sijoitteluAjoId\t$cursorHasNextTotal\t$cursorNextTotal\t$toStringTotal\t$digestTotal\t$marshalTotal\t$printTotal")
+    var hakuOidsSijoitteluHashes: Map[String, String] = Map()
 
     hakuOids.foreach { hakuOid =>
       logger.info(s"Processing haku $hakuOid")
       Timer.timed(s"Processing haku $hakuOid", 0) {
-        sijoittelunTulosRestClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None).map(_.getSijoitteluajoId).foreach { sijoitteluAjoId =>
-          logger.info(s"Latest sijoitteluAjoId from haku $hakuOid is $sijoitteluAjoId")
-          findWithCursorLoop(sijoitteluAjoId, hakuOid)
+        sijoittelunTulosRestClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None).map(_.getSijoitteluajoId) match {
+          case Some(sijoitteluajoId) =>
+            logger.info(s"Latest sijoitteluajoId from haku $hakuOid is $sijoitteluajoId")
+            val hash: String = getSijoitteluHash(sijoitteluajoId, hakuOid)
+            hakuOidsSijoitteluHashes += (hakuOid -> hash)
+          case _ => logger.info(s"No sijoittelus for haku $hakuOid")
         }
       }
-      logger.info("=================================================================\n")
+      logger.info("=================================================================")
     }
     val msg = s"DONE in ${System.currentTimeMillis - start} ms"
     logger.info(msg)
-    System.err.println(msg)
-    Ok(-1)
+    logger.info(hakuOidsSijoitteluHashes.toString())
+    Ok(hakuOidsSijoitteluHashes)
   }
 
-  private def findWithCursorLoop(sijoitteluAjoId: Long, hakuOid: String) = {
-    val start = System.currentTimeMillis()
-
-    var cursorHasNextTotal: Long = 0
-    var cursorNextTotal: Long = 0
-    var toStringTotal: Long = 0
-    var digestTotal: Long = 0
-    var marshalTotal: Long = 0
-    var printTotal: Long = 0
-
-    var nOfHakukohde = 0
-
-    val query = new BasicDBObjectBuilder().add("sijoitteluajoId", sijoitteluAjoId).get()
+  private def getSijoitteluHash(sijoitteluajoId: Long, hakuOid: String): String = {
+    val query = new BasicDBObjectBuilder().add("sijoitteluajoId", sijoitteluajoId).get()
     val cursor = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Hakukohde").find(query)
-    try {
-      val (c2, cursorNext) = Timer2.timed() { cursor.hasNext }
-      cursorHasNextTotal = cursorHasNextTotal + cursorNext
-      var continuing: Boolean = c2
 
-      while (continuing) {
-        val (o, cursorNext) = Timer2.timed() { cursor.next() }
-        cursorNextTotal = cursorNextTotal + cursorNext
-
-        val (s, toString) = Timer2.timed() { o.toString }
-        toStringTotal = toStringTotal + toString
-
-        val (d, digest) = Timer2.timed() { digester.digest(s.getBytes("UTF-8")) }
-        digestTotal = digestTotal + digest
-
-        val (hex, marshal) = Timer2.timed() { adapter.marshal(d) }
-        marshalTotal = marshalTotal + marshal
-
-        val (c, cursorHasNext) = Timer2.timed() { cursor.hasNext }
-        cursorHasNextTotal = cursorHasNextTotal + cursorHasNext
-        continuing = c
-        nOfHakukohde = nOfHakukohde + 1
-
-        val (x, print) = Timer2.timed() { System.out.println(hex) }
-        printTotal = printTotal + print
-
-//        val (x2, valintatulosHaku) = Timer2.timed() { findValintatuloksetOfHakukohde(o.get("oid").toString) }
-      }
-    } finally {
-      cursor.close()
-    }
-    findValintatuloksetOfHaku(hakuOid)
-    System.out.println(s"EXCELIIN\t$sijoitteluAjoId\t$cursorHasNextTotal\t$cursorNextTotal\t$toStringTotal\t$digestTotal\t$marshalTotal\t$printTotal")
-    System.err.println(s"cursor.next business for sijoitteluajo $sijoitteluAjoId took: ${System.currentTimeMillis() - start} ms for $nOfHakukohde hakukohteet")
+    val hakukohteetHash = getCursorHash(cursor)
+    val valintatuloksetHash = getValintatuloksetHash(hakuOid)
+    adapter.marshal(digestString(hakukohteetHash.concat(valintatuloksetHash)))
   }
 
-  private def findValintatuloksetOfHakukohde(hakukohdeOid: String): Unit = {
-    val start = System.currentTimeMillis()
-
-    var cursorHasNextTotal: Long = 0
-    var cursorNextTotal: Long = 0
-    var toStringTotal: Long = 0
-    var digestTotal: Long = 0
-    var marshalTotal: Long = 0
-    var printTotal: Long = 0
-
-    var nOfValintatulos = 0
-
-    val query = new BasicDBObjectBuilder().add("hakukohdeOid", hakukohdeOid).get()
-    val cursor = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Valintatulos").find(query)
-    try {
-      val (c2, cursorNext) = Timer2.timed() { cursor.hasNext }
-      cursorHasNextTotal = cursorHasNextTotal + cursorNext
-      var continuing: Boolean = c2
-
-      while (continuing) {
-        val (o, cursorNext) = Timer2.timed() { cursor.next() }
-        cursorNextTotal = cursorNextTotal + cursorNext
-
-        val (s, toString) = Timer2.timed() { o.toString }
-        toStringTotal = toStringTotal + toString
-
-        val (d, digest) = Timer2.timed() { digester.digest(s.getBytes("UTF-8")) }
-        digestTotal = digestTotal + digest
-
-        val (hex, marshal) = Timer2.timed() { adapter.marshal(d) }
-        marshalTotal = marshalTotal + marshal
-
-        val (c, cursorHasNext) = Timer2.timed() { cursor.hasNext }
-        cursorHasNextTotal = cursorHasNextTotal + cursorHasNext
-        continuing = c
-        nOfValintatulos = nOfValintatulos + 1
-
-        val (x, print) = Timer2.timed() {  }
-        printTotal = printTotal + print
-      }
-    } finally {
-      cursor.close()
-    }
-    System.out.println(s"VALINTATULOS\t$hakukohdeOid\t$cursorHasNextTotal\t$cursorNextTotal\t$toStringTotal\t$digestTotal\t$marshalTotal\t$printTotal")
-    System.err.println(s"valintatulos fetch for $hakukohdeOid took: ${System.currentTimeMillis() - start} ms for $nOfValintatulos valintatulos objects")
-  }
-
-
-  private def findValintatuloksetOfHaku(hakuOid: String): Unit = {
-    val start = System.currentTimeMillis()
-
-    var cursorHasNextTotal: Long = 0
-    var cursorNextTotal: Long = 0
-    var toStringTotal: Long = 0
-    var digestTotal: Long = 0
-    var marshalTotal: Long = 0
-    var printTotal: Long = 0
-
-    var nOfValintatulos = 0
-
+  private def getValintatuloksetHash(hakuOid: String): String = {
     val query = new BasicDBObjectBuilder().add("hakuOid", hakuOid).get()
     val cursor = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Valintatulos").find(query)
+    getCursorHash(cursor)
+  }
+
+  private def getCursorHash(cursor: DBCursor): String = {
+    var res: String = ""
     try {
-      val (c2, cursorNext) = Timer2.timed() { cursor.hasNext }
-      cursorHasNextTotal = cursorHasNextTotal + cursorNext
-      var continuing: Boolean = c2
-
-      while (continuing) {
-        val (o, cursorNext) = Timer2.timed() { cursor.next() }
-        cursorNextTotal = cursorNextTotal + cursorNext
-
-        val (s, toString) = Timer2.timed() { o.toString }
-        toStringTotal = toStringTotal + toString
-
-        val (d, digest) = Timer2.timed() { digester.digest(s.getBytes("UTF-8")) }
-        digestTotal = digestTotal + digest
-
-        val (hex, marshal) = Timer2.timed() { adapter.marshal(d) }
-        marshalTotal = marshalTotal + marshal
-
-        val (c, cursorHasNext) = Timer2.timed() { cursor.hasNext }
-        cursorHasNextTotal = cursorHasNextTotal + cursorHasNext
-        continuing = c
-        nOfValintatulos = nOfValintatulos + 1
-
-        val (x, print) = Timer2.timed() {  }
-        printTotal = printTotal + print
+      while (cursor.hasNext) {
+        val nextString = cursor.next().toString
+        val stringBytes = digestString(nextString)
+        val hex = adapter.marshal(stringBytes)
+        res = res.concat(hex)
       }
+    } catch {
+      case e: Exception => logger.error(e.getMessage)
     } finally {
       cursor.close()
     }
-    System.out.println(s"VALINTATULOS\t$hakuOid\t$cursorHasNextTotal\t$cursorNextTotal\t$toStringTotal\t$digestTotal\t$marshalTotal\t$printTotal")
-    System.err.println(s"valintatulos fetch for $hakuOid took: ${System.currentTimeMillis() - start} ms for $nOfValintatulos valintatulos objects")
+    res
   }
-}
 
-
-object Timer2 extends Logging {
-  def timed[R](blockname: String = "", thresholdMs: Int = 0)(block: => R): (R, Long) = {
-    val t0 = System.nanoTime()
-    val result = block
-    val t1 = System.nanoTime()
-    val time: Long = (t1 - t0) / 1000000
-    (result, time)
-  }
+  private def digestString(hakukohdeString: String): Array[Byte] = digester.digest(hakukohdeString.getBytes("UTF-8"))
 }
