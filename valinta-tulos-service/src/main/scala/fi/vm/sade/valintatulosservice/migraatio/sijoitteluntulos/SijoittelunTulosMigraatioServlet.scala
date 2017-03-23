@@ -71,8 +71,7 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
     val hakuOids = read[Set[String]](request.body)
     var hakuOidsSijoitteluHashes: Map[String, String] = Map()
 
-    hakuOids.foreach { hakuOid =>
-      logger.info(s"Processing haku $hakuOid")
+    hakuOids.par.foreach { hakuOid =>
       Timer.timed(s"Processing haku $hakuOid", 0) {
         sijoittelunTulosRestClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None).map(_.getSijoitteluajoId) match {
           case Some(sijoitteluajoId) =>
@@ -102,6 +101,8 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
     val query = new BasicDBObjectBuilder().add("sijoitteluajoId", sijoitteluajoId).get()
     val cursor = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Hakukohde").find(query)
 
+    if (!cursor.hasNext) logger.info(s"No hakukohdes for haku $hakuOid")
+
     val hakukohteetHash = getCursorHash(cursor)
     val valintatuloksetHash = getValintatuloksetHash(hakuOid)
     adapter.marshal(digestString(hakukohteetHash.concat(valintatuloksetHash)))
@@ -110,6 +111,9 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
   private def getValintatuloksetHash(hakuOid: String): String = {
     val query = new BasicDBObjectBuilder().add("hakuOid", hakuOid).get()
     val cursor = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Valintatulos").find(query)
+
+    if (!cursor.hasNext) logger.info(s"No valintatulos' for haku $hakuOid")
+
     getCursorHash(cursor)
   }
 
