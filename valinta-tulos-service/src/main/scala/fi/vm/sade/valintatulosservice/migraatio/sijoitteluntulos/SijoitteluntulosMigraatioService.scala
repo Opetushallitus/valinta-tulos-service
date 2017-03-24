@@ -1,12 +1,16 @@
 package fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos
 
+import java.security.MessageDigest
 import java.sql.Timestamp
-import java.util
+import java.{lang, util}
 import java.util.concurrent.TimeUnit.MINUTES
 import java.util.{Date, Optional}
+import javax.xml.bind.annotation.adapters.HexBinaryAdapter
 
+import com.mongodb.{BasicDBObjectBuilder, DBCursor}
 import fi.vm.sade.sijoittelu.domain._
 import fi.vm.sade.sijoittelu.tulos.dao.{HakukohdeDao, ValintatulosDao}
+import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
@@ -21,6 +25,7 @@ import slick.dbio._
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Seq
+import scala.collection.mutable
 import scala.compat.Platform.ConcurrentModificationException
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
@@ -36,6 +41,9 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
   private val hakukohdeDao: HakukohdeDao = appConfig.sijoitteluContext.hakukohdeDao
   private val valintatulosDao: ValintatulosDao = appConfig.sijoitteluContext.valintatulosDao
   private val sijoitteluDao = appConfig.sijoitteluContext.sijoitteluDao
+
+  private val digester = MessageDigest.getInstance("MD5")
+  private val adapter = new HexBinaryAdapter()
 
   def migrate(hakuOid: String, dryRun: Boolean): Unit = {
     sijoittelunTulosRestClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None).foreach { sijoitteluAjo =>
@@ -219,5 +227,81 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     }
   }
 
+  def getSijoitteluHashesByHakuOid(hakuOids: Set[String]): mutable.Map[String, String] = {
+    val start = System.currentTimeMillis()
+    val hakuOidsSijoitteluHashes: mutable.Map[String, String] = new mutable.HashMap()
 
+    hakuOids.par.foreach { hakuOid =>
+      Timer.timed(s"Processing haku $hakuOid", 0) {
+        sijoittelunTulosRestClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None).map(_.getSijoitteluajoId) match {
+          case Some(sijoitteluajoId) => createSijoitteluHash(hakuOidsSijoitteluHashes, hakuOid, sijoitteluajoId)
+          case _ => logger.info(s"No sijoittelus for haku $hakuOid")
+        }
+      }
+      logger.info("=================================================================")
+    }
+    val msg = s"DONE in ${System.currentTimeMillis - start} ms"
+    logger.info(msg, hakuOidsSijoitteluHashes.toString())
+    hakuOidsSijoitteluHashes
+  }
+
+  private def createSijoitteluHash(hakuOidsSijoitteluHashes: mutable.Map[String, String], hakuOid: String, sijoitteluajoId: lang.Long) = {
+    logger.info(s"Latest sijoitteluajoId from haku $hakuOid is $sijoitteluajoId")
+    getSijoitteluHash(sijoitteluajoId, hakuOid) match {
+      case Left(t) => logger.error(t.getMessage)
+      case Right(newHash) => saveSijoitteluHash(hakuOidsSijoitteluHashes, hakuOid, newHash)
+    }
+  }
+
+  private def saveSijoitteluHash(hakuOidsSijoitteluHashes: mutable.Map[String, String], hakuOid: String, newHash: String) = {
+    sijoitteluRepository.getSijoitteluHash(hakuOid, newHash) match {
+      case Some(_) =>
+        logger.info(s"Haku $hakuOid hash is up to date, skipping saving its sijoittelu.")
+      case _ =>
+        hakuOidsSijoitteluHashes += (hakuOid -> newHash)
+        logger.info(s"Hash for haku $hakuOid didn't exist yet or has changed, saving sijoittelu.")
+        sijoitteluRepository.saveSijoittelunHash(hakuOid, newHash)
+    }
+  }
+
+  private def getSijoitteluHash(sijoitteluajoId: Long, hakuOid: String): Either[IllegalArgumentException, String] = {
+    val query = new BasicDBObjectBuilder().add("sijoitteluajoId", sijoitteluajoId).get()
+    val cursor = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Hakukohde").find(query)
+
+    if (!cursor.hasNext) logger.info(s"No hakukohdes for haku $hakuOid")
+
+    val hakukohteetHash = getCursorHash(cursor)
+    val valintatuloksetHash = getValintatuloksetHash(hakuOid)
+    if (hakukohteetHash.isEmpty && !valintatuloksetHash.isEmpty)
+      Left(new IllegalArgumentException(s"Haku $hakuOid had valinnantulos' but no hakukohdes"))
+    else Right(adapter.marshal(digestString(hakukohteetHash.concat(valintatuloksetHash))))
+  }
+
+  private def getValintatuloksetHash(hakuOid: String): String = {
+    val query = new BasicDBObjectBuilder().add("hakuOid", hakuOid).get()
+    val cursor = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Valintatulos").find(query)
+
+    if (!cursor.hasNext) logger.info(s"No valintatulos' for haku $hakuOid")
+
+    getCursorHash(cursor)
+  }
+
+  private def getCursorHash(cursor: DBCursor): String = {
+    var res: String = ""
+    try {
+      while (cursor.hasNext) {
+        val nextString = cursor.next().toString
+        val stringBytes = digestString(nextString)
+        val hex = adapter.marshal(stringBytes)
+        res = res.concat(hex)
+      }
+    } catch {
+      case e: Exception => logger.error(e.getMessage)
+    } finally {
+      cursor.close()
+    }
+    res
+  }
+
+  private def digestString(hakukohdeString: String): Array[Byte] = digester.digest(hakukohdeString.getBytes("UTF-8"))
 }

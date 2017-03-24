@@ -1,11 +1,5 @@
 package fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos
 
-import java.lang
-import java.security.MessageDigest
-import javax.xml.bind.annotation.adapters.HexBinaryAdapter
-
-import com.mongodb.{BasicDBObjectBuilder, DBCursor}
-import fi.vm.sade.utils.Timer
 import fi.vm.sade.valintatulosservice.VtsServletBase
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
@@ -18,11 +12,6 @@ import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.{InternalServerError, Ok}
 
-import scala.collection.mutable
-
-/**
-  * Work in progress.
-  */
 class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepository,
                                        valinnantulosRepository: ValinnantulosRepository,
                                        hakukohdeRecordService: HakukohdeRecordService,
@@ -32,11 +21,8 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
 
   override protected def applicationDescription: String = "REST-API sijoittelun tuloksien migroinniksi valintarekisteriin"
 
-  private val digester = MessageDigest.getInstance("MD5")
-  private val adapter = new HexBinaryAdapter()
-
   private val sijoittelunTulosRestClient = new SijoittelunTulosRestClient(appConfig)
-  private val mongoClient = new SijoitteluntulosMigraatioService(sijoittelunTulosRestClient, appConfig,
+  private val migraatioService = new SijoitteluntulosMigraatioService(sijoittelunTulosRestClient, appConfig,
     sijoitteluRepository, valinnantulosRepository, hakukohdeRecordService, tarjontaHakuService, valintalaskentakoostepalveluService)
 
   logger.warn("Mountataan Valintarekisterin sijoittelun tuloksien migraatioservlet!")
@@ -48,11 +34,11 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
   post("/haut", operation(postHakuMigration)) {
     val start = System.currentTimeMillis()
     val dryRun = params("dryrun").toBoolean
-    val hakuOids = read[Set[String]](request.body)
+    val hakuOids = getHakuoidsWithChangedSijoittelu(read[Set[String]](request.body))
 
     try {
       hakuOids.foreach {
-        mongoClient.migrate(_, dryRun)
+        migraatioService.migrate(_, dryRun)
       }
     } catch {
       case e: Exception =>
@@ -70,81 +56,8 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
     // Real body param type cannot be used because of unsupported scala enumerations: https://github.com/scalatra/scalatra/issues/343
     parameter bodyParam[Set[String]]("hakuOids").description("Virkistettävien hakujen oidit. Huom, tyhjä lista virkistää kaikki!"))
   post("/kellota-hakukohteet", operation(postHakukohdeMigrationTiming)) {
-    val start = System.currentTimeMillis()
-    val hakuOids = read[Set[String]](request.body)
-    val hakuOidsSijoitteluHashes: mutable.Map[String, String] = new mutable.HashMap()
-
-    hakuOids.par.foreach { hakuOid =>
-      Timer.timed(s"Processing haku $hakuOid", 0) {
-        sijoittelunTulosRestClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None).map(_.getSijoitteluajoId) match {
-          case Some(sijoitteluajoId) => createSijoitteluHash(hakuOidsSijoitteluHashes, hakuOid, sijoitteluajoId)
-          case _ => logger.info(s"No sijoittelus for haku $hakuOid")
-        }
-      }
-      logger.info("=================================================================")
-    }
-    val msg = s"DONE in ${System.currentTimeMillis - start} ms"
-    logger.info(msg, hakuOidsSijoitteluHashes.toString())
-    Ok(hakuOidsSijoitteluHashes)
+    Ok(migraatioService.getSijoitteluHashesByHakuOid(read[Set[String]](request.body)))
   }
 
-  private def createSijoitteluHash(hakuOidsSijoitteluHashes: mutable.Map[String, String], hakuOid: String, sijoitteluajoId: lang.Long) = {
-    logger.info(s"Latest sijoitteluajoId from haku $hakuOid is $sijoitteluajoId")
-    getSijoitteluHash(sijoitteluajoId, hakuOid) match {
-      case Left(t) => logger.error(t.getMessage)
-      case Right(newHash) => saveSijoitteluHash(hakuOidsSijoitteluHashes, hakuOid, newHash)
-    }
-  }
-
-  private def saveSijoitteluHash(hakuOidsSijoitteluHashes: mutable.Map[String, String], hakuOid: String, newHash: String) = {
-    sijoitteluRepository.getSijoitteluHash(hakuOid, newHash) match {
-      case Some(_) =>
-        logger.info(s"Haku $hakuOid hash is up to date, skipping saving its sijoittelu.")
-      case _ =>
-        hakuOidsSijoitteluHashes += (hakuOid -> newHash)
-        logger.info(s"Hash for haku $hakuOid didn't exist yet or has changed, saving sijoittelu.")
-        sijoitteluRepository.saveSijoittelunHash(hakuOid, newHash)
-    }
-  }
-
-  private def getSijoitteluHash(sijoitteluajoId: Long, hakuOid: String): Either[Throwable,String] = {
-    val query = new BasicDBObjectBuilder().add("sijoitteluajoId", sijoitteluajoId).get()
-    val cursor = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Hakukohde").find(query)
-
-    if (!cursor.hasNext) logger.info(s"No hakukohdes for haku $hakuOid")
-
-    val hakukohteetHash = getCursorHash(cursor)
-    val valintatuloksetHash = getValintatuloksetHash(hakuOid)
-    if (hakukohteetHash.isEmpty && !valintatuloksetHash.isEmpty)
-      Left(new IllegalArgumentException(s"Haku $hakuOid had valinnantulos' but no hakukohdes"))
-    else Right(adapter.marshal(digestString(hakukohteetHash.concat(valintatuloksetHash))))
-  }
-
-  private def getValintatuloksetHash(hakuOid: String): String = {
-    val query = new BasicDBObjectBuilder().add("hakuOid", hakuOid).get()
-    val cursor = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Valintatulos").find(query)
-
-    if (!cursor.hasNext) logger.info(s"No valintatulos' for haku $hakuOid")
-
-    getCursorHash(cursor)
-  }
-
-  private def getCursorHash(cursor: DBCursor): String = {
-    var res: String = ""
-    try {
-      while (cursor.hasNext) {
-        val nextString = cursor.next().toString
-        val stringBytes = digestString(nextString)
-        val hex = adapter.marshal(stringBytes)
-        res = res.concat(hex)
-      }
-    } catch {
-      case e: Exception => logger.error(e.getMessage)
-    } finally {
-      cursor.close()
-    }
-    res
-  }
-
-  private def digestString(hakukohdeString: String): Array[Byte] = digester.digest(hakukohdeString.getBytes("UTF-8"))
+  def getHakuoidsWithChangedSijoittelu(hakuOids: Set[String]) = migraatioService.getSijoitteluHashesByHakuOid(hakuOids).keys.toSet
 }
