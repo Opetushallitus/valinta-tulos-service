@@ -56,7 +56,7 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
     // Real body param type cannot be used because of unsupported scala enumerations: https://github.com/scalatra/scalatra/issues/343
     parameter bodyParam[Set[String]]("hakuOids").description("Virkistettävien hakujen oidit. Huom, tyhjä lista virkistää kaikki!"))
   post("/kellota-hakukohteet", operation(postHakukohdeMigrationTiming)) {
-    Ok(migraatioService.getSijoitteluHashesByHakuOid(read[Set[String]](request.body)))
+    Ok(migraatioService.getSijoitteluHashesByHakuOid(read[Set[String]](request.body)).keys.toSet)
   }
 
   def getHakuoidsWithChangedSijoittelu(hakuOids: Set[String]) = migraatioService.getSijoitteluHashesByHakuOid(hakuOids).keys.toSet

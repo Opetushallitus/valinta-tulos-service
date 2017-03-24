@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit.MINUTES
 import java.util.{Date, Optional}
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter
 
-import com.mongodb.{BasicDBObjectBuilder, DBCursor}
+import com.mongodb.{BasicDBObject, BasicDBObjectBuilder, DBCursor}
 import fi.vm.sade.sijoittelu.domain._
 import fi.vm.sade.sijoittelu.tulos.dao.{HakukohdeDao, ValintatulosDao}
 import fi.vm.sade.utils.Timer
@@ -42,7 +42,6 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
   private val valintatulosDao: ValintatulosDao = appConfig.sijoitteluContext.valintatulosDao
   private val sijoitteluDao = appConfig.sijoitteluContext.sijoitteluDao
 
-  private val digester = MessageDigest.getInstance("MD5")
   private val adapter = new HexBinaryAdapter()
 
   def migrate(hakuOid: String, dryRun: Boolean): Unit = {
@@ -241,7 +240,8 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       logger.info("=================================================================")
     }
     val msg = s"DONE in ${System.currentTimeMillis - start} ms"
-    logger.info(msg, hakuOidsSijoitteluHashes.toString())
+    logger.info(msg)
+    logger.info(hakuOidsSijoitteluHashes.toString())
     hakuOidsSijoitteluHashes
   }
 
@@ -303,5 +303,8 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     res
   }
 
-  private def digestString(hakukohdeString: String): Array[Byte] = digester.digest(hakukohdeString.getBytes("UTF-8"))
+  private def digestString(hakukohdeString: String): Array[Byte] = {
+    val digester = MessageDigest.getInstance("MD5")
+    digester.digest(hakukohdeString.getBytes("UTF-8"))
+  }
 }
