@@ -29,7 +29,7 @@ class MailDecorator(hakemusRepository: HakemusRepository, valintatulosCollection
               if(henkilötunnuksellinen) {
                 Some(ilmoitus)
               } else {
-                oppijanTunnistusService.luoSecureLink(henkiloOid, status.hakemusOid, email, "fi") match {
+                oppijanTunnistusService.luoSecureLink(henkiloOid, status.hakemusOid, email, asiointikieli) match {
                   case Right(OppijanTunnistus(securelink)) =>
                     Some(ilmoitus.copy(secureLink = Some(securelink)))
                   case Left(e) =>

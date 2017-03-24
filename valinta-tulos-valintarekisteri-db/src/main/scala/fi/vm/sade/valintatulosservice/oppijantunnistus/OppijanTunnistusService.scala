@@ -25,7 +25,7 @@ class RealOppijanTunnistusService(appConfig:AppConfig) extends OppijanTunnistusS
 
   def luoSecureLink(personOid: String, hakemusOid: String, email: String, lang: String): Either[RuntimeException, OppijanTunnistus] = {
     val url = appConfig.settings.oppijanTunnistusUrl
-    val callbackUrl = lang match {
+    val callbackUrl = lang.toLowerCase match {
       case "en" => appConfig.settings.omatsivutUrlEn
       case "sv" => appConfig.settings.omatsivutUrlSv
       case _ => appConfig.settings.omatsivutUrlFi
