@@ -44,7 +44,7 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
   private val hakuUrlBase = appConfig.settings.ophUrlProperties.url("haku-app.listfull.queryBase")
   private val henkiloPalveluUrlBase = appConfig.settings.ophUrlProperties.url("authentication-service.henkilo")
 
-  case class HakemusHenkilo(personOid: Option[String], hetu: String, etunimet: String, sukunimi: String, kutsumanimet: String,
+  case class HakemusHenkilo(personOid: Option[String], hetu: Option[String], etunimet: String, sukunimi: String, kutsumanimet: String,
                             syntymaaika: String, aidinkieli: String, sukupuoli: String)
 
 
@@ -78,7 +78,7 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
       override def read(v: JValue): HakemusHenkilo = {
         val result: JValue = (v \\ "answers")
         val henkilotiedot = (result \ "henkilotiedot")
-        HakemusHenkilo( (v \\ "personOid").extractOpt[String], (henkilotiedot \ "Henkilotunnus").extract[String],
+        HakemusHenkilo( (v \\ "personOid").extractOpt[String], (henkilotiedot \ "Henkilotunnus").extractOpt[String],
           (henkilotiedot \ "Etunimet").extract[String], (henkilotiedot \ "Sukunimi").extract[String],
           (henkilotiedot \ "Kutsumanimi").extract[String], (henkilotiedot \ "syntymaaika").extract[String],
           (henkilotiedot \ "aidinkieli").extract[String], (henkilotiedot \ "sukupuoli").extract[String])
@@ -94,9 +94,9 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
       case Success(henkilo: HakemusHenkilo) => Some(henkilo)
       case Failure(t) => handleFailure(t, "finding henkilö from hakemus")
     } ) match {
+      case Some(henkilo) if henkilo.personOid.isDefined => henkilo.personOid
+      case Some(henkilo) => henkilo.hetu.map(findPersonOidByHetu).getOrElse(createPerson(henkilo))
       case None => None
-      case Some(henkilo) => henkilo.personOid.orElse(findPersonOidByHetu(henkilo.hetu).orElse(createPerson(henkilo)))
-
     }
   }
 
