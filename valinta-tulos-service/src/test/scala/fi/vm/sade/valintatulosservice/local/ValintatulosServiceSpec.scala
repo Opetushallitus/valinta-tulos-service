@@ -7,7 +7,7 @@ import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
 import fi.vm.sade.valintatulosservice.sijoittelu.{DirectMongoSijoittelunTulosRestClient, SijoittelutulosService}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
@@ -379,7 +379,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           val valintatulos2 = getHakutoiveenValintatulos("1.2.246.562.5.2013080813081926341928", "1.2.246.562.5.72607738902")
           valintatulos2.getTila must_== ValintatuloksenTila.KESKEN
           valintatulos2.getTilaHakijalle must_== ValintatuloksenTila.EI_VASTAANOTETTU_MAARA_AIKANA
-          val valintatulos3 = getHakutoiveenValintatulosByHakemus("1.2.246.562.5.2013080813081926341928", "1.2.246.562.5.72607738902", hakemusOid)
+          val valintatulos3 = getHakutoiveenValintatulosByHakemus("1.2.246.562.5.72607738902", hakemusOid)
           valintatulos3.getTila must_== ValintatuloksenTila.KESKEN
           valintatulos3.getTilaHakijalle must_== ValintatuloksenTila.EI_VASTAANOTETTU_MAARA_AIKANA
         }
@@ -392,7 +392,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           val valintatulos2 = getHakutoiveenValintatulos("1.2.246.562.5.2013080813081926341928", "1.2.246.562.5.16303028779")
           valintatulos2.getTila must_== ValintatuloksenTila.EI_VASTAANOTETTU_MAARA_AIKANA
           valintatulos2.getTilaHakijalle must_== ValintatuloksenTila.EI_VASTAANOTETTU_MAARA_AIKANA
-          val valintatulos3 = getHakutoiveenValintatulosByHakemus("1.2.246.562.5.2013080813081926341928", "1.2.246.562.5.16303028779", hakemusOid)
+          val valintatulos3 = getHakutoiveenValintatulosByHakemus("1.2.246.562.5.16303028779", hakemusOid)
           valintatulos3.getTila must_== ValintatuloksenTila.EI_VASTAANOTETTU_MAARA_AIKANA
           valintatulos3.getTilaHakijalle must_== ValintatuloksenTila.EI_VASTAANOTETTU_MAARA_AIKANA
         }
@@ -402,7 +402,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
 
   step(valintarekisteriDb.db.shutdown)
 
-  lazy val hakuService = HakuService(appConfig)
+  lazy val hakuService = HakuService(appConfig.hakuServiceConfig)
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
   lazy val sijoittelutulosService = new SijoittelutulosService(appConfig.sijoitteluContext.raportointiService,
     appConfig.ohjausparametritService, valintarekisteriDb, new DirectMongoSijoittelunTulosRestClient(appConfig))
@@ -417,7 +417,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
   def getHakutoive(idSuffix: String) = hakemuksenTulos.hakutoiveet.find{_.hakukohdeOid.endsWith(idSuffix)}.get
 
   def hakemuksenTulos = {
-    valintatulosService.hakemuksentulos(hakuOid, hakemusOid).get
+    valintatulosService.hakemuksentulos(hakemusOid).get
   }
 
   def getHakutoiveenValintatulos(hakukohdeOid: String): Valintatulos = {
@@ -430,9 +430,9 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
     valintatulosService.findValintaTuloksetForVirkailija(hakuOid).asScala.find(_.getHakukohdeOid == hakukohdeOid).get
   }
 
-  def getHakutoiveenValintatulosByHakemus(hakuOid: String, hakukohdeOid: String, hakemusOid: String): Valintatulos = {
+  def getHakutoiveenValintatulosByHakemus(hakukohdeOid: String, hakemusOid: String): Valintatulos = {
     import scala.collection.JavaConverters._
-    valintatulosService.findValintaTuloksetForVirkailijaByHakemus(hakuOid, hakemusOid).asScala.find(_.getHakukohdeOid == hakukohdeOid).get
+    valintatulosService.findValintaTuloksetForVirkailijaByHakemus(hakemusOid).asScala.find(_.getHakukohdeOid == hakukohdeOid).get
   }
 
   def checkHakutoiveState(hakuToive: Hakutoiveentulos, expectedTila: Valintatila, vastaanottoTila: Vastaanottotila, vastaanotettavuustila: Vastaanotettavuustila, julkaistavissa: Boolean) = {

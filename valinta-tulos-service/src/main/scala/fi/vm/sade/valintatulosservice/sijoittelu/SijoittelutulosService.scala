@@ -68,7 +68,7 @@ class SijoittelutulosService(raportointiService: RaportointiService,
   def findAikatauluFromOhjausparametritService(hakuOid: String): Option[Vastaanottoaikataulu] = {
     Timer.timed("findAikatauluFromOhjausparametritService -> ohjausparametritService.ohjausparametrit", 100) {
       ohjausparametritService.ohjausparametrit(hakuOid) match {
-        case Right(o) => o.flatMap(_.vastaanottoaikataulu)
+        case Right(o) => o.map(_.vastaanottoaikataulu)
         case Left(e) => throw e
       }
     }
@@ -183,7 +183,7 @@ class SijoittelutulosService(raportointiService: RaportointiService,
         hakijanTilat = hakijanTilat,
         virkailijanTilat = virkailijanTilat,
         vastaanottoDeadline.map(_.toDate),
-        Ilmoittautumistila.withName(Option(jono.getIlmoittautumisTila).getOrElse(IlmoittautumisTila.EI_TEHTY).name()),
+        SijoitteluajonIlmoittautumistila(Option(jono.getIlmoittautumisTila).getOrElse(IlmoittautumisTila.EI_TEHTY)),
         viimeisinHakemuksenTilanMuutos,
         viimeisinValintatuloksenMuutos,
         Option(jono.getJonosija).map(_.toInt),
@@ -231,7 +231,7 @@ class SijoittelutulosService(raportointiService: RaportointiService,
         hakijanTilat = hakijanTilat,
         virkailijanTilat = virkailijanTilat,
         vastaanottoDeadline.map(_.toDate),
-        Ilmoittautumistila.withName(Option(jono.getIlmoittautumisTila).getOrElse(IlmoittautumisTila.EI_TEHTY).name()),
+        SijoitteluajonIlmoittautumistila(Option(jono.getIlmoittautumisTila).getOrElse(IlmoittautumisTila.EI_TEHTY)),
         viimeisinHakemuksenTilanMuutos,
         viimeisinValintatuloksenMuutos,
         Option(jono.getJonosija).map(_.toInt),

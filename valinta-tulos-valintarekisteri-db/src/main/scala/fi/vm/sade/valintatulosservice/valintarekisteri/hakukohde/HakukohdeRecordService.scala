@@ -1,9 +1,8 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde
 
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.config.AppConfig
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde, Koulutus}
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakukohdeRepository, ValintarekisteriDb}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakukohdeRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeRecord, Kausi, Kevat, Syksy}
 
 import scala.util.{Failure, Success, Try}
@@ -88,27 +87,20 @@ class HakukohdeRecordService(hakuService: HakuService, hakukohdeRepository: Haku
     } yield HakukohdeRecord(hakukohde.oid, haku.oid, hakukohde.yhdenPaikanSaanto.voimassa, hakukohde.kkTutkintoonJohtava, alkamiskausi)
   }
 
-  private def resolveKoulutuksenAlkamiskausi(hakukohde: Hakukohde, haku: Haku): Either[Throwable, Kausi] = hakukohde.koulutuksenAlkamiskausiUri match {
-    case x if x.matches("""kausi_k#\d+""") => Right(Kevat(hakukohde.koulutuksenAlkamisvuosi))
-    case x if x.matches("""kausi_s#\d+""") => Right(Syksy(hakukohde.koulutuksenAlkamisvuosi))
-    case _ if parseLeniently => {
-      logger.warn(s"No alkamiskausi for hakukohde ${hakukohde.oid}. Falling back to koulutuksen alkamiskausi from haku: ${haku.koulutuksenAlkamiskausi}")
-      haku.koulutuksenAlkamiskausi.toRight(new IllegalStateException(s"No koulutuksen alkamiskausi on haku $haku"))
-    }
-    case _ => Left(new IllegalStateException(s"No alkamiskausi for hakukohde ${hakukohde.oid}."))
+  private def resolveKoulutuksenAlkamiskausi(hakukohde: Hakukohde, haku: Haku): Either[Throwable, Kausi] = {
+    hakukohde.koulutuksenAlkamiskausi.left.flatMap(t => {
+      if (parseLeniently) {
+        logger.warn(s"No alkamiskausi for hakukohde ${hakukohde.oid}. Falling back to koulutuksen alkamiskausi from haku: ${haku.koulutuksenAlkamiskausi}")
+        haku.koulutuksenAlkamiskausi.toRight(new IllegalStateException(s"No koulutuksen alkamiskausi on haku $haku"))
+      } else {
+        Left(t)
+      }
+    })
   }
 
   private def sequence[A, B](xs: Stream[Either[B, A]]): Either[B, List[A]] = xs match {
     case Stream.Empty => Right(Nil)
     case Left(e)#::_ => Left(e)
     case Right(x)#::rest => sequence(rest).right.map(x +: _)
-  }
-}
-
-object HakukohdeRecordService {
-
-  def apply(valintarekisteriDb: ValintarekisteriDb, appConfig: AppConfig) = {
-    val hakuService = HakuService(appConfig)
-    new HakukohdeRecordService(hakuService, valintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing)
   }
 }

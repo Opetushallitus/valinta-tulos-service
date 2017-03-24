@@ -2,13 +2,14 @@ package fi.vm.sade.valintatulosservice
 
 import java.text.ParseException
 
+import fi.vm.sade.security.{AuthenticationFailedException, AuthorizationFailedException}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.json.JsonFormats.writeJavaObjectToOutputStream
 import fi.vm.sade.valintatulosservice.json.{JsonFormats, StreamingFailureException}
 import org.json4s.MappingException
 import org.scalatra.json.JacksonJsonSupport
 import org.scalatra.swagger.SwaggerSupport
-import org.scalatra.{BadRequest, InternalServerError, Post, ScalatraServlet}
+import org.scalatra._
 
 trait VtsServletBase extends ScalatraServlet with Logging with JacksonJsonSupport with JsonFormats with SwaggerSupport {
   private val maxBodyLengthToLog = 500000
@@ -27,6 +28,12 @@ trait VtsServletBase extends ScalatraServlet with Logging with JacksonJsonSuppor
   error {
     case t: Throwable => {
       t match {
+        case e: AuthenticationFailedException =>
+          logger.warn("authentication failed", e)
+          Unauthorized("error" -> "Unauthorized")
+        case e: AuthorizationFailedException =>
+          logger.warn("authorization failed", e)
+          Forbidden("error" -> "Forbidden")
         case e: IllegalStateException =>
           badRequest(e)
         case e: IllegalArgumentException =>

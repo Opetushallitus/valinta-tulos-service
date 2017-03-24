@@ -8,7 +8,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.SharedJetty
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Ensikertalaisuus
 import org.json4s.jackson.Serialization
 import slick.driver.PostgresDriver.api._
@@ -23,7 +23,7 @@ object EnsikertalaisuusBatchAPITester extends App with Logging {
   implicit val appConfig = new VtsAppConfig.IT
   private val dbConfig = appConfig.settings.valintaRekisteriDbConfig
   lazy val valintarekisteriDb = new ValintarekisteriDb(
-    dbConfig.withValue("connectionPool", ConfigValueFactory.fromAnyRef("disabled"))).db
+    dbConfig.copy(maxConnections = Some(1), minConnections = Some(1))).db
   SharedJetty.start
   private val testDataSize = appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids
   val oids = 1.to(testDataSize).map(i => s"1.2.246.562.24.$i")

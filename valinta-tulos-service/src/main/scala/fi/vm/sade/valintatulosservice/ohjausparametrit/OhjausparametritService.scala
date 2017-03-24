@@ -13,8 +13,15 @@ import org.json4s.jackson.JsonMethods._
 import scala.util.Try
 import scala.util.control.NonFatal
 
-case class Ohjausparametrit(vastaanottoaikataulu: Option[Vastaanottoaikataulu], varasijaSaannotAstuvatVoimaan: Option[DateTime], ilmoittautuminenPaattyy: Option[DateTime], hakukierrosPaattyy: Option[DateTime], tulostenJulkistusAlkaa: Option[DateTime], kaikkiJonotSijoittelussa: Option[DateTime])
 case class ValintaTulosServiceOhjausparametrit(näytetäänköSiirryKelaanURL: Boolean)
+case class Ohjausparametrit(
+  vastaanottoaikataulu: Vastaanottoaikataulu,
+  varasijaSaannotAstuvatVoimaan: Option[DateTime],
+  ilmoittautuminenPaattyy: Option[DateTime],
+  hakukierrosPaattyy: Option[DateTime],
+  tulostenJulkistusAlkaa: Option[DateTime],
+  kaikkiJonotSijoittelussa: Option[DateTime],
+  valintaesitysHyvaksyttavissa: Option[DateTime])
 
 trait OhjausparametritService {
   def ohjausparametrit(asId: String): Either[Throwable, Option[Ohjausparametrit]]
@@ -91,7 +98,8 @@ private object OhjausparametritParser extends JsonFormats {
       parseIlmoittautuminenPaattyy(json),
       parseHakukierrosPaattyy(json),
       parseTulostenJulkistus(json),
-      parseKaikkiJonotSijoittelussa(json))
+      parseKaikkiJonotSijoittelussa(json),
+      parseValintaesitysHyvaksyttavissa(json))
   }
 
   private def parseDateTime(json: JValue, key: String): Option[DateTime] = {
@@ -107,7 +115,7 @@ private object OhjausparametritParser extends JsonFormats {
       obj <- (json \ "PH_HPVOA").toOption
       end <- (obj \ "value").extractOpt[Int]
     } yield end
-    Some(Vastaanottoaikataulu(vastaanottoEnd, vastaanottoBufferDays))
+    Vastaanottoaikataulu(vastaanottoEnd, vastaanottoBufferDays)
   }
 
   private def parseTulostenJulkistus(json: JValue) = {
@@ -124,5 +132,7 @@ private object OhjausparametritParser extends JsonFormats {
   private def parseHakukierrosPaattyy(json: JValue) =  parseDateTime(json, "PH_HKP")
 
   private def parseKaikkiJonotSijoittelussa(json: JValue) =  parseDateTime(json, "PH_VTSSV")
+
+  private def parseValintaesitysHyvaksyttavissa(json: JValue) = parseDateTime(json, "PH_VEH")
 }
 

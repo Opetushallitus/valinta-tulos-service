@@ -101,7 +101,7 @@ class VastaanottoService(hakuService: HakuService,
 
         hakutoive <- hakijaVastaanottoRepository.runAsSerialized(10, Duration(5, TimeUnit.MILLISECONDS), s"Storing vastaanotto $vastaanottoDto",
           for {
-            sijoittelunTulos <- sijoittelutulosService.latestSijoittelunTulosVirkailijana(hakuOid, henkiloOid, hakemusOid, ohjausparametrit.flatMap(_.vastaanottoaikataulu))
+            sijoittelunTulos <- sijoittelutulosService.latestSijoittelunTulosVirkailijana(hakuOid, henkiloOid, hakemusOid, ohjausparametrit.map(_.vastaanottoaikataulu))
             maybeAiempiVastaanottoKaudella <- aiempiVastaanottoKaudella(hakukohdes.find(_.oid == hakukohdeOid).get, henkiloOid)
             hakemuksenTulos = valintatulosService.julkaistavaTulos(sijoittelunTulos, haku, ohjausparametrit, true,
               vastaanottoKaudella = hakukohdeOid => {
@@ -175,7 +175,7 @@ class VastaanottoService(hakuService: HakuService,
       ohjausparametrit <- ohjausparametritService.ohjausparametrit(haku.oid).right
       hakutoive <- hakijaVastaanottoRepository.runAsSerialized(10, Duration(5, TimeUnit.MILLISECONDS), s"Storing vastaanotto $vastaanotto",
         for {
-          sijoittelunTulos <- sijoittelutulosService.latestSijoittelunTulos(haku.oid, henkiloOid, hakemusOid, ohjausparametrit.flatMap(_.vastaanottoaikataulu))
+          sijoittelunTulos <- sijoittelutulosService.latestSijoittelunTulos(haku.oid, henkiloOid, hakemusOid, ohjausparametrit.map(_.vastaanottoaikataulu))
           maybeAiempiVastaanottoKaudella <- aiempiVastaanottoKaudella(hakukohde, henkiloOid)
           hakemuksenTulos = valintatulosService.julkaistavaTulos(sijoittelunTulos, haku, ohjausparametrit, true,
             vastaanottoKaudella = hakukohdeOid => {
@@ -200,15 +200,9 @@ class VastaanottoService(hakuService: HakuService,
   }
 
   private def findHakutoive(hakemusOid: String, hakukohdeOid: String): Try[(Hakutoiveentulos, Int)] = {
-    hakuService.getHakukohde(hakukohdeOid) match {
-      case Left(e) =>
-        logger.error(s"Cannot find hakukohde with oid: $hakukohdeOid", e)
-        Failure(e)
-      case Right(hakukohde) =>
-      Try {
-        val hakemuksenTulos = valintatulosService.hakemuksentulos(hakukohde.hakuOid, hakemusOid).getOrElse(throw new IllegalArgumentException("Hakemusta ei löydy"))
-        hakemuksenTulos.findHakutoive(hakukohdeOid).getOrElse(throw new IllegalArgumentException("Hakutoivetta ei löydy"))
-      }
+    Try {
+      val hakemuksenTulos = valintatulosService.hakemuksentulos(hakemusOid).getOrElse(throw new IllegalArgumentException("Hakemusta ei löydy"))
+      hakemuksenTulos.findHakutoive(hakukohdeOid).getOrElse(throw new IllegalArgumentException("Hakutoivetta ei löydy"))
     }
   }
   private def aiempiVastaanottoKausilla(hakukohdes: Seq[HakukohdeRecord],

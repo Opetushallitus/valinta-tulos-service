@@ -26,10 +26,10 @@ class MailPoller(valintatulosCollection: ValintatulosMongoCollection, valintatul
       }
       .filter { haku =>
         ohjausparameteritService.ohjausparametrit(haku.oid) match {
-          case Right(Some(Ohjausparametrit(_, _, _, Some(hakukierrosPaattyy), _, _))) if hakukierrosPaattyy.isBeforeNow =>
+          case Right(Some(Ohjausparametrit(_, _, _, Some(hakukierrosPaattyy), _, _, _))) if hakukierrosPaattyy.isBeforeNow =>
             logger.info("Pudotetaan haku " + haku.oid + " koska hakukierros päättynyt " + hakukierrosPaattyy)
             false
-          case Right(Some(Ohjausparametrit(_, _, _, _, Some(tulostenJulkistusAlkaa), _))) if tulostenJulkistusAlkaa.isAfterNow =>
+          case Right(Some(Ohjausparametrit(_, _, _, _, Some(tulostenJulkistusAlkaa), _, _))) if tulostenJulkistusAlkaa.isAfterNow =>
             logger.info("Pudotetaan haku " + haku.oid + " koska tulosten julkistus alkaa " + tulostenJulkistusAlkaa)
             false
           case Right(None) =>
@@ -188,7 +188,7 @@ class MailPoller(valintatulosCollection: ValintatulosMongoCollection, valintatul
 
   private def fetchHakemuksentulos(id: HakemusIdentifier): Option[Hakemuksentulos] = {
     try {
-      valintatulosService.hakemuksentulos(id.hakuOid, id.hakemusOid)
+      valintatulosService.hakemuksentulos(id.hakemusOid)
     } catch {
       case e: Exception =>
         logger.error("Error fetching data for email polling. Candidate identifier=" + id, e)

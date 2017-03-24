@@ -6,6 +6,7 @@ import java.util.Date
 import com.typesafe.config.{Config, ConfigValueFactory}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db._
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriRepository
 import org.flywaydb.core.Flyway
 import slick.driver.PostgresDriver.api.{Database, _}
 import slick.jdbc.GetResult
@@ -13,7 +14,7 @@ import slick.jdbc.GetResult
 /**
   * Created by heikki.honkanen on 08/11/16.
   */
-class MailPollerDb(dbConfig: Config, isItProfile:Boolean = false) extends VastaanottoRepository with Logging {
+class MailPollerDb(dbConfig: Config, isItProfile:Boolean = false) extends ValintarekisteriRepository with Logging {
   val user = if (dbConfig.hasPath("user")) dbConfig.getString("user") else null
   val password = if (dbConfig.hasPath("password")) dbConfig.getString("password") else null
   logger.info(s"Database configuration: ${dbConfig.withValue("password", ConfigValueFactory.fromAnyRef("***"))}")

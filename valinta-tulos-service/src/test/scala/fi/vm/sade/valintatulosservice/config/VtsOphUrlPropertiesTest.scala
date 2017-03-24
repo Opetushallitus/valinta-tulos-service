@@ -23,6 +23,4 @@ class VtsOphUrlPropertiesTest extends Specification {
       fn must not throwA[RuntimeException] "Evaluation failed, missing property"
     }
   }
-
-
 }

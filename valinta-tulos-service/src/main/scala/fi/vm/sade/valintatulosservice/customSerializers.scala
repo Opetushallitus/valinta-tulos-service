@@ -1,6 +1,8 @@
 package fi.vm.sade.valintatulosservice
 
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakijanVastaanottoAction, VirkailijanVastaanottoAction}
+import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, ValintatuloksenTila}
+import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.JsonAST.{JField, JString, JValue}
 import org.json4s.jackson.compactJson
 import org.json4s.{CustomSerializer, Formats, JObject, MappingException}
@@ -30,5 +32,37 @@ class VirkailijanVastaanottoActionSerializer extends CustomSerializer[Virkailija
     case json: JValue => throw new UnsupportedOperationException(s"Deserializing ${classOf[VirkailijanVastaanottoAction].getSimpleName} not supported yet.")
   }, {
     case x: VirkailijanVastaanottoAction => JString(x.toString)
+  })
+})
+
+class VastaanottoActionSerializer extends CustomSerializer[VastaanottoAction]((formats: Formats) => {
+  ( {
+    case json: JString => VirkailijanVastaanottoAction.getVirkailijanVastaanottoAction(json.s)
+  }, {
+    case x: VirkailijanVastaanottoAction => JString(x.valintatuloksenTila.toString)
+  })
+})
+
+class IlmoittautumistilaSerializer extends CustomSerializer[SijoitteluajonIlmoittautumistila]((formats: Formats) => {
+  ({
+    case json: JString => SijoitteluajonIlmoittautumistila(IlmoittautumisTila.valueOf(json.s))
+  }, {
+    case i: SijoitteluajonIlmoittautumistila => JString(i.ilmoittautumistila.toString)
+  })
+})
+
+class ValinnantilaSerializer extends CustomSerializer[Valinnantila]((format: Formats) => {
+  ({
+    case json: JString => Valinnantila(HakemuksenTila.valueOf(json.s))
+  }, {
+    case i: Valinnantila => JString(i.valinnantila.toString)
+  })
+})
+
+class ValintatuloksenTilaSerializer extends CustomSerializer[ValintatuloksenTila]((_: Formats) => {
+  ({
+    case json: JString => ValintatuloksenTila.valueOf(json.s)
+  },{
+    case v: ValintatuloksenTila => JString(v.name())
   })
 })
