@@ -44,15 +44,15 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
 
   private val adapter = new HexBinaryAdapter()
 
-  def migrate(hakuOid: String, dryRun: Boolean): Unit = {
+  def migrate(hakuOid: String, sijoitteluHash:String, dryRun: Boolean): Unit = {
     sijoittelunTulosRestClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None).foreach { sijoitteluAjo =>
       logger.info(s"*** Starting to migrate sijoitteluAjo ${sijoitteluAjo.getSijoitteluajoId} of haku $hakuOid from MongoDb to Postgres")
-      timed(s"Migrate sijoitteluAjo ${sijoitteluAjo.getSijoitteluajoId} of haku $hakuOid") { migrate(hakuOid, sijoitteluAjo, dryRun) }
+      timed(s"Migrate sijoitteluAjo ${sijoitteluAjo.getSijoitteluajoId} of haku $hakuOid") { migrate(hakuOid, sijoitteluHash, dryRun, sijoitteluAjo) }
       logger.info(s"*** Finished migrating sijoitteluAjo ${sijoitteluAjo.getSijoitteluajoId} of haku $hakuOid from MongoDb to Postgres")
     }
   }
 
-  private def migrate(hakuOid: String, ajoFromMongo: SijoitteluAjo, dryRun: Boolean) = {
+  private def migrate(hakuOid: String, sijoitteluHash: String, dryRun: Boolean, ajoFromMongo: SijoitteluAjo) = {
     val sijoittelu = findSijoittelu(hakuOid)
     val sijoitteluType = sijoittelu.getSijoitteluType
     val mongoSijoitteluAjoId = ajoFromMongo.getSijoitteluajoId
@@ -94,6 +94,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       timed(s"Saving valinta data for sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid") {
         valinnantulosRepository.runBlocking(DBIOAction.sequence(allSaves), Duration(15, MINUTES))
       }
+      sijoitteluRepository.saveSijoittelunHash(hakuOid, sijoitteluHash)
     }
     logger.info("-----------------------------------------------------------")
   }
@@ -249,18 +250,17 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     logger.info(s"Latest sijoitteluajoId from haku $hakuOid is $sijoitteluajoId")
     getSijoitteluHash(sijoitteluajoId, hakuOid) match {
       case Left(t) => logger.error(t.getMessage)
-      case Right(newHash) => saveSijoitteluHash(hakuOidsSijoitteluHashes, hakuOid, newHash)
+      case Right(newHash) => addHakuToHashes(hakuOidsSijoitteluHashes, hakuOid, newHash)
     }
   }
 
-  private def saveSijoitteluHash(hakuOidsSijoitteluHashes: mutable.Map[String, String], hakuOid: String, newHash: String) = {
+  private def addHakuToHashes(hakuOidsSijoitteluHashes: mutable.Map[String, String], hakuOid: String, newHash: String) = {
     sijoitteluRepository.getSijoitteluHash(hakuOid, newHash) match {
       case Some(_) =>
         logger.info(s"Haku $hakuOid hash is up to date, skipping saving its sijoittelu.")
       case _ =>
-        hakuOidsSijoitteluHashes += (hakuOid -> newHash)
         logger.info(s"Hash for haku $hakuOid didn't exist yet or has changed, saving sijoittelu.")
-        sijoitteluRepository.saveSijoittelunHash(hakuOid, newHash)
+        hakuOidsSijoitteluHashes += (hakuOid -> newHash)
     }
   }
 

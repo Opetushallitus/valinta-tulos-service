@@ -34,13 +34,11 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
   post("/haut", operation(postHakuMigration)) {
     val start = System.currentTimeMillis()
     val dryRun = params("dryrun").toBoolean
-    val hakuOids = getHakuoidsWithChangedSijoittelu(read[Set[String]](request.body))
+    val hakuOidsAndHashes = migraatioService.getSijoitteluHashesByHakuOid(read[Set[String]](request.body))
 
-    try {
-      hakuOids.foreach {
-        migraatioService.migrate(_, dryRun)
-      }
-    } catch {
+    try
+      hakuOidsAndHashes.foreach(h => migraatioService.migrate(h._1, h._2, dryRun))
+    catch {
       case e: Exception =>
         logger.error("Migraatio epäonnistui", e)
         InternalServerError("Migraatio epäonnistui", reason = e.getMessage)
@@ -58,6 +56,4 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
   post("/kellota-hakukohteet", operation(postHakukohdeMigrationTiming)) {
     Ok(migraatioService.getSijoitteluHashesByHakuOid(read[Set[String]](request.body)).keys.toSet)
   }
-
-  def getHakuoidsWithChangedSijoittelu(hakuOids: Set[String]) = migraatioService.getSijoitteluHashesByHakuOid(hakuOids).keys.toSet
 }

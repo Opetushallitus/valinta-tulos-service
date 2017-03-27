@@ -214,9 +214,9 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
     fetch(hakukohdeUrl) { response =>
       (parse(response) \ "result").extract[Hakukohde]
     }.left.map {
-      case e: IllegalArgumentException => new IllegalArgumentException(s"No hakukohde $hakukohdeOid found", e)
-      case e: IllegalStateException => new IllegalStateException(s"Parsing hakukohde $hakukohdeOid failed", e)
-      case e: Exception => new RuntimeException(s"Failed to get hakukohde $hakukohdeOid", e)
+      case e: IllegalArgumentException => new IllegalArgumentException(s"No hakukohde $hakukohdeOid ($hakukohdeUrl) found", e)
+      case e: IllegalStateException => new IllegalStateException(s"Parsing hakukohde $hakukohdeOid ($hakukohdeUrl) failed", e)
+      case e: Exception => new RuntimeException(s"Failed to get hakukohde $hakukohdeOid ($hakukohdeUrl)", e)
     }
   }
 
