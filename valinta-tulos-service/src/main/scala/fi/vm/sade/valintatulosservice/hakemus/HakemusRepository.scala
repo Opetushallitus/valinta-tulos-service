@@ -97,10 +97,18 @@ class HakemusRepository()(implicit appConfig: VtsAppConfig) extends Logging {
       henkiloOid <- data.getAs[String](DatabaseKeys.personOidKey)
       answers <- data.getAs[MongoDBObject](DatabaseKeys.answersKey)
       asiointikieli = parseAsiointikieli(answers.expand[String](DatabaseKeys.asiointiKieliKey))
-      hakutoiveet <- answers.getAs[MongoDBObject](DatabaseKeys.hakutoiveetKey)
+      hakutoiveet <- extractHakutoiveet(answers)
       henkilotiedot <- answers.getAs[MongoDBObject]("henkilotiedot")
     } yield {
       Hakemus(hakemusOid, hakuOid, henkiloOid, asiointikieli, parseHakutoiveet(hakutoiveet), parseHenkilotiedot(henkilotiedot))
+    }
+  }
+
+  private def extractHakutoiveet(answers: MongoDBObject): Option[MongoDBObject] = {
+    if (answers.containsField(DatabaseKeys.hakutoiveetKey)) {
+      answers.getAs[MongoDBObject](DatabaseKeys.hakutoiveetKey)
+    } else {
+      None
     }
   }
 
