@@ -174,6 +174,10 @@ class SijoittelutulosService(raportointiService: RaportointiService,
       val hyväksyttyJulkaistussaJonossa = valintatila == hyväksytty && jono.isJulkaistavissa
       val julkaistavissa = hyväksyttyJulkaistussaJonossa || kaikkiJonotJulkaistu(hakutoive)
       val ehdollisestiHyvaksyttavissa = jono.isEhdollisestiHyvaksyttavissa
+      val ehdollisenHyvaksymisenEhtoKoodi = Option(jono.getEhdollisenHyvaksymisenEhtoKoodi)
+      val ehdollisenHyvaksymisenEhtoFI = Option(jono.getEhdollisenHyvaksymisenEhtoFI)
+      val ehdollisenHyvaksymisenEhtoSV = Option(jono.getEhdollisenHyvaksymisenEhtoSV)
+      val ehdollisenHyvaksymisenEhtoEN = Option(jono.getEhdollisenHyvaksymisenEhtoEN)
       val pisteet: Option[BigDecimal] = Option(jono.getPisteet).map((p: java.math.BigDecimal) => new BigDecimal(p))
 
       HakutoiveenSijoitteluntulos(
@@ -192,6 +196,10 @@ class SijoittelutulosService(raportointiService: RaportointiService,
         Option(jono.getVarasijanNumero).map(_.toInt),
         julkaistavissa,
         ehdollisestiHyvaksyttavissa,
+        ehdollisenHyvaksymisenEhtoKoodi,
+        ehdollisenHyvaksymisenEhtoFI,
+        ehdollisenHyvaksymisenEhtoSV,
+        ehdollisenHyvaksymisenEhtoEN,
         jono.getTilanKuvaukset.toMap,
         pisteet
       )
@@ -222,6 +230,10 @@ class SijoittelutulosService(raportointiService: RaportointiService,
       val hyväksyttyJulkaistussaJonossa = valintatila == hyväksytty && jono.isJulkaistavissa
       val julkaistavissa = hyväksyttyJulkaistussaJonossa || kaikkiJonotJulkaistu(hakutoive)
       val ehdollisestiHyvaksyttavissa = jono.isEhdollisestiHyvaksyttavissa
+      val ehdollisenHyvaksymisenEhtoKoodi = Option(jono.getEhdollisenHyvaksymisenEhtoKoodi)
+      val ehdollisenHyvaksymisenEhtoFI = Option(jono.getEhdollisenHyvaksymisenEhtoFI)
+      val ehdollisenHyvaksymisenEhtoSV = Option(jono.getEhdollisenHyvaksymisenEhtoSV)
+      val ehdollisenHyvaksymisenEhtoEN = Option(jono.getEhdollisenHyvaksymisenEhtoEN)
       val pisteet: Option[BigDecimal] = Option(jono.getPisteet).map((p: java.math.BigDecimal) => new BigDecimal(p))
 
       HakutoiveenSijoitteluntulos(
@@ -240,6 +252,10 @@ class SijoittelutulosService(raportointiService: RaportointiService,
         Option(jono.getVarasijanNumero).map(_.toInt),
         julkaistavissa,
         ehdollisestiHyvaksyttavissa,
+        ehdollisenHyvaksymisenEhtoKoodi,
+        ehdollisenHyvaksymisenEhtoFI,
+        ehdollisenHyvaksymisenEhtoSV,
+        ehdollisenHyvaksymisenEhtoEN,
         jono.getTilanKuvaukset.toMap,
         pisteet
       )
