@@ -7,7 +7,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Lukuvuosimaksu, M
 import slick.driver.PostgresDriver.api._
 
 trait LukuvuosimaksuRepositoryImpl extends LukuvuosimaksuRepository with ValintarekisteriRepository {
-  def get(hakukohdeOid: String): List[Lukuvuosimaksu] = {
+  def getLukuvuosimaksus(hakukohdeOid: String): List[Lukuvuosimaksu] = {
     runBlocking(
       sql"""select personOid, maksuntila, muokkaaja, luotu
             from lukuvuosimaksut

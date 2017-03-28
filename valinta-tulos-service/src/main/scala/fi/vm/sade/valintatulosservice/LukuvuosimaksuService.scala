@@ -10,7 +10,7 @@ class LukuvuosimaksuService(lukuvuosimaksuRepository: LukuvuosimaksuRepository,
                            ) extends Logging {
 
   def getLukuvuosimaksut(hakukohdeOid: String, auditInfo: AuditInfo) = {
-    val result = lukuvuosimaksuRepository.get(hakukohdeOid)
+    val result = lukuvuosimaksuRepository.getLukuvuosimaksus(hakukohdeOid)
     audit.log(auditInfo.user, LukuvuosimaksujenLuku,
       new Target.Builder()
         .setField("hakukohde", hakukohdeOid)

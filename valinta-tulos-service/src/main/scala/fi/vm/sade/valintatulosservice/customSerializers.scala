@@ -1,5 +1,8 @@
 package fi.vm.sade.valintatulosservice
 
+import java.time.{OffsetDateTime, ZoneId}
+import java.time.format.DateTimeFormatter
+
 import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, ValintatuloksenTila}
 import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -64,5 +67,13 @@ class ValintatuloksenTilaSerializer extends CustomSerializer[ValintatuloksenTila
     case json: JString => ValintatuloksenTila.valueOf(json.s)
   },{
     case v: ValintatuloksenTila => JString(v.name())
+  })
+})
+
+class OffsetDateTimeSerializer extends CustomSerializer[OffsetDateTime]((_: Formats) => {
+  ({
+    case json: JString => OffsetDateTime.from(DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(json.s))
+  }, {
+    case d: OffsetDateTime => JString(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(d.atZoneSameInstant(ZoneId.of("Europe/Helsinki"))))
   })
 })
