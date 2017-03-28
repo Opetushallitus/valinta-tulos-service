@@ -21,7 +21,8 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
   with HakukohdeRepositoryImpl
   with SessionRepositoryImpl
   with EnsikertalaisuusRepositoryImpl
-  with ValinnantulosRepositoryImpl {
+  with ValinnantulosRepositoryImpl
+  with HyvaksymiskirjeRepositoryImpl {
 
   logger.info(s"Database configuration: ${config.copy(password = Some("***"))}")
   val flyway = new Flyway()

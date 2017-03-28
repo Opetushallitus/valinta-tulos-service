@@ -183,6 +183,12 @@ trait ValintarekisteriResultExtractors {
 
   protected implicit val getInstantResult: GetResult[Instant] = GetResult(r => r.nextTimestamp().toInstant)
 
+  protected implicit val getOffsetDateTime: GetResult[OffsetDateTime] = GetResult(r => {
+    val d = r.rs.getObject(r.currentPos + 1, classOf[OffsetDateTime])
+    r.skip
+    d
+  })
+
   implicit object SetUUID extends SetParameter[UUID] {
     def apply(v: UUID, pp: PositionedParameters) {
       pp.setObject(v, JDBCType.BINARY.getVendorTypeNumber)
