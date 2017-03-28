@@ -167,7 +167,15 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
         }
         hs.headOption
       }
-      val hakemuksenTuloksenTilahistoriaOldestFirst: Iterable[TilaHistoria] = hakemus.map(_.getTilaHistoria.asScala.toList.sortBy(_.getLuotu)).toSeq.flatten
+      var hakemuksenTuloksenTilahistoriaOldestFirst: List[TilaHistoria] = hakemus.map(_.getTilaHistoria.asScala.toList.sortBy(_.getLuotu)).toList.flatten
+      hakemus.foreach(h => {
+        hakemuksenTuloksenTilahistoriaOldestFirst.headOption.foreach(hist => {
+          if (h.getTila != hist.getTila) {
+            logger.warn(s"hakemus $hakemusOid didn't have current tila in tila history, creating one artificially.")
+            hakemuksenTuloksenTilahistoriaOldestFirst =  hakemuksenTuloksenTilahistoriaOldestFirst :+ new TilaHistoria(h.getTila)
+          }
+        })
+      })
       val logEntriesLatestFirst = v.getLogEntries.asScala.toList.sortBy(_.getLuotu)
 
       val henkiloOid = v.getHakijaOid
