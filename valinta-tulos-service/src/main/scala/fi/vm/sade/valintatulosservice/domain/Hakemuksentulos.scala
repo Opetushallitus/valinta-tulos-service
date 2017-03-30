@@ -58,6 +58,13 @@ case class Hakutoiveentulos(hakukohdeOid: String,
     )
   }
 
+  def toOdottaaYlempienHakutoiveidenTuloksia = {
+    copy(
+      vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa,
+      vastaanottoDeadline = None
+    )
+  }
+
   def julkaistavaVersio = {
     if (julkaistavissa) {
       this
