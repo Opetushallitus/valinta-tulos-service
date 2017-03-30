@@ -22,12 +22,12 @@ object DbUtils extends Logging {
     processTriggers(enable)
   }
 
-  private def disable(tableName: String, triggerName: String): SqlAction[Int, NoStream, Effect] = {
+  def disable(tableName: String, triggerName: String): SqlAction[Int, NoStream, Effect] = {
     logger.info(s"Disabling trigger $tableName.$triggerName")
     sqlu"alter table #${tableName} disable trigger #${triggerName}"
   }
 
-  private def enable(tableName: String, triggerName: String): SqlAction[Int, NoStream, Effect] = {
+  def enable(tableName: String, triggerName: String): SqlAction[Int, NoStream, Effect] = {
     logger.info(s"Enabling trigger $tableName.$triggerName")
     sqlu"alter table #${tableName} enable trigger #${triggerName}"
   }

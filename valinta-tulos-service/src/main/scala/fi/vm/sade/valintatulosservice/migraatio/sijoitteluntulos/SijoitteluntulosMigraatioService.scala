@@ -2,12 +2,12 @@ package fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos
 
 import java.security.MessageDigest
 import java.sql.Timestamp
-import java.{lang, util}
 import java.util.concurrent.TimeUnit.MINUTES
 import java.util.{Date, Optional}
+import java.{lang, util}
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter
 
-import com.mongodb.{BasicDBObject, BasicDBObjectBuilder, DBCursor}
+import com.mongodb.{BasicDBObjectBuilder, DBCursor}
 import fi.vm.sade.sijoittelu.domain._
 import fi.vm.sade.sijoittelu.tulos.dao.{HakukohdeDao, ValintatulosDao}
 import fi.vm.sade.utils.Timer
@@ -169,10 +169,10 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       }
       var hakemuksenTuloksenTilahistoriaOldestFirst: List[TilaHistoria] = hakemus.map(_.getTilaHistoria.asScala.toList.sortBy(_.getLuotu)).toList.flatten
       hakemus.foreach(h => {
-        hakemuksenTuloksenTilahistoriaOldestFirst.headOption.foreach(hist => {
+        hakemuksenTuloksenTilahistoriaOldestFirst.lastOption.foreach(hist => {
           if (h.getTila != hist.getTila) {
             logger.warn(s"hakemus $hakemusOid didn't have current tila in tila history, creating one artificially.")
-            hakemuksenTuloksenTilahistoriaOldestFirst =  hakemuksenTuloksenTilahistoriaOldestFirst :+ new TilaHistoria(h.getTila)
+            hakemuksenTuloksenTilahistoriaOldestFirst = hakemuksenTuloksenTilahistoriaOldestFirst :+ new TilaHistoria(h.getTila)
           }
         })
       })

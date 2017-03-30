@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
 import java.sql.Timestamp
-import java.time.{Instant, ZonedDateTime}
+import java.time.ZonedDateTime
 import java.util.ConcurrentModificationException
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
@@ -100,18 +100,37 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       )
       assertValinnantila(valinnantilanTallennus.copy(valinnantila = VarasijaltaHyvaksytty))
     }
-    "update valinnantulos objects in batches" in {
+    "update hakemus-related objects in batches in migraatio" in {
       storeValinnantilaAndValinnantulos()
+      storeIlmoittautuminen()
       assertValinnantila(valinnantilanTallennus)
+      assertValinnantuloksenOhjaus(valinnantuloksenOhjaus)
+      assertIlmoittautuminen(ilmoittautuminen)
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.storeBatch(
           Seq(
             (valinnantilanTallennus.copy(valinnantila = VarasijaltaHyvaksytty), new Timestamp(System.currentTimeMillis() - 1000)),
-            (valinnantilanTallennus.copy(valinnantila = Peruutettu), new Timestamp(System.currentTimeMillis()))),
-          Nil,
-          Nil)
+            (valinnantilanTallennus.copy(valinnantila = Peruutettu), new Timestamp(System.currentTimeMillis()))
+          ),
+          Seq(
+            valinnantuloksenOhjaus.copy(julkaistavissa = true),
+            valinnantuloksenOhjaus.copy(hyvaksyPeruuntunut = true)
+          ),
+          Seq(
+            (ilmoittautuminen.copy(selite = "en kerro", tila = PoissaSyksy), henkiloOid),
+            (ilmoittautuminen.copy(selite = "no kerron", tila = Lasna), henkiloOid),
+            (ilmoittautuminen.copy(selite = "ehkä kerron", tila = PoissaSyksy), henkiloOid)
+          )
+        )
       )
       assertValinnantila(valinnantilanTallennus.copy(valinnantila = Peruutettu))
+      assertValinnantilaHistory(2, VarasijaltaHyvaksytty)
+
+      assertValinnantuloksenOhjaus(valinnantuloksenOhjaus.copy(hyvaksyPeruuntunut = true))
+      assertValinnantuloksenOhjausHistory(2, valinnantuloksenOhjaus.copy(julkaistavissa = true))
+
+      assertIlmoittautuminen(ilmoittautuminen.copy(selite = "ehkä kerron", tila = PoissaSyksy))
+      assertIlmoittautuminenHistory(3, ilmoittautuminen.copy(selite = "no kerron", tila = Lasna))
     }
     "not update existing valinnantila if modified" in {
       val notModifiedSince = ZonedDateTime.now.minusDays(1).toInstant
@@ -184,12 +203,62 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       result.head.getValinnantilanTallennus(muokkaaja) mustEqual valinnantilanTallennus
     }
 
+    def assertValinnantilaHistory(count: Int, tila: Valinnantila) = {
+      val result = singleConnectionValintarekisteriDb.runBlocking(
+        sql"""select tila
+              from valinnantilat_history
+              where hakukohde_oid = ${hakukohdeOid} and valintatapajono_oid = ${valintatapajonoOid} and hakemus_oid = ${hakemusOid}
+          """.as[String]
+      )
+      result.size must_== count
+      result.head must_== tila.toString
+    }
+
     def assertValinnantuloksenOhjaus(valinnantuloksenOhjaus: ValinnantuloksenOhjaus) = {
       val result = singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
       )
       result.size mustEqual 1
       result.head.getValinnantuloksenOhjaus(muokkaaja, selite) mustEqual valinnantuloksenOhjaus
+    }
+
+    def assertValinnantuloksenOhjausHistory(count: Int, valinnantuloksenOhjaus: ValinnantuloksenOhjaus) = {
+      val result = singleConnectionValintarekisteriDb.runBlocking(
+        sql"""select julkaistavissa, ehdollisesti_hyvaksyttavissa, hyvaksytty_varasijalta, hyvaksy_peruuntunut
+              from valinnantulokset_history
+              where hakukohde_oid = ${hakukohdeOid} and valintatapajono_oid = ${valintatapajonoOid} and hakemus_oid = ${hakemusOid}
+          """.as[(Boolean, Boolean, Boolean, Boolean)]
+      )
+
+      result.size mustEqual count
+      result.head must_== (valinnantuloksenOhjaus.julkaistavissa, valinnantuloksenOhjaus.ehdollisestiHyvaksyttavissa,
+        valinnantuloksenOhjaus.hyvaksyttyVarasijalta, valinnantuloksenOhjaus.hyvaksyPeruuntunut)
+    }
+
+    def assertIlmoittautuminen(ilmoittautuminen: Ilmoittautuminen) = {
+      val result = singleConnectionValintarekisteriDb.runBlocking(
+        sql"""select henkilo, hakukohde, tila, ilmoittaja, selite
+              from ilmoittautumiset
+              where henkilo = ${henkiloOid} and hakukohde = ${hakukohdeOid}
+          """.as[(String, String, String, String, String)]
+      )
+
+      result.size mustEqual 1
+      result.head must_== (henkiloOid, ilmoittautuminen.hakukohdeOid, ilmoittautuminen.tila.toString,
+        ilmoittautuminen.muokkaaja, ilmoittautuminen.selite)
+    }
+
+    def assertIlmoittautuminenHistory(count: Int, ilmoittautuminen: Ilmoittautuminen) = {
+      val result = singleConnectionValintarekisteriDb.runBlocking(
+        sql"""select henkilo, hakukohde, tila, ilmoittaja, selite
+              from ilmoittautumiset_history
+              where henkilo = ${henkiloOid} and hakukohde = ${hakukohdeOid}
+          """.as[(String, String, String, String, String)]
+      )
+
+      result.size must_== count
+      result.last must_== (henkiloOid, ilmoittautuminen.hakukohdeOid, ilmoittautuminen.tila.toString,
+        ilmoittautuminen.muokkaaja, ilmoittautuminen.selite)
     }
 
     def storeValinnantilaAndValinnantulos() = {
@@ -213,6 +282,13 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
            ilmoittaja,
            selite
        ) values (${valintatapajonoOid}, ${hakemusOid}, ${hakukohdeOid}, false, false, false, false, 122344555::text, 'Sijoittelun tallennus')""")
+    }
+
+    def storeIlmoittautuminen() = {
+      singleConnectionValintarekisteriDb.runBlocking(
+        sqlu"""insert into ilmoittautumiset
+               values(${henkiloOid}, ${hakukohdeOid}, ${Lasna.toString}::ilmoittautumistila, 'muokkaaja', 'selite')"""
+      )
     }
   }
 }
