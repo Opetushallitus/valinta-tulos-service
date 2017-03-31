@@ -13,15 +13,7 @@ import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 import scalaz.concurrent.Task
 
-class CasSessionService(casClient: CasClient, val serviceIdentifier: String, ldapClient: DirectoryClient, sessionRepository: SessionRepository) {
-
-  private def getLdapUser(uid: String): Either[Throwable, LdapUser] = {
-    Try(ldapClient.findUser(uid)) match {
-      case Success(Some(user)) => Right(user)
-      case Success(None) => Left(new AuthenticationFailedException(s"Failed to find user $uid from LDAP"))
-      case Failure(t) => Left(t)
-    }
-  }
+class CasSessionService(casClient: CasClient, val serviceIdentifier: String, ldapUserService: LdapUserService, sessionRepository: SessionRepository) {
 
   private def validateServiceTicket(ticket: ServiceTicket): Either[Throwable, String] = {
     val ServiceTicket(s) = ticket
@@ -39,7 +31,7 @@ class CasSessionService(casClient: CasClient, val serviceIdentifier: String, lda
   }
 
   private def createSession(ticket: ServiceTicket): Either[Throwable, (UUID, Session)] = {
-    validateServiceTicket(ticket).right.flatMap(getLdapUser).right.flatMap(storeSession(ticket, _))
+    validateServiceTicket(ticket).right.flatMap(ldapUserService.getLdapUser).right.flatMap(storeSession(ticket, _))
   }
 
   private def getSession(id: UUID): Either[Throwable, (UUID, Session)] = {
@@ -65,6 +57,16 @@ class CasSessionService(casClient: CasClient, val serviceIdentifier: String, lda
   def deleteSession(ticket: ServiceTicket): Either[Throwable, Unit] = {
     Try(sessionRepository.delete(ticket)) match {
       case Success(_) => Right(())
+      case Failure(t) => Left(t)
+    }
+  }
+}
+
+class LdapUserService(ldapClient: DirectoryClient) {
+  def getLdapUser(uid: String): Either[Throwable, LdapUser] = {
+    Try(ldapClient.findUser(uid)) match {
+      case Success(Some(user)) => Right(user)
+      case Success(None) => Left(new AuthenticationFailedException(s"Failed to find user $uid from LDAP"))
       case Failure(t) => Left(t)
     }
   }

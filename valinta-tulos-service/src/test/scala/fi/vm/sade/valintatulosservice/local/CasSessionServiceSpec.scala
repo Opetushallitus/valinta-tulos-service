@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.local
 import java.util.UUID
 
 import fi.vm.sade.security.ldap.{DirectoryClient, LdapUser}
-import fi.vm.sade.security.{AuthenticationFailedException, CasSessionService}
+import fi.vm.sade.security.{AuthenticationFailedException, CasSessionService, LdapUserService}
 import fi.vm.sade.utils.cas.CasClient
 import fi.vm.sade.valintatulosservice.security.{CasSession, ServiceTicket}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
@@ -88,6 +88,6 @@ class CasSessionServiceSpec extends Specification with MockitoStubs {
     val casClient: CasClient = mock[CasClient]
     val ldapClient: DirectoryClient = mock[DirectoryClient]
     val sessionRepository: SessionRepository = mock[SessionRepository]
-    val cas: CasSessionService = new CasSessionService(casClient, service, ldapClient, sessionRepository)
+    val cas: CasSessionService = new CasSessionService(casClient, service, new LdapUserService(ldapClient), sessionRepository)
   }
 }

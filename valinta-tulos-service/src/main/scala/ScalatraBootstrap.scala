@@ -69,6 +69,7 @@ class ScalatraBootstrap extends LifeCycle {
     lazy val valinnantulosService = new ValinnantulosService(valintarekisteriDb, authorizer, hakuService, appConfig.ohjausparametritService, hakukohdeRecordService, yhdenPaikanSaannos, appConfig, audit)
     lazy val tarjontaHakuService = new TarjontaHakuService(appConfig.hakuServiceConfig)
     lazy val valintalaskentakoostepalveluService = new ValintalaskentakoostepalveluService(appConfig)
+    lazy val ldapUserService = new LdapUserService(appConfig.securityContext.directoryClient)
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
 
 
@@ -84,7 +85,7 @@ class ScalatraBootstrap extends LifeCycle {
         new CasSessionService(
           appConfig.securityContext.casClient,
           appConfig.securityContext.casServiceIdentifier + "/auth/login",
-          appConfig.securityContext.directoryClient,
+          ldapUserService,
           valintarekisteriDb
         )
       ), "/auth/login")
@@ -95,12 +96,12 @@ class ScalatraBootstrap extends LifeCycle {
       context.mount(new EmailStatusServlet(mailPoller, valintatulosCollection, new MailDecorator(new HakemusRepository(), valintatulosCollection, hakuService, oppijanTunnistusService)), "/vastaanottoposti")
       context.mount(new EnsikertalaisuusServlet(valintarekisteriDb, appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus")
       context.mount(new HakijanVastaanottoServlet(vastaanottoService), "/vastaanotto")
-      context.mount(new ErillishakuServlet(valinnantulosService), "/erillishaku/valinnan-tulos")
+      context.mount(new ErillishakuServlet(valinnantulosService, ldapUserService), "/erillishaku/valinnan-tulos")
 
       val casSessionService = new CasSessionService(
         appConfig.securityContext.casClient,
         appConfig.securityContext.casServiceIdentifier,
-        appConfig.securityContext.directoryClient,
+        ldapUserService,
         valintarekisteriDb
       )
 
