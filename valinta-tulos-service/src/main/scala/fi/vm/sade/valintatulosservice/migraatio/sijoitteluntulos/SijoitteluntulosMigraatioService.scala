@@ -236,6 +236,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
   }
 
   def getSijoitteluHashesByHakuOid(hakuOids: Set[String]): mutable.Map[String, String] = {
+    logger.info(s"Checking latest sijoittelu hashes for haku oids $hakuOids")
     val start = System.currentTimeMillis()
     val hakuOidsSijoitteluHashes: mutable.Map[String, String] = new mutable.HashMap()
 
