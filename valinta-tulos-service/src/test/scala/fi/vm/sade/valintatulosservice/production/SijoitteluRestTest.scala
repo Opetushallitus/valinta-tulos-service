@@ -14,6 +14,7 @@ import org.specs2.runner.JUnitRunner
 
 import scala.language.experimental.macros
 
+@Ignore
 @RunWith(classOf[JUnitRunner])
 class SijoitteluRestTest extends Specification with MatcherMacros with Logging with PerformanceLogger with RestTestHelper {
   val oldHost = "https://testi.virkailija.opintopolku.fi"
