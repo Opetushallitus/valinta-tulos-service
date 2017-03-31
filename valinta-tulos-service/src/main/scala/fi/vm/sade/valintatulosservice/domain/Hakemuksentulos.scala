@@ -59,10 +59,14 @@ case class Hakutoiveentulos(hakukohdeOid: String,
   }
 
   def toOdottaaYlempienHakutoiveidenTuloksia = {
-    copy(
-      vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa,
-      vastaanottoDeadline = None
-    )
+    if(valintatila == Valintatila.hyväksytty) {
+      copy(
+        vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa,
+        vastaanottoDeadline = None
+      )
+    } else {
+      toKesken
+    }
   }
 
   def julkaistavaVersio = {
