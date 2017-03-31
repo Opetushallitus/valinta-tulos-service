@@ -144,13 +144,13 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
   }
 
   private def createSaveObjects(hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]):
-    (List[(ValinnantilanTallennus, Timestamp)], List[ValinnantuloksenOhjaus], List[(String, Ilmoittautuminen)]) = {
+    (Seq[(ValinnantilanTallennus, Timestamp)], Seq[ValinnantuloksenOhjaus], Seq[(String, Ilmoittautuminen)]) = {
 
     val hakemuksetOideittain: Map[(String, String), List[(Hakemus, String)]] = groupHakemusResultsByHakemusOidAndJonoOid(hakukohteet)
 
-    var valinnantilas: List[(ValinnantilanTallennus, Timestamp)] = List()
-    var valinnantuloksenOhjaukset: List[ValinnantuloksenOhjaus] = List()
-    var ilmoittautumiset: List[(String, Ilmoittautuminen)] = List()
+    var valinnantilas: Vector[(ValinnantilanTallennus, Timestamp)] = Vector()
+    var valinnantuloksenOhjaukset: Vector[ValinnantuloksenOhjaus] = Vector()
+    var ilmoittautumiset: Vector[(String, Ilmoittautuminen)] = Vector()
 
     valintatulokset.asScala.toList.foreach { v =>
       val hakuOid = v.getHakuOid
@@ -177,7 +177,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
         val hakemuksenValinnantilojenohjaukset = getHakemuksenValinnantuloksenOhjaukset(v, hakemusOid, valintatapajonoOid, hakukohdeOid, logEntriesLatestFirst)
         val hakemuksenIlmoittautumiset = getHakemuksenIlmoittautumiset(v, henkiloOid, hakukohdeOid, logEntriesLatestFirst)
         valinnantilas = valinnantilas ++ hakemuksenValinnantilas
-        valinnantuloksenOhjaukset = valinnantuloksenOhjaukset ++ hakemuksenValinnantilojenohjaukset.toList
+        valinnantuloksenOhjaukset = valinnantuloksenOhjaukset ++ hakemuksenValinnantilojenohjaukset.toSeq
         ilmoittautumiset = ilmoittautumiset ++ hakemuksenIlmoittautumiset
       }
     }
