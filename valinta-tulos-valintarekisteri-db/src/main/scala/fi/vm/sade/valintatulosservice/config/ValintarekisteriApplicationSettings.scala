@@ -36,6 +36,13 @@ abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.conf
     }
   }
 
+  private def parseStringSet(propertyName: String, default: Set[String] = Set()): Set[String] = {
+    Try(withConfig(_.getString(propertyName))).map(_.split(",").toSet).getOrElse {
+      logger.warn(s"""Could not read property "$propertyName", returning default value $default""")
+      default
+    }
+  }
+
   private def getString(config: Config, key: String): Option[String] = {
     if (config.hasPath(key)) Some(config.getString(key)) else None
   }
