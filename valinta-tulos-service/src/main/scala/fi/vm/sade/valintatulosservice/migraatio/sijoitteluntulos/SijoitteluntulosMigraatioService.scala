@@ -249,9 +249,8 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       }
       logger.info("=================================================================")
     }
-    val msg = s"DONE in ${System.currentTimeMillis - start} ms"
-    logger.info(msg)
-    logger.info(hakuOidsSijoitteluHashes.toString())
+    logger.info(s"Hash calculation for ${hakuOids.size} hakus DONE in ${System.currentTimeMillis - start} ms")
+    logger.info(s"hakuOid -> hash values are: $hakuOidsSijoitteluHashes")
     hakuOidsSijoitteluHashes
   }
 
