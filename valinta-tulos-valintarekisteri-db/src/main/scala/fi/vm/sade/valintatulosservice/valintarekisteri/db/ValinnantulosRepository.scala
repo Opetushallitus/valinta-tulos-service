@@ -5,14 +5,13 @@ import java.time.Instant
 import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Ilmoittautuminen, ValinnantilanTallennus, ValinnantuloksenOhjaus, Valinnantulos}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
 trait ValinnantulosRepository extends ValintarekisteriRepository {
-  type HenkiloOid = String
   type TilanViimeisinMuutos = Timestamp
 
   def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
@@ -21,7 +20,7 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
   def storeValinnantilaOverridingTimestamp(tila:ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None, tilanViimeisinMuutos: TilanViimeisinMuutos): DBIO[Unit]
   def storeBatch(valinnantilat: Seq[(ValinnantilanTallennus, TilanViimeisinMuutos)],
                  valinnantuloksenOhjaukset: Seq[ValinnantuloksenOhjaus],
-                 ilmoittautumiset: Seq[(Ilmoittautuminen, HenkiloOid)]): DBIO[Unit]
+                 ilmoittautumiset: Seq[(String, Ilmoittautuminen)]): DBIO[Unit]
 
   def updateValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
 
@@ -35,6 +34,8 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
 
   def deleteValinnantulos(muokkaaja:String, valinnantulos:Valinnantulos, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
   def deleteIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
+
+  def deleteValinnantilaHistorySavedBySijoitteluajoAndMigration(sijoitteluajoId: String)
 
   def getValinnantuloksetAndLastModifiedDateForValintatapajono(valintatapajonoOid:String, timeout:Duration = Duration(2, TimeUnit.SECONDS)):Option[(Instant, Set[Valinnantulos])] =
     runBlockingTransactionally(

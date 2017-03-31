@@ -67,7 +67,6 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     val valintatulokset = timed(s"Loading valintatulokset for sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid") {
       valintatulosDao.loadValintatulokset(hakuOid)
     }
-    val allSaves = createSaveActions(hakukohteet, valintatulokset)
     kludgeStartAndEndToSijoitteluAjoIfMissing(ajoFromMongo, hakukohteet)
 
     if (dryRun) {
@@ -91,9 +90,14 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       }
 
       logger.info(s"Starting to save valinta data sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid...")
+
+      val (valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset) = timed("Create save objects for saving valintadata") {
+        createSaveObjects(hakukohteet, valintatulokset)}
       timed(s"Saving valinta data for sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid") {
-        valinnantulosRepository.runBlocking(DBIOAction.sequence(allSaves), Duration(15, MINUTES))
+        valinnantulosRepository.runBlocking(valinnantulosRepository.storeBatch(valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset), Duration(15, MINUTES))
       }
+      logger.info("Deleting valinnantilat_history entries that were duplicated by sijoittelu and migration saves.")
+      valinnantulosRepository.deleteValinnantilaHistorySavedBySijoitteluajoAndMigration(mongoSijoitteluAjoId.toString)
       sijoitteluRepository.saveSijoittelunHash(hakuOid, sijoitteluHash)
     }
     logger.info("-----------------------------------------------------------")
@@ -139,35 +143,24 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     false
   }
 
-  private def createSaveActions(hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]): Seq[DBIO[Unit]] = {
-    def ignoreErrorsFromDataAlreadySavedBySijoittelunTulos(save: DBIO[Unit]): DBIO[Unit] = {
-      save.asTry.flatMap {
-        case Failure(cme: ConcurrentModificationException) => DBIO.successful()
-        case Failure(e) => DBIO.failed(e)
-        case Success(x) => DBIO.successful(x)
-      }
-    }
+  private def createSaveObjects(hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]):
+    (List[(ValinnantilanTallennus, Timestamp)], List[ValinnantuloksenOhjaus], List[(String, Ilmoittautuminen)]) = {
 
-    val hakemuksetOideittain: Map[(String, String), List[(Hakemus, String)]]  = groupHakemusResultsByHakemusOidAndJonoOid(hakukohteet)
+    val hakemuksetOideittain: Map[(String, String), List[(Hakemus, String)]] = groupHakemusResultsByHakemusOidAndJonoOid(hakukohteet)
 
-    valintatulokset.asScala.toList.flatMap { v =>
+    var valinnantilas: List[(ValinnantilanTallennus, Timestamp)] = List()
+    var valinnantuloksenOhjaukset: List[ValinnantuloksenOhjaus] = List()
+    var ilmoittautumiset: List[(String, Ilmoittautuminen)] = List()
+
+    valintatulokset.asScala.toList.foreach { v =>
       val hakuOid = v.getHakuOid
       val hakemusOid = v.getHakemusOid
+      val henkiloOid = v.getHakijaOid
       val valintatapajonoOid = v.getValintatapajonoOid
       val hakukohdeOid = v.getHakukohdeOid
-      val hakemus: Option[Hakemus] = {
-        val hs = hakemuksetOideittain.get((hakemusOid, valintatapajonoOid)).toSeq.flatMap(_.map(_._1))
-        if (hs.isEmpty) {
-          logger.warn(s"Ei löytynyt sijoittelun tulosta kombolle hakuoid=$hakuOid / hakukohdeoid=$hakukohdeOid" +
-            s" / valintatapajonooid=$valintatapajonoOid / hakemusoid=$hakemusOid ")
-        }
-        if (hs.size > 1) {
-          throw new IllegalStateException(s"Löytyi liian monta hakemusta kombolle hakuoid=${hakuOid} / hakukohdeoid=$hakukohdeOid" +
-            s" / valintatapajonooid=$valintatapajonoOid / hakemusoid=$hakemusOid ")
-        }
-        hs.headOption
-      }
+      val hakemus: Option[Hakemus] = findHakemus(hakemuksetOideittain, hakuOid, hakemusOid, valintatapajonoOid, hakukohdeOid)
       var hakemuksenTuloksenTilahistoriaOldestFirst: List[TilaHistoria] = hakemus.map(_.getTilaHistoria.asScala.toList.sortBy(_.getLuotu)).toList.flatten
+
       hakemus.foreach(h => {
         hakemuksenTuloksenTilahistoriaOldestFirst.lastOption.foreach(hist => {
           if (h.getTila != hist.getTila) {
@@ -176,33 +169,59 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
           }
         })
       })
-      val logEntriesLatestFirst = v.getLogEntries.asScala.toList.sortBy(_.getLuotu)
 
-      val henkiloOid = v.getHakijaOid
+      val hakemuksenValinnantilas = getHakemuksenValinnantilas(hakemusOid, henkiloOid, valintatapajonoOid, hakukohdeOid, hakemuksenTuloksenTilahistoriaOldestFirst)
 
-      val valinnanTilaSaves = hakemuksenTuloksenTilahistoriaOldestFirst.map { tilaHistoriaEntry =>
-        val valinnantila = Valinnantila(tilaHistoriaEntry.getTila)
-        val muokkaaja = "Sijoittelun tulokset -migraatio"
-        valinnantulosRepository.storeValinnantilaOverridingTimestamp(ValinnantilanTallennus(hakemusOid, valintatapajonoOid, hakukohdeOid, henkiloOid, valinnantila, muokkaaja),
-          None, new Timestamp(tilaHistoriaEntry.getLuotu.getTime))
-      }.map(ignoreErrorsFromDataAlreadySavedBySijoittelunTulos)
-
-      if (valinnanTilaSaves.isEmpty) {
-        Nil
-      } else {
-        val ohjausSaves = logEntriesLatestFirst.headOption.map { logEntry =>
-          valinnantulosRepository.storeValinnantuloksenOhjaus(ValinnantuloksenOhjaus(hakemusOid, valintatapajonoOid, hakukohdeOid,
-            v.getEhdollisestiHyvaksyttavissa, v.getJulkaistavissa, v.getHyvaksyttyVarasijalta, v.getHyvaksyPeruuntunut,
-            logEntry.getMuokkaaja, Option(logEntry.getSelite).getOrElse("")))
-        }.map(ignoreErrorsFromDataAlreadySavedBySijoittelunTulos)
-
-        val ilmoittautuminenSave = logEntriesLatestFirst.reverse.find(_.getMuutos.contains("ilmoittautuminen")).map { latestIlmoittautuminenLogEntry =>
-          valinnantulosRepository.storeIlmoittautuminen(henkiloOid, Ilmoittautuminen(hakukohdeOid, SijoitteluajonIlmoittautumistila(v.getIlmoittautumisTila),
-            latestIlmoittautuminenLogEntry.getMuokkaaja, Option(latestIlmoittautuminenLogEntry.getSelite).getOrElse("")))
-        }
-        valinnanTilaSaves ++ ohjausSaves.toSeq ++ ilmoittautuminenSave.toSeq
+      if (hakemuksenValinnantilas.nonEmpty) {
+        val logEntriesLatestFirst = v.getLogEntries.asScala.toList.sortBy(_.getLuotu)
+        val hakemuksenValinnantilojenohjaukset = getHakemuksenValinnantuloksenOhjaukset(v, hakemusOid, valintatapajonoOid, hakukohdeOid, logEntriesLatestFirst)
+        val hakemuksenIlmoittautumiset = getHakemuksenIlmoittautumiset(v, henkiloOid, hakukohdeOid, logEntriesLatestFirst)
+        valinnantilas = valinnantilas ++ hakemuksenValinnantilas
+        valinnantuloksenOhjaukset = valinnantuloksenOhjaukset ++ hakemuksenValinnantilojenohjaukset.toList
+        ilmoittautumiset = ilmoittautumiset ++ hakemuksenIlmoittautumiset
       }
     }
+    (valinnantilas, valinnantuloksenOhjaukset, ilmoittautumiset)
+  }
+
+  private def getHakemuksenValinnantuloksenOhjaukset(valintatulos: Valintatulos, hakemusOid: String, valintatapajonoOid: String,
+                                                     hakukohdeOid: String, logEntriesLatestFirst: List[LogEntry]) = {
+    logEntriesLatestFirst.headOption.map { logEntry =>
+      ValinnantuloksenOhjaus(hakemusOid, valintatapajonoOid, hakukohdeOid, valintatulos.getEhdollisestiHyvaksyttavissa,
+        valintatulos.getJulkaistavissa, valintatulos.getHyvaksyttyVarasijalta, valintatulos.getHyvaksyPeruuntunut,
+        logEntry.getMuokkaaja, Option(logEntry.getSelite).getOrElse(""))
+    }
+  }
+
+  private def getHakemuksenIlmoittautumiset(valintatulos: Valintatulos, henkiloOid: String, hakukohdeOid: String, logEntriesLatestFirst: List[LogEntry]) = {
+    logEntriesLatestFirst.reverse.find(_.getMuutos.contains("ilmoittautuminen")).map { latestIlmoittautuminenLogEntry =>
+      (henkiloOid, Ilmoittautuminen(hakukohdeOid, SijoitteluajonIlmoittautumistila(valintatulos.getIlmoittautumisTila),
+        latestIlmoittautuminenLogEntry.getMuokkaaja, Option(latestIlmoittautuminenLogEntry.getSelite).getOrElse("")))
+    }
+  }
+
+  private def getHakemuksenValinnantilas(hakemusOid: String, henkiloOid: String, valintatapajonoOid: String, hakukohdeOid: String,
+                                         hakemuksenTuloksenTilahistoriaOldestFirst: List[TilaHistoria]) = {
+    hakemuksenTuloksenTilahistoriaOldestFirst.map { tilaHistoriaEntry =>
+      val valinnantila = Valinnantila(tilaHistoriaEntry.getTila)
+      val muokkaaja = "Sijoittelun tulokset -migraatio"
+      (ValinnantilanTallennus(hakemusOid, valintatapajonoOid, hakukohdeOid, henkiloOid, valinnantila, muokkaaja),
+        new Timestamp(tilaHistoriaEntry.getLuotu.getTime))
+    }
+  }
+
+  private def findHakemus(hakemuksetOideittain: Map[(String, String), List[(Hakemus, String)]], hakuOid: String, hakemusOid: String,
+                          valintatapajonoOid: String, hakukohdeOid: String) = {
+    val hs = hakemuksetOideittain.get((hakemusOid, valintatapajonoOid)).toSeq.flatMap(_.map(_._1))
+    if (hs.isEmpty) {
+      logger.warn(s"Ei löytynyt sijoittelun tulosta kombolle hakuoid=$hakuOid / hakukohdeoid=$hakukohdeOid" +
+        s" / valintatapajonooid=$valintatapajonoOid / hakemusoid=$hakemusOid ")
+    }
+    if (hs.size > 1) {
+      throw new IllegalStateException(s"Löytyi liian monta hakemusta kombolle hakuoid=${hakuOid} / hakukohdeoid=$hakukohdeOid" +
+        s" / valintatapajonooid=$valintatapajonoOid / hakemusoid=$hakemusOid ")
+    }
+    hs.headOption
   }
 
   private def groupHakemusResultsByHakemusOidAndJonoOid(hakukohteet: util.List[Hakukohde]) = {

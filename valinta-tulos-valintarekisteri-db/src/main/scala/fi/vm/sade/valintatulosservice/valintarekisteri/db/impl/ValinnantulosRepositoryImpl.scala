@@ -10,6 +10,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepositor
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.dbio.DBIO
 import slick.driver.PostgresDriver.api._
+import slick.jdbc.GetResult
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
@@ -224,10 +225,27 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     }
   }
 
+  implicit val getValinnantilaResult = GetResult(r => SavedValinnantila(r.nextString(), r.nextString(), Valinnantila(r.nextString()), r.nextTimestamp()))
+
+  override def deleteValinnantilaHistorySavedBySijoitteluajoAndMigration(sijoitteluajoId: String): Unit = {
+    logger.info(s"poistettavien sijoitteluajoId: $sijoitteluajoId")
+    runBlocking(
+      sqlu"""delete from valinnantilat_history
+             where (hakukohde_oid, valintatapajono_oid, hakemus_oid, tila, tilan_viimeisin_muutos) in (
+               select h.hakukohde_oid, h.valintatapajono_oid, h.hakemus_oid, h.tila, h.tilan_viimeisin_muutos
+               from valinnantilat_history as h
+               join valinnantilat as v
+                  on v.valintatapajono_oid = h.valintatapajono_oid
+                  and v.hakemus_oid = h.hakemus_oid
+                  and v.hakukohde_oid = h.hakukohde_oid
+                  and v.tila = h.tila
+                  and v.tilan_viimeisin_muutos = h.tilan_viimeisin_muutos
+               where h.ilmoittaja = ${sijoitteluajoId})""")
+  }
 
   override def storeBatch(valinnantilat: Seq[(ValinnantilanTallennus, TilanViimeisinMuutos)],
                           valinnantuloksenOhjaukset: Seq[ValinnantuloksenOhjaus],
-                          ilmoittautumiset: Seq[(Ilmoittautuminen, HenkiloOid)]): DBIO[Unit] = {
+                          ilmoittautumiset: Seq[(String, Ilmoittautuminen)]): DBIO[Unit] = {
     DBIO.seq(
       DbUtils.disable("ilmoittautumiset", "set_system_time_on_ilmoittautumiset_on_insert"),
       DbUtils.disable("ilmoittautumiset", "set_system_time_on_ilmoittautumiset_on_update"),
@@ -272,9 +290,9 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
          system_time
        ) values (?, ?, ?, ?::valinnantila, ?, ?::text, ?, -1, tstzrange(now(), null, '[)'))
        on conflict on constraint valinnantilat_pkey do update set
-           tila = excluded.tila,
-           tilan_viimeisin_muutos = excluded.tilan_viimeisin_muutos,
-           ilmoittaja = excluded.ilmoittaja
+         tila = excluded.tila,
+         tilan_viimeisin_muutos = excluded.tilan_viimeisin_muutos,
+         ilmoittaja = excluded.ilmoittaja
        where valinnantilat.tila <> excluded.tila
     """)
 
@@ -343,7 +361,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
        where ilmoittautumiset.tila <> excluded.tila
     """)
 
-  private def createIlmoittautumisInsertRow(statement: PreparedStatement, ilmoittautuminen: Ilmoittautuminen, henkiloOid: String) = {
+  private def createIlmoittautumisInsertRow(statement: PreparedStatement, henkiloOid: String, ilmoittautuminen: Ilmoittautuminen) = {
     statement.setString(1, henkiloOid)
     statement.setString(2, ilmoittautuminen.hakukohdeOid)
     statement.setString(3, ilmoittautuminen.tila.toString)

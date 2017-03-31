@@ -1,5 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.domain
 
+import java.sql.Timestamp
+
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 
 case class ValinnantulosUpdateStatus(status:Int, message:String, valintatapajonoOid:String, hakemusOid:String)
@@ -97,3 +99,8 @@ case class ValinnantilanTallennus(hakemusOid: String,
                                   henkiloOid:String,
                                   valinnantila: Valinnantila,
                                   muokkaaja: String)
+
+case class SavedValinnantila(hakemusOid: String,
+                             valintatapajonoOid: String,
+                             tila:Valinnantila,
+                             tilanViimeisinMuutos: Timestamp)

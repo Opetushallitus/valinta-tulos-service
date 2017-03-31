@@ -117,9 +117,9 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
             valinnantuloksenOhjaus.copy(hyvaksyPeruuntunut = true)
           ),
           Seq(
-            (ilmoittautuminen.copy(selite = "en kerro", tila = PoissaSyksy), henkiloOid),
-            (ilmoittautuminen.copy(selite = "no kerron", tila = Lasna), henkiloOid),
-            (ilmoittautuminen.copy(selite = "ehkä kerron", tila = PoissaSyksy), henkiloOid)
+            (henkiloOid, ilmoittautuminen.copy(selite = "en kerro", tila = PoissaSyksy)),
+            (henkiloOid, ilmoittautuminen.copy(selite = "no kerron", tila = Lasna)),
+            (henkiloOid, ilmoittautuminen.copy(selite = "ehkä kerron", tila = PoissaSyksy))
           )
         )
       )

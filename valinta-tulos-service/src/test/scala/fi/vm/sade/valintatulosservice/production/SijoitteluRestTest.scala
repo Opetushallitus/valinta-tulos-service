@@ -14,7 +14,6 @@ import org.specs2.runner.JUnitRunner
 
 import scala.language.experimental.macros
 
-@Ignore
 @RunWith(classOf[JUnitRunner])
 class SijoitteluRestTest extends Specification with MatcherMacros with Logging with PerformanceLogger with RestTestHelper {
   val oldHost = "https://testi.virkailija.opintopolku.fi"
@@ -30,7 +29,7 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
      "1.2.246.562.29.28924613947" - Haku ammatilliseen opettajankoulutukseen 2017
      "1.2.246.562.29.87593180141" - Syksyn 2016 kk-yhteishaku */
 
-  val hakuOidsToTest = Seq("1.2.246.562.29.59856749474")
+  val hakuOidsToTest = Seq("1.2.246.562.29.87593180141")
 
   val infoOn = false
   val debugOn = false
