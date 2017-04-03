@@ -17,24 +17,20 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
 import fi.vm.sade.valintatulosservice.tarjonta.TarjontaHakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosBatchRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.Valintarekisteri
-import slick.dbio._
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Seq
 import scala.collection.mutable
-import scala.compat.Platform.ConcurrentModificationException
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
-import scala.util.{Failure, Success}
 
 class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTulosRestClient,
                                        appConfig: VtsAppConfig,
                                        sijoitteluRepository: SijoitteluRepository,
-                                       valinnantulosRepository: ValinnantulosRepository,
+                                       valinnantulosBatchRepository: ValinnantulosBatchRepository,
                                        hakukohdeRecordService: HakukohdeRecordService,
                                        tarjontaHakuService: TarjontaHakuService,
                                        valintalaskentakoostepalveluService: ValintalaskentakoostepalveluService) extends Logging {
@@ -94,10 +90,10 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       val (valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset) = timed("Create save objects for saving valintadata") {
         createSaveObjects(hakukohteet, valintatulokset)}
       timed(s"Saving valinta data for sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid") {
-        valinnantulosRepository.runBlocking(valinnantulosRepository.storeBatch(valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset), Duration(15, MINUTES))
+        valinnantulosBatchRepository.runBlocking(valinnantulosBatchRepository.storeBatch(valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset), Duration(15, MINUTES))
       }
       logger.info("Deleting valinnantilat_history entries that were duplicated by sijoittelu and migration saves.")
-      valinnantulosRepository.deleteValinnantilaHistorySavedBySijoitteluajoAndMigration(mongoSijoitteluAjoId.toString)
+      valinnantulosBatchRepository.deleteValinnantilaHistorySavedBySijoitteluajoAndMigration(mongoSijoitteluAjoId.toString)
       sijoitteluRepository.saveSijoittelunHash(hakuOid, sijoitteluHash)
     }
     logger.info("-----------------------------------------------------------")

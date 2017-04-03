@@ -5,7 +5,7 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
 import fi.vm.sade.valintatulosservice.tarjonta.TarjontaHakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosBatchRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import org.json4s.jackson.Serialization.read
 import org.scalatra.swagger.Swagger
@@ -13,7 +13,7 @@ import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.{InternalServerError, Ok}
 
 class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepository,
-                                       valinnantulosRepository: ValinnantulosRepository,
+                                       valinnantulosBatchRepository: ValinnantulosBatchRepository,
                                        hakukohdeRecordService: HakukohdeRecordService,
                                        tarjontaHakuService: TarjontaHakuService,
                                        valintalaskentakoostepalveluService: ValintalaskentakoostepalveluService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
@@ -23,7 +23,7 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
 
   private val sijoittelunTulosRestClient = new SijoittelunTulosRestClient(appConfig)
   private val migraatioService = new SijoitteluntulosMigraatioService(sijoittelunTulosRestClient, appConfig,
-    sijoitteluRepository, valinnantulosRepository, hakukohdeRecordService, tarjontaHakuService, valintalaskentakoostepalveluService)
+    sijoitteluRepository, valinnantulosBatchRepository, hakukohdeRecordService, tarjontaHakuService, valintalaskentakoostepalveluService)
 
   logger.warn("Mountataan Valintarekisterin sijoittelun tuloksien migraatioservlet!")
 

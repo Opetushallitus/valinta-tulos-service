@@ -1,6 +1,5 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
-import java.sql.Timestamp
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 
@@ -12,15 +11,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
 trait ValinnantulosRepository extends ValintarekisteriRepository {
-  type TilanViimeisinMuutos = Timestamp
-
   def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
   def storeValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
   def storeValinnantila(tila:ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
   def storeValinnantilaOverridingTimestamp(tila:ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None, tilanViimeisinMuutos: TilanViimeisinMuutos): DBIO[Unit]
-  def storeBatch(valinnantilat: Seq[(ValinnantilanTallennus, TilanViimeisinMuutos)],
-                 valinnantuloksenOhjaukset: Seq[ValinnantuloksenOhjaus],
-                 ilmoittautumiset: Seq[(String, Ilmoittautuminen)]): DBIO[Unit]
 
   def updateValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
 
@@ -34,8 +28,6 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
 
   def deleteValinnantulos(muokkaaja:String, valinnantulos:Valinnantulos, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
   def deleteIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
-
-  def deleteValinnantilaHistorySavedBySijoitteluajoAndMigration(sijoitteluajoId: String)
 
   def getValinnantuloksetAndLastModifiedDateForValintatapajono(valintatapajonoOid:String, timeout:Duration = Duration(2, TimeUnit.SECONDS)):Option[(Instant, Set[Valinnantulos])] =
     runBlockingTransactionally(

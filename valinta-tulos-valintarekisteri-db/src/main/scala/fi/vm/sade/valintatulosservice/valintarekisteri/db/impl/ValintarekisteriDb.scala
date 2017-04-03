@@ -22,6 +22,7 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
   with SessionRepositoryImpl
   with EnsikertalaisuusRepositoryImpl
   with ValinnantulosRepositoryImpl
+  with ValinnantulosBatchRepositoryImpl
   with HyvaksymiskirjeRepositoryImpl
   with LukuvuosimaksuRepositoryImpl {
 

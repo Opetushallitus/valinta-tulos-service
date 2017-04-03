@@ -30,11 +30,11 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
      "1.2.246.562.29.28924613947" - Haku ammatilliseen opettajankoulutukseen 2017
      "1.2.246.562.29.87593180141" - Syksyn 2016 kk-yhteishaku */
 
-  val hakuOidsToTest = Seq("1.2.246.562.29.87593180141")
+  val hakuOidsToTest = Seq("1.2.246.562.29.98929669087", "1.2.246.562.29.61316288341", "1.2.246.562.29.669559278110")
 
-  val infoOn = false
-  val debugOn = false
-  val fileForStoringNewResponse: Option[String] = /*None  //  */ Some("/tmp/lol.json")
+  val infoOn = true
+  val debugOn = true
+  val fileForStoringNewResponse: Option[String] = None  //  */ Some("/tmp/lol.json")
 
   def info(message:String) = if(infoOn) logger.info(message)
   def debug(message:String) = if(debugOn) logger.info(message)
