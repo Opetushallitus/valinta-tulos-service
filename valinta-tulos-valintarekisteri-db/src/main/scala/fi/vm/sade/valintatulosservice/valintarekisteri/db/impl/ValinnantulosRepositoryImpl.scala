@@ -299,7 +299,6 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
          tila = excluded.tila,
          tilan_viimeisin_muutos = excluded.tilan_viimeisin_muutos,
          ilmoittaja = excluded.ilmoittaja
-       where valinnantilat.tila <> excluded.tila
     """)
 
   private def createValinnantilaInsertRow(statement: PreparedStatement, valinnantila: ValinnantilanTallennus, tilanViimeisinMuutos: TilanViimeisinMuutos) = {
