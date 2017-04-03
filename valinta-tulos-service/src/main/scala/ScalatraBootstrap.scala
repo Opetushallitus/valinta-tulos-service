@@ -83,7 +83,7 @@ class ScalatraBootstrap extends LifeCycle {
     }
 
     if(null != migrationMode && "true".equalsIgnoreCase(migrationMode)) {
-      context.mount(new SijoittelunTulosMigraatioServlet(migraatioService), "/sijoittelun-tulos-migraatio")
+      context.mount(new SijoittelunTulosMigraatioServlet(valintarekisteriDb, valintarekisteriDb, hakukohdeRecordService, tarjontaHakuService, valintalaskentakoostepalveluService), "/sijoittelun-tulos-migraatio")
     } else {
       context.mount(new BuildInfoServlet, "/")
       context.mount(new CasLogin(
