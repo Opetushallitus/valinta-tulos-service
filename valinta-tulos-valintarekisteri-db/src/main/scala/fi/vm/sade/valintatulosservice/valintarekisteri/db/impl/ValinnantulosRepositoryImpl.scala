@@ -258,12 +258,18 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
         val valinnantilaStatement = createValinnantilaStatement(session.connection)
         val valinnantuloksenOhjausStatement = createValinnantuloksenOhjausStatement(session.connection)
         val ilmoittautumisetStatement = createIlmoittautumisStatement(session.connection)
-        valinnantilat.foreach(v => createValinnantilaInsertRow(valinnantilaStatement, v._1, v._2))
-        valinnantuloksenOhjaukset.foreach(o => createValinnantuloksenOhjausInsertRow(valinnantuloksenOhjausStatement, o))
-        ilmoittautumiset.foreach(i => createIlmoittautumisInsertRow(ilmoittautumisetStatement, i._1, i._2))
-        valinnantilaStatement.executeBatch()
-        valinnantuloksenOhjausStatement.executeBatch()
-        ilmoittautumisetStatement.executeBatch()
+        try {
+          valinnantilat.foreach(v => createValinnantilaInsertRow(valinnantilaStatement, v._1, v._2))
+          valinnantuloksenOhjaukset.foreach(o => createValinnantuloksenOhjausInsertRow(valinnantuloksenOhjausStatement, o))
+          ilmoittautumiset.foreach(i => createIlmoittautumisInsertRow(ilmoittautumisetStatement, i._1, i._2))
+          valinnantilaStatement.executeBatch()
+          valinnantuloksenOhjausStatement.executeBatch()
+          ilmoittautumisetStatement.executeBatch()
+        } finally {
+          valinnantilaStatement.close()
+          valinnantuloksenOhjausStatement.close()
+          ilmoittautumisetStatement.close()
+        }
       },
 
       DbUtils.enable("ilmoittautumiset", "set_system_time_on_ilmoittautumiset_on_insert"),
