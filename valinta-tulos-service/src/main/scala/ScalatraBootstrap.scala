@@ -2,7 +2,6 @@ import java.util
 import javax.servlet.{DispatcherType, ServletContext}
 
 import fi.vm.sade.auditlog.{ApplicationType, Audit, Logger}
-import fi.vm.sade.oppijantunnistus.OppijanTunnistusService
 import fi.vm.sade.security._
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.{Dev, IT, VtsAppConfig}
@@ -12,7 +11,8 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.kela.KelaService
 import fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos.SijoittelunTulosMigraatioServlet
 import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
-import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.{HakijaResolver, MigraatioServlet}
+import fi.vm.sade.oppijantunnistus.OppijanTunnistusService
+import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.sijoittelu.{SijoitteluFixtures, SijoittelunTulosRestClient, SijoittelutulosService}
@@ -75,7 +75,6 @@ class ScalatraBootstrap extends LifeCycle {
     val migrationMode = System.getProperty("valinta-rekisteri-migration-mode")
 
     if(null != migrationMode && "true".equalsIgnoreCase(migrationMode)) {
-      context.mount(new MigraatioServlet(hakukohdeRecordService, valintarekisteriDb, new HakemusRepository(), appConfig.sijoitteluContext.raportointiService, hakuService), "/migraatio")
       context.mount(new SijoittelunTulosMigraatioServlet(valintarekisteriDb, valintarekisteriDb, hakukohdeRecordService, tarjontaHakuService, valintalaskentakoostepalveluService), "/sijoittelun-tulos-migraatio")
     } else {
       context.mount(new BuildInfoServlet, "/")
