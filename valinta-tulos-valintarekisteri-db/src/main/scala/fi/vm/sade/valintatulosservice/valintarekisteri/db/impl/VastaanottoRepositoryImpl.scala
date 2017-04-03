@@ -57,7 +57,11 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
     ).map(t => (t._1, t._2) -> t._3).toMap
     vastaanotot
       .filter(v => henkiloOids.contains(v.henkiloOid))
-      .map(v => (hakemusoidit((v.henkiloOid, v.hakukohdeOid)), hakukohteet(v.hakukohdeOid), v))
+      .map(v => (
+        hakemusoidit.getOrElse((v.henkiloOid, v.hakukohdeOid), throw new IllegalStateException(s"Henkilöllä ${v.henkiloOid} ei ole valinnantulosta hakukohteeseen ${v.hakukohdeOid}")),
+        hakukohteet(v.hakukohdeOid),
+        v
+      ))
   }
 
   override def aliases(henkiloOid: String): DBIO[Set[String]] = {
