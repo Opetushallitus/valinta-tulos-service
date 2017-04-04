@@ -9,7 +9,7 @@ import fi.vm.sade.valintatulosservice.config.{OhjausparametritAppConfig, VtsAppC
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.kela.KelaService
-import fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos.SijoittelunTulosMigraatioServlet
+import fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos.{SijoittelunTulosMigraatioScheduler, SijoittelunTulosMigraatioServlet}
 import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.oppijantunnistus.OppijanTunnistusService
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
@@ -71,11 +71,13 @@ class ScalatraBootstrap extends LifeCycle {
     lazy val valintalaskentakoostepalveluService = new ValintalaskentakoostepalveluService(appConfig)
     lazy val ldapUserService = new LdapUserService(appConfig.securityContext.directoryClient)
     lazy val hyvaksymiskirjeService = new HyvaksymiskirjeService(valintarekisteriDb, hakuService, audit, authorizer)
+    lazy val sijoitteluntulosMigraatioScheduler = new SijoittelunTulosMigraatioScheduler
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
 
     val migrationMode = System.getProperty("valinta-rekisteri-migration-mode")
 
     if(null != migrationMode && "true".equalsIgnoreCase(migrationMode)) {
+      sijoitteluntulosMigraatioScheduler.startMigrationScheduler()
       context.mount(new SijoittelunTulosMigraatioServlet(valintarekisteriDb, valintarekisteriDb, hakukohdeRecordService, tarjontaHakuService, valintalaskentakoostepalveluService), "/sijoittelun-tulos-migraatio")
     } else {
       context.mount(new BuildInfoServlet, "/")
