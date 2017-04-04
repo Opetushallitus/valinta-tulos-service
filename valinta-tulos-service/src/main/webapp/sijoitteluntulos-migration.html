@@ -13,6 +13,7 @@
         };
         document.getElementById('responseHeader').innerHTML = '&nbsp;';
         document.getElementById('ajaxIndicator').style.visibility = 'visible';
+        document.getElementById('response').innerHTML = "odotetaan vastausta...";
         started = new Date();
         fetch('/valinta-tulos-service/sijoittelun-tulos-migraatio/haut?dryrun=false', request)
           .then(handleResponse)
