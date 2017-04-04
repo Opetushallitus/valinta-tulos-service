@@ -70,6 +70,7 @@ class ScalatraBootstrap extends LifeCycle {
     lazy val tarjontaHakuService = new TarjontaHakuService(appConfig.hakuServiceConfig)
     lazy val valintalaskentakoostepalveluService = new ValintalaskentakoostepalveluService(appConfig)
     lazy val ldapUserService = new LdapUserService(appConfig.securityContext.directoryClient)
+    lazy val hyvaksymiskirjeService = new HyvaksymiskirjeService(valintarekisteriDb, hakuService, audit, authorizer)
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
 
     val migrationMode = System.getProperty("valinta-rekisteri-migration-mode")
@@ -112,7 +113,7 @@ class ScalatraBootstrap extends LifeCycle {
 
       context.mount(new ValinnantulosServlet(valinnantulosService, valintarekisteriDb), "/auth/valinnan-tulos")
       context.mount(new SijoitteluServlet(sijoitteluService, valintarekisteriService, valintarekisteriDb), "/auth/sijoittelu")
-      context.mount(new HyvaksymiskirjeServlet(valintarekisteriDb, hakuService, valintarekisteriDb, authorizer, audit), "/auth/hyvaksymiskirje")
+      context.mount(new HyvaksymiskirjeServlet(hyvaksymiskirjeService, valintarekisteriDb), "/auth/hyvaksymiskirje")
       context.mount(new LukuvuosimaksuServletWithCAS(lukuvuosimaksuService, valintarekisteriDb, hakuService, authorizer), "/auth/lukuvuosimaksu")
     }
     context.mount(new HakukohdeRefreshServlet(valintarekisteriDb, hakukohdeRecordService), "/virkistys")
