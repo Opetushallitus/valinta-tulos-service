@@ -12,15 +12,15 @@ trait ValinnantulosBatchRepositoryImpl extends ValinnantulosBatchRepository with
     logger.info(s"poistettavien sijoitteluajoId: $sijoitteluajoId")
     runBlocking(
       sqlu"""delete from valinnantilat_history
-             where (hakukohde_oid, valintatapajono_oid, hakemus_oid, tila, tilan_viimeisin_muutos) in (
-               select h.hakukohde_oid, h.valintatapajono_oid, h.hakemus_oid, h.tila, h.tilan_viimeisin_muutos
+             where (hakukohde_oid, valintatapajono_oid, hakemus_oid, tila, transaction_id, ilmoittaja) in (
+               select h.hakukohde_oid, h.valintatapajono_oid, h.hakemus_oid, h.tila, h.transaction_id, h.ilmoittaja
                from valinnantilat_history as h
                join valinnantilat as v
                   on v.valintatapajono_oid = h.valintatapajono_oid
                   and v.hakemus_oid = h.hakemus_oid
                   and v.hakukohde_oid = h.hakukohde_oid
                   and v.tila = h.tila
-                  and v.tilan_viimeisin_muutos = h.tilan_viimeisin_muutos
+                  and v.transaction_id = h.transaction_id
                where h.ilmoittaja = ${sijoitteluajoId})""")
   }
 
