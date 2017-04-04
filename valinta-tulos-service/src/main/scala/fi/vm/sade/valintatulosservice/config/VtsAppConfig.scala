@@ -192,7 +192,10 @@ object VtsAppConfig extends Logging {
       new MockSecurityContext(
         settings.securitySettings.casServiceIdentifier,
         settings.securitySettings.requiredLdapRoles.map(Role(_)).toSet,
-        Map("testuser" -> LdapUser(settings.securitySettings.requiredLdapRoles, "Mock", "User", "mockoid"))
+        Map("testuser" -> LdapUser(settings.securitySettings.requiredLdapRoles, "Mock", "User", "mockoid"),
+            "sijoitteluUser" -> LdapUser(List("APP_VALINTATULOSSERVICE_CRUD", "APP_SIJOITTELU_CRUD", "APP_SIJOITTELU_CRUD_123.123.123.123"),
+              "Mock-Sijoittelu", "Sijoittelu-User", "1.2.840.113554.1.2.2")
+        )
       )
     }
   }
