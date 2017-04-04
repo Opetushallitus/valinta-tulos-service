@@ -40,6 +40,10 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
 
   private val adapter = new HexBinaryAdapter()
 
+  private type ValintatapajonoOid = String
+  private type HakemusOid = String
+  private type HakukohdeOid = String
+
   def migrate(hakuOid: String, sijoitteluHash:String, dryRun: Boolean): Unit = {
     sijoittelunTulosRestClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None).foreach { sijoitteluAjo =>
       logger.info(s"*** Starting to migrate sijoitteluAjo ${sijoitteluAjo.getSijoitteluajoId} of haku $hakuOid from MongoDb to Postgres")
@@ -142,39 +146,43 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
   private def createSaveObjects(hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]):
     (Seq[(ValinnantilanTallennus, Timestamp)], Seq[ValinnantuloksenOhjaus], Seq[(String, Ilmoittautuminen)]) = {
 
-    val hakemuksetOideittain: Map[(String, String), List[(Hakemus, String)]] = groupHakemusResultsByHakemusOidAndJonoOid(hakukohteet)
+    val hakemuksetOideittain: Map[(HakemusOid, ValintatapajonoOid, HakukohdeOid), List[(Hakemus, ValintatapajonoOid, HakukohdeOid)]] = groupHakemusResultsByHakemusOidAndJonoOid(hakukohteet)
+    val valintatuloksetOideittain: Map[(HakemusOid, ValintatapajonoOid), List[Valintatulos]] = valintatulokset.asScala.toList.groupBy(v => (v.getHakemusOid, v.getValintatapajonoOid))
 
     var valinnantilas: Vector[(ValinnantilanTallennus, Timestamp)] = Vector()
     var valinnantuloksenOhjaukset: Vector[ValinnantuloksenOhjaus] = Vector()
     var ilmoittautumiset: Vector[(String, Ilmoittautuminen)] = Vector()
 
-    valintatulokset.asScala.toList.foreach { v =>
-      val hakuOid = v.getHakuOid
-      val hakemusOid = v.getHakemusOid
-      val henkiloOid = v.getHakijaOid
-      val valintatapajonoOid = v.getValintatapajonoOid
-      val hakukohdeOid = v.getHakukohdeOid
-      val hakemus: Option[Hakemus] = findHakemus(hakemuksetOideittain, hakuOid, hakemusOid, valintatapajonoOid, hakukohdeOid)
-      var hakemuksenTuloksenTilahistoriaOldestFirst: List[TilaHistoria] = hakemus.map(_.getTilaHistoria.asScala.toList.sortBy(_.getLuotu)).toList.flatten
+    hakemuksetOideittain.foreach { case (k, v) =>
+      val valintatapajonoOid = k._2
+      val hakukohdeOid = v.head._3
+      val hakemus: Hakemus = v.head._1
+      val hakemusOid = hakemus.getHakemusOid
+      val henkiloOid = hakemus.getHakijaOid
+      var hakemuksenTuloksenTilahistoriaOldestFirst: List[TilaHistoria] = hakemus.getTilaHistoria.asScala.toList.sortBy(_.getLuotu)
 
-      hakemus.foreach(h => {
-        hakemuksenTuloksenTilahistoriaOldestFirst.lastOption.foreach(hist => {
-          if (h.getTila != hist.getTila) {
-            logger.warn(s"hakemus $hakemusOid didn't have current tila in tila history, creating one artificially.")
-            hakemuksenTuloksenTilahistoriaOldestFirst = hakemuksenTuloksenTilahistoriaOldestFirst :+ new TilaHistoria(h.getTila)
-          }
-        })
+      hakemuksenTuloksenTilahistoriaOldestFirst.lastOption.foreach(hist => {
+        if (hakemus.getTila != hist.getTila) {
+          logger.warn(s"hakemus $hakemusOid didn't have current tila in tila history, creating one artificially.")
+          hakemuksenTuloksenTilahistoriaOldestFirst = hakemuksenTuloksenTilahistoriaOldestFirst :+ new TilaHistoria(hakemus.getTila)
+        }
       })
 
       val hakemuksenValinnantilas = getHakemuksenValinnantilas(hakemusOid, henkiloOid, valintatapajonoOid, hakukohdeOid, hakemuksenTuloksenTilahistoriaOldestFirst)
 
       if (hakemuksenValinnantilas.nonEmpty) {
-        val logEntriesLatestFirst = v.getLogEntries.asScala.toList.sortBy(_.getLuotu)
-        val hakemuksenValinnantilojenohjaukset = getHakemuksenValinnantuloksenOhjaukset(v, hakemusOid, valintatapajonoOid, hakukohdeOid, logEntriesLatestFirst)
-        val hakemuksenIlmoittautumiset = getHakemuksenIlmoittautumiset(v, henkiloOid, hakukohdeOid, logEntriesLatestFirst)
         valinnantilas = valinnantilas ++ hakemuksenValinnantilas
-        valinnantuloksenOhjaukset = valinnantuloksenOhjaukset ++ hakemuksenValinnantilojenohjaukset.toSeq
-        ilmoittautumiset = ilmoittautumiset ++ hakemuksenIlmoittautumiset
+        valintatuloksetOideittain.get((hakemusOid, valintatapajonoOid)) match {
+          case Some(valintatulos) =>
+            valintatulos.foreach { tulos =>
+              val logEntriesLatestFirst = tulos.getLogEntries.asScala.toList.sortBy(_.getLuotu)
+              val hakemuksenValinnantilojenohjaukset = getHakemuksenValinnantuloksenOhjaukset(tulos, hakemusOid, valintatapajonoOid, hakukohdeOid, logEntriesLatestFirst)
+              val hakemuksenIlmoittautumiset = getHakemuksenIlmoittautumiset(tulos, henkiloOid, hakukohdeOid, logEntriesLatestFirst)
+              valinnantuloksenOhjaukset = valinnantuloksenOhjaukset ++ hakemuksenValinnantilojenohjaukset.toSeq
+              ilmoittautumiset = ilmoittautumiset ++ hakemuksenIlmoittautumiset
+            }
+          case _ =>
+        }
       }
     }
     (valinnantilas, valinnantuloksenOhjaukset, ilmoittautumiset)
@@ -206,28 +214,14 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     }
   }
 
-  private def findHakemus(hakemuksetOideittain: Map[(String, String), List[(Hakemus, String)]], hakuOid: String, hakemusOid: String,
-                          valintatapajonoOid: String, hakukohdeOid: String) = {
-    val hs = hakemuksetOideittain.get((hakemusOid, valintatapajonoOid)).toSeq.flatMap(_.map(_._1))
-    if (hs.isEmpty) {
-      logger.warn(s"Ei löytynyt sijoittelun tulosta kombolle hakuoid=$hakuOid / hakukohdeoid=$hakukohdeOid" +
-        s" / valintatapajonooid=$valintatapajonoOid / hakemusoid=$hakemusOid ")
-    }
-    if (hs.size > 1) {
-      throw new IllegalStateException(s"Löytyi liian monta hakemusta kombolle hakuoid=${hakuOid} / hakukohdeoid=$hakukohdeOid" +
-        s" / valintatapajonooid=$valintatapajonoOid / hakemusoid=$hakemusOid ")
-    }
-    hs.headOption
-  }
-
   private def groupHakemusResultsByHakemusOidAndJonoOid(hakukohteet: util.List[Hakukohde]) = {
     val kaikkiHakemuksetJaJonoOidit = for {
       hakukohde <- hakukohteet.asScala.toList
       jono <- hakukohde.getValintatapajonot.asScala.toList
       hakemus <- jono.getHakemukset.asScala
-    } yield (hakemus, jono.getOid)
+    } yield (hakemus, jono.getOid, hakukohde.getOid)
     logger.info(s"Found ${kaikkiHakemuksetJaJonoOidit.length} hakemus objects for sijoitteluajo")
-    kaikkiHakemuksetJaJonoOidit.groupBy { case (hakemus, jonoOid) => (hakemus.getHakemusOid, jonoOid) }
+    kaikkiHakemuksetJaJonoOidit.groupBy { case (hakemus, jonoOid, hakukohdeOid) => (hakemus.getHakemusOid, jonoOid, hakukohdeOid) }
   }
 
   private def kludgeStartAndEndToSijoitteluAjoIfMissing(sijoitteluAjo: SijoitteluAjo, hakukohteet: util.List[Hakukohde]) {
