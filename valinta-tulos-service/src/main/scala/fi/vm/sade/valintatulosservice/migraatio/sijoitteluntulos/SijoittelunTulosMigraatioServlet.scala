@@ -1,5 +1,7 @@
 package fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos
 
+import java.io.{PrintWriter, StringWriter}
+
 import fi.vm.sade.valintatulosservice.VtsServletBase
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
@@ -27,7 +29,7 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
 
   logger.warn("Mountataan Valintarekisterin sijoittelun tuloksien migraatioservlet!")
 
-  val postHakuMigration: OperationBuilder = (apiOperation[Int]("migroiHakukohde")
+  val postHakuMigration: OperationBuilder = (apiOperation[String]("migroiHakukohde")
     summary "Migroi sijoitteludb:stä valintarekisteriin hakuja. Toistaiseksi ei välitä siitä, ovatko tiedot muuttuneet"
     parameter queryParam[Boolean]("dryrun").defaultValue(true).description("Dry run logittaa haut, joiden tila on muuttunut, Mongossa mutta ei päivitä kantaa.")
     parameter bodyParam[Set[String]]("hakuOids").description("Virkistettävien hakujen oidit. Huom, tyhjä lista virkistää kaikki!"))
@@ -36,17 +38,19 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
     val dryRun = params("dryrun").toBoolean
     val hakuOidsAndHashes = migraatioService.getSijoitteluHashesByHakuOid(read[Set[String]](request.body))
 
-    try
+    try {
       hakuOidsAndHashes.foreach(h => migraatioService.migrate(h._1, h._2, dryRun))
-    catch {
+      val msg = s"postHakuMigration DONE in ${System.currentTimeMillis - start} ms"
+      logger.info(msg)
+      Ok(s"Migraatio onnistui, käytiin läpi ${hakuOidsAndHashes.size} hakuOidia")
+    } catch {
       case e: Exception =>
-        logger.error("Migraatio epäonnistui", e)
-        InternalServerError("Migraatio epäonnistui", reason = e.getMessage)
+        val msg = s"Migraatio epäonnistui, kesti ${System.currentTimeMillis - start} ms"
+        logger.error(msg, e)
+        val exceptionOutputWriter = new StringWriter()
+        e.printStackTrace(new PrintWriter(exceptionOutputWriter))
+        InternalServerError(s"$msg : ${e.getMessage} ${exceptionOutputWriter.toString}", reason = e.getMessage)
     }
-
-    val msg = s"postHakuMigration DONE in ${System.currentTimeMillis - start} ms"
-    logger.info(msg)
-    Ok(-1)
   }
 
   val postHakukohdeMigrationTiming: OperationBuilder = (apiOperation[Int]("migroiHakukohde")
