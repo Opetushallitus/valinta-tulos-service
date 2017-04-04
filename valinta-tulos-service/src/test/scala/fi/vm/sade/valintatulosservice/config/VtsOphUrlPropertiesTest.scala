@@ -13,7 +13,7 @@ class VtsOphUrlPropertiesTest extends Specification {
   "Properties" should {
     "resolve all" in {
       val appConfig: VtsAppConfig = new VtsAppConfig.IT
-      val urlprops = appConfig.settings.ophUrlProperties
+      val urlprops = appConfig.ophUrlProperties
       val keys = urlprops.config.load().keySet().toSet
       val fn = {
         keys.foreach(s => {

@@ -27,7 +27,7 @@ class ValintalaskentakoostepalveluService (appConfig: VtsAppConfig) {
 
     implicit val hakukohdeResponseDecoder =  org.http4s.json4s.native.jsonOf[HakukohdeResponse]
 
-    val url = appConfig.settings.ophUrlProperties.url("valintalaskentakoostepalvelu.valintaperusteet.resource.hakukohde", hakukohdeOid)
+    val url = appConfig.ophUrlProperties.url("valintalaskentakoostepalvelu.valintaperusteet.resource.hakukohde", hakukohdeOid)
     Try(
       valintalaskentakoosteClient.prepare({
         Request(method = Method.GET, uri = createUri(url, ""))

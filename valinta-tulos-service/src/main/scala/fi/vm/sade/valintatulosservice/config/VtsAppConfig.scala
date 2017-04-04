@@ -18,6 +18,7 @@ import fi.vm.sade.valintatulosservice.sijoittelu.SijoitteluSpringContext
 
 object VtsAppConfig extends Logging {
   def getProfileProperty() = System.getProperty("valintatulos.profile", "default")
+  private val propertiesFile = "/oph-configuration/valinta-tulos-service-oph.properties"
   private implicit val settingsParser = VtsApplicationSettingsParser
   private val embeddedMongoPortChooser = new PortFromSystemPropertyOrFindFree("valintatulos.embeddedmongo.port")
   private val itPostgresPortChooser = new PortFromSystemPropertyOrFindFree("valintatulos.it.postgres.port")
@@ -48,12 +49,14 @@ object VtsAppConfig extends Logging {
    * Default profile, uses ~/oph-configuration/valinta-tulos-service.properties
    */
   class Default extends VtsAppConfig with ExternalProps with CasLdapSecurity {
+    override val ophUrlProperties = new ProdOphUrlProperties(propertiesFile)
   }
 
   /**
    * Templated profile, uses config template with vars file located by system property valintatulos.vars
    */
   class LocalTestingWithTemplatedVars(val templateAttributesFile: String = System.getProperty("valintatulos.vars")) extends VtsAppConfig with TemplatedProps with CasLdapSecurity {
+    override val ophUrlProperties = new DevOphUrlProperties(propertiesFile)
     override def templateAttributesURL = new File(templateAttributesFile).toURI.toURL
   }
 
@@ -63,16 +66,23 @@ object VtsAppConfig extends Logging {
    * Dev profile, uses local mongo db
    */
   class Dev extends VtsAppConfig with ExampleTemplatedProps with CasLdapSecurity with StubbedExternalDeps {
+    override val ophUrlProperties = new DevOphUrlProperties(propertiesFile)
+
     override lazy val settings = loadSettings
       .withOverride(("hakemus.mongodb.uri", "mongodb://localhost:27017"))
       .withOverride(("sijoittelu-service.mongodb.uri", "mongodb://localhost:27017"))
       .withOverride("sijoittelu-service.mongodb.dbname", "sijoittelu")
   }
 
+  class IT_luokka extends IT {
+    override val ophUrlProperties = new OphUrlProperties(propertiesFile, false, Some("itest-virkailija.oph.ware.fi"))
+  }
+
   /**
    *  IT (integration test) profiles. Uses embedded mongo and PostgreSQL databases, and stubbed external deps
    */
   class IT extends ExampleTemplatedProps with StubbedExternalDeps with MockSecurity {
+    override val ophUrlProperties:OphUrlProperties = new DevOphUrlProperties(propertiesFile)
     private lazy val itPostgres = new ITPostgres(itPostgresPortChooser)
 
     override def start {

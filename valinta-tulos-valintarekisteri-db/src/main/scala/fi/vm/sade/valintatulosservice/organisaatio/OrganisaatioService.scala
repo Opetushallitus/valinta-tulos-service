@@ -31,7 +31,7 @@ class RealOrganisaatioService(appConfig:AppConfig) extends OrganisaatioService{
   implicit val formats = DefaultFormats
 
   override def hae(oid: String): Either[Throwable, Organisaatiot] = {
-    val url = appConfig.settings.ophUrlProperties.url("organisaatio-service.organisaatio.hae", mapAsJavaMap(Map(
+    val url = appConfig.ophUrlProperties.url("organisaatio-service.organisaatio.hae", mapAsJavaMap(Map(
       "vainAktiiviset" -> true,
       "vainLakkautetut" -> false,
       "suunnitellut" -> false,

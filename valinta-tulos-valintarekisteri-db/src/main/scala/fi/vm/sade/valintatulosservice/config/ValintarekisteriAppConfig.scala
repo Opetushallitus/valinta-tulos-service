@@ -1,15 +1,14 @@
 package fi.vm.sade.valintatulosservice.config
 
 import java.net.URL
-import java.nio.file.Paths
 
 import com.typesafe.config.{Config, ConfigFactory}
-import fi.vm.sade.properties.OphProperties
 import fi.vm.sade.utils.config.{ApplicationSettingsLoader, ConfigTemplateProcessor}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.utils.tcp.PortFromSystemPropertyOrFindFree
 
 object ValintarekisteriAppConfig extends Logging {
+  private val propertiesFile = "/oph-configuration/valinta-tulos-valintarekisteri-db-oph.properties"
   private implicit val settingsParser = ValintarekisteriApplicationSettingsParser
   private val itPostgresPortChooser = new PortFromSystemPropertyOrFindFree("valintatulos.it.postgres.port")
 
@@ -18,10 +17,12 @@ object ValintarekisteriAppConfig extends Logging {
   def getDefault(properties:java.util.Properties) = new Default(ConfigFactory.parseProperties(properties))
 
   class Default(config:Config) extends ValintarekisteriAppConfig {
+    override val ophUrlProperties = new ProdOphUrlProperties(propertiesFile)
     val settings = settingsParser.parse(config)
   }
 
   class IT extends ExampleTemplatedProps {
+    override val ophUrlProperties = new DevOphUrlProperties(propertiesFile)
     private lazy val itPostgres = new ITPostgres(itPostgresPortChooser)
 
     override def start {
@@ -70,22 +71,4 @@ object ValintarekisteriAppConfig extends Logging {
 
 trait StubbedExternalDeps {
 
-}
-
-private[config] class ValintarekisteriOphUrlProperties(confs: Config)
-  extends OphProperties("/oph-configuration/valinta-tulos-valintarekisteri-db-oph.properties")
-  with Logging {
-  addOptionalFiles(Paths.get(sys.props.getOrElse("user.home", ""), "/oph-configuration/common.properties").toString)
-  addOptionalFiles(Paths.get(sys.props.getOrElse("user.home", ""), "/oph-configuration/valinta-tulos-service.properties").toString)
-
-  private val virkailijaHost =
-    if (confs.hasPath("host.virkailija")){
-      confs.getString("host.virkailija")
-    }
-    else {
-      logger.error("host.virkailija not defined in config, using localhost in oph.properties")
-      "localhost"
-    }
-
-  addDefault("host.virkailija", virkailijaHost)
 }

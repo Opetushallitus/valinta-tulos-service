@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.testenvironment
 
-import fi.vm.sade.valintatulosservice.config.VtsAppConfig.IT
+import fi.vm.sade.valintatulosservice.config.VtsAppConfig.IT_luokka
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, RemoteOhjausparametritService}
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
@@ -10,7 +10,7 @@ import org.specs2.runner.JUnitRunner
 class OhjausparametritIntegrationTest extends Specification {
   "OhjausparametritService" should {
     "Extract response from API"in {
-      implicit val testConfig = new IT
+      implicit val testConfig = new IT_luokka
       val parametri: Ohjausparametrit = new RemoteOhjausparametritService().ohjausparametrit("1.2.246.562.29.52925694235").right.get.get
       parametri.ilmoittautuminenPaattyy must_== None
       parametri.vastaanottoaikataulu.vastaanottoEnd.get.getMillis must_== 1500033600000L
@@ -19,7 +19,7 @@ class OhjausparametritIntegrationTest extends Specification {
 
   "OhjausparametritService fail case" should {
     "return Left for non existing parametri ID" in {
-      implicit val testConfig = new IT
+      implicit val testConfig = new IT_luokka
       new RemoteOhjausparametritService().ohjausparametrit("987654321").right.get.get must throwA[Throwable]
     }
   }
