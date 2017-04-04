@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script type="application/javascript">
+      var started;
+      function migrate() {
+        var hakuOidsObject = JSON.parse(document.getElementById("hakuOids").innerHTML);
+        console.log('About to post ', hakuOidsObject);
+        var hakuOidsString = JSON.stringify(hakuOidsObject);
+        var request = {
+          method: 'post', body: hakuOidsString, headers: new Headers({'Content-Type': 'application/json'})
+        };
+        document.getElementById('responseHeader').innerHTML = '&nbsp;';
+        document.getElementById('ajaxIndicator').style.visibility = 'visible';
+        started = new Date();
+        fetch('/valinta-tulos-service/sijoittelun-tulos-migraatio/haut?dryrun=true', request)
+          .then(handleResponse)
+          .then(displayResponseBody)
+          .catch(handleResponse);
+      }
+
+      function handleResponse(response) {
+        var finished = new Date();
+        var durationMs = finished.getTime() - started.getTime();
+        document.getElementById('ajaxIndicator').style.visibility = 'hidden';
+        document.getElementById('responseHeader').innerHTML = response.status + ' ' + response.statusText +
+          ' (kesti ' + durationMs + ' ms == ' + (durationMs / (60.0 * 1000.0) + 'min, ' + started + ' – ' +  finished + ')');
+        return response.text();
+      }
+
+      function displayResponseBody(responseText) {
+        document.getElementById('response').innerHTML = responseText;
+      }
+    </script>
+</head>
+<body>
+<div>
+    <label for="hakuOids">Syötä migroitavat hakuOidit JSON-taulukossa tähän.</label>
+    <textarea style="display: block; width: 800px; height: 200px;" id="hakuOids">["1.2.246.562.29.98929669087", "1.2.246.562.29.61316288341", "1.2.246.562.29.669559278110"]
+    </textarea>
+<div>
+<div>
+    <button onclick="migrate();">Käynnistä migraatio</button>
+    <img id="ajaxIndicator" src="ajax-loader.gif" style="visibility: hidden"/>
+</div>
+<div>
+    <span style="display: block">Vastaus palvelimelta:</span>
+    <div><span id="responseHeader">&nbsp;</span></div>
+    <textarea style="width: 800px; height: 200px;" id="response" disabled="disabled"></textarea>
+</div>
+</body>
+</html>

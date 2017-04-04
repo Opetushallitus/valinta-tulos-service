@@ -56,4 +56,10 @@ class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepositor
   post("/kellota-hakukohteet", operation(postHakukohdeMigrationTiming)) {
     Ok(migraatioService.getSijoitteluHashesByHakuOid(read[Set[String]](request.body)).keys.toSet)
   }
+
+  val getHakuMigrationUi: OperationBuilder = (apiOperation[Unit]("ui")
+    summary "Käyttöliittymä hakumigraation ajamiseen tietyille hauille. Avaa URL omaan tabiin, ei toimi swaggerin kautta.")
+  get("/ui", operation(getHakuMigrationUi)) {
+    redirect("/valinta-tulos-service/sijoitteluntulos-migration.html")
+  }
 }
