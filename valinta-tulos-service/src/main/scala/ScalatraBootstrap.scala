@@ -11,6 +11,7 @@ import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.kela.KelaService
 import fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos.{SijoittelunTulosMigraatioScheduler, SijoittelunTulosMigraatioServlet, SijoitteluntulosMigraatioService}
+import fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos.{SijoittelunTulosMigraatioScheduler, SijoittelunTulosMigraatioServlet}
 import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
@@ -83,6 +84,7 @@ class ScalatraBootstrap extends LifeCycle {
     }
 
     if(null != migrationMode && "true".equalsIgnoreCase(migrationMode)) {
+      sijoitteluntulosMigraatioScheduler.startMigrationScheduler()
       context.mount(new SijoittelunTulosMigraatioServlet(valintarekisteriDb, valintarekisteriDb, hakukohdeRecordService, tarjontaHakuService, valintalaskentakoostepalveluService), "/sijoittelun-tulos-migraatio")
     } else {
       context.mount(new BuildInfoServlet, "/")
