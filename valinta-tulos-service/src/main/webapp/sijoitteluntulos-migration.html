@@ -43,12 +43,14 @@
 </div>
 <div>
     <button onclick="migrate();">Käynnistä migraatio</button>
-    <img id="ajaxIndicator" src="ajax-loader.gif" style="visibility: hidden"/>
 </div>
 <div>
     <span style="display: block">Vastaus palvelimelta:</span>
     <div><span id="responseHeader">&nbsp;</span></div>
-    <textarea style="width: 800px; height: 200px;" id="response" disabled="disabled"></textarea>
+    <div>
+        <img id="ajaxIndicator" src="ajax-loader.gif" style="position: absolute; margin: 20px; visibility: hidden"/>
+        <textarea style="width: 800px; height: 200px;" id="response" disabled="disabled"></textarea>
+    </div>
 </div>
 </body>
 </html>
