@@ -146,16 +146,16 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
                 compareFields(uusiPistetieto.tilastoidaan, None, "pistetieto.tilastoidaan")
               })
 
-              debug(s"Tilahistoria ${uusiHakemus.tilaHistoria}")
-              if (uusiHakemus.tilaHistoria.size > vanhaHakemus.tilaHistoria.size) {
-                debug(s"vanhaHakemus.tilaHistoria: ${vanhaHakemus.hakemusOid} / ${vanhaHakemus.valintatapajonoOid} : ${vanhaHakemus.tilaHistoria}")
-                debug(s"uusiHakemus.tilaHistoria: ${uusiHakemus.hakemusOid} / ${uusiHakemus.valintatapajonoOid} : ${uusiHakemus.tilaHistoria}")
-              }
-              uusiHakemus.tilaHistoria.size must be_<=(vanhaHakemus.tilaHistoria.size)
-              for ((uusiTilahistoria, i) <- uusiHakemus.tilaHistoria.reverse.zipWithIndex) {
-                val vanhaTilahistoria = vanhaHakemus.tilaHistoria.reverse(i)
-                compareFields(uusiTilahistoria.tila, vanhaTilahistoria.tila, "tilahistoria.tila")
-                compareFields(uusiTilahistoria.luotu, vanhaTilahistoria.luotu, "tilahistoria.luotu")
+              val uusiTilahistoria = uusiHakemus.tilaHistoria.sortBy(_.luotu)
+              val vanhaTilahistoria = vanhaHakemus.tilaHistoria.sortBy(_.luotu)
+              debug(s"Tilahistoria ${uusiTilahistoria}")
+              if (vanhaHakemus.tila.getOrElse("") != vanhaTilahistoria.last.tila) {
+                info(s"Vanha tilahistoria is missing latest tila entry from hakemus ${vanhaHakemus.hakemusOid}")
+                debug(s"vanhaTilahistoria: ${vanhaHakemus.hakemusOid} / valintatapajono: ${vanhaHakemus.valintatapajonoOid} : ${vanhaTilahistoria}")
+                debug(s"uusiTilahistoria: ${uusiHakemus.hakemusOid} / valintatapajono: ${uusiHakemus.valintatapajonoOid} : ${uusiTilahistoria}")
+                compareTilahistoriat(uusiTilahistoria.dropRight(1), vanhaTilahistoria)
+              } else {
+                compareTilahistoriat(uusiTilahistoria, vanhaTilahistoria)
               }
 
             })
@@ -166,7 +166,7 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
             debug("vanhaHakukohde.hakijaryhmat:")
             vanhaHakukohde.hakijaryhmat.foreach { h => debug(s"\t$h") }
           }
-          compareFields(uusiHakukohde.hakijaryhmat.size, vanhaHakukohde.hakijaryhmat.size, "hakijaryhmat.size")
+          compareFields(uusiHakukohde.hakijaryhmat.size, vanhaHakukohde.hakijaryhmat.size, s"hakijaryhmat.size (hakukohde ${uusiHakukohde.oid})")
           hakijaryhmat = hakijaryhmat + uusiHakukohde.hakijaryhmat.size
           uusiHakukohde.hakijaryhmat.foreach(uusiHakijaryhma => {
             debug(s"Hakijaryhma ${uusiHakijaryhma.oid}")
@@ -192,6 +192,14 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
 
       }
       true must beTrue
+    }
+  }
+
+  private def compareTilahistoriat(uusiTilahistoria: List[Tilahistoria], vanhaTilahistoria: List[Tilahistoria]) = {
+    for ((uusiTilahistoriaEntry, i) <- uusiTilahistoria.reverse.zipWithIndex) {
+      val vanhaTilahistoriaEntry = vanhaTilahistoria.reverse(i)
+      compareFields(uusiTilahistoriaEntry.tila, vanhaTilahistoriaEntry.tila, "tilahistoria.tila")
+      compareFields(uusiTilahistoriaEntry.luotu, vanhaTilahistoriaEntry.luotu, "tilahistoria.luotu")
     }
   }
 

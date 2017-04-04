@@ -159,16 +159,8 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       val hakemus: Hakemus = v.head._1
       val hakemusOid = hakemus.getHakemusOid
       val henkiloOid = hakemus.getHakijaOid
-      var hakemuksenTuloksenTilahistoriaOldestFirst: List[TilaHistoria] = hakemus.getTilaHistoria.asScala.toList.sortBy(_.getLuotu)
 
-      hakemuksenTuloksenTilahistoriaOldestFirst.lastOption.foreach(hist => {
-        if (hakemus.getTila != hist.getTila) {
-          logger.warn(s"hakemus $hakemusOid didn't have current tila in tila history, creating one artificially.")
-          hakemuksenTuloksenTilahistoriaOldestFirst = hakemuksenTuloksenTilahistoriaOldestFirst :+ new TilaHistoria(hakemus.getTila)
-        }
-      })
-
-      val hakemuksenValinnantilas = getHakemuksenValinnantilas(hakemusOid, henkiloOid, valintatapajonoOid, hakukohdeOid, hakemuksenTuloksenTilahistoriaOldestFirst)
+      val hakemuksenValinnantilas = getHakemuksenValinnantilas(hakemus, valintatapajonoOid, hakukohdeOid)
 
       if (hakemuksenValinnantilas.nonEmpty) {
         valinnantilas = valinnantilas ++ hakemuksenValinnantilas
@@ -204,14 +196,24 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     }
   }
 
-  private def getHakemuksenValinnantilas(hakemusOid: String, henkiloOid: String, valintatapajonoOid: String, hakukohdeOid: String,
-                                         hakemuksenTuloksenTilahistoriaOldestFirst: List[TilaHistoria]) = {
-    hakemuksenTuloksenTilahistoriaOldestFirst.map { tilaHistoriaEntry =>
+  private def getHakemuksenValinnantilas(hakemus: Hakemus, valintatapajonoOid: String, hakukohdeOid: String) = {
+    val hakemuksenTuloksenTilahistoriaOldestFirst: List[TilaHistoria] = hakemus.getTilaHistoria.asScala.toList.sortBy(_.getLuotu)
+    val muokkaaja = "Sijoittelun tulokset -migraatio"
+
+    var historiat = hakemuksenTuloksenTilahistoriaOldestFirst.zipWithIndex.map { case(tilaHistoriaEntry, i) =>
       val valinnantila = Valinnantila(tilaHistoriaEntry.getTila)
-      val muokkaaja = "Sijoittelun tulokset -migraatio"
-      (ValinnantilanTallennus(hakemusOid, valintatapajonoOid, hakukohdeOid, henkiloOid, valinnantila, muokkaaja),
+      (ValinnantilanTallennus(hakemus.getHakemusOid, valintatapajonoOid, hakukohdeOid, hakemus.getHakijaOid, valinnantila, muokkaaja),
         new Timestamp(tilaHistoriaEntry.getLuotu.getTime))
     }
+
+    hakemuksenTuloksenTilahistoriaOldestFirst.lastOption.foreach(hist => {
+      if (hakemus.getTila != hist.getTila) {
+        logger.warn(s"hakemus ${hakemus.getHakemusOid} didn't have current tila in tila history, creating one artificially.")
+        historiat = historiat :+ (ValinnantilanTallennus(hakemus.getHakemusOid, valintatapajonoOid, hakukohdeOid, hakemus.getHakijaOid, Valinnantila(hakemus.getTila), s"$muokkaaja (generoitu nykyisen tilan historiatieto)"),
+          new Timestamp(new Date().getTime))
+      }
+    })
+    historiat
   }
 
   private def groupHakemusResultsByHakemusOidAndJonoOid(hakukohteet: util.List[Hakukohde]) = {
