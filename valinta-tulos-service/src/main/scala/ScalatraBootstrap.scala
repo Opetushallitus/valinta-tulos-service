@@ -95,7 +95,7 @@ class ScalatraBootstrap extends LifeCycle {
       context.mount(new EmailStatusServlet(mailPoller, valintatulosCollection, new MailDecorator(new HakemusRepository(), valintatulosCollection, hakuService, oppijanTunnistusService)), "/vastaanottoposti")
       context.mount(new EnsikertalaisuusServlet(valintarekisteriDb, appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus")
       context.mount(new HakijanVastaanottoServlet(vastaanottoService), "/vastaanotto")
-      context.mount(new ErillishakuServlet(valinnantulosService, ldapUserService), "/erillishaku/valinnan-tulos")
+      context.mount(new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, ldapUserService), "/erillishaku/valinnan-tulos")
 
       val casSessionService = new CasSessionService(
         appConfig.securityContext.casClient,

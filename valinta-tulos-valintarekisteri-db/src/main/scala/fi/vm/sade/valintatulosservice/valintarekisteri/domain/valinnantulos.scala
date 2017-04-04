@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.domain
 
 import java.sql.Timestamp
+import java.time.OffsetDateTime
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 
@@ -19,7 +20,8 @@ case class Valinnantulos(hakukohdeOid: String,
                          ilmoittautumistila: SijoitteluajonIlmoittautumistila,
                          poistettava: Option[Boolean] = None,
                          ohitaVastaanotto: Option[Boolean] = None,
-                         ohitaIlmoittautuminen: Option[Boolean] = None) {
+                         ohitaIlmoittautuminen: Option[Boolean] = None,
+                         hyvaksymiskirjeLahetetty: Option[OffsetDateTime] = None) {
 
   def hasChanged(other:Valinnantulos) =
     other.valinnantila != valinnantila ||
