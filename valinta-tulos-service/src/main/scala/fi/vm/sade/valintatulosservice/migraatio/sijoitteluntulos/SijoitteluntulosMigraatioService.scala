@@ -2,8 +2,9 @@ package fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos
 
 import java.security.MessageDigest
 import java.sql.Timestamp
+import java.util.Calendar.HOUR_OF_DAY
 import java.util.concurrent.TimeUnit.MINUTES
-import java.util.{Date, Optional}
+import java.util.{Calendar, Date, Optional}
 import java.{lang, util}
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter
 
@@ -325,5 +326,27 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
   private def digestString(hakukohdeString: String): Array[Byte] = {
     val digester = MessageDigest.getInstance("MD5")
     digester.digest(hakukohdeString.getBytes("UTF-8"))
+  }
+
+  def runScheduledMigration(): Unit = {
+    logger.info(s"Beginning scheduled migration.")
+    val hakuOids: Set[String] = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Sijoittelu").distinct("hakuOid").asScala.map(_.toString).toSet
+    val hakuOidsAndHashes: mutable.Map[String, String] = getSijoitteluHashesByHakuOid(hakuOids.take(5))
+    var hakuoidsNotProcessed: Seq[String] = List()
+    hakuOidsAndHashes.foreach { case (oid, hash) =>
+      if (isMigrationTime) {
+        logger.info(s"Scheduled migration of haku $oid starting")
+        migrate(oid, hash, dryRun = true) // TODO: Change to false to not just dryRun
+      } else hakuoidsNotProcessed = hakuoidsNotProcessed :+ oid
+    }
+    logger.info("Scheduled migration ended.")
+    if (hakuoidsNotProcessed.nonEmpty) {
+      logger.info(s"Didn't manage to do scheduler migration to hakuoids, time ran out: ${hakuoidsNotProcessed.toString()}")
+    }
+  }
+
+  private def isMigrationTime: Boolean = {
+    val hour = Calendar.getInstance().get(HOUR_OF_DAY)
+    (hour >= 19 && hour < 24) || (hour < 8 && hour >= 0)
   }
 }
