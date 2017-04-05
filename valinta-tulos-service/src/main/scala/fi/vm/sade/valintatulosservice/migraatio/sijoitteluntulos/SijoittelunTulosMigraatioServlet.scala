@@ -10,6 +10,8 @@ import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.{InternalServerError, Ok}
 
+import scala.util.{Failure, Try}
+
 class SijoittelunTulosMigraatioServlet(migraatioService: SijoitteluntulosMigraatioService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
   override val applicationName = Some("sijoittelun-tulos-migraatio")
 
@@ -38,18 +40,24 @@ class SijoittelunTulosMigraatioServlet(migraatioService: SijoitteluntulosMigraat
       migraatioService.getSijoitteluHashesByHakuOid(hakuOids)
     }
 
-    try {
-      hakuOidsAndHashes.foreach(h => migraatioService.migrate(h._1, h._2, dryRun))
-      val msg = s"postHakuMigration DONE in ${System.currentTimeMillis - start} ms"
-      logger.info(msg)
+    val hakuOidsWithResults = hakuOidsAndHashes.map(h => (h._1, Try(migraatioService.migrate(h._1, h._2, dryRun))))
+    val hakuOidsWithFailures = hakuOidsWithResults.filter(_._2.isFailure)
+    if (hakuOidsWithFailures.nonEmpty) {
+      val msg = s"${hakuOidsAndHashes.size} haun migraatiosta ${hakuOidsWithFailures.size} epäonnistui, " +
+        s"kesti ${System.currentTimeMillis - start} ms. Virheet:"
+      logger.error(msg)
+      val failureStackTraces = hakuOidsWithFailures.map {
+        case (hakuOid, Failure(e)) =>
+          logger.error(s"Virhe haun $hakuOid migraatiossa:", e)
+          val exceptionOutputWriter = new StringWriter()
+          e.printStackTrace(new PrintWriter(exceptionOutputWriter))
+          s"Haku $hakuOid : ${exceptionOutputWriter.toString}"
+        case x => throw new IllegalStateException(s"Mahdoton tilanne $x . Täällä piti olla vain virheitä.")
+      }
+      InternalServerError(s"$msg :\n$failureStackTraces")
+    } else {
+      logger.info(s"postHakuMigration DONE in ${System.currentTimeMillis - start} ms")
       Ok(s"Migraatio onnistui, käytiin läpi ${hakuOidsAndHashes.size} hakuOidia")
-    } catch {
-      case e: Exception =>
-        val msg = s"Migraatio epäonnistui, kesti ${System.currentTimeMillis - start} ms"
-        logger.error(msg, e)
-        val exceptionOutputWriter = new StringWriter()
-        e.printStackTrace(new PrintWriter(exceptionOutputWriter))
-        InternalServerError(s"$msg : ${e.getMessage} ${exceptionOutputWriter.toString}", reason = e.getMessage)
     }
   }
 
