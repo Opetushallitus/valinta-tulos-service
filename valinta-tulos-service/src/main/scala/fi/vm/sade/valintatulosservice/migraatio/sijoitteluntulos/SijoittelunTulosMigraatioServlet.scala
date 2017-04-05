@@ -28,6 +28,7 @@ class SijoittelunTulosMigraatioServlet(migraatioService: SijoitteluntulosMigraat
     parameter queryParam[Boolean]("dryrun").defaultValue(true).description("Dry run logittaa haut, joiden tila on muuttunut Mongossa, mutta ei päivitä kantaa.")
     parameter bodyParam[Set[String]]("hakuOids").description("Virkistettävien hakujen oidit. Huom, tyhjä lista virkistää kaikki!"))
   post("/haut", operation(postHakuMigration)) {
+    contentType = "text/plain"
     val start = System.currentTimeMillis()
     val dryRun = params("dryrun").toBoolean
     val hakuOidsAndHashes = migraatioService.getSijoitteluHashesByHakuOid(read[Set[String]](request.body))
