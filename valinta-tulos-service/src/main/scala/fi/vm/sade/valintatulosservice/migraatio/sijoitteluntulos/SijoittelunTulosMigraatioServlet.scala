@@ -4,11 +4,7 @@ import java.io.{PrintWriter, StringWriter}
 
 import fi.vm.sade.valintatulosservice.VtsServletBase
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
-import fi.vm.sade.valintatulosservice.tarjonta.TarjontaHakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosBatchRepository}
-import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import org.json4s.jackson.Serialization.read
 import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
