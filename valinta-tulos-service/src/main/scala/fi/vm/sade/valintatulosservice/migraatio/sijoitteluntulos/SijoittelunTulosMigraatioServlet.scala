@@ -4,14 +4,7 @@ import java.io.{PrintWriter, StringWriter}
 
 import fi.vm.sade.valintatulosservice.VtsServletBase
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
-<<<<<<< 7d5ce24e921769e961796577433ddb36e91f56b1
-=======
-import fi.vm.sade.valintatulosservice.tarjonta.TarjontaHakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosBatchRepository}
-import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
->>>>>>> OK-119 : Put batch code to separate class
 import org.json4s.jackson.Serialization.read
 import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
@@ -19,18 +12,12 @@ import org.scalatra.{InternalServerError, Ok}
 
 import scala.util.{Failure, Try}
 
-class SijoittelunTulosMigraatioServlet(sijoitteluRepository: SijoitteluRepository,
-                                       valinnantulosBatchRepository: ValinnantulosBatchRepository,
-                                       hakukohdeRecordService: HakukohdeRecordService,
-                                       tarjontaHakuService: TarjontaHakuService,
-                                       valintalaskentakoostepalveluService: ValintalaskentakoostepalveluService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
+class SijoittelunTulosMigraatioServlet(migraatioService: SijoitteluntulosMigraatioService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
   override val applicationName = Some("sijoittelun-tulos-migraatio")
 
   override protected def applicationDescription: String = "REST-API sijoittelun tuloksien migroinniksi valintarekisteriin"
 
   private val sijoittelunTulosRestClient = new SijoittelunTulosRestClient(appConfig)
-  private val migraatioService = new SijoitteluntulosMigraatioService(sijoittelunTulosRestClient, appConfig,
-    sijoitteluRepository, valinnantulosBatchRepository, hakukohdeRecordService, tarjontaHakuService, valintalaskentakoostepalveluService)
 
   logger.warn("Mountataan Valintarekisterin sijoittelun tuloksien migraatioservlet!")
 
