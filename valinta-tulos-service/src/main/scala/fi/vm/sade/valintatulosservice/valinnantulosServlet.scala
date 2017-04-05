@@ -7,7 +7,7 @@ import java.util.UUID
 import fi.vm.sade.security.{AuthorizationFailedException, CasSessionService, LdapUserService}
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, IlmoittautumisTila, ValintatuloksenTila}
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HyvaksymiskirjePatch, SessionRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra._
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
@@ -174,11 +174,15 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymisk
     }
     val valintatapajonoOid = parseValintatapajonoOid
     val ifUnmodifiedSince: Option[Instant] = parseIfUnmodifiedSince
-    val valinnantulokset = valinnantulosRequest.valinnantulokset
-    Ok(
-      valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
-        valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, auditInfo, true)
-    )
+    val valinnantulokset = parsedBody.extract[ValinnantulosRequest].valinnantulokset
+    val storeValinnantulosResult = valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
+      valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, auditInfo, true)
+    Try(hyvaksymiskirjeService.updateHyvaksymiskirjeet(
+      valinnantulokset.map(v => HyvaksymiskirjePatch(v.henkiloOid, v.hakukohdeOid, v.hyvaksymiskirjeLahetetty)).toSet, auditInfo)) match {
+        case Failure(e) => logger.warn("Virhe hyväksymiskirjeiden lähetyspäivämäärien päivityksessä", e)
+        case x if x.isSuccess => Unit
+    }
+    Ok(storeValinnantulosResult)
   }
 
   val erillishaunValinnantulosSwagger: OperationBuilder = (apiOperation[List[Valinnantulos]]("valinnantulos")
@@ -187,6 +191,7 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymisk
     parameter queryParam[String]("uid").description("Audit-käyttäjän uid")
     parameter queryParam[String]("inetAddress").description("Audit-käyttäjän inetAddress")
     parameter queryParam[String]("userAgent").description("Audit-käyttäjän userAgent")
+    parameter queryParam[Boolean]("hyvaksymiskirjeet").description("Palauta hyväksymiskirjeiden lähetyspäivämäärät")
   )
   models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
     case ("ilmoittautumistila", mp) => ("ilmoittautumistila", ilmoittautumistilaModelProperty(mp))
