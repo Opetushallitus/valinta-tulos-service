@@ -9,6 +9,7 @@ import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy.LahetysSyy
 case class Ilmoitus(
   hakemusOid: String,
   hakijaOid: String,
+  secureLink: Option[String],
   asiointikieli: String,
   etunimi: String,
   email: String,

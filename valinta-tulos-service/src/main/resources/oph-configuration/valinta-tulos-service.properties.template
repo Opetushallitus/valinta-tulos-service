@@ -5,6 +5,9 @@
 # joka asettaa Tomcatin ympäristökohtaiset arvot.
 #
 host.virkailija={{host_virkailija}}
+host.haku={{host_haku}}
+host.haku.sv={{host_haku_sv}}
+host.haku.en={{host_haku_en}}
 valinta-tulos-service.ohjausparametrit.url=https\://{{host_virkailija}}/ohjausparametrit-service/api/v1/rest/parametri
 valinta-tulos-service.ilmoittautuminen.enabled={{valintatulosservice_ilmoittautuminen_enabled}}
 
@@ -58,3 +61,11 @@ valinta-tulos-service.authentication-service-url=https://{{host_virkailija}}/aut
 
 # KELA
 valinta-tulos-service.kela.url=https://easiointi.kela.fi/eOTh/EOThApplication?reitti=oph
+
+# Oppijan tunnistus
+oppijan-tunnistus-service.url=https://{{host_virkailija}}/oppijan-tunnistus/api/v1/only_token
+
+# Omatsivut
+omatsivut.fi=https://{{host_haku}}/omatsivut/hakutoiveidenMuokkaus.html#/token/
+omatsivut.en=https://{{host_haku_en}}/omatsivut/hakutoiveidenMuokkaus.html#/token/
+omatsivut.sv=https://{{host_haku_sv}}/omatsivut/hakutoiveidenMuokkaus.html#/token/

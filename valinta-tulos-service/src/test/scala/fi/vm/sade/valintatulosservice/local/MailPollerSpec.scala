@@ -8,6 +8,7 @@ import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.generatedfixtures._
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.mongo.MongoFactory
+import fi.vm.sade.valintatulosservice.oppijantunnistus.OppijanTunnistusService
 import fi.vm.sade.valintatulosservice.sijoittelu.{DirectMongoSijoittelunTulosRestClient, SijoittelutulosService}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
@@ -22,6 +23,7 @@ import org.specs2.runner.JUnitRunner
 @RunWith(classOf[JUnitRunner])
 class MailPollerSpec extends ITSpecification with TimeWarp {
   lazy val hakuService = HakuService(appConfig.hakuServiceConfig)
+  lazy val oppijanTunnistusService = OppijanTunnistusService(appConfig)
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
   lazy val sijoittelunTulosRestClient = new DirectMongoSijoittelunTulosRestClient(appConfig)
   lazy val sijoittelutulosService = new SijoittelutulosService(appConfig.sijoitteluContext.raportointiService, appConfig.ohjausparametritService,
@@ -33,7 +35,7 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
     valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository(), appConfig.sijoitteluContext.valintatulosRepository)
   lazy val valintatulokset = new ValintatulosMongoCollection(appConfig.settings.valintatulosMongoConfig)
   lazy val poller = new MailPoller(valintatulokset, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 3)
-  lazy val mailDecorator = new MailDecorator(new HakemusRepository(), valintatulokset, hakuService)
+  lazy val mailDecorator = new MailDecorator(new HakemusRepository(), valintatulokset, hakuService, oppijanTunnistusService)
 
   "Sähköposti lähtee, kun ehdollisesta vastaanotosta tulee sitova" in {
 
