@@ -31,7 +31,7 @@ class SijoittelunTulosMigraatioServlet(migraatioService: SijoitteluntulosMigraat
     contentType = "text/plain"
     val start = System.currentTimeMillis()
     val dryRun = params("dryrun").toBoolean
-    val hakuOidsAndHashes = migraatioService.getSijoitteluHashesByHakuOid(read[Set[String]](request.body))
+    val hakuOidsAndHashes: Map[String, String] = migraatioService.getSijoitteluHashesByHakuOid(read[Set[String]](request.body))
 
     try {
       hakuOidsAndHashes.foreach(h => migraatioService.migrate(h._1, h._2, dryRun))
@@ -53,7 +53,7 @@ class SijoittelunTulosMigraatioServlet(migraatioService: SijoitteluntulosMigraat
     // Real body param type cannot be used because of unsupported scala enumerations: https://github.com/scalatra/scalatra/issues/343
     parameter bodyParam[Set[String]]("hakuOids").description("Virkistettävien hakujen oidit. Huom, tyhjä lista virkistää kaikki!"))
   post("/kellota-hakukohteet", operation(postHakukohdeMigrationTiming)) {
-    Ok(migraatioService.getSijoitteluHashesByHakuOid(read[Set[String]](request.body)).keys.toSet)
+    Ok(migraatioService.getSijoitteluHashesByHakuOid(read[Set[String]](request.body)))
   }
 
   val getHakuMigrationUi: OperationBuilder = (apiOperation[Unit]("ui")

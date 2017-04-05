@@ -26,6 +26,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.Valintarekiste
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Seq
 import scala.collection.mutable
+import scala.collection.parallel.immutable.{ParMap, ParSet}
 import scala.concurrent.duration.Duration
 
 class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTulosRestClient,
@@ -247,41 +248,45 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     }
   }
 
-  def getSijoitteluHashesByHakuOid(hakuOids: Set[String]): mutable.Map[String, String] = {
+  def getSijoitteluHashesByHakuOid(hakuOids: Set[String]): Map[String, String] = {
     logger.info(s"Checking latest sijoittelu hashes for haku oids $hakuOids")
     val start = System.currentTimeMillis()
-    val hakuOidsSijoitteluHashes: mutable.Map[String, String] = new mutable.HashMap()
 
-    hakuOids.par.foreach { hakuOid =>
+    val hakuOidsSijoitteluHashes: Map[String, String] = hakuOids.par.map { hakuOid =>
       Timer.timed(s"Processing hash calculation for haku $hakuOid", 0) {
         sijoittelunTulosRestClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None).map(_.getSijoitteluajoId) match {
-          case Some(sijoitteluajoId) => createSijoitteluHash(hakuOidsSijoitteluHashes, hakuOid, sijoitteluajoId)
-          case _ => logger.info(s"No sijoittelus for haku $hakuOid")
+          case Some(sijoitteluajoId) => createSijoitteluHash(hakuOid, sijoitteluajoId)
+          case _ =>
+            logger.info(s"No sijoittelus for haku $hakuOid")
+            None
         }
       }
-      logger.info("=================================================================")
-    }
+    }.toList.flatten.toMap
+
     logger.info(s"Hash calculation for ${hakuOids.size} hakus DONE in ${System.currentTimeMillis - start} ms")
     logger.info(s"hakuOid -> hash values are: $hakuOidsSijoitteluHashes")
     hakuOidsSijoitteluHashes
   }
 
-  private def createSijoitteluHash(hakuOidsSijoitteluHashes: mutable.Map[String, String], hakuOid: String, sijoitteluajoId: lang.Long) = {
+  private def createSijoitteluHash(hakuOid: String, sijoitteluajoId: lang.Long): Option[(String, String)] = {
     logger.info(s"Latest sijoitteluajoId from haku $hakuOid is $sijoitteluajoId")
     getSijoitteluHash(sijoitteluajoId, hakuOid) match {
-      case Left(t) => logger.error(t.getMessage)
-      case Right(newHash) => addHakuToHashes(hakuOidsSijoitteluHashes, hakuOid, newHash)
+      case Right(newHash) => hashIsUpToDate(hakuOid, newHash) match {
+        case false =>
+          logger.info(s"Hash for haku $hakuOid didn't exist yet or has changed, saving sijoittelu.")
+          Some(hakuOid, newHash)
+        case true =>
+          logger.info(s"Haku $hakuOid hash is up to date, skipping saving its sijoittelu.")
+          None
+      }
+      case Left(t) =>
+        logger.error(t.getMessage)
+        None
     }
   }
 
-  private def addHakuToHashes(hakuOidsSijoitteluHashes: mutable.Map[String, String], hakuOid: String, newHash: String) = {
-    sijoitteluRepository.getSijoitteluHash(hakuOid, newHash) match {
-      case Some(_) =>
-        logger.info(s"Haku $hakuOid hash is up to date, skipping saving its sijoittelu.")
-      case _ =>
-        logger.info(s"Hash for haku $hakuOid didn't exist yet or has changed, saving sijoittelu.")
-        hakuOidsSijoitteluHashes += (hakuOid -> newHash)
-    }
+  private def hashIsUpToDate(hakuOid: String, newHash: String): Boolean = {
+    sijoitteluRepository.getSijoitteluHash(hakuOid, newHash).nonEmpty
   }
 
   private def getSijoitteluHash(sijoitteluajoId: Long, hakuOid: String): Either[IllegalArgumentException, String] = {
@@ -331,7 +336,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
   def runScheduledMigration(): Unit = {
     logger.info(s"Beginning scheduled migration.")
     val hakuOids: Set[String] = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Sijoittelu").distinct("hakuOid").asScala.map(_.toString).toSet
-    val hakuOidsAndHashes: mutable.Map[String, String] = getSijoitteluHashesByHakuOid(hakuOids.take(5))
+    val hakuOidsAndHashes: Map[String, String] = getSijoitteluHashesByHakuOid(hakuOids.take(5))
     var hakuoidsNotProcessed: Seq[String] = List()
     hakuOidsAndHashes.foreach { case (oid, hash) =>
       if (isMigrationTime) {
