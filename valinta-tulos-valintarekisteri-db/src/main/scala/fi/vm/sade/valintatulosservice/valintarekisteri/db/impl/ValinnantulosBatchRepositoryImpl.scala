@@ -1,11 +1,14 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import java.sql.{Connection, PreparedStatement, Timestamp}
+import java.util.concurrent.TimeUnit.MINUTES
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosBatchRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.dbio.DBIO
 import slick.driver.PostgresDriver.api._
+
+import scala.concurrent.duration.Duration
 
 trait ValinnantulosBatchRepositoryImpl extends ValinnantulosBatchRepository with ValintarekisteriRepository {
   override def deleteValinnantilaHistorySavedBySijoitteluajoAndMigration(sijoitteluajoId: String): Unit = {
@@ -21,7 +24,7 @@ trait ValinnantulosBatchRepositoryImpl extends ValinnantulosBatchRepository with
                   and v.hakukohde_oid = h.hakukohde_oid
                   and v.tila = h.tila
                   and v.transaction_id = h.transaction_id
-               where h.ilmoittaja = ${sijoitteluajoId})""")
+               where h.ilmoittaja = ${sijoitteluajoId})""", timeout = Duration(5, MINUTES))
   }
 
   override def storeBatch(valinnantilat: Seq[(ValinnantilanTallennus, TilanViimeisinMuutos)],
