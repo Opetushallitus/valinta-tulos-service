@@ -22,12 +22,21 @@ class SijoittelunTulosMigraatioServlet(migraatioService: SijoitteluntulosMigraat
   val postHakuMigration: OperationBuilder = (apiOperation[String]("migroiHakukohde")
     summary "Migroi sijoitteludb:stä valintarekisteriin hakuja. Toistaiseksi ei välitä siitä, ovatko tiedot muuttuneet"
     parameter queryParam[Boolean]("dryrun").defaultValue(true).description("Dry run logittaa haut, joiden tila on muuttunut Mongossa, mutta ei päivitä kantaa.")
+    parameter queryParam[Boolean]("force").defaultValue(false).description("Älä laske Mongon datasta oikeaa hashia, vaan migroi joka tapauksessa.")
     parameter bodyParam[Set[String]]("hakuOids").description("Virkistettävien hakujen oidit. Huom, tyhjä lista virkistää kaikki!"))
   post("/haut", operation(postHakuMigration)) {
     contentType = "text/plain"
     val start = System.currentTimeMillis()
     val dryRun = params("dryrun").toBoolean
-    val hakuOidsAndHashes: Map[String, String] = migraatioService.getSijoitteluHashesByHakuOid(read[Set[String]](request.body))
+    val force = params("force").toBoolean
+    val hakuOids = read[Set[String]](request.body)
+
+    val hakuOidsAndHashes: Map[String, String] = if (force) {
+      logger.info("force flag given, not calculating real hashes from mongo")
+      hakuOids.map((_, "overridden-hash")).toMap
+    } else {
+      migraatioService.getSijoitteluHashesByHakuOid(hakuOids)
+    }
 
     try {
       hakuOidsAndHashes.foreach(h => migraatioService.migrate(h._1, h._2, dryRun))

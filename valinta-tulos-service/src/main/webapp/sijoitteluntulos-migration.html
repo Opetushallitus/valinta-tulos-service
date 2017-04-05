@@ -6,6 +6,7 @@
       var started;
       function migrate() {
         var hakuOidsObject = JSON.parse(document.getElementById("hakuOids").value);
+        var force = document.getElementById("force").checked;
         console.log('About to post ', hakuOidsObject);
         var hakuOidsString = JSON.stringify(hakuOidsObject);
         var request = {
@@ -15,7 +16,7 @@
         document.getElementById('ajaxIndicator').style.visibility = 'visible';
         document.getElementById('response').innerHTML = "odotetaan vastausta...";
         started = new Date();
-        fetch('/valinta-tulos-service/sijoittelun-tulos-migraatio/haut?dryrun=false', request)
+        fetch('/valinta-tulos-service/sijoittelun-tulos-migraatio/haut?dryrun=false&force=' + force, request)
           .then(handleResponse)
           .then(displayResponseBody)
           .catch(handleResponse);
@@ -40,6 +41,7 @@
     <label for="hakuOids">Syötä migroitavat hakuOidit JSON-taulukossa tähän.</label>
     <textarea style="display: block; width: 800px; height: 200px;" id="hakuOids">["1.2.246.562.29.98929669087", "1.2.246.562.29.61316288341", "1.2.246.562.29.669559278110"]
     </textarea>
+    <input type="checkbox" id="force"/> Älä laske hasheja mongon tiedoista, vaan migroi niistä välittämättä
 </div>
 <div>
     <button onclick="migrate();">Käynnistä migraatio</button>
