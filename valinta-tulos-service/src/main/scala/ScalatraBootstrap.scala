@@ -77,9 +77,13 @@ class ScalatraBootstrap extends LifeCycle {
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
 
     val migrationMode = System.getProperty("valinta-rekisteri-migration-mode")
+    val scheduledMigration = System.getProperty("valinta-rekisteri-scheduled-migration")
+
+    if (null != scheduledMigration && "true".equalsIgnoreCase(scheduledMigration)) {
+      sijoitteluntulosMigraatioScheduler.startMigrationScheduler()
+    }
 
     if(null != migrationMode && "true".equalsIgnoreCase(migrationMode)) {
-      sijoitteluntulosMigraatioScheduler.startMigrationScheduler()
       context.mount(new SijoittelunTulosMigraatioServlet(migraatioService), "/sijoittelun-tulos-migraatio")
     } else {
       context.mount(new BuildInfoServlet, "/")

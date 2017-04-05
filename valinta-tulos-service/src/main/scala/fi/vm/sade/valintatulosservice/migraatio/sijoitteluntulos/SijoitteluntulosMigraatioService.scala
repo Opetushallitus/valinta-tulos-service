@@ -336,12 +336,12 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
   def runScheduledMigration(): Unit = {
     logger.info(s"Beginning scheduled migration.")
     val hakuOids: Set[String] = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Sijoittelu").distinct("hakuOid").asScala.map(_.toString).toSet
-    val hakuOidsAndHashes: Map[String, String] = getSijoitteluHashesByHakuOid(hakuOids.take(5))
+    val hakuOidsAndHashes: Map[String, String] = getSijoitteluHashesByHakuOid(hakuOids)
     var hakuoidsNotProcessed: Seq[String] = List()
     hakuOidsAndHashes.foreach { case (oid, hash) =>
       if (isMigrationTime) {
         logger.info(s"Scheduled migration of haku $oid starting")
-        migrate(oid, hash, dryRun = true) // TODO: Change to false to not just dryRun
+        migrate(oid, hash, dryRun = false)
       } else hakuoidsNotProcessed = hakuoidsNotProcessed :+ oid
     }
     logger.info("Scheduled migration ended.")

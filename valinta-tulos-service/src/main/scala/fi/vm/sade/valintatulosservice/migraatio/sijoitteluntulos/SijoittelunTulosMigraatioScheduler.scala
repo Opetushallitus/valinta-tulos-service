@@ -1,13 +1,15 @@
 package fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos
 
 import java.util.Calendar
-import java.util.Calendar.{HOUR, MINUTE, SECOND}
+import java.util.Calendar.{HOUR_OF_DAY, MINUTE, SECOND}
 import java.util.concurrent.{ScheduledThreadPoolExecutor, TimeUnit}
+
+import fi.vm.sade.utils.slf4j.Logging
 
 /**
   * Created by heikki.honkanen on 04/04/2017.
   */
-class SijoittelunTulosMigraatioScheduler(migraatioService: SijoitteluntulosMigraatioService) {
+class SijoittelunTulosMigraatioScheduler(migraatioService: SijoitteluntulosMigraatioService) extends Logging {
   def startMigrationScheduler(): Unit = {
     val scheduler = new ScheduledThreadPoolExecutor(1)
 
@@ -21,12 +23,11 @@ class SijoittelunTulosMigraatioScheduler(migraatioService: SijoitteluntulosMigra
     val initialExecution = Calendar.getInstance()
     initialExecution.add(SECOND, initialDelay)
 
-    System.err.println(s"Starting migration scheduler. First iteration in $initialDelay seconds. That is on ${initialExecution.getTime.toString}")
-    // TODO: Enable scheduling
-//    scheduler.scheduleAtFixedRate(task, initialDelay, 24 * 60 * 60 /* Seconds in a day */, TimeUnit.SECONDS)
+    logger.info(s"Starting migration scheduler. First iteration in $initialDelay seconds. That is on ${initialExecution.getTime.toString}")
+    scheduler.scheduleAtFixedRate(task, initialDelay, 24 * 60 * 60 /* Seconds in a day */, TimeUnit.SECONDS)
     Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
       override def run(): Unit = {
-        System.err.println("Shutting down migration scheduler")
+        logger.info("Shutting down migration scheduler")
         scheduler.shutdown()
       }
     }))
@@ -40,7 +41,7 @@ class SijoittelunTulosMigraatioScheduler(migraatioService: SijoitteluntulosMigra
 
   private def getFirstRunStartTime = {
     val scheduledStart = Calendar.getInstance()
-    scheduledStart.set(HOUR, 23)
+    scheduledStart.set(HOUR_OF_DAY, 23)
     scheduledStart.set(MINUTE, 0)
     scheduledStart.set(SECOND, 0)
     scheduledStart
