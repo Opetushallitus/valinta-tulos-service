@@ -5,11 +5,13 @@ import java.util.Calendar.{HOUR_OF_DAY, MINUTE, SECOND}
 import java.util.concurrent.{ScheduledThreadPoolExecutor, TimeUnit}
 
 import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 
 /**
   * Created by heikki.honkanen on 04/04/2017.
   */
-class SijoittelunTulosMigraatioScheduler(migraatioService: SijoitteluntulosMigraatioService) extends Logging {
+class SijoittelunTulosMigraatioScheduler(migraatioService: SijoitteluntulosMigraatioService,
+                                         vtsAppConfig: VtsAppConfig) extends Logging {
   def startMigrationScheduler(): Unit = {
     val scheduler = new ScheduledThreadPoolExecutor(1)
 
@@ -41,7 +43,7 @@ class SijoittelunTulosMigraatioScheduler(migraatioService: SijoitteluntulosMigra
 
   private def getFirstRunStartTime = {
     val scheduledStart = Calendar.getInstance()
-    scheduledStart.set(HOUR_OF_DAY, 23)
+    scheduledStart.set(HOUR_OF_DAY, vtsAppConfig.settings.scheduledMigrationStart)
     scheduledStart.set(MINUTE, 0)
     scheduledStart.set(SECOND, 0)
     scheduledStart

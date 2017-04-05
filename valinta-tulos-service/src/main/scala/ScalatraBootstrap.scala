@@ -73,7 +73,7 @@ class ScalatraBootstrap extends LifeCycle {
     lazy val hyvaksymiskirjeService = new HyvaksymiskirjeService(valintarekisteriDb, hakuService, audit, authorizer)
     lazy val migraatioService = new SijoitteluntulosMigraatioService(sijoittelunTulosRestClient, appConfig,
       valintarekisteriDb, valintarekisteriDb, hakukohdeRecordService, tarjontaHakuService, valintalaskentakoostepalveluService)
-    lazy val sijoitteluntulosMigraatioScheduler = new SijoittelunTulosMigraatioScheduler(migraatioService)
+    lazy val sijoitteluntulosMigraatioScheduler = new SijoittelunTulosMigraatioScheduler(migraatioService, appConfig)
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
 
     val migrationMode = System.getProperty("valinta-rekisteri-migration-mode")

@@ -352,6 +352,8 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
 
   private def isMigrationTime: Boolean = {
     val hour = Calendar.getInstance().get(HOUR_OF_DAY)
-    (hour >= 19 && hour < 24) || (hour < 7 && hour >= 0)
+    val start = appConfig.settings.scheduledMigrationStart
+    val end = appConfig.settings.scheduledMigrationEnd
+    (hour >= start && hour < 24) || (hour < end && hour >= 0)
   }
 }

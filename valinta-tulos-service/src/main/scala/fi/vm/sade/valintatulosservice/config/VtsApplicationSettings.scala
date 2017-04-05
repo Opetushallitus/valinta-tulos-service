@@ -19,6 +19,8 @@ case class VtsApplicationSettings(config: Config) extends ApplicationSettings(co
   val kelaURL = withConfig(_.getString("valinta-tulos-service.kela.url"))
   val organisaatioServiceUrl = withConfig(_.getString("cas.service.organisaatio-service"))
   val rootOrganisaatioOid = withConfig(_.getString("root.organisaatio.oid"))
+  val scheduledMigrationStart = withConfig(_.getInt("valinta-tulos-service.scheduled-migration.start-hour"))
+  val scheduledMigrationEnd = withConfig(_.getInt("valinta-tulos-service.scheduled-migration.end-hour"))
 
   val ilmoittautuminenEnabled = {
     val value = config.getString("valinta-tulos-service.ilmoittautuminen.enabled")
