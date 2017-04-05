@@ -24,6 +24,17 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
                            val appConfig: VtsAppConfig,
                            val audit: Audit) extends Logging {
 
+  def getValinnantuloksetForHakukohde(hakukohdeOid: String, auditInfo: AuditInfo): Option[(Instant, Set[Valinnantulos])] = {
+    val r = valinnantulosRepository.getValinnantuloksetAndLastModifiedDateForHakukohde(hakukohdeOid).map(t => {
+      (t._1, yhdenPaikanSaannos(t._2).fold(throw _, x => x))
+    })
+    audit.log(auditInfo.user, ValinnantuloksenLuku,
+      new Target.Builder().setField("hakukohde", hakukohdeOid).build(),
+      new Changes.Builder().build()
+    )
+    r
+  }
+
   def getValinnantuloksetForValintatapajono(valintatapajonoOid: String, auditInfo: AuditInfo): Option[(Instant, Set[Valinnantulos])] = {
     val r = valinnantulosRepository.getValinnantuloksetAndLastModifiedDateForValintatapajono(valintatapajonoOid).map(t => {
       (t._1, yhdenPaikanSaannos(t._2).fold(throw _, x => x))

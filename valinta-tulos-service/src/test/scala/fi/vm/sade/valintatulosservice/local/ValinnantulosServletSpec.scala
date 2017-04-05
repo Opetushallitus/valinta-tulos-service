@@ -83,15 +83,15 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI,
     ilmoittautumistila = Lasna)
 
-  "GET /auth/valinnan-tulos/:valintatapajonoOid" should {
+  "GET /auth/valinnan-tulos?valintatapajonoOid=" should {
     "palauttaa 401, jos käyttäjä ei ole autentikoitunut" in {
-      get("auth/valinnan-tulos/14538080612623056182813241345174") {
+      get("auth/valinnan-tulos?valintatapajonoOid=14538080612623056182813241345174") {
         status must_== 401
         body mustEqual "{\"error\":\"Unauthorized\"}"
       }
     }
     "ei palauta valinnantuloksia, jos valintatapajono on tuntematon" in {
-      get("auth/valinnan-tulos/14538080612623056182813241345175", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
+      get("auth/valinnan-tulos?valintatapajonoOid=14538080612623056182813241345175", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
         status must_== 200
         body mustEqual "[]"
       }
@@ -300,7 +300,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
   )
 
   def getLastModified(valintatapajono:String):String = {
-    get(s"auth/valinnan-tulos/$valintatapajono", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
+    get(s"auth/valinnan-tulos?valintatapajonoOid=$valintatapajono", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
       status must_== 200
       body.isEmpty mustEqual false
       val result = parse(body).extract[List[Valinnantulos]]
@@ -387,7 +387,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
   }
 
   def hae(tulos:Valinnantulos, expectedResultSize:Int = 15) = {
-    get(s"auth/valinnan-tulos/${tulos.valintatapajonoOid}", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
+    get(s"auth/valinnan-tulos?valintatapajonoOid=${tulos.valintatapajonoOid}", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
       status must_== 200
       body.isEmpty mustEqual false
       val result = parse(body).extract[List[Valinnantulos]]

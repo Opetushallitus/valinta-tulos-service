@@ -18,8 +18,10 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
 
   def updateValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
 
+  def getValinnantuloksetForHakukohde(hakukohdeOid: String): DBIO[Set[Valinnantulos]]
   def getValinnantuloksetForValintatapajono(valintatapajonoOid:String): DBIO[Set[Valinnantulos]]
 
+  def getLastModifiedForHakukohde(hakukohdeOid: String): DBIO[Option[Instant]]
   def getLastModifiedForValintatapajono(valintatapajonoOid:String):DBIO[Option[Instant]]
 
   def getLastModifiedForValintatapajononHakemukset(valintatapajonoOid:String): DBIO[Set[(String, Instant)]]
@@ -28,6 +30,19 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
 
   def deleteValinnantulos(muokkaaja:String, valinnantulos:Valinnantulos, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
   def deleteIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
+
+  def getValinnantuloksetAndLastModifiedDateForHakukohde(hakukohdeOid: String, timeout:Duration = Duration(2, TimeUnit.SECONDS)): Option[(Instant, Set[Valinnantulos])] =
+    runBlockingTransactionally(
+      getLastModifiedForHakukohde(hakukohdeOid)
+        .flatMap {
+          case Some(lastModified) => getValinnantuloksetForHakukohde(hakukohdeOid).map(vs => Some((lastModified, vs)))
+          case None => DBIO.successful(None)
+        },
+      timeout = timeout
+    ) match {
+      case Right(result) => result
+      case Left(error) => throw error
+    }
 
   def getValinnantuloksetAndLastModifiedDateForValintatapajono(valintatapajonoOid:String, timeout:Duration = Duration(2, TimeUnit.SECONDS)):Option[(Instant, Set[Valinnantulos])] =
     runBlockingTransactionally(

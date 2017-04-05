@@ -16,6 +16,29 @@ import scala.concurrent.duration.Duration
 
 trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with ValintarekisteriRepository {
 
+  override def getValinnantuloksetForHakukohde(hakukohdeOid: String): DBIO[Set[Valinnantulos]] = {
+    sql"""select ti.hakukohde_oid,
+              ti.valintatapajono_oid,
+              ti.hakemus_oid,
+              ti.henkilo_oid,
+              ti.tila,
+              tu.ehdollisesti_hyvaksyttavissa,
+              tu.julkaistavissa,
+              tu.hyvaksytty_varasijalta,
+              tu.hyvaksy_peruuntunut,
+              v.action,
+              i.tila
+          from valinnantilat as ti
+          left join valinnantulokset as tu on tu.hakemus_oid = ti.hakemus_oid
+              and tu.valintatapajono_oid = ti.valintatapajono_oid
+          left join vastaanotot as v on v.hakukohde = tu.hakukohde_oid
+              and v.henkilo = ti.henkilo_oid and v.deleted is null
+          left join ilmoittautumiset as i on i.hakukohde = tu.hakukohde_oid
+              and i.henkilo = ti.henkilo_oid
+          where ti.hakukohde_oid = ${hakukohdeOid}
+      """.as[Valinnantulos].map(_.toSet)
+  }
+
   override def getValinnantuloksetForValintatapajono(valintatapajonoOid: String): DBIO[Set[Valinnantulos]] = {
     sql"""select ti.hakukohde_oid,
               ti.valintatapajono_oid,
@@ -37,6 +60,18 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               and i.henkilo = ti.henkilo_oid
           where ti.valintatapajono_oid = ${valintatapajonoOid}
        """.as[Valinnantulos].map(_.toSet)
+  }
+
+  override def getLastModifiedForHakukohde(hakukohdeOid: String): DBIO[Option[Instant]] = {
+    sql"""select greatest(max(lower(ti.system_time)), max(lower(tu.system_time)), max(lower(il.system_time)),
+                          max(upper(ih.system_time)), max(va.timestamp), max(vh.timestamp))
+          from valinnantilat ti
+          left join valinnantulokset tu on ti.valintatapajono_oid = tu.valintatapajono_oid
+          left join ilmoittautumiset il on ti.henkilo_oid = il.henkilo and ti.hakukohde_oid = il.hakukohde
+          left join ilmoittautumiset_history ih on ti.henkilo_oid = ih.henkilo and ti.hakukohde_oid = ih.hakukohde
+          left join vastaanotot va on ti.henkilo_oid = va.henkilo and ti.hakukohde_oid = va.hakukohde
+          left join deleted_vastaanotot vh on va.deleted = vh.id and vh.id >= 0
+          where ti.hakukohde_oid = ${hakukohdeOid}""".as[Option[Instant]].head
   }
 
   override def getLastModifiedForValintatapajono(valintatapajonoOid:String):DBIO[Option[Instant]] = {
