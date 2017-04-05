@@ -25,7 +25,7 @@ class SijoittelunTulosMigraatioServlet(migraatioService: SijoitteluntulosMigraat
 
   val postHakuMigration: OperationBuilder = (apiOperation[String]("migroiHakukohde")
     summary "Migroi sijoitteludb:stä valintarekisteriin hakuja. Toistaiseksi ei välitä siitä, ovatko tiedot muuttuneet"
-    parameter queryParam[Boolean]("dryrun").defaultValue(true).description("Dry run logittaa haut, joiden tila on muuttunut, Mongossa mutta ei päivitä kantaa.")
+    parameter queryParam[Boolean]("dryrun").defaultValue(true).description("Dry run logittaa haut, joiden tila on muuttunut Mongossa, mutta ei päivitä kantaa.")
     parameter bodyParam[Set[String]]("hakuOids").description("Virkistettävien hakujen oidit. Huom, tyhjä lista virkistää kaikki!"))
   post("/haut", operation(postHakuMigration)) {
     val start = System.currentTimeMillis()
