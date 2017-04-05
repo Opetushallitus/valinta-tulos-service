@@ -253,7 +253,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     val hakuOidsSijoitteluHashes: mutable.Map[String, String] = new mutable.HashMap()
 
     hakuOids.par.foreach { hakuOid =>
-      Timer.timed(s"Processing haku $hakuOid", 0) {
+      Timer.timed(s"Processing hash calculation for haku $hakuOid", 0) {
         sijoittelunTulosRestClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None).map(_.getSijoitteluajoId) match {
           case Some(sijoitteluajoId) => createSijoitteluHash(hakuOidsSijoitteluHashes, hakuOid, sijoitteluajoId)
           case _ => logger.info(s"No sijoittelus for haku $hakuOid")
