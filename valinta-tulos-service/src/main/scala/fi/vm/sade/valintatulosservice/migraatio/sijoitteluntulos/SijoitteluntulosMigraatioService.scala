@@ -75,26 +75,8 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       logger.warn("dryRun : NOT updating the database")
     } else {
       logger.info(s"Starting to store sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid...")
-      timed(s"Ensuring hakukohteet for sijoitteluajo $mongoSijoitteluAjoId of $hakuOid are in db") {
-        hakukohteet.asScala.map(_.getOid).foreach(hakukohdeRecordService.getHakukohdeRecord)
-      }
-      timed(s"Removed jono based hakijaryhmät referring to jonos not in sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid") {
-        Valintarekisteri.poistaValintatapajonokohtaisetHakijaryhmatJoidenJonoaEiSijoiteltu(hakukohteet)
-      }
-      tarjontaHakuService.getHaku(hakuOid) match {
-        case Right(haku) =>
-          if (haku.käyttääSijoittelua || timed(s"Check if haku uses laskenta") { sijoitteluUsesLaskenta(hakukohteet) }) {
-            storeSijoittelu(hakuOid, ajoFromMongo, hakukohteet, valintatulokset)
-          } else {
-            logger.info(s"Haku $hakuOid does not use sijoittelu. Skipping saving sijoittelu $mongoSijoitteluAjoId")
-          }
-        case Left(e) => throw e
-      }
-
-      logger.info(s"Starting to save valinta data sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid...")
-
-      val (valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset) = timed("Create save objects for saving valintadata") {
-        createSaveObjects(hakukohteet, valintatulokset)}
+      val (valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset) =
+        createSaveObjectsFromMongoData(hakuOid, ajoFromMongo, mongoSijoitteluAjoId, hakukohteet, valintatulokset)
       timed(s"Saving valinta data for sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid") {
         valinnantulosBatchRepository.runBlocking(valinnantulosBatchRepository.storeBatch(valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset), Duration(15, MINUTES))
       }
@@ -103,6 +85,33 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       sijoitteluRepository.saveSijoittelunHash(hakuOid, sijoitteluHash)
     }
     logger.info("-----------------------------------------------------------")
+  }
+
+  private def createSaveObjectsFromMongoData(hakuOid: String, ajoFromMongo: SijoitteluAjo, mongoSijoitteluAjoId: lang.Long, hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]): (Seq[(ValinnantilanTallennus, Timestamp)], Seq[ValinnantuloksenOhjaus], Seq[(String, Ilmoittautuminen)]) = {
+    timed(s"Ensuring hakukohteet for sijoitteluajo $mongoSijoitteluAjoId of $hakuOid are in db") {
+      hakukohteet.asScala.map(_.getOid).foreach(hakukohdeRecordService.getHakukohdeRecord)
+    }
+    timed(s"Removed jono based hakijaryhmät referring to jonos not in sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid") {
+      Valintarekisteri.poistaValintatapajonokohtaisetHakijaryhmatJoidenJonoaEiSijoiteltu(hakukohteet)
+    }
+    tarjontaHakuService.getHaku(hakuOid) match {
+      case Right(haku) =>
+        if (haku.käyttääSijoittelua || timed(s"Check if haku uses laskenta") {
+          sijoitteluUsesLaskenta(hakukohteet)
+        }) {
+          storeSijoittelu(hakuOid, ajoFromMongo, hakukohteet, valintatulokset)
+        } else {
+          logger.info(s"Haku $hakuOid does not use sijoittelu. Skipping saving sijoittelu $mongoSijoitteluAjoId")
+        }
+      case Left(e) => throw e
+    }
+
+    logger.info(s"Starting to save valinta data sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid...")
+
+    val (valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset) = timed("Create save objects for saving valintadata") {
+      createSaveObjects(hakukohteet, valintatulokset)
+    }
+    (valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset)
   }
 
   private def findSijoittelu(hakuOid: String): Sijoittelu = {
