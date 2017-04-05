@@ -5,7 +5,7 @@
     <script type="application/javascript">
       var started;
       function migrate() {
-        var hakuOidsObject = JSON.parse(document.getElementById("hakuOids").innerHTML);
+        var hakuOidsObject = JSON.parse(document.getElementById("hakuOids").value);
         console.log('About to post ', hakuOidsObject);
         var hakuOidsString = JSON.stringify(hakuOidsObject);
         var request = {
