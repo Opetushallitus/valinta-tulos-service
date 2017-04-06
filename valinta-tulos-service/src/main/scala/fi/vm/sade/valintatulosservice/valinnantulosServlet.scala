@@ -183,6 +183,8 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymisk
     val valinnantulokset = parsedBody.extract[ValinnantulosRequest].valinnantulokset
     val storeValinnantulosResult = valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
       valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, auditInfo, true)
+    logger.info("Päivitetään hyväksymiskirjeiden lähetyspäivämäärät")
+    valinnantulokset.foreach(v => logger.info(s"$v"))
     Try(hyvaksymiskirjeService.updateHyvaksymiskirjeet(
       valinnantulokset.map(v => HyvaksymiskirjePatch(v.henkiloOid, v.hakukohdeOid, v.hyvaksymiskirjeLahetetty)).toSet, auditInfo)) match {
         case Failure(e) => logger.warn("Virhe hyväksymiskirjeiden lähetyspäivämäärien päivityksessä", e)

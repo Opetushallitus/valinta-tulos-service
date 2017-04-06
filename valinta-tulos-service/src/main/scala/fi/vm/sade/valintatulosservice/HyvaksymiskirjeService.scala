@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
+import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HyvaksymiskirjePatch, HyvaksymiskirjeRepository}
@@ -9,7 +10,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HyvaksymiskirjePatch,
 class HyvaksymiskirjeService(hyvaksymiskirjeRepository: HyvaksymiskirjeRepository,
                              hakuService: HakuService,
                              audit: Audit,
-                             authorizer: OrganizationHierarchyAuthorizer) {
+                             authorizer: OrganizationHierarchyAuthorizer) extends Logging {
 
   def getHyvaksymiskirjeet(hakukohdeOid:String, auditInfo: AuditInfo) = {
     val hakukohde = hakuService.getHakukohde(hakukohdeOid).fold(throw _, h => h)
@@ -29,6 +30,7 @@ class HyvaksymiskirjeService(hyvaksymiskirjeRepository: HyvaksymiskirjeRepositor
       authorizer.checkAccess(auditInfo.session._2, hakukohde.tarjoajaOids,
         Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).fold(throw _, x => x)
     })
+    hyvaksymiskirjeet.foreach(h => logger.info(s"$h"))
     hyvaksymiskirjeRepository.update(hyvaksymiskirjeet)
     hyvaksymiskirjeet.foreach(h => {
       audit.log(auditInfo.user, HyvaksymiskirjeidenMuokkaus,
