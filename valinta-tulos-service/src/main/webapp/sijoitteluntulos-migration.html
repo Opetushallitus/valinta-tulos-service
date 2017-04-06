@@ -33,7 +33,7 @@
           return;
         }
         document.getElementById('responseHeader').innerHTML = response.status + ' ' + response.statusText +
-          ' (kesti ' + durationMs + ' ms == ' + (durationMs / (60.0 * 1000.0) + 'min, ' + started + ' – ' +  finished + ')');
+          ' (kesti ' + durationMs + ' ms == ' + (durationMs / (60.0 * 1000.0) + ' minuuttia, ' + started + ' – ' +  finished + ')');
         return response.text();
       }
 
