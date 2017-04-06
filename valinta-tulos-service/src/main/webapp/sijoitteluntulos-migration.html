@@ -7,7 +7,6 @@
       function migrate() {
         var hakuOidsObject = JSON.parse(document.getElementById("hakuOids").value);
         var force = document.getElementById("force").checked;
-        console.log('About to post ', hakuOidsObject);
         var hakuOidsString = JSON.stringify(hakuOidsObject);
         var request = {
           method: 'post', body: hakuOidsString, headers: new Headers({'Content-Type': 'application/json'})
@@ -16,7 +15,9 @@
         document.getElementById('ajaxIndicator').style.visibility = 'visible';
         document.getElementById('response').innerHTML = "odotetaan vastausta...";
         started = new Date();
-        fetch('/valinta-tulos-service/sijoittelun-tulos-migraatio/haut?dryrun=false&force=' + force, request)
+        var url = '/valinta-tulos-service/sijoittelun-tulos-migraatio/haut?dryrun=false&force=' + force;
+        console.log('About to post to URL ' + url + ' with data', hakuOidsObject);
+        fetch(url, request)
           .then(handleResponse)
           .then(displayResponseBody)
           .catch(handleResponse);
@@ -26,6 +27,11 @@
         var finished = new Date();
         var durationMs = finished.getTime() - started.getTime();
         document.getElementById('ajaxIndicator').style.visibility = 'hidden';
+        if (!response.text) {
+          console.error('Kutsu palautti virheen', response);
+          document.getElementById('response').innerHTML = 'Virhe palvelimelta: ' + response;
+          return;
+        }
         document.getElementById('responseHeader').innerHTML = response.status + ' ' + response.statusText +
           ' (kesti ' + durationMs + ' ms == ' + (durationMs / (60.0 * 1000.0) + 'min, ' + started + ' – ' +  finished + ')');
         return response.text();
