@@ -29,7 +29,8 @@ trait ValinnantulosBatchRepositoryImpl extends ValinnantulosBatchRepository with
 
   override def storeBatch(valinnantilat: Seq[(ValinnantilanTallennus, TilanViimeisinMuutos)],
                           valinnantuloksenOhjaukset: Seq[ValinnantuloksenOhjaus],
-                          ilmoittautumiset: Seq[(String, Ilmoittautuminen)]): DBIO[Unit] = {
+                          ilmoittautumiset: Seq[(String, Ilmoittautuminen)],
+                          ehdollisenHyvaksynnanEhdot: Seq[EhdollisenHyvaksynnanEhto]): DBIO[Unit] = {
     DBIO.seq(
       DbUtils.disable("ilmoittautumiset", "set_system_time_on_ilmoittautumiset_on_insert"),
       DbUtils.disable("ilmoittautumiset", "set_system_time_on_ilmoittautumiset_on_update"),
@@ -37,22 +38,28 @@ trait ValinnantulosBatchRepositoryImpl extends ValinnantulosBatchRepository with
       DbUtils.disable("valinnantilat", "set_system_time_on_valinnantilat_on_update"),
       DbUtils.disable("valinnantulokset", "set_system_time_on_valinnantulokset_on_insert"),
       DbUtils.disable("valinnantulokset", "set_system_time_on_valinnantulokset_on_update"),
+      DbUtils.disable("ehdollisen_hyvaksynnan_ehto", "set_temporal_columns_on_ehdollisen_hyvaksynnan_ehto_on_insert"),
+      DbUtils.disable("ehdollisen_hyvaksynnan_ehto", "set_temporal_columns_on_ehdollisen_hyvaksynnan_ehto_on_update"),
 
       SimpleDBIO { session =>
         val valinnantilaStatement = createValinnantilaStatement(session.connection)
         val valinnantuloksenOhjausStatement = createValinnantuloksenOhjausStatement(session.connection)
         val ilmoittautumisetStatement = createIlmoittautumisStatement(session.connection)
+        val ehdollisenHyvaksynnanEhtoStatement = createEhdollisenHyvaksynnanEhtoStatement(session.connection)
         try {
           valinnantilat.foreach(v => createValinnantilaInsertRow(valinnantilaStatement, v._1, v._2))
           valinnantuloksenOhjaukset.foreach(o => createValinnantuloksenOhjausInsertRow(valinnantuloksenOhjausStatement, o))
           ilmoittautumiset.foreach(i => createIlmoittautumisInsertRow(ilmoittautumisetStatement, i._1, i._2))
+          ehdollisenHyvaksynnanEhdot.foreach(e => createEhdollisenHyvaksynnanEhtoRow(ehdollisenHyvaksynnanEhtoStatement, e))
           valinnantilaStatement.executeBatch()
           valinnantuloksenOhjausStatement.executeBatch()
           ilmoittautumisetStatement.executeBatch()
+          ehdollisenHyvaksynnanEhtoStatement.executeBatch()
         } finally {
           valinnantilaStatement.close()
           valinnantuloksenOhjausStatement.close()
           ilmoittautumisetStatement.close()
+          ehdollisenHyvaksynnanEhtoStatement.close()
         }
       },
 
@@ -61,7 +68,9 @@ trait ValinnantulosBatchRepositoryImpl extends ValinnantulosBatchRepository with
       DbUtils.enable("valinnantilat", "set_system_time_on_valinnantilat_on_insert"),
       DbUtils.enable("valinnantilat", "set_system_time_on_valinnantilat_on_update"),
       DbUtils.enable("valinnantulokset", "set_system_time_on_valinnantulokset_on_insert"),
-      DbUtils.enable("valinnantulokset", "set_system_time_on_valinnantulokset_on_update")
+      DbUtils.enable("valinnantulokset", "set_system_time_on_valinnantulokset_on_update"),
+      DbUtils.enable("ehdollisen_hyvaksynnan_ehto", "set_temporal_columns_on_ehdollisen_hyvaksynnan_ehto_on_insert"),
+      DbUtils.enable("ehdollisen_hyvaksynnan_ehto", "set_temporal_columns_on_ehdollisen_hyvaksynnan_ehto_on_update")
     )
   }
 
@@ -142,13 +151,13 @@ trait ValinnantulosBatchRepositoryImpl extends ValinnantulosBatchRepository with
   private def createIlmoittautumisStatement = createStatement(
     // Set tansaction_id to -1 here so that we get the whole history.
     s"""insert into ilmoittautumiset (henkilo, hakukohde, tila, ilmoittaja, selite, transaction_id, system_time)
-       values (?, ?, ?::ilmoittautumistila, ?, ?, -1, tstzrange(now(), null, '[)'))
-       on conflict on constraint ilmoittautumiset_pkey do update
-       set tila = excluded.tila,
-           ilmoittaja = excluded.ilmoittaja,
-           selite = excluded.selite,
-           transaction_id = excluded.transaction_id
-       where ilmoittautumiset.tila <> excluded.tila
+        values (?, ?, ?::ilmoittautumistila, ?, ?, -1, tstzrange(now(), null, '[)'))
+        on conflict on constraint ilmoittautumiset_pkey do update
+        set tila = excluded.tila,
+          ilmoittaja = excluded.ilmoittaja,
+          selite = excluded.selite,
+          transaction_id = excluded.transaction_id
+        where ilmoittautumiset.tila <> excluded.tila
     """)
 
   private def createIlmoittautumisInsertRow(statement: PreparedStatement, henkiloOid: String, ilmoittautuminen: Ilmoittautuminen) = {
@@ -157,6 +166,43 @@ trait ValinnantulosBatchRepositoryImpl extends ValinnantulosBatchRepository with
     statement.setString(3, ilmoittautuminen.tila.toString)
     statement.setString(4, ilmoittautuminen.muokkaaja)
     statement.setString(5, ilmoittautuminen.selite)
+
+    statement.addBatch()
+  }
+
+  private def createEhdollisenHyvaksynnanEhtoStatement = createStatement(
+    s"""insert into ehdollisen_hyvaksynnan_ehto (
+          hakemus_oid,
+          valintatapajono_oid,
+          hakukohde_oid,
+          ehdollisen_hyvaksymisen_ehto_koodi,
+          ehdollisen_hyvaksymisen_ehto_fi,
+          ehdollisen_hyvaksymisen_ehto_sv,
+          ehdollisen_hyvaksymisen_ehto_en,
+          transaction_id,
+          system_time
+        ) values (?, ?, ?, ?, ?, ?, ?, -1, tstzrange(now(), null, '[)'))
+        on conflict on constraint ehdollisen_hyvaksynnan_ehto_pkey do update
+        set ehdollisen_hyvaksymisen_ehto_koodi = excluded.ehdollisen_hyvaksymisen_ehto_koodi,
+          ehdollisen_hyvaksymisen_ehto_fi = excluded.ehdollisen_hyvaksymisen_ehto_fi,
+          ehdollisen_hyvaksymisen_ehto_sv = excluded.ehdollisen_hyvaksymisen_ehto_sv,
+          ehdollisen_hyvaksymisen_ehto_en = excluded.ehdollisen_hyvaksymisen_ehto_en,
+          transaction_id = excluded.transaction_id
+        where (ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_koodi <> excluded.ehdollisen_hyvaksymisen_ehto_koodi
+          or ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_fi <> excluded.ehdollisen_hyvaksymisen_ehto_fi
+          or ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_sv <> excluded.ehdollisen_hyvaksymisen_ehto_sv
+          or ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_en <> excluded.ehdollisen_hyvaksymisen_ehto_en)
+     """
+  )
+
+  private def createEhdollisenHyvaksynnanEhtoRow(statement: PreparedStatement, ehto: EhdollisenHyvaksynnanEhto) = {
+    statement.setString(1, ehto.hakemusOid)
+    statement.setString(2, ehto.valintatapajonoOid)
+    statement.setString(3, ehto.hakukohdeOid)
+    statement.setString(4, ehto.ehdollisenHyvaksymisenEhtoKoodi)
+    statement.setString(5, ehto.ehdollisenHyvaksymisenEhtoFI)
+    statement.setString(6, ehto.ehdollisenHyvaksymisenEhtoSV)
+    statement.setString(7, ehto.ehdollisenHyvaksymisenEhtoEN)
 
     statement.addBatch()
   }

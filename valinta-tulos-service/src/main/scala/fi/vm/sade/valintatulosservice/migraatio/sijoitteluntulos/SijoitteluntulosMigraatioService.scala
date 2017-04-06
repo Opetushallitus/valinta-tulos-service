@@ -78,9 +78,10 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       logger.info(s"Starting to store sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid...")
       storeSijoitteluData(hakuOid, ajoFromMongo, mongoSijoitteluAjoId, hakukohteet, valintatulokset)
       logger.info(s"Starting to save valinta data sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid...")
-      val (valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset) = createSaveObjects(hakukohteet, valintatulokset)
+      val (valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot) = createSaveObjects(hakukohteet, valintatulokset)
       timed(s"Saving valinta data for sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid") {
-        valinnantulosBatchRepository.runBlocking(valinnantulosBatchRepository.storeBatch(valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset), Duration(15, MINUTES))
+        valinnantulosBatchRepository.runBlocking(
+          valinnantulosBatchRepository.storeBatch(valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot), Duration(15, MINUTES))
       }
       logger.info("Deleting valinnantilat_history entries that were duplicated by sijoittelu and migration saves.")
       timed(s"Deleting duplicated valinnantilat_history entries of $mongoSijoitteluAjoId of haku $hakuOid") {
@@ -151,7 +152,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
   }
 
   private def createSaveObjects(hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]):
-    (Seq[(ValinnantilanTallennus, Timestamp)], Seq[ValinnantuloksenOhjaus], Seq[(String, Ilmoittautuminen)]) = {
+    (Vector[(ValinnantilanTallennus, Timestamp)], Vector[ValinnantuloksenOhjaus], Vector[(String, Ilmoittautuminen)], Vector[EhdollisenHyvaksynnanEhto]) = {
 
     val hakemuksetOideittain: Map[(HakemusOid, ValintatapajonoOid, HakukohdeOid), List[(Hakemus, ValintatapajonoOid, HakukohdeOid)]] = groupHakemusResultsByHakemusOidAndJonoOid(hakukohteet)
     val valintatuloksetOideittain: Map[(HakemusOid, ValintatapajonoOid), List[Valintatulos]] = valintatulokset.asScala.toList.groupBy(v => (v.getHakemusOid, v.getValintatapajonoOid))
@@ -159,6 +160,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     var valinnantilas: Vector[(ValinnantilanTallennus, Timestamp)] = Vector()
     var valinnantuloksenOhjaukset: Vector[ValinnantuloksenOhjaus] = Vector()
     var ilmoittautumiset: Vector[(String, Ilmoittautuminen)] = Vector()
+    var ehdollisenHyvaksynnanEhdot: Vector[EhdollisenHyvaksynnanEhto] = Vector()
 
     hakemuksetOideittain.foreach { case (k, v) =>
       val valintatapajonoOid = k._2
@@ -177,6 +179,9 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
               val logEntriesLatestFirst = tulos.getLogEntries.asScala.toList.sortBy(_.getLuotu)
               val hakemuksenValinnantilojenohjaukset = getHakemuksenValinnantuloksenOhjaukset(tulos, hakemusOid, valintatapajonoOid, hakukohdeOid, logEntriesLatestFirst)
               val hakemuksenIlmoittautumiset = getHakemuksenIlmoittautumiset(tulos, henkiloOid, hakukohdeOid, logEntriesLatestFirst)
+              if (tulos.getEhdollisestiHyvaksyttavissa) {
+                ehdollisenHyvaksynnanEhdot = ehdollisenHyvaksynnanEhdot :+ getEhdollisenHyvaksynnanEhto(valintatapajonoOid, hakukohdeOid, hakemusOid, tulos)
+              }
               valinnantuloksenOhjaukset = valinnantuloksenOhjaukset ++ hakemuksenValinnantilojenohjaukset.toSeq
               ilmoittautumiset = ilmoittautumiset ++ hakemuksenIlmoittautumiset
             }
@@ -184,7 +189,13 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
         }
       }
     }
-    (valinnantilas, valinnantuloksenOhjaukset, ilmoittautumiset)
+    (valinnantilas, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot)
+  }
+
+  private def getEhdollisenHyvaksynnanEhto(valintatapajonoOid: ValintatapajonoOid, hakukohdeOid: HakukohdeOid,
+                                           hakemusOid: ValintatapajonoOid, tulos: Valintatulos): EhdollisenHyvaksynnanEhto = {
+    EhdollisenHyvaksynnanEhto(hakemusOid, valintatapajonoOid, hakukohdeOid,
+      tulos.getEhdollisenHyvaksymisenEhtoKoodi, tulos.getEhdollisenHyvaksymisenEhtoFI, tulos.getEhdollisenHyvaksymisenEhtoSV, tulos.getEhdollisenHyvaksymisenEhtoEN)
   }
 
   private def getHakemuksenValinnantuloksenOhjaukset(valintatulos: Valintatulos, hakemusOid: String, valintatapajonoOid: String,

@@ -7,7 +7,8 @@ import slick.dbio.DBIO
 trait ValinnantulosBatchRepository extends ValintarekisteriRepository {
   def storeBatch(valinnantilat: Seq[(ValinnantilanTallennus, TilanViimeisinMuutos)],
                  valinnantuloksenOhjaukset: Seq[ValinnantuloksenOhjaus],
-                 ilmoittautumiset: Seq[(String, Ilmoittautuminen)]): DBIO[Unit]
+                 ilmoittautumiset: Seq[(String, Ilmoittautuminen)],
+                 ehdollisenHyvaksynnanEhdot: Seq[EhdollisenHyvaksynnanEhto]): DBIO[Unit]
 
   def deleteValinnantilaHistorySavedBySijoitteluajoAndMigration(sijoitteluajoId: String): Unit
 }

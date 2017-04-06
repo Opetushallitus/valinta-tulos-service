@@ -32,6 +32,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
   val valinnantulos = Valinnantulos(hakukohdeOid, valintatapajonoOid, hakemusOid, henkiloOid,
     Hyvaksytty, Some(false), Some(false), Some(false), Some(false), ValintatuloksenTila.KESKEN, EiTehty, None)
   val ilmoittautuminen = Ilmoittautuminen(hakukohdeOid, Lasna, "muokkaaja", "selite")
+  val ehdollisenHyvaksynnanEhto = EhdollisenHyvaksynnanEhto(hakemusOid, valintatapajonoOid, hakukohdeOid, "muu", "muu", "andra", "other")
 
     step(appConfig.start)
   override def before: Any = {
@@ -103,9 +104,11 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
     "update hakemus-related objects in batches in migraatio" in {
       storeValinnantilaAndValinnantulos()
       storeIlmoittautuminen()
+      storeEhdollisenHyvaksynnanEhto()
       assertValinnantila(valinnantilanTallennus)
       assertValinnantuloksenOhjaus(valinnantuloksenOhjaus)
       assertIlmoittautuminen(ilmoittautuminen)
+      assertEhdollisenHyvaksynnanEhto(ehdollisenHyvaksynnanEhto)
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.storeBatch(
           Seq(
@@ -120,6 +123,10 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
             (henkiloOid, ilmoittautuminen.copy(selite = "en kerro", tila = PoissaSyksy)),
             (henkiloOid, ilmoittautuminen.copy(selite = "no kerron", tila = Lasna)),
             (henkiloOid, ilmoittautuminen.copy(selite = "ehkä kerron", tila = PoissaSyksy))
+          ),
+          Seq(
+            ehdollisenHyvaksynnanEhto.copy(ehdollisenHyvaksymisenEhtoFI = "hähäääää!"),
+            ehdollisenHyvaksynnanEhto.copy(ehdollisenHyvaksymisenEhtoFI = "anteeksi...")
           )
         )
       )
@@ -131,6 +138,9 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
 
       assertIlmoittautuminen(ilmoittautuminen.copy(selite = "ehkä kerron", tila = PoissaSyksy))
       assertIlmoittautuminenHistory(3, ilmoittautuminen.copy(selite = "no kerron", tila = Lasna))
+
+      assertEhdollisenHyvaksynnanEhto(ehdollisenHyvaksynnanEhto.copy(ehdollisenHyvaksymisenEhtoFI = "anteeksi..."))
+      assertEhdollisenHyvaksynnanEhtoHistory(2, ehdollisenHyvaksynnanEhto.copy(ehdollisenHyvaksymisenEhtoFI = "muu"))
     }
     "not update existing valinnantila if modified" in {
       val notModifiedSince = ZonedDateTime.now.minusDays(1).toInstant
@@ -261,6 +271,30 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
         ilmoittautuminen.muokkaaja, ilmoittautuminen.selite)
     }
 
+    def assertEhdollisenHyvaksynnanEhto(ehto: EhdollisenHyvaksynnanEhto) = {
+      val result = singleConnectionValintarekisteriDb.runBlocking(
+        sql"""select ehdollisen_hyvaksymisen_ehto_koodi, ehdollisen_hyvaksymisen_ehto_fi, ehdollisen_hyvaksymisen_ehto_sv, ehdollisen_hyvaksymisen_ehto_en
+              from ehdollisen_hyvaksynnan_ehto
+              where hakemus_oid = ${hakemusOid} and valintatapajono_oid = ${valintatapajonoOid}
+          """.as[(String,String,String,String)]
+      )
+
+      result.size must_== 1
+      result.head must_== (ehto.ehdollisenHyvaksymisenEhtoKoodi, ehto.ehdollisenHyvaksymisenEhtoFI, ehto.ehdollisenHyvaksymisenEhtoSV, ehto.ehdollisenHyvaksymisenEhtoEN)
+    }
+
+    def assertEhdollisenHyvaksynnanEhtoHistory(count: Int, ehto: EhdollisenHyvaksynnanEhto) = {
+      val result = singleConnectionValintarekisteriDb.runBlocking(
+        sql"""select ehdollisen_hyvaksymisen_ehto_koodi, ehdollisen_hyvaksymisen_ehto_fi, ehdollisen_hyvaksymisen_ehto_sv, ehdollisen_hyvaksymisen_ehto_en
+              from ehdollisen_hyvaksynnan_ehto_history
+              where hakemus_oid = ${hakemusOid} and valintatapajono_oid = ${valintatapajonoOid}
+          """.as[(String,String,String,String)]
+      )
+
+      result.size must_== count
+      result.head must_== (ehto.ehdollisenHyvaksymisenEhtoKoodi, ehto.ehdollisenHyvaksymisenEhtoFI, ehto.ehdollisenHyvaksymisenEhtoSV, ehto.ehdollisenHyvaksymisenEhtoEN)
+    }
+
     def storeValinnantilaAndValinnantulos() = {
       singleConnectionValintarekisteriDb.runBlocking(sqlu"""insert into valinnantilat (
            hakukohde_oid,
@@ -287,7 +321,14 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
     def storeIlmoittautuminen() = {
       singleConnectionValintarekisteriDb.runBlocking(
         sqlu"""insert into ilmoittautumiset
-               values(${henkiloOid}, ${hakukohdeOid}, ${Lasna.toString}::ilmoittautumistila, 'muokkaaja', 'selite')"""
+               values (${henkiloOid}, ${hakukohdeOid}, ${Lasna.toString}::ilmoittautumistila, 'muokkaaja', 'selite')"""
+      )
+    }
+
+    def storeEhdollisenHyvaksynnanEhto() = {
+      singleConnectionValintarekisteriDb.runBlocking(
+        sqlu"""insert into ehdollisen_hyvaksynnan_ehto
+               values (${hakemusOid}, ${valintatapajonoOid}, ${hakukohdeOid}, 'muu', 'muu', 'andra', 'other')"""
       )
     }
   }

@@ -102,7 +102,10 @@ case class ValinnantilanTallennus(hakemusOid: String,
                                   valinnantila: Valinnantila,
                                   muokkaaja: String)
 
-case class SavedValinnantila(hakemusOid: String,
-                             valintatapajonoOid: String,
-                             tila:Valinnantila,
-                             tilanViimeisinMuutos: Timestamp)
+case class EhdollisenHyvaksynnanEhto(hakemusOid: String,
+                                     valintatapajonoOid: String,
+                                     hakukohdeOid: String,
+                                     ehdollisenHyvaksymisenEhtoKoodi: String,
+                                     ehdollisenHyvaksymisenEhtoFI: String,
+                                     ehdollisenHyvaksymisenEhtoSV: String,
+                                     ehdollisenHyvaksymisenEhtoEN: String)
