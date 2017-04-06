@@ -17,7 +17,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
-import fi.vm.sade.valintatulosservice.tarjonta.TarjontaHakuService
+import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosBatchRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
@@ -25,8 +25,6 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.Valintarekiste
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Seq
-import scala.collection.mutable
-import scala.collection.parallel.immutable.{ParMap, ParSet}
 import scala.concurrent.duration.Duration
 
 class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTulosRestClient,
@@ -34,7 +32,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
                                        sijoitteluRepository: SijoitteluRepository,
                                        valinnantulosBatchRepository: ValinnantulosBatchRepository,
                                        hakukohdeRecordService: HakukohdeRecordService,
-                                       tarjontaHakuService: TarjontaHakuService,
+                                       hakuService: HakuService,
                                        valintalaskentakoostepalveluService: ValintalaskentakoostepalveluService) extends Logging {
   private val hakukohdeDao: HakukohdeDao = appConfig.sijoitteluContext.hakukohdeDao
   private val valintatulosDao: ValintatulosDao = appConfig.sijoitteluContext.valintatulosDao
@@ -96,7 +94,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     timed(s"Removed jono based hakijaryhmät referring to jonos not in sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid") {
       Valintarekisteri.poistaValintatapajonokohtaisetHakijaryhmatJoidenJonoaEiSijoiteltu(hakukohteet)
     }
-    tarjontaHakuService.getHaku(hakuOid) match {
+    hakuService.getHaku(hakuOid) match {
       case Right(haku) =>
         if (haku.käyttääSijoittelua || timed(s"Check if haku uses laskenta") {
           sijoitteluUsesLaskenta(hakukohteet)
