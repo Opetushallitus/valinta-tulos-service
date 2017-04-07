@@ -30,7 +30,6 @@ class HyvaksymiskirjeService(hyvaksymiskirjeRepository: HyvaksymiskirjeRepositor
       authorizer.checkAccess(auditInfo.session._2, hakukohde.tarjoajaOids,
         Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).fold(throw _, x => x)
     })
-    hyvaksymiskirjeet.foreach(h => logger.info(s"$h"))
     hyvaksymiskirjeRepository.update(hyvaksymiskirjeet)
     hyvaksymiskirjeet.foreach(h => {
       audit.log(auditInfo.user, HyvaksymiskirjeidenMuokkaus,
