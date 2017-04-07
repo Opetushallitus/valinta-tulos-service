@@ -92,7 +92,12 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
 
   private def storeSijoitteluData(hakuOid: String, ajoFromMongo: SijoitteluAjo, mongoSijoitteluAjoId: lang.Long, hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]) = {
     timed(s"Ensuring hakukohteet for sijoitteluajo $mongoSijoitteluAjoId of $hakuOid are in db") {
-      hakukohteet.asScala.map(_.getOid).foreach(hakukohdeRecordService.getHakukohdeRecord)
+      hakukohteet.asScala.map(_.getOid).foreach { oid =>
+        hakukohdeRecordService.getHakukohdeRecord(oid) match {
+          case Left(e) => logger.error(s"Error when fetching hakukohde $oid", e)
+          case _ =>
+        }
+      }
     }
     timed(s"Removed jono based hakijaryhmät referring to jonos not in sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid") {
       Valintarekisteri.poistaValintatapajonokohtaisetHakijaryhmatJoidenJonoaEiSijoiteltu(hakukohteet)
