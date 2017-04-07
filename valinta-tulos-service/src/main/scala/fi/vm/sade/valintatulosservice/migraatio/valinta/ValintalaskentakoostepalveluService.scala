@@ -34,7 +34,7 @@ class ValintalaskentakoostepalveluService (appConfig: VtsAppConfig) {
       }
       ).flatMap {
         case r if 200 == r.status.code => r.as[HakukohdeResponse]
-        case r => Task.fail(new RuntimeException(r.toString))
+        case r => Task.fail(new RuntimeException(s"Error when checking hakukohde $hakukohdeOid from url $url : ${r.toString}"))
       }.run
     ) match {
       case Success(response) => response.kayttaaValintalaskentaa
