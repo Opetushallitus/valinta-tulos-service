@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.tarjonta
 
-import fi.vm.sade.valintatulosservice.tarjonta.KelaKoulutus.{Hammas, Ylempi, Alempi, Lääkis}
+import scala.util.Try
 
 case class KelaKoulutus(val tutkinnontaso: Option[String],val tutkinnonlaajuus1: String, val tutkinnonlaajuus2: Option[String]) extends KelaLaajuus with KelaTutkinnontaso
 
@@ -24,9 +24,14 @@ private object AlempiKKTutkinto {
   }
 }
 private object AlempiYlempiKKTutkinto {
-  def apply(laajuus: Option[String]) = {
-    val (laajuus1, laajuus2) = KelaKoulutus.asLaajuus1AndLaajuus2(laajuus)
-    KelaKoulutus(tutkinnontaso = Some("060"), tutkinnonlaajuus1 = laajuus1, tutkinnonlaajuus2 = laajuus2)
+  def apply(alempi: Alempi, ylempi: Ylempi) = {
+
+    if(alempi.laajuusarvo.isDefined && !alempi.isCombinedLaajuusarvo && !ylempi.isCombinedLaajuusarvo) {
+      KelaKoulutus(tutkinnontaso = Some("060"), tutkinnonlaajuus1 = alempi.laajuusarvo.get, tutkinnonlaajuus2 = ylempi.laajuusarvo)
+    } else {
+      val (laajuus1, laajuus2) = KelaKoulutus.asLaajuus1AndLaajuus2(KelaKoulutus.mergeLaajuudet(alempi,ylempi).laajuusarvo)
+      KelaKoulutus(tutkinnontaso = Some("060"), tutkinnonlaajuus1 = laajuus1, tutkinnonlaajuus2 = laajuus2)
+    }
   }
 }
 private object ErillinenYlempiKKTutkinto {
@@ -47,8 +52,34 @@ private object HammaslääketieteenLisensiaatti {
     KelaKoulutus(tutkinnontaso = Some("071"), tutkinnonlaajuus1 = laajuus1, tutkinnonlaajuus2 = laajuus2)
   }
 }
+private trait Taso {
+  val laajuusarvo: Option[String]
+  val isCombinedLaajuusarvo = laajuusarvo.exists(_.contains("+"))
+}
+private case class Lääkis(val laajuusarvo: Option[String]) extends Taso
+private case class Hammas(val laajuusarvo: Option[String]) extends Taso
+private case class Alempi(val laajuusarvo: Option[String]) extends Taso
+private case class Ylempi(val laajuusarvo: Option[String]) extends Taso
+private case class Muu(val laajuusarvo: Option[String]) extends Taso
 
 object KelaKoulutus {
+  def mergeLaajuudet[A <: Taso](l1: A, l2: A): A = {
+    l1.laajuusarvo match {
+      case Some(laajuus1) =>
+        l2.laajuusarvo match {
+          case Some(laajuus2) =>
+            if(laajuus1 == laajuus2 || laajuus1.contains(laajuus2)) {
+              l1
+            } else if(laajuus2.contains(laajuus1)){
+              l2
+            } else {
+              throw new RuntimeException(s"Unable to solve laajuusarvo conflict between ${l1} and ${l2}!")
+            }
+          case None => l1
+        }
+      case None => l2
+    }
+  }
 
    def asLaajuus1AndLaajuus2(laajuus: Option[String]): (String,Option[String]) = {
      val l = laajuus.map(_.split("\\+").toList).getOrElse(List())
@@ -60,43 +91,58 @@ object KelaKoulutus {
      }
   }
 
-  private trait Taso {
-    val laajuusarvo: Option[String]
-  }
-  private case class Lääkis(val laajuusarvo: Option[String]) extends Taso
-  private case class Hammas(val laajuusarvo: Option[String]) extends Taso
-  private case class Alempi(val laajuusarvo: Option[String]) extends Taso
-  private case class Ylempi(val laajuusarvo: Option[String]) extends Taso
-  private case class Muu(val laajuusarvo: Option[String]) extends Taso
 
-  def apply(ks: Seq[Koulutus]): Option[KelaKoulutus] = {
-    ks.flatMap(toTaso).sortBy {
-      case c: Lääkis => 1
-      case d: Hammas => 2
-      case a: Alempi => 3
-      case b: Ylempi => 4
-      case m: Muu => 5
-    } match {
-      case Ylempi(laajuus) :: Nil => Some(ErillinenYlempiKKTutkinto(laajuus))
-      case Alempi(laajuus1) :: Ylempi(laajuus2) :: Nil =>
-        Some(AlempiYlempiKKTutkinto(laajuus2.map(l2 => laajuus1.map(_ + "+" + l2).getOrElse(l2)).orElse(laajuus1)))
-      case Alempi(laajuus) :: Nil => Some(AlempiKKTutkinto(laajuus))
-      case Lääkis(laajuus) :: _ => Some(LääketieteenLisensiaatti(laajuus))
-      case Hammas(laajuus) :: _ => Some(HammaslääketieteenLisensiaatti(laajuus))
-      case Muu(laajuus) :: _ => Some(MuuTutkinto(laajuus))
+
+  def apply(ks: Seq[Koulutus], komos: Seq[Komo] = Nil): Option[KelaKoulutus] = {
+    val tasot = (ks.flatMap(toKoulutusLaajuusarvo) ++ komos.map(toKoulutusLaajuusarvo)).flatMap(toTaso)
+
+    val (alemmat, ylemmät, lääkis, hammas, muut)= separate(tasot)
+
+    val reduced: (Option[Alempi], Option[Ylempi], Option[Lääkis], Option[Hammas], Option[Muu]) =
+      (alemmat.reduceOption(mergeLaajuudet[Alempi]),
+        ylemmät.reduceOption(mergeLaajuudet[Ylempi]),
+        lääkis.reduceOption(mergeLaajuudet[Lääkis]),
+        hammas.reduceOption(mergeLaajuudet[Hammas]),
+        muut.reduceOption(mergeLaajuudet[Muu]))
+
+
+    reduced match {
+      case (None, Some(Ylempi(laajuus)), None, None, _) => Some(ErillinenYlempiKKTutkinto(laajuus))
+      case (Some(alempi), Some(ylempi), None, None, _) => Some(AlempiYlempiKKTutkinto(alempi, ylempi))
+      case (Some(Alempi(laajuus)), None, None, None, _) => Some(AlempiKKTutkinto(laajuus))
+      case (None, None, Some(Lääkis(laajuus)), None, _) => Some(LääketieteenLisensiaatti(laajuus))
+      case (None, None, None, Some(Hammas(laajuus)), _) => Some(HammaslääketieteenLisensiaatti(laajuus))
+      case (None, None, None, None, Some(Muu(laajuus))) => Some(MuuTutkinto(laajuus))
       case _ =>
         None
     }
 
   }
-  private def toTaso(k: Koulutus): Option[Taso] = {
+
+  private def separate(tasot: Seq[Taso]): (List[Alempi], List[Ylempi], List[Lääkis], List[Hammas], List[Muu]) = {
+    val empty: (List[Alempi], List[Ylempi], List[Lääkis], List[Hammas], List[Muu]) = (Nil,Nil,Nil,Nil,Nil)
+    tasot.foldRight(empty) { case (f, (as, bs, cs, ds, es)) =>
+      f match {
+        case a @ Alempi(_) => (a :: as, bs, cs, ds, es)
+        case b @ Ylempi(_)  => (as, b :: bs, cs, ds, es)
+        case c @ Lääkis(_)  => (as, bs, c :: cs, ds, es)
+        case d @ Hammas(_)  => (as, bs, cs, d :: ds, es)
+        case e @ Muu(_)  => (as, bs, cs, ds, e :: es)
+      }
+    }
+  }
+
+  private def toKoulutusLaajuusarvo(k:Koulutus) = Seq(KoulutusLaajuusarvo(k.koulutuskoodi.map(_.arvo), k.opintojenLaajuusarvo)) ++ k.sisaltyvatKoulutuskoodit.map(arvo => KoulutusLaajuusarvo(Some(arvo), None))
+  private def toKoulutusLaajuusarvo(komo:Komo) = KoulutusLaajuusarvo(komo.koulutuskoodi.map(_.arvo), komo.opintojenLaajuusarvo)
+
+  private def toTaso(k: KoulutusLaajuusarvo): Option[Taso] = {
     implicit class Regex(sc: StringContext) {
       def r = new util.matching.Regex(sc.parts.mkString, sc.parts.tail.map(_ => "x"): _*)
     }
     val arvo = k.opintojenLaajuusarvo.map(_.arvo).filter(_.trim.nonEmpty)
     k.koulutuskoodi match {
       case Some(koodi) =>
-        koodi.arvo match {
+        koodi match {
           case r"772101" =>
             Some(Lääkis(laajuusarvo = arvo))
           case r"772201" =>
@@ -114,3 +160,4 @@ object KelaKoulutus {
   }
 
 }
+case class KoulutusLaajuusarvo(koulutuskoodi: Option[String], opintojenLaajuusarvo: Option[Koodi])

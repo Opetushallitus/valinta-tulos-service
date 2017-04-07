@@ -44,6 +44,9 @@ object HakuFixtures extends HakuService with JsonHakuService {
       getFixtureAsStream(activeFixture)
     }
   }
+  def getKomos(kOids: Seq[String]): Either[Throwable, Seq[Komo]] = {
+    Left(new RuntimeException("Not implemented!"))
+  }
   def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]] = {
     Left(new RuntimeException("Not implemented!"))
   }

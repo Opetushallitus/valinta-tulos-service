@@ -15,7 +15,7 @@ import scala.concurrent.duration._
 class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, organisaatioService: OrganisaatioService, valintarekisteriService: VirkailijaVastaanottoRepository) {
   private val fetchPersonTimeout = 5 seconds
 
-  private def convertToVastaanotto(haku: Haku, hakukohde: Hakukohde, organisaatiot: Organisaatiot, koulutuses: Seq[Koulutus], vastaanotto: VastaanottoRecord): Option[fi.vm.sade.valintatulosservice.kela.Vastaanotto] = {
+  private def convertToVastaanotto(haku: Haku, hakukohde: Hakukohde, organisaatiot: Organisaatiot, koulutuses: Seq[Koulutus], komos: Seq[Komo], vastaanotto: VastaanottoRecord): Option[fi.vm.sade.valintatulosservice.kela.Vastaanotto] = {
     def findOppilaitos(o: Organisaatio): Option[String] =
       o.oppilaitosKoodi.orElse(o.children.flatMap(findOppilaitos).headOption)
 
@@ -25,7 +25,7 @@ class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, orga
       case _ =>
         throw new RuntimeException(s"Unable to get oppilaitos for tarjoaja ${hakukohde.tarjoajaOids.head}!")
     }
-    val kelaKoulutus: Option[KelaKoulutus] = KelaKoulutus(koulutuses)
+    val kelaKoulutus: Option[KelaKoulutus] = KelaKoulutus(koulutuses, komos)
     val kausi = haku.koulutuksenAlkamiskausi.map(kausiToDate)
 
     (kelaKoulutus, kausi) match {
@@ -72,7 +72,8 @@ class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, orga
     def hakukohdeAndOrganisaatioForVastaanotto(vastaanotto: VastaanottoRecord, haku: Haku): Either[Throwable, Option[fi.vm.sade.valintatulosservice.kela.Vastaanotto]] = {
       for(hakukohde <- hakuService.getHakukohde(vastaanotto.hakukohdeOid).right;
           koulutuses <- hakuService.getKoulutuses(hakukohde.hakukohdeKoulutusOids).right;
-          organisaatiot <- organisaatioService.hae(hakukohde.tarjoajaOids.head).right) yield convertToVastaanotto(haku, hakukohde, organisaatiot, koulutuses, vastaanotto)
+          komos <- hakuService.getKomos(koulutuses.flatMap(_.children)).right;
+          organisaatiot <- organisaatioService.hae(hakukohde.tarjoajaOids.head).right) yield convertToVastaanotto(haku, hakukohde, organisaatiot, koulutuses, komos, vastaanotto)
     }
     hakuService.getHaku(hakuOid) match {
       case Right(haku) =>

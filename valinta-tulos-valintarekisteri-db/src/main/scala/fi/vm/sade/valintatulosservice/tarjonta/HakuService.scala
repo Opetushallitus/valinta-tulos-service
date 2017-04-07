@@ -19,6 +19,7 @@ trait HakuService {
   def getHaku(oid: String): Either[Throwable, Haku]
   def getHakukohde(oid: String): Either[Throwable, Hakukohde]
   def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]]
+  def getKomos(komoOids: Seq[String]): Either[Throwable, Seq[Komo]]
   def getHakukohdes(oids: Seq[String]): Either[Throwable, Seq[Hakukohde]]
   def getHakukohdesForHaku(hakuOid: String): Either[Throwable, Seq[Hakukohde]]
   def getHakukohdeOids(hakuOid:String): Either[Throwable, Seq[String]]
@@ -61,7 +62,9 @@ case class Hakukohde(oid: String, hakuOid: String, tarjoajaOids: Set[String], ha
 }
 
 case class Koodi(uri: String, arvo: String)
-case class Koulutus(oid: String, koulutuksenAlkamiskausi: Kausi, tila: String, johtaaTutkintoon: Boolean,
+case class Komo(oid: String, koulutuskoodi: Option[Koodi], opintojenLaajuusarvo: Option[Koodi])
+case class Koulutus(oid: String, koulutuksenAlkamiskausi: Kausi, tila: String, johtaaTutkintoon: Boolean, children: Seq[String],
+                    sisaltyvatKoulutuskoodit: Seq[String],
                     koulutuskoodi: Option[Koodi],
                     koulutusaste: Option[Koodi],
                     opintojenLaajuusarvo: Option[Koodi])
@@ -83,17 +86,31 @@ class KoulutusSerializer extends CustomSerializer[Koulutus]((formats: Formats) =
       val koulutusVersioOpt = (o \ "koulutuskoodi" \ "versio").extractOpt[Int]
       val vads: JValue = (o \ "koulutuskoodi")
       def extractKoodi(j: JValue) = Try(Koodi((j \ "uri").extract[String], (j \ "arvo").extract[String])).toOption
+      val children = (o \ "children").extractOpt[Seq[String]].getOrElse(Seq())
+      val sisaltyvatKoulutuskoodiUris = (o \ "sisaltyvatKoulutuskoodit" \ "uris").extractOpt[Map[String,String]].getOrElse(Map.empty)
 
       Koulutus(oid, kausi, tila, johtaaTutkintoon,
+        children,
+        sisaltyvatKoulutuskoodit = sisaltyvatKoulutuskoodiUris.keys.toSeq,
         koulutuskoodi = extractKoodi((o \ "koulutuskoodi")),
           koulutusaste = extractKoodi((o \ "koulutusaste")),
           opintojenLaajuusarvo = extractKoodi((o \ "opintojenLaajuusarvo")))
   }, { case o => ??? })
 })
-
+class KomoSerializer extends CustomSerializer[Komo]((formats: Formats) => {
+  implicit val f = formats
+  ( {
+    case o: JObject =>
+      val JString(oid) = o \ "oid"
+      def extractKoodi(j: JValue) = Try(Koodi((j \ "uri").extract[String], (j \ "arvo").extract[String])).toOption
+      Komo(oid,
+        koulutuskoodi = extractKoodi((o \ "koulutuskoodi")),
+        opintojenLaajuusarvo = extractKoodi((o \ "opintojenLaajuusarvo")))
+  }, { case o => ??? })
+})
 protected trait JsonHakuService {
   import org.json4s._
-  implicit val formats = DefaultFormats ++ List(new KoulutusSerializer)
+  implicit val formats = DefaultFormats ++ List(new KoulutusSerializer, new KomoSerializer)
 
   protected def toHaku(haku: HakuTarjonnassa) = {
     val korkeakoulu: Boolean = haku.kohdejoukkoUri.startsWith("haunkohdejoukko_12#")
@@ -121,6 +138,7 @@ class CachedHakuService(wrappedService: HakuService) extends HakuService {
 
   override def getHaku(oid: String): Either[Throwable, Haku] = byOid(oid)
   override def getHakukohde(oid: String): Either[Throwable, Hakukohde] = wrappedService.getHakukohde(oid)
+  override def getKomos(kOids: Seq[String]): Either[Throwable, Seq[Komo]] = wrappedService.getKomos(kOids)
   override def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]] = wrappedService.getKoulutuses(koulutusOids)
   override def getHakukohdes(oids: Seq[String]): Either[Throwable, Seq[Hakukohde]] = wrappedService.getHakukohdes(oids)
   override def getHakukohdeOids(hakuOid:String): Either[Throwable, Seq[String]] = wrappedService.getHakukohdeOids(hakuOid)
@@ -215,13 +233,16 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
     }
   }
 
-  def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]] = {
-    def sequence[A, B](s: Seq[Either[A, B]]): Either[A, Seq[B]] =
-      s.foldRight(Right(Nil): Either[A, List[B]]) {
-        (e, acc) => for (xs <- acc.right; x <- e.right) yield x :: xs
-      }
+  private def sequence[A, B](s: Seq[Either[A, B]]): Either[A, Seq[B]] =
+    s.foldRight(Right(Nil): Either[A, List[B]]) {
+      (e, acc) => for (xs <- acc.right; x <- e.right) yield x :: xs
+    }
 
+  def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]] = {
     sequence(koulutusOids.map(getKoulutus))
+  }
+  def getKomos(komoOids: Seq[String]): Either[Throwable, Seq[Komo]] = {
+    sequence(komoOids.map(getKomo))
   }
 
   private def getKoulutus(koulutusOid: String): Either[Throwable, Koulutus] = {
@@ -230,7 +251,12 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
       (parse(response) \ "result").extract[Koulutus]
     }
   }
-
+  private def getKomo(komoOid: String): Either[Throwable, Komo] = {
+    val komoUrl = config.ophProperties.url("tarjonta-service.komo", komoOid)
+    fetch(komoUrl) { response =>
+      (parse(response) \ "result").extract[Komo]
+    }
+  }
   private def fetch[T](url: String)(parse: (String => T)): Either[Throwable, T] = {
     Try(DefaultHttpClient.httpGet(
       url,
