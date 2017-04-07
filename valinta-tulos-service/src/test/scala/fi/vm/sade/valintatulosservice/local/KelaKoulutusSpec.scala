@@ -10,17 +10,17 @@ class KelaKoulutusSpec extends Specification with TarjontaBuilder{
   "Koulutus from Tarjonta" should {
 
     "map 'Alempi'" in {
-      val k = koulutus.withKoulutuskoodi("623701").withOpintojenLaajuusarvo("120+180").koulutus
+      val k = koulutus.withKoulutuskoodi("623701").withOpintojenLaajuusarvo("180").koulutus
 
 
-      KelaKoulutus(Seq(k)) must_== Some(KelaKoulutus(Some("050"),"120",Some("180")))
+      KelaKoulutus(Seq(k)) must_== Some(KelaKoulutus(Some("050"),"180",None))
 
     }
 
     "map 'Ylempi'" in {
-        val k = koulutus.withKoulutuskoodi("799999").withOpintojenLaajuusarvo("120+180").koulutus
+        val k = koulutus.withKoulutuskoodi("799999").withOpintojenLaajuusarvo("120").koulutus
 
-        KelaKoulutus(Seq(k)) must_== Some(KelaKoulutus(Some("061"),"120",Some("180")))
+        KelaKoulutus(Seq(k)) must_== Some(KelaKoulutus(Some("061"),"120",None))
 
     }
 

@@ -20,7 +20,10 @@ private object MuuTutkinto {
 private object AlempiKKTutkinto {
   def apply(laajuus: Option[String]) = {
     val (laajuus1, laajuus2) = KelaKoulutus.asLaajuus1AndLaajuus2(laajuus)
-    KelaKoulutus(tutkinnontaso = Some("050"), tutkinnonlaajuus1 = laajuus1, tutkinnonlaajuus2 = laajuus2)
+    if(laajuus2.isDefined) {
+      throw new RuntimeException(s"Resolved as 'AlempiKKTutkinto' but contained laajuudet ($laajuus1, $laajuus2)")
+    }
+    KelaKoulutus(tutkinnontaso = Some("050"), tutkinnonlaajuus1 = laajuus1, tutkinnonlaajuus2 = None)
   }
 }
 private object AlempiYlempiKKTutkinto {
@@ -37,7 +40,10 @@ private object AlempiYlempiKKTutkinto {
 private object ErillinenYlempiKKTutkinto {
   def apply(laajuus: Option[String]) = {
     val (laajuus1, laajuus2) = KelaKoulutus.asLaajuus1AndLaajuus2(laajuus)
-    KelaKoulutus(tutkinnontaso = Some("061"), tutkinnonlaajuus1 = laajuus1, tutkinnonlaajuus2 = laajuus2)
+    if(laajuus2.isDefined) {
+      throw new RuntimeException(s"Resolved as 'ErillinenYlempiKKTutkinto' but contained laajuudet ($laajuus1, $laajuus2)")
+    }
+    KelaKoulutus(tutkinnontaso = Some("061"), tutkinnonlaajuus1 = laajuus1, tutkinnonlaajuus2 = None)
   }
 }
 private object LääketieteenLisensiaatti {
