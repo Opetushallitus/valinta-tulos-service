@@ -98,10 +98,9 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     }
     hakuService.getHaku(hakuOid) match {
       case Right(haku) =>
-        if (haku.käyttääSijoittelua || timed(s"Check if haku uses laskenta") {
-          sijoitteluUsesLaskenta(hakukohteet)
-        }) {
-          storeSijoittelu(hakuOid, ajoFromMongo, hakukohteet, valintatulokset)
+        val hakukohteetWithLaskenta = getHakukohteetUsingLaskenta(hakukohteet)
+        if (haku.käyttääSijoittelua || !hakukohteetWithLaskenta.isEmpty){
+          storeSijoittelu(hakuOid, ajoFromMongo, hakukohteetWithLaskenta, valintatulokset)
         } else {
           logger.info(s"Haku $hakuOid does not use sijoittelu. Skipping saving sijoittelu $mongoSijoitteluAjoId")
         }
@@ -147,13 +146,8 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     }
   }
 
-  private def sijoitteluUsesLaskenta(hakukohteet: util.List[Hakukohde]): Boolean = {
-    hakukohteet.asScala.map(_.getOid).foreach(oid => {
-      if (valintalaskentakoostepalveluService.hakukohdeUsesLaskenta(oid)) {
-        return true
-      }
-    })
-    false
+  private def getHakukohteetUsingLaskenta(hakukohteet: util.List[Hakukohde]): util.List[Hakukohde] = {
+    hakukohteet.asScala.filter(h => valintalaskentakoostepalveluService.hakukohdeUsesLaskenta(h.getOid)).asJava
   }
 
   private def createSaveObjects(hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]):
