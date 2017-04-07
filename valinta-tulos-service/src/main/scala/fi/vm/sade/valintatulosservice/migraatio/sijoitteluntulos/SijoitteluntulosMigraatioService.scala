@@ -75,8 +75,9 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       logger.warn("dryRun : NOT updating the database")
     } else {
       logger.info(s"Starting to store sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid...")
-      val (valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset) =
-        createSaveObjectsFromMongoData(hakuOid, ajoFromMongo, mongoSijoitteluAjoId, hakukohteet, valintatulokset)
+      storeSijoitteluData(hakuOid, ajoFromMongo, mongoSijoitteluAjoId, hakukohteet, valintatulokset)
+      logger.info(s"Starting to save valinta data sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid...")
+      val (valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset) = createSaveObjects(hakukohteet, valintatulokset)
       timed(s"Saving valinta data for sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid") {
         valinnantulosBatchRepository.runBlocking(valinnantulosBatchRepository.storeBatch(valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset), Duration(15, MINUTES))
       }
@@ -89,7 +90,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     logger.info("-----------------------------------------------------------")
   }
 
-  private def createSaveObjectsFromMongoData(hakuOid: String, ajoFromMongo: SijoitteluAjo, mongoSijoitteluAjoId: lang.Long, hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]): (Seq[(ValinnantilanTallennus, Timestamp)], Seq[ValinnantuloksenOhjaus], Seq[(String, Ilmoittautuminen)]) = {
+  private def storeSijoitteluData(hakuOid: String, ajoFromMongo: SijoitteluAjo, mongoSijoitteluAjoId: lang.Long, hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]) = {
     timed(s"Ensuring hakukohteet for sijoitteluajo $mongoSijoitteluAjoId of $hakuOid are in db") {
       hakukohteet.asScala.map(_.getOid).foreach(hakukohdeRecordService.getHakukohdeRecord)
     }
@@ -106,13 +107,6 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
         }
       case Left(e) => throw e
     }
-
-    logger.info(s"Starting to save valinta data sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid...")
-
-    val (valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset) = timed("Create save objects for saving valintadata") {
-      createSaveObjects(hakukohteet, valintatulokset)
-    }
-    (valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset)
   }
 
   private def findSijoittelu(hakuOid: String): Sijoittelu = {
