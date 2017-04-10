@@ -8,7 +8,7 @@ import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.generatedfixtures._
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.mongo.MongoFactory
-import fi.vm.sade.valintatulosservice.oppijantunnistus.OppijanTunnistusService
+import fi.vm.sade.oppijantunnistus.OppijanTunnistusService
 import fi.vm.sade.valintatulosservice.sijoittelu.{DirectMongoSijoittelunTulosRestClient, SijoittelutulosService}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
@@ -23,7 +23,7 @@ import org.specs2.runner.JUnitRunner
 @RunWith(classOf[JUnitRunner])
 class MailPollerSpec extends ITSpecification with TimeWarp {
   lazy val hakuService = HakuService(appConfig.hakuServiceConfig)
-  lazy val oppijanTunnistusService = OppijanTunnistusService(appConfig)
+  lazy val oppijanTunnistusService = OppijanTunnistusService(appConfig.settings)
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
   lazy val sijoittelunTulosRestClient = new DirectMongoSijoittelunTulosRestClient(appConfig)
   lazy val sijoittelutulosService = new SijoittelutulosService(appConfig.sijoitteluContext.raportointiService, appConfig.ohjausparametritService,

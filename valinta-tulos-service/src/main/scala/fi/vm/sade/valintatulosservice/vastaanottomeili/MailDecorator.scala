@@ -6,7 +6,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.AppConfig
 import fi.vm.sade.valintatulosservice.domain.{Hakemus, Henkilotiedot}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
-import fi.vm.sade.valintatulosservice.oppijantunnistus.{OppijanTunnistus, OppijanTunnistusService}
+import fi.vm.sade.oppijantunnistus.{OppijanTunnistus, OppijanTunnistusService}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 
 class HakukohdeNotFoundException(message: String) extends RuntimeException(message)
