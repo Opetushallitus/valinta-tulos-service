@@ -8,7 +8,7 @@ import org.specs2.mutable.Specification
 class KelaKoulutusSpec extends Specification with TarjontaBuilder{
 
   "Koulutus from Tarjonta" should {
-
+/*
     "map 'Alempi'" in {
       val k = koulutus.withKoulutuskoodi("623701").withOpintojenLaajuusarvo("180").koulutus
 
@@ -50,7 +50,15 @@ class KelaKoulutusSpec extends Specification with TarjontaBuilder{
       KelaKoulutus(Seq(k0), Seq(ko0)) must_== Some(KelaKoulutus(Some("060"),"180",Some("120")))
 
     }
+*/
 
+    "map 'Ylempi' and 'Alempi' with hidden sisältyväkoulutuskoodi" in {
+      val k0 = koulutus.withKoulutuskoodi("751301").withOpintojenLaajuusarvo("120").koulutus
+
+
+      KelaKoulutus(Seq(k0)) must_== Some(KelaKoulutus(Some("061"),"120", None))
+
+    }
   }
 
 }

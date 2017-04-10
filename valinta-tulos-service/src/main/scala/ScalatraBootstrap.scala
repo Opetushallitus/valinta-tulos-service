@@ -11,7 +11,7 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.kela.KelaService
 import fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos.SijoittelunTulosMigraatioServlet
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.{HakijaResolver, MigraatioServlet}
-import fi.vm.sade.valintatulosservice.oppijantunnistus.{OppijanTunnistusService, OppijanTunnistus}
+import fi.vm.sade.oppijantunnistus.{OppijanTunnistusService, OppijanTunnistus}
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.sijoittelu.{SijoitteluFixtures, SijoittelunTulosRestClient, SijoittelutulosService}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, TarjontaHakuService}
@@ -45,7 +45,7 @@ class ScalatraBootstrap extends LifeCycle {
     }
     implicit lazy val dynamicAppConfig = new OhjausparametritAppConfig(appConfig.ohjausparametritService)
     lazy val hakuService = HakuService(appConfig.hakuServiceConfig)
-    lazy val oppijanTunnistusService = OppijanTunnistusService(appConfig)
+    lazy val oppijanTunnistusService = OppijanTunnistusService(appConfig.settings)
     lazy val organisaatioService = OrganisaatioService(appConfig)
     lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig, appConfig.isInstanceOf[IT])
     lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing)

@@ -7,6 +7,10 @@ import fi.vm.sade.valintatulosservice.SecuritySettings
 import org.apache.commons.lang3.BooleanUtils
 
 case class VtsApplicationSettings(config: Config) extends ApplicationSettings(config) {
+  val omatsivutUrlEn = withConfig(_.getString("omatsivut.en"))
+  val omatsivutUrlFi = withConfig(_.getString("omatsivut.fi"))
+  val omatsivutUrlSv = withConfig(_.getString("omatsivut.sv"))
+  val oppijanTunnistusUrl = withConfig(_.getString("oppijan-tunnistus-service.url"))
   val hakemusMongoConfig: MongoConfig = getMongoConfig(config.getConfig("hakemus.mongodb"))
   val valintatulosMongoConfig: MongoConfig = getMongoConfig(config.getConfig("sijoittelu-service.mongodb"))
   val securitySettings = new SecuritySettings(config)

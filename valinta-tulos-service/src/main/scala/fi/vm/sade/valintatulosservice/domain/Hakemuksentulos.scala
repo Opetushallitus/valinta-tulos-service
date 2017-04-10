@@ -62,6 +62,17 @@ case class Hakutoiveentulos(hakukohdeOid: String,
     )
   }
 
+  def toOdottaaYlempienHakutoiveidenTuloksia = {
+    if(valintatila == Valintatila.hyväksytty) {
+      copy(
+        vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa,
+        vastaanottoDeadline = None
+      )
+    } else {
+      toKesken
+    }
+  }
+
   def julkaistavaVersio = {
     if (julkaistavissa) {
       this

@@ -1,4 +1,4 @@
-package fi.vm.sade.valintatulosservice.oppijantunnistus
+package fi.vm.sade.oppijantunnistus
 
 case class OppijanTunnistus(securelink: String)
 

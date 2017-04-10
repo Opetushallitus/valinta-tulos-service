@@ -1,7 +1,7 @@
-package fi.vm.sade.valintatulosservice.oppijantunnistus
+package fi.vm.sade.oppijantunnistus
 
 import fi.vm.sade.utils.http.DefaultHttpClient
-import fi.vm.sade.valintatulosservice.config.AppConfig
+import fi.vm.sade.valintatulosservice.config.{VtsApplicationSettings, AppConfig}
 import fi.vm.sade.valintatulosservice.organisaatio.Organisaatiot
 import org.json4s.jackson.JsonMethods._
 
@@ -16,19 +16,19 @@ trait OppijanTunnistusService {
 
 }
 object OppijanTunnistusService {
-  def apply(appConfig: AppConfig): OppijanTunnistusService = new RealOppijanTunnistusService(appConfig)
+  def apply(appConfig: VtsApplicationSettings): OppijanTunnistusService = new RealOppijanTunnistusService(appConfig)
 }
-class RealOppijanTunnistusService(appConfig:AppConfig) extends OppijanTunnistusService {
+class RealOppijanTunnistusService(appConfig:VtsApplicationSettings) extends OppijanTunnistusService {
   import org.json4s._
   implicit val formats = DefaultFormats
   import org.json4s.jackson.Serialization.{read, write}
 
   def luoSecureLink(personOid: String, hakemusOid: String, email: String, lang: String): Either[RuntimeException, OppijanTunnistus] = {
-    val url = appConfig.settings.oppijanTunnistusUrl
+    val url = appConfig.oppijanTunnistusUrl
     val callbackUrl = lang.toLowerCase match {
-      case "en" => appConfig.settings.omatsivutUrlEn
-      case "sv" => appConfig.settings.omatsivutUrlSv
-      case _ => appConfig.settings.omatsivutUrlFi
+      case "en" => appConfig.omatsivutUrlEn
+      case "sv" => appConfig.omatsivutUrlSv
+      case _ => appConfig.omatsivutUrlFi
     }
     val oppijanTunnistusBody = OppijanTunnistusCreate(callbackUrl,email,lang,Metadata(hakemusOid, personOid))
     fetch(url, oppijanTunnistusBody){ response =>
