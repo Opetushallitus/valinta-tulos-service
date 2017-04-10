@@ -1,0 +1,9 @@
+alter table valinnantilat owner to oph;
+alter table tilat_kuvaukset owner to oph;
+alter table hyvaksymiskirjeet_history owner to oph;
+alter table hyvaksymiskirjeet owner to oph;
+alter table valinnantilat_history owner to oph;
+alter table sessiot owner to oph;
+alter table roolit owner to oph;
+alter table ilmoittautumiset_history owner to oph;
+alter table tilat_kuvaukset_history owner to oph;
