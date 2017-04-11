@@ -82,7 +82,8 @@
         <dependency>
             <groupId>fi.vm.sade.sijoittelu</groupId>
             <artifactId>sijoittelu-algoritmi-domain</artifactId>
-            <version>${sijoittelu.version}</version>
+            <!--<version>${sijoittelu.version}</version>-->
+            <version>5.0-OK_112-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
