@@ -274,7 +274,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
   private def insertValintatapajono(sijoitteluajoId:Long, hakukohdeOid:String, valintatapajono:Valintatapajono) = {
     val SijoitteluajonValintatapajonoWrapper(oid, nimi, prioriteetti, tasasijasaanto, aloituspaikat, alkuperaisetAloituspaikat,
     eiVarasijatayttoa, kaikkiEhdonTayttavatHyvaksytaan, poissaOlevaTaytto, varasijat, varasijaTayttoPaivat,
-    varasijojaKaytetaanAlkaen, varasijojaTaytetaanAsti, tayttojono, hyvaksytty, varalla, alinHyvaksyttyPistemaara, valintaesitysHyvaksytty)
+    varasijojaKaytetaanAlkaen, varasijojaTaytetaanAsti, tayttojono, alinHyvaksyttyPistemaara, valintaesitysHyvaksytty)
     = SijoitteluajonValintatapajonoWrapper(valintatapajono)
 
     val varasijojaKaytetaanAlkaenTs:Option[Timestamp] = varasijojaKaytetaanAlkaen.flatMap(d => Option(new Timestamp(d.getTime)))
@@ -282,13 +282,13 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
 
     sqlu"""insert into valintatapajonot (oid, sijoitteluajo_id, hakukohde_oid, nimi, prioriteetti, tasasijasaanto, aloituspaikat,
            alkuperaiset_aloituspaikat, kaikki_ehdon_tayttavat_hyvaksytaan, poissaoleva_taytto, ei_varasijatayttoa,
-           varasijat, varasijatayttopaivat, varasijoja_kaytetaan_alkaen, varasijoja_taytetaan_asti, tayttojono, hyvaksytty, varalla,
+           varasijat, varasijatayttopaivat, varasijoja_kaytetaan_alkaen, varasijoja_taytetaan_asti, tayttojono,
            alin_hyvaksytty_pistemaara, valintaesitys_hyvaksytty)
            values (${oid}, ${sijoitteluajoId}, ${hakukohdeOid}, ${nimi}, ${prioriteetti}, ${tasasijasaanto.toString}::tasasijasaanto, ${aloituspaikat},
            ${alkuperaisetAloituspaikat}, ${kaikkiEhdonTayttavatHyvaksytaan},
            ${poissaOlevaTaytto}, ${eiVarasijatayttoa}, ${varasijat}, ${varasijaTayttoPaivat},
            ${varasijojaKaytetaanAlkaenTs}, ${varasijojaTaytetaanAstiTs}, ${tayttojono},
-           ${hyvaksytty}, ${varalla}, ${alinHyvaksyttyPistemaara}, ${valintaesitysHyvaksytty})"""
+           ${alinHyvaksyttyPistemaara}, ${valintaesitysHyvaksytty})"""
   }
 
   private def insertHakijaryhma(sijoitteluajoId:Long, hakijaryhma:Hakijaryhma) = {
@@ -357,7 +357,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
     runBlocking(
       sql"""select tasasijasaanto, oid, nimi, prioriteetti, aloituspaikat, alkuperaiset_aloituspaikat,
             alin_hyvaksytty_pistemaara, ei_varasijatayttoa, kaikki_ehdon_tayttavat_hyvaksytaan, poissaoleva_taytto,
-            valintaesitys_hyvaksytty, hyvaksytty, varalla, varasijat,
+            valintaesitys_hyvaksytty, varasijat,
             varasijatayttopaivat, varasijoja_kaytetaan_alkaen, varasijoja_taytetaan_asti, tayttojono, hakukohde_oid
             from valintatapajonot
             where sijoitteluajo_id = ${sijoitteluajoId}""".as[ValintatapajonoRecord]).toList
@@ -367,7 +367,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
     runBlocking(
       sql"""select tasasijasaanto, oid, nimi, prioriteetti, aloituspaikat, alkuperaiset_aloituspaikat,
             alin_hyvaksytty_pistemaara, ei_varasijatayttoa, kaikki_ehdon_tayttavat_hyvaksytaan, poissaoleva_taytto,
-            valintaesitys_hyvaksytty, hyvaksytty, varalla, varasijat,
+            valintaesitys_hyvaksytty, varasijat,
             varasijatayttopaivat, varasijoja_kaytetaan_alkaen, varasijoja_taytetaan_asti, tayttojono, hakukohde_oid
             from valintatapajonot
             where sijoitteluajo_id = ${sijoitteluajoId} and hakukohde_oid = ${hakukohdeOid}""".as[ValintatapajonoRecord]).toList
@@ -569,7 +569,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
             select j.hakukohde_oid, v.prioriteetti, v.oid, v.nimi, v.ei_varasijatayttoa, j.jonosija,
                 j.varasijan_numero, ti.tila, i.tila,
                 j.hyvaksytty_harkinnanvaraisesti, j.tasasijajonosija, j.pisteet, v.alin_hyvaksytty_pistemaara,
-                v.hyvaksytty, v.varalla, v.varasijat, v.varasijatayttopaivat,
+                v.varasijat, v.varasijatayttopaivat,
                 v.varasijoja_kaytetaan_alkaen, v.varasijoja_taytetaan_asti, v.tayttojono,
                 tu.julkaistavissa, tu.ehdollisesti_hyvaksyttavissa, tu.hyvaksytty_varasijalta,
                 vo.timestamp, ti.tilan_viimeisin_muutos, tk.tilankuvaus_hash, tk.tarkenteen_lisatieto,

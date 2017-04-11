@@ -111,8 +111,6 @@ case class SijoitteluajonValintatapajonoWrapper(
                                                  varasijojaKaytetaanAlkaen: Option[Date],
                                                  varasijojaTaytetaanAsti: Option[Date],
                                                  tayttojono: Option[String],
-                                                 hyvaksytty: Int,
-                                                 varalla: Int,
                                                  alinHyvaksyttyPistemaara: Option[BigDecimal],
                                                  valintaesitysHyvaksytty: Option[Boolean] = Some(false)) {
 
@@ -132,8 +130,6 @@ case class SijoitteluajonValintatapajonoWrapper(
     varasijojaKaytetaanAlkaen.foreach(valintatapajono.setVarasijojaKaytetaanAlkaen(_))
     varasijojaTaytetaanAsti.foreach(valintatapajono.setVarasijojaTaytetaanAsti(_))
     tayttojono.foreach(valintatapajono.setTayttojono(_))
-    valintatapajono.setHyvaksytty(hyvaksytty)
-    valintatapajono.setVaralla(varalla)
     alinHyvaksyttyPistemaara.foreach(pm => valintatapajono.setAlinHyvaksyttyPistemaara(pm.bigDecimal))
     valintaesitysHyvaksytty.foreach(valintatapajono.setValintaesitysHyvaksytty(_))
     valintatapajono
@@ -157,8 +153,6 @@ object SijoitteluajonValintatapajonoWrapper extends OptionConverter {
       convert[Date, Date](valintatapajono.getVarasijojaKaytetaanAlkaen(), date),
       convert[Date, Date](valintatapajono.getVarasijojaTaytetaanAsti(), date),
       convert[javaString, String](valintatapajono.getTayttojono, string),
-      valintatapajono.getHyvaksytty(),
-      valintatapajono.getVaralla(),
       convert[javaBigDecimal, BigDecimal](valintatapajono.getAlinHyvaksyttyPistemaara(), bigDecimal),
       convert[javaBoolean, Boolean](valintatapajono.getValintaesitysHyvaksytty(), boolean)
     )

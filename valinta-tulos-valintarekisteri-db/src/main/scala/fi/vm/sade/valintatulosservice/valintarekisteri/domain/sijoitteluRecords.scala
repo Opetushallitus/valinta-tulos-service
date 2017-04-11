@@ -58,7 +58,7 @@ case class HakutoiveenValintatapajonoRecord(hakukohdeOid:String, valintatapajono
     valintatapajonoNimi:String, eiVarasijatayttoa:Boolean, jonosija:Int,
     varasijanNumero:Option[Int], tila:Valinnantila, ilmoittautumisTila:SijoitteluajonIlmoittautumistila,
     hyvaksyttyHarkinnanvaraisesti:Boolean, tasasijaJonosija:Int, pisteet:Option[BigDecimal], alinHyvaksyttyPistemaara:Option[BigDecimal],
-    hyvaksytty:Int, varalla:Int, varasijat:Option[Int], varasijaTayttoPaivat:Option[Int], varasijojaKaytetaanAlkaen:Option[Date],
+    varasijat:Option[Int], varasijaTayttoPaivat:Option[Int], varasijojaKaytetaanAlkaen:Option[Date],
     varasijojaTaytetaanAsti:Option[Date], tayttojono:Option[String], julkaistavissa:Boolean, ehdollisestiHyvaksyttavissa:Boolean,
     hyvaksyttyVarasijalta:Boolean, valintatuloksenViimeisinMuutos:Option[Date], hakemuksenTilanViimeisinMuutos:Date,
     tilankuvausHash:Int, tarkenteenLisatieto:Option[String], hakeneet:Int) {
@@ -78,9 +78,7 @@ case class HakutoiveenValintatapajonoRecord(hakukohdeOid:String, valintatapajono
     hakutoiveenValintatapajonoDto.setTasasijaJonosija(tasasijaJonosija)
     pisteet.foreach(p => hakutoiveenValintatapajonoDto.setPisteet(bigDecimal(p)))
     alinHyvaksyttyPistemaara.foreach(p => hakutoiveenValintatapajonoDto.setAlinHyvaksyttyPistemaara(bigDecimal(p)))
-    //todo hakeneet
-    hakutoiveenValintatapajonoDto.setHyvaksytty(hyvaksytty)
-    hakutoiveenValintatapajonoDto.setVaralla(varalla)
+    //todo hakeneet ja ehkä hyvaksytty ja varalla? Tarvitaanko?
     varasijat.foreach(hakutoiveenValintatapajonoDto.setVarasijat(_))
     varasijaTayttoPaivat.foreach(hakutoiveenValintatapajonoDto.setVarasijaTayttoPaivat(_))
     varasijojaKaytetaanAlkaen.foreach(hakutoiveenValintatapajonoDto.setVarasijojaKaytetaanAlkaen(_))
@@ -169,7 +167,7 @@ case class ValintatapajonoRecord(tasasijasaanto:String, oid:String, nimi:String,
                                  alkuperaisetAloituspaikat:Option[Int], alinHyvaksyttyPistemaara:BigDecimal,
                                  eiVarasijatayttoa:Boolean, kaikkiEhdonTayttavatHyvaksytaan:Boolean,
                                  poissaOlevaTaytto:Boolean, valintaesitysHyvaksytty:Option[Boolean], hakeneet:Int,
-                                 hyvaksytty:Int, varalla:Int, varasijat:Option[Int], varasijanTayttoPaivat:Option[Int],
+                                 varasijat:Option[Int], varasijanTayttoPaivat:Option[Int],
                                  varasijojaKaytetaanAlkaen:Option[java.sql.Date], varasijojaKaytetaanAsti:Option[java.sql.Date],
                                  tayttoJono:Option[String], hakukohdeOid:String) {
 
@@ -191,8 +189,6 @@ case class ValintatapajonoRecord(tasasijasaanto:String, oid:String, nimi:String,
     valintatapajonoDTO.setKaikkiEhdonTayttavatHyvaksytaan(kaikkiEhdonTayttavatHyvaksytaan)
     valintatapajonoDTO.setPoissaOlevaTaytto(poissaOlevaTaytto)
     valintaesitysHyvaksytty.foreach(valintatapajonoDTO.setValintaesitysHyvaksytty(_))
-    valintatapajonoDTO.setHyvaksytty(hyvaksytty)
-    valintatapajonoDTO.setVaralla(varalla)
     varasijat.foreach(valintatapajonoDTO.setVarasijat(_))
     varasijanTayttoPaivat.foreach(valintatapajonoDTO.setVarasijaTayttoPaivat(_))
     varasijojaKaytetaanAlkaen.foreach(valintatapajonoDTO.setVarasijojaKaytetaanAlkaen)

@@ -293,7 +293,7 @@ trait ValintarekisteriDbTools extends Specification {
   private implicit val getSijoitteluajonValintatapajonoResult = GetResult(r => {
     SijoitteluajonValintatapajonoWrapper(r.nextString, r.nextString, r.nextInt, Tasasijasaanto(r.nextString()),
       r.nextIntOption, r.nextIntOption, r.nextBoolean, r.nextBoolean, r.nextBoolean, r.nextIntOption, r.nextIntOption,
-      r.nextTimestampOption(), r.nextTimestampOption(), r.nextStringOption(),r.nextInt, r.nextInt,
+      r.nextTimestampOption(), r.nextTimestampOption(), r.nextStringOption(),
       r.nextBigDecimalOption, Some(false)).valintatapajono
   })
 
@@ -302,7 +302,7 @@ trait ValintarekisteriDbTools extends Specification {
       sql"""select oid, nimi, prioriteetti, tasasijasaanto, aloituspaikat, alkuperaiset_aloituspaikat, ei_varasijatayttoa,
             kaikki_ehdon_tayttavat_hyvaksytaan, poissaoleva_taytto,
             varasijat, varasijatayttopaivat, varasijoja_kaytetaan_alkaen, varasijoja_taytetaan_asti, tayttojono,
-            hyvaksytty, varalla, alin_hyvaksytty_pistemaara
+            alin_hyvaksytty_pistemaara
             from valintatapajonot
             where hakukohde_oid = ${hakukohdeOid}""".as[Valintatapajono])
   }
@@ -512,7 +512,7 @@ trait ValintarekisteriDbTools extends Specification {
         val valintatapajonoOid = hakukohdeOid + "." + k
         val valintatapajono = SijoitteluajonValintatapajonoWrapper( valintatapajonoOid, "nimi" + k, k, Arvonta, Some(k), Some(k), false, false,
           false, Some(k), Some(k), Some(new Date(System.currentTimeMillis)), Some(new Date(System.currentTimeMillis)),
-          None, k, k, Some(k), Some(false)).valintatapajono
+          None, Some(k), Some(false)).valintatapajono
         valintatapajono.getHakemukset.addAll(
           (1 to size par).map( j => {
             val hakemus = SijoitteluajonHakemusWrapper(valintatapajonoOid + "." + j, Some(valintatapajonoOid), Some("Etunimi"), Some("Sukunimi"),
