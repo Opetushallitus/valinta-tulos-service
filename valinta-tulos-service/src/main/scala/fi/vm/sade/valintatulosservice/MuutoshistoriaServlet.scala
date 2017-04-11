@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Muutos
 import org.scalatra.Ok
 import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
@@ -22,7 +23,7 @@ class MuutoshistoriaServlet(valinnantulosService: ValinnantulosService,
     params.get("hakemusOid").fold[Either[Throwable, String]](Left(new IllegalArgumentException("URL parametri hakemusOid on pakollinen.")))(Right(_))
   }
 
-  val muutoshistoriaSwagger: OperationBuilder = (apiOperation[List[Unit]]("muutoshistoria")
+  val muutoshistoriaSwagger: OperationBuilder = (apiOperation[List[Muutos]]("muutoshistoria")
     summary "Muutoshistoria"
     parameter queryParam[String]("valintatapajonoOid").description("Valintatapajonon OID").required
     parameter queryParam[String]("hakemusOid").description("Hakemuksen OID").required
