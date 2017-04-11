@@ -18,6 +18,8 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
 
   def updateValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
 
+  def getMuutoshistoriaForHakemus(hakemusOid: String, valintatapajonoOid: String): List[Muutos]
+
   def getValinnantuloksetForHakukohde(hakukohdeOid: String): DBIO[Set[Valinnantulos]]
   def getValinnantuloksetForValintatapajono(valintatapajonoOid:String): DBIO[Set[Valinnantulos]]
 

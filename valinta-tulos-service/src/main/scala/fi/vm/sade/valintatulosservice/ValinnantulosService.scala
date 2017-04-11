@@ -24,6 +24,18 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
                            val appConfig: VtsAppConfig,
                            val audit: Audit) extends Logging {
 
+  def getMuutoshistoriaForHakemus(hakemusOid: String, valintatapajonoOid: String, auditInfo: AuditInfo): List[Muutos] = {
+    val r = valinnantulosRepository.getMuutoshistoriaForHakemus(hakemusOid, valintatapajonoOid)
+    audit.log(auditInfo.user, ValinnantuloksenLuku,
+      new Target.Builder()
+        .setField("hakemus", hakemusOid)
+        .setField("valintatapajono", valintatapajonoOid)
+        .build(),
+      new Changes.Builder().build()
+    )
+    r
+  }
+
   def getValinnantuloksetForHakukohde(hakukohdeOid: String, auditInfo: AuditInfo): Option[(Instant, Set[Valinnantulos])] = {
     val r = valinnantulosRepository.getValinnantuloksetAndLastModifiedDateForHakukohde(hakukohdeOid).map(t => {
       (t._1, yhdenPaikanSaannos(t._2).fold(throw _, x => x))

@@ -8,6 +8,9 @@ import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 
 case class ValinnantulosUpdateStatus(status:Int, message:String, valintatapajonoOid:String, hakemusOid:String)
 
+case class KentanMuutos(field: String, from: Option[Any], to: Any)
+case class Muutos(changes: List[KentanMuutos], timestamp: OffsetDateTime)
+
 case class Valinnantulos(hakukohdeOid: String,
                          valintatapajonoOid: String,
                          hakemusOid: String,

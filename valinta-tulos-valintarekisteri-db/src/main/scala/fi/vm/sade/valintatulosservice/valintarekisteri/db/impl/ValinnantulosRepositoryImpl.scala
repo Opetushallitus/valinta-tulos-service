@@ -2,10 +2,11 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import java.sql.Timestamp
 import java.time.format.DateTimeFormatter
-import java.time.{Instant, ZoneId, ZonedDateTime}
+import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
 import java.util.ConcurrentModificationException
 import java.util.concurrent.TimeUnit
 
+import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.dbio.DBIO
@@ -15,6 +16,54 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
 trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with ValintarekisteriRepository {
+  override def getMuutoshistoriaForHakemus(hakemusOid: String, valintatapajonoOid: String): List[Muutos] = {
+    runBlocking(DBIO.sequence(List(
+    sql"""select tila, tilan_viimeisin_muutos, transaction_id
+          from valinnantilat_history
+          where valintatapajono_oid = ${valintatapajonoOid}
+              and hakemus_oid = ${hakemusOid}
+          order by tilan_viimeisin_muutos desc
+      """.as[(Valinnantila, OffsetDateTime, Long)]
+      .map(r => formMuutoshistoria(r.map(t => (t._3, t._2, KentanMuutos(field = "valinnantila", from = None, to = t._1))))),
+    sql"""select julkaistavissa,
+              ehdollisesti_hyvaksyttavissa,
+              hyvaksytty_varasijalta,
+              hyvaksy_peruuntunut,
+              lower(system_time) as ts,
+              transaction_id
+          from valinnantulokset_history
+          where valintatapajono_oid = ${valintatapajonoOid}
+              and hakemus_oid = ${hakemusOid}
+          order by ts desc
+      """.as[(Boolean, Boolean, Boolean, Boolean, OffsetDateTime, Long)]
+      .map(_.flatMap {
+        case (julkaistavissa, ehdollisestiHyvaksyttavissa, hyvaksyttyVarasijalta, hyvaksyPeruuntunut, ts, txid) =>
+          List(
+            (txid, ts, KentanMuutos(field = "julkaistavissa", from = None, to = julkaistavissa)),
+            (txid, ts, KentanMuutos(field = "ehdollisestiHyvaksyttavissa", from = None, to = ehdollisestiHyvaksyttavissa)),
+            (txid, ts, KentanMuutos(field = "hyvaksyttyVarasijalta", from = None, to = hyvaksyttyVarasijalta)),
+            (txid, ts, KentanMuutos(field = "hyvaksyPeruuntunut", from = None, to = hyvaksyPeruuntunut))
+          )
+      }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten),
+    sql"""select v.action, v.timestamp
+          from vastaanotot as v
+          join valinnantilat as ti on ti.hakukohde_oid = v.hakukohde
+              and ti.henkilo_oid = v.henkilo
+          where ti.valintatapajono_oid = ${valintatapajonoOid}
+              and ti.hakemus_oid = ${hakemusOid}
+      """.as[(ValintatuloksenTila, OffsetDateTime)]
+      .map(r => formMuutoshistoria(r.map(t => (0, t._2, KentanMuutos(field = "vastaanottotila", from = None, to = t._1))))),
+    sql"""select i.tila, lower(i.system_time), i.transaction_id
+          from ilmoittautumiset_history as i
+          join valinnantilat as ti on ti.hakukohde_oid = i.hakukohde
+              and ti.henkilo_oid = i.henkilo
+          where ti.valintatapajono_oid = ${valintatapajonoOid}
+              and ti.hakemus_oid = ${hakemusOid}
+      """.as[(SijoitteluajonIlmoittautumistila, OffsetDateTime, Long)]
+      .map(r => formMuutoshistoria(r.map(t => (t._3, t._2, KentanMuutos(field = "ilmoittautumistila", from = None, to = t._1)))))
+    )).map(_.flatten.groupBy(_._1).mapValues(changes => Muutos(changes = changes.map(_._3), timestamp = changes.map(_._2).max)).values.toList)
+    )
+  }
 
   override def getValinnantuloksetForHakukohde(hakukohdeOid: String): DBIO[Set[Valinnantulos]] = {
     sql"""select ti.hakukohde_oid,
@@ -257,6 +306,15 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       case 1 => DBIO.successful(())
       case _ => DBIO.failed(new ConcurrentModificationException(s"Ilmoittautumista $ilmoittautuminen ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
     }
+  }
+
+  private def formMuutoshistoria[A, B](muutokset: Iterable[(A, B, KentanMuutos)]): List[(A, B, KentanMuutos)] = muutokset.headOption match {
+    case Some(origin) =>
+      muutokset.tail.foldRight(List(origin)) {
+        case ((a, b, muutos), ms @ (_, _, KentanMuutos(_, _, to)) :: _) if muutos.to != to => (a, b, muutos.copy(from = Some(to))) :: ms
+        case (_, ms) => ms
+      }
+    case None => List()
   }
 
   private def format(ifUnmodifiedSince: Option[Instant] = None) = ifUnmodifiedSince.map(i =>

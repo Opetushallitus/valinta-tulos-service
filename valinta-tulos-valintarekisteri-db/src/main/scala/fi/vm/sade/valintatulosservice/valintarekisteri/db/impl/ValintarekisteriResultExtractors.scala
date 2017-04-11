@@ -183,6 +183,12 @@ trait ValintarekisteriResultExtractors {
 
   protected implicit val getInstantResult: GetResult[Instant] = GetResult(r => r.nextTimestamp().toInstant)
 
+  protected implicit val getValinnantila: GetResult[Valinnantila] = GetResult(r => Valinnantila(r.nextString))
+
+  protected implicit val getValintatuloksenTila: GetResult[ValintatuloksenTila] = GetResult(r => VastaanottoAction(r.nextString).valintatuloksenTila)
+
+  protected implicit val getSijoitteluajonIlmoittautumistila: GetResult[SijoitteluajonIlmoittautumistila] = GetResult(r => SijoitteluajonIlmoittautumistila(r.nextString))
+
   protected implicit val getOffsetDateTime: GetResult[OffsetDateTime] = GetResult(r => {
     val d = r.rs.getObject(r.currentPos + 1, classOf[OffsetDateTime])
     r.skip
