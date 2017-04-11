@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.domain
 
 import java.sql.Timestamp
 import java.time.OffsetDateTime
+import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 
@@ -109,3 +110,7 @@ case class EhdollisenHyvaksynnanEhto(hakemusOid: String,
                                      ehdollisenHyvaksymisenEhtoFI: String,
                                      ehdollisenHyvaksymisenEhtoSV: String,
                                      ehdollisenHyvaksymisenEhtoEN: String)
+
+case class Hyvaksymiskirje(henkiloOid: String,
+                           hakukohdeOid: String,
+                           lahetetty: Date)

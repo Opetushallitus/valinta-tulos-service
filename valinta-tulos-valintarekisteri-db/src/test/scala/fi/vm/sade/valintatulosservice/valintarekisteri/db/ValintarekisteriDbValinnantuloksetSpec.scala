@@ -6,6 +6,7 @@ import java.util.ConcurrentModificationException
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Hyvaksymiskirje => Kirje}
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
 import org.junit.runner.RunWith
 import org.postgresql.util.PSQLException
@@ -33,6 +34,8 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
     Hyvaksytty, Some(false), Some(false), Some(false), Some(false), ValintatuloksenTila.KESKEN, EiTehty, None)
   val ilmoittautuminen = Ilmoittautuminen(hakukohdeOid, Lasna, "muokkaaja", "selite")
   val ehdollisenHyvaksynnanEhto = EhdollisenHyvaksynnanEhto(hakemusOid, valintatapajonoOid, hakukohdeOid, "muu", "muu", "andra", "other")
+  val ancient = new java.util.Date(0)
+  val hyvaksymisKirje = Kirje(henkiloOid, hakukohdeOid, ancient)
 
     step(appConfig.start)
   override def before: Any = {
@@ -105,10 +108,12 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       storeValinnantilaAndValinnantulos()
       storeIlmoittautuminen()
       storeEhdollisenHyvaksynnanEhto()
+      storeHyvaksymiskirje()
       assertValinnantila(valinnantilanTallennus)
       assertValinnantuloksenOhjaus(valinnantuloksenOhjaus)
       assertIlmoittautuminen(ilmoittautuminen)
       assertEhdollisenHyvaksynnanEhto(ehdollisenHyvaksynnanEhto)
+      assertHyvaksymiskirjeet(ancient)
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.storeBatch(
           Seq(
@@ -127,6 +132,10 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
           Seq(
             ehdollisenHyvaksynnanEhto.copy(ehdollisenHyvaksymisenEhtoFI = "hähäääää!"),
             ehdollisenHyvaksynnanEhto.copy(ehdollisenHyvaksymisenEhtoFI = "anteeksi...")
+          ),
+          Seq(
+            hyvaksymisKirje.copy(lahetetty = new java.util.Date(100000)),
+            hyvaksymisKirje.copy(lahetetty = new java.util.Date(300000))
           )
         )
       )
@@ -141,6 +150,9 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
 
       assertEhdollisenHyvaksynnanEhto(ehdollisenHyvaksynnanEhto.copy(ehdollisenHyvaksymisenEhtoFI = "anteeksi..."))
       assertEhdollisenHyvaksynnanEhtoHistory(2, ehdollisenHyvaksynnanEhto.copy(ehdollisenHyvaksymisenEhtoFI = "muu"))
+
+      assertHyvaksymiskirjeet(new java.util.Date(300000))
+      assertHyvaksymiskirjeetHistory(2, new java.util.Date(100000))
     }
     "not update existing valinnantila if modified" in {
       val notModifiedSince = ZonedDateTime.now.minusDays(1).toInstant
@@ -295,6 +307,29 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       result.head must_== (ehto.ehdollisenHyvaksymisenEhtoKoodi, ehto.ehdollisenHyvaksymisenEhtoFI, ehto.ehdollisenHyvaksymisenEhtoSV, ehto.ehdollisenHyvaksymisenEhtoEN)
     }
 
+    def assertHyvaksymiskirjeet(lahetetty: java.util.Date) = {
+      val result = singleConnectionValintarekisteriDb.runBlocking(
+        sql"""select lahetetty from hyvaksymiskirjeet
+              where henkilo_oid = ${henkiloOid} and hakukohde_oid = ${hakukohdeOid}
+           """.as[String]
+      )
+
+      result.size must_== 1
+      java.sql.Timestamp.valueOf(result.head.dropRight(3)) must_== new java.sql.Timestamp(lahetetty.getTime)
+    }
+
+    def assertHyvaksymiskirjeetHistory(count: Int, lahetetty: java.util.Date) = {
+      val result = singleConnectionValintarekisteriDb.runBlocking(
+        sql"""select lahetetty from hyvaksymiskirjeet_history
+              where henkilo_oid = ${henkiloOid} and hakukohde_oid = ${hakukohdeOid}
+              order by lahetetty asc
+           """.as[String]
+      )
+
+      result.size must_== count
+      java.sql.Timestamp.valueOf(result.last.dropRight(3)) must_== new java.sql.Timestamp(lahetetty.getTime)
+    }
+
     def storeValinnantilaAndValinnantulos() = {
       singleConnectionValintarekisteriDb.runBlocking(sqlu"""insert into valinnantilat (
            hakukohde_oid,
@@ -329,6 +364,14 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       singleConnectionValintarekisteriDb.runBlocking(
         sqlu"""insert into ehdollisen_hyvaksynnan_ehto
                values (${hakemusOid}, ${valintatapajonoOid}, ${hakukohdeOid}, 'muu', 'muu', 'andra', 'other')"""
+      )
+    }
+
+    def storeHyvaksymiskirje() = {
+      val timestamp = new java.sql.Timestamp(ancient.getTime)
+      singleConnectionValintarekisteriDb.runBlocking(
+        sqlu"""insert into hyvaksymiskirjeet
+               values (${henkiloOid}, ${hakukohdeOid}, ${timestamp})"""
       )
     }
   }
