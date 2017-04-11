@@ -26,6 +26,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.Valintarekiste
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.Duration
+import scala.util.Try
 
 class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTulosRestClient,
                                        appConfig: VtsAppConfig,
@@ -337,21 +338,25 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     digester.digest(hakukohdeString.getBytes("UTF-8"))
   }
 
-  def runScheduledMigration(): Unit = {
+  def runScheduledMigration(): Map[String, Try[Unit]] = {
     logger.info(s"Beginning scheduled migration.")
     val hakuOids: Set[String] = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Sijoittelu").distinct("hakuOid").asScala.map(_.toString).toSet
     val hakuOidsAndHashes: Map[String, String] = getSijoitteluHashesByHakuOid(hakuOids)
     var hakuoidsNotProcessed: Seq[String] = List()
-    hakuOidsAndHashes.foreach { case (oid, hash) =>
+    val results: Iterable[Option[(String, Try[Unit])]] = hakuOidsAndHashes.map { case (oid, hash) =>
       if (isMigrationTime) {
         logger.info(s"Scheduled migration of haku $oid starting")
-        migrate(oid, hash, dryRun = false)
-      } else hakuoidsNotProcessed = hakuoidsNotProcessed :+ oid
+        Some((oid, Try { migrate(oid, hash, dryRun = false) }))
+      } else {
+        hakuoidsNotProcessed = hakuoidsNotProcessed :+ oid
+        None
+      }
     }
     logger.info("Scheduled migration ended.")
     if (hakuoidsNotProcessed.nonEmpty) {
       logger.info(s"Didn't manage to do scheduler migration to hakuoids, time ran out: ${hakuoidsNotProcessed.toString()}")
     }
+    results.flatten.toMap
   }
 
   private def isMigrationTime: Boolean = {

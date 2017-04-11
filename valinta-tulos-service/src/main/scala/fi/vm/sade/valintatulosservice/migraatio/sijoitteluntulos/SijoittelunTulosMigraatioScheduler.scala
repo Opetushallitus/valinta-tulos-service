@@ -7,6 +7,8 @@ import java.util.concurrent.{ScheduledThreadPoolExecutor, TimeUnit}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 
+import scala.util.Failure
+
 /**
   * Created by heikki.honkanen on 04/04/2017.
   */
@@ -17,7 +19,14 @@ class SijoittelunTulosMigraatioScheduler(migraatioService: SijoitteluntulosMigra
 
     val task = new Runnable {
       override def run(): Unit = {
-        migraatioService.runScheduledMigration()
+        val migrationResults = migraatioService.runScheduledMigration()
+        val hakuOidsWithFailures = migrationResults.filter(_._2.isFailure)
+        logger.info(s"Finished scheduled migration of ${migrationResults.size} hakus with ${hakuOidsWithFailures.size} failures.")
+        hakuOidsWithFailures.foreach {
+          case (hakuOid, Failure(e)) =>
+            logger.error(s"Virhe haun $hakuOid migraatiossa", e)
+          case x => throw new IllegalStateException(s"Mahdoton tilanne $x . Täällä piti olla vain virheitä.")
+        }
       }
     }
 
