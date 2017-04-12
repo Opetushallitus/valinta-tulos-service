@@ -23,8 +23,14 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
           where valintatapajono_oid = ${valintatapajonoOid}
               and hakemus_oid = ${hakemusOid}
           order by tilan_viimeisin_muutos desc
-      """.as[(Valinnantila, OffsetDateTime, Long)]
-      .map(r => formMuutoshistoria(r.map(t => (t._3, t._2, KentanMuutos(field = "valinnantila", from = None, to = t._1))))),
+      """.as[(Valinnantila, OffsetDateTime, OffsetDateTime, Long)]
+      .map(_.flatMap {
+        case (tila, tilanViimeisinMuutos, ts,txid) =>
+          List(
+            (txid, ts, KentanMuutos(field = "valinnantila", from = None, to = tila)),
+            (txid, ts, KentanMuutos(field = "valinnantilanViimeisinMuutos", from = None, to = tilanViimeisinMuutos))
+          )
+      }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten),
     sql"""select julkaistavissa,
               ehdollisesti_hyvaksyttavissa,
               hyvaksytty_varasijalta,
