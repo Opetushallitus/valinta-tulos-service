@@ -83,7 +83,6 @@ class ScalatraBootstrap extends LifeCycle {
     }
 
     if(null != migrationMode && "true".equalsIgnoreCase(migrationMode)) {
-      sijoitteluntulosMigraatioScheduler.startMigrationScheduler()
       context.mount(new SijoittelunTulosMigraatioServlet(migraatioService), "/sijoittelun-tulos-migraatio")
     } else {
       context.mount(new BuildInfoServlet, "/")
