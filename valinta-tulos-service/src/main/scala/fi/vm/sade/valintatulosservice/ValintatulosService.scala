@@ -671,10 +671,10 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
               tulos.copy(vastaanotettavuustila = Vastaanotettavuustila.vastaanotettavissa_ehdollisesti)
             } else {
               // Ehdollinen vastaanotto ei vielä mahdollista, näytetään keskeneräisenä
-              tulos.toKesken
+              tulos.toOdottaaYlempienHakutoiveidenTuloksia
             }
           } else if (firstKesken >= 0 && index > firstKesken) {
-            tulos.toKesken
+            tulos.toOdottaaYlempienHakutoiveidenTuloksia
           } else {
             tulos
           }
