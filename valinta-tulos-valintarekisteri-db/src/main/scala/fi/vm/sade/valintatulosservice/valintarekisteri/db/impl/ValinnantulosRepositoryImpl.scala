@@ -18,11 +18,16 @@ import scala.concurrent.duration.Duration
 trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with ValintarekisteriRepository {
   override def getMuutoshistoriaForHakemus(hakemusOid: String, valintatapajonoOid: String): List[Muutos] = {
     runBlocking(DBIO.sequence(List(
-    sql"""select tila, tilan_viimeisin_muutos, transaction_id
-          from valinnantilat_history
+    sql"""(select tila, tilan_viimeisin_muutos, lower(system_time) as ts, transaction_id
+          from valinnantilat
           where valintatapajono_oid = ${valintatapajonoOid}
               and hakemus_oid = ${hakemusOid}
-          order by tilan_viimeisin_muutos desc
+          union all
+          select tila, tilan_viimeisin_muutos, lower(system_time) as ts, transaction_id
+          from valinnantilat_history
+          where valintatapajono_oid = ${valintatapajonoOid}
+              and hakemus_oid = ${hakemusOid})
+          order by ts asc
       """.as[(Valinnantila, OffsetDateTime, OffsetDateTime, Long)]
       .map(_.flatMap {
         case (tila, tilanViimeisinMuutos, ts,txid) =>
@@ -31,7 +36,17 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             (txid, ts, KentanMuutos(field = "valinnantilanViimeisinMuutos", from = None, to = tilanViimeisinMuutos))
           )
       }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten),
-    sql"""select julkaistavissa,
+    sql"""(select julkaistavissa,
+              ehdollisesti_hyvaksyttavissa,
+              hyvaksytty_varasijalta,
+              hyvaksy_peruuntunut,
+              lower(system_time) as ts,
+              transaction_id
+          from valinnantulokset
+          where valintatapajono_oid = ${valintatapajonoOid}
+              and hakemus_oid = ${hakemusOid}
+          union all
+          select julkaistavissa,
               ehdollisesti_hyvaksyttavissa,
               hyvaksytty_varasijalta,
               hyvaksy_peruuntunut,
@@ -39,8 +54,8 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               transaction_id
           from valinnantulokset_history
           where valintatapajono_oid = ${valintatapajonoOid}
-              and hakemus_oid = ${hakemusOid}
-          order by ts desc
+              and hakemus_oid = ${hakemusOid})
+          order by ts asc
       """.as[(Boolean, Boolean, Boolean, Boolean, OffsetDateTime, Long)]
       .map(_.flatMap {
         case (julkaistavissa, ehdollisestiHyvaksyttavissa, hyvaksyttyVarasijalta, hyvaksyPeruuntunut, ts, txid) =>
@@ -57,17 +72,30 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               and ti.henkilo_oid = v.henkilo
           where ti.valintatapajono_oid = ${valintatapajonoOid}
               and ti.hakemus_oid = ${hakemusOid}
+          order by v.timestamp asc
       """.as[(ValintatuloksenTila, OffsetDateTime)]
       .map(r => formMuutoshistoria(r.map(t => (0, t._2, KentanMuutos(field = "vastaanottotila", from = None, to = t._1))))),
-    sql"""select i.tila, lower(i.system_time), i.transaction_id
-          from ilmoittautumiset_history as i
+    sql"""(select i.tila, lower(i.system_time) as ts, i.transaction_id
+          from ilmoittautumiset as i
           join valinnantilat as ti on ti.hakukohde_oid = i.hakukohde
               and ti.henkilo_oid = i.henkilo
           where ti.valintatapajono_oid = ${valintatapajonoOid}
               and ti.hakemus_oid = ${hakemusOid}
+          union all
+          select i.tila, lower(i.system_time) as ts, i.transaction_id
+          from ilmoittautumiset_history as i
+          join valinnantilat as ti on ti.hakukohde_oid = i.hakukohde
+              and ti.henkilo_oid = i.henkilo
+          where ti.valintatapajono_oid = ${valintatapajonoOid}
+              and ti.hakemus_oid = ${hakemusOid})
+          order by ts asc
       """.as[(SijoitteluajonIlmoittautumistila, OffsetDateTime, Long)]
       .map(r => formMuutoshistoria(r.map(t => (t._3, t._2, KentanMuutos(field = "ilmoittautumistila", from = None, to = t._1)))))
-    )).map(_.flatten.groupBy(_._1).mapValues(changes => Muutos(changes = changes.map(_._3), timestamp = changes.map(_._2).max)).values.toList)
+    )).map(r => r.flatten
+      .groupBy(_._1)
+      .mapValues(changes => Muutos(changes = changes.map(_._3), timestamp = changes.map(_._2).max))
+      .values.toList
+      .sortBy(_.timestamp).reverse)
     )
   }
 
@@ -316,9 +344,9 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
 
   private def formMuutoshistoria[A, B](muutokset: Iterable[(A, B, KentanMuutos)]): List[(A, B, KentanMuutos)] = muutokset.headOption match {
     case Some(origin) =>
-      muutokset.tail.foldRight(List(origin)) {
-        case ((a, b, muutos), ms @ (_, _, KentanMuutos(_, _, to)) :: _) if muutos.to != to => (a, b, muutos.copy(from = Some(to))) :: ms
-        case (_, ms) => ms
+      muutokset.tail.foldLeft(List(origin)) {
+        case (ms @ (_, _, KentanMuutos(_, _, to)) :: _, (a, b, muutos)) if muutos.to != to => (a, b, muutos.copy(from = Some(to))) :: ms
+        case (ms, _) => ms
       }
     case None => List()
   }

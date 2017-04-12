@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import java.sql.JDBCType
-import java.time.{Instant, OffsetDateTime, ZoneId}
+import java.time.{Instant, OffsetDateTime, ZoneId, ZoneOffset}
 import java.util.UUID
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
@@ -192,7 +192,7 @@ trait ValintarekisteriResultExtractors {
   protected implicit val getOffsetDateTime: GetResult[OffsetDateTime] = GetResult(r => {
     val d = r.rs.getObject(r.currentPos + 1, classOf[OffsetDateTime])
     r.skip
-    d
+    OffsetDateTime.ofInstant(d.toInstant, ZoneId.of("Europe/Helsinki"))
   })
 
   implicit object SetUUID extends SetParameter[UUID] {

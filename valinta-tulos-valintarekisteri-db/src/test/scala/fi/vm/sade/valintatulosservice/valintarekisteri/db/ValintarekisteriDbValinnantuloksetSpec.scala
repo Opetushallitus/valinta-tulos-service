@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
-import java.sql.Timestamp
-import java.time.ZonedDateTime
+import java.sql.{JDBCType, Timestamp}
+import java.time.{OffsetDateTime, ZoneId, ZonedDateTime}
 import java.util.ConcurrentModificationException
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
@@ -13,7 +13,10 @@ import org.postgresql.util.PSQLException
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.BeforeExample
+import slick.dbio.DBIO
 import slick.driver.PostgresDriver.api.actionBasedSQLInterpolation
+import slick.driver.PostgresDriver.api.jdbcActionExtensionMethods
+import slick.jdbc.{PositionedParameters, SetParameter}
 
 @RunWith(classOf[JUnitRunner])
 class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeExample {
@@ -25,7 +28,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
   val hakemusOid = "hakemusOid"
   val muokkaaja = "muokkaaja"
   val selite = "selite"
-  val muutos = new Timestamp(System.currentTimeMillis)
+  val muutos = OffsetDateTime.now(ZoneId.of("Europe/Helsinki"))
   val valinnantilanTallennus = ValinnantilanTallennus(
     hakemusOid, valintatapajonoOid, hakukohdeOid, henkiloOid, Hyvaksytty, muokkaaja)
   val valinnantuloksenOhjaus = ValinnantuloksenOhjaus(
@@ -216,6 +219,24 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
         singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
       ) mustEqual List()
     }
+    "generate muutoshistoria from updates" in {
+      storeValinnantilaAndValinnantulos()
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.storeValinnantuloksenOhjaus(valinnantuloksenOhjaus.copy(julkaistavissa = true))
+      )
+      val result = singleConnectionValintarekisteriDb.getMuutoshistoriaForHakemus(hakemusOid, valintatapajonoOid)
+      result.size must_== 2
+      val update = result.head
+      val origin = result.tail.head
+      update.changes.size must_== 1
+      update.changes.head must_== KentanMuutos(field = "julkaistavissa", from = Some(false), to = true)
+      origin.changes must contain(KentanMuutos(field = "valinnantila", from = None, to = Hyvaksytty))
+      origin.changes must contain(KentanMuutos(field = "valinnantilanViimeisinMuutos", from = None, to = muutos))
+      origin.changes must contain(KentanMuutos(field = "julkaistavissa", from = None, to = false))
+      origin.changes must contain(KentanMuutos(field = "ehdollisestiHyvaksyttavissa", from = None, to = false))
+      origin.changes must contain(KentanMuutos(field = "hyvaksyttyVarasijalta", from = None, to = false))
+      origin.changes must contain(KentanMuutos(field = "hyvaksyPeruuntunut", from = None, to = false))
+    }
 
     def assertValinnantila(valinnantilanTallennus:ValinnantilanTallennus) = {
       val result = singleConnectionValintarekisteriDb.runBlocking(
@@ -331,26 +352,33 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
     }
 
     def storeValinnantilaAndValinnantulos() = {
-      singleConnectionValintarekisteriDb.runBlocking(sqlu"""insert into valinnantilat (
-           hakukohde_oid,
-           valintatapajono_oid,
-           hakemus_oid,
-           tila,
-           tilan_viimeisin_muutos,
-           ilmoittaja,
-           henkilo_oid
-       ) values (${hakukohdeOid}, ${valintatapajonoOid}, ${hakemusOid}, 'Hyvaksytty'::valinnantila, ${muutos}, 122344555::text, ${henkiloOid})""")
-      singleConnectionValintarekisteriDb.runBlocking(sqlu"""insert into valinnantulokset(
-           valintatapajono_oid,
-           hakemus_oid,
-           hakukohde_oid,
-           julkaistavissa,
-           ehdollisesti_hyvaksyttavissa,
-           hyvaksytty_varasijalta,
-           hyvaksy_peruuntunut,
-           ilmoittaja,
-           selite
-       ) values (${valintatapajonoOid}, ${hakemusOid}, ${hakukohdeOid}, false, false, false, false, 122344555::text, 'Sijoittelun tallennus')""")
+      implicit object SetOffsetDateTime extends SetParameter[OffsetDateTime] {
+        def apply(v: OffsetDateTime, pp: PositionedParameters): Unit = {
+          pp.setObject(v, JDBCType.TIMESTAMP_WITH_TIMEZONE.getVendorTypeNumber)
+        }
+      }
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        sqlu"""insert into valinnantilat (
+                   hakukohde_oid,
+                   valintatapajono_oid,
+                   hakemus_oid,
+                   tila,
+                   tilan_viimeisin_muutos,
+                   ilmoittaja,
+                   henkilo_oid
+               ) values (${hakukohdeOid}, ${valintatapajonoOid}, ${hakemusOid}, 'Hyvaksytty'::valinnantila, ${muutos}, 122344555::text, ${henkiloOid})""",
+        sqlu"""insert into valinnantulokset(
+                   valintatapajono_oid,
+                   hakemus_oid,
+                   hakukohde_oid,
+                   julkaistavissa,
+                   ehdollisesti_hyvaksyttavissa,
+                   hyvaksytty_varasijalta,
+                   hyvaksy_peruuntunut,
+                   ilmoittaja,
+                   selite
+               ) values (${valintatapajonoOid}, ${hakemusOid}, ${hakukohdeOid}, false, false, false, false, 122344555::text, 'Sijoittelun tallennus')"""
+      ).transactionally)
     }
 
     def storeIlmoittautuminen() = {
