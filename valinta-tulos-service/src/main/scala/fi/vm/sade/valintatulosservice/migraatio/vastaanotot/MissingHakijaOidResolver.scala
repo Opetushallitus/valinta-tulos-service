@@ -45,9 +45,7 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
   private val henkiloPalveluUrlBase = appConfig.ophUrlProperties.url("authentication-service.henkilo")
 
   case class HakemusHenkilo(personOid: Option[String], hetu: Option[String], etunimet: String, sukunimi: String, kutsumanimet: String,
-                            syntymaaika: String, aidinkieli: String, sukupuoli: String)
-
-
+                            syntymaaika: String, aidinkieli: Option[String], sukupuoli: String)
 
   private def findPersonOidByHetu(hetu: String): Option[String] = findPersonByHetu(hetu).map(_.oidHenkilo)
 
@@ -87,7 +85,7 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
         HakemusHenkilo( (v \ "personOid").extractOpt[String], (henkilotiedot \ "Henkilotunnus").extractOpt[String],
           (henkilotiedot \ "Etunimet").extract[String], (henkilotiedot \ "Sukunimi").extract[String],
           (henkilotiedot \ "Kutsumanimi").extract[String], (henkilotiedot \ "syntymaaika").extract[String],
-          (henkilotiedot \ "aidinkieli").extract[String], (henkilotiedot \ "sukupuoli").extract[String])
+          (henkilotiedot \ "aidinkieli").extractOpt[String], (henkilotiedot \ "sukupuoli").extract[String])
       }
     }
 
@@ -118,7 +116,7 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
       ("syntymaaika" -> new java.text.SimpleDateFormat("yyyy-MM-dd").format(syntymaaika)) ~
       ("sukupuoli" -> henkilo.sukupuoli) ~
       ("asiointiKieli" -> ("kieliKoodi" -> "fi")) ~
-      ("aidinkieli" -> ("kieliKoodi" -> henkilo.aidinkieli.toLowerCase))))
+      ("aidinkieli" -> ("kieliKoodi" -> henkilo.aidinkieli.getOrElse("fi").toLowerCase))))
 
     implicit val jsonStringEncoder: EntityEncoder[String] = EntityEncoder
       .stringEncoder(Charset.`UTF-8`).withContentType(`Content-Type`(MediaType.`application/json`, Charset.`UTF-8`))
