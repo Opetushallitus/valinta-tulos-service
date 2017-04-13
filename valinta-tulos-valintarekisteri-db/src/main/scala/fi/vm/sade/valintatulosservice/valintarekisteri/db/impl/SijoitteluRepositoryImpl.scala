@@ -679,6 +679,8 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
       ("delete tilat_kuvaukset_history", sqlu"delete from tilat_kuvaukset_history where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
       ("delete tilat_kuvaukset", sqlu"delete from tilat_kuvaukset where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
       ("delete viestinnan_ohjaus", sqlu"delete from viestinnan_ohjaus where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete ehdollisen_hyvaksynnan_ehto_history", sqlu"delete from ehdollisen_hyvaksynnan_ehto_history where valintatapajono_oid in (select oid from jono_oids_to_delete)"),
+      ("delete ehdollisen_hyvaksynnan_ehto", sqlu"delete from ehdollisen_hyvaksynnan_ehto where valintatapajono_oid in (select oid from jono_oids_to_delete)"),
       ("delete valinnantulokset_history", sqlu"delete from valinnantulokset_history where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
       ("delete valinnantulokset", sqlu"delete from valinnantulokset where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
       ("delete valinnantilat_history", sqlu"delete from valinnantilat_history where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
