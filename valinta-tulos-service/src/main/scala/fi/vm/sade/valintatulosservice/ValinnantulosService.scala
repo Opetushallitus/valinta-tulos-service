@@ -78,6 +78,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
         new ErillishaunValinnantulosStrategy(
           auditInfo,
           haku,
+          hakukohdeOid,
           valinnantulosRepository,
           hakukohdeRecordService,
           ifUnmodifiedSince,
