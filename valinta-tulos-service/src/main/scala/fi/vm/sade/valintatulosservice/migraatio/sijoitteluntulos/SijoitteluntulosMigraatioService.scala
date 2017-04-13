@@ -171,11 +171,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       val hakukohdeOid = v.head._3
       val hakemus: Hakemus = v.head._1
       val hakemusOid = hakemus.getHakemusOid
-      var henkiloOid = hakemus.getHakijaOid
-
-      if (henkiloOid == null) {
-        henkiloOid = hakijaOidResolver.findPersonOidByHakemusOid(hakemusOid).get
-      }
+      val henkiloOid = getHenkiloOid(hakemus)
 
       val hakemuksenValinnantilas = getHakemuksenValinnantilas(hakemus, valintatapajonoOid, hakukohdeOid)
 
@@ -201,6 +197,17 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       }
     }
     (valinnantilas, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot, hyvaksymisKirjeet)
+  }
+
+  private def getHenkiloOid(hakemus: Hakemus): String = {
+    val hakemusOid: String = hakemus.getHakemusOid
+    hakemus.getHakijaOid match {
+      case x: String if x != null => x
+      case _ => hakijaOidResolver.findPersonOidByHakemusOid(hakemusOid) match {
+        case Some(oid) => oid
+        case _ => throw new IllegalStateException("This should never happen :)")
+      }
+    }
   }
 
   private def getEhdollisenHyvaksynnanEhto(valintatapajonoOid: ValintatapajonoOid, hakukohdeOid: HakukohdeOid,
