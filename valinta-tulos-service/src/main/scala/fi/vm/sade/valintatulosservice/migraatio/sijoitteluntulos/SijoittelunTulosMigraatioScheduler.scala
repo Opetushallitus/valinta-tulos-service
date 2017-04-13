@@ -18,7 +18,7 @@ class SijoittelunTulosMigraatioScheduler(migraatioService: SijoitteluntulosMigra
     val scheduler = new ScheduledThreadPoolExecutor(1)
 
     val task = new Runnable {
-      override def run(): Unit = {
+      override def run(): Unit = try {
         val migrationResults = migraatioService.runScheduledMigration()
         val hakuOidsWithFailures = migrationResults.filter(_._2.isFailure)
         logger.info(s"Finished scheduled migration of ${migrationResults.size} hakus with ${hakuOidsWithFailures.size} failures.")
@@ -27,6 +27,9 @@ class SijoittelunTulosMigraatioScheduler(migraatioService: SijoitteluntulosMigra
             logger.error(s"Virhe haun $hakuOid migraatiossa", e)
           case x => throw new IllegalStateException(s"Mahdoton tilanne $x . Täällä piti olla vain virheitä.")
         }
+      } catch {
+        case e: Throwable =>
+          logger.error("Odottamaton virhe migraatiossa", e)
       }
     }
 
