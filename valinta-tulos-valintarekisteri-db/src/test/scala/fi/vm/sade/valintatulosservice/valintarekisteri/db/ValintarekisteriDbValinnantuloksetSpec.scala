@@ -5,8 +5,7 @@ import java.time.{OffsetDateTime, ZoneId, ZonedDateTime}
 import java.util.ConcurrentModificationException
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Hyvaksymiskirje => Kirje}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Hyvaksymiskirje => Kirje, _}
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
 import org.junit.runner.RunWith
 import org.postgresql.util.PSQLException
@@ -14,8 +13,7 @@ import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.BeforeExample
 import slick.dbio.DBIO
-import slick.driver.PostgresDriver.api.actionBasedSQLInterpolation
-import slick.driver.PostgresDriver.api.jdbcActionExtensionMethods
+import slick.driver.PostgresDriver.api.{actionBasedSQLInterpolation, jdbcActionExtensionMethods}
 import slick.jdbc.{PositionedParameters, SetParameter}
 
 @RunWith(classOf[JUnitRunner])
@@ -237,170 +235,171 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       origin.changes must contain(KentanMuutos(field = "hyvaksyttyVarasijalta", from = None, to = false))
       origin.changes must contain(KentanMuutos(field = "hyvaksyPeruuntunut", from = None, to = false))
     }
+  }
 
-    def assertValinnantila(valinnantilanTallennus:ValinnantilanTallennus) = {
-      val result = singleConnectionValintarekisteriDb.runBlocking(
-        singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
-      )
-      result.size mustEqual 1
-      result.head.getValinnantilanTallennus(muokkaaja) mustEqual valinnantilanTallennus
-    }
 
-    def assertValinnantilaHistory(count: Int, tila: Valinnantila) = {
-      val result = singleConnectionValintarekisteriDb.runBlocking(
-        sql"""select tila
-              from valinnantilat_history
-              where hakukohde_oid = ${hakukohdeOid} and valintatapajono_oid = ${valintatapajonoOid} and hakemus_oid = ${hakemusOid}
-          """.as[String]
-      )
-      result.size must_== count
-      result.head must_== tila.toString
-    }
+  def assertValinnantila(valinnantilanTallennus:ValinnantilanTallennus) = {
+    val result = singleConnectionValintarekisteriDb.runBlocking(
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+    )
+    result.size mustEqual 1
+    result.head.getValinnantilanTallennus(muokkaaja) mustEqual valinnantilanTallennus
+  }
 
-    def assertValinnantuloksenOhjaus(valinnantuloksenOhjaus: ValinnantuloksenOhjaus) = {
-      val result = singleConnectionValintarekisteriDb.runBlocking(
-        singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
-      )
-      result.size mustEqual 1
-      result.head.getValinnantuloksenOhjaus(muokkaaja, selite) mustEqual valinnantuloksenOhjaus
-    }
+  def assertValinnantilaHistory(count: Int, tila: Valinnantila) = {
+    val result = singleConnectionValintarekisteriDb.runBlocking(
+      sql"""select tila
+            from valinnantilat_history
+            where hakukohde_oid = ${hakukohdeOid} and valintatapajono_oid = ${valintatapajonoOid} and hakemus_oid = ${hakemusOid}
+        """.as[String]
+    )
+    result.size must_== count
+    result.head must_== tila.toString
+  }
 
-    def assertValinnantuloksenOhjausHistory(count: Int, valinnantuloksenOhjaus: ValinnantuloksenOhjaus) = {
-      val result = singleConnectionValintarekisteriDb.runBlocking(
-        sql"""select julkaistavissa, ehdollisesti_hyvaksyttavissa, hyvaksytty_varasijalta, hyvaksy_peruuntunut
-              from valinnantulokset_history
-              where hakukohde_oid = ${hakukohdeOid} and valintatapajono_oid = ${valintatapajonoOid} and hakemus_oid = ${hakemusOid}
-          """.as[(Boolean, Boolean, Boolean, Boolean)]
-      )
+  def assertValinnantuloksenOhjaus(valinnantuloksenOhjaus: ValinnantuloksenOhjaus) = {
+    val result = singleConnectionValintarekisteriDb.runBlocking(
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+    )
+    result.size mustEqual 1
+    result.head.getValinnantuloksenOhjaus(muokkaaja, selite) mustEqual valinnantuloksenOhjaus
+  }
 
-      result.size mustEqual count
-      result.head must_== (valinnantuloksenOhjaus.julkaistavissa, valinnantuloksenOhjaus.ehdollisestiHyvaksyttavissa,
-        valinnantuloksenOhjaus.hyvaksyttyVarasijalta, valinnantuloksenOhjaus.hyvaksyPeruuntunut)
-    }
+  def assertValinnantuloksenOhjausHistory(count: Int, valinnantuloksenOhjaus: ValinnantuloksenOhjaus) = {
+    val result = singleConnectionValintarekisteriDb.runBlocking(
+      sql"""select julkaistavissa, ehdollisesti_hyvaksyttavissa, hyvaksytty_varasijalta, hyvaksy_peruuntunut
+            from valinnantulokset_history
+            where hakukohde_oid = ${hakukohdeOid} and valintatapajono_oid = ${valintatapajonoOid} and hakemus_oid = ${hakemusOid}
+        """.as[(Boolean, Boolean, Boolean, Boolean)]
+    )
 
-    def assertIlmoittautuminen(ilmoittautuminen: Ilmoittautuminen) = {
-      val result = singleConnectionValintarekisteriDb.runBlocking(
-        sql"""select henkilo, hakukohde, tila, ilmoittaja, selite
-              from ilmoittautumiset
-              where henkilo = ${henkiloOid} and hakukohde = ${hakukohdeOid}
-          """.as[(String, String, String, String, String)]
-      )
+    result.size mustEqual count
+    result.head must_== (valinnantuloksenOhjaus.julkaistavissa, valinnantuloksenOhjaus.ehdollisestiHyvaksyttavissa,
+      valinnantuloksenOhjaus.hyvaksyttyVarasijalta, valinnantuloksenOhjaus.hyvaksyPeruuntunut)
+  }
 
-      result.size mustEqual 1
-      result.head must_== (henkiloOid, ilmoittautuminen.hakukohdeOid, ilmoittautuminen.tila.toString,
-        ilmoittautuminen.muokkaaja, ilmoittautuminen.selite)
-    }
+  def assertIlmoittautuminen(ilmoittautuminen: Ilmoittautuminen) = {
+    val result = singleConnectionValintarekisteriDb.runBlocking(
+      sql"""select henkilo, hakukohde, tila, ilmoittaja, selite
+            from ilmoittautumiset
+            where henkilo = ${henkiloOid} and hakukohde = ${hakukohdeOid}
+        """.as[(String, String, String, String, String)]
+    )
 
-    def assertIlmoittautuminenHistory(count: Int, ilmoittautuminen: Ilmoittautuminen) = {
-      val result = singleConnectionValintarekisteriDb.runBlocking(
-        sql"""select henkilo, hakukohde, tila, ilmoittaja, selite
-              from ilmoittautumiset_history
-              where henkilo = ${henkiloOid} and hakukohde = ${hakukohdeOid}
-          """.as[(String, String, String, String, String)]
-      )
+    result.size mustEqual 1
+    result.head must_== (henkiloOid, ilmoittautuminen.hakukohdeOid, ilmoittautuminen.tila.toString,
+      ilmoittautuminen.muokkaaja, ilmoittautuminen.selite)
+  }
 
-      result.size must_== count
-      result.last must_== (henkiloOid, ilmoittautuminen.hakukohdeOid, ilmoittautuminen.tila.toString,
-        ilmoittautuminen.muokkaaja, ilmoittautuminen.selite)
-    }
+  def assertIlmoittautuminenHistory(count: Int, ilmoittautuminen: Ilmoittautuminen) = {
+    val result = singleConnectionValintarekisteriDb.runBlocking(
+      sql"""select henkilo, hakukohde, tila, ilmoittaja, selite
+            from ilmoittautumiset_history
+            where henkilo = ${henkiloOid} and hakukohde = ${hakukohdeOid}
+        """.as[(String, String, String, String, String)]
+    )
 
-    def assertEhdollisenHyvaksynnanEhto(ehto: EhdollisenHyvaksynnanEhto) = {
-      val result = singleConnectionValintarekisteriDb.runBlocking(
-        sql"""select ehdollisen_hyvaksymisen_ehto_koodi, ehdollisen_hyvaksymisen_ehto_fi, ehdollisen_hyvaksymisen_ehto_sv, ehdollisen_hyvaksymisen_ehto_en
-              from ehdollisen_hyvaksynnan_ehto
-              where hakemus_oid = ${hakemusOid} and valintatapajono_oid = ${valintatapajonoOid}
-          """.as[(String,String,String,String)]
-      )
+    result.size must_== count
+    result.last must_== (henkiloOid, ilmoittautuminen.hakukohdeOid, ilmoittautuminen.tila.toString,
+      ilmoittautuminen.muokkaaja, ilmoittautuminen.selite)
+  }
 
-      result.size must_== 1
-      result.head must_== (ehto.ehdollisenHyvaksymisenEhtoKoodi, ehto.ehdollisenHyvaksymisenEhtoFI, ehto.ehdollisenHyvaksymisenEhtoSV, ehto.ehdollisenHyvaksymisenEhtoEN)
-    }
+  def assertEhdollisenHyvaksynnanEhto(ehto: EhdollisenHyvaksynnanEhto) = {
+    val result = singleConnectionValintarekisteriDb.runBlocking(
+      sql"""select ehdollisen_hyvaksymisen_ehto_koodi, ehdollisen_hyvaksymisen_ehto_fi, ehdollisen_hyvaksymisen_ehto_sv, ehdollisen_hyvaksymisen_ehto_en
+            from ehdollisen_hyvaksynnan_ehto
+            where hakemus_oid = ${hakemusOid} and valintatapajono_oid = ${valintatapajonoOid}
+        """.as[(String,String,String,String)]
+    )
 
-    def assertEhdollisenHyvaksynnanEhtoHistory(count: Int, ehto: EhdollisenHyvaksynnanEhto) = {
-      val result = singleConnectionValintarekisteriDb.runBlocking(
-        sql"""select ehdollisen_hyvaksymisen_ehto_koodi, ehdollisen_hyvaksymisen_ehto_fi, ehdollisen_hyvaksymisen_ehto_sv, ehdollisen_hyvaksymisen_ehto_en
-              from ehdollisen_hyvaksynnan_ehto_history
-              where hakemus_oid = ${hakemusOid} and valintatapajono_oid = ${valintatapajonoOid}
-          """.as[(String,String,String,String)]
-      )
+    result.size must_== 1
+    result.head must_== (ehto.ehdollisenHyvaksymisenEhtoKoodi, ehto.ehdollisenHyvaksymisenEhtoFI, ehto.ehdollisenHyvaksymisenEhtoSV, ehto.ehdollisenHyvaksymisenEhtoEN)
+  }
 
-      result.size must_== count
-      result.head must_== (ehto.ehdollisenHyvaksymisenEhtoKoodi, ehto.ehdollisenHyvaksymisenEhtoFI, ehto.ehdollisenHyvaksymisenEhtoSV, ehto.ehdollisenHyvaksymisenEhtoEN)
-    }
+  def assertEhdollisenHyvaksynnanEhtoHistory(count: Int, ehto: EhdollisenHyvaksynnanEhto) = {
+    val result = singleConnectionValintarekisteriDb.runBlocking(
+      sql"""select ehdollisen_hyvaksymisen_ehto_koodi, ehdollisen_hyvaksymisen_ehto_fi, ehdollisen_hyvaksymisen_ehto_sv, ehdollisen_hyvaksymisen_ehto_en
+            from ehdollisen_hyvaksynnan_ehto_history
+            where hakemus_oid = ${hakemusOid} and valintatapajono_oid = ${valintatapajonoOid}
+        """.as[(String,String,String,String)]
+    )
 
-    def assertHyvaksymiskirjeet(lahetetty: java.util.Date) = {
-      val result = singleConnectionValintarekisteriDb.runBlocking(
-        sql"""select lahetetty from hyvaksymiskirjeet
-              where henkilo_oid = ${henkiloOid} and hakukohde_oid = ${hakukohdeOid}
-           """.as[String]
-      )
+    result.size must_== count
+    result.head must_== (ehto.ehdollisenHyvaksymisenEhtoKoodi, ehto.ehdollisenHyvaksymisenEhtoFI, ehto.ehdollisenHyvaksymisenEhtoSV, ehto.ehdollisenHyvaksymisenEhtoEN)
+  }
 
-      result.size must_== 1
-      java.sql.Timestamp.valueOf(result.head.dropRight(3)) must_== new java.sql.Timestamp(lahetetty.getTime)
-    }
+  def assertHyvaksymiskirjeet(lahetetty: java.util.Date) = {
+    val result = singleConnectionValintarekisteriDb.runBlocking(
+      sql"""select lahetetty from hyvaksymiskirjeet
+            where henkilo_oid = ${henkiloOid} and hakukohde_oid = ${hakukohdeOid}
+         """.as[String]
+    )
 
-    def assertHyvaksymiskirjeetHistory(count: Int, lahetetty: java.util.Date) = {
-      val result = singleConnectionValintarekisteriDb.runBlocking(
-        sql"""select lahetetty from hyvaksymiskirjeet_history
-              where henkilo_oid = ${henkiloOid} and hakukohde_oid = ${hakukohdeOid}
-              order by lahetetty asc
-           """.as[String]
-      )
+    result.size must_== 1
+    java.sql.Timestamp.valueOf(result.head.dropRight(3)) must_== new java.sql.Timestamp(lahetetty.getTime)
+  }
 
-      result.size must_== count
-      java.sql.Timestamp.valueOf(result.last.dropRight(3)) must_== new java.sql.Timestamp(lahetetty.getTime)
-    }
+  def assertHyvaksymiskirjeetHistory(count: Int, lahetetty: java.util.Date) = {
+    val result = singleConnectionValintarekisteriDb.runBlocking(
+      sql"""select lahetetty from hyvaksymiskirjeet_history
+            where henkilo_oid = ${henkiloOid} and hakukohde_oid = ${hakukohdeOid}
+            order by lahetetty asc
+         """.as[String]
+    )
 
-    def storeValinnantilaAndValinnantulos() = {
-      implicit object SetOffsetDateTime extends SetParameter[OffsetDateTime] {
-        def apply(v: OffsetDateTime, pp: PositionedParameters): Unit = {
-          pp.setObject(v, JDBCType.TIMESTAMP_WITH_TIMEZONE.getVendorTypeNumber)
-        }
+    result.size must_== count
+    java.sql.Timestamp.valueOf(result.last.dropRight(3)) must_== new java.sql.Timestamp(lahetetty.getTime)
+  }
+
+  def storeValinnantilaAndValinnantulos() = {
+    implicit object SetOffsetDateTime extends SetParameter[OffsetDateTime] {
+      def apply(v: OffsetDateTime, pp: PositionedParameters): Unit = {
+        pp.setObject(v, JDBCType.TIMESTAMP_WITH_TIMEZONE.getVendorTypeNumber)
       }
-      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
-        sqlu"""insert into valinnantilat (
-                   hakukohde_oid,
-                   valintatapajono_oid,
-                   hakemus_oid,
-                   tila,
-                   tilan_viimeisin_muutos,
-                   ilmoittaja,
-                   henkilo_oid
-               ) values (${hakukohdeOid}, ${valintatapajonoOid}, ${hakemusOid}, 'Hyvaksytty'::valinnantila, ${muutos}, 122344555::text, ${henkiloOid})""",
-        sqlu"""insert into valinnantulokset(
-                   valintatapajono_oid,
-                   hakemus_oid,
-                   hakukohde_oid,
-                   julkaistavissa,
-                   ehdollisesti_hyvaksyttavissa,
-                   hyvaksytty_varasijalta,
-                   hyvaksy_peruuntunut,
-                   ilmoittaja,
-                   selite
-               ) values (${valintatapajonoOid}, ${hakemusOid}, ${hakukohdeOid}, false, false, false, false, 122344555::text, 'Sijoittelun tallennus')"""
-      ).transactionally)
     }
+    singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+      sqlu"""insert into valinnantilat (
+                 hakukohde_oid,
+                 valintatapajono_oid,
+                 hakemus_oid,
+                 tila,
+                 tilan_viimeisin_muutos,
+                 ilmoittaja,
+                 henkilo_oid
+             ) values (${hakukohdeOid}, ${valintatapajonoOid}, ${hakemusOid}, 'Hyvaksytty'::valinnantila, ${muutos}, 122344555::text, ${henkiloOid})""",
+      sqlu"""insert into valinnantulokset(
+                 valintatapajono_oid,
+                 hakemus_oid,
+                 hakukohde_oid,
+                 julkaistavissa,
+                 ehdollisesti_hyvaksyttavissa,
+                 hyvaksytty_varasijalta,
+                 hyvaksy_peruuntunut,
+                 ilmoittaja,
+                 selite
+             ) values (${valintatapajonoOid}, ${hakemusOid}, ${hakukohdeOid}, false, false, false, false, 122344555::text, 'Sijoittelun tallennus')"""
+    ).transactionally)
+  }
 
-    def storeIlmoittautuminen() = {
-      singleConnectionValintarekisteriDb.runBlocking(
-        sqlu"""insert into ilmoittautumiset
-               values (${henkiloOid}, ${hakukohdeOid}, ${Lasna.toString}::ilmoittautumistila, 'muokkaaja', 'selite')"""
-      )
-    }
+  def storeIlmoittautuminen() = {
+    singleConnectionValintarekisteriDb.runBlocking(
+      sqlu"""insert into ilmoittautumiset
+             values (${henkiloOid}, ${hakukohdeOid}, ${Lasna.toString}::ilmoittautumistila, 'muokkaaja', 'selite')"""
+    )
+  }
 
-    def storeEhdollisenHyvaksynnanEhto() = {
-      singleConnectionValintarekisteriDb.runBlocking(
-        sqlu"""insert into ehdollisen_hyvaksynnan_ehto
-               values (${hakemusOid}, ${valintatapajonoOid}, ${hakukohdeOid}, 'muu', 'muu', 'andra', 'other')"""
-      )
-    }
+  def storeEhdollisenHyvaksynnanEhto() = {
+    singleConnectionValintarekisteriDb.runBlocking(
+      sqlu"""insert into ehdollisen_hyvaksynnan_ehto
+             values (${hakemusOid}, ${valintatapajonoOid}, ${hakukohdeOid}, 'muu', 'muu', 'andra', 'other')"""
+    )
+  }
 
-    def storeHyvaksymiskirje() = {
-      val timestamp = new java.sql.Timestamp(ancient.getTime)
-      singleConnectionValintarekisteriDb.runBlocking(
-        sqlu"""insert into hyvaksymiskirjeet
-               values (${henkiloOid}, ${hakukohdeOid}, ${timestamp})"""
-      )
-    }
+  def storeHyvaksymiskirje() = {
+    val timestamp = new java.sql.Timestamp(ancient.getTime)
+    singleConnectionValintarekisteriDb.runBlocking(
+      sqlu"""insert into hyvaksymiskirjeet
+             values (${henkiloOid}, ${hakukohdeOid}, ${timestamp})"""
+    )
   }
 }
