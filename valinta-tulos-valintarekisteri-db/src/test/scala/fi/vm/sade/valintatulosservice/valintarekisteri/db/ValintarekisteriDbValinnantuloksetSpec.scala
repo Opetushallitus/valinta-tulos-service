@@ -91,7 +91,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
     "store valinnantila" in {
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
-      ) mustEqual List()
+      ) mustEqual Set()
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.storeValinnantila(valinnantilanTallennus)
       )
@@ -199,13 +199,13 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
     "not store valinnantuloksen ohjaustiedot if valinnantila doesn't exist" in {
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
-      ) mustEqual List()
+      ) mustEqual Set()
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.storeValinnantuloksenOhjaus(valinnantuloksenOhjaus.copy(julkaistavissa = true))
       ) must throwA[PSQLException]
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
-      ) mustEqual List()
+      ) mustEqual Set()
     }
     "delete valinnantulos" in {
       storeValinnantilaAndValinnantulos
@@ -215,7 +215,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.deleteValinnantulos(muokkaaja, valinnantulos.copy(poistettava = Some(true))))
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
-      ) mustEqual List()
+      ) mustEqual Set()
     }
     "generate muutoshistoria from updates" in {
       storeValinnantilaAndValinnantulos()
