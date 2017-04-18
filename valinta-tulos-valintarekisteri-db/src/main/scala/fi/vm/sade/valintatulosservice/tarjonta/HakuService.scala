@@ -91,7 +91,7 @@ class KoulutusSerializer extends CustomSerializer[Koulutus]((formats: Formats) =
 
       Koulutus(oid, kausi, tila, johtaaTutkintoon,
         children,
-        sisaltyvatKoulutuskoodit = sisaltyvatKoulutuskoodiUris.keys.toSeq,
+        sisaltyvatKoulutuskoodit = sisaltyvatKoulutuskoodiUris.keys.map(k => k.replace("koulutus_", "")).toSeq,
         koulutuskoodi = extractKoodi((o \ "koulutuskoodi")),
           koulutusaste = extractKoodi((o \ "koulutusaste")),
           opintojenLaajuusarvo = extractKoodi((o \ "opintojenLaajuusarvo")))
