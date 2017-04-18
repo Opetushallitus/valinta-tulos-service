@@ -93,7 +93,7 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
 
     ( Try[HakemusHenkilo](hakuClient.prepare(Request(method = Method.GET, uri = createUri(hakuUrlBase, hakemusOid))).flatMap {
       case r if 200 == r.status.code => r.as[HakemusHenkilo]
-      case r => Task.fail(new RuntimeException(r.toString))
+      case r => Task.fail(new RuntimeException(s"Got non-OK response from haku-app when fetching hakemus $hakemusOid: ${r.toString}"))
     }.run) match {
       case Success(henkilo: HakemusHenkilo) => Some(henkilo)
       case Failure(t) => handleFailure(t, "finding henkilö from hakemus")
