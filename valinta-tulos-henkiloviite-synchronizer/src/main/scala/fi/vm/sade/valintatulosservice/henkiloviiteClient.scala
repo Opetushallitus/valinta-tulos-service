@@ -7,7 +7,7 @@ import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasClient, CasParams}
 import org.http4s.Status.ResponseClass.Successful
 import org.http4s.client.Client
 import org.http4s.json4s.native.jsonOf
-import org.http4s.{Method, Request}
+import org.http4s.{Method, Request, Uri}
 import org.json4s.DefaultReaders.{StringReader, arrayReader}
 import org.json4s.JsonAST.JValue
 import org.json4s.Reader
@@ -20,7 +20,7 @@ case class Henkiloviite(masterOid: String, henkiloOid: String)
 
 class HenkiloviiteClient(configuration: AuthenticationConfiguration) {
   private val dateFormater = new SimpleDateFormat("yyyy-MM-dd")
-  private val resourceUrl = configuration.url.withQueryParam("date", dateFormater.format(configuration.since))
+  private val resourceUrl: Uri = configuration.url.withQueryParam("date", dateFormater.format(configuration.since)).asInstanceOf[Uri]
   private val client = createCasClient()
 
   def fetchHenkiloviitteet(): Try[List[Henkiloviite]] = {
