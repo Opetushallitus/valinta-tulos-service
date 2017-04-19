@@ -36,8 +36,15 @@
         </dependency>
         <dependency>
             <groupId>fi.vm.sade</groupId>
+            <artifactId>scala-json_2.11</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>fi.vm.sade</groupId>
+            <artifactId>scala-logging_2.11</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>fi.vm.sade</groupId>
             <artifactId>scala-utils_2.11</artifactId>
-            <version>${scala-utils_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>fi.vm.sade</groupId>
@@ -47,19 +54,22 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>${postgresql.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>${commons-io.version}</version>
-            <!--scope>test</scope-->
         </dependency>
         <dependency>
             <groupId>org.specs2</groupId>
-            <artifactId>specs2_2.11</artifactId>
-            <version>${FIXME.specs2_2.11.version}</version>
-            <scope>test</scope>
+            <artifactId>specs2-core_2.11</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.specs2</groupId>
+            <artifactId>specs2-junit_2.11</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.specs2</groupId>
+            <artifactId>specs2-mock_2.11</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
@@ -100,12 +110,12 @@
         <dependency>
             <groupId>org.json4s</groupId>
             <artifactId>json4s-jackson_2.11</artifactId>
-            <version>${FIXME.json4s_2.11.version}</version>
+            <version>${json4s_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>org.json4s</groupId>
             <artifactId>json4s-native_2.11</artifactId>
-            <version>${FIXME.json4s_2.11.version}</version>
+            <version>${json4s_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.slick</groupId>

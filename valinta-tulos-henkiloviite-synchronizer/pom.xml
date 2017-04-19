@@ -14,6 +14,40 @@
     <organization>
         <name>fi.vm.sade</name>
     </organization>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.http4s</groupId>
+                <artifactId>http4s-core_2.11</artifactId>
+                <version>${http4s_2.11.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.http4s</groupId>
+                <artifactId>http4s-client_2.11</artifactId>
+                <version>${http4s_2.11.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.http4s</groupId>
+                <artifactId>http4s-blaze-client_2.11</artifactId>
+                <version>${http4s_2.11.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.http4s</groupId>
+                <artifactId>http4s-blaze-core_2.11</artifactId>
+                <version>${http4s_2.11.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.http4s</groupId>
+                <artifactId>blaze-core_2.11</artifactId>
+                <version>0.12.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.http4s</groupId>
+                <artifactId>blaze-http_2.11</artifactId>
+                <version>0.12.0</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>org.scala-lang</groupId>
@@ -43,7 +77,6 @@
         <dependency>
             <groupId>org.http4s</groupId>
             <artifactId>http4s-blaze-client_2.11</artifactId>
-            <version>${http4s_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>org.json4s</groupId>
@@ -63,7 +96,10 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>${slf4j-api.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -73,14 +109,10 @@
         <dependency>
             <groupId>org.specs2</groupId>
             <artifactId>specs2-core_2.11</artifactId>
-            <version>${specs2_2.11.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.specs2</groupId>
             <artifactId>specs2-junit_2.11</artifactId>
-            <version>${specs2_2.11.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.json4s</groupId>
@@ -90,43 +122,39 @@
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
-            <version>${javax.servlet-api.version}</version>
         </dependency>
         <dependency>
             <groupId>org.specs2</groupId>
             <artifactId>specs2-matcher_2.11</artifactId>
-            <version>${specs2_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>${junit.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.json4s</groupId>
             <artifactId>json4s-native_2.11</artifactId>
-            <version>${json4s_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>org.http4s</groupId>
             <artifactId>http4s-client_2.11</artifactId>
-            <version>${http4s_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>org.specs2</groupId>
             <artifactId>specs2-common_2.11</artifactId>
-            <version>${specs2_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>org.http4s</groupId>
             <artifactId>http4s-core_2.11</artifactId>
-            <version>${http4s_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-util</artifactId>
             <version>${jetty.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
         </dependency>
     </dependencies>
     <build>

@@ -10,11 +10,38 @@
     </parent>
     <artifactId>valinta-tulos-service</artifactId>
     <packaging>war</packaging>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>de.flapdoodle.embed</groupId>
+                <artifactId>de.flapdoodle.embed.mongo</artifactId>
+                <version>1.50.5</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>2.5</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.validation</groupId>
+                <artifactId>validation-api</artifactId>
+                <version>1.1.0.Final</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
             <version>${scala.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-compiler</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scalap</artifactId>
         </dependency>
         <dependency>
             <groupId>org.scalatra</groupId>
@@ -34,24 +61,34 @@
         <dependency>
             <groupId>org.json4s</groupId>
             <artifactId>json4s-core_2.11</artifactId>
-            <version>${FIXME.json4s_2.11.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.json4s</groupId>
+            <artifactId>json4s-scalap_2.11</artifactId>
         </dependency>
         <dependency>
             <groupId>org.specs2</groupId>
-            <artifactId>specs2_2.11</artifactId>
-            <version>${FIXME.specs2_2.11.version}</version>
-            <scope>test</scope>
+            <artifactId>specs2-core_2.11</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.specs2</groupId>
+            <artifactId>specs2-junit_2.11</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.specs2</groupId>
+            <artifactId>specs2-mock_2.11</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.specs2</groupId>
+            <artifactId>specs2-matcher-extra_2.11</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>${junit.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
-            <version>${javax.servlet-api.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -72,7 +109,6 @@
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
-            <version>${mongo-java-driver.version}</version>
         </dependency>
         <dependency>
             <groupId>fi.vm.sade.sijoittelu</groupId>
@@ -91,8 +127,7 @@
         </dependency>
         <dependency>
             <groupId>fi.vm.sade</groupId>
-            <artifactId>scala-utils_2.11</artifactId>
-            <version>${scala-utils_2.11.version}</version>
+            <artifactId>scala-json_2.11</artifactId>
         </dependency>
         <dependency>
             <groupId>fi.vm.sade</groupId>
@@ -146,11 +181,6 @@
             <version>${FIXME.http4s_2.11.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.json4s</groupId>
-            <artifactId>json4s-native_2.11</artifactId>
-            <version>${FIXME.json4s_2.11.version}</version>
-        </dependency>
-        <dependency>
             <groupId>fi.vm.sade</groupId>
             <artifactId>valinta-tulos-valintarekisteri-db</artifactId>
             <version>${project.version}</version>
@@ -165,12 +195,10 @@
         <dependency>
             <groupId>org.json4s</groupId>
             <artifactId>json4s-ext_2.11</artifactId>
-            <version>${json4s_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>${FIXME.jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>org.mongodb</groupId>
@@ -185,7 +213,6 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>${apache.httpclient.version}</version>
         </dependency>
         <dependency>
             <groupId>org.scalatra</groupId>
@@ -200,7 +227,6 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>${commons-io.version}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
@@ -210,7 +236,6 @@
         <dependency>
             <groupId>org.scalaz</groupId>
             <artifactId>scalaz-core_2.11</artifactId>
-            <version>${FIXME.scalaz_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -225,7 +250,6 @@
         <dependency>
             <groupId>org.scalaz</groupId>
             <artifactId>scalaz-concurrent_2.11</artifactId>
-            <version>${scalaz-concurrent_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>org.clapper</groupId>
@@ -235,7 +259,6 @@
         <dependency>
             <groupId>org.json4s</groupId>
             <artifactId>json4s-jackson_2.11</artifactId>
-            <version>${FIXME.json4s_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>joda-time</groupId>
@@ -255,7 +278,6 @@
         <dependency>
             <groupId>org.json4s</groupId>
             <artifactId>json4s-ast_2.11</artifactId>
-            <version>${FIXME.json4s_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.scala-logging</groupId>
@@ -285,7 +307,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${FIXME.jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>org.scalaj</groupId>
@@ -297,10 +318,20 @@
             <artifactId>scalatra-common_2.11</artifactId>
             <version>${scalatra_2.11.version}</version>
         </dependency>
-        <dependency>
+        <dependency><!-- TODO REMOVE -->
             <groupId>commons-httpclient</groupId>
             <artifactId>commons-httpclient</artifactId>
             <version>3.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>fi.vm.sade.java-utils</groupId>

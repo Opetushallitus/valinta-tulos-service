@@ -4,7 +4,8 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusFixtures
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import org.scalatra.test.HttpComponentsClient
 import org.specs2.mutable.Specification
-import org.specs2.specification.{Fragments, Step}
+import org.specs2.specification.Step
+import org.specs2.specification.core.Fragments
 
 trait ServletSpecification extends Specification with ITSetup with TimeWarp with HttpComponentsClient {
   sequential
@@ -13,7 +14,7 @@ trait ServletSpecification extends Specification with ITSetup with TimeWarp with
   implicit val formats = JsonFormats.jsonFormats
   override lazy val hakemusFixtureImporter = HakemusFixtures()
 
-  override def map(fs: => Fragments) = {
+  override def map(fs: => Fragments): Fragments = {
     Step(SharedJetty.start) ^ super.map(fs)
   }
 
