@@ -13,6 +13,7 @@ import slick.driver.PostgresDriver.api._
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
+import scala.util.Try
 
 trait SijoitteluRepositoryImpl extends SijoitteluRepository with ValintarekisteriRepository {
 
@@ -26,62 +27,75 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
         sijoittelu.hakukohteet.flatMap(hakukohde =>
           hakukohde.getValintatapajonot.asScala.map(insertValintatapajono(sijoitteluajoId, hakukohde.getOid, _)))))
       .andThen(SimpleDBIO { session =>
-        val jonosijaStatement = createJonosijaStatement(session.connection)
-        val pistetietoStatement = createPistetietoStatement(session.connection)
-        val valinnantulosStatement = createValinnantulosStatement(session.connection)
-        val valinnantilaStatement = createValinnantilaStatement(session.connection)
-        val tilankuvausStatement = createTilankuvausStatement(session.connection)
-        val tilaKuvausMappingStatement = createTilaKuvausMappingStatement(session.connection)
-        sijoittelu.hakukohteet.foreach(hakukohde => {
-          hakukohde.getValintatapajonot.asScala.foreach(valintatapajono => {
-            valintatapajono.getHakemukset.asScala.foreach(hakemus => {
-              storeValintatapajononHakemus(
-                hakemus,
-                sijoittelu.valintatuloksetGroupedByHakemus.get(hakemus.getHakemusOid),
-                sijoitteluajoId,
-                hakukohde.getOid,
-                valintatapajono.getOid,
-                jonosijaStatement,
-                pistetietoStatement,
-                valinnantulosStatement,
-                valinnantilaStatement,
-                tilankuvausStatement,
-                tilaKuvausMappingStatement
-              )
+        var jonosijaStatement:Option[PreparedStatement] = None
+        var pistetietoStatement:Option[PreparedStatement] = None
+        var valinnantulosStatement:Option[PreparedStatement] = None
+        var valinnantilaStatement:Option[PreparedStatement] = None
+        var tilankuvausStatement:Option[PreparedStatement] = None
+        var tilaKuvausMappingStatement:Option[PreparedStatement] = None
+        try {
+          jonosijaStatement = Some(createJonosijaStatement(session.connection))
+          pistetietoStatement = Some(createPistetietoStatement(session.connection))
+          valinnantulosStatement = Some(createValinnantulosStatement(session.connection))
+          valinnantilaStatement = Some(createValinnantilaStatement(session.connection))
+          tilankuvausStatement = Some(createTilankuvausStatement(session.connection))
+          tilaKuvausMappingStatement = Some(createTilaKuvausMappingStatement(session.connection))
+          sijoittelu.hakukohteet.foreach(hakukohde => {
+            hakukohde.getValintatapajonot.asScala.foreach(valintatapajono => {
+              valintatapajono.getHakemukset.asScala.foreach(hakemus => {
+                storeValintatapajononHakemus(
+                  hakemus,
+                  sijoittelu.valintatuloksetGroupedByHakemus.get(hakemus.getHakemusOid),
+                  sijoitteluajoId,
+                  hakukohde.getOid,
+                  valintatapajono.getOid,
+                  jonosijaStatement.get,
+                  pistetietoStatement.get,
+                  valinnantulosStatement.get,
+                  valinnantilaStatement.get,
+                  tilankuvausStatement.get,
+                  tilaKuvausMappingStatement.get
+                )
+              })
             })
           })
-        })
-        time(s"Haun $hakuOid tilankuvauksien tallennus") { tilankuvausStatement.executeBatch() }
-        time(s"Haun $hakuOid jonosijojen tallennus") { jonosijaStatement.executeBatch }
-        time(s"Haun $hakuOid pistetietojen tallennus") { pistetietoStatement.executeBatch }
-        time(s"Haun $hakuOid valinnantilojen tallennus") { valinnantilaStatement.executeBatch }
-        time(s"Haun $hakuOid valinnantulosten tallennus") { valinnantulosStatement.executeBatch }
-        time(s"Haun $hakuOid tilankuvaus-mäppäysten tallennus") { tilaKuvausMappingStatement.executeBatch }
-        tilankuvausStatement.close()
-        jonosijaStatement.close()
-        pistetietoStatement.close()
-        valinnantilaStatement.close()
-        valinnantulosStatement.close()
-        tilaKuvausMappingStatement.close()
+          time(s"Haun $hakuOid tilankuvauksien tallennus") { tilankuvausStatement.get.executeBatch() }
+          time(s"Haun $hakuOid jonosijojen tallennus") { jonosijaStatement.get.executeBatch }
+          time(s"Haun $hakuOid pistetietojen tallennus") { pistetietoStatement.get.executeBatch }
+          time(s"Haun $hakuOid valinnantilojen tallennus") { valinnantilaStatement.get.executeBatch }
+          time(s"Haun $hakuOid valinnantulosten tallennus") { valinnantulosStatement.get.executeBatch }
+          time(s"Haun $hakuOid tilankuvaus-mäppäysten tallennus") { tilaKuvausMappingStatement.get.executeBatch }
+        } finally {
+          Try(tilankuvausStatement.foreach(_.close))
+          Try(jonosijaStatement.foreach(_.close))
+          Try(pistetietoStatement.foreach(_.close))
+          Try(valinnantilaStatement.foreach(_.close))
+          Try(valinnantulosStatement.foreach(_.close))
+          Try(tilaKuvausMappingStatement.foreach(_.close))
+        }
       })
       .andThen(DBIO.sequence(
         sijoittelu.hakukohteet.flatMap(_.getHakijaryhmat.asScala).map(insertHakijaryhma(sijoitteluajoId, _))))
       .andThen(SimpleDBIO { session =>
-        val statement = prepareInsertHakijaryhmanHakemus(session.connection)
-        sijoittelu.hakukohteet.foreach(hakukohde => {
-          hakukohde.getHakijaryhmat.asScala.foreach(hakijaryhma => {
-            val hyvaksytyt = hakukohde.getValintatapajonot.asScala
-              .flatMap(_.getHakemukset.asScala)
-              .filter(_.getHyvaksyttyHakijaryhmista.contains(hakijaryhma.getOid))
-              .map(_.getHakemusOid)
-              .toSet
-            hakijaryhma.getHakemusOid.asScala.foreach(hakemusOid => {
-              insertHakijaryhmanHakemus(hakijaryhma.getOid, sijoitteluajoId, hakemusOid, hyvaksytyt.contains(hakemusOid), statement)
+        var statement:Option[PreparedStatement] = None
+        try {
+          statement = Some(prepareInsertHakijaryhmanHakemus(session.connection))
+          sijoittelu.hakukohteet.foreach(hakukohde => {
+            hakukohde.getHakijaryhmat.asScala.foreach(hakijaryhma => {
+              val hyvaksytyt = hakukohde.getValintatapajonot.asScala
+                .flatMap(_.getHakemukset.asScala)
+                .filter(_.getHyvaksyttyHakijaryhmista.contains(hakijaryhma.getOid))
+                .map(_.getHakemusOid)
+                .toSet
+              hakijaryhma.getHakemusOid.asScala.foreach(hakemusOid => {
+                insertHakijaryhmanHakemus(hakijaryhma.getOid, sijoitteluajoId, hakemusOid, hyvaksytyt.contains(hakemusOid), statement.get)
+              })
             })
           })
-        })
-        time(s"Haun $hakuOid hakijaryhmien hakemusten tallennus") { statement.executeBatch() }
-        statement.close()
+          time(s"Haun $hakuOid hakijaryhmien hakemusten tallennus") { statement.get.executeBatch() }
+        } finally {
+          Try(statement.foreach(_.close))
+        }
       })
       .transactionally,
       Duration(30, TimeUnit.MINUTES))

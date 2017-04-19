@@ -9,6 +9,7 @@ import slick.dbio.DBIO
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.duration.Duration
+import scala.util.Try
 
 trait ValinnantulosBatchRepositoryImpl extends ValinnantulosBatchRepository with ValintarekisteriRepository {
   override def deleteValinnantilaHistorySavedBySijoitteluajoAndMigration(sijoitteluajoId: String): Unit = {
@@ -45,28 +46,34 @@ trait ValinnantulosBatchRepositoryImpl extends ValinnantulosBatchRepository with
       DbUtils.disable("hyvaksymiskirjeet", "set_temporal_columns_on_hyvaksymiskirjeet_on_update"),
 
       SimpleDBIO { session =>
-        val valinnantilaStatement = createValinnantilaStatement(session.connection)
-        val valinnantuloksenOhjausStatement = createValinnantuloksenOhjausStatement(session.connection)
-        val ilmoittautumisetStatement = createIlmoittautumisStatement(session.connection)
-        val ehdollisenHyvaksynnanEhtoStatement = createEhdollisenHyvaksynnanEhtoStatement(session.connection)
-        val hyvaksymiskirjeStatement = createHyvaksymiskirjeStatement(session.connection)
+        var valinnantilaStatement:Option[PreparedStatement] = None
+        var valinnantuloksenOhjausStatement:Option[PreparedStatement] = None
+        var ilmoittautumisetStatement:Option[PreparedStatement] = None
+        var ehdollisenHyvaksynnanEhtoStatement:Option[PreparedStatement] = None
+        var hyvaksymiskirjeStatement:Option[PreparedStatement] = None
         try {
-          valinnantilat.foreach(v => createValinnantilaInsertRow(valinnantilaStatement, v._1, v._2))
-          valinnantuloksenOhjaukset.foreach(o => createValinnantuloksenOhjausInsertRow(valinnantuloksenOhjausStatement, o))
-          ilmoittautumiset.foreach(i => createIlmoittautumisInsertRow(ilmoittautumisetStatement, i._1, i._2))
-          ehdollisenHyvaksynnanEhdot.foreach(e => createEhdollisenHyvaksynnanEhtoRow(ehdollisenHyvaksynnanEhtoStatement, e))
-          hyvaksymisKirjeet.foreach(k => createHyvaksymiskirjeetRow(hyvaksymiskirjeStatement, k))
-          valinnantilaStatement.executeBatch()
-          valinnantuloksenOhjausStatement.executeBatch()
-          ilmoittautumisetStatement.executeBatch()
-          ehdollisenHyvaksynnanEhtoStatement.executeBatch()
-          hyvaksymiskirjeStatement.executeBatch()
+          valinnantilaStatement = Some(createValinnantilaStatement(session.connection))
+          valinnantuloksenOhjausStatement = Some(createValinnantuloksenOhjausStatement(session.connection))
+          ilmoittautumisetStatement = Some(createIlmoittautumisStatement(session.connection))
+          ehdollisenHyvaksynnanEhtoStatement = Some(createEhdollisenHyvaksynnanEhtoStatement(session.connection))
+          hyvaksymiskirjeStatement = Some(createHyvaksymiskirjeStatement(session.connection))
+
+          valinnantilat.foreach(v => createValinnantilaInsertRow(valinnantilaStatement.get, v._1, v._2))
+          valinnantuloksenOhjaukset.foreach(o => createValinnantuloksenOhjausInsertRow(valinnantuloksenOhjausStatement.get, o))
+          ilmoittautumiset.foreach(i => createIlmoittautumisInsertRow(ilmoittautumisetStatement.get, i._1, i._2))
+          ehdollisenHyvaksynnanEhdot.foreach(e => createEhdollisenHyvaksynnanEhtoRow(ehdollisenHyvaksynnanEhtoStatement.get, e))
+          hyvaksymisKirjeet.foreach(k => createHyvaksymiskirjeetRow(hyvaksymiskirjeStatement.get, k))
+          valinnantilaStatement.get.executeBatch()
+          valinnantuloksenOhjausStatement.get.executeBatch()
+          ilmoittautumisetStatement.get.executeBatch()
+          ehdollisenHyvaksynnanEhtoStatement.get.executeBatch()
+          hyvaksymiskirjeStatement.get.executeBatch()
         } finally {
-          valinnantilaStatement.close()
-          valinnantuloksenOhjausStatement.close()
-          ilmoittautumisetStatement.close()
-          ehdollisenHyvaksynnanEhtoStatement.close()
-          hyvaksymiskirjeStatement.close()
+          Try(valinnantilaStatement.foreach(_.close))
+          Try(valinnantuloksenOhjausStatement.foreach(_.close))
+          Try(ilmoittautumisetStatement.foreach(_.close))
+          Try(ehdollisenHyvaksynnanEhtoStatement.foreach(_.close))
+          Try(hyvaksymiskirjeStatement.foreach(_.close))
         }
       },
 
