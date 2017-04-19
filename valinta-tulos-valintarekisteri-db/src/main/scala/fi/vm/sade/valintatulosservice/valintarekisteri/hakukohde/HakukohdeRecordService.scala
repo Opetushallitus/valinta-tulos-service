@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde
 
 import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.MonadHelper
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde, Koulutus}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakukohdeRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeRecord, Kausi, Kevat, Syksy}
@@ -28,7 +29,7 @@ class HakukohdeRecordService(hakuService: HakuService, hakukohdeRepository: Haku
   }
 
   def getHakukohdeRecords(oids: Seq[String]): Either[Throwable, Seq[HakukohdeRecord]] = {
-    sequence(for{oid <- oids.toStream} yield getHakukohdeRecord(oid))
+    MonadHelper.sequence(for {oid <- oids.toStream} yield getHakukohdeRecord(oid))
   }
 
   def getHakukohdeRecord(oid: String): Either[Throwable, HakukohdeRecord] = {
@@ -96,11 +97,5 @@ class HakukohdeRecordService(hakuService: HakuService, hakukohdeRepository: Haku
         Left(t)
       }
     })
-  }
-
-  private def sequence[A, B](xs: Stream[Either[B, A]]): Either[B, List[A]] = xs match {
-    case Stream.Empty => Right(Nil)
-    case Left(e)#::_ => Left(e)
-    case Right(x)#::rest => sequence(rest).right.map(x +: _)
   }
 }

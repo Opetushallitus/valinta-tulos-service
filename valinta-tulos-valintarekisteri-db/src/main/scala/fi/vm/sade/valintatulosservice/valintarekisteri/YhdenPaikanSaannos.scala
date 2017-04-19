@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
+import fi.vm.sade.valintatulosservice.MonadHelper
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoRecord, VirkailijaVastaanottoRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -9,7 +10,9 @@ class YhdenPaikanSaannos(hakuService: HakuService,
                          virkailijaVastaanottoRepository: VirkailijaVastaanottoRepository) {
 
   def apply(valinnantulokset: Set[Valinnantulos]): Either[Throwable, Set[Valinnantulos]] = {
-    sequence(valinnantulokset.groupBy(_.hakukohdeOid).map(t => ottanutVastaanToisenPaikan(t._1, t._2)).toSet).right.map(_.flatten)
+    MonadHelper.sequence(
+      valinnantulokset.groupBy(_.hakukohdeOid).map(t => ottanutVastaanToisenPaikan(t._1, t._2))
+    ).right.map(_.flatten.toSet)
   }
 
   private def ottanutVastaanToisenPaikan(hakukohdeOid: String,
@@ -39,9 +42,5 @@ class YhdenPaikanSaannos(hakuService: HakuService,
     } else {
       valinnantulos
     }
-  }
-
-  private def sequence[L, R](operations: Set[Either[L, R]]): Either[L, Set[R]] = {
-    operations.foldRight[Either[L, Set[R]]](Right(Set()))((op, result) => result.right.flatMap(rs => op.right.map(rs + _)))
   }
 }

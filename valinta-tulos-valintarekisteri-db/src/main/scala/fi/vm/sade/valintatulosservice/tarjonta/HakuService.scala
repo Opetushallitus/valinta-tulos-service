@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice.tarjonta
 import fi.vm.sade.properties.OphProperties
 import fi.vm.sade.utils.http.DefaultHttpClient
 import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.MonadHelper
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Kausi, Kevat, Syksy}
 import org.joda.time.DateTime
@@ -203,7 +204,7 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
     }.right.flatMap(_.toRight(new IllegalArgumentException(s"No hakukohde found for haku $hakuOid")))
   }
   def getHakukohdes(oids: Seq[String]): Either[Throwable, List[Hakukohde]] = {
-    sequence(for{oid <- oids.toStream} yield getHakukohde(oid))
+    MonadHelper.sequence(for {oid <- oids.toStream} yield getHakukohde(oid))
   }
   def getHakukohde(hakukohdeOid: String): Either[Throwable, Hakukohde] = {
     val hakukohdeUrl = config.ophProperties.url(
@@ -233,16 +234,11 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
     }
   }
 
-  private def sequence[A, B](s: Seq[Either[A, B]]): Either[A, Seq[B]] =
-    s.foldRight(Right(Nil): Either[A, List[B]]) {
-      (e, acc) => for (xs <- acc.right; x <- e.right) yield x :: xs
-    }
-
   def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]] = {
-    sequence(koulutusOids.map(getKoulutus))
+    MonadHelper.sequence(koulutusOids.map(getKoulutus))
   }
   def getKomos(komoOids: Seq[String]): Either[Throwable, Seq[Komo]] = {
-    sequence(komoOids.map(getKomo))
+    MonadHelper.sequence(komoOids.map(getKomo))
   }
 
   private def getKoulutus(koulutusOid: String): Either[Throwable, Koulutus] = {
@@ -280,10 +276,5 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
     }).recover {
       case NonFatal(e) => Left(new RuntimeException(s"GET $url failed", e))
     }.get
-  }
-  private def sequence[A, B](xs: Stream[Either[B, A]]): Either[B, List[A]] = xs match {
-    case Stream.Empty => Right(Nil)
-    case Left(e)#::_ => Left(e)
-    case Right(x)#::rest => sequence(rest).right.map(x +: _)
   }
 }

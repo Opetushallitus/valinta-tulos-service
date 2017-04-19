@@ -1,6 +1,8 @@
 package fi.vm.sade.valintatulosservice.tarjonta
 
 import java.io.InputStream
+
+import fi.vm.sade.valintatulosservice.MonadHelper
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Kausi
 import org.json4s.jackson.JsonMethods._
 
@@ -60,7 +62,7 @@ object HakuFixtures extends HakuService with JsonHakuService {
     })
   }
   override def getHakukohdes(oids: Seq[String]): Either[Throwable, Seq[Hakukohde]] ={
-    sequence(for{oid <- oids.toStream} yield getHakukohde(oid))
+    MonadHelper.sequence(for {oid <- oids.toStream} yield getHakukohde(oid))
   }
   override def getHakukohde(oid: String): Either[Throwable, Hakukohde] ={
     val hakuOid = hakuOids.head
@@ -89,10 +91,4 @@ object HakuFixtures extends HakuService with JsonHakuService {
 
   override def getArbitraryPublishedHakukohdeOid(hakuOid: String): Either[Throwable, String] =
     getHakukohdeOids(hakuOid).right.map(_.head)
-
-  private def sequence[A, B](xs: Stream[Either[B, A]]): Either[B, List[A]] = xs match {
-    case Stream.Empty => Right(Nil)
-    case Left(e)#::_ => Left(e)
-    case Right(x)#::rest => sequence(rest).right.map(x +: _)
-  }
 }
