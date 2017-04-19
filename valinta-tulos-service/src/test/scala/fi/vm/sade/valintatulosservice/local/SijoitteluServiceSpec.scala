@@ -53,21 +53,21 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
     SijoittelunHakukohdeRecord(sijoitteluajoId, hakukohdeOid, true).dto(
       List(
         ValintatapajonoRecord("arvonta", "valintatapajono1", "valintatapajono1", 1, Some(10), Some(10), 1, true, true, true, None, 0, None, None, None, None, None, hakukohdeOid).dto(List(
-          Some(HakemusRecord(Some("123.1"), "1234.1", None, Some("Aapeli"), Some("Ankka"), 1, 1, 1, Hyvaksytty, 123, None, false, None, false, false, "valintatapajono1")).map(h => h.dto(
+          Some(HakemusRecord(Some("123.1"), "1234.1", None, 1, 1, 1, Hyvaksytty, 123, None, false, None, false, false, "valintatapajono1")).map(h => h.dto(
             Set("hakijaryhma1"),
             h.tilankuvaukset(Some(TilankuvausRecord(123, EiTilankuvauksenTarkennetta, Some("textFi"), Some("textSv"), Some("textEn")))),
             List(TilaHistoriaRecord("valintatapajono1", "1234.1", Hyvaksytty, new Date(now.minus(2, ChronoUnit.DAYS).toEpochMilli)).dto,
                  TilaHistoriaRecord("valintatapajono1", "1234.1", Hylatty, new Date(now.minus(4, ChronoUnit.DAYS).toEpochMilli)).dto),
             List(PistetietoRecord("valintatapajono1", "1234.1", "tunniste1", "1", "1", "osallistui").dto,
                  PistetietoRecord("valintatapajono1", "1234.1", "tunniste2", "2", "2", "osallistui").dto))).get,
-          Some(HakemusRecord(Some("123.3"), "1234.3", None, Some("Asteri"), Some("Ankka"), 1, 1, 1, Hyvaksytty, 123, None, false, None, false, false, "valintatapajono1")).map(h => h.dto(
+          Some(HakemusRecord(Some("123.3"), "1234.3", None, 1, 1, 1, Hyvaksytty, 123, None, false, None, false, false, "valintatapajono1")).map(h => h.dto(
             Set(),
             h.tilankuvaukset(Some(TilankuvausRecord(123, EiTilankuvauksenTarkennetta, Some("textFi"), Some("textSv"), Some("textEn")))),
             List(TilaHistoriaRecord("valintatapajono1", "1234.3", Hyvaksytty, new Date(now.minus(2, ChronoUnit.DAYS).toEpochMilli)).dto),
             List())).get
         )),
         ValintatapajonoRecord("arvonta", "valintatapajono2", "valintatapajono2", 1, Some(10), Some(10), 1, true, true, true, None, 0, None, None, None, None, None, hakukohdeOid).dto(List(
-          Some(HakemusRecord(Some("123.2"), "1234.2", None, Some("Aatu"), Some("Ankka"), 1, 1, 1, Hyvaksytty, 123, None, false, None, false, false, "valintatapajono2")).map(h => h.dto(
+          Some(HakemusRecord(Some("123.2"), "1234.2", None, 1, 1, 1, Hyvaksytty, 123, None, false, None, false, false, "valintatapajono2")).map(h => h.dto(
             Set(),
             h.tilankuvaukset(Some(TilankuvausRecord(123, EiTilankuvauksenTarkennetta, Some("textFi"), Some("textSv"), Some("textEn")))),
             List(TilaHistoriaRecord("valintatapajono2", "1234.2", Hyvaksytty, new Date(now.minus(2, ChronoUnit.DAYS).toEpochMilli)).dto,
@@ -94,9 +94,9 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
       ValintatapajonoRecord("arvonta", "valintatapajono2", "valintatapajono2", 1, Some(10), Some(10), 1, true, true, true, None, 0, None, None, None, None, None, hakukohdeOid)
     )
     sijoitteluRepository.getHakukohteenHakemukset(sijoitteluajoId, hakukohdeOid) returns List(
-      HakemusRecord(Some("123.1"), "1234.1", None, Some("Aapeli"), Some("Ankka"), 1, 1, 1, Hyvaksytty, 123, None, false, None, false, false, "valintatapajono1"),
-      HakemusRecord(Some("123.2"), "1234.2", None, Some("Aatu"), Some("Ankka"), 1, 1, 1, Hyvaksytty, 123, None, false, None, false, false, "valintatapajono2"),
-      HakemusRecord(Some("123.3"), "1234.3", None, Some("Asteri"), Some("Ankka"), 1, 1, 1, Hyvaksytty, 123, None, false, None, false, false, "valintatapajono1")
+      HakemusRecord(Some("123.1"), "1234.1", None, 1, 1, 1, Hyvaksytty, 123, None, false, None, false, false, "valintatapajono1"),
+      HakemusRecord(Some("123.2"), "1234.2", None, 1, 1, 1, Hyvaksytty, 123, None, false, None, false, false, "valintatapajono2"),
+      HakemusRecord(Some("123.3"), "1234.3", None, 1, 1, 1, Hyvaksytty, 123, None, false, None, false, false, "valintatapajono1")
     )
     sijoitteluRepository.getHakukohteenPistetiedot(sijoitteluajoId, hakukohdeOid) returns List(
       PistetietoRecord("valintatapajono1", "1234.1", "tunniste1", "1", "1", "osallistui"),

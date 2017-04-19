@@ -11,9 +11,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
 trait SijoitteluRepositoryImpl extends SijoitteluRepository with ValintarekisteriRepository {
-
-
-
   override def getLatestSijoitteluajoId(hakuOid:String): Option[Long] = {
     runBlocking(
       sql"""select id
@@ -75,7 +72,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
 
   override def getSijoitteluajonHakemukset(sijoitteluajoId:Long): List[HakemusRecord] = {
     runBlocking(
-      sql"""select j.hakija_oid, j.hakemus_oid, j.pisteet, j.etunimi, j.sukunimi, j.prioriteetti, j.jonosija,
+      sql"""select j.hakija_oid, j.hakemus_oid, j.pisteet, j.prioriteetti, j.jonosija,
             j.tasasijajonosija, vt.tila, t_k.tilankuvaus_hash, t_k.tarkenteen_lisatieto, j.hyvaksytty_harkinnanvaraisesti, j.varasijan_numero,
             j.onko_muuttunut_viime_sijoittelussa,
             j.siirtynyt_toisesta_valintatapajonosta, j.valintatapajono_oid
@@ -96,7 +93,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
 
   override def getHakukohteenHakemukset(sijoitteluajoId:Long, hakukohdeOid:String): List[HakemusRecord] = {
     runBlocking(
-      sql"""select j.hakija_oid, j.hakemus_oid, j.pisteet, j.etunimi, j.sukunimi, j.prioriteetti, j.jonosija,
+      sql"""select j.hakija_oid, j.hakemus_oid, j.pisteet, j.prioriteetti, j.jonosija,
             j.tasasijajonosija, vt.tila, t_k.tilankuvaus_hash, t_k.tarkenteen_lisatieto, j.hyvaksytty_harkinnanvaraisesti, j.varasijan_numero,
             j.onko_muuttunut_viime_sijoittelussa,
             j.siirtynyt_toisesta_valintatapajonosta, j.valintatapajono_oid
@@ -122,7 +119,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
                      with vj as (
                        select oid from valintatapajonot where sijoitteluajo_id = ${sijoitteluajoId}
                        order by oid desc limit ${chunkSize} offset ${offset} )
-                       select j.hakija_oid, j.hakemus_oid, j.pisteet, j.etunimi, j.sukunimi, j.prioriteetti, j.jonosija,
+                       select j.hakija_oid, j.hakemus_oid, j.pisteet, j.prioriteetti, j.jonosija,
             j.tasasijajonosija, vt.tila, t_k.tilankuvaus_hash, t_k.tarkenteen_lisatieto, j.hyvaksytty_harkinnanvaraisesti, j.varasijan_numero,
             j.onko_muuttunut_viime_sijoittelussa,
             j.siirtynyt_toisesta_valintatapajonosta, j.valintatapajono_oid
@@ -238,7 +235,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
 
   override def getHakemuksenHakija(hakemusOid: String, sijoitteluajoId: Long): Option[HakijaRecord] = {
     runBlocking(
-      sql"""select etunimi, sukunimi, hakemus_oid, hakija_oid
+      sql"""select hakemus_oid, hakija_oid
             from jonosijat
             where hakemus_oid = ${hakemusOid} and sijoitteluajo_id = ${sijoitteluajoId}""".as[HakijaRecord]).headOption
   }

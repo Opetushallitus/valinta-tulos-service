@@ -173,8 +173,6 @@ trait ValintarekisteriDbTools extends Specification {
           dhakemus.getHakemusOid mustEqual whakemus.getHakemusOid
           dhakemus.getPisteet mustEqual whakemus.getPisteet
           // TODO: ei datassa? dhakemus.getPaasyJaSoveltuvuusKokeenTulos mustEqual whakemus.getPaasyJaSoveltuvuusKokeenTulos
-          dhakemus.getEtunimi mustEqual whakemus.getEtunimi
-          dhakemus.getSukunimi mustEqual whakemus.getSukunimi
           dhakemus.getPrioriteetti mustEqual whakemus.getPrioriteetti
           dhakemus.getJonosija mustEqual whakemus.getJonosija
           dhakemus.getTasasijaJonosija mustEqual whakemus.getTasasijaJonosija
@@ -433,8 +431,6 @@ trait ValintarekisteriDbTools extends Specification {
     hakijaOid = r.nextStringOption,
     hakemusOid = r.nextString,
     pisteet = r.nextBigDecimalOption,
-    etunimi = r.nextStringOption,
-    sukunimi = r.nextStringOption,
     prioriteetti = r.nextInt,
     jonosija = r.nextInt,
     tasasijaJonosija = r.nextInt,
@@ -453,8 +449,6 @@ trait ValintarekisteriDbTools extends Specification {
                 j.hakija_oid,
                 j.hakemus_oid,
                 j.pisteet,
-                j.etunimi,
-                j.sukunimi,
                 j.prioriteetti,
                 j.jonosija,
                 j.tasasijajonosija,
@@ -492,8 +486,6 @@ trait ValintarekisteriDbTools extends Specification {
       SijoitteluajonHakemusWrapper(
         hakemusOid = h.hakemusOid,
         hakijaOid = h.hakijaOid,
-        etunimi = h.etunimi,
-        sukunimi = h.sukunimi,
         prioriteetti = h.prioriteetti,
         jonosija = h.jonosija,
         varasijanNumero = h.varasijaNumero,
@@ -614,7 +606,7 @@ trait ValintarekisteriDbTools extends Specification {
           None, Some(k), Some(false)).valintatapajono
         valintatapajono.getHakemukset.addAll(
           (1 to size par).map( j => {
-            val hakemus = SijoitteluajonHakemusWrapper(valintatapajonoOid + "." + j, Some(valintatapajonoOid), Some("Etunimi"), Some("Sukunimi"),
+            val hakemus = SijoitteluajonHakemusWrapper(valintatapajonoOid + "." + j, Some(valintatapajonoOid),
               j, j, None, false, Some(j), j, false, false, Hylatty, Some(Map("FI" -> ("fi" + j), "SV" -> ("sv" + j), "EN" -> ("en" + j))),
               EiTilankuvauksenTarkennetta, None, Set(""), List()).hakemus
             hakemus.setPistetiedot(List(SijoitteluajonPistetietoWrapper("moi", Some("123"), Some("123"), Some("Osallistui")).pistetieto).asJava)

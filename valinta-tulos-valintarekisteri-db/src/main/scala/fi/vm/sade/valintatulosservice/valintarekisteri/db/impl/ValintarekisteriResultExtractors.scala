@@ -27,8 +27,6 @@ trait ValintarekisteriResultExtractors {
     koulutuksenAlkamiskausi = Kausi(r.nextString)))
 
   protected implicit val getHakijaResult = GetResult(r => HakijaRecord(
-    etunimi = r.nextString,
-    sukunimi = r.nextString,
     hakemusOid = r.nextString,
     hakijaOid = r.nextString))
 
@@ -121,8 +119,6 @@ trait ValintarekisteriResultExtractors {
     hakijaOid = r.nextStringOption,
     hakemusOid = r.nextString,
     pisteet = r.nextBigDecimalOption,
-    etunimi = r.nextStringOption,
-    sukunimi = r.nextStringOption,
     prioriteetti = r.nextInt,
     jonosija = r.nextInt,
     tasasijaJonosija = r.nextInt,

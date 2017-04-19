@@ -24,7 +24,6 @@ class StreamingJsonArrayRetrieverSpec extends ServletSpecification {
       val localUrl = s"$baseUrl/haku/$hakuOid/sijoitteluajo/latest/hakemukset"
       retriever.processStreaming("/any-service", localUrl, classOf[HakijaDTO], hakijaDtos.+=)
       val firstResult = hakijaDtos.head
-      firstResult.getEtunimi must_== "Teppo"
       firstResult.getHakijaOid must_== "1.2.246.562.24.14229104472"
       firstResult.getHakemusOid must_== "1.2.246.562.11.00000441369"
       firstResult.getHakutoiveet.size must_== 1

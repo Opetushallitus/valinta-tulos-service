@@ -35,13 +35,11 @@ case class SijoitteluajoRecord(sijoitteluajoId:Long, hakuOid:String, startMils:L
   }
 }
 
-case class HakijaRecord(etunimi:String, sukunimi:String, hakemusOid:String, hakijaOid:String) {
+case class HakijaRecord(hakemusOid:String, hakijaOid:String) {
   def dto(hakutoiveet:List[HakutoiveDTO]) = {
     val hakijaDTO = new HakijaDTO
     hakijaDTO.setHakijaOid(hakijaOid)
     hakijaDTO.setHakemusOid(hakemusOid)
-    hakijaDTO.setEtunimi(etunimi)
-    hakijaDTO.setSukunimi(sukunimi)
     hakijaDTO.setHakutoiveet(sortHakutoiveet(hakutoiveet))
     hakijaDTO
   }
@@ -260,7 +258,7 @@ case class ValintatapajonoRecord(tasasijasaanto:String, oid:String, nimi:String,
   }
 }
 
-case class HakemusRecord(hakijaOid:Option[String], hakemusOid:String, pisteet:Option[BigDecimal], etunimi:Option[String], sukunimi:Option[String],
+case class HakemusRecord(hakijaOid:Option[String], hakemusOid:String, pisteet:Option[BigDecimal],
                          prioriteetti:Int, jonosija:Int, tasasijaJonosija:Int, tila:Valinnantila, tilankuvausHash:Int,
                          tarkenteenLisatieto:Option[String], hyvaksyttyHarkinnanvaraisesti:Boolean, varasijaNumero:Option[Int],
                          onkoMuuttunutviimesijoittelusta:Boolean, siirtynytToisestaValintatapaJonosta:Boolean, valintatapajonoOid:String) {
@@ -274,8 +272,6 @@ case class HakemusRecord(hakijaOid:Option[String], hakemusOid:String, pisteet:Op
     hakijaOid.foreach(hakemusDTO.setHakijaOid)
     hakemusDTO.setHakemusOid(hakemusOid)
     pisteet.foreach(p => hakemusDTO.setPisteet(p.bigDecimal))
-    etunimi.foreach(hakemusDTO.setEtunimi)
-    sukunimi.foreach(hakemusDTO.setSukunimi)
     hakemusDTO.setPrioriteetti(prioriteetti)
     hakemusDTO.setJonosija(jonosija)
     hakemusDTO.setTasasijaJonosija(tasasijaJonosija)
@@ -301,8 +297,6 @@ case class HakemusRecord(hakijaOid:Option[String], hakemusOid:String, pisteet:Op
     hakijaOid.foreach(hakemus.setHakijaOid)
     hakemus.setHakemusOid(hakemusOid)
     pisteet.foreach(p => hakemus.setPisteet(p.bigDecimal))
-    etunimi.foreach(hakemus.setEtunimi)
-    sukunimi.foreach(hakemus.setSukunimi)
     hakemus.setPrioriteetti(prioriteetti)
     hakemus.setJonosija(jonosija)
     hakemus.setTasasijaJonosija(tasasijaJonosija)

@@ -113,8 +113,6 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
               compareFields(uusiHakemus.hakijaOid, vanhaHakemus.hakijaOid, "hakemus.hakijaOid")
               compareFields(uusiHakemus.pisteet, vanhaHakemus.pisteet, "hakemus.pisteet")
               compareFields(uusiHakemus.paasyJaSoveltuvuusKokeenTulos, vanhaHakemus.paasyJaSoveltuvuusKokeenTulos, "hakemus.paasyJaSoveltuvuusKokeenTulos")
-              compareFields(uusiHakemus.etunimi, vanhaHakemus.etunimi, "hakemus.etunimi")
-              compareFields(uusiHakemus.sukunimi, vanhaHakemus.sukunimi, "hakemus.sukunimi")
               compareFields(uusiHakemus.prioriteetti, vanhaHakemus.prioriteetti, "hakemus.prioriteetti")
               compareFields(uusiHakemus.jonosija, vanhaHakemus.jonosija, "hakemus.jonosija")
               compareFields(uusiHakemus.tasasijaJonosija, vanhaHakemus.tasasijaJonosija, "hakemus.tasasijaJonosija")

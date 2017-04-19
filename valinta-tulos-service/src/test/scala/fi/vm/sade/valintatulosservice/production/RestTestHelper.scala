@@ -73,7 +73,7 @@ case class Valintatapajono(tasasijasaanto:Option[String], tila:Option[String], o
                            varasijaTayttoPaivat:Option[java.util.Date], varasijojaTaytetaanAsti:Option[java.util.Date], tayttojono:Option[String])
 
 case class Hakemus(hakijaOid:Option[String], hakemusOid:String, pisteet:Option[Long], paasyJaSoveltuvuusKokeenTulos:Option[Long],
-                   etunimi:Option[String], sukunimi:Option[String], prioriteetti:Option[Long], jonosija:Option[Long], tasasijaJonosija:Option[Long],
+                   prioriteetti:Option[Long], jonosija:Option[Long], tasasijaJonosija:Option[Long],
                    tila:Option[String], hyvaksyttyHarkinnanvaraisesti:Option[Boolean], varasijanNumero:Option[Long], sijoitteluajoId:Option[Long],
                    hakukohdeOid:Option[String], tarjoajaOid:Option[String], valintatapajonoOid:Option[String],
                    hakuOid:Option[String], onkoMuuttunutViimeSijoittelussa:Option[Boolean], siirtynytToisestaValintatapajonosta:Option[Boolean],
@@ -85,7 +85,7 @@ case class Tilankuvaus(SV:Option[String], FI:Option[String], EN:Option[String])
 
 case class Tilahistoria(tila:String, luotu:Long)
 
-case class Hakija(hakijaOid:String, hakemusOid:String, etunimi:String, sukunimi:String, hakutoiveet:List[Hakutoive])
+case class Hakija(hakijaOid:String, hakemusOid:String, hakutoiveet:List[Hakutoive])
 
 case class Hakutoive(hakutoive:Int, hakukohdeOid:String, tarjoajaOid:Option[String], pistetiedot:List[Pistetieto], hakijaryhmat:List[Hakijaryhma],
                      kaikkiJonotSijoiteltu:Option[Boolean], ensikertalaisuusHakijaryhmanAlimmatHyvaksytytPisteet:Option[String],

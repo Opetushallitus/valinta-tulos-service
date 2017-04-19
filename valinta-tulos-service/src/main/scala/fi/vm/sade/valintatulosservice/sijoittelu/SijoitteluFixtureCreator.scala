@@ -13,8 +13,6 @@ object SijoitteluFixtureCreator {
     val hakemus = new Hakemus
     hakemus.setHakijaOid(hakijaOid)
     hakemus.setHakemusOid(hakemusOid)
-    hakemus.setEtunimi("Teppo")
-    hakemus.setSukunimi("Testaaja")
     hakemus.setPrioriteetti(hakutoiveIndex)
     hakemus.setJonosija(1)
     hakemus.setPisteet(new java.math.BigDecimal(4))

@@ -319,8 +319,6 @@ object ValinnantilanTarkenne {
 case class SijoitteluajonHakemusWrapper(
                                          hakemusOid: String,
                                          hakijaOid: Option[String],
-                                         etunimi: Option[String],
-                                         sukunimi: Option[String],
                                          prioriteetti: Int,
                                          jonosija: Int,
                                          varasijanNumero: Option[Int],
@@ -347,8 +345,6 @@ case class SijoitteluajonHakemusWrapper(
     val hakemus = new SijoitteluHakemus
     hakemus.setHakemusOid(hakemusOid)
     hakijaOid.foreach(hakemus.setHakijaOid(_))
-    etunimi.foreach(hakemus.setEtunimi(_))
-    sukunimi.foreach(hakemus.setSukunimi(_))
     hakemus.setPrioriteetti(prioriteetti)
     hakemus.setJonosija(jonosija)
     varasijanNumero.foreach(hakemus.setVarasijanNumero(_))
@@ -375,8 +371,6 @@ object SijoitteluajonHakemusWrapper extends OptionConverter {
     SijoitteluajonHakemusWrapper(
       hakemus.getHakemusOid,
       convert[javaString, String](hakemus.getHakijaOid, string),
-      convert[javaString, String](hakemus.getEtunimi, string),
-      convert[javaString, String](hakemus.getSukunimi, string),
       hakemus.getPrioriteetti,
       hakemus.getJonosija,
       convert[javaInt, Int](hakemus.getVarasijanNumero, int),

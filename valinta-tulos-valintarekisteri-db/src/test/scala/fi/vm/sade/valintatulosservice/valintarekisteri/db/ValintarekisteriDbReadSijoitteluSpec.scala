@@ -24,7 +24,7 @@ class ValintarekisteriDbReadSijoitteluSpec extends Specification with ITSetup wi
   "ValintarekisteriDb" should {
     "get hakija" in {
       val res = singleConnectionValintarekisteriDb.getHakemuksenHakija("1.2.246.562.11.00006926939", 1476936450191L).get
-      res.etunimi mustEqual "Semi Testi"
+      res.hakijaOid mustEqual "1.2.246.562.24.19795717550"
     }
 
     "get hakijan hakutoiveet" in {
