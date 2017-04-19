@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import java.sql.{PreparedStatement, Timestamp, Types}
+import java.time.Instant
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
@@ -36,6 +37,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
             valintatapajono.getHakemukset.asScala.foreach(hakemus => {
               storeValintatapajononHakemus(
                 hakemus,
+                sijoittelu.valintatuloksetGroupedByHakemus.get(hakemus.getHakemusOid),
                 sijoitteluajoId,
                 hakukohde.getOid,
                 valintatapajono.getOid,
@@ -93,6 +95,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
   }
 
   private def storeValintatapajononHakemus(hakemus: SijoitteluHakemus,
+                                           valintatulos: Option[Valintatulos],
                                            sijoitteluajoId:Long,
                                            hakukohdeOid:String,
                                            valintatapajonoOid:String,
@@ -107,7 +110,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
     hakemus.getPistetiedot.asScala.foreach(createPistetietoInsertRow(sijoitteluajoId, valintatapajonoOid, hakemus.getHakemusOid, _, pistetietoStatement))
     createValinnantilanKuvausInsertRow(hakemusWrapper, tilankuvausStatement)
     createValinnantilaInsertRow(hakukohdeOid, valintatapajonoOid, sijoitteluajoId, hakemusWrapper, valinnantilaStatement)
-    createValinnantulosInsertRow(hakemusWrapper, sijoitteluajoId, hakukohdeOid, valintatapajonoOid, valinnantulosStatement)
+    createValinnantulosInsertRow(hakemusWrapper, valintatulos, sijoitteluajoId, hakukohdeOid, valintatapajonoOid, valinnantulosStatement)
     createTilaKuvausMappingInsertRow(hakemusWrapper, hakukohdeOid, valintatapajonoOid, tilaKuvausMappingStatement)
   }
 
@@ -162,24 +165,40 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
   }
 
   private def createValinnantulosStatement = createStatement(
-    """insert into valinnantulokset (
-           valintatapajono_oid,
-           hakemus_oid,
-           hakukohde_oid,
-           ilmoittaja,
-           selite
-       ) values (?, ?, ?, ?::text, 'Sijoittelun tallennus')
-       on conflict on constraint valinnantulokset_pkey do nothing""")
+    """insert into valinnantulokset(
+             valintatapajono_oid,
+             hakemus_oid,
+             hakukohde_oid,
+             julkaistavissa,
+             hyvaksytty_varasijalta,
+             ilmoittaja,
+             selite
+           ) values (?, ?, ?, ?, ?, ?::text, 'Sijoittelun tallennus')
+           on conflict on constraint valinnantulokset_pkey do update set
+             julkaistavissa = excluded.julkaistavissa,
+             hyvaksytty_varasijalta = excluded.hyvaksytty_varasijalta
+           where ( valinnantulokset.julkaistavissa <> excluded.julkaistavissa
+             or valinnantulokset.hyvaksytty_varasijalta <> excluded.hyvaksytty_varasijalta )
+             and valinnantulokset.system_time @> ?::timestamp with time zone
+             and ?::valinnantila <> 'Peruuntunut'::valinnantila""")
 
   private def createValinnantulosInsertRow(hakemus:SijoitteluajonHakemusWrapper,
+                                           valintatulos: Option[Valintatulos],
                                            sijoitteluajoId:Long,
                                            hakukohdeOid:String,
                                            valintatapajonoOid:String,
                                            valinnantulosStatement:PreparedStatement) = {
+
+    val read = valintatulos.map(_.getRead.getTime).getOrElse(System.currentTimeMillis)
+
     valinnantulosStatement.setString(1, valintatapajonoOid)
     valinnantulosStatement.setString(2, hakemus.hakemusOid)
     valinnantulosStatement.setString(3, hakukohdeOid)
-    valinnantulosStatement.setLong(4, sijoitteluajoId)
+    valinnantulosStatement.setBoolean(4, valintatulos.exists(_.getJulkaistavissa))
+    valinnantulosStatement.setBoolean(5, valintatulos.exists(_.getHyvaksyttyVarasijalta))
+    valinnantulosStatement.setLong(6, sijoitteluajoId)
+    valinnantulosStatement.setTimestamp(7, new java.sql.Timestamp(read))
+    valinnantulosStatement.setString(8, hakemus.tila.toString)
     valinnantulosStatement.addBatch()
   }
 
@@ -343,6 +362,13 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
             from sijoitteluajon_hakukohteet sh
             where sh.sijoitteluajo_id = ${sijoitteluajoId}
             group by sh.sijoitteluajo_id, sh.hakukohde_oid, sh.kaikki_jonot_sijoiteltu""".as[SijoittelunHakukohdeRecord]).toList
+  }
+
+  override def getSijoitteluajonHakukohdeOidit(sijoitteluajoId:Long): List[String] = {
+    runBlocking(
+      sql"""select sh.hakukohde_oid
+            from sijoitteluajon_hakukohteet sh
+            where sh.sijoitteluajo_id = ${sijoitteluajoId}""".as[String]).toList.distinct
   }
 
   override def getSijoitteluajonHakukohde(sijoitteluajoId:Long, hakukohdeOid:String): Option[SijoittelunHakukohdeRecord] = {

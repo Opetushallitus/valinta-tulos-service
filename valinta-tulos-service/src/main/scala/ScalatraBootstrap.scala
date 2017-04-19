@@ -62,7 +62,7 @@ class ScalatraBootstrap extends LifeCycle {
       appConfig.sijoitteluContext.valintatulosRepository, valintarekisteriDb, valintarekisteriDb)
     lazy val valintatulosCollection = new ValintatulosMongoCollection(appConfig.settings.valintatulosMongoConfig)
     lazy val mailPoller = new MailPoller(valintatulosCollection, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 100)
-    lazy val valintarekisteriService = new ValintarekisteriService(valintarekisteriDb, hakukohdeRecordService)
+    lazy val valintarekisteriService = new ValintarekisteriService(valintarekisteriDb, valintarekisteriDb, hakukohdeRecordService)
     lazy val authorizer = new OrganizationHierarchyAuthorizer(appConfig)
     lazy val sijoitteluService = new SijoitteluService(valintarekisteriDb, authorizer, hakuService)
     lazy val yhdenPaikanSaannos = new YhdenPaikanSaannos(hakuService, valintarekisteriDb)
@@ -119,7 +119,7 @@ class ScalatraBootstrap extends LifeCycle {
       context.mount(new KelaServlet(audit, new KelaService(HakijaResolver(appConfig), hakuService, organisaatioService, valintarekisteriDb), valintarekisteriDb), "/cas/kela")
 
       context.mount(new ValinnantulosServlet(valinnantulosService, valintarekisteriDb), "/auth/valinnan-tulos")
-      context.mount(new SijoitteluServlet(sijoitteluService, valintarekisteriService, valintarekisteriDb), "/auth/sijoittelu")
+      context.mount(new SijoitteluServlet(sijoitteluService, valintarekisteriDb), "/auth/sijoittelu")
       context.mount(new HyvaksymiskirjeServlet(hyvaksymiskirjeService, valintarekisteriDb), "/auth/hyvaksymiskirje")
       context.mount(new LukuvuosimaksuServletWithCAS(lukuvuosimaksuService, valintarekisteriDb, hakuService, authorizer), "/auth/lukuvuosimaksu")
       context.mount(new MuutoshistoriaServlet(valinnantulosService, valintarekisteriDb), "/auth/muutoshistoria")

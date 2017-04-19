@@ -22,6 +22,7 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
 
   def getValinnantuloksetForHakukohde(hakukohdeOid: String): DBIO[Set[Valinnantulos]]
   def getValinnantuloksetForValintatapajono(valintatapajonoOid:String): DBIO[Set[Valinnantulos]]
+  def getValinnantuloksetForHaku(hakuOid: String): DBIO[Set[Valinnantulos]]
 
   def getLastModifiedForHakukohde(hakukohdeOid: String): DBIO[Option[Instant]]
   def getLastModifiedForValintatapajono(valintatapajonoOid:String):DBIO[Option[Instant]]
@@ -69,4 +70,13 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
         valinnantulokset.map(v => lm(v.hakemusOid) -> v)
       case Left(error) => throw error
     }
+
+  def getValinnantuloksetAndReadTimeForHaku(hakuOid:String, timeout:Duration = Duration(4, TimeUnit.SECONDS)):(Instant, Set[Valinnantulos]) = {
+    runBlockingTransactionally(
+      now().zip(getValinnantuloksetForHaku(hakuOid)), timeout = timeout
+    ) match {
+      case Right(result) => result
+      case Left(error) => throw error
+    }
+  }
 }

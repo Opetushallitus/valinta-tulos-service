@@ -2,8 +2,9 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
+import java.util.Date
 
-import fi.vm.sade.sijoittelu.domain.SijoitteluAjo
+import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, SijoitteluAjo}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -105,6 +106,46 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       history("system_time").asInstanceOf[String] mustEqual
         original("system_time").asInstanceOf[String].replace(")", "") +
           updated("system_time").asInstanceOf[String].replace("[", "").replace(",", "")
+    }
+    "store valintatulokset correctly" in {
+      import scala.collection.JavaConverters._
+
+      val oldDate = new Date()
+
+      def readJulkaistavissa() = singleConnectionValintarekisteriDb.runBlocking(
+        sql"""select julkaistavissa from valinnantulokset where hakemus_oid = '1.2.246.562.11.00000441369'""".as[Boolean]).toList
+
+      def startNewSijoittelu(wrapper:SijoitteluWrapper) = {
+        val sijoitteluajoId = System.currentTimeMillis
+        wrapper.sijoitteluajo.setStartMils(System.currentTimeMillis)
+        wrapper.sijoitteluajo.setSijoitteluajoId(sijoitteluajoId)
+        wrapper.hakukohteet.foreach(_.setSijoitteluajoId(sijoitteluajoId))
+        wrapper.sijoitteluajo.setEndMils(System.currentTimeMillis)
+      }
+
+      val wrapper = loadSijoitteluFromFixture("hyvaksytty-korkeakoulu-erillishaku")
+      singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
+      List(true, true) mustEqual readJulkaistavissa()
+
+      startNewSijoittelu(wrapper)
+      wrapper.valintatulokset.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(vt => {
+        vt.setJulkaistavissa(false, "", "")
+        vt.setRead(oldDate)
+      })
+      singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
+      List(true, true) mustEqual readJulkaistavissa()
+
+      startNewSijoittelu(wrapper)
+      wrapper.hakukohteet.head.getValintatapajonot.asScala.find(_.getOid.equals("14090336922663576781797489829887")
+      ).get.getHakemukset.asScala.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(h => {
+        h.setTila(HakemuksenTila.PERUUNTUNUT)
+      })
+      wrapper.valintatulokset.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(vt => {
+        vt.setJulkaistavissa(false, "", "")
+        vt.setRead(new Date())
+      })
+      singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
+      List(true, false).diff(readJulkaistavissa()) mustEqual List()
     }
   }
 

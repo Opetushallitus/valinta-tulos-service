@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
-import fi.vm.sade.sijoittelu.tulos.dto.{HakukohdeDTO, SijoitteluajoDTO, TilaHistoriaDTO}
+import fi.vm.sade.sijoittelu.tulos.dto.{HakukohdeDTO, SijoitteluajoDTO}
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
@@ -9,10 +9,11 @@ import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.SijoitteluajoParts
 
-class SijoitteluService(sijoitteluRepository: SijoitteluRepository,
+class SijoitteluService(val sijoitteluRepository: SijoitteluRepository,
                         authorizer:OrganizationHierarchyAuthorizer,
-                        hakuService: HakuService ) extends Logging with PerformanceLogger {
+                        hakuService: HakuService ) extends Logging with PerformanceLogger with SijoitteluajoParts {
 
   def getHakukohdeBySijoitteluajo(hakuOid:String, sijoitteluajoId:String, hakukohdeOid:String, session:Session): HakukohdeDTO = {
     (for {
@@ -135,9 +136,46 @@ class SijoitteluService(sijoitteluRepository: SijoitteluRepository,
     }).getOrElse(throw new IllegalArgumentException(s"Sijoitteluajoa $sijoitteluajoId ei löytynyt haulle $hakuOid"))
   }
 
-  private def getLatestSijoitteluajoId(sijoitteluajoId:String, hakuOid:String) =
-    sijoitteluRepository.getLatestSijoitteluajoId(sijoitteluajoId, hakuOid) match {
-      case Right(id) => id
-      case Left(failure) => throw failure
-    }
+  def getSijoitteluajo(hakuOid:String, sijoitteluajoId:String): SijoitteluajoDTO = {
+    val latestId = getLatestSijoitteluajoId(sijoitteluajoId, hakuOid)
+    logger.info(s"Haetaan sijoitteluajoDTO $latestId")
+
+    getSijoitteluajo(latestId).map(sijoitteluajo => {
+      val valintatapajonotByHakukohde = getValintatapajonoDTOsGroupedByHakukohde(latestId)
+
+      val hakijaryhmatByHakukohde = getHakijaryhmat(latestId).map(h => h.dto(
+        getHakijaryhmanHakemukset(h.sijoitteluajoId, h.oid)
+      )).groupBy(_.getHakukohdeOid)
+
+      val hakukohteet = getHakukohteet(latestId).map( hakukohde =>
+        hakukohde.dto(
+          valintatapajonotByHakukohde.getOrElse(hakukohde.oid, List()),
+          hakijaryhmatByHakukohde.getOrElse(hakukohde.oid, List())
+        )
+      )
+      sijoitteluajo.dto(hakukohteet)
+    }).getOrElse(throw new IllegalArgumentException(s"Sijoitteluajoa $sijoitteluajoId ei löytynyt haulle $hakuOid"))
+  }
+
+  private def getValintatapajonoDTOsGroupedByHakukohde(latestId:Long) = {
+    val kaikkiValintatapajonoHakemukset = getHakemusDTOs(latestId).groupBy(_.getValintatapajonoOid)
+    getValintatapajonot(latestId).mapValues(jonot => jonot.map(jono => jono.dto(kaikkiValintatapajonoHakemukset.getOrElse(jono.oid, List()))))
+  }
+
+  private def getHakemusDTOs(sijoitteluajoId:Long) = {
+    val sijoitteluajonHakemukset = getHakemukset(sijoitteluajoId)
+    val tilankuvaukset = getTilankuvaukset(sijoitteluajoId, sijoitteluajonHakemukset)
+    val hakijaryhmat = getHakemustenHakijaryhmat(sijoitteluajoId)
+    val tilahistoriat = getTilahistoriat(sijoitteluajoId).mapValues(_.map(_.dto).sortBy(_.getLuotu.getTime))
+    val pistetiedot = getPistetiedot(sijoitteluajoId).mapValues(_.map(_.dto))
+
+    sijoitteluajonHakemukset.map(h =>
+      h.dto(
+        hakijaryhmat.getOrElse(h.hakemusOid, Set()),
+        h.tilankuvaukset(tilankuvaukset.get(h.tilankuvausHash)),
+        tilahistoriat.getOrElse((h.hakemusOid, h.valintatapajonoOid), List()),
+        pistetiedot.getOrElse((h.hakemusOid, h.valintatapajonoOid), List())
+      )
+    )
+  }
 }

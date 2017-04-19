@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.domain
 import java.util
 import java.util.{Comparator, Date}
 
+import fi.vm.sade.sijoittelu.domain.{HakemuksenTila => _, IlmoittautumisTila => _, _}
 import fi.vm.sade.sijoittelu.tulos.dto._
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakutoiveDTO, HakutoiveenValintatapajonoDTO, HakijaryhmaDTO => HakutoiveenHakijaryhmaDTO}
 
@@ -17,6 +18,20 @@ case class SijoitteluajoRecord(sijoitteluajoId:Long, hakuOid:String, startMils:L
     sijoitteluajoDTO.setEndMils(endMils)
     sijoitteluajoDTO.setHakukohteet(hakukohteet.asJava)
     sijoitteluajoDTO
+  }
+
+  def entity(hakukohdeOids:List[String]) = {
+    val sijoitteluAjo = new SijoitteluAjo()
+    sijoitteluAjo.setSijoitteluajoId(sijoitteluajoId)
+    sijoitteluAjo.setHakuOid(hakuOid)
+    sijoitteluAjo.setStartMils(startMils)
+    sijoitteluAjo.setEndMils(endMils)
+    sijoitteluAjo.setHakukohteet(hakukohdeOids.map(oid => {
+      val hakukohde = new HakukohdeItem()
+      hakukohde.setOid(oid)
+      hakukohde
+    }).asJava)
+    sijoitteluAjo
   }
 }
 
@@ -130,6 +145,15 @@ case class PistetietoRecord(valintatapajonoOid:String, hakemusOid:String, tunnis
     pistetietoDTO.setTunniste(tunniste)
     pistetietoDTO
   }
+
+  def entity = {
+    val pistetieto = new Pistetieto
+    pistetieto.setArvo(arvo)
+    pistetieto.setLaskennallinenArvo(laskennallinenArvo)
+    pistetieto.setOsallistuminen(osallistuminen)
+    pistetieto.setTunniste(tunniste)
+    pistetieto
+  }
 }
 
 case class HakutoiveenPistetietoRecord(tunniste:String, arvo:String, laskennallinenArvo:String, osallistuminen:String) {
@@ -160,6 +184,17 @@ case class SijoittelunHakukohdeRecord(sijoitteluajoId: Long, oid: String, kaikki
     hakukohdeDTO.setValintatapajonot(valintatapajonot.asJava)
     hakukohdeDTO.setHakijaryhmat(hakijaryhmat.asJava)
     hakukohdeDTO
+  }
+
+  def entity(valintatapajonot:List[Valintatapajono], hakijaryhmat:List[Hakijaryhma]) = {
+
+    val hakukohde = new Hakukohde
+    hakukohde.setSijoitteluajoId(sijoitteluajoId)
+    hakukohde.setOid(oid)
+    hakukohde.setKaikkiJonotSijoiteltu(kaikkiJonotsijoiteltu)
+    hakukohde.setValintatapajonot(valintatapajonot.asJava)
+    hakukohde.setHakijaryhmat(hakijaryhmat.asJava)
+    hakukohde
   }
 }
 
@@ -198,6 +233,31 @@ case class ValintatapajonoRecord(tasasijasaanto:String, oid:String, nimi:String,
     valintatapajonoDTO.setHakeneet(hakemukset.size)
     valintatapajonoDTO
   }
+
+  def entity(hakemukset: List[Hakemus]) = {
+    val valintatapajono = new Valintatapajono
+    valintatapajono.setTasasijasaanto(fi.vm.sade.sijoittelu.domain.Tasasijasaanto.valueOf(tasasijasaanto.toUpperCase()))
+    valintatapajono.setOid(oid)
+    valintatapajono.setNimi(nimi)
+    valintatapajono.setPrioriteetti(prioriteetti)
+    valintatapajono.setAloituspaikat(aloituspaikat.get)
+    alkuperaisetAloituspaikat.foreach(valintatapajono.setAlkuperaisetAloituspaikat(_))
+    valintatapajono.setAlinHyvaksyttyPistemaara(bigDecimal(alinHyvaksyttyPistemaara))
+    valintatapajono.setEiVarasijatayttoa(eiVarasijatayttoa)
+    valintatapajono.setKaikkiEhdonTayttavatHyvaksytaan(kaikkiEhdonTayttavatHyvaksytaan)
+    valintatapajono.setPoissaOlevaTaytto(poissaOlevaTaytto)
+    valintaesitysHyvaksytty.foreach(valintatapajono.setValintaesitysHyvaksytty(_))
+    //valintatapajono.setHyvaksytty(hyvaksytty)
+    //valintatapajono.setVaralla(varalla)
+    varasijat.foreach(valintatapajono.setVarasijat(_))
+    varasijanTayttoPaivat.foreach(valintatapajono.setVarasijaTayttoPaivat(_))
+    varasijojaKaytetaanAlkaen.foreach(valintatapajono.setVarasijojaKaytetaanAlkaen)
+    varasijojaKaytetaanAsti.foreach(valintatapajono.setVarasijojaTaytetaanAsti)
+    tayttoJono.foreach(valintatapajono.setTayttojono)
+    valintatapajono.setHakemukset(hakemukset.asJava)
+    valintatapajono.setHakemustenMaara(hakemukset.size)
+    valintatapajono
+  }
 }
 
 case class HakemusRecord(hakijaOid:Option[String], hakemusOid:String, pisteet:Option[BigDecimal], etunimi:Option[String], sukunimi:Option[String],
@@ -232,6 +292,33 @@ case class HakemusRecord(hakijaOid:Option[String], hakemusOid:String, pisteet:Op
     hakemusDTO
   }
 
+  def entity(hakijaryhmaOids:Set[String],
+             tilankuvaukset:Map[String,String],
+             tilahistoria:List[TilaHistoria],
+             pistetiedot:List[Pistetieto]) = {
+
+    val hakemus = new Hakemus
+    hakijaOid.foreach(hakemus.setHakijaOid)
+    hakemus.setHakemusOid(hakemusOid)
+    pisteet.foreach(p => hakemus.setPisteet(p.bigDecimal))
+    etunimi.foreach(hakemus.setEtunimi)
+    sukunimi.foreach(hakemus.setSukunimi)
+    hakemus.setPrioriteetti(prioriteetti)
+    hakemus.setJonosija(jonosija)
+    hakemus.setTasasijaJonosija(tasasijaJonosija)
+    hakemus.setTila(fi.vm.sade.sijoittelu.domain.HakemuksenTila.valueOf(tila.valinnantila.name))
+    hakemus.setTilanKuvaukset(tilankuvaukset.asJava)
+    hakemus.setHyvaksyttyHarkinnanvaraisesti(hyvaksyttyHarkinnanvaraisesti)
+    varasijaNumero.foreach(hakemus.setVarasijanNumero(_))
+    hakemus.setOnkoMuuttunutViimeSijoittelussa(onkoMuuttunutviimesijoittelusta)
+    hakemus.setHyvaksyttyHakijaryhmista(hakijaryhmaOids.asJava)
+    hakemus.setSiirtynytToisestaValintatapajonosta(siirtynytToisestaValintatapaJonosta)
+    //hakemus.setValintatapajonoOid(valintatapajonoOid)
+    hakemus.setTilaHistoria(tilahistoria.asJava)
+    hakemus.getPistetiedot.addAll(pistetiedot.asJava)
+    hakemus
+  }
+
   def tilankuvaukset(tilankuvaus:Option[TilankuvausRecord]):Map[String,String] = tilankuvaus match {
       case Some(x) if tarkenteenLisatieto.isDefined => x.tilankuvaukset.mapValues(_.replace("<lisatieto>", tarkenteenLisatieto.get))
       case Some(x) => x.tilankuvaukset
@@ -245,6 +332,13 @@ case class TilaHistoriaRecord(valintatapajonoOid:String, hakemusOid:String, tila
     tilaDTO.setLuotu(luotu)
     tilaDTO.setTila(tila.valinnantila.toString)
     tilaDTO
+  }
+
+  def entity = {
+    val tilahistoria = new TilaHistoria
+    tilahistoria.setLuotu(luotu)
+    tilahistoria.setTila(tila.valinnantila)
+    tilahistoria
   }
 }
 
@@ -266,6 +360,22 @@ case class HakijaryhmaRecord(prioriteetti:Int, oid:String, nimi:String, hakukohd
     hakijaryhmaDTO.setHakijaryhmatyyppikoodiUri(hakijaryhmatyyppikoodiUri)
     hakijaryhmaDTO.setHakemusOid(hakemusOid.asJava)
     hakijaryhmaDTO
+  }
+
+  def entity(hakemusOid:List[String]) = {
+    val hakijaryhma = new Hakijaryhma
+    hakijaryhma.setPrioriteetti(prioriteetti)
+    hakijaryhma.setOid(oid)
+    hakijaryhma.setNimi(nimi)
+    hakukohdeOid.foreach(hakijaryhma.setHakukohdeOid)
+    hakijaryhma.setKiintio(kiintio)
+    hakijaryhma.setKaytaKaikki(kaytaKaikki)
+    hakijaryhma.setTarkkaKiintio(tarkkaKiintio)
+    hakijaryhma.setKaytetaanRyhmaanKuuluvia(kaytetaanRyhmaanKuuluvia)
+    valintatapajonoOid.foreach(hakijaryhma.setValintatapajonoOid)
+    hakijaryhma.setHakijaryhmatyyppikoodiUri(hakijaryhmatyyppikoodiUri)
+    hakijaryhma.getHakemusOid.addAll(hakemusOid.asJava)
+    hakijaryhma
   }
 }
 

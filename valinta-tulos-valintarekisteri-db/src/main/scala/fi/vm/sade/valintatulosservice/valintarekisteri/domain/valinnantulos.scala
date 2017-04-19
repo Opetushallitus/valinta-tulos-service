@@ -1,10 +1,9 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.domain
 
-import java.sql.Timestamp
-import java.time.OffsetDateTime
+import java.time.{Instant, OffsetDateTime}
 import java.util.Date
 
-import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
+import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, ValintatuloksenTila, Valintatulos}
 
 case class ValinnantulosUpdateStatus(status:Int, message:String, valintatapajonoOid:String, hakemusOid:String)
 
@@ -87,6 +86,21 @@ case class Valinnantulos(hakukohdeOid: String,
     this.valinnantila,
     muokkaaja
   )
+
+  def toValintatulos(read:Instant) = {
+    val valintatulos = new Valintatulos()
+    valintatulos.setHakukohdeOid(hakukohdeOid, "", "")
+    valintatulos.setValintatapajonoOid(valintatapajonoOid, "", "")
+    valintatulos.setHakemusOid(hakemusOid, "", "")
+    valintatulos.setHakijaOid(henkiloOid, "", "")
+    valintatulos.setIlmoittautumisTila(ilmoittautumistila.ilmoittautumistila, "", "")
+    julkaistavissa.foreach(j =>  valintatulos.setJulkaistavissa(j, "", ""))
+    hyvaksyttyVarasijalta.foreach(h => valintatulos.setHyvaksyttyVarasijalta(h, "", ""))
+    hyvaksyPeruuntunut.foreach(h => valintatulos.setHyvaksyPeruuntunut(h, "", ""))
+    ehdollisestiHyvaksyttavissa.foreach(e => valintatulos.setEhdollisestiHyvaksyttavissa(e, "", ""))
+    valintatulos.setRead(java.util.Date.from(read))
+    valintatulos
+  }
 }
 
 case class ValinnantuloksenOhjaus(hakemusOid: String,

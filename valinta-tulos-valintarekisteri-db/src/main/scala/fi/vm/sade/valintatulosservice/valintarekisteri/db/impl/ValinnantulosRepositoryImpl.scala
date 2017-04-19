@@ -145,6 +145,30 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
        """.as[Valinnantulos].map(_.toSet)
   }
 
+  override def getValinnantuloksetForHaku(hakuOid:String): DBIO[Set[Valinnantulos]] = {
+      sql"""with haun_hakukohteet as (
+                select hakukohde_oid from hakukohteet where haku_oid = ${hakuOid}
+            ) select ti.hakukohde_oid,
+                ti.valintatapajono_oid,
+                ti.hakemus_oid,
+                ti.henkilo_oid,
+                ti.tila,
+                tu.ehdollisesti_hyvaksyttavissa,
+                tu.julkaistavissa,
+                tu.hyvaksytty_varasijalta,
+                tu.hyvaksy_peruuntunut,
+                v.action,
+                i.tila
+            from valinnantilat as ti
+            inner join haun_hakukohteet as hk on hk.hakukohde_oid = ti.hakukohde_oid
+            left join valinnantulokset as tu on tu.hakemus_oid = ti.hakemus_oid
+                and tu.valintatapajono_oid = ti.valintatapajono_oid
+            left join vastaanotot as v on v.hakukohde = tu.hakukohde_oid
+                and v.henkilo = ti.henkilo_oid and v.deleted is null
+            left join ilmoittautumiset as i on i.hakukohde = tu.hakukohde_oid
+                and i.henkilo = ti.henkilo_oid""".as[Valinnantulos].map(_.toSet)
+  }
+
   override def getLastModifiedForHakukohde(hakukohdeOid: String): DBIO[Option[Instant]] = {
     sql"""select greatest(max(lower(ti.system_time)), max(lower(tu.system_time)), max(lower(il.system_time)),
                           max(upper(ih.system_time)), max(va.timestamp), max(vh.timestamp))

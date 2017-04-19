@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
+import java.util.Date
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Hylatty, Hyvaksytty, SijoittelunHakukohdeRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
@@ -118,6 +119,12 @@ class ValintarekisteriDbReadSijoitteluSpec extends Specification with ITSetup wi
       val hakemus2 = tilahistoria.find(_.hakemusOid == "1.2.246.562.11.00006736611")
       hakemus2.get.tila mustEqual Hylatty
       hakemus2.get.luotu.getTime mustEqual (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS XXX")).parse("2016-10-12 07:11:19.328 +03:00").getTime
+    }
+
+    "get haun valinnantulokset" in {
+      val (read, valinnantulokset) = singleConnectionValintarekisteriDb.getValinnantuloksetAndReadTimeForHaku("1.2.246.562.29.75203638285")
+      valinnantulokset.size mustEqual 163
+      new SimpleDateFormat("yyyy-MM-dd").format(new Date()) mustEqual new SimpleDateFormat("yyyy-MM-dd").format(Date.from(read))
     }
   }
 

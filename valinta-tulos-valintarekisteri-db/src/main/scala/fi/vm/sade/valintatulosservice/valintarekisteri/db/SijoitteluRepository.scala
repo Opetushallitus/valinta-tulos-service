@@ -19,6 +19,7 @@ trait SijoitteluRepository extends ValintarekisteriRepository {
 
   def getSijoitteluajo(sijoitteluajoId:Long): Option[SijoitteluajoRecord]
   def getSijoitteluajonHakukohteet(sijoitteluajoId:Long): List[SijoittelunHakukohdeRecord]
+  def getSijoitteluajonHakukohdeOidit(sijoitteluajoId:Long): List[String]
   def getSijoitteluajonValintatapajonot(sijoitteluajoId:Long): List[ValintatapajonoRecord]
   def getSijoitteluajonHakemukset(sijoitteluajoId:Long): List[HakemusRecord]
   def getSijoitteluajonHakemustenHakijaryhmat(sijoitteluajoId:Long): Map[String,Set[String]]

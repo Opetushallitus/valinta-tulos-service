@@ -10,7 +10,6 @@ import org.scalatra.swagger._
 import org.scalatra.{NotImplemented, Ok}
 
 class SijoitteluServlet(sijoitteluService: SijoitteluService,
-                        valintarekisteriService: ValintarekisteriService,
                         val sessionRepository: SessionRepository)
                        (implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase
                        with CasAuthenticatedServlet {
@@ -37,7 +36,7 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
 
     val hakuOid = params("hakuOid")
     val sijoitteluajoId = params("sijoitteluajoId")
-    streamOk(valintarekisteriService.getSijoitteluajo(hakuOid, sijoitteluajoId))
+    streamOk(sijoitteluService.getSijoitteluajo(hakuOid, sijoitteluajoId))
   }
 
   lazy val getSijoitteluajonPerustiedotSwagger: OperationBuilder = (apiOperation[Unit]("getSijoitteluajoSwagger")

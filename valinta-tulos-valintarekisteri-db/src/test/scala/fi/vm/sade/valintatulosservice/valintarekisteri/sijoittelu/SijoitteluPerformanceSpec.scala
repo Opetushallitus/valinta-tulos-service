@@ -16,12 +16,13 @@ class SijoitteluPerformanceSpec extends Specification with ITSetup with Valintar
   step(appConfig.start)
   step(deleteAll())
 
-  lazy val valintarekisteri = new ValintarekisteriService(singleConnectionValintarekisteriDb, hakukohdeRecordService)
+  lazy val valintarekisteri = new ValintarekisteriService(singleConnectionValintarekisteriDb, singleConnectionValintarekisteriDb, hakukohdeRecordService)
 
   "Store and read huge sijoittelu fast" in pending("Use this test only locally for performance tuning") {
     val wrapper = time("create test data") { createHugeSijoittelu(12345l, "11.22.33.44.55.66", 50) }
     time("Store sijoittelu") {singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)}
-    time("Get sijoittelu") { valintarekisteri.getSijoitteluajo("11.22.33.44.55.66", "12345") }
+    //time("Get sijoittelu") { valintarekisteri.getSijoitteluajoDTO("11.22.33.44.55.66", "12345") }
+    getSijoittelu("11.22.33.44.55.66")
     true must beTrue
   }
   "Reading latest huge sijoitteluajo is not timing out" in pending("Use this test only locally for performance tuning") {
@@ -32,11 +33,17 @@ class SijoitteluPerformanceSpec extends Specification with ITSetup with Valintar
       wrapper.hakukohteet.foreach(_.setSijoitteluajoId(sijoitteluajoId))
       time(s"Store sijoittelu ${sijoitteluajoId}") {singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)}
     })
-    compareSijoitteluWrapperToDTO(
-      wrapper,
-      time("Get latest sijoitteluajo") { valintarekisteri.getSijoitteluajo("11.22.33.44.55.66", "latest") }
+    val ( sijoitteluajo, hakukohteet ) = getSijoittelu("11.22.33.44.55.66")
+    compareSijoitteluWrapperToEntity(
+      wrapper, sijoitteluajo, hakukohteet
     )
     true must beTrue
+  }
+
+  def getSijoittelu(hakuOid:String) = {
+    val sijoitteluajo = time("Get latest sijoitteluajo") { valintarekisteri.getLatestSijoitteluajo(hakuOid) }
+    val hakukohteet = time("Get hakukohteet") { valintarekisteri.getSijoitteluajonHakukohteet(sijoitteluajo.getSijoitteluajoId) }
+    (sijoitteluajo, hakukohteet)
   }
 
   override protected def before: Unit = {
