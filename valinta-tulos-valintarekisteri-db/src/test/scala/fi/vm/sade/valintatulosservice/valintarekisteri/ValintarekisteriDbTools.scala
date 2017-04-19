@@ -10,13 +10,13 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriD
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Tasasijasaanto
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.JsonAST._
+import org.json4s.ext.EnumNameSerializer
 import org.json4s.native.JsonMethods._
 import org.json4s.{CustomSerializer, DefaultFormats}
 import org.specs2.mutable.Specification
 import slick.dbio.DBIOAction
 import slick.driver.PostgresDriver.api._
 import slick.jdbc.GetResult
-
 import scala.collection.JavaConverters._
 import scala.collection.immutable.IndexedSeq
 
