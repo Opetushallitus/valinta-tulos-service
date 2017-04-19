@@ -187,7 +187,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     }
     "palauttaa 200 ja päivittää valinnan tilaa, ohjaustietoja ja ilmoittautumista" in {
       val v = erillishaunValinnantulos
-      getValinnantuloksetForValintatapajono(v.valintatapajonoOid) mustEqual List()
+      getValinnantuloksetForValintatapajono(v.valintatapajonoOid) mustEqual Set()
       patchErillishakuJson(List(v))
       hae(erillishaunValinnantulos.copy(vastaanottotila = ValintatuloksenTila.KESKEN), 1)
     }
@@ -195,14 +195,14 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
       val v = erillishaunValinnantulos.copy(valintatapajonoOid = "varasijaltaHyvaksytynJono", hakukohdeOid = "varasijaltaHyvaksytynHakukohde",
         valinnantila = VarasijaltaHyvaksytty, hyvaksyttyVarasijalta = Some(true)
       )
-      getValinnantuloksetForValintatapajono(v.valintatapajonoOid) mustEqual List()
+      getValinnantuloksetForValintatapajono(v.valintatapajonoOid) mustEqual Set()
       patchErillishakuJson(List(v))
       hae(erillishaunValinnantulos.copy(vastaanottotila = ValintatuloksenTila.KESKEN), 1)
     }
     "palauttaa 200 ja poistaa valinnan tilan, ohjaustiedon sekä ilmoittautumisen" in {
       val v = erillishaunValinnantulos.copy(valintatapajonoOid = "poistettavaValinnantulosJono", hakukohdeOid = "poistettavaValinnantulosHakukohde")
 
-      getValinnantuloksetForValintatapajono(v.valintatapajonoOid) mustEqual List()
+      getValinnantuloksetForValintatapajono(v.valintatapajonoOid) mustEqual Set()
 
       singleConnectionValintarekisteriDb.storeHakukohde(HakukohdeRecord(v.hakukohdeOid, "hakuOid", false, false, Kevat(2017)))
       singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto("hakuOid", v.valintatapajonoOid, v.henkiloOid, v.hakemusOid, v.hakukohdeOid, VastaanotaSitovasti, "ilmoittaja", "selite"))
@@ -213,7 +213,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
 
       patchErillishakuJson(List(v.copy(poistettava = Some(true))), ifUnmodifiedSince = now)
 
-      getValinnantuloksetForValintatapajono(v.valintatapajonoOid) mustEqual List()
+      getValinnantuloksetForValintatapajono(v.valintatapajonoOid) mustEqual Set()
     }
   }
 
@@ -257,7 +257,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
   "Last-Modified" should {
     "olla validi If-Unmodified-Since" in {
       val v = erillishaunValinnantulos.copy(valintatapajonoOid = "lastModifiedJono", hakukohdeOid = "lastModifiedHakukohde", vastaanottotila = ValintatuloksenTila.KESKEN, ilmoittautumistila = EiTehty)
-      getValinnantuloksetForValintatapajono("lastModifiedJono") mustEqual List()
+      getValinnantuloksetForValintatapajono("lastModifiedJono") mustEqual Set()
 
       patchErillishakuJson(List(v.copy(julkaistavissa = None)))
 
@@ -265,7 +265,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     }
     "lukea poistetun vastaanoton päivämäärä" in {
       val v = erillishaunValinnantulos.copy(valintatapajonoOid = "deletedVastaanottoJono", hakukohdeOid = "deletedVastaanottoHakukohde")
-      getValinnantuloksetForValintatapajono("deletedVastaanottoJono") mustEqual List()
+      getValinnantuloksetForValintatapajono("deletedVastaanottoJono") mustEqual Set()
 
       patchErillishakuJson(List(v.copy(vastaanottotila = ValintatuloksenTila.KESKEN, ilmoittautumistila = EiTehty)))
 
@@ -311,7 +311,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
   "Vastaanoton päivittäminen ennen PATCH-kutsua" should {
     "palauttaa 200, jos vastaanoton tila on sama" in {
       val v = erillishaunValinnantulos.copy(valintatapajonoOid = "vastaanotonTallennusJono", hakukohdeOid = "vastaanotonTallennusJono")
-      getValinnantuloksetForValintatapajono("vastaanotonTallennusJono") mustEqual List()
+      getValinnantuloksetForValintatapajono("vastaanotonTallennusJono") mustEqual Set()
 
       patchErillishakuJson(List(v.copy(vastaanottotila = ValintatuloksenTila.KESKEN, ilmoittautumistila = EiTehty)))
 
@@ -325,7 +325,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     }
     "palauttaa 200, jos vastaanotto on poistettu ja vastaanoton tila on sama" in {
       val v = erillishaunValinnantulos.copy(valintatapajonoOid = "vastaanotonTallennusJono2", hakukohdeOid = "vastaanotonTallennusJono2")
-      getValinnantuloksetForValintatapajono("vastaanotonTallennusJono2") mustEqual List()
+      getValinnantuloksetForValintatapajono("vastaanotonTallennusJono2") mustEqual Set()
 
       patchErillishakuJson(List(v.copy(vastaanottotila = ValintatuloksenTila.KESKEN, ilmoittautumistila = EiTehty)))
 
@@ -347,7 +347,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
     }
     "palauttaa 200 ja virhekoodin, jos vastaanoton tila ei ole sama" in {
       val v = erillishaunValinnantulos.copy(valintatapajonoOid = "vastaanotonTallennusVirheJono", hakukohdeOid = "vastaanotonTallennusVirheJono")
-      getValinnantuloksetForValintatapajono("vastaanotonTallennusVirheJono") mustEqual List()
+      getValinnantuloksetForValintatapajono("vastaanotonTallennusVirheJono") mustEqual Set()
 
       patchErillishakuJson(List(v.copy(vastaanottotila = ValintatuloksenTila.KESKEN, ilmoittautumistila = EiTehty)))
 
