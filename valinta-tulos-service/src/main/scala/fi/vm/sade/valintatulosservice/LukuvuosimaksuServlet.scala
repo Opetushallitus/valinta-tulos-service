@@ -31,22 +31,28 @@ class LukuvuosimaksuServlet(val sessionRepository: SessionRepository)(implicit v
 
   get("/:hakukohdeOid") {
     val personOid = authenticatedPersonOid
-    val hakukohdeOid: String = params("hakukohdeOid")
+    val hakukohdeOid = hakukohdeOidParam
 
     Ok(db.filter(_.hakukohdeOid.equals(hakukohdeOid)))
   }
 
   private var db: List[Lukuvuosimaksu] = Nil
 
-  post("/") {
+  post("/:hakukohdeOid") {
     val muokkaaja = authenticatedPersonOid
+
+    val hakukohdeOid = hakukohdeOidParam
 
     Try(parsedBody.extract[List[LukuvuosimaksuMuutos]]).getOrElse(Nil) match {
       case eimaksuja if eimaksuja.isEmpty =>
         InternalServerError("No 'lukuvuosimaksuja' in request body!")
       case lukuvuosimaksut =>
-        db = db ++ lukuvuosimaksut.map(m => Lukuvuosimaksu(m.personOid,m.hakukohdeOid,m.maksuntila, muokkaaja, new Date))
+        db = db ++ lukuvuosimaksut.map(m => Lukuvuosimaksu(m.personOid,hakukohdeOid,m.maksuntila, muokkaaja, new Date))
         NoContent()
     }
+  }
+
+  private def hakukohdeOidParam: String = {
+    Try(params("hakukohdeOid")).toOption.filter(!_.isEmpty).getOrElse(throw new RuntimeException("HakukohdeOid is mandatory!"))
   }
 }

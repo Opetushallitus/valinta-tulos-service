@@ -16,29 +16,29 @@ class LukuvuosimaksuServletSpec extends ServletSpecification with Valintarekiste
     new DateSerializer, new TilankuvauksenTarkenneSerializer, new IlmoittautumistilaSerializer, new VastaanottoActionSerializer, new ValintatuloksenTilaSerializer,
     new EnumNameSerializer(Maksuntila))
 
-  lazy val muutos = LukuvuosimaksuMuutos("1.2.3.personOid","1.2.3.hakukohdeOid",Maksuntila.vapautettu)
+  lazy val muutos = LukuvuosimaksuMuutos("1.2.3.personOid", Maksuntila.vapautettu)
   lazy val testSession = createTestSession()
   lazy val headers = Map("Cookie" -> s"session=${testSession}", "Content-type" -> "application/json")
 
   "POST /auth/lukuvuosimaksu" should {
     "palauttaa 204 kun tallennus onnistuu" in {
-      post(s"auth/lukuvuosimaksu", muutosAsJson, headers) {
+      post(s"auth/lukuvuosimaksu/1.2.3.100", muutosAsJson, headers) {
         status must_== 204
       }
     }
 
     "palauttaa tallennetut datat pyydettäessä" in {
-      get(s"auth/lukuvuosimaksu/${muutos.hakukohdeOid}", Nil, headers) {
+      get(s"auth/lukuvuosimaksu/1.2.3.100", Nil, headers) {
         status must_== 200
         import org.json4s.native.JsonMethods._
         val maksu = parse(body).extract[List[Lukuvuosimaksu]]
 
-        maksu.map(m => LukuvuosimaksuMuutos(m.personOid,m.hakukohdeOid,m.maksuntila)).head must_== muutos
+        maksu.map(m => LukuvuosimaksuMuutos(m.personOid,m.maksuntila)).head must_== muutos
       }
     }
 
     "palauttaa 500 kun syötetty data on virheellistä" in {
-      post(s"auth/lukuvuosimaksu", """[]""".getBytes("UTF-8"), headers) {
+      post(s"auth/lukuvuosimaksu/1.2.3.100", """[]""".getBytes("UTF-8"), headers) {
         status must_== 500
       }
     }
