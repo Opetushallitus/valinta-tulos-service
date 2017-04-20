@@ -23,7 +23,7 @@ class LukuvuosimaksuServlet(val sessionRepository: SessionRepository)(implicit v
 
   override protected def applicationDescription: String = "Lukuvuosimaksut REST API"
 
-  private def authenticatedPersonOid: String = {
+  protected def authenticatedPersonOid: String = {
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
     authenticate.session.personOid
