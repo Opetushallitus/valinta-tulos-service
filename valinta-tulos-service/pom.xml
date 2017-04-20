@@ -228,7 +228,6 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
-            <version>${FIXME.jetty.version}</version>
         </dependency>
         <dependency>
             <groupId>org.scalaz</groupId>
@@ -251,7 +250,6 @@
         <dependency>
             <groupId>org.clapper</groupId>
             <artifactId>grizzled-slf4j_2.11</artifactId>
-            <version>${grizzled-slf4j_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>org.json4s</groupId>
@@ -269,7 +267,6 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-webapp</artifactId>
-            <version>${FIXME.jetty.version}</version>
         </dependency>
         <dependency>
             <groupId>org.json4s</groupId>
