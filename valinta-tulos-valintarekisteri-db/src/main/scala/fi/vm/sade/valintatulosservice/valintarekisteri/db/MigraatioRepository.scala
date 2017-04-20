@@ -4,7 +4,8 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriR
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EhdollisenHyvaksynnanEhto, Ilmoittautuminen, ValinnantilanTallennus, ValinnantuloksenOhjaus, Hyvaksymiskirje => Kirje}
 import slick.dbio.DBIO
 
-trait ValinnantulosBatchRepository extends ValintarekisteriRepository {
+trait MigraatioRepository extends ValintarekisteriRepository {
+
   def storeBatch(valinnantilat: Seq[(ValinnantilanTallennus, TilanViimeisinMuutos)],
                  valinnantuloksenOhjaukset: Seq[ValinnantuloksenOhjaus],
                  ilmoittautumiset: Seq[(String, Ilmoittautuminen)],
@@ -12,4 +13,8 @@ trait ValinnantulosBatchRepository extends ValintarekisteriRepository {
                  hyvaksymisKirjeet: Seq[Kirje]): DBIO[Unit]
 
   def deleteValinnantilaHistorySavedBySijoitteluajoAndMigration(sijoitteluajoId: String): Unit
+
+  def deleteSijoittelunTulokset(hakuOid: String): Unit
+  def saveSijoittelunHash(hakuOid: String, hash: String): Unit
+  def getSijoitteluHash(hakuOid: String, hash: String): Option[String]
 }

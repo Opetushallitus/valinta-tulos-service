@@ -1,12 +1,10 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
 import scala.util.Try
 
-trait SijoitteluRepository extends ValintarekisteriRepository {
-  def storeSijoittelu(sijoittelu:SijoitteluWrapper)
+trait SijoitteluRepository {
 
   def getLatestSijoitteluajoId(hakuOid:String): Option[Long]
 
@@ -43,9 +41,4 @@ trait SijoitteluRepository extends ValintarekisteriRepository {
   def getHakukohteenPistetiedot(sijoitteluajoId:Long, hakukohdeOid:String): List[PistetietoRecord]
   def getHakukohteenTilahistoriat(sijoitteluajoId:Long, hakukohdeOid:String): List[TilaHistoriaRecord]
   def getHakukohteenHakemukset(sijoitteluajoId:Long, hakukohdeOid:String): List[HakemusRecord]
-
-  def deleteSijoittelunTulokset(hakuOid: String): Unit
-
-  def saveSijoittelunHash(hakuOid: String, hash: String): Unit
-  def getSijoitteluHash(hakuOid: String, hash: String): Option[String]
 }

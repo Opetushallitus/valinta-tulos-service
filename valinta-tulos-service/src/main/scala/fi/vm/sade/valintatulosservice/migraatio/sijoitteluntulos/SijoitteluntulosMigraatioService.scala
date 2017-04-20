@@ -19,7 +19,7 @@ import fi.vm.sade.valintatulosservice.migraatio.valinta.Valintalaskentakoostepal
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.MissingHakijaOidResolver
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosBatchRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{MigraatioRepository, SijoitteluRepository, StoreSijoitteluRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.Valintarekisteri
@@ -31,8 +31,7 @@ import scala.util.Try
 
 class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTulosRestClient,
                                        appConfig: VtsAppConfig,
-                                       sijoitteluRepository: SijoitteluRepository,
-                                       valinnantulosBatchRepository: ValinnantulosBatchRepository,
+                                       migraatioRepository: MigraatioRepository with SijoitteluRepository with StoreSijoitteluRepository,
                                        hakukohdeRecordService: HakukohdeRecordService,
                                        hakuService: HakuService,
                                        valintalaskentakoostepalveluService: ValintalaskentakoostepalveluService) extends Logging {
@@ -83,14 +82,14 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       logger.info(s"Starting to save valinta data sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid...")
       val (valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot, hyvaksymisKirjeet) = createSaveObjects(hakukohteet, valintatulokset)
       timed(s"Saving valinta data for sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid") {
-        valinnantulosBatchRepository.runBlocking(
-          valinnantulosBatchRepository.storeBatch(valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot, hyvaksymisKirjeet), Duration(15, MINUTES))
+        migraatioRepository.runBlocking(
+          migraatioRepository.storeBatch(valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot, hyvaksymisKirjeet), Duration(15, MINUTES))
       }
       logger.info("Deleting valinnantilat_history entries that were duplicated by sijoittelu and migration saves.")
       timed(s"Deleting duplicated valinnantilat_history entries of $mongoSijoitteluAjoId of haku $hakuOid") {
-        valinnantulosBatchRepository.deleteValinnantilaHistorySavedBySijoitteluajoAndMigration(mongoSijoitteluAjoId.toString)
+        migraatioRepository.deleteValinnantilaHistorySavedBySijoitteluajoAndMigration(mongoSijoitteluAjoId.toString)
       }
-      sijoitteluRepository.saveSijoittelunHash(hakuOid, sijoitteluHash)
+      migraatioRepository.saveSijoittelunHash(hakuOid, sijoitteluHash)
     }
     logger.info("-----------------------------------------------------------")
   }
@@ -129,7 +128,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
   }
 
   private def deleteExistingResultsFromPostgres(hakuOid: String, dryRun: Boolean) = {
-    val latestAjoIdFromPostgresOpt = sijoitteluRepository.getLatestSijoitteluajoId(hakuOid)
+    val latestAjoIdFromPostgresOpt = migraatioRepository.getLatestSijoitteluajoId(hakuOid)
     if (latestAjoIdFromPostgresOpt.isDefined) {
       val latestAjoIdFromPostgres = latestAjoIdFromPostgresOpt.get
       logger.info(s"Existing sijoitteluajo $latestAjoIdFromPostgres found in Postgres, deleting results of haku $hakuOid:")
@@ -137,7 +136,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
         logger.warn(s"dryRun : NOT removing existing sijoitteluajo $latestAjoIdFromPostgres data.")
       } else {
         logger.warn(s"Existing sijoitteluajo $latestAjoIdFromPostgres found, deleting all results of haku $hakuOid:")
-        sijoitteluRepository.deleteSijoittelunTulokset(hakuOid)
+        migraatioRepository.deleteSijoittelunTulokset(hakuOid)
       }
     } else {
       logger.info(s"No Sijoitteluajo for haku $hakuOid seems to be stored to Postgres db yet.")
@@ -146,7 +145,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
 
   private def storeSijoittelu(hakuOid: String, sijoitteluAjo: SijoitteluAjo, hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]) = {
     timed(s"Stored sijoitteluajo ${sijoitteluAjo.getSijoitteluajoId} of haku $hakuOid") {
-      sijoitteluRepository.storeSijoittelu(SijoitteluWrapper(sijoitteluAjo, hakukohteet, valintatulokset))
+      migraatioRepository.storeSijoittelu(SijoitteluWrapper(sijoitteluAjo, hakukohteet, valintatulokset))
     }
   }
 
@@ -320,7 +319,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
   }
 
   private def hashIsUpToDate(hakuOid: String, newHash: String): Boolean = {
-    sijoitteluRepository.getSijoitteluHash(hakuOid, newHash).nonEmpty
+    migraatioRepository.getSijoitteluHash(hakuOid, newHash).nonEmpty
   }
 
   private def getSijoitteluHash(sijoitteluajoId: Long, hakuOid: String): Either[IllegalArgumentException, String] = {

@@ -1,9 +1,10 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import java.sql.{Connection, PreparedStatement, Timestamp}
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MINUTES
 
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosBatchRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.MigraatioRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.dbio.DBIO
 import slick.driver.PostgresDriver.api._
@@ -11,7 +12,7 @@ import slick.driver.PostgresDriver.api._
 import scala.concurrent.duration.Duration
 import scala.util.Try
 
-trait ValinnantulosBatchRepositoryImpl extends ValinnantulosBatchRepository with ValintarekisteriRepository {
+trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriRepository {
   override def deleteValinnantilaHistorySavedBySijoitteluajoAndMigration(sijoitteluajoId: String): Unit = {
     logger.info(s"poistettavien sijoitteluajoId: $sijoitteluajoId")
     runBlocking(
@@ -241,5 +242,83 @@ trait ValinnantulosBatchRepositoryImpl extends ValinnantulosBatchRepository with
     statement.setTimestamp(3, new java.sql.Timestamp(kirje.lahetetty.getTime))
 
     statement.addBatch()
+  }
+
+  override def deleteSijoittelunTulokset(hakuOid: String): Unit = {
+    val sijoitteluAjoIds = runBlocking(sql"select id from sijoitteluajot where haku_oid = ${hakuOid} order by id asc".as[Long])
+    logger.info(s"Found ${sijoitteluAjoIds.length} sijoitteluajos to delete of haku $hakuOid : $sijoitteluAjoIds")
+    sijoitteluAjoIds.foreach(deleteSingleSijoitteluAjo(hakuOid, _))
+  }
+
+  private def deleteSingleSijoitteluAjo(hakuOid: String, sijoitteluajoId: Long): Unit = {
+    val tablesWithTriggers = Seq(
+      "tilat_kuvaukset",
+      "valinnantilat",
+      "valinnantulokset",
+      "ilmoittautumiset",
+      "hakijaryhman_hakemukset",
+      "pistetiedot",
+      "jonosijat")
+
+    val disableTriggers: DBIO[Seq[Int]] = DbUtils.disableTriggers(tablesWithTriggers)
+
+    val deleteOperationsWithDescriptions: Seq[(String, DBIO[Any])] = Seq(
+      (s"disable triggers of $tablesWithTriggers", DbUtils.disableTriggers(tablesWithTriggers)),
+
+      ("create tmp table hakukohde_oids_to_delete", sqlu"create temporary table hakukohde_oids_to_delete (oid character varying primary key) on commit drop"),
+      ("create tmp table jono_oids_to_delete", sqlu"create temporary table jono_oids_to_delete (oid character varying primary key) on commit drop"),
+      ("populate hakukohde_oids_to_delete", sqlu"""insert into hakukohde_oids_to_delete (
+               select distinct sa_hk.hakukohde_oid from sijoitteluajon_hakukohteet sa_hk where sa_hk.sijoitteluajo_id = ${sijoitteluajoId})"""),
+      ("populate jono_oids_to_delete", sqlu"insert into jono_oids_to_delete (select distinct j.oid from valintatapajonot j join hakukohde_oids_to_delete hotd on hotd.oid = j.hakukohde_oid)"),
+
+      ("delete hakijaryhman_hakemukset", sqlu"delete from hakijaryhman_hakemukset where sijoitteluajo_id = ${sijoitteluajoId}"),
+      ("delete hakijaryhmat", sqlu"delete from hakijaryhmat where sijoitteluajo_id = ${sijoitteluajoId}"),
+      ("delete pistetiedot", sqlu"delete from pistetiedot where sijoitteluajo_id = ${sijoitteluajoId}"),
+      ("delete jonosijat", sqlu"delete from jonosijat where sijoitteluajo_id = ${sijoitteluajoId}"),
+      ("delete valintatapajonot", sqlu"delete from valintatapajonot where sijoitteluajo_id = ${sijoitteluajoId}"),
+      ("delete sijoitteluajon_hakukohteet", sqlu"delete from sijoitteluajon_hakukohteet where sijoitteluajo_id = ${sijoitteluajoId}"),
+      ("delete sijoitteluajo", sqlu"delete from sijoitteluajot where id = ${sijoitteluajoId}"),
+
+      ("delete tilat_kuvaukset_history", sqlu"delete from tilat_kuvaukset_history where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete tilat_kuvaukset", sqlu"delete from tilat_kuvaukset where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete viestinnan_ohjaus", sqlu"delete from viestinnan_ohjaus where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete ehdollisen_hyvaksynnan_ehto_history", sqlu"delete from ehdollisen_hyvaksynnan_ehto_history where valintatapajono_oid in (select oid from jono_oids_to_delete)"),
+      ("delete ehdollisen_hyvaksynnan_ehto", sqlu"delete from ehdollisen_hyvaksynnan_ehto where valintatapajono_oid in (select oid from jono_oids_to_delete)"),
+      ("delete valinnantulokset_history", sqlu"delete from valinnantulokset_history where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete valinnantulokset", sqlu"delete from valinnantulokset where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete valinnantilat_history", sqlu"delete from valinnantilat_history where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete valinnantilat", sqlu"delete from valinnantilat where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+
+      ("delete ilmoittautumiset_history", sqlu"delete from ilmoittautumiset_history where hakukohde in (select oid from hakukohde_oids_to_delete)"),
+      ("delete ilmoittautumiset", sqlu"delete from ilmoittautumiset where hakukohde in (select oid from hakukohde_oids_to_delete)"),
+
+      (s"enable triggers of $tablesWithTriggers", DbUtils.enableTriggers(tablesWithTriggers))
+    )
+
+    val (descriptions, sqls) = deleteOperationsWithDescriptions.unzip
+
+    time(s"Delete sijoittelu contents of sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
+      logger.info(s"Deleting sijoitteluajo $sijoitteluajoId of haku $hakuOid ...")
+      runBlockingTransactionally(DBIO.sequence(sqls), timeout = Duration(30, TimeUnit.MINUTES)) match {
+        case Right(rowCounts) =>
+          logger.info(s"Delete of haku $hakuOid successful. " +
+            s"Lines affected:\n\t${descriptions.zip(rowCounts).mkString("\n\t")}")
+        case Left(t) =>
+          logger.error(s"Could not delete sijoitteluajo $sijoitteluajoId of haku $hakuOid", t)
+          throw t
+      }
+    }
+  }
+
+  override def saveSijoittelunHash(hakuOid: String, hash: String): Unit = {
+    runBlocking(
+      sqlu"""insert into mongo_sijoittelu_hashes values (${hakuOid}, ${hash})
+              on conflict (haku_oid) do update set hash = ${hash}""")
+  }
+
+  override def getSijoitteluHash(hakuOid: String, hash: String): Option[String] = {
+    runBlocking(
+      sql"""select * from mongo_sijoittelu_hashes
+            where haku_oid = ${hakuOid} and hash = ${hash}""".as[String]).headOption
   }
 }

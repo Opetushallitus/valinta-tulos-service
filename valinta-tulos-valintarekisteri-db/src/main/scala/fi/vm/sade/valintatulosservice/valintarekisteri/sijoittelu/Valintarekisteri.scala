@@ -7,7 +7,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.ValintarekisteriAppConfig
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, StoreSijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusRecord, SijoitteluWrapper}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
@@ -25,10 +25,10 @@ class ValintarekisteriForSijoittelu(appConfig:ValintarekisteriAppConfig.Valintar
   override val sijoitteluRepository = valintarekisteriDb
   override val valinnantulosRepository = valintarekisteriDb
   private val hakuService = HakuService(appConfig.hakuServiceConfig)
-  override val hakukohdeRecordService: HakukohdeRecordService = new HakukohdeRecordService(hakuService, sijoitteluRepository, appConfig.settings.lenientTarjontaDataParsing)
+  override val hakukohdeRecordService: HakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing)
 }
 
-class ValintarekisteriService(override val sijoitteluRepository:SijoitteluRepository,
+class ValintarekisteriService(override val sijoitteluRepository:SijoitteluRepository with StoreSijoitteluRepository,
                               override val valinnantulosRepository: ValinnantulosRepository,
                               override val hakukohdeRecordService: HakukohdeRecordService) extends Valintarekisteri {
 }
@@ -85,7 +85,7 @@ trait SijoitteluajoParts { this:Logging with PerformanceLogger =>
 
 abstract class Valintarekisteri extends Logging with PerformanceLogger with SijoitteluajoParts {
 
-  val sijoitteluRepository:SijoitteluRepository
+  val sijoitteluRepository:SijoitteluRepository with StoreSijoitteluRepository
   val hakukohdeRecordService: HakukohdeRecordService
   val valinnantulosRepository: ValinnantulosRepository
 
