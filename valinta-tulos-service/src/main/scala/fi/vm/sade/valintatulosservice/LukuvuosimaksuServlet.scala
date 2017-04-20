@@ -33,7 +33,8 @@ class LukuvuosimaksuServlet(val sessionRepository: SessionRepository)(implicit v
     val personOid = authenticatedPersonOid
     val hakukohdeOid = hakukohdeOidParam
 
-    Ok(db.filter(_.hakukohdeOid.equals(hakukohdeOid)))
+    val result = db.filter(_.hakukohdeOid.equals(hakukohdeOid)).groupBy(l => l.personOid).values.map(l => l.sortBy(a => a.luotu).reverse).map(l => l.head).toList
+    Ok(result)
   }
 
   private var db: List[Lukuvuosimaksu] = Nil
