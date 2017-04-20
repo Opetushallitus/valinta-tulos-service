@@ -171,8 +171,8 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
       }
     }
     "palauttaa 403, jos käyttäjällä ei ole kirjoitusoikeuksia organisaatioon" in {
-      patch("auth/valinnan-tulos/1234567?erillishaku=true", write(List(erillishaunValinnantulos)),
-        Map("Cookie" -> s"session=${createTestSession(Set(Role.SIJOITTELU_CRUD))}",
+      patch(uri = "auth/valinnan-tulos/1234567?erillishaku=true", body = write(List(erillishaunValinnantulos)).getBytes,
+        headers = Map("Cookie" -> s"session=${createTestSession(Set(Role.SIJOITTELU_CRUD))}",
           "If-Unmodified-Since" -> now)) {
         status must_== 403
         body mustEqual "{\"error\":\"Forbidden\"}"
@@ -304,7 +304,7 @@ class ValinnantulosServletSpec extends ServletSpecification with Valintarekister
       status must_== 200
       body.isEmpty mustEqual false
       val result = parse(body).extract[List[Valinnantulos]]
-      header("Last-Modified")
+      httpComponentsClient.header("Last-Modified")
     }
   }
 

@@ -23,7 +23,7 @@
         <grizzled-slf4j_2.11.version>1.0.2</grizzled-slf4j_2.11.version>
         <guava.version>18.0</guava.version>
         <hamcrest.version>1.3</hamcrest.version>
-        <http4s_2.11.version>0.13.2a</http4s_2.11.version>
+        <http4s_2.11.version>0.15.8</http4s_2.11.version>
         <jackson.version>2.8.4</jackson.version>
         <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
         <jetty.version>9.3.7.v20160115</jetty.version>
@@ -34,7 +34,7 @@
         <mongo-java-driver.version>3.4.2</mongo-java-driver.version>
         <morphia.version>1.2.1</morphia.version>
         <postgresql.version>9.4.1212</postgresql.version>
-        <scala-cas_2.11.version>0.4.0-SNAPSHOT</scala-cas_2.11.version>
+        <scala-cas_2.11.version>0.4.1-SNAPSHOT</scala-cas_2.11.version>
         <scala-ldap-client_2.11.version>1.0.0-SNAPSHOT</scala-ldap-client_2.11.version>
         <scala.version>2.11.8</scala.version>
         <scala-logging_2.11.version>3.1.0</scala-logging_2.11.version>
@@ -42,19 +42,17 @@
         <scala-xml_2.11.version>1.0.5</scala-xml_2.11.version>
         <scalaj-http_2.11.version>1.1.0</scalaj-http_2.11.version>
         <scalatra_2.11.version>2.3.0</scalatra_2.11.version>
-        <scalaz-stream_2.11.version>0.7.3a</scalaz-stream_2.11.version>
-        <scalaz_2.11.version>7.2.10</scalaz_2.11.version>
+        <scalaz-stream_2.11.version>0.7a</scalaz-stream_2.11.version> <!-- required by specs2 3.5 -->
+        <scalaz_2.11.version>7.1.11</scalaz_2.11.version> <!-- latest that works with http4s 0.15.8 -->
         <sijoittelu.version>5.3_OK-119-SNAPSHOT</sijoittelu.version>
         <slf4j-api.version>1.7.25</slf4j-api.version>
         <slick_2.11.version>3.1.1</slick_2.11.version>
-        <specs2_2.11.version>3.8.9</specs2_2.11.version>
+        <specs2_2.11.version>3.5</specs2_2.11.version> <!-- latest that works with scalaz 7.1.11 -->
         <spring.version>4.3.2.RELEASE</spring.version>
         <typesafe.config.version>1.2.1</typesafe.config.version>
 
         <!-- Old duplicate versions -->
-        <FIXME.http4s_2.11.version>0.10.1</FIXME.http4s_2.11.version>
         <FIXME.jetty.version>9.2.1.v20140609</FIXME.jetty.version>
-        <FIXME.scala-cas_2.11.version>0.3.2-SNAPSHOT</FIXME.scala-cas_2.11.version>
         <FIXME.plugin.maven-surefire-plugin.version>2.13</FIXME.plugin.maven-surefire-plugin.version>
 
         <enfore.java.version>[1.8,)</enfore.java.version>
@@ -99,6 +97,11 @@
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-library</artifactId>
                 <version>${scala.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.scala-lang.modules</groupId>
+                <artifactId>scala-java8-compat_2.11</artifactId>
+                <version>0.8.0</version>
             </dependency>
             <dependency>
                 <groupId>fi.vm.sade</groupId>
@@ -259,17 +262,32 @@
             <dependency>
                 <groupId>org.http4s</groupId>
                 <artifactId>http4s-client_2.11</artifactId>
-                <version>${FIXME.http4s_2.11.version}</version>
+                <version>${http4s_2.11.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.http4s</groupId>
+                <artifactId>http4s-blaze-client_2.11</artifactId>
+                <version>${http4s_2.11.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.http4s</groupId>
+                <artifactId>http4s-json4s-native_2.11</artifactId>
+                <version>${http4s_2.11.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.http4s</groupId>
                 <artifactId>http4s-core_2.11</artifactId>
-                <version>${FIXME.http4s_2.11.version}</version>
+                <version>${http4s_2.11.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.http4s</groupId>
+                <artifactId>http4s-websocket_2.11</artifactId>
+                <version>0.1.6</version>
             </dependency>
             <dependency>
                 <groupId>org.http4s</groupId>
                 <artifactId>blaze-http_2.11</artifactId>
-                <version>0.10.1</version>
+                <version>0.12.4</version>
             </dependency>
             <dependency>
                 <groupId>org.json4s</groupId>
@@ -305,6 +323,11 @@
                 <groupId>org.scalaz.stream</groupId>
                 <artifactId>scalaz-stream_2.11</artifactId>
                 <version>${scalaz-stream_2.11.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.scodec</groupId>
+                <artifactId>scodec-bits_2.11</artifactId>
+                <version>1.1.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -377,6 +400,11 @@
                 <artifactId>specs2-mock_2.11</artifactId>
                 <version>${specs2_2.11.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.spire-math</groupId>
+                <artifactId>jawn-parser_2.11</artifactId>
+                <version>0.10.4</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -28,7 +28,7 @@ class KelaServletSpec extends ServletSpecification with ValintarekisteriDbTools 
       post(s"cas/kela/vastaanotot/henkilo", "face-beef".getBytes("UTF-8"),headers) {
         status must_== 200
 
-        header.get("Content-Type") must_== Some("application/json; charset=UTF-8")
+        httpComponentsClient.header.get("Content-Type") must_== Some("application/json; charset=UTF-8")
 
         body startsWith("{")
       }

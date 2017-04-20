@@ -13,8 +13,9 @@ import org.json4s.JsonAST.JValue
 import org.json4s.Reader
 
 import scala.concurrent.duration.Duration
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 import scalaz.concurrent.Task
+import scalaz.{-\/, \/-}
 
 case class Henkiloviite(masterOid: String, henkiloOid: String)
 
@@ -28,10 +29,14 @@ class HenkiloviiteClient(configuration: AuthenticationConfiguration) {
       method = Method.GET,
       uri = resourceUrl
     )
-    Try(client.fetch(request) {
+
+    client.fetch(request) {
       case Successful(response) => response.as[Array[Henkiloviite]](HenkiloviiteClient.henkiloviiteDecoder).map(_.toList)
       case response => Task.fail(new RuntimeException(s"Request $request failed with response $response"))
-    }.unsafePerformSyncFor(Duration(1, TimeUnit.MINUTES)))
+    }.attemptRunFor(Duration(1, TimeUnit.MINUTES)) match {
+      case \/-(results) => Success(results)
+      case -\/(e) => Failure(e)
+    }
   }
 
   private def createCasClient(): Client = {

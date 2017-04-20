@@ -19,8 +19,8 @@ trait RestTestHelper {
 
   implicit val formats = DefaultFormats
 
-  protected def getOld(uriString:String) = {
-    vanhaSijoitteluCasClient.prepare(Request(method = Method.GET, uri = createUri(uriString))).flatMap {
+  protected def getOld(uriString: String): String = {
+    vanhaSijoitteluCasClient.fetch(Request(method = Method.GET, uri = createUri(uriString))) {
       case r if 200 == r.status.code => r.as[String]
       case r => Task.fail(new RuntimeException(s"$uriString => ${r.toString}"))
     }.run
@@ -34,13 +34,13 @@ trait RestTestHelper {
       new CasClient(cas_url, org.http4s.client.blaze.defaultClient),
       casParams,
       org.http4s.client.blaze.defaultClient,
-      null
-    )
+      "RestTestHelper"
+    ).httpClient
   }
 
   protected def get[T](fetch:() => String)(implicit m: Manifest[T]): T = parse(fetch()).extract[T]
 
-  protected def getNew(url: String, vtsSessionCookie: String) = {
+  protected def getNew(url: String, vtsSessionCookie: String): String = {
     val (statusCode, responseHeaders, result) =
       new DefaultHttpRequest(Http(url)
         .method("GET")

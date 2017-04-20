@@ -143,12 +143,10 @@
         <dependency>
             <groupId>org.http4s</groupId>
             <artifactId>http4s-blaze-client_2.11</artifactId>
-            <version>${FIXME.http4s_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>org.http4s</groupId>
             <artifactId>blaze-http_2.11</artifactId>
-            <version>${FIXME.http4s_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>fi.vm.sade</groupId>
@@ -158,7 +156,7 @@
         <dependency>
             <groupId>fi.vm.sade</groupId>
             <artifactId>scala-cas_2.11</artifactId>
-            <version>${FIXME.scala-cas_2.11.version}</version>
+            <version>${scala-cas_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.slick</groupId>
@@ -178,7 +176,6 @@
         <dependency>
             <groupId>org.http4s</groupId>
             <artifactId>http4s-json4s-native_2.11</artifactId>
-            <version>${FIXME.http4s_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>fi.vm.sade</groupId>
@@ -268,7 +265,6 @@
         <dependency>
             <groupId>org.http4s</groupId>
             <artifactId>http4s-core_2.11</artifactId>
-            <version>${FIXME.http4s_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
@@ -302,7 +298,6 @@
         <dependency>
             <groupId>org.http4s</groupId>
             <artifactId>http4s-client_2.11</artifactId>
-            <version>${FIXME.http4s_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

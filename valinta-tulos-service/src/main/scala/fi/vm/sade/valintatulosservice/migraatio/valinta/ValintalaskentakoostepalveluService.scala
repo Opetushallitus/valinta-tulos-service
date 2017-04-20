@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.migraatio.valinta
 
 import java.net.URLEncoder
+import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasParams}
 import fi.vm.sade.utils.slf4j.Logging
@@ -9,8 +10,9 @@ import org.http4s.{Method, Request, Uri}
 import org.json4s._
 import org.json4s.jackson.JsonMethods.parse
 
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.duration.Duration
 import scalaz.concurrent.Task
+import scalaz.{-\/, \/-}
 
 /**
   * Created by heikki.honkanen on 15/03/2017.
@@ -45,17 +47,12 @@ class ValintalaskentakoostepalveluService(appConfig: VtsAppConfig) extends Loggi
 
     implicit val hakukohdeResponseDecoder =  org.http4s.json4s.native.jsonOf[HakukohdeResponse]
 
-    Try(
-      valintalaskentakoosteClient.prepare({
-        Request(method = Method.GET, uri = createUri(url, ""))
-      }
-      ).flatMap {
-        case r if 200 == r.status.code => r.as[HakukohdeResponse]
-        case r => Task.fail(new RuntimeException(s"Error when checking hakukohde $hakukohdeOid from url $url : ${r.toString}"))
-      }.run
-    ) match {
-      case Success(response) => response.kayttaaValintalaskentaa
-      case Failure(t) => throw t
+    valintalaskentakoosteClient.httpClient.fetch(Request(method = Method.GET, uri = createUri(url, ""))) {
+      case r if 200 == r.status.code => r.as[HakukohdeResponse]
+      case r => Task.fail(new RuntimeException(s"Error when checking hakukohde $hakukohdeOid from url $url : ${r.toString}"))
+    }.attemptRunFor(Duration(1, TimeUnit.MINUTES)) match {
+      case \/-(response) => response.kayttaaValintalaskentaa
+      case -\/(t) => throw t
     }
   }
 
@@ -66,7 +63,7 @@ class ValintalaskentakoostepalveluService(appConfig: VtsAppConfig) extends Loggi
 
   private def createCasClient(appConfig: VtsAppConfig, targetService: String): CasAuthenticatingClient = {
     val params = CasParams(targetService, appConfig.settings.securitySettings.casUsername, appConfig.settings.securitySettings.casPassword)
-    new CasAuthenticatingClient(appConfig.securityContext.casClient, params, org.http4s.client.blaze.defaultClient)
+    new CasAuthenticatingClient(appConfig.securityContext.casClient, params, org.http4s.client.blaze.defaultClient, "valinta-tulos-service") // TODO read from constant
   }
 
   def parseStatus(json: String): Option[String] = {
