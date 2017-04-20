@@ -14,6 +14,10 @@ import org.scalatra.swagger.Swagger
 
 import scala.util.Try
 
+object TmpDb {
+  var db: List[Lukuvuosimaksu] = Nil
+}
+
 class LukuvuosimaksuServlet(val sessionRepository: SessionRepository)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase
   with CasAuthenticatedServlet {
 
@@ -33,11 +37,11 @@ class LukuvuosimaksuServlet(val sessionRepository: SessionRepository)(implicit v
     val personOid = authenticatedPersonOid
     val hakukohdeOid = hakukohdeOidParam
 
-    val result = db.filter(_.hakukohdeOid.equals(hakukohdeOid)).groupBy(l => l.personOid).values.map(l => l.sortBy(a => a.luotu).reverse).map(l => l.head).toList
+    val result = TmpDb.db.filter(_.hakukohdeOid.equals(hakukohdeOid)).groupBy(l => l.personOid).values.map(l => l.sortBy(a => a.luotu).reverse).map(l => l.head).toList
     Ok(result)
   }
 
-  private var db: List[Lukuvuosimaksu] = Nil
+
 
   post("/:hakukohdeOid") {
     val muokkaaja = authenticatedPersonOid
@@ -48,7 +52,7 @@ class LukuvuosimaksuServlet(val sessionRepository: SessionRepository)(implicit v
       case eimaksuja if eimaksuja.isEmpty =>
         InternalServerError("No 'lukuvuosimaksuja' in request body!")
       case lukuvuosimaksut =>
-        db = db ++ lukuvuosimaksut.map(m => Lukuvuosimaksu(m.personOid,hakukohdeOid,m.maksuntila, muokkaaja, new Date))
+        TmpDb.db = TmpDb.db ++ lukuvuosimaksut.map(m => Lukuvuosimaksu(m.personOid,hakukohdeOid,m.maksuntila, muokkaaja, new Date))
         NoContent()
     }
   }
