@@ -1,10 +1,12 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
+import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
 import scala.util.Try
 
-trait SijoitteluRepository {
+trait SijoitteluRepository extends PerformanceLogger { this:Logging =>
 
   def getLatestSijoitteluajoId(hakuOid:String): Option[Long]
 
@@ -15,6 +17,12 @@ trait SijoitteluRepository {
         new IllegalArgumentException(s"Väärän tyyppinen sijoitteluajon ID: $sijoitteluajoId"))
   }
 
+  def getLatestSijoitteluajoIdThrowFailure(sijoitteluajoId:String, hakuOid:String):Long =
+    getLatestSijoitteluajoId(sijoitteluajoId, hakuOid) match {
+      case Right(id) => id
+      case Left(failure) => throw failure
+    }
+
   def getSijoitteluajo(sijoitteluajoId:Long): Option[SijoitteluajoRecord]
   def getSijoitteluajonHakukohteet(sijoitteluajoId:Long): List[SijoittelunHakukohdeRecord]
   def getSijoitteluajonHakukohdeOidit(sijoitteluajoId:Long): List[String]
@@ -23,11 +31,25 @@ trait SijoitteluRepository {
   def getSijoitteluajonHakemustenHakijaryhmat(sijoitteluajoId:Long): Map[String,Set[String]]
   def getSijoitteluajonTilahistoriat(sijoitteluajoId:Long): List[TilaHistoriaRecord]
   def getSijoitteluajonHakijaryhmat(sijoitteluajoId:Long): List[HakijaryhmaRecord]
-  def getSijoitteluajonHakijaryhmanHakemukset(hakijaryhmaOid:String, sijoitteluajoId:Long): List[String]
+  def getSijoitteluajonHakijaryhmanHakemukset(sijoitteluajoId:Long, hakijaryhmaOid:String): List[String]
   def getSijoitteluajonPistetiedot(sijoitteluajoId:Long): List[PistetietoRecord]
   def getSijoitteluajonPistetiedotInChunks(sijoitteluajoId:Long, chunkSize:Int = 200): List[PistetietoRecord]
   def getSijoitteluajonHakemuksetInChunks(sijoitteluajoId:Long, chunkSize:Int = 300): List[HakemusRecord]
   def getValinnantilanKuvaukset(tilankuvausHashes:List[Int]): Map[Int,TilankuvausRecord]
+
+  type HakemusValintatapajono = (String, String)
+
+  def getSijoitteluajonTilahistoriatGroupByHakemusValintatapajono(sijoitteluajoId:Long):Map[HakemusValintatapajono, List[TilaHistoriaRecord]] =
+    getSijoitteluajonTilahistoriat(sijoitteluajoId).groupBy(tilahistoria => (tilahistoria.hakemusOid, tilahistoria.valintatapajonoOid))
+
+  def getSijoitteluajonPistetiedotGroupByHakemusValintatapajono(sijoitteluajoId:Long):Map[HakemusValintatapajono, List[PistetietoRecord]] =
+    getSijoitteluajonPistetiedot(sijoitteluajoId).groupBy(pistetieto => (pistetieto.hakemusOid, pistetieto.valintatapajonoOid))
+
+  def getValinnantilanKuvauksetForHakemukset(hakemukset:List[HakemusRecord]): Map[Int,TilankuvausRecord] =
+    getValinnantilanKuvaukset(hakemukset.map(_.tilankuvausHash).distinct)
+
+  def getSijoitteluajonValintatapajonotGroupedByHakukohde(sijoitteluajoId:Long): Map[String, List[ValintatapajonoRecord]] =
+    getSijoitteluajonValintatapajonot(sijoitteluajoId).groupBy(_.hakukohdeOid)
 
   def getHakemuksenHakija(hakemusOid:String, sijoitteluajoId:Long): Option[HakijaRecord]
   def getHakemuksenHakutoiveet(hakemusOid:String, sijoitteluajoId:Long): List[HakutoiveRecord]

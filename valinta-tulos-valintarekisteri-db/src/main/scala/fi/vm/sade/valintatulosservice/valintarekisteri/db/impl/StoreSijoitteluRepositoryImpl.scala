@@ -16,7 +16,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.JavaConverters._
 
 trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with ValintarekisteriRepository {
-  override def storeSijoittelu(sijoittelu: SijoitteluWrapper): Unit = {
+
+  override def storeSijoittelu(sijoittelu: SijoitteluWrapper): Unit = time(s"Haun ${sijoittelu.sijoitteluajo.getHakuOid} koko sijoittelun ${sijoittelu.sijoitteluajo.getSijoitteluajoId} tallennus") {
     val sijoitteluajoId = sijoittelu.sijoitteluajo.getSijoitteluajoId
     val hakuOid = sijoittelu.sijoitteluajo.getHakuOid
     runBlocking(insertSijoitteluajo(sijoittelu.sijoitteluajo)

@@ -65,7 +65,7 @@ class ValintarekisteriDbReadSijoitteluSpec extends Specification with ITSetup wi
 
     "get hakijaryhman hakemukset" in {
       val hakijaryhmaOid = singleConnectionValintarekisteriDb.getSijoitteluajonHakijaryhmat(1476936450191L).last.oid
-      singleConnectionValintarekisteriDb.getSijoitteluajonHakijaryhmanHakemukset(hakijaryhmaOid, 1476936450191L).size mustEqual 14
+      singleConnectionValintarekisteriDb.getSijoitteluajonHakijaryhmanHakemukset(1476936450191L, hakijaryhmaOid).size mustEqual 14
     }
 
     "get hakemuksen ilmoittaja, selite and viimeksiMuokattu" in {
