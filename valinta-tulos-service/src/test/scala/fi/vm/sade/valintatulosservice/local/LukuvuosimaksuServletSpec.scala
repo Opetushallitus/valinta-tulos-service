@@ -16,13 +16,17 @@ class LukuvuosimaksuServletSpec extends ServletSpecification with Valintarekiste
     new DateSerializer, new TilankuvauksenTarkenneSerializer, new IlmoittautumistilaSerializer, new VastaanottoActionSerializer, new ValintatuloksenTilaSerializer,
     new EnumNameSerializer(Maksuntila))
 
-  lazy val muutos = LukuvuosimaksuMuutos("1.2.3.personOid", Maksuntila.vapautettu)
+  lazy val vapautettu = LukuvuosimaksuMuutos("1.2.3.personOid", Maksuntila.vapautettu)
+  lazy val maksettu = LukuvuosimaksuMuutos("1.2.3.personOid", Maksuntila.maksettu)
   lazy val testSession = createTestSession()
   lazy val headers = Map("Cookie" -> s"session=${testSession}", "Content-type" -> "application/json")
 
   "POST /auth/lukuvuosimaksu" should {
     "palauttaa 204 kun tallennus onnistuu" in {
-      post(s"auth/lukuvuosimaksu/1.2.3.100", muutosAsJson, headers) {
+      post(s"auth/lukuvuosimaksu/1.2.3.100", muutosAsJson(vapautettu), headers) {
+        status must_== 204
+      }
+      post(s"auth/lukuvuosimaksu/1.2.3.100", muutosAsJson(maksettu), headers) {
         status must_== 204
       }
     }
@@ -33,7 +37,7 @@ class LukuvuosimaksuServletSpec extends ServletSpecification with Valintarekiste
         import org.json4s.native.JsonMethods._
         val maksu = parse(body).extract[List[Lukuvuosimaksu]]
 
-        maksu.map(m => LukuvuosimaksuMuutos(m.personOid,m.maksuntila)).head must_== muutos
+        maksu.map(m => LukuvuosimaksuMuutos(m.personOid,m.maksuntila)).head must_== maksettu
       }
     }
 
@@ -45,9 +49,9 @@ class LukuvuosimaksuServletSpec extends ServletSpecification with Valintarekiste
 
   }
 
-  private def muutosAsJson = {
+  private def muutosAsJson(l: LukuvuosimaksuMuutos) = {
     import org.json4s.native.Serialization.{write}
-    val json = write(List(muutos))
+    val json = write(List(l))
 
     json.getBytes("UTF-8")
   }
