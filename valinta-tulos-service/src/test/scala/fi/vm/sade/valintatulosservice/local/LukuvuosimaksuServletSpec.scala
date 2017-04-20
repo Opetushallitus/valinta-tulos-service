@@ -21,6 +21,19 @@ class LukuvuosimaksuServletSpec extends ServletSpecification with Valintarekiste
   lazy val testSession = createTestSession()
   lazy val headers = Map("Cookie" -> s"session=${testSession}", "Content-type" -> "application/json")
 
+  "Lukuvuosimaksu API without CAS should work" should {
+    "palauttaa 204 when POST with 'kutsuja' query param" in {
+      post(s"lukuvuosimaksu/1.2.3.200?kutsuja=1.2.3.4", muutosAsJson(vapautettu), Map("Content-type" -> "application/json")) {
+        status must_== 204
+      }
+    }
+    "fail with 500 when calling without 'kutsuja' query param" in {
+      post(s"lukuvuosimaksu/1.2.3.200", muutosAsJson(vapautettu), Map("Content-type" -> "application/json")) {
+        status must_== 400
+      }
+    }
+  }
+
   "POST /auth/lukuvuosimaksu" should {
     "palauttaa 204 kun tallennus onnistuu" in {
       post(s"auth/lukuvuosimaksu/1.2.3.100", muutosAsJson(vapautettu), headers) {
