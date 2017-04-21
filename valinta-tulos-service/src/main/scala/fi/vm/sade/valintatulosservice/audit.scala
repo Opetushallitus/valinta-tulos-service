@@ -26,3 +26,11 @@ case object ValinnantuloksenMuokkaus extends Operation {
 case object ValinnantuloksenPoisto extends Operation {
   def name: String = "VALINNANTULOKSEN_POISTO"
 }
+
+case object LukuvuosimaksujenLuku extends Operation {
+  def name: String = "LUKUVUOSIMAKSUJEN_LUKU"
+}
+
+case object LukuvuosimaksujenMuokkaus extends Operation {
+  def name: String = "LUKUVUOSIMAKSUJEN_MUOKKAUS"
+}

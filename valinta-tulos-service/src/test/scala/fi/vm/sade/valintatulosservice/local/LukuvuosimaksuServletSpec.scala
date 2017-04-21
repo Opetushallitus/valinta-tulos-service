@@ -1,20 +1,27 @@
 package fi.vm.sade.valintatulosservice.local
 
-import fi.vm.sade.valintatulosservice.{ValintatuloksenTilaSerializer, VastaanottoActionSerializer, IlmoittautumistilaSerializer, ServletSpecification}
-import fi.vm.sade.valintatulosservice.lukuvuosimaksut.{LukuvuosimaksuMuutos, Maksuntila, Lukuvuosimaksu}
+import fi.vm.sade.valintatulosservice.lukuvuosimaksut.LukuvuosimaksuMuutos
+import fi.vm.sade.valintatulosservice._
+import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Lukuvuosimaksu, Maksuntila}
 import org.json4s.DefaultFormats
 import org.json4s.ext.EnumNameSerializer
 import org.junit.runner.RunWith
+import org.mockserver.integration.ClientAndServer
+import org.mockserver.model.{HttpRequest, HttpResponse}
 import org.specs2.runner.JUnitRunner
-import org.specs2.specification.BeforeExample
-import slick.driver.PostgresDriver.api._
 
 @RunWith(classOf[JUnitRunner])
 class LukuvuosimaksuServletSpec extends ServletSpecification with ValintarekisteriDbTools {
   override implicit val formats = DefaultFormats ++ List(new TasasijasaantoSerializer, new ValinnantilaSerializer,
     new DateSerializer, new TilankuvauksenTarkenneSerializer, new IlmoittautumistilaSerializer, new VastaanottoActionSerializer, new ValintatuloksenTilaSerializer,
     new EnumNameSerializer(Maksuntila))
+
+  val organisaatioService:ClientAndServer = ClientAndServer.startClientAndServer(VtsAppConfig.organisaatioMockPort)
+  organisaatioService.when(new HttpRequest().withPath(
+    s"/organisaatio-service/rest/organisaatio/123.123.123.123/parentoids"
+  )).respond(new HttpResponse().withStatusCode(200).withBody("1.2.246.562.10.00000000001/1.2.246.562.10.39804091914/123.123.123.123"))
 
   lazy val vapautettu = LukuvuosimaksuMuutos("1.2.3.personOid", Maksuntila.vapautettu)
   lazy val maksettu = LukuvuosimaksuMuutos("1.2.3.personOid", Maksuntila.maksettu)
@@ -63,7 +70,7 @@ class LukuvuosimaksuServletSpec extends ServletSpecification with Valintarekiste
   }
 
   private def muutosAsJson(l: LukuvuosimaksuMuutos) = {
-    import org.json4s.native.Serialization.{write}
+    import org.json4s.native.Serialization.write
     val json = write(List(l))
 
     json.getBytes("UTF-8")

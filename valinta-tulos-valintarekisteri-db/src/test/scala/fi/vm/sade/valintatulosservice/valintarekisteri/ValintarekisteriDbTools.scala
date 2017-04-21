@@ -92,7 +92,8 @@ trait ValintarekisteriDbTools extends Specification {
       sqlu"truncate table valintatapajonot cascade",
       sqlu"truncate table sijoitteluajon_hakukohteet cascade",
       sqlu"truncate table hakukohteet cascade",
-      sqlu"truncate table sijoitteluajot cascade"
+      sqlu"truncate table sijoitteluajot cascade",
+      sqlu"truncate table lukuvuosimaksut cascade"
       ).transactionally)
   }
 
