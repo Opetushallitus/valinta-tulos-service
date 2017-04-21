@@ -46,7 +46,7 @@
         <sijoittelu.version>5.3_OK-119-SNAPSHOT</sijoittelu.version>
         <slf4j-api.version>1.7.25</slf4j-api.version>
         <slick_2.11.version>3.1.1</slick_2.11.version>
-        <specs2_2.11.version>3.5</specs2_2.11.version> <!-- latest that works with scalaz 7.1.11 -->
+        <specs2_2.11.version>3.8.6-scalaz-7.1</specs2_2.11.version>
         <spring.version>4.3.2.RELEASE</spring.version>
         <typesafe.config.version>1.2.1</typesafe.config.version>
 
