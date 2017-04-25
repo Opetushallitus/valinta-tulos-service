@@ -288,6 +288,9 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
     lazy val hakemusOidsByHakijaOids = timed(s"Fetch hakija oids by hakemus oids for haku $hakuOid and hakukohde $hakukohdeOid", 1000) {
       hakemusRepository.findPersonOids(hakuOid, hakukohdeOid)
     }
+    lazy val hakemusOidsByHakijaOidsForWholeHaku = timed(s"Fetch hakija oids by hakemus oids for haku $hakuOid $hakukohdeOid", 1000) {
+      hakemusRepository.findPersonOids(hakuOid)
+    }
 
     val valintatulokset: util.List[Valintatulos] = timed(s"Fetch plain valintatulokset for haku $hakuOid", 1000) {
       valintatulosDao.loadValintatuloksetForHakukohde(hakukohdeOid)
@@ -300,7 +303,11 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
     val valintatulosIterator = valintatulokset.iterator()
     while (valintatulosIterator.hasNext) {
       val v = valintatulosIterator.next()
-      val hakijaOid = if (StringUtils.isNotBlank(v.getHakijaOid)) v.getHakijaOid else hakemusOidsByHakijaOids(v.getHakemusOid)
+      val hakijaOid: String = if (StringUtils.isNotBlank(v.getHakijaOid)) v.getHakijaOid else hakemusOidsByHakijaOids.getOrElse(v.getHakemusOid, {
+        logger.warn(s"Could not find hakija oid for ${v.getHakemusOid} when finding for hakukohde $hakukohdeOid , " +
+          s"resorting to searching from whole haku $hakuOid")
+        hakemusOidsByHakijaOidsForWholeHaku(v.getHakemusOid)
+      })
       val henkilonVastaanotot = haunVastaanotot.get(hakijaOid)
       val hakijanVastaanototHakukohteeseen: List[VastaanottoRecord] = henkilonVastaanotot.map(_.filter(_.hakukohdeOid == hakukohdeOid)).toList.flatten
       val tilaVirkailijalle: ValintatuloksenTila = paatteleVastaanottotilaVirkailijaaVarten(hakijaOid, hakijanVastaanototHakukohteeseen, haku, kaudenVastaanotot)
