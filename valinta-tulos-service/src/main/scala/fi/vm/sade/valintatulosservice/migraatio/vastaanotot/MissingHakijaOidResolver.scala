@@ -54,7 +54,7 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
     implicit val henkiloReader = new Reader[Henkilo] {
       override def read(v: JValue): Henkilo = {
         val searchResults = (v \\ "results").children
-        if (searchResults.values.size > 1) {
+        if (searchResults.values.size != 1) {
           val message = s"Found ${searchResults.values.size} hits for same hetu! $searchResults"
           logger.error(message)
           throw new IllegalStateException(message)
