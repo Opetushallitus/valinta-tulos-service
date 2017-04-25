@@ -42,7 +42,6 @@ object HakijaResolver {
 class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with Logging with HakijaResolver {
   private val hakuClient = createCasClient(appConfig, "/haku-app")
   private val henkiloClient = createCasClient(appConfig, "/authentication-service")
-  private val hakuUrlBase = appConfig.ophUrlProperties.url("haku-app.listfull.queryBase")
   private val henkiloPalveluUrlBase = appConfig.ophUrlProperties.url("authentication-service.henkilo")
 
   case class HakemusHenkilo(personOid: Option[String], hetu: Option[String], etunimet: String, sukunimi: String, kutsumanimet: String,
@@ -81,9 +80,8 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
   def findPersonOidByHakemusOid(hakemusOid: String): Option[String] = {
     implicit val hakemusHenkiloReader = new Reader[HakemusHenkilo] {
       override def read(v: JValue): HakemusHenkilo = {
-        val result: JValue = (v \\ "answers")
-        val henkilotiedot = (result \ "henkilotiedot")
-        HakemusHenkilo( (v \\ "personOid").children.map(_.extract[String]).headOption, (henkilotiedot \ "Henkilotunnus").extractOpt[String],
+        val henkilotiedot = v \ "answers" \ "henkilotiedot"
+        HakemusHenkilo( (v \ "personOid").extractOpt[String], (henkilotiedot \ "Henkilotunnus").extractOpt[String],
           (henkilotiedot \ "Etunimet").extract[String], (henkilotiedot \ "Sukunimi").extract[String],
           (henkilotiedot \ "Kutsumanimi").extract[String], (henkilotiedot \ "syntymaaika").extract[String],
           (henkilotiedot \ "aidinkieli").extractOpt[String], (henkilotiedot \ "sukupuoli").extractOpt[String])
@@ -92,7 +90,9 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
 
     implicit val hakemusHenkiloDecoder = org.http4s.json4s.native.jsonOf[HakemusHenkilo]
 
-    val henkiloFromHakemus = hakuClient.httpClient.fetch(Request(method = Method.GET, uri = createUri(hakuUrlBase, hakemusOid))) {
+    val stringUri = appConfig.ophUrlProperties.url("haku-app.application.queryBase", hakemusOid)
+    val url = Uri.fromString(stringUri).getOrElse(throw new RuntimeException(s"Invalid uri: $stringUri"))
+    val henkiloFromHakemus = hakuClient.httpClient.fetch(Request(method = Method.GET, uri = url)) {
       case r if 200 == r.status.code => r.as[HakemusHenkilo]
       case r => Task.fail(new RuntimeException(s"Got non-OK response from haku-app when fetching hakemus $hakemusOid: ${r.toString}"))
     }.attemptRunFor(Duration(1, TimeUnit.MINUTES)) match {
