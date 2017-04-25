@@ -83,7 +83,7 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
       override def read(v: JValue): HakemusHenkilo = {
         val result: JValue = (v \\ "answers")
         val henkilotiedot = (result \ "henkilotiedot")
-        HakemusHenkilo( (v \\ "personOid").extractOpt[String], (henkilotiedot \ "Henkilotunnus").extractOpt[String],
+        HakemusHenkilo( (v \\ "personOid").children.map(_.extract[String]).headOption, (henkilotiedot \ "Henkilotunnus").extractOpt[String],
           (henkilotiedot \ "Etunimet").extract[String], (henkilotiedot \ "Sukunimi").extract[String],
           (henkilotiedot \ "Kutsumanimi").extract[String], (henkilotiedot \ "syntymaaika").extract[String],
           (henkilotiedot \ "aidinkieli").extractOpt[String], (henkilotiedot \ "sukupuoli").extractOpt[String])
