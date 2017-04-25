@@ -44,12 +44,7 @@ class LukuvuosimaksuServletWithCAS(lukuvuosimaksuService: LukuvuosimaksuService,
       Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).fold(throw _, x => x)
 
     val lukuvuosimaksus = lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, auditInfo)
-    val result = lukuvuosimaksus
-      .groupBy(l => l.personOid).values
-      .map(l => l.sortBy(a => a.luotu).reverse)
-      .map(l => l.head).toList
-
-    Ok(result)
+    Ok(lukuvuosimaksus)
   }
 
 
@@ -61,9 +56,7 @@ class LukuvuosimaksuServletWithCAS(lukuvuosimaksuService: LukuvuosimaksuService,
     val hakukohdeOid = hakukohdeOidParam
 
     Try(parsedBody.extract[List[LukuvuosimaksuMuutos]]).getOrElse(Nil) match {
-      case eimaksuja if eimaksuja.isEmpty =>
-        InternalServerError("No 'lukuvuosimaksuja' in request body!")
-      case lukuvuosimaksuMuutokset =>
+      case lukuvuosimaksuMuutokset if lukuvuosimaksuMuutokset.nonEmpty =>
         val lukuvuosimaksut = lukuvuosimaksuMuutokset.map(m => {
           Lukuvuosimaksu(m.personOid, hakukohdeOid, m.maksuntila, muokkaaja, new Date)
         })
@@ -72,10 +65,12 @@ class LukuvuosimaksuServletWithCAS(lukuvuosimaksuService: LukuvuosimaksuService,
           authorizer.checkAccess(auditInfo.session._2, hakukohde.tarjoajaOids,
             Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).fold(throw _, x => x)
         })
-
         lukuvuosimaksuService.updateLukuvuosimaksut(lukuvuosimaksut, auditInfo)
-
         NoContent()
+
+      case _ =>
+        InternalServerError("No 'lukuvuosimaksuja' in request body!")
+
     }
   }
 

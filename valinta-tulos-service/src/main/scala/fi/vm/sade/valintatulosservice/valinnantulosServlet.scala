@@ -1,18 +1,13 @@
 package fi.vm.sade.valintatulosservice
-import java.net.InetAddress
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId, ZonedDateTime}
-import java.util.UUID
 
 import fi.vm.sade.security.AuthorizationFailedException
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, IlmoittautumisTila, ValintatuloksenTila}
-import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.json.JsonFormats
-import fi.vm.sade.valintatulosservice.security.{Role, Session}
+import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra._
-import org.scalatra.json.JacksonJsonSupport
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 
@@ -126,27 +121,12 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
 }
 
 class ErillishakuServlet(valinnantulosService: ValinnantulosService)(implicit val swagger: Swagger)
-  extends ValinnantulosServletBase {
+  extends ValinnantulosServletBase with AuditInfoParameter {
 
   override val applicationName = Some("erillishaku/valinnan-tulos")
   override val applicationDescription = "Erillishaun valinnantuloksen REST API"
 
-  private def getSession(auditSession: AuditSession): (UUID, Session) = (UUID.randomUUID(), getAuditSession(auditSession))
-
-  private def getAuditSession(s:AuditSession) = fi.vm.sade.valintatulosservice.security.AuditSession(s.personOid, s.roles.map(Role(_)).toSet)
-
-  private def parseAuditSession = parsedBody.extract[ValinnantulosRequest].auditSession
-
-  protected def getAuditInfo = {
-    val auditSession = parseAuditSession
-    AuditInfo(
-      getSession(auditSession),
-      InetAddress.getByName(auditSession.inetAddress),
-      auditSession.userAgent
-    )
-  }
-
-  val erillishaunValinnantulosMuutosSwagger: OperationBuilder = (apiOperation[Unit]("muokkaaValinnantulosta")
+    val erillishaunValinnantulosMuutosSwagger: OperationBuilder = (apiOperation[Unit]("muokkaaValinnantulosta")
     summary "Muokkaa erillishaun valinnantulosta"
     parameter pathParam[String]("valintatapajonoOid").description("Valintatapajonon OID")
     parameter headerParam[String]("If-Unmodified-Since").description(s"Aikaleima RFC 1123 määrittelemässä muodossa $sample").required
@@ -160,7 +140,7 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService)(implicit va
   }))
   post("/:valintatapajonoOid", operation(erillishaunValinnantulosMuutosSwagger)) {
     contentType = formats("json")
-    val auditInfo = getAuditInfo
+    val auditInfo = getAuditInfo(parsedBody.extract[ValinnantulosRequest])
     if (!auditInfo.session._2.hasAnyRole(Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))) {
       throw new AuthorizationFailedException()
     }
@@ -172,7 +152,7 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService)(implicit va
         valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, auditInfo, true)
     )
   }
+
 }
 
-case class AuditSession(personOid:String, roles:List[String], userAgent:String, inetAddress:String)
-case class ValinnantulosRequest(valinnantulokset:List[Valinnantulos], auditSession:AuditSession)
+case class ValinnantulosRequest(valinnantulokset:List[Valinnantulos], auditSession: AuditSessionRequest) extends RequestWithAuditSession

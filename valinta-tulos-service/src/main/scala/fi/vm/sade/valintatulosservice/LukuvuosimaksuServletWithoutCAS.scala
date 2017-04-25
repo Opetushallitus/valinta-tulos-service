@@ -15,7 +15,7 @@ import scala.util.Try
 
 class LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService: LukuvuosimaksuService)
                                   (implicit val swagger: Swagger, appConfig: VtsAppConfig)
-  extends VtsServletBase {
+  extends VtsServletBase with AuditInfoParameter {
 
   implicit val defaultFormats = DefaultFormats + new EnumNameSerializer(Maksuntila)
 
@@ -23,35 +23,34 @@ class LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService: LukuvuosimaksuServi
 
   override protected def applicationDescription: String = "Lukuvuosimaksut unauthenticated REST API"
 
-  def authenticatedPersonOid: String = {
-    Option(params("kutsuja")).getOrElse(throw new RuntimeException("Query parameter kutsuja is missing!"))
-  }
-
   get("/:hakukohdeOid") {
     val hakukohdeOid = hakukohdeOidParam
-    val lukuvuosimaksus = lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, null)
-    val result = lukuvuosimaksus.groupBy(l => l.personOid).values.map(l => l.sortBy(a => a.luotu).reverse)
-      .map(l => l.head).toList
 
-    Ok(result)
+    val lukuvuosiRequest = parsedBody.extract[LukuvuosimaksuRequest]
+    val auditInfo = getAuditInfo(lukuvuosiRequest)
+
+    val lukuvuosimaksus = lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, auditInfo)
+    Ok(lukuvuosimaksus)
   }
 
 
   post("/:hakukohdeOid") {
-    val muokkaaja = authenticatedPersonOid
-
     val hakukohdeOid = hakukohdeOidParam
 
-    Try(parsedBody.extract[List[LukuvuosimaksuMuutos]]).getOrElse(Nil) match {
-      case eimaksuja if eimaksuja.isEmpty =>
-        InternalServerError("No 'lukuvuosimaksuja' in request body!")
-      case lukuvuosimaksuMuutokset =>
+    val lukuvuosimaksuRequest = parsedBody.extract[LukuvuosimaksuRequest]
+
+    val auditInfo = getAuditInfo(lukuvuosimaksuRequest)
+
+    lukuvuosimaksuRequest.lukuvuosimaksuMuutokset match {
+      case lukuvuosimaksuMuutokset if lukuvuosimaksuMuutokset.nonEmpty =>
         val lukuvuosimaksut = lukuvuosimaksuMuutokset.map(m => {
-          Lukuvuosimaksu(m.personOid, hakukohdeOid, m.maksuntila, muokkaaja, new Date)
+          Lukuvuosimaksu(m.personOid, hakukohdeOid, m.maksuntila, auditInfo.session._2.personOid, new Date)
         })
-        lukuvuosimaksuService.updateLukuvuosimaksut(lukuvuosimaksut, null)
+        lukuvuosimaksuService.updateLukuvuosimaksut(lukuvuosimaksut, auditInfo)
 
         NoContent()
+      case _ =>
+        InternalServerError("No 'lukuvuosimaksuja' in request body!")
     }
   }
 
@@ -59,4 +58,8 @@ class LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService: LukuvuosimaksuServi
     Try(params("hakukohdeOid")).toOption.filter(!_.isEmpty)
       .getOrElse(throw new RuntimeException("HakukohdeOid is mandatory!"))
   }
+
 }
+
+case class LukuvuosimaksuRequest(lukuvuosimaksuMuutokset: List[LukuvuosimaksuMuutos], auditSession: AuditSessionRequest)
+  extends RequestWithAuditSession
