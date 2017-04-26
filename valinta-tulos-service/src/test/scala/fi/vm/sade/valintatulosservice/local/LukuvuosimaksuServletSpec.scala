@@ -34,12 +34,12 @@ class LukuvuosimaksuServletSpec extends ServletSpecification with Valintarekiste
 
   "Lukuvuosimaksu API without CAS should work" should {
     "palauttaa 204 when POST with 'auditInfo'" in {
-      post(s"lukuvuosimaksu/1.2.3.200", muutosAsJsonWithAuditSession(vapautettu), Map("Content-type" -> "application/json")) {
+      post(s"lukuvuosimaksu/write/1.2.3.200", muutosAsJsonWithAuditSession(vapautettu), Map("Content-type" -> "application/json")) {
         status must_== 204
       }
     }
     "fail with 400 when calling without 'auditInfo'" in {
-      post(s"lukuvuosimaksu/1.2.3.200", muutosAsJson(vapautettu), Map("Content-type" -> "application/json")) {
+      post(s"lukuvuosimaksu/write/1.2.3.200", muutosAsJson(vapautettu), Map("Content-type" -> "application/json")) {
         status must_== 400
       }
     }
