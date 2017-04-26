@@ -84,7 +84,18 @@ class ScalatraBootstrap extends LifeCycle {
 
     if(null != migrationMode && "true".equalsIgnoreCase(migrationMode)) {
       context.mount(new SijoittelunTulosMigraatioServlet(migraatioService), "/sijoittelun-tulos-migraatio")
+      val forceRunningBasicVtsWithMigration = System.getProperty("valinta-rekisteri-force-basic-vts-with-migration")
+      if (forceRunningBasicVtsWithMigration != null && "true".equals(forceRunningBasicVtsWithMigration)) {
+        mountBasicVts()
+      }
     } else {
+      mountBasicVts()
+    }
+    context.mount(new HakukohdeRefreshServlet(valintarekisteriDb, hakukohdeRecordService), "/virkistys")
+
+    context.mount(new SwaggerServlet, "/swagger/*")
+
+    def mountBasicVts(): Unit = {
       context.mount(new BuildInfoServlet, "/")
       context.mount(new CasLogin(
         appConfig.settings.securitySettings.casUrl,
@@ -124,9 +135,6 @@ class ScalatraBootstrap extends LifeCycle {
       context.mount(new LukuvuosimaksuServletWithCAS(lukuvuosimaksuService, valintarekisteriDb, hakuService, authorizer), "/auth/lukuvuosimaksu")
       context.mount(new MuutoshistoriaServlet(valinnantulosService, valintarekisteriDb), "/auth/muutoshistoria")
     }
-    context.mount(new HakukohdeRefreshServlet(valintarekisteriDb, hakukohdeRecordService), "/virkistys")
-
-    context.mount(new SwaggerServlet, "/swagger/*")
   }
 
   def createCasLdapFilter(casSessionService: CasSessionService, roles: Set[Role]): CasLdapFilter =
