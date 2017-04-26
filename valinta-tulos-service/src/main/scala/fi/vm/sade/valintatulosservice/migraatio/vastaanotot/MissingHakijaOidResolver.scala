@@ -52,21 +52,27 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
   private def findPersonOidByHetu(hetu: String): Option[String] = findPersonByHetu(hetu).map(_.oidHenkilo)
 
   override def findPersonByHetu(hetu: String, timeout: Duration = 60 seconds): Option[Henkilo] = {
-    implicit val henkiloReader = new Reader[Henkilo] {
-      override def read(v: JValue): Henkilo = {
+    implicit val henkiloReader = new Reader[Option[Henkilo]] {
+      override def read(v: JValue): Option[Henkilo] = {
         val henkilotiedot = (v \\ "results")
-        Henkilo( (v \\ "oidHenkilo").extract[String], (henkilotiedot \ "hetu").extract[String],
-          (henkilotiedot \ "etunimet").extract[String], (henkilotiedot \ "sukunimi").extract[String])
+        henkilotiedot match {
+          case JArray(tiedot) if tiedot.isEmpty =>
+            None
+          case _ =>
+            Some(Henkilo( (v \\ "oidHenkilo").extract[String], (henkilotiedot \ "hetu").extract[String],
+              (henkilotiedot \ "etunimet").extract[String], (henkilotiedot \ "sukunimi").extract[String]))
+        }
+
       }
     }
 
-    implicit val henkiloDecoder = org.http4s.json4s.native.jsonOf[Henkilo]
+    implicit val henkiloDecoder = org.http4s.json4s.native.jsonOf[Option[Henkilo]]
 
     Try(henkiloClient.prepare(createUri(henkiloPalveluUrlBase + "?q=", hetu)).timed(timeout).flatMap {
-      case r if 200 == r.status.code => r.as[Henkilo]
+      case r if 200 == r.status.code => r.as[Option[Henkilo]]
       case r => Task.fail(new RuntimeException(r.toString))
     }.run) match {
-      case Success(henkilo) => Some(henkilo)
+      case Success(henkilo) => henkilo
       case Failure(t) =>
         handleFailure(t, "searching person oid by hetu " + Option(hetu).map(_.replaceAll(".","*")))
         throw t
