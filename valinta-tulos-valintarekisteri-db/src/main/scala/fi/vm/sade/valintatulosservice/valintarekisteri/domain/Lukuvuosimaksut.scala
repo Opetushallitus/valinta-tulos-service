@@ -11,4 +11,4 @@ object Maksuntila extends Enumeration {
   val vapautettu = Value("VAPAUTETTU")
 }
 
-case class Lukuvuosimaksu(personOid: String, hakukohdeOid: String, maksuntila: Maksuntila, muokkaaja: String, luotu: Date)
+case class Lukuvuosimaksu(personOid: String, hakukohdeOid: HakukohdeOid, maksuntila: Maksuntila, muokkaaja: String, luotu: Date)

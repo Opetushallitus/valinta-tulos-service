@@ -5,6 +5,7 @@ import java.io.{PrintWriter, StringWriter}
 import fi.vm.sade.valintatulosservice.VtsServletBase
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 import org.json4s.jackson.Serialization.read
 import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
@@ -31,9 +32,9 @@ class SijoittelunTulosMigraatioServlet(migraatioService: SijoitteluntulosMigraat
     val start = System.currentTimeMillis()
     val dryRun = params("dryrun").toBoolean
     val force = params("force").toBoolean
-    val hakuOids = read[Set[String]](request.body)
+    val hakuOids = read[Set[HakuOid]](request.body)
 
-    val hakuOidsAndHashes: Map[String, String] = if (force) {
+    val hakuOidsAndHashes = if (force) {
       logger.info("force flag given, not calculating real hashes from mongo")
       hakuOids.map((_, "overridden-hash")).toMap
     } else {
@@ -66,7 +67,7 @@ class SijoittelunTulosMigraatioServlet(migraatioService: SijoitteluntulosMigraat
     // Real body param type cannot be used because of unsupported scala enumerations: https://github.com/scalatra/scalatra/issues/343
     parameter bodyParam[Set[String]]("hakuOids").description("Virkistettävien hakujen oidit. Huom, tyhjä lista virkistää kaikki!"))
   post("/kellota-hakukohteet", operation(postHakukohdeMigrationTiming)) {
-    Ok(migraatioService.getSijoitteluHashesByHakuOid(read[Set[String]](request.body)))
+    Ok(migraatioService.getSijoitteluHashesByHakuOid(read[Set[HakuOid]](request.body)))
   }
 
   val getHakuMigrationUi: OperationBuilder = (apiOperation[Unit]("ui")

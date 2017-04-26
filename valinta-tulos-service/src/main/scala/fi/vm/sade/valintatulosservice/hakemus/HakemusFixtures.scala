@@ -5,6 +5,7 @@ import fi.vm.sade.sijoittelu.tulos.testfixtures.MongoMockData
 import fi.vm.sade.utils.config.MongoConfig
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.mongo.MongoFactory
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
 import org.bson.types.ObjectId
 
 class HakemusFixtures(config: MongoConfig) {
@@ -53,21 +54,21 @@ class HakemusFixtures(config: MongoConfig) {
   def importTemplateFixture(hakemus: HakemusFixture) = {
     val currentTemplateObject = MongoMockData.readJson("fixtures/hakemus/hakemus-template.json").asInstanceOf[BasicDBObject]
     currentTemplateObject.put("_id", new ObjectId())
-    currentTemplateObject.put("oid", hakemus.hakemusOid)
-    currentTemplateObject.put("applicationSystemId", hakemus.hakuOid)
-    currentTemplateObject.put("personOid", hakemus.hakemusOid)
+    currentTemplateObject.put("oid", hakemus.hakemusOid.toString)
+    currentTemplateObject.put("applicationSystemId", hakemus.hakuOid.toString)
+    currentTemplateObject.put("personOid", hakemus.hakemusOid.toString)
     val hakutoiveetDbObject = currentTemplateObject.get("answers").asInstanceOf[BasicDBObject].get("hakutoiveet").asInstanceOf[BasicDBObject]
     val hakutoiveetMetaDbList = currentTemplateObject
       .get("authorizationMeta").asInstanceOf[BasicDBObject]
       .get("applicationPreferences").asInstanceOf[BasicDBList]
 
     hakemus.hakutoiveet.foreach { hakutoive =>
-      hakutoiveetDbObject.put("preference" + hakutoive.index + "-Koulutus-id", hakutoive.hakukohdeOid)
+      hakutoiveetDbObject.put("preference" + hakutoive.index + "-Koulutus-id", hakutoive.hakukohdeOid.toString)
       hakutoiveetDbObject.put("preference" + hakutoive.index + "-Opetuspiste-id", hakutoive.tarjoajaOid)
       hakutoiveetMetaDbList.add(BasicDBObjectBuilder.start()
         .add("ordinal", hakutoive.index)
         .push("preferenceData")
-        .add("Koulutus-id", hakutoive.hakukohdeOid)
+        .add("Koulutus-id", hakutoive.hakukohdeOid.toString)
         .add("Opetuspiste-id", hakutoive.tarjoajaOid)
         .pop()
         .get())
@@ -96,5 +97,5 @@ object HakemusFixtures {
   }
 }
 
-case class HakemusFixture(hakuOid: String, hakemusOid: String, hakutoiveet: List[HakutoiveFixture])
-case class HakutoiveFixture(index: Int, tarjoajaOid: String, hakukohdeOid: String)
+case class HakemusFixture(hakuOid: HakuOid, hakemusOid: HakemusOid, hakutoiveet: List[HakutoiveFixture])
+case class HakutoiveFixture(index: Int, tarjoajaOid: String, hakukohdeOid: HakukohdeOid)

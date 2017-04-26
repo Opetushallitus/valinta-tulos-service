@@ -2,12 +2,12 @@ package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import java.util.Date
 
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
 import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy.LahetysSyy
 
 case class Ilmoitus(
-  hakemusOid: String,
+  hakemusOid: HakemusOid,
   hakijaOid: String,
   secureLink: Option[String],
   asiointikieli: String,
@@ -19,7 +19,7 @@ case class Ilmoitus(
 )
 
 case class Hakukohde(
-  oid: String,
+  oid: HakukohdeOid,
   lahetysSyy: LahetysSyy,
   vastaanottotila: Vastaanottotila,
   ehdollisestiHyvaksyttavissa: Boolean,
@@ -28,13 +28,13 @@ case class Hakukohde(
 )
 
 case class Haku(
-  oid: String,
+  oid: HakuOid,
   nimi: Map[String, String]
 )
 
 case class LahetysKuittaus(
-  hakemusOid: String,
-  hakukohteet: List[String],
+  hakemusOid: HakemusOid,
+  hakukohteet: List[HakukohdeOid],
   mediat: List[String]
 )
 

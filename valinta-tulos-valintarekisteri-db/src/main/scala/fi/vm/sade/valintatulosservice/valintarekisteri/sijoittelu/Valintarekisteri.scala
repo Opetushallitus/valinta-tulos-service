@@ -8,35 +8,38 @@ import fi.vm.sade.valintatulosservice.config.ValintarekisteriAppConfig
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, StoreSijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.SijoitteluWrapper
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, SijoitteluWrapper}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 
 import scala.collection.JavaConverters._
 
-class ValintarekisteriForSijoittelu(appConfig:ValintarekisteriAppConfig.ValintarekisteriAppConfig) extends Valintarekisteri {
+class ValintarekisteriForSijoittelu(sijoitteluRepository:SijoitteluRepository with StoreSijoitteluRepository,
+                                    hakukohdeRecordService: HakukohdeRecordService,
+                                    valinnantulosRepository: ValinnantulosRepository)
+  extends Valintarekisteri(sijoitteluRepository, hakukohdeRecordService, valinnantulosRepository) {
+
+  private def this(appConfig: ValintarekisteriAppConfig.ValintarekisteriAppConfig, valintarekisteriDb: ValintarekisteriDb) = this(
+    valintarekisteriDb,
+    new HakukohdeRecordService(HakuService(appConfig.hakuServiceConfig), valintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing),
+    valintarekisteriDb
+  )
+
+  def this(appConfig: ValintarekisteriAppConfig.ValintarekisteriAppConfig) =
+    this(appConfig, new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig))
 
   def this() = this(ValintarekisteriAppConfig.getDefault())
 
   def this(properties:java.util.Properties) = this(ValintarekisteriAppConfig.getDefault(properties))
-
-  lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
-
-  override val sijoitteluRepository = valintarekisteriDb
-  override val valinnantulosRepository = valintarekisteriDb
-  private val hakuService = HakuService(appConfig.hakuServiceConfig)
-  override val hakukohdeRecordService: HakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing)
 }
 
-class ValintarekisteriService(override val sijoitteluRepository:SijoitteluRepository with StoreSijoitteluRepository,
-                              override val valinnantulosRepository: ValinnantulosRepository,
-                              override val hakukohdeRecordService: HakukohdeRecordService) extends Valintarekisteri {
-}
+class ValintarekisteriService(sijoitteluRepository:SijoitteluRepository with StoreSijoitteluRepository,
+                              valinnantulosRepository: ValinnantulosRepository,
+                              hakukohdeRecordService: HakukohdeRecordService)
+  extends Valintarekisteri(sijoitteluRepository, hakukohdeRecordService, valinnantulosRepository) { }
 
-abstract class Valintarekisteri extends Logging {
-
-  val sijoitteluRepository:SijoitteluRepository with StoreSijoitteluRepository
-  val hakukohdeRecordService: HakukohdeRecordService
-  val valinnantulosRepository: ValinnantulosRepository
+abstract class Valintarekisteri(sijoitteluRepository:SijoitteluRepository with StoreSijoitteluRepository,
+                                hakukohdeRecordService: HakukohdeRecordService,
+                                valinnantulosRepository: ValinnantulosRepository) extends Logging {
 
   def tallennaSijoittelu(sijoitteluajo:SijoitteluAjo, hakukohteet:java.util.List[Hakukohde], valintatulokset:java.util.List[Valintatulos]): Unit = {
     logger.info(s"Tallennetaan sijoitteluajo haulle: ${sijoitteluajo.getHakuOid}")
@@ -45,7 +48,7 @@ abstract class Valintarekisteri extends Logging {
     try {
       val sijoittelu = SijoitteluWrapper(sijoitteluajo, hakukohteet, valintatulokset)
       logger.info(s"Tallennetaan hakukohteet haulle")
-      sijoittelu.hakukohteet.map(_.getOid).foreach(hakukohdeRecordService.getHakukohdeRecord)
+      sijoittelu.hakukohteet.map(h => HakukohdeOid(h.getOid)).foreach(hakukohdeRecordService.getHakukohdeRecord)
       logger.info(s"Tallennetaan sijoittelu")
       sijoitteluRepository.storeSijoittelu(sijoittelu)
       logger.info(s"Sijoitteluajon tallennus onnistui haulle: ${sijoitteluajo.getHakuOid}")
@@ -60,10 +63,10 @@ abstract class Valintarekisteri extends Logging {
     }
   }
 
-  def getLatestSijoitteluajo(hakuOid:String): SijoitteluAjo = getSijoitteluajo(hakuOid, "latest")
+  def getLatestSijoitteluajo(hakuOid: String): SijoitteluAjo = getSijoitteluajo(hakuOid, "latest")
 
-  def getSijoitteluajo(hakuOid:String, sijoitteluajoId:String): SijoitteluAjo = {
-    val latestId = sijoitteluRepository.getLatestSijoitteluajoIdThrowFailure(sijoitteluajoId, hakuOid)
+  def getSijoitteluajo(hakuOid: String, sijoitteluajoId: String): SijoitteluAjo = {
+    val latestId = sijoitteluRepository.getLatestSijoitteluajoIdThrowFailure(sijoitteluajoId, HakuOid(hakuOid))
     sijoitteluRepository.getSijoitteluajo(latestId).getOrElse(
       throw new IllegalArgumentException(s"Sijoitteluajoa $latestId ei löytynyt haulle $hakuOid")
     ).entity(sijoitteluRepository.getSijoitteluajonHakukohdeOidit(latestId))
@@ -74,7 +77,7 @@ abstract class Valintarekisteri extends Logging {
 
     val hakijaryhmatByHakukohde = sijoitteluRepository.getSijoitteluajonHakijaryhmat(sijoitteluajoId).map(h => h.entity(
       sijoitteluRepository.getSijoitteluajonHakijaryhmanHakemukset(h.sijoitteluajoId, h.oid)
-    )).groupBy(_.getHakukohdeOid)
+    )).groupBy(h => HakukohdeOid(h.getHakukohdeOid))
 
     sijoitteluRepository.getSijoitteluajonHakukohteet(sijoitteluajoId).map( hakukohde =>
       hakukohde.entity(
@@ -107,8 +110,8 @@ abstract class Valintarekisteri extends Logging {
     ).groupBy(_._1).mapValues(_.map(_._2))
   }
 
-  def getValintatulokset(hakuOid:String): java.util.List[Valintatulos] = {
-    val (read, valinnantulokset) = valinnantulosRepository.getValinnantuloksetAndReadTimeForHaku(hakuOid)
+  def getValintatulokset(hakuOid: String): java.util.List[Valintatulos] = {
+    val (read, valinnantulokset) = valinnantulosRepository.getValinnantuloksetAndReadTimeForHaku(HakuOid(hakuOid))
     valinnantulokset.map(_.toValintatulos(read)).toList.asJava
   }
 }

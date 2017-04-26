@@ -73,20 +73,20 @@ class VastaanottoService(hakuService: HakuService,
       return Nil
     }
 
-    val henkiloidenVastaanototHauissaByHakuOid: Map[String, Map[String, List[Valintatulos]]] =
+    val henkiloidenVastaanototHauissaByHakuOid: Map[HakuOid, Map[String, List[Valintatulos]]] =
       hakuOidit.map(hakuOid => (hakuOid, findValintatulokset(hakuOid))).toMap
 
     (for {
       ((hakukohdeOid, hakuOid), vastaanottoEventDtos) <- vastaanotot.groupBy(v => (v.hakukohdeOid, v.hakuOid))
       haunValintatulokset = henkiloidenVastaanototHauissaByHakuOid(hakuOid)
-      hakukohteenValintatulokset: Map[String, Option[Valintatulos]] = haunValintatulokset.mapValues(_.find(_.getHakukohdeOid == hakukohdeOid))
+      hakukohteenValintatulokset: Map[String, Option[Valintatulos]] = haunValintatulokset.mapValues(_.find(_.getHakukohdeOid == hakukohdeOid.toString))
       vastaanottoEventDto <- vastaanottoEventDtos if isPaivitys(vastaanottoEventDto, hakukohteenValintatulokset.get(vastaanottoEventDto.henkiloOid).flatten.map(_.getTila))
     } yield {
       VirkailijanVastaanotto(vastaanottoEventDto)
     }).toList.sortWith(VirkailijanVastaanotto.tallennusJarjestys)
   }
 
-  private def tallennaVirkailijanHakukohteenVastaanotot(hakukohdeOid: String, hakuOid: String, uudetVastaanotot: List[VastaanottoEventDto]): List[VastaanottoResult] = {
+  private def tallennaVirkailijanHakukohteenVastaanotot(hakukohdeOid: HakukohdeOid, hakuOid: HakuOid, uudetVastaanotot: List[VastaanottoEventDto]): List[VastaanottoResult] = {
     val hakuEither = hakuService.getHaku(hakuOid)
     val ohjausparametritEither = ohjausparametritService.ohjausparametrit(hakuOid)
     uudetVastaanotot.map(vastaanottoDto => {
@@ -153,7 +153,7 @@ class VastaanottoService(hakuService: HakuService,
     !Vastaanottotila.matches(newStateFromVirkailijanVastaanotto, currentState)
   }
 
-  private def findValintatulokset(hakuOid: String): Map[String, List[Valintatulos]] = {
+  private def findValintatulokset(hakuOid: HakuOid): Map[String, List[Valintatulos]] = {
     valintatulosService.findValintaTuloksetForVirkailija(hakuOid).asScala.toList.groupBy(_.getHakijaOid)
   }
 
@@ -162,7 +162,7 @@ class VastaanottoService(hakuService: HakuService,
   }
 
   @Deprecated
-  def tarkistaVastaanotettavuus(vastaanotettavaHakemusOid: String, hakukohdeOid: String): Unit = {
+  def tarkistaVastaanotettavuus(vastaanotettavaHakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Unit = {
     findHakutoive(vastaanotettavaHakemusOid, hakukohdeOid).get
   }
   def vastaanotaHakijana(vastaanotto: VastaanottoEvent): Either[Throwable, Unit] = {
@@ -199,7 +199,7 @@ class VastaanottoService(hakuService: HakuService,
     } yield ()
   }
 
-  private def findHakutoive(hakemusOid: String, hakukohdeOid: String): Try[(Hakutoiveentulos, Int)] = {
+  private def findHakutoive(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Try[(Hakutoiveentulos, Int)] = {
     Try {
       val hakemuksenTulos = valintatulosService.hakemuksentulos(hakemusOid).getOrElse(throw new IllegalArgumentException("Hakemusta ei löydy"))
       hakemuksenTulos.findHakutoive(hakukohdeOid).getOrElse(throw new IllegalArgumentException("Hakutoivetta ei löydy"))
@@ -239,7 +239,7 @@ class VastaanottoService(hakuService: HakuService,
     }
   }
 
-  private def tarkistaHakutoiveenVastaanotettavuus(hakemuksenTulos: Hakemuksentulos, hakukohdeOid: String, haluttuTila: VastaanottoAction): Either[Throwable, Hakutoiveentulos] = {
+  private def tarkistaHakutoiveenVastaanotettavuus(hakemuksenTulos: Hakemuksentulos, hakukohdeOid: HakukohdeOid, haluttuTila: VastaanottoAction): Either[Throwable, Hakutoiveentulos] = {
     val missingHakutoive = s"Hakutoivetta $hakukohdeOid ei löydy hakemukselta ${hakemuksenTulos.hakemusOid}"
     for {
       hakutoive <- hakemuksenTulos.findHakutoive(hakukohdeOid).toRight(new IllegalArgumentException(missingHakutoive)).right
@@ -266,7 +266,8 @@ class VastaanottoService(hakuService: HakuService,
     case Poista => Right(())
   }
 
-  private def tarkistaHakutoiveenVastaanotettavuusVirkailijana(hakemuksentulos: Hakemuksentulos, hakukohdeOid: String,
+  private def tarkistaHakutoiveenVastaanotettavuusVirkailijana(hakemuksentulos: Hakemuksentulos,
+                                                               hakukohdeOid: HakukohdeOid,
                                                                vastaanottoDto: VastaanottoEventDto,
                                                                maybeAiempiVastaanottoKaudella: Option[Option[VastaanottoRecord]]): Either[Throwable, Option[(Hakutoiveentulos, Int)]] = {
     val missingHakutoive = s"Hakutoivetta $hakukohdeOid ei löydy hakemukselta ${hakemuksentulos.hakemusOid}"

@@ -4,12 +4,13 @@ import java.sql.PreparedStatement
 import java.time.OffsetDateTime
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{Hyvaksymiskirje, HyvaksymiskirjePatch, HyvaksymiskirjeRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakukohdeOid
 import slick.driver.PostgresDriver.api._
 
 import scala.util.Try
 
 trait HyvaksymiskirjeRepositoryImpl extends HyvaksymiskirjeRepository with ValintarekisteriRepository {
-  def getHyvaksymiskirjeet(hakukohdeOid: String): Set[Hyvaksymiskirje] = {
+  def getHyvaksymiskirjeet(hakukohdeOid: HakukohdeOid): Set[Hyvaksymiskirje] = {
     runBlocking(
       sql"""select henkilo_oid, lahetetty
             from hyvaksymiskirjeet
@@ -46,11 +47,11 @@ trait HyvaksymiskirjeRepositoryImpl extends HyvaksymiskirjeRepository with Valin
           hyvaksymiskirjeet.foreach {
             case HyvaksymiskirjePatch(henkiloOid, hakukohdeOid, None) =>
               delete.get.setString(1, henkiloOid)
-              delete.get.setString(2, hakukohdeOid)
+              delete.get.setString(2, hakukohdeOid.toString)
               delete.get.addBatch()
             case HyvaksymiskirjePatch(henkiloOid, hakukohdeOid, Some(lahetetty)) =>
               update.get.setString(1, henkiloOid)
-              update.get.setString(2, hakukohdeOid)
+              update.get.setString(2, hakukohdeOid.toString)
               update.get.setObject(3, lahetetty)
               update.get.addBatch()
           }

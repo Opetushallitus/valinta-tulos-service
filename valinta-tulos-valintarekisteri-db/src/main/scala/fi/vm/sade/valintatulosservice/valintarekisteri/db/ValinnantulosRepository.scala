@@ -18,23 +18,23 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
 
   def updateValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
 
-  def getMuutoshistoriaForHakemus(hakemusOid: String, valintatapajonoOid: String): List[Muutos]
+  def getMuutoshistoriaForHakemus(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[Muutos]
 
-  def getValinnantuloksetForHakukohde(hakukohdeOid: String): DBIO[Set[Valinnantulos]]
-  def getValinnantuloksetForValintatapajono(valintatapajonoOid:String): DBIO[Set[Valinnantulos]]
-  def getValinnantuloksetForHaku(hakuOid: String): DBIO[Set[Valinnantulos]]
+  def getValinnantuloksetForHakukohde(hakukohdeOid: HakukohdeOid): DBIO[Set[Valinnantulos]]
+  def getValinnantuloksetForValintatapajono(valintatapajonoOid: ValintatapajonoOid): DBIO[Set[Valinnantulos]]
+  def getValinnantuloksetForHaku(hakuOid: HakuOid): DBIO[Set[Valinnantulos]]
 
-  def getLastModifiedForHakukohde(hakukohdeOid: String): DBIO[Option[Instant]]
-  def getLastModifiedForValintatapajono(valintatapajonoOid:String):DBIO[Option[Instant]]
+  def getLastModifiedForHakukohde(hakukohdeOid: HakukohdeOid): DBIO[Option[Instant]]
+  def getLastModifiedForValintatapajono(valintatapajonoOid: ValintatapajonoOid):DBIO[Option[Instant]]
 
-  def getLastModifiedForValintatapajononHakemukset(valintatapajonoOid:String): DBIO[Set[(String, Instant)]]
+  def getLastModifiedForValintatapajononHakemukset(valintatapajonoOid: ValintatapajonoOid): DBIO[Set[(HakemusOid, Instant)]]
 
-  def getHakuForHakukohde(hakukohdeOid:String): String
+  def getHakuForHakukohde(hakukohdeOid: HakukohdeOid): HakuOid
 
   def deleteValinnantulos(muokkaaja:String, valinnantulos:Valinnantulos, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
   def deleteIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
 
-  def getValinnantuloksetAndLastModifiedDateForHakukohde(hakukohdeOid: String, timeout:Duration = Duration(2, TimeUnit.SECONDS)): Option[(Instant, Set[Valinnantulos])] =
+  def getValinnantuloksetAndLastModifiedDateForHakukohde(hakukohdeOid: HakukohdeOid, timeout: Duration = Duration(2, TimeUnit.SECONDS)): Option[(Instant, Set[Valinnantulos])] =
     runBlockingTransactionally(
       getLastModifiedForHakukohde(hakukohdeOid)
         .flatMap {
@@ -47,7 +47,7 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
       case Left(error) => throw error
     }
 
-  def getValinnantuloksetAndLastModifiedDateForValintatapajono(valintatapajonoOid:String, timeout:Duration = Duration(2, TimeUnit.SECONDS)):Option[(Instant, Set[Valinnantulos])] =
+  def getValinnantuloksetAndLastModifiedDateForValintatapajono(valintatapajonoOid: ValintatapajonoOid, timeout: Duration = Duration(2, TimeUnit.SECONDS)): Option[(Instant, Set[Valinnantulos])] =
     runBlockingTransactionally(
       getLastModifiedForValintatapajono(valintatapajonoOid)
         .flatMap {
@@ -60,7 +60,7 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
       case Left(error) => throw error
     }
 
-  def getValinnantuloksetAndLastModifiedDatesForValintatapajono(valintatapajonoOid:String, timeout:Duration = Duration(2, TimeUnit.SECONDS)):Set[(Instant, Valinnantulos)] =
+  def getValinnantuloksetAndLastModifiedDatesForValintatapajono(valintatapajonoOid: ValintatapajonoOid, timeout: Duration = Duration(2, TimeUnit.SECONDS)): Set[(Instant, Valinnantulos)] =
     runBlockingTransactionally(
       getLastModifiedForValintatapajononHakemukset(valintatapajonoOid).zip(getValinnantuloksetForValintatapajono(valintatapajonoOid)),
       timeout = timeout
@@ -71,7 +71,7 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
       case Left(error) => throw error
     }
 
-  def getValinnantuloksetAndReadTimeForHaku(hakuOid:String, timeout:Duration = Duration(4, TimeUnit.SECONDS)):(Instant, Set[Valinnantulos]) = {
+  def getValinnantuloksetAndReadTimeForHaku(hakuOid: HakuOid, timeout:Duration = Duration(4, TimeUnit.SECONDS)):(Instant, Set[Valinnantulos]) = {
     runBlockingTransactionally(
       now().zip(getValinnantuloksetForHaku(hakuOid)), timeout = timeout
     ) match {

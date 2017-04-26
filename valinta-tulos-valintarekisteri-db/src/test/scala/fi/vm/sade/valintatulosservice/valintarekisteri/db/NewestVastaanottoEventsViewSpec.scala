@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{VastaanotaEhdollisesti, VirkailijanVastaanotto}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid, VastaanotaEhdollisesti, VirkailijanVastaanotto}
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
@@ -10,10 +10,10 @@ import slick.driver.PostgresDriver.api._
 
 @RunWith(classOf[JUnitRunner])
 class NewestVastaanottoEventsViewSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterExample {
-  private val hakukohdeOid = "1.2.246.561.20.00000000001"
-  private val hakuOid = "1.2.246.561.29.00000000001"
-  private val valintatapajonoOid = "1.2.246.561.20.00000000001"
-  private val hakemusOid = "1.2.246.562.99.00000000001"
+  private val hakukohdeOid = HakukohdeOid("1.2.246.561.20.00000000001")
+  private val hakuOid = HakuOid("1.2.246.561.29.00000000001")
+  private val valintatapajonoOid = ValintatapajonoOid("1.2.246.561.20.00000000001")
+  private val hakemusOid = HakemusOid("1.2.246.562.99.00000000001")
   private val henkiloOidA = "1.2.246.562.24.0000000000a"
   private val henkiloOidB = "1.2.246.562.24.0000000000b"
   private val henkiloOidC = "1.2.246.562.24.0000000000c"

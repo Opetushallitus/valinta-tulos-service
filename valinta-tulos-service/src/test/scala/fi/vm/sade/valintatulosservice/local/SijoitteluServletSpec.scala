@@ -2,7 +2,9 @@ package fi.vm.sade.valintatulosservice.local
 
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
+import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOidSerializer, HakuOidSerializer, HakukohdeOidSerializer, ValintatapajonoOidSerializer}
 import org.json4s.{DefaultFormats, JArray}
 import org.json4s.jackson.JsonMethods
 import org.junit.runner.RunWith
@@ -13,7 +15,17 @@ import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class SijoitteluServletSpec extends ServletSpecification with ValintarekisteriDbTools {
-  override implicit val formats = DefaultFormats ++ List(new NumberLongSerializer, new TasasijasaantoSerializer, new ValinnantilaSerializer, new DateSerializer, new TilankuvauksenTarkenneSerializer)
+  override implicit val formats = DefaultFormats ++ List(
+    new NumberLongSerializer,
+    new TasasijasaantoSerializer,
+    new ValinnantilaSerializer,
+    new DateSerializer,
+    new TilankuvauksenTarkenneSerializer,
+    new HakuOidSerializer,
+    new HakukohdeOidSerializer,
+    new ValintatapajonoOidSerializer,
+    new HakemusOidSerializer
+  )
   step(singleConnectionValintarekisteriDb.storeSijoittelu(loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")))
 
   lazy val testSession = createTestSession()

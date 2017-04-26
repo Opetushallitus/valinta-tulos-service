@@ -20,14 +20,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterExample {
   sequential
   private val henkiloOid = "1.2.246.562.24.00000000001"
-  private val hakemusOid = "1.2.246.562.99.00000000001"
-  private val hakukohdeOid = "1.2.246.561.20.00000000001"
-  private val valintatapajonoOid = "1.2.246.561.20.00000000001"
-  private val otherHakukohdeOid = "1.2.246.561.20.00000000002"
-  private val otherHakukohdeOidForHakuOid = "1.2.246.561.20.00000000003"
-  private val refreshedHakukohdeOid = "1.2.246.561.20.00000000004"
-  private val hakuOid = "1.2.246.561.29.00000000001"
-  private val otherHakuOid = "1.2.246.561.29.00000000002"
+  private val hakemusOid = HakemusOid("1.2.246.562.99.00000000001")
+  private val hakukohdeOid = HakukohdeOid("1.2.246.561.20.00000000001")
+  private val valintatapajonoOid = ValintatapajonoOid("1.2.246.561.20.00000000001")
+  private val otherHakukohdeOid = HakukohdeOid("1.2.246.561.20.00000000002")
+  private val otherHakukohdeOidForHakuOid = HakukohdeOid("1.2.246.561.20.00000000003")
+  private val refreshedHakukohdeOid = HakukohdeOid("1.2.246.561.20.00000000004")
+  private val hakuOid = HakuOid("1.2.246.561.29.00000000001")
+  private val otherHakuOid = HakuOid("1.2.246.561.29.00000000002")
 
   private val henkiloOidA = "1.2.246.562.24.0000000000a"
   private val henkiloOidB = "1.2.246.562.24.0000000000b"
@@ -65,12 +65,12 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
     "hakukohteet can be found by oids" in {
       val kohde = HakukohdeRecord(refreshedHakukohdeOid, hakuOid, true, true, Kevat(2015))
       singleConnectionValintarekisteriDb.storeHakukohde(kohde)
-      val stored: Option[HakukohdeRecord] = singleConnectionValintarekisteriDb.findHakukohteet(Set("1.2.3", refreshedHakukohdeOid)).headOption
+      val stored: Option[HakukohdeRecord] = singleConnectionValintarekisteriDb.findHakukohteet(Set(HakukohdeOid("1.2.3"), refreshedHakukohdeOid)).headOption
       stored must beSome[HakukohdeRecord](kohde)
     }
 
     "finding hakukohteet by oids is injection proof" in {
-      (singleConnectionValintarekisteriDb.findHakukohteet(Set("; drop table hakukohteet;--"))
+      (singleConnectionValintarekisteriDb.findHakukohteet(Set(HakukohdeOid("; drop table hakukohteet;--")))
         must throwA[IllegalArgumentException])
     }
 
@@ -136,7 +136,7 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
       singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid + "2", hakemusOid, hakukohdeOid, VastaanotaSitovasti, henkiloOid, "testiselite"))
       singleConnectionValintarekisteriDb.runBlocking(sqlu"""insert into hakukohteet (hakukohde_oid, haku_oid, kk_tutkintoon_johtava, yhden_paikan_saanto_voimassa, koulutuksen_alkamiskausi)
                        values (${hakukohdeOid + "1"}, ${hakuOid + "1"}, false, false, '2015K')""")
-      singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid + "1", VastaanotaSitovasti, henkiloOid, "testiselite"))
+      singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, HakukohdeOid(hakukohdeOid.toString + "1"), VastaanotaSitovasti, henkiloOid, "testiselite"))
       val recordsFromDb = singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.findYhdenPaikanSaannonPiirissaOlevatVastaanotot(henkiloOid, Kausi("2015K")))
       recordsFromDb must beSome[VastaanottoRecord]
       recordsFromDb.get.hakukohdeOid must beEqualTo(hakukohdeOid)
@@ -207,7 +207,7 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
 
     "rollback failing transaction" in {
       singleConnectionValintarekisteriDb.store( List(
-        VirkailijanVastaanotto(hakuOid, valintatapajonoOid, "123!", "2222323", "134134134.123", VastaanotaSitovasti, "123!", "testiselite")), DBIOAction.successful()) must throwA[Exception]
+        VirkailijanVastaanotto(hakuOid, valintatapajonoOid, "123!", HakemusOid("2222323"), HakukohdeOid("134134134.123"), VastaanotaSitovasti, "123!", "testiselite")), DBIOAction.successful()) must throwA[Exception]
       singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.findHenkilonVastaanottoHakukohteeseen(henkiloOid, hakukohdeOid)) must beNone
     }
 
@@ -217,7 +217,7 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
         VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, otherHakukohdeOid, VastaanotaSitovasti, henkiloOid, "testiselite")), DBIOAction.successful()) must beEqualTo(())
       val henkiloOidsAndActionsFromDb = singleConnectionValintarekisteriDb.runBlocking(
         sql"""select henkilo, action, hakukohde from vastaanotot
-              where henkilo = $henkiloOid order by hakukohde""".as[(String, String, String)])
+              where henkilo = $henkiloOid order by hakukohde""".as[(String, String, HakukohdeOid)])
       henkiloOidsAndActionsFromDb must have size 2
       henkiloOidsAndActionsFromDb(0) mustEqual (henkiloOid, VastaanotaSitovasti.toString, hakukohdeOid)
       henkiloOidsAndActionsFromDb(1) mustEqual (henkiloOid, VastaanotaSitovasti.toString, otherHakukohdeOid)
@@ -241,7 +241,7 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
       "ei ensikertalainen, jos sibling henkilöllä vastaanotto" in {
         storeHenkiloviitteet()
         singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOidA, hakemusOid, hakukohdeOid, VastaanotaSitovasti, henkiloOidA, "testiselite"))
-        singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(otherHakuOid, valintatapajonoOid, henkiloOidB, hakemusOid + "1", otherHakukohdeOid, Peru, henkiloOidB, "testiselite"))
+        singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(otherHakuOid, valintatapajonoOid, henkiloOidB, HakemusOid(hakemusOid.toString + "1"), otherHakukohdeOid, Peru, henkiloOidB, "testiselite"))
         singleConnectionValintarekisteriDb.findEnsikertalaisuus(henkiloOidC, Kevat(2015)) must beAnInstanceOf[EiEnsikertalainen]
         val r = singleConnectionValintarekisteriDb.findEnsikertalaisuus(Set(henkiloOidB, henkiloOidC), Kevat(2015))
         r must have size 2
@@ -251,7 +251,7 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
       "ei ensikertalainen, jos slave henkilöllä vastaanotto" in {
         storeHenkiloviitteet()
         singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOidA, hakemusOid, hakukohdeOid, VastaanotaSitovasti, henkiloOidA, "testiselite"))
-        singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(otherHakuOid, valintatapajonoOid, henkiloOidB, hakemusOid + "1", otherHakukohdeOid, Peru, henkiloOidB, "testiselite"))
+        singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(otherHakuOid, valintatapajonoOid, henkiloOidB, HakemusOid(hakemusOid.toString + "1"), otherHakukohdeOid, Peru, henkiloOidB, "testiselite"))
         singleConnectionValintarekisteriDb.findEnsikertalaisuus(henkiloOidB, Kevat(2015)) must beAnInstanceOf[EiEnsikertalainen]
         val r = singleConnectionValintarekisteriDb.findEnsikertalaisuus(Set(henkiloOidC, henkiloOidB), Kevat(2015))
         r must have size 2
@@ -261,7 +261,7 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
       "ei ensikertalainen, jos master henkilöllä vastaanotto" in {
         storeHenkiloviitteet()
         singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOidB, hakemusOid, hakukohdeOid, VastaanotaSitovasti, henkiloOidB, "testiselite"))
-        singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(otherHakuOid, valintatapajonoOid, henkiloOidA, hakemusOid + "1", otherHakukohdeOid, Peru, henkiloOidA, "testiselite"))
+        singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(otherHakuOid, valintatapajonoOid, henkiloOidA, HakemusOid(hakemusOid.toString + "1"), otherHakukohdeOid, Peru, henkiloOidA, "testiselite"))
         singleConnectionValintarekisteriDb.findEnsikertalaisuus(henkiloOidC, Kevat(2015)) must beAnInstanceOf[EiEnsikertalainen]
         val r = singleConnectionValintarekisteriDb.findEnsikertalaisuus(Set(henkiloOidA, henkiloOidC), Kevat(2015))
         r must have size 2
@@ -280,7 +280,7 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
 
     "store hakukohde multiple times" in {
       Await.result(Future.sequence((1 to 10).map(i => Future {
-        singleConnectionValintarekisteriDb.storeHakukohde(HakukohdeRecord("1.2.3", "2.3.4", true, true, Syksy(2016)))
+        singleConnectionValintarekisteriDb.storeHakukohde(HakukohdeRecord(HakukohdeOid("1.2.3"), HakuOid("2.3.4"), true, true, Syksy(2016)))
       })), Duration(60, TimeUnit.SECONDS)) must not(throwAn[Exception])
     }
 
@@ -372,7 +372,7 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
 
   private def storeVastaanototForYhdenPaikanSaantoTest(vastaanottajaHenkiloOid:String, perujaHenkiloOid:String) = {
     singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, perujaHenkiloOid, hakemusOid, hakukohdeOid, Peru, perujaHenkiloOid, "testiselite"))
-    singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, vastaanottajaHenkiloOid, hakemusOid + "1", otherHakukohdeOidForHakuOid, VastaanotaSitovasti, vastaanottajaHenkiloOid, "testiselite"))
+    singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, vastaanottajaHenkiloOid, HakemusOid(hakemusOid.toString + "1"), otherHakukohdeOidForHakuOid, VastaanotaSitovasti, vastaanottajaHenkiloOid, "testiselite"))
   }
 
   private def runYhdenPaikanSaantoTest(findHenkiloOid:String, expectedHenkiloOid:String) = {

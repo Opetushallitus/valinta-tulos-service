@@ -8,13 +8,13 @@ import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, Ohjaus
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, VastaanottoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.{Vastaanottotila => _}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{VastaanotaEhdollisesti, VastaanotaSitovasti}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, VastaanotaEhdollisesti, VastaanotaSitovasti}
 
 class MailPoller(valintatulosCollection: ValintatulosMongoCollection, valintatulosService: ValintatulosService, hakijaVastaanottoRepository: HakijaVastaanottoRepository, hakuService: HakuService, ohjausparameteritService: OhjausparametritService, val limit: Integer) extends Logging {
 
   // TODO Change from Mongo to Postgres!
 
-  def etsiHaut: List[String] = {
+  def etsiHaut: List[HakuOid] = {
     val found = (hakuService.kaikkiJulkaistutHaut match {
       case Right(haut) => haut
       case Left(e) => throw e
@@ -62,7 +62,7 @@ class MailPoller(valintatulosCollection: ValintatulosMongoCollection, valintatul
   }
 
 
-  def pollForMailables(hakuOids: List[String] = etsiHaut, limit: Int = this.limit, excludeHakemusOids: Set[String] = Set.empty): List[HakemusMailStatus] = {
+  def pollForMailables(hakuOids: List[HakuOid] = etsiHaut, limit: Int = this.limit, excludeHakemusOids: Set[HakemusOid] = Set.empty): List[HakemusMailStatus] = {
     val candidates: Set[HakemusIdentifier] = valintatulosCollection.pollForCandidates(hakuOids, limit, excludeHakemusOids = excludeHakemusOids)
     logger.info("candidates found {}", formatJson(candidates))
 
@@ -111,7 +111,7 @@ class MailPoller(valintatulosCollection: ValintatulosMongoCollection, valintatul
     }
   }
 
-  private def hakukohdeMailStatusFor(hakemusOid: String, hakutoive: Hakutoiveentulos, uudetVastaanotot: Set[VastaanottoRecord], vanhatVastaanotot: Set[VastaanottoRecord]) = {
+  private def hakukohdeMailStatusFor(hakemusOid: HakemusOid, hakutoive: Hakutoiveentulos, uudetVastaanotot: Set[VastaanottoRecord], vanhatVastaanotot: Set[VastaanottoRecord]) = {
     val alreadySentVastaanottoilmoitus = valintatulosCollection.alreadyMailed(hakemusOid, hakutoive.hakukohdeOid).isDefined
     val (status, reason, message) =
       if (Vastaanotettavuustila.isVastaanotettavissa(hakutoive.vastaanotettavuustila) && !alreadySentVastaanottoilmoitus) {

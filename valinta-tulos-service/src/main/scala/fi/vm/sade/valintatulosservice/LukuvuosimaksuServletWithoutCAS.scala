@@ -4,7 +4,7 @@ import java.util.Date
 
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.lukuvuosimaksut.LukuvuosimaksuMuutos
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Lukuvuosimaksu, Maksuntila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, Lukuvuosimaksu, Maksuntila}
 import org.json4s.DefaultFormats
 import org.json4s.ext.EnumNameSerializer
 import org.scalatra.swagger.Swagger
@@ -54,9 +54,9 @@ class LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService: LukuvuosimaksuServi
     }
   }
 
-  private def hakukohdeOidParam: String = {
-    Try(params("hakukohdeOid")).toOption.filter(!_.isEmpty)
-      .getOrElse(throw new RuntimeException("HakukohdeOid is mandatory!"))
+  private def hakukohdeOidParam: HakukohdeOid = {
+    HakukohdeOid(Try(params("hakukohdeOid")).toOption.filter(!_.isEmpty)
+      .getOrElse(throw new RuntimeException("HakukohdeOid is mandatory!")))
   }
 
 }

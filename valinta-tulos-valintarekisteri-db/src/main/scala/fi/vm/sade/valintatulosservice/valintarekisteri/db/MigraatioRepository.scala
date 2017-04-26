@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EhdollisenHyvaksynnanEhto, Ilmoittautuminen, ValinnantilanTallennus, ValinnantuloksenOhjaus, Hyvaksymiskirje => Kirje}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EhdollisenHyvaksynnanEhto, HakuOid, Ilmoittautuminen, ValinnantilanTallennus, ValinnantuloksenOhjaus, Hyvaksymiskirje => Kirje}
 import slick.dbio.DBIO
 
 trait MigraatioRepository extends ValintarekisteriRepository {
@@ -14,7 +14,7 @@ trait MigraatioRepository extends ValintarekisteriRepository {
 
   def deleteValinnantilaHistorySavedBySijoitteluajoAndMigration(sijoitteluajoId: String): Unit
 
-  def deleteSijoittelunTulokset(hakuOid: String): Unit
-  def saveSijoittelunHash(hakuOid: String, hash: String): Unit
-  def getSijoitteluHash(hakuOid: String, hash: String): Option[String]
+  def deleteSijoittelunTulokset(hakuOid: HakuOid): Unit
+  def saveSijoittelunHash(hakuOid: HakuOid, hash: String): Unit
+  def getSijoitteluHash(hakuOid: HakuOid, hash: String): Option[String]
 }

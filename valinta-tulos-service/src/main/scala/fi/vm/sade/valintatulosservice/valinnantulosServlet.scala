@@ -4,7 +4,7 @@ import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.UUID
 
-import fi.vm.sade.security.{AuthorizationFailedException, CasSessionService, LdapUserService}
+import fi.vm.sade.security.{AuthorizationFailedException, LdapUserService}
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, IlmoittautumisTila, ValintatuloksenTila}
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HyvaksymiskirjePatch, SessionRepository}
@@ -28,12 +28,12 @@ trait ValinnantulosServletBase extends VtsServletBase {
     ModelProperty(DataType.String, mp.position, required = true, allowableValues = AllowableValues(ValintatuloksenTila.values().toList.map(_.toString)))
   }
 
-  protected def parseValintatapajonoOid: Either[Throwable, String] = {
-    params.get("valintatapajonoOid").fold[Either[Throwable, String]](Left(new IllegalArgumentException("URL parametri valintatapajono OID on pakollinen.")))(Right(_))
+  protected def parseValintatapajonoOid: Either[Throwable, ValintatapajonoOid] = {
+    params.get("valintatapajonoOid").fold[Either[Throwable, ValintatapajonoOid]](Left(new IllegalArgumentException("URL parametri valintatapajono OID on pakollinen.")))(s => Right(ValintatapajonoOid(s)))
   }
 
-  protected def parseHakukohdeOid: Either[Throwable, String] = {
-    params.get("hakukohdeOid").fold[Either[Throwable, String]](Left(new IllegalArgumentException("URL parametri hakukohde OID on pakollinen.")))(Right(_))
+  protected def parseHakukohdeOid: Either[Throwable, HakukohdeOid] = {
+    params.get("hakukohdeOid").fold[Either[Throwable, HakukohdeOid]](Left(new IllegalArgumentException("URL parametri hakukohde OID on pakollinen.")))(s => Right(HakukohdeOid(s)))
   }
 
   protected def parseMandatoryParam(paramName:String): String = {

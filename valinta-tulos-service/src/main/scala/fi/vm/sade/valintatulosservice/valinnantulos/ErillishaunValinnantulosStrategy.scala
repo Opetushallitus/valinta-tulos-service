@@ -16,7 +16,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
                                        haku: Haku,
-                                       hakukohdeOid: String,
+                                       hakukohdeOid: HakukohdeOid,
                                        valinnantulosRepository: ValinnantulosRepository,
                                        hakukohdeRecordService: HakukohdeRecordService,
                                        ifUnmodifiedSince: Option[Instant],
@@ -208,9 +208,9 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
 
   private def target(uusi: Valinnantulos): Target = {
     new Target.Builder()
-      .setField("hakukohde", uusi.hakukohdeOid)
-      .setField("valintatapajono", uusi.valintatapajonoOid)
-      .setField("hakemus", uusi.hakemusOid)
+      .setField("hakukohde", uusi.hakukohdeOid.toString)
+      .setField("valintatapajono", uusi.valintatapajonoOid.toString)
+      .setField("hakemus", uusi.hakemusOid.toString)
       .build()
   }
 

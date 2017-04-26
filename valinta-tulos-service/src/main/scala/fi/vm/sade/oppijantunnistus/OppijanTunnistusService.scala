@@ -1,8 +1,8 @@
 package fi.vm.sade.oppijantunnistus
 
 import fi.vm.sade.utils.http.DefaultHttpClient
-import fi.vm.sade.valintatulosservice.config.{VtsApplicationSettings, AppConfig}
-import fi.vm.sade.valintatulosservice.organisaatio.Organisaatiot
+import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakemusOid
 import org.json4s.jackson.JsonMethods._
 
 import scala.util.Try
@@ -12,7 +12,7 @@ import scalaj.http.HttpOptions
 
 trait OppijanTunnistusService {
 
-  def luoSecureLink(personOid: String, hakemusOid: String, email: String, lang: String): Either[RuntimeException, OppijanTunnistus]
+  def luoSecureLink(personOid: String, hakemusOid: HakemusOid, email: String, lang: String): Either[RuntimeException, OppijanTunnistus]
 
 }
 object OppijanTunnistusService {
@@ -21,16 +21,16 @@ object OppijanTunnistusService {
 class RealOppijanTunnistusService(appConfig:VtsApplicationSettings) extends OppijanTunnistusService {
   import org.json4s._
   implicit val formats = DefaultFormats
-  import org.json4s.jackson.Serialization.{read, write}
+  import org.json4s.jackson.Serialization.write
 
-  def luoSecureLink(personOid: String, hakemusOid: String, email: String, lang: String): Either[RuntimeException, OppijanTunnistus] = {
+  def luoSecureLink(personOid: String, hakemusOid: HakemusOid, email: String, lang: String): Either[RuntimeException, OppijanTunnistus] = {
     val url = appConfig.oppijanTunnistusUrl
     val callbackUrl = lang.toLowerCase match {
       case "en" => appConfig.omatsivutUrlEn
       case "sv" => appConfig.omatsivutUrlSv
       case _ => appConfig.omatsivutUrlFi
     }
-    val oppijanTunnistusBody = OppijanTunnistusCreate(callbackUrl,email,lang,Metadata(hakemusOid, personOid))
+    val oppijanTunnistusBody = OppijanTunnistusCreate(callbackUrl, email, lang, Metadata(hakemusOid, personOid))
     fetch(url, oppijanTunnistusBody){ response =>
       (parse(response)).extract[OppijanTunnistus]
     }.left.map {

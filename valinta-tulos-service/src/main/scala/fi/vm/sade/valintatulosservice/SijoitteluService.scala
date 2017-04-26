@@ -13,7 +13,7 @@ class SijoitteluService(val sijoitteluRepository: SijoitteluRepository,
                         authorizer:OrganizationHierarchyAuthorizer,
                         hakuService: HakuService ) extends Logging {
 
-  def getHakukohdeBySijoitteluajo(hakuOid:String, sijoitteluajoId:String, hakukohdeOid:String, session:Session): HakukohdeDTO = {
+  def getHakukohdeBySijoitteluajo(hakuOid: HakuOid, sijoitteluajoId: String, hakukohdeOid: HakukohdeOid, session: Session): HakukohdeDTO = {
     (for {
       tarjonta  <- hakuService.getHakukohde(hakukohdeOid).right
       _         <- authorizer.checkAccess(session, tarjonta.tarjoajaOids, Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).right
@@ -58,8 +58,8 @@ class SijoitteluService(val sijoitteluRepository: SijoitteluRepository,
     val hakemukset = kaikkiHakemukset.groupBy(_.valintatapajonoOid)
     val tilankuvaukset = getTilankuvaukset
 
-    def hakemuksenHakijaryhmat(hakemusOid:String):Set[String] = {
-      hakijaryhmat.filter(_.getHakemusOid.contains(hakemusOid)).map(_.getOid).toSet
+    def hakemuksenHakijaryhmat(hakemusOid: HakemusOid): Set[String] = {
+      hakijaryhmat.filter(_.getHakemusOid.contains(hakemusOid.toString)).map(_.getOid).toSet
     }
 
     hakukohde.dto(
@@ -77,7 +77,7 @@ class SijoitteluService(val sijoitteluRepository: SijoitteluRepository,
     )
   }
 
-  def getHakemusBySijoitteluajo(hakuOid:String, sijoitteluajoId:String, hakemusOid:String): HakijaDTO = {
+  def getHakemusBySijoitteluajo(hakuOid: HakuOid, sijoitteluajoId: String, hakemusOid: HakemusOid): HakijaDTO = {
     val latestId = sijoitteluRepository.getLatestSijoitteluajoIdThrowFailure(sijoitteluajoId, hakuOid)
     val hakija = sijoitteluRepository.getHakemuksenHakija(hakemusOid, latestId)
       .orElse(throw new IllegalArgumentException(s"Hakijaa ei löytynyt hakemukselle $hakemusOid, sijoitteluajoid: $latestId")).get
@@ -109,20 +109,20 @@ class SijoitteluService(val sijoitteluRepository: SijoitteluRepository,
     )
   }
 
-  def getSijoitteluajonPerustiedot(hakuOid:String, sijoitteluajoId:String): SijoitteluajoDTO = {
+  def getSijoitteluajonPerustiedot(hakuOid: HakuOid, sijoitteluajoId: String): SijoitteluajoDTO = {
     val latestId = sijoitteluRepository.getLatestSijoitteluajoIdThrowFailure(sijoitteluajoId, hakuOid)
     sijoitteluRepository.getSijoitteluajo(latestId).map(sijoitteluajo => {
 
       val hakukohteet = sijoitteluRepository.getSijoitteluajonHakukohteet(latestId).map{hakukohde =>
         val dto = new HakukohdeDTO()
-        dto.setOid(hakukohde.oid)
+        dto.setOid(hakukohde.oid.toString)
         dto
       }
       sijoitteluajo.dto(hakukohteet)
     }).getOrElse(throw new IllegalArgumentException(s"Sijoitteluajoa $sijoitteluajoId ei löytynyt haulle $hakuOid"))
   }
 
-  def getSijoitteluajo(hakuOid:String, sijoitteluajoId:String): SijoitteluajoDTO = {
+  def getSijoitteluajo(hakuOid: HakuOid, sijoitteluajoId: String): SijoitteluajoDTO = {
     val latestId = sijoitteluRepository.getLatestSijoitteluajoIdThrowFailure(sijoitteluajoId, hakuOid)
     logger.info(s"Haetaan sijoitteluajoDTO $latestId")
 
@@ -131,7 +131,7 @@ class SijoitteluService(val sijoitteluRepository: SijoitteluRepository,
 
       val hakijaryhmatByHakukohde = sijoitteluRepository.getSijoitteluajonHakijaryhmat(latestId).map(h => h.dto(
         sijoitteluRepository.getSijoitteluajonHakijaryhmanHakemukset(h.sijoitteluajoId, h.oid)
-      )).groupBy(_.getHakukohdeOid)
+      )).groupBy(h => HakukohdeOid(h.getHakukohdeOid))
 
       val hakukohteet = sijoitteluRepository.getSijoitteluajonHakukohteet(latestId).map( hakukohde =>
         hakukohde.dto(
@@ -144,7 +144,7 @@ class SijoitteluService(val sijoitteluRepository: SijoitteluRepository,
   }
 
   private def getValintatapajonoDTOsGroupedByHakukohde(latestId:Long) = {
-    val kaikkiValintatapajonoHakemukset = getHakemusDTOs(latestId).groupBy(_.getValintatapajonoOid)
+    val kaikkiValintatapajonoHakemukset = getHakemusDTOs(latestId).groupBy(v => ValintatapajonoOid(v.getValintatapajonoOid))
     sijoitteluRepository.getSijoitteluajonValintatapajonotGroupedByHakukohde(latestId).mapValues(jonot => jonot.map(jono => jono.dto(kaikkiValintatapajonoHakemukset.getOrElse(jono.oid, List()))))
   }
 

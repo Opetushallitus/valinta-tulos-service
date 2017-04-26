@@ -12,7 +12,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.JsonAST._
 import org.json4s.ext.EnumNameSerializer
 import org.json4s.native.JsonMethods._
-import org.json4s.{CustomSerializer, DefaultFormats}
+import org.json4s.{CustomSerializer, DefaultFormats, Formats}
 import org.specs2.mutable.Specification
 import slick.dbio.DBIOAction
 import slick.driver.PostgresDriver.api._
@@ -60,7 +60,17 @@ trait ValintarekisteriDbTools extends Specification {
     case x: ValinnantilanTarkenne => JString(x.tilankuvauksenTarkenne.toString)
   }))
 
-  implicit val formats = DefaultFormats ++ List(new NumberLongSerializer, new TasasijasaantoSerializer, new ValinnantilaSerializer, new DateSerializer, new TilankuvauksenTarkenneSerializer)
+  implicit val formats = DefaultFormats ++ List(
+    new NumberLongSerializer,
+    new TasasijasaantoSerializer,
+    new ValinnantilaSerializer,
+    new DateSerializer,
+    new TilankuvauksenTarkenneSerializer,
+    new HakuOidSerializer,
+    new HakukohdeOidSerializer,
+    new ValintatapajonoOidSerializer,
+    new HakemusOidSerializer
+  )
 
   def hakijaryhmaOidsToSet(hakijaryhmaOids:Option[String]): Set[String] = {
     hakijaryhmaOids match {
@@ -349,15 +359,15 @@ trait ValintarekisteriDbTools extends Specification {
       h.getSijoitteluajoId.equals(sijoitteluajo.getSijoitteluajoId)
     }), valintatulokset)
     if(tallennaHakukohteet) {
-      hakukohteet.foreach(h => insertHakukohde(h.getOid, sijoitteluajo.getHakuOid))
+      hakukohteet.foreach(h => insertHakukohde(HakukohdeOid(h.getOid), HakuOid(sijoitteluajo.getHakuOid)))
     }
     wrapper
   }
 
-  def insertHakukohde(hakukohdeOid:String, hakuOid:String) = {
+  def insertHakukohde(hakukohdeOid: HakukohdeOid, hakuOid: HakuOid) = {
     singleConnectionValintarekisteriDb.runBlocking(DBIOAction.seq(
       sqlu"""insert into hakukohteet (hakukohde_oid, haku_oid, kk_tutkintoon_johtava, yhden_paikan_saanto_voimassa, koulutuksen_alkamiskausi)
-           values ($hakukohdeOid, $hakuOid, true, true, '2015K')"""))
+           values (${hakukohdeOid.toString}, ${hakuOid.toString}, true, true, '2015K')"""))
   }
 
   def loadSijoitteluFromFixture(fixture: String, path: String = "sijoittelu/", tallennaHakukohteet: Boolean = true):SijoitteluWrapper = {
@@ -366,7 +376,7 @@ trait ValintarekisteriDbTools extends Specification {
   }
 
   private implicit val getSijoitteluajoResult = GetResult(r => {
-    SijoitteluajoWrapper(r.nextLong, r.nextString, r.nextTimestamp.getTime, r.nextTimestamp.getTime).sijoitteluajo
+    SijoitteluajoWrapper(r.nextLong, HakuOid(r.nextString), r.nextTimestamp.getTime, r.nextTimestamp.getTime).sijoitteluajo
   })
 
   def findSijoitteluajo(sijoitteluajoId:Long): Option[SijoitteluAjo] = {
@@ -377,7 +387,7 @@ trait ValintarekisteriDbTools extends Specification {
   }
 
   private implicit val getSijoitteluajonHakukohdeResult = GetResult(r => {
-    SijoitteluajonHakukohdeWrapper(r.nextLong, r.nextString, r.nextBoolean).hakukohde
+    SijoitteluajonHakukohdeWrapper(r.nextLong, HakukohdeOid(r.nextString), r.nextBoolean).hakukohde
   })
 
   def findSijoitteluajonHakukohteet(sijoitteluajoId:Long): Seq[Hakukohde] = {
@@ -388,7 +398,7 @@ trait ValintarekisteriDbTools extends Specification {
   }
 
   private implicit val getSijoitteluajonValintatapajonoResult = GetResult(r => {
-    SijoitteluajonValintatapajonoWrapper(r.nextString, r.nextString, r.nextInt, Tasasijasaanto(r.nextString()),
+    SijoitteluajonValintatapajonoWrapper(ValintatapajonoOid(r.nextString), r.nextString, r.nextInt, Tasasijasaanto(r.nextString()),
       r.nextIntOption, r.nextIntOption, r.nextBoolean, r.nextBoolean, r.nextBoolean, r.nextIntOption, r.nextIntOption,
       r.nextTimestampOption(), r.nextTimestampOption(), r.nextStringOption(),
       r.nextBigDecimalOption, Some(false)).valintatapajono
@@ -406,7 +416,7 @@ trait ValintarekisteriDbTools extends Specification {
 
   private implicit val getSijoitteluajonHakijaryhmaResult = GetResult(r => {
     SijoitteluajonHakijaryhmaWrapper(r.nextString, r.nextString, r.nextInt, r.nextInt, r.nextBoolean, r.nextBoolean,
-      r.nextBoolean, List(), r.nextStringOption, r.nextStringOption, r.nextStringOption).hakijaryhma
+      r.nextBoolean, List(), r.nextStringOption.map(ValintatapajonoOid), r.nextStringOption.map(HakukohdeOid), r.nextStringOption).hakijaryhma
   })
 
   def findHakukohteenHakijaryhmat(hakukohdeOid:String): Seq[Hakijaryhma] = {
@@ -429,7 +439,7 @@ trait ValintarekisteriDbTools extends Specification {
 
   implicit val getHakemuksetForValintatapajonosResult = GetResult(r => HakemusRecord(
     hakijaOid = r.nextStringOption,
-    hakemusOid = r.nextString,
+    hakemusOid = HakemusOid(r.nextString),
     pisteet = r.nextBigDecimalOption,
     prioriteetti = r.nextInt,
     jonosija = r.nextInt,
@@ -441,7 +451,7 @@ trait ValintarekisteriDbTools extends Specification {
     varasijaNumero = r.nextIntOption,
     onkoMuuttunutviimesijoittelusta = r.nextBoolean,
     siirtynytToisestaValintatapaJonosta = r.nextBoolean,
-    valintatapajonoOid = r.nextString))
+    valintatapajonoOid = ValintatapajonoOid(r.nextString)))
 
   private def findValintatapajononJonosijat(valintatapajonoOid:String): Seq[Hakemus] = {
     val hakemukset = singleConnectionValintarekisteriDb.runBlocking(
@@ -480,7 +490,7 @@ trait ValintarekisteriDbTools extends Specification {
             join hakijaryhman_hakemukset as hh on hh.hakemus_oid = j.hakemus_oid
             where j.valintatapajono_oid = ${valintatapajonoOid}
         """.as[(String, String)]
-    ).groupBy(_._1).mapValues(_.map(_._2).toSet)
+    ).groupBy(t => HakemusOid(t._1)).mapValues(_.map(_._2).toSet)
     val tilankuvaukset = singleConnectionValintarekisteriDb.getValinnantilanKuvaukset(hakemukset.map(_.tilankuvausHash))
     hakemukset.map(h => {
       SijoitteluajonHakemusWrapper(
@@ -592,25 +602,26 @@ trait ValintarekisteriDbTools extends Specification {
     storedHakukohteet.length mustEqual wrapper.hakukohteet.length
   }
 
-  def createHugeSijoittelu(sijoitteluajoId:Long, hakuOid:String, size:Int = 50) = {
+  def createHugeSijoittelu(sijoitteluajoId: Long, hakuOid: HakuOid, size: Int = 50) = {
     val sijoitteluajo = SijoitteluajoWrapper(sijoitteluajoId, hakuOid, System.currentTimeMillis(), System.currentTimeMillis())
     var valinnantulokset:IndexedSeq[SijoitteluajonValinnantulosWrapper] = IndexedSeq()
     val hakukohteet = (1 to size par).map(i => {
-      val hakukohdeOid = hakuOid + "." + i
+      val hakukohdeOid = HakukohdeOid(hakuOid.toString + "." + i)
       val hakukohde = SijoitteluajonHakukohdeWrapper(sijoitteluajoId, hakukohdeOid, true).hakukohde
       hakukohde.setValintatapajonot(
       (1 to 4 par).map( k => {
-        val valintatapajonoOid = hakukohdeOid + "." + k
+        val valintatapajonoOid = ValintatapajonoOid(hakukohdeOid.toString + "." + k)
         val valintatapajono = SijoitteluajonValintatapajonoWrapper( valintatapajonoOid, "nimi" + k, k, Arvonta, Some(k), Some(k), false, false,
           false, Some(k), Some(k), Some(new Date(System.currentTimeMillis)), Some(new Date(System.currentTimeMillis)),
           None, Some(k), Some(false)).valintatapajono
         valintatapajono.getHakemukset.addAll(
           (1 to size par).map( j => {
-            val hakemus = SijoitteluajonHakemusWrapper(valintatapajonoOid + "." + j, Some(valintatapajonoOid),
+            val hakemusOid = HakemusOid(valintatapajonoOid.toString + "." + j)
+            val hakemus = SijoitteluajonHakemusWrapper(hakemusOid, Some(valintatapajonoOid.toString),
               j, j, None, false, Some(j), j, false, false, Hylatty, Some(Map("FI" -> ("fi" + j), "SV" -> ("sv" + j), "EN" -> ("en" + j))),
               EiTilankuvauksenTarkennetta, None, Set(""), List()).hakemus
             hakemus.setPistetiedot(List(SijoitteluajonPistetietoWrapper("moi", Some("123"), Some("123"), Some("Osallistui")).pistetieto).asJava)
-            valinnantulokset = valinnantulokset ++ IndexedSeq(SijoitteluajonValinnantulosWrapper(valintatapajonoOid, hakemus.getHakemusOid, hakukohdeOid,
+            valinnantulokset = valinnantulokset ++ IndexedSeq(SijoitteluajonValinnantulosWrapper(valintatapajonoOid, hakemusOid, hakukohdeOid,
               false, false, false, false, None, None, MailStatusWrapper(None, None, None, None).status))
             hakemus
           }).seq.asJava
@@ -630,7 +641,7 @@ trait ValintarekisteriDbTools extends Specification {
       hakukohde.getValintatapajonot.get(0).getHakemukset().asScala.foreach(h => h.setHyvaksyttyHakijaryhmista(hakijaryhmaOids))
       hakukohde
     })
-    hakukohteet.foreach(h => insertHakukohde(h.getOid, hakuOid))
+    hakukohteet.foreach(h => insertHakukohde(HakukohdeOid(h.getOid), hakuOid))
     SijoitteluWrapper(sijoitteluajo.sijoitteluajo, hakukohteet.seq.asJava, valinnantulokset.map(_.valintatulos).asJava)
   }
 }

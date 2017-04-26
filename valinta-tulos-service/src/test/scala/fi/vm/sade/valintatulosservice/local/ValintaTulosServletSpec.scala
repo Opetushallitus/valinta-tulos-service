@@ -4,7 +4,7 @@ import fi.vm.sade.security.mock.MockSecurityContext
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{LasnaKokoLukuvuosi, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, LasnaKokoLukuvuosi, Vastaanottotila}
 import org.joda.time.{DateTime, DateTimeZone}
 import org.json4s.JValue
 import org.json4s.jackson.Serialization
@@ -33,7 +33,7 @@ class ValintaTulosServletSpec extends ServletSpecification {
 
     "kun hakukohdetta ei löydy" in {
       "404" in {
-        HakuFixtures.useFixture("notfound")
+        HakuFixtures.useFixture(HakuOid("notfound"))
         get("haku/1.2.246.562.5.2013080813081926341928/hakukohde/1.2.246.562.5.foo") {
           status must_== 404
           body must_== """{"error":"Not found"}"""
@@ -103,7 +103,7 @@ class ValintaTulosServletSpec extends ServletSpecification {
 
     "kun hakua ei löydy" in {
       "404" in {
-        HakuFixtures.useFixture("notfound")
+        HakuFixtures.useFixture(HakuOid("notfound"))
         get("haku/1.2.246.562.5.foo") {
           status must_== 404
           body must_== """{"error":"Not found"}"""
@@ -137,7 +137,7 @@ class ValintaTulosServletSpec extends ServletSpecification {
 
     "kun haku ei löydy" in {
       "200 tyhjien tulosten kanssa" in {
-        HakuFixtures.useFixture("notfound")
+        HakuFixtures.useFixture(HakuOid("notfound"))
         get("haku/1.2.246.562.5.foo/sijoitteluajo/latest/hakemukset") {
           body must_== """{"totalCount":0,"results":[]}"""
           status must_== 200

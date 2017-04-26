@@ -9,37 +9,37 @@ import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakutoiveDTO, Hak
 
 import scala.collection.JavaConverters._
 
-case class SijoitteluajoRecord(sijoitteluajoId:Long, hakuOid:String, startMils:Long, endMils:Long) {
+case class SijoitteluajoRecord(sijoitteluajoId:Long, hakuOid: HakuOid, startMils:Long, endMils:Long) {
   def dto(hakukohteet:List[HakukohdeDTO]) = {
     val sijoitteluajoDTO = new SijoitteluajoDTO
     sijoitteluajoDTO.setSijoitteluajoId(sijoitteluajoId)
-    sijoitteluajoDTO.setHakuOid(hakuOid)
+    sijoitteluajoDTO.setHakuOid(hakuOid.toString)
     sijoitteluajoDTO.setStartMils(startMils)
     sijoitteluajoDTO.setEndMils(endMils)
     sijoitteluajoDTO.setHakukohteet(hakukohteet.asJava)
     sijoitteluajoDTO
   }
 
-  def entity(hakukohdeOids:List[String]) = {
+  def entity(hakukohdeOids: List[HakukohdeOid]) = {
     val sijoitteluAjo = new SijoitteluAjo()
     sijoitteluAjo.setSijoitteluajoId(sijoitteluajoId)
-    sijoitteluAjo.setHakuOid(hakuOid)
+    sijoitteluAjo.setHakuOid(hakuOid.toString)
     sijoitteluAjo.setStartMils(startMils)
     sijoitteluAjo.setEndMils(endMils)
     sijoitteluAjo.setHakukohteet(hakukohdeOids.map(oid => {
       val hakukohde = new HakukohdeItem()
-      hakukohde.setOid(oid)
+      hakukohde.setOid(oid.toString)
       hakukohde
     }).asJava)
     sijoitteluAjo
   }
 }
 
-case class HakijaRecord(hakemusOid:String, hakijaOid:String) {
+case class HakijaRecord(hakemusOid: HakemusOid, hakijaOid: String) {
   def dto(hakutoiveet:List[HakutoiveDTO]) = {
     val hakijaDTO = new HakijaDTO
     hakijaDTO.setHakijaOid(hakijaOid)
-    hakijaDTO.setHakemusOid(hakemusOid)
+    hakijaDTO.setHakemusOid(hakemusOid.toString)
     hakijaDTO.setHakutoiveet(sortHakutoiveet(hakutoiveet))
     hakijaDTO
   }
@@ -53,12 +53,12 @@ case class HakijaRecord(hakemusOid:String, hakijaOid:String) {
   }
 }
 
-case class HakutoiveRecord(hakemusOid: String, hakutoive: Int, hakukohdeOid: String, valintatuloksenTila: String, kaikkiJonotsijoiteltu: Boolean) {
+case class HakutoiveRecord(hakemusOid: HakemusOid, hakutoive: Int, hakukohdeOid: HakukohdeOid, valintatuloksenTila: String, kaikkiJonotsijoiteltu: Boolean) {
 
   def dto(valintatapajonot:List[HakutoiveenValintatapajonoDTO], pistetiedot:List[PistetietoDTO], hakijaryhmat:List[HakutoiveenHakijaryhmaDTO]) = {
     val hakutoiveDTO = new HakutoiveDTO
     hakutoiveDTO.setHakutoive(hakutoive)
-    hakutoiveDTO.setHakukohdeOid(hakukohdeOid)
+    hakutoiveDTO.setHakukohdeOid(hakukohdeOid.toString)
     //  TODO hakutoiveDTO.setVastaanottotieto(valintatuloksenTila) ?
     hakutoiveDTO.setPistetiedot(pistetiedot.asJava)
     hakutoiveDTO.setHakutoiveenValintatapajonot(valintatapajonot.asJava)
@@ -67,7 +67,7 @@ case class HakutoiveRecord(hakemusOid: String, hakutoive: Int, hakukohdeOid: Str
   }
 }
 
-case class HakutoiveenValintatapajonoRecord(hakukohdeOid:String, valintatapajonoPrioriteetti:Int, valintatapajonoOid:String,
+case class HakutoiveenValintatapajonoRecord(hakukohdeOid: HakukohdeOid, valintatapajonoPrioriteetti:Int, valintatapajonoOid: ValintatapajonoOid,
     valintatapajonoNimi:String, eiVarasijatayttoa:Boolean, jonosija:Int,
     varasijanNumero:Option[Int], tila:Valinnantila, ilmoittautumisTila:SijoitteluajonIlmoittautumistila,
     hyvaksyttyHarkinnanvaraisesti:Boolean, tasasijaJonosija:Int, pisteet:Option[BigDecimal], alinHyvaksyttyPistemaara:Option[BigDecimal],
@@ -79,7 +79,7 @@ case class HakutoiveenValintatapajonoRecord(hakukohdeOid:String, valintatapajono
   def dto(tilankuvaukset:Map[String,String]) = {
     val hakutoiveenValintatapajonoDto = new HakutoiveenValintatapajonoDTO()
     hakutoiveenValintatapajonoDto.setValintatapajonoPrioriteetti(valintatapajonoPrioriteetti)
-    hakutoiveenValintatapajonoDto.setValintatapajonoOid(valintatapajonoOid)
+    hakutoiveenValintatapajonoDto.setValintatapajonoOid(valintatapajonoOid.toString)
     hakutoiveenValintatapajonoDto.setValintatapajonoNimi(valintatapajonoNimi)
     hakutoiveenValintatapajonoDto.setEiVarasijatayttoa(eiVarasijatayttoa)
     hakutoiveenValintatapajonoDto.setJonosija(jonosija)
@@ -119,13 +119,13 @@ case class HakutoiveenValintatapajonoRecord(hakukohdeOid:String, valintatapajono
   }
 }
 
-case class HakutoiveenHakijaryhmaRecord(oid:String, nimi:String, hakukohdeOid:String, valintatapajonoOid:Option[String], kiintio:Int,
+case class HakutoiveenHakijaryhmaRecord(oid:String, nimi:String, hakukohdeOid: HakukohdeOid, valintatapajonoOid: Option[ValintatapajonoOid], kiintio:Int,
                                         hyvaksyttyHakijaryhmasta:Boolean, hakijaryhmaTyyppikoodiUri:Option[String]) {
   def dto = {
     val hakutoiveenHakijaryhmaDTO = new HakutoiveenHakijaryhmaDTO()
     hakutoiveenHakijaryhmaDTO.setOid(oid)
     hakutoiveenHakijaryhmaDTO.setNimi(nimi)
-    valintatapajonoOid.foreach(hakutoiveenHakijaryhmaDTO.setValintatapajonoOid)
+    valintatapajonoOid.map(_.toString).foreach(hakutoiveenHakijaryhmaDTO.setValintatapajonoOid)
     hakutoiveenHakijaryhmaDTO.setKiintio(kiintio)
     hakutoiveenHakijaryhmaDTO.setHyvaksyttyHakijaryhmasta(hyvaksyttyHakijaryhmasta)
     hakijaryhmaTyyppikoodiUri.foreach(hakutoiveenHakijaryhmaDTO.setHakijaryhmatyyppikoodiUri)
@@ -133,7 +133,7 @@ case class HakutoiveenHakijaryhmaRecord(oid:String, nimi:String, hakukohdeOid:St
   }
 }
 
-case class PistetietoRecord(valintatapajonoOid:String, hakemusOid:String, tunniste:String,
+case class PistetietoRecord(valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, tunniste:String,
                             arvo:String, laskennallinenArvo:String, osallistuminen:String) {
   def dto = {
     val pistetietoDTO = new PistetietoDTO
@@ -171,13 +171,13 @@ object HakutoiveenPistetietoRecord {
   )
 }
 
-case class SijoittelunHakukohdeRecord(sijoitteluajoId: Long, oid: String, kaikkiJonotsijoiteltu: Boolean) {
+case class SijoittelunHakukohdeRecord(sijoitteluajoId: Long, oid: HakukohdeOid, kaikkiJonotsijoiteltu: Boolean) {
 
   def dto(valintatapajonot:List[ValintatapajonoDTO], hakijaryhmat:List[HakijaryhmaDTO]) = {
 
     val hakukohdeDTO = new HakukohdeDTO
     hakukohdeDTO.setSijoitteluajoId(sijoitteluajoId)
-    hakukohdeDTO.setOid(oid)
+    hakukohdeDTO.setOid(oid.toString)
     hakukohdeDTO.setKaikkiJonotSijoiteltu(kaikkiJonotsijoiteltu)
     hakukohdeDTO.setValintatapajonot(valintatapajonot.asJava)
     hakukohdeDTO.setHakijaryhmat(hakijaryhmat.asJava)
@@ -188,7 +188,7 @@ case class SijoittelunHakukohdeRecord(sijoitteluajoId: Long, oid: String, kaikki
 
     val hakukohde = new Hakukohde
     hakukohde.setSijoitteluajoId(sijoitteluajoId)
-    hakukohde.setOid(oid)
+    hakukohde.setOid(oid.toString)
     hakukohde.setKaikkiJonotSijoiteltu(kaikkiJonotsijoiteltu)
     hakukohde.setValintatapajonot(valintatapajonot.asJava)
     hakukohde.setHakijaryhmat(hakijaryhmat.asJava)
@@ -196,13 +196,13 @@ case class SijoittelunHakukohdeRecord(sijoitteluajoId: Long, oid: String, kaikki
   }
 }
 
-case class ValintatapajonoRecord(tasasijasaanto:String, oid:String, nimi:String, prioriteetti:Int, aloituspaikat:Option[Int],
+case class ValintatapajonoRecord(tasasijasaanto:String, oid: ValintatapajonoOid, nimi:String, prioriteetti:Int, aloituspaikat:Option[Int],
                                  alkuperaisetAloituspaikat:Option[Int], alinHyvaksyttyPistemaara:BigDecimal,
                                  eiVarasijatayttoa:Boolean, kaikkiEhdonTayttavatHyvaksytaan:Boolean,
                                  poissaOlevaTaytto:Boolean, valintaesitysHyvaksytty:Option[Boolean], hakeneet:Int,
                                  varasijat:Option[Int], varasijanTayttoPaivat:Option[Int],
                                  varasijojaKaytetaanAlkaen:Option[java.sql.Date], varasijojaKaytetaanAsti:Option[java.sql.Date],
-                                 tayttoJono:Option[String], hakukohdeOid:String) {
+                                 tayttoJono:Option[String], hakukohdeOid: HakukohdeOid) {
 
   def bigDecimal(bigDecimal:BigDecimal): java.math.BigDecimal = bigDecimal match {
     case i: BigDecimal => i.bigDecimal
@@ -212,7 +212,7 @@ case class ValintatapajonoRecord(tasasijasaanto:String, oid:String, nimi:String,
   def dto(hakemukset: List[HakemusDTO]) = {
     val valintatapajonoDTO = new ValintatapajonoDTO
     valintatapajonoDTO.setTasasijasaanto(fi.vm.sade.sijoittelu.tulos.dto.Tasasijasaanto.valueOf(tasasijasaanto.toUpperCase()))
-    valintatapajonoDTO.setOid(oid)
+    valintatapajonoDTO.setOid(oid.toString)
     valintatapajonoDTO.setNimi(nimi)
     valintatapajonoDTO.setPrioriteetti(prioriteetti)
     valintatapajonoDTO.setAloituspaikat(aloituspaikat.get)
@@ -235,7 +235,7 @@ case class ValintatapajonoRecord(tasasijasaanto:String, oid:String, nimi:String,
   def entity(hakemukset: List[Hakemus]) = {
     val valintatapajono = new Valintatapajono
     valintatapajono.setTasasijasaanto(fi.vm.sade.sijoittelu.domain.Tasasijasaanto.valueOf(tasasijasaanto.toUpperCase()))
-    valintatapajono.setOid(oid)
+    valintatapajono.setOid(oid.toString)
     valintatapajono.setNimi(nimi)
     valintatapajono.setPrioriteetti(prioriteetti)
     valintatapajono.setAloituspaikat(aloituspaikat.get)
@@ -258,10 +258,10 @@ case class ValintatapajonoRecord(tasasijasaanto:String, oid:String, nimi:String,
   }
 }
 
-case class HakemusRecord(hakijaOid:Option[String], hakemusOid:String, pisteet:Option[BigDecimal],
+case class HakemusRecord(hakijaOid:Option[String], hakemusOid: HakemusOid, pisteet:Option[BigDecimal],
                          prioriteetti:Int, jonosija:Int, tasasijaJonosija:Int, tila:Valinnantila, tilankuvausHash:Int,
                          tarkenteenLisatieto:Option[String], hyvaksyttyHarkinnanvaraisesti:Boolean, varasijaNumero:Option[Int],
-                         onkoMuuttunutviimesijoittelusta:Boolean, siirtynytToisestaValintatapaJonosta:Boolean, valintatapajonoOid:String) {
+                         onkoMuuttunutviimesijoittelusta:Boolean, siirtynytToisestaValintatapaJonosta:Boolean, valintatapajonoOid: ValintatapajonoOid) {
 
   def dto(hakijaryhmaOids:Set[String],
           tilankuvaukset:Map[String,String],
@@ -270,7 +270,7 @@ case class HakemusRecord(hakijaOid:Option[String], hakemusOid:String, pisteet:Op
 
     val hakemusDTO = new HakemusDTO
     hakijaOid.foreach(hakemusDTO.setHakijaOid)
-    hakemusDTO.setHakemusOid(hakemusOid)
+    hakemusDTO.setHakemusOid(hakemusOid.toString)
     pisteet.foreach(p => hakemusDTO.setPisteet(p.bigDecimal))
     hakemusDTO.setPrioriteetti(prioriteetti)
     hakemusDTO.setJonosija(jonosija)
@@ -282,7 +282,7 @@ case class HakemusRecord(hakijaOid:Option[String], hakemusOid:String, pisteet:Op
     hakemusDTO.setOnkoMuuttunutViimeSijoittelussa(onkoMuuttunutviimesijoittelusta)
     hakemusDTO.setHyvaksyttyHakijaryhmista(hakijaryhmaOids.asJava)
     hakemusDTO.setSiirtynytToisestaValintatapajonosta(siirtynytToisestaValintatapaJonosta)
-    hakemusDTO.setValintatapajonoOid(valintatapajonoOid)
+    hakemusDTO.setValintatapajonoOid(valintatapajonoOid.toString)
     hakemusDTO.setTilaHistoria(tilahistoria.asJava)
     hakemusDTO.getPistetiedot.addAll(pistetiedot.asJava)
     hakemusDTO
@@ -295,7 +295,7 @@ case class HakemusRecord(hakijaOid:Option[String], hakemusOid:String, pisteet:Op
 
     val hakemus = new Hakemus
     hakijaOid.foreach(hakemus.setHakijaOid)
-    hakemus.setHakemusOid(hakemusOid)
+    hakemus.setHakemusOid(hakemusOid.toString)
     pisteet.foreach(p => hakemus.setPisteet(p.bigDecimal))
     hakemus.setPrioriteetti(prioriteetti)
     hakemus.setJonosija(jonosija)
@@ -320,7 +320,7 @@ case class HakemusRecord(hakijaOid:Option[String], hakemusOid:String, pisteet:Op
   }
 }
 
-case class TilaHistoriaRecord(valintatapajonoOid:String, hakemusOid:String, tila:Valinnantila, luotu:Date) {
+case class TilaHistoriaRecord(valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, tila:Valinnantila, luotu:Date) {
   def dto = {
     val tilaDTO = new TilaHistoriaDTO
     tilaDTO.setLuotu(luotu)
@@ -336,39 +336,39 @@ case class TilaHistoriaRecord(valintatapajonoOid:String, hakemusOid:String, tila
   }
 }
 
-case class HakijaryhmaRecord(prioriteetti:Int, oid:String, nimi:String, hakukohdeOid:Option[String], kiintio:Int,
+case class HakijaryhmaRecord(prioriteetti:Int, oid:String, nimi:String, hakukohdeOid: Option[HakukohdeOid], kiintio:Int,
                              kaytaKaikki:Boolean, sijoitteluajoId:Long, tarkkaKiintio:Boolean, kaytetaanRyhmaanKuuluvia:Boolean,
-                             valintatapajonoOid:Option[String], hakijaryhmatyyppikoodiUri:String) {
+                             valintatapajonoOid: Option[ValintatapajonoOid], hakijaryhmatyyppikoodiUri:String) {
 
-  def dto(hakemusOid:List[String]) = {
+  def dto(hakemusOid: List[HakemusOid]) = {
     val hakijaryhmaDTO = new HakijaryhmaDTO
     hakijaryhmaDTO.setPrioriteetti(prioriteetti)
     hakijaryhmaDTO.setOid(oid)
     hakijaryhmaDTO.setNimi(nimi)
-    hakukohdeOid.foreach(hakijaryhmaDTO.setHakukohdeOid)
+    hakukohdeOid.map(_.toString).foreach(hakijaryhmaDTO.setHakukohdeOid)
     hakijaryhmaDTO.setKiintio(kiintio)
     hakijaryhmaDTO.setKaytaKaikki(kaytaKaikki)
     hakijaryhmaDTO.setTarkkaKiintio(tarkkaKiintio)
     hakijaryhmaDTO.setKaytetaanRyhmaanKuuluvia(kaytetaanRyhmaanKuuluvia)
-    valintatapajonoOid.foreach(hakijaryhmaDTO.setValintatapajonoOid)
+    valintatapajonoOid.map(_.toString).foreach(hakijaryhmaDTO.setValintatapajonoOid)
     hakijaryhmaDTO.setHakijaryhmatyyppikoodiUri(hakijaryhmatyyppikoodiUri)
-    hakijaryhmaDTO.setHakemusOid(hakemusOid.asJava)
+    hakijaryhmaDTO.setHakemusOid(hakemusOid.map(_.toString).asJava)
     hakijaryhmaDTO
   }
 
-  def entity(hakemusOid:List[String]) = {
+  def entity(hakemusOid: List[HakemusOid]) = {
     val hakijaryhma = new Hakijaryhma
     hakijaryhma.setPrioriteetti(prioriteetti)
     hakijaryhma.setOid(oid)
     hakijaryhma.setNimi(nimi)
-    hakukohdeOid.foreach(hakijaryhma.setHakukohdeOid)
+    hakukohdeOid.map(_.toString).foreach(hakijaryhma.setHakukohdeOid)
     hakijaryhma.setKiintio(kiintio)
     hakijaryhma.setKaytaKaikki(kaytaKaikki)
     hakijaryhma.setTarkkaKiintio(tarkkaKiintio)
     hakijaryhma.setKaytetaanRyhmaanKuuluvia(kaytetaanRyhmaanKuuluvia)
-    valintatapajonoOid.foreach(hakijaryhma.setValintatapajonoOid)
+    valintatapajonoOid.map(_.toString).foreach(hakijaryhma.setValintatapajonoOid)
     hakijaryhma.setHakijaryhmatyyppikoodiUri(hakijaryhmatyyppikoodiUri)
-    hakijaryhma.getHakemusOid.addAll(hakemusOid.asJava)
+    hakijaryhma.getHakemusOid.addAll(hakemusOid.map(_.toString).asJava)
     hakijaryhma
   }
 }

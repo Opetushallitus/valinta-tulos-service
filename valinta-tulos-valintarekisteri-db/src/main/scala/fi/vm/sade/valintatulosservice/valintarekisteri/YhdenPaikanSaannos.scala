@@ -15,7 +15,7 @@ class YhdenPaikanSaannos(hakuService: HakuService,
     ).right.map(_.flatten.toSet)
   }
 
-  private def ottanutVastaanToisenPaikan(hakukohdeOid: String,
+  private def ottanutVastaanToisenPaikan(hakukohdeOid: HakukohdeOid,
                                          valinnantulokset: Set[Valinnantulos]): Either[Throwable, Set[Valinnantulos]] = {
     hakuService.getHakukohde(hakukohdeOid).right.flatMap(hakukohde => {
       if (hakukohde.yhdenPaikanSaanto.voimassa) {
@@ -31,7 +31,7 @@ class YhdenPaikanSaannos(hakuService: HakuService,
   }
 
   private def ottanutVastaanToisenPaikan(valinnantulos: Valinnantulos,
-                                         vastaanotto: Option[(String, HakukohdeRecord, VastaanottoRecord)]): Valinnantulos = {
+                                         vastaanotto: Option[(HakemusOid, HakukohdeRecord, VastaanottoRecord)]): Valinnantulos = {
     val sitovaVastaanotto = vastaanotto.exists(_._3.action == VastaanotaSitovasti)
     val ehdollinenVastaanottoToisellaHakemuksella =
       vastaanotto.exists(v => v._1 != valinnantulos.hakemusOid && v._3.action == VastaanotaEhdollisesti)

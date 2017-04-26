@@ -29,12 +29,12 @@ case class VastaanottoHistoria (
 
 case class OpintopolunVastaanottotieto (
    personOid: String,
-   hakuOid: String,
-   hakukohdeOid: String,
+   hakuOid: HakuOid,
+   hakukohdeOid: HakukohdeOid,
    vastaanottoAction: String,
    vastaanottoaika: Date) extends Vastaanottotieto
 
 case class VanhaVastaanottotieto(
     personOid: String,
-    hakukohde: String,
+    hakukohde: HakukohdeOid,
     vastaanottoaika: Date) extends Vastaanottotieto

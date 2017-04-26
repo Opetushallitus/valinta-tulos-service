@@ -13,7 +13,7 @@ import fi.vm.sade.valintatulosservice.sijoittelu.{DirectMongoSijoittelunTulosRes
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{VastaanottoEventDto, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid, VastaanottoEventDto, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.vastaanottomeili._
 import org.joda.time.DateTime
@@ -40,19 +40,19 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
   "Sähköposti lähtee, kun ehdollisesta vastaanotosta tulee sitova" in {
 
     "Vastaanottosähköpostit" in {
-      val fixture = new GeneratedFixture(List(SimpleGeneratedHakuFixture(3, 1, "1.2.3.4.6",
+      val fixture = new GeneratedFixture(List(SimpleGeneratedHakuFixture(3, 1, HakuOid("1.2.3.4.6"),
         List(HakemuksenTila.VARALLA, HakemuksenTila.VARALLA, HakemuksenTila.HYVAKSYTTY))))
       fixture.apply
 
-      val res1 = vastaanottoService.vastaanotaVirkailijana(List(VastaanottoEventDto("3.1", "1.2.3.4.6.1", "1.2.3.4.6.1", "3", "1.2.3.4.6",
+      val res1 = vastaanottoService.vastaanotaVirkailijana(List(VastaanottoEventDto(ValintatapajonoOid("3.1"), "1.2.3.4.6.1", HakemusOid("1.2.3.4.6.1"), HakukohdeOid("3"), HakuOid("1.2.3.4.6"),
         Vastaanottotila.ehdollisesti_vastaanottanut, "6.4.3.2.1", "testifixtuuri")))
       res1.head.result.status must_== 200
 
-      val res2 = vastaanottoService.vastaanotaVirkailijana(List(VastaanottoEventDto("3.1", "1.2.3.4.6.1", "1.2.3.4.6.1", "3", "1.2.3.4.6",
+      val res2 = vastaanottoService.vastaanotaVirkailijana(List(VastaanottoEventDto(ValintatapajonoOid("3.1"), "1.2.3.4.6.1", HakemusOid("1.2.3.4.6.1"), HakukohdeOid("3"), HakuOid("1.2.3.4.6"),
         Vastaanottotila.kesken, "6.4.3.2.1", "testifixtuuri")))
       res2.head.result.status must_== 200
 
-      val res3 = vastaanottoService.vastaanotaVirkailijana(List(VastaanottoEventDto("3.1", "1.2.3.4.6.1", "1.2.3.4.6.1", "3", "1.2.3.4.6",
+      val res3 = vastaanottoService.vastaanotaVirkailijana(List(VastaanottoEventDto(ValintatapajonoOid("3.1"), "1.2.3.4.6.1", HakemusOid("1.2.3.4.6.1"), HakukohdeOid("3"), HakuOid("1.2.3.4.6"),
         Vastaanottotila.vastaanottanut, "6.4.3.2.1", "testifixtuuri")))
       res3.head.result.status must_== 200
 
@@ -69,7 +69,7 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
 
   "Sähköpostia ei lähde, kun 'kesken' tilaisesta vastaanotosta tulee sitova" in {
     "Vastaanottosähköpostit" in {
-      val fixture = new GeneratedFixture(List(SimpleGeneratedHakuFixture(3, 1, "1.2.3.4.5",
+      val fixture = new GeneratedFixture(List(SimpleGeneratedHakuFixture(3, 1, HakuOid("1.2.3.4.5"),
         List(HakemuksenTila.VARALLA,HakemuksenTila.VARALLA,HakemuksenTila.HYVAKSYTTY))))
       fixture.apply
 
@@ -91,7 +91,7 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
   "Ehdollinen vastaanotto periytyy ylemmäs" in {
 
     "Vastaanottosähköpostit" in {
-      val fixture = new GeneratedFixture(List(new SimpleGeneratedHakuFixture(3, 1, "1.2.3.4.7", List(HakemuksenTila.VARALLA,HakemuksenTila.HYLATTY,HakemuksenTila.HYVAKSYTTY))))
+      val fixture = new GeneratedFixture(List(new SimpleGeneratedHakuFixture(3, 1, HakuOid("1.2.3.4.7"), List(HakemuksenTila.VARALLA,HakemuksenTila.HYLATTY,HakemuksenTila.HYVAKSYTTY))))
       fixture.apply
 
       val timestamp = System.currentTimeMillis()
@@ -102,7 +102,7 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
 
         vastaanotaAll(hk => Some(hk.vastaanottotila).filter(_ => hk.valintatila == Valintatila.hyväksytty).map(_ => ehdollisesti_vastaanottanut))(mailables)
 
-        val fixture = new GeneratedFixture(List(new SimpleGeneratedHakuFixture(3, 1, "1.2.3.4.7", List(HakemuksenTila.VARALLA,HakemuksenTila.HYVAKSYTTY,HakemuksenTila.HYVAKSYTTY))))
+        val fixture = new GeneratedFixture(List(new SimpleGeneratedHakuFixture(3, 1, HakuOid("1.2.3.4.7"), List(HakemuksenTila.VARALLA,HakemuksenTila.HYVAKSYTTY,HakemuksenTila.HYVAKSYTTY))))
         fixture.apply
         // This throws "Löytyi aiempi vastaanotto VastaanottoRecord(1.2.3.4.6.1,1.2.3.4.6,3,VastaanotaEhdollisesti,,2016-07-15 10:58:15.201395)"
         vastaanotaAll(hk => Some(hk.vastaanottotila).filter(_ == kesken && hk.valintatila == Valintatila.hylätty).map(_ => ehdollisesti_vastaanottanut))(mailables)
@@ -124,7 +124,7 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
   "Hakujen filtteröinti" in {
     "korkeakouluhaku -> mukaan" in {
       new GeneratedFixture(new SingleHakemusFixture()).apply
-      poller.etsiHaut must_== List("1")
+      poller.etsiHaut must_== List(HakuOid("1"))
     }
 
     "2.asteen haku -> ei mukaan" in {
@@ -136,7 +136,7 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
 
     "Jos hakuaika ei alkanut -> ei mukaan" in {
       new GeneratedFixture(new SingleHakemusFixture()) {
-        override def hakuFixture = "korkeakoulu-yhteishaku-hakuaika-tulevaisuudessa"
+        override def hakuFixture = HakuOid("korkeakoulu-yhteishaku-hakuaika-tulevaisuudessa")
       }.apply
       poller.etsiHaut must_== Nil
     }
@@ -159,7 +159,7 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
       new GeneratedFixture(new SingleHakemusFixture()){
         override def ohjausparametritFixture = "tulokset-saa-julkaista"
       }.apply
-      poller.etsiHaut must_== List("1")
+      poller.etsiHaut must_== List(HakuOid("1"))
     }
   }
 
@@ -202,12 +202,12 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
   "Kun hyväksytty yhteen kohteeseen ja hylätty toisessa" in {
     lazy val fixture = new GeneratedFixture(List(new GeneratedHakuFixture() {
       override def hakemukset = List(
-        HakemuksenTulosFixture("H1", List(
-          HakemuksenHakukohdeFixture("1", "1"),
-          HakemuksenHakukohdeFixture("1", "2", List(ValintatapaJonoFixture(HakemuksenTila.HYLATTY)))
+        HakemuksenTulosFixture(HakemusOid("H1"), List(
+          HakemuksenHakukohdeFixture("1", HakukohdeOid("1")),
+          HakemuksenHakukohdeFixture("1", HakukohdeOid("2"), List(ValintatapaJonoFixture(HakemuksenTila.HYLATTY)))
         )),
-        HakemuksenTulosFixture("H2", List(
-          HakemuksenHakukohdeFixture("1", "1", List(ValintatapaJonoFixture(HakemuksenTila.HYLATTY)))
+        HakemuksenTulosFixture(HakemusOid("H2"), List(
+          HakemuksenHakukohdeFixture("1", HakukohdeOid("1"), List(ValintatapaJonoFixture(HakemuksenTila.HYLATTY)))
         ))
       )
     }))
@@ -215,7 +215,7 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
     "Meili lähetetään" in {
       fixture.apply
       val mailables: List[HakemusMailStatus] = poller.pollForMailables()
-      mailables.map(_.hakemusOid).toSet must_== Set("H1")
+      mailables.map(_.hakemusOid).toSet must_== Set(HakemusOid("H1"))
     }
 
     "Meiliä ei lähetetä uudestaan" in {
@@ -223,7 +223,7 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
       val timestamp = System.currentTimeMillis()
       withFixedDateTime(timestamp) {
         val mailables: List[HakemusMailStatus] = poller.pollForMailables()
-        mailables.map(_.hakemusOid).toSet must_== Set("H1")
+        mailables.map(_.hakemusOid).toSet must_== Set(HakemusOid("H1"))
         markMailablesSent(mailables);
         withFixedDateTime(threeDaysLater(timestamp)) {
           val mailablesAfterSent: List[HakemusMailStatus] = poller.pollForMailables();
@@ -236,7 +236,7 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
       fixture.apply
       withFixedDateTime("10.10.2014 0:00") {
         val mailables: List[HakemusMailStatus] = poller.pollForMailables()
-        mailables.map(_.hakemusOid).toSet must_== Set("H1")
+        mailables.map(_.hakemusOid).toSet must_== Set(HakemusOid("H1"))
         markMailablesSent(mailables)
         pollForCandidates.map(_.hakemusOid) must_== Set.empty
         withFixedDateTime("11.10.2014 1:00") {
@@ -249,8 +249,8 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
   "Kun hakija on varalla" in {
     lazy val fixture = new GeneratedFixture(List(new GeneratedHakuFixture() {
       override def hakemukset = List(
-        HakemuksenTulosFixture("H1", List(
-          HakemuksenHakukohdeFixture("1", "1", List(ValintatapaJonoFixture(HakemuksenTila.VARALLA)))
+        HakemuksenTulosFixture(HakemusOid("H1"), List(
+          HakemuksenHakukohdeFixture("1", HakukohdeOid("1"), List(ValintatapaJonoFixture(HakemuksenTila.VARALLA)))
         ))
       )
     }))
@@ -260,7 +260,7 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
       withFixedDateTime("10.10.2014 0:00") {
         poller.pollForMailables().map(_.hakemusOid) must_== Nil
         withFixedDateTime("13.10.2014 1:00") {
-          pollForCandidates.map(_.hakemusOid) must_== Set("H1")
+          pollForCandidates.map(_.hakemusOid) must_== Set(HakemusOid("H1"))
         }
       }
     }
@@ -269,8 +269,8 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
   "Kun hakemuksen tulosta ei ole julkaistu" in {
     lazy val fixture = new GeneratedFixture(List(new GeneratedHakuFixture() {
       override def hakemukset = List(
-        HakemuksenTulosFixture("H1", List(
-          HakemuksenHakukohdeFixture("1", "1", List(ValintatapaJonoFixture(HakemuksenTila.HYVAKSYTTY)), julkaistavissa = false)
+        HakemuksenTulosFixture(HakemusOid("H1"), List(
+          HakemuksenHakukohdeFixture("1", HakukohdeOid("1"), List(ValintatapaJonoFixture(HakemuksenTila.HYVAKSYTTY)), julkaistavissa = false)
         ))
       )
     }))
@@ -287,7 +287,7 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
   }
 
   "Kun Hakemuksia on useammassa Haussa" in {
-    val fixture = new GeneratedFixture(List(new SimpleGeneratedHakuFixture(1, 4, "1"), new SimpleGeneratedHakuFixture(1, 4, "2")))
+    val fixture = new GeneratedFixture(List(SimpleGeneratedHakuFixture(1, 4, HakuOid("1")), SimpleGeneratedHakuFixture(1, 4, HakuOid("2"))))
     "Tuloksia haetaan molemmista" in {
       val poller = new MailPoller(valintatulokset, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 8)
       fixture.apply
@@ -312,17 +312,6 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
   }
 
   step(valintarekisteriDb.db.shutdown)
-
-  private def verifyMailSent(hakemusOid: String, hakukohdeOid: String, timestamp: Long) {
-    val valintatulosCollection = MongoFactory.createDB(appConfig.settings.valintatulosMongoConfig)("Valintatulos")
-    val query = MongoDBObject(
-      "hakemusOid" -> hakemusOid,
-      "hakukohdeOid" -> hakukohdeOid
-    )
-    val result: DBObject = valintatulosCollection.findOne(query).get
-    result.expand[java.util.Date]("mailStatus.sent") must_== Some(new java.util.Date(timestamp))
-    result.expand[List[String]]("mailStatus.media") must_== Some(List("email"))
-  }
 
   private def pollForCandidates: Set[HakemusIdentifier] = {
     valintatulokset.pollForCandidates(poller.etsiHaut, poller.limit)

@@ -8,7 +8,7 @@ import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
 import fi.vm.sade.valintatulosservice.sijoittelu.{DirectMongoSijoittelunTulosRestClient, SijoittelutulosService}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.{ITSpecification, TimeWarp, ValintatulosService, VastaanotettavuusService}
@@ -30,28 +30,28 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
     }
 
     "erillishaku korkeakouluihin" in {
-      val hakuFixture: String = HakuFixtures.korkeakouluErillishaku
+      val hakuFixture = HakuFixtures.korkeakouluErillishaku
       testitKaikilleHakutyypeille(hakuFixture)
       testitSijoiteltavilleKorkeakouluHauille(hakuFixture)
       testitSijoittelunPiirissäOlevilleHakutyypeille(hakuFixture)
     }
 
     "korkeakoulun yhteishaku ilman sijoittelua" in {
-      val hakuFixture: String = "korkeakoulu-lisahaku1"
+      val hakuFixture = HakuFixtures.korkeakouluLisahaku1
       testitKaikilleHakutyypeille(hakuFixture)
       testitTyypillisilleHauille(hakuFixture)
       testitSijoittelunPiirissäOlemattomilleHakutyypeille(hakuFixture)
     }
 
     "yhteishaku toisen asteen oppilaitoksiin" in {
-      val hakuFixture: String = HakuFixtures.toinenAsteYhteishaku
+      val hakuFixture = HakuFixtures.toinenAsteYhteishaku
       testitKaikilleHakutyypeille(hakuFixture)
       testitTyypillisilleHauille(hakuFixture)
       testitSijoittelunPiirissäOlevilleHakutyypeille(hakuFixture)
     }
 
     "erillishaku toisen asteen oppilaitoksiin (ei sijoittelua)" in {
-      val hakuFixture: String = HakuFixtures.toinenAsteErillishakuEiSijoittelua
+      val hakuFixture = HakuFixtures.toinenAsteErillishakuEiSijoittelua
       testitKaikilleHakutyypeille(hakuFixture)
       testitTyypillisilleHauille(hakuFixture)
       testitSijoittelunPiirissäOlemattomilleHakutyypeille(hakuFixture)
@@ -68,11 +68,11 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
   lazy val vastaanotettavuusService = new VastaanotettavuusService(hakukohdeRecordService, valintarekisteriDb)
   lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb, hakuService, valintarekisteriDb, hakukohdeRecordService)
 
-  val hakuOid: String = "1.2.246.562.5.2013080813081926341928"
+  val hakuOid = HakuOid("1.2.246.562.5.2013080813081926341928")
   val sijoitteluAjoId: String = "latest"
-  val hakemusOid: String = "1.2.246.562.11.00000441369"
+  val hakemusOid = HakemusOid("1.2.246.562.11.00000441369")
 
-  def testitTyypillisilleHauille(hakuFixture: String) = {
+  def testitTyypillisilleHauille(hakuFixture: HakuOid) = {
     "hyväksytty, useimmat haut" in {
       "ylemmat sijoiteltu -> vastaanotettavissa" in {
         useFixture("hyvaksytty-ylempi-sijoiteltu.json", hakuFixture = hakuFixture)
@@ -100,7 +100,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
     }
   }
 
-  def testitSijoittelunPiirissäOlevilleHakutyypeille(hakuFixture: String) = {
+  def testitSijoittelunPiirissäOlevilleHakutyypeille(hakuFixture: HakuOid) = {
     "hyväksyttyä hakutoivetta alemmat julkaisemattomat merkitään tilaan PERUUNTUNUT" in {
       useFixture("hyvaksytty-julkaisematon-hyvaksytty.json", hakuFixture = hakuFixture, hakemusFixtures = List( "00000441369-3"))
 
@@ -116,7 +116,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
     }
   }
 
-  def testitSijoittelunPiirissäOlemattomilleHakutyypeille(hakuFixture: String) = {
+  def testitSijoittelunPiirissäOlemattomilleHakutyypeille(hakuFixture: HakuOid) = {
     "hyväksyttyä hakutoivetta alempia ei merkitä tilaan PERUUNTUNUT" in {
       useFixture("hyvaksytty-julkaisematon-hyvaksytty.json", hakuFixture = hakuFixture, hakemusFixtures = List( "00000441369-3"))
 
@@ -126,7 +126,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
     }
   }
 
-  def testitSijoiteltavilleKorkeakouluHauille(hakuFixture: String) = {
+  def testitSijoiteltavilleKorkeakouluHauille(hakuFixture: HakuOid) = {
     "hyväksytty, sijoittelua käyttävä korkeakouluhaku" in {
       "ylemmat sijoiteltu -> vastaanotettavissa" in {
         useFixture("hyvaksytty-ylempi-sijoiteltu.json", hakuFixture = hakuFixture)
@@ -183,7 +183,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
     }
   }
 
-  def testitKaikilleHakutyypeille(hakuFixture: String) = {
+  def testitKaikilleHakutyypeille(hakuFixture: HakuOid) = {
 
     "sijoittelusta puuttuvat hakutoiveet" in {
       "näytetään keskeneräisinä ja julkaisemattomina" in {
@@ -394,7 +394,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
         val valintatulos2 = getHakutoiveenValintatulos("1.2.246.562.5.2013080813081926341928", "1.2.246.562.5.72607738902")
         valintatulos2.getTila must_== ValintatuloksenTila.KESKEN
         valintatulos2.getTilaHakijalle must_== ValintatuloksenTila.EI_VASTAANOTETTU_MAARA_AIKANA
-        val valintatulos3 = getHakutoiveenValintatulosByHakemus("1.2.246.562.5.72607738902", hakemusOid)
+        val valintatulos3 = getHakutoiveenValintatulosByHakemus("1.2.246.562.5.72607738902", hakemusOid.toString)
         valintatulos3.getTila must_== ValintatuloksenTila.KESKEN
         valintatulos3.getTilaHakijalle must_== ValintatuloksenTila.EI_VASTAANOTETTU_MAARA_AIKANA
       }
@@ -407,14 +407,14 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
         val valintatulos2 = getHakutoiveenValintatulos("1.2.246.562.5.2013080813081926341928", "1.2.246.562.5.16303028779")
         valintatulos2.getTila must_== ValintatuloksenTila.EI_VASTAANOTETTU_MAARA_AIKANA
         valintatulos2.getTilaHakijalle must_== ValintatuloksenTila.EI_VASTAANOTETTU_MAARA_AIKANA
-        val valintatulos3 = getHakutoiveenValintatulosByHakemus("1.2.246.562.5.16303028779", hakemusOid)
+        val valintatulos3 = getHakutoiveenValintatulosByHakemus("1.2.246.562.5.16303028779", hakemusOid.toString)
         valintatulos3.getTila must_== ValintatuloksenTila.EI_VASTAANOTETTU_MAARA_AIKANA
         valintatulos3.getTilaHakijalle must_== ValintatuloksenTila.EI_VASTAANOTETTU_MAARA_AIKANA
       }
     }
   }
 
-  def getHakutoive(idSuffix: String) = hakemuksenTulos.hakutoiveet.find{_.hakukohdeOid.endsWith(idSuffix)}.get
+  def getHakutoive(idSuffix: String) = hakemuksenTulos.hakutoiveet.find{_.hakukohdeOid.toString.endsWith(idSuffix)}.get
 
   def hakemuksenTulos = {
     valintatulosService.hakemuksentulos(hakemusOid).get
@@ -422,17 +422,17 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
 
   def getHakutoiveenValintatulos(hakukohdeOid: String): Valintatulos = {
     import scala.collection.JavaConverters._
-    valintatulosService.findValintaTuloksetForVirkailija(hakuOid, hakukohdeOid).asScala.find(_.getHakemusOid == hakemusOid).get
+    valintatulosService.findValintaTuloksetForVirkailija(hakuOid, HakukohdeOid(hakukohdeOid)).asScala.find(_.getHakemusOid == hakemusOid.toString).get
   }
 
   def getHakutoiveenValintatulos(hakuOid: String, hakukohdeOid: String): Valintatulos = {
     import scala.collection.JavaConverters._
-    valintatulosService.findValintaTuloksetForVirkailija(hakuOid).asScala.find(_.getHakukohdeOid == hakukohdeOid).get
+    valintatulosService.findValintaTuloksetForVirkailija(HakuOid(hakuOid)).asScala.find(_.getHakukohdeOid == hakukohdeOid).get
   }
 
   def getHakutoiveenValintatulosByHakemus(hakukohdeOid: String, hakemusOid: String): Valintatulos = {
     import scala.collection.JavaConverters._
-    valintatulosService.findValintaTuloksetForVirkailijaByHakemus(hakemusOid).asScala.find(_.getHakukohdeOid == hakukohdeOid).get
+    valintatulosService.findValintaTuloksetForVirkailijaByHakemus(HakemusOid(hakemusOid)).asScala.find(_.getHakukohdeOid == hakukohdeOid).get
   }
 
   def checkHakutoiveState(hakuToive: Hakutoiveentulos, expectedTila: Valintatila, vastaanottoTila: Vastaanottotila, vastaanotettavuustila: Vastaanotettavuustila, julkaistavissa: Boolean) = {

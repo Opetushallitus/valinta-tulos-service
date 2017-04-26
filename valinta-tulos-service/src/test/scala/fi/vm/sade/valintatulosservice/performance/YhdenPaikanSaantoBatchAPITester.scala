@@ -9,6 +9,7 @@ import fi.vm.sade.valintatulosservice.SharedJetty
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.generatedfixtures.{GeneratedFixture, SimpleGeneratedHakuFixture2}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 import org.json4s.jackson.Serialization
 import org.json4s.{DefaultFormats, JValue}
 import slick.driver.PostgresDriver.api._
@@ -29,7 +30,7 @@ object YhdenPaikanSaantoBatchAPITester extends App with Logging {
 
   println(s"***** Inserting $testDataSize rows of test data. This might take a while...")
 
-  new GeneratedFixture(new SimpleGeneratedHakuFixture2(5, testDataSize, "1.2.246.562.5.2013080813081926341928")).apply
+  new GeneratedFixture(new SimpleGeneratedHakuFixture2(5, testDataSize, HakuOid("1.2.246.562.5.2013080813081926341928"))).apply
 
   for(i <- 1 to 5) {
     Await.ready(valintarekisteriDb.run(

@@ -15,16 +15,17 @@ import org.specs2.specification.Scope
 
 @RunWith(classOf[JUnitRunner])
 class YhdenPaikanSaannosSpec extends Specification {
-  private val otherHakuOid = "otherHakuOid"
-  private val hakukohdeOid = "hakukohdeOid"
-  private val otherHakukohdeOid = "otherHakukohdeOid"
-  private val hakemusOid = "hakemusOid"
-  private val otherHakemusOid = "otherHakemusOid"
+  private val hakuOid = HakuOid("hakuOid")
+  private val otherHakuOid = HakuOid("otherHakuOid")
+  private val hakukohdeOid = HakukohdeOid("hakukohdeOid")
+  private val otherHakukohdeOid = HakukohdeOid("otherHakukohdeOid")
+  private val hakemusOid = HakemusOid("hakemusOid")
+  private val otherHakemusOid = HakemusOid("otherHakemusOid")
   private val henkiloOid = "henkiloOid"
   private val kausi = Kevat(2000)
   private val hakukohde = Hakukohde(
     oid = hakukohdeOid,
-    hakuOid = "hakuOid",
+    hakuOid = hakuOid,
     tarjoajaOids = Set(),
     hakukohdeKoulutusOids = List(),
     koulutusAsteTyyppi = "KORKEAKOULUTUS",
@@ -38,7 +39,7 @@ class YhdenPaikanSaannosSpec extends Specification {
   )
   private val nonYpsHakukohde = Hakukohde(
     oid = hakukohdeOid,
-    hakuOid = "hakuOid",
+    hakuOid = hakuOid,
     tarjoajaOids = Set(),
     hakukohdeKoulutusOids = List(),
     koulutusAsteTyyppi = "KORKEAKOULUTUS",
@@ -52,7 +53,7 @@ class YhdenPaikanSaannosSpec extends Specification {
   )
   private val valinnantulos = Valinnantulos(
     hakukohdeOid = hakukohdeOid,
-    valintatapajonoOid = "valintatapajonoOid",
+    valintatapajonoOid = ValintatapajonoOid("valintatapajonoOid"),
     hakemusOid = hakemusOid,
     henkiloOid = henkiloOid,
     valinnantila = Hyvaksytty,

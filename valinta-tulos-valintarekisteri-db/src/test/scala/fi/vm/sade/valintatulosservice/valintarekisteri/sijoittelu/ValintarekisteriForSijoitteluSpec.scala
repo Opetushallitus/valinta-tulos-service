@@ -1,16 +1,15 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
-import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, Hakemus, Hakijaryhma, Valintatapajono, Hakukohde}
+import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, Hakemus, Hakijaryhma, Hakukohde, Valintatapajono}
 import fi.vm.sade.sijoittelu.tulos.dto.{SijoitteluDTO, SijoitteluajoDTO}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{SijoitteluWrapper, TilahistoriaWrapper}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, SijoitteluWrapper, TilahistoriaWrapper, Valinnantila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.BeforeAfterExample
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Valinnantila
 
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -24,13 +23,13 @@ class ValintarekisteriForSijoitteluSpec extends Specification with ITSetup with 
 
   lazy val valintarekisteri = new ValintarekisteriService(singleConnectionValintarekisteriDb, singleConnectionValintarekisteriDb, hakukohdeRecordService)
 
-  def getLatestSijoittelu(hakuOid:String) = {
+  def getLatestSijoittelu(hakuOid: String) = {
     val sijoitteluajo = time("Get latest sijoitteluajo") { valintarekisteri.getLatestSijoitteluajo(hakuOid) }
     val hakukohteet = time("Get hakukohteet") { valintarekisteri.getSijoitteluajonHakukohteet(sijoitteluajo.getSijoitteluajoId) }
     (sijoitteluajo, hakukohteet)
   }
 
-  def getSijoittelu(hakuOid:String, sijoitteluajoId:String) = {
+  def getSijoittelu(hakuOid: String, sijoitteluajoId:String) = {
     val sijoitteluajo = time("Get sijoitteluajo") { valintarekisteri.getSijoitteluajo(hakuOid, sijoitteluajoId) }
     val hakukohteet = time("Get hakukohteet") { valintarekisteri.getSijoitteluajonHakukohteet(sijoitteluajo.getSijoitteluajoId) }
     (sijoitteluajo, hakukohteet)

@@ -43,11 +43,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
 
   private val hakijaOidResolver = new MissingHakijaOidResolver(appConfig)
 
-  private type ValintatapajonoOid = String
-  private type HakemusOid = String
-  private type HakukohdeOid = String
-
-  def migrate(hakuOid: String, sijoitteluHash:String, dryRun: Boolean): Unit = {
+  def migrate(hakuOid: HakuOid, sijoitteluHash:String, dryRun: Boolean): Unit = {
     sijoittelunTulosRestClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None) match {
       case Some(sijoitteluAjo) =>
         logger.info(s"*** Starting to migrate sijoitteluAjo ${sijoitteluAjo.getSijoitteluajoId} of haku $hakuOid from MongoDb to Postgres")
@@ -57,7 +53,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     }
   }
 
-  private def migrate(hakuOid: String, sijoitteluHash: String, dryRun: Boolean, ajoFromMongo: SijoitteluAjo) = {
+  private def migrate(hakuOid: HakuOid, sijoitteluHash: String, dryRun: Boolean, ajoFromMongo: SijoitteluAjo) = {
     val sijoittelu = findSijoittelu(hakuOid)
     val sijoitteluType = sijoittelu.getSijoitteluType
     val mongoSijoitteluAjoId = ajoFromMongo.getSijoitteluajoId
@@ -70,7 +66,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     }
     logger.info(s"Loaded ${hakukohteet.size()} hakukohde objects for sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid")
     val valintatulokset = timed(s"Loading valintatulokset for sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid") {
-      valintatulosDao.loadValintatulokset(hakuOid)
+      valintatulosDao.loadValintatulokset(hakuOid.toString)
     }
     kludgeStartAndEndToSijoitteluAjoIfMissing(ajoFromMongo, hakukohteet)
 
@@ -94,9 +90,9 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     logger.info("-----------------------------------------------------------")
   }
 
-  private def storeSijoitteluData(hakuOid: String, ajoFromMongo: SijoitteluAjo, mongoSijoitteluAjoId: lang.Long, hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]) = {
+  private def storeSijoitteluData(hakuOid: HakuOid, ajoFromMongo: SijoitteluAjo, mongoSijoitteluAjoId: lang.Long, hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]) = {
     timed(s"Ensuring hakukohteet for sijoitteluajo $mongoSijoitteluAjoId of $hakuOid are in db") {
-      hakukohteet.asScala.map(_.getOid).foreach { oid =>
+      hakukohteet.asScala.map(h => HakukohdeOid(h.getOid)).foreach { oid =>
         hakukohdeRecordService.getHakukohdeRecord(oid) match {
           case Left(e) => logger.error(s"Error when fetching hakukohde $oid", e)
           case _ =>
@@ -118,8 +114,8 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     }
   }
 
-  private def findSijoittelu(hakuOid: String): Sijoittelu = {
-    val sijoitteluOptional: Optional[Sijoittelu] = sijoitteluDao.getSijoitteluByHakuOid(hakuOid)
+  private def findSijoittelu(hakuOid: HakuOid): Sijoittelu = {
+    val sijoitteluOptional: Optional[Sijoittelu] = sijoitteluDao.getSijoitteluByHakuOid(hakuOid.toString)
     if (!sijoitteluOptional.isPresent) {
       throw new IllegalStateException(s"sijoittelu not found in Mongodb for haku $hakuOid " +
         s"even though latest sijoitteluajo is found. This is impossible :) Or you need to reboot sijoittelu-service.")
@@ -127,7 +123,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     sijoitteluOptional.get()
   }
 
-  private def deleteExistingResultsFromPostgres(hakuOid: String, dryRun: Boolean) = {
+  private def deleteExistingResultsFromPostgres(hakuOid: HakuOid, dryRun: Boolean) = {
     val latestAjoIdFromPostgresOpt = migraatioRepository.getLatestSijoitteluajoId(hakuOid)
     if (latestAjoIdFromPostgresOpt.isDefined) {
       val latestAjoIdFromPostgres = latestAjoIdFromPostgresOpt.get
@@ -143,7 +139,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     }
   }
 
-  private def storeSijoittelu(hakuOid: String, sijoitteluAjo: SijoitteluAjo, hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]) = {
+  private def storeSijoittelu(hakuOid: HakuOid, sijoitteluAjo: SijoitteluAjo, hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]) = {
     timed(s"Stored sijoitteluajo ${sijoitteluAjo.getSijoitteluajoId} of haku $hakuOid") {
       migraatioRepository.storeSijoittelu(SijoitteluWrapper(sijoitteluAjo, hakukohteet, valintatulokset))
     }
@@ -156,8 +152,10 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
   private def createSaveObjects(hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]):
     (Vector[(ValinnantilanTallennus, Timestamp)], Vector[ValinnantuloksenOhjaus], Vector[(String, Ilmoittautuminen)], Vector[EhdollisenHyvaksynnanEhto], Vector[Hyvaksymiskirje]) = {
 
-    val hakemuksetOideittain: Map[(HakemusOid, ValintatapajonoOid, HakukohdeOid), List[(Hakemus, ValintatapajonoOid, HakukohdeOid)]] = groupHakemusResultsByHakemusOidAndJonoOid(hakukohteet)
-    val valintatuloksetOideittain: Map[(HakemusOid, ValintatapajonoOid), List[Valintatulos]] = valintatulokset.asScala.toList.groupBy(v => (v.getHakemusOid, v.getValintatapajonoOid))
+    val hakemuksetOideittain: Map[(HakemusOid, ValintatapajonoOid, HakukohdeOid), List[(Hakemus, ValintatapajonoOid, HakukohdeOid)]] =
+      groupHakemusResultsByHakemusOidAndJonoOid(hakukohteet)
+    val valintatuloksetOideittain: Map[(HakemusOid, ValintatapajonoOid), List[Valintatulos]] =
+      valintatulokset.asScala.toList.groupBy(v => (HakemusOid(v.getHakemusOid), ValintatapajonoOid(v.getValintatapajonoOid)))
 
     var valinnantilas: Vector[(ValinnantilanTallennus, Timestamp)] = Vector()
     var valinnantuloksenOhjaukset: Vector[ValinnantuloksenOhjaus] = Vector()
@@ -169,7 +167,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       val valintatapajonoOid = k._2
       val hakukohdeOid = v.head._3
       val hakemus: Hakemus = v.head._1
-      val hakemusOid = hakemus.getHakemusOid
+      val hakemusOid = HakemusOid(hakemus.getHakemusOid)
       val henkiloOid = getHenkiloOid(hakemus)
 
       val hakemuksenValinnantilas = getHakemuksenValinnantilas(hakemus, valintatapajonoOid, hakukohdeOid)
@@ -210,13 +208,13 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
   }
 
   private def getEhdollisenHyvaksynnanEhto(valintatapajonoOid: ValintatapajonoOid, hakukohdeOid: HakukohdeOid,
-                                           hakemusOid: ValintatapajonoOid, tulos: Valintatulos): EhdollisenHyvaksynnanEhto = {
+                                           hakemusOid: HakemusOid, tulos: Valintatulos): EhdollisenHyvaksynnanEhto = {
     EhdollisenHyvaksynnanEhto(hakemusOid, valintatapajonoOid, hakukohdeOid,
       tulos.getEhdollisenHyvaksymisenEhtoKoodi, tulos.getEhdollisenHyvaksymisenEhtoFI, tulos.getEhdollisenHyvaksymisenEhtoSV, tulos.getEhdollisenHyvaksymisenEhtoEN)
   }
 
-  private def getHakemuksenValinnantuloksenOhjaukset(valintatulos: Valintatulos, hakemusOid: String, valintatapajonoOid: String,
-                                                     hakukohdeOid: String, logEntriesLatestFirst: List[LogEntry]) = {
+  private def getHakemuksenValinnantuloksenOhjaukset(valintatulos: Valintatulos, hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid,
+                                                     hakukohdeOid: HakukohdeOid, logEntriesLatestFirst: List[LogEntry]) = {
     logEntriesLatestFirst.headOption.map { logEntry =>
       ValinnantuloksenOhjaus(hakemusOid, valintatapajonoOid, hakukohdeOid, valintatulos.getEhdollisestiHyvaksyttavissa,
         valintatulos.getJulkaistavissa, valintatulos.getHyvaksyttyVarasijalta, valintatulos.getHyvaksyPeruuntunut,
@@ -224,27 +222,27 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     }
   }
 
-  private def getHakemuksenIlmoittautumiset(valintatulos: Valintatulos, henkiloOid: String, hakukohdeOid: String, logEntriesLatestFirst: List[LogEntry]) = {
+  private def getHakemuksenIlmoittautumiset(valintatulos: Valintatulos, henkiloOid: String, hakukohdeOid: HakukohdeOid, logEntriesLatestFirst: List[LogEntry]) = {
     logEntriesLatestFirst.reverse.find(_.getMuutos.contains("ilmoittautuminen")).map { latestIlmoittautuminenLogEntry =>
       (henkiloOid, Ilmoittautuminen(hakukohdeOid, SijoitteluajonIlmoittautumistila(valintatulos.getIlmoittautumisTila),
         latestIlmoittautuminenLogEntry.getMuokkaaja, Option(latestIlmoittautuminenLogEntry.getSelite).getOrElse("")))
     }
   }
 
-  private def getHakemuksenValinnantilas(hakemus: Hakemus, valintatapajonoOid: String, hakukohdeOid: String) = {
+  private def getHakemuksenValinnantilas(hakemus: Hakemus, valintatapajonoOid: ValintatapajonoOid, hakukohdeOid: HakukohdeOid) = {
     val hakemuksenTuloksenTilahistoriaOldestFirst: List[TilaHistoria] = hakemus.getTilaHistoria.asScala.toList.sortBy(_.getLuotu)
     val muokkaaja = "Sijoittelun tulokset -migraatio"
 
     var historiat = hakemuksenTuloksenTilahistoriaOldestFirst.zipWithIndex.map { case(tilaHistoriaEntry, i) =>
       val valinnantila = Valinnantila(tilaHistoriaEntry.getTila)
-      (ValinnantilanTallennus(hakemus.getHakemusOid, valintatapajonoOid, hakukohdeOid, hakemus.getHakijaOid, valinnantila, muokkaaja),
+      (ValinnantilanTallennus(HakemusOid(hakemus.getHakemusOid), valintatapajonoOid, hakukohdeOid, hakemus.getHakijaOid, valinnantila, muokkaaja),
         new Timestamp(tilaHistoriaEntry.getLuotu.getTime))
     }
 
     hakemuksenTuloksenTilahistoriaOldestFirst.lastOption.foreach(hist => {
       if (hakemus.getTila != hist.getTila) {
         logger.warn(s"hakemus ${hakemus.getHakemusOid} didn't have current tila in tila history, creating one artificially.")
-        historiat = historiat :+ (ValinnantilanTallennus(hakemus.getHakemusOid, valintatapajonoOid, hakukohdeOid, hakemus.getHakijaOid, Valinnantila(hakemus.getTila), s"$muokkaaja (generoitu nykyisen tilan historiatieto)"),
+        historiat = historiat :+ (ValinnantilanTallennus(HakemusOid(hakemus.getHakemusOid), valintatapajonoOid, hakukohdeOid, hakemus.getHakijaOid, Valinnantila(hakemus.getTila), s"$muokkaaja (generoitu nykyisen tilan historiatieto)"),
           new Timestamp(new Date().getTime))
       }
     })
@@ -256,9 +254,9 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       hakukohde <- hakukohteet.asScala.toList
       jono <- hakukohde.getValintatapajonot.asScala.toList
       hakemus <- jono.getHakemukset.asScala
-    } yield (hakemus, jono.getOid, hakukohde.getOid)
+    } yield (hakemus, ValintatapajonoOid(jono.getOid), HakukohdeOid(hakukohde.getOid))
     logger.info(s"Found ${kaikkiHakemuksetJaJonoOidit.length} hakemus objects for sijoitteluajo")
-    kaikkiHakemuksetJaJonoOidit.groupBy { case (hakemus, jonoOid, hakukohdeOid) => (hakemus.getHakemusOid, jonoOid, hakukohdeOid) }
+    kaikkiHakemuksetJaJonoOidit.groupBy { case (hakemus, jonoOid, hakukohdeOid) => (HakemusOid(hakemus.getHakemusOid), jonoOid, hakukohdeOid) }
   }
 
   private def kludgeStartAndEndToSijoitteluAjoIfMissing(sijoitteluAjo: SijoitteluAjo, hakukohteet: util.List[Hakukohde]) {
@@ -281,11 +279,11 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     }
   }
 
-  def getSijoitteluHashesByHakuOid(hakuOids: Set[String]): Map[String, String] = {
+  def getSijoitteluHashesByHakuOid(hakuOids: Set[HakuOid]): Map[HakuOid, String] = {
     logger.info(s"Checking latest sijoittelu hashes for haku oids $hakuOids")
     val start = System.currentTimeMillis()
 
-    val hakuOidsSijoitteluHashes: Map[String, String] = hakuOids.par.map { hakuOid =>
+    val hakuOidsSijoitteluHashes = hakuOids.par.map { hakuOid =>
       Timer.timed(s"Processing hash calculation for haku $hakuOid", 0) {
         sijoittelunTulosRestClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None).map(_.getSijoitteluajoId) match {
           case Some(sijoitteluajoId) => createSijoitteluHash(hakuOid, sijoitteluajoId)
@@ -301,7 +299,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     hakuOidsSijoitteluHashes
   }
 
-  private def createSijoitteluHash(hakuOid: String, sijoitteluajoId: lang.Long): Option[(String, String)] = {
+  private def createSijoitteluHash(hakuOid: HakuOid, sijoitteluajoId: lang.Long): Option[(HakuOid, String)] = {
     logger.info(s"Latest sijoitteluajoId from haku $hakuOid is $sijoitteluajoId")
     getSijoitteluHash(sijoitteluajoId, hakuOid) match {
       case Right(newHash) => hashIsUpToDate(hakuOid, newHash) match {
@@ -318,11 +316,11 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     }
   }
 
-  private def hashIsUpToDate(hakuOid: String, newHash: String): Boolean = {
+  private def hashIsUpToDate(hakuOid: HakuOid, newHash: String): Boolean = {
     migraatioRepository.getSijoitteluHash(hakuOid, newHash).nonEmpty
   }
 
-  private def getSijoitteluHash(sijoitteluajoId: Long, hakuOid: String): Either[IllegalArgumentException, String] = {
+  private def getSijoitteluHash(sijoitteluajoId: Long, hakuOid: HakuOid): Either[IllegalArgumentException, String] = {
     val query = new BasicDBObjectBuilder().add("sijoitteluajoId", sijoitteluajoId).get()
     val cursor = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Hakukohde").find(query)
 
@@ -335,8 +333,8 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     else Right(adapter.marshal(digestString(hakukohteetHash.concat(valintatuloksetHash))))
   }
 
-  private def getValintatuloksetHash(hakuOid: String): String = {
-    val query = new BasicDBObjectBuilder().add("hakuOid", hakuOid).get()
+  private def getValintatuloksetHash(hakuOid: HakuOid): String = {
+    val query = new BasicDBObjectBuilder().add("hakuOid", hakuOid.toString).get()
     val cursor = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Valintatulos").find(query)
 
     if (!cursor.hasNext) logger.info(s"No valintatulos' for haku $hakuOid")
@@ -366,12 +364,12 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     digester.digest(hakukohdeString.getBytes("UTF-8"))
   }
 
-  def runScheduledMigration(): Map[String, Try[Unit]] = {
+  def runScheduledMigration(): Map[HakuOid, Try[Unit]] = {
     logger.info(s"Beginning scheduled migration.")
-    val hakuOids: Set[String] = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Sijoittelu").distinct("hakuOid").asScala.map(_.toString).toSet
-    val hakuOidsAndHashes: Map[String, String] = getSijoitteluHashesByHakuOid(hakuOids)
-    var hakuoidsNotProcessed: Seq[String] = List()
-    val results: Iterable[Option[(String, Try[Unit])]] = hakuOidsAndHashes.map { case (oid, hash) =>
+    val hakuOids: Set[HakuOid] = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Sijoittelu").distinct("hakuOid").asScala.map(o => HakuOid(o.toString)).toSet
+    val hakuOidsAndHashes: Map[HakuOid, String] = getSijoitteluHashesByHakuOid(hakuOids)
+    var hakuoidsNotProcessed: Seq[HakuOid] = List()
+    val results: Iterable[Option[(HakuOid, Try[Unit])]] = hakuOidsAndHashes.map { case (oid, hash) =>
       if (isMigrationTime) {
         logger.info(s"Scheduled migration of haku $oid starting")
         Some((oid, Try { migrate(oid, hash, dryRun = false) }))

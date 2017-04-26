@@ -24,41 +24,41 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
                            val appConfig: VtsAppConfig,
                            val audit: Audit) extends Logging {
 
-  def getMuutoshistoriaForHakemus(hakemusOid: String, valintatapajonoOid: String, auditInfo: AuditInfo): List[Muutos] = {
+  def getMuutoshistoriaForHakemus(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid, auditInfo: AuditInfo): List[Muutos] = {
     val r = valinnantulosRepository.getMuutoshistoriaForHakemus(hakemusOid, valintatapajonoOid)
     audit.log(auditInfo.user, ValinnantuloksenLuku,
       new Target.Builder()
-        .setField("hakemus", hakemusOid)
-        .setField("valintatapajono", valintatapajonoOid)
+        .setField("hakemus", hakemusOid.toString)
+        .setField("valintatapajono", valintatapajonoOid.toString)
         .build(),
       new Changes.Builder().build()
     )
     r
   }
 
-  def getValinnantuloksetForHakukohde(hakukohdeOid: String, auditInfo: AuditInfo): Option[(Instant, Set[Valinnantulos])] = {
+  def getValinnantuloksetForHakukohde(hakukohdeOid: HakukohdeOid, auditInfo: AuditInfo): Option[(Instant, Set[Valinnantulos])] = {
     val r = valinnantulosRepository.getValinnantuloksetAndLastModifiedDateForHakukohde(hakukohdeOid).map(t => {
       (t._1, yhdenPaikanSaannos(t._2).fold(throw _, x => x))
     })
     audit.log(auditInfo.user, ValinnantuloksenLuku,
-      new Target.Builder().setField("hakukohde", hakukohdeOid).build(),
+      new Target.Builder().setField("hakukohde", hakukohdeOid.toString).build(),
       new Changes.Builder().build()
     )
     r
   }
 
-  def getValinnantuloksetForValintatapajono(valintatapajonoOid: String, auditInfo: AuditInfo): Option[(Instant, Set[Valinnantulos])] = {
+  def getValinnantuloksetForValintatapajono(valintatapajonoOid: ValintatapajonoOid, auditInfo: AuditInfo): Option[(Instant, Set[Valinnantulos])] = {
     val r = valinnantulosRepository.getValinnantuloksetAndLastModifiedDateForValintatapajono(valintatapajonoOid).map(t => {
       (t._1, yhdenPaikanSaannos(t._2).fold(throw _, x => x))
     })
     audit.log(auditInfo.user, ValinnantuloksenLuku,
-      new Target.Builder().setField("valintatapajono", valintatapajonoOid).build(),
+      new Target.Builder().setField("valintatapajono", valintatapajonoOid.toString).build(),
       new Changes.Builder().build()
     )
     r
   }
 
-  def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid: String,
+  def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid: ValintatapajonoOid,
                                                valinnantulokset: List[Valinnantulos],
                                                ifUnmodifiedSince: Option[Instant],
                                                auditInfo: AuditInfo,
@@ -114,7 +114,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
     } yield s.audit(uusi, vanha)
   }
 
-  private def handle(s: ValinnantulosStrategy, valinnantulokset: List[Valinnantulos], vanhatValinnantulokset: Map[String, (Instant, Valinnantulos)], ifUnmodifiedSince: Option[Instant]): List[ValinnantulosUpdateStatus] = {
+  private def handle(s: ValinnantulosStrategy, valinnantulokset: List[Valinnantulos], vanhatValinnantulokset: Map[HakemusOid, (Instant, Valinnantulos)], ifUnmodifiedSince: Option[Instant]): List[ValinnantulosUpdateStatus] = {
     valinnantulokset.map(uusiValinnantulos => {
       vanhatValinnantulokset.get(uusiValinnantulos.hakemusOid) match {
         case Some((_, vanhaValinnantulos)) if !s.hasChange(uusiValinnantulos, vanhaValinnantulos) => Right()

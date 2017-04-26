@@ -1,8 +1,8 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Lukuvuosimaksu
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Lukuvuosimaksu,HakukohdeOid}
 
 trait LukuvuosimaksuRepository {
-  def getLukuvuosimaksus(hakukohdeOid: String): List[Lukuvuosimaksu]
+  def getLukuvuosimaksus(hakukohdeOid: HakukohdeOid): List[Lukuvuosimaksu]
   def update(lukuvuosimaksut: List[Lukuvuosimaksu]): Unit
 }

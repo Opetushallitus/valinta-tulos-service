@@ -9,14 +9,15 @@ import fi.vm.sade.valintatulosservice.hakemus.{HakemusFixture, HakemusFixtures, 
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoitteluFixtureCreator
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 import org.mongodb.morphia.AdvancedDatastore
 
 import scala.collection.immutable.Iterable
 
-class GeneratedFixture(haut: List[GeneratedHakuFixture] = List(new GeneratedHakuFixture("1"))) extends Logging {
+class GeneratedFixture(haut: List[GeneratedHakuFixture] = List(new GeneratedHakuFixture())) extends Logging {
   def this(haku: GeneratedHakuFixture) = this(List(haku))
 
-  def hakuFixture: String = HakuFixtures.korkeakouluYhteishaku
+  def hakuFixture: HakuOid = HakuFixtures.korkeakouluYhteishaku
 
   def ohjausparametritFixture = OhjausparametritFixtures.vastaanottoLoppuu2100
 
@@ -39,7 +40,7 @@ class GeneratedFixture(haut: List[GeneratedHakuFixture] = List(new GeneratedHaku
       logger.info("Sijoittelu...")
       appConfig.sijoitteluContext.sijoitteluDao.persistSijoittelu(haku.sijoittelu)
       logger.info("Hakukohde...")
-      insertWithProgress(haku.hakukohteet.grouped(100))(hakukohteet => hakukohteet.foreach(appConfig.sijoitteluContext.hakukohdeDao.persistHakukohde(_, haku.hakuOid)))
+      insertWithProgress(haku.hakukohteet.grouped(100))(hakukohteet => hakukohteet.foreach(appConfig.sijoitteluContext.hakukohdeDao.persistHakukohde(_, haku.hakuOid.toString)))
       logger.info("Hakemus-kantaan...")
       haku.hakemukset
         .map { hakemus => HakemusFixture(haku.hakuOid, hakemus.hakemusOid, hakemus.hakutoiveet.zipWithIndex.map{ case (hakutoive, index) => HakutoiveFixture(index+1, hakutoive.tarjoajaOid, hakutoive.hakukohdeOid) })}
@@ -72,23 +73,23 @@ class GeneratedFixture(haut: List[GeneratedHakuFixture] = List(new GeneratedHaku
     }
   }
 }
-class GeneratedHakuFixture(val hakuOid: String = "1") {
-  val hakuOidAfterDot = hakuOid.split('.').last
+class GeneratedHakuFixture(val hakuOid: HakuOid = HakuOid("1")) {
+  val hakuOidAfterDot = hakuOid.toString.split('.').last
   val sijoitteluajoId: Long = hakuOidAfterDot.substring(0, Math.min(hakuOidAfterDot.length, 5)).toLong
 
-  def hakemukset = List(HakemuksenTulosFixture("1", List(
-    HakemuksenHakukohdeFixture("1", "1")
+  def hakemukset = List(HakemuksenTulosFixture(HakemusOid("1"), List(
+    HakemuksenHakukohdeFixture("1", HakukohdeOid("1"))
   )))
 
   def kaikkiJonotSijoiteltu: Boolean = true
 
   lazy val hakukohteet: List[Hakukohde] = {
-    val grouped: Map[(String, String), List[(String, String, HakemuksenTulosFixture, Int)]] = (for {
+    val grouped: Map[(String, HakukohdeOid), List[(String, HakukohdeOid, HakemuksenTulosFixture, Int)]] = (for {
       hakemus <- hakemukset
       (hakutoive, index) <- hakemus.hakutoiveet.zipWithIndex
     } yield {
       (hakutoive.tarjoajaOid, hakutoive.hakukohdeOid, hakemus, index + 1)
-    }).groupBy { case (tarjoaja: String, hakukohde: String, hakemus: HakemuksenTulosFixture, hakutoiveNumero: Int) => (tarjoaja, hakukohde)}
+    }).groupBy { case (tarjoaja: String, hakukohde: HakukohdeOid, hakemus: HakemuksenTulosFixture, hakutoiveNumero: Int) => (tarjoaja, hakukohde)}
 
     val mapped: Iterable[Hakukohde] = grouped
       .map { case ((tarjoajaId, hakukohdeId), values) => {
@@ -103,9 +104,9 @@ class GeneratedHakuFixture(val hakuOid: String = "1") {
           if (jonot.length >= jonoNumero)
         } yield {
           val hakemuksenJono = jonot(jonoNumero - 1)
-          SijoitteluFixtureCreator.newHakemus(hakemus.hakemusOid, hakemus.hakemusOid, hakutoiveNumero, hakemuksenJono.tulos)
+          SijoitteluFixtureCreator.newHakemus(hakemus.hakemusOid, hakemus.hakemusOid.toString, hakutoiveNumero, hakemuksenJono.tulos)
         }
-        SijoitteluFixtureCreator.newValintatapajono(hakukohdeId + "." + jonoNumero, hakemukset)
+        SijoitteluFixtureCreator.newValintatapajono(ValintatapajonoOid(hakukohdeId.toString + "." + jonoNumero), hakemukset)
       }
       SijoitteluFixtureCreator.newHakukohde(hakukohdeId, tarjoajaId, sijoitteluajoId, kaikkiJonotSijoiteltu, jonot)
     }
@@ -116,9 +117,9 @@ class GeneratedHakuFixture(val hakuOid: String = "1") {
   def julkaistavissa(hakukohde: Hakukohde, hakemus: Hakemus) = {
     (for {
       hakemuksenTulos <- hakemukset
-      if (hakemuksenTulos.hakemusOid == hakemus.getHakemusOid)
+      if (hakemuksenTulos.hakemusOid == HakemusOid(hakemus.getHakemusOid))
       hakutoive <- hakemuksenTulos.hakutoiveet
-      if (hakutoive.hakukohdeOid == hakukohde.getOid)
+      if (hakutoive.hakukohdeOid == HakukohdeOid(hakukohde.getOid))
     } yield (hakutoive.julkaistavissa)).headOption.getOrElse(true)
   }
 
@@ -129,12 +130,12 @@ class GeneratedHakuFixture(val hakuOid: String = "1") {
     jono: Valintatapajono <- hakukohde.getValintatapajonot
     hakemus: Hakemus <- jono.getHakemukset
   } yield {
-    SijoitteluFixtureCreator.newValintatulos(jono.getOid, hakuOid, hakemus.getHakemusOid, hakukohde.getOid, hakemus.getHakijaOid, hakemus.getPrioriteetti, julkaistavissa(hakukohde, hakemus))
+    SijoitteluFixtureCreator.newValintatulos(ValintatapajonoOid(jono.getOid), hakuOid, HakemusOid(hakemus.getHakemusOid), HakukohdeOid(hakukohde.getOid), hakemus.getHakijaOid, hakemus.getPrioriteetti, julkaistavissa(hakukohde, hakemus))
   }
 
-  lazy val sijoittelu: Sijoittelu = SijoitteluFixtureCreator.newSijoittelu(hakuOid, sijoitteluajoId, hakukohteet.map(_.getOid))
+  lazy val sijoittelu: Sijoittelu = SijoitteluFixtureCreator.newSijoittelu(hakuOid, sijoitteluajoId, hakukohteet.map(h => HakukohdeOid(h.getOid)))
 }
 
-case class HakemuksenTulosFixture(hakemusOid: String, hakutoiveet: List[HakemuksenHakukohdeFixture])
-case class HakemuksenHakukohdeFixture(tarjoajaOid: String, hakukohdeOid: String, jonot: List[ValintatapaJonoFixture] = List(ValintatapaJonoFixture(HakemuksenTila.HYVAKSYTTY)), julkaistavissa: Boolean = true)
+case class HakemuksenTulosFixture(hakemusOid: HakemusOid, hakutoiveet: List[HakemuksenHakukohdeFixture])
+case class HakemuksenHakukohdeFixture(tarjoajaOid: String, hakukohdeOid: HakukohdeOid, jonot: List[ValintatapaJonoFixture] = List(ValintatapaJonoFixture(HakemuksenTila.HYVAKSYTTY)), julkaistavissa: Boolean = true)
 case class ValintatapaJonoFixture(tulos: HakemuksenTila)

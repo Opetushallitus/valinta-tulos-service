@@ -113,9 +113,9 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
   )
 
   private def createValinnantilaInsertRow(statement: PreparedStatement, valinnantila: ValinnantilanTallennus, tilanViimeisinMuutos: TilanViimeisinMuutos) = {
-    statement.setString(1, valinnantila.hakukohdeOid)
-    statement.setString(2, valinnantila.valintatapajonoOid)
-    statement.setString(3, valinnantila.hakemusOid)
+    statement.setString(1, valinnantila.hakukohdeOid.toString)
+    statement.setString(2, valinnantila.valintatapajonoOid.toString)
+    statement.setString(3, valinnantila.hakemusOid.toString)
     statement.setString(4, valinnantila.valinnantila.toString)
     statement.setTimestamp(5, new Timestamp(tilanViimeisinMuutos.getTime))
     statement.setString(6, valinnantila.muokkaaja)
@@ -152,9 +152,9 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
   )
 
   private def createValinnantuloksenOhjausInsertRow(statement: PreparedStatement, valinnantuloksenOhjaus: ValinnantuloksenOhjaus) = {
-    statement.setString(1, valinnantuloksenOhjaus.valintatapajonoOid)
-    statement.setString(2, valinnantuloksenOhjaus.hakemusOid)
-    statement.setString(3, valinnantuloksenOhjaus.hakukohdeOid)
+    statement.setString(1, valinnantuloksenOhjaus.valintatapajonoOid.toString)
+    statement.setString(2, valinnantuloksenOhjaus.hakemusOid.toString)
+    statement.setString(3, valinnantuloksenOhjaus.hakukohdeOid.toString)
     statement.setString(4, valinnantuloksenOhjaus.muokkaaja)
     statement.setString(5, valinnantuloksenOhjaus.selite)
     statement.setBoolean(6, valinnantuloksenOhjaus.julkaistavissa)
@@ -179,7 +179,7 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
 
   private def createIlmoittautumisInsertRow(statement: PreparedStatement, henkiloOid: String, ilmoittautuminen: Ilmoittautuminen) = {
     statement.setString(1, henkiloOid)
-    statement.setString(2, ilmoittautuminen.hakukohdeOid)
+    statement.setString(2, ilmoittautuminen.hakukohdeOid.toString)
     statement.setString(3, ilmoittautuminen.tila.toString)
     statement.setString(4, ilmoittautuminen.muokkaaja)
     statement.setString(5, ilmoittautuminen.selite)
@@ -212,9 +212,9 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
   )
 
   private def createEhdollisenHyvaksynnanEhtoRow(statement: PreparedStatement, ehto: EhdollisenHyvaksynnanEhto) = {
-    statement.setString(1, ehto.hakemusOid)
-    statement.setString(2, ehto.valintatapajonoOid)
-    statement.setString(3, ehto.hakukohdeOid)
+    statement.setString(1, ehto.hakemusOid.toString)
+    statement.setString(2, ehto.valintatapajonoOid.toString)
+    statement.setString(3, ehto.hakukohdeOid.toString)
     statement.setString(4, ehto.ehdollisenHyvaksymisenEhtoKoodi)
     statement.setString(5, ehto.ehdollisenHyvaksymisenEhtoFI)
     statement.setString(6, ehto.ehdollisenHyvaksymisenEhtoSV)
@@ -238,19 +238,19 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
 
   private def createHyvaksymiskirjeetRow(statement: PreparedStatement, kirje: Hyvaksymiskirje) = {
     statement.setString(1, kirje.henkiloOid)
-    statement.setString(2, kirje.hakukohdeOid)
+    statement.setString(2, kirje.hakukohdeOid.toString)
     statement.setTimestamp(3, new java.sql.Timestamp(kirje.lahetetty.getTime))
 
     statement.addBatch()
   }
 
-  override def deleteSijoittelunTulokset(hakuOid: String): Unit = {
+  override def deleteSijoittelunTulokset(hakuOid: HakuOid): Unit = {
     val sijoitteluAjoIds = runBlocking(sql"select id from sijoitteluajot where haku_oid = ${hakuOid} order by id asc".as[Long])
     logger.info(s"Found ${sijoitteluAjoIds.length} sijoitteluajos to delete of haku $hakuOid : $sijoitteluAjoIds")
     sijoitteluAjoIds.foreach(deleteSingleSijoitteluAjo(hakuOid, _))
   }
 
-  private def deleteSingleSijoitteluAjo(hakuOid: String, sijoitteluajoId: Long): Unit = {
+  private def deleteSingleSijoitteluAjo(hakuOid: HakuOid, sijoitteluajoId: Long): Unit = {
     val tablesWithTriggers = Seq(
       "tilat_kuvaukset",
       "valinnantilat",
@@ -310,13 +310,13 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
     }
   }
 
-  override def saveSijoittelunHash(hakuOid: String, hash: String): Unit = {
+  override def saveSijoittelunHash(hakuOid: HakuOid, hash: String): Unit = {
     runBlocking(
       sqlu"""insert into mongo_sijoittelu_hashes values (${hakuOid}, ${hash})
               on conflict (haku_oid) do update set hash = ${hash}""")
   }
 
-  override def getSijoitteluHash(hakuOid: String, hash: String): Option[String] = {
+  override def getSijoitteluHash(hakuOid: HakuOid, hash: String): Option[String] = {
     runBlocking(
       sql"""select * from mongo_sijoittelu_hashes
             where haku_oid = ${hakuOid} and hash = ${hash}""".as[String]).headOption

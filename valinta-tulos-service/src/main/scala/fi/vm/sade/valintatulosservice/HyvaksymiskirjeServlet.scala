@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{Hyvaksymiskirje, HyvaksymiskirjePatch, SessionRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakukohdeOid
 import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.{NoContent, Ok}
@@ -14,7 +15,7 @@ class HyvaksymiskirjeServlet(hyvaksymiskirjeService: HyvaksymiskirjeService,
   override val applicationName = Some("auth/hyvaksymiskirje")
   override val applicationDescription = "Hyväksymiskirjeiden REST API"
 
-  private def parseHakukohdeOid: String = params.getOrElse("hakukohdeOid", throw new IllegalArgumentException("URL parametri hakukohdeOid on pakollinen."))
+  private def parseHakukohdeOid: HakukohdeOid = HakukohdeOid(params.getOrElse("hakukohdeOid", throw new IllegalArgumentException("URL parametri hakukohdeOid on pakollinen.")))
 
   val hyvaksymiskirjeSwagger: OperationBuilder = (apiOperation[List[Hyvaksymiskirje]]("hyväksymiskirjeet")
     summary "Hyväksymiskirjeet"

@@ -20,10 +20,10 @@ import slick.jdbc.{PositionedParameters, SetParameter}
 class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeExample {
   sequential
   val henkiloOid = "henkiloOid"
-  val hakukohdeOid = "hakukohdeOid"
-  val hakuOid = "hakuOid"
-  val valintatapajonoOid = "valintatapajonoOid"
-  val hakemusOid = "hakemusOid"
+  val hakukohdeOid = HakukohdeOid("hakukohdeOid")
+  val hakuOid = HakuOid("hakuOid")
+  val valintatapajonoOid = ValintatapajonoOid("valintatapajonoOid")
+  val hakemusOid = HakemusOid("hakemusOid")
   val muokkaaja = "muokkaaja"
   val selite = "selite"
   val muutos = OffsetDateTime.now(ZoneId.of("Europe/Helsinki"))
@@ -283,7 +283,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       sql"""select henkilo, hakukohde, tila, ilmoittaja, selite
             from ilmoittautumiset
             where henkilo = ${henkiloOid} and hakukohde = ${hakukohdeOid}
-        """.as[(String, String, String, String, String)]
+        """.as[(String, HakukohdeOid, String, String, String)]
     )
 
     result.size mustEqual 1
@@ -296,7 +296,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       sql"""select henkilo, hakukohde, tila, ilmoittaja, selite
             from ilmoittautumiset_history
             where henkilo = ${henkiloOid} and hakukohde = ${hakukohdeOid}
-        """.as[(String, String, String, String, String)]
+        """.as[(String, HakukohdeOid, String, String, String)]
     )
 
     result.size must_== count

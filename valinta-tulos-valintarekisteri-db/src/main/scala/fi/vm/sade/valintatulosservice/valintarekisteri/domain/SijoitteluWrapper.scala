@@ -10,7 +10,7 @@ import org.apache.commons.lang3.BooleanUtils
 import scala.collection.JavaConverters._
 
 case class SijoitteluWrapper(sijoitteluajo: SijoitteluAjo, hakukohteet: List[Hakukohde], valintatulokset: List[Valintatulos]) {
-  lazy val valintatuloksetGroupedByHakemus = valintatulokset.map(vt => vt.getHakemusOid -> vt).toMap
+  lazy val valintatuloksetGroupedByHakemus: Map[HakemusOid, Valintatulos] = valintatulokset.map(vt => HakemusOid(vt.getHakemusOid) -> vt).toMap
 }
 
 object SijoitteluWrapper {
@@ -21,14 +21,14 @@ object SijoitteluWrapper {
 
 case class SijoitteluajoWrapper(
                                  sijoitteluajoId: Long,
-                                 hakuOid: String,
+                                 hakuOid: HakuOid,
                                  startMils: Long,
                                  endMils: Long) {
 
   val sijoitteluajo: SijoitteluAjo = {
     val sijoitteluajo = new SijoitteluAjo
     sijoitteluajo.setSijoitteluajoId(sijoitteluajoId)
-    sijoitteluajo.setHakuOid(hakuOid)
+    sijoitteluajo.setHakuOid(hakuOid.toString)
     sijoitteluajo.setStartMils(startMils)
     sijoitteluajo.setEndMils(endMils)
     sijoitteluajo
@@ -39,19 +39,19 @@ object SijoitteluajoWrapper {
   def apply(sijoitteluAjo: SijoitteluAjo): SijoitteluajoWrapper = {
     SijoitteluajoWrapper(
       sijoitteluAjo.getSijoitteluajoId,
-      sijoitteluAjo.getHakuOid,
+      HakuOid(sijoitteluAjo.getHakuOid),
       sijoitteluAjo.getStartMils,
       sijoitteluAjo.getEndMils
     )
   }
 }
 
-case class SijoitteluajonHakukohdeWrapper(sijoitteluajoId: Long, oid: String, kaikkiJonotSijoiteltu: Boolean) {
+case class SijoitteluajonHakukohdeWrapper(sijoitteluajoId: Long, oid: HakukohdeOid, kaikkiJonotSijoiteltu: Boolean) {
 
   val hakukohde: Hakukohde = {
     val hakukohde = new Hakukohde
     hakukohde.setSijoitteluajoId(sijoitteluajoId)
-    hakukohde.setOid(oid)
+    hakukohde.setOid(oid.toString)
     hakukohde.setKaikkiJonotSijoiteltu(kaikkiJonotSijoiteltu)
     hakukohde
   }
@@ -59,7 +59,7 @@ case class SijoitteluajonHakukohdeWrapper(sijoitteluajoId: Long, oid: String, ka
 
 object SijoitteluajonHakukohdeWrapper {
   def apply(hakukohde: Hakukohde): SijoitteluajonHakukohdeWrapper = {
-    SijoitteluajonHakukohdeWrapper(hakukohde.getSijoitteluajoId, hakukohde.getOid, hakukohde.isKaikkiJonotSijoiteltu)
+    SijoitteluajonHakukohdeWrapper(hakukohde.getSijoitteluajoId, HakukohdeOid(hakukohde.getOid), hakukohde.isKaikkiJonotSijoiteltu)
   }
 }
 
@@ -99,7 +99,7 @@ object Tasasijasaanto {
 }
 
 case class SijoitteluajonValintatapajonoWrapper(
-                                                 oid: String,
+                                                 oid: ValintatapajonoOid,
                                                  nimi: String,
                                                  prioriteetti: Int,
                                                  tasasijasaanto: Tasasijasaanto,
@@ -118,7 +118,7 @@ case class SijoitteluajonValintatapajonoWrapper(
 
   val valintatapajono: Valintatapajono = {
     val valintatapajono = new Valintatapajono
-    valintatapajono.setOid(oid)
+    valintatapajono.setOid(oid.toString)
     valintatapajono.setNimi(nimi)
     valintatapajono.setPrioriteetti(prioriteetti)
     valintatapajono.setTasasijasaanto(tasasijasaanto.tasasijasaanto)
@@ -141,7 +141,7 @@ case class SijoitteluajonValintatapajonoWrapper(
 object SijoitteluajonValintatapajonoWrapper extends OptionConverter {
   def apply(valintatapajono: Valintatapajono): SijoitteluajonValintatapajonoWrapper = {
     SijoitteluajonValintatapajonoWrapper(
-      valintatapajono.getOid(),
+      ValintatapajonoOid(valintatapajono.getOid()),
       valintatapajono.getNimi(),
       valintatapajono.getPrioriteetti(),
       Tasasijasaanto.getTasasijasaanto(valintatapajono.getTasasijasaanto),
@@ -317,7 +317,7 @@ object ValinnantilanTarkenne {
 
 
 case class SijoitteluajonHakemusWrapper(
-                                         hakemusOid: String,
+                                         hakemusOid: HakemusOid,
                                          hakijaOid: Option[String],
                                          prioriteetti: Int,
                                          jonosija: Int,
@@ -343,8 +343,8 @@ case class SijoitteluajonHakemusWrapper(
 
   val hakemus: SijoitteluHakemus = {
     val hakemus = new SijoitteluHakemus
-    hakemus.setHakemusOid(hakemusOid)
-    hakijaOid.foreach(hakemus.setHakijaOid(_))
+    hakemus.setHakemusOid(hakemusOid.toString)
+    hakijaOid.foreach(hakemus.setHakijaOid)
     hakemus.setPrioriteetti(prioriteetti)
     hakemus.setJonosija(jonosija)
     varasijanNumero.foreach(hakemus.setVarasijanNumero(_))
@@ -356,7 +356,7 @@ case class SijoitteluajonHakemusWrapper(
     hakemus.setTila(tila.valinnantila)
     hakemus.setTilanKuvaukset(tilanKuvaukset.getOrElse(Map()).asJava)
     hakemus.setTilankuvauksenTarkenne(tilankuvauksenTarkenne.tilankuvauksenTarkenne)
-    tarkenteenLisatieto.foreach(hakemus.setTarkenteenLisatieto(_))
+    tarkenteenLisatieto.foreach(hakemus.setTarkenteenLisatieto)
     hakemus.setHyvaksyttyHakijaryhmista(hyvaksyttyHakijaryhmista.asJava)
     hakemus.setTilaHistoria(tilaHistoria.map(_.tilahistoria).asJava)
     hakemus
@@ -369,7 +369,7 @@ object SijoitteluajonHakemusWrapper extends OptionConverter {
 
   def apply(hakemus: SijoitteluHakemus): SijoitteluajonHakemusWrapper = {
     SijoitteluajonHakemusWrapper(
-      hakemus.getHakemusOid,
+      HakemusOid(hakemus.getHakemusOid),
       convert[javaString, String](hakemus.getHakijaOid, string),
       hakemus.getPrioriteetti,
       hakemus.getJonosija,
@@ -475,9 +475,9 @@ object SijoitteluajonIlmoittautumistila {
 }
 
 case class SijoitteluajonValinnantulosWrapper(
-                                               valintatapajonoOid: String,
-                                               hakemusOid: String,
-                                               hakukohdeOid: String,
+                                               valintatapajonoOid: ValintatapajonoOid,
+                                               hakemusOid: HakemusOid,
+                                               hakukohdeOid: HakukohdeOid,
                                                ehdollisestiHyvaksyttavissa: Boolean = false,
                                                julkaistavissa: Boolean = false,
                                                hyvaksyttyVarasijalta: Boolean = false,
@@ -488,9 +488,9 @@ case class SijoitteluajonValinnantulosWrapper(
                                              ) {
   val valintatulos: Valintatulos = {
     val valintatulos = new Valintatulos()
-    valintatulos.setValintatapajonoOid(valintatapajonoOid, "")
-    valintatulos.setHakemusOid(hakemusOid, "")
-    valintatulos.setHakukohdeOid(hakukohdeOid, "")
+    valintatulos.setValintatapajonoOid(valintatapajonoOid.toString, "")
+    valintatulos.setHakemusOid(hakemusOid.toString, "")
+    valintatulos.setHakukohdeOid(hakukohdeOid.toString, "")
     valintatulos.setEhdollisestiHyvaksyttavissa(ehdollisestiHyvaksyttavissa, "", "");
     valintatulos.setJulkaistavissa(julkaistavissa, "")
     valintatulos.setHyvaksyttyVarasijalta(hyvaksyttyVarasijalta, "")
@@ -504,9 +504,9 @@ case class SijoitteluajonValinnantulosWrapper(
 
 object SijoitteluajonValinnantulosWrapper extends OptionConverter {
   def apply(valintatulos: Valintatulos): SijoitteluajonValinnantulosWrapper = SijoitteluajonValinnantulosWrapper(
-    valintatulos.getValintatapajonoOid,
-    valintatulos.getHakemusOid,
-    valintatulos.getHakukohdeOid,
+    ValintatapajonoOid(valintatulos.getValintatapajonoOid),
+    HakemusOid(valintatulos.getHakemusOid),
+    HakukohdeOid(valintatulos.getHakukohdeOid),
     valintatulos.getEhdollisestiHyvaksyttavissa,
     valintatulos.getJulkaistavissa,
     valintatulos.getHyvaksyttyVarasijalta,
@@ -591,8 +591,8 @@ case class SijoitteluajonHakijaryhmaWrapper(
                                              tarkkaKiintio: Boolean,
                                              kaytetaanRyhmaanKuuluvia: Boolean,
                                              hakemusOid: List[String],
-                                             valintatapajonoOid: Option[String],
-                                             hakukohdeOid: Option[String],
+                                             valintatapajonoOid: Option[ValintatapajonoOid],
+                                             hakukohdeOid: Option[HakukohdeOid],
                                              hakijaryhmatyyppikoodiUri: Option[String]
                                            ) {
   val hakijaryhma: Hakijaryhma = {
@@ -606,9 +606,9 @@ case class SijoitteluajonHakijaryhmaWrapper(
     hakijaryhma.setTarkkaKiintio(tarkkaKiintio)
     hakijaryhma.setKaytetaanRyhmaanKuuluvia(kaytetaanRyhmaanKuuluvia)
     hakijaryhma.getHakemusOid.addAll(hakemusOid.asJava)
-    valintatapajonoOid.foreach(hakijaryhma.setValintatapajonoOid(_))
-    hakukohdeOid.foreach(hakijaryhma.setHakukohdeOid(_))
-    hakijaryhmatyyppikoodiUri.foreach(hakijaryhma.setHakijaryhmatyyppikoodiUri(_))
+    valintatapajonoOid.map(_.toString).foreach(hakijaryhma.setValintatapajonoOid)
+    hakukohdeOid.map(_.toString).foreach(hakijaryhma.setHakukohdeOid)
+    hakijaryhmatyyppikoodiUri.foreach(hakijaryhma.setHakijaryhmatyyppikoodiUri)
     hakijaryhma
   }
 }
@@ -627,8 +627,8 @@ object SijoitteluajonHakijaryhmaWrapper extends OptionConverter {
       hakijaryhma.isTarkkaKiintio,
       hakijaryhma.isKaytetaanRyhmaanKuuluvia,
       hakijaryhma.getHakemusOid.asScala.toList,
-      convert[javaString, String](hakijaryhma.getValintatapajonoOid, string),
-      convert[javaString, String](hakijaryhma.getHakukohdeOid, string),
+      convert[javaString, String](hakijaryhma.getValintatapajonoOid, string).map(ValintatapajonoOid),
+      convert[javaString, String](hakijaryhma.getHakukohdeOid, string).map(HakukohdeOid),
       convert[javaString, String](hakijaryhma.getHakijaryhmatyyppikoodiUri, string)
     )
   }

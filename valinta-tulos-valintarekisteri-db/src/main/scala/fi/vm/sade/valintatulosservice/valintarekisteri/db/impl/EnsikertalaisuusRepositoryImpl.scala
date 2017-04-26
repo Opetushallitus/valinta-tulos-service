@@ -39,7 +39,7 @@ trait EnsikertalaisuusRepositoryImpl extends EnsikertalaisuusRepository with Val
             where kk_tutkintoon_johtava
                 and henkilo = ${personOid}
             order by "timestamp" desc
-      """.as[(String, String, String, java.sql.Timestamp)]
+      """.as[(HakuOid, HakukohdeOid, String, java.sql.Timestamp)]
     ).map(vastaanotto => OpintopolunVastaanottotieto(personOid, vastaanotto._1, vastaanotto._2, vastaanotto._3, vastaanotto._4)).toList
     val oldList = runBlocking(
       sql"""select hakukohde, "timestamp" from vanhat_vastaanotot
@@ -47,7 +47,7 @@ trait EnsikertalaisuusRepositoryImpl extends EnsikertalaisuusRepository with Val
                 and (henkilo in (select linked_oid from henkiloviitteet where person_oid = ${personOid})
                      or henkilo = ${personOid})
             order by "timestamp" desc
-      """.as[(String, java.sql.Timestamp)]
+      """.as[(HakukohdeOid, java.sql.Timestamp)]
     ).map(vastaanotto => VanhaVastaanottotieto(personOid, vastaanotto._1, vastaanotto._2)).toList
     VastaanottoHistoria(newList, oldList)
   }

@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
@@ -20,7 +21,7 @@ class SijoitteluPerformanceSpec extends Specification with ITSetup with Valintar
 
   "Store and read huge sijoittelu fast" in {
     skipped("Use this test only locally for performance tuning")
-    val wrapper = time("create test data") { createHugeSijoittelu(12345l, "11.22.33.44.55.66", 50) }
+    val wrapper = time("create test data") { createHugeSijoittelu(12345l, HakuOid("11.22.33.44.55.66"), 50) }
     time("Store sijoittelu") {singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)}
     //time("Get sijoittelu") { valintarekisteri.getSijoitteluajoDTO("11.22.33.44.55.66", "12345") }
     getSijoittelu("11.22.33.44.55.66")
@@ -29,7 +30,7 @@ class SijoitteluPerformanceSpec extends Specification with ITSetup with Valintar
   "Reading latest huge sijoitteluajo is not timing out" in {
     skipped("Use this test only locally for performance tuning")
     val numberOfSijoitteluajot = 15
-    val wrapper = time("create test data") { createHugeSijoittelu(12345l, "11.22.33.44.55.66", 40) }
+    val wrapper = time("create test data") { createHugeSijoittelu(12345l, HakuOid("11.22.33.44.55.66"), 40) }
     (12345l to (12345l + numberOfSijoitteluajot - 1)).foreach(sijoitteluajoId => {
       wrapper.sijoitteluajo.setSijoitteluajoId(sijoitteluajoId)
       wrapper.hakukohteet.foreach(_.setSijoitteluajoId(sijoitteluajoId))
@@ -42,7 +43,7 @@ class SijoitteluPerformanceSpec extends Specification with ITSetup with Valintar
     true must beTrue
   }
 
-  def getSijoittelu(hakuOid:String) = {
+  def getSijoittelu(hakuOid: String) = {
     val sijoitteluajo = time("Get latest sijoitteluajo") { valintarekisteri.getLatestSijoitteluajo(hakuOid) }
     val hakukohteet = time("Get hakukohteet") { valintarekisteri.getSijoitteluajonHakukohteet(sijoitteluajo.getSijoitteluajoId) }
     (sijoitteluajo, hakukohteet)

@@ -16,7 +16,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
 trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with ValintarekisteriRepository {
-  override def getMuutoshistoriaForHakemus(hakemusOid: String, valintatapajonoOid: String): List[Muutos] = {
+  override def getMuutoshistoriaForHakemus(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[Muutos] = {
     runBlocking(DBIO.sequence(List(
     sql"""(select tila, tilan_viimeisin_muutos, lower(system_time) as ts, transaction_id
           from valinnantilat
@@ -99,7 +99,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     )
   }
 
-  override def getValinnantuloksetForHakukohde(hakukohdeOid: String): DBIO[Set[Valinnantulos]] = {
+  override def getValinnantuloksetForHakukohde(hakukohdeOid: HakukohdeOid): DBIO[Set[Valinnantulos]] = {
     sql"""select ti.hakukohde_oid,
               ti.valintatapajono_oid,
               ti.hakemus_oid,
@@ -122,7 +122,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       """.as[Valinnantulos].map(_.toSet)
   }
 
-  override def getValinnantuloksetForValintatapajono(valintatapajonoOid: String): DBIO[Set[Valinnantulos]] = {
+  override def getValinnantuloksetForValintatapajono(valintatapajonoOid: ValintatapajonoOid): DBIO[Set[Valinnantulos]] = {
     sql"""select ti.hakukohde_oid,
               ti.valintatapajono_oid,
               ti.hakemus_oid,
@@ -145,7 +145,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
        """.as[Valinnantulos].map(_.toSet)
   }
 
-  override def getValinnantuloksetForHaku(hakuOid:String): DBIO[Set[Valinnantulos]] = {
+  override def getValinnantuloksetForHaku(hakuOid: HakuOid): DBIO[Set[Valinnantulos]] = {
       sql"""with haun_hakukohteet as (
                 select hakukohde_oid from hakukohteet where haku_oid = ${hakuOid}
             ) select ti.hakukohde_oid,
@@ -169,7 +169,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                 and i.henkilo = ti.henkilo_oid""".as[Valinnantulos].map(_.toSet)
   }
 
-  override def getLastModifiedForHakukohde(hakukohdeOid: String): DBIO[Option[Instant]] = {
+  override def getLastModifiedForHakukohde(hakukohdeOid: HakukohdeOid): DBIO[Option[Instant]] = {
     sql"""select greatest(max(lower(ti.system_time)), max(lower(tu.system_time)), max(lower(il.system_time)),
                           max(upper(ih.system_time)), max(va.timestamp), max(vh.timestamp))
           from valinnantilat ti
@@ -181,7 +181,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
           where ti.hakukohde_oid = ${hakukohdeOid}""".as[Option[Instant]].head
   }
 
-  override def getLastModifiedForValintatapajono(valintatapajonoOid:String):DBIO[Option[Instant]] = {
+  override def getLastModifiedForValintatapajono(valintatapajonoOid: ValintatapajonoOid):DBIO[Option[Instant]] = {
     sql"""select greatest(max(lower(ti.system_time)), max(lower(tu.system_time)), max(lower(il.system_time)),
                           max(upper(ih.system_time)), max(va.timestamp), max(vh.timestamp))
           from valinnantilat ti
@@ -193,22 +193,22 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
           where ti.valintatapajono_oid = ${valintatapajonoOid}""".as[Option[Instant]].head
   }
 
-  override def getLastModifiedForValintatapajononHakemukset(valintatapajonoOid:String):DBIO[Set[(String, Instant)]] = {
+  override def getLastModifiedForValintatapajononHakemukset(valintatapajonoOid: ValintatapajonoOid):DBIO[Set[(HakemusOid, Instant)]] = {
     sql"""select ti.hakemus_oid, greatest(max(lower(ti.system_time)), max(lower(tu.system_time)), max(lower(il.system_time)), max(upper(ih.system_time)))
           from valinnantilat ti
           left join valinnantulokset tu on ti.valintatapajono_oid = tu.valintatapajono_oid
           left join ilmoittautumiset il on ti.henkilo_oid = il.henkilo and ti.hakukohde_oid = il.hakukohde
           left join ilmoittautumiset_history ih on ti.henkilo_oid = ih.henkilo and ti.hakukohde_oid = ih.hakukohde
           where ti.valintatapajono_oid = ${valintatapajonoOid}
-          group by ti.hakemus_oid""".as[(String, Instant)].map(_.toSet)
+          group by ti.hakemus_oid""".as[(HakemusOid, Instant)].map(_.toSet)
   }
 
-  override def getHakuForHakukohde(hakukohdeOid:String): String = {
+  override def getHakuForHakukohde(hakukohdeOid: HakukohdeOid): HakuOid = {
     runBlocking(
       sql"""select a.haku_oid from sijoitteluajot a
             inner join sijoitteluajon_hakukohteet h on a.id = h.sijoitteluajo_id
             where h.hakukohde_oid = ${hakukohdeOid}
-            order by sijoitteluajo_id desc limit 1""".as[String], Duration(1, TimeUnit.SECONDS)).head
+            order by sijoitteluajo_id desc limit 1""".as[HakuOid], Duration(1, TimeUnit.SECONDS)).head
   }
 
   override def updateValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
