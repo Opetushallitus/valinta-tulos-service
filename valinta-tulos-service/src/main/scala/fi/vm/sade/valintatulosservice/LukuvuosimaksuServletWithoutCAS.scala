@@ -23,7 +23,7 @@ class LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService: LukuvuosimaksuServi
 
   override protected def applicationDescription: String = "Lukuvuosimaksut unauthenticated REST API"
 
-  get("/:hakukohdeOid") {
+  post("read/:hakukohdeOid") {
     val hakukohdeOid = hakukohdeOidParam
 
     val lukuvuosiRequest = parsedBody.extract[LukuvuosimaksuRequest]
@@ -34,7 +34,7 @@ class LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService: LukuvuosimaksuServi
   }
 
 
-  post("/:hakukohdeOid") {
+  post("write/:hakukohdeOid") {
     val hakukohdeOid = hakukohdeOidParam
 
     val lukuvuosimaksuRequest = parsedBody.extract[LukuvuosimaksuRequest]
