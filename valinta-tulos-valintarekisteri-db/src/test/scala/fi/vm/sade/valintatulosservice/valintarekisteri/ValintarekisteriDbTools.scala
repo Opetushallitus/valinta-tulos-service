@@ -38,6 +38,10 @@ trait ValintarekisteriDbTools extends Specification {
       new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").parse(dateValue)
     case JObject(List(JField("$date", JString(dateValue)))) =>
       new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").parse(dateValue)
+    case JString(dateValue) if dateValue.endsWith("Z") =>
+      new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse(dateValue)
+    case JString(dateValue) =>
+      new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(dateValue)
   }, {
     case x: Date => JObject(List(JField("$date", JString("" + x))))
   }))
