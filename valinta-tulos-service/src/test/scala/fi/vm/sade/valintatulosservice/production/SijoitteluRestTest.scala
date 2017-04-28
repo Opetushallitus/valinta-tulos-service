@@ -17,11 +17,12 @@ import scala.language.experimental.macros
 @Ignore
 @RunWith(classOf[JUnitRunner])
 class SijoitteluRestTest extends Specification with MatcherMacros with Logging with PerformanceLogger with RestTestHelper {
-  val oldHost = "https://testi.virkailija.opintopolku.fi"
+  val oldHost = "https://virkailija.opintopolku.fi"
+  val casHost = "https://testi.virkailija.opintopolku.fi"
   //private val newHost = "https://testi.virkailija.opintopolku.fi"
   private val newHost = "http://localhost:8097"
 
-  override val cas_url = oldHost + "/cas"
+  override val casUrlOld: String = oldHost + "/cas"
 
   /* Hakuoideja
      "1.2.246.562.29.75203638285" - Kevään 2016 kk-yhteishaku
@@ -42,7 +43,7 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
   "New sijoittelu (valintarekisteri) and old sijoittelu (sijoitteluDb)" should {
     "contain same information" in {
 
-      val vtsClient = new VtsAuthenticatingClient(oldHost, "/valinta-tulos-service", cas_user, cas_password)
+      val vtsClient = new VtsAuthenticatingClient(casHost, newHost + "/valinta-tulos-service", "auth/login", casUserNew, casPasswordNew)
       val vtsSessionCookie = vtsClient.getVtsSession(newHost)
 
       hakuOidsToTest.foreach { oid =>

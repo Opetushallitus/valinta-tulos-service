@@ -19,9 +19,9 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
   val vtsHost = "http://localhost:8097"
   //val cas_user = System.getProperty("cas_user")
   //val cas_password = System.getProperty("cas_password")
-  override val cas_url = casHost + "/cas"
+  override val casUrlOld = casHost + "/cas"
 
-  val vtsClient = new VtsAuthenticatingClient(casHost, "/valinta-tulos-service", cas_user, cas_password)
+  val vtsClient = new VtsAuthenticatingClient(casHost, vtsHost + "/valinta-tulos-service", "auth/login", casUserNew, casPasswordNew)
   val vtsSessionCookie = vtsClient.getVtsSession(casHost)
 
   val hakuOid = "1.2.246.562.29.75203638285"

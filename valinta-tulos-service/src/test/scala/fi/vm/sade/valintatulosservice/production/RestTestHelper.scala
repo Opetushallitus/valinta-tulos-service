@@ -11,11 +11,13 @@ import scalaj.http.{Http, HttpOptions}
 import scalaz.concurrent.Task
 
 trait RestTestHelper {
-  val cas_user = System.getProperty("cas_user")
-  val cas_password = System.getProperty("cas_password")
-  def cas_url:String
+  val casUserNew = System.getProperty("cas_user_new")
+  val casPasswordNew = System.getProperty("cas_password_new")
+  val casUserOld = System.getProperty("cas_user_old")
+  val casPasswordOld = System.getProperty("cas_password_old")
+  def casUrlOld:String
 
-  lazy val vanhaSijoitteluCasClient = createCasClient("/sijoittelu-service")
+  lazy val vanhaSijoitteluCasClient = createCasClientForOldData("/sijoittelu-service")
 
   implicit val formats = DefaultFormats
 
@@ -28,10 +30,10 @@ trait RestTestHelper {
 
   protected def createUri(uriString:String): Uri = Uri.fromString(uriString).getOrElse(throw new RuntimeException(s"Invalid uri"))
 
-  protected def createCasClient(target:String): Client = {
-    val casParams = CasParams(target, cas_user, cas_password)
+  protected def createCasClientForOldData(target:String): Client = {
+    val casParams = CasParams(target, casUserOld, casPasswordOld)
     new CasAuthenticatingClient(
-      new CasClient(cas_url, org.http4s.client.blaze.defaultClient),
+      new CasClient(casUrlOld, org.http4s.client.blaze.defaultClient),
       casParams,
       org.http4s.client.blaze.defaultClient,
       "RestTestHelper"
