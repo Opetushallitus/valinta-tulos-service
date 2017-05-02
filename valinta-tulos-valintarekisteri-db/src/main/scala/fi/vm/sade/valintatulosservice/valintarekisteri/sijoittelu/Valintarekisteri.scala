@@ -73,46 +73,16 @@ abstract class Valintarekisteri(sijoitteluRepository:SijoitteluRepository with S
   }
 
   def getSijoitteluajonHakukohteet(sijoitteluajoId:Long): java.util.List[Hakukohde] = {
-    val valintatapajonotByHakukohde = getValintatapajonoEntitiesGroupedByHakukohde(sijoitteluajoId)
-
-    val hakijaryhmatByHakukohde = sijoitteluRepository.getSijoitteluajonHakijaryhmat(sijoitteluajoId).map(h => h.entity(
-      sijoitteluRepository.getSijoitteluajonHakijaryhmanHakemukset(h.sijoitteluajoId, h.oid)
-    )).groupBy(h => HakukohdeOid(h.getHakukohdeOid))
-
-    sijoitteluRepository.getSijoitteluajonHakukohteet(sijoitteluajoId).map( hakukohde =>
-      hakukohde.entity(
-        valintatapajonotByHakukohde.getOrElse(hakukohde.oid, List()),
-        hakijaryhmatByHakukohde.getOrElse(hakukohde.oid, List())
-      )
-    ).asJava
-  }
-
-  private def getValintatapajonoEntitiesGroupedByHakukohde(latestId:Long) = {
-    val kaikkiValintatapajonoHakemukset = getHakemusEntitiesGroupedByValintatapajonoOid(latestId)
-    sijoitteluRepository.getSijoitteluajonValintatapajonotGroupedByHakukohde(latestId).mapValues(
-      jonot => jonot.map(jono => jono.entity(kaikkiValintatapajonoHakemukset.getOrElse(jono.oid, List()))))
-  }
-
-  private def getHakemusEntitiesGroupedByValintatapajonoOid(sijoitteluajoId:Long) = {
-    val sijoitteluajonHakemukset = sijoitteluRepository.getSijoitteluajonHakemuksetInChunks(sijoitteluajoId)
-    val tilankuvaukset = sijoitteluRepository.getValinnantilanKuvauksetForHakemukset(sijoitteluajonHakemukset)
-    val hakijaryhmat = sijoitteluRepository.getSijoitteluajonHakemustenHakijaryhmat(sijoitteluajoId)
-    val tilahistoriat = sijoitteluRepository.getSijoitteluajonTilahistoriatGroupByHakemusValintatapajono(sijoitteluajoId).mapValues(_.map(_.entity).sortBy(_.getLuotu.getTime))
-    val pistetiedot = sijoitteluRepository.getSijoitteluajonPistetiedotGroupByHakemusValintatapajono(sijoitteluajoId).mapValues(_.map(_.entity))
-
-    sijoitteluajonHakemukset.map(h =>
-      (h.valintatapajonoOid, h.entity(
-        hakijaryhmat.getOrElse(h.hakemusOid, Set()),
-        h.tilankuvaukset(tilankuvaukset.get(h.tilankuvausHash)),
-        tilahistoriat.getOrElse((h.hakemusOid, h.valintatapajonoOid), List()),
-        pistetiedot.getOrElse((h.hakemusOid, h.valintatapajonoOid), List())
-      ))
-    ).groupBy(_._1).mapValues(_.map(_._2))
+    new GetSijoitteluajonHakukohteet(sijoitteluRepository, sijoitteluajoId).entity()
   }
 
   def getValintatulokset(hakuOid: String): java.util.List[Valintatulos] = {
     val (read, valinnantulokset) = valinnantulosRepository.getValinnantuloksetAndReadTimeForHaku(HakuOid(hakuOid))
     valinnantulokset.map(_.toValintatulos(read)).toList.asJava
+  }
+
+  def getHakukohdeForSijoitteluajo(sijoitteluajoId:Long, hakukohdeOid:String) = {
+    new GetSijoitteluajonHakukohde(sijoitteluRepository, sijoitteluajoId, HakukohdeOid(hakukohdeOid)).entity()
   }
 }
 
