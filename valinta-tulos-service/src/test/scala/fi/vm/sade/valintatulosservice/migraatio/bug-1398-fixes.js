@@ -199,3 +199,39 @@ db.Hakukohde.find({sijoitteluajoId: sijoitteluajoId,
       oid: fixedOid
     } });
 });
+
+
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// 3) hakukohteiden korjaus Valintatulos-collectionista
+//    **********************************
+//
+// Still in sijoitteludb.
+// First some background checks in sijoitteludb
+
+var hakukohdeFixMappings = {
+  "1.2.246.562.14.2013102510244944903778": "1.2.246.562.20.50072287449",
+  "1.2.246.562.14.2013110813213398882225": "1.2.246.562.20.22011956772",
+  "1.2.246.562.5.45309566409": "1.2.246.562.20.44280111129",
+  "1.2.246.562.5.42611100555": "1.2.246.562.20.67124751198"
+};
+
+db.Valintatulos.count({hakuOid: "1.2.246.562.5.2013080813081926341927",
+  hakukohdeOid: { $in: Object.keySet(hakukohdeFixMappings) } } ); // 2037
+
+// Store the erroneous Valintatulos documents in a safe place
+db.Valintatulos.find({hakuOid: "1.2.246.562.5.2013080813081926341927",
+  hakukohdeOid: { $in: Object.keySet(hakukohdeFixMappings) } } ).forEach(function(vt) {
+    db.bug1398valintatulos.insert(vt);
+});
+
+// And do it!
+db.Valintatulos.find({hakuOid: "1.2.246.562.5.2013080813081926341927",
+  hakukohdeOid: { $in: Object.keySet(hakukohdeFixMappings) } } ).forEach(function(vt) {
+    var oldOid = vt.hakukohdeOid;
+    var fixedOid = hakukohdeFixMappings[oldOid];
+    print("Setting oid from", oldOid, "to", fixedOid, "in document", vt._id.toString());
+    db.Valintatulos.update({_id: vt._id}, {$set: {
+      hakukohdeOid: fixedOid
+    } });
+});
