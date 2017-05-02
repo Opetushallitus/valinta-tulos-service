@@ -51,7 +51,10 @@ var deepValue = function(obj, path){
 };
 
 function fixHakutoiveet(hakemusOid, dryRun) {
+  print("Processing hakemus", hakemusOid)
   var oldHakutoiveOids = Object.keySet(hakukohdeFixMappings);
+
+  // answers.hakutoiveet
   var toiveKeys = ["answers.hakutoiveet.preference1-Koulutus-id",
     "answers.hakutoiveet.preference2-Koulutus-id",
     "answers.hakutoiveet.preference3-Koulutus-id",
@@ -63,17 +66,62 @@ function fixHakutoiveet(hakemusOid, dryRun) {
     var toiveOidOnHakemus = deepValue(hakemus, toiveKey);
     if (oldHakutoiveOids.indexOf(toiveOidOnHakemus) > -1) {
       var correctToiveOid = hakukohdeFixMappings[toiveOidOnHakemus];
-      var updateObject = {};
-      updateObject[toiveKey] = correctToiveOid;
       if (dryRun) {
-        print('Would fix', toiveOidOnHakemus, 'to', correctToiveOid, 'on application', hakemusOid);
-        //print(updateObject);
+        print('Would fix', toiveOidOnHakemus, 'to', correctToiveOid, 'on application', hakemusOid, toiveKey);
       } else {
-        db.application.update({oid: hakemusOid, _id: hakemus._id},
-          { $set: updateObject });
+        hakemus[toiveKey] = correctToiveOid;
       }
     }
   });
+
+  // authorizationMeta
+  if (hakemus.authorizationMeta.applicationPreferences) {
+    hakemus.authorizationMeta.applicationPreferences.forEach(function(preference) {
+      var toiveOidOnHakemus = preference.preferenceData["Koulutus-id"];
+      if (oldHakutoiveOids.indexOf(toiveOidOnHakemus) > -1) {
+        var correctToiveOid = hakukohdeFixMappings[toiveOidOnHakemus];
+        if (dryRun) {
+          print('Would fix', toiveOidOnHakemus, 'to', correctToiveOid, 'on application', hakemusOid, "authorizationMeta.applicationPreferences.preferenceData.Koulutus-id");
+        } else {
+          preference.preferenceData["Koulutus-id"] = correctToiveOid;
+        }
+      }
+    });
+  }
+
+  // preferenceEligibilities
+  if (hakemus.preferenceEligibilities) {
+    hakemus.preferenceEligibilities.forEach(function(eligilibity) {
+      var toiveOidOnHakemus = eligilibity.aoId;
+      if (oldHakutoiveOids.indexOf(toiveOidOnHakemus) > -1) {
+        var correctToiveOid = hakukohdeFixMappings[toiveOidOnHakemus];
+        if (dryRun) {
+          print('Would fix', toiveOidOnHakemus, 'to', correctToiveOid, 'on application', hakemusOid, "preferenceEligibilities.aoId");
+        } else {
+          eligilibity.aoId = correctToiveOid;
+        }
+      }
+    });
+  }
+
+  // preferencesChecked
+  if (hakemus.preferencesChecked) {
+    hakemus.preferencesChecked.forEach(function(checked) {
+      var toiveOidOnHakemus = checked.preferenceAoOid;
+      if (oldHakutoiveOids.indexOf(toiveOidOnHakemus) > -1) {
+        var correctToiveOid = hakukohdeFixMappings[toiveOidOnHakemus];
+        if (dryRun) {
+          print('Would fix', toiveOidOnHakemus, 'to', correctToiveOid, 'on application', hakemusOid, "hakemus.preferencesChecked.preferenceAoOid");
+        } else {
+          checked.preferenceAoOid = correctToiveOid;
+        }
+      }
+    });
+  }
+
+  if (!dryRun) {
+    db.application.update({oid: hakemusOid, _id: hakemus._id}, hakemus);
+  }
 }
 
 // First try it out a bit with a single one
@@ -85,7 +133,10 @@ db.bug1398applications.find().forEach(function(a) {
 });
 // You should get a listing resembling this
 /*
-Would fix 1.2.246.562.14.2013102510244944903778 to 1.2.246.562.20.50072287449 on application 1.2.246.562.11.00000638867
+Would fix 1.2.246.562.14.2013102510244944903778 to 1.2.246.562.20.50072287449 on application 1.2.246.562.11.00000638867 answers.hakutoiveet.preference1-Koulutus-id
+Would fix 1.2.246.562.14.2013102510244944903778 to 1.2.246.562.20.50072287449 on application 1.2.246.562.11.00000472036 authorizationMeta.applicationPreferences.preferenceData.Koulutus-id
+Would fix 1.2.246.562.14.2013102510244944903778 to 1.2.246.562.20.50072287449 on application 1.2.246.562.11.00000472036 preferenceEligibilities.aoId
+Would fix 1.2.246.562.14.2013102510244944903778 to 1.2.246.562.20.50072287449 on application 1.2.246.562.11.00000472036 hakemus.preferencesChecked.preferenceAoOid
 Would fix 1.2.246.562.14.2013102510244944903778 to 1.2.246.562.20.50072287449 on application 1.2.246.562.11.00000472036
 ...
  */
