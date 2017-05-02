@@ -8,10 +8,13 @@ db.application.find({"applicationSystemId":"1.2.246.562.5.2013080813081926341927
 db.application.count({"applicationSystemId":"1.2.246.562.5.2013080813081926341927"}) // 83982
 */
 
+// https://virkailija.opintopolku.fi/tarjonta-app/index.html#/hakukohde/1.2.246.562.20.67124751198 vastaa kohdetta 1.2.246.562.5.42611100555
+
 var hakukohdeFixMappings = {
   "1.2.246.562.14.2013102510244944903778": "1.2.246.562.20.50072287449",
   "1.2.246.562.14.2013110813213398882225": "1.2.246.562.20.22011956772",
-  "1.2.246.562.5.45309566409": "1.2.246.562.20.44280111129"
+  "1.2.246.562.5.45309566409": "1.2.246.562.20.44280111129",
+  "1.2.246.562.5.42611100555": "1.2.246.562.20.67124751198"
 };
 
 // There are almost 2000 applications with the wrong hakukohde oids
