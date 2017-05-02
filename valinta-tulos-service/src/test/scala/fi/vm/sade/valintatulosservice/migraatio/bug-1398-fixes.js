@@ -156,3 +156,46 @@ db.bug1398applications.find().forEach(function(a) {
     fixHakutoiveet(a.oid, false);
 });
 // and then check the results.
+
+
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// 2) hakukohteiden korjaus Hakukohde-collectionista
+//    **********************************
+//
+// Changing to sijoitteludb at this point.
+// First some background checks in sijoitteludb
+
+var hakukohdeFixMappings = {
+  "1.2.246.562.14.2013102510244944903778": "1.2.246.562.20.50072287449",
+  "1.2.246.562.14.2013110813213398882225": "1.2.246.562.20.22011956772",
+  "1.2.246.562.5.45309566409": "1.2.246.562.20.44280111129",
+  "1.2.246.562.5.42611100555": "1.2.246.562.20.67124751198"
+};
+
+var sijoitteluajoId = db.getCollection('Sijoittelu').find({"hakuOid":"1.2.246.562.5.2013080813081926341927"})[0].sijoitteluajot.sort(function(a, b) {
+    return a.sijoitteluajoId < b.sijoitteluajoId ? 1 : -1;
+})[0].sijoitteluajoId;
+// 1418737548779 is the latest sijoitteluajoId of 1.2.246.562.5.2013080813081926341927 (Ammatillisen koulutuksen ja lukiokoulutuksen kevään 2014 yhteishaku)
+
+db.Hakukohde.count({sijoitteluajoId: sijoitteluajoId}); // 2826
+
+db.Hakukohde.count({sijoitteluajoId: sijoitteluajoId,
+  oid: { $in: Object.keySet(hakukohdeFixMappings) } } ); // 4
+
+// Store the erroneous Hakukohde documents in a safe place
+db.Hakukohde.find({sijoitteluajoId: sijoitteluajoId,
+  oid: { $in: Object.keySet(hakukohdeFixMappings) } } ).forEach(function(hk) {
+    db.bug1398hakukohdes.insert(hk);
+});
+
+// And do it!
+db.Hakukohde.find({sijoitteluajoId: sijoitteluajoId,
+  oid: { $in: Object.keySet(hakukohdeFixMappings) } } ).forEach(function(hk) {
+    var oldOid = hk.oid;
+    var fixedOid = hakukohdeFixMappings[oldOid];
+    print("Setting oid from", oldOid, "to", fixedOid, "in document", hk._id.toString());
+    db.Hakukohde.update({_id: hk._id}, {$set: {
+      oid: fixedOid
+    } });
+});
