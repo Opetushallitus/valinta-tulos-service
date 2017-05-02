@@ -1,6 +1,5 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
-import fi.vm.sade.sijoittelu.tulos.dto.HakemusDTO
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, ValintatapajonoOid}
 
@@ -9,11 +8,7 @@ class GetSijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository,
   val hakukohde = sijoitteluRepository.getSijoitteluajonHakukohde(sijoitteluajoId, hakukohdeOid).getOrElse(
     throw new IllegalArgumentException(s"Sijoitteluajolle ${sijoitteluajoId} ei löydy hakukohdetta ${hakukohdeOid}"))
 
-  def getValintatapajonot = sijoitteluRepository.getHakukohteenValintatapajonot(sijoitteluajoId, hakukohde.oid)
-
-  def getHakemukset = sijoitteluRepository.getHakukohteenHakemukset(sijoitteluajoId, hakukohde.oid)
-
-  lazy val kaikkiHakemukset = getHakemukset
+  lazy val kaikkiHakemukset = sijoitteluRepository.getHakukohteenHakemukset(sijoitteluajoId, hakukohde.oid)
   lazy val tilankuvausHashit = kaikkiHakemukset.map(_.tilankuvausHash).distinct
 
   def getPistetiedotGroupedByValintatapajonoOidAndHakemusOid = {
@@ -26,15 +21,13 @@ class GetSijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository,
     ).groupBy(_.valintatapajonoOid).mapValues(_.groupBy(_.hakemusOid))
   }
 
-  def getTilankuvaukset = sijoitteluRepository.getValinnantilanKuvaukset(tilankuvausHashit)
-
-  val valintatapajonot = getValintatapajonot
+  val valintatapajonot = sijoitteluRepository.getHakukohteenValintatapajonot(sijoitteluajoId, hakukohde.oid)
   val pistetiedot = getPistetiedotGroupedByValintatapajonoOidAndHakemusOid
   val tilahistoriat = getTilahistoriatGroupedByValintatapajonoOidAndHakemusOid
   val hakijaryhmat = sijoitteluRepository.getHakukohteenHakijaryhmat(sijoitteluajoId, hakukohde.oid)
   val hakijaryhmienHakemukset = hakijaryhmat.map(hr => hr.oid -> sijoitteluRepository.getSijoitteluajonHakijaryhmanHakemukset(sijoitteluajoId, hr.oid)).toMap
   val hakemukset = kaikkiHakemukset.groupBy(_.valintatapajonoOid)
-  val tilankuvaukset = getTilankuvaukset
+  val tilankuvaukset = sijoitteluRepository.getValinnantilanKuvaukset(tilankuvausHashit)
 
   def hakemuksenHakijaryhmat(hakemusOid:HakemusOid):Set[String] = {
     hakijaryhmienHakemukset.filter {
