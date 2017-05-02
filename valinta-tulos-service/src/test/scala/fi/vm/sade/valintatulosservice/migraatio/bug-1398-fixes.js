@@ -72,7 +72,8 @@ function fixHakutoiveet(hakemusOid, dryRun) {
       if (dryRun) {
         print('Would fix', toiveOidOnHakemus, 'to', correctToiveOid, 'on application', hakemusOid, toiveKey);
       } else {
-        hakemus[toiveKey] = correctToiveOid;
+        var suffix = toiveKey.split("\.")[2];
+        hakemus.answers.hakutoiveet[suffix] = correctToiveOid;
       }
     }
   });
