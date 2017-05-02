@@ -8,7 +8,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
 import fi.vm.sade.valintatulosservice.security.Role
-import fi.vm.sade.valintatulosservice.tarjonta.HakuService
+import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService}
 import fi.vm.sade.valintatulosservice.valinnantulos._
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
@@ -20,6 +20,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
                            val hakuService: HakuService,
                            val ohjausparametritService: OhjausparametritService,
                            val hakukohdeRecordService: HakukohdeRecordService,
+                           vastaanottoService: VastaanottoService,
                            yhdenPaikanSaannos: YhdenPaikanSaannos,
                            val appConfig: VtsAppConfig,
                            val audit: Audit) extends Logging {
@@ -58,6 +59,30 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
     r
   }
 
+  private def storeVastaanotot(valinnantulokset: List[Valinnantulos],
+                               hakuOid: HakuOid,
+                               valintatapajonoOid: ValintatapajonoOid,
+                               muokkaaja: String,
+                               selite: String): List[ValinnantulosUpdateStatus] = {
+    vastaanottoService.vastaanotaVirkailijana(valinnantulokset.map(v => VastaanottoEventDto(
+      v.valintatapajonoOid,
+      v.henkiloOid,
+      v.hakemusOid,
+      v.hakukohdeOid,
+      hakuOid,
+      Vastaanottotila.values.find(Vastaanottotila.matches(_, v.vastaanottotila))
+        .getOrElse(throw new IllegalArgumentException(s"Odottamaton vastaanottotila ${v.vastaanottotila}")),
+      muokkaaja,
+      selite
+    ))).filter(r => r.result.status != 200)
+      .map(r => ValinnantulosUpdateStatus(
+        r.result.status,
+        r.result.message.orNull,
+        valintatapajonoOid,
+        r.hakemusOid
+      )).toList
+  }
+
   def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid: ValintatapajonoOid,
                                                valinnantulokset: List[Valinnantulos],
                                                ifUnmodifiedSince: Option[Instant],
@@ -70,6 +95,10 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
       haku <- hakuService.getHaku(hakukohde.hakuOid).right
       ohjausparametrit <- ohjausparametritService.ohjausparametrit(hakukohde.hakuOid).right
     } yield {
+      val vastaanottoResults = storeVastaanotot(valinnantulokset, haku.oid, valintatapajonoOid, auditInfo.session._2.personOid, "Virkailijan vastaanoton muokkaus")
+      if (vastaanottoResults.nonEmpty) {
+        return vastaanottoResults
+      }
       val vanhatValinnantulokset = valinnantulosRepository.getValinnantuloksetAndLastModifiedDatesForValintatapajono(valintatapajonoOid)
       val lastModifiedByHakemusOid = vanhatValinnantulokset.map(t => t._2.hakemusOid -> t._1).toMap
       val vanhatValinnantuloksetByHakemusOid = yhdenPaikanSaannos(vanhatValinnantulokset.map(_._2))
