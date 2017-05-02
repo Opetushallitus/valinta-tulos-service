@@ -235,3 +235,100 @@ db.Valintatulos.find({hakuOid: "1.2.246.562.5.2013080813081926341927",
       hakukohdeOid: fixedOid
     } });
 });
+
+
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// 4) vastaanottojen korjaus valintarekisteri-postgresistä
+//    **********************************
+//
+// Now let's go to valintarekisteridb
+// First some background checks again
+
+/*
+
+select count(*), year from (
+select date_part('year', timestamp) as year from vastaanotot where hakukohde in (
+      '1.2.246.562.14.2013102510244944903778',
+      '1.2.246.562.14.2013110813213398882225',
+      '1.2.246.562.5.45309566409',
+      '1.2.246.562.5.4261110055'
+)) as t
+group by year;
+-- 423   2015
+-- 447   2014
+
+select count(*), year, action from (
+select date_part('year', timestamp) as year, action from vastaanotot where hakukohde in (
+      '1.2.246.562.14.2013102510244944903778',
+      '1.2.246.562.14.2013110813213398882225',
+      '1.2.246.562.5.45309566409',
+      '1.2.246.562.5.4261110055'
+)) as t
+group by year, action
+order by year, action;
+2	2014	MerkitseMyohastyneeksi
+32	2014	Peru
+413	2014	VastaanotaSitovasti
+30	2015	Peru
+393	2015	VastaanotaSitovasti
+
+  */
+
+// From sijoitteludb:
+db.bug1398valintatulos.find({tila: {$ne: "KESKEN"} }, {_id: 0, "tila": 1}).toArray();
+/*
+$ pbpaste | grep tila | sort | uniq -c
+      3         "tila" : "EI_VASTAANOTETTU_MAARA_AIKANA"
+     33         "tila" : "PERUNUT"
+    442         "tila" : "VASTAANOTTANUT"
+*/
+
+// Store old vastaanotto rows to a safe place
+/*
+create table bug1398vastaanotot (like vastaanotot);
+insert into bug1398vastaanotot (select * from vastaanotot where hakukohde in (
+      '1.2.246.562.14.2013102510244944903778',
+      '1.2.246.562.14.2013110813213398882225',
+      '1.2.246.562.5.45309566409',
+      '1.2.246.562.5.4261110055'
+));
+commit;
+*/
+
+// Generate hakukohde insert code from sijoitteludb
+Object.keySet(hakukohdeFixMappings).forEach(function(k) {
+    var newHakukohdeOid = hakukohdeFixMappings[k];
+    var hakuOid = "1.2.246.562.5.2013080813081926341927";
+    print("insert into hakukohteet (hakukohde_oid, haku_oid, kk_tutkintoon_johtava, koulutuksen_alkamiskausi, yhden_paikan_saanto_voimassa) " +
+     "values ('" + newHakukohdeOid + "', '" + hakuOid + "', false, '2014S', false);");
+});
+// And insert the hakukohde records to db.
+
+// Ensure new hakukohde records are up to date wrt to tarjonta in valintarekisteri by passing the new oids to
+// https://virkailija.opintopolku.fi/valinta-tulos-service/api-docs/index.html#!/virkistys/virkistaHakukohteet
+
+
+// Generate db update code from sijoitteludb
+db.bug1398valintatulos.find({tila: {$ne: "KESKEN"} }).forEach(function(vt) {
+    var oldOid = vt.hakukohdeOid;
+    var fixedOid = hakukohdeFixMappings[oldOid];
+    var tilaMappings = {
+        "EI_VASTAANOTETTU_MAARA_AIKANA": "MerkitseMyohastyneeksi",
+        "PERUNUT": "Peru",
+        "VASTAANOTTANUT": "VastaanotaSitovasti"
+        };
+    var valintarekisteriAction = tilaMappings[vt.tila];
+    print("update vastaanotot set hakukohde = '" + fixedOid + "' where hakukohde = '" + oldOid +
+        "' and henkilo = '" + vt.hakijaOid + "' and date_part('year', timestamp) = 2014 and action = '" + valintarekisteriAction + "';");
+    } );
+
+// Run the code to valintarekisteridb, and check the results before committing
+/*
+$ pbpaste |grep update | wc -l
+478
+$ pbpaste |grep '1 row affected' | wc -l
+478
+*/
+
+// Now you can use the earlier check SQLs to see that there are no more results left for the old oids from the previous year.
