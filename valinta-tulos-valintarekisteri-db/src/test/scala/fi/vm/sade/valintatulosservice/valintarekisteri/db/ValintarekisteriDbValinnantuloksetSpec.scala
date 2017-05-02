@@ -32,7 +32,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
   val valinnantuloksenOhjaus = ValinnantuloksenOhjaus(
     hakemusOid, valintatapajonoOid, hakukohdeOid, false, false, false, false, muokkaaja, selite)
   val valinnantulos = Valinnantulos(hakukohdeOid, valintatapajonoOid, hakemusOid, henkiloOid,
-    Hyvaksytty, Some(false), Some(false), Some(false), Some(false), ValintatuloksenTila.KESKEN, EiTehty, None)
+    Hyvaksytty, Some(false), None, None, None, None, Some(false), Some(false), Some(false), ValintatuloksenTila.KESKEN, EiTehty, None)
   val ilmoittautuminen = Ilmoittautuminen(hakukohdeOid, Lasna, "muokkaaja", "selite")
   val ehdollisenHyvaksynnanEhto = EhdollisenHyvaksynnanEhto(hakemusOid, valintatapajonoOid, hakukohdeOid, "muu", "muu", "andra", "other")
   val ancient = new java.util.Date(0)
@@ -64,7 +64,6 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.deleteIlmoittautuminen(henkiloOid, ilmoittautuminen))
       singleConnectionValintarekisteriDb.runBlocking(sql"""select henkilo, selite from ilmoittautumiset""".as[(String, String)]).size must_== 0
       singleConnectionValintarekisteriDb.runBlocking(sql"""select henkilo from ilmoittautumiset_history where selite = 'selite'""".as[String]).head must_== henkiloOid
-
     }
     "update valinnantuloksen ohjaustiedot" in {
       storeValinnantilaAndValinnantulos

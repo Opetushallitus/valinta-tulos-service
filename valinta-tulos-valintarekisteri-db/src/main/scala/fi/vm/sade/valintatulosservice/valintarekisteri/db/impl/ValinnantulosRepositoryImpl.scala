@@ -106,12 +106,18 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               ti.henkilo_oid,
               ti.tila,
               tu.ehdollisesti_hyvaksyttavissa,
+              eh.ehdollisen_hyvaksymisen_ehto_koodi,
+              eh.ehdollisen_hyvaksymisen_ehto_fi,
+              eh.ehdollisen_hyvaksymisen_ehto_sv,
+              eh.ehdollisen_hyvaksymisen_ehto_en,
               tu.julkaistavissa,
               tu.hyvaksytty_varasijalta,
               tu.hyvaksy_peruuntunut,
               v.action,
               i.tila
           from valinnantilat as ti
+          left join ehdollisen_hyvaksynnan_ehto as eh on eh.hakemus_oid = ti.hakemus_oid
+              and eh.valintatapajono_oid = ti.valintatapajono_oid
           left join valinnantulokset as tu on tu.hakemus_oid = ti.hakemus_oid
               and tu.valintatapajono_oid = ti.valintatapajono_oid
           left join vastaanotot as v on v.hakukohde = tu.hakukohde_oid
@@ -129,12 +135,18 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               ti.henkilo_oid,
               ti.tila,
               tu.ehdollisesti_hyvaksyttavissa,
+              eh.ehdollisen_hyvaksymisen_ehto_koodi,
+              eh.ehdollisen_hyvaksymisen_ehto_fi,
+              eh.ehdollisen_hyvaksymisen_ehto_sv,
+              eh.ehdollisen_hyvaksymisen_ehto_en,
               tu.julkaistavissa,
               tu.hyvaksytty_varasijalta,
               tu.hyvaksy_peruuntunut,
               v.action,
               i.tila
           from valinnantilat as ti
+          left join ehdollisen_hyvaksynnan_ehto as eh on eh.hakemus_oid = ti.hakemus_oid
+              and eh.valintatapajono_oid = ti.valintatapajono_oid
           left join valinnantulokset as tu on tu.hakemus_oid = ti.hakemus_oid
               and tu.valintatapajono_oid = ti.valintatapajono_oid
           left join vastaanotot as v on v.hakukohde = tu.hakukohde_oid
@@ -154,6 +166,10 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                 ti.henkilo_oid,
                 ti.tila,
                 tu.ehdollisesti_hyvaksyttavissa,
+                eh.ehdollisen_hyvaksymisen_ehto_koodi,
+                eh.ehdollisen_hyvaksymisen_ehto_fi,
+                eh.ehdollisen_hyvaksymisen_ehto_sv,
+                eh.ehdollisen_hyvaksymisen_ehto_en,
                 tu.julkaistavissa,
                 tu.hyvaksytty_varasijalta,
                 tu.hyvaksy_peruuntunut,
@@ -165,6 +181,8 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                 and tu.valintatapajono_oid = ti.valintatapajono_oid
             left join vastaanotot as v on v.hakukohde = tu.hakukohde_oid
                 and v.henkilo = ti.henkilo_oid and v.deleted is null
+            left join ehdollisen_hyvaksynnan_ehto as eh on eh.hakemus_oid = ti.hakemus_oid
+                and eh.valintatapajono_oid = ti.valintatapajono_oid
             left join ilmoittautumiset as i on i.hakukohde = tu.hakukohde_oid
                 and i.henkilo = ti.henkilo_oid""".as[Valinnantulos].map(_.toSet)
   }
