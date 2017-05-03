@@ -348,16 +348,25 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   }
 
   def deleteValinnantila(tila: ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+    val deleteTilanKuvaukset =
+      sqlu"""delete from tilat_kuvaukset
+             where hakukohde_oid = ${tila.hakukohdeOid}
+                 and hakemus_oid = ${tila.hakemusOid}
+                 and valintatapajono_oid = ${tila.valintatapajonoOid}
+        """
+    val deleteValinnantila =
       sqlu"""delete from valinnantilat
-               where hakukohde_oid = ${tila.hakukohdeOid}
-               and hakemus_oid = ${tila.hakemusOid}
-               and valintatapajono_oid = ${tila.valintatapajonoOid}
-               and tila = ${tila.valinnantila.toString}::valinnantila
-               and (${ifUnmodifiedSince}::timestamptz is null
-                   or system_time @> ${ifUnmodifiedSince})""".flatMap {
+             where hakukohde_oid = ${tila.hakukohdeOid}
+                 and hakemus_oid = ${tila.hakemusOid}
+                 and valintatapajono_oid = ${tila.valintatapajonoOid}
+                 and tila = ${tila.valinnantila.toString}::valinnantila
+                 and (${ifUnmodifiedSince}::timestamptz is null
+                     or system_time @> ${ifUnmodifiedSince})
+        """.flatMap {
         case 1 => DBIO.successful(())
         case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantilaa $tila ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
       }
+    deleteTilanKuvaukset.andThen(deleteValinnantila).transactionally
   }
 
   def deleteValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
