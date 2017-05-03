@@ -105,9 +105,14 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     hakuService.getHaku(hakuOid) match {
       case Right(haku) =>
         val tallennettavatHakukohteet = if (haku.käyttääSijoittelua) hakukohteet else getHakukohteetUsingLaskenta(hakukohteet)
-        if (haku.käyttääSijoittelua || !tallennettavatHakukohteet.isEmpty){
-          logger.info(s"Haku $hakuOid does not use sijoittelu, but has ${tallennettavatHakukohteet.size} / " +
-            s"${hakukohteet.size} hakukohdes that use laskenta, so saving $mongoSijoitteluAjoId")
+        if (haku.käyttääSijoittelua || !tallennettavatHakukohteet.isEmpty) {
+          if (haku.käyttääSijoittelua) {
+            logger.info(s"Haku $hakuOid uses sijoittelu, so saving ${tallennettavatHakukohteet.size} / " +
+              s"${hakukohteet.size} hakukohdes of its latest sijoitteluajo $mongoSijoitteluAjoId")
+          } else {
+            logger.info(s"Haku $hakuOid does not use sijoittelu, but has ${tallennettavatHakukohteet.size} / " +
+              s"${hakukohteet.size} hakukohdes that use laskenta, so saving $mongoSijoitteluAjoId")
+          }
           storeSijoittelu(hakuOid, ajoFromMongo, tallennettavatHakukohteet, valintatulokset)
         } else {
           logger.info(s"Haku $hakuOid does not use sijoittelu. Skipping saving sijoittelu $mongoSijoitteluAjoId")
