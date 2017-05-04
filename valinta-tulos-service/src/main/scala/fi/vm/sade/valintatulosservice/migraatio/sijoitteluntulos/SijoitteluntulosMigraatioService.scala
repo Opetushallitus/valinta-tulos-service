@@ -207,10 +207,12 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     val hakemusOid: String = hakemus.getHakemusOid
     hakemus.getHakijaOid match {
       case x: String if x != null => x
-      case _ => hakijaOidResolver.findPersonOidByHakemusOid(hakemusOid) match {
-        case Some(oid) => oid
-        case _ => throw new IllegalStateException("This should never happen :)")
-      }
+      case _ =>
+        logger.info(s"hakijaOid was null on hakemuksen tulos $hakemusOid , searching with missing hakija oid resolver")
+        hakijaOidResolver.findPersonOidByHakemusOid(hakemusOid) match {
+          case Some(oid) => oid
+          case _ => throw new IllegalStateException("This should never happen :)")
+        }
     }
   }
 
