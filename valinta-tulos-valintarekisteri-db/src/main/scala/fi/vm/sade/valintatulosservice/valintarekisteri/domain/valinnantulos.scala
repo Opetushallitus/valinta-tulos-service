@@ -91,7 +91,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     muokkaaja
   )
 
-  def toValintatulos(read:Instant) = {
+  def toValintatulos():Valintatulos = {
     val valintatulos = new Valintatulos()
     valintatulos.setHakukohdeOid(hakukohdeOid.toString, "", "")
     valintatulos.setValintatapajonoOid(valintatapajonoOid.toString, "", "")
@@ -102,6 +102,11 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     hyvaksyttyVarasijalta.foreach(h => valintatulos.setHyvaksyttyVarasijalta(h, "", ""))
     hyvaksyPeruuntunut.foreach(h => valintatulos.setHyvaksyPeruuntunut(h, "", ""))
     ehdollisestiHyvaksyttavissa.foreach(e => valintatulos.setEhdollisestiHyvaksyttavissa(e, "", ""))
+    valintatulos
+  }
+
+  def toValintatulos(read:Instant):Valintatulos = {
+    val valintatulos = toValintatulos()
     valintatulos.setRead(java.util.Date.from(read))
     valintatulos
   }
