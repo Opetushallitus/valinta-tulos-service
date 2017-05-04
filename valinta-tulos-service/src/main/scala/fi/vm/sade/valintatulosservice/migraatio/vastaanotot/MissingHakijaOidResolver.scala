@@ -9,6 +9,7 @@ import fi.vm.sade.valintatulosservice.config.StubbedExternalDeps
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import org.http4s._
+import org.http4s.client.middleware.{Retry, RetryPolicy}
 import org.http4s.headers.`Content-Type`
 import org.json4s.JsonAST.JValue
 import org.json4s.JsonDSL._
@@ -92,7 +93,8 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
 
     val stringUri = appConfig.ophUrlProperties.url("haku-app.application.queryBase", hakemusOid)
     val url = Uri.fromString(stringUri).getOrElse(throw new RuntimeException(s"Invalid uri: $stringUri"))
-    val henkiloFromHakemus = hakuClient.httpClient.fetch(Request(method = Method.GET, uri = url)) {
+    val retryingClient = Retry(RetryPolicy.exponentialBackoff(Duration(5, TimeUnit.MINUTES), maxRetry = 10))(hakuClient.httpClient)
+    val henkiloFromHakemus = retryingClient.fetch(Request(method = Method.GET, uri = url)) {
       case r if 200 == r.status.code => r.as[HakemusHenkilo]
       case r => Task.fail(new RuntimeException(s"Got non-OK response from haku-app when fetching hakemus $hakemusOid: ${r.toString}"))
     }.attemptRunFor(Duration(1, TimeUnit.MINUTES)) match {
