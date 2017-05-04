@@ -3,14 +3,18 @@ package fi.vm.sade.valintatulosservice
 import java.text.SimpleDateFormat
 import java.util.Date
 
+import fi.vm.sade.auditlog.Target.Builder
+import fi.vm.sade.auditlog.{Changes, Target, Audit}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.kela.{KelaService, Vastaanotto, Henkilo}
+import fi.vm.sade.valintatulosservice.security.Role
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import org.scalatra.{InternalServerError, NoContent, Ok}
 import org.scalatra.swagger.{Swagger, SwaggerEngine}
 
 import scala.util.{Success, Try}
 
-class KelaServlet(kelaService: KelaService)(override implicit val swagger: Swagger)  extends VtsServletBase {
+class KelaServlet(audit: Audit, kelaService: KelaService, val sessionRepository: SessionRepository)(override implicit val swagger: Swagger)  extends VtsServletBase with CasAuthenticatedServlet {
 
   override val applicationName = Some("cas/kela")
 
@@ -21,6 +25,13 @@ class KelaServlet(kelaService: KelaService)(override implicit val swagger: Swagg
   }
 
   post("/vastaanotot/henkilo") {
+    implicit val authenticated = authenticate
+    authorize(Role.KELA_READ)
+    val credentials: AuditInfo = auditInfo
+    val builder= new Target.Builder()
+      .setField("henkilotunnus", request.body)
+    params.get("alkuaika").foreach(builder.setField("alkuaika",_))
+    audit.log(auditInfo.user, VastaanottotietojenLuku, builder.build(), new Changes.Builder().build())
     parseParams() match {
       case HetuQuery(henkilotunnus, startingAt) =>
         try {

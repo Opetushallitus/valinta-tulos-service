@@ -3,6 +3,8 @@ package fi.vm.sade.valintatulosservice.security
 case class Role(s: String)
 
 object Role {
+  val KELA_READ = Role("APP_KELA_READ")
+  val VALINTATULOSSERVICE_CRUD = Role("APP_VALINTATULOSSERVICE_CRUD")
   val SIJOITTELU_READ = Role("APP_SIJOITTELU_READ")
   val SIJOITTELU_READ_UPDATE = Role("APP_SIJOITTELU_READ_UPDATE")
   val SIJOITTELU_CRUD = Role("APP_SIJOITTELU_CRUD")
