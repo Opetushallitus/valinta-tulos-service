@@ -100,7 +100,7 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
       case r => Task.fail(new RuntimeException(s"Got non-OK response from haku-app when fetching hakemus $hakemusOid: ${r.toString}"))
     }.attemptRunFor(totalOperationTimeout.minus(Duration(1, TimeUnit.SECONDS))) match {
       case \/-(henkilo: HakemusHenkilo) => Some(henkilo)
-      case -\/(t) => handleFailure(t, "finding henkilö from hakemus")
+      case -\/(t) => handleFailure(t, s"finding henkilö from hakemus $hakemusOid")
     }
 
     henkiloFromHakemus match {
@@ -142,8 +142,8 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
   }
 
   private def handleFailure(t:Throwable, message:String) = t match {
-    case pf: ParseFailure => logger.error(s"Got parse exception when $message $pf, ${pf.sanitized}", t); None
-    case e:Exception => logger.error(s"Got exception when $message ${e.getMessage}", e); None
+    case pf: ParseFailure => logger.error(s"Got parse exception when $message : $pf, ${pf.sanitized}", t); None
+    case e:Exception => logger.error(s"Got exception when $message : ${e.getMessage}", e); None
   }
 
   private def createUri(base: String, rest: String): Uri = {
