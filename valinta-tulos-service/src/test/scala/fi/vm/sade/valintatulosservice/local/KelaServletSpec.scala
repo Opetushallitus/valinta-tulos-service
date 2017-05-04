@@ -14,7 +14,7 @@ class KelaServletSpec extends ServletSpecification with ValintarekisteriDbTools 
   override implicit val formats = DefaultFormats ++ List(new TasasijasaantoSerializer, new ValinnantilaSerializer,
     new DateSerializer, new TilankuvauksenTarkenneSerializer, new IlmoittautumistilaSerializer, new VastaanottoActionSerializer, new ValintatuloksenTilaSerializer,
     new EnumNameSerializer(Maksuntila))
-  lazy val testSession = createTestSession(Set(Role.VALINTATULOSSERVICE_CRUD, Role.KELA_READ))
+  lazy val testSession = createTestSession(Set(Role.KELA_READ))
   lazy val headers = Map("Cookie" -> s"session=${testSession}", "Content-type" -> "text/plain")
 
   "POST /cas/kela/vastaanotot/henkilo" should {

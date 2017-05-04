@@ -14,6 +14,7 @@ import fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos.SijoittelunTulo
 import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.{HakijaResolver, MigraatioServlet}
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
+import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.sijoittelu.{SijoitteluFixtures, SijoittelunTulosRestClient, SijoittelutulosService}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, TarjontaHakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
@@ -96,18 +97,18 @@ class ScalatraBootstrap extends LifeCycle {
       context.mount(new HakijanVastaanottoServlet(vastaanottoService), "/vastaanotto")
       context.mount(new ErillishakuServlet(valinnantulosService), "/erillishaku/valinnan-tulos")
 
-      val securityFilter = new CasLdapFilter(
-        new CasSessionService(
-          appConfig.securityContext.casClient,
-          appConfig.securityContext.casServiceIdentifier,
-          appConfig.securityContext.directoryClient,
-          valintarekisteriDb
-        ),
-        appConfig.securityContext.requiredLdapRoles
+      val casSessionService = new CasSessionService(
+        appConfig.securityContext.casClient,
+        appConfig.securityContext.casServiceIdentifier,
+        appConfig.securityContext.directoryClient,
+        valintarekisteriDb
       )
-      context.addFilter("cas", securityFilter)
-        .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/*")
-      context.mount(new PublicValintatulosServlet(valintatulosService, vastaanottoService, ilmoittautumisService), "/cas/haku")
+
+      context.addFilter("cas", createCasLdapFilter(casSessionService, appConfig.securityContext.requiredLdapRoles))
+        .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/haku/*")
+      context.addFilter("kelaCas", createCasLdapFilter(casSessionService, Set.empty))
+        .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/kela/*")
+        context.mount(new PublicValintatulosServlet(valintatulosService, vastaanottoService, ilmoittautumisService), "/cas/haku")
       context.mount(new KelaServlet(audit, new KelaService(HakijaResolver(appConfig), hakuService, organisaatioService, valintarekisteriDb), valintarekisteriDb), "/cas/kela")
 
       context.mount(new ValinnantulosServlet(valinnantulosService, valintarekisteriDb), "/auth/valinnan-tulos")
@@ -118,6 +119,10 @@ class ScalatraBootstrap extends LifeCycle {
 
     context.mount(new SwaggerServlet, "/swagger/*")
   }
+
+  def createCasLdapFilter(casSessionService: CasSessionService, roles: Set[Role]): CasLdapFilter =
+    new CasLdapFilter(casSessionService, roles)
+
 
   override def destroy(context: ServletContext) = {
     super.destroy(context)
