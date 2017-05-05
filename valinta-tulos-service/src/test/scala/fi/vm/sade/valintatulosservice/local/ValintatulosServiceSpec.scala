@@ -66,7 +66,8 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
     appConfig.ohjausparametritService, valintarekisteriDb, new DirectMongoSijoittelunTulosRestClient(appConfig))
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, true)
   lazy val vastaanotettavuusService = new VastaanotettavuusService(hakukohdeRecordService, valintarekisteriDb)
-  lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb, hakuService, valintarekisteriDb, hakukohdeRecordService)
+  lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb,
+    hakuService, valintarekisteriDb, hakukohdeRecordService, appConfig.sijoitteluContext.valintatulosDao)
 
   val hakuOid = HakuOid("1.2.246.562.5.2013080813081926341928")
   val sijoitteluAjoId: String = "latest"
@@ -421,18 +422,15 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
   }
 
   def getHakutoiveenValintatulos(hakukohdeOid: String): Valintatulos = {
-    import scala.collection.JavaConverters._
-    valintatulosService.findValintaTuloksetForVirkailija(hakuOid, HakukohdeOid(hakukohdeOid)).asScala.find(_.getHakemusOid == hakemusOid.toString).get
+    valintatulosService.findValintaTuloksetForVirkailija(hakuOid, HakukohdeOid(hakukohdeOid)).find(_.getHakemusOid == hakemusOid.toString).get
   }
 
   def getHakutoiveenValintatulos(hakuOid: String, hakukohdeOid: String): Valintatulos = {
-    import scala.collection.JavaConverters._
-    valintatulosService.findValintaTuloksetForVirkailija(HakuOid(hakuOid)).asScala.find(_.getHakukohdeOid == hakukohdeOid).get
+    valintatulosService.findValintaTuloksetForVirkailija(HakuOid(hakuOid)).find(_.getHakukohdeOid == hakukohdeOid).get
   }
 
   def getHakutoiveenValintatulosByHakemus(hakukohdeOid: String, hakemusOid: String): Valintatulos = {
-    import scala.collection.JavaConverters._
-    valintatulosService.findValintaTuloksetForVirkailijaByHakemus(HakemusOid(hakemusOid)).asScala.find(_.getHakukohdeOid == hakukohdeOid).get
+    valintatulosService.findValintaTuloksetForVirkailijaByHakemus(HakemusOid(hakemusOid)).find(_.getHakukohdeOid == hakukohdeOid).get
   }
 
   def checkHakutoiveState(hakuToive: Hakutoiveentulos, expectedTila: Valintatila, vastaanottoTila: Vastaanottotila, vastaanotettavuustila: Vastaanotettavuustila, julkaistavissa: Boolean) = {

@@ -154,7 +154,7 @@ class VastaanottoService(hakuService: HakuService,
   }
 
   private def findValintatulokset(hakuOid: HakuOid): Map[String, List[Valintatulos]] = {
-    valintatulosService.findValintaTuloksetForVirkailija(hakuOid).asScala.toList.groupBy(_.getHakijaOid)
+    valintatulosService.findValintaTuloksetForVirkailija(hakuOid).groupBy(_.getHakijaOid)
   }
 
   private def createVastaanottoResult(statusCode: Int, exception: Option[Throwable], vastaanottoEvent: VastaanottoEvent) = {
