@@ -1,25 +1,36 @@
-// Ks. Jiran BUG-1398
+// Ks. Jiran BUG-1400
+
+// 0) Parametrit
+//    ************************
+
+var oldHakuOid = '1.2.246.562.5.2014022711042555034240'; // Perusopetuksen jälkeisen valmistavan koulutuksen kesän 2014 haku
+var currentHakuOid = '1.2.246.562.29.14865319314'; // Perusopetuksen jälkeisen koulutuksen kevään 2015 haku
+
+
 
 // 1) hakutoiveiden korjaus hakemuksilta
 //    **********************************
 // First some background checks in haku-app
+db.application.find({"applicationSystemId": oldHakuOid});
+db.application.count({"applicationSystemId": oldHakuOid}); // 4547
+
 /*
-db.application.find({"applicationSystemId":"1.2.246.562.5.2013080813081926341927"}) // (Ammatillisen koulutuksen ja lukiokoulutuksen kevään 2014 yhteishaku)
-db.application.count({"applicationSystemId":"1.2.246.562.5.2013080813081926341927"}) // 83982
+https://virkailija.opintopolku.fi/tarjonta-app/index.html#/hakukohde/1.2.246.562.20.897007206610
+vastaa kohdetta https://virkailija.opintopolku.fi/valintalaskenta-ui/app/index.html#/haku/1.2.246.562.29.14865319314/hakukohde/1.2.246.562.20.12572218035/perustiedot
+
+ja https://virkailija.opintopolku.fi/tarjonta-app/index.html#/hakukohde/1.2.246.562.20.33593482731
+vastaa kohdetta https://virkailija.opintopolku.fi/valintalaskenta-ui/app/index.html#/haku/1.2.246.562.29.14865319314/hakukohde/1.2.246.562.20.71447532327/perustiedot
 */
 
-// https://virkailija.opintopolku.fi/tarjonta-app/index.html#/hakukohde/1.2.246.562.20.67124751198 vastaa kohdetta 1.2.246.562.5.42611100555
 
 var hakukohdeFixMappings = {
-  "1.2.246.562.14.2013102510244944903778": "1.2.246.562.20.50072287449",
-  "1.2.246.562.14.2013110813213398882225": "1.2.246.562.20.22011956772",
-  "1.2.246.562.5.45309566409": "1.2.246.562.20.44280111129",
-  "1.2.246.562.5.42611100555": "1.2.246.562.20.67124751198"
+  "1.2.246.562.20.12572218035": "1.2.246.562.20.897007206610",
+  "1.2.246.562.20.71447532327": "1.2.246.562.20.33593482731"
 };
 
-// There are almost 2000 applications with the wrong hakukohde oids
+// There are 22 applications with the wrong hakukohde oids
 db.application.count({
-  "applicationSystemId":"1.2.246.562.5.2013080813081926341927",
+  "applicationSystemId":oldHakuOid,
   $or: [
     {"answers.hakutoiveet.preference1-Koulutus-id": { $in: Object.keySet(hakukohdeFixMappings) } },
     {"answers.hakutoiveet.preference2-Koulutus-id": { $in: Object.keySet(hakukohdeFixMappings) }},
@@ -28,11 +39,11 @@ db.application.count({
     {"answers.hakutoiveet.preference5-Koulutus-id": { $in: Object.keySet(hakukohdeFixMappings) }},
     {"answers.hakutoiveet.preference6-Koulutus-id": { $in: Object.keySet(hakukohdeFixMappings) }}
   ]
-}); // 1991
+}); // 22
 
 // Let's store them in a safe place
 db.application.find({
-  "applicationSystemId":"1.2.246.562.5.2013080813081926341927",
+  "applicationSystemId":oldHakuOid,
   $or: [
     {"answers.hakutoiveet.preference1-Koulutus-id": { $in: Object.keySet(hakukohdeFixMappings) } },
     {"answers.hakutoiveet.preference2-Koulutus-id": { $in: Object.keySet(hakukohdeFixMappings) }},
@@ -42,7 +53,7 @@ db.application.find({
     {"answers.hakutoiveet.preference6-Koulutus-id": { $in: Object.keySet(hakukohdeFixMappings) }}
   ]
 }).forEach(function(a) {
-  db.bug1398applications.insert(a)
+  db.bug1400applications.insert(a)
 });
 
 // and then go about fixing the oids.
@@ -129,10 +140,10 @@ function fixHakutoiveet(hakemusOid, dryRun) {
 }
 
 // First try it out a bit with a single one
-fixHakutoiveet(db.bug1398applications.find().toArray()[0].oid, true);
+fixHakutoiveet(db.bug1400applications.find().toArray()[0].oid, true);
 
 // And then do a bigger test run
-db.bug1398applications.find().forEach(function(a) {
+db.bug1400applications.find().forEach(function(a) {
     fixHakutoiveet(a.oid, true);
 });
 // You should get a listing resembling this
@@ -144,15 +155,15 @@ Would fix 1.2.246.562.14.2013102510244944903778 to 1.2.246.562.20.50072287449 on
 Would fix 1.2.246.562.14.2013102510244944903778 to 1.2.246.562.20.50072287449 on application 1.2.246.562.11.00000472036
 ...
  */
-// You might want to do some data dump before proceeding with the fix (see check-moved-hakukohteet-applications.js )
+// You might want to do some data dump before proceeding with the fix (see check-moved-hakukohteet-applications.js , be sure to read from correct collection )
 // Make stuff happen:
-fixHakutoiveet(db.bug1398applications.find().toArray()[0].oid, false);
+fixHakutoiveet(db.bug1400applications.find().toArray()[0].oid, false);
 // It should say something like "Updated 1 existing record(s) in 71ms".
 // And if you ran it with the same argument again, nothing should be updated anymore.
 // You should also check the single record to see that it's OK and the wanted changes are there.
 
 // If you're sure that everything is perfect and beautiful, fix everything:
-db.bug1398applications.find().forEach(function(a) {
+db.bug1400applications.find().forEach(function(a) {
     fixHakutoiveet(a.oid, false);
 });
 // and then check the results.
@@ -167,26 +178,26 @@ db.bug1398applications.find().forEach(function(a) {
 // First some background checks in sijoitteludb
 
 var hakukohdeFixMappings = {
-  "1.2.246.562.14.2013102510244944903778": "1.2.246.562.20.50072287449",
-  "1.2.246.562.14.2013110813213398882225": "1.2.246.562.20.22011956772",
-  "1.2.246.562.5.45309566409": "1.2.246.562.20.44280111129",
-  "1.2.246.562.5.42611100555": "1.2.246.562.20.67124751198"
+  "1.2.246.562.20.12572218035": "1.2.246.562.20.897007206610",
+  "1.2.246.562.20.71447532327": "1.2.246.562.20.33593482731"
 };
 
-var sijoitteluajoId = db.getCollection('Sijoittelu').find({"hakuOid":"1.2.246.562.5.2013080813081926341927"})[0].sijoitteluajot.sort(function(a, b) {
+var oldHakuOid = '1.2.246.562.5.2014022711042555034240'; // Perusopetuksen jälkeisen valmistavan koulutuksen kesän 2014 haku
+var currentHakuOid = '1.2.246.562.29.14865319314'; // Perusopetuksen jälkeisen koulutuksen kevään 2015 haku
+
+var sijoitteluajoId = db.getCollection('Sijoittelu').find({"hakuOid": oldHakuOid})[0].sijoitteluajot.sort(function(a, b) {
     return a.sijoitteluajoId < b.sijoitteluajoId ? 1 : -1;
 })[0].sijoitteluajoId;
-// 1418737548779 is the latest sijoitteluajoId of 1.2.246.562.5.2013080813081926341927 (Ammatillisen koulutuksen ja lukiokoulutuksen kevään 2014 yhteishaku)
 
-db.Hakukohde.count({sijoitteluajoId: sijoitteluajoId}); // 2826
+db.Hakukohde.count({sijoitteluajoId: sijoitteluajoId}); // 217
 
 db.Hakukohde.count({sijoitteluajoId: sijoitteluajoId,
-  oid: { $in: Object.keySet(hakukohdeFixMappings) } } ); // 4
+  oid: { $in: Object.keySet(hakukohdeFixMappings) } } ); // 2
 
 // Store the erroneous Hakukohde documents in a safe place
 db.Hakukohde.find({sijoitteluajoId: sijoitteluajoId,
   oid: { $in: Object.keySet(hakukohdeFixMappings) } } ).forEach(function(hk) {
-    db.bug1398hakukohdes.insert(hk);
+    db.bug1400hakukohdes.insert(hk);
 });
 
 // And do it!
@@ -210,23 +221,21 @@ db.Hakukohde.find({sijoitteluajoId: sijoitteluajoId,
 // First some background checks in sijoitteludb
 
 var hakukohdeFixMappings = {
-  "1.2.246.562.14.2013102510244944903778": "1.2.246.562.20.50072287449",
-  "1.2.246.562.14.2013110813213398882225": "1.2.246.562.20.22011956772",
-  "1.2.246.562.5.45309566409": "1.2.246.562.20.44280111129",
-  "1.2.246.562.5.42611100555": "1.2.246.562.20.67124751198"
+  "1.2.246.562.20.12572218035": "1.2.246.562.20.897007206610",
+  "1.2.246.562.20.71447532327": "1.2.246.562.20.33593482731"
 };
 
-db.Valintatulos.count({hakuOid: "1.2.246.562.5.2013080813081926341927",
-  hakukohdeOid: { $in: Object.keySet(hakukohdeFixMappings) } } ); // 2037
+db.Valintatulos.count({hakuOid: oldHakuOid,
+  hakukohdeOid: { $in: Object.keySet(hakukohdeFixMappings) } } ); // 13
 
 // Store the erroneous Valintatulos documents in a safe place
-db.Valintatulos.find({hakuOid: "1.2.246.562.5.2013080813081926341927",
+db.Valintatulos.find({hakuOid: oldHakuOid,
   hakukohdeOid: { $in: Object.keySet(hakukohdeFixMappings) } } ).forEach(function(vt) {
-    db.bug1398valintatulos.insert(vt);
+    db.bug1400valintatulos.insert(vt);
 });
 
 // And do it!
-db.Valintatulos.find({hakuOid: "1.2.246.562.5.2013080813081926341927",
+db.Valintatulos.find({hakuOid: oldHakuOid,
   hakukohdeOid: { $in: Object.keySet(hakukohdeFixMappings) } } ).forEach(function(vt) {
     var oldOid = vt.hakukohdeOid;
     var fixedOid = hakukohdeFixMappings[oldOid];
@@ -247,51 +256,48 @@ db.Valintatulos.find({hakuOid: "1.2.246.562.5.2013080813081926341927",
 
 /*
 
+  "1.2.246.562.20.12572218035": "1.2.246.562.20.897007206610",
+  "1.2.246.562.20.71447532327": "1.2.246.562.20.33593482731"
+
+
 select count(*), year from (
 select date_part('year', timestamp) as year from vastaanotot where hakukohde in (
-      '1.2.246.562.14.2013102510244944903778',
-      '1.2.246.562.14.2013110813213398882225',
-      '1.2.246.562.5.45309566409',
-      '1.2.246.562.5.4261110055'
+      '1.2.246.562.20.12572218035',
+      '1.2.246.562.20.71447532327'
 )) as t
 group by year;
--- 423   2015
--- 447   2014
+-- 13	2014
+-- 20	2015
 
 select count(*), year, action from (
 select date_part('year', timestamp) as year, action from vastaanotot where hakukohde in (
-      '1.2.246.562.14.2013102510244944903778',
-      '1.2.246.562.14.2013110813213398882225',
-      '1.2.246.562.5.45309566409',
-      '1.2.246.562.5.4261110055'
+      '1.2.246.562.20.12572218035',
+      '1.2.246.562.20.71447532327'
 )) as t
 group by year, action
 order by year, action;
-2	2014	MerkitseMyohastyneeksi
-32	2014	Peru
-413	2014	VastaanotaSitovasti
-30	2015	Peru
-393	2015	VastaanotaSitovasti
+1	2014	Peru
+1	2015	Peru
+9	2015	MerkitseMyohastyneeksi
+10	2015	VastaanotaSitovasti
+12	2014	VastaanotaSitovasti
 
   */
 
 // From sijoitteludb:
-db.bug1398valintatulos.find({tila: {$ne: "KESKEN"} }, {_id: 0, "tila": 1}).toArray();
+db.bug1400valintatulos.find({tila: {$ne: "KESKEN"} }, {_id: 0, "tila": 1}).toArray();
 /*
 $ pbpaste | grep tila | sort | uniq -c
-      3         "tila" : "EI_VASTAANOTETTU_MAARA_AIKANA"
-     33         "tila" : "PERUNUT"
-    442         "tila" : "VASTAANOTTANUT"
+      1         "tila" : "PERUNUT"
+     12         "tila" : "VASTAANOTTANUT"
 */
 
 // Store old vastaanotto rows to a safe place
 /*
-create table bug1398vastaanotot (like vastaanotot);
-insert into bug1398vastaanotot (select * from vastaanotot where hakukohde in (
-      '1.2.246.562.14.2013102510244944903778',
-      '1.2.246.562.14.2013110813213398882225',
-      '1.2.246.562.5.45309566409',
-      '1.2.246.562.5.4261110055'
+create table bug1400vastaanotot (like vastaanotot);
+insert into bug1400vastaanotot (select * from vastaanotot where hakukohde in (
+      '1.2.246.562.20.12572218035',
+      '1.2.246.562.20.71447532327'
 ));
 commit;
 */
@@ -299,7 +305,7 @@ commit;
 // Generate hakukohde insert code from sijoitteludb
 Object.keySet(hakukohdeFixMappings).forEach(function(k) {
     var newHakukohdeOid = hakukohdeFixMappings[k];
-    var hakuOid = "1.2.246.562.5.2013080813081926341927";
+    var hakuOid = oldHakuOid;
     print("insert into hakukohteet (hakukohde_oid, haku_oid, kk_tutkintoon_johtava, koulutuksen_alkamiskausi, yhden_paikan_saanto_voimassa) " +
      "values ('" + newHakukohdeOid + "', '" + hakuOid + "', false, '2014S', false);");
 });
@@ -310,7 +316,8 @@ Object.keySet(hakukohdeFixMappings).forEach(function(k) {
 
 
 // Generate db update code from sijoitteludb
-db.bug1398valintatulos.find({tila: {$ne: "KESKEN"} }).forEach(function(vt) {
+hakijaOidsByHakemusOids = {};  // see below
+db.bug1400valintatulos.find({tila: {$ne: "KESKEN"} }).forEach(function(vt) {
     var oldOid = vt.hakukohdeOid;
     var fixedOid = hakukohdeFixMappings[oldOid];
     var tilaMappings = {
@@ -319,16 +326,34 @@ db.bug1398valintatulos.find({tila: {$ne: "KESKEN"} }).forEach(function(vt) {
         "VASTAANOTTANUT": "VastaanotaSitovasti"
         };
     var valintarekisteriAction = tilaMappings[vt.tila];
+    var hakijaOid = (vt.hakijaOid ? vt.hakijaOid : hakijaOidsByHakemusOids[vt.hakemusOid]);
+    if (!hakijaOid) {
+      throw "No hakijaOid for valintatulos of hakemus " + vt.hakemusOid
+    }
     print("update vastaanotot set hakukohde = '" + fixedOid + "' where hakukohde = '" + oldOid +
-        "' and henkilo = '" + vt.hakijaOid + "' and date_part('year', timestamp) = 2014 and action = '" + valintarekisteriAction + "';");
+        "' and henkilo = '" + hakijaOid + "' and date_part('year', timestamp) = 2014 and action = '" + valintarekisteriAction + "';");
     } );
+
+// If you get
+// uncaught exception: No hakijaOid for valintatulos of hakemus 1.2.246.562.11.00000892726
+// it means that there are hakijaOids missing from valintatulos documents.
+// You can find them from haku-app mongo like this:
+var applicationArray = db.bug1400applications.find({}, {_id: 0, oid: 1, personOid: 1}).toArray();
+var hakijaOidsByHakemusOids = {};
+applicationArray.forEach(function(h) {
+    hakijaOidsByHakemusOids[h.oid] = h.personOid;
+    });
+hakijaOidsByHakemusOids;
+// and then copy-paste that into the sijoittelumongo session for the name hakijaOidsByHakemusOids and run again
 
 // Run the code to valintarekisteridb, and check the results before committing
 /*
 $ pbpaste |grep update | wc -l
-478
+13
+
 $ pbpaste |grep '1 row affected' | wc -l
-478
+13
+
 */
 
 // Now you can use the earlier check SQLs to see that there are no more results left for the old oids from the previous year.
