@@ -20,6 +20,7 @@ import scalaz.concurrent.Task
 
 case class Henkilo(oidHenkilo: String, hetu: String, etunimet: String, sukunimi: String)
 
+
 trait HakijaResolver {
   def findPersonByHetu(hetu: String, timeout: Duration = 60 seconds): Option[Henkilo]
 }
@@ -41,8 +42,10 @@ object HakijaResolver {
 class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with Logging with HakijaResolver {
   private val hakuClient = createCasClient(appConfig, "/haku-app")
   private val henkiloClient = createCasClient(appConfig, "/authentication-service")
+  private val oppijanumerorekisteriClient = createCasClient(appConfig, "/oppijanumerorekisteri-service")
   private val hakuUrlBase = appConfig.ophUrlProperties.url("haku-app.listfull.queryBase")
   private val henkiloPalveluUrlBase = appConfig.ophUrlProperties.url("authentication-service.henkilo")
+  private val oppijanumerorekisteriUrlBase = appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.henkiloPerusByHetu")
 
   case class HakemusHenkilo(personOid: Option[String], hetu: Option[String], etunimet: String, sukunimi: String, kutsumanimet: String,
                             syntymaaika: String, aidinkieli: String, sukupuoli: String)
@@ -67,8 +70,7 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
     }
 
     implicit val henkiloDecoder = org.http4s.json4s.native.jsonOf[Option[Henkilo]]
-
-    Try(henkiloClient.prepare(createUri(henkiloPalveluUrlBase + "?q=", hetu)).timed(timeout).flatMap {
+    Try(oppijanumerorekisteriClient.prepare(createUri(appConfig.ophUrlProperties.url(oppijanumerorekisteriUrlBase, hetu))).timed(timeout).flatMap {
       case r if 200 == r.status.code => r.as[Option[Henkilo]]
       case r => Task.fail(new RuntimeException(r.toString))
     }.run) match {
@@ -146,7 +148,9 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
     case pe:ParseException => logger.error(s"Got parse exception when ${message} ${pe.failure.details}, ${pe.failure.sanitized}", t); None
     case e:Exception => logger.error(s"Got exception when ${message} ${e.getMessage}", e); None
   }
-
+  private def createUri(uri: String): Uri = {
+    Uri.fromString(uri).getOrElse(throw new RuntimeException(s"Invalid uri: $uri"))
+  }
   private def createUri(base: String, rest: String): Uri = {
     val stringUri = base + URLEncoder.encode(rest, "UTF-8")
     Uri.fromString(stringUri).getOrElse(throw new RuntimeException(s"Invalid uri: $stringUri"))
