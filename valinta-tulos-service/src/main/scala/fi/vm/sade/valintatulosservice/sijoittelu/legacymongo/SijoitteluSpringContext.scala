@@ -1,10 +1,10 @@
-package fi.vm.sade.valintatulosservice.sijoittelu
+package fi.vm.sade.valintatulosservice.sijoittelu.legacymongo
 
 import com.mongodb._
-import fi.vm.sade.sijoittelu.tulos.dao.{HakukohdeDao, SijoitteluDao, ValintatulosDao => ValintatulosMongoDao}
-import fi.vm.sade.sijoittelu.tulos.service.{RaportointiService => FooRaportointiService}
+import fi.vm.sade.sijoittelu.tulos.dao.{HakukohdeDao, SijoitteluDao}
+import fi.vm.sade.sijoittelu.tulos.service.RaportointiService
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{MongoRaportointiService, MongoValintatulosDao, MongoValintatulosRepository}
+import fi.vm.sade.valintatulosservice.sijoittelu.SijoitteluContext
 import org.mongodb.morphia.{Datastore, Morphia}
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationContext
@@ -15,13 +15,13 @@ import org.springframework.core.env.{MapPropertySource, MutablePropertySources}
 import scala.collection.JavaConversions._
 
 class SijoitteluSpringContext(config: VtsAppConfig, context: ApplicationContext) extends SijoitteluContext {
-  override def database: DB = context.getBean(classOf[DB])
+  def database = context.getBean(classOf[DB])
 
   override lazy val morphiaDs = context.getBean(classOf[Datastore])
-  override lazy val valintatulosDao = new MongoValintatulosDao(context.getBean(classOf[ValintatulosMongoDao]))
+  override lazy val valintatulosDao = context.getBean(classOf[MongoValintatulosDao])
   override lazy val hakukohdeDao = context.getBean(classOf[HakukohdeDao])
   override lazy val sijoitteluDao = context.getBean(classOf[SijoitteluDao])
-  override lazy val raportointiService = new MongoRaportointiService(context.getBean(classOf[FooRaportointiService]))
+  override lazy val raportointiService = new MongoRaportointiService(context.getBean(classOf[RaportointiService]))
   override lazy val valintatulosRepository = new MongoValintatulosRepository(valintatulosDao)
 }
 
