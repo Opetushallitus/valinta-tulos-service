@@ -15,6 +15,7 @@ import fi.vm.sade.valintatulosservice.migraatio.valinta.Valintalaskentakoostepal
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.security.Role
+import fi.vm.sade.valintatulosservice.sijoittelu.valintarekisteri.{ValintarekisteriValintatulosDao, ValintarekisteriRaportointiService, ValintarekisteriValintatulosRepository}
 import fi.vm.sade.valintatulosservice.sijoittelu.{SijoitteluFixtures, SijoittelunTulosRestClient, SijoittelutulosService}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
@@ -40,31 +41,51 @@ class ScalatraBootstrap extends LifeCycle {
     implicit val appConfig: VtsAppConfig = VtsAppConfig.fromOptionalString(Option(context.getAttribute("valintatulos.profile").asInstanceOf[String]))
     globalConfig = Some(appConfig)
     appConfig.start
+
+    def isTrue(string:String) = null != string && "true".equalsIgnoreCase(string)
+
+    val migrationMode = isTrue(System.getProperty("valinta-rekisteri-migration-mode"))
+    val scheduledMigration = isTrue(System.getProperty("valinta-rekisteri-scheduled-migration"))
+    val initMongoContext = !appConfig.settings.useValintarekisteriInsteadOfSijoitteluMongo
+    if((migrationMode || scheduledMigration) && !initMongoContext) {
+      throw new RuntimeException("Migraatio-moodia voi käyttää vain Sijoittelun Mongon kanssa.")
+    }
+
     if (appConfig.isInstanceOf[IT] || appConfig.isInstanceOf[Dev]) {
       context.mount(new FixtureServlet(valintarekisteriDb), "/util")
       SijoitteluFixtures(appConfig.sijoitteluContext.database, valintarekisteriDb).importFixture("hyvaksytty-kesken-julkaistavissa.json")
     }
     implicit lazy val dynamicAppConfig = new OhjausparametritAppConfig(appConfig.ohjausparametritService)
+
     lazy val hakuService = HakuService(appConfig.hakuServiceConfig)
     lazy val oppijanTunnistusService = OppijanTunnistusService(appConfig.settings)
     lazy val organisaatioService = OrganisaatioService(appConfig)
     lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig, appConfig.isInstanceOf[IT])
     lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing)
     val sijoittelunTulosRestClient = SijoittelunTulosRestClient(appConfig)
-    lazy val sijoittelutulosService = new SijoittelutulosService(appConfig.sijoitteluContext.raportointiService,
+    lazy val sijoitteluService = new SijoitteluService(valintarekisteriDb, authorizer, hakuService)
+
+    lazy val (raportointiService, valintatulosDao, valintatulosRepository) = if(initMongoContext) {
+      (appConfig.sijoitteluContext.raportointiService, appConfig.sijoitteluContext.valintatulosDao, appConfig.sijoitteluContext.valintatulosRepository)
+    } else {
+      val valintarekisteriValintatulosDao = new ValintarekisteriValintatulosDao(valintarekisteriDb)
+      (new ValintarekisteriRaportointiService(sijoitteluService, valintarekisteriDb),
+        valintarekisteriValintatulosDao,
+        new ValintarekisteriValintatulosRepository(valintarekisteriValintatulosDao))
+    }
+
+    lazy val sijoittelutulosService = new SijoittelutulosService(raportointiService,
       appConfig.ohjausparametritService, valintarekisteriDb, sijoittelunTulosRestClient)
     lazy val vastaanotettavuusService = new VastaanotettavuusService(hakukohdeRecordService, valintarekisteriDb)
-    lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb, hakuService, valintarekisteriDb, hakukohdeRecordService)(appConfig,dynamicAppConfig)
+    lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao)(appConfig,dynamicAppConfig)
     lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService, valintarekisteriDb,
-      appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository(),
-      appConfig.sijoitteluContext.valintatulosRepository)
+      appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository(), valintatulosRepository)
     lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService,
-      appConfig.sijoitteluContext.valintatulosRepository, valintarekisteriDb, valintarekisteriDb)
+      valintatulosRepository, valintarekisteriDb, valintarekisteriDb)
     lazy val valintatulosCollection = new ValintatulosMongoCollection(appConfig.settings.valintatulosMongoConfig)
     lazy val mailPoller = new MailPoller(valintatulosCollection, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 100)
     lazy val valintarekisteriService = new ValintarekisteriService(valintarekisteriDb, valintarekisteriDb, hakukohdeRecordService)
     lazy val authorizer = new OrganizationHierarchyAuthorizer(appConfig)
-    lazy val sijoitteluService = new SijoitteluService(valintarekisteriDb, authorizer, hakuService)
     lazy val yhdenPaikanSaannos = new YhdenPaikanSaannos(hakuService, valintarekisteriDb)
     lazy val valinnantulosService = new ValinnantulosService(
       valintarekisteriDb,
@@ -84,14 +105,11 @@ class ScalatraBootstrap extends LifeCycle {
     lazy val sijoitteluntulosMigraatioScheduler = new SijoittelunTulosMigraatioScheduler(migraatioService, appConfig)
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
 
-    val migrationMode = System.getProperty("valinta-rekisteri-migration-mode")
-    val scheduledMigration = System.getProperty("valinta-rekisteri-scheduled-migration")
-
-    if (null != scheduledMigration && "true".equalsIgnoreCase(scheduledMigration)) {
+    if (scheduledMigration) {
       sijoitteluntulosMigraatioScheduler.startMigrationScheduler()
     }
 
-    if(null != migrationMode && "true".equalsIgnoreCase(migrationMode)) {
+    if(migrationMode) {
       context.mount(new SijoittelunTulosMigraatioServlet(migraatioService), "/sijoittelun-tulos-migraatio")
       val forceRunningBasicVtsWithMigration = System.getProperty("valinta-rekisteri-force-basic-vts-with-migration")
       if (forceRunningBasicVtsWithMigration != null && "true".equals(forceRunningBasicVtsWithMigration)) {
