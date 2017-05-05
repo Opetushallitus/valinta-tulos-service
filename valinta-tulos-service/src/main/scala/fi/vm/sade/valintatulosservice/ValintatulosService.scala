@@ -516,7 +516,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
       val hakemuksenVastaanototKaudella: String => Option[(Kausi, Boolean)] = hakukohdeOid =>
         vastaanottoKaudella(hakukohdeOid).map(a => (a._1, a._2.contains(hakemus.henkiloOid)))
 
-      julkaistavaTulos(sijoitteluTulos, haku, ohjausparametrit, checkJulkaisuAikaParametri, hakemuksenVastaanototKaudella)(hakemus)
+      julkaistavaTulos(sijoitteluTulos, haku, ohjausparametrit, checkJulkaisuAikaParametri, hakemuksenVastaanototKaudella, hakemus.henkilotiedot.hasHetu)(hakemus)
     })
   }
 
@@ -524,14 +524,14 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
                        haku: Haku,
                        ohjausparametrit: Option[Ohjausparametrit],
                        checkJulkaisuAikaParametri: Boolean,
-                       vastaanottoKaudella: String => Option[(Kausi, Boolean)]
-                      )(h:Hakemus): Hakemuksentulos = {
+                       vastaanottoKaudella: String => Option[(Kausi, Boolean)],
+                       hasHetu: Boolean)(h:Hakemus): Hakemuksentulos = {
     val tulokset = h.toiveet.map { toive =>
       val hakutoiveenSijoittelunTulos: HakutoiveenSijoitteluntulos = sijoitteluTulos.hakutoiveet.find { t =>
         t.hakukohdeOid == toive.oid
       }.getOrElse(HakutoiveenSijoitteluntulos.kesken(toive.oid, toive.tarjoajaOid))
 
-      Hakutoiveentulos.julkaistavaVersioSijoittelunTuloksesta(hakutoiveenSijoittelunTulos, toive, haku, ohjausparametrit, checkJulkaisuAikaParametri)
+      Hakutoiveentulos.julkaistavaVersioSijoittelunTuloksesta(hakutoiveenSijoittelunTulos, toive, haku, ohjausparametrit, checkJulkaisuAikaParametri, hasHetu)
     }
 
     val lopullisetTulokset = Välitulos(tulokset, haku, ohjausparametrit)

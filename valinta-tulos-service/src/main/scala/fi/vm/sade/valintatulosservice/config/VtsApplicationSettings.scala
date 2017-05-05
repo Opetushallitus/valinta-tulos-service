@@ -19,6 +19,7 @@ case class VtsApplicationSettings(config: Config) extends ApplicationSettings(co
   val kelaURL = withConfig(_.getString("valinta-tulos-service.kela.url"))
   val organisaatioServiceUrl = withConfig(_.getString("cas.service.organisaatio-service"))
   val rootOrganisaatioOid = withConfig(_.getString("root.organisaatio.oid"))
+  val oiliHetutonUrl = withConfig(_.getString("omatsivut.oili.hetutonUrl"))
 
   val ilmoittautuminenEnabled = {
     val value = config.getString("valinta-tulos-service.ilmoittautuminen.enabled")

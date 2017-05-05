@@ -18,14 +18,14 @@ class HakutoiveenIlmoittautumistilaSpec extends Specification {
     "should be enabled in IT" in {
       implicit val appConfig = new VtsAppConfig.IT
       val it = HakutoiveenIlmoittautumistila.getIlmoittautumistila(vastaanottanut, Haku("", korkeakoulu = true, toinenAste = false, käyttääSijoittelua = true,
-        None, Set(), Nil, Some(Kausi("2016S")), YhdenPaikanSaanto(false, ""), Map("kieli_fi" -> "Haun nimi")), None)
+        None, Set(), Nil, Some(Kausi("2016S")), YhdenPaikanSaanto(false, ""), Map("kieli_fi" -> "Haun nimi")), None, true)
       it.ilmoittauduttavissa must_== true
     }
 
     "should be disabled by default" in {
       implicit val appConfig = new VtsAppConfig.IT_disabledIlmoittautuminen
       val it = HakutoiveenIlmoittautumistila.getIlmoittautumistila(vastaanottanut, Haku("", korkeakoulu = true, toinenAste = false, käyttääSijoittelua = true,
-        None, Set(), Nil, Some(Kausi("2016S")), YhdenPaikanSaanto(false, ""), Map("kieli_fi" -> "Haun nimi")), None)
+        None, Set(), Nil, Some(Kausi("2016S")), YhdenPaikanSaanto(false, ""), Map("kieli_fi" -> "Haun nimi")), None, false)
       it.ilmoittauduttavissa must_== false
     }
   }
