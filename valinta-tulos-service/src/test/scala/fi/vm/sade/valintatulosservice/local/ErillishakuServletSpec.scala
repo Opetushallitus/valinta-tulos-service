@@ -3,7 +3,6 @@ package fi.vm.sade.valintatulosservice.local
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
-import java.util.UUID
 
 import fi.vm.sade.security.ldap.LdapUser
 import fi.vm.sade.security.{AuthenticationFailedException, LdapUserService}
@@ -11,12 +10,11 @@ import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.utils.ServletTest
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.Role
-import fi.vm.sade.valintatulosservice.{AuditInfo, AuditSessionRequest, ErillishakuServlet, HyvaksymiskirjeService, ValinnantulosRequest, ValinnantulosService, ValinnantulosServlet}
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{Hyvaksymiskirje, HyvaksymiskirjePatch, SessionRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{Hyvaksymiskirje, HyvaksymiskirjePatch}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiTehty, HakemusOid, HakukohdeOid, Hylatty, Valinnantulos, ValinnantulosUpdateStatus, ValintatapajonoOid}
-import org.eclipse.jetty.servlet.ServletHolder
-import org.json4s.native.JsonMethods.parse
+import fi.vm.sade.valintatulosservice.{AuditInfo, AuditSessionRequest, ErillishakuServlet, HyvaksymiskirjeService, ValinnantulosRequest, ValinnantulosService}
 import org.json4s.jackson.Serialization.write
+import org.json4s.native.JsonMethods.parse
 import org.junit.runner.RunWith
 import org.scalatra.swagger.Swagger
 import org.scalatra.test.{EmbeddedJettyContainer, HttpComponentsClient}
