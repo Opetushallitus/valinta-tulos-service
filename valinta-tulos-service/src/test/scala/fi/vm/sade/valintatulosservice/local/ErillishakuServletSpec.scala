@@ -8,6 +8,7 @@ import java.util.UUID
 import fi.vm.sade.security.ldap.LdapUser
 import fi.vm.sade.security.{AuthenticationFailedException, LdapUserService}
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
+import fi.vm.sade.utils.ServletTest
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.{AuditInfo, AuditSessionRequest, ErillishakuServlet, HyvaksymiskirjeService, ValinnantulosRequest, ValinnantulosService, ValinnantulosServlet}
@@ -32,26 +33,11 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
   override def afterAll(): Unit = stop()
 
   def foreach[R: AsResult](f: ((String, ValinnantulosService, HyvaksymiskirjeService, LdapUserService)) => R): org.specs2.execute.Result = {
-    val uri = UUID.randomUUID().toString
-    val valinnantulosService = mockAs[ValinnantulosService](uri)
-    val hyvaksymiskirjeService = mockAs[HyvaksymiskirjeService](uri)
-    val ldapUserService = mockAs[LdapUserService](uri)
+    val valinnantulosService = mock[ValinnantulosService]
+    val hyvaksymiskirjeService = mock[HyvaksymiskirjeService]
+    val ldapUserService = mock[LdapUserService]
     val servlet = new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, ldapUserService)(mock[Swagger])
-    val servletHolder = new ServletHolder(uri, servlet)
-    servletContextHandler.synchronized {
-      servletContextHandler.addServlet(servletHolder, s"/$uri/*")
-    }
-    try AsResult(f((uri, valinnantulosService, hyvaksymiskirjeService, ldapUserService)))
-    finally {
-      servletContextHandler.synchronized {
-        servletContextHandler.getServletHandler.setServletMappings(
-          servletContextHandler.getServletHandler.getServletMappings.filter(m => m.getServletName != servletHolder.getName)
-        )
-        servletContextHandler.getServletHandler.setServlets(
-          servletContextHandler.getServletHandler.getServlets.filter(s => s != servletHolder)
-        )
-      }
-    }
+    ServletTest.withServlet(this, servlet, (uri: String) => AsResult(f((uri, valinnantulosService, hyvaksymiskirjeService, ldapUserService))))
   }
 
   private implicit val formats = JsonFormats.jsonFormats

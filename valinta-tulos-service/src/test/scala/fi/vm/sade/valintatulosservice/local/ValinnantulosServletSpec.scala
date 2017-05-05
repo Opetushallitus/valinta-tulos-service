@@ -7,12 +7,12 @@ import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.UUID
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
+import fi.vm.sade.utils.ServletTest
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import org.eclipse.jetty.servlet.ServletHolder
 import org.json4s.jackson.Serialization._
 import org.json4s.native.JsonMethods._
 import org.junit.runner.RunWith
@@ -31,25 +31,10 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
   override def afterAll(): Unit = stop()
 
   def foreach[R: AsResult](f: ((String, ValinnantulosService, SessionRepository)) => R): org.specs2.execute.Result = {
-    val uri = UUID.randomUUID().toString
-    val valinnantulosService = mockAs[ValinnantulosService](uri)
-    val sessionRepository = mockAs[SessionRepository](uri)
+    val valinnantulosService = mock[ValinnantulosService]
+    val sessionRepository = mock[SessionRepository]
     val servlet = new ValinnantulosServlet(valinnantulosService, sessionRepository)(mock[Swagger])
-    val servletHolder = new ServletHolder(uri, servlet)
-    servletContextHandler.synchronized {
-        servletContextHandler.addServlet(servletHolder, s"/$uri/*")
-    }
-    try AsResult(f((uri, valinnantulosService, sessionRepository)))
-    finally {
-      servletContextHandler.synchronized {
-        servletContextHandler.getServletHandler.setServletMappings(
-          servletContextHandler.getServletHandler.getServletMappings.filter(m => m.getServletName != servletHolder.getName)
-        )
-        servletContextHandler.getServletHandler.setServlets(
-          servletContextHandler.getServletHandler.getServlets.filter(s => s != servletHolder)
-        )
-      }
-    }
+    ServletTest.withServlet(this, servlet, (uri: String) => AsResult(f((uri, valinnantulosService, sessionRepository))))
   }
 
   private implicit val formats = JsonFormats.jsonFormats
