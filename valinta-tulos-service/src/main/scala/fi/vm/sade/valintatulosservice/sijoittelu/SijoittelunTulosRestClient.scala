@@ -10,10 +10,12 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuO
 
 import scala.collection.JavaConverters._
 
+@Deprecated
 class SijoittelunTulosRestClient(appConfig: VtsAppConfig) {
   private val retriever = new StreamingJsonArrayRetriever(appConfig)
   private val targetService = appConfig.ophUrlProperties.url("sijoittelu-service.suffix")
 
+  @Deprecated
   def fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid]): Option[SijoitteluAjo] = {
     val ajo = new SijoitteluAjo
     val processor: SijoitteluajoDTO => SijoitteluAjo = dto => {
@@ -49,6 +51,7 @@ class SijoittelunTulosRestClient(appConfig: VtsAppConfig) {
     }
   }
 
+  @Deprecated
   def fetchHakemuksenTulos(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid): Option[HakijaDTO] = {
     val hakuOid = sijoitteluAjo.getHakuOid
     val url = appConfig.ophUrlProperties.url("sijoittelu-service.hakemus.for.sijoittelu", hakuOid, sijoitteluAjo.getSijoitteluajoId, hakemusOid.toString)
@@ -62,6 +65,7 @@ class SijoittelunTulosRestClient(appConfig: VtsAppConfig) {
   }
 }
 
+@Deprecated
 object SijoittelunTulosRestClient {
   def apply(appConfig: VtsAppConfig) = appConfig match {
     case _: StubbedExternalDeps => new DirectMongoSijoittelunTulosRestClient(appConfig)

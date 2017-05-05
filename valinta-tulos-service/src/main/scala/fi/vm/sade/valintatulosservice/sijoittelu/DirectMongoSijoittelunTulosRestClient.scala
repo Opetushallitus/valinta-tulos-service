@@ -14,14 +14,14 @@ class DirectMongoSijoittelunTulosRestClient(appConfig: VtsAppConfig) extends Sij
 
   override def fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid]): Option[SijoitteluAjo] = {
     hakukohdeOid match {
-      case Some(oid) => fromOptional(raportointiService.latestSijoitteluAjoForHakukohde(hakuOid.toString, oid.toString))
-      case None => fromOptional(raportointiService.latestSijoitteluAjoForHaku(hakuOid.toString))
+      case Some(oid) => raportointiService.latestSijoitteluAjoForHakukohde(hakuOid, oid)
+      case None => raportointiService.latestSijoitteluAjoForHaku(hakuOid)
     }
   }
 
 
   override def fetchHakemuksenTulos(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid) = {
-    Option(raportointiService.hakemus(sijoitteluAjo.getHakuOid, sijoitteluAjo.getSijoitteluajoId.toString, hakemusOid.toString))
+    raportointiService.hakemus(HakuOid(sijoitteluAjo.getHakuOid), sijoitteluAjo.getSijoitteluajoId.toString, hakemusOid)
   }
 
   def fromOptional[T](opt: Optional[T]) = {

@@ -405,7 +405,8 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
     "Valintatuloksen muutoslogi"  in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
       vastaanota(hakuOid, hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
-      val valintatulos: Valintatulos = valintatulosDao.loadValintatulos(vastaanotettavissaHakuKohdeOid, "14090336922663576781797489829886", hakemusOid)
+      val valintatulos: Valintatulos = valintatulosDao.loadValintatulos(HakukohdeOid(vastaanotettavissaHakuKohdeOid),
+        ValintatapajonoOid("14090336922663576781797489829886"), HakemusOid(hakemusOid))
       assertSecondLogEntry(valintatulos, "tila: KESKEN -> VASTAANOTTANUT_SITOVASTI", selite)
     }
 
@@ -477,7 +478,8 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
     "Valintatuloksen muutoslogi"  in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = hakuFixture)
       vastaanota(hakuOid, hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
-      val valintatulos: Valintatulos = valintatulosDao.loadValintatulos(vastaanotettavissaHakuKohdeOid, "14090336922663576781797489829886", hakemusOid)
+      val valintatulos: Valintatulos = valintatulosDao.loadValintatulos(HakukohdeOid(vastaanotettavissaHakuKohdeOid),
+        ValintatapajonoOid("14090336922663576781797489829886"), HakemusOid(hakemusOid))
       assertSecondLogEntry(valintatulos, "tila: KESKEN -> VASTAANOTTANUT_SITOVASTI", selite)
     }
 
@@ -503,7 +505,8 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
   lazy val sijoittelutulosService = new SijoittelutulosService(appConfig.sijoitteluContext.raportointiService,
     appConfig.ohjausparametritService, valintarekisteriDb, sijoittelunTulosRestClient)
   lazy val vastaanotettavuusService = new VastaanotettavuusService(hakukohdeRecordService, valintarekisteriDb)
-  lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb, hakuService, valintarekisteriDb, hakukohdeRecordService)(appConfig, dynamicAppConfig)
+  lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb,
+    hakuService, valintarekisteriDb, hakukohdeRecordService, appConfig.sijoitteluContext.valintatulosDao)(appConfig, dynamicAppConfig)
   lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService,
     valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository(), appConfig.sijoitteluContext.valintatulosRepository)
   lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService,

@@ -24,7 +24,7 @@ class ValintatulosIntegrationTest extends Specification {
         val hakuService = HakuService(appConfig.hakuServiceConfig)
         val sijoittelutulosService = new SijoittelutulosService(appConfig.sijoitteluContext.raportointiService, appConfig.ohjausparametritService, null,
           SijoittelunTulosRestClient(appConfig))
-        val valintatulosService = new ValintatulosService(null, sijoittelutulosService, null, hakuService, null, null)
+        val valintatulosService = new ValintatulosService(null, sijoittelutulosService, null, hakuService, null, null, null)
 
         val tulos: Hakemuksentulos = valintatulosService.hakemuksentulos(HakemusOid("1.2.246.562.11.00000000330")).get
 
