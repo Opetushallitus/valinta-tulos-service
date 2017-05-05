@@ -177,7 +177,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       val hakemusOid = HakemusOid(hakemus.getHakemusOid)
       val henkiloOid = getHenkiloOid(hakemus)
 
-      val hakemuksenValinnantilas = getHakemuksenValinnantilas(hakemus, valintatapajonoOid, hakukohdeOid)
+      val hakemuksenValinnantilas = getHakemuksenValinnantilas(hakemus, valintatapajonoOid, hakukohdeOid, henkiloOid)
 
       if (hakemuksenValinnantilas.nonEmpty) {
         valinnantilas = valinnantilas ++ hakemuksenValinnantilas
@@ -238,20 +238,20 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     }
   }
 
-  private def getHakemuksenValinnantilas(hakemus: Hakemus, valintatapajonoOid: ValintatapajonoOid, hakukohdeOid: HakukohdeOid) = {
+  private def getHakemuksenValinnantilas(hakemus: Hakemus, valintatapajonoOid: ValintatapajonoOid, hakukohdeOid: HakukohdeOid, henkiloOid: String) = {
     val hakemuksenTuloksenTilahistoriaOldestFirst: List[TilaHistoria] = hakemus.getTilaHistoria.asScala.toList.sortBy(_.getLuotu)
     val muokkaaja = "Sijoittelun tulokset -migraatio"
 
     var historiat = hakemuksenTuloksenTilahistoriaOldestFirst.zipWithIndex.map { case(tilaHistoriaEntry, i) =>
       val valinnantila = Valinnantila(tilaHistoriaEntry.getTila)
-      (ValinnantilanTallennus(HakemusOid(hakemus.getHakemusOid), valintatapajonoOid, hakukohdeOid, hakemus.getHakijaOid, valinnantila, muokkaaja),
+      (ValinnantilanTallennus(HakemusOid(hakemus.getHakemusOid), valintatapajonoOid, hakukohdeOid, henkiloOid, valinnantila, muokkaaja),
         new Timestamp(tilaHistoriaEntry.getLuotu.getTime))
     }
 
     hakemuksenTuloksenTilahistoriaOldestFirst.lastOption.foreach(hist => {
       if (hakemus.getTila != hist.getTila) {
         logger.warn(s"hakemus ${hakemus.getHakemusOid} didn't have current tila in tila history, creating one artificially.")
-        historiat = historiat :+ (ValinnantilanTallennus(HakemusOid(hakemus.getHakemusOid), valintatapajonoOid, hakukohdeOid, hakemus.getHakijaOid, Valinnantila(hakemus.getTila), s"$muokkaaja (generoitu nykyisen tilan historiatieto)"),
+        historiat = historiat :+ (ValinnantilanTallennus(HakemusOid(hakemus.getHakemusOid), valintatapajonoOid, hakukohdeOid, henkiloOid, Valinnantila(hakemus.getTila), s"$muokkaaja (generoitu nykyisen tilan historiatieto)"),
           new Timestamp(new Date().getTime))
       }
     })
