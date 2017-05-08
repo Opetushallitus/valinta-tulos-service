@@ -26,6 +26,7 @@ class CasLdapFilter(cas: CasSessionService, requiredRoles: Set[Role]) extends Sc
       case Right((id, session)) if session.hasEveryRole(requiredRoles) =>
         implicit val cookieOptions = CookieOptions(path = "/valinta-tulos-service", secure = false, httpOnly = true)
         cookies += ("session" -> id.toString)
+        request.setAttribute("session", id.toString)
         // pass
       case Right((_, session)) =>
         logger.warn(s"User ${session.personOid} does not have all required roles $requiredRoles")
