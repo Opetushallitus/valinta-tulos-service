@@ -1,11 +1,11 @@
-package fi.vm.sade.valintatulosservice.sijoittelu.valintarekisteri
+package fi.vm.sade.valintatulosservice.sijoittelu
 
 import fi.vm.sade.sijoittelu.domain.Valintatulos
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 
-trait ValintatulosDao {
+trait ValintarekisteriValintatulosDao {
 
   def loadValintatulokset(hakuOid:HakuOid):List[Valintatulos]
   def loadValintatuloksetForHakukohde(hakukohdeOid:HakukohdeOid):List[Valintatulos]
@@ -17,7 +17,7 @@ trait ValintatulosDao {
   def createOrUpdateValintatulos(valintatulos:Valintatulos)
 }
 
-class ValintarekisteriValintatulosDao(valinnantulosRepository: ValinnantulosRepository) extends ValintatulosDao with Logging {
+class ValintarekisteriValintatulosDaoImpl(valinnantulosRepository: ValinnantulosRepository) extends ValintarekisteriValintatulosDao with Logging {
 
   override def loadValintatulokset(hakuOid:HakuOid) =
     valinnantulosRepository.runBlocking(

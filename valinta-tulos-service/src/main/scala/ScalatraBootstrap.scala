@@ -15,9 +15,9 @@ import fi.vm.sade.valintatulosservice.migraatio.valinta.Valintalaskentakoostepal
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.security.Role
-import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.SijoitteluSpringContext
-import fi.vm.sade.valintatulosservice.sijoittelu.valintarekisteri.{ValintarekisteriRaportointiService, ValintarekisteriValintatulosDao, ValintarekisteriValintatulosRepository}
-import fi.vm.sade.valintatulosservice.sijoittelu.{SijoitteluContext, SijoitteluFixtures, SijoittelunTulosRestClient, SijoittelutulosService}
+import fi.vm.sade.valintatulosservice.sijoittelu.{SijoitteluFixtures, SijoittelunTulosRestClient, SijoittelutulosService}
+import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{SijoitteluContext, SijoitteluSpringContext}
+import fi.vm.sade.valintatulosservice.sijoittelu.{ValintarekisteriValintatulosRepository, _}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
@@ -75,10 +75,10 @@ class ScalatraBootstrap extends LifeCycle {
     lazy val (raportointiService, valintatulosDao, valintatulosRepository) = if(initMongoContext) {
       (sijoitteluContext.raportointiService, sijoitteluContext.valintatulosDao, sijoitteluContext.valintatulosRepository)
     } else {
-      val valintarekisteriValintatulosDao = new ValintarekisteriValintatulosDao(valintarekisteriDb)
-      (new ValintarekisteriRaportointiService(sijoitteluService, valintarekisteriDb),
+      val valintarekisteriValintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
+      (new ValintarekisteriRaportointiServiceImpl(sijoitteluService, valintarekisteriDb),
         valintarekisteriValintatulosDao,
-        new ValintarekisteriValintatulosRepository(valintarekisteriValintatulosDao))
+        new ValintarekisteriValintatulosRepositoryImpl(valintarekisteriValintatulosDao))
     }
 
     lazy val sijoittelutulosService = new SijoittelutulosService(raportointiService,
