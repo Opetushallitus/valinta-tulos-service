@@ -56,15 +56,10 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
   override def findPersonByHetu(hetu: String, timeout: Duration = 60 seconds): Option[Henkilo] = {
     implicit val henkiloReader = new Reader[Option[Henkilo]] {
       override def read(v: JValue): Option[Henkilo] = {
-        val henkilotiedot = (v \\ "results")
-        henkilotiedot match {
-          case JArray(tiedot) if tiedot.isEmpty =>
-            None
-          case _ =>
-            Some(Henkilo( (v \\ "oidHenkilo").extract[String], (henkilotiedot \ "hetu").extract[String],
-              (henkilotiedot \ "etunimet").extract[String], (henkilotiedot \ "sukunimi").extract[String]))
-        }
-
+        Some(Henkilo( (v \ "oidHenkilo").extract[String],
+          (v \ "hetu").extract[String],
+          (v \ "etunimet").extract[String],
+          (v \ "sukunimi").extract[String]))
       }
     }
 
