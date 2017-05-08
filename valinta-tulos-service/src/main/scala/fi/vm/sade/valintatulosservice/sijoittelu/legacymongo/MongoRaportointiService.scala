@@ -39,7 +39,7 @@ class MongoRaportointiService(service:MongoService) extends RaportointiService {
   def toOption[R](opt:java.util.Optional[R]):Option[R] = if (opt.isPresent) Some(opt.get) else None
 
   def toJavaBoolean(b: Option[Boolean]): java.lang.Boolean = b match {
-    case Some(scalaBoolean) => scalaBoolean
+    case Some(scalaBoolean) => scalaBoolean.asInstanceOf[java.lang.Boolean]
     case None => null.asInstanceOf[java.lang.Boolean]
   }
 

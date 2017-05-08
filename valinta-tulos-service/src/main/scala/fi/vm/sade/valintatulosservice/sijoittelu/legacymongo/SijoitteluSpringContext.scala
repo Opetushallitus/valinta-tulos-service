@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.sijoittelu.legacymongo
 
 import com.mongodb._
-import fi.vm.sade.sijoittelu.tulos.dao.{HakukohdeDao, SijoitteluDao}
+import fi.vm.sade.sijoittelu.tulos.dao.{HakukohdeDao, SijoitteluDao, ValintatulosDao}
 import fi.vm.sade.sijoittelu.tulos.service.RaportointiService
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoitteluContext
@@ -18,7 +18,7 @@ class SijoitteluSpringContext(config: VtsAppConfig, context: ApplicationContext)
   def database = context.getBean(classOf[DB])
 
   override lazy val morphiaDs = context.getBean(classOf[Datastore])
-  override lazy val valintatulosDao = context.getBean(classOf[MongoValintatulosDao])
+  override lazy val valintatulosDao = new MongoValintatulosDao(context.getBean(classOf[ValintatulosDao]))
   override lazy val hakukohdeDao = context.getBean(classOf[HakukohdeDao])
   override lazy val sijoitteluDao = context.getBean(classOf[SijoitteluDao])
   override lazy val raportointiService = new MongoRaportointiService(context.getBean(classOf[RaportointiService]))
