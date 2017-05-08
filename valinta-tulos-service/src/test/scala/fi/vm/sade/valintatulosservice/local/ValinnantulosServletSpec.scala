@@ -45,7 +45,14 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
   private val crudSession = CasSession(ServiceTicket("ST"), "1.2.246.562.24.1", Set(Role.SIJOITTELU_CRUD))
   private val now = Instant.now.truncatedTo(ChronoUnit.SECONDS)
   private val ifUnmodifiedSince = DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant(now, ZoneId.of("GMT")))
-  private def auditInfo(session: Session) = AuditInfo((sessionId, session), InetAddress.getByName("127.0.0.1"), "Apache-HttpClient/4.5.2 (Java/1.8.0_72)")
+  private val userAgent = "ValinnantulosServletSpec-user-agent"
+  private def auditInfo(session: Session) = AuditInfo((sessionId, session), InetAddress.getByName("127.0.0.1"), userAgent)
+  private val defaultHeaders = Map("Cookie" -> s"session=${sessionId.toString}",
+    "User-Agent" -> userAgent)
+  private val defaultPatchHeaders = defaultHeaders ++ Map(
+    "Content-Type" -> "application/json",
+    "If-Unmodified-Since" -> ifUnmodifiedSince
+  )
   private val hakukohdeOid = HakukohdeOid("1.2.246.562.20.26643418986")
   private val valintatapajonoOid = ValintatapajonoOid("14538080612623056182813241345174")
   private val hakemusOid = HakemusOid("1.2.246.562.11.00006169123")
@@ -69,7 +76,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
 
   "GET /auth/valinnan-tulos" in {
     "palauttaa 401, jos sessiokeksi puuttuu" in { t: (String, ValinnantulosService, SessionRepository) =>
-      get(t._1, Iterable("valintatapajonoOid" -> valintatapajonoOid.toString), Map.empty) {
+      get(t._1, Iterable("valintatapajonoOid" -> valintatapajonoOid.toString), defaultHeaders - "session") {
         status must_== 401
         body must_== "{\"error\":\"Unauthorized\"}"
       }
@@ -77,7 +84,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
 
     "palauttaa 401, jos sessio ei ole voimassa" in { t: (String, ValinnantulosService, SessionRepository) =>
       t._3.get(sessionId) returns None
-      get(t._1, Iterable("valintatapajonoOid" -> valintatapajonoOid.toString), Map("Cookie" -> s"session=${sessionId.toString}")) {
+      get(t._1, Iterable("valintatapajonoOid" -> valintatapajonoOid.toString), defaultHeaders) {
         status must_== 401
         body must_== "{\"error\":\"Unauthorized\"}"
       }
@@ -85,7 +92,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
 
     "palauttaa 403, jos käyttäjällä ei ole lukuoikeuksia" in { t: (String, ValinnantulosService, SessionRepository) =>
       t._3.get(sessionId) returns Some(unauthorizedSession)
-      get(t._1, Iterable("valintatapajonoOid" -> valintatapajonoOid.toString), Map("Cookie" -> s"session=${sessionId.toString}")) {
+      get(t._1, Iterable("valintatapajonoOid" -> valintatapajonoOid.toString), defaultHeaders) {
         status must_== 403
         body must_== "{\"error\":\"Forbidden\"}"
       }
@@ -94,7 +101,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
     "palauttaa 200 ja tyhjän taulukon jos valinnan tuloksia ei löydy" in { t: (String, ValinnantulosService, SessionRepository) =>
       t._3.get(sessionId) returns Some(readSession)
       t._2.getValinnantuloksetForValintatapajono(ValintatapajonoOid("1"), auditInfo(readSession)) returns None
-      get(t._1, Iterable("valintatapajonoOid" -> "1"), Map("Cookie" -> s"session=${sessionId.toString}")) {
+      get(t._1, Iterable("valintatapajonoOid" -> "1"), defaultHeaders) {
         status must_== 200
         body must_== "[]"
       }
@@ -103,7 +110,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
     "palauttaa 200 ja valintatapajonon valinnan tulokset valintatapajono-oidilla haettaessa" in { t: (String, ValinnantulosService, SessionRepository) =>
       t._3.get(sessionId) returns Some(readSession)
       t._2.getValinnantuloksetForValintatapajono(valintatapajonoOid, auditInfo(readSession)) returns Some((Instant.now, Set(valinnantulos)))
-      get(t._1, Iterable("valintatapajonoOid" -> valintatapajonoOid.toString), Map("Cookie" -> s"session=${sessionId.toString}")) {
+      get(t._1, Iterable("valintatapajonoOid" -> valintatapajonoOid.toString), defaultHeaders) {
         status must_== 200
         parse(body).extract[List[Valinnantulos]] must_== List(valinnantulos)
       }
@@ -112,7 +119,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
     "palauttaa 200 ja hakukohteen valinnan tulokset hakukohdeoidilla haettaessa" in { t: (String, ValinnantulosService, SessionRepository) =>
       t._3.get(sessionId) returns Some(readSession)
       t._2.getValinnantuloksetForHakukohde(hakukohdeOid, auditInfo(readSession)) returns Some((Instant.now, Set(valinnantulos)))
-      get(t._1, Iterable("hakukohdeOid" -> hakukohdeOid.toString), Map("Cookie" -> s"session=${sessionId.toString}")) {
+      get(t._1, Iterable("hakukohdeOid" -> hakukohdeOid.toString), defaultHeaders) {
         status must_== 200
         parse(body).extract[List[Valinnantulos]] must_== List(valinnantulos)
       }
@@ -121,7 +128,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
     "palauttaa 200 ja valintatapajonon valinnan tulokset hakukohde ja valintatapajono-oidilla haettaessa" in { t: (String, ValinnantulosService, SessionRepository) =>
       t._3.get(sessionId) returns Some(readSession)
       t._2.getValinnantuloksetForValintatapajono(valintatapajonoOid, auditInfo(readSession)) returns Some((Instant.now, Set(valinnantulos)))
-      get(t._1, Iterable("hakukohdeOid" -> hakukohdeOid.toString, "valintatapajonoOid" -> valintatapajonoOid.toString), Map("Cookie" -> s"session=${sessionId.toString}")) {
+      get(t._1, Iterable("hakukohdeOid" -> hakukohdeOid.toString, "valintatapajonoOid" -> valintatapajonoOid.toString), defaultHeaders) {
         status must_== 200
         parse(body).extract[List[Valinnantulos]] must_== List(valinnantulos)
       }
@@ -131,7 +138,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       val lastModified = DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant(now.plusSeconds(1), ZoneId.of("GMT")))
       t._3.get(sessionId) returns Some(readSession)
       t._2.getValinnantuloksetForValintatapajono(valintatapajonoOid, auditInfo(readSession)) returns Some((now, Set(valinnantulos)))
-      get(t._1, Iterable("valintatapajonoOid" -> valintatapajonoOid.toString), Map("Cookie" -> s"session=${sessionId.toString}")) {
+      get(t._1, Iterable("valintatapajonoOid" -> valintatapajonoOid.toString), defaultHeaders) {
         status must_== 200
         header.get("Last-Modified") must beSome(lastModified)
       }
@@ -143,10 +150,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       patch(
         s"${t._1}/${valintatapajonoOid.toString}",
         write(List(valinnantulos.copy(julkaistavissa = Some(true)))).getBytes("UTF-8"),
-        Map(
-          "Content-Type" -> "application/json",
-          "If-Unmodified-Since" -> ifUnmodifiedSince
-        )
+        defaultPatchHeaders - "session"
       ) {
         status must_== 401
         body must_== "{\"error\":\"Unauthorized\"}"
@@ -158,11 +162,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       patch(
         s"${t._1}/${valintatapajonoOid.toString}",
         write(List(valinnantulos.copy(julkaistavissa = Some(true)))).getBytes("UTF-8"),
-        Map(
-          "Content-Type" -> "application/json",
-          "Cookie" -> s"session=${sessionId.toString}",
-          "If-Unmodified-Since" -> ifUnmodifiedSince
-        )
+        defaultPatchHeaders
       ) {
         status must_== 401
         body must_== "{\"error\":\"Unauthorized\"}"
@@ -174,11 +174,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       patch(
         s"${t._1}/${valintatapajonoOid.toString}",
         write(List(valinnantulos.copy(julkaistavissa = Some(true)))).getBytes("UTF-8"),
-        Map(
-          "Content-Type" -> "application/json",
-          "Cookie" -> s"session=${sessionId.toString}",
-          "If-Unmodified-Since" -> ifUnmodifiedSince
-        )
+        defaultPatchHeaders
       ) {
         status must_== 403
         body must_== "{\"error\":\"Forbidden\"}"
@@ -190,10 +186,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       patch(
         s"${t._1}/${valintatapajonoOid.toString}",
         write(List(valinnantulos.copy(julkaistavissa = Some(true)))).getBytes("UTF-8"),
-        Map(
-          "Content-Type" -> "application/json",
-          "Cookie" -> s"session=${sessionId.toString}"
-        )
+        defaultPatchHeaders - "If-Unmodified-Since"
       ) {
         status must_== 400
         body must_== "{\"error\":\"Otsake If-Unmodified-Since on pakollinen.\"}"
@@ -212,11 +205,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       patch(
         s"${t._1}/${valintatapajonoOid.toString}",
         write(List(valinnantulos.copy(julkaistavissa = Some(true)))).getBytes("UTF-8"),
-        Map(
-          "Content-Type" -> "application/json",
-          "Cookie" -> s"session=${sessionId.toString}",
-          "If-Unmodified-Since" -> ifUnmodifiedSince
-        )
+        defaultPatchHeaders
       ) {
         status must_== 200
         parse(body).extract[List[ValinnantulosUpdateStatus]] must_== List.empty
@@ -236,11 +225,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       patch(
         s"${t._1}/${valintatapajonoOid.toString}",
         write(List(valinnantulos.copy(julkaistavissa = Some(true)))).getBytes("UTF-8"),
-        Map(
-          "Content-Type" -> "application/json",
-          "Cookie" -> s"session=${sessionId.toString}",
-          "If-Unmodified-Since" -> ifUnmodifiedSince
-        )
+        defaultPatchHeaders
       ) {
         status must_== 200
         parse(body).extract[List[ValinnantulosUpdateStatus]] must_== List(virhe)
@@ -259,11 +244,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       patch(
         s"${t._1}/${valintatapajonoOid.toString}?erillishaku=true",
         write(List(valinnantulos.copy(julkaistavissa = Some(true)))).getBytes("UTF-8"),
-        Map(
-          "Content-Type" -> "application/json",
-          "Cookie" -> s"session=${sessionId.toString}",
-          "If-Unmodified-Since" -> ifUnmodifiedSince
-        )
+        defaultPatchHeaders
       ) {
         status must_== 200
         parse(body).extract[List[ValinnantulosUpdateStatus]] must_== List.empty
