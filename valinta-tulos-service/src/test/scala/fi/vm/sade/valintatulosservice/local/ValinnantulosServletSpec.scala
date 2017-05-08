@@ -76,7 +76,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
 
   "GET /auth/valinnan-tulos" in {
     "palauttaa 401, jos sessiokeksi puuttuu" in { t: (String, ValinnantulosService, SessionRepository) =>
-      get(t._1, Iterable("valintatapajonoOid" -> valintatapajonoOid.toString), defaultHeaders - "session") {
+      get(t._1, Iterable("valintatapajonoOid" -> valintatapajonoOid.toString), defaultHeaders - "Cookie") {
         status must_== 401
         body must_== "{\"error\":\"Unauthorized\"}"
       }
@@ -150,7 +150,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       patch(
         s"${t._1}/${valintatapajonoOid.toString}",
         write(List(valinnantulos.copy(julkaistavissa = Some(true)))).getBytes("UTF-8"),
-        defaultPatchHeaders - "session"
+        defaultPatchHeaders - "Cookie"
       ) {
         status must_== 401
         body must_== "{\"error\":\"Unauthorized\"}"
