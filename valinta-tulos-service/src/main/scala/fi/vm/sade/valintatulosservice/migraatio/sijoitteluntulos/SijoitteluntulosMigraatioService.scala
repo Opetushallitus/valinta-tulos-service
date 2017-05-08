@@ -19,7 +19,7 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.MissingHakijaOidResolver
-import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
+import fi.vm.sade.valintatulosservice.sijoittelu.{SijoitteluContext, SijoittelunTulosRestClient}
 import fi.vm.sade.valintatulosservice.sijoittelu.valintarekisteri.ValintatulosDao
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{MigraatioRepository, MigratedIlmoittautuminen, SijoitteluRepository, StoreSijoitteluRepository, Valintaesitys}
@@ -37,10 +37,11 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
                                        migraatioRepository: MigraatioRepository with SijoitteluRepository with StoreSijoitteluRepository,
                                        hakukohdeRecordService: HakukohdeRecordService,
                                        hakuService: HakuService,
-                                       valintalaskentakoostepalveluService: ValintalaskentakoostepalveluService) extends Logging {
-  private val hakukohdeDao: HakukohdeDao = appConfig.sijoitteluContext.hakukohdeDao
-  private val valintatulosDao: ValintatulosDao = appConfig.sijoitteluContext.valintatulosDao
-  private val sijoitteluDao = appConfig.sijoitteluContext.sijoitteluDao
+                                       valintalaskentakoostepalveluService: ValintalaskentakoostepalveluService,
+                                       sijoitteluContext: SijoitteluContext) extends Logging {
+  private val hakukohdeDao: HakukohdeDao = sijoitteluContext.hakukohdeDao
+  private val valintatulosDao: ValintatulosDao = sijoitteluContext.valintatulosDao
+  private val sijoitteluDao = sijoitteluContext.sijoitteluDao
 
   private val adapter = new HexBinaryAdapter()
 
@@ -389,7 +390,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
 
   private def getSijoitteluHash(sijoitteluajoId: Long, hakuOid: HakuOid): Either[IllegalArgumentException, String] = {
     val query = new BasicDBObjectBuilder().add("sijoitteluajoId", sijoitteluajoId).get()
-    val cursor = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Hakukohde").find(query)
+    val cursor = sijoitteluContext.morphiaDs.getDB.getCollection("Hakukohde").find(query)
 
     if (!cursor.hasNext) logger.info(s"No hakukohdes for haku $hakuOid")
 
@@ -402,7 +403,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
 
   private def getValintatuloksetHash(hakuOid: HakuOid): String = {
     val query = new BasicDBObjectBuilder().add("hakuOid", hakuOid.toString).get()
-    val cursor = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Valintatulos").find(query)
+    val cursor = sijoitteluContext.morphiaDs.getDB.getCollection("Valintatulos").find(query)
 
     if (!cursor.hasNext) logger.info(s"No valintatulos' for haku $hakuOid")
 
@@ -433,7 +434,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
 
   def runScheduledMigration(): Map[HakuOid, Try[Unit]] = {
     logger.info(s"Beginning scheduled migration.")
-    val hakuOids: Set[HakuOid] = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Sijoittelu").distinct("hakuOid").asScala.map(o => HakuOid(o.toString)).toSet
+    val hakuOids: Set[HakuOid] = sijoitteluContext.morphiaDs.getDB.getCollection("Sijoittelu").distinct("hakuOid").asScala.map(o => HakuOid(o.toString)).toSet
     val hakuOidsAndHashes: Map[HakuOid, String] = getSijoitteluHashesByHakuOid(hakuOids)
     var hakuoidsNotProcessed: Seq[HakuOid] = List()
     val results: Iterable[Option[(HakuOid, Try[Unit])]] = hakuOidsAndHashes.map { case (oid, hash) =>

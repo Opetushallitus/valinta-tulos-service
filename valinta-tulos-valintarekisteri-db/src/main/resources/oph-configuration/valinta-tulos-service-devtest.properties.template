@@ -47,6 +47,7 @@ valinta-tulos-service.valintarekisteri.db.registerMbeans=true
 valinta-tulos-service.valintarekisteri.db.initializationFailFast=true
 valinta-tulos-service.valintarekisteri.db.timeout=20 seconds
 valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids=1000000
+valinta-tulos-service.valintarekisteri.use-sijoittelu-mongo=true
 
 # Valintarekisterin migraatio
 #valinta-tulos-service.haku-app-url=https://{{host_virkailija}}/haku-app

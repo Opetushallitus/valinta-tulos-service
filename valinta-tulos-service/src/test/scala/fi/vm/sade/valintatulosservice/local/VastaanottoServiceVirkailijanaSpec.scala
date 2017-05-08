@@ -390,16 +390,16 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
   lazy val hakuService = HakuService(appConfig.hakuServiceConfig)
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, true)
-  lazy val sijoittelunTulosRestClient = new DirectMongoSijoittelunTulosRestClient(appConfig)
-  lazy val sijoittelutulosService = new SijoittelutulosService(appConfig.sijoitteluContext.raportointiService,
+  lazy val sijoittelunTulosRestClient = new DirectMongoSijoittelunTulosRestClient(sijoitteluContext, appConfig)
+  lazy val sijoittelutulosService = new SijoittelutulosService(sijoitteluContext.raportointiService,
     appConfig.ohjausparametritService, valintarekisteriDb, sijoittelunTulosRestClient)
   lazy val vastaanotettavuusService = new VastaanotettavuusService(hakukohdeRecordService, valintarekisteriDb)
   lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb,
-    hakuService, valintarekisteriDb, hakukohdeRecordService, appConfig.sijoitteluContext.valintatulosDao)(appConfig, dynamicAppConfig)
+    hakuService, valintarekisteriDb, hakukohdeRecordService, sijoitteluContext.valintatulosDao)(appConfig, dynamicAppConfig)
   lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService,
-    valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository(), appConfig.sijoitteluContext.valintatulosRepository)
+    valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository(), sijoitteluContext.valintatulosRepository)
   lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService,
-    appConfig.sijoitteluContext.valintatulosRepository, valintarekisteriDb, valintarekisteriDb)
+    sijoitteluContext.valintatulosRepository, valintarekisteriDb, valintarekisteriDb)
 
   private def hakemuksenTulos: Hakemuksentulos = valintatulosService.hakemuksentulos(hakemusOid).get
 
