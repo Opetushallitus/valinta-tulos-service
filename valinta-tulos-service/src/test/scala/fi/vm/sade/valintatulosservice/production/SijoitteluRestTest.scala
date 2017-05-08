@@ -17,11 +17,12 @@ import scala.language.experimental.macros
 @Ignore
 @RunWith(classOf[JUnitRunner])
 class SijoitteluRestTest extends Specification with MatcherMacros with Logging with PerformanceLogger with RestTestHelper {
-  val oldHost = "https://testi.virkailija.opintopolku.fi"
+  val oldHost = "https://virkailija.opintopolku.fi"
+  val casHost = "https://testi.virkailija.opintopolku.fi"
   //private val newHost = "https://testi.virkailija.opintopolku.fi"
   private val newHost = "http://localhost:8097"
 
-  override val cas_url = oldHost + "/cas"
+  override val casUrlOld: String = oldHost + "/cas"
 
   /* Hakuoideja
      "1.2.246.562.29.75203638285" - Kevään 2016 kk-yhteishaku
@@ -30,11 +31,11 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
      "1.2.246.562.29.28924613947" - Haku ammatilliseen opettajankoulutukseen 2017
      "1.2.246.562.29.87593180141" - Syksyn 2016 kk-yhteishaku */
 
-  val hakuOidsToTest = Seq("1.2.246.562.29.59856749474")
+  val hakuOidsToTest = Seq("1.2.246.562.29.98929669087", "1.2.246.562.29.61316288341", "1.2.246.562.29.669559278110")
 
-  val infoOn = false
-  val debugOn = false
-  val fileForStoringNewResponse: Option[String] = /*None  //  */ Some("/tmp/lol.json")
+  val infoOn = true
+  val debugOn = true
+  val fileForStoringNewResponse: Option[String] = None  //  */ Some("/tmp/lol.json")
 
   def info(message:String) = if(infoOn) logger.info(message)
   def debug(message:String) = if(debugOn) logger.info(message)
@@ -42,7 +43,7 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
   "New sijoittelu (valintarekisteri) and old sijoittelu (sijoitteluDb)" should {
     "contain same information" in {
 
-      val vtsClient = new VtsAuthenticatingClient(oldHost, "/valinta-tulos-service", cas_user, cas_password)
+      val vtsClient = new VtsAuthenticatingClient(casHost, newHost + "/valinta-tulos-service", "auth/login", casUserNew, casPasswordNew)
       val vtsSessionCookie = vtsClient.getVtsSession(newHost)
 
       hakuOidsToTest.foreach { oid =>
@@ -96,8 +97,8 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
             compareFields(uusiValintatapajono.kaikkiEhdonTayttavatHyvaksytaan, vanhaValintatapajono.kaikkiEhdonTayttavatHyvaksytaan, "valintatapajono.kaikkiEhdonTayttavatHyvaksytaan")
             compareFields(uusiValintatapajono.poissaOlevaTaytto, vanhaValintatapajono.poissaOlevaTaytto, "valintatapajono.poissaOlevaTaytto")
             compareFields(uusiValintatapajono.hakeneet, vanhaValintatapajono.hakeneet, "valintatapajono.hakeneet")
-            compareFields(uusiValintatapajono.hyvaksytty, vanhaValintatapajono.hyvaksytty, "valintatapajono.hyvaksytty")
-            compareFields(uusiValintatapajono.varalla, vanhaValintatapajono.varalla, "valintatapajono.varalla")
+            compareFields(uusiValintatapajono.hyvaksytty, None, "valintatapajono.hyvaksytty")
+            compareFields(uusiValintatapajono.varalla, None, "valintatapajono.varalla")
             compareFields(uusiValintatapajono.varasijat, vanhaValintatapajono.varasijat, "valintatapajono.varasijat")
             compareFields(uusiValintatapajono.varasijaTayttoPaivat, vanhaValintatapajono.varasijaTayttoPaivat, "valintatapajono.varasijaTayttoPaivat")
             compareFields(uusiValintatapajono.varasijojaTaytetaanAsti, vanhaValintatapajono.varasijojaTaytetaanAsti, "valintatapajono.varasijojaTaytetaanAsti")
@@ -113,8 +114,6 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
               compareFields(uusiHakemus.hakijaOid, vanhaHakemus.hakijaOid, "hakemus.hakijaOid")
               compareFields(uusiHakemus.pisteet, vanhaHakemus.pisteet, "hakemus.pisteet")
               compareFields(uusiHakemus.paasyJaSoveltuvuusKokeenTulos, vanhaHakemus.paasyJaSoveltuvuusKokeenTulos, "hakemus.paasyJaSoveltuvuusKokeenTulos")
-              compareFields(uusiHakemus.etunimi, vanhaHakemus.etunimi, "hakemus.etunimi")
-              compareFields(uusiHakemus.sukunimi, vanhaHakemus.sukunimi, "hakemus.sukunimi")
               compareFields(uusiHakemus.prioriteetti, vanhaHakemus.prioriteetti, "hakemus.prioriteetti")
               compareFields(uusiHakemus.jonosija, vanhaHakemus.jonosija, "hakemus.jonosija")
               compareFields(uusiHakemus.tasasijaJonosija, vanhaHakemus.tasasijaJonosija, "hakemus.tasasijaJonosija")
@@ -146,16 +145,16 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
                 compareFields(uusiPistetieto.tilastoidaan, None, "pistetieto.tilastoidaan")
               })
 
-              debug(s"Tilahistoria ${uusiHakemus.tilaHistoria}")
-              if (uusiHakemus.tilaHistoria.size > vanhaHakemus.tilaHistoria.size) {
-                debug(s"vanhaHakemus.tilaHistoria: ${vanhaHakemus.hakemusOid} / ${vanhaHakemus.valintatapajonoOid} : ${vanhaHakemus.tilaHistoria}")
-                debug(s"uusiHakemus.tilaHistoria: ${uusiHakemus.hakemusOid} / ${uusiHakemus.valintatapajonoOid} : ${uusiHakemus.tilaHistoria}")
-              }
-              uusiHakemus.tilaHistoria.size must be_<=(vanhaHakemus.tilaHistoria.size)
-              for ((uusiTilahistoria, i) <- uusiHakemus.tilaHistoria.reverse.zipWithIndex) {
-                val vanhaTilahistoria = vanhaHakemus.tilaHistoria.reverse(i)
-                compareFields(uusiTilahistoria.tila, vanhaTilahistoria.tila, "tilahistoria.tila")
-                compareFields(uusiTilahistoria.luotu, vanhaTilahistoria.luotu, "tilahistoria.luotu")
+              val uusiTilahistoria = uusiHakemus.tilaHistoria.sortBy(_.luotu)
+              val vanhaTilahistoria = vanhaHakemus.tilaHistoria.sortBy(_.luotu)
+              debug(s"Tilahistoria ${uusiTilahistoria}")
+              if (vanhaHakemus.tila.getOrElse("") != vanhaTilahistoria.last.tila) {
+                info(s"Vanha tilahistoria is missing latest tila entry from hakemus ${vanhaHakemus.hakemusOid}")
+                debug(s"vanhaTilahistoria: ${vanhaHakemus.hakemusOid} / valintatapajono: ${vanhaHakemus.valintatapajonoOid} : ${vanhaTilahistoria}")
+                debug(s"uusiTilahistoria: ${uusiHakemus.hakemusOid} / valintatapajono: ${uusiHakemus.valintatapajonoOid} : ${uusiTilahistoria}")
+                compareTilahistoriat(uusiTilahistoria.dropRight(1), vanhaTilahistoria)
+              } else {
+                compareTilahistoriat(uusiTilahistoria, vanhaTilahistoria)
               }
 
             })
@@ -166,7 +165,7 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
             debug("vanhaHakukohde.hakijaryhmat:")
             vanhaHakukohde.hakijaryhmat.foreach { h => debug(s"\t$h") }
           }
-          compareFields(uusiHakukohde.hakijaryhmat.size, vanhaHakukohde.hakijaryhmat.size, "hakijaryhmat.size")
+          compareFields(uusiHakukohde.hakijaryhmat.size, vanhaHakukohde.hakijaryhmat.size, s"hakijaryhmat.size (hakukohde ${uusiHakukohde.oid})")
           hakijaryhmat = hakijaryhmat + uusiHakukohde.hakijaryhmat.size
           uusiHakukohde.hakijaryhmat.foreach(uusiHakijaryhma => {
             debug(s"Hakijaryhma ${uusiHakijaryhma.oid}")
@@ -192,6 +191,14 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
 
       }
       true must beTrue
+    }
+  }
+
+  private def compareTilahistoriat(uusiTilahistoria: List[Tilahistoria], vanhaTilahistoria: List[Tilahistoria]) = {
+    for ((uusiTilahistoriaEntry, i) <- uusiTilahistoria.reverse.zipWithIndex) {
+      val vanhaTilahistoriaEntry = vanhaTilahistoria.reverse(i)
+      compareFields(uusiTilahistoriaEntry.tila, vanhaTilahistoriaEntry.tila, "tilahistoria.tila")
+      compareFields(uusiTilahistoriaEntry.luotu, vanhaTilahistoriaEntry.luotu, "tilahistoria.luotu")
     }
   }
 

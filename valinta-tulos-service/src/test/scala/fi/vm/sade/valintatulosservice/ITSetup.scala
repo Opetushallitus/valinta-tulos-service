@@ -1,12 +1,13 @@
 package fi.vm.sade.valintatulosservice
 
 import com.typesafe.config.ConfigValueFactory
-import fi.vm.sade.valintatulosservice.config.{VtsDynamicAppConfig, VtsAppConfig}
+import fi.vm.sade.valintatulosservice.config.{VtsAppConfig, VtsDynamicAppConfig}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusFixtures
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoitteluFixtures
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 
 trait ITSetup {
   implicit val appConfig = new VtsAppConfig.IT
@@ -26,7 +27,7 @@ trait ITSetup {
                  extraFixtureNames: List[String] = List(),
                  ohjausparametritFixture: String = OhjausparametritFixtures.vastaanottoLoppuu2100,
                  hakemusFixtures: List[String] = HakemusFixtures.defaultFixtures,
-                 hakuFixture: String = HakuFixtures.korkeakouluYhteishaku,
+                 hakuFixture: HakuOid = HakuFixtures.korkeakouluYhteishaku,
                  yhdenPaikanSaantoVoimassa: Boolean = false,
                  kktutkintoonJohtava: Boolean = false,
                  clearFixturesInitially: Boolean = true

@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit.SECONDS
 
 import com.mongodb.DB
 import fi.vm.sade.sijoittelu.tulos.testfixtures.MongoMockData
+import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.DefaultFormats
@@ -37,7 +38,7 @@ case class SijoitteluFixtures(db: DB, valintarekisteriDb : ValintarekisteriDb) {
                                            yhdenPaikanSaantoVoimassa: Boolean = false,
                                            kktutkintoonJohtava: Boolean = false): Unit = {
 
-    implicit val formats = DefaultFormats
+    implicit val formats = JsonFormats.jsonFormats
 
     val json = parse(scala.io.Source.fromInputStream(new ClassPathResource("fixtures/sijoittelu/" + fixtureName).getInputStream).mkString)
     val JArray(valintatulokset) = ( json \ "Valintatulos" )
@@ -50,19 +51,19 @@ case class SijoitteluFixtures(db: DB, valintarekisteriDb : ValintarekisteriDb) {
         case Some(tila) =>
           getVastaanottoAction(tila).foreach(action => {
             valintarekisteriDb.storeHakukohde(HakukohdeRecord(
-                (valintatulos \ "hakukohdeOid").extract[String],
-                (valintatulos \ "hakuOid").extract[String],
+                (valintatulos \ "hakukohdeOid").extract[HakukohdeOid],
+                (valintatulos \ "hakuOid").extract[HakuOid],
                 yhdenPaikanSaantoVoimassa,
                 kktutkintoonJohtava,
                 Kevat(2016)
             ))
 
             valintarekisteriDb.store(VirkailijanVastaanotto(
-              (valintatulos \ "hakuOid").extract[String],
-              (valintatulos \ "valintatapajonoOid").extract[String],
+              (valintatulos \ "hakuOid").extract[HakuOid],
+              (valintatulos \ "valintatapajonoOid").extract[ValintatapajonoOid],
               (valintatulos \ "hakijaOid").extract[String],
-              (valintatulos \ "hakemusOid").extract[String],
-              (valintatulos \ "hakukohdeOid").extract[String],
+              (valintatulos \ "hakemusOid").extract[HakemusOid],
+              (valintatulos \ "hakukohdeOid").extract[HakukohdeOid],
               action,
               (valintatulos \ "hakijaOid").extract[String],
               "Tuotu vanhasta järjestelmästä"

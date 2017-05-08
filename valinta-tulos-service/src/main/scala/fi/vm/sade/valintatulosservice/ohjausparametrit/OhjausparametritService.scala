@@ -5,6 +5,7 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain.Vastaanottoaikataulu
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 import org.joda.time.DateTime
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
@@ -23,12 +24,12 @@ case class Ohjausparametrit(
   valintaesitysHyvaksyttavissa: Option[DateTime])
 
 trait OhjausparametritService {
-  def ohjausparametrit(asId: String): Either[Throwable, Option[Ohjausparametrit]]
+  def ohjausparametrit(asId: HakuOid): Either[Throwable, Option[Ohjausparametrit]]
   def valintaTulosServiceOhjausparametrit(): Either[Throwable, Option[ValintaTulosServiceOhjausparametrit]]
 }
 
 class StubbedOhjausparametritService extends OhjausparametritService {
-  def ohjausparametrit(asId: String): Either[Throwable, Option[Ohjausparametrit]] = {
+  def ohjausparametrit(asId: HakuOid): Either[Throwable, Option[Ohjausparametrit]] = {
     val fileName = "/fixtures/ohjausparametrit/" + OhjausparametritFixtures.activeFixture + ".json"
     Right(Option(getClass.getResourceAsStream(fileName))
       .map(scala.io.Source.fromInputStream(_).mkString)
@@ -44,10 +45,10 @@ class StubbedOhjausparametritService extends OhjausparametritService {
 object CachedRemoteOhjausparametritService {
   def apply(implicit appConfig: VtsAppConfig): OhjausparametritService = {
     val service = new RemoteOhjausparametritService()
-    val ohjausparametritMemo = TTLOptionalMemoize.memoize[String, Option[Ohjausparametrit]](service.ohjausparametrit, 60 * 60)
+    val ohjausparametritMemo = TTLOptionalMemoize.memoize[HakuOid, Option[Ohjausparametrit]](service.ohjausparametrit, 60 * 60)
 
     new OhjausparametritService() {
-      override def ohjausparametrit(asId: String): Either[Throwable, Option[Ohjausparametrit]] = ohjausparametritMemo(asId)
+      override def ohjausparametrit(asId: HakuOid): Either[Throwable, Option[Ohjausparametrit]] = ohjausparametritMemo(asId)
       override def valintaTulosServiceOhjausparametrit(): Either[Throwable, Option[ValintaTulosServiceOhjausparametrit]] = service.valintaTulosServiceOhjausparametrit()
     }
   }
@@ -77,8 +78,8 @@ class RemoteOhjausparametritService(implicit appConfig: VtsAppConfig) extends Oh
     parametrit("valintatulosservice")(body => OhjausparametritParser.parseValintaTulosServiceOhjausparametrit(parse(body)))
   }
 
-  override def ohjausparametrit(asId: String): Either[Throwable, Option[Ohjausparametrit]] =
-    parametrit(asId)(body => OhjausparametritParser.parseOhjausparametrit(parse(body)))
+  override def ohjausparametrit(asId: HakuOid): Either[Throwable, Option[Ohjausparametrit]] =
+    parametrit(asId.toString)(body => OhjausparametritParser.parseOhjausparametrit(parse(body)))
 }
 
 private object OhjausparametritParser extends JsonFormats {

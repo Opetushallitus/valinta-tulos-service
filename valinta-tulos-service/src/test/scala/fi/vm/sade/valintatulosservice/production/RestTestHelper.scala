@@ -11,16 +11,18 @@ import scalaj.http.{Http, HttpOptions}
 import scalaz.concurrent.Task
 
 trait RestTestHelper {
-  val cas_user = System.getProperty("cas_user")
-  val cas_password = System.getProperty("cas_password")
-  def cas_url:String
+  val casUserNew = System.getProperty("cas_user_new")
+  val casPasswordNew = System.getProperty("cas_password_new")
+  val casUserOld = System.getProperty("cas_user_old")
+  val casPasswordOld = System.getProperty("cas_password_old")
+  def casUrlOld:String
 
-  lazy val vanhaSijoitteluCasClient = createCasClient("/sijoittelu-service")
+  lazy val vanhaSijoitteluCasClient = createCasClientForOldData("/sijoittelu-service")
 
   implicit val formats = DefaultFormats
 
-  protected def getOld(uriString:String) = {
-    vanhaSijoitteluCasClient.prepare(Request(method = Method.GET, uri = createUri(uriString))).flatMap {
+  protected def getOld(uriString: String): String = {
+    vanhaSijoitteluCasClient.fetch(Request(method = Method.GET, uri = createUri(uriString))) {
       case r if 200 == r.status.code => r.as[String]
       case r => Task.fail(new RuntimeException(s"$uriString => ${r.toString}"))
     }.run
@@ -28,19 +30,19 @@ trait RestTestHelper {
 
   protected def createUri(uriString:String): Uri = Uri.fromString(uriString).getOrElse(throw new RuntimeException(s"Invalid uri"))
 
-  protected def createCasClient(target:String): Client = {
-    val casParams = CasParams(target, cas_user, cas_password)
+  protected def createCasClientForOldData(target:String): Client = {
+    val casParams = CasParams(target, casUserOld, casPasswordOld)
     new CasAuthenticatingClient(
-      new CasClient(cas_url, org.http4s.client.blaze.defaultClient),
+      new CasClient(casUrlOld, org.http4s.client.blaze.defaultClient),
       casParams,
       org.http4s.client.blaze.defaultClient,
-      null
-    )
+      "RestTestHelper"
+    ).httpClient
   }
 
   protected def get[T](fetch:() => String)(implicit m: Manifest[T]): T = parse(fetch()).extract[T]
 
-  protected def getNew(url: String, vtsSessionCookie: String) = {
+  protected def getNew(url: String, vtsSessionCookie: String): String = {
     val (statusCode, responseHeaders, result) =
       new DefaultHttpRequest(Http(url)
         .method("GET")
@@ -73,7 +75,7 @@ case class Valintatapajono(tasasijasaanto:Option[String], tila:Option[String], o
                            varasijaTayttoPaivat:Option[java.util.Date], varasijojaTaytetaanAsti:Option[java.util.Date], tayttojono:Option[String])
 
 case class Hakemus(hakijaOid:Option[String], hakemusOid:String, pisteet:Option[Long], paasyJaSoveltuvuusKokeenTulos:Option[Long],
-                   etunimi:Option[String], sukunimi:Option[String], prioriteetti:Option[Long], jonosija:Option[Long], tasasijaJonosija:Option[Long],
+                   prioriteetti:Option[Long], jonosija:Option[Long], tasasijaJonosija:Option[Long],
                    tila:Option[String], hyvaksyttyHarkinnanvaraisesti:Option[Boolean], varasijanNumero:Option[Long], sijoitteluajoId:Option[Long],
                    hakukohdeOid:Option[String], tarjoajaOid:Option[String], valintatapajonoOid:Option[String],
                    hakuOid:Option[String], onkoMuuttunutViimeSijoittelussa:Option[Boolean], siirtynytToisestaValintatapajonosta:Option[Boolean],
@@ -85,7 +87,7 @@ case class Tilankuvaus(SV:Option[String], FI:Option[String], EN:Option[String])
 
 case class Tilahistoria(tila:String, luotu:Long)
 
-case class Hakija(hakijaOid:String, hakemusOid:String, etunimi:String, sukunimi:String, hakutoiveet:List[Hakutoive])
+case class Hakija(hakijaOid:String, hakemusOid:String, hakutoiveet:List[Hakutoive])
 
 case class Hakutoive(hakutoive:Int, hakukohdeOid:String, tarjoajaOid:Option[String], pistetiedot:List[Pistetieto], hakijaryhmat:List[Hakijaryhma],
                      kaikkiJonotSijoiteltu:Option[Boolean], ensikertalaisuusHakijaryhmanAlimmatHyvaksytytPisteet:Option[String],

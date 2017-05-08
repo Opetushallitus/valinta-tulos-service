@@ -1,11 +1,13 @@
 package fi.vm.sade.valintatulosservice
+import java.net.InetAddress
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId, ZonedDateTime}
+import java.util.UUID
 
-import fi.vm.sade.security.AuthorizationFailedException
+import fi.vm.sade.security.{AuthorizationFailedException, LdapUserService}
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, IlmoittautumisTila, ValintatuloksenTila}
-import fi.vm.sade.valintatulosservice.security.Role
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
+import fi.vm.sade.valintatulosservice.security.{Role, Session}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HyvaksymiskirjePatch, SessionRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra._
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
@@ -26,8 +28,16 @@ trait ValinnantulosServletBase extends VtsServletBase {
     ModelProperty(DataType.String, mp.position, required = true, allowableValues = AllowableValues(ValintatuloksenTila.values().toList.map(_.toString)))
   }
 
-  protected def parseValintatapajonoOid: String = {
-    params.getOrElse("valintatapajonoOid", throw new IllegalArgumentException("URL parametri Valintatapajono OID on pakollinen."))
+  protected def parseValintatapajonoOid: Either[Throwable, ValintatapajonoOid] = {
+    params.get("valintatapajonoOid").fold[Either[Throwable, ValintatapajonoOid]](Left(new IllegalArgumentException("URL parametri valintatapajono OID on pakollinen.")))(s => Right(ValintatapajonoOid(s)))
+  }
+
+  protected def parseHakukohdeOid: Either[Throwable, HakukohdeOid] = {
+    params.get("hakukohdeOid").fold[Either[Throwable, HakukohdeOid]](Left(new IllegalArgumentException("URL parametri hakukohde OID on pakollinen.")))(s => Right(HakukohdeOid(s)))
+  }
+
+  protected def parseMandatoryParam(paramName:String): String = {
+    params.getOrElse(paramName, throw new IllegalArgumentException(s"Parametri ${paramName} on pakollinen."))
   }
 
   protected def parseErillishaku: Option[Boolean] = Try(params.get("erillishaku").map(_.toBoolean)) match {
@@ -73,24 +83,26 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
 
   val valinnantulosSwagger: OperationBuilder = (apiOperation[List[Valinnantulos]]("valinnantulos")
     summary "Valinnantulos"
-    parameter pathParam[String]("valintatapajonoOid").description("Valintatapajonon OID")
+    parameter queryParam[String]("valintatapajonoOid").description("Valintatapajonon OID")
+    parameter queryParam[String]("hakukohdeOid").description("Hakukohteen OID")
     )
   models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
     case ("ilmoittautumistila", mp) => ("ilmoittautumistila", ilmoittautumistilaModelProperty(mp))
     case ("valinnantila", mp) => ("valinnantila", valinnantilaModelProperty(mp))
     case p => p
   }))
-  get("/:valintatapajonoOid", operation(valinnantulosSwagger)) {
+  get("/", operation(valinnantulosSwagger)) {
     contentType = formats("json")
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
-    val valintatapajonoOid = parseValintatapajonoOid
-    valinnantulosService.getValinnantuloksetForValintatapajono(valintatapajonoOid, auditInfo) match {
-      case Some((lastModified, valinnantulokset)) =>
-        Ok(body = valinnantulokset, headers = Map("Last-Modified" -> createLastModifiedHeader(lastModified)))
-      case None =>
-        Ok(List())
-    }
+    parseValintatapajonoOid.right.map(valinnantulosService.getValinnantuloksetForValintatapajono(_, auditInfo))
+      .left.flatMap(_ => parseHakukohdeOid.right.map(valinnantulosService.getValinnantuloksetForHakukohde(_, auditInfo)))
+      .fold(throw _, {
+        case Some((lastModified, valinnantulokset)) =>
+          Ok(body = valinnantulokset, headers = Map("Last-Modified" -> createLastModifiedHeader(lastModified)))
+        case None =>
+          Ok(List())
+      })
   }
 
   val valinnantulosMuutosSwagger: OperationBuilder = (apiOperation[Unit]("muokkaaValinnantulosta")
@@ -110,7 +122,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
     val erillishaku = parseErillishaku
-    val valintatapajonoOid = parseValintatapajonoOid
+    val valintatapajonoOid = parseValintatapajonoOid.fold(throw _, x => x)
     val ifUnmodifiedSince: Instant = getIfUnmodifiedSince
     val valinnantulokset = parsedBody.extract[List[Valinnantulos]]
     Ok(
@@ -120,18 +132,39 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
   }
 }
 
-class ErillishakuServlet(valinnantulosService: ValinnantulosService)(implicit val swagger: Swagger)
-  extends ValinnantulosServletBase with AuditInfoParameter {
+class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymiskirjeService: HyvaksymiskirjeService, ldapUserService: LdapUserService)
+  (implicit val swagger: Swagger) extends ValinnantulosServletBase with AuditInfoParameter  {
 
   override val applicationName = Some("erillishaku/valinnan-tulos")
   override val applicationDescription = "Erillishaun valinnantuloksen REST API"
 
-    val erillishaunValinnantulosMuutosSwagger: OperationBuilder = (apiOperation[Unit]("muokkaaValinnantulosta")
+  private def getSession(auditSession: AuditSessionRequest): (UUID, Session) = (UUID.randomUUID(), getAuditSession(auditSession))
+
+  private def getAuditSession(s:AuditSessionRequest) = fi.vm.sade.valintatulosservice.security.AuditSession(s.personOid, s.roles.map(Role(_)).toSet)
+
+  private def parseHyvaksymiskirjeet = params.get("hyvaksymiskirjeet").exists(_.equalsIgnoreCase("true"))
+
+  protected def getAuditInfo(uid:String, inetAddress:String, userAgent:String) = {
+    (for {
+      user <- ldapUserService.getLdapUser(uid).right
+    } yield {
+      AuditInfo(
+        (UUID.randomUUID(), fi.vm.sade.valintatulosservice.security.AuditSession(user.oid, user.roles.map(Role(_)).toSet)),
+        InetAddress.getByName(inetAddress),
+        userAgent
+      )
+    }) match {
+      case Right(auditInfo) => auditInfo
+      case Left(failure) => throw failure
+    }
+  }
+
+  val erillishaunValinnantulosMuutosSwagger: OperationBuilder = (apiOperation[Unit]("muokkaaValinnantulosta")
     summary "Muokkaa erillishaun valinnantulosta"
     parameter pathParam[String]("valintatapajonoOid").description("Valintatapajonon OID")
     parameter headerParam[String]("If-Unmodified-Since").description(s"Aikaleima RFC 1123 määrittelemässä muodossa $sample").required
     parameter bodyParam[List[ValinnantulosRequest]].description("Muutokset valinnan tulokseen ja kirjautumistieto").required
-    )
+  )
   models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
     case ("ilmoittautumistila", mp) => ("ilmoittautumistila", ilmoittautumistilaModelProperty(mp))
     case ("valinnantila", mp) => ("valinnantila", valinnantilaModelProperty(mp))
@@ -140,19 +173,67 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService)(implicit va
   }))
   post("/:valintatapajonoOid", operation(erillishaunValinnantulosMuutosSwagger)) {
     contentType = formats("json")
-    val auditInfo = getAuditInfo(parsedBody.extract[ValinnantulosRequest])
+    val valinnantulosRequest: ValinnantulosRequest = parsedBody.extract[ValinnantulosRequest]
+    val auditInfo = getAuditInfo(valinnantulosRequest)
     if (!auditInfo.session._2.hasAnyRole(Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))) {
       throw new AuthorizationFailedException()
     }
-    val valintatapajonoOid = parseValintatapajonoOid
+    val valintatapajonoOid = parseValintatapajonoOid.fold(throw _, x => x)
     val ifUnmodifiedSince: Option[Instant] = parseIfUnmodifiedSince
     val valinnantulokset = parsedBody.extract[ValinnantulosRequest].valinnantulokset
-    Ok(
-      valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
-        valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, auditInfo, true)
-    )
+    val storeValinnantulosResult = valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
+      valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, auditInfo, true)
+    Try(hyvaksymiskirjeService.updateHyvaksymiskirjeet(
+      valinnantulokset.map(v => HyvaksymiskirjePatch(v.henkiloOid, v.hakukohdeOid, v.hyvaksymiskirjeLahetetty)).toSet, auditInfo)) match {
+        case Failure(e) => logger.warn("Virhe hyväksymiskirjeiden lähetyspäivämäärien päivityksessä", e)
+        case x if x.isSuccess => Unit
+    }
+    Ok(storeValinnantulosResult)
   }
 
+  val erillishaunValinnantulosSwagger: OperationBuilder = (apiOperation[List[Valinnantulos]]("valinnantulos")
+    summary "Erillishaun valinnantulos"
+    parameter pathParam[String]("valintatapajonoOid").description("Valintatapajonon OID")
+    parameter queryParam[String]("uid").description("Audit-käyttäjän uid")
+    parameter queryParam[String]("inetAddress").description("Audit-käyttäjän inetAddress")
+    parameter queryParam[String]("userAgent").description("Audit-käyttäjän userAgent")
+    parameter queryParam[Boolean]("hyvaksymiskirjeet").description("Palauta hyväksymiskirjeiden lähetyspäivämäärät")
+  )
+  models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
+    case ("ilmoittautumistila", mp) => ("ilmoittautumistila", ilmoittautumistilaModelProperty(mp))
+    case ("valinnantila", mp) => ("valinnantila", valinnantilaModelProperty(mp))
+    case p => p
+  }))
+  get("/:valintatapajonoOid", operation(erillishaunValinnantulosSwagger)) {
+    contentType = formats("json")
+    val auditInfo = getAuditInfo(
+      parseMandatoryParam("uid"),
+      parseMandatoryParam("inetAddress"),
+      parseMandatoryParam("userAgent")
+    )
+    if (!auditInfo.session._2.hasAnyRole(Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))) {
+      throw new AuthorizationFailedException()
+    }
+    val valintatapajonoOid = parseValintatapajonoOid.fold(throw _, x => x)
+
+    valinnantulosService.getValinnantuloksetForValintatapajono(valintatapajonoOid, auditInfo) match {
+      case None => Ok(List())
+      case Some((lastModified, valinnantulokset)) => {
+
+        lazy val hakukohdeOid = valinnantulokset.head.hakukohdeOid
+        lazy val hyvaksymiskirjeet = hyvaksymiskirjeService.getHyvaksymiskirjeet(hakukohdeOid, auditInfo)
+
+        def findLahetetty(henkiloOid:String) = hyvaksymiskirjeet.find(_.henkiloOid == henkiloOid).map(_.lahetetty)
+        def mergeTuloksetJaKirjeet = valinnantulokset.map(v => v.copy(hyvaksymiskirjeLahetetty = findLahetetty(v.henkiloOid)))
+
+        val isHyvaksymiskirjeet = !valinnantulokset.isEmpty && parseHyvaksymiskirjeet
+        val response = if (isHyvaksymiskirjeet) mergeTuloksetJaKirjeet else valinnantulokset
+
+        Ok(body = response, headers = Map("Last-Modified" -> createLastModifiedHeader(lastModified)))
+      }
+    }
+  }
 }
 
+case class ValinnantulosWithHyvaksymiskirje()
 case class ValinnantulosRequest(valinnantulokset:List[Valinnantulos], auditSession: AuditSessionRequest) extends RequestWithAuditSession

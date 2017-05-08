@@ -7,22 +7,22 @@ import fi.vm.sade.valintatulosservice.domain.Valintatila.Valintatila
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila.Vastaanotettavuustila
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 
-case class Hakemuksentulos(hakuOid: String, hakemusOid: String, hakijaOid: String, aikataulu: Option[Vastaanottoaikataulu], hakutoiveet: List[Hakutoiveentulos]) {
-  def findHakutoive(hakukohdeOid: String): Option[(Hakutoiveentulos, Int)] =
+case class Hakemuksentulos(hakuOid: HakuOid, hakemusOid: HakemusOid, hakijaOid: String, aikataulu: Option[Vastaanottoaikataulu], hakutoiveet: List[Hakutoiveentulos]) {
+  def findHakutoive(hakukohdeOid: HakukohdeOid): Option[(Hakutoiveentulos, Int)] =
     (for {
       (toive, indeksi) <- hakutoiveet.zipWithIndex
       if toive.hakukohdeOid == hakukohdeOid
     } yield (toive, indeksi + 1)).headOption
 }
 
-case class Hakutoiveentulos(hakukohdeOid: String,
+case class Hakutoiveentulos(hakukohdeOid: HakukohdeOid,
                             hakukohdeNimi: String,
                             tarjoajaOid: String,
                             tarjoajaNimi: String,
-                            valintatapajonoOid: String,
+                            valintatapajonoOid: ValintatapajonoOid,
                             valintatila: Valintatila,
                             vastaanottotila: Vastaanottotila,
                             ilmoittautumistila: HakutoiveenIlmoittautumistila,

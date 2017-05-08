@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakijanVastaanotto, HakijanVastaanottoAction}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijanVastaanotto, HakijanVastaanottoAction, HakukohdeOid}
 import org.json4s._
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
@@ -21,12 +21,13 @@ class HakijanVastaanottoServlet(vastaanottoService: VastaanottoService)(implicit
     summary "Tallenna hakukohteelle uusi vastaanottotila"
     parameter pathParam[String]("henkiloOid").description("Hakijan henkilönumero")
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid")
+    parameter pathParam[String]("hakemusOid").description("Hakemuksen oid")
     parameter bodyParam(hakijanVastaanottoActionModel))
   post("/henkilo/:henkiloOid/hakemus/:hakemusOid/hakukohde/:hakukohdeOid", operation(postVastaanottoSwagger)) {
 
     val personOid = params("henkiloOid")
-    val hakemusOid = params("hakemusOid")
-    val hakukohdeOid = params("hakukohdeOid")
+    val hakemusOid = HakemusOid(params("hakemusOid"))
+    val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     val action = parsedBody.extract[HakijanVastaanottoAction]
 
     vastaanottoService.vastaanotaHakijana(HakijanVastaanotto(personOid, hakemusOid, hakukohdeOid, action))

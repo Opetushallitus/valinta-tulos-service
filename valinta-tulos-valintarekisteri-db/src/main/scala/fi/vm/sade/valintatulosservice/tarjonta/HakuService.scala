@@ -5,7 +5,7 @@ import fi.vm.sade.utils.http.DefaultHttpClient
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.MonadHelper
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Kausi, Kevat, Syksy}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOidSerializer, HakuOid, HakuOidSerializer, HakukohdeOid, HakukohdeOidSerializer, Kausi, Kevat, Syksy, ValintatapajonoOidSerializer}
 import org.joda.time.DateTime
 import org.json4s.JsonAST.{JInt, JObject, JString}
 import org.json4s.jackson.JsonMethods._
@@ -17,14 +17,14 @@ import scala.util.control.NonFatal
 import scalaj.http.HttpOptions
 
 trait HakuService {
-  def getHaku(oid: String): Either[Throwable, Haku]
-  def getHakukohde(oid: String): Either[Throwable, Hakukohde]
+  def getHaku(oid: HakuOid): Either[Throwable, Haku]
+  def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde]
   def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]]
   def getKomos(komoOids: Seq[String]): Either[Throwable, Seq[Komo]]
-  def getHakukohdes(oids: Seq[String]): Either[Throwable, Seq[Hakukohde]]
-  def getHakukohdesForHaku(hakuOid: String): Either[Throwable, Seq[Hakukohde]]
-  def getHakukohdeOids(hakuOid:String): Either[Throwable, Seq[String]]
-  def getArbitraryPublishedHakukohdeOid(oid: String): Either[Throwable, String]
+  def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[Hakukohde]]
+  def getHakukohdesForHaku(hakuOid: HakuOid): Either[Throwable, Seq[Hakukohde]]
+  def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]]
+  def getArbitraryPublishedHakukohdeOid(oid: HakuOid): Either[Throwable, HakukohdeOid]
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]]
 }
 
@@ -38,7 +38,7 @@ object HakuService {
   }
 }
 
-case class Haku(oid: String, korkeakoulu: Boolean, toinenAste: Boolean,
+case class Haku(oid: HakuOid, korkeakoulu: Boolean, toinenAste: Boolean,
                 käyttääSijoittelua: Boolean, varsinaisenHaunOid: Option[String], sisältyvätHaut: Set[String],
                 hakuAjat: List[Hakuaika], koulutuksenAlkamiskausi: Option[Kausi], yhdenPaikanSaanto: YhdenPaikanSaanto,
                 nimi: Map[String, String])
@@ -49,7 +49,7 @@ case class Hakuaika(hakuaikaId: String, alkuPvm: Option[Long], loppuPvm: Option[
   }
 }
 
-case class Hakukohde(oid: String, hakuOid: String, tarjoajaOids: Set[String], hakukohdeKoulutusOids: List[String],
+case class Hakukohde(oid: HakukohdeOid, hakuOid: HakuOid, tarjoajaOids: Set[String], hakukohdeKoulutusOids: List[String],
                      koulutusAsteTyyppi: String, koulutusmoduuliTyyppi: String,
                      hakukohteenNimet: Map[String, String], tarjoajaNimet: Map[String, String], yhdenPaikanSaanto: YhdenPaikanSaanto,
                      tutkintoonJohtava:Boolean, koulutuksenAlkamiskausiUri:String, koulutuksenAlkamisvuosi:Int) {
@@ -111,9 +111,16 @@ class KomoSerializer extends CustomSerializer[Komo]((formats: Formats) => {
 })
 protected trait JsonHakuService {
   import org.json4s._
-  implicit val formats = DefaultFormats ++ List(new KoulutusSerializer, new KomoSerializer)
+  implicit val formats: Formats = DefaultFormats ++ List(
+    new KoulutusSerializer,
+    new KomoSerializer,
+    new HakuOidSerializer,
+    new HakukohdeOidSerializer,
+    new ValintatapajonoOidSerializer,
+    new HakemusOidSerializer
+  )
 
-  protected def toHaku(haku: HakuTarjonnassa) = {
+  protected def toHaku(haku: HakuTarjonnassa): Haku = {
     val korkeakoulu: Boolean = haku.kohdejoukkoUri.startsWith("haunkohdejoukko_12#")
     val yhteishaku: Boolean = haku.hakutapaUri.startsWith("hakutapa_01#")
     val varsinainenhaku: Boolean = haku.hakutyyppiUri.startsWith("hakutyyppi_01#1")
@@ -134,22 +141,22 @@ protected trait JsonHakuService {
 }
 
 class CachedHakuService(wrappedService: HakuService) extends HakuService {
-  private val byOid = TTLOptionalMemoize.memoize[String, Haku](oid => wrappedService.getHaku(oid), 4 * 60 * 60)
+  private val byOid = TTLOptionalMemoize.memoize[HakuOid, Haku](oid => wrappedService.getHaku(oid), 4 * 60 * 60)
   private val all = TTLOptionalMemoize.memoize[Unit, List[Haku]](_ => wrappedService.kaikkiJulkaistutHaut, 4 * 60 * 60)
 
-  override def getHaku(oid: String): Either[Throwable, Haku] = byOid(oid)
-  override def getHakukohde(oid: String): Either[Throwable, Hakukohde] = wrappedService.getHakukohde(oid)
+  override def getHaku(oid: HakuOid): Either[Throwable, Haku] = byOid(oid)
+  override def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde] = wrappedService.getHakukohde(oid)
   override def getKomos(kOids: Seq[String]): Either[Throwable, Seq[Komo]] = wrappedService.getKomos(kOids)
   override def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]] = wrappedService.getKoulutuses(koulutusOids)
-  override def getHakukohdes(oids: Seq[String]): Either[Throwable, Seq[Hakukohde]] = wrappedService.getHakukohdes(oids)
-  override def getHakukohdeOids(hakuOid:String): Either[Throwable, Seq[String]] = wrappedService.getHakukohdeOids(hakuOid)
-  override def getHakukohdesForHaku(hakuOid: String): Either[Throwable, Seq[Hakukohde]] = wrappedService.getHakukohdesForHaku(hakuOid)
-  override def getArbitraryPublishedHakukohdeOid(oid: String): Either[Throwable, String] = wrappedService.getArbitraryPublishedHakukohdeOid(oid)
+  override def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[Hakukohde]] = wrappedService.getHakukohdes(oids)
+  override def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]] = wrappedService.getHakukohdeOids(hakuOid)
+  override def getHakukohdesForHaku(hakuOid: HakuOid): Either[Throwable, Seq[Hakukohde]] = wrappedService.getHakukohdesForHaku(hakuOid)
+  override def getArbitraryPublishedHakukohdeOid(oid: HakuOid): Either[Throwable, HakukohdeOid] = wrappedService.getArbitraryPublishedHakukohdeOid(oid)
 
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = all()
 }
 
-private case class HakuTarjonnassa(oid: String, hakutapaUri: String, hakutyyppiUri: String, kohdejoukkoUri: String,
+private case class HakuTarjonnassa(oid: HakuOid, hakutapaUri: String, hakutyyppiUri: String, kohdejoukkoUri: String,
                                    koulutuksenAlkamisVuosi: Option[Int], koulutuksenAlkamiskausiUri: Option[String],
                                    sijoittelu: Boolean,
                                    parentHakuOid: Option[String], sisaltyvatHaut: Set[String], tila: String,
@@ -172,7 +179,7 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
     } yield status
   }
 
-  def getHaku(oid: String): Either[Throwable, Haku] = {
+  def getHaku(oid: HakuOid): Either[Throwable, Haku] = {
     val url = config.ophProperties.url("tarjonta-service.haku", oid)
     fetch(url) { response =>
       val hakuTarjonnassa = (parse(response) \ "result").extract[HakuTarjonnassa]
@@ -184,14 +191,14 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
     }
   }
 
-  def getHakukohdeOids(hakuOid:String): Either[Throwable, Seq[String]] = {
+  def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]] = {
     val url = config.ophProperties.url("tarjonta-service.haku", hakuOid)
     fetch(url) { response =>
-      (parse(response) \ "result" \ "hakukohdeOids" ).extract[List[String]]
+      (parse(response) \ "result" \ "hakukohdeOids" ).extract[List[HakukohdeOid]]
     }
   }
 
-  override def getArbitraryPublishedHakukohdeOid(hakuOid: String): Either[Throwable, String] = {
+  override def getArbitraryPublishedHakukohdeOid(hakuOid: HakuOid): Either[Throwable, HakukohdeOid] = {
     val url = config.ophProperties.url("tarjonta-service.hakukohde.search", mapAsJavaMap(Map(
       "tila" -> "VALMIS",
       "tila" -> "JULKAISTU",
@@ -200,13 +207,13 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
       "limit" -> 1
     )))
     fetch(url) { response =>
-      (parse(response) \ "result" \ "tulokset" \ "tulokset" \ "oid" ).extractOpt[String]
+      (parse(response) \ "result" \ "tulokset" \ "tulokset" \ "oid" ).extractOpt[HakukohdeOid]
     }.right.flatMap(_.toRight(new IllegalArgumentException(s"No hakukohde found for haku $hakuOid")))
   }
-  def getHakukohdes(oids: Seq[String]): Either[Throwable, List[Hakukohde]] = {
+  def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, List[Hakukohde]] = {
     MonadHelper.sequence(for {oid <- oids.toStream} yield getHakukohde(oid))
   }
-  def getHakukohde(hakukohdeOid: String): Either[Throwable, Hakukohde] = {
+  def getHakukohde(hakukohdeOid: HakukohdeOid): Either[Throwable, Hakukohde] = {
     val hakukohdeUrl = config.ophProperties.url(
       "tarjonta-service.hakukohde", hakukohdeOid, mapAsJavaMap(Map(
         "populateAdditionalKomotoFields" -> true
@@ -214,13 +221,13 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
     fetch(hakukohdeUrl) { response =>
       (parse(response) \ "result").extract[Hakukohde]
     }.left.map {
-      case e: IllegalArgumentException => new IllegalArgumentException(s"No hakukohde $hakukohdeOid found", e)
-      case e: IllegalStateException => new IllegalStateException(s"Parsing hakukohde $hakukohdeOid failed", e)
-      case e: Exception => new RuntimeException(s"Failed to get hakukohde $hakukohdeOid", e)
+      case e: IllegalArgumentException => new IllegalArgumentException(s"No hakukohde $hakukohdeOid ($hakukohdeUrl) found", e)
+      case e: IllegalStateException => new IllegalStateException(s"Parsing hakukohde $hakukohdeOid ($hakukohdeUrl) failed", e)
+      case e: Exception => new RuntimeException(s"Failed to get hakukohde $hakukohdeOid ($hakukohdeUrl)", e)
     }
   }
 
-  def getHakukohdesForHaku(hakuOid: String): Either[Throwable, Seq[Hakukohde]] = {
+  def getHakukohdesForHaku(hakuOid: HakuOid): Either[Throwable, Seq[Hakukohde]] = {
     getHakukohdeOids(hakuOid).right.flatMap(getHakukohdes)
   }
 

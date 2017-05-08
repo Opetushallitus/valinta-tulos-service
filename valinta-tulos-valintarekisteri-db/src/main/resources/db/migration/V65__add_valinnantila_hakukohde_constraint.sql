@@ -1,0 +1,1 @@
+alter table valinnantilat add foreign key (hakukohde_oid) references hakukohteet (hakukohde_oid);

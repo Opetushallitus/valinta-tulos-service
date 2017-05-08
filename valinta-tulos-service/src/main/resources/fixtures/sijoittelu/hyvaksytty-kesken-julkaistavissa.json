@@ -18,6 +18,12 @@
                     "sijoitteluajoId": {
                         "$numberLong": "1409055160621"
                     },
+                    "startMils": {
+                        "$numberLong": "1476936398704"
+                    },
+                    "endMils": {
+                        "$numberLong": "1476936709468"
+                    },
                     "hakuOid" : "1.2.246.562.29.173465377510",
                     "hakukohteet" : [
                         {
@@ -39,6 +45,7 @@
             },
             "oid": "1.2.246.562.5.72607738902",
             "tarjoajaOid": "1.2.246.562.10.591352080610",
+            "kaikkiJonotSijoiteltu": true,
             "valintatapajonot": [
                 {
                     "tasasijasaanto": "YLITAYTTO",
@@ -77,7 +84,8 @@
                                     "tila": "HYVAKSYTTY"
                                 }
                             ],
-                            "hyvaksyttyHarkinnanvaraisesti": false
+                            "hyvaksyttyHarkinnanvaraisesti": false,
+                            "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
                         }
                     ]
                 },
@@ -118,7 +126,8 @@
                                     "tila": "PERUUNTUNUT"
                                 }
                             ],
-                            "hyvaksyttyHarkinnanvaraisesti": false
+                            "hyvaksyttyHarkinnanvaraisesti": false,
+                            "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
                         }
                     ]
                 }

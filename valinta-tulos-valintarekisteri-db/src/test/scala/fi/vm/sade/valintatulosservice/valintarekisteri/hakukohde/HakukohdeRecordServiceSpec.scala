@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde
 
 import fi.vm.sade.valintatulosservice.tarjonta._
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakukohdeRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeRecord, Kausi}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, HakukohdeRecord, Kausi}
 import org.junit.runner.RunWith
 import org.specs2.matcher.MustThrownExpectations
 import org.specs2.mock.Mockito
@@ -69,8 +69,8 @@ class HakukohdeRecordServiceSpec extends Specification with MockitoMatchers with
   trait HakukohdeRecordServiceWithMocks extends Mockito with Scope with MustThrownExpectations {
     val hakuService = mock[HakuService]
     val hakukohdeRepository = mock[HakukohdeRepository]
-    val hakuOid = "1.2.246.562.5.73892938273982732"
-    val hakukohdeOid = "1.2.246.562.5.4890340398"
+    val hakuOid = HakuOid("1.2.246.562.5.73892938273982732")
+    val hakukohdeOid = HakukohdeOid("1.2.246.562.5.4890340398")
     val hakukohdeRecord = HakukohdeRecord(hakukohdeOid, hakuOid = hakuOid,
       yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true, Kausi("2016K"))
 

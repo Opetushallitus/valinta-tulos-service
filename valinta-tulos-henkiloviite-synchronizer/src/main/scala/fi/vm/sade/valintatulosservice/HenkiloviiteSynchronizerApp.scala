@@ -4,7 +4,7 @@ import java.util.Calendar
 import java.util.concurrent.{ScheduledThreadPoolExecutor, TimeUnit}
 
 import ch.qos.logback.access.jetty.RequestLogImpl
-import org.eclipse.jetty.server.handler.{ContextHandler, ContextHandlerCollection, ResourceHandler}
+import org.eclipse.jetty.server.handler.{ContextHandler, ContextHandlerCollection, RequestLogHandler, ResourceHandler}
 import org.eclipse.jetty.server.{RequestLog, Server}
 import org.eclipse.jetty.servlet.{ServletContextHandler, ServletHolder}
 import org.eclipse.jetty.util.resource.Resource
@@ -38,8 +38,12 @@ object HenkiloviiteSynchronizerApp {
 
     val rootContextHandlers = new ContextHandlerCollection
     rootContextHandlers.setHandlers(Array(resourceContext, servletContext))
-    server.setHandler(rootContextHandlers)
-    server.setRequestLog(requestLog(config))
+
+    val loggingHandlerWrapper = new RequestLogHandler()
+    loggingHandlerWrapper.setRequestLog(requestLog(config))
+    loggingHandlerWrapper.setHandler(rootContextHandlers)
+
+    server.setHandler(loggingHandlerWrapper)
 
     val synchronizerScheduler = startScheduledSynchronization(config.scheduler, synchronizer)
     Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {

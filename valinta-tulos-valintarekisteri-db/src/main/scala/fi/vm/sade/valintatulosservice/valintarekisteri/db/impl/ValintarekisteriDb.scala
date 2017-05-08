@@ -18,10 +18,13 @@ case class DbConfig(url: String,
 class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends ValintarekisteriRepository
   with VastaanottoRepositoryImpl
   with SijoitteluRepositoryImpl
+  with StoreSijoitteluRepositoryImpl
+  with MigraatioRepositoryImpl
   with HakukohdeRepositoryImpl
   with SessionRepositoryImpl
   with EnsikertalaisuusRepositoryImpl
   with ValinnantulosRepositoryImpl
+  with HyvaksymiskirjeRepositoryImpl
   with LukuvuosimaksuRepositoryImpl {
 
   logger.info(s"Database configuration: ${config.copy(password = Some("***"))}")

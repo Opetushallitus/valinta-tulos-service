@@ -1,15 +1,25 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.domain
 
-import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
+import java.time.{Instant, OffsetDateTime}
+import java.util.Date
 
-case class ValinnantulosUpdateStatus(status:Int, message:String, valintatapajonoOid:String, hakemusOid:String)
+import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, ValintatuloksenTila, Valintatulos}
 
-case class Valinnantulos(hakukohdeOid: String,
-                         valintatapajonoOid: String,
-                         hakemusOid: String,
+case class ValinnantulosUpdateStatus(status:Int, message:String, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid)
+
+case class KentanMuutos(field: String, from: Option[Any], to: Any)
+case class Muutos(changes: List[KentanMuutos], timestamp: OffsetDateTime)
+
+case class Valinnantulos(hakukohdeOid: HakukohdeOid,
+                         valintatapajonoOid: ValintatapajonoOid,
+                         hakemusOid: HakemusOid,
                          henkiloOid: String,
                          valinnantila: Valinnantila,
                          ehdollisestiHyvaksyttavissa: Option[Boolean],
+                         ehdollisenHyvaksymisenEhtoKoodi: Option[String],
+                         ehdollisenHyvaksymisenEhtoFI: Option[String],
+                         ehdollisenHyvaksymisenEhtoSV: Option[String],
+                         ehdollisenHyvaksymisenEhtoEN: Option[String],
                          julkaistavissa: Option[Boolean],
                          hyvaksyttyVarasijalta: Option[Boolean],
                          hyvaksyPeruuntunut: Option[Boolean],
@@ -17,7 +27,8 @@ case class Valinnantulos(hakukohdeOid: String,
                          ilmoittautumistila: SijoitteluajonIlmoittautumistila,
                          poistettava: Option[Boolean] = None,
                          ohitaVastaanotto: Option[Boolean] = None,
-                         ohitaIlmoittautuminen: Option[Boolean] = None) {
+                         ohitaIlmoittautuminen: Option[Boolean] = None,
+                         hyvaksymiskirjeLahetetty: Option[OffsetDateTime] = None) {
 
   def hasChanged(other:Valinnantulos) =
     other.valinnantila != valinnantila ||
@@ -79,11 +90,26 @@ case class Valinnantulos(hakukohdeOid: String,
     this.valinnantila,
     muokkaaja
   )
+
+  def toValintatulos(read:Instant) = {
+    val valintatulos = new Valintatulos()
+    valintatulos.setHakukohdeOid(hakukohdeOid.toString, "", "")
+    valintatulos.setValintatapajonoOid(valintatapajonoOid.toString, "", "")
+    valintatulos.setHakemusOid(hakemusOid.toString, "", "")
+    valintatulos.setHakijaOid(henkiloOid, "", "")
+    valintatulos.setIlmoittautumisTila(ilmoittautumistila.ilmoittautumistila, "", "")
+    julkaistavissa.foreach(j =>  valintatulos.setJulkaistavissa(j, "", ""))
+    hyvaksyttyVarasijalta.foreach(h => valintatulos.setHyvaksyttyVarasijalta(h, "", ""))
+    hyvaksyPeruuntunut.foreach(h => valintatulos.setHyvaksyPeruuntunut(h, "", ""))
+    ehdollisestiHyvaksyttavissa.foreach(e => valintatulos.setEhdollisestiHyvaksyttavissa(e, "", ""))
+    valintatulos.setRead(java.util.Date.from(read))
+    valintatulos
+  }
 }
 
-case class ValinnantuloksenOhjaus(hakemusOid: String,
-                                  valintatapajonoOid: String,
-                                  hakukohdeOid:String,
+case class ValinnantuloksenOhjaus(hakemusOid: HakemusOid,
+                                  valintatapajonoOid: ValintatapajonoOid,
+                                  hakukohdeOid: HakukohdeOid,
                                   ehdollisestiHyvaksyttavissa: Boolean,
                                   julkaistavissa: Boolean,
                                   hyvaksyttyVarasijalta: Boolean,
@@ -91,9 +117,21 @@ case class ValinnantuloksenOhjaus(hakemusOid: String,
                                   muokkaaja: String,
                                   selite: String)
 
-case class ValinnantilanTallennus(hakemusOid: String,
-                                  valintatapajonoOid: String,
-                                  hakukohdeOid:String,
+case class ValinnantilanTallennus(hakemusOid: HakemusOid,
+                                  valintatapajonoOid: ValintatapajonoOid,
+                                  hakukohdeOid: HakukohdeOid,
                                   henkiloOid:String,
                                   valinnantila: Valinnantila,
                                   muokkaaja: String)
+
+case class EhdollisenHyvaksynnanEhto(hakemusOid: HakemusOid,
+                                     valintatapajonoOid: ValintatapajonoOid,
+                                     hakukohdeOid: HakukohdeOid,
+                                     ehdollisenHyvaksymisenEhtoKoodi: String,
+                                     ehdollisenHyvaksymisenEhtoFI: String,
+                                     ehdollisenHyvaksymisenEhtoSV: String,
+                                     ehdollisenHyvaksymisenEhtoEN: String)
+
+case class Hyvaksymiskirje(henkiloOid: String,
+                           hakukohdeOid: HakukohdeOid,
+                           lahetetty: Date)

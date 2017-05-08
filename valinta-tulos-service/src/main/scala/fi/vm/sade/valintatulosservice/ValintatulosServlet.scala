@@ -19,15 +19,15 @@ import scala.util.Try
 abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vastaanottoService: VastaanottoService, ilmoittautumisService: IlmoittautumisService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
 
   lazy val exampleHakemuksenTulos = Hakemuksentulos(
-    "2.2.2.2",
-    "4.3.2.1",
+    HakuOid("2.2.2.2"),
+    HakemusOid("4.3.2.1"),
     "1.3.3.1",
     Some(Vastaanottoaikataulu(Some(new DateTime()), Some(14))),
     List(
       Hakutoiveentulos.julkaistavaVersioSijoittelunTuloksesta(
-        HakutoiveenSijoitteluntulos.kesken("1.2.3.4", "4.4.4.4"),
-        Hakutoive("1.2.3.4", "4.4.4.4", "Hakukohde1", "Tarjoaja1"),
-        Haku("5.5.5.5", korkeakoulu = true, toinenAste = false, käyttääSijoittelua = true, None, Set(),
+        HakutoiveenSijoitteluntulos.kesken(HakukohdeOid("1.2.3.4"), "4.4.4.4"),
+        Hakutoive(HakukohdeOid("1.2.3.4"), "4.4.4.4", "Hakukohde1", "Tarjoaja1"),
+        Haku(HakuOid("5.5.5.5"), korkeakoulu = true, toinenAste = false, käyttääSijoittelua = true, None, Set(),
           List(Hakuaika("12345", Some(System.currentTimeMillis()), Some(System.currentTimeMillis()))),
           Some(Kausi("2016S")),
           YhdenPaikanSaanto(false, ""), Map("kieli_fi" -> "Haun nimi")),
@@ -44,7 +44,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid, jonka tulokset halutaan")
   )
   get("/:hakuOid/hakemus/:hakemusOid", operation(getHakemusSwagger)) {
-    val hakemusOid = params("hakemusOid")
+    val hakemusOid = HakemusOid(params("hakemusOid"))
     valintatulosService.hakemuksentulos(hakemusOid) match {
       case Some(tulos) => tulos
       case _ => NotFound("error" -> "Not found")
@@ -58,13 +58,13 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     parameter pathParam[String]("hakuOid").description("Haun oid")
   )
   get("/:hakuOid", operation(getHakemuksetSwagger)) {
-    val hakuOid = params("hakuOid")
+    val hakuOid = HakuOid(params("hakuOid"))
     serveStreamingResults({ valintatulosService.hakemustenTulosByHaku(hakuOid, false) })
   }
 
   get("/:hakuOid/hakukohde/:hakukohdeOid", operation(getHakukohteenHakemuksetSwagger)) {
-    val hakuOid = params("hakuOid")
-    val hakukohdeOid = params("hakukohdeOid")
+    val hakuOid = HakuOid(params("hakuOid"))
+    val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     serveStreamingResults({ valintatulosService.hakemustenTulosByHakukohde(hakuOid, hakukohdeOid).right.toOption })
   }
 
@@ -83,7 +83,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid")
     )
   get("/:hakuOid/hakemus/:hakemusOid/hakukohde/:hakukohdeOid/vastaanotettavuus", operation(getHakukohteenVastaanotettavuusSwagger)) {
-    Try(vastaanottoService.tarkistaVastaanotettavuus(params("hakemusOid"), params("hakukohdeOid")))
+    Try(vastaanottoService.tarkistaVastaanotettavuus(HakemusOid(params("hakemusOid")), HakukohdeOid(params("hakukohdeOid"))))
       .map((_) => Ok())
       .recover({ case pae:PriorAcceptanceException => Forbidden("error" -> pae.getMessage) })
       .get
@@ -95,7 +95,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     notes "Bodyssä tulee antaa tieto hakukohteen ilmoittautumistilan muutoksesta Ilmoittautuminen tyyppinä. Esim:\n" +
     pretty(Extraction.decompose(
       Ilmoittautuminen(
-        "1.2.3.4",
+        HakukohdeOid("1.2.3.4"),
         LasnaKokoLukuvuosi,
         "henkilö: 5.5.5.5",
         "kuvaus mitä kautta muokkaus tehty"
@@ -106,8 +106,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid, jonka vastaanottotilaa ollaan muokkaamassa")
     )
   post("/:hakuOid/hakemus/:hakemusOid/ilmoittaudu", operation(postIlmoittautuminenSwagger)) {
-    val hakuOid = params("hakuOid")
-    val hakemusOid = params("hakemusOid")
+    val hakemusOid = HakemusOid(params("hakemusOid"))
     val ilmoittautuminen = parsedBody.extract[Ilmoittautuminen]
 
     ilmoittautumisService.ilmoittaudu(hakemusOid, ilmoittautuminen)
@@ -127,12 +126,12 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     def booleanParam(n: String): Option[Boolean] = params.get(n).map(_.toBoolean)
     def intParam(n: String): Option[Int] = params.get(n).map(_.toInt)
 
-    val hakuOid = params("hakuOid")
+    val hakuOid = HakuOid(params("hakuOid"))
     val sijoitteluajoId = params("sijoitteluajoId")
     val hyvaksytyt = booleanParam("hyvaksytyt")
     val ilmanHyvaksyntaa = booleanParam("ilmanHyvaksyntaa")
     val vastaanottaneet = booleanParam("vastaanottaneet")
-    val hakukohdeOid = multiParams.get("hakukohdeOid").map(_.toList)
+    val hakukohdeOid = multiParams.get("hakukohdeOid").map(_.toList.map(HakukohdeOid))
     val count = intParam("count")
     val index = intParam("index")
     val hakijaPaginationObject = valintatulosService.sijoittelunTulokset(hakuOid, sijoitteluajoId, hyvaksytyt, ilmanHyvaksyntaa, vastaanottaneet, hakukohdeOid, count, index)
@@ -145,9 +144,9 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     parameter pathParam[String]("sijoitteluajoId").description("""Sijoitteluajon id tai "latest"""").required
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid").required)
   get("/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakemus/:hakemusOid", operation(getHakemuksenSijoitteluajonTulosSwagger)) {
-    val hakuOid = params("hakuOid")
+    val hakuOid = HakuOid(params("hakuOid"))
     val sijoitteluajoId = params("sijoitteluajoId")
-    val hakemusOid = params("hakemusOid")
+    val hakemusOid = HakemusOid(params("hakemusOid"))
     valintatulosService.sijoittelunTulosHakemukselle(hakuOid, sijoitteluajoId, hakemusOid) match {
       case Some(hakijaDto) => Ok(JsonFormats.javaObjectToJsonString(hakijaDto))
       case None => Ok(JsonFormats.javaObjectToJsonString(new HakijaDTO()))
@@ -159,7 +158,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     parameter pathParam[String]("sijoitteluajoId").description("""Sijoitteluajon id tai "latest"""").required)
   get("/streaming/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakemukset", operation(getStreamingHaunSijoitteluajonTuloksetSwagger)) {
-    val hakuOid = params("hakuOid")
+    val hakuOid = HakuOid(params("hakuOid"))
     val sijoitteluajoId = params("sijoitteluajoId")
 
     val writer = response.writer

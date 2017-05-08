@@ -5,6 +5,7 @@ import java.util.Date
 import fi.vm.sade.valintatulosservice.domain.Valintatila.Valintatila
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila.Vastaanotettavuustila
 import fi.vm.sade.valintatulosservice.domain.{HakutoiveenIlmoittautumistila, HakutoiveenSijoittelunTilaTieto, Hakutoiveentulos}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, ValintatapajonoOid}
 import org.json4s.Extraction._
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
@@ -18,11 +19,11 @@ class HakutoiveentulosSerializer extends CustomSerializer[Hakutoiveentulos]((for
     val vastaanottotila = (x \ "vastaanottotila").extract[String]
     val vastaanotettavuustila = (x \ "vastaanotettavuustila").extract[Vastaanotettavuustila]
     Hakutoiveentulos(
-      hakukohdeOid = (x \ "hakukohdeOid").extract[String],
+      hakukohdeOid = (x \ "hakukohdeOid").extract[HakukohdeOid],
       hakukohdeNimi = (x \ "hakukohdeNimi").extract[String],
       tarjoajaOid = (x \ "tarjoajaOid").extract[String],
       tarjoajaNimi = (x \ "tarjoajaNimi").extract[String],
-      valintatapajonoOid = (x \ "valintatapajonoOid").extract[String],
+      valintatapajonoOid = (x \ "valintatapajonoOid").extract[ValintatapajonoOid],
       valintatila = valintatila,
       vastaanottotila = vastaanottotila,
       ilmoittautumistila = (x \ "ilmoittautumistila").extract[HakutoiveenIlmoittautumistila],
@@ -46,9 +47,9 @@ class HakutoiveentulosSerializer extends CustomSerializer[Hakutoiveentulos]((for
   }, {
   case tulos: Hakutoiveentulos =>
     implicit val f = formats
-    ("hakukohdeOid" -> tulos.hakukohdeOid) ~ ("hakukohdeNimi" -> tulos.hakukohdeNimi) ~
+    ("hakukohdeOid" -> tulos.hakukohdeOid.toString) ~ ("hakukohdeNimi" -> tulos.hakukohdeNimi) ~
       ("tarjoajaOid" -> tulos.tarjoajaOid) ~ ("tarjoajaNimi" -> tulos.tarjoajaNimi) ~
-      ("valintatapajonoOid" -> tulos.valintatapajonoOid) ~
+      ("valintatapajonoOid" -> tulos.valintatapajonoOid.toString) ~
       ("valintatila" -> decompose(tulos.valintatila)) ~
       ("vastaanottotila" -> decompose(tulos.vastaanottotila)) ~
       ("ilmoittautumistila" -> decompose(tulos.ilmoittautumistila)) ~

@@ -7,5 +7,10 @@ trait VtsSwaggerBase { this: SwaggerSupport =>
 
   registerModel[ErrorResponse]()
 
-  case class ModelResponseMessage(code: Int, message: String, responseModel: String = "ErrorResponse") extends ResponseMessage[String]
+  class ModelResponseMessage(override val code: Int, override val message: String)
+    extends ResponseMessage(code, message, responseModel = Some("ErrorResponse"))
+
+  object ModelResponseMessage {
+    def apply(code: Int, message: String): ModelResponseMessage = new ModelResponseMessage(code, message)
+  }
 }

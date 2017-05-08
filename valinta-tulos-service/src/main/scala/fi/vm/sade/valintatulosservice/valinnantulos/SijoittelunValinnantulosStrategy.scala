@@ -158,9 +158,9 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
     val vanha = vanhaOpt.getOrElse(throw new IllegalStateException(s"Vain valinnantuloksen muokkaus sallittu haussa ${haku.oid}"))
     audit.log(auditInfo.user, ValinnantuloksenMuokkaus,
       new Target.Builder()
-        .setField("hakukohde", vanha.hakukohdeOid)
-        .setField("valintatapajono", vanha.valintatapajonoOid)
-        .setField("hakemus", vanha.hakemusOid)
+        .setField("hakukohde", vanha.hakukohdeOid.toString)
+        .setField("valintatapajono", vanha.valintatapajonoOid.toString)
+        .setField("hakemus", vanha.hakemusOid.toString)
         .build(),
       new Changes.Builder()
         .updated("valinnantila", vanha.valinnantila.toString, uusi.valinnantila.toString)

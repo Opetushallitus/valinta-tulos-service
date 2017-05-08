@@ -8,6 +8,7 @@ import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoitteluFixtures
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 import org.scalatra.ScalatraServlet
 import org.scalatra.json.JacksonJsonSupport
 
@@ -24,9 +25,9 @@ class FixtureServlet(valintarekisteriDb: ValintarekisteriDb)(implicit val appCon
     SijoitteluFixtures(appConfig.sijoitteluContext.database, valintarekisteriDb).importFixture(fixturename + ".json", true)
     val ohjausparametrit = paramOption("ohjausparametrit").getOrElse(OhjausparametritFixtures.vastaanottoLoppuu2100)
     OhjausparametritFixtures.activeFixture = ohjausparametrit
-    val haku = paramOption("haku").getOrElse(HakuFixtures.korkeakouluYhteishaku)
+    val haku = paramOption("haku").map(HakuOid).getOrElse(HakuFixtures.korkeakouluYhteishaku)
     val useHakuAsHakuOid = paramOption("useHakuAsHakuOid").getOrElse("false")
-    val useHakuOid = paramOption("useHakuOid")
+    val useHakuOid = paramOption("useHakuOid").map(HakuOid)
     if(useHakuOid.isDefined) {
       HakuFixtures.useFixture(haku, List(useHakuOid.get))
     } else {

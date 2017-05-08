@@ -19,9 +19,9 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
   val vtsHost = "http://localhost:8097"
   //val cas_user = System.getProperty("cas_user")
   //val cas_password = System.getProperty("cas_password")
-  override val cas_url = casHost + "/cas"
+  override val casUrlOld = casHost + "/cas"
 
-  val vtsClient = new VtsAuthenticatingClient(casHost, "/valinta-tulos-service", cas_user, cas_password)
+  val vtsClient = new VtsAuthenticatingClient(casHost, vtsHost + "/valinta-tulos-service", "auth/login", casUserNew, casPasswordNew)
   val vtsSessionCookie = vtsClient.getVtsSession(casHost)
 
   val hakuOid = "1.2.246.562.29.75203638285"
@@ -35,8 +35,6 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
       val uusiHakemus = time("Get uusi hakemus") { get[Hakija](() => getNewHakemus(hakuOid, hakemusOid, vtsSessionCookie))}
       val vanhaHakemus = time("Get vanha hakemus") { get[Hakija](() => getOld(s"$oldSijoitteluHost/sijoittelu-service/resources/sijoittelu/$hakuOid/sijoitteluajo/latest/hakemus/$hakemusOid")) }
 
-      uusiHakemus.etunimi mustEqual vanhaHakemus.etunimi
-      uusiHakemus.sukunimi mustEqual vanhaHakemus.sukunimi
       uusiHakemus.hakemusOid mustEqual vanhaHakemus.hakemusOid
       uusiHakemus.hakijaOid mustEqual vanhaHakemus.hakijaOid
       uusiHakemus.hakutoiveet.size mustEqual vanhaHakemus.hakutoiveet.size
@@ -188,8 +186,6 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
           .hakijaOid(vanhaHakemus.hakijaOid)
           .pisteet(vanhaHakemus.pisteet)
           .paasyJaSoveltuvuusKokeenTulos(vanhaHakemus.paasyJaSoveltuvuusKokeenTulos)
-          .etunimi(vanhaHakemus.etunimi)
-          .sukunimi(vanhaHakemus.sukunimi)
           .prioriteetti(vanhaHakemus.prioriteetti)
           .jonosija(vanhaHakemus.jonosija)
           .tasasijaJonosija(vanhaHakemus.tasasijaJonosija)

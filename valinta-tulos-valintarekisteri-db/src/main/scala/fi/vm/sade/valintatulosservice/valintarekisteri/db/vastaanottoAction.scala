@@ -4,18 +4,18 @@ import java.util.Date
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
-case class VastaanottoRecord(henkiloOid: String, hakuOid: String, hakukohdeOid: String, action: VastaanottoAction, ilmoittaja: String, timestamp: Date)
+case class VastaanottoRecord(henkiloOid: String, hakuOid: HakuOid, hakukohdeOid: HakukohdeOid, action: VastaanottoAction, ilmoittaja: String, timestamp: Date)
 
 trait VastaanottoEvent {
   def henkiloOid: String
-  def hakemusOid: String
-  def hakukohdeOid: String
+  def hakemusOid: HakemusOid
+  def hakukohdeOid: HakukohdeOid
   def action: VastaanottoAction
   def ilmoittaja: String
   def selite: String
 }
 object VastaanottoEvent {
-  def unapply(vastaanottoEvent: VastaanottoEvent): Option[(String, String, String, VastaanottoAction, String, String)] = {
+  def unapply(vastaanottoEvent: VastaanottoEvent): Option[(String, HakemusOid, HakukohdeOid, VastaanottoAction, String, String)] = {
     Some((vastaanottoEvent.henkiloOid, vastaanottoEvent.hakemusOid, vastaanottoEvent.hakukohdeOid,
       vastaanottoEvent.action, vastaanottoEvent.ilmoittaja, vastaanottoEvent.selite))
   }

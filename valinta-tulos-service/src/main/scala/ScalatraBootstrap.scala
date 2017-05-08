@@ -10,13 +10,13 @@ import fi.vm.sade.valintatulosservice.config.{OhjausparametritAppConfig, VtsAppC
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.kela.KelaService
-import fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos.SijoittelunTulosMigraatioServlet
+import fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos.{SijoittelunTulosMigraatioScheduler, SijoittelunTulosMigraatioServlet, SijoitteluntulosMigraatioService}
 import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
-import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.{HakijaResolver, MigraatioServlet}
+import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.sijoittelu.{SijoitteluFixtures, SijoittelunTulosRestClient, SijoittelutulosService}
-import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, TarjontaHakuService}
+import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
@@ -62,29 +62,56 @@ class ScalatraBootstrap extends LifeCycle {
       appConfig.sijoitteluContext.valintatulosRepository, valintarekisteriDb, valintarekisteriDb)
     lazy val valintatulosCollection = new ValintatulosMongoCollection(appConfig.settings.valintatulosMongoConfig)
     lazy val mailPoller = new MailPoller(valintatulosCollection, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 100)
-    lazy val valintarekisteriService = new ValintarekisteriService(valintarekisteriDb, hakukohdeRecordService)
+    lazy val valintarekisteriService = new ValintarekisteriService(valintarekisteriDb, valintarekisteriDb, hakukohdeRecordService)
     lazy val authorizer = new OrganizationHierarchyAuthorizer(appConfig)
     lazy val sijoitteluService = new SijoitteluService(valintarekisteriDb, authorizer, hakuService)
     lazy val yhdenPaikanSaannos = new YhdenPaikanSaannos(hakuService, valintarekisteriDb)
-    lazy val valinnantulosService = new ValinnantulosService(valintarekisteriDb, authorizer, hakuService, appConfig.ohjausparametritService, hakukohdeRecordService, yhdenPaikanSaannos, appConfig, audit)
-    lazy val tarjontaHakuService = new TarjontaHakuService(appConfig.hakuServiceConfig)
+    lazy val valinnantulosService = new ValinnantulosService(
+      valintarekisteriDb,
+      authorizer,
+      hakuService,
+      appConfig.ohjausparametritService,
+      hakukohdeRecordService,
+      vastaanottoService,
+      yhdenPaikanSaannos,
+      appConfig,
+      audit)
     lazy val valintalaskentakoostepalveluService = new ValintalaskentakoostepalveluService(appConfig)
+    lazy val ldapUserService = new LdapUserService(appConfig.securityContext.directoryClient)
+    lazy val hyvaksymiskirjeService = new HyvaksymiskirjeService(valintarekisteriDb, hakuService, audit, authorizer)
+    lazy val migraatioService = new SijoitteluntulosMigraatioService(sijoittelunTulosRestClient, appConfig,
+      valintarekisteriDb, hakukohdeRecordService, hakuService, valintalaskentakoostepalveluService)
+    lazy val sijoitteluntulosMigraatioScheduler = new SijoittelunTulosMigraatioScheduler(migraatioService, appConfig)
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
 
-
     val migrationMode = System.getProperty("valinta-rekisteri-migration-mode")
+    val scheduledMigration = System.getProperty("valinta-rekisteri-scheduled-migration")
+
+    if (null != scheduledMigration && "true".equalsIgnoreCase(scheduledMigration)) {
+      sijoitteluntulosMigraatioScheduler.startMigrationScheduler()
+    }
 
     if(null != migrationMode && "true".equalsIgnoreCase(migrationMode)) {
-      context.mount(new MigraatioServlet(hakukohdeRecordService, valintarekisteriDb, new HakemusRepository(), appConfig.sijoitteluContext.raportointiService, hakuService), "/migraatio")
-      context.mount(new SijoittelunTulosMigraatioServlet(valintarekisteriDb, valintarekisteriDb, hakukohdeRecordService, tarjontaHakuService, valintalaskentakoostepalveluService), "/sijoittelun-tulos-migraatio")
+      context.mount(new SijoittelunTulosMigraatioServlet(migraatioService), "/sijoittelun-tulos-migraatio")
+      val forceRunningBasicVtsWithMigration = System.getProperty("valinta-rekisteri-force-basic-vts-with-migration")
+      if (forceRunningBasicVtsWithMigration != null && "true".equals(forceRunningBasicVtsWithMigration)) {
+        mountBasicVts()
+      }
     } else {
+      mountBasicVts()
+    }
+    context.mount(new HakukohdeRefreshServlet(valintarekisteriDb, hakukohdeRecordService), "/virkistys")
+
+    context.mount(new SwaggerServlet, "/swagger/*")
+
+    def mountBasicVts(): Unit = {
       context.mount(new BuildInfoServlet, "/")
       context.mount(new CasLogin(
         appConfig.settings.securitySettings.casUrl,
         new CasSessionService(
           appConfig.securityContext.casClient,
           appConfig.securityContext.casServiceIdentifier + "/auth/login",
-          appConfig.securityContext.directoryClient,
+          ldapUserService,
           valintarekisteriDb
         )
       ), "/auth/login")
@@ -95,12 +122,12 @@ class ScalatraBootstrap extends LifeCycle {
       context.mount(new EmailStatusServlet(mailPoller, valintatulosCollection, new MailDecorator(new HakemusRepository(), valintatulosCollection, hakuService, oppijanTunnistusService)), "/vastaanottoposti")
       context.mount(new EnsikertalaisuusServlet(valintarekisteriDb, appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus")
       context.mount(new HakijanVastaanottoServlet(vastaanottoService), "/vastaanotto")
-      context.mount(new ErillishakuServlet(valinnantulosService), "/erillishaku/valinnan-tulos")
+      context.mount(new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, ldapUserService), "/erillishaku/valinnan-tulos")
 
       val casSessionService = new CasSessionService(
         appConfig.securityContext.casClient,
         appConfig.securityContext.casServiceIdentifier,
-        appConfig.securityContext.directoryClient,
+        ldapUserService,
         valintarekisteriDb
       )
 
@@ -112,12 +139,11 @@ class ScalatraBootstrap extends LifeCycle {
       context.mount(new KelaServlet(audit, new KelaService(HakijaResolver(appConfig), hakuService, organisaatioService, valintarekisteriDb), valintarekisteriDb), "/cas/kela")
 
       context.mount(new ValinnantulosServlet(valinnantulosService, valintarekisteriDb), "/auth/valinnan-tulos")
-      context.mount(new SijoitteluServlet(sijoitteluService, valintarekisteriService, valintarekisteriDb), "/auth/sijoittelu")
+      context.mount(new SijoitteluServlet(sijoitteluService, valintarekisteriDb), "/auth/sijoittelu")
+      context.mount(new HyvaksymiskirjeServlet(hyvaksymiskirjeService, valintarekisteriDb), "/auth/hyvaksymiskirje")
       context.mount(new LukuvuosimaksuServletWithCAS(lukuvuosimaksuService, valintarekisteriDb, hakuService, authorizer), "/auth/lukuvuosimaksu")
+      context.mount(new MuutoshistoriaServlet(valinnantulosService, valintarekisteriDb), "/auth/muutoshistoria")
     }
-    context.mount(new HakukohdeRefreshServlet(valintarekisteriDb, hakukohdeRecordService), "/virkistys")
-
-    context.mount(new SwaggerServlet, "/swagger/*")
   }
 
   def createCasLdapFilter(casSessionService: CasSessionService, roles: Set[Role]): CasLdapFilter =

@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
+import java.sql.PreparedStatement
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
@@ -8,6 +9,8 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
 import scala.concurrent.duration.Duration
 import slick.driver.PostgresDriver.api._
+
+import scala.util.Try
 
 trait EnsikertalaisuusRepositoryImpl extends EnsikertalaisuusRepository with ValintarekisteriRepository {
 
@@ -36,7 +39,7 @@ trait EnsikertalaisuusRepositoryImpl extends EnsikertalaisuusRepository with Val
             where kk_tutkintoon_johtava
                 and henkilo = ${personOid}
             order by "timestamp" desc
-      """.as[(String, String, String, java.sql.Timestamp)]
+      """.as[(HakuOid, HakukohdeOid, String, java.sql.Timestamp)]
     ).map(vastaanotto => OpintopolunVastaanottotieto(personOid, vastaanotto._1, vastaanotto._2, vastaanotto._3, vastaanotto._4)).toList
     val oldList = runBlocking(
       sql"""select hakukohde, "timestamp" from vanhat_vastaanotot
@@ -44,7 +47,7 @@ trait EnsikertalaisuusRepositoryImpl extends EnsikertalaisuusRepository with Val
                 and (henkilo in (select linked_oid from henkiloviitteet where person_oid = ${personOid})
                      or henkilo = ${personOid})
             order by "timestamp" desc
-      """.as[(String, java.sql.Timestamp)]
+      """.as[(HakukohdeOid, java.sql.Timestamp)]
     ).map(vastaanotto => VanhaVastaanottotieto(personOid, vastaanotto._1, vastaanotto._2)).toList
     VastaanottoHistoria(newList, oldList)
   }
@@ -52,15 +55,16 @@ trait EnsikertalaisuusRepositoryImpl extends EnsikertalaisuusRepository with Val
   override def findEnsikertalaisuus(personOids: Set[String], koulutuksenAlkamisKausi: Kausi): Set[Ensikertalaisuus] = {
     val createTempTable = sqlu"create temporary table person_oids (oid varchar) on commit drop"
     val insertPersonOids = SimpleDBIO[Unit](jdbcActionContext => {
-      val statement = jdbcActionContext.connection.prepareStatement("""insert into person_oids values (?)""")
+      var statement:Option[PreparedStatement] = None
       try {
+        statement = Some(jdbcActionContext.connection.prepareStatement("""insert into person_oids values (?)"""))
         personOids.foreach(oid => {
-          statement.setString(1, oid)
-          statement.addBatch()
+          statement.get.setString(1, oid)
+          statement.get.addBatch()
         })
-        statement.executeBatch()
+        statement.get.executeBatch()
       } finally {
-        statement.close()
+        Try(statement.foreach(_.close))
       }
     })
     val findVastaanottos =

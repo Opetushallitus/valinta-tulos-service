@@ -67,7 +67,7 @@ class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, orga
     vastaanotot.groupBy(_.hakuOid).flatMap(fetchDataForVastaanotot).toSeq
   }
 
-  private def fetchDataForVastaanotot(entry: (String, Seq[VastaanottoRecord])): Seq[fi.vm.sade.valintatulosservice.kela.Vastaanotto] = {
+  private def fetchDataForVastaanotot(entry: (HakuOid, Seq[VastaanottoRecord])): Seq[fi.vm.sade.valintatulosservice.kela.Vastaanotto] = {
     val (hakuOid, vastaanotot) = entry
     def hakukohdeAndOrganisaatioForVastaanotto(vastaanotto: VastaanottoRecord, haku: Haku): Either[Throwable, Option[fi.vm.sade.valintatulosservice.kela.Vastaanotto]] = {
       for(hakukohde <- hakuService.getHakukohde(vastaanotto.hakukohdeOid).right;

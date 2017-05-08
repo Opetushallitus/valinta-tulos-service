@@ -1,22 +1,24 @@
 package fi.vm.sade.valintatulosservice.migraatio.vastaanotot
 
 import java.net.URLEncoder
+import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasParams}
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.config.{StubbedExternalDeps, AppConfig}
+import fi.vm.sade.valintatulosservice.config.StubbedExternalDeps
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import org.http4s._
+import org.http4s.client.middleware.{Retry, RetryPolicy}
 import org.http4s.headers.`Content-Type`
 import org.json4s.JsonAST.JValue
 import org.json4s.JsonDSL._
 import org.json4s._
 import org.json4s.native.JsonMethods._
-import scala.concurrent.duration._
 
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.duration._
 import scalaz.concurrent.Task
+import scalaz.{-\/, \/-}
 
 case class Henkilo(oidHenkilo: String, hetu: String, etunimet: String, sukunimi: String)
 
@@ -41,39 +43,36 @@ object HakijaResolver {
 class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with Logging with HakijaResolver {
   private val hakuClient = createCasClient(appConfig, "/haku-app")
   private val henkiloClient = createCasClient(appConfig, "/authentication-service")
-  private val hakuUrlBase = appConfig.ophUrlProperties.url("haku-app.listfull.queryBase")
   private val henkiloPalveluUrlBase = appConfig.ophUrlProperties.url("authentication-service.henkilo")
 
   case class HakemusHenkilo(personOid: Option[String], hetu: Option[String], etunimet: String, sukunimi: String, kutsumanimet: String,
-                            syntymaaika: String, aidinkieli: String, sukupuoli: String)
-
-
+                            syntymaaika: String, aidinkieli: Option[String], sukupuoli: Option[String])
 
   private def findPersonOidByHetu(hetu: String): Option[String] = findPersonByHetu(hetu).map(_.oidHenkilo)
 
-  override def findPersonByHetu(hetu: String, timeout: Duration = 60 seconds): Option[Henkilo] = {
-    implicit val henkiloReader = new Reader[Option[Henkilo]] {
-      override def read(v: JValue): Option[Henkilo] = {
-        val henkilotiedot = (v \\ "results")
-        henkilotiedot match {
-          case JArray(tiedot) if tiedot.isEmpty =>
-            None
-          case _ =>
-            Some(Henkilo( (v \\ "oidHenkilo").extract[String], (henkilotiedot \ "hetu").extract[String],
-              (henkilotiedot \ "etunimet").extract[String], (henkilotiedot \ "sukunimi").extract[String]))
+  override def findPersonByHetu(hetu: String, timeout: Duration = 60.seconds): Option[Henkilo] = {
+    implicit val henkiloReader = new Reader[Henkilo] {
+      override def read(v: JValue): Henkilo = {
+        val searchResults = (v \\ "results").children
+        if (searchResults.values.size != 1) {
+          val message = s"Found ${searchResults.values.size} hits for same hetu! $searchResults"
+          logger.error(message)
+          throw new IllegalStateException(message)
         }
-
+        val onlyResult: JValue = searchResults.arr.head
+        Henkilo( (onlyResult \ "oidHenkilo").extract[String], (onlyResult \ "hetu").extract[String],
+          (onlyResult \ "etunimet").extract[String], (onlyResult \ "sukunimi").extract[String])
       }
     }
 
-    implicit val henkiloDecoder = org.http4s.json4s.native.jsonOf[Option[Henkilo]]
+    implicit val henkiloDecoder = org.http4s.json4s.native.jsonOf[Henkilo]
 
-    Try(henkiloClient.prepare(createUri(henkiloPalveluUrlBase + "?q=", hetu)).timed(timeout).flatMap {
-      case r if 200 == r.status.code => r.as[Option[Henkilo]]
+    henkiloClient.httpClient.fetch(Request(uri = createUri(henkiloPalveluUrlBase + "?q=", hetu))) {
+      case r if 200 == r.status.code => r.as[Henkilo]
       case r => Task.fail(new RuntimeException(r.toString))
-    }.run) match {
-      case Success(henkilo) => henkilo
-      case Failure(t) =>
+    }.attemptRunFor(timeout) match {
+      case \/-(henkilo) => Some(henkilo)
+      case -\/(t) =>
         handleFailure(t, "searching person oid by hetu " + Option(hetu).map(_.replaceAll(".","*")))
         throw t
     }
@@ -82,27 +81,32 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
   def findPersonOidByHakemusOid(hakemusOid: String): Option[String] = {
     implicit val hakemusHenkiloReader = new Reader[HakemusHenkilo] {
       override def read(v: JValue): HakemusHenkilo = {
-        val result: JValue = (v \\ "answers")
-        val henkilotiedot = (result \ "henkilotiedot")
-        HakemusHenkilo( (v \\ "personOid").extractOpt[String], (henkilotiedot \ "Henkilotunnus").extractOpt[String],
+        val henkilotiedot = v \ "answers" \ "henkilotiedot"
+        HakemusHenkilo( (v \ "personOid").extractOpt[String], (henkilotiedot \ "Henkilotunnus").extractOpt[String],
           (henkilotiedot \ "Etunimet").extract[String], (henkilotiedot \ "Sukunimi").extract[String],
           (henkilotiedot \ "Kutsumanimi").extract[String], (henkilotiedot \ "syntymaaika").extract[String],
-          (henkilotiedot \ "aidinkieli").extract[String], (henkilotiedot \ "sukupuoli").extract[String])
+          (henkilotiedot \ "aidinkieli").extractOpt[String], (henkilotiedot \ "sukupuoli").extractOpt[String])
       }
     }
 
     implicit val hakemusHenkiloDecoder = org.http4s.json4s.native.jsonOf[HakemusHenkilo]
 
-    ( Try[HakemusHenkilo](hakuClient.prepare(Request(method = Method.GET, uri = createUri(hakuUrlBase, hakemusOid))).flatMap {
+    val stringUri = appConfig.ophUrlProperties.url("haku-app.application.queryBase", hakemusOid)
+    val url = Uri.fromString(stringUri).getOrElse(throw new RuntimeException(s"Invalid uri: $stringUri"))
+    val totalOperationTimeout = Duration(1, TimeUnit.MINUTES)
+    val retryingClient = Retry(RetryPolicy.exponentialBackoff(totalOperationTimeout, maxRetry = 10))(hakuClient.httpClient)
+    val henkiloFromHakemus = retryingClient.fetch(Request(method = Method.GET, uri = url)) {
       case r if 200 == r.status.code => r.as[HakemusHenkilo]
-      case r => Task.fail(new RuntimeException(r.toString))
-    }.run) match {
-      case Success(henkilo: HakemusHenkilo) => Some(henkilo)
-      case Failure(t) => handleFailure(t, "finding henkilö from hakemus")
-    } ) match {
+      case r => Task.fail(new RuntimeException(s"Got non-OK response from haku-app when fetching hakemus $hakemusOid: ${r.toString}"))
+    }.attemptRunFor(totalOperationTimeout.minus(Duration(1, TimeUnit.SECONDS))) match {
+      case \/-(henkilo: HakemusHenkilo) => Some(henkilo)
+      case -\/(t) => handleFailure(t, s"finding henkilö from hakemus $hakemusOid")
+    }
+
+    henkiloFromHakemus match {
       case Some(henkilo) if henkilo.personOid.isDefined => henkilo.personOid
-      case Some(henkilo) => henkilo.hetu.map(findPersonOidByHetu).getOrElse(createPerson(henkilo))
-      case None => None
+      case Some(henkilo) => henkilo.hetu.map(findPersonOidByHetu).getOrElse({throw new RuntimeException(s"Hakemuksella $hakemusOid ei hakijaoidia!")})
+      case None => throw new RuntimeException(s"Hakemuksen $hakemusOid henkilotietoja ei saatu parsittua.")
     }
   }
 
@@ -118,33 +122,28 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
       ("syntymaaika" -> new java.text.SimpleDateFormat("yyyy-MM-dd").format(syntymaaika)) ~
       ("sukupuoli" -> henkilo.sukupuoli) ~
       ("asiointiKieli" -> ("kieliKoodi" -> "fi")) ~
-      ("aidinkieli" -> ("kieliKoodi" -> henkilo.aidinkieli.toLowerCase))))
+      ("aidinkieli" -> ("kieliKoodi" -> henkilo.aidinkieli.getOrElse("fi").toLowerCase))))
 
     implicit val jsonStringEncoder: EntityEncoder[String] = EntityEncoder
       .stringEncoder(Charset.`UTF-8`).withContentType(`Content-Type`(MediaType.`application/json`, Charset.`UTF-8`))
 
-    Try(
-      henkiloClient.prepare({
-        val task = Request(method = Method.POST, uri = createUri(henkiloPalveluUrlBase + "/", ""))
-          .withBody(json)(jsonStringEncoder)
-        task
-        }
-      ).flatMap {
-        case r if 200 == r.status.code => r.as[String]
-        case r => Task.fail(new RuntimeException(r.toString))
-      }.run
-    ) match {
-      case Success(response) => {
-        logger.info(s"Luotiin henkilo oid=${response}")
+    val task: Task[Request] = Request(method = Method.POST, uri = createUri(henkiloPalveluUrlBase + "/", ""))
+      .withBody(json)(jsonStringEncoder)
+
+    henkiloClient.httpClient.fetch(task) {
+      case r if 200 == r.status.code => r.as[String]
+      case r => Task.fail(new RuntimeException(r.toString))
+    }.attemptRunFor(Duration(30, TimeUnit.SECONDS)) match {
+      case \/-(response) =>
+        logger.info(s"Luotiin henkilo oid=$response")
         Some(response)
-      }
-      case Failure(t) => handleFailure(t, "creating person")
+      case -\/(t) => handleFailure(t, "creating person")
     }
   }
 
   private def handleFailure(t:Throwable, message:String) = t match {
-    case pe:ParseException => logger.error(s"Got parse exception when ${message} ${pe.failure.details}, ${pe.failure.sanitized}", t); None
-    case e:Exception => logger.error(s"Got exception when ${message} ${e.getMessage}", e); None
+    case pf: ParseFailure => logger.error(s"Got parse exception when $message : $pf, ${pf.sanitized}", t); None
+    case e:Exception => logger.error(s"Got exception when $message : ${e.getMessage}", e); None
   }
 
   private def createUri(base: String, rest: String): Uri = {
@@ -154,6 +153,6 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
 
   private def createCasClient(appConfig: VtsAppConfig, targetService: String): CasAuthenticatingClient = {
     val params = CasParams(targetService, appConfig.settings.securitySettings.casUsername, appConfig.settings.securitySettings.casPassword)
-    new CasAuthenticatingClient(appConfig.securityContext.casClient, params, org.http4s.client.blaze.defaultClient)
+    new CasAuthenticatingClient(appConfig.securityContext.casClient, params, org.http4s.client.blaze.defaultClient, "valinta-tulos-service") // TODO move clientSubSystemCode to constant
   }
 }

@@ -4,18 +4,18 @@ import java.util.Date
 
 import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila._
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiTehty, SijoitteluajonIlmoittautumistila, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiTehty, HakemusOid, HakukohdeOid, ValintatapajonoOid, SijoitteluajonIlmoittautumistila, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
 
 case class HakemuksenSijoitteluntulos (
-  hakemusOid: String,
+  hakemusOid: HakemusOid,
   hakijaOid: Option[String],
   hakutoiveet: List[HakutoiveenSijoitteluntulos]
 )
 case class HakutoiveenSijoitteluntulos(
-  hakukohdeOid: String,
+  hakukohdeOid: HakukohdeOid,
   tarjoajaOid: String,
-  valintatapajonoOid: String,
+  valintatapajonoOid: ValintatapajonoOid,
   hakijanTilat: HakutoiveenSijoittelunTilaTieto,
   virkailijanTilat: HakutoiveenSijoittelunTilaTieto,
   vastaanottoDeadline: Option[Date],
@@ -41,12 +41,12 @@ case class HakutoiveenSijoitteluntulos(
 }
 
 object HakutoiveenSijoitteluntulos {
-  def kesken(hakukohdeOid: String, tarjoajaOid: String) = {
+  def kesken(hakukohdeOid: HakukohdeOid, tarjoajaOid: String) = {
     val tilat = HakutoiveenSijoittelunTilaTieto(Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa)
     HakutoiveenSijoitteluntulos(
       hakukohdeOid,
       tarjoajaOid,
-      valintatapajonoOid = "",
+      valintatapajonoOid = ValintatapajonoOid(""),
       hakijanTilat = tilat,
       virkailijanTilat = tilat,
       vastaanottoDeadline = None,

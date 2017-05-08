@@ -12,7 +12,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.JsonAST._
 import org.json4s.ext.EnumNameSerializer
 import org.json4s.native.JsonMethods._
-import org.json4s.{CustomSerializer, DefaultFormats}
+import org.json4s.{CustomSerializer, DefaultFormats, Formats}
 import org.specs2.mutable.Specification
 import slick.dbio.DBIOAction
 import slick.driver.PostgresDriver.api._
@@ -38,6 +38,10 @@ trait ValintarekisteriDbTools extends Specification {
       new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").parse(dateValue)
     case JObject(List(JField("$date", JString(dateValue)))) =>
       new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").parse(dateValue)
+    case JString(dateValue) if dateValue.endsWith("Z") =>
+      new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse(dateValue)
+    case JString(dateValue) =>
+      new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(dateValue)
   }, {
     case x: Date => JObject(List(JField("$date", JString("" + x))))
   }))
@@ -60,7 +64,17 @@ trait ValintarekisteriDbTools extends Specification {
     case x: ValinnantilanTarkenne => JString(x.tilankuvauksenTarkenne.toString)
   }))
 
-  implicit val formats = DefaultFormats ++ List(new NumberLongSerializer, new TasasijasaantoSerializer, new ValinnantilaSerializer, new DateSerializer, new TilankuvauksenTarkenneSerializer)
+  implicit val formats = DefaultFormats ++ List(
+    new NumberLongSerializer,
+    new TasasijasaantoSerializer,
+    new ValinnantilaSerializer,
+    new DateSerializer,
+    new TilankuvauksenTarkenneSerializer,
+    new HakuOidSerializer,
+    new HakukohdeOidSerializer,
+    new ValintatapajonoOidSerializer,
+    new HakemusOidSerializer
+  )
 
   def hakijaryhmaOidsToSet(hakijaryhmaOids:Option[String]): Set[String] = {
     hakijaryhmaOids match {
@@ -173,6 +187,103 @@ trait ValintarekisteriDbTools extends Specification {
           dhakemus.getHakemusOid mustEqual whakemus.getHakemusOid
           dhakemus.getPisteet mustEqual whakemus.getPisteet
           // TODO: ei datassa? dhakemus.getPaasyJaSoveltuvuusKokeenTulos mustEqual whakemus.getPaasyJaSoveltuvuusKokeenTulos
+          dhakemus.getPrioriteetti mustEqual whakemus.getPrioriteetti
+          dhakemus.getJonosija mustEqual whakemus.getJonosija
+          dhakemus.getTasasijaJonosija mustEqual whakemus.getTasasijaJonosija
+          dhakemus.getTila.toString mustEqual whakemus.getTila.toString
+          dhakemus.getTilanKuvaukset mustEqual whakemus.getTilanKuvaukset
+          // TODO tallennetaanko historia vanhoista? dhakemus.getTilahistoria mustEqual whakemus.getTilahistoria
+          dhakemus.isHyvaksyttyHarkinnanvaraisesti mustEqual whakemus.isHyvaksyttyHarkinnanvaraisesti
+          dhakemus.getVarasijanNumero mustEqual whakemus.getVarasijanNumero
+          dhakemus.getValintatapajonoOid mustEqual wvalintatapajono.getOid
+          dhakemus.isOnkoMuuttunutViimeSijoittelussa mustEqual whakemus.isOnkoMuuttunutViimeSijoittelussa
+          dhakemus.getHyvaksyttyHakijaryhmista.asScala.diff(whakemus.getHyvaksyttyHakijaryhmista.asScala) mustEqual Set()
+          dhakemus.getSiirtynytToisestaValintatapajonosta mustEqual whakemus.getSiirtynytToisestaValintatapajonosta
+          //TODO: ?? dhakemus.getTodellinenJonosija mustEqual whakemus.getJonosija
+
+          dhakemus.getPistetiedot.size mustEqual whakemus.getPistetiedot.size
+          dhakemus.getPistetiedot.asScala.toList.foreach(dpistetieto => {
+            val wpistetieto = whakemus.getPistetiedot.asScala.toList.find(_.getTunniste.equals(dpistetieto.getTunniste)).head
+            dpistetieto.getArvo mustEqual wpistetieto.getArvo
+            dpistetieto.getLaskennallinenArvo mustEqual wpistetieto.getLaskennallinenArvo
+            dpistetieto.getOsallistuminen mustEqual wpistetieto.getOsallistuminen
+            dpistetieto.getTyypinKoodiUri mustEqual null
+            dpistetieto.isTilastoidaan mustEqual null
+          })
+        })
+      })
+    })
+    true must beTrue
+  }
+
+  def compareSijoitteluWrapperToEntity(wrapper:SijoitteluWrapper, entity:SijoitteluAjo, hakukohteet: java.util.List[Hakukohde]) = {
+    val simpleFormat = new SimpleDateFormat("dd-MM-yyyy")
+
+    def format(date:java.util.Date) = date match {
+      case null => null
+      case x:java.util.Date => simpleFormat.format(x)
+    }
+
+    entity.getSijoitteluajoId mustEqual wrapper.sijoitteluajo.getSijoitteluajoId
+    entity.getHakuOid mustEqual wrapper.sijoitteluajo.getHakuOid
+    entity.getStartMils mustEqual wrapper.sijoitteluajo.getStartMils
+    entity.getEndMils mustEqual wrapper.sijoitteluajo.getEndMils
+
+    hakukohteet.size mustEqual wrapper.hakukohteet.size
+    hakukohteet.asScala.toList.foreach(dhakukohde => {
+      val whakukohde = wrapper.hakukohteet.find(_.getOid.equals(dhakukohde.getOid)).head
+      dhakukohde.getSijoitteluajoId mustEqual wrapper.sijoitteluajo.getSijoitteluajoId
+      //dhakukohde.getEnsikertalaisuusHakijaryhmanAlimmatHyvaksytytPisteet mustEqual null
+      dhakukohde.getTarjoajaOid mustEqual whakukohde.getTarjoajaOid
+      dhakukohde.isKaikkiJonotSijoiteltu mustEqual whakukohde.isKaikkiJonotSijoiteltu
+
+      dhakukohde.getHakijaryhmat.size mustEqual whakukohde.getHakijaryhmat.size
+      dhakukohde.getHakijaryhmat.asScala.toList.foreach(dhakijaryhma => {
+        val whakijaryhma = whakukohde.getHakijaryhmat.asScala.toList.find(_.getOid.equals(dhakijaryhma.getOid)).head
+        dhakijaryhma.getPrioriteetti mustEqual whakijaryhma.getPrioriteetti
+        dhakijaryhma.getPaikat mustEqual whakijaryhma.getPaikat
+        dhakijaryhma.getNimi mustEqual whakijaryhma.getNimi
+        dhakijaryhma.getHakukohdeOid mustEqual whakukohde.getOid
+        dhakijaryhma.getKiintio mustEqual whakijaryhma.getKiintio
+        dhakijaryhma.isKaytaKaikki mustEqual whakijaryhma.isKaytaKaikki
+        dhakijaryhma.isTarkkaKiintio mustEqual whakijaryhma.isTarkkaKiintio
+        dhakijaryhma.isKaytetaanRyhmaanKuuluvia mustEqual whakijaryhma.isKaytetaanRyhmaanKuuluvia
+        dhakijaryhma.getHakemusOid.asScala.toList.diff(whakijaryhma.getHakemusOid.asScala.toList) mustEqual List()
+        dhakijaryhma.getValintatapajonoOid mustEqual whakijaryhma.getValintatapajonoOid
+        dhakijaryhma.getHakijaryhmatyyppikoodiUri mustEqual whakijaryhma.getHakijaryhmatyyppikoodiUri
+      })
+
+      dhakukohde.getValintatapajonot.size mustEqual whakukohde.getValintatapajonot.size
+      dhakukohde.getValintatapajonot.asScala.toList.foreach(dvalintatapajono => {
+        val wvalintatapajono = whakukohde.getValintatapajonot.asScala.toList.find(_.getOid.equals(dvalintatapajono.getOid)).head
+        dvalintatapajono.getAlinHyvaksyttyPistemaara mustEqual wvalintatapajono.getAlinHyvaksyttyPistemaara
+        dvalintatapajono.getAlkuperaisetAloituspaikat mustEqual wvalintatapajono.getAlkuperaisetAloituspaikat
+        dvalintatapajono.getAloituspaikat mustEqual wvalintatapajono.getAloituspaikat
+        dvalintatapajono.getEiVarasijatayttoa mustEqual wvalintatapajono.getEiVarasijatayttoa
+        dvalintatapajono.getHakemustenMaara mustEqual wvalintatapajono.getHakemukset.size
+        dvalintatapajono.getKaikkiEhdonTayttavatHyvaksytaan mustEqual wvalintatapajono.getKaikkiEhdonTayttavatHyvaksytaan
+        dvalintatapajono.getNimi mustEqual wvalintatapajono.getNimi
+        dvalintatapajono.getPoissaOlevaTaytto mustEqual wvalintatapajono.getPoissaOlevaTaytto
+        dvalintatapajono.getPrioriteetti mustEqual wvalintatapajono.getPrioriteetti
+        dvalintatapajono.getTasasijasaanto.toString mustEqual wvalintatapajono.getTasasijasaanto.toString
+        dvalintatapajono.getTayttojono mustEqual wvalintatapajono.getTayttojono
+        wvalintatapajono.getValintaesitysHyvaksytty match {
+          case null => dvalintatapajono.getValintaesitysHyvaksytty mustEqual false
+          case x => dvalintatapajono.getValintaesitysHyvaksytty mustEqual x
+        }
+        dvalintatapajono.getVaralla mustEqual wvalintatapajono.getVaralla
+        dvalintatapajono.getVarasijat mustEqual wvalintatapajono.getVarasijat
+        dvalintatapajono.getVarasijaTayttoPaivat mustEqual wvalintatapajono.getVarasijaTayttoPaivat
+        format(dvalintatapajono.getVarasijojaKaytetaanAlkaen) mustEqual format(wvalintatapajono.getVarasijojaKaytetaanAlkaen)
+        format(dvalintatapajono.getVarasijojaTaytetaanAsti) mustEqual format(wvalintatapajono.getVarasijojaTaytetaanAsti)
+
+        dvalintatapajono.getHakemukset.size mustEqual wvalintatapajono.getHakemukset.size
+        dvalintatapajono.getHakemukset.asScala.toList.foreach(dhakemus => {
+          val whakemus = wvalintatapajono.getHakemukset.asScala.toList.find(_.getHakemusOid.equals(dhakemus.getHakemusOid)).head
+          dhakemus.getHakijaOid mustEqual whakemus.getHakijaOid
+          dhakemus.getHakemusOid mustEqual whakemus.getHakemusOid
+          dhakemus.getPisteet mustEqual whakemus.getPisteet
+          // TODO: ei datassa? dhakemus.getPaasyJaSoveltuvuusKokeenTulos mustEqual whakemus.getPaasyJaSoveltuvuusKokeenTulos
           dhakemus.getEtunimi mustEqual whakemus.getEtunimi
           dhakemus.getSukunimi mustEqual whakemus.getSukunimi
           dhakemus.getPrioriteetti mustEqual whakemus.getPrioriteetti
@@ -183,7 +294,7 @@ trait ValintarekisteriDbTools extends Specification {
           // TODO tallennetaanko historia vanhoista? dhakemus.getTilahistoria mustEqual whakemus.getTilahistoria
           dhakemus.isHyvaksyttyHarkinnanvaraisesti mustEqual whakemus.isHyvaksyttyHarkinnanvaraisesti
           dhakemus.getVarasijanNumero mustEqual whakemus.getVarasijanNumero
-          dhakemus.getValintatapajonoOid mustEqual wvalintatapajono.getOid
+          //dhakemus.getValintatapajonoOid mustEqual wvalintatapajono.getOid
           dhakemus.isOnkoMuuttunutViimeSijoittelussa mustEqual whakemus.isOnkoMuuttunutViimeSijoittelussa
           dhakemus.getHyvaksyttyHakijaryhmista.asScala.diff(whakemus.getHyvaksyttyHakijaryhmista.asScala) mustEqual List()
           dhakemus.getSiirtynytToisestaValintatapajonosta mustEqual whakemus.getSiirtynytToisestaValintatapajonosta
@@ -196,7 +307,7 @@ trait ValintarekisteriDbTools extends Specification {
             dpistetieto.getLaskennallinenArvo mustEqual wpistetieto.getLaskennallinenArvo
             dpistetieto.getOsallistuminen mustEqual wpistetieto.getOsallistuminen
             dpistetieto.getTyypinKoodiUri mustEqual null
-            dpistetieto.isTilastoidaan mustEqual null
+            dpistetieto.isTilastoidaan mustEqual false
           })
         })
       })
@@ -252,15 +363,15 @@ trait ValintarekisteriDbTools extends Specification {
       h.getSijoitteluajoId.equals(sijoitteluajo.getSijoitteluajoId)
     }), valintatulokset)
     if(tallennaHakukohteet) {
-      hakukohteet.foreach(h => insertHakukohde(h.getOid, sijoitteluajo.getHakuOid))
+      hakukohteet.foreach(h => insertHakukohde(HakukohdeOid(h.getOid), HakuOid(sijoitteluajo.getHakuOid)))
     }
     wrapper
   }
 
-  def insertHakukohde(hakukohdeOid:String, hakuOid:String) = {
+  def insertHakukohde(hakukohdeOid: HakukohdeOid, hakuOid: HakuOid) = {
     singleConnectionValintarekisteriDb.runBlocking(DBIOAction.seq(
       sqlu"""insert into hakukohteet (hakukohde_oid, haku_oid, kk_tutkintoon_johtava, yhden_paikan_saanto_voimassa, koulutuksen_alkamiskausi)
-           values ($hakukohdeOid, $hakuOid, true, true, '2015K')"""))
+           values (${hakukohdeOid.toString}, ${hakuOid.toString}, true, true, '2015K')"""))
   }
 
   def loadSijoitteluFromFixture(fixture: String, path: String = "sijoittelu/", tallennaHakukohteet: Boolean = true):SijoitteluWrapper = {
@@ -269,7 +380,7 @@ trait ValintarekisteriDbTools extends Specification {
   }
 
   private implicit val getSijoitteluajoResult = GetResult(r => {
-    SijoitteluajoWrapper(r.nextLong, r.nextString, r.nextTimestamp.getTime, r.nextTimestamp.getTime).sijoitteluajo
+    SijoitteluajoWrapper(r.nextLong, HakuOid(r.nextString), r.nextTimestamp.getTime, r.nextTimestamp.getTime).sijoitteluajo
   })
 
   def findSijoitteluajo(sijoitteluajoId:Long): Option[SijoitteluAjo] = {
@@ -280,7 +391,7 @@ trait ValintarekisteriDbTools extends Specification {
   }
 
   private implicit val getSijoitteluajonHakukohdeResult = GetResult(r => {
-    SijoitteluajonHakukohdeWrapper(r.nextLong, r.nextString, r.nextBoolean).hakukohde
+    SijoitteluajonHakukohdeWrapper(r.nextLong, HakukohdeOid(r.nextString), r.nextBoolean).hakukohde
   })
 
   def findSijoitteluajonHakukohteet(sijoitteluajoId:Long): Seq[Hakukohde] = {
@@ -291,9 +402,9 @@ trait ValintarekisteriDbTools extends Specification {
   }
 
   private implicit val getSijoitteluajonValintatapajonoResult = GetResult(r => {
-    SijoitteluajonValintatapajonoWrapper(r.nextString, r.nextString, r.nextInt, Tasasijasaanto(r.nextString()),
+    SijoitteluajonValintatapajonoWrapper(ValintatapajonoOid(r.nextString), r.nextString, r.nextInt, Tasasijasaanto(r.nextString()),
       r.nextIntOption, r.nextIntOption, r.nextBoolean, r.nextBoolean, r.nextBoolean, r.nextIntOption, r.nextIntOption,
-      r.nextTimestampOption(), r.nextTimestampOption(), r.nextStringOption(),r.nextInt, r.nextInt,
+      r.nextTimestampOption(), r.nextTimestampOption(), r.nextStringOption(),
       r.nextBigDecimalOption, Some(false)).valintatapajono
   })
 
@@ -302,14 +413,14 @@ trait ValintarekisteriDbTools extends Specification {
       sql"""select oid, nimi, prioriteetti, tasasijasaanto, aloituspaikat, alkuperaiset_aloituspaikat, ei_varasijatayttoa,
             kaikki_ehdon_tayttavat_hyvaksytaan, poissaoleva_taytto,
             varasijat, varasijatayttopaivat, varasijoja_kaytetaan_alkaen, varasijoja_taytetaan_asti, tayttojono,
-            hyvaksytty, varalla, alin_hyvaksytty_pistemaara
+            alin_hyvaksytty_pistemaara
             from valintatapajonot
             where hakukohde_oid = ${hakukohdeOid}""".as[Valintatapajono])
   }
 
   private implicit val getSijoitteluajonHakijaryhmaResult = GetResult(r => {
     SijoitteluajonHakijaryhmaWrapper(r.nextString, r.nextString, r.nextInt, r.nextInt, r.nextBoolean, r.nextBoolean,
-      r.nextBoolean, List(), r.nextStringOption, r.nextStringOption, r.nextStringOption).hakijaryhma
+      r.nextBoolean, List(), r.nextStringOption.map(ValintatapajonoOid), r.nextStringOption.map(HakukohdeOid), r.nextStringOption).hakijaryhma
   })
 
   def findHakukohteenHakijaryhmat(hakukohdeOid:String): Seq[Hakijaryhma] = {
@@ -332,10 +443,8 @@ trait ValintarekisteriDbTools extends Specification {
 
   implicit val getHakemuksetForValintatapajonosResult = GetResult(r => HakemusRecord(
     hakijaOid = r.nextStringOption,
-    hakemusOid = r.nextString,
+    hakemusOid = HakemusOid(r.nextString),
     pisteet = r.nextBigDecimalOption,
-    etunimi = r.nextStringOption,
-    sukunimi = r.nextStringOption,
     prioriteetti = r.nextInt,
     jonosija = r.nextInt,
     tasasijaJonosija = r.nextInt,
@@ -346,7 +455,7 @@ trait ValintarekisteriDbTools extends Specification {
     varasijaNumero = r.nextIntOption,
     onkoMuuttunutviimesijoittelusta = r.nextBoolean,
     siirtynytToisestaValintatapaJonosta = r.nextBoolean,
-    valintatapajonoOid = r.nextString))
+    valintatapajonoOid = ValintatapajonoOid(r.nextString)))
 
   private def findValintatapajononJonosijat(valintatapajonoOid:String): Seq[Hakemus] = {
     val hakemukset = singleConnectionValintarekisteriDb.runBlocking(
@@ -354,8 +463,6 @@ trait ValintarekisteriDbTools extends Specification {
                 j.hakija_oid,
                 j.hakemus_oid,
                 j.pisteet,
-                j.etunimi,
-                j.sukunimi,
                 j.prioriteetti,
                 j.jonosija,
                 j.tasasijajonosija,
@@ -387,14 +494,12 @@ trait ValintarekisteriDbTools extends Specification {
             join hakijaryhman_hakemukset as hh on hh.hakemus_oid = j.hakemus_oid
             where j.valintatapajono_oid = ${valintatapajonoOid}
         """.as[(String, String)]
-    ).groupBy(_._1).mapValues(_.map(_._2).toSet)
+    ).groupBy(t => HakemusOid(t._1)).mapValues(_.map(_._2).toSet)
     val tilankuvaukset = singleConnectionValintarekisteriDb.getValinnantilanKuvaukset(hakemukset.map(_.tilankuvausHash))
     hakemukset.map(h => {
       SijoitteluajonHakemusWrapper(
         hakemusOid = h.hakemusOid,
         hakijaOid = h.hakijaOid,
-        etunimi = h.etunimi,
-        sukunimi = h.sukunimi,
         prioriteetti = h.prioriteetti,
         jonosija = h.jonosija,
         varasijanNumero = h.varasijaNumero,
@@ -501,25 +606,26 @@ trait ValintarekisteriDbTools extends Specification {
     storedHakukohteet.length mustEqual wrapper.hakukohteet.length
   }
 
-  def createHugeSijoittelu(sijoitteluajoId:Long, hakuOid:String, size:Int = 50) = {
+  def createHugeSijoittelu(sijoitteluajoId: Long, hakuOid: HakuOid, size: Int = 50) = {
     val sijoitteluajo = SijoitteluajoWrapper(sijoitteluajoId, hakuOid, System.currentTimeMillis(), System.currentTimeMillis())
     var valinnantulokset:IndexedSeq[SijoitteluajonValinnantulosWrapper] = IndexedSeq()
     val hakukohteet = (1 to size par).map(i => {
-      val hakukohdeOid = hakuOid + "." + i
+      val hakukohdeOid = HakukohdeOid(hakuOid.toString + "." + i)
       val hakukohde = SijoitteluajonHakukohdeWrapper(sijoitteluajoId, hakukohdeOid, true).hakukohde
       hakukohde.setValintatapajonot(
       (1 to 4 par).map( k => {
-        val valintatapajonoOid = hakukohdeOid + "." + k
+        val valintatapajonoOid = ValintatapajonoOid(hakukohdeOid.toString + "." + k)
         val valintatapajono = SijoitteluajonValintatapajonoWrapper( valintatapajonoOid, "nimi" + k, k, Arvonta, Some(k), Some(k), false, false,
           false, Some(k), Some(k), Some(new Date(System.currentTimeMillis)), Some(new Date(System.currentTimeMillis)),
-          None, k, k, Some(k), Some(false)).valintatapajono
+          None, Some(k), Some(false)).valintatapajono
         valintatapajono.getHakemukset.addAll(
           (1 to size par).map( j => {
-            val hakemus = SijoitteluajonHakemusWrapper(valintatapajonoOid + "." + j, Some(valintatapajonoOid), Some("Etunimi"), Some("Sukunimi"),
+            val hakemusOid = HakemusOid(valintatapajonoOid.toString + "." + j)
+            val hakemus = SijoitteluajonHakemusWrapper(hakemusOid, Some(valintatapajonoOid.toString),
               j, j, None, false, Some(j), j, false, false, Hylatty, Some(Map("FI" -> ("fi" + j), "SV" -> ("sv" + j), "EN" -> ("en" + j))),
               EiTilankuvauksenTarkennetta, None, Set(""), List()).hakemus
             hakemus.setPistetiedot(List(SijoitteluajonPistetietoWrapper("moi", Some("123"), Some("123"), Some("Osallistui")).pistetieto).asJava)
-            valinnantulokset = valinnantulokset ++ IndexedSeq(SijoitteluajonValinnantulosWrapper(valintatapajonoOid, hakemus.getHakemusOid, hakukohdeOid,
+            valinnantulokset = valinnantulokset ++ IndexedSeq(SijoitteluajonValinnantulosWrapper(valintatapajonoOid, hakemusOid, hakukohdeOid,
               false, false, false, false, None, None, MailStatusWrapper(None, None, None, None).status))
             hakemus
           }).seq.asJava
@@ -539,7 +645,7 @@ trait ValintarekisteriDbTools extends Specification {
       hakukohde.getValintatapajonot.get(0).getHakemukset().asScala.foreach(h => h.setHyvaksyttyHakijaryhmista(hakijaryhmaOids))
       hakukohde
     })
-    hakukohteet.foreach(h => insertHakukohde(h.getOid, hakuOid))
+    hakukohteet.foreach(h => insertHakukohde(HakukohdeOid(h.getOid), hakuOid))
     SijoitteluWrapper(sijoitteluajo.sijoitteluajo, hakukohteet.seq.asJava, valinnantulokset.map(_.valintatulos).asJava)
   }
 }

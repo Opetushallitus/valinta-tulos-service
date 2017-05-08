@@ -7,6 +7,7 @@ import com.typesafe.config.{Config, ConfigValueFactory}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db._
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
 import org.flywaydb.core.Flyway
 import slick.driver.PostgresDriver.api.{Database, _}
 import slick.jdbc.GetResult
@@ -27,10 +28,10 @@ class MailPollerDb(dbConfig: Config, isItProfile:Boolean = false) extends Valint
     runBlocking(sqlu"""alter table public.schema_version owner to oph""")
   }
 
-  private implicit val pollForCandidatesResult = GetResult(r => HakemusIdentifier(r.nextString, r.nextString,
+  private implicit val pollForCandidatesResult = GetResult(r => HakemusIdentifier(HakuOid(r.nextString), HakemusOid(r.nextString),
     Option(r.nextTimestamp())))
 
-  def pollForCandidates(hakuOids: List[String], limit: Int, recheckIntervalHours: Int = (24 * 3),  excludeHakemusOids: Set[String] = Set.empty): Set[HakemusIdentifier] = {
+  def pollForCandidates(hakuOids: List[HakuOid], limit: Int, recheckIntervalHours: Int = (24 * 3),  excludeHakemusOids: Set[HakemusOid] = Set.empty): Set[HakemusIdentifier] = {
     val hakuOidsIn = hakuOids.map(oid => s"'$oid'").mkString(",")
     val hakemusOidsNotIn = excludeHakemusOids.map(oid => s"'$oid'").mkString(",")
     val res = runBlocking(
@@ -47,7 +48,7 @@ class MailPollerDb(dbConfig: Config, isItProfile:Boolean = false) extends Valint
     res
   }
 
-  def updateLastChecked(hakemusOids: Set[String]) = {
+  def updateLastChecked(hakemusOids: Set[HakemusOid]) = {
     val hakemusOidsIn = hakemusOids.map(oid => s"'$oid'").mkString(",")
     val timestamp = new Timestamp(new Date().getTime)
     runBlocking(
@@ -56,7 +57,7 @@ class MailPollerDb(dbConfig: Config, isItProfile:Boolean = false) extends Valint
              where hakemus_oid in #$hakemusOidsIn""")
   }
 
-  def alreadyMailed(hakemusOid: String, hakukohdeOid: String): Option[java.util.Date] = {
+  def alreadyMailed(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Option[java.util.Date] = {
     runBlocking(
       sql"""select sent
             from valinnantulokset
@@ -73,15 +74,15 @@ class MailPollerDb(dbConfig: Config, isItProfile:Boolean = false) extends Valint
     updateValintatulos(hakemus.hakemusOid, hakukohde.hakukohdeOid, null, null, message)
   }
 
-  def markAsNonMailable(hakemusOid: String, hakuKohdeOid: String, message: String) {
-    updateValintatulos(hakemusOid, hakuKohdeOid, new Timestamp(new Date().getTime), null, message)
+  def markAsNonMailable(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, message: String) {
+    updateValintatulos(hakemusOid, hakukohdeOid, new Timestamp(new Date().getTime), null, message)
   }
 
-  private def markAsSent(hakemusOid: String, hakuKohdeOid: String, message: String) {
-    updateValintatulos(hakemusOid, hakuKohdeOid, null, new Timestamp(new Date().getTime), message)
+  private def markAsSent(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, message: String) {
+    updateValintatulos(hakemusOid, hakukohdeOid, null, new Timestamp(new Date().getTime), message)
   }
 
-  private def updateValintatulos(hakemusOid: String, hakuKohdeOid: String, done: Timestamp, sent: Timestamp, message: String): Unit = {
+  private def updateValintatulos(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, done: Timestamp, sent: Timestamp, message: String): Unit = {
     runBlocking(
       sqlu"""update valinnantulokset
              set done = ${done}, sent = ${sent}, message = ${message}

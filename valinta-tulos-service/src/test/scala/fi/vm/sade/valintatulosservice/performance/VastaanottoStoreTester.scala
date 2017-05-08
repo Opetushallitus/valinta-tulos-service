@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.ValintarekisteriAppConfig
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakijanVastaanotto, VastaanotaSitovasti}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijanVastaanotto, HakuOid, HakukohdeOid, VastaanotaSitovasti}
 import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -19,13 +19,13 @@ object VastaanottoStoreTester extends App with Logging {
   appConfig.start
   val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
   private val henkiloOid = "1.2.246.562.24.0000000000"
-  private val hakemusOid = "1.2.246.562.99.00000000001"
-  private val hakukohdeOid = "1.2.246.561.20.00000000001"
-  private val hakuOid = "1.2.246.561.29.00000000001"
+  private val hakemusOid = HakemusOid("1.2.246.562.99.00000000001")
+  private val hakukohdeOid = HakukohdeOid("1.2.246.561.20.00000000001")
+  private val hakuOid = HakuOid("1.2.246.561.29.00000000001")
 
   valintarekisteriDb.runBlocking(
     sqlu"""insert into hakukohteet (hakukohde_oid, haku_oid, kk_tutkintoon_johtava, yhden_paikan_saanto_voimassa, koulutuksen_alkamiskausi)
-           values ($hakukohdeOid, $hakuOid, true, true, '2015K')""")
+           values (${hakukohdeOid.toString}, ${hakuOid.toString}, true, true, '2015K')""")
 
   val r = Random
   val concurrency = 60

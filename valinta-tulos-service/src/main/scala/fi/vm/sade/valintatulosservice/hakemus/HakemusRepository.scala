@@ -7,6 +7,7 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain.{Hakemus, Hakutoive, Henkilotiedot}
 import fi.vm.sade.valintatulosservice.hakemus.DatabaseKeys.tarjoajaIdKeyPostfix
 import fi.vm.sade.valintatulosservice.mongo.MongoFactory
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
 
 import scala.util.Try
 
@@ -42,45 +43,45 @@ class HakemusRepository()(implicit appConfig: VtsAppConfig) extends Logging {
 
   val kieliKoodit = Map(("suomi", "FI"), ("ruotsi", "SV"), ("englanti", "EN"))
 
-  def findPersonOids(hakuOid: String): Map[String, String] = {
+  def findPersonOids(hakuOid: HakuOid): Map[HakemusOid, String] = {
     application.find(
-      MongoDBObject(DatabaseKeys.applicationSystemIdKey -> hakuOid),
+      MongoDBObject(DatabaseKeys.applicationSystemIdKey -> hakuOid.toString),
       MongoDBObject(DatabaseKeys.oidKey -> 1, DatabaseKeys.personOidKey -> 1)
-    ).map(o => o.as[String](DatabaseKeys.oidKey) -> o.getAs[String](DatabaseKeys.personOidKey).getOrElse("")).toMap
+    ).map(o => HakemusOid(o.as[String](DatabaseKeys.oidKey)) -> o.getAs[String](DatabaseKeys.personOidKey).getOrElse("")).toMap
   }
 
-  def findPersonOids(hakuOid: String, hakukohdeOid: String): Map[String, String] = {
+  def findPersonOids(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Map[HakemusOid, String] = {
     application.find(
-      MongoDBObject(DatabaseKeys.applicationSystemIdKey -> hakuOid, DatabaseKeys.hakutoiveetSearchPath -> hakukohdeOid),
+      MongoDBObject(DatabaseKeys.applicationSystemIdKey -> hakuOid.toString, DatabaseKeys.hakutoiveetSearchPath -> hakukohdeOid.toString),
       MongoDBObject(DatabaseKeys.oidKey -> 1, DatabaseKeys.personOidKey -> 1)
-    ).map(o => o.as[String](DatabaseKeys.oidKey) -> o.getAs[String](DatabaseKeys.personOidKey).getOrElse("")).toMap
+    ).map(o => HakemusOid(o.as[String](DatabaseKeys.oidKey)) -> o.getAs[String](DatabaseKeys.personOidKey).getOrElse("")).toMap
   }
 
-  def findHakemukset(hakuOid: String): Iterator[Hakemus] = {
-    findHakemuksetByQuery(MongoDBObject(DatabaseKeys.applicationSystemIdKey -> hakuOid))
+  def findHakemukset(hakuOid: HakuOid): Iterator[Hakemus] = {
+    findHakemuksetByQuery(MongoDBObject(DatabaseKeys.applicationSystemIdKey -> hakuOid.toString))
   }
 
-  def findHakemus(hakemusOid: String): Either[Throwable, Hakemus] = {
-    Try(findHakemuksetByQuery(MongoDBObject(DatabaseKeys.oidKey -> hakemusOid)).toStream.headOption
+  def findHakemus(hakemusOid: HakemusOid): Either[Throwable, Hakemus] = {
+    Try(findHakemuksetByQuery(MongoDBObject(DatabaseKeys.oidKey -> hakemusOid.toString)).toStream.headOption
       .toRight(new IllegalArgumentException(s"No hakemus $hakemusOid found"))).recover {
       case e => Left(e)
     }.get
   }
 
-  def findHakemuksetByOids(hakemusOids: Iterable[String]): Iterator[Hakemus] = {
-    findHakemuksetByQuery(DatabaseKeys.oidKey $in hakemusOids)
+  def findHakemuksetByOids(hakemusOids: Iterable[HakemusOid]): Iterator[Hakemus] = {
+    findHakemuksetByQuery(DatabaseKeys.oidKey $in hakemusOids.map(_.toString))
   }
 
-  def findHakemukset(hakuOid: String, personOid: String): Iterator[Hakemus] = {
-    findHakemuksetByQuery(MongoDBObject(DatabaseKeys.personOidKey -> personOid, DatabaseKeys.applicationSystemIdKey -> hakuOid))
+  def findHakemukset(hakuOid: HakuOid, personOid: String): Iterator[Hakemus] = {
+    findHakemuksetByQuery(MongoDBObject(DatabaseKeys.personOidKey -> personOid, DatabaseKeys.applicationSystemIdKey -> hakuOid.toString))
   }
 
-  def findHakemuksetByHakukohde(hakuOid: String, hakukohdeOid: String): Iterator[Hakemus] = {
-    findHakemuksetByQuery(MongoDBObject(DatabaseKeys.applicationSystemIdKey -> hakuOid, DatabaseKeys.hakutoiveetSearchPath -> hakukohdeOid))
+  def findHakemuksetByHakukohde(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Iterator[Hakemus] = {
+    findHakemuksetByQuery(MongoDBObject(DatabaseKeys.applicationSystemIdKey -> hakuOid.toString, DatabaseKeys.hakutoiveetSearchPath -> hakukohdeOid.toString))
   }
 
-  def findHakemuksetByHakukohdeAndPerson(hakukohdeOid: String, personOid: String): Iterator[Hakemus] = {
-    findHakemuksetByQuery(MongoDBObject(DatabaseKeys.hakutoiveetSearchPath -> hakukohdeOid, DatabaseKeys.personOidKey -> personOid))
+  def findHakemuksetByHakukohdeAndPerson(hakukohdeOid: HakukohdeOid, personOid: String): Iterator[Hakemus] = {
+    findHakemuksetByQuery(MongoDBObject(DatabaseKeys.hakutoiveetSearchPath -> hakukohdeOid.toString, DatabaseKeys.personOidKey -> personOid))
   }
 
   def findHakemuksetByQuery(query: commons.Imports.DBObject): Iterator[Hakemus] = {
@@ -100,7 +101,7 @@ class HakemusRepository()(implicit appConfig: VtsAppConfig) extends Logging {
       hakutoiveet <- extractHakutoiveet(answers)
       henkilotiedot <- answers.getAs[MongoDBObject]("henkilotiedot")
     } yield {
-      Hakemus(hakemusOid, hakuOid, henkiloOid, asiointikieli, parseHakutoiveet(hakutoiveet), parseHenkilotiedot(henkilotiedot))
+      Hakemus(HakemusOid(hakemusOid), HakuOid(hakuOid), henkiloOid, asiointikieli, parseHakutoiveet(hakutoiveet), parseHenkilotiedot(henkilotiedot))
     }
   }
 
@@ -128,7 +129,7 @@ class HakemusRepository()(implicit appConfig: VtsAppConfig) extends Logging {
     }.sortBy(_._1).map {
       case (index, _, hakukohdeOid) =>
         Hakutoive(
-          hakukohdeOid,
+          HakukohdeOid(hakukohdeOid),
           hakutoiveet.get(s"preference$index-$tarjoajaIdKeyPostfix").map(_.asInstanceOf[String]).getOrElse(""),
           hakutoiveet.get(s"preference$index-${DatabaseKeys.hakutoiveKeyPostfix}").map(_.asInstanceOf[String]).getOrElse(""),
           hakutoiveet.get(s"preference$index-${DatabaseKeys.tarjoajaKeyPostfix}").map(_.asInstanceOf[String]).getOrElse("")

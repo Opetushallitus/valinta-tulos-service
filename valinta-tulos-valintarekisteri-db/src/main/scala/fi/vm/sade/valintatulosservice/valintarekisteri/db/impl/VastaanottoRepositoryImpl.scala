@@ -4,7 +4,7 @@ import java.util.Date
 import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.db._
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{ConflictingAcceptancesException, HakukohdeRecord, Kausi, Poista}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{ConflictingAcceptancesException, HakemusOid, HakuOid, HakukohdeOid, HakukohdeRecord, Kausi, Poista}
 import org.postgresql.util.PSQLException
 import slick.driver.PostgresDriver.api._
 import slick.jdbc.TransactionIsolation.Serializable
@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with VirkailijaVastaanottoRepository with ValintarekisteriRepository {
 
-  override def findHaunVastaanotot(hakuOid: String): Set[VastaanottoRecord] = {
+  override def findHaunVastaanotot(hakuOid: HakuOid): Set[VastaanottoRecord] = {
     runBlocking(sql"""select henkilo, haku_oid, hakukohde, action, ilmoittaja, "timestamp"
                       from newest_vastaanotto_events
                       where haku_oid = ${hakuOid}""".as[VastaanottoRecord]).toSet
@@ -29,7 +29,7 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
                 and yhden_paikan_saanto_voimassa""".as[VastaanottoRecord]).toSet
   }
 
-  override def findYpsVastaanotot(kausi: Kausi, henkiloOids: Set[String]): Set[(String, HakukohdeRecord, VastaanottoRecord)] = {
+  override def findYpsVastaanotot(kausi: Kausi, henkiloOids: Set[String]): Set[(HakemusOid, HakukohdeRecord, VastaanottoRecord)] = {
     val vastaanotot = findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(kausi)
     val hakukohteet = runBlocking(
       sql"""select hakukohde_oid,
@@ -53,11 +53,15 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
                               and v.henkilo = vt.henkilo_oid
                               and v.koulutuksen_alkamiskausi = ${kausi.toKausiSpec}
                               and v.yhden_paikan_saanto_voimassa)
-        """.as[(String, String, String)]
-    ).map(t => (t._1, t._2) -> t._3).toMap
+        """.as[((String, HakukohdeOid), HakemusOid)]
+    ).toMap
     vastaanotot
       .filter(v => henkiloOids.contains(v.henkiloOid))
-      .map(v => (hakemusoidit((v.henkiloOid, v.hakukohdeOid)), hakukohteet(v.hakukohdeOid), v))
+      .map(v => (
+        hakemusoidit.getOrElse((v.henkiloOid, v.hakukohdeOid), throw new IllegalStateException(s"Henkilöllä ${v.henkiloOid} ei ole valinnantulosta hakukohteeseen ${v.hakukohdeOid}")),
+        hakukohteet(v.hakukohdeOid),
+        v
+      ))
   }
 
   override def aliases(henkiloOid: String): DBIO[Set[String]] = {
@@ -81,7 +85,7 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
     }
   }
 
-  override def findVastaanottoHistoryHaussa(henkiloOid: String, hakuOid: String): Set[VastaanottoRecord] = {
+  override def findVastaanottoHistoryHaussa(henkiloOid: String, hakuOid: HakuOid): Set[VastaanottoRecord] = {
     runBlocking(
       sql"""select henkilo, haku_oid, hakukohde, action, ilmoittaja, "timestamp"
             from (
@@ -97,7 +101,7 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
             order by id""".as[VastaanottoRecord]).toSet
   }
 
-  override def findHenkilonVastaanototHaussa(henkiloOid: String, hakuOid: String): DBIO[Set[VastaanottoRecord]] = {
+  override def findHenkilonVastaanototHaussa(henkiloOid: String, hakuOid: HakuOid): DBIO[Set[VastaanottoRecord]] = {
     sql"""select henkilo, haku_oid, hakukohde, action, ilmoittaja, "timestamp"
           from (
               select henkilo, haku_oid, hakukohde, action, ilmoittaja, "timestamp", id
@@ -130,7 +134,7 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
     }
   }
 
-  override def findHenkilonVastaanottoHakukohteeseen(personOid: String, hakukohdeOid: String): DBIO[Option[VastaanottoRecord]] = {
+  override def findHenkilonVastaanottoHakukohteeseen(personOid: String, hakukohdeOid: HakukohdeOid): DBIO[Option[VastaanottoRecord]] = {
     sql"""select henkilo, haku_oid, hakukohde, action, ilmoittaja, "timestamp"
           from newest_vastaanotot
           where henkilo = $personOid

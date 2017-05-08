@@ -6,7 +6,7 @@ import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.sijoittelu.{DirectMongoSijoittelunTulosRestClient, SijoittelutulosService}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.{ITSpecification, TimeWarp, ValintatulosService, VastaanotettavuusService}
@@ -59,10 +59,10 @@ class ValintatulosServiceLisahakuSpec extends ITSpecification with TimeWarp {
   lazy val vastaanotettavuusService = new VastaanotettavuusService(hakukohdeRecordService, valintarekisteriDb)
   lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb, hakuService, valintarekisteriDb, hakukohdeRecordService)
 
-  val hakuOid: String = "korkeakoulu-lisahaku1"
-  val hakemusOid: String = "1.2.246.562.11.00000878230"
+  val hakuOid = HakuOid("korkeakoulu-lisahaku1")
+  val hakemusOid = HakemusOid("1.2.246.562.11.00000878230")
 
-  def getHakutoive(hakukohdeOidSuffix: String) = hakemuksenTulos.hakutoiveet.find{_.hakukohdeOid.endsWith(hakukohdeOidSuffix)}.get
+  def getHakutoive(hakukohdeOidSuffix: String) = hakemuksenTulos.hakutoiveet.find{_.hakukohdeOid.toString.endsWith(hakukohdeOidSuffix)}.get
 
   def hakemuksenTulos = {
     valintatulosService.hakemuksentulos(hakemusOid).get

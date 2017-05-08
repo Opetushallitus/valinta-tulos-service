@@ -1,16 +1,15 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
-import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, Hakemus, Hakijaryhma, Valintatapajono, Hakukohde}
+import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, Hakemus, Hakijaryhma, Hakukohde, Valintatapajono}
 import fi.vm.sade.sijoittelu.tulos.dto.{SijoitteluDTO, SijoitteluajoDTO}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{SijoitteluWrapper, TilahistoriaWrapper}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, SijoitteluWrapper, TilahistoriaWrapper, Valinnantila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.BeforeAfterExample
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Valinnantila
 
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -22,23 +21,31 @@ class ValintarekisteriForSijoitteluSpec extends Specification with ITSetup with 
   step(appConfig.start)
   step(deleteAll())
 
-  lazy val valintarekisteri = new ValintarekisteriService(singleConnectionValintarekisteriDb, hakukohdeRecordService)
+  lazy val valintarekisteri = new ValintarekisteriService(singleConnectionValintarekisteriDb, singleConnectionValintarekisteriDb, hakukohdeRecordService)
+
+  def getLatestSijoittelu(hakuOid: String) = {
+    val sijoitteluajo = time("Get latest sijoitteluajo") { valintarekisteri.getLatestSijoitteluajo(hakuOid) }
+    val hakukohteet = time("Get hakukohteet") { valintarekisteri.getSijoitteluajonHakukohteet(sijoitteluajo.getSijoitteluajoId) }
+    (sijoitteluajo, hakukohteet)
+  }
+
+  def getSijoittelu(hakuOid: String, sijoitteluajoId:String) = {
+    val sijoitteluajo = time("Get sijoitteluajo") { valintarekisteri.getSijoitteluajo(hakuOid, sijoitteluajoId) }
+    val hakukohteet = time("Get hakukohteet") { valintarekisteri.getSijoitteluajonHakukohteet(sijoitteluajo.getSijoitteluajoId) }
+    (sijoitteluajo, hakukohteet)
+  }
 
   "SijoitteluajoDTO with sijoitteluajoId should be fetched from database" in {
     val wrapper = loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")
     time("Store sijoittelu") { singleConnectionValintarekisteriDb.storeSijoittelu(wrapper) }
-    compareSijoitteluWrapperToDTO(
-      wrapper,
-      time("Get sijoitteluajo") { valintarekisteri.getSijoitteluajo("1.2.246.562.29.75203638285", "1476936450191") }
-    )
+    val (sijoitteluajo, hakukohteet) = getSijoittelu("1.2.246.562.29.75203638285", "1476936450191")
+    compareSijoitteluWrapperToEntity(wrapper, sijoitteluajo, hakukohteet)
   }
   "SijoitteluajoDTO with latest sijoitteluajoId should be fetched from database" in {
     val wrapper = loadSijoitteluFromFixture("valintatapajono_hakijaryhma_pistetiedot", "sijoittelu/")
     time("Store sijoittelu") { singleConnectionValintarekisteriDb.storeSijoittelu(wrapper) }
-    compareSijoitteluWrapperToDTO(
-      wrapper,
-      time("Get sijoitteluajo") { valintarekisteri.getSijoitteluajo("korkeakoulu-erillishaku", "latest") }
-    )
+    val (sijoitteluajo, hakukohteet) = getLatestSijoittelu("korkeakoulu-erillishaku")
+    compareSijoitteluWrapperToEntity(wrapper, sijoitteluajo, hakukohteet)
   }
   "Sijoittelu and hakukohteet should be saved in database 1" in {
     val wrapper = loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")
@@ -65,7 +72,7 @@ class ValintarekisteriForSijoitteluSpec extends Specification with ITSetup with 
   "Exception is thrown when no latest sijoitteluajo is found" in {
     val wrapper = loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")
     singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
-    valintarekisteri.getSijoitteluajo("1.2.246.562.29.75203638286", "latest") must throwA(
+    valintarekisteri.getLatestSijoitteluajo("1.2.246.562.29.75203638286") must throwA(
       new IllegalArgumentException("Yhtään sijoitteluajoa ei löytynyt haulle 1.2.246.562.29.75203638286"))
   }
   "Exception is thrown when sijoitteluajoId is malformed" in {
@@ -106,31 +113,31 @@ class ValintarekisteriForSijoitteluSpec extends Specification with ITSetup with 
     updateTila(HakemuksenTila.VARALLA, sijoitteluajo5Ajat._1, findHakemus(wrapper, hakukohdeOid, valintatapajonoOid, hakemusOid))
     time("Store sijoittelu") { singleConnectionValintarekisteriDb.storeSijoittelu(wrapper) }
 
-    val tallennettuSijoitteluajo = valintarekisteri.getSijoitteluajo("1.2.246.562.29.75203638285", "latest")
+    val (_, tallennettuSijoitteluajo) = getSijoittelu("1.2.246.562.29.75203638285", "latest")
 
     val tallennettuTilahistoria = findTilahistoria(tallennettuSijoitteluajo, hakukohdeOid, valintatapajonoOid, hakemusOid)
 
     tallennettuTilahistoria.size mustEqual 4
     tallennettuTilahistoria.get(3).getLuotu.getTime mustEqual sijoitteluajo5Ajat._1
-    tallennettuTilahistoria.get(3).getTila mustEqual HakemuksenTila.VARALLA.toString
+    tallennettuTilahistoria.get(3).getTila mustEqual HakemuksenTila.VARALLA
     tallennettuTilahistoria.get(2).getLuotu.getTime mustEqual sijoitteluajo3Ajat._1
-    tallennettuTilahistoria.get(2).getTila mustEqual HakemuksenTila.VARASIJALTA_HYVAKSYTTY.toString
+    tallennettuTilahistoria.get(2).getTila mustEqual HakemuksenTila.VARASIJALTA_HYVAKSYTTY
     tallennettuTilahistoria.get(1).getLuotu.getTime mustEqual sijoitteluajo2Ajat._1
-    tallennettuTilahistoria.get(1).getTila mustEqual HakemuksenTila.VARALLA.toString
+    tallennettuTilahistoria.get(1).getTila mustEqual HakemuksenTila.VARALLA
     tallennettuTilahistoria.get(0).getLuotu.getTime mustEqual sijoitteluajo1Ajat._1
-    tallennettuTilahistoria.get(0).getTila mustEqual HakemuksenTila.HYVAKSYTTY.toString
+    tallennettuTilahistoria.get(0).getTila mustEqual HakemuksenTila.HYVAKSYTTY
 
-    val aikaisempiSijoitteluajo = valintarekisteri.getSijoitteluajo("1.2.246.562.29.75203638285", "333456")
+    val (_, aikaisempiSijoitteluajo) = getSijoittelu("1.2.246.562.29.75203638285", "333456")
 
     val aikaisemminTallennetunTilahistoria = findTilahistoria(aikaisempiSijoitteluajo, hakukohdeOid, valintatapajonoOid,hakemusOid)
 
     aikaisemminTallennetunTilahistoria.size mustEqual 3
     aikaisemminTallennetunTilahistoria.get(2).getLuotu.getTime mustEqual sijoitteluajo3Ajat._1
-    aikaisemminTallennetunTilahistoria.get(2).getTila mustEqual HakemuksenTila.VARASIJALTA_HYVAKSYTTY.toString
+    aikaisemminTallennetunTilahistoria.get(2).getTila mustEqual HakemuksenTila.VARASIJALTA_HYVAKSYTTY
     aikaisemminTallennetunTilahistoria.get(1).getLuotu.getTime mustEqual sijoitteluajo2Ajat._1
-    aikaisemminTallennetunTilahistoria.get(1).getTila mustEqual HakemuksenTila.VARALLA.toString
+    aikaisemminTallennetunTilahistoria.get(1).getTila mustEqual HakemuksenTila.VARALLA
     aikaisemminTallennetunTilahistoria.get(0).getLuotu.getTime mustEqual sijoitteluajo1Ajat._1
-    aikaisemminTallennetunTilahistoria.get(0).getTila mustEqual HakemuksenTila.HYVAKSYTTY.toString
+    aikaisemminTallennetunTilahistoria.get(0).getTila mustEqual HakemuksenTila.HYVAKSYTTY
   }
   "Tilahistoria is read for hakemukset that have not changed in requested sijoitteluajo" in {
     val hakukohdeOid = "1.2.246.562.20.56217166919"
@@ -152,8 +159,8 @@ class ValintarekisteriForSijoitteluSpec extends Specification with ITSetup with 
     updateTila(HakemuksenTila.VARALLA, sijoitteluajo2Ajat._1, findHakemus(wrapper, hakukohdeOid, valintatapajonoOid, hakemusOid1))
     time("Store sijoittelu") { singleConnectionValintarekisteriDb.storeSijoittelu(wrapper) }
 
-    val ensimmainen = valintarekisteri.getSijoitteluajo("1.2.246.562.29.75203638285", "123456")
-    val toinen = valintarekisteri.getSijoitteluajo("1.2.246.562.29.75203638285", "latest")
+    val (_, ensimmainen) = getSijoittelu("1.2.246.562.29.75203638285", "123456")
+    val (_, toinen) = getSijoittelu("1.2.246.562.29.75203638285", "latest")
 
     findTilahistoria(ensimmainen, hakukohdeOid, valintatapajonoOid, hakemusOid1).size mustEqual 1
     findTilahistoria(ensimmainen, hakukohdeOid, valintatapajonoOid, hakemusOid2).size mustEqual 1
@@ -232,6 +239,12 @@ class ValintarekisteriForSijoitteluSpec extends Specification with ITSetup with 
 
   private def findTilahistoria(sijoitteluajo: SijoitteluajoDTO, hakukohdeOid: String, valintatapajonoOid: String, hakemusOid: String) = {
     sijoitteluajo.getHakukohteet.asScala.find(_.getOid.equals(hakukohdeOid)).get
+      .getValintatapajonot.asScala.find(_.getOid.equals(valintatapajonoOid)).get
+      .getHakemukset.asScala.find(_.getHakemusOid.equals(hakemusOid)).get.getTilaHistoria
+  }
+
+  private def findTilahistoria(hakukohteet:java.util.List[Hakukohde], hakukohdeOid: String, valintatapajonoOid: String, hakemusOid: String) = {
+    hakukohteet.asScala.find(_.getOid.equals(hakukohdeOid)).get
       .getValintatapajonot.asScala.find(_.getOid.equals(valintatapajonoOid)).get
       .getHakemukset.asScala.find(_.getHakemusOid.equals(hakemusOid)).get.getTilaHistoria
   }

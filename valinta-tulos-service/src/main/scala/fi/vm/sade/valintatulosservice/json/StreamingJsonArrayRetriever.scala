@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicReference
 import com.fasterxml.jackson.core.{JsonFactory, JsonParser, JsonToken}
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.net.HttpHeaders
-import fi.vm.sade.utils.cas.CasClient.JSessionId
+import fi.vm.sade.utils.cas.CasClient.SessionCookie
 import fi.vm.sade.utils.cas.CasParams
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
@@ -14,8 +14,7 @@ import org.http4s.Status
 
 import scala.concurrent.duration.Duration
 import scalaj.http.{Http, HttpRequest, HttpResponse}
-import scalaz.concurrent.Task
-import scalaz.stream._
+import scalaz.{-\/, \/-}
 
 
 class StreamingJsonArrayRetriever(appConfig: VtsAppConfig) extends Logging {
@@ -88,14 +87,16 @@ class StreamingJsonArrayRetriever(appConfig: VtsAppConfig) extends Logging {
   }
 
   private def authenticate(casParams: CasParams): String = {
-    val sessions: Process[Task, JSessionId] = Process(casParams).toSource through appConfig.securityContext.casClient.sessionRefreshChannel
-
     JSessionIdHolder.synchronized {
       if (JSessionIdHolder.hasSessionId) {
         JSessionIdHolder.jSessionId.get()
       } else {
         var jSessionId = JSessionIdHolder.NOT_FETCHED
-        sessions.map(sessionIdFromCas => jSessionId = sessionIdFromCas).run.run
+        appConfig.securityContext.casClient.fetchCasSession(casParams).attemptRunFor(Duration(1, TimeUnit.MINUTES)) match {
+          case \/-(sessionIdFromCas: SessionCookie) => jSessionId = sessionIdFromCas
+          case -\/(e) =>
+            logger.error("Problem when fetching JSessionId", e)
+        }
         JSessionIdHolder.jSessionId.set(jSessionId)
         jSessionId
       }

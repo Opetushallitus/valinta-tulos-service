@@ -29,7 +29,7 @@ class SijoittelutulosService(raportointiService: RaportointiService,
                              sijoittelunTulosClient: SijoittelunTulosRestClient) {
   import scala.collection.JavaConversions._
 
-  def hakemuksenTulos(haku: Haku, hakemusOid: String, hakijaOidIfFound: Option[String], aikataulu: Option[Vastaanottoaikataulu], latestSijoitteluAjo: Option[SijoitteluAjo]): Option[HakemuksenSijoitteluntulos] = {
+  def hakemuksenTulos(haku: Haku, hakemusOid: HakemusOid, hakijaOidIfFound: Option[String], aikataulu: Option[Vastaanottoaikataulu], latestSijoitteluAjo: Option[SijoitteluAjo]): Option[HakemuksenSijoitteluntulos] = {
     for (
       hakijaOid <- hakijaOidIfFound;
       sijoitteluAjo <- latestSijoitteluAjo;
@@ -37,11 +37,11 @@ class SijoittelutulosService(raportointiService: RaportointiService,
     ) yield hakemuksenYhteenveto(hakija, aikataulu, fetchVastaanotto(hakijaOid, haku.oid), false)
   }
 
-  def hakemustenTulos(hakuOid: String,
-                      hakukohdeOid: Option[String] = None,
-                      hakijaOidsByHakemusOids: Map[String, String],
-                      haunVastaanotot: Option[Map[String,Set[VastaanottoRecord]]] = None): List[HakemuksenSijoitteluntulos] = {
-    def fetchVastaanottos(hakemusOid: String, hakijaOidFromSijoittelunTulos: Option[String]): Set[VastaanottoRecord] =
+  def hakemustenTulos(hakuOid: HakuOid,
+                      hakukohdeOid: Option[HakukohdeOid] = None,
+                      hakijaOidsByHakemusOids: Map[HakemusOid, String],
+                      haunVastaanotot: Option[Map[String, Set[VastaanottoRecord]]] = None): List[HakemuksenSijoitteluntulos] = {
+    def fetchVastaanottos(hakemusOid: HakemusOid, hakijaOidFromSijoittelunTulos: Option[String]): Set[VastaanottoRecord] =
       (hakijaOidsByHakemusOids.get(hakemusOid).orElse(hakijaOidFromSijoittelunTulos), haunVastaanotot) match {
         case (Some(hakijaOid), Some(vastaanotot)) => vastaanotot.getOrElse(hakijaOid, Set())
         case (Some(hakijaOid), None) => fetchVastaanotto(hakijaOid, hakuOid)
@@ -54,10 +54,10 @@ class SijoittelutulosService(raportointiService: RaportointiService,
       sijoittelu <- findLatestSijoitteluAjo(hakuOid, hakukohdeOid);
       hakijat <- {
         hakukohdeOid match {
-          case Some(hakukohde) => Option(Timer.timed("hakukohteen hakemukset", 1000)(raportointiService.hakemukset(sijoittelu, hakukohde)))
-            .map(_.toList.map(h => hakemuksenKevytYhteenveto(h, aikataulu, fetchVastaanottos(h.getHakemusOid, Option(h.getHakijaOid)))))
+          case Some(hakukohde) => Option(Timer.timed("hakukohteen hakemukset", 1000)(raportointiService.hakemukset(sijoittelu, hakukohde.toString)))
+            .map(_.toList.map(h => hakemuksenKevytYhteenveto(h, aikataulu, fetchVastaanottos(HakemusOid(h.getHakemusOid), Option(h.getHakijaOid)))))
           case None => Option(Timer.timed("hakemukset", 1000)(raportointiService.hakemukset(sijoittelu, null, null, null, null, null, null)))
-            .map(_.getResults.toList.map(h => hakemuksenYhteenveto(h, aikataulu, fetchVastaanottos(h.getHakemusOid, Option(h.getHakijaOid)), false)))
+            .map(_.getResults.toList.map(h => hakemuksenYhteenveto(h, aikataulu, fetchVastaanottos(HakemusOid(h.getHakemusOid), Option(h.getHakijaOid)), false)))
         }
       }
     ) yield {
@@ -65,7 +65,7 @@ class SijoittelutulosService(raportointiService: RaportointiService,
     }).getOrElse(Nil)
   }
 
-  def findAikatauluFromOhjausparametritService(hakuOid: String): Option[Vastaanottoaikataulu] = {
+  def findAikatauluFromOhjausparametritService(hakuOid: HakuOid): Option[Vastaanottoaikataulu] = {
     Timer.timed("findAikatauluFromOhjausparametritService -> ohjausparametritService.ohjausparametrit", 100) {
       ohjausparametritService.ohjausparametrit(hakuOid) match {
         case Right(o) => o.map(_.vastaanottoaikataulu)
@@ -74,20 +74,20 @@ class SijoittelutulosService(raportointiService: RaportointiService,
     }
   }
 
-  def findLatestSijoitteluAjoForHaku(hakuOid: String): Option[SijoitteluAjo] = {
+  def findLatestSijoitteluAjoForHaku(hakuOid: HakuOid): Option[SijoitteluAjo] = {
     Timer.timed("findLatestSijoitteluAjoForHaku -> latestSijoitteluAjoClient.fetchLatestSijoitteluAjoFromSijoitteluService", 100) {
       sijoittelunTulosClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None)
     }
   }
 
-  def findLatestSijoitteluAjo(hakuOid: String, hakukohdeOid: Option[String]): Option[SijoitteluAjo] = {
+  def findLatestSijoitteluAjo(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid]): Option[SijoitteluAjo] = {
     Timer.timed(s"findLatestSijoitteluAjo -> latestSijoitteluAjoClient.fetchLatestSijoitteluAjoFromSijoitteluService($hakuOid, $hakukohdeOid)", 100) {
       sijoittelunTulosClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, hakukohdeOid)
     }
   }
 
-  def sijoittelunTuloksetWithoutVastaanottoTieto(hakuOid: String, sijoitteluajoId: String, hyvaksytyt: Option[Boolean], ilmanHyvaksyntaa: Option[Boolean], vastaanottaneet: Option[Boolean],
-                                                 hakukohdeOid: Option[List[String]], count: Option[Int], index: Option[Int],
+  def sijoittelunTuloksetWithoutVastaanottoTieto(hakuOid: HakuOid, sijoitteluajoId: String, hyvaksytyt: Option[Boolean], ilmanHyvaksyntaa: Option[Boolean], vastaanottaneet: Option[Boolean],
+                                                 hakukohdeOid: Option[List[HakukohdeOid]], count: Option[Int], index: Option[Int],
                                                  haunVastaanototByHakijaOid: Map[String, Set[VastaanottoRecord]]): HakijaPaginationObject = {
     import scala.collection.JavaConverters._
 
@@ -104,7 +104,7 @@ class SijoittelutulosService(raportointiService: RaportointiService,
       }
 
       val hakukohdeOidsAsJava: java.util.List[String] = hakukohdeOid match {
-        case Some(oids) => oids.asJava
+        case Some(oids) => oids.map(_.toString).asJava
         case None => null
       }
 
@@ -113,7 +113,7 @@ class SijoittelutulosService(raportointiService: RaportointiService,
     }.getOrElse(new HakijaPaginationObject)
   }
 
-  def latestSijoittelunTulos(hakuOid: String, henkiloOid: String, hakemusOid: String,
+  def latestSijoittelunTulos(hakuOid: HakuOid, henkiloOid: String, hakemusOid: HakemusOid,
                              vastaanottoaikataulu: Option[Vastaanottoaikataulu]): DBIO[HakemuksenSijoitteluntulos] = {
     findLatestSijoitteluAjoForHaku(hakuOid).flatMap(findHakemus(hakemusOid, _)).map(hakija => {
       hakijaVastaanottoRepository.findHenkilonVastaanototHaussa(henkiloOid, hakuOid).map(vastaanotot => {
@@ -122,7 +122,7 @@ class SijoittelutulosService(raportointiService: RaportointiService,
     }).getOrElse(DBIO.successful(HakemuksenSijoitteluntulos(hakemusOid, None, Nil)))
   }
 
-  def latestSijoittelunTulosVirkailijana(hakuOid: String, henkiloOid: String, hakemusOid: String,
+  def latestSijoittelunTulosVirkailijana(hakuOid: HakuOid, henkiloOid: String, hakemusOid: HakemusOid,
                                          vastaanottoaikataulu: Option[Vastaanottoaikataulu]): DBIO[HakemuksenSijoitteluntulos] = {
     findLatestSijoitteluAjoForHaku(hakuOid).flatMap(findHakemus(hakemusOid, _)).map(hakija => {
       hakijaVastaanottoRepository.findHenkilonVastaanototHaussa(henkiloOid, hakuOid).map(vastaanotot => {
@@ -131,22 +131,22 @@ class SijoittelutulosService(raportointiService: RaportointiService,
     }).getOrElse(DBIO.successful(HakemuksenSijoitteluntulos(hakemusOid, None, Nil)))
   }
 
-  def sijoittelunTulosForAjoWithoutVastaanottoTieto(sijoitteluAjo: SijoitteluAjo, hakemusOid: String): HakijaDTO = findHakemus(hakemusOid, sijoitteluAjo).orNull
+  def sijoittelunTulosForAjoWithoutVastaanottoTieto(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid): HakijaDTO = findHakemus(hakemusOid, sijoitteluAjo).orNull
 
-  def findSijoitteluAjo(hakuOid: String, sijoitteluajoId: String): Option[SijoitteluAjo] = {
+  def findSijoitteluAjo(hakuOid: HakuOid, sijoitteluajoId: String): Option[SijoitteluAjo] = {
     if (SijoitteluResource.LATEST == sijoitteluajoId) {
       sijoittelunTulosClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None)
     } else fromOptional(raportointiService.getSijoitteluAjo(sijoitteluajoId.toLong))
   }
 
-  private def findHakemus(hakemusOid: String, sijoitteluAjo: SijoitteluAjo): Option[HakijaDTO] = {
+  private def findHakemus(hakemusOid: HakemusOid, sijoitteluAjo: SijoitteluAjo): Option[HakijaDTO] = {
     Timer.timed("SijoittelutulosService -> sijoittelunTulosClient.fetchHakemuksenTulos", 1000) {
       sijoittelunTulosClient.fetchHakemuksenTulos(sijoitteluAjo, hakemusOid)
     }
   }
 
 
-  private def fetchVastaanotto(henkiloOid: String, hakuOid: String): Set[VastaanottoRecord] = {
+  private def fetchVastaanotto(henkiloOid: String, hakuOid: HakuOid): Set[VastaanottoRecord] = {
     Timer.timed("hakijaVastaanottoRepository.findHenkilonVastaanototHaussa", 100) {
       hakijaVastaanottoRepository.runBlocking(hakijaVastaanottoRepository.findHenkilonVastaanototHaussa(henkiloOid, hakuOid))
     }
@@ -155,7 +155,7 @@ class SijoittelutulosService(raportointiService: RaportointiService,
   def hakemuksenYhteenveto(hakija: HakijaDTO, aikataulu: Option[Vastaanottoaikataulu], vastaanottoRecord: Set[VastaanottoRecord], vastaanotettavuusVirkailijana: Boolean): HakemuksenSijoitteluntulos = {
 
     val hakutoiveidenYhteenvedot = hakija.getHakutoiveet.toList.map { hakutoive: HakutoiveDTO =>
-      val vastaanotto = vastaanottoRecord.find(v => v.hakukohdeOid == hakutoive.getHakukohdeOid).map(_.action)
+      val vastaanotto = vastaanottoRecord.find(v => v.hakukohdeOid.toString == hakutoive.getHakukohdeOid).map(_.action)
       val jono: HakutoiveenValintatapajonoDTO = JonoFinder.merkitseväJono(hakutoive).get
       val valintatila: Valintatila = jononValintatila(jono, hakutoive)
 
@@ -181,9 +181,9 @@ class SijoittelutulosService(raportointiService: RaportointiService,
       val pisteet: Option[BigDecimal] = Option(jono.getPisteet).map((p: java.math.BigDecimal) => new BigDecimal(p))
 
       HakutoiveenSijoitteluntulos(
-        hakutoive.getHakukohdeOid,
+        HakukohdeOid(hakutoive.getHakukohdeOid),
         hakutoive.getTarjoajaOid,
-        jono.getValintatapajonoOid,
+        ValintatapajonoOid(jono.getValintatapajonoOid),
         hakijanTilat = hakijanTilat,
         virkailijanTilat = virkailijanTilat,
         vastaanottoDeadline.map(_.toDate),
@@ -205,12 +205,12 @@ class SijoittelutulosService(raportointiService: RaportointiService,
       )
     }
 
-    HakemuksenSijoitteluntulos(hakija.getHakemusOid, Option(StringUtils.trimToNull(hakija.getHakijaOid)), hakutoiveidenYhteenvedot)
+    HakemuksenSijoitteluntulos(HakemusOid(hakija.getHakemusOid), Option(StringUtils.trimToNull(hakija.getHakijaOid)), hakutoiveidenYhteenvedot)
   }
 
   private def hakemuksenKevytYhteenveto(hakija: KevytHakijaDTO, aikataulu: Option[Vastaanottoaikataulu], vastaanottoRecord: Set[VastaanottoRecord]): HakemuksenSijoitteluntulos = {
     val hakutoiveidenYhteenvedot = hakija.getHakutoiveet.toList.map { hakutoive: KevytHakutoiveDTO =>
-      val vastaanotto = vastaanottoRecord.find(v => v.hakukohdeOid == hakutoive.getHakukohdeOid).map(_.action)
+      val vastaanotto = vastaanottoRecord.find(v => v.hakukohdeOid.toString == hakutoive.getHakukohdeOid).map(_.action)
       val jono: KevytHakutoiveenValintatapajonoDTO = JonoFinder.merkitseväJono(hakutoive).get
 
       val valintatila: Valintatila = jononValintatila(jono, hakutoive)
@@ -237,9 +237,9 @@ class SijoittelutulosService(raportointiService: RaportointiService,
       val pisteet: Option[BigDecimal] = Option(jono.getPisteet).map((p: java.math.BigDecimal) => new BigDecimal(p))
 
       HakutoiveenSijoitteluntulos(
-        hakutoive.getHakukohdeOid,
+        HakukohdeOid(hakutoive.getHakukohdeOid),
         hakutoive.getTarjoajaOid,
-        jono.getValintatapajonoOid,
+        ValintatapajonoOid(jono.getValintatapajonoOid),
         hakijanTilat = hakijanTilat,
         virkailijanTilat = virkailijanTilat,
         vastaanottoDeadline.map(_.toDate),
@@ -261,7 +261,7 @@ class SijoittelutulosService(raportointiService: RaportointiService,
       )
     }
 
-    HakemuksenSijoitteluntulos(hakija.getHakemusOid, Option(StringUtils.trimToNull(hakija.getHakijaOid)), hakutoiveidenYhteenvedot)
+    HakemuksenSijoitteluntulos(HakemusOid(hakija.getHakemusOid), Option(StringUtils.trimToNull(hakija.getHakijaOid)), hakutoiveidenYhteenvedot)
   }
 
   private def laskeVastaanotettavuustila(valintatila: Valintatila, vastaanottotila: Vastaanottotila): Vastaanotettavuustila.Value = {
@@ -325,7 +325,7 @@ class SijoittelutulosService(raportointiService: RaportointiService,
     }
   }
 
-  def haeVastaanotonAikarajaTiedot(hakuOid: String, hakukohdeOid: String, hakemusOids: Set[String]): Set[VastaanottoAikarajaMennyt] = {
+  def haeVastaanotonAikarajaTiedot(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid, hakemusOids: Set[HakemusOid]): Set[VastaanottoAikarajaMennyt] = {
     def calculateLateness(aikataulu: Option[Vastaanottoaikataulu])(hakijaDto: KevytHakijaDTO): VastaanottoAikarajaMennyt = {
       val hakutoiveDtoOfThisHakukohde: Option[KevytHakutoiveDTO] = hakijaDto.getHakutoiveet.toList.find(_.getHakukohdeOid == hakukohdeOid)
       val vastaanottoDeadline: Option[DateTime] = hakutoiveDtoOfThisHakukohde.flatMap { hakutoive: KevytHakutoiveDTO =>
@@ -334,7 +334,7 @@ class SijoittelutulosService(raportointiService: RaportointiService,
         laskeVastaanottoDeadline(aikataulu, viimeisinHakemuksenTilanMuutos)
       }
       val isLate: Boolean = vastaanottoDeadline.exists(new DateTime().isAfter)
-      VastaanottoAikarajaMennyt(hakijaDto.getHakemusOid, isLate, vastaanottoDeadline)
+      VastaanottoAikarajaMennyt(HakemusOid(hakijaDto.getHakemusOid), isLate, vastaanottoDeadline)
     }
 
     import scala.collection.JavaConverters._
@@ -342,7 +342,7 @@ class SijoittelutulosService(raportointiService: RaportointiService,
       case Some(sijoitteluAjo) =>
         val aikataulu = findAikatauluFromOhjausparametritService(hakuOid)
         val allHakijasForHakukohde = Timer.timed(s"Fetch hakemukset just for hakukohde $hakukohdeOid of haku $hakuOid", 1000) {
-          raportointiService.hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo, hakukohdeOid).asScala
+          raportointiService.hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo, hakukohdeOid.toString).asScala
         }
         val queriedHakijasForHakukohde = allHakijasForHakukohde.filter(hakijaDto => hakemusOids.contains(hakijaDto.getHakemusOid))
         queriedHakijasForHakukohde.map(calculateLateness(aikataulu)).toSet

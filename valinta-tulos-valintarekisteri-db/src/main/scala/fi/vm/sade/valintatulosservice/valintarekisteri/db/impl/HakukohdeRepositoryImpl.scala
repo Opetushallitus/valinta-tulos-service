@@ -1,20 +1,20 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakukohdeRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeRecord, OidValidator}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, HakukohdeRecord, OidValidator}
 import org.postgresql.util.PSQLException
 import slick.driver.PostgresDriver.api._
 
 trait HakukohdeRepositoryImpl extends HakukohdeRepository with ValintarekisteriRepository {
 
-  override def findHakukohde(oid: String): Option[HakukohdeRecord] = {
+  override def findHakukohde(oid: HakukohdeOid): Option[HakukohdeRecord] = {
     runBlocking(sql"""select hakukohde_oid, haku_oid, yhden_paikan_saanto_voimassa, kk_tutkintoon_johtava, koulutuksen_alkamiskausi
            from hakukohteet
            where hakukohde_oid = $oid
          """.as[HakukohdeRecord]).headOption
   }
 
-  override def findHaunArbitraryHakukohde(oid: String): Option[HakukohdeRecord] = {
+  override def findHaunArbitraryHakukohde(oid: HakuOid): Option[HakukohdeRecord] = {
     runBlocking(sql"""select hakukohde_oid, haku_oid, yhden_paikan_saanto_voimassa, kk_tutkintoon_johtava, koulutuksen_alkamiskausi
            from hakukohteet
            where haku_oid = $oid
@@ -22,7 +22,7 @@ trait HakukohdeRepositoryImpl extends HakukohdeRepository with ValintarekisteriR
          """.as[HakukohdeRecord]).headOption
   }
 
-  override def findHaunHakukohteet(oid: String): Set[HakukohdeRecord] = {
+  override def findHaunHakukohteet(oid: HakuOid): Set[HakukohdeRecord] = {
     runBlocking(sql"""select hakukohde_oid, haku_oid, yhden_paikan_saanto_voimassa, kk_tutkintoon_johtava, koulutuksen_alkamiskausi
            from hakukohteet
            where haku_oid = $oid
@@ -35,10 +35,10 @@ trait HakukohdeRepositoryImpl extends HakukohdeRepository with ValintarekisteriR
             from hakukohteet""".as[HakukohdeRecord]).toSet
   }
 
-  override def findHakukohteet(hakukohdeOids: Set[String]): Set[HakukohdeRecord] = hakukohdeOids match {
+  override def findHakukohteet(hakukohdeOids: Set[HakukohdeOid]): Set[HakukohdeRecord] = hakukohdeOids match {
     case x if 0 == x.size => Set()
     case _ => {
-      val invalidOids = hakukohdeOids.filterNot(OidValidator.isOid)
+      val invalidOids = hakukohdeOids.filterNot(_.valid)
       if (invalidOids.nonEmpty) {
         throw new IllegalArgumentException(s"${invalidOids.size} huonoa oidia syötteessä: $invalidOids")
       }
@@ -75,7 +75,7 @@ trait HakukohdeRepositoryImpl extends HakukohdeRepository with ValintarekisteriR
     ) == 1
   }
 
-  override def hakukohteessaVastaanottoja(oid: String): Boolean = {
+  override def hakukohteessaVastaanottoja(oid: HakukohdeOid): Boolean = {
     runBlocking(sql"""select count(*) from newest_vastaanotot where hakukohde = ${oid}""".as[Int]).head > 0
   }
 }

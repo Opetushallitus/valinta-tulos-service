@@ -3,10 +3,11 @@ package fi.vm.sade.valintatulosservice.testenvironment
 import java.io.File
 
 import fi.vm.sade.valintatulosservice.ValintatulosService
-import fi.vm.sade.valintatulosservice.config.{VtsDynamicAppConfig, VtsAppConfig}
+import fi.vm.sade.valintatulosservice.config.{VtsAppConfig, VtsDynamicAppConfig}
 import fi.vm.sade.valintatulosservice.domain.Hakemuksentulos
 import fi.vm.sade.valintatulosservice.sijoittelu.{SijoittelunTulosRestClient, SijoittelutulosService}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakemusOid
 import org.junit.runner.RunWith
 import org.specs2.execute._
 import org.specs2.mutable.Specification
@@ -25,11 +26,11 @@ class ValintatulosIntegrationTest extends Specification {
           SijoittelunTulosRestClient(appConfig))
         val valintatulosService = new ValintatulosService(null, sijoittelutulosService, null, hakuService, null, null)
 
-        val tulos: Hakemuksentulos = valintatulosService.hakemuksentulos("1.2.246.562.11.00000000330").get
+        val tulos: Hakemuksentulos = valintatulosService.hakemuksentulos(HakemusOid("1.2.246.562.11.00000000330")).get
 
         tulos.hakutoiveet.length must_== 2
       } else {
-        throw new SkipException(Skipped("Variables file not found at " + varsFile))
+        throw SkipException(Skipped("Variables file not found at " + varsFile))
       }
     }
   }

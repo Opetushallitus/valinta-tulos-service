@@ -16,11 +16,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
                                        haku: Haku,
+                                       hakukohdeOid: HakukohdeOid,
                                        valinnantulosRepository: ValinnantulosRepository,
                                        hakukohdeRecordService: HakukohdeRecordService,
                                        ifUnmodifiedSince: Option[Instant],
                                        audit: Audit) extends ValinnantulosStrategy with Logging {
   private val session = auditInfo.session._2
+
+  lazy val hakukohdeRecord: Either[Throwable, HakukohdeRecord] = hakukohdeRecordService.getHakukohdeRecord(hakukohdeOid)
 
   def hasChange(uusi:Valinnantulos, vanha:Valinnantulos) = uusi.hasChanged(vanha) || uusi.poistettava.getOrElse(false)
 
@@ -173,7 +176,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         s"vastaanottotila on ${uusi.vastaanottotila} ja " +
         s"valinnantila on ${uusi.valinnantila} ja " +
         s"ilmoittautumistila on ${uusi.ilmoittautumistila}.")
-        hakukohdeRecordService.getHakukohdeRecord(uusi.hakukohdeOid) match {
+        hakukohdeRecord match {
           case Right(_) => createInsertOperations
           case Left(t) => List(DBIO.failed(t))
         }
@@ -205,9 +208,9 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
 
   private def target(uusi: Valinnantulos): Target = {
     new Target.Builder()
-      .setField("hakukohde", uusi.hakukohdeOid)
-      .setField("valintatapajono", uusi.valintatapajonoOid)
-      .setField("hakemus", uusi.hakemusOid)
+      .setField("hakukohde", uusi.hakukohdeOid.toString)
+      .setField("valintatapajono", uusi.valintatapajonoOid.toString)
+      .setField("hakemus", uusi.hakemusOid.toString)
       .build()
   }
 

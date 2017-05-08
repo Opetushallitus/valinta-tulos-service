@@ -7,12 +7,12 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.VastaanottoEvent
 @Deprecated //Used by old Vastaanotto API
 case class Vastaanotto(hakukohdeOid: String, tila: Vastaanottotila, muokkaaja: String, selite: String)
 
-case class HakijanVastaanotto(henkiloOid: String, hakemusOid: String, hakukohdeOid: String, action: HakijanVastaanottoAction) extends VastaanottoEvent {
+case class HakijanVastaanotto(henkiloOid: String, hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, action: HakijanVastaanottoAction) extends VastaanottoEvent {
   val ilmoittaja = henkiloOid
   val selite = "Hakijan oma vastaanotto"
 }
 
-case class VirkailijanVastaanotto(hakuOid: String, valintatapajonoOid: String, henkiloOid: String, hakemusOid: String, hakukohdeOid: String,
+case class VirkailijanVastaanotto(hakuOid: HakuOid, valintatapajonoOid: ValintatapajonoOid, henkiloOid: String, hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid,
                                   action: VirkailijanVastaanottoAction, ilmoittaja: String, selite: String) extends VastaanottoEvent
 
 object VirkailijanVastaanotto {
@@ -23,7 +23,12 @@ object VirkailijanVastaanotto {
 
 
   def apply(dto: VastaanottoEventDto): VirkailijanVastaanotto = {
-    VirkailijanVastaanotto(dto.hakuOid, dto.valintatapajonoOid, dto.henkiloOid, dto.hakemusOid, dto.hakukohdeOid,
+    VirkailijanVastaanotto(
+      dto.hakuOid,
+      dto.valintatapajonoOid,
+      dto.henkiloOid,
+      dto.hakemusOid,
+      dto.hakukohdeOid,
       VirkailijanVastaanottoAction.getVirkailijanVastaanottoAction(dto.tila), dto.ilmoittaja, dto.selite)
   }
 }

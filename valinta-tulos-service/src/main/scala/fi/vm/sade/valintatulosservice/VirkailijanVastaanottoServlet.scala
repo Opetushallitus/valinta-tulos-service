@@ -4,7 +4,7 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.json.JsonFormats.javaObjectToJsonString
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.VastaanottoRecord
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{PriorAcceptanceException, VastaanottoEventDto, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, PriorAcceptanceException, ValintatapajonoOid, VastaanottoEventDto, Vastaanottotila}
 import org.joda.time.DateTime
 import org.json4s.jackson.Serialization._
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
@@ -23,8 +23,8 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid"))
   get("/haku/:hakuOid/hakukohde/:hakukohdeOid", operation(getVastaanottoTilatByHakukohdeSwagger)) {
 
-    val hakuOid = params("hakuOid")
-    val hakukohdeOid = params("hakukohdeOid")
+    val hakuOid = HakuOid(params("hakuOid"))
+    val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
 
     valintatulosService.hakemustenTulosByHakukohde(hakuOid, hakukohdeOid).right.map(
       h => Ok(h.map(t => {
@@ -43,7 +43,7 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
     parameter pathParam[String]("hakuOid").description("Haku oid")
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid"))
   get("/valintatulos/haku/:hakuOid/hakemus/:hakemusOid", operation(getValintatuloksetByHakemusSwagger)) {
-    val hakemusOid = params("hakemusOid")
+    val hakemusOid = HakemusOid(params("hakemusOid"))
     Ok(javaObjectToJsonString(valintatulosService.findValintaTuloksetForVirkailijaByHakemus(hakemusOid)))
   }
 
@@ -52,8 +52,8 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
     parameter pathParam[String]("hakuOid").description("Haun oid")
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid"))
   get("/valintatulos/haku/:hakuOid/hakukohde/:hakukohdeOid", operation(getValintatuloksetByHakukohdeSwagger)) {
-    val hakuOid = params("hakuOid")
-    val hakukohdeOid = params("hakukohdeOid")
+    val hakuOid = HakuOid(params("hakuOid"))
+    val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     Ok(javaObjectToJsonString(valintatulosService.findValintaTuloksetForVirkailija(hakuOid, hakukohdeOid)))
   }
 
@@ -62,8 +62,8 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
     parameter pathParam[String]("hakuOid").description("Haun oid")
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid"))
   get("/valintatulos/ilmanhakijantilaa/haku/:hakuOid/hakukohde/:hakukohdeOid", operation(getValintatuloksetWithoutTilaHakijalleByHakukohdeSwagger)) {
-    val hakuOid = params("hakuOid")
-    val hakukohdeOid = params("hakukohdeOid")
+    val hakuOid = HakuOid(params("hakuOid"))
+    val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     Ok(javaObjectToJsonString(valintatulosService.findValintaTuloksetForVirkailijaWithoutTilaHakijalle(hakuOid, hakukohdeOid)))
   }
 
@@ -73,9 +73,9 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid")
     parameter bodyParam[Set[String]]("hakemusOids").description("Kiinnostavien hakemusten oidit"))
   post("/myohastyneet/haku/:hakuOid/hakukohde/:hakukohdeOid", operation(postLatenessFlagsForApplicationsSwagger)) {
-    val hakuOid = params("hakuOid")
-    val hakukohdeOid = params("hakukohdeOid")
-    val hakemusOids = read[Set[String]](request.body)
+    val hakuOid = HakuOid(params("hakuOid"))
+    val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
+    val hakemusOids = read[Set[HakemusOid]](request.body)
     Ok(valintatulosService.haeVastaanotonAikarajaTiedot(hakuOid, hakukohdeOid, hakemusOids))
   }
 
@@ -86,10 +86,10 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
     parameter pathParam[String]("valintatapajonoOid").description("Valintatapajonon oid")
     parameter bodyParam[Set[String]]("hakemusOids").description("Kiinnostavien hakemusten oidit"))
   post("/tilahakijalle/haku/:hakuOid/hakukohde/:hakukohdeOid/valintatapajono/:valintatapajonoOid", operation(postTilaHakijalleForApplicationsSwagger)) {
-    val hakuOid = params("hakuOid")
-    val hakukohdeOid = params("hakukohdeOid")
-    val valintatapajonoOid = params("valintatapajonoOid")
-    val hakemusOids = read[Set[String]](request.body)
+    val hakuOid = HakuOid(params("hakuOid"))
+    val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
+    val valintatapajonoOid = ValintatapajonoOid(params("valintatapajonoOid"))
+    val hakemusOids = read[Set[HakemusOid]](request.body)
     Ok(valintatulosService.haeTilatHakijoille(hakuOid, hakukohdeOid, valintatapajonoOid, hakemusOids))
   }
 
@@ -97,7 +97,7 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
     summary "Hakee valintatulokset haun hakijoille"
     parameter pathParam[String]("hakuOid").description("Haun oid"))
   get("/valintatulos/haku/:hakuOid", operation(getValintatuloksetByHakuSwagger)) {
-    val hakuOid = params("hakuOid")
+    val hakuOid = HakuOid(params("hakuOid"))
     Ok(javaObjectToJsonString(valintatulosService.findValintaTuloksetForVirkailija(hakuOid)))
   }
 
@@ -106,7 +106,7 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
       summary "Yhden paikan säädöksen piirissä olevat vastaanotot annetun haun koulutuksen alkamiskaudella"
       parameter pathParam[String]("hakuOid").description("Haun oid"))
   get("/vastaanotot/haku/:hakuOid", operation(getHaunKoulutuksenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissaSwagger)) {
-    val hakuOid = params("hakuOid")
+    val hakuOid = HakuOid(params("hakuOid"))
     Ok(valintatulosService.haunKoulutuksenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid).toList)
   }
 
@@ -145,6 +145,6 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
 }
 
 case class Result(status: Int, message: Option[String])
-case class VastaanottoResult(henkiloOid: String, hakemusOid: String, hakukohdeOid: String, result: Result)
-case class VastaanottoAikarajaMennyt(hakemusOid: String, mennyt: Boolean, vastaanottoDeadline: Option[DateTime])
-case class TilaHakijalle(hakemusOid: String, hakukohdeOid: String, valintatapajonoOid: String, tilaHakijalle: String)
+case class VastaanottoResult(henkiloOid: String, hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, result: Result)
+case class VastaanottoAikarajaMennyt(hakemusOid: HakemusOid, mennyt: Boolean, vastaanottoDeadline: Option[DateTime])
+case class TilaHakijalle(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, tilaHakijalle: String)
