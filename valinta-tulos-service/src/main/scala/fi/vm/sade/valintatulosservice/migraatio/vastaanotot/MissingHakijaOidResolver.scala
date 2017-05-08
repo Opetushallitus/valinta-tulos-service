@@ -45,7 +45,6 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
   private val oppijanumerorekisteriClient = createCasClient(appConfig, "/oppijanumerorekisteri-service")
   private val hakuUrlBase = appConfig.ophUrlProperties.url("haku-app.listfull.queryBase")
   private val henkiloPalveluUrlBase = appConfig.ophUrlProperties.url("authentication-service.henkilo")
-  private val oppijanumerorekisteriUrlBase = appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.henkiloPerusByHetu")
 
   case class HakemusHenkilo(personOid: Option[String], hetu: Option[String], etunimet: String, sukunimi: String, kutsumanimet: String,
                             syntymaaika: String, aidinkieli: String, sukupuoli: String)
@@ -70,7 +69,7 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
     }
 
     implicit val henkiloDecoder = org.http4s.json4s.native.jsonOf[Option[Henkilo]]
-    Try(oppijanumerorekisteriClient.prepare(createUri(appConfig.ophUrlProperties.url(oppijanumerorekisteriUrlBase, hetu))).timed(timeout).flatMap {
+    Try(oppijanumerorekisteriClient.prepare(createUri(appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.henkiloPerusByHetu",  hetu))).timed(timeout).flatMap {
       case r if 200 == r.status.code => r.as[Option[Henkilo]]
       case r => Task.fail(new RuntimeException(r.toString))
     }.run) match {
