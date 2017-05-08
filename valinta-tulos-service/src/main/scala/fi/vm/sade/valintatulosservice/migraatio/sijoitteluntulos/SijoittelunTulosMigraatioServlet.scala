@@ -4,7 +4,6 @@ import java.io.{PrintWriter, StringWriter}
 
 import fi.vm.sade.valintatulosservice.VtsServletBase
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 import org.json4s.jackson.Serialization.read
 import org.scalatra.swagger.Swagger
@@ -17,8 +16,6 @@ class SijoittelunTulosMigraatioServlet(migraatioService: SijoitteluntulosMigraat
   override val applicationName = Some("sijoittelun-tulos-migraatio")
 
   override protected def applicationDescription: String = "REST-API sijoittelun tuloksien migroinniksi valintarekisteriin"
-
-  private val sijoittelunTulosRestClient = new SijoittelunTulosRestClient(appConfig)
 
   logger.warn("Mountataan Valintarekisterin sijoittelun tuloksien migraatioservlet!")
 

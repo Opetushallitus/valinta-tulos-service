@@ -1,11 +1,12 @@
-package fi.vm.sade.valintatulosservice.sijoittelu
+package fi.vm.sade.valintatulosservice.sijoittelu.legacymongo
 
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.StreamingJsonArrayRetriever
+import fi.vm.sade.valintatulosservice.sijoittelu.ValintarekisteriHakijaDTOClient
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 
-class StreamingHakijaDtoClient(appConfig: VtsAppConfig) {
+class StreamingHakijaDtoClient(appConfig: VtsAppConfig) extends ValintarekisteriHakijaDTOClient {
   private val retriever = new StreamingJsonArrayRetriever(appConfig)
 
   private val targetService = appConfig.ophUrlProperties.url("sijoittelu-service.suffix")
