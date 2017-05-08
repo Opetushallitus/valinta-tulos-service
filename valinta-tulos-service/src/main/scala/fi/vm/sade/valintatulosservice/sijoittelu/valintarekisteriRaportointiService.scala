@@ -1,4 +1,4 @@
-package fi.vm.sade.valintatulosservice.sijoittelu.valintarekisteri
+package fi.vm.sade.valintatulosservice.sijoittelu
 
 import fi.vm.sade.sijoittelu.domain.SijoitteluAjo
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationObject, KevytHakijaDTO}
@@ -8,7 +8,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuO
 
 import scala.util.Try
 
-trait RaportointiService {
+trait ValintarekisteriRaportointiService {
   def latestSijoitteluAjoForHaku(hakuOid:HakuOid): Option[SijoitteluAjo]
   def getSijoitteluAjo(sijoitteluajoId: Long): Option[SijoitteluAjo]
   def latestSijoitteluAjoForHakukohde(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Option[SijoitteluAjo]
@@ -30,7 +30,7 @@ trait RaportointiService {
   def hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo: SijoitteluAjo, hakukohdeOid:HakukohdeOid): List[KevytHakijaDTO]
 }
 
-class ValintarekisteriRaportointiService(sijoitteluService: SijoitteluService, sijoitteluRepository: SijoitteluRepository) extends RaportointiService {
+class ValintarekisteriRaportointiServiceImpl(sijoitteluService: SijoitteluService, sijoitteluRepository: SijoitteluRepository) extends ValintarekisteriRaportointiService {
   override def latestSijoitteluAjoForHaku(hakuOid: HakuOid): Option[SijoitteluAjo] =
     sijoitteluRepository.getLatestSijoitteluajoId(hakuOid).flatMap(getSijoitteluAjo)
 

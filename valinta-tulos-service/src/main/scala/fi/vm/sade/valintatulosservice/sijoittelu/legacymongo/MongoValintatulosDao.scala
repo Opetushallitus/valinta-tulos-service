@@ -2,12 +2,12 @@ package fi.vm.sade.valintatulosservice.sijoittelu.legacymongo
 
 import fi.vm.sade.sijoittelu.domain.Valintatulos
 import fi.vm.sade.sijoittelu.tulos.dao.{ValintatulosDao => MongoDao}
-import fi.vm.sade.valintatulosservice.sijoittelu.valintarekisteri.ValintatulosDao
+import fi.vm.sade.valintatulosservice.sijoittelu.{ValintarekisteriValintatulosDao}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 
 import scala.collection.JavaConverters._
 
-class MongoValintatulosDao(dao:MongoDao) extends ValintatulosDao {
+class MongoValintatulosDao(dao:MongoDao) extends ValintarekisteriValintatulosDao {
 
   override def loadValintatulokset(hakuOid:HakuOid) =
     dao.loadValintatulokset(hakuOid.toString).asScala.toList

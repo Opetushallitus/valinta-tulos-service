@@ -4,7 +4,8 @@ import com.mongodb._
 import fi.vm.sade.sijoittelu.tulos.dao.{HakukohdeDao, SijoitteluDao, ValintatulosDao}
 import fi.vm.sade.sijoittelu.tulos.service.RaportointiService
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.sijoittelu.SijoitteluContext
+import fi.vm.sade.valintatulosservice.sijoittelu
+import fi.vm.sade.valintatulosservice.sijoittelu.{ValintarekisteriValintatulosDao, ValintarekisteriValintatulosRepository}
 import org.mongodb.morphia.{Datastore, Morphia}
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationContext
@@ -13,6 +14,17 @@ import org.springframework.context.support.PropertySourcesPlaceholderConfigurer
 import org.springframework.core.env.{MapPropertySource, MutablePropertySources}
 
 import scala.collection.JavaConversions._
+
+trait SijoitteluContext {
+
+  def database:DB
+  val morphiaDs:Datastore
+  val valintatulosDao:ValintarekisteriValintatulosDao
+  val hakukohdeDao:HakukohdeDao
+  val sijoitteluDao:SijoitteluDao
+  val raportointiService:sijoittelu.ValintarekisteriRaportointiService
+  val valintatulosRepository:ValintarekisteriValintatulosRepository
+}
 
 class SijoitteluSpringContext(config: VtsAppConfig, context: ApplicationContext) extends SijoitteluContext {
   def database = context.getBean(classOf[DB])

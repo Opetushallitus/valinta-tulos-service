@@ -1,12 +1,12 @@
 package fi.vm.sade.valintatulosservice.sijoittelu.legacymongo
 
 import fi.vm.sade.sijoittelu.domain.Valintatulos
-import fi.vm.sade.valintatulosservice.sijoittelu.{ValintatulosNotFoundException, ValintatulosRepository}
+import fi.vm.sade.valintatulosservice.sijoittelu.{ValintarekisteriValintatulosRepository, ValintatulosNotFoundException}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 
 import scala.util.Try
 
-class MongoValintatulosRepository(val dao:MongoValintatulosDao) extends ValintatulosRepository {
+class MongoValintatulosRepository(val dao:MongoValintatulosDao) extends ValintarekisteriValintatulosRepository {
 
   override def modifyValintatulos(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid,
                          block: (Valintatulos => Unit)): Either[Throwable, Unit] = {
