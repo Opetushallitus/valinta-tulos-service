@@ -4,11 +4,11 @@ import fi.vm.sade.sijoittelu.domain.SijoitteluAjo
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationObject, KevytHakijaDTO}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
 import fi.vm.sade.sijoittelu.tulos.service.{RaportointiService => MongoService}
-import fi.vm.sade.valintatulosservice.sijoittelu.valintarekisteri.RaportointiService
+import fi.vm.sade.valintatulosservice.sijoittelu.ValintarekisteriRaportointiService
 
 import scala.collection.JavaConverters._
 
-class MongoRaportointiService(service:MongoService) extends RaportointiService {
+class MongoRaportointiService(service:MongoService) extends ValintarekisteriRaportointiService {
   override def latestSijoitteluAjoForHaku(hakuOid: HakuOid): Option[SijoitteluAjo] =
     toOption[SijoitteluAjo](service.latestSijoitteluAjoForHaku(hakuOid.toString))
 

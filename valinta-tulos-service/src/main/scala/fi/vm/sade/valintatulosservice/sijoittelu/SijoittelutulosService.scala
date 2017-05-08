@@ -12,7 +12,6 @@ import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
 import fi.vm.sade.valintatulosservice.sijoittelu.JonoFinder.kaikkiJonotJulkaistu
-import fi.vm.sade.valintatulosservice.sijoittelu.valintarekisteri.RaportointiService
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, VastaanottoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
@@ -23,7 +22,7 @@ import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class SijoittelutulosService(raportointiService: RaportointiService,
+class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiService,
                              ohjausparametritService: OhjausparametritService,
                              hakijaVastaanottoRepository: HakijaVastaanottoRepository,
                              sijoittelunTulosClient: SijoittelunTulosRestClient) {
