@@ -1,4 +1,4 @@
-package fi.vm.sade.valintatulosservice.sijoittelu
+package fi.vm.sade.valintatulosservice.sijoittelu.fixture
 
 import java.util
 import java.util.Date

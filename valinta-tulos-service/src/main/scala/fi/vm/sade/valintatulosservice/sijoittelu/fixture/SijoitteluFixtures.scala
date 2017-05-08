@@ -1,4 +1,4 @@
-package fi.vm.sade.valintatulosservice.sijoittelu
+package fi.vm.sade.valintatulosservice.sijoittelu.fixture
 
 import java.util.concurrent.TimeUnit.SECONDS
 
@@ -7,7 +7,6 @@ import fi.vm.sade.sijoittelu.tulos.testfixtures.MongoMockData
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import org.json4s.DefaultFormats
 import org.json4s.JsonAST.JArray
 import org.json4s.jackson.JsonMethods._
 import org.springframework.core.io.ClassPathResource
