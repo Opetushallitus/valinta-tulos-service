@@ -18,8 +18,8 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.MissingHakijaOidResolver
-import fi.vm.sade.valintatulosservice.sijoittelu.{SijoittelunTulosRestClient, ValintarekisteriValintatulosDao}
-import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.SijoitteluContext
+import fi.vm.sade.valintatulosservice.sijoittelu.{ValintarekisteriSijoittelunTulosClient, ValintarekisteriValintatulosDao}
+import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{SijoitteluContext, SijoittelunTulosRestClient}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{MigraatioRepository, SijoitteluRepository, StoreSijoitteluRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -31,7 +31,7 @@ import scala.collection.immutable.Seq
 import scala.concurrent.duration.Duration
 import scala.util.Try
 
-class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTulosRestClient,
+class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: ValintarekisteriSijoittelunTulosClient,
                                        appConfig: VtsAppConfig,
                                        migraatioRepository: MigraatioRepository with SijoitteluRepository with StoreSijoitteluRepository,
                                        hakukohdeRecordService: HakukohdeRecordService,
