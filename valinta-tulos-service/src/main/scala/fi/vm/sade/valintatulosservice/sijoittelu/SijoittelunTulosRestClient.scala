@@ -6,6 +6,7 @@ import fi.vm.sade.sijoittelu.tulos.dto.{HakukohdeDTO, SijoitteluajoDTO}
 import fi.vm.sade.valintatulosservice.config.StubbedExternalDeps
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.StreamingJsonArrayRetriever
+import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.SijoitteluContext
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
 
 import scala.collection.JavaConverters._

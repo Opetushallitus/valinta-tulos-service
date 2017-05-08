@@ -19,8 +19,8 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.MissingHakijaOidResolver
-import fi.vm.sade.valintatulosservice.sijoittelu.{SijoitteluContext, SijoittelunTulosRestClient}
-import fi.vm.sade.valintatulosservice.sijoittelu.valintarekisteri.ValintatulosDao
+import fi.vm.sade.valintatulosservice.sijoittelu.{SijoittelunTulosRestClient, ValintarekisteriValintatulosDao}
+import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.SijoitteluContext
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{MigraatioRepository, MigratedIlmoittautuminen, SijoitteluRepository, StoreSijoitteluRepository, Valintaesitys}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -40,7 +40,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
                                        valintalaskentakoostepalveluService: ValintalaskentakoostepalveluService,
                                        sijoitteluContext: SijoitteluContext) extends Logging {
   private val hakukohdeDao: HakukohdeDao = sijoitteluContext.hakukohdeDao
-  private val valintatulosDao: ValintatulosDao = sijoitteluContext.valintatulosDao
+  private val valintatulosDao: ValintarekisteriValintatulosDao = sijoitteluContext.valintatulosDao
   private val sijoitteluDao = sijoitteluContext.sijoitteluDao
 
   private val adapter = new HexBinaryAdapter()

@@ -7,7 +7,8 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.hakemus.{HakemusFixture, HakemusFixtures, HakutoiveFixture}
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
-import fi.vm.sade.valintatulosservice.sijoittelu.{SijoitteluContext, SijoitteluFixtureCreator}
+import fi.vm.sade.valintatulosservice.sijoittelu.SijoitteluFixtureCreator
+import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.SijoitteluContext
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 import org.mongodb.morphia.AdvancedDatastore
