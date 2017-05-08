@@ -93,12 +93,11 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
 
     val stringUri = appConfig.ophUrlProperties.url("haku-app.application.queryBase", hakemusOid)
     val url = Uri.fromString(stringUri).getOrElse(throw new RuntimeException(s"Invalid uri: $stringUri"))
-    val totalOperationTimeout = Duration(1, TimeUnit.MINUTES)
-    val retryingClient = Retry(RetryPolicy.exponentialBackoff(totalOperationTimeout, maxRetry = 10))(hakuClient.httpClient)
+    val retryingClient = Retry(RetryPolicy.exponentialBackoff(Duration(30, TimeUnit.SECONDS), maxRetry = 10))(hakuClient.httpClient)
     val henkiloFromHakemus = retryingClient.fetch(Request(method = Method.GET, uri = url)) {
       case r if 200 == r.status.code => r.as[HakemusHenkilo]
       case r => Task.fail(new RuntimeException(s"Got non-OK response from haku-app when fetching hakemus $hakemusOid: ${r.toString}"))
-    }.attemptRunFor(totalOperationTimeout.minus(Duration(1, TimeUnit.SECONDS))) match {
+    }.attemptRunFor(Duration(3, TimeUnit.MINUTES)) match {
       case \/-(henkilo: HakemusHenkilo) => Some(henkilo)
       case -\/(t) => handleFailure(t, s"finding henkilö from hakemus $hakemusOid")
     }
