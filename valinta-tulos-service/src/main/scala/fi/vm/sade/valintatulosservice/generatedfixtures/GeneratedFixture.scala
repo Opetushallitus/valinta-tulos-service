@@ -7,7 +7,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.hakemus.{HakemusFixture, HakemusFixtures, HakutoiveFixture}
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
-import fi.vm.sade.valintatulosservice.sijoittelu.SijoitteluFixtureCreator
+import fi.vm.sade.valintatulosservice.sijoittelu.{SijoitteluContext, SijoitteluFixtureCreator}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 import org.mongodb.morphia.AdvancedDatastore
@@ -21,26 +21,26 @@ class GeneratedFixture(haut: List[GeneratedHakuFixture] = List(new GeneratedHaku
 
   def ohjausparametritFixture = OhjausparametritFixtures.vastaanottoLoppuu2100
 
-  def apply(implicit appConfig: VtsAppConfig) {
+  def apply(sijoitteluContext: SijoitteluContext)(implicit appConfig: VtsAppConfig) {
     HakuFixtures.useFixture(hakuFixture, haut.map(_.hakuOid))
 
     val hakemusFixtures = HakemusFixtures()
     logger.info("Clearing...")
     hakemusFixtures.clear
     OhjausparametritFixtures.activeFixture = ohjausparametritFixture
-    MongoMockData.clear(appConfig.sijoitteluContext.database)
+    MongoMockData.clear(sijoitteluContext.database)
 
     logger.info("Iterating...")
 
     haut.foreach { haku =>
       logger.info("Generating for Haku " + haku.hakuOid)
       logger.info("Valintatulos...")
-      val morphia: AdvancedDatastore = appConfig.sijoitteluContext.morphiaDs.asInstanceOf[AdvancedDatastore]
+      val morphia: AdvancedDatastore = sijoitteluContext.morphiaDs.asInstanceOf[AdvancedDatastore]
       insertWithProgress(haku.valintatulokset.grouped(100))(valintatulokset => morphia.insert(convert(valintatulokset.toIterable), WriteConcern.Acknowledged))
       logger.info("Sijoittelu...")
-      appConfig.sijoitteluContext.sijoitteluDao.persistSijoittelu(haku.sijoittelu)
+      sijoitteluContext.sijoitteluDao.persistSijoittelu(haku.sijoittelu)
       logger.info("Hakukohde...")
-      insertWithProgress(haku.hakukohteet.grouped(100))(hakukohteet => hakukohteet.foreach(appConfig.sijoitteluContext.hakukohdeDao.persistHakukohde(_, haku.hakuOid.toString)))
+      insertWithProgress(haku.hakukohteet.grouped(100))(hakukohteet => hakukohteet.foreach(sijoitteluContext.hakukohdeDao.persistHakukohde(_, haku.hakuOid.toString)))
       logger.info("Hakemus-kantaan...")
       haku.hakemukset
         .map { hakemus => HakemusFixture(haku.hakuOid, hakemus.hakemusOid, hakemus.hakutoiveet.zipWithIndex.map{ case (hakutoive, index) => HakutoiveFixture(index+1, hakutoive.tarjoajaOid, hakutoive.hakukohdeOid) })}

@@ -182,12 +182,6 @@ object VtsAppConfig extends Logging {
 
     override def settings: VtsApplicationSettings
 
-    lazy val sijoitteluContext:SijoitteluContext = if (settings.useValintarekisteriInsteadOfSijoitteluMongo) {
-      new SijoitteluSpringContext(this, SijoitteluSpringContext.createApplicationContext(this))
-    } else {
-      throw new NotImplementedError("Someone called Sijoittelu Mongo Context when useValintarekisteriInsteadOfSijoitteluMongo=true!!!")
-    }
-
     def properties: Map[String, String] = settings.toProperties
 
     def securityContext: SecurityContext

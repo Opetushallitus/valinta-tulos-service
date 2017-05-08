@@ -15,8 +15,9 @@ import fi.vm.sade.valintatulosservice.migraatio.valinta.Valintalaskentakoostepal
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.security.Role
-import fi.vm.sade.valintatulosservice.sijoittelu.valintarekisteri.{ValintarekisteriValintatulosDao, ValintarekisteriRaportointiService, ValintarekisteriValintatulosRepository}
-import fi.vm.sade.valintatulosservice.sijoittelu.{SijoitteluFixtures, SijoittelunTulosRestClient, SijoittelutulosService}
+import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.SijoitteluSpringContext
+import fi.vm.sade.valintatulosservice.sijoittelu.valintarekisteri.{ValintarekisteriRaportointiService, ValintarekisteriValintatulosDao, ValintarekisteriValintatulosRepository}
+import fi.vm.sade.valintatulosservice.sijoittelu.{SijoitteluContext, SijoitteluFixtures, SijoittelunTulosRestClient, SijoittelutulosService}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
@@ -46,14 +47,20 @@ class ScalatraBootstrap extends LifeCycle {
 
     val migrationMode = isTrue(System.getProperty("valinta-rekisteri-migration-mode"))
     val scheduledMigration = isTrue(System.getProperty("valinta-rekisteri-scheduled-migration"))
-    val initMongoContext = !appConfig.settings.useValintarekisteriInsteadOfSijoitteluMongo
+    val initMongoContext = appConfig.settings.useSijoitteluMongo
     if((migrationMode || scheduledMigration) && !initMongoContext) {
       throw new RuntimeException("Migraatio-moodia voi käyttää vain Sijoittelun Mongon kanssa.")
     }
 
+    lazy val sijoitteluContext:SijoitteluContext = if (initMongoContext) {
+      new SijoitteluSpringContext(appConfig, SijoitteluSpringContext.createApplicationContext(appConfig))
+    } else {
+      throw new NotImplementedError("Someone called Sijoittelu Mongo Context when useSijoitteluMongo=false!!!")
+    }
+
     if (appConfig.isInstanceOf[IT] || appConfig.isInstanceOf[Dev]) {
-      context.mount(new FixtureServlet(valintarekisteriDb), "/util")
-      SijoitteluFixtures(appConfig.sijoitteluContext.database, valintarekisteriDb).importFixture("hyvaksytty-kesken-julkaistavissa.json")
+      context.mount(new FixtureServlet(sijoitteluContext, valintarekisteriDb), "/util")
+      SijoitteluFixtures(sijoitteluContext.database, valintarekisteriDb).importFixture("hyvaksytty-kesken-julkaistavissa.json")
     }
     implicit lazy val dynamicAppConfig = new OhjausparametritAppConfig(appConfig.ohjausparametritService)
 
@@ -62,11 +69,11 @@ class ScalatraBootstrap extends LifeCycle {
     lazy val organisaatioService = OrganisaatioService(appConfig)
     lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig, appConfig.isInstanceOf[IT])
     lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing)
-    val sijoittelunTulosRestClient = SijoittelunTulosRestClient(appConfig)
+    val sijoittelunTulosRestClient = SijoittelunTulosRestClient(sijoitteluContext, appConfig)
     lazy val sijoitteluService = new SijoitteluService(valintarekisteriDb, authorizer, hakuService)
 
     lazy val (raportointiService, valintatulosDao, valintatulosRepository) = if(initMongoContext) {
-      (appConfig.sijoitteluContext.raportointiService, appConfig.sijoitteluContext.valintatulosDao, appConfig.sijoitteluContext.valintatulosRepository)
+      (sijoitteluContext.raportointiService, sijoitteluContext.valintatulosDao, sijoitteluContext.valintatulosRepository)
     } else {
       val valintarekisteriValintatulosDao = new ValintarekisteriValintatulosDao(valintarekisteriDb)
       (new ValintarekisteriRaportointiService(sijoitteluService, valintarekisteriDb),
@@ -101,7 +108,7 @@ class ScalatraBootstrap extends LifeCycle {
     lazy val ldapUserService = new LdapUserService(appConfig.securityContext.directoryClient)
     lazy val hyvaksymiskirjeService = new HyvaksymiskirjeService(valintarekisteriDb, hakuService, audit, authorizer)
     lazy val migraatioService = new SijoitteluntulosMigraatioService(sijoittelunTulosRestClient, appConfig,
-      valintarekisteriDb, hakukohdeRecordService, hakuService, valintalaskentakoostepalveluService)
+      valintarekisteriDb, hakukohdeRecordService, hakuService, valintalaskentakoostepalveluService, sijoitteluContext)
     lazy val sijoitteluntulosMigraatioScheduler = new SijoittelunTulosMigraatioScheduler(migraatioService, appConfig)
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
 

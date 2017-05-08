@@ -67,8 +67,8 @@ class SijoittelunTulosRestClient(appConfig: VtsAppConfig) {
 
 @Deprecated
 object SijoittelunTulosRestClient {
-  def apply(appConfig: VtsAppConfig) = appConfig match {
-    case _: StubbedExternalDeps => new DirectMongoSijoittelunTulosRestClient(appConfig)
+  def apply(sijoitteluContext:SijoitteluContext, appConfig: VtsAppConfig) = appConfig match {
+    case _: StubbedExternalDeps => new DirectMongoSijoittelunTulosRestClient(sijoitteluContext, appConfig)
     case _ => new SijoittelunTulosRestClient(appConfig)
   }
 }
