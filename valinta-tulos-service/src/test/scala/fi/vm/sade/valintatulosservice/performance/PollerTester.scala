@@ -4,8 +4,8 @@ import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.config.{VtsAppConfig, VtsDynamicAppConfig}
-import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.SijoitteluSpringContext
-import fi.vm.sade.valintatulosservice.sijoittelu.{DirectMongoSijoittelunTulosRestClient, SijoittelutulosService}
+import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{DirectMongoSijoittelunTulosRestClient, SijoitteluSpringContext, StreamingHakijaDtoClient}
+import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelutulosService
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.vastaanottomeili.{HakemusMailStatus, MailPoller, ValintatulosMongoCollection}
 import fi.vm.sade.valintatulosservice.{TimeWarp, ValintatulosService}
@@ -19,7 +19,7 @@ object PollerTester extends App with Logging with TimeWarp {
   val hakuService = HakuService(appConfig.hakuServiceConfig)
   lazy val sijoittelutulosService = new SijoittelutulosService(sijoitteluContext.raportointiService,
     appConfig.ohjausparametritService, null, new DirectMongoSijoittelunTulosRestClient(sijoitteluContext, appConfig))
-  lazy val valintatulosService = new ValintatulosService(null, sijoittelutulosService, null, hakuService, null, null, null)
+  lazy val valintatulosService = new ValintatulosService(null, sijoittelutulosService, null, hakuService, null, null, null, new StreamingHakijaDtoClient(appConfig))
   lazy val valintatulokset = new ValintatulosMongoCollection(appConfig.settings.valintatulosMongoConfig)
   val poller = new MailPoller(valintatulokset, valintatulosService, null, hakuService, appConfig.ohjausparametritService, limit = 100)
 
