@@ -15,6 +15,7 @@ import fi.vm.sade.valintatulosservice.migraatio.valinta.Valintalaskentakoostepal
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.security.Role
+import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtures
 import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{SijoitteluContext, SijoitteluSpringContext, SijoittelunTulosRestClient, StreamingHakijaDtoClient}
 import fi.vm.sade.valintatulosservice.sijoittelu.{ValintarekisteriValintatulosRepository, _}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
