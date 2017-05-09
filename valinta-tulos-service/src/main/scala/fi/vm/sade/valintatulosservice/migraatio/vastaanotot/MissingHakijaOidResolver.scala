@@ -43,6 +43,7 @@ object HakijaResolver {
 class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with Logging with HakijaResolver {
   private val hakuClient = createCasClient(appConfig, "/haku-app")
   private val henkiloClient = createCasClient(appConfig, "/authentication-service")
+  private val oppijanumerorekisteriClient = createCasClient(appConfig, "/oppijanumerorekisteri-service")
   private val henkiloPalveluUrlBase = appConfig.ophUrlProperties.url("authentication-service.henkilo")
 
   case class HakemusHenkilo(personOid: Option[String], hetu: Option[String], etunimet: String, sukunimi: String, kutsumanimet: String,
@@ -67,7 +68,8 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
 
     implicit val henkiloDecoder = org.http4s.json4s.native.jsonOf[Henkilo]
 
-    henkiloClient.httpClient.fetch(Request(uri = createUri(henkiloPalveluUrlBase + "?q=", hetu))) {
+    val requestUri = createUri(appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.henkiloPerusByHetu",hetu))
+    oppijanumerorekisteriClient.httpClient.fetch(Request(uri = requestUri)) {
       case r if 200 == r.status.code => r.as[Henkilo]
       case r => Task.fail(new RuntimeException(r.toString))
     }.attemptRunFor(timeout) match {
@@ -144,7 +146,9 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
     case pf: ParseFailure => logger.error(s"Got parse exception when $message : $pf, ${pf.sanitized}", t); None
     case e:Exception => logger.error(s"Got exception when $message : ${e.getMessage}", e); None
   }
-
+  private def createUri(uri: String): Uri = {
+    Uri.fromString(uri).getOrElse(throw new RuntimeException(s"Invalid uri: $uri"))
+  }
   private def createUri(base: String, rest: String): Uri = {
     val stringUri = base + URLEncoder.encode(rest, "UTF-8")
     Uri.fromString(stringUri).getOrElse(throw new RuntimeException(s"Invalid uri: $stringUri"))
