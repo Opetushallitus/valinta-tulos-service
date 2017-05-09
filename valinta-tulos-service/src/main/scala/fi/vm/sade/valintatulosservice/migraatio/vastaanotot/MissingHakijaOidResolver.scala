@@ -61,14 +61,17 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
       }
     }
 
-    implicit val henkiloDecoder = org.http4s.json4s.native.jsonOf[Henkilo]
+    implicit val henkiloDecoder = org.http4s.json4s.native.jsonOf[Option[Henkilo]]
 
     val requestUri = createUri(appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.henkiloPerusByHetu",hetu))
     oppijanumerorekisteriClient.httpClient.fetch(Request(uri = requestUri)) {
-      case r if 200 == r.status.code => r.as[Henkilo]
+      case r if 200 == r.status.code => r.as[Option[Henkilo]]
       case r => Task.fail(new RuntimeException(r.toString))
     }.attemptRunFor(timeout) match {
-      case \/-(henkilo) => Some(henkilo)
+      case \/-(found@Some(henkilo)) => found
+      case \/-(None) =>
+        logger.warn(s"Could not find henkilo by hetu from ONR")
+        None
       case -\/(t) =>
         handleFailure(t, "searching person oid by hetu " + Option(hetu).map(_.replaceAll(".","*")))
         throw t
