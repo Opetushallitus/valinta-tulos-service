@@ -102,6 +102,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     hyvaksyttyVarasijalta.foreach(h => valintatulos.setHyvaksyttyVarasijalta(h, "", ""))
     hyvaksyPeruuntunut.foreach(h => valintatulos.setHyvaksyPeruuntunut(h, "", ""))
     ehdollisestiHyvaksyttavissa.foreach(e => valintatulos.setEhdollisestiHyvaksyttavissa(e, "", ""))
+    valintatulos.setTila(vastaanottotila, "")
     valintatulos
   }
 
