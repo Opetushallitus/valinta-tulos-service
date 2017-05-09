@@ -51,18 +51,13 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
 
   private def findPersonOidByHetu(hetu: String): Option[String] = findPersonByHetu(hetu).map(_.oidHenkilo)
 
-  override def findPersonByHetu(hetu: String, timeout: Duration = 60.seconds): Option[Henkilo] = {
-    implicit val henkiloReader = new Reader[Henkilo] {
-      override def read(v: JValue): Henkilo = {
-        val searchResults = (v \\ "results").children
-        if (searchResults.values.size != 1) {
-          val message = s"Found ${searchResults.values.size} hits for same hetu! $searchResults"
-          logger.error(message)
-          throw new IllegalStateException(message)
-        }
-        val onlyResult: JValue = searchResults.arr.head
-        Henkilo( (onlyResult \ "oidHenkilo").extract[String], (onlyResult \ "hetu").extract[String],
-          (onlyResult \ "etunimet").extract[String], (onlyResult \ "sukunimi").extract[String])
+  override def findPersonByHetu(hetu: String, timeout: Duration = 60 seconds): Option[Henkilo] = {
+    implicit val henkiloReader = new Reader[Option[Henkilo]] {
+      override def read(v: JValue): Option[Henkilo] = {
+        Some(Henkilo( (v \ "oidHenkilo").extract[String],
+          (v \ "hetu").extract[String],
+          (v \ "etunimet").extract[String],
+          (v \ "sukunimi").extract[String]))
       }
     }
 
