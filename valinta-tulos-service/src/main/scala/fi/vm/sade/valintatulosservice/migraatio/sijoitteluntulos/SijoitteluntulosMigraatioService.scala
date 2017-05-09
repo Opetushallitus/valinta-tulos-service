@@ -70,6 +70,10 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     }
     kludgeStartAndEndToSijoitteluAjoIfMissing(ajoFromMongo, hakukohteet)
 
+    timed(s"Ensure that hakija oids are in place in ${hakukohteet.size()} hakukohteet of ajo $mongoSijoitteluAjoId of haku $hakuOid") {
+      resolveMissingHakijaOids(hakukohteet)
+    }
+
     if (dryRun) {
       logger.warn("dryRun : NOT updating the database")
     } else {
@@ -156,6 +160,14 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     hakukohteet.asScala.filter(h => valintalaskentakoostepalveluService.hakukohdeUsesLaskenta(h.getOid)).asJava
   }
 
+  private def resolveMissingHakijaOids(hakukohteet: util.List[Hakukohde]): Unit = {
+    hakukohteet.asScala.foreach(_.getValintatapajonot.asScala.foreach(_.getHakemukset.asScala.foreach { hakemus =>
+      if (hakemus.getHakijaOid == null) {
+        hakemus.setHakijaOid(getHakijaOidByHakemusOid(hakemus.getHakemusOid))
+      }
+    }))
+  }
+
   private def createSaveObjects(hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]):
     (Vector[(ValinnantilanTallennus, Timestamp)], Vector[ValinnantuloksenOhjaus], Vector[(String, Ilmoittautuminen)], Vector[EhdollisenHyvaksynnanEhto], Vector[Hyvaksymiskirje]) = {
 
@@ -208,11 +220,15 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     hakemus.getHakijaOid match {
       case x: String if x != null => x
       case _ =>
-        logger.info(s"hakijaOid was null on hakemuksen tulos $hakemusOid , searching with missing hakija oid resolver")
-        hakijaOidResolver.findPersonOidByHakemusOid(hakemusOid) match {
-          case Some(oid) => oid
-          case _ => throw new IllegalStateException("This should never happen :)")
-        }
+        getHakijaOidByHakemusOid(hakemusOid)
+    }
+  }
+
+  private def getHakijaOidByHakemusOid(hakemusOid: String) = {
+    logger.info(s"hakijaOid was null on hakemuksen tulos $hakemusOid , searching with missing hakija oid resolver")
+    hakijaOidResolver.findPersonOidByHakemusOid(hakemusOid) match {
+      case Some(oid) => oid
+      case _ => throw new IllegalStateException("This should never happen :)")
     }
   }
 
