@@ -524,7 +524,8 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
                        haku: Haku,
                        ohjausparametrit: Option[Ohjausparametrit],
                        checkJulkaisuAikaParametri: Boolean,
-                       vastaanottoKaudella: HakukohdeOid => Option[(Kausi, Boolean)]
+                       vastaanottoKaudella: HakukohdeOid => Option[(Kausi, Boolean)],
+                       hasHetu: Boolean
                       )(h:Hakemus): Hakemuksentulos = {
     val tulokset = h.toiveet.map { toive =>
       val hakutoiveenSijoittelunTulos: HakutoiveenSijoitteluntulos = sijoitteluTulos.hakutoiveet.find { t =>
