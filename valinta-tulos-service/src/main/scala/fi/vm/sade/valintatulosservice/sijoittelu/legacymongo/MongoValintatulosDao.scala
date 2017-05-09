@@ -15,19 +15,13 @@ class MongoValintatulosDao(dao:MongoDao) extends ValintarekisteriValintatulosDao
   override def loadValintatuloksetForHakukohde(hakukohdeOid:HakukohdeOid) =
     dao.loadValintatuloksetForHakukohde(hakukohdeOid.toString).asScala.toList
 
-  override def loadValintatuloksetForValintatapajono(valintatapajonoOid:ValintatapajonoOid) =
-    dao.loadValintatuloksetForValintatapajono(valintatapajonoOid.toString).asScala.toList
-
   override def loadValintatuloksetForHakemus(hakemusOid:HakemusOid) =
     dao.loadValintatuloksetForHakemus(hakemusOid.toString).asScala.toList
 
-  override def loadValintatulosForValintatapajono(valintatapajonoOid:ValintatapajonoOid, hakemusOid:HakemusOid) =
-    dao.loadValintatulosForValintatapajono(valintatapajonoOid.toString, hakemusOid.toString)
-
-  override def loadValintatulos(hakukohdeOid:HakukohdeOid, valintatapajonoOid:ValintatapajonoOid, hakemusOid:HakemusOid) =
+  def loadValintatulos(hakukohdeOid:HakukohdeOid, valintatapajonoOid:ValintatapajonoOid, hakemusOid:HakemusOid) =
     dao.loadValintatulos(hakukohdeOid.toString, valintatapajonoOid.toString, hakemusOid.toString)
 
-  override def createOrUpdateValintatulos(valintatulos:Valintatulos) =
+  def createOrUpdateValintatulos(valintatulos:Valintatulos) =
     dao.createOrUpdateValintatulos(valintatulos)
 
 }

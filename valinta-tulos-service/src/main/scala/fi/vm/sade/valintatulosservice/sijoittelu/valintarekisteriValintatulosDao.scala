@@ -9,46 +9,21 @@ trait ValintarekisteriValintatulosDao {
 
   def loadValintatulokset(hakuOid:HakuOid):List[Valintatulos]
   def loadValintatuloksetForHakukohde(hakukohdeOid:HakukohdeOid):List[Valintatulos]
-  def loadValintatuloksetForValintatapajono(valintatapajonoOid:ValintatapajonoOid):List[Valintatulos]
   def loadValintatuloksetForHakemus(hakemusOid:HakemusOid):List[Valintatulos]
-  def loadValintatulosForValintatapajono(valintatapajonoOid:ValintatapajonoOid, hakemusOid:HakemusOid):Valintatulos
-  def loadValintatulos(hakukohdeOid:HakukohdeOid, valintatapajonoOid:ValintatapajonoOid, hakemusOid:HakemusOid):Valintatulos
 
-  def createOrUpdateValintatulos(valintatulos:Valintatulos)
 }
 
 class ValintarekisteriValintatulosDaoImpl(valinnantulosRepository: ValinnantulosRepository) extends ValintarekisteriValintatulosDao with Logging {
 
-  override def loadValintatulokset(hakuOid:HakuOid) =
-    valinnantulosRepository.runBlocking(
-      valinnantulosRepository.getValinnantuloksetForHaku(hakuOid)
-    ).map(_.toValintatulos).toList
+  private def run[R](operations: slick.dbio.DBIO[R]): R = valinnantulosRepository.runBlocking(operations)
 
+  override def loadValintatulokset(hakuOid:HakuOid):List[Valintatulos] =
+    run(valinnantulosRepository.getValinnantuloksetForHaku(hakuOid)).map(_.toValintatulos).toList
 
-  override def loadValintatuloksetForHakukohde(hakukohdeOid:HakukohdeOid) =
-    valinnantulosRepository.runBlocking(
-      valinnantulosRepository.getValinnantuloksetForHakukohde(hakukohdeOid)
-    ).map(_.toValintatulos).toList
+  override def loadValintatuloksetForHakukohde(hakukohdeOid:HakukohdeOid):List[Valintatulos] =
+    run(valinnantulosRepository.getValinnantuloksetForHakukohde(hakukohdeOid)).map(_.toValintatulos).toList
 
-  override def loadValintatuloksetForValintatapajono(valintatapajonoOid:ValintatapajonoOid) =
-    valinnantulosRepository.runBlocking(
-      valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid)
-    ).map(_.toValintatulos).toList
-
-  override def loadValintatuloksetForHakemus(hakemusOid:HakemusOid) =
-    throw new NotImplementedError("TODO")
-
-  override def loadValintatulosForValintatapajono(valintatapajonoOid:ValintatapajonoOid, hakemusOid:HakemusOid) =
-    valinnantulosRepository.runBlocking(
-      valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid)
-    ).find(_.hakemusOid == hakemusOid).map(_.toValintatulos()).getOrElse(null)
-
-  override def loadValintatulos(hakukohdeOid:HakukohdeOid, valintatapajonoOid:ValintatapajonoOid, hakemusOid:HakemusOid) =
-    valinnantulosRepository.runBlocking(
-      valinnantulosRepository.getValinnantuloksetForHakukohde(hakukohdeOid)
-    ).find(vt => vt.hakemusOid == hakemusOid && vt.valintatapajonoOid == valintatapajonoOid).map(_.toValintatulos()).getOrElse(null)
-
-  override def createOrUpdateValintatulos(valintatulos:Valintatulos) =
-    logger.warn("Yritettiin kirjoittaa valintatulosta, mutta Mongoon kirjoitus ei ole päällä.")
+  override def loadValintatuloksetForHakemus(hakemusOid:HakemusOid):List[Valintatulos] =
+    run(valinnantulosRepository.getValinnantuloksetForHakemus(hakemusOid)).map(_.toValintatulos).toList
 
 }
