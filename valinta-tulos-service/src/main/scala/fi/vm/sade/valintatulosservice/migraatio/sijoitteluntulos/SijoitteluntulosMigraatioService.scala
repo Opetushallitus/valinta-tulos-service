@@ -15,6 +15,7 @@ import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.MissingHakijaOidResolver
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
@@ -42,6 +43,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
   private val adapter = new HexBinaryAdapter()
 
   private val hakijaOidResolver = new MissingHakijaOidResolver(appConfig)
+  private val hakemusRepository = new HakemusRepository()(appConfig)
 
   def migrate(hakuOid: HakuOid, sijoitteluHash:String, dryRun: Boolean): Unit = {
     sijoittelunTulosRestClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None) match {
@@ -71,7 +73,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     kludgeStartAndEndToSijoitteluAjoIfMissing(ajoFromMongo, hakukohteet)
 
     timed(s"Ensure that hakija oids are in place in ${hakukohteet.size()} hakukohteet of ajo $mongoSijoitteluAjoId of haku $hakuOid") {
-      resolveMissingHakijaOids(hakukohteet)
+      resolveMissingHakijaOids(hakuOid, hakukohteet)
     }
 
     if (dryRun) {
@@ -160,10 +162,15 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     hakukohteet.asScala.filter(h => valintalaskentakoostepalveluService.hakukohdeUsesLaskenta(h.getOid)).asJava
   }
 
-  private def resolveMissingHakijaOids(hakukohteet: util.List[Hakukohde]): Unit = {
+  private def resolveMissingHakijaOids(hakuOid: HakuOid, hakukohteet: util.List[Hakukohde]): Unit = {
+    lazy val hakijaOidsByHakemusOidsFromHakuApp = timed(s"Find person oids by hakemus oids for haku $hakuOid", 1000) {
+      hakemusRepository.findPersonOids(hakuOid)
+    }
     hakukohteet.asScala.foreach(_.getValintatapajonot.asScala.foreach(_.getHakemukset.asScala.foreach { hakemus =>
       if (hakemus.getHakijaOid == null) {
-        hakemus.setHakijaOid(getHakijaOidByHakemusOid(hakemus.getHakemusOid))
+        val hakemusOid = HakemusOid(hakemus.getHakemusOid)
+        val hakijaOid = hakijaOidsByHakemusOidsFromHakuApp.getOrElse(hakemusOid, getHakijaOidByHakemusOid(hakemusOid))
+        hakemus.setHakijaOid(hakijaOid)
       }
     }))
   }
@@ -220,13 +227,13 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     hakemus.getHakijaOid match {
       case x: String if x != null => x
       case _ =>
-        getHakijaOidByHakemusOid(hakemusOid)
+        getHakijaOidByHakemusOid(HakemusOid(hakemusOid))
     }
   }
 
-  private def getHakijaOidByHakemusOid(hakemusOid: String) = {
+  private def getHakijaOidByHakemusOid(hakemusOid: HakemusOid) = {
     logger.info(s"hakijaOid was null on hakemuksen tulos $hakemusOid , searching with missing hakija oid resolver")
-    hakijaOidResolver.findPersonOidByHakemusOid(hakemusOid) match {
+    hakijaOidResolver.findPersonOidByHakemusOid(hakemusOid.toString) match {
       case Some(oid) => oid
       case _ => throw new IllegalStateException("This should never happen :)")
     }
