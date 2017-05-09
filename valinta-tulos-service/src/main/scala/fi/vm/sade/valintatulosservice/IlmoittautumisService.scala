@@ -17,19 +17,6 @@ class IlmoittautumisService(valintatulosService: ValintatulosService,
                             tulokset: ValintarekisteriValintatulosRepository,
                             hakijaVastaanottoRepository: HakijaVastaanottoRepository, valinnantulosRepository: ValinnantulosRepository) extends JsonFormats {
   private val logger = LoggerFactory.getLogger(classOf[IlmoittautumisService])
-  def getIlmoittautumistilat(valintatapajonoOid: ValintatapajonoOid): Either[Throwable, Seq[(HakemusOid, SijoitteluajonIlmoittautumistila, Instant)]] = {
-    tulokset.findValintatulokset(valintatapajonoOid).right.map(_.map(v => (
-      HakemusOid(v.getHakemusOid),
-      SijoitteluajonIlmoittautumistila(v.getIlmoittautumisTila),
-      Option(v.getViimeinenMuutos).map(_.toInstant).getOrElse(Instant.EPOCH).truncatedTo(ChronoUnit.SECONDS))
-    ))
-  }
-
-  def getIlmoittautumistila(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): Either[Throwable, (SijoitteluajonIlmoittautumistila, Instant)] = {
-    tulokset.findValintatulos(valintatapajonoOid, hakemusOid).right.map(v =>
-      (SijoitteluajonIlmoittautumistila(v.getIlmoittautumisTila), Option(v.getViimeinenMuutos).map(_.toInstant).getOrElse(Instant.EPOCH))
-    )
-  }
 
   def ilmoittaudu(hakemusOid: HakemusOid, ilmoittautuminen: Ilmoittautuminen) {
     val hakemuksenTulos = valintatulosService.hakemuksentulos(hakemusOid).getOrElse(throw new IllegalArgumentException("Hakemusta ei löydy"))
