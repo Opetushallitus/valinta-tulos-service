@@ -30,7 +30,8 @@ class ValintarekisteriSijoittelunTulosClientSpec extends Specification with ITSe
 
     "return sijoitteluajo (erillishaku, ei sijoittelua)" in {
       val sijoitteluajo = client.fetchLatestSijoitteluAjo(hakuOid1).get
-      sijoitteluajo.getSijoitteluajoId must_== null
+      sijoitteluajo.isInstanceOf[SyntheticSijoitteluAjoForHakusWithoutSijoittelu] must_== true
+      sijoitteluajo.getSijoitteluajoId must_== SyntheticSijoitteluAjoForHakusWithoutSijoittelu.syntheticSijoitteluajoId
       sijoitteluajo.getHakuOid must_== hakuOid1.toString
       sijoitteluajo.getHakukohteet.asScala.map(_.getOid).diff(List(oidHaku1hakukohde1.toString, oidHaku1hakukohde2.toString)) must_== List()
     }
@@ -52,7 +53,8 @@ class ValintarekisteriSijoittelunTulosClientSpec extends Specification with ITSe
 
     "return latest sijoitteluajo for hakukohde (erillishaku, ei sijoittelua)" in {
       val sijoitteluajo = client.fetchLatestSijoitteluAjo(hakuOid1, Some(oidHaku1hakukohde1)).get
-      sijoitteluajo.getSijoitteluajoId must_== null
+      sijoitteluajo.isInstanceOf[SyntheticSijoitteluAjoForHakusWithoutSijoittelu] must_== true
+      sijoitteluajo.getSijoitteluajoId must_== SyntheticSijoitteluAjoForHakusWithoutSijoittelu.syntheticSijoitteluajoId
       sijoitteluajo.getHakuOid must_== hakuOid1.toString
       sijoitteluajo.getHakukohteet.asScala.map(_.getOid).diff(List(oidHaku1hakukohde1.toString, oidHaku1hakukohde2.toString)) must_== List()
     }

@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.sijoittelu
 
 import java.util.Collections.sort
 
-import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatulos}
+import fi.vm.sade.sijoittelu.domain.{Hakukohde, HakukohdeItem, SijoitteluAjo, Valintatulos}
 import fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.VARASIJALTA_HYVAKSYTTY
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationObject, KevytHakijaDTO}
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, ValintatuloksenTila}
@@ -125,9 +125,21 @@ class ValintarekisteriRaportointiServiceImpl(sijoitteluService: SijoitteluServic
     }
 }
 
-case class SyntheticSijoitteluAjoForHakusWithoutSijoittelu(hakuOid: HakuOid) extends SijoitteluAjo {
+case class SyntheticSijoitteluAjoForHakusWithoutSijoittelu(hakuOid: HakuOid, hakukohdeOidit: List[HakukohdeOid] = List()) extends SijoitteluAjo {
   setHakuOid(hakuOid.toString)
-  setSijoitteluajoId(-1L)
+  setSijoitteluajoId(SyntheticSijoitteluAjoForHakusWithoutSijoittelu.syntheticSijoitteluajoId)
   setStartMils(-1L)
   setEndMils(-1L)
+  setHakukohteet(hakukohdeOidsToHakukohdeItems)
+
+  import scala.collection.JavaConverters._
+  private def hakukohdeOidsToHakukohdeItems = hakukohdeOidit.map(oid => {
+    val item = new HakukohdeItem()
+    item.setOid(oid.toString)
+    item
+  }).asJava
+}
+
+object SyntheticSijoitteluAjoForHakusWithoutSijoittelu {
+  final val syntheticSijoitteluajoId = -1L
 }

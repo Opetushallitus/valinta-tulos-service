@@ -17,18 +17,6 @@ class ValintarekisteriSijoittelunTulosClientImpl(sijoitteluRepository: Sijoittel
 
   private def run[R](operations: slick.dbio.DBIO[R]): R = valinnantulosRepository.runBlocking(operations)
 
-  private def generateSijoitteluajo(hakuOid: HakuOid, hakukohdeOidit: List[HakukohdeOid]) = {
-    import scala.collection.JavaConverters._
-    val sijoitteluajo = new SijoitteluAjo()
-    sijoitteluajo.setHakuOid(hakuOid.toString)
-    sijoitteluajo.setHakukohteet(hakukohdeOidit.map(oid => {
-      val item = new HakukohdeItem()
-      item.setOid(oid.toString)
-      item
-    }).asJava)
-    sijoitteluajo
-  }
-
   override def fetchLatestSijoitteluAjo(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid] = None): Option[SijoitteluAjo] = {
     val latestId = sijoitteluRepository.getLatestSijoitteluajoId(hakuOid)
 
@@ -45,7 +33,7 @@ class ValintarekisteriSijoittelunTulosClientImpl(sijoitteluRepository: Sijoittel
     latestId match {
       case _ if hakukohdeMissing => None
       case None if hakukohdeOidit.isEmpty => None
-      case None => Some(generateSijoitteluajo(hakuOid, hakukohdeOidit))
+      case None => Some(SyntheticSijoitteluAjoForHakusWithoutSijoittelu(hakuOid, hakukohdeOidit))
       case Some(id) => sijoitteluRepository.getSijoitteluajo(id).map(_.entity(hakukohdeOidit))
     }
   }
