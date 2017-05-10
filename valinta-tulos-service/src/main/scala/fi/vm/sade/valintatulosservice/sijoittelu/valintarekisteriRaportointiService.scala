@@ -15,12 +15,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, Hakem
 import scala.util.Try
 
 trait ValintarekisteriRaportointiService {
-  def latestSijoitteluAjoForHaku(hakuOid:HakuOid): Option[SijoitteluAjo]
   def getSijoitteluAjo(sijoitteluajoId: Long): Option[SijoitteluAjo]
-  def latestSijoitteluAjoForHakukohde(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Option[SijoitteluAjo]
-
-  def hakemus(sijoitteluAjo: SijoitteluAjo, hakemusOid:HakemusOid): Option[HakijaDTO]
-  def hakemus(hakuOid:HakuOid, sijoitteluajoId:String, hakemusOid:HakemusOid): Option[HakijaDTO]
 
   def hakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO]
 
@@ -36,25 +31,10 @@ trait ValintarekisteriRaportointiService {
   def hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo: SijoitteluAjo, hakukohdeOid:HakukohdeOid): List[KevytHakijaDTO]
 }
 
-class ValintarekisteriRaportointiServiceImpl(sijoitteluService: SijoitteluService, sijoitteluRepository: SijoitteluRepository,
-                                         valintatulosDao: ValintarekisteriValintatulosDao) extends ValintarekisteriRaportointiService {
+class ValintarekisteriRaportointiServiceImpl(sijoitteluRepository: SijoitteluRepository,
+                                             valintatulosDao: ValintarekisteriValintatulosDao) extends ValintarekisteriRaportointiService {
   private val sijoitteluTulosConverter = new SijoitteluTulosConverterImpl
   private val raportointiConverter = new RaportointiConverterImpl
-
-
-  override def latestSijoitteluAjoForHaku(hakuOid: HakuOid): Option[SijoitteluAjo] = {
-    sijoitteluRepository.getLatestSijoitteluajoId(hakuOid) match {
-      case Some(realSijoitteluajoId) => getSijoitteluAjo(realSijoitteluajoId)
-      case None => Some(SyntheticSijoitteluAjoForHakusWithoutSijoittelu(hakuOid))
-    }
-  }
-
-
-  override def hakemus(sijoitteluAjo: SijoitteluAjo, hakemusOid:HakemusOid): Option[HakijaDTO] =
-    hakemus(HakuOid(sijoitteluAjo.getHakuOid), "" + sijoitteluAjo.getSijoitteluajoId, hakemusOid)
-
-  override def hakemus(hakuOid: HakuOid, sijoitteluajoId: String, hakemusOid: HakemusOid): Option[HakijaDTO] =
-    Try(sijoitteluService.getHakemusBySijoitteluajo(hakuOid, sijoitteluajoId, hakemusOid)).toOption
 
   override def hakemukset(sijoitteluAjo: SijoitteluAjo,
                           hyvaksytyt: Option[Boolean],
@@ -63,7 +43,7 @@ class ValintarekisteriRaportointiServiceImpl(sijoitteluService: SijoitteluServic
                           hakukohdeOids: Option[List[HakukohdeOid]],
                           count: Option[Int],
                           index: Option[Int]): HakijaPaginationObject = {
-    val sijoitteluajonHakemukset: Seq[HakemusRecord] = sijoitteluService.sijoitteluRepository.getSijoitteluajonHakemukset(sijoitteluAjo.getSijoitteluajoId)
+    val sijoitteluajonHakemukset: Seq[HakemusRecord] = sijoitteluRepository.getSijoitteluajonHakemukset(sijoitteluAjo.getSijoitteluajoId)
     //val hakukohteet: java.util.List[Hakukohde] = hakukohdeDao.getHakukohdeForSijoitteluajo(ajo.getSijoitteluajoId())
 
     val valintatulokset = valintatulosDao.loadValintatulokset(HakuOid(sijoitteluAjo.getHakuOid))
@@ -77,7 +57,7 @@ class ValintarekisteriRaportointiServiceImpl(sijoitteluService: SijoitteluServic
 
   override def hakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO] = ???
 
-  override def latestSijoitteluAjoForHakukohde(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Option[SijoitteluAjo] = ???
+  //override def latestSijoitteluAjoForHakukohde(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Option[SijoitteluAjo] = ???
 
   private def konvertoiHakijat(hyvaksytyt: Boolean, ilmanHyvaksyntaa: Boolean, vastaanottaneet: Boolean, hakukohdeOids: java.util.List[String], count: Integer, index: Integer, valintatulokset: java.util.List[Valintatulos], hakukohteet: java.util.List[Hakukohde]): HakijaPaginationObject = {
     def filter(hakija: HakijaDTO, hyvaksytyt: Boolean, ilmanHyvaksyntaa: Boolean, vastaanottaneet: Boolean, hakukohdeOids: java.util.List[String]): Boolean = {
