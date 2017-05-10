@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, ValintatapajonoOid}
 
-class GetSijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, val sijoitteluajoId: Long, val hakukohdeOid:HakukohdeOid) {
+class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, val sijoitteluajoId: Long, val hakukohdeOid:HakukohdeOid) {
 
   val hakukohde = sijoitteluRepository.getSijoitteluajonHakukohde(sijoitteluajoId, hakukohdeOid).getOrElse(
     throw new IllegalArgumentException(s"Sijoitteluajolle ${sijoitteluajoId} ei löydy hakukohdetta ${hakukohdeOid}"))
@@ -68,7 +68,7 @@ class GetSijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository,
   }
 }
 
-class GetSijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository, val sijoitteluajoId: Long) {
+class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository, val sijoitteluajoId: Long) {
   import scala.collection.JavaConverters._
 
   val sijoitteluajonHakemukset = sijoitteluRepository.getSijoitteluajonHakemuksetInChunks(sijoitteluajoId)

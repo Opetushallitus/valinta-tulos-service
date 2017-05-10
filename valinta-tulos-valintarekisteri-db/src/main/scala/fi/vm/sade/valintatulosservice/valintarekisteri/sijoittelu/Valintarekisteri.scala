@@ -73,7 +73,7 @@ abstract class Valintarekisteri(sijoitteluRepository:SijoitteluRepository with S
   }
 
   def getSijoitteluajonHakukohteet(sijoitteluajoId:Long): java.util.List[Hakukohde] = {
-    new GetSijoitteluajonHakukohteet(sijoitteluRepository, sijoitteluajoId).entity()
+    new SijoitteluajonHakukohteet(sijoitteluRepository, sijoitteluajoId).entity()
   }
 
   def getValintatulokset(hakuOid: String): java.util.List[Valintatulos] = {
@@ -82,7 +82,7 @@ abstract class Valintarekisteri(sijoitteluRepository:SijoitteluRepository with S
   }
 
   def getHakukohdeForSijoitteluajo(sijoitteluajoId:Long, hakukohdeOid:String) = {
-    new GetSijoitteluajonHakukohde(sijoitteluRepository, sijoitteluajoId, HakukohdeOid(hakukohdeOid)).entity()
+    new SijoitteluajonHakukohde(sijoitteluRepository, sijoitteluajoId, HakukohdeOid(hakukohdeOid)).entity()
   }
 }
 

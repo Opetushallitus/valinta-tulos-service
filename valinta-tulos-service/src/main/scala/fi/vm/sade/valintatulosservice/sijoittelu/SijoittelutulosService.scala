@@ -117,6 +117,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
 
   def sijoittelunTulosForAjoWithoutVastaanottoTieto(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid): HakijaDTO = findHakemus(hakemusOid, sijoitteluAjo).orNull
 
+  @Deprecated //TODO: Ei toimi erillishaulla, jolla ei ole laskentaa, jos käytössä PostgreSQL eikä Mongo. Käytetäänkö vielä oikeasti?
   def findSijoitteluAjo(hakuOid: HakuOid, sijoitteluajoId: String): Option[SijoitteluAjo] = {
     if (SijoitteluResource.LATEST == sijoitteluajoId) {
       findLatestSijoitteluAjoForHaku(hakuOid)
@@ -128,7 +129,6 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
       sijoittelunTulosClient.fetchHakemuksenTulos(sijoitteluAjo, hakemusOid)
     }
   }
-
 
   private def fetchVastaanotto(henkiloOid: String, hakuOid: HakuOid): Set[VastaanottoRecord] = {
     Timer.timed("hakijaVastaanottoRepository.findHenkilonVastaanototHaussa", 100) {

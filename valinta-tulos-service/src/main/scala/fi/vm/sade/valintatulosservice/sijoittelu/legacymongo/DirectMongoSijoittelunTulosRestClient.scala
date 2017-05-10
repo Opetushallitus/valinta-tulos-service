@@ -10,7 +10,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuO
   * For testing _only_. Goes directly to raportointiservice without invoking sijoittelu-service REST API.
   */
 class DirectMongoSijoittelunTulosRestClient(sijoitteluContext:SijoitteluContext, appConfig: VtsAppConfig) extends SijoittelunTulosRestClient(appConfig) {
-  private val raportointiService = sijoitteluContext.raportointiService
+  private val raportointiService = sijoitteluContext.raportointiService.asInstanceOf[MongoRaportointiService]
 
   override def fetchLatestSijoitteluAjo(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid]): Option[SijoitteluAjo] = {
     hakukohdeOid match {
