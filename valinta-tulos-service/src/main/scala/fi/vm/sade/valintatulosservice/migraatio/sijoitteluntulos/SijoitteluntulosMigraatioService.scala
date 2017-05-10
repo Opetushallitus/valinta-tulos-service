@@ -48,7 +48,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: Valintarekist
   private val hakemusRepository = new HakemusRepository()(appConfig)
 
   def migrate(hakuOid: HakuOid, sijoitteluHash:String, dryRun: Boolean): Unit = {
-    sijoittelunTulosRestClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None) match {
+    sijoittelunTulosRestClient.fetchLatestSijoitteluAjo(hakuOid, None) match {
       case Some(sijoitteluAjo) =>
         logger.info(s"*** Starting to migrate sijoitteluAjo ${sijoitteluAjo.getSijoitteluajoId} of haku $hakuOid from MongoDb to Postgres")
         timed(s"Migrate sijoitteluAjo ${sijoitteluAjo.getSijoitteluajoId} of haku $hakuOid") { migrate(hakuOid, sijoitteluHash, dryRun, sijoitteluAjo) }
@@ -321,7 +321,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: Valintarekist
 
     val hakuOidsSijoitteluHashes = hakuOids.par.map { hakuOid =>
       Timer.timed(s"Processing hash calculation for haku $hakuOid", 0) {
-        sijoittelunTulosRestClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None).map(_.getSijoitteluajoId) match {
+        sijoittelunTulosRestClient.fetchLatestSijoitteluAjo(hakuOid, None).map(_.getSijoitteluajoId) match {
           case Some(sijoitteluajoId) => createSijoitteluHash(hakuOid, sijoitteluajoId)
           case _ =>
             logger.info(s"No sijoittelus for haku $hakuOid")
