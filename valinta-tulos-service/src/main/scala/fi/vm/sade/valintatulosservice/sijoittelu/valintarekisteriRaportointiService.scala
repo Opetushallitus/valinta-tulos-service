@@ -130,14 +130,13 @@ case class SyntheticSijoitteluAjoForHakusWithoutSijoittelu(hakuOid: HakuOid, hak
   setSijoitteluajoId(SyntheticSijoitteluAjoForHakusWithoutSijoittelu.syntheticSijoitteluajoId)
   setStartMils(-1L)
   setEndMils(-1L)
-  setHakukohteet(hakukohdeOidsToHakukohdeItems)
 
   import scala.collection.JavaConverters._
-  private def hakukohdeOidsToHakukohdeItems = hakukohdeOidit.map(oid => {
-    val item = new HakukohdeItem()
-    item.setOid(oid.toString)
-    item
-  }).asJava
+  setHakukohteet(hakukohdeOidit.map(oid => SyntheticHakukohdeItem(oid).asInstanceOf[HakukohdeItem]).asJava)
+
+  case class SyntheticHakukohdeItem(hakukohdeOid: HakukohdeOid) extends HakukohdeItem {
+    setOid(hakukohdeOid.toString)
+  }
 }
 
 object SyntheticSijoitteluAjoForHakusWithoutSijoittelu {
