@@ -9,13 +9,13 @@ import fi.vm.sade.valintatulosservice.sijoittelu.ValintarekisteriRaportointiServ
 import scala.collection.JavaConverters._
 
 class MongoRaportointiService(service:MongoService) extends ValintarekisteriRaportointiService {
-  override def latestSijoitteluAjoForHaku(hakuOid: HakuOid): Option[SijoitteluAjo] =
+  def latestSijoitteluAjoForHaku(hakuOid: HakuOid): Option[SijoitteluAjo] =
     toOption[SijoitteluAjo](service.latestSijoitteluAjoForHaku(hakuOid.toString))
 
-  override def hakemus(sijoitteluAjo: SijoitteluAjo, hakemusOid:HakemusOid): Option[HakijaDTO] =
+  def hakemus(sijoitteluAjo: SijoitteluAjo, hakemusOid:HakemusOid): Option[HakijaDTO] =
     Option(service.hakemus(sijoitteluAjo, hakemusOid.toString))
 
-  override def hakemus(hakuOid: HakuOid, sijoitteluajoId: String, hakemusOid: HakemusOid): Option[HakijaDTO] =
+  def hakemus(hakuOid: HakuOid, sijoitteluajoId: String, hakemusOid: HakemusOid): Option[HakijaDTO] =
     Option(service.hakemus(hakuOid.toString, sijoitteluajoId, hakemusOid.toString))
 
   override def hakemukset(sijoitteluAjo: SijoitteluAjo, hyvaksytyt: Option[Boolean], ilmanHyvaksyntaa: Option[Boolean],
@@ -27,7 +27,7 @@ class MongoRaportointiService(service:MongoService) extends ValintarekisteriRapo
   override def getSijoitteluAjo(sijoitteluajoId: Long): Option[SijoitteluAjo] =
     toOption[SijoitteluAjo](service.getSijoitteluAjo(sijoitteluajoId))
 
-  override def latestSijoitteluAjoForHakukohde(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Option[SijoitteluAjo] =
+  def latestSijoitteluAjoForHakukohde(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Option[SijoitteluAjo] =
     toOption[SijoitteluAjo](service.latestSijoitteluAjoForHakukohde(hakuOid.toString, hakukohdeOid.toString))
 
   override def hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO] =
