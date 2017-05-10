@@ -76,13 +76,13 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
 
   def findLatestSijoitteluAjoForHaku(hakuOid: HakuOid): Option[SijoitteluAjo] = {
     Timer.timed("findLatestSijoitteluAjoForHaku -> latestSijoitteluAjoClient.fetchLatestSijoitteluAjoFromSijoitteluService", 100) {
-      sijoittelunTulosClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None)
+      sijoittelunTulosClient.fetchLatestSijoitteluAjo(hakuOid)
     }
   }
 
   def findLatestSijoitteluAjo(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid]): Option[SijoitteluAjo] = {
     Timer.timed(s"findLatestSijoitteluAjo -> latestSijoitteluAjoClient.fetchLatestSijoitteluAjoFromSijoitteluService($hakuOid, $hakukohdeOid)", 100) {
-      sijoittelunTulosClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, hakukohdeOid)
+      sijoittelunTulosClient.fetchLatestSijoitteluAjo(hakuOid, hakukohdeOid)
     }
   }
 
@@ -119,7 +119,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
 
   def findSijoitteluAjo(hakuOid: HakuOid, sijoitteluajoId: String): Option[SijoitteluAjo] = {
     if (SijoitteluResource.LATEST == sijoitteluajoId) {
-      sijoittelunTulosClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None)
+      findLatestSijoitteluAjoForHaku(hakuOid)
     } else raportointiService.getSijoitteluAjo(sijoitteluajoId.toLong)
   }
 
@@ -321,8 +321,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
       VastaanottoAikarajaMennyt(HakemusOid(hakijaDto.getHakemusOid), isLate, vastaanottoDeadline)
     }
 
-    import scala.collection.JavaConverters._
-    Timer.timed(s"haeVastaanotonAikarajaTiedot -> latestSijoitteluAjoClient.fetchLatestSijoitteluAjoFromSijoitteluService($hakuOid, Some($hakukohdeOid))", 100) { sijoittelunTulosClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, Some(hakukohdeOid)) } match {
+    findLatestSijoitteluAjo(hakuOid, Some(hakukohdeOid)) match {
       case Some(sijoitteluAjo) =>
         val aikataulu = findAikatauluFromOhjausparametritService(hakuOid)
         val allHakijasForHakukohde = Timer.timed(s"Fetch hakemukset just for hakukohde $hakukohdeOid of haku $hakuOid", 1000) {

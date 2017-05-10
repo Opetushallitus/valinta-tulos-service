@@ -17,7 +17,7 @@ class SijoittelunTulosRestClient(appConfig: VtsAppConfig) extends Valintarekiste
   private val targetService = appConfig.ophUrlProperties.url("sijoittelu-service.suffix")
 
   @Deprecated
-  override def fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid]): Option[SijoitteluAjo] = {
+  override def fetchLatestSijoitteluAjo(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid]): Option[SijoitteluAjo] = {
     val ajo = new SijoitteluAjo
     val processor: SijoitteluajoDTO => SijoitteluAjo = dto => {
       ajo.setSijoitteluajoId(dto.getSijoitteluajoId)
