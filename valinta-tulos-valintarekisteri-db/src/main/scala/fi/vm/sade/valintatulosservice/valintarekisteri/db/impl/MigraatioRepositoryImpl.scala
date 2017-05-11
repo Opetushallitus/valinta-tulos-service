@@ -250,6 +250,65 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
     sijoitteluAjoIds.foreach(deleteSingleSijoitteluAjo(hakuOid, _))
   }
 
+  /**
+    * Note that this will probably produce too long transactions for large results if everything
+    * is deleted at once.
+    */
+  override def deleteAllTulokset(hakuOid: HakuOid): Unit = {
+    runBlocking(
+      sql"""select count(1) from valinnantilat where hakukohde_oid in
+           (select hakukohde_oid from hakukohteet where haku_oid = ${hakuOid.toString})""".as[Long]).headOption match {
+      case Some(nOfValinnantilat) => logger.info(s"Found $nOfValinnantilat valinnantilat rows of haku $hakuOid")
+      case None => logger.info(s"No valinnantilat found for haku $hakuOid")
+    }
+
+    val tablesWithTriggers = Seq(
+      "tilat_kuvaukset",
+      "valinnantilat",
+      "valinnantulokset",
+      "ilmoittautumiset",
+      "ehdollisen_hyvaksynnan_ehto")
+
+    val disableTriggers: DBIO[Seq[Int]] = DbUtils.disableTriggers(tablesWithTriggers)
+
+    val deleteOperationsWithDescriptions: Seq[(String, DBIO[Any])] = Seq(
+      (s"disable triggers of $tablesWithTriggers", DbUtils.disableTriggers(tablesWithTriggers)),
+
+      ("create tmp table hakukohde_oids_to_delete", sqlu"create temporary table hakukohde_oids_to_delete (oid character varying primary key) on commit drop"),
+      ("populate hakukohde_oids_to_delete", sqlu"""insert into hakukohde_oids_to_delete (
+               select distinct hk.hakukohde_oid from hakukohteet hk where hk.haku_oid = ${hakuOid.toString})"""),
+
+      ("delete tilat_kuvaukset_history", sqlu"delete from tilat_kuvaukset_history where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete tilat_kuvaukset", sqlu"delete from tilat_kuvaukset where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete viestinnan_ohjaus", sqlu"delete from viestinnan_ohjaus where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete ehdollisen_hyvaksynnan_ehto_history", sqlu"delete from ehdollisen_hyvaksynnan_ehto_history where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete ehdollisen_hyvaksynnan_ehto", sqlu"delete from ehdollisen_hyvaksynnan_ehto where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete valinnantulokset_history", sqlu"delete from valinnantulokset_history where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete valinnantulokset", sqlu"delete from valinnantulokset where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete valinnantilat_history", sqlu"delete from valinnantilat_history where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete valinnantilat", sqlu"delete from valinnantilat where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+
+      ("delete ilmoittautumiset_history", sqlu"delete from ilmoittautumiset_history where hakukohde in (select oid from hakukohde_oids_to_delete)"),
+      ("delete ilmoittautumiset", sqlu"delete from ilmoittautumiset where hakukohde in (select oid from hakukohde_oids_to_delete)"),
+
+      (s"enable triggers of $tablesWithTriggers", DbUtils.enableTriggers(tablesWithTriggers))
+    )
+
+    val (descriptions, sqls) = deleteOperationsWithDescriptions.unzip
+
+    time(s"Delete results of haku haku $hakuOid") {
+      logger.info(s"Deleting results of haku $hakuOid ...")
+      runBlockingTransactionally(DBIO.sequence(sqls), timeout = Duration(30, TimeUnit.MINUTES)) match {
+        case Right(rowCounts) =>
+          logger.info(s"Delete of haku $hakuOid successful. " +
+            s"Lines affected:\n\t${descriptions.zip(rowCounts).mkString("\n\t")}")
+        case Left(t) =>
+          logger.error(s"Could not delete results of haku $hakuOid", t)
+          throw t
+      }
+    }
+  }
+
   private def deleteSingleSijoitteluAjo(hakuOid: HakuOid, sijoitteluajoId: Long): Unit = {
     val tablesWithTriggers = Seq(
       "tilat_kuvaukset",

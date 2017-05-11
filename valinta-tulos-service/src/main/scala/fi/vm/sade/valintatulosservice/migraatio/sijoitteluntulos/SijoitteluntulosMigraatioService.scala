@@ -144,12 +144,14 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       if (dryRun) {
         logger.warn(s"dryRun : NOT removing existing sijoitteluajo $latestAjoIdFromPostgres data.")
       } else {
-        logger.warn(s"Existing sijoitteluajo $latestAjoIdFromPostgres found, deleting all results of haku $hakuOid:")
+        logger.warn(s"Existing sijoitteluajo $latestAjoIdFromPostgres found, deleting all sijoittelu results of haku $hakuOid:")
         migraatioRepository.deleteSijoittelunTulokset(hakuOid)
       }
     } else {
       logger.info(s"No Sijoitteluajo for haku $hakuOid seems to be stored to Postgres db yet.")
     }
+    logger.info(s"Deleting the rest of the results of haku $hakuOid:")
+    migraatioRepository.deleteAllTulokset(hakuOid)
   }
 
   private def storeSijoittelu(hakuOid: HakuOid, sijoitteluAjo: SijoitteluAjo, hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]) = {
