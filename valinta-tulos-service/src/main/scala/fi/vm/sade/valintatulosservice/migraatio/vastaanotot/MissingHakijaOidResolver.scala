@@ -66,6 +66,7 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
     val requestUri = createUri(appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.henkiloPerusByHetu",hetu))
     oppijanumerorekisteriClient.httpClient.fetch(Request(uri = requestUri)) {
       case r if 200 == r.status.code => r.as[Option[Henkilo]]
+      case r if 404 == r.status.code => Task.now(None)
       case r => Task.fail(new RuntimeException(r.toString))
     }.attemptRunFor(timeout) match {
       case \/-(found@Some(henkilo)) => found
