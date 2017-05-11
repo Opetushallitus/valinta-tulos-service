@@ -2,10 +2,13 @@ package fi.vm.sade.valintatulosservice.migraatio.valinta
 
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.SECONDS
 
 import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasParams}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import org.http4s.client.middleware.Retry
+import org.http4s.client.middleware.RetryPolicy.exponentialBackoff
 import org.http4s.{Method, Request, Uri}
 import org.json4s._
 import org.json4s.jackson.JsonMethods.parse
@@ -20,22 +23,11 @@ import scalaz.{-\/, \/-}
 class ValintalaskentakoostepalveluService(appConfig: VtsAppConfig) extends Logging {
   implicit val formats = DefaultFormats
   private val valintalaskentakoosteClient = createCasClient(appConfig, "/valintalaskentakoostepalvelu/")
-  private val retryBackoffMillis = Seq(50, 500, 5000)
 
   def hakukohdeUsesLaskenta(hakukohdeOid: String): Boolean = {
     val url = appConfig.ophUrlProperties.url("valintalaskentakoostepalvelu.valintaperusteet.resource.hakukohde", hakukohdeOid)
-    retryBackoffMillis.foreach { backoffMillis =>
-      try {
-        logger.info(s"Calling $url to see if kohde $hakukohdeOid uses laskenta")
-        return callKoostepalveluForKayttaaLaskentaa(url, hakukohdeOid)
-      } catch {
-        case e: Exception =>
-          logger.error(e.getMessage + s" : retrying after $backoffMillis ms", e)
-          Thread.sleep(backoffMillis)
-      }
-    }
-    throw new RuntimeException(s"Could not determine whether hakukohde $hakukohdeOid uses laskenta with ${retryBackoffMillis.size} " +
-      s"attempts with intervals of $retryBackoffMillis ms")
+    logger.info(s"Calling $url to see if kohde $hakukohdeOid uses laskenta")
+    callKoostepalveluForKayttaaLaskentaa(url, hakukohdeOid)
   }
 
   private def callKoostepalveluForKayttaaLaskentaa(url: String, hakukohdeOid: String): Boolean = {
@@ -47,10 +39,11 @@ class ValintalaskentakoostepalveluService(appConfig: VtsAppConfig) extends Loggi
 
     implicit val hakukohdeResponseDecoder =  org.http4s.json4s.native.jsonOf[HakukohdeResponse]
 
-    valintalaskentakoosteClient.httpClient.fetch(Request(method = Method.GET, uri = createUri(url, ""))) {
+    val retryingClient = Retry(exponentialBackoff(Duration(30, SECONDS), maxRetry = 10))(valintalaskentakoosteClient.httpClient)
+    retryingClient.fetch(Request(method = Method.GET, uri = createUri(url, ""))) {
       case r if 200 == r.status.code => r.as[HakukohdeResponse]
       case r => Task.fail(new RuntimeException(s"Error when checking hakukohde $hakukohdeOid from url $url : ${r.toString}"))
-    }.attemptRunFor(Duration(1, TimeUnit.MINUTES)) match {
+    }.attemptRunFor(Duration(10, TimeUnit.MINUTES)) match {
       case \/-(response) => response.kayttaaValintalaskentaa
       case -\/(t) => throw t
     }
