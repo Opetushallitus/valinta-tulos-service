@@ -106,7 +106,7 @@ class VastaanottoService(hakuService: HakuService,
             hakemuksenTulos = valintatulosService.julkaistavaTulos(sijoittelunTulos, haku, ohjausparametrit, true,
               vastaanottoKaudella = hakukohdeOid => {
                 hakukohdes.find(_.oid == hakukohdeOid).filter(_.yhdenPaikanSaantoVoimassa).flatMap(hakukohde => Some(hakukohde.koulutuksenAlkamiskausi, maybeAiempiVastaanottoKaudella.flatten.isDefined))
-              })(hakemus)
+              }, hakemus.henkilotiedot.hasHetu)(hakemus)
             hakutoive <- tarkistaHakutoiveenVastaanotettavuusVirkailijana(hakemuksenTulos, hakukohdeOid, vastaanottoDto, maybeAiempiVastaanottoKaudella).fold(DBIO.failed, DBIO.successful)
             _ <- hakutoive.fold[DBIO[Unit]](DBIO.successful())(_ => hakijaVastaanottoRepository.storeAction(vastaanotto))
           } yield hakutoive).right
@@ -180,7 +180,7 @@ class VastaanottoService(hakuService: HakuService,
           hakemuksenTulos = valintatulosService.julkaistavaTulos(sijoittelunTulos, haku, ohjausparametrit, true,
             vastaanottoKaudella = hakukohdeOid => {
               hakukohdes.find(_.oid == hakukohdeOid).filter(_.yhdenPaikanSaantoVoimassa).flatMap(hakukohde => Some(hakukohde.koulutuksenAlkamiskausi, maybeAiempiVastaanottoKaudella.flatten.isDefined))
-            })(hakemus)
+            }, hakemus.henkilotiedot.hasHetu)(hakemus)
           hakutoive <- tarkistaHakutoiveenVastaanotettavuus(hakemuksenTulos, hakukohdeOid, vastaanotto.action).fold(DBIO.failed, DBIO.successful)
           _ <- hakijaVastaanottoRepository.storeAction(vastaanotto)
         } yield hakutoive).right

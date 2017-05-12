@@ -28,11 +28,19 @@ case class UlkoinenJärjestelmä(nimi: LanguageMap, url: String) extends Ilmoitt
 
 object HakutoiveenIlmoittautumistila {
 
-  val oili = UlkoinenJärjestelmä(Map(Language.fi -> "Oili", Language.sv -> "Oili", Language.en -> "Oili"), "/oili/")
+  val oiliHetullinen = UlkoinenJärjestelmä(Map(Language.fi -> "Oili", Language.sv -> "Oili", Language.en -> "Oili"), "/oili/")
+  def oiliHetuton(appConfig: VtsAppConfig) = UlkoinenJärjestelmä(Map(Language.fi -> "Oili", Language.sv -> "Oili", Language.en -> "Oili"), appConfig.settings.oiliHetutonUrl)
 
-  def getIlmoittautumistila(sijoitteluTila: HakutoiveenSijoitteluntulos, haku: Haku, ohjausparametrit: Option[Ohjausparametrit])(implicit appConfig: VtsAppConfig): HakutoiveenIlmoittautumistila = {
+  def getIlmoittautumistila(sijoitteluTila: HakutoiveenSijoitteluntulos,
+                            haku: Haku,
+                            ohjausparametrit: Option[Ohjausparametrit],
+                            hasHetu: Boolean)(implicit appConfig: VtsAppConfig): HakutoiveenIlmoittautumistila = {
     val ilmoittautumistapa = if(haku.korkeakoulu) {
-      Some(oili)
+      if (hasHetu) {
+        Some(oiliHetullinen)
+      } else {
+        Some(oiliHetuton(appConfig))
+      }
     }
     else {
       None

@@ -410,17 +410,24 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
     }
 
     "ilmoittautuminen" in {
-      "onnistuu ja tarjotaaan oilia, jos vastaanottanut" in {
+      "onnistuu ja tarjotaan oilia, jos vastaanottanut ja hetullinen" in {
         useFixture("hyvaksytty-vastaanottanut.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
         hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
-        hakemuksenTulos.hakutoiveet(0).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, Some(HakutoiveenIlmoittautumistila.oili), EiTehty, true)
+        hakemuksenTulos.hakutoiveet(0).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, Some(HakutoiveenIlmoittautumistila.oiliHetullinen), EiTehty, true)
         ilmoittaudu(hakemusOid, "1.2.246.562.5.72607738902", LasnaKokoLukuvuosi, muokkaaja, selite)
-        hakemuksenTulos.hakutoiveet(0).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, Some(HakutoiveenIlmoittautumistila.oili), LasnaKokoLukuvuosi, false)
+        hakemuksenTulos.hakutoiveet(0).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, Some(HakutoiveenIlmoittautumistila.oiliHetullinen), LasnaKokoLukuvuosi, false)
+      }
+      "onnistuu ja tarjotaan oilia, jos vastaanottanut hetuton" in {
+        useFixture("hyvaksytty-vastaanottanut.json", hakuFixture = hakuFixture, hakemusFixtures = List("00000441369-no-hetu"), yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
+        hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
+        hakemuksenTulos.hakutoiveet(0).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, Some(HakutoiveenIlmoittautumistila.oiliHetuton(appConfig)), EiTehty, true)
+        ilmoittaudu(hakemusOid, "1.2.246.562.5.72607738902", LasnaKokoLukuvuosi, muokkaaja, selite)
+        hakemuksenTulos.hakutoiveet(0).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, Some(HakutoiveenIlmoittautumistila.oiliHetuton(appConfig)), LasnaKokoLukuvuosi, false)
       }
       "ei onnistu, jos vastaanottanut ehdollisesti" in {
         useFixture("hyvaksytty-vastaanottanut-ehdollisesti.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
         hakemuksenTulos.hakutoiveet(1).vastaanottotila must_== Vastaanottotila.ehdollisesti_vastaanottanut
-        hakemuksenTulos.hakutoiveet(1).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, Some(HakutoiveenIlmoittautumistila.oili), EiTehty, false)
+        hakemuksenTulos.hakutoiveet(1).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, Some(HakutoiveenIlmoittautumistila.oiliHetullinen), EiTehty, false)
         expectFailure{ilmoittaudu(hakemusOid, "1.2.246.562.5.16303028779", LasnaKokoLukuvuosi, muokkaaja, selite)}
       }
       "onnistuu viime hetkeen asti" in {

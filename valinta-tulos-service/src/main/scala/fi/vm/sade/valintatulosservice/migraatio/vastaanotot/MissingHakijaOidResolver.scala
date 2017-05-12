@@ -43,6 +43,7 @@ object HakijaResolver {
 class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with Logging with HakijaResolver {
   private val hakuClient = createCasClient(appConfig, "/haku-app")
   private val henkiloClient = createCasClient(appConfig, "/authentication-service")
+  private val oppijanumerorekisteriClient = createCasClient(appConfig, "/oppijanumerorekisteri-service")
   private val henkiloPalveluUrlBase = appConfig.ophUrlProperties.url("authentication-service.henkilo")
 
   case class HakemusHenkilo(personOid: Option[String], hetu: Option[String], etunimet: String, sukunimi: String, kutsumanimet: String,
@@ -50,28 +51,28 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
 
   private def findPersonOidByHetu(hetu: String): Option[String] = findPersonByHetu(hetu).map(_.oidHenkilo)
 
-  override def findPersonByHetu(hetu: String, timeout: Duration = 60.seconds): Option[Henkilo] = {
-    implicit val henkiloReader = new Reader[Henkilo] {
-      override def read(v: JValue): Henkilo = {
-        val searchResults = (v \\ "results").children
-        if (searchResults.values.size != 1) {
-          val message = s"Found ${searchResults.values.size} hits for same hetu! $searchResults"
-          logger.error(message)
-          throw new IllegalStateException(message)
-        }
-        val onlyResult: JValue = searchResults.arr.head
-        Henkilo( (onlyResult \ "oidHenkilo").extract[String], (onlyResult \ "hetu").extract[String],
-          (onlyResult \ "etunimet").extract[String], (onlyResult \ "sukunimi").extract[String])
+  override def findPersonByHetu(hetu: String, timeout: Duration = 60 seconds): Option[Henkilo] = {
+    implicit val henkiloReader = new Reader[Option[Henkilo]] {
+      override def read(v: JValue): Option[Henkilo] = {
+        Some(Henkilo( (v \ "oidHenkilo").extract[String],
+          (v \ "hetu").extract[String],
+          (v \ "etunimet").extract[String],
+          (v \ "sukunimi").extract[String]))
       }
     }
 
-    implicit val henkiloDecoder = org.http4s.json4s.native.jsonOf[Henkilo]
+    implicit val henkiloDecoder = org.http4s.json4s.native.jsonOf[Option[Henkilo]]
 
-    henkiloClient.httpClient.fetch(Request(uri = createUri(henkiloPalveluUrlBase + "?q=", hetu))) {
-      case r if 200 == r.status.code => r.as[Henkilo]
+    val requestUri = createUri(appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.henkiloPerusByHetu",hetu))
+    oppijanumerorekisteriClient.httpClient.fetch(Request(uri = requestUri)) {
+      case r if 200 == r.status.code => r.as[Option[Henkilo]]
+      case r if 404 == r.status.code => Task.now(None)
       case r => Task.fail(new RuntimeException(r.toString))
     }.attemptRunFor(timeout) match {
-      case \/-(henkilo) => Some(henkilo)
+      case \/-(found@Some(henkilo)) => found
+      case \/-(None) =>
+        logger.warn(s"Could not find henkilo by hetu from ONR")
+        None
       case -\/(t) =>
         handleFailure(t, "searching person oid by hetu " + Option(hetu).map(_.replaceAll(".","*")))
         throw t
@@ -144,7 +145,9 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
     case pf: ParseFailure => logger.error(s"Got parse exception when $message : $pf, ${pf.sanitized}", t); None
     case e:Exception => logger.error(s"Got exception when $message : ${e.getMessage}", e); None
   }
-
+  private def createUri(uri: String): Uri = {
+    Uri.fromString(uri).getOrElse(throw new RuntimeException(s"Invalid uri: $uri"))
+  }
   private def createUri(base: String, rest: String): Uri = {
     val stringUri = base + URLEncoder.encode(rest, "UTF-8")
     Uri.fromString(stringUri).getOrElse(throw new RuntimeException(s"Invalid uri: $stringUri"))
