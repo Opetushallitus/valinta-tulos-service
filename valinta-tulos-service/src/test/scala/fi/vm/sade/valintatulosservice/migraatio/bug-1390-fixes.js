@@ -210,7 +210,7 @@ db.Hakukohde.count({sijoitteluajoId: sijoitteluajoId,
 // Store the erroneous Hakukohde documents in a safe place
 db.Hakukohde.find({sijoitteluajoId: sijoitteluajoId,
     oid: { $in: Object.keySet(hakukohdeFixMappings) } } ).forEach(function(hk) {
-    db.bug1400hakukohdes.insert(hk);
+    db.bug1390hakukohdes.insert(hk);
 });
 
 // And do it!
@@ -259,6 +259,34 @@ db.Valintatulos.find({hakuOid: oldHakuOid,
     print("Setting oid from", oldOid, "to", fixedOid, "in document", vt._id.toString());
     db.Valintatulos.update({_id: vt._id}, {$set: {
         hakukohdeOid: fixedOid
+    } });
+});
+
+
+// This query showed that there were still some hakemus where there were multiple vastaanotto in different hakus
+db.Valintatulos.find({hakukohdeOid: { $in: Object.keySet(hakukohdeFixMappings) } } ).forEach(function(vt) {
+    var hakuoids = db.Valintatulos.distinct("hakuOid", {hakemusOid: vt.hakemusOid } )
+    if(hakuoids.length > 1)
+        print(vt.hakemusOid +":  "+hakuoids)
+});
+
+// Moved the valintatulos to safety
+var brokenHakemus = ['1.2.246.562.11.00000934804','1.2.246.562.11.00000880806','1.2.246.562.11.00000945220','1.2.246.562.11.00000884886','1.2.246.562.11.00000919065','1.2.246.562.11.00000945165','1.2.246.562.11.00000893071','1.2.246.562.11.00000955647','1.2.246.562.11.00000966526','1.2.246.562.11.00000950273','1.2.246.562.11.00000922696','1.2.246.562.11.00000949323','1.2.246.562.11.00000986292','1.2.246.562.11.00000953173','1.2.246.562.11.00000892519','1.2.246.562.11.00000919405','1.2.246.562.11.00000920106','1.2.246.562.11.00000986564','1.2.246.562.11.00000882749','1.2.246.562.11.00000882503','1.2.246.562.11.00000955155','1.2.246.562.11.00000918710','1.2.246.562.11.00000881517','1.2.246.562.11.00000885940','1.2.246.562.11.00000970907','1.2.246.562.11.00000948874','1.2.246.562.11.00000885487','1.2.246.562.11.00000962915','1.2.246.562.11.00000904575','1.2.246.562.11.00000957593','1.2.246.562.11.00000982542','1.2.246.562.11.00000932576','1.2.246.562.11.00000964007','1.2.246.562.11.00000883926','1.2.246.562.11.00000984184','1.2.246.562.11.00000952488','1.2.246.562.11.00000980272','1.2.246.562.11.00000981187','1.2.246.562.11.00000980748','1.2.246.562.11.00000930361','1.2.246.562.11.00000882532','1.2.246.562.11.00000889946','1.2.246.562.11.00000904407','1.2.246.562.11.00000981307','1.2.246.562.11.00000904083','1.2.246.562.11.00000966092','1.2.246.562.11.00000885322','1.2.246.562.11.00000928975','1.2.246.562.11.00000984003','1.2.246.562.11.00000883311','1.2.246.562.11.00000963367','1.2.246.562.11.00000929673','1.2.246.562.11.00000883476']
+db.Valintatulos.find({
+    hakukohdeOid: {$in: Object.keySet(hakukohdeFixMappings)},
+    hakemusOid: {$in: brokenHakemus}
+}).forEach(function (vt) {
+    db.bug1390valintatulos_v2.insert(vt);
+});
+
+// And fixed
+db.Valintatulos.find({
+    hakukohdeOid: {$in: Object.keySet(hakukohdeFixMappings)},
+    hakemusOid: {$in: brokenHakemus}
+}).forEach(function (vt) {
+    db.Valintatulos.update({_id: vt._id}, {$set: {
+        hakuOid: "1.2.246.562.5.2014022711042555034240",
+        hakukohdeOid: "1.2.246.562.20.44853622296"
     } });
 });
 
