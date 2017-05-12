@@ -148,7 +148,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
         migraatioRepository.deleteSijoittelunTulokset(hakuOid)
       }
     } else {
-      logger.info(s"No Sijoitteluajo for haku $hakuOid seems to be stored to Postgres db yet.")
+      logger.info(s"No Sijoitteluajo for haku $hakuOid seems to be stored to Postgres db.")
     }
     logger.info(s"Deleting the rest of the results of haku $hakuOid:")
     migraatioRepository.deleteAllTulokset(hakuOid)
