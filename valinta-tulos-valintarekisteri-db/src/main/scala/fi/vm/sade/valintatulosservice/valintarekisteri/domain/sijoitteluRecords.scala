@@ -53,30 +53,28 @@ case class HakijaRecord(hakemusOid: HakemusOid, hakijaOid: String) {
   }
 }
 
-case class HakutoiveRecord(hakemusOid: HakemusOid, hakutoive: Int, hakukohdeOid: HakukohdeOid, valintatuloksenTila: String, kaikkiJonotsijoiteltu: Boolean) {
+case class HakutoiveRecord(hakemusOid: HakemusOid, hakutoive: Option[Int], hakukohdeOid: HakukohdeOid, kaikkiJonotsijoiteltu: Option[Boolean]) {
 
   def dto(valintatapajonot:List[HakutoiveenValintatapajonoDTO], pistetiedot:List[PistetietoDTO], hakijaryhmat:List[HakutoiveenHakijaryhmaDTO]) = {
     val hakutoiveDTO = new HakutoiveDTO
-    hakutoiveDTO.setHakutoive(hakutoive)
+    hakutoive.foreach(hakutoiveDTO.setHakutoive(_))
     hakutoiveDTO.setHakukohdeOid(hakukohdeOid.toString)
     //  TODO hakutoiveDTO.setVastaanottotieto(valintatuloksenTila) ?
     hakutoiveDTO.setPistetiedot(pistetiedot.asJava)
     hakutoiveDTO.setHakutoiveenValintatapajonot(valintatapajonot.asJava)
     hakutoiveDTO.setHakijaryhmat(hakijaryhmat.asJava)
+    kaikkiJonotsijoiteltu.foreach(hakutoiveDTO.setKaikkiJonotSijoiteltu(_))
     hakutoiveDTO
   }
 }
 
 case class HakutoiveenValintatapajonoRecord(hakukohdeOid: HakukohdeOid, valintatapajonoPrioriteetti:Int, valintatapajonoOid: ValintatapajonoOid,
     valintatapajonoNimi:String, eiVarasijatayttoa:Boolean, jonosija:Int,
-    varasijanNumero:Option[Int], tila:Valinnantila, ilmoittautumisTila:SijoitteluajonIlmoittautumistila,
-    hyvaksyttyHarkinnanvaraisesti:Boolean, tasasijaJonosija:Int, pisteet:Option[BigDecimal], alinHyvaksyttyPistemaara:Option[BigDecimal],
-    varasijat:Option[Int], varasijaTayttoPaivat:Option[Int], varasijojaKaytetaanAlkaen:Option[Date],
-    varasijojaTaytetaanAsti:Option[Date], tayttojono:Option[String], julkaistavissa:Boolean, ehdollisestiHyvaksyttavissa:Boolean,
-    hyvaksyttyVarasijalta:Boolean, valintatuloksenViimeisinMuutos:Option[Date], hakemuksenTilanViimeisinMuutos:Date,
-    tilankuvausHash:Int, tarkenteenLisatieto:Option[String], hakeneet:Int) {
+    varasijanNumero:Option[Int], hyvaksyttyHarkinnanvaraisesti:Boolean, tasasijaJonosija:Int, pisteet:Option[BigDecimal],
+    alinHyvaksyttyPistemaara:Option[BigDecimal], varasijat:Option[Int], varasijaTayttoPaivat:Option[Int], varasijojaKaytetaanAlkaen:Option[Date],
+    varasijojaTaytetaanAsti:Option[Date], tayttojono:Option[String], tilankuvausHash:Int, tarkenteenLisatieto:Option[String], hakeneet:Int) {
 
-  def dto(tilankuvaukset:Map[String,String]) = {
+  def dto(valinnantulos: Option[Valinnantulos], hyvaksytyt:Int, tilankuvaukset:Map[String,String]) = {
     val hakutoiveenValintatapajonoDto = new HakutoiveenValintatapajonoDTO()
     hakutoiveenValintatapajonoDto.setValintatapajonoPrioriteetti(valintatapajonoPrioriteetti)
     hakutoiveenValintatapajonoDto.setValintatapajonoOid(valintatapajonoOid.toString)
@@ -85,8 +83,6 @@ case class HakutoiveenValintatapajonoRecord(hakukohdeOid: HakukohdeOid, valintat
     hakutoiveenValintatapajonoDto.setJonosija(jonosija)
     //todo paasyJasoveltuvuuskokeentulos
     varasijanNumero.foreach(hakutoiveenValintatapajonoDto.setVarasijanNumero(_))
-    hakutoiveenValintatapajonoDto.setTila(HakemuksenTila.valueOf(tila.valinnantila.name))
-    hakutoiveenValintatapajonoDto.setIlmoittautumisTila(IlmoittautumisTila.valueOf(ilmoittautumisTila.ilmoittautumistila.name))
     hakutoiveenValintatapajonoDto.setHyvaksyttyHarkinnanvaraisesti(hyvaksyttyHarkinnanvaraisesti)
     hakutoiveenValintatapajonoDto.setTasasijaJonosija(tasasijaJonosija)
     pisteet.foreach(p => hakutoiveenValintatapajonoDto.setPisteet(bigDecimal(p)))
@@ -97,13 +93,18 @@ case class HakutoiveenValintatapajonoRecord(hakukohdeOid: HakukohdeOid, valintat
     varasijojaKaytetaanAlkaen.foreach(hakutoiveenValintatapajonoDto.setVarasijojaKaytetaanAlkaen(_))
     varasijojaTaytetaanAsti.foreach(hakutoiveenValintatapajonoDto.setVarasijojaTaytetaanAsti(_))
     tayttojono.foreach(hakutoiveenValintatapajonoDto.setTayttojono)
-    hakutoiveenValintatapajonoDto.setJulkaistavissa(julkaistavissa)
-    hakutoiveenValintatapajonoDto.setEhdollisestiHyvaksyttavissa(ehdollisestiHyvaksyttavissa)
-    hakutoiveenValintatapajonoDto.setHyvaksyttyVarasijalta(hyvaksyttyVarasijalta)
-    valintatuloksenViimeisinMuutos.foreach(hakutoiveenValintatapajonoDto.setValintatuloksenViimeisinMuutos(_))
-    hakutoiveenValintatapajonoDto.setHakemuksenTilanViimeisinMuutos(hakemuksenTilanViimeisinMuutos)
+    valinnantulos.foreach { v =>
+      hakutoiveenValintatapajonoDto.setTila(HakemuksenTila.valueOf(v.valinnantila.valinnantila.name))
+      hakutoiveenValintatapajonoDto.setIlmoittautumisTila(IlmoittautumisTila.valueOf(v.ilmoittautumistila.ilmoittautumistila.name))
+      v.julkaistavissa.foreach(hakutoiveenValintatapajonoDto.setJulkaistavissa(_))
+      v.ehdollisestiHyvaksyttavissa.foreach(hakutoiveenValintatapajonoDto.setEhdollisestiHyvaksyttavissa(_))
+      v.hyvaksyttyVarasijalta.foreach(hakutoiveenValintatapajonoDto.setHyvaksyttyVarasijalta(_))
+      v.valinnantilanViimeisinMuutos.foreach(odt => hakutoiveenValintatapajonoDto.setHakemuksenTilanViimeisinMuutos(Date.from(odt.toInstant)))
+      v.vastaanotonViimeisinMuutos.foreach(odt => hakutoiveenValintatapajonoDto.setValintatuloksenViimeisinMuutos(Date.from(odt.toInstant)))
+    }
     hakutoiveenValintatapajonoDto.setTilanKuvaukset(tilankuvaukset.asJava)
     hakutoiveenValintatapajonoDto.setHakeneet(hakeneet)
+    hakutoiveenValintatapajonoDto.setHyvaksytty(hyvaksytyt)
     hakutoiveenValintatapajonoDto
   }
 
@@ -116,6 +117,23 @@ case class HakutoiveenValintatapajonoRecord(hakukohdeOid: HakukohdeOid, valintat
   def bigDecimal(bigDecimal:BigDecimal): java.math.BigDecimal = bigDecimal match {
     case i: BigDecimal => i.bigDecimal
     case _ => null
+  }
+}
+
+object HakutoiveenValintatapajonoRecord {
+  def dto(valinnantulos: Valinnantulos, hakeneet:Int, hyvaksytyt:Int) = {
+    val hakutoiveenValintatapajonoDto = new HakutoiveenValintatapajonoDTO()
+    hakutoiveenValintatapajonoDto.setValintatapajonoOid(valinnantulos.valintatapajonoOid.toString)
+    hakutoiveenValintatapajonoDto.setTila(HakemuksenTila.valueOf(valinnantulos.valinnantila.valinnantila.name))
+    hakutoiveenValintatapajonoDto.setIlmoittautumisTila(IlmoittautumisTila.valueOf(valinnantulos.ilmoittautumistila.ilmoittautumistila.name))
+    valinnantulos.julkaistavissa.foreach(hakutoiveenValintatapajonoDto.setJulkaistavissa(_))
+    valinnantulos.ehdollisestiHyvaksyttavissa.foreach(hakutoiveenValintatapajonoDto.setEhdollisestiHyvaksyttavissa(_))
+    valinnantulos.hyvaksyttyVarasijalta.foreach(hakutoiveenValintatapajonoDto.setHyvaksyttyVarasijalta(_))
+    valinnantulos.valinnantilanViimeisinMuutos.foreach(odt => hakutoiveenValintatapajonoDto.setHakemuksenTilanViimeisinMuutos(Date.from(odt.toInstant)))
+    valinnantulos.vastaanotonViimeisinMuutos.foreach(odt => hakutoiveenValintatapajonoDto.setValintatuloksenViimeisinMuutos(Date.from(odt.toInstant)))
+    hakutoiveenValintatapajonoDto.setHakeneet(hakeneet)
+    hakutoiveenValintatapajonoDto.setHyvaksytty(hyvaksytyt)
+    hakutoiveenValintatapajonoDto
   }
 }
 

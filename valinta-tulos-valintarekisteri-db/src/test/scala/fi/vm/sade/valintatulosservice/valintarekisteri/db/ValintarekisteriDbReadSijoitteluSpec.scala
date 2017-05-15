@@ -25,19 +25,18 @@ class ValintarekisteriDbReadSijoitteluSpec extends Specification with ITSetup wi
 
   "ValintarekisteriDb" should {
     "get hakija" in {
-      val res = singleConnectionValintarekisteriDb.getHakemuksenHakija(hakemusOid, 1476936450191L).get
+      val res = singleConnectionValintarekisteriDb.getHakemuksenHakija(hakemusOid, Some(1476936450191L)).get
       res.hakijaOid mustEqual "1.2.246.562.24.19795717550"
     }
 
     "get hakijan hakutoiveet" in {
-      val res = singleConnectionValintarekisteriDb.getHakemuksenHakutoiveet(hakemusOid, 1476936450191L)
+      val res = singleConnectionValintarekisteriDb.getHakemuksenHakutoiveetSijoittelussa(hakemusOid, 1476936450191L)
       res.size mustEqual 1
-      res.head.hakutoive mustEqual 6
-      res.head.valintatuloksenTila mustEqual "Hyvaksytty"
+      res.head.hakutoive mustEqual Some(6)
     }
 
     "get hakijan pistetiedot" in {
-      val res = singleConnectionValintarekisteriDb.getHakemuksenPistetiedot(hakemusOid, 1476936450191L)
+      val res = singleConnectionValintarekisteriDb.getHakemuksenPistetiedotSijoittelussa(hakemusOid, 1476936450191L)
       res.size mustEqual 1
       res.head.tunniste mustEqual "85e2d263-d57d-46e3-3069-651c733c64d8"
     }

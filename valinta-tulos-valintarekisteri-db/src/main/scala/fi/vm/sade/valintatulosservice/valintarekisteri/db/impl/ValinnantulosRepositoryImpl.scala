@@ -121,7 +121,9 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               tu.hyvaksytty_varasijalta,
               tu.hyvaksy_peruuntunut,
               v.action,
-              i.tila
+              i.tila,
+              ti.tilan_viimeisin_muutos,
+              v.timestamp
           from valinnantilat as ti
           left join ehdollisen_hyvaksynnan_ehto as eh on eh.hakemus_oid = ti.hakemus_oid
               and eh.valintatapajono_oid = ti.valintatapajono_oid
@@ -150,7 +152,9 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               tu.hyvaksytty_varasijalta,
               tu.hyvaksy_peruuntunut,
               v.action,
-              i.tila
+              i.tila,
+              ti.tilan_viimeisin_muutos,
+              v.timestamp
           from valinnantilat as ti
           left join ehdollisen_hyvaksynnan_ehto as eh on eh.hakemus_oid = ti.hakemus_oid
               and eh.valintatapajono_oid = ti.valintatapajono_oid
@@ -182,7 +186,9 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               tu.hyvaksytty_varasijalta,
               tu.hyvaksy_peruuntunut,
               v.action,
-              i.tila
+              i.tila,
+              ti.tilan_viimeisin_muutos,
+              v.timestamp
           from valinnantilat as ti
           left join ehdollisen_hyvaksynnan_ehto as eh on eh.hakemus_oid = ti.hakemus_oid
               and eh.valintatapajono_oid = ti.valintatapajono_oid
@@ -212,7 +218,9 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                 tu.hyvaksytty_varasijalta,
                 tu.hyvaksy_peruuntunut,
                 v.action,
-                i.tila
+                i.tila,
+                ti.tilan_viimeisin_muutos,
+                v.timestamp
             from valinnantilat as ti
             join hakukohteet hk on ti.hakukohde_oid = hk.hakukohde_oid and hk.haku_oid = ${hakuOid}
             left join valinnantulokset as tu on tu.valintatapajono_oid = ti.valintatapajono_oid
@@ -224,6 +232,16 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             left join ilmoittautumiset as i on i.henkilo = ti.henkilo_oid
                 and i.hakukohde = ti.hakukohde_oid""".as[Valinnantulos].map(_.toSet)
     }
+
+  override def getHaunValinnantilat(hakuOid: HakuOid): List[(HakukohdeOid, ValintatapajonoOid, HakemusOid, Valinnantila)] = {
+      runBlocking(
+        sql"""select v.hakukohde_oid, v.valintatapajono_oid, v.hakemus_oid, v.tila
+              from valinnantilat v
+              inner join hakukohteet h on v.hakukohde_oid = h.hakukohde_oid
+              where h.haku_oid = ${hakuOid}
+        """.as[(HakukohdeOid, ValintatapajonoOid, HakemusOid, Valinnantila)]).toList
+  }
+
 
   override def getLastModifiedForHakukohde(hakukohdeOid: HakukohdeOid): DBIO[Option[Instant]] = {
     sql"""select greatest(max(lower(ti.system_time)), max(lower(tu.system_time)), max(lower(il.system_time)),
