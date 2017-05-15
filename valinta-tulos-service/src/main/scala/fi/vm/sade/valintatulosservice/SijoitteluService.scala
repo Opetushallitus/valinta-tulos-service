@@ -6,11 +6,11 @@ import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.SijoitteluRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakemusRepository, SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.{SijoitteluajonHakija, SijoitteluajonHakukohde, SijoitteluajonHakukohteet}
 
-class SijoitteluService(val sijoitteluRepository: SijoitteluRepository,
+class SijoitteluService(val sijoitteluRepository: SijoitteluRepository with HakemusRepository with ValinnantulosRepository,
                         authorizer:OrganizationHierarchyAuthorizer,
                         hakuService: HakuService ) extends Logging {
 

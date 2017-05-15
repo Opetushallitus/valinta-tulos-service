@@ -2,8 +2,11 @@ package fi.vm.sade.valintatulosservice.sijoittelu
 
 import fi.vm.sade.sijoittelu.domain.{HakukohdeItem, SijoitteluAjo}
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosRepository}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, SijoitteluajoRecord}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakemusRepository, SijoitteluRepository, ValinnantulosRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.SijoitteluajonHakija
+
+import scala.util.Try
 
 trait ValintarekisteriSijoittelunTulosClient {
 
@@ -13,7 +16,7 @@ trait ValintarekisteriSijoittelunTulosClient {
 
 }
 
-class ValintarekisteriSijoittelunTulosClientImpl(sijoitteluRepository: SijoitteluRepository, valinnantulosRepository: ValinnantulosRepository) extends ValintarekisteriSijoittelunTulosClient {
+class ValintarekisteriSijoittelunTulosClientImpl(sijoitteluRepository: HakemusRepository with SijoitteluRepository with ValinnantulosRepository, valinnantulosRepository: ValinnantulosRepository) extends ValintarekisteriSijoittelunTulosClient {
 
   private def run[R](operations: slick.dbio.DBIO[R]): R = valinnantulosRepository.runBlocking(operations)
 
@@ -38,5 +41,6 @@ class ValintarekisteriSijoittelunTulosClientImpl(sijoitteluRepository: Sijoittel
     }
   }
 
-  override def fetchHakemuksenTulos(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid): Option[HakijaDTO] = ???
+  override def fetchHakemuksenTulos(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid): Option[HakijaDTO] =
+    Try(new SijoitteluajonHakija(sijoitteluRepository, sijoitteluAjo, hakemusOid).dto()).toOption
 }

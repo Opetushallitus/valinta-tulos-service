@@ -1,8 +1,9 @@
 package fi.vm.sade.valintatulosservice.sijoittelu
 
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, SyntheticSijoitteluAjoForHakusWithoutSijoittelu}
 import fi.vm.sade.valintatulosservice.valintarekisteri.ITSetup
 import org.specs2.mutable.Specification
+
 import scala.collection.JavaConverters._
 
 class ValintarekisteriSijoittelunTulosClientSpec extends Specification with ITSetup with ValintarekisteriTestData {

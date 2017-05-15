@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
 import java.util
 
-import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatulos}
+import fi.vm.sade.sijoittelu.domain.{Hakukohde, HakukohdeItem, SijoitteluAjo, Valintatulos}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.ValintarekisteriAppConfig
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
