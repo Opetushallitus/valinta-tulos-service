@@ -20,6 +20,7 @@ object JsonFormats {
     new ValinnantilaSerializer,
     new ValintatuloksenTilaSerializer,
     new OffsetDateTimeSerializer,
+    new ZonedDateTimeSerializer,
     new HakuOidSerializer,
     new HakukohdeOidSerializer,
     new ValintatapajonoOidSerializer,

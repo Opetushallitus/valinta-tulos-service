@@ -301,6 +301,13 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     }
   }
 
+  override def setJulkaistavissa(valintatapajonoOid: ValintatapajonoOid): DBIO[Unit] = {
+    sqlu"""update valinnantulokset set julkaistavissa = true
+           where valintatapajono_oid = $valintatapajonoOid
+               and not julkaistavissa
+      """.map(_ => ())
+  }
+
   override def storeValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
     sqlu"""insert into valinnantulokset(
              valintatapajono_oid,
