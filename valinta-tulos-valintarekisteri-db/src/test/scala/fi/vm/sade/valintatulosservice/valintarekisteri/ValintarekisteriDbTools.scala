@@ -720,7 +720,7 @@ trait ValintarekisteriDbTools extends Specification {
         valintatapajono.getHakemukset.addAll(
           (1 to size par).map( j => {
             val hakemusOid = HakemusOid(valintatapajonoOid.toString + "." + j)
-            val hakemus = SijoitteluajonHakemusWrapper(hakemusOid, Some(valintatapajonoOid.toString),
+            val hakemus = SijoitteluajonHakemusWrapper(hakemusOid, Some(hakemusOid.toString),
               j, j, None, false, Some(j), j, false, false, Hylatty, Some(Map("FI" -> ("fi" + j), "SV" -> ("sv" + j), "EN" -> ("en" + j))),
               EiTilankuvauksenTarkennetta, None, Set(""), List()).hakemus
             hakemus.setPistetiedot(List(SijoitteluajonPistetietoWrapper("moi", Some("123"), Some("123"), Some("Osallistui")).pistetieto).asJava)
