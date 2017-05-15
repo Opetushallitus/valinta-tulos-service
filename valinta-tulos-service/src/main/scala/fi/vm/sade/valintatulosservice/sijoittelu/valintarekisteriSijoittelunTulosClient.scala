@@ -6,7 +6,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakemusRepository, Si
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.SijoitteluajonHakija
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 trait ValintarekisteriSijoittelunTulosClient {
 
@@ -42,5 +42,8 @@ class ValintarekisteriSijoittelunTulosClientImpl(sijoitteluRepository: HakemusRe
   }
 
   override def fetchHakemuksenTulos(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid): Option[HakijaDTO] =
-    Try(new SijoitteluajonHakija(sijoitteluRepository, sijoitteluAjo, hakemusOid).dto()).toOption
+    Try(new SijoitteluajonHakija(sijoitteluRepository, sijoitteluAjo, hakemusOid).dto()) match {
+      case Failure(e) => throw new RuntimeException(e)
+      case Success(r) => Some(r)
+    }
 }

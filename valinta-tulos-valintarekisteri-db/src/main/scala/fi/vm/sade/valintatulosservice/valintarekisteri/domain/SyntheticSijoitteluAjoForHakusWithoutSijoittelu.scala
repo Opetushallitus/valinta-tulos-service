@@ -19,7 +19,7 @@ case class SyntheticSijoitteluAjoForHakusWithoutSijoittelu(hakuOid: HakuOid, hak
 object SyntheticSijoitteluAjoForHakusWithoutSijoittelu {
   final val syntheticSijoitteluajoId = -1L
 
-  def isSynthetic(ajo:SijoitteluAjo) = ajo.isInstanceOf[SyntheticSijoitteluAjoForHakusWithoutSijoittelu] || null == ajo.getSijoitteluajoId || 0 < ajo.getSijoitteluajoId
+  def isSynthetic(ajo:SijoitteluAjo) = ajo.isInstanceOf[SyntheticSijoitteluAjoForHakusWithoutSijoittelu] || null == ajo.getSijoitteluajoId || 0 > ajo.getSijoitteluajoId
 
   def getSijoitteluajoId(ajo:SijoitteluAjo):Option[Long] = ajo match {
     case a if !isSynthetic(a) => Some(a.getSijoitteluajoId)

@@ -5,6 +5,7 @@ import java.util.{Comparator, Date}
 
 import fi.vm.sade.sijoittelu.domain.{HakemuksenTila => _, IlmoittautumisTila => _, _}
 import fi.vm.sade.sijoittelu.tulos.dto._
+import fi.vm.sade.sijoittelu.tulos.dto.ValintatuloksenTila
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakutoiveDTO, HakutoiveenValintatapajonoDTO, HakijaryhmaDTO => HakutoiveenHakijaryhmaDTO}
 
 import scala.collection.JavaConverters._
@@ -55,7 +56,7 @@ case class HakijaRecord(hakemusOid: HakemusOid, hakijaOid: String) {
 
 case class HakutoiveRecord(hakemusOid: HakemusOid, hakutoive: Option[Int], hakukohdeOid: HakukohdeOid, kaikkiJonotsijoiteltu: Option[Boolean]) {
 
-  def dto(valintatapajonot:List[HakutoiveenValintatapajonoDTO], pistetiedot:List[PistetietoDTO], hakijaryhmat:List[HakutoiveenHakijaryhmaDTO]) = {
+  def dto(vastaanottotieto:fi.vm.sade.sijoittelu.domain.ValintatuloksenTila, valintatapajonot:List[HakutoiveenValintatapajonoDTO], pistetiedot:List[PistetietoDTO], hakijaryhmat:List[HakutoiveenHakijaryhmaDTO]) = {
     val hakutoiveDTO = new HakutoiveDTO
     hakutoive.foreach(hakutoiveDTO.setHakutoive(_))
     hakutoiveDTO.setHakukohdeOid(hakukohdeOid.toString)
@@ -63,6 +64,7 @@ case class HakutoiveRecord(hakemusOid: HakemusOid, hakutoive: Option[Int], hakuk
     hakutoiveDTO.setPistetiedot(pistetiedot.asJava)
     hakutoiveDTO.setHakutoiveenValintatapajonot(valintatapajonot.asJava)
     hakutoiveDTO.setHakijaryhmat(hakijaryhmat.asJava)
+    hakutoiveDTO.setVastaanottotieto(ValintatuloksenTila.valueOf(vastaanottotieto.toString))
     kaikkiJonotsijoiteltu.foreach(hakutoiveDTO.setKaikkiJonotSijoiteltu(_))
     hakutoiveDTO
   }

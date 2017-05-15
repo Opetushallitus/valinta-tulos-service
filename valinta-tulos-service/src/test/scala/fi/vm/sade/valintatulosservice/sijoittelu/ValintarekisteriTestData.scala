@@ -34,6 +34,13 @@ trait ValintarekisteriTestData extends ValintarekisteriDbTools {
 
   val sijoitteluajoId = 12345l
 
+  val sijoittelunHakemusOid1 = HakemusOid("Haku2.2.1.1")
+  val sijoittelunHakemusOid2 = HakemusOid("Haku2.2.1.2")
+  val sijoittelunHakukohdeOid1 = HakukohdeOid("Haku2.1")
+  val sijoittelunHakukohdeOid2 = HakukohdeOid("Haku2.2")
+  val sijoittelunValintatapajonoOid1 = ValintatapajonoOid("Haku2.1.1")
+  val sijoittelunValintatapajonoOid2 = ValintatapajonoOid("Haku2.2.1")
+
   def createSijoitteluajoHaulle2() = {
     singleConnectionValintarekisteriDb.storeSijoittelu(createHugeSijoittelu(sijoitteluajoId, hakuOid2, 2))
   }
@@ -64,7 +71,7 @@ trait ValintarekisteriTestData extends ValintarekisteriDbTools {
       ehdollisenHyvaksymisenEhtoFI = None,
       ehdollisenHyvaksymisenEhtoSV = None,
       ehdollisenHyvaksymisenEhtoEN = None,
-      julkaistavissa = None,
+      julkaistavissa = Some(true),
       hyvaksyttyVarasijalta = None,
       hyvaksyPeruuntunut = None,
       vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI,
