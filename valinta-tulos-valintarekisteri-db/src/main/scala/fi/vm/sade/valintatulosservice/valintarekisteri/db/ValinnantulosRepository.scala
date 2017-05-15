@@ -25,6 +25,8 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
   def getValinnantuloksetForHaku(hakuOid: HakuOid): DBIO[Set[Valinnantulos]]
   def getValinnantuloksetForHakemus(hakemusOid: HakemusOid): DBIO[Set[Valinnantulos]]
 
+  def getHaunValinnantilat(hakuOid: HakuOid): List[(HakukohdeOid, ValintatapajonoOid, HakemusOid, Valinnantila)]
+
   def getValinnantulostenHakukohdeOiditForHaku(hakuOid: HakuOid): DBIO[List[HakukohdeOid]]
 
   def getLastModifiedForHakukohde(hakukohdeOid: HakukohdeOid): DBIO[Option[Instant]]

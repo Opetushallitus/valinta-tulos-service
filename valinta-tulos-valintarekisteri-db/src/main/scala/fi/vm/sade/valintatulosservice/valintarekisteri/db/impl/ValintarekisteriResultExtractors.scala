@@ -7,7 +7,7 @@ import java.util.UUID
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoAction, VastaanottoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import slick.jdbc.{GetResult, PositionedParameters, SetParameter}
+import slick.jdbc.{GetResult, PositionedParameters, PositionedResult, SetParameter}
 
 trait ValintarekisteriResultExtractors {
 
@@ -32,10 +32,9 @@ trait ValintarekisteriResultExtractors {
 
   protected implicit val getHakutoiveResult = GetResult(r => HakutoiveRecord(
     hakemusOid = HakemusOid(r.nextString),
-    hakutoive = r.nextInt,
+    hakutoive = r.nextIntOption,
     hakukohdeOid = HakukohdeOid(r.nextString),
-    valintatuloksenTila = r.nextString,
-    kaikkiJonotsijoiteltu = r.nextBoolean))
+    kaikkiJonotsijoiteltu = r.nextBooleanOption))
 
   protected implicit val getHakutoiveenValintatapajonoResult = GetResult(r => HakutoiveenValintatapajonoRecord(
     hakukohdeOid = HakukohdeOid(r.nextString),
@@ -45,8 +44,6 @@ trait ValintarekisteriResultExtractors {
     eiVarasijatayttoa = r.nextBoolean,
     jonosija = r.nextInt,
     varasijanNumero = r.nextIntOption,
-    tila = Valinnantila(r.nextString),
-    ilmoittautumisTila = r.nextStringOption.map(SijoitteluajonIlmoittautumistila(_)).getOrElse(EiTehty),
     hyvaksyttyHarkinnanvaraisesti = r.nextBoolean,
     tasasijaJonosija = r.nextInt,
     pisteet = r.nextBigDecimalOption,
@@ -56,11 +53,6 @@ trait ValintarekisteriResultExtractors {
     varasijojaKaytetaanAlkaen = r.nextTimestampOption,
     varasijojaTaytetaanAsti = r.nextTimestampOption,
     tayttojono = r.nextStringOption,
-    julkaistavissa = r.nextBoolean,
-    ehdollisestiHyvaksyttavissa = r.nextBoolean,
-    hyvaksyttyVarasijalta = r.nextBoolean,
-    valintatuloksenViimeisinMuutos = r.nextTimestampOption,
-    hakemuksenTilanViimeisinMuutos = r.nextTimestamp,
     tilankuvausHash = r.nextInt,
     tarkenteenLisatieto = r.nextStringOption,
     hakeneet = r.nextInt
@@ -173,7 +165,9 @@ trait ValintarekisteriResultExtractors {
     hyvaksyttyVarasijalta = r.nextBooleanOption,
     hyvaksyPeruuntunut = r.nextBooleanOption,
     vastaanottotila = r.nextStringOption.map(VastaanottoAction(_).valintatuloksenTila).getOrElse(ValintatuloksenTila.KESKEN),
-    ilmoittautumistila = r.nextStringOption.map(SijoitteluajonIlmoittautumistila(_)).getOrElse(EiTehty)
+    ilmoittautumistila = r.nextStringOption.map(SijoitteluajonIlmoittautumistila(_)).getOrElse(EiTehty),
+    valinnantilanViimeisinMuutos = parseOffsetDateTime(r),
+    vastaanotonViimeisinMuutos = parseOffsetDateTime(r)
   ))
 
   protected implicit val getInstantOptionResult: GetResult[Option[Instant]] = GetResult(r => r.nextTimestampOption().map(_.toInstant))
@@ -182,14 +176,21 @@ trait ValintarekisteriResultExtractors {
 
   protected implicit val getValinnantila: GetResult[Valinnantila] = GetResult(r => Valinnantila(r.nextString))
 
+  protected implicit val getHaunValinnantilat: GetResult[(HakukohdeOid, ValintatapajonoOid, HakemusOid, Valinnantila)] = GetResult(r =>
+    (HakukohdeOid(r.nextString), ValintatapajonoOid(r.nextString), HakemusOid(r.nextString), Valinnantila(r.nextString)))
+
   protected implicit val getValintatuloksenTila: GetResult[ValintatuloksenTila] = GetResult(r => VastaanottoAction(r.nextString).valintatuloksenTila)
 
   protected implicit val getSijoitteluajonIlmoittautumistila: GetResult[SijoitteluajonIlmoittautumistila] = GetResult(r => SijoitteluajonIlmoittautumistila(r.nextString))
 
-  protected implicit val getOffsetDateTime: GetResult[OffsetDateTime] = GetResult(r => {
+  private def parseOffsetDateTime(r:PositionedResult):Option[OffsetDateTime] = {
     val d = r.rs.getObject(r.currentPos + 1, classOf[OffsetDateTime])
     r.skip
-    OffsetDateTime.ofInstant(d.toInstant, ZoneId.of("Europe/Helsinki"))
+    Option(d).map(d => OffsetDateTime.ofInstant(d.toInstant, ZoneId.of("Europe/Helsinki")))
+  }
+
+  protected implicit val getOffsetDateTime: GetResult[OffsetDateTime] = GetResult(r => {
+    parseOffsetDateTime(r).get
   })
 
   implicit val getHakuOid: GetResult[HakuOid] = GetResult(r => {
