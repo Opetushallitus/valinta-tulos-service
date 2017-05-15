@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
-import fi.vm.sade.sijoittelu.domain.SijoitteluAjo
+import fi.vm.sade.sijoittelu.domain.{SijoitteluAjo, ValintatuloksenTila}
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakutoiveDTO, HakutoiveenValintatapajonoDTO}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakemusRepository, SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -23,7 +23,7 @@ class SijoitteluajonHakija(val repository: HakemusRepository with SijoitteluRepo
 
   lazy val haunValinnantilat = repository.getHaunValinnantilat(hakuOid) //TODO performance? Do we need koko haku?
 
-  lazy val hakemuksenValinnantulokset = repository.runBlocking(repository.getValinnantuloksetForHakemus(hakemusOid)).groupBy(_.hakukohdeOid) //.map(v => (v.hakukohdeOid, v.valintatapajonoOid) -> v).toMap
+  lazy val hakemuksenValinnantulokset: Map[HakukohdeOid, Set[Valinnantulos]] = repository.runBlocking(repository.getValinnantuloksetForHakemus(hakemusOid)).groupBy(_.hakukohdeOid) //.map(v => (v.hakukohdeOid, v.valintatapajonoOid) -> v).toMap
 
   lazy val hakutoiveetSijoittelussa = sijoitteluajoId.map(repository.getHakemuksenHakutoiveetSijoittelussa(hakemusOid, _).map(h => h.hakukohdeOid -> h).toMap).getOrElse(Map())
   lazy val valintatapajonotSijoittelussa = sijoitteluajoId.map(repository.getHakemuksenHakutoiveidenValintatapajonotSijoittelussa(hakemusOid, _).groupBy(_.hakukohdeOid)).getOrElse(Map())
@@ -46,6 +46,15 @@ class SijoitteluajonHakija(val repository: HakemusRepository with SijoitteluRepo
     }.map(_._3).distinct.size
   }
 
+  def getVastaanotto(hakukohdeOid: HakukohdeOid): ValintatuloksenTila = {
+    val vastaanotto = hakemuksenValinnantulokset.getOrElse(hakukohdeOid, Set()).map(_.vastaanottotila)
+    if(1 < vastaanotto.size) {
+      throw new RuntimeException(s"Hakemukselle ${hakemusOid} löytyy monta vastaanottoa hakukohteelle ${hakukohdeOid}")
+    } else {
+      vastaanotto.headOption.getOrElse(ValintatuloksenTila.KESKEN)
+    }
+  }
+
   def dto(): HakijaDTO = {
     val hakukohdeOidit = hakemuksenValinnantulokset.keySet.union(hakutoiveetSijoittelussa.keySet)
     hakija.dto(hakukohdeOidit.map { hakukohdeOid =>
@@ -64,13 +73,14 @@ class SijoitteluajonHakija(val repository: HakemusRepository with SijoitteluRepo
         }
 
         hakutoive.dto(
+          getVastaanotto(hakukohdeOid),
           valintatapajonoDtot,
           pistetiedot,
           hakijaryhmat
         )
       } else {
         val valinnantulokset = hakemuksenValinnantulokset.getOrElse(hakukohdeOid, List())
-        val hakutoive = HakutoiveRecord(hakemusOid, None, hakukohdeOid, None) //TODO hakutoive=1?
+        val hakutoive = HakutoiveRecord(hakemusOid, Some(1), hakukohdeOid, None) //TODO hakutoive=1?
         val valintatapajonoDtot = valinnantulokset.map{ j =>
           HakutoiveenValintatapajonoRecord.dto(
             j,
@@ -78,7 +88,7 @@ class SijoitteluajonHakija(val repository: HakemusRepository with SijoitteluRepo
             hyvaksyttyValintatapajonosta(hakukohdeOid, j.valintatapajonoOid)
           )
         }.toList
-        hakutoive.dto(valintatapajonoDtot, List(), List())
+        hakutoive.dto(getVastaanotto(hakukohdeOid), valintatapajonoDtot, List(), List())
       }
     }.toList)
   }

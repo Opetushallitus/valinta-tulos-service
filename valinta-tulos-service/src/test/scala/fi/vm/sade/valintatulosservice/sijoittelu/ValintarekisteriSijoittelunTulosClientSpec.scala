@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.sijoittelu
 
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, SyntheticSijoitteluAjoForHakusWithoutSijoittelu}
+import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.ITSetup
 import org.specs2.mutable.Specification
 
@@ -58,6 +59,85 @@ class ValintarekisteriSijoittelunTulosClientSpec extends Specification with ITSe
       sijoitteluajo.getSijoitteluajoId must_== SyntheticSijoitteluAjoForHakusWithoutSijoittelu.syntheticSijoitteluajoId
       sijoitteluajo.getHakuOid must_== hakuOid1.toString
       sijoitteluajo.getHakukohteet.asScala.map(_.getOid).diff(List(oidHaku1hakukohde1.toString, oidHaku1hakukohde2.toString)) must_== List()
+    }
+  }
+
+  "fetch hakemuksen tulos" should {
+
+    step(insertValinnantulos(hakuOid2, valinnantulos(sijoittelunHakukohdeOid2, sijoittelunValintatapajonoOid2, sijoittelunHakemusOid1)))
+
+    "return hakijan hakutoiveet" in {
+      val hakijaDto = client.fetchHakemuksenTulos(client.fetchLatestSijoitteluAjo(hakuOid2).get, sijoittelunHakemusOid1).get
+      hakijaDto.getHakijaOid must_== sijoittelunHakemusOid1.toString
+      hakijaDto.getHakemusOid must_== sijoittelunHakemusOid1.toString
+
+      hakijaDto.getHakutoiveet.asScala.size must_== 1
+      val hakutoive = hakijaDto.getHakutoiveet.asScala.head
+      hakutoive.getHakukohdeOid must_== sijoittelunHakukohdeOid2.toString
+      hakutoive.getVastaanottotieto must_== fi.vm.sade.sijoittelu.tulos.dto.ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI
+
+      hakutoive.getHakutoiveenValintatapajonot.asScala.size must_== 1
+      val valintatapajono = hakutoive.getHakutoiveenValintatapajonot.asScala.head
+      valintatapajono.getHakeneet must_== 2
+      valintatapajono.getHyvaksytty must_== 1
+      valintatapajono.getIlmoittautumisTila must_== fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila.LASNA
+      valintatapajono.getTila must_== fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.HYVAKSYTTY
+      valintatapajono.getValintatapajonoOid must_== sijoittelunValintatapajonoOid2.toString
+    }
+
+    "return hakijan hakutoiveet (erillishaku, ei sijoittelua)" in {
+      val hakijaDto = client.fetchHakemuksenTulos(client.fetchLatestSijoitteluAjo(hakuOid1).get, hakemusOid2).get
+      hakijaDto.getHakijaOid must_== hakemusOid2.toString
+      hakijaDto.getHakemusOid must_== hakemusOid2.toString
+
+      hakijaDto.getHakutoiveet.asScala.size must_== 1
+      val hakutoive = hakijaDto.getHakutoiveet.asScala.head
+      hakutoive.getHakukohdeOid must_== oidHaku1hakukohde1.toString
+      hakutoive.getVastaanottotieto must_== fi.vm.sade.sijoittelu.tulos.dto.ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI
+
+      hakutoive.getHakutoiveenValintatapajonot.asScala.size must_== 1
+      val valintatapajono = hakutoive.getHakutoiveenValintatapajonot.asScala.head
+      valintatapajono.getHakeneet must_== 2
+      valintatapajono.getHyvaksytty must_== 2
+      valintatapajono.getIlmoittautumisTila must_== fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila.LASNA
+      valintatapajono.getTila must_== fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.HYVAKSYTTY
+      valintatapajono.getValintatapajonoOid must_== oidHaku1hakukohde1jono1.toString
+    }
+
+    step(insertValinnantulos(hakuOid2, valinnantulos(oidHaku2hakukohde1, oidHaku2hakukohde1jono1, sijoittelunHakemusOid2)))
+    step(insertValinnantulos(hakuOid2, valinnantulosHylatty(oidHaku2hakukohde1, oidHaku2hakukohde1jono2, sijoittelunHakemusOid2)))
+
+    "return hakijan hakutoiveet (both with and without sijoittelu)" in {
+      val hakijaDto = client.fetchHakemuksenTulos(client.fetchLatestSijoitteluAjo(hakuOid2).get, sijoittelunHakemusOid2).get
+      hakijaDto.getHakijaOid must_== sijoittelunHakemusOid2.toString
+      hakijaDto.getHakemusOid must_== sijoittelunHakemusOid2.toString
+
+      hakijaDto.getHakutoiveet.asScala.size must_== 2
+      val hakutoive1 = hakijaDto.getHakutoiveet.asScala.find(_.getHakukohdeOid.equals(oidHaku2hakukohde1.toString)).get
+      hakutoive1.getVastaanottotieto must_== fi.vm.sade.sijoittelu.tulos.dto.ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI
+
+      val hakutoive2 = hakijaDto.getHakutoiveet.asScala.find(_.getHakukohdeOid.equals(sijoittelunHakukohdeOid2.toString)).get
+      hakutoive2.getVastaanottotieto must_== fi.vm.sade.sijoittelu.tulos.dto.ValintatuloksenTila.KESKEN
+
+      hakutoive1.getHakutoiveenValintatapajonot.asScala.size must_== 2
+      val valintatapajono1 = hakutoive1.getHakutoiveenValintatapajonot.asScala.find(_.getValintatapajonoOid.equals(oidHaku2hakukohde1jono1.toString)).get
+      valintatapajono1.getHakeneet must_== 3
+      valintatapajono1.getHyvaksytty must_== 3
+      valintatapajono1.getIlmoittautumisTila must_== fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila.LASNA
+      valintatapajono1.getTila must_== fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.HYVAKSYTTY
+
+      val valintatapajono2 = hakutoive1.getHakutoiveenValintatapajonot.asScala.find(_.getValintatapajonoOid.equals(oidHaku2hakukohde1jono2.toString)).get
+      valintatapajono2.getHakeneet must_== 3
+      valintatapajono2.getHyvaksytty must_== 2
+      valintatapajono2.getIlmoittautumisTila must_== fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila.LASNA
+      valintatapajono2.getTila must_== fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.HYLATTY
+
+      hakutoive2.getHakutoiveenValintatapajonot.asScala.size must_== 1
+      val valintatapajono3 = hakutoive2.getHakutoiveenValintatapajonot.asScala.find(_.getValintatapajonoOid.equals(sijoittelunValintatapajonoOid2.toString)).get
+      valintatapajono3.getHakeneet must_== 2
+      valintatapajono3.getHyvaksytty must_== 1
+      valintatapajono3.getIlmoittautumisTila must_== fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila.EI_TEHTY
+      valintatapajono3.getTila must_== fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.HYLATTY
     }
   }
 }
