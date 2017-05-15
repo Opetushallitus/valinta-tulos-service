@@ -255,7 +255,21 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   }
 
   override def storeValinnantila(tila:ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
-    storeValinnantilaOverridingTimestamp(tila, ifUnmodifiedSince, new Timestamp(System.currentTimeMillis))
+    ensureValintaesitys(tila.hakukohdeOid, tila.valintatapajonoOid)
+      .andThen(storeValinnantilaOverridingTimestamp(tila, ifUnmodifiedSince, new Timestamp(System.currentTimeMillis)))
+  }
+
+  private def ensureValintaesitys(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid): DBIO[Unit] = {
+    sqlu"""insert into valintaesitykset (
+               hakukohde_oid,
+               valintatapajono_oid,
+               hyvaksytty
+           ) values (
+               $hakukohdeOid,
+               $valintatapajonoOid,
+               null::timestamp with time zone
+           ) on conflict on constraint valintaesitykset_pkey do nothing
+      """.map(_ => ())
   }
 
   override def storeValinnantilaOverridingTimestamp(tila: ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant], tilanViimeisinMuutos: TilanViimeisinMuutos) = {

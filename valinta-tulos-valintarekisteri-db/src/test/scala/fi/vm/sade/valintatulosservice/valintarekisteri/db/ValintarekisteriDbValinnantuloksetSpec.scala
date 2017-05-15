@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
 import java.sql.{JDBCType, Timestamp}
-import java.time.{OffsetDateTime, ZoneId, ZonedDateTime}
+import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
 import java.util.ConcurrentModificationException
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
@@ -114,8 +114,12 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       assertIlmoittautuminen(ilmoittautuminen)
       assertEhdollisenHyvaksynnanEhto(ehdollisenHyvaksynnanEhto)
       assertHyvaksymiskirjeet(ancient)
+      val valintaesitys = Valintaesitys(hakukohdeOid, valintatapajonoOid, Some(ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.of("Europe/Helsinki"))))
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.storeBatch(
+          Seq(
+            valintaesitys
+          ),
           Seq(
             (valinnantilanTallennus.copy(valinnantila = VarasijaltaHyvaksytty), new Timestamp(System.currentTimeMillis() - 1000)),
             (valinnantilanTallennus.copy(valinnantila = Peruutettu), new Timestamp(System.currentTimeMillis()))
@@ -139,6 +143,9 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
           )
         )
       )
+      assertValintaesitykset(valintaesitys)
+      assertValintaesityksetHistory()
+
       assertValinnantila(valinnantilanTallennus.copy(valinnantila = Peruutettu))
       assertValinnantilaHistory(2, VarasijaltaHyvaksytty)
 
@@ -236,6 +243,17 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
     }
   }
 
+  private def assertValintaesitykset(valintaesitys: Valintaesitys) = {
+    singleConnectionValintarekisteriDb.runBlocking(
+      singleConnectionValintarekisteriDb.get(valintatapajonoOid)
+    ) must beSome(valintaesitys)
+  }
+
+  private def assertValintaesityksetHistory() = {
+    singleConnectionValintarekisteriDb.runBlocking(
+      sql"""select 1 from valintaesitykset_history where valintatapajono_oid = ${valintatapajonoOid.toString}""".as[Int]
+    ) must beEmpty
+  }
 
   def assertValinnantila(valinnantilanTallennus:ValinnantilanTallennus) = {
     val result = singleConnectionValintarekisteriDb.runBlocking(
@@ -357,6 +375,15 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       }
     }
     singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+      sqlu"""insert into valintaesitykset (
+                 hakukohde_oid,
+                 valintatapajono_oid,
+                 hyvaksytty
+             ) values (
+                 $hakukohdeOid,
+                 $valintatapajonoOid,
+                 null::timestamp with time zone
+             )""",
       sqlu"""insert into valinnantilat (
                  hakukohde_oid,
                  valintatapajono_oid,

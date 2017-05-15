@@ -59,23 +59,54 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
   override def getSijoitteluajonValintatapajonot(sijoitteluajoId: Long): List[ValintatapajonoRecord] =
     time (s"Sijoitteluajon $sijoitteluajoId valintatapajonojen haku") {
       runBlocking(
-        sql"""select tasasijasaanto, oid, nimi, prioriteetti, aloituspaikat, alkuperaiset_aloituspaikat,
-              alin_hyvaksytty_pistemaara, ei_varasijatayttoa, kaikki_ehdon_tayttavat_hyvaksytaan, poissaoleva_taytto,
-              valintaesitys_hyvaksytty, varasijat,
-              varasijatayttopaivat, varasijoja_kaytetaan_alkaen, varasijoja_taytetaan_asti, tayttojono, hakukohde_oid
-              from valintatapajonot
-              where sijoitteluajo_id = ${sijoitteluajoId}""".as[ValintatapajonoRecord]).toList
+        sql"""select
+                  v.tasasijasaanto,
+                  v.oid,
+                  v.nimi,
+                  v.prioriteetti,
+                  v.aloituspaikat,
+                  v.alkuperaiset_aloituspaikat,
+                  v.alin_hyvaksytty_pistemaara,
+                  v.ei_varasijatayttoa,
+                  v.kaikki_ehdon_tayttavat_hyvaksytaan,
+                  v.poissaoleva_taytto,
+                  ve.hyvaksytty is not null,
+                  v.varasijat,
+                  v.varasijatayttopaivat,
+                  v.varasijoja_kaytetaan_alkaen,
+                  v.varasijoja_taytetaan_asti,
+                  v.tayttojono,
+                  v.hakukohde_oid
+              from valintatapajonot as v
+              join valintaesitykset as ve on ve.valintatapajono_oid = v.oid
+              where v.sijoitteluajo_id = ${sijoitteluajoId}""".as[ValintatapajonoRecord]).toList
     }
 
   override def getHakukohteenValintatapajonot(sijoitteluajoId: Long, hakukohdeOid: HakukohdeOid): List[ValintatapajonoRecord] =
     time (s"Sijoitteluajon $sijoitteluajoId hakukohteen $hakukohdeOid valintatapajonojen haku") {
       runBlocking(
-        sql"""select tasasijasaanto, oid, nimi, prioriteetti, aloituspaikat, alkuperaiset_aloituspaikat,
-              alin_hyvaksytty_pistemaara, ei_varasijatayttoa, kaikki_ehdon_tayttavat_hyvaksytaan, poissaoleva_taytto,
-              valintaesitys_hyvaksytty, varasijat,
-              varasijatayttopaivat, varasijoja_kaytetaan_alkaen, varasijoja_taytetaan_asti, tayttojono, hakukohde_oid
-              from valintatapajonot
-              where sijoitteluajo_id = ${sijoitteluajoId} and hakukohde_oid = ${hakukohdeOid}""".as[ValintatapajonoRecord]).toList
+        sql"""select
+                  v.tasasijasaanto,
+                  v.oid,
+                  v.nimi,
+                  v.prioriteetti,
+                  v.aloituspaikat,
+                  v.alkuperaiset_aloituspaikat,
+                  v.alin_hyvaksytty_pistemaara,
+                  v.ei_varasijatayttoa,
+                  v.kaikki_ehdon_tayttavat_hyvaksytaan,
+                  v.poissaoleva_taytto,
+                  ve.hyvaksytty is not null,
+                  v.varasijat,
+                  v.varasijatayttopaivat,
+                  v.varasijoja_kaytetaan_alkaen,
+                  v.varasijoja_taytetaan_asti,
+                  v.tayttojono,
+                  v.hakukohde_oid
+              from valintatapajonot as v
+              join valintaesitykset as ve on ve.valintatapajono_oid = v.oid
+              where v.sijoitteluajo_id = ${sijoitteluajoId}
+                  and v.hakukohde_oid = ${hakukohdeOid}""".as[ValintatapajonoRecord]).toList
     }
 
   override def getSijoitteluajonHakemukset(sijoitteluajoId:Long): List[HakemusRecord] =

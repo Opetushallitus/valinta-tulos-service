@@ -260,4 +260,17 @@ trait ValintarekisteriResultExtractors {
       case None => pp.setNull(JDBCType.TIMESTAMP_WITH_TIMEZONE.getVendorTypeNumber)
     }
   }
+
+  implicit object SetZonedDateTime extends SetParameter[ZonedDateTime] {
+    def apply(v: ZonedDateTime, pp: PositionedParameters): Unit = {
+      pp.setObject(v.toOffsetDateTime, JDBCType.TIMESTAMP_WITH_TIMEZONE.getVendorTypeNumber)
+    }
+  }
+
+  implicit object SetOptionZonedDateTime extends SetParameter[Option[ZonedDateTime]] {
+    def apply(v: Option[ZonedDateTime], pp: PositionedParameters): Unit = v match {
+      case Some(i) => SetZonedDateTime.apply(i, pp)
+      case None => pp.setNull(JDBCType.TIMESTAMP_WITH_TIMEZONE.getVendorTypeNumber)
+    }
+  }
 }

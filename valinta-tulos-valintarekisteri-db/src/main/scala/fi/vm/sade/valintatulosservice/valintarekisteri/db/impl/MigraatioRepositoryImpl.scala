@@ -1,10 +1,10 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
-import java.sql.{Connection, PreparedStatement, Timestamp}
+import java.sql.{Connection, JDBCType, PreparedStatement, Timestamp}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MINUTES
 
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.MigraatioRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{MigraatioRepository, Valintaesitys}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.dbio.DBIO
 import slick.driver.PostgresDriver.api._
@@ -29,7 +29,8 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
                where h.ilmoittaja = ${sijoitteluajoId})""", timeout = Duration(5, MINUTES))
   }
 
-  override def storeBatch(valinnantilat: Seq[(ValinnantilanTallennus, TilanViimeisinMuutos)],
+  override def storeBatch(valintaesitykset: Seq[Valintaesitys],
+                          valinnantilat: Seq[(ValinnantilanTallennus, TilanViimeisinMuutos)],
                           valinnantuloksenOhjaukset: Seq[ValinnantuloksenOhjaus],
                           ilmoittautumiset: Seq[(String, Ilmoittautuminen)],
                           ehdollisenHyvaksynnanEhdot: Seq[EhdollisenHyvaksynnanEhto],
@@ -47,29 +48,41 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
       DbUtils.disable("hyvaksymiskirjeet", "set_temporal_columns_on_hyvaksymiskirjeet_on_update"),
 
       SimpleDBIO { session =>
+        var valintaesityksetStatement: Option[PreparedStatement] = None
+        var deleteValintaesityksetHistoryStatement: Option[PreparedStatement] = None
         var valinnantilaStatement:Option[PreparedStatement] = None
         var valinnantuloksenOhjausStatement:Option[PreparedStatement] = None
         var ilmoittautumisetStatement:Option[PreparedStatement] = None
         var ehdollisenHyvaksynnanEhtoStatement:Option[PreparedStatement] = None
         var hyvaksymiskirjeStatement:Option[PreparedStatement] = None
         try {
+          valintaesityksetStatement = Some(createValintaesityksetStatement(session.connection))
+          deleteValintaesityksetHistoryStatement = Some(createDeleteValintaesityksetHistoryStatement(session.connection))
           valinnantilaStatement = Some(createValinnantilaStatement(session.connection))
           valinnantuloksenOhjausStatement = Some(createValinnantuloksenOhjausStatement(session.connection))
           ilmoittautumisetStatement = Some(createIlmoittautumisStatement(session.connection))
           ehdollisenHyvaksynnanEhtoStatement = Some(createEhdollisenHyvaksynnanEhtoStatement(session.connection))
           hyvaksymiskirjeStatement = Some(createHyvaksymiskirjeStatement(session.connection))
 
+          valintaesitykset.foreach(v => {
+            createValintaesitysInsertRow(valintaesityksetStatement.get, v)
+            createDeleteValintaesitysHistoryRow(deleteValintaesityksetHistoryStatement.get, v)
+          })
           valinnantilat.foreach(v => createValinnantilaInsertRow(valinnantilaStatement.get, v._1, v._2))
           valinnantuloksenOhjaukset.foreach(o => createValinnantuloksenOhjausInsertRow(valinnantuloksenOhjausStatement.get, o))
           ilmoittautumiset.foreach(i => createIlmoittautumisInsertRow(ilmoittautumisetStatement.get, i._1, i._2))
           ehdollisenHyvaksynnanEhdot.foreach(e => createEhdollisenHyvaksynnanEhtoRow(ehdollisenHyvaksynnanEhtoStatement.get, e))
           hyvaksymisKirjeet.foreach(k => createHyvaksymiskirjeetRow(hyvaksymiskirjeStatement.get, k))
+          valintaesityksetStatement.get.executeBatch()
+          deleteValintaesityksetHistoryStatement.get.executeBatch()
           valinnantilaStatement.get.executeBatch()
           valinnantuloksenOhjausStatement.get.executeBatch()
           ilmoittautumisetStatement.get.executeBatch()
           ehdollisenHyvaksynnanEhtoStatement.get.executeBatch()
           hyvaksymiskirjeStatement.get.executeBatch()
         } finally {
+          Try(valintaesityksetStatement.foreach(_.close))
+          Try(deleteValintaesityksetHistoryStatement.foreach(_.close))
           Try(valinnantilaStatement.foreach(_.close))
           Try(valinnantuloksenOhjausStatement.foreach(_.close))
           Try(ilmoittautumisetStatement.foreach(_.close))
@@ -93,6 +106,46 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
 
   private def createStatement(sql: String): (Connection) => PreparedStatement =
     (connection: java.sql.Connection) => connection.prepareStatement(sql)
+
+  private def createValintaesityksetStatement(connection: Connection) = {
+    connection.prepareStatement(
+      """insert into valintaesitykset (
+             hakukohde_oid,
+             valintatapajono_oid,
+             hyvaksytty
+         ) values (?, ?, ?::timestamp with time zone)
+         on conflict on constraint valintaesitykset_pkey do update set
+             hyvaksytty = excluded.hyvaksytty"""
+    )
+  }
+
+  private def createDeleteValintaesityksetHistoryStatement(connection: Connection) = {
+    connection.prepareStatement(
+      """delete from valintaesitykset_history
+         where hakukohde_oid = ?
+             and valintatapajono_oid = ?"""
+    )
+  }
+
+  private def createValintaesitysInsertRow(statement: PreparedStatement, valintaesitys: Valintaesitys) = {
+    var i = 1
+    statement.setString(i, valintaesitys.hakukohdeOid.toString); i = i + 1
+    statement.setString(i, valintaesitys.valintatapajonoOid.toString); i = i + 1
+    valintaesitys.hyvaksytty match {
+      case Some(h) => statement.setObject(i, h.toOffsetDateTime, JDBCType.TIMESTAMP_WITH_TIMEZONE.getVendorTypeNumber); i = i + 1
+      case None => statement.setNull(i, JDBCType.TIMESTAMP_WITH_TIMEZONE.getVendorTypeNumber); i = i + 1
+    }
+
+    statement.addBatch()
+  }
+
+  private def createDeleteValintaesitysHistoryRow(statement: PreparedStatement, valintaesitys: Valintaesitys) = {
+    var i = 1
+    statement.setString(i, valintaesitys.hakukohdeOid.toString); i = i + 1
+    statement.setString(i, valintaesitys.valintatapajonoOid.toString); i = i + 1
+
+    statement.addBatch()
+  }
 
   private def createValinnantilaStatement = createStatement(
     """insert into valinnantilat (
@@ -265,6 +318,7 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
     val tablesWithTriggers = Seq(
       "tilat_kuvaukset",
       "valinnantilat",
+      "valintaesitykset",
       "valinnantulokset",
       "ilmoittautumiset",
       "ehdollisen_hyvaksynnan_ehto")
@@ -287,6 +341,8 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
       ("delete valinnantulokset", sqlu"delete from valinnantulokset where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
       ("delete valinnantilat_history", sqlu"delete from valinnantilat_history where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
       ("delete valinnantilat", sqlu"delete from valinnantilat where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete valintaesitykset", sqlu"delete from valintaesitykset where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete valintaesitykset_history", sqlu"delete from valintaesitykset_history where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
 
       ("delete ilmoittautumiset_history", sqlu"delete from ilmoittautumiset_history where hakukohde in (select oid from hakukohde_oids_to_delete)"),
       ("delete ilmoittautumiset", sqlu"delete from ilmoittautumiset where hakukohde in (select oid from hakukohde_oids_to_delete)"),
@@ -347,6 +403,8 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
       ("delete valinnantulokset", sqlu"delete from valinnantulokset where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
       ("delete valinnantilat_history", sqlu"delete from valinnantilat_history where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
       ("delete valinnantilat", sqlu"delete from valinnantilat where hakukohde_oid in (select oid from hakukohde_oids_to_delete)"),
+      ("delete valintaesitykset", sqlu"delete from valintaesitykset where valintatapajono_oid in (select oid from jono_oids_to_delete)"),
+      ("delete valintaesitykset_history", sqlu"delete from valintaesitykset_history where valintatapajono_oid in (select oid from jono_oids_to_delete)"),
 
       ("delete ilmoittautumiset_history", sqlu"delete from ilmoittautumiset_history where hakukohde in (select oid from hakukohde_oids_to_delete)"),
       ("delete ilmoittautumiset", sqlu"delete from ilmoittautumiset where hakukohde in (select oid from hakukohde_oids_to_delete)"),
