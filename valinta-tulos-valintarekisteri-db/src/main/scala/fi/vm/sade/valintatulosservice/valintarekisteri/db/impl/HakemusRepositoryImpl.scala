@@ -48,86 +48,7 @@ trait HakemusRepositoryImpl extends HakemusRepository with ValintarekisteriRepos
               from jonosijat j
               inner join sijoitteluajon_hakukohteet as sh on sh.hakukohde_oid = j.hakukohde_oid and sh.sijoitteluajo_id = j.sijoitteluajo_id
               where j.sijoitteluajo_id = ${sijoitteluajoId} and j.hakemus_oid = ${hakemusOid}""".as[HakutoiveRecord]).toList
-
-        /*sql"""with j as (select * from jonosijat where hakemus_oid = ${hakemusOid} and sijoitteluajo_id = ${sijoitteluajoId})
-                  select j.hakemus_oid, j.prioriteetti, v.hakukohde_oid, vt.tila, sh.kaikki_jonot_sijoiteltu
-                  from j
-                  left join valinnantulokset as v on v.hakemus_oid = j.hakemus_oid
-                      and v.valintatapajono_oid = j.valintatapajono_oid
-                      and v.hakukohde_oid = j.hakukohde_oid
-                  left join valinnantilat as vt on vt.hakemus_oid = v.hakemus_oid
-                      and vt.valintatapajono_oid = v.valintatapajono_oid
-                      and vt.hakukohde_oid = v.hakukohde_oid
-                  left join sijoitteluajon_hakukohteet as sh on sh.hakukohde_oid = v.hakukohde_oid""".as[HakutoiveRecord]
-      )*/
   }
-
-
-  /*override def getHakemuksenHakutoiveet(hakemusOid: HakemusOid, sijoitteluajoId: Option[Long] = None): List[HakutoiveRecord] = {
-
-    def filterHakutoiveet(t:(Seq[HakutoiveRecord], Seq[HakutoiveRecord])):Seq[HakutoiveRecord] =
-      seqTupleToUnion((t._1, t._2.filterNot(r => t._1.exists(_.hakukohdeOid.equals(r.hakukohdeOid)))))
-
-    def getHakemuksenHakutoiveetValinnantuloksissa(hakemusOid: HakemusOid) =
-      time(s"Hakemuksen $hakemusOid hakutoiveiden haku") {
-        runBlocking(hakutoiveetValinnantuloksissaDBIO(hakemusOid))}
-
-    def getHakemuksenHakutoiveetSijoittelussaJaValinnantuloksissa(hakemusOid: HakemusOid, sijoitteluajoId: Long) =
-      time(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid hakutoiveiden haku") {
-        filterHakutoiveet(runBlocking(hakutoiveetSijoittelussaDBIO(hakemusOid,sijoitteluajoId).zip(hakutoiveetValinnantuloksissaDBIO(hakemusOid))))}
-
-    def hakutoiveetSijoittelussaDBIO(hakemusOid: HakemusOid, sijoitteluajoId: Long): DBIO[Seq[HakutoiveRecord]] =
-      sql"""with j as (select * from jonosijat where hakemus_oid = ${hakemusOid} and sijoitteluajo_id = ${sijoitteluajoId})
-                select j.hakemus_oid, j.prioriteetti, v.hakukohde_oid, vt.tila, sh.kaikki_jonot_sijoiteltu, null, true
-                from j
-                left join valinnantulokset as v on v.hakemus_oid = j.hakemus_oid
-                    and v.valintatapajono_oid = j.valintatapajono_oid
-                    and v.hakukohde_oid = j.hakukohde_oid
-                left join valinnantilat as vt on vt.hakemus_oid = v.hakemus_oid
-                    and vt.valintatapajono_oid = v.valintatapajono_oid
-                    and vt.hakukohde_oid = v.hakukohde_oid
-                left join sijoitteluajon_hakukohteet as sh on sh.hakukohde_oid = v.hakukohde_oid""".as[HakutoiveRecord]
-
-    def hakutoiveetValinnantuloksissaDBIO(hakemusOid: HakemusOid): DBIO[Seq[HakutoiveRecord]] =
-      sql"""select hakemus_oid, null, hakukohde_oid, tila, null, valintatapajono_oid, false
-            from valinnantilat
-            where hakemus_oid = ${hakemusOid}""".as[HakutoiveRecord]
-
-    sijoitteluajoId match {
-      case Some(id) if 0 < id => getHakemuksenHakutoiveetSijoittelussaJaValinnantuloksissa(hakemusOid, id).toList
-      case _ => getHakemuksenHakutoiveetValinnantuloksissa(hakemusOid).toList
-    }
-  }*/
-
-  /*override def getHakemuksenHakutoiveidenValintatapajonotValinnantuloksissa(hakemusOid: HakemusOid): List[HakutoiveenValintatapajonoRecordNotInSijoittelu] = {
-    time(s"Hakemuksen $hakemusOid hakutoiveiden valintatapajonojen haku") {
-      runBlocking(
-        sql"""with hakemuksenHakukohteet as (
-                select hakukohde_oid, valintatapajono_oid from valinnantilat where hakemus_oid = ${hakemusOid}
-              )
-              with hakeneet as (
-                select ti.valintatapajono_oid, count(ti.hakemus_oid) hakeneet
-                  from valinnantilat ti
-                  inner join hakemuksenHakukohteet h on ti.hakukohde_oid = h.hakukohde_oid and ti.valintatapajono_oid = h.valintatapajono_oid
-                  group by valintatapajono_oid
-              )
-              select j.hakukohde_oid, v.prioriteetti, v.oid, v.nimi, v.ei_varasijatayttoa, j.jonosija,
-                  j.varasijan_numero, ti.tila, i.tila,
-                  j.hyvaksytty_harkinnanvaraisesti, j.tasasijajonosija, j.pisteet, v.alin_hyvaksytty_pistemaara,
-                  v.varasijat, v.varasijatayttopaivat,
-                  v.varasijoja_kaytetaan_alkaen, v.varasijoja_taytetaan_asti, v.tayttojono,
-                  tu.julkaistavissa, tu.ehdollisesti_hyvaksyttavissa, tu.hyvaksytty_varasijalta,
-                  vo.timestamp, ti.tilan_viimeisin_muutos, tk.tilankuvaus_hash, tk.tarkenteen_lisatieto,
-                  h.hakeneet
-                from valinnantilat ti
-                inner join valinnantulokset tu on tu.valintatapajono_oid = v.oid and tu.hakemus_oid = j.hakemus_oid and tu.hakukohde_oid = j.hakukohde_oid
-                inner join tilat_kuvaukset tk on tk.valintatapajono_oid = v.oid and tk.hakemus_oid = j.hakemus_oid and tk.hakukohde_oid = j.hakukohde_oid
-                left join ilmoittautumiset i on i.henkilo = j.hakija_oid and i.hakukohde = j.hakukohde_oid
-                left join vastaanotot vo on vo.henkilo = j.hakija_oid and vo.hakukohde = j.hakukohde_oid and vo.deleted is null
-                where j.sijoitteluajo_id = ${sijoitteluajoId} and j.hakemus_oid = ${hakemusOid}""".as[HakutoiveenValintatapajonoRecord]).toList
-    }
-  }*/
-
 
   override def getHakemuksenHakutoiveidenValintatapajonotSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId: Long): List[HakutoiveenValintatapajonoRecord] =
     time(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid hakutoiveiden valintatapajonojen haku") {
@@ -149,35 +70,7 @@ trait HakemusRepositoryImpl extends HakemusRepository with ValintarekisteriRepos
                 inner join tilat_kuvaukset tk on tk.valintatapajono_oid = v.oid and tk.hakemus_oid = j.hakemus_oid and tk.hakukohde_oid = j.hakukohde_oid
                 where j.sijoitteluajo_id = ${sijoitteluajoId} and j.hakemus_oid = ${hakemusOid}""".as[HakutoiveenValintatapajonoRecord]).toList
     }
-
-  /*override def getHakemuksenHakutoiveidenValintatapajonotSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId: Long): List[HakutoiveenValintatapajonoRecord] =
-    time(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid hakutoiveiden valintatapajonojen haku") {
-      runBlocking(
-        sql"""with hakeneet as (
-                select valintatapajono_oid, count(hakemus_oid) hakeneet
-                  from jonosijat
-                  where sijoitteluajo_id = ${sijoitteluajoId}
-                  group by valintatapajono_oid
-              )
-              select j.hakukohde_oid, v.prioriteetti, v.oid, v.nimi, v.ei_varasijatayttoa, j.jonosija,
-                  j.varasijan_numero, ti.tila, i.tila,
-                  j.hyvaksytty_harkinnanvaraisesti, j.tasasijajonosija, j.pisteet, v.alin_hyvaksytty_pistemaara,
-                  v.varasijat, v.varasijatayttopaivat,
-                  v.varasijoja_kaytetaan_alkaen, v.varasijoja_taytetaan_asti, v.tayttojono,
-                  tu.julkaistavissa, tu.ehdollisesti_hyvaksyttavissa, tu.hyvaksytty_varasijalta,
-                  vo.timestamp, ti.tilan_viimeisin_muutos, tk.tilankuvaus_hash, tk.tarkenteen_lisatieto,
-                  h.hakeneet
-                from jonosijat j
-                inner join valintatapajonot v on j.valintatapajono_oid = v.oid and j.sijoitteluajo_id = v.sijoitteluajo_id
-                inner join hakeneet h on v.oid = h.valintatapajono_oid
-                inner join valinnantilat ti on ti.valintatapajono_oid = v.oid and ti.hakemus_oid = j.hakemus_oid and ti.hakukohde_oid = j.hakukohde_oid
-                inner join valinnantulokset tu on tu.valintatapajono_oid = v.oid and tu.hakemus_oid = j.hakemus_oid and tu.hakukohde_oid = j.hakukohde_oid
-                inner join tilat_kuvaukset tk on tk.valintatapajono_oid = v.oid and tk.hakemus_oid = j.hakemus_oid and tk.hakukohde_oid = j.hakukohde_oid
-                left join ilmoittautumiset i on i.henkilo = j.hakija_oid and i.hakukohde = j.hakukohde_oid
-                left join vastaanotot vo on vo.henkilo = j.hakija_oid and vo.hakukohde = j.hakukohde_oid and vo.deleted is null
-                where j.sijoitteluajo_id = ${sijoitteluajoId} and j.hakemus_oid = ${hakemusOid}""".as[HakutoiveenValintatapajonoRecord]).toList
-    }*/
-
+  
   override def getHakemuksenHakutoiveidenHakijaryhmatSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId: Long): List[HakutoiveenHakijaryhmaRecord] =
     time(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid hakutoiveiden hakijaryhmien haku") {
       runBlocking(
