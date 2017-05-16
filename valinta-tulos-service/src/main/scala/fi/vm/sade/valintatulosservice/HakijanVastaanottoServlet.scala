@@ -12,6 +12,8 @@ class HakijanVastaanottoServlet(vastaanottoService: VastaanottoService)(implicit
 
   override protected def applicationDescription: String = "Opiskelupaikan vastaanoton REST API"
 
+  private implicit val jsonFormatsForHakija: Formats = jsonFormats ++ List(new HakijanVastaanottoActionSerializer)
+
   private val hakijanVastaanottoActionModel = Model(
     id = classOf[HakijanVastaanottoAction].getSimpleName,
     name = classOf[HakijanVastaanottoAction].getSimpleName,

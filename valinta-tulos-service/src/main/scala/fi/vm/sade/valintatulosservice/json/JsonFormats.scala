@@ -14,7 +14,6 @@ object JsonFormats {
   val customSerializers = List(new LanguageMapSerializer()) ++ enumSerializers ++ List(
     new EnsikertalaisuusSerializer,
     new VastaanottoActionSerializer,
-    new HakijanVastaanottoActionSerializer,
     new VirkailijanVastaanottoActionSerializer,
     new HakutoiveentulosSerializer,
     new IlmoittautumistilaSerializer,
