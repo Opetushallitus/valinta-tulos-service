@@ -13,12 +13,12 @@ object JsonFormats {
   private val enumSerializers = List(new EnumNameSerializer(Vastaanotettavuustila), new EnumNameSerializer(Valintatila), new EnumNameSerializer(Language))
   val customSerializers = List(new LanguageMapSerializer()) ++ enumSerializers ++ List(
     new EnsikertalaisuusSerializer,
+    new VastaanottoActionSerializer,
     new HakijanVastaanottoActionSerializer,
     new VirkailijanVastaanottoActionSerializer,
     new HakutoiveentulosSerializer,
     new IlmoittautumistilaSerializer,
     new ValinnantilaSerializer,
-    new VastaanottoActionSerializer,
     new ValintatuloksenTilaSerializer,
     new OffsetDateTimeSerializer,
     new HakuOidSerializer,
