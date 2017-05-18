@@ -1,15 +1,17 @@
 package fi.vm.sade.valintatulosservice.sijoittelu
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
+import fi.vm.sade.valintatulosservice.ITSpecification
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.ITSetup
+import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
+import org.specs2.runner.JUnitRunner
 
 import scala.collection.JavaConverters._
 
-class ValintarekisteriSijoittelunTulosClientSpec extends Specification with ITSetup with ValintarekisteriTestData {
-  sequential
-  step(appConfig.start)
+@RunWith(classOf[JUnitRunner])
+class ValintarekisteriSijoittelunTulosClientSpec extends ITSpecification with ValintarekisteriTestData {
   step(deleteAll())
 
   lazy val client = new ValintarekisteriSijoittelunTulosClientImpl(singleConnectionValintarekisteriDb, singleConnectionValintarekisteriDb)
