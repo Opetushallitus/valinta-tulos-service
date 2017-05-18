@@ -41,4 +41,6 @@ class ValintarekisteriValintatulosDaoSpec extends ITSpecification with Valintare
     valintatulokset2.map(_.getTila).diff(List(ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)) must_== List()
     valintatulokset2.map(vt => ValintatapajonoOid(vt.getValintatapajonoOid)).diff(List(oidHaku2hakukohde1jono1, oidHaku2hakukohde1jono2)) must_== List()
   }
+
+  step(deleteAll())
 }

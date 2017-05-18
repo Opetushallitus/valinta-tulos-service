@@ -142,4 +142,6 @@ class ValintarekisteriSijoittelunTulosClientSpec extends ITSpecification with Va
       valintatapajono3.getTila must_== fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.HYLATTY
     }
   }
+
+  step(deleteAll())
 }
