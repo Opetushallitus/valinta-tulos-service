@@ -4,7 +4,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
-trait HakemusRepository extends PerformanceLogger { this:Logging =>
+trait HakijaRepository extends PerformanceLogger { this:Logging =>
   def getHakemuksenHakija(hakemusOid: HakemusOid, sijoitteluajoId: Option[Long] = None):Option[HakijaRecord]
 
   def getHakemuksenHakutoiveetSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId: Long): List[HakutoiveRecord]
@@ -12,5 +12,7 @@ trait HakemusRepository extends PerformanceLogger { this:Logging =>
   def getHakemuksenHakutoiveidenValintatapajonotSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId: Long): List[HakutoiveenValintatapajonoRecord]
   def getHakemuksenHakutoiveidenHakijaryhmatSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId: Long): List[HakutoiveenHakijaryhmaRecord]
 
-  //def getHakemuksenHakutoiveidenValintatapajonotValinnantuloksissa(hakemusOid: HakemusOid): List[HakutoiveenValintatapajonoRecordNotInSijoittelu]
+  def getHakukohteenHakijat(hakukohdeOid: HakukohdeOid, sijoitteluajoId: Option[Long] = None):List[HakijaRecord]
+  def getHakukohteenHakemuksienHakutoiveetSijoittelussa(hakukohdeOid: HakukohdeOid, sijoitteluajoId:Long): List[HakutoiveRecord]
+  def getHakukohteenHakemuksienValintatapajonotSijoittelussa(hakukohdeOid: HakukohdeOid, sijoitteluajoId:Long): List[HakutoiveenValintatapajonoRecord]
 }
