@@ -9,10 +9,11 @@ import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, ValintatuloksenTila}
 import fi.vm.sade.sijoittelu.tulos.service.impl.comparators.HakijaDTOComparator
 import fi.vm.sade.sijoittelu.tulos.service.impl.converters.{RaportointiConverterImpl, SijoitteluTulosConverterImpl}
 import fi.vm.sade.valintatulosservice.SijoitteluService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.SijoitteluRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakemusRecord, HakuOid, HakukohdeOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.{SijoitteluajonHakija, SijoitteluajonHakijat}
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 trait ValintarekisteriRaportointiService {
   def getSijoitteluAjo(sijoitteluajoId: Long): Option[SijoitteluAjo]
@@ -31,7 +32,7 @@ trait ValintarekisteriRaportointiService {
   def hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo: SijoitteluAjo, hakukohdeOid:HakukohdeOid): List[KevytHakijaDTO]
 }
 
-class ValintarekisteriRaportointiServiceImpl(sijoitteluRepository: SijoitteluRepository,
+class ValintarekisteriRaportointiServiceImpl(sijoitteluRepository: HakijaRepository with SijoitteluRepository with ValinnantulosRepository,
                                              valintatulosDao: ValintarekisteriValintatulosDao) extends ValintarekisteriRaportointiService {
   private val sijoitteluTulosConverter = new SijoitteluTulosConverterImpl
   private val raportointiConverter = new RaportointiConverterImpl
@@ -55,7 +56,12 @@ class ValintarekisteriRaportointiServiceImpl(sijoitteluRepository: SijoitteluRep
 
   override def hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO] = ???
 
-  override def hakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO] = ???
+  override def hakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO] = {
+    Try(new SijoitteluajonHakijat(sijoitteluRepository, sijoitteluAjo, hakukohdeOid).kevytDto) match {
+      case Failure(e) => throw new RuntimeException(e)
+      case Success(r) => r
+    }
+  }
 
   //override def latestSijoitteluAjoForHakukohde(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Option[SijoitteluAjo] = ???
 

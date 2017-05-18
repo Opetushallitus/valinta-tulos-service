@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.sijoittelu
 
 import fi.vm.sade.sijoittelu.domain.{HakukohdeItem, SijoitteluAjo}
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakemusRepository, SijoitteluRepository, ValinnantulosRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.SijoitteluajonHakija
 
@@ -16,7 +16,7 @@ trait ValintarekisteriSijoittelunTulosClient {
 
 }
 
-class ValintarekisteriSijoittelunTulosClientImpl(sijoitteluRepository: HakemusRepository with SijoitteluRepository with ValinnantulosRepository, valinnantulosRepository: ValinnantulosRepository) extends ValintarekisteriSijoittelunTulosClient {
+class ValintarekisteriSijoittelunTulosClientImpl(sijoitteluRepository: HakijaRepository with SijoitteluRepository with ValinnantulosRepository, valinnantulosRepository: ValinnantulosRepository) extends ValintarekisteriSijoittelunTulosClient {
 
   private def run[R](operations: slick.dbio.DBIO[R]): R = valinnantulosRepository.runBlocking(operations)
 

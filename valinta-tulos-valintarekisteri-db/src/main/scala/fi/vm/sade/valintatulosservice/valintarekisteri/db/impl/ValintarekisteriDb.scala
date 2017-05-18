@@ -27,7 +27,7 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
   with HyvaksymiskirjeRepositoryImpl
   with LukuvuosimaksuRepositoryImpl
   with ValintaesitysRepositoryImpl
-  with HakemusRepositoryImpl {
+  with HakijaRepositoryImpl {
 
   logger.info(s"Database configuration: ${config.copy(password = Some("***"))}")
   val flyway = new Flyway()
@@ -49,5 +49,4 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
     logger.warn("alter table public.schema_version owner to oph")
     runBlocking(sqlu"""alter table public.schema_version owner to oph""")
   }
-
 }
