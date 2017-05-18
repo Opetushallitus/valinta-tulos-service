@@ -1,20 +1,18 @@
 package fi.vm.sade.valintatulosservice.local
 
-import com.mongodb.casbah.Imports._
-import com.mongodb.casbah.commons.TypeImports._
+import fi.vm.sade.oppijantunnistus.OppijanTunnistusService
 import fi.vm.sade.sijoittelu.domain.HakemuksenTila
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.generatedfixtures._
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
-import fi.vm.sade.valintatulosservice.mongo.MongoFactory
-import fi.vm.sade.oppijantunnistus.OppijanTunnistusService
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelutulosService
 import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{DirectMongoSijoittelunTulosRestClient, StreamingHakijaDtoClient}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{HakemusIdentifier, ValintarekisteriDb}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid, VastaanottoEventDto, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.vastaanottomeili._
 import org.joda.time.DateTime
@@ -36,8 +34,15 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
   lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService,
     valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository(), sijoitteluContext.valintatulosRepository)
   lazy val valintatulokset = new ValintatulosMongoCollection(appConfig.settings.valintatulosMongoConfig)
-  lazy val poller = new MailPoller(valintatulokset, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 3)
-  lazy val mailDecorator = new MailDecorator(new HakemusRepository(), valintatulokset, hakuService, oppijanTunnistusService)
+  val featureEnabledPostgres = false
+  lazy val mailPollerRepository: MailPollerRepository =
+    if (featureEnabledPostgres) {
+      valintarekisteriDb
+    } else {
+      new ValintatulosMongoCollection(appConfig.settings.valintatulosMongoConfig)
+    }
+  lazy val poller = new MailPollerAdapter(mailPollerRepository, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 3)
+  lazy val mailDecorator = new MailDecorator(new HakemusRepository(), mailPollerRepository, hakuService, oppijanTunnistusService)
 
   "Sähköposti lähtee, kun ehdollisesta vastaanotosta tulee sitova" in {
 
@@ -198,7 +203,7 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
   private def markMailablesSent(mailables: List[HakemusMailStatus]) {
     mailables
       .map { mail => LahetysKuittaus(mail.hakemusOid, mail.hakukohteet.map(_.hakukohdeOid), List("email"))}
-      .foreach(valintatulokset.markAsSent(_))
+      .foreach(kuittaus => mailPollerRepository.markAsSent(kuittaus.hakemusOid, kuittaus.hakukohteet, kuittaus.mediat))
   }
 
   "Kun hyväksytty yhteen kohteeseen ja hylätty toisessa" in {
@@ -291,13 +296,13 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
   "Kun Hakemuksia on useammassa Haussa" in {
     val fixture = new GeneratedFixture(List(SimpleGeneratedHakuFixture(1, 4, HakuOid("1")), SimpleGeneratedHakuFixture(1, 4, HakuOid("2"))))
     "Tuloksia haetaan molemmista" in {
-      val poller = new MailPoller(valintatulokset, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 8)
+      val poller = new MailPollerAdapter(mailPollerRepository, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 8)
       fixture.apply(sijoitteluContext)
       poller.pollForMailables().size must_== 4 // <- molemmista hauista tulee 2 hyväksyttyä
     }
 
     "Määrärajoitus koskee kaikkia Hakuja yhteensä" in {
-      val poller = new MailPoller(valintatulokset, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 3)
+      val poller = new MailPollerAdapter(mailPollerRepository, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 3)
       fixture.apply(sijoitteluContext)
       poller.pollForMailables().size must_== 3
     }
@@ -305,7 +310,7 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
 
   "Kun ensimmäisestä pollauksesta palautuu vain hylättäviä maileja" in {
     "Niin haetaan kunnes löytyy" in {
-      val poller = new MailPoller(valintatulokset, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 1)
+      val poller = new MailPollerAdapter(mailPollerRepository, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 1)
       useFixture("hyvaksytty-kesken-julkaistavissa-00000441372.json",
           extraFixtureNames = List("hyvaksytty-kesken-julkaistavissa.json"),
           hakemusFixtures = List("00000441369", "00000441372-no-email"))
@@ -316,7 +321,7 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
   step(valintarekisteriDb.db.shutdown)
 
   private def pollForCandidates: Set[HakemusIdentifier] = {
-    valintatulokset.pollForCandidates(poller.etsiHaut, poller.limit)
+    mailPollerRepository.pollForCandidates(poller.etsiHaut, poller.limit)
   }
 
 }

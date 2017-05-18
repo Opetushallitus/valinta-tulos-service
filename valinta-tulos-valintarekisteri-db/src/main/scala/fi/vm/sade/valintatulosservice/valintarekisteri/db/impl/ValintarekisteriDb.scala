@@ -26,6 +26,7 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
   with ValinnantulosRepositoryImpl
   with HyvaksymiskirjeRepositoryImpl
   with LukuvuosimaksuRepositoryImpl
+  with MailPollerRepositoryImpl
   with ValintaesitysRepositoryImpl
   with HakijaRepositoryImpl {
 
