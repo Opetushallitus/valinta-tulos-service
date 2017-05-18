@@ -8,13 +8,18 @@ import fi.vm.sade.valintatulosservice.domain.{Hakemus, Henkilotiedot}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.oppijantunnistus.{OppijanTunnistus, OppijanTunnistusService}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
 class HakukohdeNotFoundException(message: String) extends RuntimeException(message)
 
 class HakuNotFoundException(message: String) extends RuntimeException(message)
 
-class MailDecorator(hakemusRepository: HakemusRepository, valintatulosCollection: ValintatulosMongoCollection, hakuService: HakuService, oppijanTunnistusService: OppijanTunnistusService) extends Logging {
+class MailDecorator(hakemusRepository: HakemusRepository,
+                    mailPollerRepository: MailPollerRepository,
+                    hakuService: HakuService,
+                    oppijanTunnistusService: OppijanTunnistusService
+                   ) extends Logging {
   def statusToMail(status: HakemusMailStatus): Option[Ilmoitus] = {
     status.anyMailToBeSent match {
       case true => {
@@ -41,20 +46,20 @@ class MailDecorator(hakemusRepository: HakemusRepository, valintatulosCollection
             } catch {
               case e: Exception =>
                 status.hakukohteet.filter(_.shouldMail).foreach {
-                  valintatulosCollection.addMessage(status, _,  e.getMessage)
+                  mailPollerRepository.addMessage(status, _,  e.getMessage)
                 }
                 None
             }
           case Right(hakemus) =>
             logger.warn("Hakemukselta puuttuu kutsumanimi tai email: " + status.hakemusOid)
             status.hakukohteet.filter(_.shouldMail).foreach {
-              valintatulosCollection.addMessage(status, _,  "Hakemukselta puuttuu kutsumanimi tai email")
+              mailPollerRepository.addMessage(status, _,  "Hakemukselta puuttuu kutsumanimi tai email")
             }
             None
           case Left(e) =>
             logger.error("Hakemusta ei löydy: " + status.hakemusOid, e)
             status.hakukohteet.filter(_.shouldMail).foreach {
-              valintatulosCollection.addMessage(status, _,  "Hakemusta ei löydy")
+              mailPollerRepository.addMessage(status, _,  "Hakemusta ei löydy")
             }
             None
         }

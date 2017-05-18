@@ -7,10 +7,12 @@ import com.mongodb.casbah.Imports._
 import fi.vm.sade.utils.config.MongoConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats._
 import fi.vm.sade.valintatulosservice.mongo.MongoFactory
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl._
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.joda.time.{DateTime, DateTimeUtils}
 
-class ValintatulosMongoCollection(mongoConfig: MongoConfig) {
+class ValintatulosMongoCollection(mongoConfig: MongoConfig) extends MailPollerRepository {
   private val valintatulos = MongoFactory.createDB(mongoConfig)("Valintatulos")
 
   def pollForCandidates(hakuOids: List[HakuOid], limit: Int, recheckIntervalHours: Int = (24 * 3), excludeHakemusOids: Set[HakemusOid] = Set.empty): Set[HakemusIdentifier] = {
@@ -52,9 +54,9 @@ class ValintatulosMongoCollection(mongoConfig: MongoConfig) {
     updateValintatulos(hakemus.hakemusOid, hakukohde.hakukohdeOid, Map("mailStatus.message" -> message))
   }
 
-  def markAsSent(mailContents: LahetysKuittaus) {
-    mailContents.hakukohteet.foreach { hakukohde =>
-      markAsSent(mailContents.hakemusOid, hakukohde, mailContents.mediat, "Lähetetty " + formatJson(mailContents.mediat))
+  def markAsSent(hakemusOid: HakemusOid, hakukohteet: List[HakukohdeOid], mediat: List[String]): Unit = {
+    hakukohteet.foreach { hakukohde =>
+      markAsSent(hakemusOid, hakukohde, mediat, "Lähetetty " + formatJson(mediat))
     }
   }
 
@@ -65,7 +67,7 @@ class ValintatulosMongoCollection(mongoConfig: MongoConfig) {
     updateValintatulos(hakemusOid, hakukohdeOid, fields)
   }
 
-  private def markAsSent(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, sentViaMedias: List[String], message: String) {
+  private def markAsSent(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, sentViaMedias: List[String], message: String): Unit = {
     val timestamp = new Date(DateTimeUtils.currentTimeMillis)
     val fields: Map[JSFunction, Any] = Map("mailStatus.sent" -> timestamp, "mailStatus.media" -> sentViaMedias, "mailStatus.message" -> message)
 
