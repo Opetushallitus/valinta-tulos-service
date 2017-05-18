@@ -54,8 +54,12 @@ class ValintarekisteriRaportointiServiceImpl(sijoitteluRepository: HakijaReposit
   override def getSijoitteluAjo(sijoitteluajoId: Long): Option[SijoitteluAjo] =
     sijoitteluRepository.getSijoitteluajo(sijoitteluajoId).map(_.entity(sijoitteluRepository.getSijoitteluajonHakukohdeOidit(sijoitteluajoId)))
 
-  override def hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO] = ???
-
+  override def hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO] = {
+    Try(new SijoitteluajonHakijat(sijoitteluRepository, sijoitteluAjo, hakukohdeOid).kevytDtoVainHakukohde) match {
+      case Failure(e) => throw new RuntimeException(e)
+      case Success(r) => r
+    }
+  }
   override def hakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO] = {
     Try(new SijoitteluajonHakijat(sijoitteluRepository, sijoitteluAjo, hakukohdeOid).kevytDto) match {
       case Failure(e) => throw new RuntimeException(e)
