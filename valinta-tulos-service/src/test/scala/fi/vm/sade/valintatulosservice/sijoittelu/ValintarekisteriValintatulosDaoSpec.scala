@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.sijoittelu
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
+import fi.vm.sade.valintatulosservice.ITSpecification
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
 import org.junit.runner.RunWith
@@ -8,9 +9,7 @@ import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
-class ValintarekisteriValintatulosDaoSpec extends Specification with ITSetup with ValintarekisteriTestData {
-  sequential
-  step(appConfig.start)
+class ValintarekisteriValintatulosDaoSpec extends ITSpecification with ValintarekisteriTestData {
   step(deleteAll())
 
   lazy val dao = new ValintarekisteriValintatulosDaoImpl(singleConnectionValintarekisteriDb)
