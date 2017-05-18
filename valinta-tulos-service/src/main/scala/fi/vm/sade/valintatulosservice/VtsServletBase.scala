@@ -6,6 +6,7 @@ import fi.vm.sade.security.{AuthenticationFailedException, AuthorizationFailedEx
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.json.JsonFormats.writeJavaObjectToOutputStream
 import fi.vm.sade.valintatulosservice.json.{JsonFormats, StreamingFailureException}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.NotFoundException
 import org.json4s.MappingException
 import org.scalatra.json.JacksonJsonSupport
 import org.scalatra.swagger.SwaggerSupport
@@ -44,6 +45,8 @@ trait VtsServletBase extends ScalatraServlet with Logging with JacksonJsonSuppor
           badRequest(e)
         case e: NoSuchElementException =>
           badRequest(e)
+        case e: NotFoundException =>
+          NotFound(reason = e.getMessage)
         case e: StreamingFailureException =>
           logger.error(errorDescription, e)
           InternalServerError(e.contentToInsertToBody)
