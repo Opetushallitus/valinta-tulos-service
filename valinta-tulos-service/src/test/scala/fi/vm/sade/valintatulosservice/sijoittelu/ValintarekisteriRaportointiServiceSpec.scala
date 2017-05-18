@@ -110,4 +110,6 @@ class ValintarekisteriRaportointiServiceSpec extends ITSpecification with Valint
       true must_== true
     }
   }
+
+  step(deleteAll())
 }
