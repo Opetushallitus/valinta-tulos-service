@@ -82,7 +82,9 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
     try {
       Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session)))
     } catch {
-      case e: NotFoundException => NotFound(e.getMessage)
+      case e: NotFoundException =>
+        val message = e.getMessage
+        NotFound(body = Map("error" -> message), reason = message)
     }
   }
 }
