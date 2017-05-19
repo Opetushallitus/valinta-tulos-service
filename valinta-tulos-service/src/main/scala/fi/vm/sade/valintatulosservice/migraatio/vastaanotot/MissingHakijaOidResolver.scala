@@ -61,7 +61,7 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
       }
     }
 
-    implicit val henkiloDecoder = org.http4s.json4s.native.jsonOf[Henkilo]
+    implicit val henkiloDecoder = org.http4s.json4s.native.jsonOf[Option[Henkilo]]
 
     val requestUri = createUri(appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.henkiloPerusByHetu",hetu))
     oppijanumerorekisteriClient.httpClient.fetch(Request(uri = requestUri)) {
