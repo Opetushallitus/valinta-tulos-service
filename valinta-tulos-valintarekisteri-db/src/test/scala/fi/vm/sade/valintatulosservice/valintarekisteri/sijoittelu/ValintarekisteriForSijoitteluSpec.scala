@@ -1,10 +1,10 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
-import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, Hakemus, Hakijaryhma, Hakukohde, Valintatapajono}
+import fi.vm.sade.sijoittelu.domain._
 import fi.vm.sade.sijoittelu.tulos.dto.{SijoitteluDTO, SijoitteluajoDTO}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, SijoitteluWrapper, TilahistoriaWrapper, Valinnantila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
@@ -73,7 +73,7 @@ class ValintarekisteriForSijoitteluSpec extends Specification with ITSetup with 
     val wrapper = loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")
     singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
     valintarekisteri.getLatestSijoitteluajo("1.2.246.562.29.75203638286") must throwA(
-      new IllegalArgumentException("Yhtään sijoitteluajoa ei löytynyt haulle 1.2.246.562.29.75203638286"))
+      new NotFoundException("Yhtään sijoitteluajoa ei löytynyt haulle 1.2.246.562.29.75203638286"))
   }
   "Exception is thrown when sijoitteluajoId is malformed" in {
     val wrapper = loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")

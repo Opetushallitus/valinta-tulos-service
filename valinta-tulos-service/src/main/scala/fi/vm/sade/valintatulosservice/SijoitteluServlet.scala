@@ -4,11 +4,10 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
-import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.ValintarekisteriService
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, NotFoundException}
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
-import org.scalatra.{NotImplemented, Ok}
+import org.scalatra.{NotFound, Ok}
 
 class SijoitteluServlet(sijoitteluService: SijoitteluService,
                         val sessionRepository: SessionRepository)
@@ -80,6 +79,12 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
 
-    Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session)))
+    try {
+      Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session)))
+    } catch {
+      case e: NotFoundException =>
+        val message = e.getMessage
+        NotFound(body = Map("error" -> message), reason = message)
+    }
   }
 }

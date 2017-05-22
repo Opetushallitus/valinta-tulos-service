@@ -12,7 +12,7 @@ trait SijoitteluRepository extends PerformanceLogger { this:Logging =>
 
   def getLatestSijoitteluajoId(sijoitteluajoId: String, hakuOid: HakuOid): Either[Throwable,Long] = sijoitteluajoId match {
       case x if "latest".equalsIgnoreCase(x) => getLatestSijoitteluajoId(hakuOid).toRight(
-        new IllegalArgumentException(s"Yhtään sijoitteluajoa ei löytynyt haulle $hakuOid"))
+        new NotFoundException(s"Yhtään sijoitteluajoa ei löytynyt haulle $hakuOid"))
       case x => Try(x.toLong).toOption.toRight(
         new IllegalArgumentException(s"Väärän tyyppinen sijoitteluajon ID: $sijoitteluajoId"))
   }
