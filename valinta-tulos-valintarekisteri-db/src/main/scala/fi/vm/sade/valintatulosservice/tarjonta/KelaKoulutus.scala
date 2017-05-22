@@ -22,7 +22,6 @@ private object AlempiKKTutkinto {
     val (laajuus1, laajuus2) = KelaKoulutus.asLaajuus1AndLaajuus2(laajuus)
     if(laajuus2.isDefined) {
       KelaKoulutus(tutkinnontaso = Some("050"), tutkinnonlaajuus1 = laajuus1, tutkinnonlaajuus2 = None)
-      //throw new RuntimeException(s"Resolved as 'AlempiKKTutkinto' but contained laajuudet ($laajuus1, $laajuus2)")
     } else {
       KelaKoulutus(tutkinnontaso = Some("050"), tutkinnonlaajuus1 = laajuus1, tutkinnonlaajuus2 = None)
     }
@@ -44,7 +43,6 @@ private object ErillinenYlempiKKTutkinto {
     val (laajuus1, laajuus2) = KelaKoulutus.asLaajuus1AndLaajuus2(laajuus)
     if(laajuus2.isDefined) {
       KelaKoulutus(tutkinnontaso = Some("061"), tutkinnonlaajuus1 = laajuus2.get, tutkinnonlaajuus2 = None)
-      //throw new RuntimeException(s"Resolved as 'ErillinenYlempiKKTutkinto' but contained laajuudet ($laajuus1, $laajuus2)")
     } else {
       KelaKoulutus(tutkinnontaso = Some("061"), tutkinnonlaajuus1 = laajuus1, tutkinnonlaajuus2 = None)
     }
