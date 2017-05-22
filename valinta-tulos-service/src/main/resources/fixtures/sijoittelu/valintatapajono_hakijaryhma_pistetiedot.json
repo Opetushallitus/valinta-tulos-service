@@ -34,133 +34,133 @@
       ]
     }
   ],
- "Hakukohde": [
+  "Hakukohde": [
     {
       "_id": {
         "$oid": "57517a2de4b0bdc0600d97fe"
       },
-      "className" : "fi.vm.sade.sijoittelu.domain.Hakukohde",
+      "className": "fi.vm.sade.sijoittelu.domain.Hakukohde",
       "sijoitteluajoId": {
         "$numberLong": "1464957466474"
       },
-      "oid" : "1.2.246.562.20.96062693534",
-      "tarjoajaOid" : "1.2.246.562.10.57531791028",
-      "kaikkiJonotSijoiteltu" : false,
-      "valintatapajonot" : [
+      "oid": "1.2.246.562.20.96062693534",
+      "tarjoajaOid": "1.2.246.562.10.57531791028",
+      "kaikkiJonotSijoiteltu": false,
+      "valintatapajonot": [
         {
-          "tasasijasaanto" : "YLITAYTTO",
-          "oid" : "14507702432714954928588511164948",
-          "nimi" : "Koepisteet",
-          "prioriteetti" : 0,
-          "aloituspaikat" : 0,
-          "alkuperaisetAloituspaikat" : 0,
-          "eiVarasijatayttoa" : false,
-          "kaikkiEhdonTayttavatHyvaksytaan" : false,
-          "poissaOlevaTaytto" : true,
-          "varasijat" : 0,
-          "varasijaTayttoPaivat" : 0,
-          "varasijojaTaytetaanAsti" : {
+          "tasasijasaanto": "YLITAYTTO",
+          "oid": "14507702432714954928588511164948",
+          "nimi": "Koepisteet",
+          "prioriteetti": 0,
+          "aloituspaikat": 0,
+          "alkuperaisetAloituspaikat": 0,
+          "eiVarasijatayttoa": false,
+          "kaikkiEhdonTayttavatHyvaksytaan": false,
+          "poissaOlevaTaytto": true,
+          "varasijat": 0,
+          "varasijaTayttoPaivat": 0,
+          "varasijojaTaytetaanAsti": {
             "$date": "2016-08-15T12:00:00.000Z"
           },
-          "hyvaksytty" : 0,
-          "varalla" : 1,
-          "alinHyvaksyttyPistemaara" : "",
-          "hakemukset" : [
+          "hyvaksytty": 0,
+          "varalla": 1,
+          "alinHyvaksyttyPistemaara": "",
+          "hakemukset": [
             {
-              "hakijaOid" : "1.2.246.562.24.71711513035",
-              "hakemusOid" : "1.2.246.562.11.00000002574",
-              "etunimi" : "Milla",
-              "sukunimi" : "Magia",
-              "prioriteetti" : 2,
-              "jonosija" : 1,
-              "onkoMuuttunutViimeSijoittelussa" : true,
-              "pisteet" : "0",
-              "tasasijaJonosija" : 1,
-              "tila" : "VARALLA",
-              "edellinenTila" : "HYLATTY",
-              "tilaHistoria" : [
+              "hakijaOid": "1.2.246.562.24.71711513035",
+              "hakemusOid": "1.2.246.562.11.00000002574",
+              "etunimi": "Milla",
+              "sukunimi": "Magia",
+              "prioriteetti": 2,
+              "jonosija": 1,
+              "onkoMuuttunutViimeSijoittelussa": true,
+              "pisteet": "0",
+              "tasasijaJonosija": 1,
+              "tila": "VARALLA",
+              "edellinenTila": "HYLATTY",
+              "tilaHistoria": [
                 {
-                  "luotu" : {
+                  "luotu": {
                     "$date": "2016-06-02T13:54:52.027Z"
                   },
-                  "tila" : "VARASIJALTA_HYVAKSYTTY"
+                  "tila": "VARASIJALTA_HYVAKSYTTY"
                 }
               ],
-              "hyvaksyttyHarkinnanvaraisesti" : false,
-              "pistetiedot" : [
+              "hyvaksyttyHarkinnanvaraisesti": false,
+              "pistetiedot": [
                 {
-                  "tunniste" : "IB_essee",
-                  "osallistuminen" : "MERKITSEMATTA"
+                  "tunniste": "IB_essee",
+                  "osallistuminen": "MERKITSEMATTA"
                 },
                 {
-                  "tunniste" : "IB_matloog",
-                  "osallistuminen" : "MERKITSEMATTA"
+                  "tunniste": "IB_matloog",
+                  "osallistuminen": "MERKITSEMATTA"
                 },
                 {
-                  "tunniste" : "IB_haastattelu",
-                  "osallistuminen" : "MERKITSEMATTA"
+                  "tunniste": "IB_haastattelu",
+                  "osallistuminen": "MERKITSEMATTA"
                 },
                 {
-                  "tunniste" : "IB_monivalinta",
-                  "osallistuminen" : "MERKITSEMATTA"
+                  "tunniste": "IB_monivalinta",
+                  "osallistuminen": "MERKITSEMATTA"
                 },
                 {
-                  "tunniste" : "IB_kielikoe",
-                  "laskennallinenArvo" : "0",
-                  "osallistuminen" : "MERKITSEMATTA"
+                  "tunniste": "IB_kielikoe",
+                  "laskennallinenArvo": "0",
+                  "osallistuminen": "MERKITSEMATTA"
                 }
               ],
-              "varasijanNumero" : 1,
-              "hyvaksyttyHakijaryhmasta" : false
+              "varasijanNumero": 1,
+              "hyvaksyttyHakijaryhmasta": false
             }
           ]
         }
       ],
-      "hakijaryhmat" : [
+      "hakijaryhmat": [
         {
-          "prioriteetti" : 5,
-          "paikat" : 0,
-          "oid" : "1452159018697-9158802588726167163",
-          "nimi" : "Ensikertalaisten hakijaryhmä",
-          "hakukohdeOid" : "1.2.246.562.20.96062693534",
-          "kiintio" : 0,
-          "kaytaKaikki" : false,
-          "tarkkaKiintio" : false,
-          "kaytetaanRyhmaanKuuluvia" : true,
-          "hakemusOid" : [
+          "prioriteetti": 5,
+          "paikat": 0,
+          "oid": "1452159018697-9158802588726167163",
+          "nimi": "Ensikertalaisten hakijaryhmä",
+          "hakukohdeOid": "1.2.246.562.20.96062693534",
+          "kiintio": 0,
+          "kaytaKaikki": false,
+          "tarkkaKiintio": false,
+          "kaytetaanRyhmaanKuuluvia": true,
+          "hakemusOid": [
             "1.2.246.562.11.00000002574"
           ]
         }
       ]
     }
- ],
- "Valintatulos" : [
-   {
-     "_id": {
-       "$oid": "574418ace975f55730489578"
-     },
-     "className" : "fi.vm.sade.sijoittelu.domain.Valintatulos",
-     "valintatapajonoOid" : "14507702432714954928588511164948",
-     "hakemusOid" : "1.2.246.562.11.00000002574",
-     "hakukohdeOid" : "1.2.246.562.20.96062693534",
-     "ehdollisestiHyvaksyttavissa" : false,
-     "julkaistavissa" : true,
-     "hyvaksyttyVarasijalta" : false,
-     "hyvaksyPeruuntunut" : false,
-     "hakijaOid" : "1.2.246.562.24.71711513035",
-     "hakuOid" : "1.2.246.562.29.75203638285",
-     "hakutoive" : 2,
-     "ilmoittautumisTila" : "EI_TEHTY",
-     "logEntries" : [
-       {
-         "luotu" : {
-         "$date": "2016-05-24T09:02:36.637Z"
-         },
-         "muokkaaja" : "1.2.246.562.24.72453542949",
-         "muutos" : "tila: KESKEN -> VASTAANOTTANUT_SITOVASTI",
-         "selite" : ""
-       }
-     ]
-   }
- ]
+  ],
+  "Valintatulos": [
+    {
+      "_id": {
+        "$oid": "574418ace975f55730489578"
+      },
+      "className": "fi.vm.sade.sijoittelu.domain.Valintatulos",
+      "valintatapajonoOid": "14507702432714954928588511164948",
+      "hakemusOid": "1.2.246.562.11.00000002574",
+      "hakukohdeOid": "1.2.246.562.20.96062693534",
+      "ehdollisestiHyvaksyttavissa": false,
+      "julkaistavissa": true,
+      "hyvaksyttyVarasijalta": false,
+      "hyvaksyPeruuntunut": false,
+      "hakijaOid": "1.2.246.562.24.71711513035",
+      "hakuOid": "1.2.246.562.29.75203638285",
+      "hakutoive": 2,
+      "ilmoittautumisTila": "EI_TEHTY",
+      "logEntries": [
+        {
+          "luotu": {
+            "$date": "2016-05-24T09:02:36.637Z"
+          },
+          "muokkaaja": "1.2.246.562.24.72453542949",
+          "muutos": "tila: KESKEN -> VASTAANOTTANUT_SITOVASTI",
+          "selite": ""
+        }
+      ]
+    }
+  ]
 }
