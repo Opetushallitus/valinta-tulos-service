@@ -1,3 +1,14 @@
+/*
+    Install required packages with:
+        > npm install
+
+    Set fileLocation variable which is the location for the dump file
+    Set your CAS username and CAS password in tools.js
+
+    Run with:
+        > node script.js
+*/
+
 let fs = require('fs');
 let request = require('request');
 let CASAPI = require('./tools.js')
