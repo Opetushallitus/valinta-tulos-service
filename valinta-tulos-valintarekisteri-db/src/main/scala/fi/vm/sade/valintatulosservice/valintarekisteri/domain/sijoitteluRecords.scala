@@ -288,6 +288,15 @@ case class SijoittelunHakukohdeRecord(sijoitteluajoId: Long, oid: HakukohdeOid, 
   }
 }
 
+object ErillishaunHakukohdeRecord {
+  def entity(hakukohdeOid: HakukohdeOid, valintatapajonot:List[Valintatapajono]) = {
+    val hakukohde = new Hakukohde
+    hakukohde.setOid(hakukohdeOid.toString)
+    hakukohde.setValintatapajonot(valintatapajonot.asJava)
+    hakukohde
+  }
+}
+
 case class ValintatapajonoRecord(tasasijasaanto:String, oid: ValintatapajonoOid, nimi:String, prioriteetti:Int, aloituspaikat:Option[Int],
                                  alkuperaisetAloituspaikat:Option[Int], alinHyvaksyttyPistemaara:BigDecimal,
                                  eiVarasijatayttoa:Boolean, kaikkiEhdonTayttavatHyvaksytaan:Boolean,
@@ -344,6 +353,18 @@ case class ValintatapajonoRecord(tasasijasaanto:String, oid: ValintatapajonoOid,
     varasijojaKaytetaanAlkaen.foreach(valintatapajono.setVarasijojaKaytetaanAlkaen)
     varasijojaKaytetaanAsti.foreach(valintatapajono.setVarasijojaTaytetaanAsti)
     tayttoJono.foreach(valintatapajono.setTayttojono)
+    valintatapajono.setHakemukset(hakemukset.asJava)
+    valintatapajono.setHakemustenMaara(hakemukset.size)
+    valintatapajono
+  }
+}
+
+object ValintatapajonoRecord {
+  def entity(valintatapajonoOid: ValintatapajonoOid, hakemukset: List[Hakemus]) = {
+    val valintatapajono = new Valintatapajono
+    valintatapajono.setOid(valintatapajonoOid.toString)
+    //valintatapajono.setHyvaksytty(hyvaksytty)
+    //valintatapajono.setVaralla(varalla)
     valintatapajono.setHakemukset(hakemukset.asJava)
     valintatapajono.setHakemustenMaara(hakemukset.size)
     valintatapajono
@@ -409,6 +430,20 @@ case class HakemusRecord(hakijaOid:Option[String], hakemusOid: HakemusOid, piste
       case Some(x) if tarkenteenLisatieto.isDefined => x.tilankuvaukset.mapValues(_.replace("<lisatieto>", tarkenteenLisatieto.get))
       case Some(x) => x.tilankuvaukset
       case _ => Map()
+  }
+}
+
+object HakemusRecord {
+  def entity(valinnantulos: Valinnantulos) = {
+    val hakemus = new Hakemus
+    hakemus.setHakijaOid(valinnantulos.henkiloOid)
+    hakemus.setHakemusOid(valinnantulos.hakemusOid.toString)
+    hakemus.setTila(fi.vm.sade.sijoittelu.domain.HakemuksenTila.valueOf(valinnantulos.valinnantila.valinnantila.name))
+    hakemus.setJonosija(1) //TODO
+    hakemus.setTasasijaJonosija(1) //TODO
+    //hakemus.setTilanKuvaukset(tilankuvaukset.asJava) Erillishaulla ei tilankuvauksia
+    //hakemus.setTilaHistoria(tilahistoria.asJava)
+    hakemus
   }
 }
 
