@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import java.sql.JDBCType
-import java.time.{Instant, OffsetDateTime, ZoneId, ZoneOffset}
+import java.time.{Instant, OffsetDateTime, ZoneId, ZoneOffset, ZonedDateTime}
 import java.util.UUID
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
@@ -192,12 +192,27 @@ trait ValintarekisteriResultExtractors {
     OffsetDateTime.ofInstant(d.toInstant, ZoneId.of("Europe/Helsinki"))
   })
 
+  protected implicit val getZonedDateTime: GetResult[ZonedDateTime] = GetResult(r => {
+    val d = r.rs.getObject(r.currentPos + 1, classOf[OffsetDateTime])
+    r.skip
+    d.atZoneSameInstant(ZoneId.of("Europe/Helsinki"))
+  })
+
+  protected implicit val getZonedDateTimeOption: GetResult[Option[ZonedDateTime]] = GetResult(r => {
+    val d = r.rs.getObject(r.currentPos + 1, classOf[OffsetDateTime])
+    Option(d).map(_.atZoneSameInstant(ZoneId.of("Europe/Helsinki")))
+  })
+
   implicit val getHakuOid: GetResult[HakuOid] = GetResult(r => {
     HakuOid(r.nextString())
   })
 
   implicit val getHakukohdeOid: GetResult[HakukohdeOid] = GetResult(r => {
     HakukohdeOid(r.nextString())
+  })
+
+  implicit val getValintatapajonoOid: GetResult[ValintatapajonoOid] = GetResult(r => {
+    ValintatapajonoOid(r.nextString())
   })
 
   implicit val getHakemusOid: GetResult[HakemusOid] = GetResult(r => {
@@ -257,6 +272,19 @@ trait ValintarekisteriResultExtractors {
   implicit object SetOptionInstant extends SetParameter[Option[Instant]] {
     def apply(v: Option[Instant], pp: PositionedParameters): Unit = v match {
       case Some(i) => SetInstant.apply(i, pp)
+      case None => pp.setNull(JDBCType.TIMESTAMP_WITH_TIMEZONE.getVendorTypeNumber)
+    }
+  }
+
+  implicit object SetZonedDateTime extends SetParameter[ZonedDateTime] {
+    def apply(v: ZonedDateTime, pp: PositionedParameters): Unit = {
+      pp.setObject(v.toOffsetDateTime, JDBCType.TIMESTAMP_WITH_TIMEZONE.getVendorTypeNumber)
+    }
+  }
+
+  implicit object SetOptionZonedDateTime extends SetParameter[Option[ZonedDateTime]] {
+    def apply(v: Option[ZonedDateTime], pp: PositionedParameters): Unit = v match {
+      case Some(i) => SetZonedDateTime.apply(i, pp)
       case None => pp.setNull(JDBCType.TIMESTAMP_WITH_TIMEZONE.getVendorTypeNumber)
     }
   }

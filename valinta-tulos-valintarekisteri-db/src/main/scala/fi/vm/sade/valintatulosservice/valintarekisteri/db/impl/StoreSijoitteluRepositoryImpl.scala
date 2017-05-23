@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import java.sql.{PreparedStatement, Timestamp, Types}
+import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
@@ -10,8 +11,8 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
 import scala.concurrent.duration.Duration
 import scala.util.Try
-
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.JavaConverters._
 
@@ -307,21 +308,62 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
   private def insertValintatapajono(sijoitteluajoId: Long, hakukohdeOid: HakukohdeOid, valintatapajono: Valintatapajono) = {
     val SijoitteluajonValintatapajonoWrapper(oid, nimi, prioriteetti, tasasijasaanto, aloituspaikat, alkuperaisetAloituspaikat,
     eiVarasijatayttoa, kaikkiEhdonTayttavatHyvaksytaan, poissaOlevaTaytto, varasijat, varasijaTayttoPaivat,
-    varasijojaKaytetaanAlkaen, varasijojaTaytetaanAsti, tayttojono, alinHyvaksyttyPistemaara, valintaesitysHyvaksytty)
+    varasijojaKaytetaanAlkaen, varasijojaTaytetaanAsti, tayttojono, alinHyvaksyttyPistemaara, _)
     = SijoitteluajonValintatapajonoWrapper(valintatapajono)
 
     val varasijojaKaytetaanAlkaenTs:Option[Timestamp] = varasijojaKaytetaanAlkaen.flatMap(d => Option(new Timestamp(d.getTime)))
     val varasijojaTaytetaanAstiTs:Option[Timestamp] = varasijojaTaytetaanAsti.flatMap(d => Option(new Timestamp(d.getTime)))
 
-    sqlu"""insert into valintatapajonot (oid, sijoitteluajo_id, hakukohde_oid, nimi, prioriteetti, tasasijasaanto, aloituspaikat,
-           alkuperaiset_aloituspaikat, kaikki_ehdon_tayttavat_hyvaksytaan, poissaoleva_taytto, ei_varasijatayttoa,
-           varasijat, varasijatayttopaivat, varasijoja_kaytetaan_alkaen, varasijoja_taytetaan_asti, tayttojono,
-           alin_hyvaksytty_pistemaara, valintaesitys_hyvaksytty)
-           values (${oid}, ${sijoitteluajoId}, ${hakukohdeOid}, ${nimi}, ${prioriteetti}, ${tasasijasaanto.toString}::tasasijasaanto, ${aloituspaikat},
-           ${alkuperaisetAloituspaikat}, ${kaikkiEhdonTayttavatHyvaksytaan},
-           ${poissaOlevaTaytto}, ${eiVarasijatayttoa}, ${varasijat}, ${varasijaTayttoPaivat},
-           ${varasijojaKaytetaanAlkaenTs}, ${varasijojaTaytetaanAstiTs}, ${tayttojono},
-           ${alinHyvaksyttyPistemaara}, ${valintaesitysHyvaksytty})"""
+    val ensureValintaesitys =
+      sqlu"""insert into valintaesitykset (
+                 hakukohde_oid,
+                 valintatapajono_oid,
+                 hyvaksytty
+             ) values (
+                 $hakukohdeOid,
+                 $oid,
+                 null::timestamp with time zone
+             ) on conflict on constraint valintaesitykset_pkey do nothing
+        """
+    val insert =
+      sqlu"""insert into valintatapajonot (
+                 oid,
+                 sijoitteluajo_id,
+                 hakukohde_oid,
+                 nimi,
+                 prioriteetti,
+                 tasasijasaanto,
+                 aloituspaikat,
+                 alkuperaiset_aloituspaikat,
+                 kaikki_ehdon_tayttavat_hyvaksytaan,
+                 poissaoleva_taytto,
+                 ei_varasijatayttoa,
+                 varasijat,
+                 varasijatayttopaivat,
+                 varasijoja_kaytetaan_alkaen,
+                 varasijoja_taytetaan_asti,
+                 tayttojono,
+                 alin_hyvaksytty_pistemaara
+             ) values (
+                 ${oid},
+                 ${sijoitteluajoId},
+                 ${hakukohdeOid},
+                 ${nimi},
+                 ${prioriteetti},
+                 ${tasasijasaanto.toString}::tasasijasaanto,
+                 ${aloituspaikat},
+                 ${alkuperaisetAloituspaikat},
+                 ${kaikkiEhdonTayttavatHyvaksytaan},
+                 ${poissaOlevaTaytto},
+                 ${eiVarasijatayttoa},
+                 ${varasijat},
+                 ${varasijaTayttoPaivat},
+                 ${varasijojaKaytetaanAlkaenTs},
+                 ${varasijojaTaytetaanAstiTs},
+                 ${tayttojono},
+                 ${alinHyvaksyttyPistemaara}
+             )"""
+    ensureValintaesitys.andThen(insert)
   }
 
   private def insertHakijaryhma(sijoitteluajoId:Long, hakijaryhma:Hakijaryhma) = {

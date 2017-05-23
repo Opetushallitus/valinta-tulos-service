@@ -45,3 +45,11 @@ case object HyvaksymiskirjeidenMuokkaus extends Operation {
 case object VastaanottotietojenLuku extends Operation {
   def name: String = "VASTAANOTTOTIETOJEN_LUKU"
 }
+
+case object ValintaesityksenHyvaksyminen extends Operation {
+  def name: String = "VALINTAESITYKSEN_HYVAKSYMINEN"
+}
+
+case object ValintaesityksenLuku extends Operation {
+  def name: String = "VALINTAESITYKSEN_LUKU"
+}

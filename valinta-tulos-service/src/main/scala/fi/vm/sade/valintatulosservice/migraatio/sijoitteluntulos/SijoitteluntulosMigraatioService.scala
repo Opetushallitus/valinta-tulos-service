@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos
 
 import java.security.MessageDigest
 import java.sql.Timestamp
+import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.Calendar.HOUR_OF_DAY
 import java.util.concurrent.TimeUnit.MINUTES
 import java.util.{Calendar, Date, Optional}
@@ -20,7 +21,7 @@ import fi.vm.sade.valintatulosservice.migraatio.valinta.Valintalaskentakoostepal
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.MissingHakijaOidResolver
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{MigraatioRepository, SijoitteluRepository, StoreSijoitteluRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{MigraatioRepository, SijoitteluRepository, StoreSijoitteluRepository, Valintaesitys}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.Valintarekisteri
@@ -82,10 +83,10 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       logger.info(s"Starting to store sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid...")
       storeSijoitteluData(hakuOid, ajoFromMongo, mongoSijoitteluAjoId, hakukohteet, valintatulokset)
       logger.info(s"Starting to save valinta data sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid...")
-      val (valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot, hyvaksymisKirjeet) = createSaveObjects(hakukohteet, valintatulokset)
+      val (valintaesitykset, valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot, hyvaksymisKirjeet) = createSaveObjects(hakukohteet, valintatulokset)
       timed(s"Saving valinta data for sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid") {
         migraatioRepository.runBlocking(
-          migraatioRepository.storeBatch(valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot, hyvaksymisKirjeet), Duration(15, MINUTES))
+          migraatioRepository.storeBatch(valintaesitykset, valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot, hyvaksymisKirjeet), Duration(15, MINUTES))
       }
       logger.info("Deleting valinnantilat_history entries that were duplicated by sijoittelu and migration saves.")
       timed(s"Deleting duplicated valinnantilat_history entries of $mongoSijoitteluAjoId of haku $hakuOid") {
@@ -178,13 +179,14 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
   }
 
   private def createSaveObjects(hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]):
-    (Vector[(ValinnantilanTallennus, Timestamp)], Vector[ValinnantuloksenOhjaus], Vector[(String, Ilmoittautuminen)], Vector[EhdollisenHyvaksynnanEhto], Vector[Hyvaksymiskirje]) = {
+    (Vector[Valintaesitys], Vector[(ValinnantilanTallennus, Timestamp)], Vector[ValinnantuloksenOhjaus], Vector[(String, Ilmoittautuminen)], Vector[EhdollisenHyvaksynnanEhto], Vector[Hyvaksymiskirje]) = {
 
     val hakemuksetOideittain: Map[(HakemusOid, ValintatapajonoOid, HakukohdeOid), List[(Hakemus, ValintatapajonoOid, HakukohdeOid)]] =
       groupHakemusResultsByHakemusOidAndJonoOid(hakukohteet)
     val valintatuloksetOideittain: Map[(HakemusOid, ValintatapajonoOid), List[Valintatulos]] =
       valintatulokset.asScala.toList.groupBy(v => (HakemusOid(v.getHakemusOid), ValintatapajonoOid(v.getValintatapajonoOid)))
 
+    val valintaesitykset: Vector[Valintaesitys] = hakukohteet.asScala.flatMap(hakukohteenValintaesitykset).toVector
     var valinnantilas: Vector[(ValinnantilanTallennus, Timestamp)] = Vector()
     var valinnantuloksenOhjaukset: Vector[ValinnantuloksenOhjaus] = Vector()
     var ilmoittautumiset: Vector[(String, Ilmoittautuminen)] = Vector()
@@ -221,7 +223,21 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
         }
       }
     }
-    (valinnantilas, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot, hyvaksymisKirjeet)
+    (valintaesitykset, valinnantilas, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot, hyvaksymisKirjeet)
+  }
+
+  private def hakukohteenValintaesitykset(hakukohde: Hakukohde): Vector[Valintaesitys] = {
+    hakukohde.getValintatapajonot.asScala.map(v => valintaesitys(HakukohdeOid(hakukohde.getOid), v)).toVector
+  }
+
+  private def valintaesitys(hakukohdeOid: HakukohdeOid, valintatapajono: Valintatapajono): Valintaesitys = {
+    Valintaesitys(
+      hakukohdeOid,
+      ValintatapajonoOid(valintatapajono.getOid),
+      Option(valintatapajono.getValintaesitysHyvaksytty).map(Boolean2boolean).collect {
+        case true => ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.of("Europe/Helsinki"))
+      }
+    )
   }
 
   private def getHenkiloOid(hakemus: Hakemus): String = {

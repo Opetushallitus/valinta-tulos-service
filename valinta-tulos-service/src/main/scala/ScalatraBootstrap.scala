@@ -143,6 +143,7 @@ class ScalatraBootstrap extends LifeCycle {
       context.mount(new HyvaksymiskirjeServlet(hyvaksymiskirjeService, valintarekisteriDb), "/auth/hyvaksymiskirje")
       context.mount(new LukuvuosimaksuServletWithCAS(lukuvuosimaksuService, valintarekisteriDb, hakuService, authorizer), "/auth/lukuvuosimaksu")
       context.mount(new MuutoshistoriaServlet(valinnantulosService, valintarekisteriDb), "/auth/muutoshistoria")
+      context.mount(new ValintaesitysServlet(new ValintaesitysService(hakuService, authorizer, valintarekisteriDb, valintarekisteriDb, audit), valintarekisteriDb), "/auth/valintaesitys")
     }
   }
 
