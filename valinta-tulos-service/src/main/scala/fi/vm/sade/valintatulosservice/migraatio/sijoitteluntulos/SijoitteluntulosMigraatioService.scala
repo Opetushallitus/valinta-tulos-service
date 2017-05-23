@@ -257,7 +257,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
   }
 
   private def getHakemuksenIlmoittautumiset(valintatulos: Valintatulos, henkiloOid: String, hakukohdeOid: HakukohdeOid, logEntriesLatestFirst: List[LogEntry]) = {
-    logEntriesLatestFirst.reverse.find(_.getMuutos.contains("ilmoittautuminen")).map { latestIlmoittautuminenLogEntry =>
+    logEntriesLatestFirst.reverse.find(_.getMuutos.contains("ilmoittautumisTila")).map { latestIlmoittautuminenLogEntry =>
       (henkiloOid, Ilmoittautuminen(hakukohdeOid, SijoitteluajonIlmoittautumistila(valintatulos.getIlmoittautumisTila),
         latestIlmoittautuminenLogEntry.getMuokkaaja, Option(latestIlmoittautuminenLogEntry.getSelite).getOrElse("")))
     }
