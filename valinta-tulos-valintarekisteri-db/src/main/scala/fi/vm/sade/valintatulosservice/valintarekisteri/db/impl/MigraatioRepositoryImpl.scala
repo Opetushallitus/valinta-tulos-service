@@ -4,7 +4,7 @@ import java.sql.{Connection, JDBCType, PreparedStatement, Timestamp}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MINUTES
 
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{MigraatioRepository, Valintaesitys}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{MigraatioRepository, Valintaesitys, MigratedIlmoittautuminen}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.dbio.DBIO
 import slick.driver.PostgresDriver.api._
@@ -32,7 +32,7 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
   override def storeBatch(valintaesitykset: Seq[Valintaesitys],
                           valinnantilat: Seq[(ValinnantilanTallennus, TilanViimeisinMuutos)],
                           valinnantuloksenOhjaukset: Seq[ValinnantuloksenOhjaus],
-                          ilmoittautumiset: Seq[(String, Ilmoittautuminen)],
+                          ilmoittautumiset: Seq[MigratedIlmoittautuminen],
                           ehdollisenHyvaksynnanEhdot: Seq[EhdollisenHyvaksynnanEhto],
                           hyvaksymisKirjeet: Seq[Hyvaksymiskirje]): DBIO[Unit] = {
     DBIO.seq(
@@ -70,7 +70,7 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
           })
           valinnantilat.foreach(v => createValinnantilaInsertRow(valinnantilaStatement.get, v._1, v._2))
           valinnantuloksenOhjaukset.foreach(o => createValinnantuloksenOhjausInsertRow(valinnantuloksenOhjausStatement.get, o))
-          ilmoittautumiset.foreach(i => createIlmoittautumisInsertRow(ilmoittautumisetStatement.get, i._1, i._2))
+          ilmoittautumiset.foreach(i => createIlmoittautumisInsertRow(ilmoittautumisetStatement.get, i))
           ehdollisenHyvaksynnanEhdot.foreach(e => createEhdollisenHyvaksynnanEhtoRow(ehdollisenHyvaksynnanEhtoStatement.get, e))
           hyvaksymisKirjeet.foreach(k => createHyvaksymiskirjeetRow(hyvaksymiskirjeStatement.get, k))
           valintaesityksetStatement.get.executeBatch()
@@ -221,7 +221,7 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
   private def createIlmoittautumisStatement = createStatement(
     // Set tansaction_id to -1 here so that we get the whole history.
     s"""insert into ilmoittautumiset (henkilo, hakukohde, tila, ilmoittaja, selite, transaction_id, system_time)
-        values (?, ?, ?::ilmoittautumistila, ?, ?, -1, tstzrange(now(), null, '[)'))
+        values (?, ?, ?::ilmoittautumistila, ?, ?, -1, tstzrange(?, null, '[)'))
         on conflict on constraint ilmoittautumiset_pkey do update
         set tila = excluded.tila,
           ilmoittaja = excluded.ilmoittaja,
@@ -230,12 +230,14 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
         where ilmoittautumiset.tila <> excluded.tila"""
   )
 
-  private def createIlmoittautumisInsertRow(statement: PreparedStatement, henkiloOid: String, ilmoittautuminen: Ilmoittautuminen) = {
+  private def createIlmoittautumisInsertRow(statement: PreparedStatement, migratedIlmoittautuminen: MigratedIlmoittautuminen) = {
+    val (henkiloOid, ilmoittautuminen, timestamp) = MigratedIlmoittautuminen.unapply(migratedIlmoittautuminen).get
     statement.setString(1, henkiloOid)
     statement.setString(2, ilmoittautuminen.hakukohdeOid.toString)
     statement.setString(3, ilmoittautuminen.tila.toString)
     statement.setString(4, ilmoittautuminen.muokkaaja)
     statement.setString(5, ilmoittautuminen.selite)
+    statement.setTimestamp(6, timestamp)
 
     statement.addBatch()
   }

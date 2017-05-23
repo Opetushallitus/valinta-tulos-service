@@ -129,9 +129,9 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
             valinnantuloksenOhjaus.copy(hyvaksyPeruuntunut = true)
           ),
           Seq(
-            (henkiloOid, ilmoittautuminen.copy(selite = "en kerro", tila = PoissaSyksy)),
-            (henkiloOid, ilmoittautuminen.copy(selite = "no kerron", tila = Lasna)),
-            (henkiloOid, ilmoittautuminen.copy(selite = "ehkä kerron", tila = PoissaSyksy))
+            MigratedIlmoittautuminen(henkiloOid, ilmoittautuminen.copy(selite = "en kerro", tila = PoissaSyksy), new Timestamp(System.currentTimeMillis())),
+            MigratedIlmoittautuminen(henkiloOid, ilmoittautuminen.copy(selite = "no kerron", tila = Lasna), new Timestamp(System.currentTimeMillis())),
+            MigratedIlmoittautuminen(henkiloOid, ilmoittautuminen.copy(selite = "ehkä kerron", tila = PoissaSyksy), new Timestamp(System.currentTimeMillis()))
           ),
           Seq(
             ehdollisenHyvaksynnanEhto.copy(ehdollisenHyvaksymisenEhtoFI = "hähäääää!"),
