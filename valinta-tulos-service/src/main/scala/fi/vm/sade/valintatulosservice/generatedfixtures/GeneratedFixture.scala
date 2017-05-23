@@ -29,7 +29,7 @@ class GeneratedFixture(haut: List[GeneratedHakuFixture] = List(new GeneratedHaku
     logger.info("Clearing...")
     hakemusFixtures.clear
     OhjausparametritFixtures.activeFixture = ohjausparametritFixture
-    MongoMockData.clear(sijoitteluContext.database)
+    //MongoMockData.clear(sijoitteluContext.database)
 
     logger.info("Iterating...")
 

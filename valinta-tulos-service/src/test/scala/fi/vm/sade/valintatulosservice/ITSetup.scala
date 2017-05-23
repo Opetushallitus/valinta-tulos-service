@@ -14,7 +14,7 @@ trait ITSetup {
   implicit val appConfig = new VtsAppConfig.IT
   implicit val dynamicAppConfig: VtsDynamicAppConfig = VtsAppConfig.MockDynamicAppConfig(näytetäänSiirryKelaanURL= true)
   val dbConfig = appConfig.settings.valintaRekisteriDbConfig
-  lazy val sijoitteluContext = new SijoitteluSpringContext(appConfig, SijoitteluSpringContext.createApplicationContext(appConfig))
+  lazy val sijoitteluContext = new SijoitteluSpringContext(appConfig, SijoitteluSpringContext.createApplicationContext(appConfig)) // TODO: don't use sijoitteluContext in MailPollerSpec
 
   lazy val singleConnectionValintarekisteriDb = new ValintarekisteriDb(
     dbConfig.copy(maxConnections = Some(1), minConnections = Some(1)))
@@ -23,7 +23,7 @@ trait ITSetup {
 
   lazy val hakemusFixtureImporter = HakemusFixtures()(appConfig)
 
-  lazy val sijoitteluFixtures = SijoitteluFixtures(sijoitteluContext.database, singleConnectionValintarekisteriDb)
+  lazy val sijoitteluFixtures = SijoitteluFixtures(singleConnectionValintarekisteriDb)
 
   def useFixture(fixtureName: String,
                  extraFixtureNames: List[String] = List(),

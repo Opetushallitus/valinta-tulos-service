@@ -1,6 +1,5 @@
 package fi.vm.sade.valintatulosservice.sijoittelu.fixture
 
-import com.mongodb.DB
 import fi.vm.sade.sijoittelu.tulos.testfixtures.MongoMockData
 import fi.vm.sade.valintatulosservice.json4sCustomFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
@@ -10,7 +9,7 @@ import org.json4s.jackson.JsonMethods._
 import org.springframework.core.io.ClassPathResource
 import slick.driver.PostgresDriver.api.{actionBasedSQLInterpolation, _}
 
-case class SijoitteluFixtures(db: DB, valintarekisteriDb : ValintarekisteriDb) extends json4sCustomFormats {
+case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends json4sCustomFormats {
 
   implicit val formats = DefaultFormats ++ List(
     new NumberLongSerializer)
@@ -20,11 +19,10 @@ case class SijoitteluFixtures(db: DB, valintarekisteriDb : ValintarekisteriDb) e
                     yhdenPaikanSaantoVoimassa: Boolean = false,
                     kktutkintoonJohtava: Boolean = false) {
     if (clear) {
-      clearFixtures
-      deleteAll()
+      clearFixtures()
     }
-    val tulokset = MongoMockData.readJson("fixtures/sijoittelu/" + fixtureName)
-    MongoMockData.insertData(db, tulokset)
+    //val tulokset = MongoMockData.readJson("fixtures/sijoittelu/" + fixtureName)
+    //MongoMockData.insertData(db, tulokset)
 
     importJsonFixturesToPostgres(fixtureName, yhdenPaikanSaantoVoimassa, kktutkintoonJohtava)
 
@@ -81,9 +79,10 @@ case class SijoitteluFixtures(db: DB, valintarekisteriDb : ValintarekisteriDb) e
     case "VASTAANOTTANUT_SITOVASTI" => Some(VastaanotaSitovasti)
   }
 
-  def clearFixtures {
-    MongoMockData.clear(db)
-    val base = MongoMockData.readJson("fixtures/sijoittelu/sijoittelu-basedata.json")
-    MongoMockData.insertData(db, base)
+  def clearFixtures() {
+    deleteAll()
+//    MongoMockData.clear(db)
+//    val base = MongoMockData.readJson("fixtures/sijoittelu/sijoittelu-basedata.json")
+//    MongoMockData.insertData(db, base)
   }
 }

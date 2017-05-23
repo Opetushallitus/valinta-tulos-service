@@ -18,6 +18,10 @@ import scala.util.{Failure, Success, Try}
 trait ValintarekisteriRaportointiService {
   def getSijoitteluAjo(sijoitteluajoId: Long): Option[SijoitteluAjo]
 
+  def latestSijoitteluAjoForHakukohde(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Option[SijoitteluAjo]
+
+  def latestSijoitteluAjoForHaku(hakuOid: HakuOid): Option[SijoitteluAjo]
+
   def hakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO]
 
   def hakemukset(sijoitteluAjo: SijoitteluAjo,
@@ -67,7 +71,8 @@ class ValintarekisteriRaportointiServiceImpl(sijoitteluRepository: HakijaReposit
     }
   }
 
-  //override def latestSijoitteluAjoForHakukohde(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Option[SijoitteluAjo] = ???
+  def latestSijoitteluAjoForHakukohde(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Option[SijoitteluAjo] = ???
+  def latestSijoitteluAjoForHaku(hakuOid: HakuOid): Option[SijoitteluAjo] = ???
 
   private def konvertoiHakijat(hyvaksytyt: Boolean, ilmanHyvaksyntaa: Boolean, vastaanottaneet: Boolean, hakukohdeOids: java.util.List[String], count: Integer, index: Integer, valintatulokset: java.util.List[Valintatulos], hakukohteet: java.util.List[Hakukohde]): HakijaPaginationObject = {
     def filter(hakija: HakijaDTO, hyvaksytyt: Boolean, ilmanHyvaksyntaa: Boolean, vastaanottaneet: Boolean, hakukohdeOids: java.util.List[String]): Boolean = {
