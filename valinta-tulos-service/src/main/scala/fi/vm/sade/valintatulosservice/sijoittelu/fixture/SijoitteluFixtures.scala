@@ -42,11 +42,6 @@ case class SijoitteluFixtures(db: DB, valintarekisteriDb : ValintarekisteriDb) e
 
   private def insertHakukohde(hakukohdeOid: String, hakuOid: String, sijoitteluajoId: Long, kaikkiJonotSijoiteltu: Boolean, yhdenPaikanSaantoVoimassa: Boolean, kktutkintoonJohtava: Boolean) = {
     valintarekisteriDb.storeHakukohde(HakukohdeRecord(HakukohdeOid(hakukohdeOid), HakuOid(hakuOid), yhdenPaikanSaantoVoimassa, kktutkintoonJohtava, Kevat(2016)))
-    valintarekisteriDb.runBlocking(
-      sqlu"""INSERT INTO sijoitteluajon_hakukohteet (sijoitteluajo_id, haku_oid, hakukohde_oid, kaikki_jonot_sijoiteltu)
-               VALUES (${sijoitteluajoId}, ${hakuOid}, ${hakukohdeOid}, ${kaikkiJonotSijoiteltu})
-               ON CONFLICT DO NOTHING"""
-    )
   }
 
   private val deleteFromVastaanotot = DBIO.seq(

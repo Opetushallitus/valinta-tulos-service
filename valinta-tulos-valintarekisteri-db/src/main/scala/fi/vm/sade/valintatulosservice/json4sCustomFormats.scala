@@ -46,4 +46,13 @@ trait json4sCustomFormats {
   }, {
     case x: ValinnantilanTarkenne => JString(x.tilankuvauksenTarkenne.toString)
   }))
+
+  def getCustomSerializers() =
+    List(
+      new NumberLongSerializer,
+      new TasasijasaantoSerializer,
+      new ValinnantilaSerializer,
+      new DateSerializer,
+      new TilankuvauksenTarkenneSerializer
+    )
 }

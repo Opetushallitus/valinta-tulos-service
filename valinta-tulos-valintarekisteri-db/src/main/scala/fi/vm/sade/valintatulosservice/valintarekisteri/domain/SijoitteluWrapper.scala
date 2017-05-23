@@ -7,7 +7,7 @@ import java.util.Date
 import fi.vm.sade.sijoittelu.domain.{Hakemus => SijoitteluHakemus, Tasasijasaanto => SijoitteluTasasijasaanto, _}
 import fi.vm.sade.valintatulosservice.json4sCustomFormats
 import org.apache.commons.lang3.BooleanUtils
-import org.json4s.DefaultFormats
+import org.json4s.{DefaultFormats, Formats}
 import org.json4s.JsonAST.{JArray, JValue}
 
 import scala.collection.JavaConverters._
@@ -21,17 +21,13 @@ object SijoitteluWrapper extends json4sCustomFormats {
     SijoitteluWrapper(sijoitteluajo, hakukohteet.asScala.toList, valintatulokset.asScala.toList)
   }
 
-  implicit val formats = DefaultFormats ++ List(
-    new NumberLongSerializer,
-    new TasasijasaantoSerializer,
-    new ValinnantilaSerializer,
-    new DateSerializer,
-    new TilankuvauksenTarkenneSerializer)
+  implicit val formats: Formats = DefaultFormats ++ Oids.getSerializers() ++ getCustomSerializers()
 
   def fromJson(json: JValue, tallennaHakukohteet: Boolean = true): SijoitteluWrapper = {
     val JArray(sijoittelut) = (json \ "Sijoittelu")
     val JArray(sijoitteluajot) = (sijoittelut(0) \ "sijoitteluajot")
-    val sijoitteluajo = sijoitteluajot(0).extract[SijoitteluWrapper].sijoitteluajo
+    val sijoitteluajoWrapper = sijoitteluajot(0).extract[SijoitteluajoWrapper]
+    val sijoitteluajo = sijoitteluajoWrapper.sijoitteluajo
 
     val JArray(jsonHakukohteet) = (json \ "Hakukohde")
     val hakukohteet: List[Hakukohde] = jsonHakukohteet.map(hakukohdeJson => {
