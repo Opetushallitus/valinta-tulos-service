@@ -6,7 +6,8 @@ import slick.dbio.DBIO
 
 trait MigraatioRepository extends ValintarekisteriRepository {
 
-  def storeBatch(valinnantilat: Seq[(ValinnantilanTallennus, TilanViimeisinMuutos)],
+  def storeBatch(valintaesitykset: Seq[Valintaesitys],
+                 valinnantilat: Seq[(ValinnantilanTallennus, TilanViimeisinMuutos)],
                  valinnantuloksenOhjaukset: Seq[ValinnantuloksenOhjaus],
                  ilmoittautumiset: Seq[(String, Ilmoittautuminen)],
                  ehdollisenHyvaksynnanEhdot: Seq[EhdollisenHyvaksynnanEhto],
