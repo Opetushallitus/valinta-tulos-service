@@ -308,6 +308,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
     valintatulokset
   }
 
+  @Deprecated //Ei käytetä/sivutusta ei käytetä
   def sijoittelunTulokset(hakuOid: HakuOid, sijoitteluajoId: String, hyvaksytyt: Option[Boolean], ilmanHyvaksyntaa: Option[Boolean], vastaanottaneet: Option[Boolean],
                           hakukohdeOid: Option[List[HakukohdeOid]], count: Option[Int], index: Option[Int]): HakijaPaginationObject = {
     val haunVastaanototByHakijaOid = timed("Fetch haun vastaanotot for haku: " + hakuOid, 1000) {

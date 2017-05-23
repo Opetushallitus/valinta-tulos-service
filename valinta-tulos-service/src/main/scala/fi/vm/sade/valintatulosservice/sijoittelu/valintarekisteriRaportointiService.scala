@@ -21,6 +21,7 @@ trait ValintarekisteriRaportointiService {
 
   def hakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO]
 
+  @Deprecated //sivutuksen (count/index) voi poistaa
   def hakemukset(sijoitteluAjo: SijoitteluAjo,
                  hyvaksytyt: Option[Boolean],
                  ilmanHyvaksyntaa: Option[Boolean],
@@ -56,6 +57,7 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
     }).toList.asJava
   }
 
+  @Deprecated //sivutuksen (count/index) voi poistaa
   override def hakemukset(sijoitteluAjo: SijoitteluAjo,
                           hyvaksytyt: Option[Boolean],
                           ilmanHyvaksyntaa: Option[Boolean],
@@ -115,6 +117,7 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
             ((!hyvaksytyt || isHyvaksytty) && (!ilmanHyvaksyntaa || !isHyvaksytty) && (!vastaanottaneet || isVastaanottanut))
         }
 
+    @Deprecated //sivutusta ei käytetä mistään?
     def applyPagination(result: java.util.List[HakijaDTO], count: Integer, index: Integer): java.util.List[HakijaDTO] = {
       if (index != null && count != null) {
         result.subList(index, Math.min(index + count, result.size))
