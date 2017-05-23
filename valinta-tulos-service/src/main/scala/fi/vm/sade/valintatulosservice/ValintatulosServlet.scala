@@ -113,6 +113,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     ilmoittautumisService.ilmoittaudu(hakemusOid, ilmoittautuminen)
   }
 
+  @Deprecated //Ei käytetä mistään? Jos tarvitaan hyväksymis/jälkiohjauskirjeitä varten, sivutuksen voi kuitenkin poistaa
   lazy val getHaunSijoitteluajonTuloksetSwagger: OperationBuilder = (apiOperation[Unit]("getHaunSijoitteluajonTuloksetSwagger")
     summary """Sivutettu listaus hakemuksien/hakijoiden listaukseen. Yksityiskohtainen listaus kaikista hakutoiveista ja niiden valintatapajonoista"""
     parameter pathParam[String]("hakuOid").description("Haun oid").required
