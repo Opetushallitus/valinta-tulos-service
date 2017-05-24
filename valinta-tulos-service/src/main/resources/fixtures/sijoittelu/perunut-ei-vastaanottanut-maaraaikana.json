@@ -89,7 +89,8 @@
                 "FI": "Peruuntunut, ei vastaanottanut määräaikana",
                 "SV": "Annullerad, har inte tagit emot platsen inom utsatt tid",
                 "EN": "Cancelled, has not confirmed the study place within the deadline"
-              }
+              },
+              "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
             }
           ]
         }
@@ -135,7 +136,8 @@
                   "tila": "HYLATTY"
                 }
               ],
-              "hyvaksyttyHarkinnanvaraisesti": false
+              "hyvaksyttyHarkinnanvaraisesti": false,
+              "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
             }
           ]
         }

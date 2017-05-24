@@ -79,7 +79,8 @@
                   "tila": "VARALLA"
                 }
               ],
-              "hyvaksyttyHarkinnanvaraisesti": false
+              "hyvaksyttyHarkinnanvaraisesti": false,
+              "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
             }
           ]
         }
@@ -133,7 +134,8 @@
                   "tila": "HYVAKSYTTY"
                 }
               ],
-              "hyvaksyttyHarkinnanvaraisesti": false
+              "hyvaksyttyHarkinnanvaraisesti": false,
+              "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
             }
           ]
         }

@@ -88,7 +88,8 @@
                 "FI": "Testi",
                 "SV": "Testi",
                 "EN": "Testi"
-              }
+              },
+              "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
             }
           ]
         }

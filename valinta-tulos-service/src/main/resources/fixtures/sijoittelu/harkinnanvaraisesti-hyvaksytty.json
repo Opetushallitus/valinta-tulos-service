@@ -83,7 +83,8 @@
                   "tila": "HYVAKSYTTY"
                 }
               ],
-              "hyvaksyttyHarkinnanvaraisesti": true
+              "hyvaksyttyHarkinnanvaraisesti": true,
+              "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
             }
           ]
         }

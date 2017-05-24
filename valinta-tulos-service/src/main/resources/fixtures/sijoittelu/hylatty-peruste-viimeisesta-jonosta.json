@@ -80,7 +80,8 @@
                 "FI": "Ensimmäinen jono",
                 "SV": "Ensimmäinen jono sv",
                 "EN": "Ensimmäinen jono en"
-              }
+              },
+              "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
             }
           ]
         },
@@ -117,7 +118,8 @@
                 "FI": "Toinen jono",
                 "SV": "Toinen jono sv",
                 "EN": "Toinen jono en"
-              }
+              },
+              "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
             }
           ]
         }

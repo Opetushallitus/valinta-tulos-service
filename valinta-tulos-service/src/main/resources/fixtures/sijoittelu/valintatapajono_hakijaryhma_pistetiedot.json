@@ -111,7 +111,8 @@
                 }
               ],
               "varasijanNumero": 1,
-              "hyvaksyttyHakijaryhmasta": false
+              "hyvaksyttyHakijaryhmasta": false,
+              "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
             }
           ]
         }
