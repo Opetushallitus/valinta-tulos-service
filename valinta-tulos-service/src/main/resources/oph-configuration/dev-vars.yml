@@ -10,3 +10,4 @@ valintatulosservice_ilmoittautuminen_enabled: true
 valintatulosservice_parseleniently_tarjonta: false
 valintatulosservice_parseleniently_sijoitteluajontulos: false
 oili_hetuton_url: "/oiliHetuton/"
+read_from_valintarekisteri: false
