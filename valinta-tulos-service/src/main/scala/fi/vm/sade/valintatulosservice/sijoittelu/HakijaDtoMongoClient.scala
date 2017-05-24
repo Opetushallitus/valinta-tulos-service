@@ -9,13 +9,14 @@ import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 /**
   * Fetches HakijaDTOs directly from mongodb database
   */
 class HakijaDtoMongoClient(appConfig: VtsAppConfig) extends StreamingHakijaDtoClient(appConfig) with Logging {
   private val raportointiService = appConfig.sijoitteluContext.raportointiService
 
-  override def processSijoittelunTulokset[T](hakuOid: String, sijoitteluajoId: String, processor: HakijaDTO => T): Unit = {
+  override def processSijoittelunTulokset[T](hakuOid: HakuOid, sijoitteluajoId: String, processor: HakijaDTO => T): Unit = {
     val sijoitteluAjo: Optional[SijoitteluAjo] =
       Timer.timed(s"${getClass.getSimpleName}: Retrieve sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
         getSijoitteluAjo(sijoitteluajoId, hakuOid)
@@ -28,7 +29,7 @@ class HakijaDtoMongoClient(appConfig: VtsAppConfig) extends StreamingHakijaDtoCl
     }
   }
 
-  private def processHakijat[T](hakuOid: String, sijoitteluAjo: SijoitteluAjo, processor: (HakijaDTO) => Any) = {
+  private def processHakijat[T](hakuOid: HakuOid, sijoitteluAjo: SijoitteluAjo, processor: (HakijaDTO) => Any) = {
     val sijoitteluajoId = sijoitteluAjo.getSijoitteluajoId
     val hakijat: util.List[HakijaDTO] = Timer.timed(
       s"Run raportointiService query for hakemukset of $sijoitteluajoId of $hakuOid") {
@@ -50,10 +51,10 @@ class HakijaDtoMongoClient(appConfig: VtsAppConfig) extends StreamingHakijaDtoCl
     }
   }
 
-  private def getSijoitteluAjo(sijoitteluajoId: String, hakuOid: String): Optional[SijoitteluAjo] = {
+  private def getSijoitteluAjo(sijoitteluajoId: String, hakuOid: HakuOid): Optional[SijoitteluAjo] = {
     try {
       if ("latest" == sijoitteluajoId) {
-        raportointiService.cachedLatestSijoitteluAjoForHaku(hakuOid)
+        raportointiService.cachedLatestSijoitteluAjoForHaku(hakuOid.toString)
       } else {
         raportointiService.getSijoitteluAjo(sijoitteluajoId.toLong)
       }
