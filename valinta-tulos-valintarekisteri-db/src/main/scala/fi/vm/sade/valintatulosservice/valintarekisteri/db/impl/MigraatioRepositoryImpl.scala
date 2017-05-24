@@ -386,7 +386,7 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
       ("create tmp table jono_oids_to_delete", sqlu"create temporary table jono_oids_to_delete (oid character varying primary key) on commit drop"),
       ("populate hakukohde_oids_to_delete", sqlu"""insert into hakukohde_oids_to_delete (
                select distinct sa_hk.hakukohde_oid from sijoitteluajon_hakukohteet sa_hk where sa_hk.sijoitteluajo_id = ${sijoitteluajoId})"""),
-      ("populate jono_oids_to_delete", sqlu"insert into jono_oids_to_delete (select distinct j.oid from valintatapajonot j join hakukohde_oids_to_delete hotd on hotd.oid = j.hakukohde_oid)"),
+      ("populate jono_oids_to_delete", sqlu"insert into jono_oids_to_delete (select distinct j.oid from valintatapajonot j join hakukohde_oids_to_delete hotd on hotd.oid = j.hakukohde_oid where j.sijoitteluajo_id = ${sijoitteluajoId})"),
 
       ("delete hakijaryhman_hakemukset", sqlu"delete from hakijaryhman_hakemukset where sijoitteluajo_id = ${sijoitteluajoId}"),
       ("delete hakijaryhmat", sqlu"delete from hakijaryhmat where sijoitteluajo_id = ${sijoitteluajoId}"),
