@@ -15,7 +15,7 @@ class ValintarekisteriRaportointiServiceSpec extends ITSpecification with Valint
   step(deleteAll())
 
   lazy val raportointiService = new ValintarekisteriRaportointiServiceImpl(singleConnectionValintarekisteriDb, new ValintarekisteriValintatulosDaoImpl(singleConnectionValintarekisteriDb))
-  lazy val client = new ValintarekisteriSijoittelunTulosClientImpl(singleConnectionValintarekisteriDb, singleConnectionValintarekisteriDb)
+  lazy val client = new ValintarekisteriSijoittelunTulosClientImpl(singleConnectionValintarekisteriDb)
 
   step(createSijoitteluajoHaulle2)
   step(createHakujen1Ja2ValinnantuloksetIlmanSijoittelua)
