@@ -162,9 +162,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   }
 
   override def getValinnantuloksetForHaku(hakuOid: HakuOid): DBIO[Set[Valinnantulos]] = {
-      sql"""with haun_hakukohteet as (
-                select hakukohde_oid from hakukohteet where haku_oid = ${hakuOid}
-            ) select ti.hakukohde_oid,
+      sql"""select ti.hakukohde_oid,
                 ti.valintatapajono_oid,
                 ti.hakemus_oid,
                 ti.henkilo_oid,
@@ -180,16 +178,16 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                 v.action,
                 i.tila
             from valinnantilat as ti
-            inner join haun_hakukohteet as hk on hk.hakukohde_oid = ti.hakukohde_oid
-            left join valinnantulokset as tu on tu.hakemus_oid = ti.hakemus_oid
-                and tu.valintatapajono_oid = ti.valintatapajono_oid
-            left join vastaanotot as v on v.hakukohde = tu.hakukohde_oid
+            join hakukohteet hk on ti.hakukohde_oid = hk.hakukohde_oid and hk.haku_oid = ${hakuOid}
+            left join valinnantulokset as tu on tu.valintatapajono_oid = ti.valintatapajono_oid
+                and tu.hakemus_oid = ti.hakemus_oid
+            left join vastaanotot as v on v.hakukohde = hk.hakukohde_oid
                 and v.henkilo = ti.henkilo_oid and v.deleted is null
-            left join ehdollisen_hyvaksynnan_ehto as eh on eh.hakemus_oid = ti.hakemus_oid
-                and eh.valintatapajono_oid = ti.valintatapajono_oid
-            left join ilmoittautumiset as i on i.hakukohde = tu.hakukohde_oid
-                and i.henkilo = ti.henkilo_oid""".as[Valinnantulos].map(_.toSet)
-  }
+            left join ehdollisen_hyvaksynnan_ehto as eh on eh.valintatapajono_oid = ti.valintatapajono_oid
+                and eh.hakemus_oid = ti.hakemus_oid
+            left join ilmoittautumiset as i on i.henkilo = ti.henkilo_oid
+                and i.hakukohde = ti.hakukohde_oid""".as[Valinnantulos].map(_.toSet)
+    }
 
   override def getLastModifiedForHakukohde(hakukohdeOid: HakukohdeOid): DBIO[Option[Instant]] = {
     sql"""select greatest(max(lower(ti.system_time)), max(lower(tu.system_time)), max(lower(il.system_time)),
