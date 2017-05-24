@@ -41,7 +41,7 @@
       },
       "className": "fi.vm.sade.sijoittelu.domain.Hakukohde",
       "sijoitteluajoId": {
-        "$numberLong": "1409055160622"
+        "$numberLong": "1409055160621"
       },
       "oid": "1.2.246.562.20.99933864235",
       "tarjoajaOid": "1.2.246.562.10.12565036949",
