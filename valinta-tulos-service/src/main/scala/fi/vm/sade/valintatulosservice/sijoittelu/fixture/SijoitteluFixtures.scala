@@ -33,9 +33,12 @@ case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends js
                                            kktutkintoonJohtava: Boolean = false): Unit = {
 
     val json = parse(scala.io.Source.fromInputStream(new ClassPathResource("fixtures/sijoittelu/" + fixtureName).getInputStream).mkString)
-    val wrapper = SijoitteluWrapper.fromJson(json)
-    wrapper.hakukohteet.foreach(h => insertHakukohde(h.getOid, wrapper.sijoitteluajo.getHakuOid, wrapper.sijoitteluajo.getSijoitteluajoId, h.isKaikkiJonotSijoiteltu, yhdenPaikanSaantoVoimassa, kktutkintoonJohtava))
-    valintarekisteriDb.storeSijoittelu(wrapper)
+    SijoitteluWrapper.fromJson(json) match {
+      case Some(wrapper) =>
+        wrapper.hakukohteet.foreach(h => insertHakukohde(h.getOid, wrapper.sijoitteluajo.getHakuOid, wrapper.sijoitteluajo.getSijoitteluajoId, h.isKaikkiJonotSijoiteltu, yhdenPaikanSaantoVoimassa, kktutkintoonJohtava))
+        valintarekisteriDb.storeSijoittelu(wrapper)
+      case None =>
+    }
   }
 
   private def insertHakukohde(hakukohdeOid: String, hakuOid: String, sijoitteluajoId: Long, kaikkiJonotSijoiteltu: Boolean, yhdenPaikanSaantoVoimassa: Boolean, kktutkintoonJohtava: Boolean) = {

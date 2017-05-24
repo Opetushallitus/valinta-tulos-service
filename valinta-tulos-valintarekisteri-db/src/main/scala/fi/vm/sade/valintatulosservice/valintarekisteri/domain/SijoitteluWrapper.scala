@@ -23,53 +23,57 @@ object SijoitteluWrapper extends json4sCustomFormats {
 
   implicit val formats: Formats = DefaultFormats ++ Oids.getSerializers() ++ getCustomSerializers()
 
-  def fromJson(json: JValue, tallennaHakukohteet: Boolean = true): SijoitteluWrapper = {
+  def fromJson(json: JValue): Option[SijoitteluWrapper] = {
     val JArray(sijoittelut) = (json \ "Sijoittelu")
-    val JArray(sijoitteluajot) = (sijoittelut(0) \ "sijoitteluajot")
-    val sijoitteluajoWrapper = sijoitteluajot(0).extract[SijoitteluajoWrapper]
-    val sijoitteluajo = sijoitteluajoWrapper.sijoitteluajo
+    if (sijoittelut.size < 1) {
+       None
+    } else {
+      val JArray(sijoitteluajot) = (sijoittelut(0) \ "sijoitteluajot")
+      val sijoitteluajoWrapper = sijoitteluajot(0).extract[SijoitteluajoWrapper]
+      val sijoitteluajo = sijoitteluajoWrapper.sijoitteluajo
 
-    val JArray(jsonHakukohteet) = (json \ "Hakukohde")
-    val hakukohteet: List[Hakukohde] = jsonHakukohteet.map(hakukohdeJson => {
-      val hakukohde = hakukohdeJson.extract[SijoitteluajonHakukohdeWrapper].hakukohde
-      hakukohde.setValintatapajonot({
-        val JArray(valintatapajonot) = (hakukohdeJson \ "valintatapajonot")
-        valintatapajonot.map(valintatapajono => {
-          val valintatapajonoExt = valintatapajono.extract[SijoitteluajonValintatapajonoWrapper].valintatapajono
-          val JArray(hakemukset) = (valintatapajono \ "hakemukset")
-          valintatapajonoExt.setHakemukset(hakemukset.map(hakemus => {
-            val hakemusExt = hakemus.extract[SijoitteluajonHakemusWrapper].hakemus
-            (hakemus \ "pistetiedot") match {
-              case JArray(pistetiedot) => hakemusExt.setPistetiedot(pistetiedot.map(pistetieto => pistetieto.extract[SijoitteluajonPistetietoWrapper].pistetieto).asJava)
-              case _ =>
-            }
-            hakemusExt
-          }).asJava)
-          valintatapajonoExt
-        }).asJava
+      val JArray(jsonHakukohteet) = (json \ "Hakukohde")
+      val hakukohteet: List[Hakukohde] = jsonHakukohteet.map(hakukohdeJson => {
+        val hakukohde = hakukohdeJson.extract[SijoitteluajonHakukohdeWrapper].hakukohde
+        hakukohde.setValintatapajonot({
+          val JArray(valintatapajonot) = (hakukohdeJson \ "valintatapajonot")
+          valintatapajonot.map(valintatapajono => {
+            val valintatapajonoExt = valintatapajono.extract[SijoitteluajonValintatapajonoWrapper].valintatapajono
+            val JArray(hakemukset) = (valintatapajono \ "hakemukset")
+            valintatapajonoExt.setHakemukset(hakemukset.map(hakemus => {
+              val hakemusExt = hakemus.extract[SijoitteluajonHakemusWrapper].hakemus
+              (hakemus \ "pistetiedot") match {
+                case JArray(pistetiedot) => hakemusExt.setPistetiedot(pistetiedot.map(pistetieto => pistetieto.extract[SijoitteluajonPistetietoWrapper].pistetieto).asJava)
+                case _ =>
+              }
+              hakemusExt
+            }).asJava)
+            valintatapajonoExt
+          }).asJava
+        })
+        (hakukohdeJson \ "hakijaryhmat") match {
+          case JArray(hakijaryhmat) => hakukohde.setHakijaryhmat(hakijaryhmat.map(hakijaryhma => hakijaryhma.extract[SijoitteluajonHakijaryhmaWrapper].hakijaryhma).asJava)
+          case _ =>
+        }
+        hakukohde
       })
-      (hakukohdeJson \ "hakijaryhmat") match {
-        case JArray(hakijaryhmat) => hakukohde.setHakijaryhmat(hakijaryhmat.map(hakijaryhma => hakijaryhma.extract[SijoitteluajonHakijaryhmaWrapper].hakijaryhma).asJava)
-        case _ =>
-      }
-      hakukohde
-    })
 
-    val JArray(jsonValintatulokset) = (json \ "Valintatulos")
-    val valintatulokset: List[Valintatulos] = jsonValintatulokset.map(valintaTulos => {
-      val tulos = valintaTulos.extract[SijoitteluajonValinnantulosWrapper].valintatulos
-      (valintaTulos \ "logEntries") match {
-        case JArray(entries) => tulos.setOriginalLogEntries(entries.map(e => e.extract[LogEntryWrapper].entry).asJava)
-        case _ =>
-      }
-      tulos.setMailStatus((valintaTulos \ "mailStatus").extract[MailStatusWrapper].status)
-      tulos
-    })
+      val JArray(jsonValintatulokset) = (json \ "Valintatulos")
+      val valintatulokset: List[Valintatulos] = jsonValintatulokset.map(valintaTulos => {
+        val tulos = valintaTulos.extract[SijoitteluajonValinnantulosWrapper].valintatulos
+        (valintaTulos \ "logEntries") match {
+          case JArray(entries) => tulos.setOriginalLogEntries(entries.map(e => e.extract[LogEntryWrapper].entry).asJava)
+          case _ =>
+        }
+        tulos.setMailStatus((valintaTulos \ "mailStatus").extract[MailStatusWrapper].status)
+        tulos
+      })
 
-    val wrapper: SijoitteluWrapper = SijoitteluWrapper(sijoitteluajo, hakukohteet.filter(h => {
-      h.getSijoitteluajoId.equals(sijoitteluajo.getSijoitteluajoId)
-    }), valintatulokset)
-    wrapper
+      val wrapper: SijoitteluWrapper = SijoitteluWrapper(sijoitteluajo, hakukohteet.filter(h => {
+        h.getSijoitteluajoId.equals(sijoitteluajo.getSijoitteluajoId)
+      }), valintatulokset)
+      Some(wrapper)
+    }
   }
 }
 

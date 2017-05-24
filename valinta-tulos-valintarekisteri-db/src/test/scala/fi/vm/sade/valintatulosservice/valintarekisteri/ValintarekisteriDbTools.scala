@@ -285,11 +285,14 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
 
   def loadSijoitteluFromFixture(fixture: String, path: String = "sijoittelu/", tallennaHakukohteet: Boolean = true):SijoitteluWrapper = {
     val json = parse(getClass.getClassLoader.getResourceAsStream("fixtures/" + path + fixture + ".json"))
-    val sijoitteluWrapper = SijoitteluWrapper.fromJson(json)
-    if (tallennaHakukohteet) {
-      sijoitteluWrapper.hakukohteet.foreach(h => insertHakukohde(HakukohdeOid(h.getOid), HakuOid(sijoitteluWrapper.sijoitteluajo.getHakuOid)))
+    SijoitteluWrapper.fromJson(json) match {
+      case Some(wrapper) =>
+        if (tallennaHakukohteet) {
+          wrapper.hakukohteet.foreach(h => insertHakukohde(HakukohdeOid(h.getOid), HakuOid(wrapper.sijoitteluajo.getHakuOid)))
+        }
+        wrapper
+      case None => throw new IllegalArgumentException("Could not get SijoitteluWrapper: no sijoittelus.")
     }
-    sijoitteluWrapper
   }
 
   private implicit val getSijoitteluajoResult = GetResult(r => {
