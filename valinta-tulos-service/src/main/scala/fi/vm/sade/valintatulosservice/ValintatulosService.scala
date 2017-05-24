@@ -551,7 +551,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
   private def asetaKelaURL(tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]): List[Hakutoiveentulos] = {
     val hakukierrosEiOlePäättynyt = !(ohjausparametrit.flatMap(_.hakukierrosPaattyy).map(_.isBefore(DateTime.now())).getOrElse(false))
     val näytetäänSiirryKelaanURL = dynamicAppConfig.näytetäänSiirryKelaanURL
-    val näytetäänKelaURL = if (hakukierrosEiOlePäättynyt&&näytetäänSiirryKelaanURL) Some(appConfig.settings.kelaURL) else None
+    val näytetäänKelaURL = if (hakukierrosEiOlePäättynyt&&näytetäänSiirryKelaanURL&&haku.sallittuKohdejoukkoKelaLinkille) Some(appConfig.settings.kelaURL) else None
 
     tulokset.map {
       case tulos if vastaanottanut == tulos.vastaanottotila =>
