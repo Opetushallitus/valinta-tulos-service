@@ -47,7 +47,7 @@ class ScalatraBootstrap extends LifeCycle {
 
     val migrationMode = isTrue(System.getProperty("valinta-rekisteri-migration-mode"))
     val scheduledMigration = isTrue(System.getProperty("valinta-rekisteri-scheduled-migration"))
-    val initMongoContext = appConfig.settings.useSijoitteluMongo
+    val initMongoContext = !appConfig.settings.readFromValintarekisteri
     if((migrationMode || scheduledMigration) && !initMongoContext) {
       throw new RuntimeException("Migraatio-moodia voi käyttää vain Sijoittelun Mongon kanssa.")
     }
