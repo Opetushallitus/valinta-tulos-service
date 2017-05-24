@@ -12,7 +12,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 
 trait ITSetup {
   implicit val appConfig = new VtsAppConfig.IT
-  implicit val dynamicAppConfig: VtsDynamicAppConfig = VtsAppConfig.MockDynamicAppConfig(näytetäänSiirryKelaanURL= true)
+  implicit val dynamicAppConfig: VtsDynamicAppConfig = VtsAppConfig.MockDynamicAppConfig()
   val dbConfig = appConfig.settings.valintaRekisteriDbConfig
   lazy val sijoitteluContext = new SijoitteluSpringContext(appConfig, SijoitteluSpringContext.createApplicationContext(appConfig)) // TODO: don't use sijoitteluContext in MailPollerSpec
 
@@ -36,8 +36,8 @@ trait ITSetup {
                 ) {
 
     sijoitteluFixtures.importFixture(fixtureName, clear = clearFixturesInitially, yhdenPaikanSaantoVoimassa = yhdenPaikanSaantoVoimassa, kktutkintoonJohtava = kktutkintoonJohtava)
-    extraFixtureNames.map(fixtureName =>
-      sijoitteluFixtures.importFixture(fixtureName, clear = false, yhdenPaikanSaantoVoimassa = yhdenPaikanSaantoVoimassa, kktutkintoonJohtava = kktutkintoonJohtava)
+    extraFixtureNames.foreach(fixtureName =>
+      sijoitteluFixtures.importFixture(fixtureName, yhdenPaikanSaantoVoimassa = yhdenPaikanSaantoVoimassa, kktutkintoonJohtava = kktutkintoonJohtava)
     )
 
     OhjausparametritFixtures.activeFixture = ohjausparametritFixture
