@@ -129,7 +129,10 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   }
 
   override def getValinnantuloksetForValintatapajono(valintatapajonoOid: ValintatapajonoOid): DBIO[Set[Valinnantulos]] = {
-    sql"""select ti.hakukohde_oid,
+    sql"""with jonon_hakukohde as (select hakukohde_oid
+              from valintaesitykset
+              where valintatapajono_oid = $valintatapajonoOid
+          ) select ti.hakukohde_oid,
               ti.valintatapajono_oid,
               ti.hakemus_oid,
               ti.henkilo_oid,
@@ -149,9 +152,10 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               and eh.valintatapajono_oid = ti.valintatapajono_oid
           left join valinnantulokset as tu on tu.hakemus_oid = ti.hakemus_oid
               and tu.valintatapajono_oid = ti.valintatapajono_oid
-          left join vastaanotot as v on v.hakukohde = tu.hakukohde_oid
-              and v.henkilo = ti.henkilo_oid and v.deleted is null
-          left join ilmoittautumiset as i on i.hakukohde = tu.hakukohde_oid
+          left join vastaanotot as v on v.hakukohde = (select * from jonon_hakukohde)
+              and v.henkilo = ti.henkilo_oid
+              and v.deleted is null
+          left join ilmoittautumiset as i on i.hakukohde = (select * from jonon_hakukohde)
               and i.henkilo = ti.henkilo_oid
           where ti.valintatapajono_oid = ${valintatapajonoOid}
        """.as[Valinnantulos].map(_.toSet)
