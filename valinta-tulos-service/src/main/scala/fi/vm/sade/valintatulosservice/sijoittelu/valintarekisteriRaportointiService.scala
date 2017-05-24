@@ -21,6 +21,8 @@ trait ValintarekisteriRaportointiService {
 
   def hakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO]
 
+  def hakemukset(sijoitteluAjo: SijoitteluAjo):HakijaPaginationObject = hakemukset(sijoitteluAjo, None, None, None, None, None, None)
+
   @Deprecated //sivutuksen (count/index) voi poistaa
   def hakemukset(sijoitteluAjo: SijoitteluAjo,
                  hyvaksytyt: Option[Boolean],
