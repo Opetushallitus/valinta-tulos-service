@@ -433,7 +433,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
     }
 
     try {
-      if (appConfig.settings.hakuOidsToLoadDirectlyFromMongo.contains(hakuOid)) {
+      if (appConfig.settings.hakuOidsToLoadDirectlyFromMongo.contains(hakuOid.toString)) {
         logger.info(s"Exceptionally fetching HakijaDTOs directly from database for haku: $hakuOid")
         hakijaDtoMongoClient.processSijoittelunTulokset(hakuOid, sijoitteluajoId, processor)
       } else {
