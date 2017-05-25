@@ -32,6 +32,8 @@ object HakijaResolver {
       override def findPersonByHetu(hetu: String, timeout: Duration): Option[Henkilo] = hetu match {
         case "face-beef" =>
           Some(Henkilo("1.2.3.4", "face-beef", "Test", "Henkilo"))
+        case "090121-321C" =>
+          Some(Henkilo("1.2.246.562.24.26463409086", "090121-321C", "Vili", "Rossi"))
         case _ =>
           None
       }

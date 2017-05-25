@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.production
 
 import java.io.File
 
-import fi.vm.sade.utils.cas._
+import fi.vm.sade.security.VtsAuthenticatingClient
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import org.apache.commons.io.FileUtils
