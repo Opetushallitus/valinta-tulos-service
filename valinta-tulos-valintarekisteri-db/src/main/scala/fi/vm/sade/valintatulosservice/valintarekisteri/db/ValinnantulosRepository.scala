@@ -72,7 +72,7 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
       case Left(error) => throw error
     }
 
-  def getValinnantuloksetAndReadTimeForHaku(hakuOid: HakuOid, timeout:Duration = Duration(4, TimeUnit.SECONDS)):(Instant, Set[Valinnantulos]) = {
+  def getValinnantuloksetAndReadTimeForHaku(hakuOid: HakuOid, timeout:Duration = Duration(30, TimeUnit.SECONDS)):(Instant, Set[Valinnantulos]) = {
     runBlockingTransactionally(
       now().zip(getValinnantuloksetForHaku(hakuOid)), timeout = timeout
     ) match {
