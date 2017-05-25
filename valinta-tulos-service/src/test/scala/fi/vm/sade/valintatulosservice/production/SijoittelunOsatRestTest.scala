@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.production
 
-import fi.vm.sade.utils.cas.VtsAuthenticatingClient
+import fi.vm.sade.security.VtsAuthenticatingClient
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import org.junit.Ignore
