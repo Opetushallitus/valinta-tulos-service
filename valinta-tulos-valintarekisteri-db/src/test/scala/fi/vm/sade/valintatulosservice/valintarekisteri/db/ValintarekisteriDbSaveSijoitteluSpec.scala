@@ -4,16 +4,15 @@ import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, SijoitteluAjo}
+import fi.vm.sade.sijoittelu.domain.HakemuksenTila
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
+import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import jdk.nashorn.internal.ir.annotations.Ignore
+import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.BeforeAfterExample
-import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import slick.driver.PostgresDriver.api.actionBasedSQLInterpolation
 import slick.jdbc.GetResult
 
@@ -147,6 +146,49 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
       List(true, false).diff(readJulkaistavissa()) mustEqual List()
     }
+    "not update existing valinnantulos if valintatulos not updated in sijoitteluajo" in {
+      val wrapper = loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")
+      singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
+
+      readTable("valinnantulokset_history").size mustEqual 0
+      readTable("valinnantulokset").size mustEqual 1
+
+      singleConnectionValintarekisteriDb.runBlocking(
+        sqlu"""update valinnantulokset
+               set julkaistavissa = true, hyvaksytty_varasijalta = true
+               where hakemus_oid = ${hakemusOid}""")
+      readTable("valinnantulokset_history").size mustEqual 1
+
+      val newSijoitteluajoWrapper = wrapper.copy(valintatulokset = Nil)
+      incrementSijoitteluajoId(newSijoitteluajoWrapper)
+      singleConnectionValintarekisteriDb.storeSijoittelu(newSijoitteluajoWrapper)
+
+      val flagsFromDb = singleConnectionValintarekisteriDb.runBlocking(
+        sql"""select julkaistavissa, hyvaksytty_varasijalta
+              from valinnantulokset where hakemus_oid = ${hakemusOid}""".as[(Boolean, Boolean)])
+      flagsFromDb must haveSize(1)
+      flagsFromDb.head mustEqual (true, true)
+
+      readTable("valinnantulokset_history").size mustEqual 1
+      readTable("valinnantulokset").size mustEqual 1
+
+      incrementSijoitteluajoId(newSijoitteluajoWrapper)
+      singleConnectionValintarekisteriDb.storeSijoittelu(newSijoitteluajoWrapper)
+      val flagsFromDbAfterSecondSave = singleConnectionValintarekisteriDb.runBlocking(
+        sql"""select julkaistavissa, hyvaksytty_varasijalta
+              from valinnantulokset where hakemus_oid = ${hakemusOid}""".as[(Boolean, Boolean)])
+
+      flagsFromDbAfterSecondSave must haveSize(1)
+      flagsFromDbAfterSecondSave.head mustEqual (true, true)
+      readTable("valinnantulokset_history").size mustEqual 1
+      readTable("valinnantulokset").size mustEqual 1
+    }
+  }
+
+  private def incrementSijoitteluajoId(newSijoitteluajoWrapper: SijoitteluWrapper) = {
+    val newSijoitteluajoId = newSijoitteluajoWrapper.sijoitteluajo.getSijoitteluajoId + 1
+    newSijoitteluajoWrapper.sijoitteluajo.setSijoitteluajoId(newSijoitteluajoId)
+    newSijoitteluajoWrapper.hakukohteet.foreach(_.setSijoitteluajoId(newSijoitteluajoId))
   }
 
   override protected def before: Unit = {
