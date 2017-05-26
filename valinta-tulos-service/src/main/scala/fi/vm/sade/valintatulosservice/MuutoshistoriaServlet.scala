@@ -31,8 +31,8 @@ class MuutoshistoriaServlet(valinnantulosService: ValinnantulosService,
     )
   get("/", operation(muutoshistoriaSwagger)) {
     contentType = formats("json")
-    if(skipAuditForServiceCall) {
-      implicit val authenticated = authenticate
+    implicit val authenticated = authenticate
+    if (skipAuditForServiceCall) {
       authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
     }
     val valintatapajonoOid = parseValintatapajonoOid.fold(throw _, o => o)
