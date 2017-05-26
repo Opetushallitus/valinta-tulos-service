@@ -16,10 +16,13 @@ import org.apache.log4j.{LogManager, PatternLayout, WriterAppender}
 import org.json4s.DefaultFormats
 import org.json4s.native.JsonMethods._
 import org.json4s.native.Serialization._
+import org.junit.runner.RunWith
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.model.{HttpRequest, HttpResponse}
+import org.specs2.runner.JUnitRunner
 import org.specs2.specification.{AfterEach, BeforeEach}
 
+@RunWith(classOf[JUnitRunner])
 class ValinnantulosIntegrationSpec extends ServletSpecification with ValintarekisteriDbTools with BeforeEach with AfterEach {
 
   override implicit val formats = DefaultFormats ++ List(
@@ -105,7 +108,12 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
   private def hae(valinnantulos: Option[Valinnantulos], valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, session: String) = {
     get(s"auth/valinnan-tulos?valintatapajonoOid=$valintatapajonoOid", Seq.empty, Map("Cookie" -> s"session=$session")) {
       status must_== 200
-      parse(body).extract[List[Valinnantulos]].find(_.hakemusOid == hakemusOid) must_== valinnantulos
+      val valinnantulosOption = parse(body).extract[List[Valinnantulos]].find(_.hakemusOid == hakemusOid)
+      valinnantulosOption.map(_.copy(
+        hyvaksymiskirjeLahetetty = None,
+        valinnantilanViimeisinMuutos = None,
+        vastaanotonViimeisinMuutos = None)
+      ) must_== valinnantulos
       httpComponentsClient.header.get("Last-Modified").map(s => Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(s)))
     }
   }
