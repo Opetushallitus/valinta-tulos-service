@@ -50,6 +50,12 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     booleanOptionChanged(hyvaksyttyVarasijalta, other.hyvaksyttyVarasijalta) ||
     booleanOptionChanged(hyvaksyPeruuntunut, other.hyvaksyPeruuntunut)
 
+  def hasEhdollisenHyvaksynnanEhtoChanged(other:Valinnantulos) =
+    stringChanged(ehdollisenHyvaksymisenEhtoKoodi, other.ehdollisenHyvaksymisenEhtoKoodi) ||
+    stringChanged(ehdollisenHyvaksymisenEhtoFI, other.ehdollisenHyvaksymisenEhtoFI) ||
+    stringChanged(ehdollisenHyvaksymisenEhtoSV, other.ehdollisenHyvaksymisenEhtoSV) ||
+    stringChanged(ehdollisenHyvaksymisenEhtoEN, other.ehdollisenHyvaksymisenEhtoEN)
+
   private def booleanOptionChanged(thisParam:Option[Boolean], otherParam:Option[Boolean]) =
     (thisParam.isDefined && otherParam.isDefined && thisParam != otherParam) || (thisParam.isDefined && otherParam.isEmpty)
 
@@ -58,6 +64,16 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
       thisParam.getOrElse(false)
     } else {
       otherParam.getOrElse(false)
+    }
+
+  private def stringChanged(thisParam:Option[String], otherParam:Option[String]) =
+    (thisParam.isDefined && otherParam.isDefined && thisParam != otherParam) || (thisParam.isDefined && otherParam.isEmpty)
+
+  private def getStringChange(thisParam:Option[String], otherParam:Option[String])  =
+    if(stringChanged(thisParam, otherParam)) {
+      thisParam.getOrElse("")
+    } else {
+      otherParam.getOrElse("")
     }
 
   def getValinnantuloksenOhjauksenMuutos(vanha:Valinnantulos, muokkaaja:String, selite:String) = ValinnantuloksenOhjaus(
@@ -82,6 +98,26 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     this.hyvaksyPeruuntunut.getOrElse(false),
     muokkaaja,
     selite
+  )
+
+  def getEhdollisenHyvaksynnanEhtoMuutos(vanha:Valinnantulos) = EhdollisenHyvaksynnanEhto(
+    this.hakemusOid,
+    this.valintatapajonoOid,
+    this.hakukohdeOid,
+    getStringChange(this.ehdollisenHyvaksymisenEhtoKoodi, vanha.ehdollisenHyvaksymisenEhtoKoodi),
+    getStringChange(this.ehdollisenHyvaksymisenEhtoFI, vanha.ehdollisenHyvaksymisenEhtoFI),
+    getStringChange(this.ehdollisenHyvaksymisenEhtoSV, vanha.ehdollisenHyvaksymisenEhtoSV),
+    getStringChange(this.ehdollisenHyvaksymisenEhtoEN, vanha.ehdollisenHyvaksymisenEhtoEN)
+  )
+
+  def getEhdollisenHyvaksynnanEhto() = EhdollisenHyvaksynnanEhto(
+    this.hakemusOid,
+    this.valintatapajonoOid,
+    this.hakukohdeOid,
+    this.ehdollisenHyvaksymisenEhtoKoodi.getOrElse(""),
+    this.ehdollisenHyvaksymisenEhtoFI.getOrElse(""),
+    this.ehdollisenHyvaksymisenEhtoSV.getOrElse(""),
+    this.ehdollisenHyvaksymisenEhtoEN.getOrElse("")
   )
 
   def getValinnantilanTallennus(muokkaaja:String) = ValinnantilanTallennus(
