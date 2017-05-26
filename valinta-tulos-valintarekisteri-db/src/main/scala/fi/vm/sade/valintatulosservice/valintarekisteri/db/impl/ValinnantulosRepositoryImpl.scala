@@ -312,15 +312,15 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
 
   override def updateEhdollisenHyvaksynnanEhto(ehto: EhdollisenHyvaksynnanEhto, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
     sqlu"""update ehdollisen_hyvaksynnan_ehto
-           set ehdollisenHyvaksymisenEhtoKoodi = ${ehto.ehdollisenHyvaksymisenEhtoKoodi},
-              ehdollisenHyvaksymisenEhtoFI = ${ehto.ehdollisenHyvaksymisenEhtoFI},
-              ehdollisenHyvaksymisenEhtoSV = ${ehto.ehdollisenHyvaksymisenEhtoSV},
-              ehdollisenHyvaksymisenEhtoEN = ${ehto.ehdollisenHyvaksymisenEhtoEN}
+           set ehdollisen_hyvaksymisen_ehto_koodi = ${ehto.ehdollisenHyvaksymisenEhtoKoodi},
+              ehdollisen_hyvaksymisen_ehto_fi = ${ehto.ehdollisenHyvaksymisenEhtoFI},
+              ehdollisen_hyvaksymisen_ehto_sv = ${ehto.ehdollisenHyvaksymisenEhtoSV},
+              ehdollisen_hyvaksymisen_ehto_en = ${ehto.ehdollisenHyvaksymisenEhtoEN}
            where valintatapajono_oid = ${ehto.valintatapajonoOid} and hakemus_oid = ${ehto.hakemusOid} and (
-              ehdollisenHyvaksymisenEhtoKoodi <> ${ehto.ehdollisenHyvaksymisenEhtoKoodi} or
-              ehdollisenHyvaksymisenEhtoFI <> ${ehto.ehdollisenHyvaksymisenEhtoFI} or
-              ehdollisenHyvaksymisenEhtoSV <> ${ehto.ehdollisenHyvaksymisenEhtoSV} or
-              ehdollisenHyvaksymisenEhtoEN <> ${ehto.ehdollisenHyvaksymisenEhtoEN}
+              ehdollisen_hyvaksymisen_ehto_koodi <> ${ehto.ehdollisenHyvaksymisenEhtoKoodi} or
+              ehdollisen_hyvaksymisen_ehto_fi <> ${ehto.ehdollisenHyvaksymisenEhtoFI} or
+              ehdollisen_hyvaksymisen_ehto_sv <> ${ehto.ehdollisenHyvaksymisenEhtoSV} or
+              ehdollisen_hyvaksymisen_ehto_en <> ${ehto.ehdollisenHyvaksymisenEhtoEN}
            ) and (
               ${ifUnmodifiedSince}::timestamptz is null or
               system_time @> ${ifUnmodifiedSince}

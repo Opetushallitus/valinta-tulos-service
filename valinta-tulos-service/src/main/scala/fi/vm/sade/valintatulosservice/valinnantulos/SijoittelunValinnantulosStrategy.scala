@@ -64,6 +64,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
       def validateEhdollisestiHyvaksyttavissa() = uusi.ehdollisestiHyvaksyttavissa match {
         case None | vanha.ehdollisestiHyvaksyttavissa => Right()
+        case _ if allowOphUpdate(session) => Right()
         case _ if allowOrgUpdate(session, tarjoajaOids) => Right()
         case _ => Left(ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä ehdollisesti", uusi.valintatapajonoOid, uusi.hakemusOid))
       }
@@ -146,8 +147,13 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
       DBIO.successful(())
     }
     val updateEhdollisenHyvaksynnanEhto = if (uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha)) {
+      /*
       valinnantulosRepository.updateEhdollisenHyvaksynnanEhto(
         uusi.getEhdollisenHyvaksynnanEhtoMuutos(vanha), Some(ifUnmodifiedSince))
+      */
+      valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(
+        uusi.getEhdollisenHyvaksynnanEhtoMuutos(vanha), Some(ifUnmodifiedSince)
+      )
     } else {
       DBIO.successful(())
     }
@@ -157,7 +163,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
     } else {
       DBIO.successful(())
     }
-    updateOhjaus.andThen(updateIlmoittautuminen)
+    updateOhjaus.andThen(updateEhdollisenHyvaksynnanEhto).andThen(updateIlmoittautuminen)
   }
 
   def audit(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): Unit = {
