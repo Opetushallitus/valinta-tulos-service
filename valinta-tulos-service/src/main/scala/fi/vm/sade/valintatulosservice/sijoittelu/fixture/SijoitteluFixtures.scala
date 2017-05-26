@@ -22,9 +22,19 @@ case class SijoitteluFixtures(db: DB, valintarekisteriDb : ValintarekisteriDb) {
                     kktutkintoonJohtava: Boolean = false) {
     if (clear) {
       clearFixtures
-      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM vastaanotot"), Duration(4, SECONDS))
-      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM ilmoittautumiset"), Duration(4, SECONDS))
-      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM hakukohteet"), Duration(4, SECONDS))
+      val timeout = Duration(4, SECONDS)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM vastaanotot"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM ilmoittautumiset"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM pistetiedot"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM jonosijat"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM valintatapajonot"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM sijoitteluajon_hakukohteet"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM viestinnan_ohjaus"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM valinnantulokset"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM tilat_kuvaukset"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM valinnantilat"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM valintaesitykset"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM hakukohteet"), timeout)
     }
     val tulokset = MongoMockData.readJson("fixtures/sijoittelu/" + fixtureName)
     MongoMockData.insertData(db, tulokset)
