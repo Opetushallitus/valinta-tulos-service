@@ -10,6 +10,7 @@ import org.json4s.jackson.Serialization._
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 import org.scalatra.{Forbidden, Ok}
+import scala.collection.JavaConverters._
 
 class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, vastaanottoService: VastaanottoService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
 
@@ -44,7 +45,7 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid"))
   get("/valintatulos/haku/:hakuOid/hakemus/:hakemusOid", operation(getValintatuloksetByHakemusSwagger)) {
     val hakemusOid = HakemusOid(params("hakemusOid"))
-    Ok(javaObjectToJsonString(valintatulosService.findValintaTuloksetForVirkailijaByHakemus(hakemusOid)))
+    Ok(javaObjectToJsonString(valintatulosService.findValintaTuloksetForVirkailijaByHakemus(hakemusOid).asJava))
   }
 
   val getValintatuloksetByHakukohdeSwagger: OperationBuilder = (apiOperation[Unit]("getValintatuloksetByHakukohde")
@@ -54,7 +55,7 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
   get("/valintatulos/haku/:hakuOid/hakukohde/:hakukohdeOid", operation(getValintatuloksetByHakukohdeSwagger)) {
     val hakuOid = HakuOid(params("hakuOid"))
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
-    Ok(javaObjectToJsonString(valintatulosService.findValintaTuloksetForVirkailija(hakuOid, hakukohdeOid)))
+    Ok(javaObjectToJsonString(valintatulosService.findValintaTuloksetForVirkailija(hakuOid, hakukohdeOid).asJava))
   }
 
   val getValintatuloksetWithoutTilaHakijalleByHakukohdeSwagger: OperationBuilder = (apiOperation[Unit]("getValintatuloksetWithoutTilaHakijalleByHakukohdeSwagger")
@@ -64,7 +65,7 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
   get("/valintatulos/ilmanhakijantilaa/haku/:hakuOid/hakukohde/:hakukohdeOid", operation(getValintatuloksetWithoutTilaHakijalleByHakukohdeSwagger)) {
     val hakuOid = HakuOid(params("hakuOid"))
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
-    Ok(javaObjectToJsonString(valintatulosService.findValintaTuloksetForVirkailijaWithoutTilaHakijalle(hakuOid, hakukohdeOid)))
+    Ok(javaObjectToJsonString(valintatulosService.findValintaTuloksetForVirkailijaWithoutTilaHakijalle(hakuOid, hakukohdeOid).asJava))
   }
 
   val postLatenessFlagsForApplicationsSwagger: OperationBuilder = (apiOperation[Set[VastaanottoAikarajaMennyt]]("getLatenessFlagsForApplicationsSwagger")
@@ -98,7 +99,7 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
     parameter pathParam[String]("hakuOid").description("Haun oid"))
   get("/valintatulos/haku/:hakuOid", operation(getValintatuloksetByHakuSwagger)) {
     val hakuOid = HakuOid(params("hakuOid"))
-    Ok(javaObjectToJsonString(valintatulosService.findValintaTuloksetForVirkailija(hakuOid)))
+    Ok(javaObjectToJsonString(valintatulosService.findValintaTuloksetForVirkailija(hakuOid).asJava))
   }
 
   val getHaunKoulutuksenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissaSwagger: OperationBuilder =
