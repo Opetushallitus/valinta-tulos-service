@@ -39,6 +39,7 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
       there was one (sijoitteluRepository).getHakukohteenPistetiedot(sijoitteluajoId, hakukohdeOid)
       there was one (sijoitteluRepository).getHakukohteenTilahistoriat(sijoitteluajoId, hakukohdeOid)
       there was one (sijoitteluRepository).getHakukohteenHakijaryhmat(sijoitteluajoId, hakukohdeOid)
+      there was one (sijoitteluRepository).getSijoitteluajonHakijaryhmienHakemukset(sijoitteluajoId, List("hakijaryhma1"))
       there was one (sijoitteluRepository).getSijoitteluajonHakijaryhmanHakemukset(sijoitteluajoId, "hakijaryhma1")
       there was one (sijoitteluRepository).getValinnantilanKuvaukset(List(123))
 
@@ -119,6 +120,8 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
     )
 
     sijoitteluRepository.getSijoitteluajonHakijaryhmanHakemukset(sijoitteluajoId, "hakijaryhma1") returns List(HakemusOid("1234.1"))
+    sijoitteluRepository.getSijoitteluajonHakijaryhmienHakemukset(sijoitteluajoId, List("hakijaryhma1")) returns Map("hakijaryhma1" -> List(HakemusOid("1234.1")))
+
 
     sijoitteluRepository.getValinnantilanKuvaukset(List(123)) returns
       Map(123 -> TilankuvausRecord(123, EiTilankuvauksenTarkennetta, Some("textFi"), Some("textSv"), Some("textEn")))
