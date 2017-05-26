@@ -155,6 +155,9 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         Option(uusi.hasOhjausChanged(vanha)).collect { case true => valinnantulosRepository.updateValinnantuloksenOhjaus(
           uusi.getValinnantuloksenOhjauksenMuutos(vanha, muokkaaja, selite), ifUnmodifiedSince)
         },
+        Option(uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha)).collect { case true => valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(
+          uusi.getEhdollisenHyvaksynnanEhtoMuutos(vanha), ifUnmodifiedSince)
+        },
         Option(uusi.ilmoittautumistila != vanha.ilmoittautumistila && !uusi.ohitaIlmoittautuminen.getOrElse(false)).collect {
           case true => valinnantulosRepository.storeIlmoittautuminen(
             vanha.henkiloOid, Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), ifUnmodifiedSince)
