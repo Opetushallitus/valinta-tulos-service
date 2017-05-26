@@ -104,12 +104,14 @@ class ValintaesitysServiceSpec extends Specification with MockitoMatchers with M
         def loop(actions: List[DBIO[Any]]): Either[Throwable, Any] = actions match {
           case a :: Nil => mockRun(a)
           case a :: rest => mockRun(a).right.flatMap(_ => loop(rest))
+          case _ => throw new RuntimeException("This should not happen")
         }
         loop(actions.toList)
       case SequenceAction(actions) =>
         def loop(actions: List[DBIO[Any]]): Either[Throwable, Any] = actions match {
           case a :: Nil => mockRun(a)
           case a :: rest => mockRun(a).right.flatMap(_ => loop(rest))
+          case _ => throw new RuntimeException("This should not happen either")
         }
         loop(actions.toList)
       case _ => throw new RuntimeException("problem")
