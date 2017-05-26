@@ -31,12 +31,16 @@ class MuutoshistoriaServlet(valinnantulosService: ValinnantulosService,
     )
   get("/", operation(muutoshistoriaSwagger)) {
     contentType = formats("json")
-    implicit val authenticated = authenticate
     if (skipAuditForServiceCall) {
+      val valintatapajonoOid = parseValintatapajonoOid.fold(throw _, o => o)
+      val hakemusOid = parseHakemusOid.fold(throw _, o => o)
+      Ok(valinnantulosService.getMuutoshistoriaForHakemusWithoutAuditInfo(hakemusOid, valintatapajonoOid))
+    } else {
+      implicit val authenticated = authenticate
       authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
+      val valintatapajonoOid = parseValintatapajonoOid.fold(throw _, o => o)
+      val hakemusOid = parseHakemusOid.fold(throw _, o => o)
+      Ok(valinnantulosService.getMuutoshistoriaForHakemus(hakemusOid, valintatapajonoOid, auditInfo))
     }
-    val valintatapajonoOid = parseValintatapajonoOid.fold(throw _, o => o)
-    val hakemusOid = parseHakemusOid.fold(throw _, o => o)
-    Ok(valinnantulosService.getMuutoshistoriaForHakemus(hakemusOid, valintatapajonoOid, auditInfo))
   }
 }

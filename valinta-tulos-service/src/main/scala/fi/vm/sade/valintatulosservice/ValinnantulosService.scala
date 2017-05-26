@@ -23,20 +23,21 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
                            vastaanottoService: VastaanottoService,
                            yhdenPaikanSaannos: YhdenPaikanSaannos,
                            val appConfig: VtsAppConfig,
-                           val audit: Audit,
-                           val skipAuditForServiceCall: Boolean = false) extends Logging {
+                           val audit: Audit) extends Logging {
+
+  def getMuutoshistoriaForHakemusWithoutAuditInfo(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[Muutos] = {
+    valinnantulosRepository.getMuutoshistoriaForHakemus(hakemusOid, valintatapajonoOid)
+  }
 
   def getMuutoshistoriaForHakemus(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid, auditInfo: AuditInfo): List[Muutos] = {
     val r = valinnantulosRepository.getMuutoshistoriaForHakemus(hakemusOid, valintatapajonoOid)
-    if(!skipAuditForServiceCall) {
-      audit.log(auditInfo.user, ValinnantuloksenLuku,
-        new Target.Builder()
-          .setField("hakemus", hakemusOid.toString)
-          .setField("valintatapajono", valintatapajonoOid.toString)
-          .build(),
-        new Changes.Builder().build()
-      )
-    }
+    audit.log(auditInfo.user, ValinnantuloksenLuku,
+      new Target.Builder()
+        .setField("hakemus", hakemusOid.toString)
+        .setField("valintatapajono", valintatapajonoOid.toString)
+        .build(),
+      new Changes.Builder().build()
+    )
     r
   }
 
