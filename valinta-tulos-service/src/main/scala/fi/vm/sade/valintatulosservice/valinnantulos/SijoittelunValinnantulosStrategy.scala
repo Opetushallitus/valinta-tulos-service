@@ -147,10 +147,6 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
       DBIO.successful(())
     }
     val updateEhdollisenHyvaksynnanEhto = if (uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha)) {
-      /*
-      valinnantulosRepository.updateEhdollisenHyvaksynnanEhto(
-        uusi.getEhdollisenHyvaksynnanEhtoMuutos(vanha), Some(ifUnmodifiedSince))
-      */
       valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(
         uusi.getEhdollisenHyvaksynnanEhtoMuutos(vanha), Some(ifUnmodifiedSince)
       )

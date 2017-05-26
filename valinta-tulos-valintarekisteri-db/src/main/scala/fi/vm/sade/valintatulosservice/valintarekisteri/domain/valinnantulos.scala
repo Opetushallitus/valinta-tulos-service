@@ -51,6 +51,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     booleanOptionChanged(hyvaksyPeruuntunut, other.hyvaksyPeruuntunut)
 
   def hasEhdollisenHyvaksynnanEhtoChanged(other:Valinnantulos) =
+    booleanOptionChanged(ehdollisestiHyvaksyttavissa, other.ehdollisestiHyvaksyttavissa) ||
     stringChanged(ehdollisenHyvaksymisenEhtoKoodi, other.ehdollisenHyvaksymisenEhtoKoodi) ||
     stringChanged(ehdollisenHyvaksymisenEhtoFI, other.ehdollisenHyvaksymisenEhtoFI) ||
     stringChanged(ehdollisenHyvaksymisenEhtoSV, other.ehdollisenHyvaksymisenEhtoSV) ||
@@ -67,7 +68,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     }
 
   private def stringChanged(thisParam:Option[String], otherParam:Option[String]) =
-    (thisParam.isDefined && otherParam.isDefined && thisParam != otherParam) || (thisParam.isDefined && otherParam.isEmpty)
+    (thisParam.isDefined && otherParam.isDefined && thisParam != otherParam) || (thisParam.isDefined && otherParam.isEmpty) || (thisParam.isEmpty && otherParam.isDefined)
 
   private def getStringChange(thisParam:Option[String], otherParam:Option[String])  =
     if(stringChanged(thisParam, otherParam)) {
@@ -76,17 +77,19 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
       otherParam.getOrElse("")
     }
 
-  def getValinnantuloksenOhjauksenMuutos(vanha:Valinnantulos, muokkaaja:String, selite:String) = ValinnantuloksenOhjaus(
-    this.hakemusOid,
-    this.valintatapajonoOid,
-    this.hakukohdeOid,
-    getBooleanOptionChange(this.ehdollisestiHyvaksyttavissa, vanha.ehdollisestiHyvaksyttavissa),
-    getBooleanOptionChange(this.julkaistavissa, vanha.julkaistavissa),
-    getBooleanOptionChange(this.hyvaksyttyVarasijalta, vanha.hyvaksyttyVarasijalta),
-    getBooleanOptionChange(this.hyvaksyPeruuntunut, vanha.hyvaksyPeruuntunut),
-    muokkaaja,
-    selite
-  )
+  def getValinnantuloksenOhjauksenMuutos(vanha:Valinnantulos, muokkaaja:String, selite:String) = {
+    ValinnantuloksenOhjaus(
+      this.hakemusOid,
+      this.valintatapajonoOid,
+      this.hakukohdeOid,
+      getBooleanOptionChange(this.ehdollisestiHyvaksyttavissa, vanha.ehdollisestiHyvaksyttavissa),
+      getBooleanOptionChange(this.julkaistavissa, vanha.julkaistavissa),
+      getBooleanOptionChange(this.hyvaksyttyVarasijalta, vanha.hyvaksyttyVarasijalta),
+      getBooleanOptionChange(this.hyvaksyPeruuntunut, vanha.hyvaksyPeruuntunut),
+      muokkaaja,
+      selite
+    )
+  }
 
   def getValinnantuloksenOhjaus(muokkaaja:String, selite:String) = ValinnantuloksenOhjaus(
     this.hakemusOid,
@@ -100,15 +103,29 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     selite
   )
 
-  def getEhdollisenHyvaksynnanEhtoMuutos(vanha:Valinnantulos) = EhdollisenHyvaksynnanEhto(
-    this.hakemusOid,
-    this.valintatapajonoOid,
-    this.hakukohdeOid,
-    getStringChange(this.ehdollisenHyvaksymisenEhtoKoodi, vanha.ehdollisenHyvaksymisenEhtoKoodi),
-    getStringChange(this.ehdollisenHyvaksymisenEhtoFI, vanha.ehdollisenHyvaksymisenEhtoFI),
-    getStringChange(this.ehdollisenHyvaksymisenEhtoSV, vanha.ehdollisenHyvaksymisenEhtoSV),
-    getStringChange(this.ehdollisenHyvaksymisenEhtoEN, vanha.ehdollisenHyvaksymisenEhtoEN)
-  )
+  def getEhdollisenHyvaksynnanEhtoMuutos(vanha:Valinnantulos) = {
+    if (ehdollisestiHyvaksyttavissa.isDefined && ehdollisestiHyvaksyttavissa.get == true) {
+      EhdollisenHyvaksynnanEhto(
+        this.hakemusOid,
+        this.valintatapajonoOid,
+        this.hakukohdeOid,
+        getStringChange(this.ehdollisenHyvaksymisenEhtoKoodi, vanha.ehdollisenHyvaksymisenEhtoKoodi),
+        getStringChange(this.ehdollisenHyvaksymisenEhtoFI, vanha.ehdollisenHyvaksymisenEhtoFI),
+        getStringChange(this.ehdollisenHyvaksymisenEhtoSV, vanha.ehdollisenHyvaksymisenEhtoSV),
+        getStringChange(this.ehdollisenHyvaksymisenEhtoEN, vanha.ehdollisenHyvaksymisenEhtoEN)
+      )
+    } else {
+      EhdollisenHyvaksynnanEhto(
+        this.hakemusOid,
+        this.valintatapajonoOid,
+        this.hakukohdeOid,
+        "",
+        "",
+        "",
+        ""
+      )
+    }
+  }
 
   def getEhdollisenHyvaksynnanEhto() = EhdollisenHyvaksynnanEhto(
     this.hakemusOid,
