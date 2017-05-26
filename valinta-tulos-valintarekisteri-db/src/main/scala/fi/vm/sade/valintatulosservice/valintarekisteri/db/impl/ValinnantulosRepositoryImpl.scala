@@ -310,6 +310,26 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     }
   }
 
+  override def updateEhdollisenHyvaksynnanEhto(ehto: EhdollisenHyvaksynnanEhto, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+    sqlu"""update ehdollisen_hyvaksynnan_ehto
+           set ehdollisenHyvaksymisenEhtoKoodi = ${ehto.ehdollisenHyvaksymisenEhtoKoodi},
+              ehdollisenHyvaksymisenEhtoFI = ${ehto.ehdollisenHyvaksymisenEhtoFI},
+              ehdollisenHyvaksymisenEhtoSV = ${ehto.ehdollisenHyvaksymisenEhtoSV},
+              ehdollisenHyvaksymisenEhtoEN = ${ehto.ehdollisenHyvaksymisenEhtoEN}
+           where valintatapajono_oid = ${ehto.valintatapajonoOid} and hakemus_oid = ${ehto.hakemusOid} and (
+              ehdollisenHyvaksymisenEhtoKoodi <> ${ehto.ehdollisenHyvaksymisenEhtoKoodi} or
+              ehdollisenHyvaksymisenEhtoFI <> ${ehto.ehdollisenHyvaksymisenEhtoFI} or
+              ehdollisenHyvaksymisenEhtoSV <> ${ehto.ehdollisenHyvaksymisenEhtoSV} or
+              ehdollisenHyvaksymisenEhtoEN <> ${ehto.ehdollisenHyvaksymisenEhtoEN}
+           ) and (
+              ${ifUnmodifiedSince}::timestamptz is null or
+              system_time @> ${ifUnmodifiedSince}
+           )""".flatMap {
+      case 1 => DBIO.successful(())
+      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ehdollisen hyväksynnän ehtoa $ehto ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
+    }
+  }
+
   override def storeValinnantila(tila:ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
     ensureValintaesitys(tila.hakukohdeOid, tila.valintatapajonoOid)
       .andThen(storeValinnantilaOverridingTimestamp(tila, ifUnmodifiedSince, new Timestamp(System.currentTimeMillis)))
@@ -402,6 +422,39 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ohjausta $ohjaus ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
 }
 }
+
+  override def storeEhdollisenHyvaksynnanEhto(ehto:EhdollisenHyvaksynnanEhto, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+    sqlu"""insert into ehdollisen_hyvaksynnan_ehto (
+             valintatapajono_oid,
+             hakemus_oid,
+             hakukohde_oid,
+             ehdollisen_hyvaksymisen_ehto_koodi,
+             ehdollisen_hyvaksymisen_ehto_fi,
+             ehdollisen_hyvaksymisen_ehto_sv,
+             ehdollisen_hyvaksymisen_ehto_en
+           ) values (${ehto.valintatapajonoOid},
+              ${ehto.hakemusOid},
+              ${ehto.hakukohdeOid},
+              ${ehto.ehdollisenHyvaksymisenEhtoKoodi},
+              ${ehto.ehdollisenHyvaksymisenEhtoFI},
+              ${ehto.ehdollisenHyvaksymisenEhtoSV},
+              ${ehto.ehdollisenHyvaksymisenEhtoEN})
+           on conflict on constraint ehdollisen_hyvaksynnan_ehto_pkey do update set
+             ehdollisen_hyvaksymisen_ehto_koodi = excluded.ehdollisen_hyvaksymisen_ehto_koodi,
+             ehdollisen_hyvaksymisen_ehto_fi = excluded.ehdollisen_hyvaksymisen_ehto_fi,
+             ehdollisen_hyvaksymisen_ehto_sv = excluded.ehdollisen_hyvaksymisen_ehto_sv,
+             ehdollisen_hyvaksymisen_ehto_en = excluded.ehdollisen_hyvaksymisen_ehto_en
+           where ( ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_koodi <> excluded.ehdollisen_hyvaksymisen_ehto_koodi
+             or ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_fi <> excluded.ehdollisen_hyvaksymisen_ehto_fi
+             or ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_sv <> excluded.ehdollisen_hyvaksymisen_ehto_sv
+             or ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_en <> excluded.ehdollisen_hyvaksymisen_ehto_en )
+             and (
+              ${ifUnmodifiedSince}::timestamptz is null or
+              ehdollisen_hyvaksynnan_ehto.system_time @> ${ifUnmodifiedSince})""".flatMap {
+      case 1 => DBIO.successful(())
+      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ehdollisen hyväksynnän ehtoa $ehto ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
+    }
+  }
 
   override def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
     sqlu"""insert into ilmoittautumiset (henkilo, hakukohde, tila, ilmoittaja, selite)

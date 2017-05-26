@@ -140,6 +140,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
       List(
         Some(valinnantulosRepository.storeValinnantila(uusi.getValinnantilanTallennus(muokkaaja), ifUnmodifiedSince)),
         Some(valinnantulosRepository.storeValinnantuloksenOhjaus(uusi.getValinnantuloksenOhjaus(muokkaaja, selite), ifUnmodifiedSince)),
+        Some(valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(uusi.getEhdollisenHyvaksynnanEhto(), ifUnmodifiedSince)),
         Option(uusi.ilmoittautumistila != EiTehty).collect { case true => valinnantulosRepository.storeIlmoittautuminen(
           uusi.henkiloOid, Ilmoittautuminen(uusi.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), ifUnmodifiedSince)
         }

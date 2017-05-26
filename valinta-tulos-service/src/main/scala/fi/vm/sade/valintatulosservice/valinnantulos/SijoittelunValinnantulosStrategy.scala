@@ -28,7 +28,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
                                        audit: Audit) extends ValinnantulosStrategy with Logging {
   private val session = auditInfo.session._2
 
-  def hasChange(uusi:Valinnantulos, vanha:Valinnantulos) = uusi.hasChanged(vanha)
+  def hasChange(uusi:Valinnantulos, vanha:Valinnantulos) = (uusi.hasChanged(vanha) || uusi.hasOhjausChanged(vanha) || uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha))
 
   def validate(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): Either[ValinnantulosUpdateStatus, Unit] = {
     if (vanhaOpt.isEmpty) {
@@ -142,6 +142,12 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
     val updateOhjaus = if (uusi.hasOhjausChanged(vanha)) {
       valinnantulosRepository.updateValinnantuloksenOhjaus(
         uusi.getValinnantuloksenOhjauksenMuutos(vanha, muokkaaja, "Virkailijan tallennus"), Some(ifUnmodifiedSince))
+    } else {
+      DBIO.successful(())
+    }
+    val updateEhdollisenHyvaksynnanEhto = if (uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha)) {
+      valinnantulosRepository.updateEhdollisenHyvaksynnanEhto(
+        uusi.getEhdollisenHyvaksynnanEhtoMuutos(vanha), Some(ifUnmodifiedSince))
     } else {
       DBIO.successful(())
     }
