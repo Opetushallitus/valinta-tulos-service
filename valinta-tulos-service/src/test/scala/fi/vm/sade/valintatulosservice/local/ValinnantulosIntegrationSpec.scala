@@ -44,7 +44,7 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
 
   override def before: Any = {
     deleteAll()
-    sijoitteluFixtures.importFixture("hyvaksytty-kesken-julkaistavissa.json")
+    //sijoitteluFixtures.importFixture("hyvaksytty-kesken-julkaistavissa.json")
     HakuFixtures.useFixture(HakuFixtures.korkeakouluYhteishaku, List(HakuOid("1.2.246.562.29.173465377510")))
     hakemusFixtureImporter.clear
     hakemusFixtureImporter.importFixture("00000441369")

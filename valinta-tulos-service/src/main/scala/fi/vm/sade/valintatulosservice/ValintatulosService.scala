@@ -200,7 +200,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
                                  hakukohdeOid: HakukohdeOid,
                                  hakukohteenVastaanotot: Option[Map[String,Set[VastaanottoRecord]]] = None,
                                  checkJulkaisuAikaParametri: Boolean = true): Either[Throwable, Iterator[Hakemuksentulos]] = {
-    val hakemukset = hakemusRepository.findHakemuksetByHakukohde(hakuOid, hakukohdeOid).toSeq //hakemus-mongo
+    val hakemukset = hakemusRepository.findHakemuksetByHakukohde(hakuOid, hakukohdeOid).toVector //hakemus-mongo
     val uniqueHakukohdeOids = hakemukset.flatMap(_.toiveet.map(_.oid)).distinct
     timed("Fetch hakemusten tulos for haku: "+ hakuOid + " and hakukohde: " + hakukohdeOid, 1000) (
       for {
@@ -480,6 +480,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
       case Left(e) => throw e
     }
     val hakemukset = getHakemukset()
+    val all = hakemukset.toVector
     val sijoitteluTulokset = timed("Fetch sijoittelun tulos", 1000) {
       getSijoittelunTulos(
         hakijaOidsByHakemusOids.getOrElse(getHakemukset().map(h => (h.oid, h.henkiloOid)).toMap)

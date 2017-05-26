@@ -14,7 +14,6 @@ trait ITSetup {
   implicit val appConfig = new VtsAppConfig.IT
   implicit val dynamicAppConfig: VtsDynamicAppConfig = VtsAppConfig.MockDynamicAppConfig()
   val dbConfig = appConfig.settings.valintaRekisteriDbConfig
-  lazy val sijoitteluContext = new SijoitteluSpringContext(appConfig, SijoitteluSpringContext.createApplicationContext(appConfig)) // TODO: don't use sijoitteluContext in MailPollerSpec
 
   lazy val singleConnectionValintarekisteriDb = new ValintarekisteriDb(
     dbConfig.copy(maxConnections = Some(1), minConnections = Some(1)))

@@ -1,3 +1,4 @@
+/*
 package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.utils.slf4j.Logging
@@ -13,7 +14,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 import org.scalatra.ScalatraServlet
 import org.scalatra.json.JacksonJsonSupport
 
-class FixtureServlet(sijoitteluContext: SijoitteluContext, valintarekisteriDb: ValintarekisteriDb)(implicit val appConfig: VtsAppConfig)
+class FixtureServlet(valintarekisteriDb: ValintarekisteriDb)(implicit val appConfig: VtsAppConfig)
   extends ScalatraServlet with Logging with JacksonJsonSupport with JsonFormats {
 
   options("/fixtures/apply") {
@@ -47,7 +48,7 @@ class FixtureServlet(sijoitteluContext: SijoitteluContext, valintarekisteriDb: V
     response.addHeader("Access-Control-Allow-Origin", "*")
     val hakemuksia: Int = params.get("hakemuksia").map(_.toInt).getOrElse(50)
     val hakukohteita: Int = params.get("hakukohteita").map(_.toInt).getOrElse(5)
-    new GeneratedFixture(new SimpleGeneratedHakuFixture(hakukohteita, hakemuksia)).apply(sijoitteluContext)
+    new GeneratedFixture(new SimpleGeneratedHakuFixture(hakukohteita, hakemuksia)).apply(valintarekisteriDb)
   }
 
   error {
@@ -67,3 +68,4 @@ class FixtureServlet(sijoitteluContext: SijoitteluContext, valintarekisteriDb: V
   }
 
 }
+*/

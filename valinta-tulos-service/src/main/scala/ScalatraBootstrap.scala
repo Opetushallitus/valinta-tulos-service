@@ -59,7 +59,6 @@ class ScalatraBootstrap extends LifeCycle {
     }
 
     if (appConfig.isInstanceOf[IT] || appConfig.isInstanceOf[Dev]) {
-      context.mount(new FixtureServlet(sijoitteluContext, valintarekisteriDb), "/util")
       SijoitteluFixtures(valintarekisteriDb).importFixture("hyvaksytty-kesken-julkaistavissa.json")
     }
     implicit lazy val dynamicAppConfig = new OhjausparametritAppConfig(appConfig.ohjausparametritService)

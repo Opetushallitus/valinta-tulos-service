@@ -12,6 +12,7 @@ import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.SijoitteluContext
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 import org.mongodb.morphia.AdvancedDatastore
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 
 import scala.collection.immutable.Iterable
 
@@ -22,6 +23,7 @@ class GeneratedFixture(haut: List[GeneratedHakuFixture] = List(new GeneratedHaku
 
   def ohjausparametritFixture = OhjausparametritFixtures.vastaanottoLoppuu2100
 
+  /*
   def apply(sijoitteluContext: SijoitteluContext)(implicit appConfig: VtsAppConfig) {
     HakuFixtures.useFixture(hakuFixture, haut.map(_.hakuOid))
 
@@ -50,6 +52,46 @@ class GeneratedFixture(haut: List[GeneratedHakuFixture] = List(new GeneratedHaku
           x.foreach(hakemusFixtures.importTemplateFixture(_))
           hakemusFixtures.commitBulkOperationInsert
       })
+    }
+    logger.info("Done")
+  }
+  */
+
+  // TODO: insert generated fixtures data to PSQL
+  def apply(valintarekisteriDb: ValintarekisteriDb)(implicit appConfig: VtsAppConfig) {
+    HakuFixtures.useFixture(hakuFixture, haut.map(_.hakuOid))
+
+    val hakemusFixtures = HakemusFixtures()
+    logger.info("Clearing...")
+    hakemusFixtures.clear
+    OhjausparametritFixtures.activeFixture = ohjausparametritFixture
+    //MongoMockData.clear(sijoitteluContext.database)
+
+    logger.info("Iterating...")
+
+    haut.foreach { haku =>
+      logger.info("Generating for Haku " + haku.hakuOid)
+      logger.info("Valintatulos...")
+      haku.valintatulokset.foreach{
+        valintatulos =>
+          //valintarekisteriDb...
+      }
+
+      logger.info("Sijoittelu...")
+      // insert haku.sijoittelu...
+
+      logger.info("Hakukohde...")
+      haku.hakukohteet.foreach{
+        hakukohde =>
+          // ...
+      }
+      logger.info("Hakemus-kantaan...")
+      haku.hakemukset
+        .map { hakemus => HakemusFixture(haku.hakuOid, hakemus.hakemusOid, hakemus.hakutoiveet.zipWithIndex.map{ case (hakutoive, index) => HakutoiveFixture(index+1, hakutoive.tarjoajaOid, hakutoive.hakukohdeOid) })}
+        .foreach{
+          hakemus =>
+            // ...
+        }
     }
     logger.info("Done")
   }
