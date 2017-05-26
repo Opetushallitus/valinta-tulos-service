@@ -17,6 +17,7 @@ trait PerformanceLogger extends Logging {
     result
   }
 
-  def time[R](description:String)(block: => R): R =
-    if(timeLogging) logTime(description){ block } else block
+  def time[R](description:String, log:Boolean = true)(block: => R): R =
+    if(timeLogging && log) logTime(description){ block } else block
+
 }
