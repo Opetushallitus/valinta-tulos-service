@@ -25,7 +25,7 @@ class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, va
   val pistetiedot = getPistetiedotGroupedByValintatapajonoOidAndHakemusOid
   val tilahistoriat = getTilahistoriatGroupedByValintatapajonoOidAndHakemusOid
   val hakijaryhmat = sijoitteluRepository.getHakukohteenHakijaryhmat(sijoitteluajoId, hakukohde.oid)
-  val hakijaryhmienHakemukset = hakijaryhmat.map(hr => hr.oid -> sijoitteluRepository.getSijoitteluajonHakijaryhmanHakemukset(sijoitteluajoId, hr.oid)).toMap
+  val hakijaryhmienHakemukset = sijoitteluRepository.getSijoitteluajonHakijaryhmienHakemukset(sijoitteluajoId, hakijaryhmat.map(_.oid))
   val hakemukset = kaikkiHakemukset.groupBy(_.valintatapajonoOid)
   val tilankuvaukset = sijoitteluRepository.getValinnantilanKuvaukset(tilankuvausHashit)
 
@@ -79,7 +79,7 @@ class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository, 
 
   val valintatapajonot = sijoitteluRepository.getSijoitteluajonValintatapajonotGroupedByHakukohde(sijoitteluajoId)
   val hakijaryhmat = sijoitteluRepository.getSijoitteluajonHakijaryhmat(sijoitteluajoId)
-  val hakijaryhmienHakemukset = hakijaryhmat.map(hr => hr.oid -> sijoitteluRepository.getSijoitteluajonHakijaryhmanHakemukset(sijoitteluajoId, hr.oid)).toMap
+  val hakijaryhmienHakemukset = sijoitteluRepository.getSijoitteluajonHakijaryhmienHakemukset(sijoitteluajoId, hakijaryhmat.map(_.oid))
 
   val hakukohteet = sijoitteluRepository.getSijoitteluajonHakukohteet(sijoitteluajoId)
 
