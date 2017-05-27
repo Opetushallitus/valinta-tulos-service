@@ -1,8 +1,9 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import fi.vm.sade.utils.slf4j.Logging
-import slick.driver.PostgresDriver.api._
-import slick.profile.{SqlAction, SqlStreamingAction}
+import slick.dbio.{DBIO, Effect, NoStream}
+import slick.jdbc.PostgresProfile.api._
+import slick.sql.{SqlAction, SqlStreamingAction}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
