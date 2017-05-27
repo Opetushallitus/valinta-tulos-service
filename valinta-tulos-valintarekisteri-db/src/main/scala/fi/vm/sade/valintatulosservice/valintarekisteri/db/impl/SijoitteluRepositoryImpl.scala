@@ -216,7 +216,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
                                   and j.valintatapajono_oid = th.valintatapajono_oid
                                   and j.hakemus_oid = th.hakemus_oid
                                   and j.sijoitteluajo_id = ${sijoitteluajoId})
-                    and lower(th.system_time) <= ${ts}::timestamptz""".as[TilaHistoriaRecord])).toList
+                    and lower(th.system_time) <= ${ts}::timestamptz""".as[TilaHistoriaRecord]), timeout = Duration(10L, TimeUnit.MINUTES)).toList
     }
 
   override def getHakukohteenTilahistoriat(sijoitteluajoId: Long, hakukohdeOid: HakukohdeOid): List[TilaHistoriaRecord] =
