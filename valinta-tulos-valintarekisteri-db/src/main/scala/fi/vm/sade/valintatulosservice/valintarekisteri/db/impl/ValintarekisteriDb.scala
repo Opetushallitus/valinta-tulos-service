@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import fi.vm.sade.utils.Timer
 import org.flywaydb.core.Flyway
-import slick.driver.PostgresDriver.api.{Database, _}
+import slick.jdbc.PostgresProfile.api._
 
 case class DbConfig(url: String,
                     user: Option[String],
@@ -42,8 +42,9 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
     config.minConnections.foreach(c.setMinimumIdle)
     config.registerMbeans.foreach(c.setRegisterMbeans)
     config.initializationFailFast.foreach(c.setInitializationFailFast)
-    val executor = AsyncExecutor("valintarekisteri", config.numThreads.getOrElse(20), config.queueSize.getOrElse(1000))
-    Database.forDataSource(new HikariDataSource(c), executor)
+    val maxConnections = config.numThreads.getOrElse(20)
+    val executor = AsyncExecutor("valintarekisteri", maxConnections, config.queueSize.getOrElse(1000))
+    Database.forDataSource(new HikariDataSource(c), maxConnections = Some(maxConnections), executor)
   }
   if(isItProfile) {
     logger.warn("alter table public.schema_version owner to oph")
