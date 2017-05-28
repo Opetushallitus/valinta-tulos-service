@@ -5,7 +5,8 @@ import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila.Vastaanotettavuustila
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
-import fi.vm.sade.valintatulosservice.sijoittelu.{DirectMongoSijoittelunTulosRestClient, SijoittelutulosService}
+import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelutulosService
+import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{DirectMongoSijoittelunTulosRestClient, StreamingHakijaDtoClient}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, Vastaanottotila}
@@ -62,11 +63,12 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
 
   lazy val hakuService = HakuService(appConfig.hakuServiceConfig)
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
-  lazy val sijoittelutulosService = new SijoittelutulosService(appConfig.sijoitteluContext.raportointiService,
-    appConfig.ohjausparametritService, valintarekisteriDb, new DirectMongoSijoittelunTulosRestClient(appConfig))
+  lazy val sijoittelutulosService = new SijoittelutulosService(sijoitteluContext.raportointiService,
+    appConfig.ohjausparametritService, valintarekisteriDb, new DirectMongoSijoittelunTulosRestClient(sijoitteluContext, appConfig))
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, true)
   lazy val vastaanotettavuusService = new VastaanotettavuusService(hakukohdeRecordService, valintarekisteriDb)
-  lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb, hakuService, valintarekisteriDb, hakukohdeRecordService)
+  lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb,
+    hakuService, valintarekisteriDb, hakukohdeRecordService, sijoitteluContext.valintatulosDao, new StreamingHakijaDtoClient(appConfig))
 
   val hakuOid = HakuOid("1.2.246.562.5.2013080813081926341928")
   val sijoitteluAjoId: String = "latest"
@@ -421,18 +423,15 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
   }
 
   def getHakutoiveenValintatulos(hakukohdeOid: String): Valintatulos = {
-    import scala.collection.JavaConverters._
-    valintatulosService.findValintaTuloksetForVirkailija(hakuOid, HakukohdeOid(hakukohdeOid)).asScala.find(_.getHakemusOid == hakemusOid.toString).get
+    valintatulosService.findValintaTuloksetForVirkailija(hakuOid, HakukohdeOid(hakukohdeOid)).find(_.getHakemusOid == hakemusOid.toString).get
   }
 
   def getHakutoiveenValintatulos(hakuOid: String, hakukohdeOid: String): Valintatulos = {
-    import scala.collection.JavaConverters._
-    valintatulosService.findValintaTuloksetForVirkailija(HakuOid(hakuOid)).asScala.find(_.getHakukohdeOid == hakukohdeOid).get
+    valintatulosService.findValintaTuloksetForVirkailija(HakuOid(hakuOid)).find(_.getHakukohdeOid == hakukohdeOid).get
   }
 
   def getHakutoiveenValintatulosByHakemus(hakukohdeOid: String, hakemusOid: String): Valintatulos = {
-    import scala.collection.JavaConverters._
-    valintatulosService.findValintaTuloksetForVirkailijaByHakemus(HakemusOid(hakemusOid)).asScala.find(_.getHakukohdeOid == hakukohdeOid).get
+    valintatulosService.findValintaTuloksetForVirkailijaByHakemus(HakemusOid(hakemusOid)).find(_.getHakukohdeOid == hakukohdeOid).get
   }
 
   def checkHakutoiveState(hakuToive: Hakutoiveentulos, expectedTila: Valintatila, vastaanottoTila: Vastaanottotila, vastaanotettavuustila: Vastaanotettavuustila, julkaistavissa: Boolean) = {

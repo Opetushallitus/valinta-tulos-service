@@ -6,13 +6,13 @@ import fi.vm.sade.sijoittelu.domain.SijoitteluAjo
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi._
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, IlmoittautumisTila}
 import fi.vm.sade.sijoittelu.tulos.resource.SijoitteluResource
-import fi.vm.sade.sijoittelu.tulos.service.RaportointiService
 import fi.vm.sade.utils.Timer
 import fi.vm.sade.valintatulosservice.VastaanottoAikarajaMennyt
 import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
 import fi.vm.sade.valintatulosservice.sijoittelu.JonoFinder.kaikkiJonotJulkaistu
+import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.SijoittelunTulosRestClient
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, VastaanottoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
@@ -23,10 +23,10 @@ import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class SijoittelutulosService(raportointiService: RaportointiService,
+class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiService,
                              ohjausparametritService: OhjausparametritService,
                              hakijaVastaanottoRepository: HakijaVastaanottoRepository,
-                             sijoittelunTulosClient: SijoittelunTulosRestClient) {
+                             sijoittelunTulosClient: ValintarekisteriSijoittelunTulosClient) {
   import scala.collection.JavaConversions._
 
   def hakemuksenTulos(haku: Haku, hakemusOid: HakemusOid, hakijaOidIfFound: Option[String], aikataulu: Option[Vastaanottoaikataulu], latestSijoitteluAjo: Option[SijoitteluAjo]): Option[HakemuksenSijoitteluntulos] = {
@@ -54,9 +54,9 @@ class SijoittelutulosService(raportointiService: RaportointiService,
       sijoittelu <- findLatestSijoitteluAjo(hakuOid, hakukohdeOid);
       hakijat <- {
         hakukohdeOid match {
-          case Some(hakukohde) => Option(Timer.timed("hakukohteen hakemukset", 1000)(raportointiService.hakemukset(sijoittelu, hakukohde.toString)))
+          case Some(hakukohde) => Option(Timer.timed("hakukohteen hakemukset", 1000)(raportointiService.hakemukset(sijoittelu, hakukohde)))
             .map(_.toList.map(h => hakemuksenKevytYhteenveto(h, aikataulu, fetchVastaanottos(HakemusOid(h.getHakemusOid), Option(h.getHakijaOid)))))
-          case None => Option(Timer.timed("hakemukset", 1000)(raportointiService.hakemukset(sijoittelu, null, null, null, null, null, null)))
+          case None => Option(Timer.timed("hakemukset", 1000)(raportointiService.hakemukset(sijoittelu, None, None, None, None, None, None)))
             .map(_.getResults.toList.map(h => hakemuksenYhteenveto(h, aikataulu, fetchVastaanottos(HakemusOid(h.getHakemusOid), Option(h.getHakijaOid)), false)))
         }
       }
@@ -76,40 +76,25 @@ class SijoittelutulosService(raportointiService: RaportointiService,
 
   def findLatestSijoitteluAjoForHaku(hakuOid: HakuOid): Option[SijoitteluAjo] = {
     Timer.timed("findLatestSijoitteluAjoForHaku -> latestSijoitteluAjoClient.fetchLatestSijoitteluAjoFromSijoitteluService", 100) {
-      sijoittelunTulosClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None)
+      sijoittelunTulosClient.fetchLatestSijoitteluAjo(hakuOid)
     }
   }
 
   def findLatestSijoitteluAjo(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid]): Option[SijoitteluAjo] = {
     Timer.timed(s"findLatestSijoitteluAjo -> latestSijoitteluAjoClient.fetchLatestSijoitteluAjoFromSijoitteluService($hakuOid, $hakukohdeOid)", 100) {
-      sijoittelunTulosClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, hakukohdeOid)
+      sijoittelunTulosClient.fetchLatestSijoitteluAjo(hakuOid, hakukohdeOid)
     }
   }
 
+  @Deprecated //Ei käytetä/sivutusta ei käytetä
   def sijoittelunTuloksetWithoutVastaanottoTieto(hakuOid: HakuOid, sijoitteluajoId: String, hyvaksytyt: Option[Boolean], ilmanHyvaksyntaa: Option[Boolean], vastaanottaneet: Option[Boolean],
                                                  hakukohdeOid: Option[List[HakukohdeOid]], count: Option[Int], index: Option[Int],
                                                  haunVastaanototByHakijaOid: Map[String, Set[VastaanottoRecord]]): HakijaPaginationObject = {
-    import scala.collection.JavaConverters._
 
     val sijoitteluntulos: Option[SijoitteluAjo] = findSijoitteluAjo(hakuOid, sijoitteluajoId)
 
     sijoitteluntulos.map { ajo =>
-      def toJavaBoolean(b: Option[Boolean]): java.lang.Boolean = b match {
-        case Some(scalaBoolean) => scalaBoolean
-        case None => null.asInstanceOf[java.lang.Boolean]
-      }
-      def toJavaInt(i: Option[Int]): java.lang.Integer = i match {
-        case Some(scalaInt) => scalaInt
-        case None => null
-      }
-
-      val hakukohdeOidsAsJava: java.util.List[String] = hakukohdeOid match {
-        case Some(oids) => oids.map(_.toString).asJava
-        case None => null
-      }
-
-      raportointiService.hakemukset(ajo, toJavaBoolean(hyvaksytyt), toJavaBoolean(ilmanHyvaksyntaa), toJavaBoolean(vastaanottaneet),
-        hakukohdeOidsAsJava, toJavaInt(count), toJavaInt(index))
+      raportointiService.hakemukset(ajo, hyvaksytyt, ilmanHyvaksyntaa, vastaanottaneet, hakukohdeOid, count, index)
     }.getOrElse(new HakijaPaginationObject)
   }
 
@@ -133,10 +118,11 @@ class SijoittelutulosService(raportointiService: RaportointiService,
 
   def sijoittelunTulosForAjoWithoutVastaanottoTieto(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid): HakijaDTO = findHakemus(hakemusOid, sijoitteluAjo).orNull
 
+  @Deprecated //TODO: Ei toimi erillishaulla, jolla ei ole laskentaa, jos käytössä PostgreSQL eikä Mongo. Käytetäänkö vielä oikeasti?
   def findSijoitteluAjo(hakuOid: HakuOid, sijoitteluajoId: String): Option[SijoitteluAjo] = {
     if (SijoitteluResource.LATEST == sijoitteluajoId) {
-      sijoittelunTulosClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None)
-    } else fromOptional(raportointiService.getSijoitteluAjo(sijoitteluajoId.toLong))
+      findLatestSijoitteluAjoForHaku(hakuOid)
+    } else raportointiService.getSijoitteluAjo(sijoitteluajoId.toLong)
   }
 
   private def findHakemus(hakemusOid: HakemusOid, sijoitteluAjo: SijoitteluAjo): Option[HakijaDTO] = {
@@ -144,7 +130,6 @@ class SijoittelutulosService(raportointiService: RaportointiService,
       sijoittelunTulosClient.fetchHakemuksenTulos(sijoitteluAjo, hakemusOid)
     }
   }
-
 
   private def fetchVastaanotto(henkiloOid: String, hakuOid: HakuOid): Set[VastaanottoRecord] = {
     Timer.timed("hakijaVastaanottoRepository.findHenkilonVastaanototHaussa", 100) {
@@ -337,12 +322,11 @@ class SijoittelutulosService(raportointiService: RaportointiService,
       VastaanottoAikarajaMennyt(HakemusOid(hakijaDto.getHakemusOid), isLate, vastaanottoDeadline)
     }
 
-    import scala.collection.JavaConverters._
-    Timer.timed(s"haeVastaanotonAikarajaTiedot -> latestSijoitteluAjoClient.fetchLatestSijoitteluAjoFromSijoitteluService($hakuOid, Some($hakukohdeOid))", 100) { sijoittelunTulosClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, Some(hakukohdeOid)) } match {
+    findLatestSijoitteluAjo(hakuOid, Some(hakukohdeOid)) match {
       case Some(sijoitteluAjo) =>
         val aikataulu = findAikatauluFromOhjausparametritService(hakuOid)
         val allHakijasForHakukohde = Timer.timed(s"Fetch hakemukset just for hakukohde $hakukohdeOid of haku $hakuOid", 1000) {
-          raportointiService.hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo, hakukohdeOid.toString).asScala
+          raportointiService.hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo, hakukohdeOid)
         }
         val queriedHakijasForHakukohde = allHakijasForHakukohde.filter(hakijaDto => hakemusOids.contains(hakijaDto.getHakemusOid))
         queriedHakijasForHakukohde.map(calculateLateness(aikataulu)).toSet
@@ -391,13 +375,5 @@ class SijoittelutulosService(raportointiService: RaportointiService,
   private def ifNull[T](value: T, defaultValue: T): T = {
     if (value == null) defaultValue
     else value
-  }
-
-  def fromOptional[T](opt: Optional[T]) = {
-    if (opt.isPresent) {
-      Some(opt.get)
-    } else {
-      None
-    }
   }
 }

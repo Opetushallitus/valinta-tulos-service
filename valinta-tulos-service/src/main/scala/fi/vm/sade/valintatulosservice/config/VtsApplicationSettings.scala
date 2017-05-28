@@ -22,6 +22,7 @@ case class VtsApplicationSettings(config: Config) extends ApplicationSettings(co
   val scheduledMigrationStart = withConfig(_.getInt("valinta-tulos-service.scheduled-migration.start-hour"))
   val scheduledMigrationEnd = withConfig(_.getInt("valinta-tulos-service.scheduled-migration.end-hour"))
   val oiliHetutonUrl = withConfig(_.getString("omatsivut.oili.hetutonUrl"))
+  val readFromValintarekisteri = BooleanUtils.isTrue(withConfig(_.getBoolean("valinta-tulos-service.read-from-valintarekisteri")))
 
   val ilmoittautuminenEnabled = {
     val value = config.getString("valinta-tulos-service.ilmoittautuminen.enabled")

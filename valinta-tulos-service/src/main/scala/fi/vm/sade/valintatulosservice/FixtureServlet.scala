@@ -5,14 +5,17 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.generatedfixtures.{GeneratedFixture, SimpleGeneratedHakuFixture}
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
-import fi.vm.sade.valintatulosservice.sijoittelu.SijoitteluFixtures
+import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtures
+import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.SijoitteluContext
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 import org.scalatra.ScalatraServlet
 import org.scalatra.json.JacksonJsonSupport
 
-class FixtureServlet(valintarekisteriDb: ValintarekisteriDb)(implicit val appConfig: VtsAppConfig) extends ScalatraServlet with Logging with JacksonJsonSupport with JsonFormats {
+class FixtureServlet(sijoitteluContext: SijoitteluContext, valintarekisteriDb: ValintarekisteriDb)(implicit val appConfig: VtsAppConfig)
+  extends ScalatraServlet with Logging with JacksonJsonSupport with JsonFormats {
+
   options("/fixtures/apply") {
     response.addHeader("Access-Control-Allow-Origin", "*")
     response.addHeader("Access-Control-Allow-Methods", "PUT")
@@ -22,7 +25,7 @@ class FixtureServlet(valintarekisteriDb: ValintarekisteriDb)(implicit val appCon
   put("/fixtures/apply") {
     response.addHeader("Access-Control-Allow-Origin", "*")
     val fixturename = params("fixturename")
-    SijoitteluFixtures(appConfig.sijoitteluContext.database, valintarekisteriDb).importFixture(fixturename + ".json", true)
+    SijoitteluFixtures(sijoitteluContext.database, valintarekisteriDb).importFixture(fixturename + ".json", true)
     val ohjausparametrit = paramOption("ohjausparametrit").getOrElse(OhjausparametritFixtures.vastaanottoLoppuu2100)
     OhjausparametritFixtures.activeFixture = ohjausparametrit
     val haku = paramOption("haku").map(HakuOid).getOrElse(HakuFixtures.korkeakouluYhteishaku)
@@ -44,7 +47,7 @@ class FixtureServlet(valintarekisteriDb: ValintarekisteriDb)(implicit val appCon
     response.addHeader("Access-Control-Allow-Origin", "*")
     val hakemuksia: Int = params.get("hakemuksia").map(_.toInt).getOrElse(50)
     val hakukohteita: Int = params.get("hakukohteita").map(_.toInt).getOrElse(5)
-    new GeneratedFixture(new SimpleGeneratedHakuFixture(hakukohteita, hakemuksia)).apply
+    new GeneratedFixture(new SimpleGeneratedHakuFixture(hakukohteita, hakemuksia)).apply(sijoitteluContext)
   }
 
   error {

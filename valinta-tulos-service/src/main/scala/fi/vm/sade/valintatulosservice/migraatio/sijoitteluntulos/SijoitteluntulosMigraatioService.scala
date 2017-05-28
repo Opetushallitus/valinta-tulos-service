@@ -11,7 +11,7 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter
 
 import com.mongodb.{BasicDBObjectBuilder, DBCursor}
 import fi.vm.sade.sijoittelu.domain._
-import fi.vm.sade.sijoittelu.tulos.dao.{HakukohdeDao, ValintatulosDao}
+import fi.vm.sade.sijoittelu.tulos.dao.HakukohdeDao
 import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
@@ -19,7 +19,8 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.MissingHakijaOidResolver
-import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelunTulosRestClient
+import fi.vm.sade.valintatulosservice.sijoittelu.{ValintarekisteriSijoittelunTulosClient, ValintarekisteriValintatulosDao}
+import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{SijoitteluContext, SijoittelunTulosRestClient}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{MigraatioRepository, MigratedIlmoittautuminen, SijoitteluRepository, StoreSijoitteluRepository, Valintaesitys}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -31,15 +32,16 @@ import scala.collection.immutable.Seq
 import scala.concurrent.duration.Duration
 import scala.util.Try
 
-class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTulosRestClient,
+class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: ValintarekisteriSijoittelunTulosClient,
                                        appConfig: VtsAppConfig,
                                        migraatioRepository: MigraatioRepository with SijoitteluRepository with StoreSijoitteluRepository,
                                        hakukohdeRecordService: HakukohdeRecordService,
                                        hakuService: HakuService,
-                                       valintalaskentakoostepalveluService: ValintalaskentakoostepalveluService) extends Logging {
-  private val hakukohdeDao: HakukohdeDao = appConfig.sijoitteluContext.hakukohdeDao
-  private val valintatulosDao: ValintatulosDao = appConfig.sijoitteluContext.valintatulosDao
-  private val sijoitteluDao = appConfig.sijoitteluContext.sijoitteluDao
+                                       valintalaskentakoostepalveluService: ValintalaskentakoostepalveluService,
+                                       sijoitteluContext: SijoitteluContext) extends Logging {
+  private val hakukohdeDao: HakukohdeDao = sijoitteluContext.hakukohdeDao
+  private val valintatulosDao: ValintarekisteriValintatulosDao = sijoitteluContext.valintatulosDao
+  private val sijoitteluDao = sijoitteluContext.sijoitteluDao
 
   private val adapter = new HexBinaryAdapter()
 
@@ -50,7 +52,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
   private val defaultTimestamp = new Date(0) // epoch can easily(?) be distinguished from real values
 
   def migrate(hakuOid: HakuOid, sijoitteluHash:String, dryRun: Boolean): Unit = {
-    sijoittelunTulosRestClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None) match {
+    sijoittelunTulosRestClient.fetchLatestSijoitteluAjo(hakuOid, None) match {
       case Some(sijoitteluAjo) =>
         logger.info(s"*** Starting to migrate sijoitteluAjo ${sijoitteluAjo.getSijoitteluajoId} of haku $hakuOid from MongoDb to Postgres")
         timed(s"Migrate sijoitteluAjo ${sijoitteluAjo.getSijoitteluajoId} of haku $hakuOid") { migrate(hakuOid, sijoitteluHash, dryRun, sijoitteluAjo) }
@@ -72,7 +74,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
     }
     logger.info(s"Loaded ${hakukohteet.size()} hakukohde objects for sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid")
     val valintatulokset = timed(s"Loading valintatulokset for sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid") {
-      valintatulosDao.loadValintatulokset(hakuOid.toString)
+      valintatulosDao.loadValintatulokset(hakuOid)
     }
     kludgeStartAndEndToSijoitteluAjoIfMissing(ajoFromMongo, hakukohteet)
 
@@ -84,9 +86,9 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
       logger.warn("dryRun : NOT updating the database")
     } else {
       logger.info(s"Starting to store sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid...")
-      storeSijoitteluData(hakuOid, ajoFromMongo, mongoSijoitteluAjoId, hakukohteet, valintatulokset)
+      storeSijoitteluData(hakuOid, ajoFromMongo, mongoSijoitteluAjoId, hakukohteet, valintatulokset.asJava)
       logger.info(s"Starting to save valinta data sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid...")
-      val (valintaesitykset, valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot, hyvaksymisKirjeet) = createSaveObjects(hakukohteet, valintatulokset)
+      val (valintaesitykset, valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot, hyvaksymisKirjeet) = createSaveObjects(hakukohteet, valintatulokset.asJava)
       timed(s"Saving valinta data for sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid") {
         migraatioRepository.runBlocking(
           migraatioRepository.storeBatch(valintaesitykset, valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot, hyvaksymisKirjeet), Duration(15, MINUTES))
@@ -351,7 +353,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
 
     val hakuOidsSijoitteluHashes = hakuOids.par.map { hakuOid =>
       Timer.timed(s"Processing hash calculation for haku $hakuOid", 0) {
-        sijoittelunTulosRestClient.fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid, None).map(_.getSijoitteluajoId) match {
+        sijoittelunTulosRestClient.fetchLatestSijoitteluAjo(hakuOid, None).map(_.getSijoitteluajoId) match {
           case Some(sijoitteluajoId) => createSijoitteluHash(hakuOid, sijoitteluajoId)
           case _ =>
             logger.info(s"No sijoittelus for haku $hakuOid")
@@ -388,7 +390,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
 
   private def getSijoitteluHash(sijoitteluajoId: Long, hakuOid: HakuOid): Either[IllegalArgumentException, String] = {
     val query = new BasicDBObjectBuilder().add("sijoitteluajoId", sijoitteluajoId).get()
-    val cursor = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Hakukohde").find(query)
+    val cursor = sijoitteluContext.morphiaDs.getDB.getCollection("Hakukohde").find(query)
 
     if (!cursor.hasNext) logger.info(s"No hakukohdes for haku $hakuOid")
 
@@ -401,7 +403,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
 
   private def getValintatuloksetHash(hakuOid: HakuOid): String = {
     val query = new BasicDBObjectBuilder().add("hakuOid", hakuOid.toString).get()
-    val cursor = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Valintatulos").find(query)
+    val cursor = sijoitteluContext.morphiaDs.getDB.getCollection("Valintatulos").find(query)
 
     if (!cursor.hasNext) logger.info(s"No valintatulos' for haku $hakuOid")
 
@@ -432,7 +434,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: SijoittelunTu
 
   def runScheduledMigration(): Map[HakuOid, Try[Unit]] = {
     logger.info(s"Beginning scheduled migration.")
-    val hakuOids: Set[HakuOid] = appConfig.sijoitteluContext.morphiaDs.getDB.getCollection("Sijoittelu").distinct("hakuOid").asScala.map(o => HakuOid(o.toString)).toSet
+    val hakuOids: Set[HakuOid] = sijoitteluContext.morphiaDs.getDB.getCollection("Sijoittelu").distinct("hakuOid").asScala.map(o => HakuOid(o.toString)).toSet
     val hakuOidsAndHashes: Map[HakuOid, String] = getSijoitteluHashesByHakuOid(hakuOids)
     var hakuoidsNotProcessed: Seq[HakuOid] = List()
     val results: Iterable[Option[(HakuOid, Try[Unit])]] = hakuOidsAndHashes.map { case (oid, hash) =>

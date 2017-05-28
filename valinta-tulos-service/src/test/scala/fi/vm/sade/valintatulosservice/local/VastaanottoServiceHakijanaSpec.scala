@@ -5,7 +5,8 @@ import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
-import fi.vm.sade.valintatulosservice.sijoittelu.{DirectMongoSijoittelunTulosRestClient, SijoittelutulosService}
+import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelutulosService
+import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{DirectMongoSijoittelunTulosRestClient, StreamingHakijaDtoClient}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
@@ -405,7 +406,8 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
     "Valintatuloksen muutoslogi"  in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
       vastaanota(hakuOid, hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
-      val valintatulos: Valintatulos = valintatulosDao.loadValintatulos(vastaanotettavissaHakuKohdeOid, "14090336922663576781797489829886", hakemusOid)
+      val valintatulos: Valintatulos = valintatulosDao.loadValintatulos(HakukohdeOid(vastaanotettavissaHakuKohdeOid),
+        ValintatapajonoOid("14090336922663576781797489829886"), HakemusOid(hakemusOid))
       assertSecondLogEntry(valintatulos, "tila: KESKEN -> VASTAANOTTANUT_SITOVASTI", selite)
     }
 
@@ -477,7 +479,8 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
     "Valintatuloksen muutoslogi"  in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = hakuFixture)
       vastaanota(hakuOid, hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
-      val valintatulos: Valintatulos = valintatulosDao.loadValintatulos(vastaanotettavissaHakuKohdeOid, "14090336922663576781797489829886", hakemusOid)
+      val valintatulos: Valintatulos = valintatulosDao.loadValintatulos(HakukohdeOid(vastaanotettavissaHakuKohdeOid),
+        ValintatapajonoOid("14090336922663576781797489829886"), HakemusOid(hakemusOid))
       assertSecondLogEntry(valintatulos, "tila: KESKEN -> VASTAANOTTANUT_SITOVASTI", selite)
     }
 
@@ -494,20 +497,21 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
 
   step(valintarekisteriDb.db.shutdown)
 
-  private lazy val valintatulosDao = appConfig.sijoitteluContext.valintatulosDao
+  private lazy val valintatulosDao = sijoitteluContext.valintatulosDao
 
   lazy val hakuService = HakuService(appConfig.hakuServiceConfig)
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, true)
-  lazy val sijoittelunTulosRestClient = new DirectMongoSijoittelunTulosRestClient(appConfig)
-  lazy val sijoittelutulosService = new SijoittelutulosService(appConfig.sijoitteluContext.raportointiService,
+  lazy val sijoittelunTulosRestClient = new DirectMongoSijoittelunTulosRestClient(sijoitteluContext, appConfig)
+  lazy val sijoittelutulosService = new SijoittelutulosService(sijoitteluContext.raportointiService,
     appConfig.ohjausparametritService, valintarekisteriDb, sijoittelunTulosRestClient)
   lazy val vastaanotettavuusService = new VastaanotettavuusService(hakukohdeRecordService, valintarekisteriDb)
-  lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb, hakuService, valintarekisteriDb, hakukohdeRecordService)(appConfig, dynamicAppConfig)
+  lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb,
+    hakuService, valintarekisteriDb, hakukohdeRecordService, sijoitteluContext.valintatulosDao, new StreamingHakijaDtoClient(appConfig))(appConfig, dynamicAppConfig)
   lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService,
-    valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository(), appConfig.sijoitteluContext.valintatulosRepository)
+    valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository(), sijoitteluContext.valintatulosRepository)
   lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService,
-    appConfig.sijoitteluContext.valintatulosRepository, valintarekisteriDb, valintarekisteriDb)
+    sijoitteluContext.valintatulosRepository, valintarekisteriDb, valintarekisteriDb)
 
   private def hakemuksenTulos: Hakemuksentulos = hakemuksenTulos(hakemusOid)
   private def hakemuksenTulos(hakemusOid: String) = valintatulosService.hakemuksentulos(HakemusOid(hakemusOid)).get

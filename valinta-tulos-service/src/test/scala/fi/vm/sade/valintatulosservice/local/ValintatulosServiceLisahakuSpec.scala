@@ -3,7 +3,8 @@ package fi.vm.sade.valintatulosservice.local
 import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila.Vastaanotettavuustila
 import fi.vm.sade.valintatulosservice.domain._
-import fi.vm.sade.valintatulosservice.sijoittelu.{DirectMongoSijoittelunTulosRestClient, SijoittelutulosService}
+import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelutulosService
+import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{DirectMongoSijoittelunTulosRestClient, StreamingHakijaDtoClient}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, Vastaanottotila}
@@ -53,11 +54,12 @@ class ValintatulosServiceLisahakuSpec extends ITSpecification with TimeWarp {
 
   lazy val hakuService = HakuService(appConfig.hakuServiceConfig)
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
-  lazy val sijoittelutulosService = new SijoittelutulosService(appConfig.sijoitteluContext.raportointiService, appConfig.ohjausparametritService,
-    valintarekisteriDb, new DirectMongoSijoittelunTulosRestClient(appConfig))
+  lazy val sijoittelutulosService = new SijoittelutulosService(sijoitteluContext.raportointiService, appConfig.ohjausparametritService,
+    valintarekisteriDb, new DirectMongoSijoittelunTulosRestClient(sijoitteluContext, appConfig))
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, true)
   lazy val vastaanotettavuusService = new VastaanotettavuusService(hakukohdeRecordService, valintarekisteriDb)
-  lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb, hakuService, valintarekisteriDb, hakukohdeRecordService)
+  lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb,
+    hakuService, valintarekisteriDb, hakukohdeRecordService, sijoitteluContext.valintatulosDao, new StreamingHakijaDtoClient(appConfig))
 
   val hakuOid = HakuOid("korkeakoulu-lisahaku1")
   val hakemusOid = HakemusOid("1.2.246.562.11.00000878230")

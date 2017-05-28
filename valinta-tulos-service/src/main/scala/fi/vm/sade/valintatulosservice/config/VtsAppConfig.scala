@@ -14,7 +14,7 @@ import fi.vm.sade.utils.tcp.{PortChecker, PortFromSystemPropertyOrFindFree}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusFixtures
 import fi.vm.sade.valintatulosservice.ohjausparametrit._
 import fi.vm.sade.valintatulosservice.security.Role
-import fi.vm.sade.valintatulosservice.sijoittelu.SijoitteluSpringContext
+import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{SijoitteluContext, SijoitteluSpringContext}
 
 object VtsAppConfig extends Logging {
   def getProfileProperty() = System.getProperty("valintatulos.profile", "default")
@@ -171,7 +171,6 @@ object VtsAppConfig extends Logging {
   }
 
   trait VtsAppConfig extends AppConfig {
-    lazy val sijoitteluContext = new SijoitteluSpringContext(this, SijoitteluSpringContext.createApplicationContext(this))
 
     def start {}
 

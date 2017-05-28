@@ -5,7 +5,7 @@ import java.time.temporal.ChronoUnit
 
 import fi.vm.sade.sijoittelu.domain.IlmoittautumisTila
 import fi.vm.sade.valintatulosservice.json.JsonFormats
-import fi.vm.sade.valintatulosservice.sijoittelu.ValintatulosRepository
+import fi.vm.sade.valintatulosservice.sijoittelu.ValintarekisteriValintatulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, Ilmoittautuminen, SijoitteluajonIlmoittautumistila, ValintatapajonoOid, VastaanotaSitovasti}
 import org.json4s.jackson.Serialization
@@ -14,22 +14,9 @@ import org.slf4j.LoggerFactory
 import scala.util.Try
 
 class IlmoittautumisService(valintatulosService: ValintatulosService,
-                            tulokset: ValintatulosRepository,
+                            tulokset: ValintarekisteriValintatulosRepository,
                             hakijaVastaanottoRepository: HakijaVastaanottoRepository, valinnantulosRepository: ValinnantulosRepository) extends JsonFormats {
   private val logger = LoggerFactory.getLogger(classOf[IlmoittautumisService])
-  def getIlmoittautumistilat(valintatapajonoOid: ValintatapajonoOid): Either[Throwable, Seq[(HakemusOid, SijoitteluajonIlmoittautumistila, Instant)]] = {
-    tulokset.findValintatulokset(valintatapajonoOid).right.map(_.map(v => (
-      HakemusOid(v.getHakemusOid),
-      SijoitteluajonIlmoittautumistila(v.getIlmoittautumisTila),
-      Option(v.getViimeinenMuutos).map(_.toInstant).getOrElse(Instant.EPOCH).truncatedTo(ChronoUnit.SECONDS))
-    ))
-  }
-
-  def getIlmoittautumistila(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): Either[Throwable, (SijoitteluajonIlmoittautumistila, Instant)] = {
-    tulokset.findValintatulos(valintatapajonoOid, hakemusOid).right.map(v =>
-      (SijoitteluajonIlmoittautumistila(v.getIlmoittautumisTila), Option(v.getViimeinenMuutos).map(_.toInstant).getOrElse(Instant.EPOCH))
-    )
-  }
 
   def ilmoittaudu(hakemusOid: HakemusOid, ilmoittautuminen: Ilmoittautuminen) {
     val hakemuksenTulos = valintatulosService.hakemuksentulos(hakemusOid).getOrElse(throw new IllegalArgumentException("Hakemusta ei löydy"))

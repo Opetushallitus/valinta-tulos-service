@@ -140,6 +140,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
       List(
         Some(valinnantulosRepository.storeValinnantila(uusi.getValinnantilanTallennus(muokkaaja), ifUnmodifiedSince)),
         Some(valinnantulosRepository.storeValinnantuloksenOhjaus(uusi.getValinnantuloksenOhjaus(muokkaaja, selite), ifUnmodifiedSince)),
+        Some(valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(uusi.getEhdollisenHyvaksynnanEhto(), ifUnmodifiedSince)),
         Option(uusi.ilmoittautumistila != EiTehty).collect { case true => valinnantulosRepository.storeIlmoittautuminen(
           uusi.henkiloOid, Ilmoittautuminen(uusi.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), ifUnmodifiedSince)
         }
@@ -153,6 +154,9 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         },
         Option(uusi.hasOhjausChanged(vanha)).collect { case true => valinnantulosRepository.updateValinnantuloksenOhjaus(
           uusi.getValinnantuloksenOhjauksenMuutos(vanha, muokkaaja, selite), ifUnmodifiedSince)
+        },
+        Option(uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha)).collect { case true => valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(
+          uusi.getEhdollisenHyvaksynnanEhtoMuutos(vanha), ifUnmodifiedSince)
         },
         Option(uusi.ilmoittautumistila != vanha.ilmoittautumistila && !uusi.ohitaIlmoittautuminen.getOrElse(false)).collect {
           case true => valinnantulosRepository.storeIlmoittautuminen(

@@ -1,4 +1,4 @@
-package fi.vm.sade.valintatulosservice.sijoittelu
+package fi.vm.sade.valintatulosservice.sijoittelu.fixture
 
 import java.util.concurrent.TimeUnit.SECONDS
 
@@ -7,7 +7,6 @@ import fi.vm.sade.sijoittelu.tulos.testfixtures.MongoMockData
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import org.json4s.DefaultFormats
 import org.json4s.JsonAST.JArray
 import org.json4s.jackson.JsonMethods._
 import org.springframework.core.io.ClassPathResource
@@ -23,14 +22,27 @@ case class SijoitteluFixtures(db: DB, valintarekisteriDb : ValintarekisteriDb) {
                     kktutkintoonJohtava: Boolean = false) {
     if (clear) {
       clearFixtures
-      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM vastaanotot"), Duration(4, SECONDS))
-      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM ilmoittautumiset"), Duration(4, SECONDS))
-      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM hakukohteet"), Duration(4, SECONDS))
+      val timeout = Duration(4, SECONDS)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM vastaanotot"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM ilmoittautumiset"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM pistetiedot"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM jonosijat"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM valintatapajonot"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM hakijaryhman_hakemukset"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM hakijaryhmat"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM sijoitteluajon_hakukohteet"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM viestinnan_ohjaus"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM ehdollisen_hyvaksynnan_ehto"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM valinnantulokset"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM tilat_kuvaukset"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM valinnantilat"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM valintaesitykset"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM hakukohteet"), timeout)
     }
     val tulokset = MongoMockData.readJson("fixtures/sijoittelu/" + fixtureName)
     MongoMockData.insertData(db, tulokset)
 
-    importJsonFixturesToPostgres(fixtureName, yhdenPaikanSaantoVoimassa, kktutkintoonJohtava);
+    importJsonFixturesToPostgres(fixtureName, yhdenPaikanSaantoVoimassa, kktutkintoonJohtava)
 
   }
 

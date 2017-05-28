@@ -8,7 +8,7 @@ import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.SijoitteluService
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde}
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.SijoitteluRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{PistetietoRecord, _}
 import org.junit.runner.RunWith
 import org.specs2.matcher.MustThrownExpectations
@@ -39,6 +39,7 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
       there was one (sijoitteluRepository).getHakukohteenPistetiedot(sijoitteluajoId, hakukohdeOid)
       there was one (sijoitteluRepository).getHakukohteenTilahistoriat(sijoitteluajoId, hakukohdeOid)
       there was one (sijoitteluRepository).getHakukohteenHakijaryhmat(sijoitteluajoId, hakukohdeOid)
+      there was one (sijoitteluRepository).getSijoitteluajonHakijaryhmienHakemukset(sijoitteluajoId, List("hakijaryhma1"))
       there was one (sijoitteluRepository).getSijoitteluajonHakijaryhmanHakemukset(sijoitteluajoId, "hakijaryhma1")
       there was one (sijoitteluRepository).getValinnantilanKuvaukset(List(123))
 
@@ -86,7 +87,9 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
     val authorizer = mock[OrganizationHierarchyAuthorizer]
     authorizer.checkAccess(session, Set(tarjoajaOid), Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Right(())
 
-    val sijoitteluRepository = mock[SijoitteluRepository]
+    type repositoryType = SijoitteluRepository with HakijaRepository with ValinnantulosRepository
+    val sijoitteluRepository = mock[repositoryType]
+
     sijoitteluRepository.getLatestSijoitteluajoId("latest", hakuOid) returns Right(sijoitteluajoId)
     sijoitteluRepository.getSijoitteluajonHakukohde(sijoitteluajoId, hakukohdeOid) returns Some(SijoittelunHakukohdeRecord(sijoitteluajoId, hakukohdeOid, true))
     sijoitteluRepository.getHakukohteenValintatapajonot(sijoitteluajoId, hakukohdeOid) returns List(
@@ -117,6 +120,8 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
     )
 
     sijoitteluRepository.getSijoitteluajonHakijaryhmanHakemukset(sijoitteluajoId, "hakijaryhma1") returns List(HakemusOid("1234.1"))
+    sijoitteluRepository.getSijoitteluajonHakijaryhmienHakemukset(sijoitteluajoId, List("hakijaryhma1")) returns Map("hakijaryhma1" -> List(HakemusOid("1234.1")))
+
 
     sijoitteluRepository.getValinnantilanKuvaukset(List(123)) returns
       Map(123 -> TilankuvausRecord(123, EiTilankuvauksenTarkennetta, Some("textFi"), Some("textSv"), Some("textEn")))

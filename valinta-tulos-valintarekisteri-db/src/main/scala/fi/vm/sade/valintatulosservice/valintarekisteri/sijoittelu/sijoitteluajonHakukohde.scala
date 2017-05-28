@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, NotFoundException, ValintatapajonoOid}
 
-class GetSijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, val sijoitteluajoId: Long, val hakukohdeOid:HakukohdeOid) {
+class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, val sijoitteluajoId: Long, val hakukohdeOid:HakukohdeOid) {
 
   val hakukohde = sijoitteluRepository.getSijoitteluajonHakukohde(sijoitteluajoId, hakukohdeOid).getOrElse(
     throw new NotFoundException(s"Sijoitteluajolle ${sijoitteluajoId} ei löydy hakukohdetta ${hakukohdeOid}"))
@@ -25,7 +25,7 @@ class GetSijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository,
   val pistetiedot = getPistetiedotGroupedByValintatapajonoOidAndHakemusOid
   val tilahistoriat = getTilahistoriatGroupedByValintatapajonoOidAndHakemusOid
   val hakijaryhmat = sijoitteluRepository.getHakukohteenHakijaryhmat(sijoitteluajoId, hakukohde.oid)
-  val hakijaryhmienHakemukset = hakijaryhmat.map(hr => hr.oid -> sijoitteluRepository.getSijoitteluajonHakijaryhmanHakemukset(sijoitteluajoId, hr.oid)).toMap
+  val hakijaryhmienHakemukset = sijoitteluRepository.getSijoitteluajonHakijaryhmienHakemukset(sijoitteluajoId, hakijaryhmat.map(_.oid))
   val hakemukset = kaikkiHakemukset.groupBy(_.valintatapajonoOid)
   val tilankuvaukset = sijoitteluRepository.getValinnantilanKuvaukset(tilankuvausHashit)
 
@@ -68,7 +68,7 @@ class GetSijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository,
   }
 }
 
-class GetSijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository, val sijoitteluajoId: Long) {
+class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository, val sijoitteluajoId: Long) {
   import scala.collection.JavaConverters._
 
   val sijoitteluajonHakemukset = sijoitteluRepository.getSijoitteluajonHakemuksetInChunks(sijoitteluajoId)
@@ -79,7 +79,7 @@ class GetSijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepositor
 
   val valintatapajonot = sijoitteluRepository.getSijoitteluajonValintatapajonotGroupedByHakukohde(sijoitteluajoId)
   val hakijaryhmat = sijoitteluRepository.getSijoitteluajonHakijaryhmat(sijoitteluajoId)
-  val hakijaryhmienHakemukset = hakijaryhmat.map(hr => hr.oid -> sijoitteluRepository.getSijoitteluajonHakijaryhmanHakemukset(sijoitteluajoId, hr.oid)).toMap
+  val hakijaryhmienHakemukset = sijoitteluRepository.getSijoitteluajonHakijaryhmienHakemukset(sijoitteluajoId, hakijaryhmat.map(_.oid))
 
   val hakukohteet = sijoitteluRepository.getSijoitteluajonHakukohteet(sijoitteluajoId)
 

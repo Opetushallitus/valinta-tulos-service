@@ -9,7 +9,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
-import fi.vm.sade.valintatulosservice.sijoittelu.{SijoittelutulosService, ValintatulosRepository}
+import fi.vm.sade.valintatulosservice.sijoittelu.{SijoittelutulosService, ValintarekisteriValintatulosRepository}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, VastaanottoEvent, VastaanottoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
@@ -30,7 +30,7 @@ class VastaanottoService(hakuService: HakuService,
                          ohjausparametritService: OhjausparametritService,
                          sijoittelutulosService: SijoittelutulosService,
                          hakemusRepository: HakemusRepository,
-                         valintatulosRepository: ValintatulosRepository) extends Logging {
+                         valintatulosRepository: ValintarekisteriValintatulosRepository) extends Logging {
 
   private val statesMatchingInexistentActions = Set(
     Vastaanottotila.kesken,
@@ -154,7 +154,7 @@ class VastaanottoService(hakuService: HakuService,
   }
 
   private def findValintatulokset(hakuOid: HakuOid): Map[String, List[Valintatulos]] = {
-    valintatulosService.findValintaTuloksetForVirkailija(hakuOid).asScala.toList.groupBy(_.getHakijaOid)
+    valintatulosService.findValintaTuloksetForVirkailija(hakuOid).groupBy(_.getHakijaOid)
   }
 
   private def createVastaanottoResult(statusCode: Int, exception: Option[Throwable], vastaanottoEvent: VastaanottoEvent) = {

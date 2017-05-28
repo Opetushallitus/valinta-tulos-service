@@ -1,4 +1,4 @@
-package fi.vm.sade.valintatulosservice.sijoittelu
+package fi.vm.sade.valintatulosservice.sijoittelu.legacymongo
 
 import fi.vm.sade.sijoittelu.domain.{HakukohdeItem, SijoitteluAjo}
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
@@ -6,15 +6,18 @@ import fi.vm.sade.sijoittelu.tulos.dto.{HakukohdeDTO, SijoitteluajoDTO}
 import fi.vm.sade.valintatulosservice.config.StubbedExternalDeps
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.StreamingJsonArrayRetriever
+import fi.vm.sade.valintatulosservice.sijoittelu.ValintarekisteriSijoittelunTulosClient
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
 
 import scala.collection.JavaConverters._
 
-class SijoittelunTulosRestClient(appConfig: VtsAppConfig) {
+@Deprecated
+class SijoittelunTulosRestClient(appConfig: VtsAppConfig) extends ValintarekisteriSijoittelunTulosClient {
   private val retriever = new StreamingJsonArrayRetriever(appConfig)
   private val targetService = appConfig.ophUrlProperties.url("sijoittelu-service.suffix")
 
-  def fetchLatestSijoitteluAjoFromSijoitteluService(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid]): Option[SijoitteluAjo] = {
+  @Deprecated
+  override def fetchLatestSijoitteluAjo(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid]): Option[SijoitteluAjo] = {
     val ajo = new SijoitteluAjo
     val processor: SijoitteluajoDTO => SijoitteluAjo = dto => {
       ajo.setSijoitteluajoId(dto.getSijoitteluajoId)
@@ -49,7 +52,8 @@ class SijoittelunTulosRestClient(appConfig: VtsAppConfig) {
     }
   }
 
-  def fetchHakemuksenTulos(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid): Option[HakijaDTO] = {
+  @Deprecated
+  override def fetchHakemuksenTulos(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid): Option[HakijaDTO] = {
     val hakuOid = sijoitteluAjo.getHakuOid
     val url = appConfig.ophUrlProperties.url("sijoittelu-service.hakemus.for.sijoittelu", hakuOid, sijoitteluAjo.getSijoitteluajoId, hakemusOid.toString)
     var result: HakijaDTO = null
@@ -62,9 +66,10 @@ class SijoittelunTulosRestClient(appConfig: VtsAppConfig) {
   }
 }
 
+@Deprecated
 object SijoittelunTulosRestClient {
-  def apply(appConfig: VtsAppConfig) = appConfig match {
-    case _: StubbedExternalDeps => new DirectMongoSijoittelunTulosRestClient(appConfig)
+  def apply(sijoitteluContext:SijoitteluContext, appConfig: VtsAppConfig) = appConfig match {
+    case _: StubbedExternalDeps => new DirectMongoSijoittelunTulosRestClient(sijoitteluContext, appConfig)
     case _ => new SijoittelunTulosRestClient(appConfig)
   }
 }
