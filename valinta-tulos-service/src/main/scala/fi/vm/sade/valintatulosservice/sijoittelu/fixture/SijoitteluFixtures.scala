@@ -28,6 +28,7 @@ case class SijoitteluFixtures(db: DB, valintarekisteriDb : ValintarekisteriDb) {
       Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM pistetiedot"), timeout)
       Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM jonosijat"), timeout)
       Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM valintatapajonot"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM hakijaryhman_hakemukset"), timeout)
       Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM hakijaryhmat"), timeout)
       Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM sijoitteluajon_hakukohteet"), timeout)
       Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM viestinnan_ohjaus"), timeout)
