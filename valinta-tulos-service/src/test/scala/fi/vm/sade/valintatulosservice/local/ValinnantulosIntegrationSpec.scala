@@ -129,6 +129,10 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
   "päivittää valinnantulosta" in {
     val update = valinnantulos.copy(
       ehdollisestiHyvaksyttavissa = Some(true),
+      ehdollisenHyvaksymisenEhtoKoodi = Some("<koodi>"),
+      ehdollisenHyvaksymisenEhtoFI = Some("syy"),
+      ehdollisenHyvaksymisenEhtoSV = Some("anledning"),
+      ehdollisenHyvaksymisenEhtoEN = Some("reason"),
       vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI,
       ilmoittautumistila = Lasna
     )
@@ -141,8 +145,11 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
   "päivittää valinnantulosta erillishaussa" in {
     val update = valinnantulos.copy(
       valinnantila = Peruuntunut,
-      ehdollisestiHyvaksyttavissa = Some(true)
-    )
+      ehdollisestiHyvaksyttavissa = Some(true),
+      ehdollisenHyvaksymisenEhtoKoodi = Some("<koodi>"),
+      ehdollisenHyvaksymisenEhtoFI = Some("syy"),
+      ehdollisenHyvaksymisenEhtoSV = Some("anledning"),
+      ehdollisenHyvaksymisenEhtoEN = Some("reason"))
 
     val Some(lastModified) = hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
     paivita(update, true, session, lastModified) must beNone
@@ -171,7 +178,11 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
   "palauttaa virheen päivitystä yritettäessä jos vastaanotto poistettu lukemisen jälkeen" in {
     val updateVastaanottanut = valinnantulos.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
     val updateKesken = valinnantulos.copy(vastaanottotila = ValintatuloksenTila.KESKEN)
-    val update = valinnantulos.copy(ehdollisestiHyvaksyttavissa = Some(true))
+    val update = valinnantulos.copy(ehdollisestiHyvaksyttavissa = Some(true),
+      ehdollisenHyvaksymisenEhtoKoodi = Some("<koodi>"),
+      ehdollisenHyvaksymisenEhtoFI = Some("syy"),
+      ehdollisenHyvaksymisenEhtoSV = Some("anledning"),
+      ehdollisenHyvaksymisenEhtoEN = Some("reason"))
 
     val Some(lastModified) = hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
     paivita(updateVastaanottanut, false, session, lastModified) must beNone
@@ -186,7 +197,11 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
   }
 
   "auditlogittaa valinnantuloksen luvut ja muokkaukset" in {
-    val update = valinnantulos.copy(ehdollisestiHyvaksyttavissa = Some(true))
+    val update = valinnantulos.copy(ehdollisestiHyvaksyttavissa = Some(true),
+      ehdollisenHyvaksymisenEhtoKoodi = Some("<koodi>"),
+      ehdollisenHyvaksymisenEhtoFI = Some("syy"),
+      ehdollisenHyvaksymisenEhtoSV = Some("anledning"),
+      ehdollisenHyvaksymisenEhtoEN = Some("reason"))
 
     val Some(lastModified) = hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
     paivita(update, false, session, lastModified) must beNone
