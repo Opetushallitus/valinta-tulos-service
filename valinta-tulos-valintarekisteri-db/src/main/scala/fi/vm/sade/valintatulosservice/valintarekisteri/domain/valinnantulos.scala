@@ -5,9 +5,10 @@ import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, ValintatuloksenTila, Valintatulos}
 
-case class ValinnantulosUpdateStatus(status:Int, message:String, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid)
+case class ValinnantulosUpdateStatus(status: Int, message: String, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid)
 
 case class KentanMuutos(field: String, from: Option[Any], to: Any)
+
 case class Muutos(changes: List[KentanMuutos], timestamp: OffsetDateTime)
 
 case class Valinnantulos(hakukohdeOid: HakukohdeOid,
@@ -32,52 +33,52 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
                          valinnantilanViimeisinMuutos: Option[OffsetDateTime] = None,
                          vastaanotonViimeisinMuutos: Option[OffsetDateTime] = None) {
 
-  def hasChanged(other:Valinnantulos) =
+  def hasChanged(other: Valinnantulos) =
     other.valinnantila != valinnantila ||
-    other.vastaanottotila != vastaanottotila ||
-    other.ilmoittautumistila != ilmoittautumistila ||
-    hasOhjausChanged(other)
+      other.vastaanottotila != vastaanottotila ||
+      other.ilmoittautumistila != ilmoittautumistila ||
+      hasOhjausChanged(other)
 
-  def isSameValinnantulos(other:Valinnantulos) =
+  def isSameValinnantulos(other: Valinnantulos) =
     other.hakukohdeOid == hakukohdeOid &&
-    other.valintatapajonoOid == valintatapajonoOid &&
-    other.hakemusOid == hakemusOid &&
-    other.henkiloOid == henkiloOid
+      other.valintatapajonoOid == valintatapajonoOid &&
+      other.hakemusOid == hakemusOid &&
+      other.henkiloOid == henkiloOid
 
-  def hasOhjausChanged(other:Valinnantulos) =
+  def hasOhjausChanged(other: Valinnantulos) =
     booleanOptionChanged(ehdollisestiHyvaksyttavissa, other.ehdollisestiHyvaksyttavissa) ||
-    booleanOptionChanged(julkaistavissa, other.julkaistavissa) ||
-    booleanOptionChanged(hyvaksyttyVarasijalta, other.hyvaksyttyVarasijalta) ||
-    booleanOptionChanged(hyvaksyPeruuntunut, other.hyvaksyPeruuntunut)
+      booleanOptionChanged(julkaistavissa, other.julkaistavissa) ||
+      booleanOptionChanged(hyvaksyttyVarasijalta, other.hyvaksyttyVarasijalta) ||
+      booleanOptionChanged(hyvaksyPeruuntunut, other.hyvaksyPeruuntunut)
 
-  def hasEhdollisenHyvaksynnanEhtoChanged(other:Valinnantulos) =
+  def hasEhdollisenHyvaksynnanEhtoChanged(other: Valinnantulos) =
     booleanOptionChanged(ehdollisestiHyvaksyttavissa, other.ehdollisestiHyvaksyttavissa) ||
-    stringChanged(ehdollisenHyvaksymisenEhtoKoodi, other.ehdollisenHyvaksymisenEhtoKoodi) ||
-    stringChanged(ehdollisenHyvaksymisenEhtoFI, other.ehdollisenHyvaksymisenEhtoFI) ||
-    stringChanged(ehdollisenHyvaksymisenEhtoSV, other.ehdollisenHyvaksymisenEhtoSV) ||
-    stringChanged(ehdollisenHyvaksymisenEhtoEN, other.ehdollisenHyvaksymisenEhtoEN)
+      stringChanged(ehdollisenHyvaksymisenEhtoKoodi, other.ehdollisenHyvaksymisenEhtoKoodi) ||
+      stringChanged(ehdollisenHyvaksymisenEhtoFI, other.ehdollisenHyvaksymisenEhtoFI) ||
+      stringChanged(ehdollisenHyvaksymisenEhtoSV, other.ehdollisenHyvaksymisenEhtoSV) ||
+      stringChanged(ehdollisenHyvaksymisenEhtoEN, other.ehdollisenHyvaksymisenEhtoEN)
 
-  private def booleanOptionChanged(thisParam:Option[Boolean], otherParam:Option[Boolean]) =
+  private def booleanOptionChanged(thisParam: Option[Boolean], otherParam: Option[Boolean]) =
     (thisParam.isDefined && otherParam.isDefined && thisParam != otherParam) || (thisParam.isDefined && otherParam.isEmpty)
 
-  private def getBooleanOptionChange(thisParam:Option[Boolean], otherParam:Option[Boolean]) =
-    if(booleanOptionChanged(thisParam, otherParam)) {
+  private def getBooleanOptionChange(thisParam: Option[Boolean], otherParam: Option[Boolean]) =
+    if (booleanOptionChanged(thisParam, otherParam)) {
       thisParam.getOrElse(false)
     } else {
       otherParam.getOrElse(false)
     }
 
-  private def stringChanged(thisParam:Option[String], otherParam:Option[String]) =
+  private def stringChanged(thisParam: Option[String], otherParam: Option[String]) =
     (thisParam.isDefined && otherParam.isDefined && thisParam != otherParam) || (thisParam.isDefined && otherParam.isEmpty) || (thisParam.isEmpty && otherParam.isDefined)
 
-  private def getStringChange(thisParam:Option[String], otherParam:Option[String])  =
-    if(stringChanged(thisParam, otherParam)) {
+  private def getStringChange(thisParam: Option[String], otherParam: Option[String]) =
+    if (stringChanged(thisParam, otherParam)) {
       thisParam.getOrElse("")
     } else {
       otherParam.getOrElse("")
     }
 
-  def getValinnantuloksenOhjauksenMuutos(vanha:Valinnantulos, muokkaaja:String, selite:String) = {
+  def getValinnantuloksenOhjauksenMuutos(vanha: Valinnantulos, muokkaaja: String, selite: String) = {
     ValinnantuloksenOhjaus(
       this.hakemusOid,
       this.valintatapajonoOid,
@@ -91,7 +92,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     )
   }
 
-  def getValinnantuloksenOhjaus(muokkaaja:String, selite:String) = ValinnantuloksenOhjaus(
+  def getValinnantuloksenOhjaus(muokkaaja: String, selite: String) = ValinnantuloksenOhjaus(
     this.hakemusOid,
     this.valintatapajonoOid,
     this.hakukohdeOid,
@@ -103,7 +104,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     selite
   )
 
-  def getEhdollisenHyvaksynnanEhtoMuutos(vanha:Valinnantulos) = {
+  def getEhdollisenHyvaksynnanEhtoMuutos(vanha: Valinnantulos) = {
     if (ehdollisestiHyvaksyttavissa.isDefined && ehdollisestiHyvaksyttavissa.get == true) {
       EhdollisenHyvaksynnanEhto(
         this.hakemusOid,
@@ -137,7 +138,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     this.ehdollisenHyvaksymisenEhtoEN.getOrElse("")
   )
 
-  def getValinnantilanTallennus(muokkaaja:String) = ValinnantilanTallennus(
+  def getValinnantilanTallennus(muokkaaja: String) = ValinnantilanTallennus(
     this.hakemusOid,
     this.valintatapajonoOid,
     this.hakukohdeOid,
@@ -146,14 +147,14 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     muokkaaja
   )
 
-  def toValintatulos():Valintatulos = {
+  def toValintatulos(): Valintatulos = {
     val valintatulos = new Valintatulos()
     valintatulos.setHakukohdeOid(hakukohdeOid.toString, "", "")
     valintatulos.setValintatapajonoOid(valintatapajonoOid.toString, "", "")
     valintatulos.setHakemusOid(hakemusOid.toString, "", "")
     valintatulos.setHakijaOid(henkiloOid, "", "")
     valintatulos.setIlmoittautumisTila(ilmoittautumistila.ilmoittautumistila, "", "")
-    julkaistavissa.foreach(j =>  valintatulos.setJulkaistavissa(j, "", ""))
+    julkaistavissa.foreach(j => valintatulos.setJulkaistavissa(j, "", ""))
     hyvaksyttyVarasijalta.foreach(h => valintatulos.setHyvaksyttyVarasijalta(h, "", ""))
     hyvaksyPeruuntunut.foreach(h => valintatulos.setHyvaksyPeruuntunut(h, "", ""))
     ehdollisestiHyvaksyttavissa.foreach(e => valintatulos.setEhdollisestiHyvaksyttavissa(e, "", ""))
@@ -161,7 +162,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     valintatulos
   }
 
-  def toValintatulos(read:Instant):Valintatulos = {
+  def toValintatulos(read: Instant): Valintatulos = {
     val valintatulos = toValintatulos()
     valintatulos.setRead(java.util.Date.from(read))
     valintatulos
@@ -181,7 +182,7 @@ case class ValinnantuloksenOhjaus(hakemusOid: HakemusOid,
 case class ValinnantilanTallennus(hakemusOid: HakemusOid,
                                   valintatapajonoOid: ValintatapajonoOid,
                                   hakukohdeOid: HakukohdeOid,
-                                  henkiloOid:String,
+                                  henkiloOid: String,
                                   valinnantila: Valinnantila,
                                   muokkaaja: String)
 
