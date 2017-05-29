@@ -1,22 +1,21 @@
 package fi.vm.sade.valintatulosservice.sijoittelu
 
-import java.util.{Date, Optional}
+import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain.SijoitteluAjo
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi._
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, IlmoittautumisTila}
 import fi.vm.sade.sijoittelu.tulos.resource.SijoitteluResource
 import fi.vm.sade.utils.Timer
-import fi.vm.sade.valintatulosservice.VastaanottoAikarajaMennyt
 import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
 import fi.vm.sade.valintatulosservice.sijoittelu.JonoFinder.kaikkiJonotJulkaistu
-import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.SijoittelunTulosRestClient
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, VastaanottoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import fi.vm.sade.valintatulosservice.{PersonOidFromHakemusResolver, VastaanottoAikarajaMennyt}
 import org.apache.commons.lang.StringUtils
 import org.joda.time.DateTime
 import slick.dbio.DBIO
@@ -39,10 +38,10 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
 
   def hakemustenTulos(hakuOid: HakuOid,
                       hakukohdeOid: Option[HakukohdeOid] = None,
-                      hakijaOidsByHakemusOids: Map[HakemusOid, String],
+                      personOidResolver: PersonOidFromHakemusResolver,
                       haunVastaanotot: Option[Map[String, Set[VastaanottoRecord]]] = None): List[HakemuksenSijoitteluntulos] = {
     def fetchVastaanottos(hakemusOid: HakemusOid, hakijaOidFromSijoittelunTulos: Option[String]): Set[VastaanottoRecord] =
-      (hakijaOidsByHakemusOids.get(hakemusOid).orElse(hakijaOidFromSijoittelunTulos), haunVastaanotot) match {
+      (hakijaOidFromSijoittelunTulos.orElse(personOidResolver.findBy(hakemusOid)), haunVastaanotot) match {
         case (Some(hakijaOid), Some(vastaanotot)) => vastaanotot.getOrElse(hakijaOid, Set())
         case (Some(hakijaOid), None) => fetchVastaanotto(hakijaOid, hakuOid)
         case (None, _) => throw new IllegalStateException(s"No hakija oid for hakemus $hakemusOid")

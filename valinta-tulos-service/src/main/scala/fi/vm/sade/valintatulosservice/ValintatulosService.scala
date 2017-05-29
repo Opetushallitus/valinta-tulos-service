@@ -1,8 +1,5 @@
 package fi.vm.sade.valintatulosservice
 
-import java.time.Instant
-import java.util
-
 import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.sijoittelu.tulos.dto
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationObject}
@@ -14,13 +11,11 @@ import fi.vm.sade.valintatulosservice.domain.Valintatila.isHyväksytty
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
-import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.StreamingHakijaDtoClient
 import fi.vm.sade.valintatulosservice.sijoittelu.{SijoittelutulosService, ValintarekisteriHakijaDTOClient, ValintarekisteriValintatulosDao}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, VastaanottoRecord, VirkailijaVastaanottoRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.vastaanottanut
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, HakukohdeRecord, Kausi, MerkitseMyohastyneeksi, ValintatapajonoOid, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import org.apache.commons.lang3.StringUtils
 import org.joda.time.DateTime
@@ -83,7 +78,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
         () => List(h).iterator,
         hakijaOidsByHakemusOids => sijoittelutulosService.hakemuksenTulos(haku,
           hakemusOid,
-          hakijaOidsByHakemusOids.get(hakemusOid),
+          hakijaOidsByHakemusOids.findBy(hakemusOid),
           sijoittelutulosService.findAikatauluFromOhjausparametritService(h.hakuOid),
           latestSijoitteluAjo).toSeq,
         vastaanottoKaudella = hakukohdeOid => {
@@ -125,7 +120,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
         val hakemustenTulokset = fetchTulokset(
           haku,
           () => hakemukset.toIterator,
-          hakijaOidsByHakemusOids => hakemusOids.flatMap(hakemusOid => sijoittelutulosService.hakemuksenTulos(haku, hakemusOid, hakijaOidsByHakemusOids.get(hakemusOid), vastaanottoaikataulu, latestSijoitteluAjo)).toSeq,
+          personOidFromHakemusResolver => hakemusOids.flatMap(hakemusOid => sijoittelutulosService.hakemuksenTulos(haku, hakemusOid, personOidFromHakemusResolver.findBy(hakemusOid), vastaanottoaikataulu, latestSijoitteluAjo)).toSeq,
           vastaanottoKaudella = hakukohdeOid => {
             hakukohdes.find(_.oid == hakukohdeOid) match {
               case Some(hakukohde) if(hakukohde.yhdenPaikanSaantoVoimassa) =>
@@ -176,8 +171,11 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
         fetchTulokset(
           haku,
           () => hakemusRepository.findHakemukset(hakuOid),
-          hakijaOidsByHakemusOids => sijoittelutulosService.hakemustenTulos(hakuOid, hakijaOidsByHakemusOids = hakijaOidsByHakemusOids, haunVastaanotot = haunVastaanotot),
-          Some(timed("personOids from hakemus", 1000)(hakemusRepository.findPersonOids(hakuOid))),
+          personOidFromHakemusResolver => sijoittelutulosService.hakemustenTulos(hakuOid, None, personOidFromHakemusResolver, haunVastaanotot = haunVastaanotot),
+          Some(new PersonOidFromHakemusResolver {
+            private lazy val hakijaOidByHakemusOid = timed("personOids from hakemus", 1000)(hakemusRepository.findPersonOids(hakuOid))
+            override def findBy(hakemusOid: HakemusOid): Option[String] = hakijaOidByHakemusOid.get(hakemusOid)
+          }),
           checkJulkaisuAikaParametri,
           vastaanottoKaudella = hakukohdeOid => {
             val hk: Option[Option[Kausi]] = koulutuksenAlkamisKaudet.get(hakukohdeOid)
@@ -215,8 +213,11 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
         fetchTulokset(
           haku,
           () => hakemukset.toIterator,
-          hakijaOidsByHakemusOids => sijoittelutulosService.hakemustenTulos(hakuOid, Some(hakukohdeOid), hakijaOidsByHakemusOids, hakukohteenVastaanotot),
-          Some(timed("personOids from hakemus", 1000)(hakemusRepository.findPersonOids(hakuOid, hakukohdeOid))),
+          personOidFromHakemusResolver => sijoittelutulosService.hakemustenTulos(hakuOid, Some(hakukohdeOid), personOidFromHakemusResolver, hakukohteenVastaanotot),
+          Some(new PersonOidFromHakemusResolver {
+            private lazy val hakijaOidByHakemusOid = timed("personOids from hakemus", 1000)(hakemusRepository.findPersonOids(hakuOid, hakukohdeOid))
+            override def findBy(hakemusOid: HakemusOid): Option[String] = hakijaOidByHakemusOid.get(hakemusOid)
+          }),
           checkJulkaisuAikaParametri,
           vastaanottoKaudella = hakukohdeOid => {
             val result: Option[(Kausi, Set[String])] = hakukohdes.find(_.oid == hakukohdeOid) match {
@@ -472,8 +473,8 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
 
   def fetchTulokset(haku: Haku,
                     getHakemukset: () => Iterator[Hakemus],
-                    getSijoittelunTulos: Map[HakemusOid, String] => Seq[HakemuksenSijoitteluntulos],
-                    hakijaOidsByHakemusOids: Option[Map[HakemusOid, String]] = None,
+                    getSijoittelunTulos: PersonOidFromHakemusResolver => Seq[HakemuksenSijoitteluntulos],
+                    personOidFromHakemusResolver: Option[PersonOidFromHakemusResolver] = None,
                     checkJulkaisuAikaParametri: Boolean = true,
                     vastaanottoKaudella: HakukohdeOid => Option[(Kausi, Set[String])]): Iterator[Hakemuksentulos] = {
     val ohjausparametrit = ohjausparametritService.ohjausparametrit(haku.oid) match {
@@ -483,7 +484,10 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
     val hakemukset = getHakemukset()
     val sijoitteluTulokset = timed("Fetch sijoittelun tulos", 1000) {
       getSijoittelunTulos(
-        hakijaOidsByHakemusOids.getOrElse(getHakemukset().map(h => (h.oid, h.henkiloOid)).toMap)
+        personOidFromHakemusResolver.getOrElse(new PersonOidFromHakemusResolver {
+          private lazy val hakijaOidByHakemusOid = getHakemukset().map(h => (h.oid, h.henkiloOid)).toMap
+          override def findBy(hakemusOid: HakemusOid): Option[String] = hakijaOidByHakemusOid.get(hakemusOid)
+        })
       ).map(t => (t.hakemusOid, t)).toMap
     }
     hakemukset.map(hakemus => {
