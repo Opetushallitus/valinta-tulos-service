@@ -120,7 +120,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
       def allowOphUpdate(session: Session) = session.hasAnyRole(Set(Role.SIJOITTELU_CRUD_OPH))
 
       def allowMusiikkiUpdate(session: Session, tarjoajaOids: Set[String]) =
-        tarjoajaOids.exists(tarjoajaOid => session.hasAnyRole(Set(Role.musiikkialanValintaToinenAste(tarjoajaOid))))
+        authorizer.checkAccess(session, tarjoajaOids, Set(Role.VALINTAKAYTTAJA_MUSIIKKIALA)).isRight
 
       validateMuutos()
     }
