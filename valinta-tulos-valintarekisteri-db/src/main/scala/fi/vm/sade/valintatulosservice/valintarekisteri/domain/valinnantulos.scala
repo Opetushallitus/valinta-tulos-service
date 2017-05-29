@@ -146,17 +146,26 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
   )
 
   def toValintatulos(): Valintatulos = {
-    val valintatulos = new Valintatulos()
-    valintatulos.setHakukohdeOid(hakukohdeOid.toString, "", "")
-    valintatulos.setValintatapajonoOid(valintatapajonoOid.toString, "", "")
-    valintatulos.setHakemusOid(hakemusOid.toString, "", "")
-    valintatulos.setHakijaOid(henkiloOid, "", "")
-    valintatulos.setIlmoittautumisTila(ilmoittautumistila.ilmoittautumistila, "", "")
-    julkaistavissa.foreach(j => valintatulos.setJulkaistavissa(j, "", ""))
-    hyvaksyttyVarasijalta.foreach(h => valintatulos.setHyvaksyttyVarasijalta(h, "", ""))
+    val valintatulos = new Valintatulos(
+      hakemusOid.toString,
+      henkiloOid,
+      hakukohdeOid.toString,
+      null,  // hakuOid doesn't seem to be present in this context at all
+      0,  // hakutoive doesn't seem to be present in this context either
+      hyvaksyttyVarasijalta.getOrElse(false),
+      ilmoittautumistila.ilmoittautumistila,
+      julkaistavissa.getOrElse(false),
+      vastaanottotila,
+      ehdollisestiHyvaksyttavissa.getOrElse(false),
+      valintatapajonoOid.toString,
+      hyvaksymiskirjeLahetetty.map(d => Date.from(d.toInstant)).orNull,
+      ehdollisenHyvaksymisenEhtoKoodi.orNull,
+      ehdollisenHyvaksymisenEhtoFI.orNull,
+      ehdollisenHyvaksymisenEhtoSV.orNull,
+      ehdollisenHyvaksymisenEhtoEN.orNull
+    )
+    // not settable through constructor:
     hyvaksyPeruuntunut.foreach(h => valintatulos.setHyvaksyPeruuntunut(h, "", ""))
-    ehdollisestiHyvaksyttavissa.foreach(e => valintatulos.setEhdollisestiHyvaksyttavissa(e, "", ""))
-    valintatulos.setTila(vastaanottotila, "")
     valintatulos
   }
 
