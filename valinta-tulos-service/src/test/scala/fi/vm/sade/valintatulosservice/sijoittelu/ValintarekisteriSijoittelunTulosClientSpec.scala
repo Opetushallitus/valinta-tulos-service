@@ -68,6 +68,10 @@ class ValintarekisteriSijoittelunTulosClientSpec extends ITSpecification with Va
 
     step(insertValinnantulos(hakuOid2, valinnantulos(sijoittelunHakukohdeOid2, sijoittelunValintatapajonoOid2, sijoittelunHakemusOid1)))
 
+    "return None if hakija not found" in {
+      client.fetchHakemuksenTulos(client.fetchLatestSijoitteluAjo(hakuOid2).get, HakemusOid("fakeHakemusOid")) must_== None
+    }
+
     "return hakijan hakutoiveet" in {
       val hakijaDto = client.fetchHakemuksenTulos(client.fetchLatestSijoitteluAjo(hakuOid2).get, sijoittelunHakemusOid1).get
       hakijaDto.getHakijaOid must_== sijoittelunHakemusOid1.toString

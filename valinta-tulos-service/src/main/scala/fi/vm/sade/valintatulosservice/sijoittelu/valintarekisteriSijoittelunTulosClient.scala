@@ -43,6 +43,7 @@ class ValintarekisteriSijoittelunTulosClientImpl(repository: HakijaRepository wi
 
   override def fetchHakemuksenTulos(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid): Option[HakijaDTO] =
     Try(new SijoitteluajonHakija(repository, sijoitteluAjo, hakemusOid).dto()) match {
+      case Failure(e) if e.isInstanceOf[NotFoundException] => None
       case Failure(e) => throw new RuntimeException(e)
       case Success(r) => Some(r)
     }

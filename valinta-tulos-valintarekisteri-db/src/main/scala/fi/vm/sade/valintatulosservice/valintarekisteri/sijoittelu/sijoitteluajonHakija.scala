@@ -19,7 +19,7 @@ class SijoitteluajonHakija(val repository: HakijaRepository with SijoitteluRepos
   }
 
   val hakija = repository.getHakemuksenHakija(hakemusOid, sijoitteluajoId)
-    .orElse(throw new IllegalArgumentException(s"Hakijaa ei löytynyt hakemukselle $hakemusOid, sijoitteluajoid: $sijoitteluajoId")).get
+    .orElse(throw new NotFoundException(s"Hakijaa ei löytynyt hakemukselle $hakemusOid, sijoitteluajoid: $sijoitteluajoId")).get
 
   lazy val haunValinnantilat = repository.getHaunValinnantilat(hakuOid) //TODO performance? Do we need koko haku?
 
