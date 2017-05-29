@@ -307,7 +307,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
          select valintatapajono_oid, hakemus_oid, tunniste, arvo, laskennallinen_arvo, osallistuminen
          from  pistetiedot
          where sijoitteluajo_id = ${sijoitteluajoId}""".as[PistetietoRecord],
-        Duration(1, TimeUnit.MINUTES)
+        Duration(2, TimeUnit.MINUTES)
       ).toList
     }
 
