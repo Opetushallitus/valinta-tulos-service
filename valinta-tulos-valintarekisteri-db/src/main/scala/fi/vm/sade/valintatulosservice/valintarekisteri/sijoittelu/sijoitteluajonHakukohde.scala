@@ -79,7 +79,7 @@ class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository, 
 
   val valintatapajonot = sijoitteluRepository.getSijoitteluajonValintatapajonotGroupedByHakukohde(sijoitteluajoId)
   val hakijaryhmat = sijoitteluRepository.getSijoitteluajonHakijaryhmat(sijoitteluajoId)
-  val hakijaryhmienHakemukset = sijoitteluRepository.getSijoitteluajonHakijaryhmienHakemukset(sijoitteluajoId, hakijaryhmat.map(_.oid))
+  val hakijaryhmiinKuuluvatHakemukset = sijoitteluRepository.getSijoitteluajonHakijaryhmienHakemukset(sijoitteluajoId, hakijaryhmat.map(_.oid))
 
   val hakukohteet = sijoitteluRepository.getSijoitteluajonHakukohteet(sijoitteluajoId)
 
@@ -104,7 +104,7 @@ class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository, 
     hakukohteet.map(hakukohde =>
       hakukohde.entity(
         valintatapajonot.mapValues(jonot => jonot.map(jono => jono.entity(hakemukset.getOrElse(jono.oid, List())))).getOrElse(hakukohde.oid, List()),
-        groupedHakijaryhmat.getOrElse(Some(hakukohde.oid), List()).map(hr => hr.entity(hakijaryhmienHakemukset.getOrElse(hr.oid, List())))
+        groupedHakijaryhmat.getOrElse(Some(hakukohde.oid), List()).map(hr => hr.entity(hakijaryhmiinKuuluvatHakemukset.getOrElse(hr.oid, List())))
       )
     ).asJava
   }
@@ -124,7 +124,7 @@ class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository, 
     hakukohteet.map( hakukohde =>
       hakukohde.dto(
         valintatapajonot.mapValues(jonot => jonot.map(jono => jono.dto(hakemukset.getOrElse(jono.oid.toString, List())))).getOrElse(hakukohde.oid, List()),
-        groupedHakijaryhmat.getOrElse(Some(hakukohde.oid), List()).map(hr => hr.dto(hakijaryhmienHakemukset.getOrElse(hr.oid, List())))
+        groupedHakijaryhmat.getOrElse(Some(hakukohde.oid), List()).map(hr => hr.dto(hakijaryhmiinKuuluvatHakemukset.getOrElse(hr.oid, List())))
       )
     )
   }
