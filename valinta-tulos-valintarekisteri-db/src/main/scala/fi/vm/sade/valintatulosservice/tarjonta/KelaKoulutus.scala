@@ -90,7 +90,7 @@ object KelaKoulutus {
   }
 
    def asLaajuus1AndLaajuus2(laajuus: Option[String]): (String,Option[String]) = {
-     val l = laajuus.map(_.split("\\+").toList).getOrElse(List())
+     val l = laajuus.map(_.split("\\+").toList).getOrElse(List()).filter(_.forall(_.isDigit))
      l match {
        case List(l1,l2) => (l1, Some(l2))
        case List(l1) => (l1, None)
