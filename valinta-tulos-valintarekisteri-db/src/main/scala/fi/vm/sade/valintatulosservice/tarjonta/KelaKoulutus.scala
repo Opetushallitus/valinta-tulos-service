@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice.tarjonta
 
+import scala.collection.immutable
 import scala.util.Try
 
 case class KelaKoulutus(val tutkinnontaso: Option[String],val tutkinnonlaajuus1: String, val tutkinnonlaajuus2: Option[String]) extends KelaLaajuus with KelaTutkinnontaso
@@ -111,12 +112,21 @@ object KelaKoulutus {
 
     val (alemmat, ylemmät, lääkis, hammas, muut)= separate(tasot)
 
+    def mergeMuut(muut: List[Muu]): Option[Muu] = {
+      val laajuusarvot = muut.flatMap(_.laajuusarvo)
+      if(laajuusarvot.isEmpty) {
+        None
+      } else {
+        Some(Muu(laajuusarvo = Some(laajuusarvot.mkString("+"))))
+      }
+    }
+
     val reduced: (Option[Alempi], Option[Ylempi], Option[Lääkis], Option[Hammas], Option[Muu]) =
       (alemmat.reduceOption(mergeLaajuudet[Alempi]),
         ylemmät.reduceOption(mergeLaajuudet[Ylempi]),
         lääkis.reduceOption(mergeLaajuudet[Lääkis]),
         hammas.reduceOption(mergeLaajuudet[Hammas]),
-        muut.reduceOption(mergeLaajuudet[Muu]))
+        mergeMuut(muut))
 
 
     reduced match {
