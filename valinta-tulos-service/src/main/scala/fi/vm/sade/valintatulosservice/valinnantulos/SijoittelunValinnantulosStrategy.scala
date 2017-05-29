@@ -41,7 +41,6 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
       def validateMuutos(): Either[ValinnantulosUpdateStatus, Unit] = {
         for {
           valinnantila <- validateValinnantila().right
-          ehdollisestiHyvaksyttavissa <- validateEhdollisestiHyvaksyttavissa().right
           julkaistavissa <- validateJulkaistavissa().right
           hyvaksyttyVarasijalta <- validateHyvaksyttyVarasijalta().right
           hyvaksyPeruuntunut <- validateHyvaksyPeruuntunut().right
@@ -60,13 +59,6 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
       def validateValinnantila() = uusi.valinnantila match {
         case vanha.valinnantila => Right()
         case _ => Left(ValinnantulosUpdateStatus(403, s"Valinnantilan muutos ei ole sallittu", uusi.valintatapajonoOid, uusi.hakemusOid))
-      }
-
-      def validateEhdollisestiHyvaksyttavissa() = uusi.ehdollisestiHyvaksyttavissa match {
-        case None | vanha.ehdollisestiHyvaksyttavissa => Right()
-        case _ if allowOphUpdate(session) => Right()
-        case _ if allowOrgUpdate(session, tarjoajaOids) => Right()
-        case _ => Left(ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä ehdollisesti", uusi.valintatapajonoOid, uusi.hakemusOid))
       }
 
       def validateJulkaistavissa() = (uusi.julkaistavissa, uusi.vastaanottotila) match {
@@ -129,9 +121,6 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
       def allowMusiikkiUpdate(session: Session, tarjoajaOids: Set[String]) =
         tarjoajaOids.exists(tarjoajaOid => session.hasAnyRole(Set(Role.musiikkialanValintaToinenAste(tarjoajaOid))))
-
-      def allowOrgUpdate(session: Session, tarjoajaOids: Set[String]) =
-        tarjoajaOids.exists(tarjoajaOid => session.hasAnyRole(Set(Role.sijoitteluCrudOrg(tarjoajaOid), Role.sijoitteluUpdateOrg(tarjoajaOid))))
 
       validateMuutos()
     }

@@ -11,8 +11,6 @@ object Role {
   val SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH = Role("APP_SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_1.2.246.562.10.00000000001")
   val SIJOITTELU_CRUD_OPH = Role("APP_SIJOITTELU_CRUD_1.2.246.562.10.00000000001")
   def musiikkialanValintaToinenAste(tarjoajaOid:String) = Role(s"APP_VALINTOJENTOTEUTTAMINEN_TOISEN_ASTEEN_MUSIIKKIALAN_VALINTAKAYTTAJA_${tarjoajaOid}")
-  def sijoitteluUpdateOrg(tarjoajaOid:String) = Role(s"APP_SIJOITTELU_UPDATE_${tarjoajaOid}")
-  def sijoitteluCrudOrg(tarjoajaOid:String) = Role(s"APP_SIJOITTELU_CRUD_${tarjoajaOid}")
 }
 
 sealed trait Session {
