@@ -27,7 +27,7 @@ trait ValintarekisteriRepository extends ValintarekisteriResultExtractors with L
       operations.getClass.getDeclaredFields.foreach { f =>
         ReflectionUtils.makeAccessible(f)
         if (f.getName.startsWith("query")) {
-          val value = f.get(operations)
+          val value = f.get(operations).toString.replaceAll("\n", " ").replaceAll("\r", " ")
           System.err.println(s"QUERY: $value")
         }
       }
