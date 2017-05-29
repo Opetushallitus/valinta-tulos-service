@@ -61,7 +61,7 @@ valinta-tulos-service.read-from-valintarekisteri={{read_from_valintarekisteri}}
 # Valintarekisterin migraatio
 valinta-tulos-service.haku-app-url=https://{{host_virkailija}}/haku-app
 valinta-tulos-service.authentication-service-url=https://{{host_virkailija}}/authentication-service
-valinta-tulos-service.scheduled-migration.start-hour=23
+valinta-tulos-service.scheduled-migration.start-hour=17
 valinta-tulos-service.scheduled-migration.end-hour=7
 
 # KELA
