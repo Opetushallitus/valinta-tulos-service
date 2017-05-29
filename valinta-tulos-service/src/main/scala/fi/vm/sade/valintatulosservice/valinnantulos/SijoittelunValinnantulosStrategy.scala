@@ -62,19 +62,20 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
       }
 
       def validateJulkaistavissa() = (uusi.julkaistavissa, uusi.vastaanottotila) match {
-        case (None, _) | (vanha.julkaistavissa, _) => Right()
-        case (Some(false), vastaanotto) if List(MerkitseMyohastyneeksi, Poista).contains(vastaanotto) => Right()
-        case (Some(false), _) => Left(ValinnantulosUpdateStatus(409, s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sillä on vastaanotto", uusi.valintatapajonoOid, uusi.hakemusOid))
-        case (Some(true), _) if allowJulkaistavissaUpdate() => Right()
-        case (_, _) => Left(ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia julkaista valinnantulosta", uusi.valintatapajonoOid, uusi.hakemusOid))
+        case (vanha.julkaistavissa, _) => Right()
+        case (Some(false), vastaanotto) if vastaanotto != ValintatuloksenTila.KESKEN =>
+          Left(ValinnantulosUpdateStatus(409, s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sen vastaanottotila on $vastaanotto", uusi.valintatapajonoOid, uusi.hakemusOid))
+        case (_, _) => allowJulkaistavissaUpdate()
       }
 
-      def allowJulkaistavissaUpdate(): Boolean = {
+      def allowJulkaistavissaUpdate(): Either[ValinnantulosUpdateStatus, Unit] = {
         (haku, ohjausparametrit) match {
-          case (h, _) if h.korkeakoulu => true
-          case (_, None) => true
-          case (_, Some(o)) if o.valintaesitysHyvaksyttavissa.exists(_.isBeforeNow) => true
-          case (_, _) => authorizer.checkAccess(session, appConfig.settings.rootOrganisaatioOid, Set(Role.SIJOITTELU_CRUD)).isRight
+          case (h, _) if h.korkeakoulu => Right()
+          case (_, None) => Right()
+          case (_, Some(o)) if o.valintaesitysHyvaksyttavissa.exists(_.isBeforeNow) => Right()
+          case (_, _) => authorizer.checkAccess(session, appConfig.settings.rootOrganisaatioOid, Set(Role.SIJOITTELU_CRUD)).left.map(_ =>
+            ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia julkaista valinnantulosta", uusi.valintatapajonoOid, uusi.hakemusOid)
+          )
         }
       }
 

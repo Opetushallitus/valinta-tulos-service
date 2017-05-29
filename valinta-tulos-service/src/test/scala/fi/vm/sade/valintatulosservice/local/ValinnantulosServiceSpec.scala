@@ -85,7 +85,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       )
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo) mustEqual List(
         ValinnantulosUpdateStatus(403, s"Valinnantilan muutos ei ole sallittu", valintatapajonoOid, valinnantulokset(0).hakemusOid),
-        ValinnantulosUpdateStatus(409, s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sillä on vastaanotto", valintatapajonoOid, valinnantulokset(1).hakemusOid),
+        ValinnantulosUpdateStatus(409, s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sen vastaanottotila on ${ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI}", valintatapajonoOid, valinnantulokset(1).hakemusOid),
         ValinnantulosUpdateStatus(409, s"Ei voida hyväksyä varasijalta", valintatapajonoOid, valinnantulokset(2).hakemusOid),
         ValinnantulosUpdateStatus(409, s"Hyväksy peruuntunut -arvoa ei voida muuttaa valinnantulokselle", valintatapajonoOid, valinnantulokset(3).hakemusOid),
         ValinnantulosUpdateStatus(409, s"Ilmoittautumista ei voida muuttaa, koska vastaanotto ei ole sitova", valintatapajonoOid, valinnantulokset(4).hakemusOid)
