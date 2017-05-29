@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
+import org.springframework.util.ReflectionUtils
 import slick.dbio._
 import slick.driver.PostgresDriver.api.jdbcActionExtensionMethods
 import slick.driver.PostgresDriver.backend.Database
@@ -17,9 +18,20 @@ import scala.util.{Failure, Success, Try}
 
 trait ValintarekisteriRepository extends ValintarekisteriResultExtractors with Logging with PerformanceLogger {
   type TilanViimeisinMuutos = Timestamp
+  private val logSqlOfSomeQueries = false // For debugging only. Do NOT enable in production.
 
   val db: Database
   def runBlocking[R](operations: DBIO[R], timeout: Duration = Duration(10, TimeUnit.MINUTES)): R = {
+    if (logSqlOfSomeQueries) {
+      logger.error("This should not happen in production.")
+      operations.getClass.getDeclaredFields.foreach { f =>
+        ReflectionUtils.makeAccessible(f)
+        if (f.getName.startsWith("query")) {
+          val value = f.get(operations)
+          System.err.println(s"QUERY: $value")
+        }
+      }
+    }
     Await.result(
       db.run(operations.withStatementParameters(statementInit = st => st.setQueryTimeout(timeout.toSeconds.toInt))),
       timeout + Duration(1, TimeUnit.SECONDS)
