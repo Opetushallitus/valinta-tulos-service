@@ -288,6 +288,19 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
               where hakijaryhma_oid = ${hakijaryhmaOid} and sijoitteluajo_id = ${sijoitteluajoId}""".as[HakemusOid]).toList
     }
 
+  override def getSijoitteluajonHakijaryhmistaHyvaksytytHakemukset(sijoitteluajoId:Long, hakijaryhmaOids:List[String]): Map[String, List[HakemusOid]] =
+    time (s"Sijoitteluajon $sijoitteluajoId hakijaryhmien (${hakijaryhmaOids.size} kpl) hakemuksien haku" ) {
+      hakijaryhmaOids.map(oid => oid -> getSijoitteluajonHakijaryhmastaHyvaksytytHakemukset(sijoitteluajoId, oid, false)).toMap
+    }
+
+  override def getSijoitteluajonHakijaryhmastaHyvaksytytHakemukset(sijoitteluajoId:Long, hakijaryhmaOid: String, log:Boolean = true): List[HakemusOid] =
+    time (s"Sijoitteluajon $sijoitteluajoId hakijaryhmän $hakijaryhmaOid hakemuksien haku", log ) {
+      runBlocking(
+        sql"""select hakemus_oid
+              from hakijaryhman_hakemukset
+              where hakijaryhma_oid = ${hakijaryhmaOid} and sijoitteluajo_id = ${sijoitteluajoId} and hyvaksytty_hakijaryhmasta = TRUE""".as[HakemusOid]).toList
+    }
+
   override def getSijoitteluajonPistetiedot(sijoitteluajoId:Long): List[PistetietoRecord] =
     time (s"Sijoitteluajon $sijoitteluajoId pistetietojen haku") {
       runBlocking(sql"""

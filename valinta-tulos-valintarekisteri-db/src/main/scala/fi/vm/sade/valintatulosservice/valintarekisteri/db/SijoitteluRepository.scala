@@ -36,6 +36,8 @@ trait SijoitteluRepository extends PerformanceLogger { this:Logging =>
   def getSijoitteluajonHakijaryhmat(sijoitteluajoId:Long): List[HakijaryhmaRecord]
   def getSijoitteluajonHakijaryhmienHakemukset(sijoitteluajoId:Long, hakijaryhmaOids:List[String]): Map[String, List[HakemusOid]]
   def getSijoitteluajonHakijaryhmanHakemukset(sijoitteluajoId:Long, hakijaryhmaOid:String, log:Boolean = true): List[HakemusOid]
+  def getSijoitteluajonHakijaryhmistaHyvaksytytHakemukset(sijoitteluajoId:Long, hakijaryhmaOids:List[String]): Map[String, List[HakemusOid]]
+  def getSijoitteluajonHakijaryhmastaHyvaksytytHakemukset(sijoitteluajoId:Long, hakijaryhmaOid:String, log:Boolean = true): List[HakemusOid]
   def getSijoitteluajonPistetiedot(sijoitteluajoId:Long): List[PistetietoRecord]
   def getSijoitteluajonPistetiedotInChunks(sijoitteluajoId:Long, chunkSize:Int = 200): List[PistetietoRecord]
   def getSijoitteluajonHakemuksetInChunks(sijoitteluajoId:Long, chunkSize:Int = 300): List[HakemusRecord]
