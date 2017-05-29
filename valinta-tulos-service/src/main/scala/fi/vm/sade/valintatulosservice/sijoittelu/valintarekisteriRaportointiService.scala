@@ -72,7 +72,7 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
     val sijoitteluajoId = SyntheticSijoitteluAjoForHakusWithoutSijoittelu.getSijoitteluajoId(sijoitteluAjo)
     val valinnantulokset = repository.runBlocking(repository.getValinnantuloksetForHaku(HakuOid(sijoitteluAjo.getHakuOid)))
 
-    def sijoitteluajonHakukohteet = sijoitteluajoId.map(id => tryOrThrow(new SijoitteluajonHakukohteet(repository, id).entity)).getOrElse(new java.util.ArrayList[Hakukohde]())
+    val sijoitteluajonHakukohteet = sijoitteluajoId.map(id => tryOrThrow(new SijoitteluajonHakukohteet(repository, id).entity)).getOrElse(new java.util.ArrayList[Hakukohde]())
     def hakukohteetIlmanSijoittelua = hakukohteetValinnantuloksista(
       valinnantulokset.filterNot(vt => sijoitteluajonHakukohteet.asScala.map(_.getOid).contains(vt.hakukohdeOid.toString))
         .groupBy(_.hakukohdeOid).mapValues(_.groupBy(_.valintatapajonoOid)))
