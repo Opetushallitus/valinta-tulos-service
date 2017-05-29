@@ -4,7 +4,7 @@ import java.time.Instant
 
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
-import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
+import fi.vm.sade.sijoittelu.domain.{EhdollisenHyvaksymisenEhtoKoodi, ValintatuloksenTila}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
@@ -42,6 +42,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
         for {
           valinnantila <- validateValinnantila().right
           julkaistavissa <- validateJulkaistavissa().right
+          _ <- validateEhdollisestiHyvaksytty.right
           hyvaksyttyVarasijalta <- validateHyvaksyttyVarasijalta().right
           hyvaksyPeruuntunut <- validateHyvaksyPeruuntunut().right
           vastaanottoNotChanged <- validateVastaanottoNotChanged().right
@@ -77,6 +78,20 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
             ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia julkaista valinnantulosta", uusi.valintatapajonoOid, uusi.hakemusOid)
           )
         }
+      }
+
+      def validateEhdollisestiHyvaksytty: Either[ValinnantulosUpdateStatus, Unit] = (uusi.ehdollisestiHyvaksyttavissa, uusi.ehdollisenHyvaksymisenEhtoKoodi) match {
+        case (Some(true), None) =>
+          Left(ValinnantulosUpdateStatus(409, "Valinnantulos on ehdollisesti hyväksyttävissä, mutta ehtoa ei ole annettu.", uusi.valintatapajonoOid, uusi.hakemusOid))
+        case (Some(false), Some(_)) | (None, Some(_)) =>
+          Left(ValinnantulosUpdateStatus(409, "Valinnantulos on ei ole ehdollisesti hyväksyttävissä, mutta ehto on annettu.", uusi.valintatapajonoOid, uusi.hakemusOid))
+        case (_, Some(EhdollisenHyvaksymisenEhtoKoodi.EHTO_MUU)) if uusi.ehdollisenHyvaksymisenEhtoFI.isEmpty =>
+          Left(ValinnantulosUpdateStatus(409, "Valinnantuloksen ehdollisen hyväksynnän suomenkielistä ehtoa ei ole annettu.", uusi.valintatapajonoOid, uusi.hakemusOid))
+        case (_, Some(EhdollisenHyvaksymisenEhtoKoodi.EHTO_MUU)) if uusi.ehdollisenHyvaksymisenEhtoSV.isEmpty =>
+          Left(ValinnantulosUpdateStatus(409, "Valinnantuloksen ehdollisen hyväksynnän ruotsinkielistä ehtoa ei ole annettu.", uusi.valintatapajonoOid, uusi.hakemusOid))
+        case (_, Some(EhdollisenHyvaksymisenEhtoKoodi.EHTO_MUU)) if uusi.ehdollisenHyvaksymisenEhtoEN.isEmpty =>
+          Left(ValinnantulosUpdateStatus(409, "Valinnantuloksen ehdollisen hyväksynnän englanninkielistä ehtoa ei ole annettu.", uusi.valintatapajonoOid, uusi.hakemusOid))
+        case _ => Right()
       }
 
       def validateHyvaksyttyVarasijalta() = (uusi.hyvaksyttyVarasijalta, uusi.valinnantila) match {
