@@ -113,7 +113,7 @@ object KelaKoulutus {
     val (alemmat, ylemmät, lääkis, hammas, muut)= separate(tasot)
 
     def mergeMuut(muut: List[Muu]): Option[Muu] = {
-      val laajuusarvot = muut.flatMap(_.laajuusarvo)
+      val laajuusarvot = muut.flatMap(_.laajuusarvo).toSet
       if(laajuusarvot.isEmpty) {
         None
       } else {
