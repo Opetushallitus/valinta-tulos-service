@@ -9,6 +9,7 @@ import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationO
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, ValintatuloksenTila}
 import fi.vm.sade.sijoittelu.tulos.service.impl.comparators.HakijaDTOComparator
 import fi.vm.sade.sijoittelu.tulos.service.impl.converters.{RaportointiConverterImpl, SijoitteluTulosConverterImpl}
+import fi.vm.sade.utils.Timer
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.{SijoitteluajonHakijat, SijoitteluajonHakukohteet}
@@ -76,7 +77,9 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
       valinnantulokset.filterNot(vt => sijoitteluajonHakukohteet.asScala.map(_.getOid).contains(vt.hakukohdeOid.toString))
         .groupBy(_.hakukohdeOid).mapValues(_.groupBy(_.valintatapajonoOid)))
 
-    val valintatulokset = valinnantulokset.map(_.toValintatulos).toList.asJava
+    val valintatulokset = Timer.timed("valinnantulos-Valintatulos-konversio", 1000) {
+      valinnantulokset.map(_.toValintatulos).toList.asJava
+    }
     val hakukohteet = new util.ArrayList[Hakukohde]()
     hakukohteet.addAll(sijoitteluajonHakukohteet)
     hakukohteet.addAll(hakukohteetIlmanSijoittelua)
