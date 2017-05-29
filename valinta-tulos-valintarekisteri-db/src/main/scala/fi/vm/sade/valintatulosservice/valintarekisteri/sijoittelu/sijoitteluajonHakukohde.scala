@@ -39,7 +39,7 @@ class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, va
       valintatapajonot.map(v => v.dto(
         hakemukset.getOrElse(v.oid, List()).map(h =>
           h.dto(
-            hakijaryhmatJoistaHakemuksetOnHyvaksytty(h.hakemusOid),
+            hakijaryhmatJoistaHakemuksetOnHyvaksytty.getOrElse(h.hakemusOid, Set()),
             h.tilankuvaukset(tilankuvaukset.get(h.tilankuvausHash)),
             tilahistoriat.getOrElse(h.valintatapajonoOid, Map()).getOrElse(h.hakemusOid, List()).map(_.dto),
             pistetiedot.getOrElse(h.valintatapajonoOid, Map()).getOrElse(h.hakemusOid, List()).map(_.dto)
