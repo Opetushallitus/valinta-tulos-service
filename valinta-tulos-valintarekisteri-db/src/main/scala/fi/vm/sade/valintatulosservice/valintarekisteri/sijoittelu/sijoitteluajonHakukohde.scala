@@ -83,12 +83,6 @@ class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository, 
 
   val hakukohteet = sijoitteluRepository.getSijoitteluajonHakukohteet(sijoitteluajoId)
 
-  def hakemuksenHakijaryhmat(hakemusOid:String):Set[String] = {
-    hakijaryhmienHakemukset.filter {
-      case (hakijaryhma, hakemukset) => hakemukset.contains(hakemusOid)
-    }.keySet
-  }
-
   def entity() = {
     val hakemukset = sijoitteluajonHakemukset.map(h =>
       (h.valintatapajonoOid, h.entity(
