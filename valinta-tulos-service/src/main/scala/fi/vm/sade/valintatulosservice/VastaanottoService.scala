@@ -219,15 +219,12 @@ class VastaanottoService(hakuService: HakuService,
     }
   }
 
-  private def tarkistaHakijakohtainenDeadline(hakutoive: Hakutoiveentulos): Either[Throwable, Unit] = {
-    val vastaanottoDeadline = hakutoive.vastaanottoDeadline
-    if (vastaanottoDeadline.isDefined && vastaanottoDeadline.get.after(new Date())) {
+  private def tarkistaHakijakohtainenDeadline(hakutoive: Hakutoiveentulos): Either[Throwable, Unit] = hakutoive.vastaanottoDeadline match {
+    case Some(d) if d.after(new Date()) =>
       Left(new IllegalArgumentException(
-        s"""Hakijakohtaista määräaikaa ${new SimpleDateFormat("dd-MM-yyyy").format(vastaanottoDeadline)}
-            |kohteella ${hakutoive.hakukohdeOid} : ${hakutoive.vastaanotettavuustila.toString} ei ole vielä ohitettu.""".stripMargin))
-    } else {
-      Right(())
-    }
+        s"""Hakijakohtaista määräaikaa ${new SimpleDateFormat("dd-MM-yyyy").format(d)}
+           |kohteella ${hakutoive.hakukohdeOid} : ${hakutoive.vastaanotettavuustila.toString} ei ole vielä ohitettu.""".stripMargin))
+    case None => Right()
   }
 
   private def tarkistaHakutoiveenVastaanotettavuus(hakutoive: Hakutoiveentulos, haluttuTila: VastaanottoAction): Either[Throwable, Unit] = {
