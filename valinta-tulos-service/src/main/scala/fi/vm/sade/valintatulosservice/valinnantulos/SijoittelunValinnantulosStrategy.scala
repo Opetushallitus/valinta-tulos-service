@@ -70,21 +70,12 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
       }
 
       def allowJulkaistavissaUpdate(): Boolean = {
-        def ophCrudAccess() = authorizer.checkAccess(session, appConfig.settings.rootOrganisaatioOid, Set(Role.SIJOITTELU_CRUD)).isRight
-
-        def valintaesitysHyvaksyttavissa(ohjausparametrit: Ohjausparametrit) = ohjausparametrit.valintaesitysHyvaksyttavissa match {
-          case None => ophCrudAccess
-          case Some(valintaesitysHyvaksyttavissa) if valintaesitysHyvaksyttavissa.isAfterNow => ophCrudAccess
-          case Some(_) => true
-        }
-
-        def korkeakouluhaku() = (haku, ohjausparametrit) match {
+        (haku, ohjausparametrit) match {
           case (h, _) if h.korkeakoulu => true
           case (_, None) => true
-          case (_, Some(o)) => valintaesitysHyvaksyttavissa(o)
+          case (_, Some(o)) if o.valintaesitysHyvaksyttavissa.exists(_.isBeforeNow) => true
+          case (_, _) => authorizer.checkAccess(session, appConfig.settings.rootOrganisaatioOid, Set(Role.SIJOITTELU_CRUD)).isRight
         }
-
-        korkeakouluhaku
       }
 
       def validateHyvaksyttyVarasijalta() = (uusi.hyvaksyttyVarasijalta, uusi.valinnantila) match {
