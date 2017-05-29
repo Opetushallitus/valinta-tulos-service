@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SijoitteluRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, NotFoundException, ValintatapajonoOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, NotFoundException}
 
 class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, val sijoitteluajoId: Long, val hakukohdeOid:HakukohdeOid) {
 
@@ -25,22 +25,21 @@ class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, va
   val pistetiedot = getPistetiedotGroupedByValintatapajonoOidAndHakemusOid
   val tilahistoriat = getTilahistoriatGroupedByValintatapajonoOidAndHakemusOid
   val hakijaryhmat = sijoitteluRepository.getHakukohteenHakijaryhmat(sijoitteluajoId, hakukohde.oid)
-  val hakijaryhmienHakemukset = sijoitteluRepository.getSijoitteluajonHakijaryhmistaHyvaksytytHakemukset(sijoitteluajoId, hakijaryhmat.map(_.oid))
+  val hakijaRyhmistaHyvaksytytHakemukset = sijoitteluRepository.getSijoitteluajonHakijaryhmistaHyvaksytytHakemukset(sijoitteluajoId, hakijaryhmat.map(_.oid))
+  val hakijaryhmienHakemukset = sijoitteluRepository.getSijoitteluajonHakijaryhmienHakemukset(sijoitteluajoId, hakijaryhmat.map(_.oid))
   val hakemukset = kaikkiHakemukset.groupBy(_.valintatapajonoOid)
   val tilankuvaukset = sijoitteluRepository.getValinnantilanKuvaukset(tilankuvausHashit)
 
-  def hakemuksenHakijaryhmat(hakemusOid:HakemusOid):Set[String] = {
-    hakijaryhmienHakemukset.filter {
-      case (hakijaryhma, hakemukset) => hakemukset.contains(hakemusOid)
-    }.keySet
-  }
+  private val hakijaryhmatJoistaHakemuksetOnHyvaksytty: Map[HakemusOid, Set[String]] = hakijaRyhmistaHyvaksytytHakemukset.toList.flatMap { case(hakijaryhmaOid, hakemusOids) =>
+    hakemusOids.map(_ -> hakijaryhmaOid)
+  }.groupBy(_._1).map { x => (x._1, x._2.map(_._2).toSet)}
 
   def dto() = {
     hakukohde.dto(
       valintatapajonot.map(v => v.dto(
         hakemukset.getOrElse(v.oid, List()).map(h =>
           h.dto(
-            hakemuksenHakijaryhmat(h.hakemusOid),
+            hakijaryhmatJoistaHakemuksetOnHyvaksytty(h.hakemusOid),
             h.tilankuvaukset(tilankuvaukset.get(h.tilankuvausHash)),
             tilahistoriat.getOrElse(h.valintatapajonoOid, Map()).getOrElse(h.hakemusOid, List()).map(_.dto),
             pistetiedot.getOrElse(h.valintatapajonoOid, Map()).getOrElse(h.hakemusOid, List()).map(_.dto)
@@ -56,7 +55,7 @@ class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, va
       valintatapajonot.map(v => v.entity(
         hakemukset.getOrElse(v.oid, List()).map(h =>
           h.entity(
-            hakemuksenHakijaryhmat(h.hakemusOid),
+            hakijaryhmatJoistaHakemuksetOnHyvaksytty(h.hakemusOid),
             h.tilankuvaukset(tilankuvaukset.get(h.tilankuvausHash)),
             tilahistoriat.getOrElse(h.valintatapajonoOid, Map()).getOrElse(h.hakemusOid, List()).map(_.entity),
             pistetiedot.getOrElse(h.valintatapajonoOid, Map()).getOrElse(h.hakemusOid, List()).map(_.entity)
@@ -73,7 +72,7 @@ class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository, 
 
   val sijoitteluajonHakemukset = sijoitteluRepository.getSijoitteluajonHakemuksetInChunks(sijoitteluajoId)
   val tilankuvaukset = sijoitteluRepository.getValinnantilanKuvauksetForHakemukset(sijoitteluajonHakemukset)
-  val hakemustenHakijaryhmat = sijoitteluRepository.getSijoitteluajonHakemustenHakijaryhmat(sijoitteluajoId)
+  val hakijaryhmatJoistaHakemuksetOnHyvaksytty = sijoitteluRepository.getHakijaryhmatJoistaHakemuksetOnHyvaksytty(sijoitteluajoId)
   val tilahistoriat = sijoitteluRepository.getSijoitteluajonTilahistoriatGroupByHakemusValintatapajono(sijoitteluajoId)
   val pistetiedot = sijoitteluRepository.getSijoitteluajonPistetiedotGroupByHakemusValintatapajono(sijoitteluajoId)
 
@@ -86,7 +85,7 @@ class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository, 
   def entity() = {
     val hakemukset = sijoitteluajonHakemukset.map(h =>
       (h.valintatapajonoOid, h.entity(
-        hakemustenHakijaryhmat.getOrElse(h.hakemusOid, Set()), //TODO voiko päätellä hakijaryhmistä?
+        hakijaryhmatJoistaHakemuksetOnHyvaksytty.getOrElse(h.hakemusOid, Set()),
         h.tilankuvaukset(tilankuvaukset.get(h.tilankuvausHash)),
         tilahistoriat.getOrElse((h.hakemusOid, h.valintatapajonoOid), List()).map(_.entity).sortBy(_.getLuotu.getTime),
         pistetiedot.getOrElse((h.hakemusOid, h.valintatapajonoOid), List()).map(_.entity)
@@ -106,7 +105,7 @@ class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository, 
   def dto() = {
     val hakemukset = sijoitteluajonHakemukset.map(h =>
       h.dto(
-        hakemustenHakijaryhmat.getOrElse(h.hakemusOid, Set()), //TODO voiko päätellä hakijaryhmistä?
+        hakijaryhmatJoistaHakemuksetOnHyvaksytty.getOrElse(h.hakemusOid, Set()),
         h.tilankuvaukset(tilankuvaukset.get(h.tilankuvausHash)),
         tilahistoriat.getOrElse((h.hakemusOid, h.valintatapajonoOid), List()).map(_.dto).sortBy(_.getLuotu.getTime),
         pistetiedot.getOrElse((h.hakemusOid, h.valintatapajonoOid), List()).map(_.dto)

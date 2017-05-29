@@ -187,12 +187,12 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
       readHakemukset()
     }
 
-  def getSijoitteluajonHakemustenHakijaryhmat(sijoitteluajoId:Long): Map[HakemusOid, Set[String]] =
+  def getHakijaryhmatJoistaHakemuksetOnHyvaksytty(sijoitteluajoId:Long): Map[HakemusOid, Set[String]] =
     time (s"Sijoitteluajon $sijoitteluajoId hakemusten hakijaryhmien haku") {
       runBlocking(
         sql"""select hh.hakemus_oid, hr.oid as hakijaryhma
               from hakijaryhmat hr
-              inner join hakijaryhman_hakemukset hh on hr.oid = hh.hakijaryhma_oid and hr.sijoitteluajo_id = hh.sijoitteluajo_id
+              join hakijaryhman_hakemukset hh on hr.oid = hh.hakijaryhma_oid and hr.sijoitteluajo_id = hh.sijoitteluajo_id and hh.hyvaksytty_hakijaryhmasta
               where hr.sijoitteluajo_id = ${sijoitteluajoId};""".as[(HakemusOid, String)]).groupBy(_._1).map { case (k,v) => (k,v.map(_._2).toSet) }
     }
 
