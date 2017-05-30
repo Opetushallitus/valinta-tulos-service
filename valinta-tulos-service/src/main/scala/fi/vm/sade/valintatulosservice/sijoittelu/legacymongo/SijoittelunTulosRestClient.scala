@@ -38,6 +38,8 @@ class SijoittelunTulosRestClient(appConfig: VtsAppConfig) extends Valintarekiste
     }
   }
 
+  override def fetchLatestSijoitteluAjoWithoutHakukohdes(hakuOid: HakuOid): Option[SijoitteluAjo] = fetchLatestSijoitteluAjo(hakuOid)
+
   private def hakukohdeDtoToHakukohde(hakukohdeDTO: HakukohdeDTO): HakukohdeItem = {
     val item = new HakukohdeItem
     item.setOid(hakukohdeDTO.getOid)

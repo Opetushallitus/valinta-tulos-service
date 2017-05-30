@@ -79,6 +79,12 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     }
   }
 
+  def findLatestSijoitteluAjoWithoutHakukohdesForHaku(hakuOid: HakuOid): Option[SijoitteluAjo] = {
+    Timer.timed("findLatestSijoitteluAjoWithoutHakukohdesForHaku -> sijoittelunTulosClient.fetchLatestSijoitteluAjo(hakuOid)", 100) {
+      sijoittelunTulosClient.fetchLatestSijoitteluAjoWithoutHakukohdes(hakuOid)
+    }
+  }
+
   def findLatestSijoitteluAjo(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid]): Option[SijoitteluAjo] = {
     Timer.timed(s"findLatestSijoitteluAjo -> latestSijoitteluAjoClient.fetchLatestSijoitteluAjoFromSijoitteluService($hakuOid, $hakukohdeOid)", 100) {
       sijoittelunTulosClient.fetchLatestSijoitteluAjo(hakuOid, hakukohdeOid)

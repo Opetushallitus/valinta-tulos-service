@@ -19,6 +19,7 @@ class DirectMongoSijoittelunTulosRestClient(sijoitteluContext:SijoitteluContext,
     }
   }
 
+  override def fetchLatestSijoitteluAjoWithoutHakukohdes(hakuOid: HakuOid): Option[SijoitteluAjo]= fetchLatestSijoitteluAjo(hakuOid, None)
 
   override def fetchHakemuksenTulos(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid) = {
     raportointiService.hakemus(HakuOid(sijoitteluAjo.getHakuOid), sijoitteluAjo.getSijoitteluajoId.toString, hakemusOid)

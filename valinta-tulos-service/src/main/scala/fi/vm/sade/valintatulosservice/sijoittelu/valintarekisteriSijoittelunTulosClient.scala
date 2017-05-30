@@ -12,6 +12,8 @@ trait ValintarekisteriSijoittelunTulosClient {
 
   def fetchLatestSijoitteluAjo(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid] = None): Option[SijoitteluAjo]
 
+  def fetchLatestSijoitteluAjoWithoutHakukohdes(hakuOid: HakuOid): Option[SijoitteluAjo]
+
   def fetchHakemuksenTulos(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid): Option[HakijaDTO]
 
 }
@@ -38,6 +40,13 @@ class ValintarekisteriSijoittelunTulosClientImpl(repository: HakijaRepository wi
       case None if hakukohdeOidit.isEmpty => None
       case None => Some(SyntheticSijoitteluAjoForHakusWithoutSijoittelu(hakuOid, hakukohdeOidit))
       case Some(id) => repository.getSijoitteluajo(id).map(_.entity(hakukohdeOidit))
+    }
+  }
+
+  override def fetchLatestSijoitteluAjoWithoutHakukohdes(hakuOid: HakuOid): Option[SijoitteluAjo] = {
+    repository.getLatestSijoitteluajoId(hakuOid) match {
+      case None => Some(SyntheticSijoitteluAjoForHakusWithoutSijoittelu(hakuOid))
+      case Some(id) => repository.getSijoitteluajo(id).map(_.entity(Nil))
     }
   }
 
