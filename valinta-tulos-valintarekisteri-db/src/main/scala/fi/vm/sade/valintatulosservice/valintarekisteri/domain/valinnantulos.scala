@@ -23,7 +23,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
                          ehdollisenHyvaksymisenEhtoEN: Option[String],
                          julkaistavissa: Boolean,
                          hyvaksyttyVarasijalta: Boolean,
-                         hyvaksyPeruuntunut: Option[Boolean],
+                         hyvaksyPeruuntunut: Boolean,
                          vastaanottotila: ValintatuloksenTila,
                          ilmoittautumistila: SijoitteluajonIlmoittautumistila,
                          poistettava: Option[Boolean] = None,
@@ -49,7 +49,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     booleanOptionChanged(ehdollisestiHyvaksyttavissa, other.ehdollisestiHyvaksyttavissa) ||
       julkaistavissa != other.julkaistavissa ||
       hyvaksyttyVarasijalta != other.hyvaksyttyVarasijalta ||
-      booleanOptionChanged(hyvaksyPeruuntunut, other.hyvaksyPeruuntunut)
+      hyvaksyPeruuntunut != other.hyvaksyPeruuntunut
 
   def hasEhdollisenHyvaksynnanEhtoChanged(other: Valinnantulos) =
     booleanOptionChanged(ehdollisestiHyvaksyttavissa, other.ehdollisestiHyvaksyttavissa) ||
@@ -84,7 +84,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
       getBooleanOptionChange(this.ehdollisestiHyvaksyttavissa, vanha.ehdollisestiHyvaksyttavissa),
       this.julkaistavissa,
       this.hyvaksyttyVarasijalta,
-      getBooleanOptionChange(this.hyvaksyPeruuntunut, vanha.hyvaksyPeruuntunut),
+      this.hyvaksyPeruuntunut,
       muokkaaja,
       selite
     )
@@ -97,7 +97,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     this.ehdollisestiHyvaksyttavissa.getOrElse(false),
     this.julkaistavissa,
     this.hyvaksyttyVarasijalta,
-    this.hyvaksyPeruuntunut.getOrElse(false),
+    this.hyvaksyPeruuntunut,
     muokkaaja,
     selite
   )
@@ -165,7 +165,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
       ehdollisenHyvaksymisenEhtoEN.orNull
     )
     // not settable through constructor:
-    hyvaksyPeruuntunut.foreach(h => valintatulos.setHyvaksyPeruuntunut(h, "", ""))
+    valintatulos.setHyvaksyPeruuntunut(hyvaksyPeruuntunut, "", "")
     valintatulos
   }
 

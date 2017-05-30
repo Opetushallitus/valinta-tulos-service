@@ -65,7 +65,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
     ehdollisenHyvaksymisenEhtoEN = None,
     julkaistavissa = false,
     hyvaksyttyVarasijalta = false,
-    hyvaksyPeruuntunut = None,
+    hyvaksyPeruuntunut = false,
     vastaanottotila = ValintatuloksenTila.KESKEN,
     ilmoittautumistila = EiTehty
   )

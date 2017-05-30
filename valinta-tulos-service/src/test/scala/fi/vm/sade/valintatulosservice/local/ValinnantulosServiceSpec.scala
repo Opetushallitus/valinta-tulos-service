@@ -81,7 +81,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
         valinnantulosB.copy(ehdollisestiHyvaksyttavissa = Some(true), ehdollisenHyvaksymisenEhtoKoodi = Some(EhdollisenHyvaksymisenEhtoKoodi.EHTO_MUU)),
         valinnantulosC.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, julkaistavissa = false),
         valinnantulosD.copy(hyvaksyttyVarasijalta = true),
-        valinnantulosE.copy(hyvaksyPeruuntunut = Some(true)),
+        valinnantulosE.copy(hyvaksyPeruuntunut = true),
         valinnantulosF.copy(ilmoittautumistila = Lasna)
       )
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo) mustEqual List(
@@ -97,7 +97,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       authorizer.checkAccess(session, Set(tarjoajaOid), Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Right(())
       authorizer.checkAccess(session, Set(tarjoajaOid), Set(Role.SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH)) returns Left(new AuthorizationFailedException("error"))
       valinnantulosRepository.getValinnantuloksetAndLastModifiedDatesForValintatapajono(valintatapajonoOid) returns Set((lastModified, valinnantulosA.copy(valinnantila = Peruuntunut)))
-      val valinnantulokset = List(valinnantulosA.copy( valinnantila = Peruuntunut, hyvaksyPeruuntunut = Some(true)))
+      val valinnantulokset = List(valinnantulosA.copy( valinnantila = Peruuntunut, hyvaksyPeruuntunut = true))
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo)  mustEqual List(
         ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä peruuntunutta", valintatapajonoOid, hakemusOidA))
       there was no (valinnantulosRepository).updateValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
@@ -106,7 +106,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       valinnantulosRepository.getValinnantuloksetAndLastModifiedDatesForValintatapajono(valintatapajonoOid) returns Set((lastModified, valinnantulosA.copy(valinnantila = Peruuntunut)))
       valinnantulosRepository.updateValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]]) returns DBIO.successful(())
       valinnantulosRepository.runBlockingTransactionally(any[DBIO[Unit]], any[Duration]) returns Right[Throwable, Unit](())
-      val valinnantulokset = List(valinnantulosA.copy( valinnantila = Peruuntunut, hyvaksyPeruuntunut = Some(true)))
+      val valinnantulokset = List(valinnantulosA.copy( valinnantila = Peruuntunut, hyvaksyPeruuntunut = true))
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo) mustEqual List()
       there was one (valinnantulosRepository).updateValinnantuloksenOhjaus(valinnantulokset(0).getValinnantuloksenOhjaus(session.personOid, "Virkailijan tallennus"), Some(lastModified))
     }
@@ -223,7 +223,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
         ehdollisestiHyvaksyttavissa = Some(false),
         julkaistavissa = true,
         hyvaksyttyVarasijalta = false,
-        hyvaksyPeruuntunut = Some(false),
+        hyvaksyPeruuntunut = false,
         vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI,
         ilmoittautumistila = Lasna)
       valinnantulosRepository.getValinnantuloksetAndLastModifiedDatesForValintatapajono(valintatapajonoOid) returns Set()
@@ -295,7 +295,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       ehdollisenHyvaksymisenEhtoEN = None,
       julkaistavissa = false,
       hyvaksyttyVarasijalta = false,
-      hyvaksyPeruuntunut = None,
+      hyvaksyPeruuntunut = false,
       vastaanottotila = ValintatuloksenTila.KESKEN,
       ilmoittautumistila = EiTehty)
     val valinnantulosB = valinnantulosA.copy(hakemusOid = hakemusOidB, henkiloOid = henkiloOidB)

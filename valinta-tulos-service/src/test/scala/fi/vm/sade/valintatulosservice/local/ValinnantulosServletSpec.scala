@@ -69,7 +69,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
     ehdollisenHyvaksymisenEhtoEN = None,
     julkaistavissa = false,
     hyvaksyttyVarasijalta = false,
-    hyvaksyPeruuntunut = None,
+    hyvaksyPeruuntunut = false,
     vastaanottotila = ValintatuloksenTila.KESKEN,
     ilmoittautumistila = EiTehty
   )

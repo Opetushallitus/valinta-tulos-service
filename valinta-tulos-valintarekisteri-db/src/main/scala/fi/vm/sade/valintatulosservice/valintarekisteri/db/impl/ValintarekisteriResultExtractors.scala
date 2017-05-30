@@ -164,7 +164,7 @@ trait ValintarekisteriResultExtractors {
     ehdollisenHyvaksymisenEhtoEN = r.nextStringOption(),
     julkaistavissa = r.nextBoolean,
     hyvaksyttyVarasijalta = r.nextBoolean,
-    hyvaksyPeruuntunut = r.nextBooleanOption,
+    hyvaksyPeruuntunut = r.nextBoolean,
     vastaanottotila = r.nextStringOption.map(VastaanottoAction(_).valintatuloksenTila).getOrElse(ValintatuloksenTila.KESKEN),
     ilmoittautumistila = r.nextStringOption.map(SijoitteluajonIlmoittautumistila(_)).getOrElse(EiTehty),
     valinnantilanViimeisinMuutos = parseOffsetDateTime(r),

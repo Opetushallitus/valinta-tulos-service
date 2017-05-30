@@ -103,8 +103,8 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
       }
 
       def validateHyvaksyPeruuntunut() = (uusi.hyvaksyPeruuntunut, uusi.valinnantila, uusi.julkaistavissa) match {
-        case (None, _, _) | (vanha.hyvaksyPeruuntunut, _, _) => Right()
-        case (_, Hyvaksytty, false) if vanha.hyvaksyPeruuntunut == Some(true) => allowPeruuntuneidenHyvaksynta()
+        case (vanha.hyvaksyPeruuntunut, _, _) => Right()
+        case (_, Hyvaksytty, false) if vanha.hyvaksyPeruuntunut => allowPeruuntuneidenHyvaksynta()
         case (_, Peruuntunut, false) => allowPeruuntuneidenHyvaksynta()
         case (_, _, _) => Left(ValinnantulosUpdateStatus(409, s"Hyväksy peruuntunut -arvoa ei voida muuttaa valinnantulokselle", uusi.valintatapajonoOid, uusi.hakemusOid))
       }
@@ -165,7 +165,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
         .updated("ehdollisestiHyvaksyttavissa", vanha.ehdollisestiHyvaksyttavissa.getOrElse(false).toString, uusi.ehdollisestiHyvaksyttavissa.getOrElse(false).toString)
         .updated("julkaistavissa", vanha.julkaistavissa.toString, uusi.julkaistavissa.toString)
         .updated("hyvaksyttyVarasijalta", vanha.hyvaksyttyVarasijalta.toString, uusi.hyvaksyttyVarasijalta.toString)
-        .updated("hyvaksyPeruuntunut", vanha.hyvaksyPeruuntunut.getOrElse(false).toString, uusi.hyvaksyPeruuntunut.getOrElse(false).toString)
+        .updated("hyvaksyPeruuntunut", vanha.hyvaksyPeruuntunut.toString, uusi.hyvaksyPeruuntunut.toString)
         .updated("vastaanottotila", vanha.vastaanottotila.toString, uusi.vastaanottotila.toString)
         .updated("ilmoittautumistila", vanha.ilmoittautumistila.toString, uusi.ilmoittautumistila.toString)
         .build()

@@ -73,7 +73,7 @@ trait ValintarekisteriTestData extends ValintarekisteriDbTools {
       ehdollisenHyvaksymisenEhtoEN = None,
       julkaistavissa = true,
       hyvaksyttyVarasijalta = false,
-      hyvaksyPeruuntunut = None,
+      hyvaksyPeruuntunut = false,
       vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI,
       ilmoittautumistila = Lasna)
   }
@@ -92,7 +92,7 @@ trait ValintarekisteriTestData extends ValintarekisteriDbTools {
       ehdollisenHyvaksymisenEhtoEN = None,
       julkaistavissa = false,
       hyvaksyttyVarasijalta = false,
-      hyvaksyPeruuntunut = None,
+      hyvaksyPeruuntunut = false,
       vastaanottotila = ValintatuloksenTila.KESKEN,
       ilmoittautumistila = EiTehty)
   }

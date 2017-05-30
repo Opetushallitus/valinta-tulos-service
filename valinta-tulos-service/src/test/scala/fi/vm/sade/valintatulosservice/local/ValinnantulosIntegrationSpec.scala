@@ -89,7 +89,7 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
     ehdollisenHyvaksymisenEhtoEN = None,
     julkaistavissa = true,
     hyvaksyttyVarasijalta = false,
-    hyvaksyPeruuntunut = Some(false),
+    hyvaksyPeruuntunut = false,
     vastaanottotila = ValintatuloksenTila.KESKEN,
     ilmoittautumistila = EiTehty
   )

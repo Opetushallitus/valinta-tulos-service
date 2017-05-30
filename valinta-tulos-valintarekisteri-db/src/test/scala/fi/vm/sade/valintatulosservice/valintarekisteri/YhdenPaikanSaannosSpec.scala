@@ -64,7 +64,7 @@ class YhdenPaikanSaannosSpec extends Specification {
     ehdollisenHyvaksymisenEhtoEN = None,
     julkaistavissa = true,
     hyvaksyttyVarasijalta = false,
-    hyvaksyPeruuntunut = Some(false),
+    hyvaksyPeruuntunut = false,
     vastaanottotila = ValintatuloksenTila.KESKEN,
     ilmoittautumistila = EiTehty
   )
