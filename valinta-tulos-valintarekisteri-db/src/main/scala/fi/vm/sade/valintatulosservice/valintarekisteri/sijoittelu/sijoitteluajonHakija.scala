@@ -49,7 +49,8 @@ class SijoitteluajonHakija(val repository: HakijaRepository with SijoitteluRepos
   def getVastaanotto(hakukohdeOid: HakukohdeOid): ValintatuloksenTila = {
     val vastaanotto = hakemuksenValinnantulokset.getOrElse(hakukohdeOid, Set()).map(_.vastaanottotila)
     if(1 < vastaanotto.size) {
-      throw new RuntimeException(s"Hakemukselle ${hakemusOid} löytyy monta vastaanottoa hakukohteelle ${hakukohdeOid}")
+      val vastaanottoString = vastaanotto.mkString(",")
+      throw new RuntimeException(s"Hakemukselle ${hakemusOid} löytyy monta vastaanottoa hakukohteelle ${hakukohdeOid}: ${vastaanottoString}")
     } else {
       vastaanotto.headOption.getOrElse(ValintatuloksenTila.KESKEN)
     }

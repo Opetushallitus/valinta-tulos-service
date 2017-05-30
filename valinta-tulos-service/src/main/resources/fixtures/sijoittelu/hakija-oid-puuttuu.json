@@ -58,6 +58,7 @@
           "poissaOlevaTaytto": false,
           "hakemukset": [
             {
+              "hakijaOid": "1.2.246.562.24.14229104472",
               "hakemusOid": "1.2.246.562.11.00000441369",
               "etunimi": "Teppo",
               "sukunimi": "Testaaja",
