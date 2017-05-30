@@ -77,33 +77,23 @@ class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, orga
     }
 
     val hakuFut: Future[Haku] = Future(hakuService.getHaku(hakuOid)).flatMap(flattenEither)
-    val vastaanottoAndHakukohdeFut: Future[Seq[(VastaanottoRecord, Hakukohde)]] =
-      Future.sequence(vastaanotot.map(vastaanotto => Future(hakuService.getHakukohde(vastaanotto.hakukohdeOid)).flatMap(flattenEither).map((vastaanotto, _))))
 
-    val recordAndHakukohde = for(
-      haku <- hakuFut;
-      v <- vastaanottoAndHakukohdeFut
-    ) yield (haku, v)
-
-    def recordAndHakukohdeToVastaanotto(haku: Haku, vastaanotto: VastaanottoRecord, hakukohde: Hakukohde): Future[Option[fi.vm.sade.valintatulosservice.kela.Vastaanotto]] = {
+    def recordAndHakukohdeToVastaanotto(hakuF: Future[Haku], vastaanotto: VastaanottoRecord, hakukohde: Hakukohde): Future[Option[fi.vm.sade.valintatulosservice.kela.Vastaanotto]] = {
       val k = Future(hakuService.getKoulutuses(hakukohde.hakukohdeKoulutusOids)).flatMap(flattenEither)
       val o = Future(organisaatioService.hae(hakukohde.tarjoajaOids.head)).flatMap(flattenEither)
 
       for(
         koulutuses <- k;
         organisaatiot <- o;
-        komos <- Future(hakuService.getKomos(koulutuses.flatMap(_.children))).flatMap(flattenEither)
+        komos <- Future(hakuService.getKomos(koulutuses.flatMap(_.children))).flatMap(flattenEither);
+        haku <- hakuF
       ) yield convertToVastaanotto(haku, hakukohde, organisaatiot, koulutuses, komos, vastaanotto)
     }
 
-    recordAndHakukohde.map(s => {
-      val (haku, vastaanottoAndHakukohde) = s
+    val vastaanottoAndHakukohdeFut: Future[Seq[Future[Option[Vastaanotto]]]] =
+      Future.sequence(vastaanotot.map(vastaanotto => Future(hakuService.getHakukohde(vastaanotto.hakukohdeOid)).flatMap(flattenEither).map(recordAndHakukohdeToVastaanotto(hakuFut, vastaanotto, _))))
 
-      Future.sequence(vastaanottoAndHakukohde.map(v => {
-        val (vastaanotto, hakukohde) = v
-        recordAndHakukohdeToVastaanotto(haku, vastaanotto, hakukohde)
-      })).map(_.flatten)
-    }).flatMap(f => f)
+    vastaanottoAndHakukohdeFut.flatMap(f => Future.sequence(f)).map(_.flatten)
   }
 
 
