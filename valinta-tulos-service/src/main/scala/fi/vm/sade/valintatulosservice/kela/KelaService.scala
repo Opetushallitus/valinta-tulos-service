@@ -10,6 +10,7 @@ import fi.vm.sade.valintatulosservice.tarjonta._
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoRecord, VirkailijaVastaanottoRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
+import scala.collection.parallel.ParSeq
 import scala.concurrent.duration._
 
 class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, organisaatioService: OrganisaatioService, valintarekisteriService: VirkailijaVastaanottoRepository) {
@@ -69,20 +70,27 @@ class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, orga
 
   private def fetchDataForVastaanotot(entry: (HakuOid, Seq[VastaanottoRecord])): Seq[fi.vm.sade.valintatulosservice.kela.Vastaanotto] = {
     val (hakuOid, vastaanotot) = entry
-    def hakukohdeAndOrganisaatioForVastaanotto(vastaanotto: VastaanottoRecord, haku: Haku): Either[Throwable, Option[fi.vm.sade.valintatulosservice.kela.Vastaanotto]] = {
-      for(hakukohde <- hakuService.getHakukohde(vastaanotto.hakukohdeOid).right;
-          koulutuses <- hakuService.getKoulutuses(hakukohde.hakukohdeKoulutusOids).right;
-          komos <- hakuService.getKomos(koulutuses.flatMap(_.children)).right;
-          organisaatiot <- organisaatioService.hae(hakukohde.tarjoajaOids.head).right) yield convertToVastaanotto(haku, hakukohde, organisaatiot, koulutuses, komos, vastaanotto)
-    }
+
+    val datat: ParSeq[Either[Throwable, (Hakukohde, Organisaatiot, Seq[Koulutus], Seq[Komo], VastaanottoRecord)]] = vastaanotot.par.map(vastaanotto => {
+      for(
+        hakukohde <- hakuService.getHakukohde(vastaanotto.hakukohdeOid).right;
+        koulutuses <- hakuService.getKoulutuses(hakukohde.hakukohdeKoulutusOids).right;
+        organisaatiot <- organisaatioService.hae(hakukohde.tarjoajaOids.head).right;
+        komos <- hakuService.getKomos(koulutuses.flatMap(_.children)).right
+      ) yield(hakukohde, organisaatiot, koulutuses, komos, vastaanotto)
+    })
+
     hakuService.getHaku(hakuOid) match {
       case Right(haku) =>
-        vastaanotot.par.map(hakukohdeAndOrganisaatioForVastaanotto(_, haku) match {
-          case Right(vastaanotto) =>
-            vastaanotto
+        datat.seq.flatMap {
+          case Right(data) =>
+            val (hakukohde, organisaatiot, koulutuses, komos, vastaanotto) = data
+            convertToVastaanotto(haku, hakukohde, organisaatiot, koulutuses, komos, vastaanotto)
           case Left(e) =>
             throw new RuntimeException(s"Unable to get hakukohde or organisaatio! ${e.getMessage}")
-        }).seq.flatten
+
+        }
+
       case Left(e) =>
         throw new RuntimeException(s"Unable to get haku ${hakuOid}! ${e.getMessage}")
     }
