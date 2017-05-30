@@ -23,7 +23,7 @@ trait ITSetup {
 
   lazy val hakemusFixtureImporter = HakemusFixtures()(appConfig)
 
-  lazy val sijoitteluFixtures = SijoitteluFixtures(sijoitteluContext.database, singleConnectionValintarekisteriDb)
+  lazy val sijoitteluFixtures = SijoitteluFixtures(singleConnectionValintarekisteriDb)
 
   def useFixture(fixtureName: String,
                  extraFixtureNames: List[String] = List(),

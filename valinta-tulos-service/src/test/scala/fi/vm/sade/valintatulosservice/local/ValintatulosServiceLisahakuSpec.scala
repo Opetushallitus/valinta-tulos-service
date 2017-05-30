@@ -57,12 +57,13 @@ class ValintatulosServiceLisahakuSpec extends ITSpecification with TimeWarp {
 
   lazy val hakuService = HakuService(appConfig.hakuServiceConfig)
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
-  lazy val sijoittelutulosService = new SijoittelutulosService(sijoitteluContext.raportointiService, appConfig.ohjausparametritService,
-    valintarekisteriDb, new DirectMongoSijoittelunTulosRestClient(sijoitteluContext, appConfig))
+  lazy val valintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
+  lazy val sijoittelutulosService = new SijoittelutulosService(new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintatulosDao), appConfig.ohjausparametritService,
+    valintarekisteriDb, new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb))
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, true)
   lazy val vastaanotettavuusService = new VastaanotettavuusService(hakukohdeRecordService, valintarekisteriDb)
   lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb,
-    hakuService, valintarekisteriDb, hakukohdeRecordService, sijoitteluContext.valintatulosDao, new StreamingHakijaDtoClient(appConfig))
+    hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, new StreamingHakijaDtoClient(appConfig))
 
   val hakuOid = HakuOid("korkeakoulu-lisahaku1")
   val hakemusOid = HakemusOid("1.2.246.562.11.00000878230")
