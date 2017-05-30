@@ -10,6 +10,7 @@ import fi.vm.sade.valintatulosservice.tarjonta._
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoRecord, VirkailijaVastaanottoRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, organisaatioService: OrganisaatioService, valintarekisteriService: VirkailijaVastaanottoRepository) {
@@ -46,10 +47,8 @@ class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, orga
 
 
 
-  def fetchVastaanototForPersonWithHetu(hetu: String, alkaen: Option[Date]): Option[Henkilo] = {
-    val henkilo: Option[vastaanotot.Henkilo] = hakijaResolver.findPersonByHetu(hetu, fetchPersonTimeout)
-
-    henkilo match {
+  def fetchVastaanototForPersonWithHetu(hetu: String, alkaen: Option[Date])(implicit executor:ExecutionContext): Future[Option[Henkilo]] = {
+    Future(hakijaResolver.findPersonByHetu(hetu, fetchPersonTimeout)).map {
       case Some(henkilo) =>
         val vastaanotot = valintarekisteriService.findHenkilonVastaanotot(henkilo.oidHenkilo, alkaen)
 

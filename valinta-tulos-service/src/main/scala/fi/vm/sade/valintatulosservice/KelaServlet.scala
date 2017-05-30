@@ -4,18 +4,23 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import fi.vm.sade.auditlog.Target.Builder
-import fi.vm.sade.auditlog.{Changes, Target, Audit}
+import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.kela.{KelaService, Vastaanotto, Henkilo}
+import fi.vm.sade.valintatulosservice.kela.{Henkilo, KelaService, Vastaanotto}
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
-import org.scalatra.{InternalServerError, NoContent, Ok}
+import org.scalatra.{FutureSupport, InternalServerError, NoContent, Ok}
 import org.scalatra.swagger.{Swagger, SwaggerEngine}
 
-import scala.util.{Success, Try}
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
+import scala.concurrent.forkjoin.ForkJoinPool
+import scala.util.{Failure, Success, Try}
 
-class KelaServlet(audit: Audit, kelaService: KelaService, val sessionRepository: SessionRepository)(override implicit val swagger: Swagger)  extends VtsServletBase with CasAuthenticatedServlet {
-
+class KelaServlet(audit: Audit, kelaService: KelaService, val sessionRepository: SessionRepository)(override implicit val swagger: Swagger)  extends VtsServletBase with CasAuthenticatedServlet with FutureSupport {
+  private val pool = new ForkJoinPool(15)
+  override protected implicit def executor: ExecutionContext = ExecutionContext.fromExecutor(pool)
   override val applicationName = Some("cas/kela")
 
   protected val applicationDescription = "Julkinen Kela REST API"
@@ -32,23 +37,21 @@ class KelaServlet(audit: Audit, kelaService: KelaService, val sessionRepository:
       .setField("henkilotunnus", request.body)
     params.get("alkuaika").foreach(builder.setField("alkuaika",_))
     audit.log(auditInfo.user, VastaanottotietojenLuku, builder.build(), new Changes.Builder().build())
-    parseParams() match {
-      case HetuQuery(henkilotunnus, startingAt) =>
-        try {
-          kelaService.fetchVastaanototForPersonWithHetu(henkilotunnus, startingAt) match {
-            case Some(henkilo) =>
-              Ok(henkilo)
-            case _ =>
-              NoContent()
-          }
-        } catch {
-          case e: Exception =>
-            InternalServerError(e.getMessage)
-        }
+    val (henkilotunnus, startingAt) = parseParams()
+
+    Await.ready(kelaService.fetchVastaanototForPersonWithHetu(henkilotunnus, startingAt), 5.seconds).value.get match {
+      case Success(Some(henkilo)) =>
+        Ok(henkilo)
+      case Success(None) =>
+        NoContent()
+      case Failure(t) =>
+        InternalServerError(t.getMessage)
     }
+
+
   }
 
-  private def parseParams(): Query = {
+  private def parseParams(): (String, Option[Date]) = {
     def invalidQuery =
       halt(400, "Henkilotunnus is mandatory and alkuaika should be in format dd.MM.yyyy!")
     val hetu = request.body
@@ -57,16 +60,14 @@ class KelaServlet(audit: Audit, kelaService: KelaService, val sessionRepository:
       case Some(startingAt) =>
         Try(new SimpleDateFormat("dd.MM.yyyy").parse(startingAt)) match {
           case Success(someDate) if someDate.before(new Date) =>
-            HetuQuery(hetu, Some(someDate))
+            (hetu, Some(someDate))
           case _ =>
             invalidQuery
         }
       case _ =>
-        HetuQuery(hetu, None)
+        (hetu, None)
     }
   }
 
-}
 
-private trait Query
-private case class HetuQuery(hetu: String, startingAt: Option[Date]) extends Query
+}
