@@ -22,7 +22,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
                          ehdollisenHyvaksymisenEhtoSV: Option[String],
                          ehdollisenHyvaksymisenEhtoEN: Option[String],
                          julkaistavissa: Boolean,
-                         hyvaksyttyVarasijalta: Option[Boolean],
+                         hyvaksyttyVarasijalta: Boolean,
                          hyvaksyPeruuntunut: Option[Boolean],
                          vastaanottotila: ValintatuloksenTila,
                          ilmoittautumistila: SijoitteluajonIlmoittautumistila,
@@ -48,7 +48,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
   def hasOhjausChanged(other: Valinnantulos) =
     booleanOptionChanged(ehdollisestiHyvaksyttavissa, other.ehdollisestiHyvaksyttavissa) ||
       julkaistavissa != other.julkaistavissa ||
-      booleanOptionChanged(hyvaksyttyVarasijalta, other.hyvaksyttyVarasijalta) ||
+      hyvaksyttyVarasijalta != other.hyvaksyttyVarasijalta ||
       booleanOptionChanged(hyvaksyPeruuntunut, other.hyvaksyPeruuntunut)
 
   def hasEhdollisenHyvaksynnanEhtoChanged(other: Valinnantulos) =
@@ -83,7 +83,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
       this.hakukohdeOid,
       getBooleanOptionChange(this.ehdollisestiHyvaksyttavissa, vanha.ehdollisestiHyvaksyttavissa),
       this.julkaistavissa,
-      getBooleanOptionChange(this.hyvaksyttyVarasijalta, vanha.hyvaksyttyVarasijalta),
+      this.hyvaksyttyVarasijalta,
       getBooleanOptionChange(this.hyvaksyPeruuntunut, vanha.hyvaksyPeruuntunut),
       muokkaaja,
       selite
@@ -96,7 +96,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     this.hakukohdeOid,
     this.ehdollisestiHyvaksyttavissa.getOrElse(false),
     this.julkaistavissa,
-    this.hyvaksyttyVarasijalta.getOrElse(false),
+    this.hyvaksyttyVarasijalta,
     this.hyvaksyPeruuntunut.getOrElse(false),
     muokkaaja,
     selite
@@ -152,7 +152,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
       hakukohdeOid.toString,
       null,  // hakuOid doesn't seem to be present in this context at all
       0,  // hakutoive doesn't seem to be present in this context either
-      hyvaksyttyVarasijalta.getOrElse(false),
+      hyvaksyttyVarasijalta,
       ilmoittautumistila.ilmoittautumistila,
       julkaistavissa,
       vastaanottotila,

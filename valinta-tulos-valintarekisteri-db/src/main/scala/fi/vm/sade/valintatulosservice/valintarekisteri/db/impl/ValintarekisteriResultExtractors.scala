@@ -163,7 +163,7 @@ trait ValintarekisteriResultExtractors {
     ehdollisenHyvaksymisenEhtoSV = r.nextStringOption(),
     ehdollisenHyvaksymisenEhtoEN = r.nextStringOption(),
     julkaistavissa = r.nextBoolean,
-    hyvaksyttyVarasijalta = r.nextBooleanOption,
+    hyvaksyttyVarasijalta = r.nextBoolean,
     hyvaksyPeruuntunut = r.nextBooleanOption,
     vastaanottotila = r.nextStringOption.map(VastaanottoAction(_).valintatuloksenTila).getOrElse(ValintatuloksenTila.KESKEN),
     ilmoittautumistila = r.nextStringOption.map(SijoitteluajonIlmoittautumistila(_)).getOrElse(EiTehty),

@@ -128,7 +128,7 @@ case class HakutoiveenValintatapajonoRecord(hakemusOid: HakemusOid, hakukohdeOid
       hakutoiveenValintatapajonoDto.setIlmoittautumisTila(IlmoittautumisTila.valueOf(v.ilmoittautumistila.ilmoittautumistila.name))
       hakutoiveenValintatapajonoDto.setJulkaistavissa(v.julkaistavissa)
       v.ehdollisestiHyvaksyttavissa.foreach(hakutoiveenValintatapajonoDto.setEhdollisestiHyvaksyttavissa(_))
-      v.hyvaksyttyVarasijalta.foreach(hakutoiveenValintatapajonoDto.setHyvaksyttyVarasijalta(_))
+      hakutoiveenValintatapajonoDto.setHyvaksyttyVarasijalta(v.hyvaksyttyVarasijalta)
       v.valinnantilanViimeisinMuutos.foreach(odt => hakutoiveenValintatapajonoDto.setHakemuksenTilanViimeisinMuutos(Date.from(odt.toInstant)))
       v.vastaanotonViimeisinMuutos.foreach(odt => hakutoiveenValintatapajonoDto.setValintatuloksenViimeisinMuutos(Date.from(odt.toInstant)))
     }
@@ -150,7 +150,7 @@ case class HakutoiveenValintatapajonoRecord(hakemusOid: HakemusOid, hakukohdeOid
       v.valinnantilanViimeisinMuutos.foreach(odt => hakutoiveenValintatapajonoDto.setHakemuksenTilanViimeisinMuutos(Date.from(odt.toInstant)))
       hakutoiveenValintatapajonoDto.setJulkaistavissa(v.julkaistavissa)
       v.ehdollisestiHyvaksyttavissa.foreach(hakutoiveenValintatapajonoDto.setEhdollisestiHyvaksyttavissa(_))
-      v.hyvaksyttyVarasijalta.foreach(hakutoiveenValintatapajonoDto.setHyvaksyttyVarasijalta(_))
+      hakutoiveenValintatapajonoDto.setHyvaksyttyVarasijalta(v.hyvaksyttyVarasijalta)
       v.valinnantilanViimeisinMuutos.foreach(odt => hakutoiveenValintatapajonoDto.setHakemuksenTilanViimeisinMuutos(Date.from(odt.toInstant)))
 
       /*
@@ -186,7 +186,7 @@ object HakutoiveenValintatapajonoRecord {
     hakutoiveenValintatapajonoDto.setIlmoittautumisTila(IlmoittautumisTila.valueOf(valinnantulos.ilmoittautumistila.ilmoittautumistila.name))
     hakutoiveenValintatapajonoDto.setJulkaistavissa(valinnantulos.julkaistavissa)
     valinnantulos.ehdollisestiHyvaksyttavissa.foreach(hakutoiveenValintatapajonoDto.setEhdollisestiHyvaksyttavissa(_))
-    valinnantulos.hyvaksyttyVarasijalta.foreach(hakutoiveenValintatapajonoDto.setHyvaksyttyVarasijalta(_))
+    hakutoiveenValintatapajonoDto.setHyvaksyttyVarasijalta(valinnantulos.hyvaksyttyVarasijalta)
     valinnantulos.valinnantilanViimeisinMuutos.foreach(odt => hakutoiveenValintatapajonoDto.setHakemuksenTilanViimeisinMuutos(Date.from(odt.toInstant)))
     valinnantulos.vastaanotonViimeisinMuutos.foreach(odt => hakutoiveenValintatapajonoDto.setValintatuloksenViimeisinMuutos(Date.from(odt.toInstant)))
     hakutoiveenValintatapajonoDto
@@ -199,7 +199,7 @@ object HakutoiveenValintatapajonoRecord {
     hakutoiveenValintatapajonoDto.setIlmoittautumisTila(IlmoittautumisTila.valueOf(valinnantulos.ilmoittautumistila.ilmoittautumistila.name))
     hakutoiveenValintatapajonoDto.setJulkaistavissa(valinnantulos.julkaistavissa)
     valinnantulos.ehdollisestiHyvaksyttavissa.foreach(hakutoiveenValintatapajonoDto.setEhdollisestiHyvaksyttavissa(_))
-    valinnantulos.hyvaksyttyVarasijalta.foreach(hakutoiveenValintatapajonoDto.setHyvaksyttyVarasijalta(_))
+    hakutoiveenValintatapajonoDto.setHyvaksyttyVarasijalta(valinnantulos.hyvaksyttyVarasijalta)
     valinnantulos.valinnantilanViimeisinMuutos.foreach(odt => hakutoiveenValintatapajonoDto.setHakemuksenTilanViimeisinMuutos(Date.from(odt.toInstant)))
     valinnantulos.vastaanotonViimeisinMuutos.foreach(odt => hakutoiveenValintatapajonoDto.setValintatuloksenViimeisinMuutos(Date.from(odt.toInstant)))
     hakutoiveenValintatapajonoDto

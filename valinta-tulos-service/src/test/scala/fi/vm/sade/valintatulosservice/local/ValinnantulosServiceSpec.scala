@@ -80,7 +80,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
         valinnantulosA.copy(valinnantila = Hyvaksytty),
         valinnantulosB.copy(ehdollisestiHyvaksyttavissa = Some(true), ehdollisenHyvaksymisenEhtoKoodi = Some(EhdollisenHyvaksymisenEhtoKoodi.EHTO_MUU)),
         valinnantulosC.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, julkaistavissa = false),
-        valinnantulosD.copy(hyvaksyttyVarasijalta = Some(true)),
+        valinnantulosD.copy(hyvaksyttyVarasijalta = true),
         valinnantulosE.copy(hyvaksyPeruuntunut = Some(true)),
         valinnantulosF.copy(ilmoittautumistila = Lasna)
       )
@@ -222,7 +222,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
         valinnantila = Hyvaksytty,
         ehdollisestiHyvaksyttavissa = Some(false),
         julkaistavissa = true,
-        hyvaksyttyVarasijalta = Some(false),
+        hyvaksyttyVarasijalta = false,
         hyvaksyPeruuntunut = Some(false),
         vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI,
         ilmoittautumistila = Lasna)
@@ -294,7 +294,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       ehdollisenHyvaksymisenEhtoSV = None,
       ehdollisenHyvaksymisenEhtoEN = None,
       julkaistavissa = false,
-      hyvaksyttyVarasijalta = None,
+      hyvaksyttyVarasijalta = false,
       hyvaksyPeruuntunut = None,
       vastaanottotila = ValintatuloksenTila.KESKEN,
       ilmoittautumistila = EiTehty)

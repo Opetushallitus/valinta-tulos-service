@@ -43,7 +43,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
     ehdollisenHyvaksymisenEhtoSV = None,
     ehdollisenHyvaksymisenEhtoEN = None,
     julkaistavissa = false,
-    hyvaksyttyVarasijalta = Some(false),
+    hyvaksyttyVarasijalta = false,
     hyvaksyPeruuntunut = Some(false),
     vastaanottotila = ValintatuloksenTila.KESKEN,
     ilmoittautumistila = EiTehty,
@@ -194,7 +194,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
         singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
       )
       result.size mustEqual 1
-      (result.head.julkaistavissa, result.head.ehdollisestiHyvaksyttavissa, result.head.hyvaksyPeruuntunut, result.head.hyvaksyttyVarasijalta) mustEqual (false, None, None, None)
+      (result.head.julkaistavissa, result.head.ehdollisestiHyvaksyttavissa, result.head.hyvaksyPeruuntunut, result.head.hyvaksyttyVarasijalta) mustEqual (false, None, None, false)
 
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.storeValinnantuloksenOhjaus(valinnantuloksenOhjaus.copy(julkaistavissa = true))

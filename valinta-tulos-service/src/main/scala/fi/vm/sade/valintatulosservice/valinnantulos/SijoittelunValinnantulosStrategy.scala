@@ -95,10 +95,10 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
       }
 
       def validateHyvaksyttyVarasijalta() = (uusi.hyvaksyttyVarasijalta, uusi.valinnantila) match {
-        case (None, _) | (vanha.hyvaksyttyVarasijalta, _) => Right()
-        case (Some(true), Varalla) if (allowOphUpdate(session) || allowMusiikkiUpdate(session, tarjoajaOids)) => Right()
-        case (Some(true), x) if x != Varalla => Left(ValinnantulosUpdateStatus(409, s"Ei voida hyväksyä varasijalta", uusi.valintatapajonoOid, uusi.hakemusOid))
-        case (Some(false), _) if (allowOphUpdate(session) || allowMusiikkiUpdate(session, tarjoajaOids)) => Right()
+        case (vanha.hyvaksyttyVarasijalta, _) => Right()
+        case (true, Varalla) if allowOphUpdate(session) || allowMusiikkiUpdate(session, tarjoajaOids) => Right()
+        case (true, x) if x != Varalla => Left(ValinnantulosUpdateStatus(409, s"Ei voida hyväksyä varasijalta", uusi.valintatapajonoOid, uusi.hakemusOid))
+        case (false, _) if allowOphUpdate(session) || allowMusiikkiUpdate(session, tarjoajaOids) => Right()
         case (_, _) => Left(ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä varasijalta", uusi.valintatapajonoOid, uusi.hakemusOid))
       }
 
@@ -164,7 +164,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
         .updated("valinnantila", vanha.valinnantila.toString, uusi.valinnantila.toString)
         .updated("ehdollisestiHyvaksyttavissa", vanha.ehdollisestiHyvaksyttavissa.getOrElse(false).toString, uusi.ehdollisestiHyvaksyttavissa.getOrElse(false).toString)
         .updated("julkaistavissa", vanha.julkaistavissa.toString, uusi.julkaistavissa.toString)
-        .updated("hyvaksyttyVarasijalta", vanha.hyvaksyttyVarasijalta.getOrElse(false).toString, uusi.hyvaksyttyVarasijalta.getOrElse(false).toString)
+        .updated("hyvaksyttyVarasijalta", vanha.hyvaksyttyVarasijalta.toString, uusi.hyvaksyttyVarasijalta.toString)
         .updated("hyvaksyPeruuntunut", vanha.hyvaksyPeruuntunut.getOrElse(false).toString, uusi.hyvaksyPeruuntunut.getOrElse(false).toString)
         .updated("vastaanottotila", vanha.vastaanottotila.toString, uusi.vastaanottotila.toString)
         .updated("ilmoittautumistila", vanha.ilmoittautumistila.toString, uusi.ilmoittautumistila.toString)
