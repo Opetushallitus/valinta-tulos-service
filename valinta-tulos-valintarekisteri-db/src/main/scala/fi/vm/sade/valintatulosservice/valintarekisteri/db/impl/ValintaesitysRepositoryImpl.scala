@@ -37,13 +37,11 @@ trait ValintaesitysRepositoryImpl extends ValintaesitysRepository with Valintare
       .flatMap {
         case (false, None) =>
             DBIO.failed(new IllegalStateException(s"Valintatapajonolla $valintatapajonoOid ei ole valintaesitystä."))
-        case (false, Some(Valintaesitys(_, _, Some(hyvaksytty)))) =>
-          DBIO.failed(new IllegalStateException(s"Valintatapajonon $valintatapajonoOid valintaesitys on jo hyväksytty $hyvaksytty."))
         case (false, Some(Valintaesitys(_, _, None))) =>
           DBIO.failed(new RuntimeException("No update, but valintaesitys still not hyväksytty. Are we not using isolation level serializable?"))
         case (true, None) =>
           DBIO.failed(new RuntimeException("Updated, but valintaesitys no longer exists. Are we not using isolation level serializable?"))
-        case (true, Some(valintaesitys)) =>
+        case (_, Some(valintaesitys)) =>
           DBIO.successful(valintaesitys)
     }.transactionally
   }
