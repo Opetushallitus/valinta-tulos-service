@@ -6,8 +6,8 @@ import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.generatedfixtures._
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
-import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{SijoittelunTulosRestClient, StreamingHakijaDtoClient}
-import fi.vm.sade.valintatulosservice.sijoittelu.{SijoittelutulosService, ValintarekisteriRaportointiServiceImpl, ValintarekisteriValintatulosDaoImpl, ValintarekisteriValintatulosRepositoryImpl}
+import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.StreamingHakijaDtoClient
+import fi.vm.sade.valintatulosservice.sijoittelu._
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{HakemusIdentifier, ValintarekisteriDb}
@@ -24,10 +24,9 @@ class MailPollerSpec extends ITSpecification with TimeWarp {
   lazy val hakuService = HakuService(appConfig.hakuServiceConfig)
   lazy val oppijanTunnistusService = OppijanTunnistusService(appConfig.settings)
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
-  lazy val sijoittelunTulosRestClient = new SijoittelunTulosRestClient(appConfig)
   lazy val valintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
   lazy val sijoittelutulosService = new SijoittelutulosService(new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintatulosDao), appConfig.ohjausparametritService,
-    valintarekisteriDb, sijoittelunTulosRestClient)
+    valintarekisteriDb, new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb))
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, true)
   lazy val vastaanotettavuusService = new VastaanotettavuusService(hakukohdeRecordService, valintarekisteriDb)
   lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb, hakuService,

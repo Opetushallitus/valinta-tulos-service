@@ -3,15 +3,12 @@ package fi.vm.sade.valintatulosservice.local
 import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila.Vastaanotettavuustila
 import fi.vm.sade.valintatulosservice.domain._
+import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.StreamingHakijaDtoClient
 import fi.vm.sade.valintatulosservice.sijoittelu.{SijoittelutulosService, ValintarekisteriRaportointiServiceImpl, ValintarekisteriSijoittelunTulosClientImpl, ValintarekisteriValintatulosDaoImpl}
-import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{DirectMongoSijoittelunTulosRestClient, SijoittelunTulosRestClient, StreamingHakijaDtoClient}
-import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelutulosService
-import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{DirectMongoSijoittelunTulosRestClient, StreamingHakijaDtoClient}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakijaRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.{ITSpecification, TimeWarp, ValintatulosService, VastaanotettavuusService}
 import org.junit.runner.RunWith

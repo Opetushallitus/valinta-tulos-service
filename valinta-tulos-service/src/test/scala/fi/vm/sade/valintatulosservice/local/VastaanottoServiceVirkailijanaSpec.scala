@@ -3,8 +3,8 @@ package fi.vm.sade.valintatulosservice.local
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
-import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{DirectMongoSijoittelunTulosRestClient, SijoittelunTulosRestClient, StreamingHakijaDtoClient}
-import fi.vm.sade.valintatulosservice.sijoittelu.{SijoittelutulosService, ValintarekisteriRaportointiServiceImpl, ValintarekisteriValintatulosDaoImpl, ValintarekisteriValintatulosRepositoryImpl}
+import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.StreamingHakijaDtoClient
+import fi.vm.sade.valintatulosservice.sijoittelu._
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
@@ -391,9 +391,8 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
   lazy val hakuService = HakuService(appConfig.hakuServiceConfig)
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, true)
-  lazy val sijoittelunTulosRestClient = new SijoittelunTulosRestClient(appConfig)
   lazy val sijoittelutulosService = new SijoittelutulosService(new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintatulosDao), appConfig.ohjausparametritService,
-    valintarekisteriDb, sijoittelunTulosRestClient)
+    valintarekisteriDb, new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb))
   lazy val vastaanotettavuusService = new VastaanotettavuusService(hakukohdeRecordService, valintarekisteriDb)
   lazy val valintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
   lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb,
