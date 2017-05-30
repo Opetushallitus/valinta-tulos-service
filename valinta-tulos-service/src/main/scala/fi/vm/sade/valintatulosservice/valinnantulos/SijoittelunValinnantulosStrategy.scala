@@ -117,6 +117,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
       def validateIlmoittautumistila() = (uusi.ilmoittautumistila, uusi.vastaanottotila) match {
         case (vanha.ilmoittautumistila, _) => Right()
+        case (EiTehty, _) => Right()
         case (_, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI) => Right()
         case (_, _) => Left(ValinnantulosUpdateStatus(409, s"Ilmoittautumista ei voida muuttaa, koska vastaanotto ei ole sitova", uusi.valintatapajonoOid, uusi.hakemusOid))
       }
