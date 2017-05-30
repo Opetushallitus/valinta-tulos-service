@@ -162,7 +162,7 @@ trait ValintarekisteriResultExtractors {
     ehdollisenHyvaksymisenEhtoFI = r.nextStringOption(),
     ehdollisenHyvaksymisenEhtoSV = r.nextStringOption(),
     ehdollisenHyvaksymisenEhtoEN = r.nextStringOption(),
-    julkaistavissa = r.nextBooleanOption,
+    julkaistavissa = r.nextBoolean,
     hyvaksyttyVarasijalta = r.nextBooleanOption,
     hyvaksyPeruuntunut = r.nextBooleanOption,
     vastaanottotila = r.nextStringOption.map(VastaanottoAction(_).valintatuloksenTila).getOrElse(ValintatuloksenTila.KESKEN),

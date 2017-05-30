@@ -64,7 +64,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
       def validateJulkaistavissa() = (uusi.julkaistavissa, uusi.vastaanottotila) match {
         case (vanha.julkaistavissa, _) => Right()
-        case (Some(false), vastaanotto) if vastaanotto != ValintatuloksenTila.KESKEN =>
+        case (false, vastaanotto) if vastaanotto != ValintatuloksenTila.KESKEN =>
           Left(ValinnantulosUpdateStatus(409, s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sen vastaanottotila on $vastaanotto", uusi.valintatapajonoOid, uusi.hakemusOid))
         case (_, _) => allowJulkaistavissaUpdate()
       }
@@ -102,18 +102,12 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
         case (_, _) => Left(ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä varasijalta", uusi.valintatapajonoOid, uusi.hakemusOid))
       }
 
-      def validateHyvaksyPeruuntunut() = (uusi.hyvaksyPeruuntunut, uusi.valinnantila, isJulkaistavissa()) match {
+      def validateHyvaksyPeruuntunut() = (uusi.hyvaksyPeruuntunut, uusi.valinnantila, uusi.julkaistavissa) match {
         case (None, _, _) | (vanha.hyvaksyPeruuntunut, _, _) => Right()
         case (_, Hyvaksytty, false) if vanha.hyvaksyPeruuntunut == Some(true) => allowPeruuntuneidenHyvaksynta()
         case (_, Peruuntunut, false) => allowPeruuntuneidenHyvaksynta()
         case (_, _, _) => Left(ValinnantulosUpdateStatus(409, s"Hyväksy peruuntunut -arvoa ei voida muuttaa valinnantulokselle", uusi.valintatapajonoOid, uusi.hakemusOid))
       }
-
-      def isJulkaistavissa(): Boolean =
-        (uusi.julkaistavissa, vanha.julkaistavissa) match {
-          case (None, Some(true)) | (Some(true), _) => true
-          case (_, _) => false
-        }
 
       def validateIlmoittautumistila() = (uusi.ilmoittautumistila, uusi.vastaanottotila) match {
         case (vanha.ilmoittautumistila, _) => Right()
@@ -169,7 +163,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
       new Changes.Builder()
         .updated("valinnantila", vanha.valinnantila.toString, uusi.valinnantila.toString)
         .updated("ehdollisestiHyvaksyttavissa", vanha.ehdollisestiHyvaksyttavissa.getOrElse(false).toString, uusi.ehdollisestiHyvaksyttavissa.getOrElse(false).toString)
-        .updated("julkaistavissa", vanha.julkaistavissa.getOrElse(false).toString, uusi.julkaistavissa.getOrElse(false).toString)
+        .updated("julkaistavissa", vanha.julkaistavissa.toString, uusi.julkaistavissa.toString)
         .updated("hyvaksyttyVarasijalta", vanha.hyvaksyttyVarasijalta.getOrElse(false).toString, uusi.hyvaksyttyVarasijalta.getOrElse(false).toString)
         .updated("hyvaksyPeruuntunut", vanha.hyvaksyPeruuntunut.getOrElse(false).toString, uusi.hyvaksyPeruuntunut.getOrElse(false).toString)
         .updated("vastaanottotila", vanha.vastaanottotila.toString, uusi.vastaanottotila.toString)

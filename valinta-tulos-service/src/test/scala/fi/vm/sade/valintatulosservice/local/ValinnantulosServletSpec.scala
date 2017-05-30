@@ -67,7 +67,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
     ehdollisenHyvaksymisenEhtoFI = None,
     ehdollisenHyvaksymisenEhtoSV = None,
     ehdollisenHyvaksymisenEhtoEN = None,
-    julkaistavissa = None,
+    julkaistavissa = false,
     hyvaksyttyVarasijalta = None,
     hyvaksyPeruuntunut = None,
     vastaanottotila = ValintatuloksenTila.KESKEN,
@@ -149,7 +149,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
     "palauttaa 401, jos sessiokeksi puuttuu" in { t: (String, ValinnantulosService, SessionRepository) =>
       patch(
         s"${t._1}/${valintatapajonoOid.toString}",
-        write(List(valinnantulos.copy(julkaistavissa = Some(true)))).getBytes("UTF-8"),
+        write(List(valinnantulos.copy(julkaistavissa = true))).getBytes("UTF-8"),
         defaultPatchHeaders - "Cookie"
       ) {
         status must_== 401
@@ -161,7 +161,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       t._3.get(sessionId) returns None
       patch(
         s"${t._1}/${valintatapajonoOid.toString}",
-        write(List(valinnantulos.copy(julkaistavissa = Some(true)))).getBytes("UTF-8"),
+        write(List(valinnantulos.copy(julkaistavissa = true))).getBytes("UTF-8"),
         defaultPatchHeaders
       ) {
         status must_== 401
@@ -173,7 +173,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       t._3.get(sessionId) returns Some(readSession)
       patch(
         s"${t._1}/${valintatapajonoOid.toString}",
-        write(List(valinnantulos.copy(julkaistavissa = Some(true)))).getBytes("UTF-8"),
+        write(List(valinnantulos.copy(julkaistavissa = true))).getBytes("UTF-8"),
         defaultPatchHeaders
       ) {
         status must_== 403
@@ -185,7 +185,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       t._3.get(sessionId) returns Some(crudSession)
       patch(
         s"${t._1}/${valintatapajonoOid.toString}",
-        write(List(valinnantulos.copy(julkaistavissa = Some(true)))).getBytes("UTF-8"),
+        write(List(valinnantulos.copy(julkaistavissa = true))).getBytes("UTF-8"),
         defaultPatchHeaders - "If-Unmodified-Since"
       ) {
         status must_== 400
@@ -197,14 +197,14 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       t._3.get(sessionId) returns Some(crudSession)
       t._2.storeValinnantuloksetAndIlmoittautumiset(
         valintatapajonoOid,
-        List(valinnantulos.copy(julkaistavissa = Some(true))),
+        List(valinnantulos.copy(julkaistavissa = true)),
         Some(now),
         auditInfo(crudSession),
         false
       ) returns List.empty
       patch(
         s"${t._1}/${valintatapajonoOid.toString}",
-        write(List(valinnantulos.copy(julkaistavissa = Some(true)))).getBytes("UTF-8"),
+        write(List(valinnantulos.copy(julkaistavissa = true))).getBytes("UTF-8"),
         defaultPatchHeaders
       ) {
         status must_== 200
@@ -217,14 +217,14 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       t._3.get(sessionId) returns Some(crudSession)
       t._2.storeValinnantuloksetAndIlmoittautumiset(
         valintatapajonoOid,
-        List(valinnantulos.copy(julkaistavissa = Some(true))),
+        List(valinnantulos.copy(julkaistavissa = true)),
         Some(now),
         auditInfo(crudSession),
         false
       ) returns List(virhe)
       patch(
         s"${t._1}/${valintatapajonoOid.toString}",
-        write(List(valinnantulos.copy(julkaistavissa = Some(true)))).getBytes("UTF-8"),
+        write(List(valinnantulos.copy(julkaistavissa = true))).getBytes("UTF-8"),
         defaultPatchHeaders
       ) {
         status must_== 200
@@ -236,14 +236,14 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       t._3.get(sessionId) returns Some(crudSession)
       t._2.storeValinnantuloksetAndIlmoittautumiset(
         valintatapajonoOid,
-        List(valinnantulos.copy(julkaistavissa = Some(true))),
+        List(valinnantulos.copy(julkaistavissa = true)),
         Some(now),
         auditInfo(crudSession),
         true
       ) returns List.empty
       patch(
         s"${t._1}/${valintatapajonoOid.toString}?erillishaku=true",
-        write(List(valinnantulos.copy(julkaistavissa = Some(true)))).getBytes("UTF-8"),
+        write(List(valinnantulos.copy(julkaistavissa = true))).getBytes("UTF-8"),
         defaultPatchHeaders
       ) {
         status must_== 200

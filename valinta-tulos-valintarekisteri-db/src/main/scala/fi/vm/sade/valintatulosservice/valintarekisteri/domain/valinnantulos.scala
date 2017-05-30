@@ -21,7 +21,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
                          ehdollisenHyvaksymisenEhtoFI: Option[String],
                          ehdollisenHyvaksymisenEhtoSV: Option[String],
                          ehdollisenHyvaksymisenEhtoEN: Option[String],
-                         julkaistavissa: Option[Boolean],
+                         julkaistavissa: Boolean,
                          hyvaksyttyVarasijalta: Option[Boolean],
                          hyvaksyPeruuntunut: Option[Boolean],
                          vastaanottotila: ValintatuloksenTila,
@@ -47,7 +47,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
 
   def hasOhjausChanged(other: Valinnantulos) =
     booleanOptionChanged(ehdollisestiHyvaksyttavissa, other.ehdollisestiHyvaksyttavissa) ||
-      booleanOptionChanged(julkaistavissa, other.julkaistavissa) ||
+      julkaistavissa != other.julkaistavissa ||
       booleanOptionChanged(hyvaksyttyVarasijalta, other.hyvaksyttyVarasijalta) ||
       booleanOptionChanged(hyvaksyPeruuntunut, other.hyvaksyPeruuntunut)
 
@@ -82,7 +82,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
       this.valintatapajonoOid,
       this.hakukohdeOid,
       getBooleanOptionChange(this.ehdollisestiHyvaksyttavissa, vanha.ehdollisestiHyvaksyttavissa),
-      getBooleanOptionChange(this.julkaistavissa, vanha.julkaistavissa),
+      this.julkaistavissa,
       getBooleanOptionChange(this.hyvaksyttyVarasijalta, vanha.hyvaksyttyVarasijalta),
       getBooleanOptionChange(this.hyvaksyPeruuntunut, vanha.hyvaksyPeruuntunut),
       muokkaaja,
@@ -95,7 +95,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     this.valintatapajonoOid,
     this.hakukohdeOid,
     this.ehdollisestiHyvaksyttavissa.getOrElse(false),
-    this.julkaistavissa.getOrElse(false),
+    this.julkaistavissa,
     this.hyvaksyttyVarasijalta.getOrElse(false),
     this.hyvaksyPeruuntunut.getOrElse(false),
     muokkaaja,
@@ -154,7 +154,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
       0,  // hakutoive doesn't seem to be present in this context either
       hyvaksyttyVarasijalta.getOrElse(false),
       ilmoittautumistila.ilmoittautumistila,
-      julkaistavissa.getOrElse(false),
+      julkaistavissa,
       vastaanottotila,
       ehdollisestiHyvaksyttavissa.getOrElse(false),
       valintatapajonoOid.toString,

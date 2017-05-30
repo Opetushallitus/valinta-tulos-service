@@ -61,15 +61,16 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
     }
 
     def validateJulkaistavissa() = (uusi.julkaistavissa, uusi.vastaanottotila) match {
-      case (None, ValintatuloksenTila.KESKEN) | (Some(false), ValintatuloksenTila.KESKEN) => Right()
-      case (None, _) | (Some(false), _) => Left(ValinnantulosUpdateStatus(409, s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sillä on vastaanotto", uusi.valintatapajonoOid, uusi.hakemusOid))
-      case (Some(true), _) => Right()
+      case (false, vastaanottotila) if vastaanottotila != ValintatuloksenTila.KESKEN =>
+        Left(ValinnantulosUpdateStatus(409,s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sillä on vastaanotto", uusi.valintatapajonoOid, uusi.hakemusOid))
+      case _ =>
+        Right()
     }
 
     def validateIlmoittautuminen() = (uusi.ilmoittautumistila, uusi.vastaanottotila, uusi.julkaistavissa) match {
       case (_, _, _) if uusi.ohitaIlmoittautuminen.getOrElse(false) => Right()
       case (x, _, _) if vanha.isDefined && vanha.get.ilmoittautumistila == x => Right()
-      case (EiTehty, _, _) | (_, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, Some(true)) => Right()
+      case (EiTehty, _, _) | (_, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, true) => Right()
       case (_, _, _) => Left(ValinnantulosUpdateStatus(409,
         s"Ilmoittautumistila ${uusi.ilmoittautumistila} ei ole sallittu, kun vastaanotto on ${uusi.vastaanottotila} ja julkaistavissa tieto on ${uusi.julkaistavissa}", uusi.valintatapajonoOid, uusi.hakemusOid))
     }
@@ -225,7 +226,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         new Changes.Builder()
           .updated("valinnantila", vanha.valinnantila.toString, uusi.valinnantila.toString)
           .updated("ehdollisestiHyvaksyttavissa", vanha.ehdollisestiHyvaksyttavissa.getOrElse(false).toString, uusi.ehdollisestiHyvaksyttavissa.getOrElse(false).toString)
-          .updated("julkaistavissa", vanha.julkaistavissa.getOrElse(false).toString, uusi.julkaistavissa.getOrElse(false).toString)
+          .updated("julkaistavissa", vanha.julkaistavissa.toString, uusi.julkaistavissa.toString)
           .updated("hyvaksyttyVarasijalta", vanha.hyvaksyttyVarasijalta.getOrElse(false).toString, uusi.hyvaksyttyVarasijalta.getOrElse(false).toString)
           .updated("hyvaksyPeruuntunut", vanha.hyvaksyPeruuntunut.getOrElse(false).toString, uusi.hyvaksyPeruuntunut.getOrElse(false).toString)
           .updated("vastaanottotila", vanha.vastaanottotila.toString, uusi.vastaanottotila.toString)
@@ -238,7 +239,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         new Changes.Builder()
           .added("valinnantila", uusi.valinnantila.toString)
           .added("ehdollisestiHyvaksyttavissa", uusi.ehdollisestiHyvaksyttavissa.getOrElse(false).toString)
-          .added("julkaistavissa", uusi.julkaistavissa.getOrElse(false).toString)
+          .added("julkaistavissa", uusi.julkaistavissa.toString)
           .added("hyvaksyttyVarasijalta", uusi.hyvaksyttyVarasijalta.getOrElse(false).toString)
           .added("hyvaksyPeruuntunut", uusi.hyvaksyPeruuntunut.getOrElse(false).toString)
           .added("vastaanottotila", uusi.vastaanottotila.toString)
@@ -251,7 +252,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         new Changes.Builder()
           .removed("valinnantila", vanha.valinnantila.toString)
           .removed("ehdollisestiHyvaksyttavissa", vanha.ehdollisestiHyvaksyttavissa.getOrElse(false).toString)
-          .removed("julkaistavissa", vanha.julkaistavissa.getOrElse(false).toString)
+          .removed("julkaistavissa", vanha.julkaistavissa.toString)
           .removed("hyvaksyttyVarasijalta", vanha.hyvaksyttyVarasijalta.getOrElse(false).toString)
           .removed("hyvaksyPeruuntunut", vanha.hyvaksyPeruuntunut.getOrElse(false).toString)
           .removed("vastaanottotila", vanha.vastaanottotila.toString)
