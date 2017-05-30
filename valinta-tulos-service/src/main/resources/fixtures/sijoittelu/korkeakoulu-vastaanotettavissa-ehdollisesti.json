@@ -7,7 +7,7 @@
       "className": "fi.vm.sade.sijoittelu.domain.Sijoittelu",
       "hakuOid": "1.2.246.562.29.62858726037",
       "sijoitteluId": {
-        "$numberLong": "1409055160666"
+        "$numberLong": "1496148928100"
       },
       "created": {
         "$date": "2014-08-26T15:12:40.621Z"
@@ -16,14 +16,14 @@
       "sijoitteluajot": [
         {
           "sijoitteluajoId": {
-            "$numberLong": "1409055160666"
+            "$numberLong": "1496148928100"
           },
           "hakuOid": "1.2.246.562.29.62858726037",
           "startMils": {
-            "$numberLong": "1409055160617"
+            "$numberLong": "14961489281001"
           },
           "endMils": {
-            "$numberLong": "1409055160623"
+            "$numberLong": "14961499281001"
           },
           "hakukohteet": [
             {
@@ -41,7 +41,7 @@
       },
       "className": "fi.vm.sade.sijoittelu.domain.Hakukohde",
       "sijoitteluajoId": {
-        "$numberLong": "1409055160666"
+        "$numberLong": "1496148928100"
       },
       "oid": "1.2.246.562.20.93395603447",
       "tarjoajaOid": "1.2.246.562.10.591352080610",
@@ -89,7 +89,7 @@
       },
       "className": "fi.vm.sade.sijoittelu.domain.Hakukohde",
       "sijoitteluajoId": {
-        "$numberLong": "1409055160666"
+        "$numberLong": "1496148928100"
       },
       "oid": "1.2.246.562.20.42476855715",
       "tarjoajaOid": "1.2.246.562.10.591352080610",

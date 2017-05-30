@@ -7,7 +7,7 @@
       "className": "fi.vm.sade.sijoittelu.domain.Sijoittelu",
       "hakuOid": "korkeakoulu-erillishaku",
       "sijoitteluId": {
-        "$numberLong": "1409055160624"
+        "$numberLong": "1496148928085"
       },
       "created": {
         "$date": "2014-08-26T15:12:40.621Z"
@@ -16,14 +16,14 @@
       "sijoitteluajot": [
         {
           "sijoitteluajoId": {
-            "$numberLong": "1409055160624"
+            "$numberLong": "1496148928085"
           },
           "hakuOid": "korkeakoulu-erillishaku",
           "startMils": {
-            "$numberLong": "1409055160617"
+            "$numberLong": "14961489280851"
           },
           "endMils": {
-            "$numberLong": "1409055160623"
+            "$numberLong": "14961499280851"
           },
           "hakukohteet": [
             {
@@ -41,7 +41,7 @@
       },
       "className": "fi.vm.sade.sijoittelu.domain.Hakukohde",
       "sijoitteluajoId": {
-        "$numberLong": "1409055160624"
+        "$numberLong": "1496148928085"
       },
       "oid": "1.2.246.562.5.72607738902",
       "tarjoajaOid": "1.2.246.562.10.591352080610",
