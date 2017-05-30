@@ -8,6 +8,7 @@
     Run with:
         > node script.js
 */
+'use strict';
 
 let fs = require('fs');
 let request = require('request');
@@ -19,7 +20,7 @@ let posList = {
     tutkinnonTaso: {start: '165', end: '168'},
     tutkinnonLaajuus1: {start: '180', end: '183'},
     tutkinnonLaajuus2: {start: '183', end: '186'}
-}
+};
 
 let fileLocation = '';
 let objectList = [];

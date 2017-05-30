@@ -1,9 +1,8 @@
-package fi.vm.sade.valintatulosservice.vastaanottomeili
+package fi.vm.sade.valintatulosservice.valintarekisteri.domain
 
 import java.util.Date
 
-import fi.vm.sade.valintatulosservice.domain.Valintatila._
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.domain.Valintatila.Valintatila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
 
 case class HakemusMailStatus(hakijaOid: String, hakemusOid: HakemusOid, hakukohteet: List[HakukohdeMailStatus], hakuOid: HakuOid) {
@@ -21,8 +20,6 @@ case class HakukohdeMailStatus(hakukohdeOid: HakukohdeOid,
                                ehdollisestiHyvaksyttavissa: Boolean) {
   def shouldMail = status == MailStatus.SHOULD_MAIL
 }
-
-case class HakemusIdentifier(hakuOid: HakuOid, hakemusOid: HakemusOid, lastSent: Option[Date])
 
 object MailStatus extends Enumeration {
   val NOT_MAILED, MAILED, SHOULD_MAIL, NEVER_MAIL = Value
