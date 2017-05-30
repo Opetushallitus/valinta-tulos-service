@@ -103,20 +103,13 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
   override def getHakemuksenHakutoiveidenValintatapajonotSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId: Long): List[HakutoiveenValintatapajonoRecord] =
     time(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid hakutoiveiden valintatapajonojen haku") {
       runBlocking(
-        sql"""with hakeneet as (
-                select valintatapajono_oid, count(hakemus_oid) hakeneet
-                  from jonosijat
-                  where sijoitteluajo_id = ${sijoitteluajoId}
-                  group by valintatapajono_oid
-              )
-              select j.hakemus_oid, j.hakukohde_oid, v.prioriteetti, v.oid, v.nimi, v.ei_varasijatayttoa, j.jonosija,
+        sql"""select j.hakemus_oid, j.hakukohde_oid, v.prioriteetti, v.oid, v.nimi, v.ei_varasijatayttoa, j.jonosija,
                   j.varasijan_numero, j.hyvaksytty_harkinnanvaraisesti, j.tasasijajonosija, j.pisteet,
                   v.alin_hyvaksytty_pistemaara, v.varasijat, v.varasijatayttopaivat,
                   v.varasijoja_kaytetaan_alkaen, v.varasijoja_taytetaan_asti, v.tayttojono,
-                  tk.tilankuvaus_hash, tk.tarkenteen_lisatieto, h.hakeneet
+                  tk.tilankuvaus_hash, tk.tarkenteen_lisatieto
                 from jonosijat j
                 inner join valintatapajonot v on j.valintatapajono_oid = v.oid and j.sijoitteluajo_id = v.sijoitteluajo_id
-                inner join hakeneet h on v.oid = h.valintatapajono_oid
                 inner join tilat_kuvaukset tk on tk.valintatapajono_oid = v.oid and tk.hakemus_oid = j.hakemus_oid and tk.hakukohde_oid = j.hakukohde_oid
                 where j.sijoitteluajo_id = ${sijoitteluajoId} and j.hakemus_oid = ${hakemusOid}""".as[HakutoiveenValintatapajonoRecord]).toList
     }
