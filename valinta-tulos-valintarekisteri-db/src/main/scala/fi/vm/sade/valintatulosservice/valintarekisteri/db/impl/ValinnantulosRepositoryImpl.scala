@@ -100,10 +100,13 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   }
 
   override def getValinnantulostenHakukohdeOiditForHaku(hakuOid: HakuOid): DBIO[List[HakukohdeOid]] = {
-    sql"""select ti.hakukohde_oid
-          from valinnantilat ti
-          inner join hakukohteet h on ti.hakukohde_oid = h.hakukohde_oid
-          where h.haku_oid = ${hakuOid}""".as[HakukohdeOid].map(_.toList)
+    sql"""select hk.hakukohde_oid
+         from (select h.hakukohde_oid
+               from hakukohteet h
+               where h.haku_oid = ${hakuOid}) as hk
+         where exists(select hk.hakukohde_oid
+                      from valinnantilat vt
+                      where vt.hakukohde_oid = hk.hakukohde_oid)""".as[HakukohdeOid].map(_.toList)
   }
 
   override def getValinnantuloksetForHakemus(hakemusOid: HakemusOid): DBIO[Set[Valinnantulos]] = {
