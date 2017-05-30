@@ -5,7 +5,7 @@
         "$oid": "547f0c17e4b0755315d44e0a"
       },
       "className": "fi.vm.sade.sijoittelu.domain.Sijoittelu",
-      "hakuOid": "1.2.246.562.29.173465377510",
+      "hakuOid": "1.2.246.562.5.2013080813081926341928",
       "sijoitteluId": {
         "$numberLong": "1409055160622"
       },
@@ -24,7 +24,7 @@
           "endMils": {
             "$numberLong": "1476936709468"
           },
-          "hakuOid": "1.2.246.562.29.173465377510",
+          "hakuOid": "1.2.246.562.5.2013080813081926341928",
           "hakukohteet": [
             {
               "oid": "1.2.246.562.5.72607738902"

@@ -5,7 +5,7 @@
         "$oid": "547f0c17e4b0755315d44e0a"
       },
       "className": "fi.vm.sade.sijoittelu.domain.Sijoittelu",
-      "hakuOid": "1.2.246.562.29.173465377510",
+      "hakuOid": "korkeakoulu-erillishaku",
       "sijoitteluId": {
         "$numberLong": "1409055160622"
       },
@@ -18,7 +18,7 @@
           "sijoitteluajoId": {
             "$numberLong": "1409055160621"
           },
-          "hakuOid": "1.2.246.562.29.173465377510",
+          "hakuOid": "korkeakoulu-erillishaku",
           "hakukohteet": [
             {
               "oid": "1.2.246.562.5.72607738902"

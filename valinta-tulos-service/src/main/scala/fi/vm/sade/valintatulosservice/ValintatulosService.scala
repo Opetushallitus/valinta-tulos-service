@@ -481,7 +481,6 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
       case Left(e) => throw e
     }
     val hakemukset = getHakemukset()
-    val all = hakemukset.toVector
     val sijoitteluTulokset = timed("Fetch sijoittelun tulos", 1000) {
       getSijoittelunTulos(
         hakijaOidsByHakemusOids.getOrElse(getHakemukset().map(h => (h.oid, h.henkiloOid)).toMap)

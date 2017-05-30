@@ -24,8 +24,8 @@ class ValintarekisteriSijoittelunTulosClientImpl(repository: HakijaRepository wi
   override def fetchLatestSijoitteluAjo(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid] = None): Option[SijoitteluAjo] = {
     val latestId = repository.getLatestSijoitteluajoId(hakuOid)
 
-    def sijoitteluajonHakukohdeOidit = latestId.map(id => repository.getSijoitteluajonHakukohdeOidit(id)).getOrElse(List())
-    def valinnantulostenHakukohdeOidit = run(repository.getValinnantulostenHakukohdeOiditForHaku(hakuOid))
+    val sijoitteluajonHakukohdeOidit = latestId.map(id => repository.getSijoitteluajonHakukohdeOidit(id)).getOrElse(List())
+    val valinnantulostenHakukohdeOidit = run(repository.getValinnantulostenHakukohdeOiditForHaku(hakuOid))
 
     val hakukohdeOidit = sijoitteluajonHakukohdeOidit.union(valinnantulostenHakukohdeOidit).distinct
 
