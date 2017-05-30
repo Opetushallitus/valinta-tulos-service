@@ -47,25 +47,25 @@ class ValintaesitysServiceSpec extends Specification with MockitoMatchers with M
   "hyvaksyValintaesitys" in {
     "hyvaksyy valintaesityksen ja julkaisee valinnantulokset" in new Mocks with Authorized with Hakukohde {
       valintaesitysRepository.hyvaksyValintaesitys(valintatapajonoOidB) returns DBIO.successful(valintaesitysB)
-      valinnantulosRepository.setJulkaistavissa(valintatapajonoOidB) returns DBIO.successful(())
+      valinnantulosRepository.setJulkaistavissa(valintatapajonoOidB, auditInfo.session._2.personOid, "Valintaesityksen hyväksyntä") returns DBIO.successful(())
       service.hyvaksyValintaesitys(valintatapajonoOidB, auditInfo) must_== valintaesitysB
       there was one (valintaesitysRepository).hyvaksyValintaesitys(valintatapajonoOidB)
-      there was one (valinnantulosRepository).setJulkaistavissa(valintatapajonoOidB)
+      there was one (valinnantulosRepository).setJulkaistavissa(valintatapajonoOidB, auditInfo.session._2.personOid, "Valintaesityksen hyväksyntä")
     }
     "auditlogittaa valintaesityksen hyväksymisen" in new Mocks with Authorized with Hakukohde {
       valintaesitysRepository.hyvaksyValintaesitys(valintatapajonoOidB) returns DBIO.successful(valintaesitysB)
-      valinnantulosRepository.setJulkaistavissa(valintatapajonoOidB) returns DBIO.successful(())
+      valinnantulosRepository.setJulkaistavissa(valintatapajonoOidB, auditInfo.session._2.personOid, "Valintaesityksen hyväksyntä") returns DBIO.successful(())
       service.hyvaksyValintaesitys(valintatapajonoOidB, auditInfo) must_== valintaesitysB
       there was one(audit).log(any[User], argThat[Operation, Operation](be_==(ValintaesityksenHyvaksyminen)), any[Target], any[Changes])
     }
     "tarkistaa päivitysoikeudet" in new Mocks with Hakukohde {
       val e = new AuthorizationFailedException("error")
       valintaesitysRepository.hyvaksyValintaesitys(valintatapajonoOidB) returns DBIO.successful(valintaesitysB)
-      valinnantulosRepository.setJulkaistavissa(valintatapajonoOidB) returns DBIO.successful(())
+      valinnantulosRepository.setJulkaistavissa(valintatapajonoOidB, auditInfo.session._2.personOid, "Valintaesityksen hyväksyntä") returns DBIO.successful(())
       authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]]) returns Left(e)
       service.hyvaksyValintaesitys(valintatapajonoOidB, auditInfo) must throwAn[AuthorizationFailedException](e)
       there was one (valintaesitysRepository).hyvaksyValintaesitys(valintatapajonoOidB)
-      there was one (valinnantulosRepository).setJulkaistavissa(valintatapajonoOidB)
+      there was one (valinnantulosRepository).setJulkaistavissa(valintatapajonoOidB, auditInfo.session._2.personOid, "Valintaesityksen hyväksyntä")
     }
   }
 

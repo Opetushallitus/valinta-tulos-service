@@ -380,8 +380,11 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     }
   }
 
-  override def setJulkaistavissa(valintatapajonoOid: ValintatapajonoOid): DBIO[Unit] = {
-    sqlu"""update valinnantulokset set julkaistavissa = true
+  override def setJulkaistavissa(valintatapajonoOid: ValintatapajonoOid, ilmoittaja: String, selite: String): DBIO[Unit] = {
+    sqlu"""update valinnantulokset
+           set julkaistavissa = true,
+               ilmoittaja = $ilmoittaja,
+               selite = $selite
            where valintatapajono_oid = $valintatapajonoOid
                and not julkaistavissa
       """.map(_ => ())

@@ -24,7 +24,7 @@ class ValintaesitysService(hakuService: HakuService,
 
   def hyvaksyValintaesitys(valintatapajonoOid: ValintatapajonoOid, auditInfo: AuditInfo): Valintaesitys = {
     val valintaesitys = valinnantulosRepository.runBlockingTransactionally(
-      hyvaksyValintaesitys(valintatapajonoOid)
+      hyvaksyValintaesitys(valintatapajonoOid, auditInfo.session._2.personOid)
         .flatMap(authorizeValintaesityksenHyvaksyminen(_, auditInfo.session._2))
     ).fold(throw _, v => v)
     auditlogValintaesityksenHyvaksyminen(valintaesitys, auditInfo)
@@ -45,10 +45,10 @@ class ValintaesitysService(hakuService: HakuService,
     } yield valintaesitys).fold(DBIO.failed, DBIO.successful)
   }
 
-  private def hyvaksyValintaesitys(valintatapajonoOid: ValintatapajonoOid): DBIO[Valintaesitys] = {
+  private def hyvaksyValintaesitys(valintatapajonoOid: ValintatapajonoOid, ilmoittaja: String): DBIO[Valintaesitys] = {
     for {
       valintaesitys <- valintaesitysRepository.hyvaksyValintaesitys(valintatapajonoOid)
-      _ <- valinnantulosRepository.setJulkaistavissa(valintatapajonoOid)
+      _ <- valinnantulosRepository.setJulkaistavissa(valintatapajonoOid, ilmoittaja, "Valintaesityksen hyväksyntä")
     } yield valintaesitys
   }
 
