@@ -14,6 +14,12 @@ class SijoitteluService(val sijoitteluRepository: SijoitteluRepository with Haki
                         authorizer:OrganizationHierarchyAuthorizer,
                         hakuService: HakuService ) extends Logging {
 
+  def getHakukohdeBySijoitteluajoWithoutAuthentication(hakuOid: HakuOid, sijoitteluajoId: String, hakukohdeOid: HakukohdeOid): HakukohdeDTO = {
+    sijoitteluRepository.getLatestSijoitteluajoId(sijoitteluajoId, hakuOid).right
+      .map(latestId => new SijoitteluajonHakukohde(sijoitteluRepository, latestId, hakukohdeOid).dto())
+      .fold(throw _, x => x)
+  }
+
   def getHakukohdeBySijoitteluajo(hakuOid: HakuOid, sijoitteluajoId: String, hakukohdeOid: HakukohdeOid, session: Session): HakukohdeDTO = {
     (for {
       tarjonta  <- hakuService.getHakukohde(hakukohdeOid).right

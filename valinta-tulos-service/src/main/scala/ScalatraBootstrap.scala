@@ -160,6 +160,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new EnsikertalaisuusServlet(valintarekisteriDb, appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus")
       context.mount(new HakijanVastaanottoServlet(vastaanottoService), "/vastaanotto")
       context.mount(new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, ldapUserService), "/erillishaku/valinnan-tulos")
+      context.mount(new NoAuthSijoitteluServlet(sijoitteluService), "/sijoittelu")
 
       val casSessionService = new CasSessionService(
         appConfig.securityContext.casClient,
