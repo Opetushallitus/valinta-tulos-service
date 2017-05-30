@@ -34,18 +34,6 @@ class SijoitteluajonHakija(val repository: HakijaRepository with SijoitteluRepos
     valintatapajonotSijoittelussa.values.flatten.map(_.tilankuvausHash).toList.distinct
   )
 
-  def hyvaksyttyValintatapajonosta(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid) = {
-    haunValinnantilat.filter{ case (hakukohde, valintatapajono, hakemus, tila) =>
-      hakukohde.equals(hakukohdeOid) && valintatapajono.equals(valintatapajonoOid) && List(Hyvaksytty, VarasijaltaHyvaksytty).contains(tila)
-    }.map(_._3).distinct.size
-  }
-
-  def hakeneetValintatapajonossa(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid) = {
-    haunValinnantilat.filter{ case (hakukohde, valintatapajono, hakemus, tila) =>
-      hakukohde.equals(hakukohdeOid) && valintatapajono.equals(valintatapajonoOid)
-    }.map(_._3).distinct.size
-  }
-
   def getVastaanotto(hakukohdeOid: HakukohdeOid): ValintatuloksenTila = {
     val vastaanotto = hakemuksenValinnantulokset.getOrElse(hakukohdeOid, Set()).map(_.vastaanottotila)
     if(1 < vastaanotto.size) {
@@ -63,10 +51,7 @@ class SijoitteluajonHakija(val repository: HakijaRepository with SijoitteluRepos
     val pistetiedot = pistetiedotSijoittelussa.filterKeys(valintatapajonoOidit.contains).values.flatten.map(HakutoiveenPistetietoRecord(_)).toList.distinct.map(_.dto)
     val hakijaryhmat = hakijaryhmatSijoittelussa.getOrElse(hakukohdeOid, List()).map(_.dto)
     val valintatapajonoDtot = valintatapajonot.map{ j =>
-      j.dto(
-        valinnantulokset.find(_.valintatapajonoOid.equals(j.valintatapajonoOid)),
-        hyvaksyttyValintatapajonosta(hakukohdeOid, j.valintatapajonoOid),
-        j.tilankuvaukset(tilankuvauksetSijoittelussa.get(j.tilankuvausHash)))
+      j.dto(valinnantulokset.find(_.valintatapajonoOid.equals(j.valintatapajonoOid)), j.tilankuvaukset(tilankuvauksetSijoittelussa.get(j.tilankuvausHash)))
     }
 
     hakutoive.dto(
@@ -81,11 +66,7 @@ class SijoitteluajonHakija(val repository: HakijaRepository with SijoitteluRepos
     val valinnantulokset = hakemuksenValinnantulokset.getOrElse(hakukohdeOid, List())
     val hakutoive = HakutoiveRecord(hakemusOid, Some(1), hakukohdeOid, None)
     val valintatapajonoDtot = valinnantulokset.map{ j =>
-      HakutoiveenValintatapajonoRecord.dto(
-        j,
-        hakeneetValintatapajonossa(hakukohdeOid, j.valintatapajonoOid),
-        hyvaksyttyValintatapajonosta(hakukohdeOid, j.valintatapajonoOid)
-      )
+      HakutoiveenValintatapajonoRecord.dto(j)
     }.toList
     hakutoive.dto(getVastaanotto(hakukohdeOid), valintatapajonoDtot, List(), List())
   }

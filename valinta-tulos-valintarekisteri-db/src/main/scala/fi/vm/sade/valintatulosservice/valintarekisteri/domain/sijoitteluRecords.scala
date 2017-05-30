@@ -105,7 +105,7 @@ case class HakutoiveenValintatapajonoRecord(hakemusOid: HakemusOid, hakukohdeOid
     alinHyvaksyttyPistemaara:Option[BigDecimal], varasijat:Option[Int], varasijaTayttoPaivat:Option[Int], varasijojaKaytetaanAlkaen:Option[Date],
     varasijojaTaytetaanAsti:Option[Date], tayttojono:Option[String], tilankuvausHash:Int, tarkenteenLisatieto:Option[String], hakeneet:Option[Int]) {
 
-  def dto(valinnantulos: Option[Valinnantulos], hyvaksytyt:Int, tilankuvaukset:Map[String,String]) = {
+  def dto(valinnantulos: Option[Valinnantulos], tilankuvaukset: Map[String, String]): HakutoiveenValintatapajonoDTO = {
     val hakutoiveenValintatapajonoDto = new HakutoiveenValintatapajonoDTO()
     hakutoiveenValintatapajonoDto.setValintatapajonoPrioriteetti(valintatapajonoPrioriteetti)
     hakutoiveenValintatapajonoDto.setValintatapajonoOid(valintatapajonoOid.toString)
@@ -118,7 +118,6 @@ case class HakutoiveenValintatapajonoRecord(hakemusOid: HakemusOid, hakukohdeOid
     hakutoiveenValintatapajonoDto.setTasasijaJonosija(tasasijaJonosija)
     pisteet.foreach(p => hakutoiveenValintatapajonoDto.setPisteet(bigDecimal(p)))
     alinHyvaksyttyPistemaara.foreach(p => hakutoiveenValintatapajonoDto.setAlinHyvaksyttyPistemaara(bigDecimal(p)))
-    //todo hakeneet ja ehkä hyvaksytty ja varalla? Tarvitaanko?
     varasijat.foreach(hakutoiveenValintatapajonoDto.setVarasijat(_))
     varasijaTayttoPaivat.foreach(hakutoiveenValintatapajonoDto.setVarasijaTayttoPaivat(_))
     varasijojaKaytetaanAlkaen.foreach(hakutoiveenValintatapajonoDto.setVarasijojaKaytetaanAlkaen(_))
@@ -134,8 +133,6 @@ case class HakutoiveenValintatapajonoRecord(hakemusOid: HakemusOid, hakukohdeOid
       v.vastaanotonViimeisinMuutos.foreach(odt => hakutoiveenValintatapajonoDto.setValintatuloksenViimeisinMuutos(Date.from(odt.toInstant)))
     }
     hakutoiveenValintatapajonoDto.setTilanKuvaukset(tilankuvaukset.asJava)
-    hakeneet.foreach(hakutoiveenValintatapajonoDto.setHakeneet(_))
-    hakutoiveenValintatapajonoDto.setHyvaksytty(hyvaksytyt)
     hakutoiveenValintatapajonoDto
   }
 
@@ -182,7 +179,7 @@ case class HakutoiveenValintatapajonoRecord(hakemusOid: HakemusOid, hakukohdeOid
 }
 
 object HakutoiveenValintatapajonoRecord {
-  def dto(valinnantulos: Valinnantulos, hakeneet:Int, hyvaksytyt:Int) = {
+  def dto(valinnantulos: Valinnantulos): HakutoiveenValintatapajonoDTO = {
     val hakutoiveenValintatapajonoDto = new HakutoiveenValintatapajonoDTO()
     hakutoiveenValintatapajonoDto.setValintatapajonoOid(valinnantulos.valintatapajonoOid.toString)
     hakutoiveenValintatapajonoDto.setTila(HakemuksenTila.valueOf(valinnantulos.valinnantila.valinnantila.name))
@@ -192,8 +189,6 @@ object HakutoiveenValintatapajonoRecord {
     valinnantulos.hyvaksyttyVarasijalta.foreach(hakutoiveenValintatapajonoDto.setHyvaksyttyVarasijalta(_))
     valinnantulos.valinnantilanViimeisinMuutos.foreach(odt => hakutoiveenValintatapajonoDto.setHakemuksenTilanViimeisinMuutos(Date.from(odt.toInstant)))
     valinnantulos.vastaanotonViimeisinMuutos.foreach(odt => hakutoiveenValintatapajonoDto.setValintatuloksenViimeisinMuutos(Date.from(odt.toInstant)))
-    hakutoiveenValintatapajonoDto.setHakeneet(hakeneet)
-    hakutoiveenValintatapajonoDto.setHyvaksytty(hyvaksytyt)
     hakutoiveenValintatapajonoDto
   }
 
