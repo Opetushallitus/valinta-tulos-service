@@ -224,7 +224,7 @@ class VastaanottoService(hakuService: HakuService,
       Left(new IllegalArgumentException(
         s"""Hakijakohtaista määräaikaa ${new SimpleDateFormat("dd-MM-yyyy").format(d)}
            |kohteella ${hakutoive.hakukohdeOid} : ${hakutoive.vastaanotettavuustila.toString} ei ole vielä ohitettu.""".stripMargin))
-    case None => Right()
+    case _ => Right()
   }
 
   private def tarkistaHakutoiveenVastaanotettavuus(hakutoive: Hakutoiveentulos, haluttuTila: VastaanottoAction): Either[Throwable, Unit] = {
