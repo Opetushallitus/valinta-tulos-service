@@ -1,11 +1,15 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
+import java.time.OffsetDateTime
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
-import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session, AuditSession}
+import fi.vm.sade.valintatulosservice.security.{AuditSession, CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
 
 trait SessionRepositoryImpl extends SessionRepository with ValintarekisteriRepository {
 
@@ -33,17 +37,24 @@ trait SessionRepositoryImpl extends SessionRepository with ValintarekisteriRepos
 
   override def get(id: UUID): Option[Session] = {
     runBlocking(
-      sql"""select cas_tiketti, henkilo, rooli from sessiot as s
-            join roolit as r on s.id = r.sessio
-            where s.id = $id and s.viimeksi_luettu > now() - interval '30 minutes'""".as[(Option[String], String, String)]
-        .flatMap {
-          case (casTicket, personOid, rooli) +: ss =>
-            sqlu"""update sessiot set viimeksi_luettu = now() where id = $id"""
-              .andThen(DBIO.successful(Some(CasSession(ServiceTicket(casTicket.get), personOid, ss.map(t => Role(t._3)).toSet + Role(rooli)))))
-          case _ =>
-            sqlu"""delete from sessiot where id = $id""".andThen(DBIO.successful(None))
-        }.transactionally
-    )
+      sql"""select cas_tiketti, henkilo from sessiot
+            where id = $id and viimeksi_luettu > now() - interval '30 minutes'
+      """.as[(Option[String], String)].map(_.headOption).flatMap {
+        case None =>
+          sqlu"""delete from sessiot where id = $id""".andThen(DBIO.successful(None))
+        case Some(t) =>
+          sqlu"""update sessiot set viimeksi_luettu = now()
+                 where id = $id and viimeksi_luettu > now() - interval '15 minutes'"""
+            .andThen(DBIO.successful(Some(t)))
+      }.transactionally, Duration(2, TimeUnit.SECONDS)
+    ).map {
+      case (casTicket, personOid) =>
+        val roolit = runBlocking(
+          sql"""select rooli from roolit where sessio = $id""".as[String],
+          Duration(2, TimeUnit.SECONDS)
+        )
+        CasSession(ServiceTicket(casTicket.get), personOid, roolit.map(Role(_)).toSet)
+    }
   }
 
 }
