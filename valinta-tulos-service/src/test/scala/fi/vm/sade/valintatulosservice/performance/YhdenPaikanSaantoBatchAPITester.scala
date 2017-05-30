@@ -2,7 +2,6 @@ package fi.vm.sade.valintatulosservice.performance
 
 import java.util.concurrent.TimeUnit
 
-import com.typesafe.config.ConfigValueFactory
 import fi.vm.sade.utils.http.{DefaultHttpClient, DefaultHttpRequest}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.SharedJetty
@@ -32,7 +31,7 @@ object YhdenPaikanSaantoBatchAPITester extends App with Logging {
 
   println(s"***** Inserting $testDataSize rows of test data. This might take a while...")
 
-  new GeneratedFixture(new SimpleGeneratedHakuFixture2(5, testDataSize, HakuOid("1.2.246.562.5.2013080813081926341928"))).apply(valintarekisteriDb)
+  new GeneratedFixture(new SimpleGeneratedHakuFixture2(5, testDataSize, HakuOid("1.2.246.562.5.2013080813081926341928"))).apply(sijoitteluContext)
 
   for(i <- 1 to 5) {
     Await.ready(valintarekisteriDb.db.run(

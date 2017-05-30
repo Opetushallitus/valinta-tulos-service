@@ -27,7 +27,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
       Hakutoiveentulos.julkaistavaVersioSijoittelunTuloksesta(
         HakutoiveenSijoitteluntulos.kesken(HakukohdeOid("1.2.3.4"), "4.4.4.4"),
         Hakutoive(HakukohdeOid("1.2.3.4"), "4.4.4.4", "Hakukohde1", "Tarjoaja1"),
-        Haku(HakuOid("5.5.5.5"), korkeakoulu = true, toinenAste = false, käyttääSijoittelua = true, None, Set(),
+        Haku(HakuOid("5.5.5.5"), korkeakoulu = true, toinenAste = false, sallittuKohdejoukkoKelaLinkille = true, käyttääSijoittelua = true, None, Set(),
           List(Hakuaika("12345", Some(System.currentTimeMillis()), Some(System.currentTimeMillis()))),
           Some(Kausi("2016S")),
           YhdenPaikanSaanto(false, ""), Map("kieli_fi" -> "Haun nimi")),
@@ -113,6 +113,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     ilmoittautumisService.ilmoittaudu(hakemusOid, ilmoittautuminen)
   }
 
+  @Deprecated //Ei käytetä mistään? Jos tarvitaan hyväksymis/jälkiohjauskirjeitä varten, sivutuksen voi kuitenkin poistaa
   lazy val getHaunSijoitteluajonTuloksetSwagger: OperationBuilder = (apiOperation[Unit]("getHaunSijoitteluajonTuloksetSwagger")
     summary """Sivutettu listaus hakemuksien/hakijoiden listaukseen. Yksityiskohtainen listaus kaikista hakutoiveista ja niiden valintatapajonoista"""
     parameter pathParam[String]("hakuOid").description("Haun oid").required

@@ -14,8 +14,7 @@ import scala.collection.JavaConverters._
 class ValintarekisteriSijoittelunTulosClientSpec extends ITSpecification with ValintarekisteriTestData {
   step(deleteAll())
 
-  lazy val client = new ValintarekisteriSijoittelunTulosClientImpl(singleConnectionValintarekisteriDb, singleConnectionValintarekisteriDb)
-
+  lazy val client = new ValintarekisteriSijoittelunTulosClientImpl(singleConnectionValintarekisteriDb)
   step(createSijoitteluajoHaulle2)
   step(createHakujen1Ja2ValinnantuloksetIlmanSijoittelua)
 

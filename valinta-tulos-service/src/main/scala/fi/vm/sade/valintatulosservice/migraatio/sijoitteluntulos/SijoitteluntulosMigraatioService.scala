@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos
 
 import java.security.MessageDigest
 import java.sql.Timestamp
+import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.Calendar.HOUR_OF_DAY
 import java.util.concurrent.TimeUnit.MINUTES
 import java.util.{Calendar, Date, Optional}
@@ -21,7 +22,7 @@ import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.MissingHakijaOidReso
 import fi.vm.sade.valintatulosservice.sijoittelu.{ValintarekisteriSijoittelunTulosClient, ValintarekisteriValintatulosDao}
 import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{SijoitteluContext, SijoittelunTulosRestClient}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{MigraatioRepository, SijoitteluRepository, StoreSijoitteluRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{MigraatioRepository, MigratedIlmoittautuminen, SijoitteluRepository, StoreSijoitteluRepository, Valintaesitys}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.Valintarekisteri
@@ -46,6 +47,9 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: Valintarekist
 
   private val hakijaOidResolver = new MissingHakijaOidResolver(appConfig)
   private val hakemusRepository = new HakemusRepository()(appConfig)
+
+  private val defaultMuokkaaja = "Sijoittelun tulokset -migraatio"
+  private val defaultTimestamp = new Date(0) // epoch can easily(?) be distinguished from real values
 
   def migrate(hakuOid: HakuOid, sijoitteluHash:String, dryRun: Boolean): Unit = {
     sijoittelunTulosRestClient.fetchLatestSijoitteluAjo(hakuOid, None) match {
@@ -84,10 +88,10 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: Valintarekist
       logger.info(s"Starting to store sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid...")
       storeSijoitteluData(hakuOid, ajoFromMongo, mongoSijoitteluAjoId, hakukohteet, valintatulokset.asJava)
       logger.info(s"Starting to save valinta data sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid...")
-      val (valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot, hyvaksymisKirjeet) = createSaveObjects(hakukohteet, valintatulokset.asJava)
+      val (valintaesitykset, valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot, hyvaksymisKirjeet) = createSaveObjects(hakukohteet, valintatulokset.asJava)
       timed(s"Saving valinta data for sijoitteluajo $mongoSijoitteluAjoId of haku $hakuOid") {
         migraatioRepository.runBlocking(
-          migraatioRepository.storeBatch(valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot, hyvaksymisKirjeet), Duration(15, MINUTES))
+          migraatioRepository.storeBatch(valintaesitykset, valinnantilat, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot, hyvaksymisKirjeet), Duration(15, MINUTES))
       }
       logger.info("Deleting valinnantilat_history entries that were duplicated by sijoittelu and migration saves.")
       timed(s"Deleting duplicated valinnantilat_history entries of $mongoSijoitteluAjoId of haku $hakuOid") {
@@ -180,16 +184,17 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: Valintarekist
   }
 
   private def createSaveObjects(hakukohteet: util.List[Hakukohde], valintatulokset: util.List[Valintatulos]):
-    (Vector[(ValinnantilanTallennus, Timestamp)], Vector[ValinnantuloksenOhjaus], Vector[(String, Ilmoittautuminen)], Vector[EhdollisenHyvaksynnanEhto], Vector[Hyvaksymiskirje]) = {
+    (Vector[Valintaesitys], Vector[(ValinnantilanTallennus, Timestamp)], Vector[ValinnantuloksenOhjaus], Vector[MigratedIlmoittautuminen], Vector[EhdollisenHyvaksynnanEhto], Vector[Hyvaksymiskirje]) = {
 
     val hakemuksetOideittain: Map[(HakemusOid, ValintatapajonoOid, HakukohdeOid), List[(Hakemus, ValintatapajonoOid, HakukohdeOid)]] =
       groupHakemusResultsByHakemusOidAndJonoOid(hakukohteet)
     val valintatuloksetOideittain: Map[(HakemusOid, ValintatapajonoOid), List[Valintatulos]] =
       valintatulokset.asScala.toList.groupBy(v => (HakemusOid(v.getHakemusOid), ValintatapajonoOid(v.getValintatapajonoOid)))
 
+    val valintaesitykset: Vector[Valintaesitys] = hakukohteet.asScala.flatMap(hakukohteenValintaesitykset).toVector
     var valinnantilas: Vector[(ValinnantilanTallennus, Timestamp)] = Vector()
     var valinnantuloksenOhjaukset: Vector[ValinnantuloksenOhjaus] = Vector()
-    var ilmoittautumiset: Vector[(String, Ilmoittautuminen)] = Vector()
+    var ilmoittautumiset: Vector[MigratedIlmoittautuminen] = Vector()
     var ehdollisenHyvaksynnanEhdot: Vector[EhdollisenHyvaksynnanEhto] = Vector()
     var hyvaksymisKirjeet: Vector[Hyvaksymiskirje] = Vector()
 
@@ -209,7 +214,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: Valintarekist
             valintatulos.foreach { tulos =>
               val logEntriesLatestFirst = tulos.getLogEntries.asScala.toList.sortBy(_.getLuotu)
               val hakemuksenValinnantilojenohjaukset = getHakemuksenValinnantuloksenOhjaukset(tulos, hakemusOid, valintatapajonoOid, hakukohdeOid, logEntriesLatestFirst)
-              val hakemuksenIlmoittautumiset = getHakemuksenIlmoittautumiset(tulos, henkiloOid, hakukohdeOid, logEntriesLatestFirst)
+              val hakemuksenIlmoittautumiset = getHakemuksenIlmoittautuminen(tulos, henkiloOid, hakukohdeOid, logEntriesLatestFirst)
               if (tulos.getEhdollisestiHyvaksyttavissa) {
                 ehdollisenHyvaksynnanEhdot = ehdollisenHyvaksynnanEhdot :+ getEhdollisenHyvaksynnanEhto(valintatapajonoOid, hakukohdeOid, hakemusOid, tulos)
               }
@@ -223,7 +228,21 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: Valintarekist
         }
       }
     }
-    (valinnantilas, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot, hyvaksymisKirjeet)
+    (valintaesitykset, valinnantilas, valinnantuloksenOhjaukset, ilmoittautumiset, ehdollisenHyvaksynnanEhdot, hyvaksymisKirjeet)
+  }
+
+  private def hakukohteenValintaesitykset(hakukohde: Hakukohde): Vector[Valintaesitys] = {
+    hakukohde.getValintatapajonot.asScala.map(v => valintaesitys(HakukohdeOid(hakukohde.getOid), v)).toVector
+  }
+
+  private def valintaesitys(hakukohdeOid: HakukohdeOid, valintatapajono: Valintatapajono): Valintaesitys = {
+    Valintaesitys(
+      hakukohdeOid,
+      ValintatapajonoOid(valintatapajono.getOid),
+      Option(valintatapajono.getValintaesitysHyvaksytty).map(Boolean2boolean).collect {
+        case true => ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.of("Europe/Helsinki"))
+      }
+    )
   }
 
   private def getHenkiloOid(hakemus: Hakemus): String = {
@@ -258,27 +277,40 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: Valintarekist
     }
   }
 
-  private def getHakemuksenIlmoittautumiset(valintatulos: Valintatulos, henkiloOid: String, hakukohdeOid: HakukohdeOid, logEntriesLatestFirst: List[LogEntry]) = {
-    logEntriesLatestFirst.reverse.find(_.getMuutos.contains("ilmoittautuminen")).map { latestIlmoittautuminenLogEntry =>
-      (henkiloOid, Ilmoittautuminen(hakukohdeOid, SijoitteluajonIlmoittautumistila(valintatulos.getIlmoittautumisTila),
-        latestIlmoittautuminenLogEntry.getMuokkaaja, Option(latestIlmoittautuminenLogEntry.getSelite).getOrElse("")))
+  private def getHakemuksenIlmoittautuminen(valintatulos: Valintatulos,
+                                            henkiloOid: String,
+                                            hakukohdeOid: HakukohdeOid,
+                                            logEntriesLatestFirst: List[LogEntry]): Option[MigratedIlmoittautuminen] = {
+    val seemsLikeIlmoittautuminenInAnyOfItsOldForms: LogEntry => Boolean = le => le.getMuutos.contains("ilmoittautumisTila") ||
+      le.getMuutos.contains("ILMOITETTU") || le.getMuutos.contains("VASTAANOTTANUT")
+    val latestIlmoittautuminen = logEntriesLatestFirst.reverse.find(seemsLikeIlmoittautuminenInAnyOfItsOldForms).map { latestIlmoEntry =>
+      (latestIlmoEntry.getMuokkaaja,
+        latestIlmoEntry.getLuotu,
+        Option(latestIlmoEntry.getSelite).getOrElse(""))
+    }
+    if (valintatulos.getIlmoittautumisTila != null &&
+      (valintatulos.getIlmoittautumisTila != IlmoittautumisTila.EI_TEHTY || latestIlmoittautuminen.isDefined)) {
+      val (muokkaaja, luotu, selite) = latestIlmoittautuminen.getOrElse(defaultMuokkaaja, defaultTimestamp, "")
+      val ilmoittautuminen = Ilmoittautuminen(hakukohdeOid, SijoitteluajonIlmoittautumistila(valintatulos.getIlmoittautumisTila), muokkaaja, selite)
+      Some(MigratedIlmoittautuminen(henkiloOid, ilmoittautuminen, new Timestamp(luotu.getTime)))
+    } else {
+      None
     }
   }
 
   private def getHakemuksenValinnantilas(hakemus: Hakemus, valintatapajonoOid: ValintatapajonoOid, hakukohdeOid: HakukohdeOid, henkiloOid: String) = {
     val hakemuksenTuloksenTilahistoriaOldestFirst: List[TilaHistoria] = hakemus.getTilaHistoria.asScala.toList.sortBy(_.getLuotu)
-    val muokkaaja = "Sijoittelun tulokset -migraatio"
 
     var historiat = hakemuksenTuloksenTilahistoriaOldestFirst.zipWithIndex.map { case(tilaHistoriaEntry, i) =>
       val valinnantila = Valinnantila(tilaHistoriaEntry.getTila)
-      (ValinnantilanTallennus(HakemusOid(hakemus.getHakemusOid), valintatapajonoOid, hakukohdeOid, henkiloOid, valinnantila, muokkaaja),
+      (ValinnantilanTallennus(HakemusOid(hakemus.getHakemusOid), valintatapajonoOid, hakukohdeOid, henkiloOid, valinnantila, defaultMuokkaaja),
         new Timestamp(tilaHistoriaEntry.getLuotu.getTime))
     }
 
     hakemuksenTuloksenTilahistoriaOldestFirst.lastOption.foreach(hist => {
       if (hakemus.getTila != hist.getTila) {
         logger.warn(s"hakemus ${hakemus.getHakemusOid} didn't have current tila in tila history, creating one artificially.")
-        historiat = historiat :+ (ValinnantilanTallennus(HakemusOid(hakemus.getHakemusOid), valintatapajonoOid, hakukohdeOid, henkiloOid, Valinnantila(hakemus.getTila), s"$muokkaaja (generoitu nykyisen tilan historiatieto)"),
+        historiat = historiat :+ (ValinnantilanTallennus(HakemusOid(hakemus.getHakemusOid), valintatapajonoOid, hakukohdeOid, henkiloOid, Valinnantila(hakemus.getTila), s"$defaultMuokkaaja (generoitu nykyisen tilan historiatieto)"),
           new Timestamp(new Date().getTime))
       }
     })

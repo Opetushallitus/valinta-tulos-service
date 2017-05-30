@@ -4,6 +4,7 @@ import javax.servlet.{DispatcherType, ServletContext}
 import fi.vm.sade.auditlog.{ApplicationType, Audit, Logger}
 import fi.vm.sade.oppijantunnistus.OppijanTunnistusService
 import fi.vm.sade.security._
+import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.{Dev, IT, VtsAppConfig}
 import fi.vm.sade.valintatulosservice.config.{OhjausparametritAppConfig, VtsAppConfig}
@@ -27,7 +28,7 @@ import fi.vm.sade.valintatulosservice.vastaanottomeili.{MailDecorator, MailPolle
 import org.scalatra._
 import org.slf4j.LoggerFactory
 
-class ScalatraBootstrap extends LifeCycle {
+class ScalatraBootstrap extends LifeCycle with Logging {
 
   implicit val swagger = new ValintatulosSwagger
 
@@ -47,7 +48,13 @@ class ScalatraBootstrap extends LifeCycle {
 
     val migrationMode = isTrue(System.getProperty("valinta-rekisteri-migration-mode"))
     val scheduledMigration = isTrue(System.getProperty("valinta-rekisteri-scheduled-migration"))
-    val initMongoContext = appConfig.settings.useSijoitteluMongo
+    val initMongoContext = !appConfig.settings.readFromValintarekisteri
+    if(initMongoContext) {
+      logger.warn("Initialisoidaan Mongo-context ja luetaan sijoittelun tulokset Mongosta!")
+    } else {
+      logger.warn("Luetaan sijoittelun tulokset valintarekisteristä! Ei initialisoida sijoittelun Mongo-contextia!")
+    }
+
     if((migrationMode || scheduledMigration) && !initMongoContext) {
       throw new RuntimeException("Migraatio-moodia voi käyttää vain Sijoittelun Mongon kanssa.")
     }
@@ -59,7 +66,8 @@ class ScalatraBootstrap extends LifeCycle {
     }
 
     if (appConfig.isInstanceOf[IT] || appConfig.isInstanceOf[Dev]) {
-      SijoitteluFixtures(valintarekisteriDb).importFixture("hyvaksytty-kesken-julkaistavissa.json")
+      context.mount(new FixtureServlet(sijoitteluContext, valintarekisteriDb), "/util")
+      SijoitteluFixtures(sijoitteluContext.database, valintarekisteriDb).importFixture("hyvaksytty-kesken-julkaistavissa.json")
     }
     implicit lazy val dynamicAppConfig = new OhjausparametritAppConfig(appConfig.ohjausparametritService)
 
@@ -75,11 +83,13 @@ class ScalatraBootstrap extends LifeCycle {
         SijoittelunTulosRestClient(sijoitteluContext, appConfig), new StreamingHakijaDtoClient(appConfig))
     } else {
       val valintarekisteriValintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
-      (new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintarekisteriValintatulosDao),
+      val valintarekisteriRaportointiService = new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintarekisteriValintatulosDao)
+      val valintarekisteriSijoittelunTulosClient = new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb)
+      ( valintarekisteriRaportointiService,
         valintarekisteriValintatulosDao,
         new ValintarekisteriValintatulosRepositoryImpl(valintarekisteriValintatulosDao),
-        new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb, valintarekisteriDb),
-        new ValintarekisteriHakijaDTOClientImpl())
+        valintarekisteriSijoittelunTulosClient,
+        new ValintarekisteriHakijaDTOClientImpl(valintarekisteriRaportointiService, valintarekisteriSijoittelunTulosClient, valintarekisteriDb))
     }
 
     lazy val sijoittelutulosService = new SijoittelutulosService(raportointiService,
@@ -144,6 +154,7 @@ class ScalatraBootstrap extends LifeCycle {
 
       context.mount(new VirkailijanVastaanottoServlet(valintatulosService, vastaanottoService), "/virkailija")
       context.mount(new LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService), "/lukuvuosimaksu")
+      context.mount(new MuutoshistoriaServlet(valinnantulosService, valintarekisteriDb, skipAuditForServiceCall = true), "/muutoshistoria")
       context.mount(new PrivateValintatulosServlet(valintatulosService, vastaanottoService, ilmoittautumisService), "/haku")
       context.mount(new EmailStatusServlet(mailPoller, valintatulosCollection, new MailDecorator(new HakemusRepository(), valintatulosCollection, hakuService, oppijanTunnistusService)), "/vastaanottoposti")
       context.mount(new EnsikertalaisuusServlet(valintarekisteriDb, appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus")
@@ -169,6 +180,7 @@ class ScalatraBootstrap extends LifeCycle {
       context.mount(new HyvaksymiskirjeServlet(hyvaksymiskirjeService, valintarekisteriDb), "/auth/hyvaksymiskirje")
       context.mount(new LukuvuosimaksuServletWithCAS(lukuvuosimaksuService, valintarekisteriDb, hakuService, authorizer), "/auth/lukuvuosimaksu")
       context.mount(new MuutoshistoriaServlet(valinnantulosService, valintarekisteriDb), "/auth/muutoshistoria")
+      context.mount(new ValintaesitysServlet(new ValintaesitysService(hakuService, authorizer, valintarekisteriDb, valintarekisteriDb, audit), valintarekisteriDb), "/auth/valintaesitys")
     }
   }
 

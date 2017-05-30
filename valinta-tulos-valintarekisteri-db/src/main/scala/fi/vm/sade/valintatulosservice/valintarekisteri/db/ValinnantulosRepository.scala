@@ -13,10 +13,13 @@ import scala.concurrent.duration.Duration
 trait ValinnantulosRepository extends ValintarekisteriRepository {
   def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
   def storeValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
+  def storeEhdollisenHyvaksynnanEhto(ehto:EhdollisenHyvaksynnanEhto, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
   def storeValinnantila(tila:ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
   def storeValinnantilaOverridingTimestamp(tila:ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None, tilanViimeisinMuutos: TilanViimeisinMuutos): DBIO[Unit]
+  def setJulkaistavissa(valintatapajonoOid: ValintatapajonoOid): DBIO[Unit]
 
   def updateValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
+  def updateEhdollisenHyvaksynnanEhto(ehto: EhdollisenHyvaksynnanEhto, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
 
   def getMuutoshistoriaForHakemus(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[Muutos]
 
@@ -76,7 +79,7 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
       case Left(error) => throw error
     }
 
-  def getValinnantuloksetAndReadTimeForHaku(hakuOid: HakuOid, timeout:Duration = Duration(4, TimeUnit.SECONDS)):(Instant, Set[Valinnantulos]) = {
+  def getValinnantuloksetAndReadTimeForHaku(hakuOid: HakuOid, timeout:Duration = Duration(5, TimeUnit.MINUTES)):(Instant, Set[Valinnantulos]) = {
     runBlockingTransactionally(
       now().zip(getValinnantuloksetForHaku(hakuOid)), timeout = timeout
     ) match {

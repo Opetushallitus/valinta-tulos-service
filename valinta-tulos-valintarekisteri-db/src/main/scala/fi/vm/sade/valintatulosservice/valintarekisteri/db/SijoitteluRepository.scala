@@ -10,10 +10,13 @@ trait SijoitteluRepository extends PerformanceLogger { this:Logging =>
 
   def getLatestSijoitteluajoId(hakuOid: HakuOid): Option[Long]
 
+  def isLatest(sijoitteluajoId: String) = "latest".equalsIgnoreCase(sijoitteluajoId)
+  def parseId(sijoitteluajoId: String) = Try(sijoitteluajoId.toLong).toOption
+
   def getLatestSijoitteluajoId(sijoitteluajoId: String, hakuOid: HakuOid): Either[Throwable,Long] = sijoitteluajoId match {
-      case x if "latest".equalsIgnoreCase(x) => getLatestSijoitteluajoId(hakuOid).toRight(
-        new IllegalArgumentException(s"Yhtään sijoitteluajoa ei löytynyt haulle $hakuOid"))
-      case x => Try(x.toLong).toOption.toRight(
+      case x if isLatest(x) => getLatestSijoitteluajoId(hakuOid).toRight(
+        new NotFoundException(s"Yhtään sijoitteluajoa ei löytynyt haulle $hakuOid"))
+      case x => parseId(x).toRight(
         new IllegalArgumentException(s"Väärän tyyppinen sijoitteluajon ID: $sijoitteluajoId"))
   }
 
@@ -31,7 +34,8 @@ trait SijoitteluRepository extends PerformanceLogger { this:Logging =>
   def getSijoitteluajonHakemustenHakijaryhmat(sijoitteluajoId:Long): Map[HakemusOid, Set[String]]
   def getSijoitteluajonTilahistoriat(sijoitteluajoId:Long): List[TilaHistoriaRecord]
   def getSijoitteluajonHakijaryhmat(sijoitteluajoId:Long): List[HakijaryhmaRecord]
-  def getSijoitteluajonHakijaryhmanHakemukset(sijoitteluajoId:Long, hakijaryhmaOid:String): List[HakemusOid]
+  def getSijoitteluajonHakijaryhmienHakemukset(sijoitteluajoId:Long, hakijaryhmaOids:List[String]): Map[String, List[HakemusOid]]
+  def getSijoitteluajonHakijaryhmanHakemukset(sijoitteluajoId:Long, hakijaryhmaOid:String, log:Boolean = true): List[HakemusOid]
   def getSijoitteluajonPistetiedot(sijoitteluajoId:Long): List[PistetietoRecord]
   def getSijoitteluajonPistetiedotInChunks(sijoitteluajoId:Long, chunkSize:Int = 200): List[PistetietoRecord]
   def getSijoitteluajonHakemuksetInChunks(sijoitteluajoId:Long, chunkSize:Int = 300): List[HakemusRecord]

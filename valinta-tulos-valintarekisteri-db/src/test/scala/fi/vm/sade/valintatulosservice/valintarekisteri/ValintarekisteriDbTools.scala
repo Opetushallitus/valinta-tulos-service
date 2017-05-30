@@ -64,6 +64,8 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
       sqlu"truncate table valinnantulokset_history cascade",
       sqlu"truncate table valinnantilat cascade",
       sqlu"truncate table valinnantilat_history cascade",
+      sqlu"truncate table valintaesitykset cascade",
+      sqlu"truncate table valintaesitykset_history cascade ",
       sqlu"truncate table jonosijat cascade",
       sqlu"truncate table valintatapajonot cascade",
       sqlu"truncate table sijoitteluajon_hakukohteet cascade",

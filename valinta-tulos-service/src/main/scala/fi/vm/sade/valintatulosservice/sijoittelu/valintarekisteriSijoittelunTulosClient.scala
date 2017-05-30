@@ -16,15 +16,16 @@ trait ValintarekisteriSijoittelunTulosClient {
 
 }
 
-class ValintarekisteriSijoittelunTulosClientImpl(sijoitteluRepository: HakijaRepository with SijoitteluRepository with ValinnantulosRepository, valinnantulosRepository: ValinnantulosRepository) extends ValintarekisteriSijoittelunTulosClient {
 
-  private def run[R](operations: slick.dbio.DBIO[R]): R = valinnantulosRepository.runBlocking(operations)
+class ValintarekisteriSijoittelunTulosClientImpl(repository: HakijaRepository with SijoitteluRepository with ValinnantulosRepository) extends ValintarekisteriSijoittelunTulosClient {
+
+  private def run[R](operations: slick.dbio.DBIO[R]): R = repository.runBlocking(operations)
 
   override def fetchLatestSijoitteluAjo(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid] = None): Option[SijoitteluAjo] = {
-    val latestId = sijoitteluRepository.getLatestSijoitteluajoId(hakuOid)
+    val latestId = repository.getLatestSijoitteluajoId(hakuOid)
 
-    def sijoitteluajonHakukohdeOidit = latestId.map(id => sijoitteluRepository.getSijoitteluajonHakukohdeOidit(id)).getOrElse(List())
-    def valinnantulostenHakukohdeOidit = run(valinnantulosRepository.getValinnantulostenHakukohdeOiditForHaku(hakuOid))
+    def sijoitteluajonHakukohdeOidit = latestId.map(id => repository.getSijoitteluajonHakukohdeOidit(id)).getOrElse(List())
+    def valinnantulostenHakukohdeOidit = run(repository.getValinnantulostenHakukohdeOiditForHaku(hakuOid))
 
     val hakukohdeOidit = sijoitteluajonHakukohdeOidit.union(valinnantulostenHakukohdeOidit).distinct
 
@@ -37,12 +38,12 @@ class ValintarekisteriSijoittelunTulosClientImpl(sijoitteluRepository: HakijaRep
       case _ if hakukohdeMissing => None
       case None if hakukohdeOidit.isEmpty => None
       case None => Some(SyntheticSijoitteluAjoForHakusWithoutSijoittelu(hakuOid, hakukohdeOidit))
-      case Some(id) => sijoitteluRepository.getSijoitteluajo(id).map(_.entity(hakukohdeOidit))
+      case Some(id) => repository.getSijoitteluajo(id).map(_.entity(hakukohdeOidit))
     }
   }
 
   override def fetchHakemuksenTulos(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid): Option[HakijaDTO] =
-    Try(new SijoitteluajonHakija(sijoitteluRepository, sijoitteluAjo, hakemusOid).dto()) match {
+    Try(new SijoitteluajonHakija(repository, sijoitteluAjo, hakemusOid).dto()) match {
       case Failure(e) => throw new RuntimeException(e)
       case Success(r) => Some(r)
     }

@@ -1,28 +1,46 @@
 package fi.vm.sade.valintatulosservice.sijoittelu.fixture
 
+import java.util.concurrent.TimeUnit.SECONDS
+
+import com.mongodb.DB
 import fi.vm.sade.sijoittelu.tulos.testfixtures.MongoMockData
-import fi.vm.sade.valintatulosservice.json4sCustomFormats
+import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import org.json4s.DefaultFormats
+import org.json4s.JsonAST.JArray
 import org.json4s.jackson.JsonMethods._
 import org.springframework.core.io.ClassPathResource
-import slick.driver.PostgresDriver.api.{actionBasedSQLInterpolation, _}
+import slick.driver.PostgresDriver.api.actionBasedSQLInterpolation
 
-case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends json4sCustomFormats {
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
-  implicit val formats = DefaultFormats ++ List(
-    new NumberLongSerializer)
-
+case class SijoitteluFixtures(db: DB, valintarekisteriDb : ValintarekisteriDb) {
   def importFixture(fixtureName: String,
                     clear: Boolean = false,
                     yhdenPaikanSaantoVoimassa: Boolean = false,
                     kktutkintoonJohtava: Boolean = false) {
     if (clear) {
-      clearFixtures()
+      clearFixtures
+      val timeout = Duration(4, SECONDS)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM vastaanotot"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM ilmoittautumiset"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM pistetiedot"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM jonosijat"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM valintatapajonot"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM hakijaryhman_hakemukset"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM hakijaryhmat"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM sijoitteluajon_hakukohteet"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM viestinnan_ohjaus"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM ehdollisen_hyvaksynnan_ehto"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM valinnantulokset"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM tilat_kuvaukset"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM valinnantilat"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM valintaesitykset"), timeout)
+      Await.result(valintarekisteriDb.db.run(sqlu"DELETE FROM hakukohteet"), timeout)
     }
-    //val tulokset = MongoMockData.readJson("fixtures/sijoittelu/" + fixtureName)
-    //MongoMockData.insertData(db, tulokset)
+    val tulokset = MongoMockData.readJson("fixtures/sijoittelu/" + fixtureName)
+    MongoMockData.insertData(db, tulokset)
 
     importJsonFixturesToPostgres(fixtureName, yhdenPaikanSaantoVoimassa, kktutkintoonJohtava)
 
@@ -32,45 +50,40 @@ case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends js
                                            yhdenPaikanSaantoVoimassa: Boolean = false,
                                            kktutkintoonJohtava: Boolean = false): Unit = {
 
+    implicit val formats = JsonFormats.jsonFormats
+
     val json = parse(scala.io.Source.fromInputStream(new ClassPathResource("fixtures/sijoittelu/" + fixtureName).getInputStream).mkString)
-    SijoitteluWrapper.fromJson(json) match {
-      case Some(wrapper) =>
-        wrapper.hakukohteet.foreach(h => insertHakukohde(h.getOid, wrapper.sijoitteluajo.getHakuOid, wrapper.sijoitteluajo.getSijoitteluajoId, h.isKaikkiJonotSijoiteltu, yhdenPaikanSaantoVoimassa, kktutkintoonJohtava))
-        valintarekisteriDb.storeSijoittelu(wrapper)
-      case None =>
+    val JArray(valintatulokset) = ( json \ "Valintatulos" )
+
+    for(valintatulos <- valintatulokset) {
+      val tilaOption = (valintatulos \ "tila").extractOpt[String]
+      tilaOption match {
+        case None =>
+          // pass
+        case Some(tila) =>
+          getVastaanottoAction(tila).foreach(action => {
+            valintarekisteriDb.storeHakukohde(HakukohdeRecord(
+                (valintatulos \ "hakukohdeOid").extract[HakukohdeOid],
+                (valintatulos \ "hakuOid").extract[HakuOid],
+                yhdenPaikanSaantoVoimassa,
+                kktutkintoonJohtava,
+                Kevat(2016)
+            ))
+
+            valintarekisteriDb.store(VirkailijanVastaanotto(
+              (valintatulos \ "hakuOid").extract[HakuOid],
+              (valintatulos \ "valintatapajonoOid").extract[ValintatapajonoOid],
+              (valintatulos \ "hakijaOid").extract[String],
+              (valintatulos \ "hakemusOid").extract[HakemusOid],
+              (valintatulos \ "hakukohdeOid").extract[HakukohdeOid],
+              action,
+              (valintatulos \ "hakijaOid").extract[String],
+              "Tuotu vanhasta järjestelmästä"
+            ))
+          })
+      }
+
     }
-  }
-
-  private def insertHakukohde(hakukohdeOid: String, hakuOid: String, sijoitteluajoId: Long, kaikkiJonotSijoiteltu: Boolean, yhdenPaikanSaantoVoimassa: Boolean, kktutkintoonJohtava: Boolean) = {
-    valintarekisteriDb.storeHakukohde(HakukohdeRecord(HakukohdeOid(hakukohdeOid), HakuOid(hakuOid), yhdenPaikanSaantoVoimassa, kktutkintoonJohtava, Kevat(2016)))
-  }
-
-  private val deleteFromVastaanotot = DBIO.seq(
-    sqlu"truncate table vastaanotot cascade",
-    sqlu"truncate table deleted_vastaanotot cascade",
-    sqlu"truncate table henkiloviitteet cascade",
-    sqlu"truncate table vanhat_vastaanotot cascade")
-
-  private def deleteAll(): Unit = {
-    valintarekisteriDb.runBlocking(DBIO.seq(
-      deleteFromVastaanotot,
-      sqlu"truncate table valinnantilan_kuvaukset cascade",
-      sqlu"truncate table hakijaryhman_hakemukset cascade",
-      sqlu"truncate table hakijaryhmat cascade",
-      sqlu"truncate table ilmoittautumiset cascade",
-      sqlu"truncate table ilmoittautumiset_history cascade",
-      sqlu"truncate table pistetiedot cascade",
-      sqlu"truncate table valinnantulokset cascade",
-      sqlu"truncate table valinnantulokset_history cascade",
-      sqlu"truncate table valinnantilat cascade",
-      sqlu"truncate table valinnantilat_history cascade",
-      sqlu"truncate table jonosijat cascade",
-      sqlu"truncate table valintatapajonot cascade",
-      sqlu"truncate table sijoitteluajon_hakukohteet cascade",
-      sqlu"truncate table hakukohteet cascade",
-      sqlu"truncate table sijoitteluajot cascade",
-      sqlu"truncate table lukuvuosimaksut cascade"
-    ).transactionally)
   }
 
   private def getVastaanottoAction(vastaanotto:String) = vastaanotto match {
@@ -82,10 +95,9 @@ case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends js
     case "VASTAANOTTANUT_SITOVASTI" => Some(VastaanotaSitovasti)
   }
 
-  def clearFixtures() {
-    deleteAll()
-//    MongoMockData.clear(db)
-//    val base = MongoMockData.readJson("fixtures/sijoittelu/sijoittelu-basedata.json")
-//    MongoMockData.insertData(db, base)
+  def clearFixtures {
+    MongoMockData.clear(db)
+    val base = MongoMockData.readJson("fixtures/sijoittelu/sijoittelu-basedata.json")
+    MongoMockData.insertData(db, base)
   }
 }

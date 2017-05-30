@@ -12,8 +12,9 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 
 trait ITSetup {
   implicit val appConfig = new VtsAppConfig.IT
-  implicit val dynamicAppConfig: VtsDynamicAppConfig = VtsAppConfig.MockDynamicAppConfig()
+  implicit val dynamicAppConfig: VtsDynamicAppConfig = VtsAppConfig.MockDynamicAppConfig(näytetäänSiirryKelaanURL= true)
   val dbConfig = appConfig.settings.valintaRekisteriDbConfig
+  lazy val sijoitteluContext = new SijoitteluSpringContext(appConfig, SijoitteluSpringContext.createApplicationContext(appConfig))
 
   lazy val singleConnectionValintarekisteriDb = new ValintarekisteriDb(
     dbConfig.copy(maxConnections = Some(1), minConnections = Some(1)))
@@ -22,7 +23,7 @@ trait ITSetup {
 
   lazy val hakemusFixtureImporter = HakemusFixtures()(appConfig)
 
-  lazy val sijoitteluFixtures = SijoitteluFixtures(singleConnectionValintarekisteriDb)
+  lazy val sijoitteluFixtures = SijoitteluFixtures(sijoitteluContext.database, singleConnectionValintarekisteriDb)
 
   def useFixture(fixtureName: String,
                  extraFixtureNames: List[String] = List(),
@@ -35,8 +36,8 @@ trait ITSetup {
                 ) {
 
     sijoitteluFixtures.importFixture(fixtureName, clear = clearFixturesInitially, yhdenPaikanSaantoVoimassa = yhdenPaikanSaantoVoimassa, kktutkintoonJohtava = kktutkintoonJohtava)
-    extraFixtureNames.foreach(fixtureName =>
-      sijoitteluFixtures.importFixture(fixtureName, yhdenPaikanSaantoVoimassa = yhdenPaikanSaantoVoimassa, kktutkintoonJohtava = kktutkintoonJohtava)
+    extraFixtureNames.map(fixtureName =>
+      sijoitteluFixtures.importFixture(fixtureName, clear = false, yhdenPaikanSaantoVoimassa = yhdenPaikanSaantoVoimassa, kktutkintoonJohtava = kktutkintoonJohtava)
     )
 
     OhjausparametritFixtures.activeFixture = ohjausparametritFixture

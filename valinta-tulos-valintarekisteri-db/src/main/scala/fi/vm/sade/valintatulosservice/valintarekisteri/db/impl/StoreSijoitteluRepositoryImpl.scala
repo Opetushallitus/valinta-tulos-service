@@ -7,13 +7,11 @@ import java.util.concurrent.TimeUnit
 import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatapajono, Hakemus => SijoitteluHakemus, _}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.StoreSijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import slick.driver.PostgresDriver.api._
 
+import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
 import scala.util.Try
-
-import slick.driver.PostgresDriver.api._
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.collection.JavaConverters._
 
 trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with ValintarekisteriRepository {
 
@@ -29,14 +27,16 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
       .andThen(SimpleDBIO { session =>
         var jonosijaStatement:Option[PreparedStatement] = None
         var pistetietoStatement:Option[PreparedStatement] = None
-        var valinnantulosStatement:Option[PreparedStatement] = None
+        var insertValinnantulosStatement:Option[PreparedStatement] = None
+        var updateValinnantulosStatement:Option[PreparedStatement] = None
         var valinnantilaStatement:Option[PreparedStatement] = None
         var tilankuvausStatement:Option[PreparedStatement] = None
         var tilaKuvausMappingStatement:Option[PreparedStatement] = None
         try {
           jonosijaStatement = Some(createJonosijaStatement(session.connection))
           pistetietoStatement = Some(createPistetietoStatement(session.connection))
-          valinnantulosStatement = Some(createValinnantulosStatement(session.connection))
+          insertValinnantulosStatement = Some(createInsertValinnantulosStatement(session.connection))
+          updateValinnantulosStatement = Some(createUpdateValinnantulosStatement(session.connection))
           valinnantilaStatement = Some(createValinnantilaStatement(session.connection))
           tilankuvausStatement = Some(createTilankuvausStatement(session.connection))
           tilaKuvausMappingStatement = Some(createTilaKuvausMappingStatement(session.connection))
@@ -51,7 +51,8 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
                   ValintatapajonoOid(valintatapajono.getOid),
                   jonosijaStatement.get,
                   pistetietoStatement.get,
-                  valinnantulosStatement.get,
+                  insertValinnantulosStatement.get,
+                  updateValinnantulosStatement.get,
                   valinnantilaStatement.get,
                   tilankuvausStatement.get,
                   tilaKuvausMappingStatement.get
@@ -63,14 +64,16 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
           time(s"Haun $hakuOid jonosijojen tallennus") { jonosijaStatement.get.executeBatch }
           time(s"Haun $hakuOid pistetietojen tallennus") { pistetietoStatement.get.executeBatch }
           time(s"Haun $hakuOid valinnantilojen tallennus") { valinnantilaStatement.get.executeBatch }
-          time(s"Haun $hakuOid valinnantulosten tallennus") { valinnantulosStatement.get.executeBatch }
+          time(s"Haun $hakuOid uusien valinnantulosten tallennus") { insertValinnantulosStatement.get.executeBatch }
+          time(s"Haun $hakuOid päivittyneiden valinnantulosten tallennus") { updateValinnantulosStatement.get.executeBatch }
           time(s"Haun $hakuOid tilankuvaus-mäppäysten tallennus") { tilaKuvausMappingStatement.get.executeBatch }
         } finally {
           Try(tilankuvausStatement.foreach(_.close))
           Try(jonosijaStatement.foreach(_.close))
           Try(pistetietoStatement.foreach(_.close))
           Try(valinnantilaStatement.foreach(_.close))
-          Try(valinnantulosStatement.foreach(_.close))
+          Try(insertValinnantulosStatement.foreach(_.close))
+          Try(updateValinnantulosStatement.foreach(_.close))
           Try(tilaKuvausMappingStatement.foreach(_.close))
         }
       })
@@ -111,13 +114,14 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
   }
 
   private def storeValintatapajononHakemus(hakemus: SijoitteluHakemus,
-                                           valintatulos: Option[Valintatulos],
+                                           valintatulosOption: Option[Valintatulos],
                                            sijoitteluajoId:Long,
                                            hakukohdeOid: HakukohdeOid,
                                            valintatapajonoOid: ValintatapajonoOid,
                                            jonosijaStatement: PreparedStatement,
                                            pistetietoStatement: PreparedStatement,
-                                           valinnantulosStatement: PreparedStatement,
+                                           insertValinnantulosStatement: PreparedStatement,
+                                           updateValinnantulosStatement: PreparedStatement,
                                            valinnantilaStatement: PreparedStatement,
                                            tilankuvausStatement: PreparedStatement,
                                            tilaKuvausMappingStatement: PreparedStatement) = {
@@ -126,7 +130,10 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
     hakemus.getPistetiedot.asScala.foreach(createPistetietoInsertRow(sijoitteluajoId, valintatapajonoOid, HakemusOid(hakemus.getHakemusOid), _, pistetietoStatement))
     createValinnantilanKuvausInsertRow(hakemusWrapper, tilankuvausStatement)
     createValinnantilaInsertRow(hakukohdeOid, valintatapajonoOid, sijoitteluajoId, hakemusWrapper, valinnantilaStatement)
-    createValinnantulosInsertRow(hakemusWrapper, valintatulos, sijoitteluajoId, hakukohdeOid, valintatapajonoOid, valinnantulosStatement)
+    valintatulosOption match {
+      case None => createValinnantulosInsertRow(hakemusWrapper, sijoitteluajoId, hakukohdeOid, valintatapajonoOid, insertValinnantulosStatement)
+      case Some(valintatulos) => createValinnantulosUpdateRow(hakemusWrapper, valintatulos, sijoitteluajoId, hakukohdeOid, valintatapajonoOid, updateValinnantulosStatement)
+    }
     createTilaKuvausMappingInsertRow(hakemusWrapper, hakukohdeOid, valintatapajonoOid, tilaKuvausMappingStatement)
   }
 
@@ -178,7 +185,30 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
     statement.addBatch()
   }
 
-  private def createValinnantulosStatement = createStatement(
+  private def createInsertValinnantulosStatement = createStatement(
+    """insert into valinnantulokset(
+             valintatapajono_oid,
+             hakemus_oid,
+             hakukohde_oid,
+             ilmoittaja,
+             selite
+           ) values (?, ?, ?, ?::text, 'Sijoittelun tallennus')
+           on conflict on constraint valinnantulokset_pkey do nothing""")
+
+  private def createValinnantulosInsertRow(hakemus:SijoitteluajonHakemusWrapper,
+                                           sijoitteluajoId:Long,
+                                           hakukohdeOid: HakukohdeOid,
+                                           valintatapajonoOid: ValintatapajonoOid,
+                                           valinnantulosStatement:PreparedStatement) = {
+    valinnantulosStatement.setString(1, valintatapajonoOid.toString)
+    valinnantulosStatement.setString(2, hakemus.hakemusOid.toString)
+    valinnantulosStatement.setString(3, hakukohdeOid.toString)
+    valinnantulosStatement.setLong(4, sijoitteluajoId)
+    valinnantulosStatement.addBatch()
+  }
+
+
+  private def createUpdateValinnantulosStatement = createStatement(
     """insert into valinnantulokset(
              valintatapajono_oid,
              hakemus_oid,
@@ -196,20 +226,20 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
              and valinnantulokset.system_time @> ?::timestamp with time zone
              and ?::valinnantila <> 'Peruuntunut'::valinnantila""")
 
-  private def createValinnantulosInsertRow(hakemus:SijoitteluajonHakemusWrapper,
-                                           valintatulos: Option[Valintatulos],
+  private def createValinnantulosUpdateRow(hakemus:SijoitteluajonHakemusWrapper,
+                                           valintatulos: Valintatulos,
                                            sijoitteluajoId:Long,
                                            hakukohdeOid: HakukohdeOid,
                                            valintatapajonoOid: ValintatapajonoOid,
                                            valinnantulosStatement:PreparedStatement) = {
 
-    val read = valintatulos.map(_.getRead.getTime).getOrElse(System.currentTimeMillis)
+    val read = valintatulos.getRead.getTime
 
     valinnantulosStatement.setString(1, valintatapajonoOid.toString)
     valinnantulosStatement.setString(2, hakemus.hakemusOid.toString)
     valinnantulosStatement.setString(3, hakukohdeOid.toString)
-    valinnantulosStatement.setBoolean(4, valintatulos.exists(_.getJulkaistavissa))
-    valinnantulosStatement.setBoolean(5, valintatulos.exists(_.getHyvaksyttyVarasijalta))
+    valinnantulosStatement.setBoolean(4, valintatulos.getJulkaistavissa)
+    valinnantulosStatement.setBoolean(5, valintatulos.getHyvaksyttyVarasijalta)
     valinnantulosStatement.setLong(6, sijoitteluajoId)
     valinnantulosStatement.setTimestamp(7, new java.sql.Timestamp(read))
     valinnantulosStatement.setString(8, hakemus.tila.toString)
@@ -307,21 +337,62 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
   private def insertValintatapajono(sijoitteluajoId: Long, hakukohdeOid: HakukohdeOid, valintatapajono: Valintatapajono) = {
     val SijoitteluajonValintatapajonoWrapper(oid, nimi, prioriteetti, tasasijasaanto, aloituspaikat, alkuperaisetAloituspaikat,
     eiVarasijatayttoa, kaikkiEhdonTayttavatHyvaksytaan, poissaOlevaTaytto, varasijat, varasijaTayttoPaivat,
-    varasijojaKaytetaanAlkaen, varasijojaTaytetaanAsti, tayttojono, alinHyvaksyttyPistemaara, valintaesitysHyvaksytty)
+    varasijojaKaytetaanAlkaen, varasijojaTaytetaanAsti, tayttojono, alinHyvaksyttyPistemaara, _)
     = SijoitteluajonValintatapajonoWrapper(valintatapajono)
 
     val varasijojaKaytetaanAlkaenTs:Option[Timestamp] = varasijojaKaytetaanAlkaen.flatMap(d => Option(new Timestamp(d.getTime)))
     val varasijojaTaytetaanAstiTs:Option[Timestamp] = varasijojaTaytetaanAsti.flatMap(d => Option(new Timestamp(d.getTime)))
 
-    sqlu"""insert into valintatapajonot (oid, sijoitteluajo_id, hakukohde_oid, nimi, prioriteetti, tasasijasaanto, aloituspaikat,
-           alkuperaiset_aloituspaikat, kaikki_ehdon_tayttavat_hyvaksytaan, poissaoleva_taytto, ei_varasijatayttoa,
-           varasijat, varasijatayttopaivat, varasijoja_kaytetaan_alkaen, varasijoja_taytetaan_asti, tayttojono,
-           alin_hyvaksytty_pistemaara, valintaesitys_hyvaksytty)
-           values (${oid}, ${sijoitteluajoId}, ${hakukohdeOid}, ${nimi}, ${prioriteetti}, ${tasasijasaanto.toString}::tasasijasaanto, ${aloituspaikat},
-           ${alkuperaisetAloituspaikat}, ${kaikkiEhdonTayttavatHyvaksytaan},
-           ${poissaOlevaTaytto}, ${eiVarasijatayttoa}, ${varasijat}, ${varasijaTayttoPaivat},
-           ${varasijojaKaytetaanAlkaenTs}, ${varasijojaTaytetaanAstiTs}, ${tayttojono},
-           ${alinHyvaksyttyPistemaara}, ${valintaesitysHyvaksytty})"""
+    val ensureValintaesitys =
+      sqlu"""insert into valintaesitykset (
+                 hakukohde_oid,
+                 valintatapajono_oid,
+                 hyvaksytty
+             ) values (
+                 $hakukohdeOid,
+                 $oid,
+                 null::timestamp with time zone
+             ) on conflict on constraint valintaesitykset_pkey do nothing
+        """
+    val insert =
+      sqlu"""insert into valintatapajonot (
+                 oid,
+                 sijoitteluajo_id,
+                 hakukohde_oid,
+                 nimi,
+                 prioriteetti,
+                 tasasijasaanto,
+                 aloituspaikat,
+                 alkuperaiset_aloituspaikat,
+                 kaikki_ehdon_tayttavat_hyvaksytaan,
+                 poissaoleva_taytto,
+                 ei_varasijatayttoa,
+                 varasijat,
+                 varasijatayttopaivat,
+                 varasijoja_kaytetaan_alkaen,
+                 varasijoja_taytetaan_asti,
+                 tayttojono,
+                 alin_hyvaksytty_pistemaara
+             ) values (
+                 ${oid},
+                 ${sijoitteluajoId},
+                 ${hakukohdeOid},
+                 ${nimi},
+                 ${prioriteetti},
+                 ${tasasijasaanto.toString}::tasasijasaanto,
+                 ${aloituspaikat},
+                 ${alkuperaisetAloituspaikat},
+                 ${kaikkiEhdonTayttavatHyvaksytaan},
+                 ${poissaOlevaTaytto},
+                 ${eiVarasijatayttoa},
+                 ${varasijat},
+                 ${varasijaTayttoPaivat},
+                 ${varasijojaKaytetaanAlkaenTs},
+                 ${varasijojaTaytetaanAstiTs},
+                 ${tayttojono},
+                 ${alinHyvaksyttyPistemaara}
+             )"""
+    ensureValintaesitys.andThen(insert)
   }
 
   private def insertHakijaryhma(sijoitteluajoId:Long, hakijaryhma:Hakijaryhma) = {
