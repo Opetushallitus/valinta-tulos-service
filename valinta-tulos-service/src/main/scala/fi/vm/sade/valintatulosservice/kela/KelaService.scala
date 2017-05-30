@@ -10,6 +10,7 @@ import fi.vm.sade.valintatulosservice.tarjonta._
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoRecord, VirkailijaVastaanottoRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
+import scala.collection.immutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
@@ -48,43 +49,61 @@ class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, orga
 
 
   def fetchVastaanototForPersonWithHetu(hetu: String, alkaen: Option[Date])(implicit executor:ExecutionContext): Future[Option[Henkilo]] = {
-    Future(hakijaResolver.findPersonByHetu(hetu, fetchPersonTimeout)).map {
+    Future(hakijaResolver.findPersonByHetu(hetu, fetchPersonTimeout)).flatMap {
       case Some(henkilo) =>
         val vastaanotot = valintarekisteriService.findHenkilonVastaanotot(henkilo.oidHenkilo, alkaen)
 
-        Some(fi.vm.sade.valintatulosservice.kela.Henkilo(
-          henkilotunnus = henkilo.hetu,
-          sukunimi = henkilo.sukunimi,
-          etunimet = henkilo.etunimet,
-          vastaanotot = recordsToVastaanotot(vastaanotot.toSeq)))
+        recordsToVastaanotot(vastaanotot.toSeq).map(v => {
+          Some(fi.vm.sade.valintatulosservice.kela.Henkilo(
+            henkilotunnus = henkilo.hetu,
+            sukunimi = henkilo.sukunimi,
+            etunimet = henkilo.etunimet,
+            vastaanotot = v))
+        })
       case _ =>
-        None
+        Future.successful(None)
     }
   }
 
-  private def recordsToVastaanotot(vastaanotot: Seq[VastaanottoRecord]): Seq[fi.vm.sade.valintatulosservice.kela.Vastaanotto] = {
-    vastaanotot.groupBy(_.hakuOid).flatMap(fetchDataForVastaanotot).toSeq
+  private def recordsToVastaanotot(vastaanotot: Seq[VastaanottoRecord])(implicit executor:ExecutionContext): Future[Seq[fi.vm.sade.valintatulosservice.kela.Vastaanotto]] = {
+    Future.sequence(vastaanotot.groupBy(_.hakuOid).map(fetchDataForVastaanotot)).map(_.flatten.toSeq)
   }
 
-  private def fetchDataForVastaanotot(entry: (HakuOid, Seq[VastaanottoRecord])): Seq[fi.vm.sade.valintatulosservice.kela.Vastaanotto] = {
+  private def fetchDataForVastaanotot(entry: (HakuOid, Seq[VastaanottoRecord]))(implicit executor:ExecutionContext): Future[Seq[fi.vm.sade.valintatulosservice.kela.Vastaanotto]] = {
     val (hakuOid, vastaanotot) = entry
-    def hakukohdeAndOrganisaatioForVastaanotto(vastaanotto: VastaanottoRecord, haku: Haku): Either[Throwable, Option[fi.vm.sade.valintatulosservice.kela.Vastaanotto]] = {
-      for(hakukohde <- hakuService.getHakukohde(vastaanotto.hakukohdeOid).right;
-          koulutuses <- hakuService.getKoulutuses(hakukohde.hakukohdeKoulutusOids).right;
-          komos <- hakuService.getKomos(koulutuses.flatMap(_.children)).right;
-          organisaatiot <- organisaatioService.hae(hakukohde.tarjoajaOids.head).right) yield convertToVastaanotto(haku, hakukohde, organisaatiot, koulutuses, komos, vastaanotto)
+    def flattenEither[B](f: Either[Throwable,B]) = f match {
+      case Right(r) => Future.successful(r)
+      case Left(t) => Future.failed(t)
     }
-    hakuService.getHaku(hakuOid) match {
-      case Right(haku) =>
-        vastaanotot.par.map(hakukohdeAndOrganisaatioForVastaanotto(_, haku) match {
-          case Right(vastaanotto) =>
-            vastaanotto
-          case Left(e) =>
-            throw new RuntimeException(s"Unable to get hakukohde or organisaatio! ${e.getMessage}")
-        }).seq.flatten
-      case Left(e) =>
-        throw new RuntimeException(s"Unable to get haku ${hakuOid}! ${e.getMessage}")
+
+    val hakuFut: Future[Haku] = Future(hakuService.getHaku(hakuOid)).flatMap(flattenEither)
+    val vastaanottoAndHakukohdeFut: Future[Seq[(VastaanottoRecord, Hakukohde)]] =
+      Future.sequence(vastaanotot.map(vastaanotto => Future(hakuService.getHakukohde(vastaanotto.hakukohdeOid)).flatMap(flattenEither).map((vastaanotto, _))))
+
+    val recordAndHakukohde = for(
+      haku <- hakuFut;
+      v <- vastaanottoAndHakukohdeFut
+    ) yield (haku, v)
+
+    def recordAndHakukohdeToVastaanotto(haku: Haku, vastaanotto: VastaanottoRecord, hakukohde: Hakukohde): Future[Option[fi.vm.sade.valintatulosservice.kela.Vastaanotto]] = {
+      val k = Future(hakuService.getKoulutuses(hakukohde.hakukohdeKoulutusOids)).flatMap(flattenEither)
+      val o = Future(organisaatioService.hae(hakukohde.tarjoajaOids.head)).flatMap(flattenEither)
+
+      for(
+        koulutuses <- k;
+        organisaatiot <- o;
+        komos <- Future(hakuService.getKomos(koulutuses.flatMap(_.children))).flatMap(flattenEither)
+      ) yield convertToVastaanotto(haku, hakukohde, organisaatiot, koulutuses, komos, vastaanotto)
     }
+
+    recordAndHakukohde.map(s => {
+      val (haku, vastaanottoAndHakukohde) = s
+
+      Future.sequence(vastaanottoAndHakukohde.map(v => {
+        val (vastaanotto, hakukohde) = v
+        recordAndHakukohdeToVastaanotto(haku, vastaanotto, hakukohde)
+      })).map(_.flatten)
+    }).flatMap(f => f)
   }
 
 
