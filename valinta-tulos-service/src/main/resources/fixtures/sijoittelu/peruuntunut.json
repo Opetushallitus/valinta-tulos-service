@@ -82,7 +82,8 @@
             }
           ]
         }
-      ]
+      ],
+      "kaikkiJonotSijoiteltu": true
     }
   ],
   "Valintatulos": [

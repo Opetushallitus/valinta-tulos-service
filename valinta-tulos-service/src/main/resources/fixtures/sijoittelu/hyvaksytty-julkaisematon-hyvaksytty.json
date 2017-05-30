@@ -82,7 +82,8 @@
             }
           ]
         }
-      ]
+      ],
+      "kaikkiJonotSijoiteltu": true
     },
     {
       "_id": {
@@ -131,7 +132,8 @@
             }
           ]
         }
-      ]
+      ],
+      "kaikkiJonotSijoiteltu": true
     },
     {
       "_id": {
@@ -180,7 +182,8 @@
             }
           ]
         }
-      ]
+      ],
+      "kaikkiJonotSijoiteltu": true
     }
   ],
   "Valintatulos": [
