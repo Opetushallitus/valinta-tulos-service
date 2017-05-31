@@ -67,7 +67,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
     for {
       h <- hakemusRepository.findHakemus(hakemusOid).right.toOption
       haku <- hakuService.getHaku(h.hakuOid).right.toOption
-      latestSijoitteluAjo = sijoittelutulosService.findLatestSijoitteluAjoForHaku(h.hakuOid)
+      latestSijoitteluajoId = sijoittelutulosService.findLatestSijoitteluajoId(h.hakuOid)
       hakukohdeRecords <- hakukohdeRecordService.getHakukohdeRecords(h.toiveet.map(_.oid)).right.toOption
       uniqueKaudet <- Right(hakukohdeRecords.filter(_.yhdenPaikanSaantoVoimassa)
         .map(_.koulutuksenAlkamiskausi)).right.toOption
@@ -80,7 +80,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
           hakemusOid,
           hakijaOidsByHakemusOids.findBy(hakemusOid),
           sijoittelutulosService.findAikatauluFromOhjausparametritService(h.hakuOid),
-          latestSijoitteluAjo).toSeq,
+          latestSijoitteluajoId).toSeq,
         vastaanottoKaudella = hakukohdeOid => {
           hakukohdeRecords.find(_.oid == hakukohdeOid) match {
             case Some(hakukohde) if hakukohde.yhdenPaikanSaantoVoimassa => {
@@ -116,11 +116,11 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
             hakukohdes.filter(_.yhdenPaikanSaantoVoimassa).map(_.koulutuksenAlkamiskausi).toSet)
         })
         val vastaanottoaikataulu = sijoittelutulosService.findAikatauluFromOhjausparametritService(hakuOid)
-        val latestSijoitteluAjo = sijoittelutulosService.findLatestSijoitteluAjo(hakuOid, Some(hakukohdeOid))
+        val latestSijoitteluajoId = sijoittelutulosService.findLatestSijoitteluajoId(hakuOid)
         val hakemustenTulokset = fetchTulokset(
           haku,
           () => hakemukset.toIterator,
-          personOidFromHakemusResolver => hakemusOids.flatMap(hakemusOid => sijoittelutulosService.hakemuksenTulos(haku, hakemusOid, personOidFromHakemusResolver.findBy(hakemusOid), vastaanottoaikataulu, latestSijoitteluAjo)).toSeq,
+          personOidFromHakemusResolver => hakemusOids.flatMap(hakemusOid => sijoittelutulosService.hakemuksenTulos(haku, hakemusOid, personOidFromHakemusResolver.findBy(hakemusOid), vastaanottoaikataulu, latestSijoitteluajoId)).toSeq,
           vastaanottoKaudella = hakukohdeOid => {
             hakukohdes.find(_.oid == hakukohdeOid) match {
               case Some(hakukohde) if(hakukohde.yhdenPaikanSaantoVoimassa) =>

@@ -28,11 +28,10 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
                              sijoittelunTulosClient: ValintarekisteriSijoittelunTulosClient) {
   import scala.collection.JavaConversions._
 
-  def hakemuksenTulos(haku: Haku, hakemusOid: HakemusOid, hakijaOidIfFound: Option[String], aikataulu: Option[Vastaanottoaikataulu], latestSijoitteluAjo: Option[SijoitteluAjo]): Option[HakemuksenSijoitteluntulos] = {
+  def hakemuksenTulos(haku: Haku, hakemusOid: HakemusOid, hakijaOidIfFound: Option[String], aikataulu: Option[Vastaanottoaikataulu], latestSijoitteluajoId: Option[Long]): Option[HakemuksenSijoitteluntulos] = {
     for (
       hakijaOid <- hakijaOidIfFound;
-      sijoitteluAjo <- latestSijoitteluAjo;
-      hakija: HakijaDTO <- findHakemus(hakemusOid, sijoitteluAjo)
+      hakija: HakijaDTO <- findHakemus(hakemusOid, latestSijoitteluajoId, haku.oid)
     ) yield hakemuksenYhteenveto(hakija, aikataulu, fetchVastaanotto(hakijaOid, haku.oid), false)
   }
 
