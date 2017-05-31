@@ -180,4 +180,4 @@ object KelaKoulutus {
   }
 
 }
-case class KoulutusLaajuusarvo(oid: String, koulutuskoodi: Option[String], opintojenLaajuusarvo: Option[String])
+case class KoulutusLaajuusarvo(oid: Option[String], koulutuskoodi: Option[String], opintojenLaajuusarvo: Option[String])
