@@ -250,7 +250,7 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
     val hakukohdeUrl = config.ophProperties.url(
       "tarjonta-service.hakukohdekela", hakukohdeOid)
     fetch(hakukohdeUrl) { response =>
-      (parse(response) \ "result").extract[HakukohdeKela]
+      parse(response).extract[HakukohdeKela]
     }.left.map {
       case e: IllegalArgumentException => new IllegalArgumentException(s"No hakukohde $hakukohdeOid ($hakukohdeUrl) found", e)
       case e: IllegalStateException => new IllegalStateException(s"Parsing hakukohde $hakukohdeOid ($hakukohdeUrl) failed", e)
