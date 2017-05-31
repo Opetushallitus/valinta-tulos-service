@@ -72,30 +72,32 @@ case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends js
   }
 
   private val deleteFromVastaanotot = DBIO.seq(
-    sqlu"TRUNCATE TABLE vastaanotot CASCADE",
-    sqlu"TRUNCATE TABLE deleted_vastaanotot CASCADE",
-    sqlu"TRUNCATE TABLE henkiloviitteet CASCADE",
-    sqlu"TRUNCATE TABLE vanhat_vastaanotot CASCADE")
+    sqlu"truncate table vastaanotot cascade",
+    sqlu"delete from deleted_vastaanotot where id <> overriden_vastaanotto_deleted_id()",
+    sqlu"truncate table henkiloviitteet cascade",
+    sqlu"truncate table vanhat_vastaanotot cascade")
 
-  private def deleteAll(): Unit = {
+  def deleteAll(): Unit = {
     valintarekisteriDb.runBlocking(DBIO.seq(
       deleteFromVastaanotot,
-      sqlu"TRUNCATE TABLE valinnantilan_kuvaukset CASCADE",
-      sqlu"TRUNCATE TABLE hakijaryhman_hakemukset CASCADE",
-      sqlu"TRUNCATE TABLE hakijaryhmat CASCADE",
-      sqlu"TRUNCATE TABLE ilmoittautumiset CASCADE",
-      sqlu"TRUNCATE TABLE ilmoittautumiset_history CASCADE",
-      sqlu"TRUNCATE TABLE pistetiedot CASCADE",
-      sqlu"TRUNCATE TABLE valinnantulokset CASCADE",
-      sqlu"TRUNCATE TABLE valinnantulokset_history CASCADE",
-      sqlu"TRUNCATE TABLE valinnantilat CASCADE",
-      sqlu"TRUNCATE TABLE valinnantilat_history CASCADE",
-      sqlu"TRUNCATE TABLE jonosijat CASCADE",
-      sqlu"TRUNCATE TABLE valintatapajonot CASCADE",
-      sqlu"TRUNCATE TABLE sijoitteluajon_hakukohteet CASCADE",
-      sqlu"TRUNCATE TABLE hakukohteet CASCADE",
-      sqlu"TRUNCATE TABLE sijoitteluajot CASCADE",
-      sqlu"TRUNCATE TABLE lukuvuosimaksut CASCADE"
+      sqlu"truncate table valinnantilan_kuvaukset cascade",
+      sqlu"truncate table hakijaryhman_hakemukset cascade",
+      sqlu"truncate table hakijaryhmat cascade",
+      sqlu"truncate table ilmoittautumiset cascade",
+      sqlu"truncate table ilmoittautumiset_history cascade",
+      sqlu"truncate table pistetiedot cascade",
+      sqlu"truncate table valinnantulokset cascade",
+      sqlu"truncate table valinnantulokset_history cascade",
+      sqlu"truncate table valinnantilat cascade",
+      sqlu"truncate table valinnantilat_history cascade",
+      sqlu"truncate table valintaesitykset cascade",
+      sqlu"truncate table valintaesitykset_history cascade ",
+      sqlu"truncate table jonosijat cascade",
+      sqlu"truncate table valintatapajonot cascade",
+      sqlu"truncate table sijoitteluajon_hakukohteet cascade",
+      sqlu"truncate table hakukohteet cascade",
+      sqlu"truncate table sijoitteluajot cascade",
+      sqlu"truncate table lukuvuosimaksut cascade"
     ).transactionally)
   }
 

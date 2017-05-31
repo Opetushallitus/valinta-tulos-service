@@ -20,7 +20,11 @@ class ValintarekisteriValintatulosDaoImpl(valinnantulosRepository: Valinnantulos
   override def loadValintatulokset(hakuOid:HakuOid):List[Valintatulos] =
     run(valinnantulosRepository.getValinnantuloksetForHaku(hakuOid)).map(_.toValintatulos).toList
 
-  def loadValintatulos(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid): Valintatulos = ??? // TODO
+  def loadValintatulos(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid): Valintatulos = {
+    loadValintatuloksetForHakemus(hakemusOid).filter(v =>
+      v.getValintatapajonoOid == valintatapajonoOid.toString && v.getHakukohdeOid == hakukohdeOid.toString
+    ).head
+  }
 
   override def loadValintatuloksetForHakukohde(hakukohdeOid:HakukohdeOid):List[Valintatulos] =
     run(valinnantulosRepository.getValinnantuloksetForHakukohde(hakukohdeOid)).map(_.toValintatulos).toList
