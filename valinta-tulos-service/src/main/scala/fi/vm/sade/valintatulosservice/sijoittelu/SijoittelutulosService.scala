@@ -136,6 +136,12 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     }
   }
 
+  private def findHakemus(hakemusOid: HakemusOid, sijoitteluajoId: Option[Long], hakuOid: HakuOid): Option[HakijaDTO] = {
+    Timer.timed("SijoittelutulosService -> sijoittelunTulosClient.fetchHakemuksenTulos", 1000) {
+      sijoittelunTulosClient.fetchHakemuksenTulos(sijoitteluajoId, hakuOid, hakemusOid)
+    }
+  }
+
   private def fetchVastaanotto(henkiloOid: String, hakuOid: HakuOid): Set[VastaanottoRecord] = {
     Timer.timed("hakijaVastaanottoRepository.findHenkilonVastaanototHaussa", 100) {
       hakijaVastaanottoRepository.runBlocking(hakijaVastaanottoRepository.findHenkilonVastaanototHaussa(henkiloOid, hakuOid))
