@@ -78,7 +78,7 @@ abstract class Valintarekisteri(sijoitteluRepository:SijoitteluRepository with S
 
   def getValintatulokset(hakuOid: String): java.util.List[Valintatulos] = {
     val (read, valinnantulokset) = valinnantulosRepository.getValinnantuloksetAndReadTimeForHaku(HakuOid(hakuOid))
-    valinnantulokset.map(_.toValintatulos(read)).toList.asJava
+    valinnantulokset.map(_.toValintatulos(read, Some(hakuOid))).toList.asJava
   }
 
   def getHakukohdeForSijoitteluajo(sijoitteluajoId:Long, hakukohdeOid:String) = {

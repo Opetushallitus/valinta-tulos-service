@@ -78,7 +78,7 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
         .groupBy(_.hakukohdeOid).mapValues(_.groupBy(_.valintatapajonoOid)))
 
     val valintatulokset = Timer.timed("valinnantulos-Valintatulos-konversio", 1000) {
-      valinnantulokset.map(_.toValintatulos).toList.asJava
+      valinnantulokset.map(_.toValintatulos()).toList.asJava
     }
     val hakukohteet = new util.ArrayList[Hakukohde]()
     hakukohteet.addAll(sijoitteluajonHakukohteet)

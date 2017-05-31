@@ -18,12 +18,12 @@ class ValintarekisteriValintatulosDaoImpl(valinnantulosRepository: Valinnantulos
   private def run[R](operations: slick.dbio.DBIO[R]): R = valinnantulosRepository.runBlocking(operations)
 
   override def loadValintatulokset(hakuOid:HakuOid):List[Valintatulos] =
-    run(valinnantulosRepository.getValinnantuloksetForHaku(hakuOid)).map(_.toValintatulos).toList
+    run(valinnantulosRepository.getValinnantuloksetForHaku(hakuOid)).map(_.toValintatulos()).toList
 
   override def loadValintatuloksetForHakukohde(hakukohdeOid:HakukohdeOid):List[Valintatulos] =
-    run(valinnantulosRepository.getValinnantuloksetForHakukohde(hakukohdeOid)).map(_.toValintatulos).toList
+    run(valinnantulosRepository.getValinnantuloksetForHakukohde(hakukohdeOid)).map(_.toValintatulos()).toList
 
   override def loadValintatuloksetForHakemus(hakemusOid:HakemusOid):List[Valintatulos] =
-    run(valinnantulosRepository.getValinnantuloksetForHakemus(hakemusOid)).map(_.toValintatulos).toList
+    run(valinnantulosRepository.getValinnantuloksetForHakemus(hakemusOid)).map(_.toValintatulos()).toList
 
 }

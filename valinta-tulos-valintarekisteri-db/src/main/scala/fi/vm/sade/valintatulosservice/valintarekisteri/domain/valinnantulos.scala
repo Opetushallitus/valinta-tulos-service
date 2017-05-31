@@ -145,12 +145,12 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     muokkaaja
   )
 
-  def toValintatulos(): Valintatulos = {
+  def toValintatulos(hakuOid: Option[String] = None): Valintatulos = {
     val valintatulos = new Valintatulos(
       hakemusOid.toString,
       henkiloOid,
       hakukohdeOid.toString,
-      null,  // hakuOid doesn't seem to be present in this context at all
+      hakuOid.get,
       0,  // hakutoive doesn't seem to be present in this context either
       hyvaksyttyVarasijalta.getOrElse(false),
       ilmoittautumistila.ilmoittautumistila,
@@ -169,8 +169,8 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     valintatulos
   }
 
-  def toValintatulos(read: Instant): Valintatulos = {
-    val valintatulos = toValintatulos()
+  def toValintatulos(read: Instant, hakuOid: Option[String]): Valintatulos = {
+    val valintatulos = toValintatulos(hakuOid)
     valintatulos.setRead(java.util.Date.from(read))
     valintatulos
   }
