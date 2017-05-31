@@ -13,8 +13,6 @@ object SijoitteluajonHakija {
     val hakija = repository.getHakemuksenHakija(hakemusOid, sijoitteluajoId)
       .orElse(throw new NotFoundException(s"Hakijaa ei löytynyt hakemukselle $hakemusOid, sijoitteluajoid: $sijoitteluajoId")).get
 
-    lazy val haunValinnantilat = repository.getHaunValinnantilat(hakuOid) //TODO performance? Do we need koko haku?
-
     lazy val hakemuksenValinnantulokset: Map[HakukohdeOid, Set[Valinnantulos]] = repository.runBlocking(repository.getValinnantuloksetForHakemus(hakemusOid)).groupBy(_.hakukohdeOid) //.map(v => (v.hakukohdeOid, v.valintatapajonoOid) -> v).toMap
 
     lazy val hakutoiveetSijoittelussa = sijoitteluajoId.map(repository.getHakemuksenHakutoiveetSijoittelussa(hakemusOid, _).map(h => h.hakukohdeOid -> h).toMap).getOrElse(Map())
