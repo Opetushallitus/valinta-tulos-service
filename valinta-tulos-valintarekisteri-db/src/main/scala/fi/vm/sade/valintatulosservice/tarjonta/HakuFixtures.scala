@@ -62,6 +62,10 @@ object HakuFixtures extends HakuService with JsonHakuService {
       getHakuFixture(hakuOid).toList.filter {_.julkaistu}.map(toHaku(_).copy(oid = hakuOid))
     })
   }
+
+  override def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, HakukohdeKela] = {
+    Left(new UnsupportedOperationException("Not implemented"))
+  }
   override def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[Hakukohde]] ={
     MonadHelper.sequence(for {oid <- oids.toStream} yield getHakukohde(oid))
   }

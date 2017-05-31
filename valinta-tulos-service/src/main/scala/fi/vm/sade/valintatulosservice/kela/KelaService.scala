@@ -12,27 +12,19 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
 import scala.concurrent.duration._
 
+
+
 class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, organisaatioService: OrganisaatioService, valintarekisteriService: VirkailijaVastaanottoRepository) {
   private val fetchPersonTimeout = 5 seconds
 
-  private def convertToVastaanotto(haku: Haku, hakukohde: Hakukohde, organisaatiot: Organisaatiot, koulutuses: Seq[Koulutus], komos: Seq[Komo], vastaanotto: VastaanottoRecord): Option[fi.vm.sade.valintatulosservice.kela.Vastaanotto] = {
-    def findOppilaitos(o: Organisaatio): Option[String] =
-      o.oppilaitosKoodi.orElse(o.children.flatMap(findOppilaitos).headOption)
+  private def convertToVastaanotto(hakukohde: HakukohdeKela, vastaanotto: VastaanottoRecord): Option[fi.vm.sade.valintatulosservice.kela.Vastaanotto] = {
+    val kelaKoulutus: Option[KelaKoulutus] = KelaKoulutus(hakukohde.koulutuslaajuusarvot)
 
-    val oppilaitos = organisaatiot.organisaatiot.headOption.flatMap(findOppilaitos) match {
-      case Some(oppilaitos) =>
-        oppilaitos
-      case _ =>
-        throw new RuntimeException(s"Unable to get oppilaitos for tarjoaja ${hakukohde.tarjoajaOids.head}!")
-    }
-    val kelaKoulutus: Option[KelaKoulutus] = KelaKoulutus(koulutuses, komos)
-    val kausi = haku.koulutuksenAlkamiskausi.map(kausiToDate)
-
-    (kelaKoulutus, kausi) match {
+    (kelaKoulutus, hakukohde.koulutuksenAlkamiskausi.map(kausiToDate)) match {
       case (Some(kela), Some(kausi)) =>
         Some(fi.vm.sade.valintatulosservice.kela.Vastaanotto(
-          organisaatio = hakukohde.tarjoajaOids.head,
-          oppilaitos = oppilaitos,
+          organisaatio = hakukohde.tarjoajaOid,
+          oppilaitos = hakukohde.oppilaitoskoodi,
           hakukohde = vastaanotto.hakukohdeOid,
           tutkinnonlaajuus1 = kela.tutkinnonlaajuus1,
           tutkinnonlaajuus2 = kela.tutkinnonlaajuus2,
@@ -43,8 +35,6 @@ class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, orga
         None
     }
   }
-
-
 
   def fetchVastaanototForPersonWithHetu(hetu: String, alkaen: Option[Date]): Option[Henkilo] = {
     val henkilo: Option[vastaanotot.Henkilo] = hakijaResolver.findPersonByHetu(hetu, fetchPersonTimeout)
@@ -69,23 +59,10 @@ class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, orga
 
   private def fetchDataForVastaanotot(entry: (HakuOid, Seq[VastaanottoRecord])): Seq[fi.vm.sade.valintatulosservice.kela.Vastaanotto] = {
     val (hakuOid, vastaanotot) = entry
-    def hakukohdeAndOrganisaatioForVastaanotto(vastaanotto: VastaanottoRecord, haku: Haku): Either[Throwable, Option[fi.vm.sade.valintatulosservice.kela.Vastaanotto]] = {
-      for(hakukohde <- hakuService.getHakukohde(vastaanotto.hakukohdeOid).right;
-          koulutuses <- hakuService.getKoulutuses(hakukohde.hakukohdeKoulutusOids).right;
-          komos <- hakuService.getKomos(koulutuses.flatMap(_.children)).right;
-          organisaatiot <- organisaatioService.hae(hakukohde.tarjoajaOids.head).right) yield convertToVastaanotto(haku, hakukohde, organisaatiot, koulutuses, komos, vastaanotto)
-    }
-    hakuService.getHaku(hakuOid) match {
-      case Right(haku) =>
-        vastaanotot.par.map(hakukohdeAndOrganisaatioForVastaanotto(_, haku) match {
-          case Right(vastaanotto) =>
-            vastaanotto
-          case Left(e) =>
-            throw new RuntimeException(s"Unable to get hakukohde or organisaatio! ${e.getMessage}")
-        }).seq.flatten
-      case Left(e) =>
-        throw new RuntimeException(s"Unable to get haku ${hakuOid}! ${e.getMessage}")
-    }
+    vastaanotot.par.flatMap(vastaanotto => hakuService.getHakukohdeKela(vastaanotto.hakukohdeOid) match {
+      case Right(hakukohdeKela) => convertToVastaanotto(hakukohdeKela, vastaanotto)
+      case Left(t) => throw t
+    }).seq
   }
 
 
