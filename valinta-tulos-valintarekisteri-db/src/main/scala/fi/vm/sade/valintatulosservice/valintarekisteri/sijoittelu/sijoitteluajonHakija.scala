@@ -9,9 +9,8 @@ object SijoitteluajonHakija {
   def dto(repository: HakijaRepository with SijoitteluRepository with ValinnantulosRepository,
           sijoitteluajoId:Option[Long],
           hakuOid:HakuOid,
-          hakemusOid:HakemusOid): HakijaDTO = {
+          hakemusOid:HakemusOid): Option[HakijaDTO] = {
     val hakija = repository.getHakemuksenHakija(hakemusOid, sijoitteluajoId)
-      .orElse(throw new NotFoundException(s"Hakijaa ei löytynyt hakemukselle $hakemusOid, sijoitteluajoid: $sijoitteluajoId")).get
 
     lazy val hakemuksenValinnantulokset: Map[HakukohdeOid, Set[Valinnantulos]] = repository.runBlocking(repository.getValinnantuloksetForHakemus(hakemusOid)).groupBy(_.hakukohdeOid) //.map(v => (v.hakukohdeOid, v.valintatapajonoOid) -> v).toMap
 
@@ -62,25 +61,25 @@ object SijoitteluajonHakija {
     }
 
     val hakukohdeOidit = hakemuksenValinnantulokset.keySet.union(hakutoiveetSijoittelussa.keySet)
-    hakija.dto(hakukohdeOidit.map { hakukohdeOid =>
+    hakija.map(_.dto(hakukohdeOidit.map { hakukohdeOid =>
       if (hakutoiveetSijoittelussa.contains(hakukohdeOid)) {
         hakukohdeDtoSijoittelu(hakukohdeOid)
       } else {
         hakukohdeDtoEiSijoittelua(hakukohdeOid)
       }
-    }.toList)
+    }.toList))
   }
 
   def dto(repository: HakijaRepository with SijoitteluRepository with ValinnantulosRepository,
           sijoitteluajoId: String,
           hakuOid: HakuOid,
-          hakemusOid: HakemusOid): HakijaDTO = {
+          hakemusOid: HakemusOid): Option[HakijaDTO] = {
     dto(repository, Some(repository.getLatestSijoitteluajoIdThrowFailure(sijoitteluajoId, hakuOid)), hakuOid, hakemusOid)
   }
 
   def dto(repository: HakijaRepository with SijoitteluRepository with ValinnantulosRepository,
           sijoitteluajo: SijoitteluAjo,
-          hakemusOid: HakemusOid): HakijaDTO = {
+          hakemusOid: HakemusOid): Option[HakijaDTO] = {
     dto(repository, SyntheticSijoitteluAjoForHakusWithoutSijoittelu.getSijoitteluajoId(sijoitteluajo), HakuOid(sijoitteluajo.getHakuOid), hakemusOid)
   }
 }
