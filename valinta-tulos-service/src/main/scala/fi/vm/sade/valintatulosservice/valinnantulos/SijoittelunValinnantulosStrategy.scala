@@ -83,8 +83,6 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
       def validateEhdollisestiHyvaksytty: Either[ValinnantulosUpdateStatus, Unit] = (uusi.ehdollisestiHyvaksyttavissa, uusi.ehdollisenHyvaksymisenEhtoKoodi) match {
         case (Some(true), None) =>
           Left(ValinnantulosUpdateStatus(409, "Valinnantulos on ehdollisesti hyväksyttävissä, mutta ehtoa ei ole annettu.", uusi.valintatapajonoOid, uusi.hakemusOid))
-        case (Some(false), Some(_)) | (None, Some(_)) =>
-          Left(ValinnantulosUpdateStatus(409, "Valinnantulos on ei ole ehdollisesti hyväksyttävissä, mutta ehto on annettu.", uusi.valintatapajonoOid, uusi.hakemusOid))
         case (_, Some(EhdollisenHyvaksymisenEhtoKoodi.EHTO_MUU)) if uusi.ehdollisenHyvaksymisenEhtoFI.forall(_.isEmpty) =>
           Left(ValinnantulosUpdateStatus(409, "Valinnantuloksen ehdollisen hyväksynnän suomenkielistä ehtoa ei ole annettu.", uusi.valintatapajonoOid, uusi.hakemusOid))
         case (_, Some(EhdollisenHyvaksymisenEhtoKoodi.EHTO_MUU)) if uusi.ehdollisenHyvaksymisenEhtoSV.forall(_.isEmpty) =>
