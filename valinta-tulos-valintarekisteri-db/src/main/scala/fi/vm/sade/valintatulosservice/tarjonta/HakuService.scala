@@ -96,7 +96,7 @@ class HakukohdeKelaSerializer extends CustomSerializer[HakukohdeKela]((formats: 
         hakukohdeOid = hakukohdeOid,
         tarjoajaOid = tarjoajaOid,
         oppilaitoskoodi = oppilaitoskoodi,
-        koulutuslaajuusarvot = Seq()
+        koulutuslaajuusarvot = children
       )
   }, { case o => ??? })
 })
