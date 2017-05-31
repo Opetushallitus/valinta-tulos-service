@@ -298,7 +298,7 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: Valintarekist
     }
   }
 
-  private def getHakemuksenValinnantilas(hakemus: Hakemus, valintatapajonoOid: ValintatapajonoOid, hakukohdeOid: HakukohdeOid, henkiloOid: String) = {
+  private def getHakemuksenValinnantilas(hakemus: Hakemus, valintatapajonoOid: ValintatapajonoOid, hakukohdeOid: HakukohdeOid, henkiloOid: String): Seq[(ValinnantilanTallennus, Timestamp)] = {
     val hakemuksenTuloksenTilahistoriaOldestFirst: List[TilaHistoria] = hakemus.getTilaHistoria.asScala.toList.sortBy(_.getLuotu)
 
     var historiat = hakemuksenTuloksenTilahistoriaOldestFirst.zipWithIndex.map { case(tilaHistoriaEntry, i) =>
@@ -307,14 +307,21 @@ class SijoitteluntulosMigraatioService(sijoittelunTulosRestClient: Valintarekist
         new Timestamp(tilaHistoriaEntry.getLuotu.getTime))
     }
 
-    hakemuksenTuloksenTilahistoriaOldestFirst.lastOption.foreach(hist => {
-      if (hakemus.getTila != hist.getTila) {
-        logger.warn(s"hakemus ${hakemus.getHakemusOid} didn't have current tila in tila history, creating one artificially.")
-        historiat = historiat :+ (ValinnantilanTallennus(HakemusOid(hakemus.getHakemusOid), valintatapajonoOid, hakukohdeOid, henkiloOid, Valinnantila(hakemus.getTila), s"$defaultMuokkaaja (generoitu nykyisen tilan historiatieto)"),
-          new Timestamp(new Date().getTime))
+    hakemuksenTuloksenTilahistoriaOldestFirst.lastOption match {
+      case Some(hist) => {
+        if (hakemus.getTila != hist.getTila) {
+          logger.warn(s"hakemus ${hakemus.getHakemusOid} didn't have current tila in tila history, creating one artificially.")
+          historiat = historiat :+ (ValinnantilanTallennus(HakemusOid(hakemus.getHakemusOid), valintatapajonoOid, hakukohdeOid, henkiloOid, Valinnantila(hakemus.getTila), s"$defaultMuokkaaja (generoitu nykyisen tilan historiatieto)"),
+            new Timestamp(new Date().getTime))
+        }
+        historiat
       }
-    })
-    historiat
+      case None =>
+        logger.warn(s"hakemus ${hakemus.getHakemusOid} didn't have any tila history, creating it artificially.")
+        Seq((ValinnantilanTallennus(HakemusOid(hakemus.getHakemusOid), valintatapajonoOid, hakukohdeOid, henkiloOid, Valinnantila(hakemus.getTila), s"$defaultMuokkaaja (generoitu nykyisen tilan historiatieto)"),
+          new Timestamp(new Date().getTime))
+        )
+    }
   }
 
   private def groupHakemusResultsByHakemusOidAndJonoOid(hakukohteet: util.List[Hakukohde]) = {
