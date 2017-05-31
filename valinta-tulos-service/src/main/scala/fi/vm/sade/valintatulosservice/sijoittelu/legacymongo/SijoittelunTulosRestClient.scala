@@ -72,18 +72,6 @@ class SijoittelunTulosRestClient(appConfig: VtsAppConfig) extends Valintarekiste
     })
   }
 
-  @Deprecated
-  override def fetchHakemuksenTulos(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid): Option[HakijaDTO] = {
-    val hakuOid = sijoitteluAjo.getHakuOid
-    val url = appConfig.ophUrlProperties.url("sijoittelu-service.hakemus.for.sijoittelu", hakuOid, sijoitteluAjo.getSijoitteluajoId, hakemusOid.toString)
-    var result: HakijaDTO = null
-    val processor: HakijaDTO => HakijaDTO = { h =>
-      result = h
-      h
-    }
-    retriever.processStreaming[HakijaDTO,HakijaDTO](targetService, url, classOf[HakijaDTO], processor, responseIsArray = false)
-    Option(result)
-  }
 }
 
 @Deprecated

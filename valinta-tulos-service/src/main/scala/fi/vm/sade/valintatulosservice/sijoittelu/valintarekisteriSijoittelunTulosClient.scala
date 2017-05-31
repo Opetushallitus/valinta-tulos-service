@@ -16,8 +16,6 @@ trait ValintarekisteriSijoittelunTulosClient {
 
   def fetchLatestSijoitteluAjoWithoutHakukohdes(hakuOid: HakuOid): Option[SijoitteluAjo]
 
-  def fetchHakemuksenTulos(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid): Option[HakijaDTO]
-
   def fetchHakemuksenTulos(sijoitteluajoId: Option[Long], hakuOid: HakuOid, hakemusOid: HakemusOid): Option[HakijaDTO]
 
 }
@@ -65,9 +63,4 @@ class ValintarekisteriSijoittelunTulosClientImpl(repository: HakijaRepository wi
     }
   }
 
-  override def fetchHakemuksenTulos(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid): Option[HakijaDTO] =
-    Try(SijoitteluajonHakija.dto(repository, sijoitteluAjo, hakemusOid)) match {
-      case Failure(e) => throw new RuntimeException(e)
-      case Success(r) => r
-    }
 }

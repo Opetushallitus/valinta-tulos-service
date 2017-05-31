@@ -76,12 +76,6 @@ object SijoitteluajonHakija {
           hakemusOid: HakemusOid): Option[HakijaDTO] = {
     dto(repository, Some(repository.getLatestSijoitteluajoIdThrowFailure(sijoitteluajoId, hakuOid)), hakuOid, hakemusOid)
   }
-
-  def dto(repository: HakijaRepository with SijoitteluRepository with ValinnantulosRepository,
-          sijoitteluajo: SijoitteluAjo,
-          hakemusOid: HakemusOid): Option[HakijaDTO] = {
-    dto(repository, SyntheticSijoitteluAjoForHakusWithoutSijoittelu.getSijoitteluajoId(sijoitteluajo), HakuOid(sijoitteluajo.getHakuOid), hakemusOid)
-  }
 }
 
 class SijoitteluajonHakijat(val repository: HakijaRepository with SijoitteluRepository with ValinnantulosRepository,

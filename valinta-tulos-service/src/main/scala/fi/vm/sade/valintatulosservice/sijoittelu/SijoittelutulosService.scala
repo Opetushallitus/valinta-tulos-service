@@ -133,12 +133,6 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     } else raportointiService.getSijoitteluAjo(sijoitteluajoId.toLong).map(_.getSijoitteluajoId)
   }
 
-  private def findHakemus(hakemusOid: HakemusOid, sijoitteluAjo: SijoitteluAjo): Option[HakijaDTO] = {
-    Timer.timed("SijoittelutulosService -> sijoittelunTulosClient.fetchHakemuksenTulos", 1000) {
-      sijoittelunTulosClient.fetchHakemuksenTulos(sijoitteluAjo, hakemusOid)
-    }
-  }
-
   private def findHakemus(hakemusOid: HakemusOid, sijoitteluajoId: Option[Long], hakuOid: HakuOid): Option[HakijaDTO] = {
     Timer.timed("SijoittelutulosService -> sijoittelunTulosClient.fetchHakemuksenTulos", 1000) {
       sijoittelunTulosClient.fetchHakemuksenTulos(sijoitteluajoId, hakuOid, hakemusOid)

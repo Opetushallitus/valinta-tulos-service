@@ -29,10 +29,6 @@ class DirectMongoSijoittelunTulosRestClient(sijoitteluContext:SijoitteluContext,
     sijoitteluajoId.flatMap(id => raportointiService.hakemus(hakuOid, id.toString, hakemusOid))
   }
 
-  override def fetchHakemuksenTulos(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid) = {
-    raportointiService.hakemus(HakuOid(sijoitteluAjo.getHakuOid), sijoitteluAjo.getSijoitteluajoId.toString, hakemusOid)
-  }
-
   def fromOptional[T](opt: Optional[T]) = {
     if (opt.isPresent) {
       Some(opt.get)
