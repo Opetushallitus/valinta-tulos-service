@@ -22,10 +22,12 @@ trait ValintarekisteriRaportointiService {
 
   def hakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO]
 
-  def hakemukset(sijoitteluAjo: SijoitteluAjo):HakijaPaginationObject = hakemukset(sijoitteluAjo, None, None, None, None, None, None)
+  def hakemukset(sijoitteluAjo: SijoitteluAjo):HakijaPaginationObject =
+    hakemukset(SyntheticSijoitteluAjoForHakusWithoutSijoittelu.getSijoitteluajoId(sijoitteluAjo), HakuOid(sijoitteluAjo.getHakuOid), None, None, None, None, None, None)
 
   @Deprecated //sivutuksen (count/index) voi poistaa
-  def hakemukset(sijoitteluAjo: SijoitteluAjo,
+  def hakemukset(sijoitteluajoId: Option[Long],
+                 hakuOid: HakuOid,
                  hyvaksytyt: Option[Boolean],
                  ilmanHyvaksyntaa: Option[Boolean],
                  vastaanottaneet: Option[Boolean],
@@ -61,7 +63,8 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
   }
 
   @Deprecated //sivutuksen (count/index) voi poistaa
-  override def hakemukset(sijoitteluAjo: SijoitteluAjo,
+  override def hakemukset(sijoitteluajoId: Option[Long],
+                          hakuOid: HakuOid,
                           hyvaksytyt: Option[Boolean],
                           ilmanHyvaksyntaa: Option[Boolean],
                           vastaanottaneet: Option[Boolean],
@@ -69,8 +72,7 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
                           count: Option[Int],
                           index: Option[Int]): HakijaPaginationObject = {
 
-    val sijoitteluajoId = SyntheticSijoitteluAjoForHakusWithoutSijoittelu.getSijoitteluajoId(sijoitteluAjo)
-    val valinnantulokset = repository.runBlocking(repository.getValinnantuloksetForHaku(HakuOid(sijoitteluAjo.getHakuOid)))
+    val valinnantulokset = repository.runBlocking(repository.getValinnantuloksetForHaku(hakuOid))
 
     val sijoitteluajonHakukohteet = sijoitteluajoId.map(id => tryOrThrow(new SijoitteluajonHakukohteet(repository, id).entity)).getOrElse(new java.util.ArrayList[Hakukohde]())
     def hakukohteetIlmanSijoittelua = hakukohteetValinnantuloksista(

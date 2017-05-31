@@ -54,7 +54,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
         hakukohdeOid match {
           case Some(hakukohde) => Option(Timer.timed("hakukohteen hakemukset", 1000)(raportointiService.hakemukset(sijoittelu, hakukohde)))
             .map(_.toList.map(h => hakemuksenKevytYhteenveto(h, aikataulu, fetchVastaanottos(HakemusOid(h.getHakemusOid), Option(h.getHakijaOid)))))
-          case None => Option(Timer.timed("hakemukset", 1000)(raportointiService.hakemukset(sijoittelu, None, None, None, None, None, None)))
+          case None => Option(Timer.timed("hakemukset", 1000)(raportointiService.hakemukset(sijoittelu)))
             .map(_.getResults.toList.map(h => hakemuksenYhteenveto(h, aikataulu, fetchVastaanottos(HakemusOid(h.getHakemusOid), Option(h.getHakijaOid)), false)))
         }
       }
@@ -101,11 +101,8 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
                                                  hakukohdeOid: Option[List[HakukohdeOid]], count: Option[Int], index: Option[Int],
                                                  haunVastaanototByHakijaOid: Map[String, Set[VastaanottoRecord]]): HakijaPaginationObject = {
 
-    val sijoitteluntulos: Option[SijoitteluAjo] = findSijoitteluAjo(hakuOid, sijoitteluajoId)
-
-    sijoitteluntulos.map { ajo =>
-      raportointiService.hakemukset(ajo, hyvaksytyt, ilmanHyvaksyntaa, vastaanottaneet, hakukohdeOid, count, index)
-    }.getOrElse(new HakijaPaginationObject)
+    val id: Option[Long] = findSijoitteluAjo(hakuOid, sijoitteluajoId)
+    raportointiService.hakemukset(id, hakuOid, hyvaksytyt, ilmanHyvaksyntaa, vastaanottaneet, hakukohdeOid, count, index)
   }
 
   def latestSijoittelunTulos(hakuOid: HakuOid, henkiloOid: String, hakemusOid: HakemusOid,
@@ -126,13 +123,14 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     }).getOrElse(DBIO.successful(HakemuksenSijoitteluntulos(hakemusOid, None, Nil)))
   }
 
-  def sijoittelunTulosForAjoWithoutVastaanottoTieto(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid): HakijaDTO = findHakemus(hakemusOid, sijoitteluAjo).orNull
+  def sijoittelunTulosForAjoWithoutVastaanottoTieto(sijoitteluajoId: Option[Long], hakuOid: HakuOid, hakemusOid: HakemusOid): Option[HakijaDTO] =
+    findHakemus(hakemusOid, sijoitteluajoId, hakuOid)
 
   @Deprecated //TODO: Ei toimi erillishaulla, jolla ei ole laskentaa, jos käytössä PostgreSQL eikä Mongo. Käytetäänkö vielä oikeasti?
-  def findSijoitteluAjo(hakuOid: HakuOid, sijoitteluajoId: String): Option[SijoitteluAjo] = {
+  def findSijoitteluAjo(hakuOid: HakuOid, sijoitteluajoId: String): Option[Long] = {
     if (SijoitteluResource.LATEST == sijoitteluajoId) {
-      findLatestSijoitteluAjoForHaku(hakuOid)
-    } else raportointiService.getSijoitteluAjo(sijoitteluajoId.toLong)
+      findLatestSijoitteluajoId(hakuOid)
+    } else raportointiService.getSijoitteluAjo(sijoitteluajoId.toLong).map(_.getSijoitteluajoId)
   }
 
   private def findHakemus(hakemusOid: HakemusOid, sijoitteluAjo: SijoitteluAjo): Option[HakijaDTO] = {

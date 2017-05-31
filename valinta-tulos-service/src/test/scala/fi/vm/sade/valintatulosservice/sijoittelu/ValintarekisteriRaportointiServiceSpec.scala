@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.sijoittelu
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationObject, KevytHakijaDTO}
 import fi.vm.sade.valintatulosservice.ITSpecification
 import fi.vm.sade.valintatulosservice.valintarekisteri.ITSetup
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, ValintatapajonoOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
@@ -175,7 +175,7 @@ class ValintarekisteriRaportointiServiceSpec extends ITSpecification with Valint
 
   "hakemukset (HakijaPaginationObject)" should {
     "return hakijat and hakutoiveet for haku (both with and without sijoittelu)" in {
-      val paginationObject = raportointiService.hakemukset(sijoitteluajo, None, None, None, None, None, None)
+      val paginationObject = raportointiService.hakemukset(sijoitteluajo)
       paginationObject.getTotalCount must_== 20
 
       val hakijaDtot = paginationObject.getResults.asScala
@@ -218,13 +218,16 @@ class ValintarekisteriRaportointiServiceSpec extends ITSpecification with Valint
         result.size must_== hakemukset.size
         result.map(r => HakemusOid(r.getHakemusOid)).diff(hakemukset) must_== List()
       }
-      assert(20, List(HakemusOid("Haku2.1.1.1"), HakemusOid("Haku2.1.1.2")), raportointiService.hakemukset(sijoitteluajo, None, None, None, None, Some(2), None))
-      assert(20, List(HakemusOid("Haku2.1.1.2"), HakemusOid("Haku2.1.2.1"), HakemusOid("Haku2.1.2.2")), raportointiService.hakemukset(sijoitteluajo, None, None, None, None, Some(3), Some(1)))
-      assert(5, List(sijoittelunHakemusOid2, hakemusOid5), raportointiService.hakemukset(sijoitteluajo, None, None, None, Some(List(oidHaku2hakukohde1)), Some(2), None))
-      assert(5, List(hakemusOid5, hakemusOid6), raportointiService.hakemukset(sijoitteluajo, Some(true), None, None, None, Some(2), Some(1)))
-      assert(15, List(HakemusOid("Haku2.1.1.1"), HakemusOid("Haku2.1.1.2")), raportointiService.hakemukset(sijoitteluajo, None, Some(true), None, None, Some(2), None))
-      assert(5, List(hakemusOid7, hakemusOid8), raportointiService.hakemukset(sijoitteluajo, None, None, Some(true), None, Some(2), Some(3)))
-      assert(0, List(), raportointiService.hakemukset(sijoitteluajo, Some(true), None, None, Some(List(sijoittelunHakukohdeOid1)), Some(2), None))
+
+      val sijoitteluajoId: Option[Long] = Option(sijoitteluajo.getSijoitteluajoId)
+      val hakuOid = HakuOid(sijoitteluajo.getHakuOid)
+      assert(20, List(HakemusOid("Haku2.1.1.1"), HakemusOid("Haku2.1.1.2")), raportointiService.hakemukset(sijoitteluajoId, hakuOid, None, None, None, None, Some(2), None))
+      assert(20, List(HakemusOid("Haku2.1.1.2"), HakemusOid("Haku2.1.2.1"), HakemusOid("Haku2.1.2.2")), raportointiService.hakemukset(sijoitteluajoId, hakuOid, None, None, None, None, Some(3), Some(1)))
+      assert(5, List(sijoittelunHakemusOid2, hakemusOid5), raportointiService.hakemukset(sijoitteluajoId, hakuOid, None, None, None, Some(List(oidHaku2hakukohde1)), Some(2), None))
+      assert(5, List(hakemusOid5, hakemusOid6), raportointiService.hakemukset(sijoitteluajoId, hakuOid, Some(true), None, None, None, Some(2), Some(1)))
+      assert(15, List(HakemusOid("Haku2.1.1.1"), HakemusOid("Haku2.1.1.2")), raportointiService.hakemukset(sijoitteluajoId, hakuOid, None, Some(true), None, None, Some(2), None))
+      assert(5, List(hakemusOid7, hakemusOid8), raportointiService.hakemukset(sijoitteluajoId, hakuOid, None, None, Some(true), None, Some(2), Some(3)))
+      assert(0, List(), raportointiService.hakemukset(sijoitteluajoId, hakuOid, Some(true), None, None, Some(List(sijoittelunHakukohdeOid1)), Some(2), None))
       true must_== true
     }
   }

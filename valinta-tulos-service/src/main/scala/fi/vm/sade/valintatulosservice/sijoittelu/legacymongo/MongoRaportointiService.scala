@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.sijoittelu.legacymongo
 
 import fi.vm.sade.sijoittelu.domain.SijoitteluAjo
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationObject, KevytHakijaDTO}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, SyntheticSijoitteluAjoForHakusWithoutSijoittelu}
 import fi.vm.sade.sijoittelu.tulos.service.{RaportointiService => MongoService}
 import fi.vm.sade.valintatulosservice.sijoittelu.ValintarekisteriRaportointiService
 
@@ -18,11 +18,17 @@ class MongoRaportointiService(service:MongoService) extends ValintarekisteriRapo
   def hakemus(hakuOid: HakuOid, sijoitteluajoId: String, hakemusOid: HakemusOid): Option[HakijaDTO] =
     Option(service.hakemus(hakuOid.toString, sijoitteluajoId, hakemusOid.toString))
 
-  override def hakemukset(sijoitteluAjo: SijoitteluAjo, hyvaksytyt: Option[Boolean], ilmanHyvaksyntaa: Option[Boolean],
+  override def hakemukset(sijoitteluajoId: Option[Long], hakuOid: HakuOid, hyvaksytyt: Option[Boolean], ilmanHyvaksyntaa: Option[Boolean],
                           vastaanottaneet: Option[Boolean], hakukohdeOids: Option[List[HakukohdeOid]], count: Option[Int],
-                          index: Option[Int]): HakijaPaginationObject =
+                          index: Option[Int]): HakijaPaginationObject = {
+    // service.hakemukset should only use sijoitteluajoId and hakuOid from sijoitteluAjo
+    val id: Long = sijoitteluajoId.getOrElse(SyntheticSijoitteluAjoForHakusWithoutSijoittelu.syntheticSijoitteluajoId)
+    val sijoitteluAjo = new SijoitteluAjo()
+    sijoitteluAjo.setSijoitteluajoId(id)
+    sijoitteluAjo.setHakuOid(hakuOid.toString)
     service.hakemukset(sijoitteluAjo, toJavaBoolean(hyvaksytyt), toJavaBoolean(ilmanHyvaksyntaa), toJavaBoolean(vastaanottaneet),
       hakukohdeOidsListAsJava(hakukohdeOids), toJavaInt(count), toJavaInt(index))
+  }
 
   override def getSijoitteluAjo(sijoitteluajoId: Long): Option[SijoitteluAjo] =
     toOption[SijoitteluAjo](service.getSijoitteluAjo(sijoitteluajoId))
