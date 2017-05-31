@@ -11,17 +11,8 @@ object SijoitteluajonHakija {
           hakuOid:HakuOid,
           hakemusOid:HakemusOid): Option[HakijaDTO] = {
     val hakija = repository.getHakemuksenHakija(hakemusOid, sijoitteluajoId)
-
-    lazy val hakemuksenValinnantulokset: Map[HakukohdeOid, Set[Valinnantulos]] = repository.runBlocking(repository.getValinnantuloksetForHakemus(hakemusOid)).groupBy(_.hakukohdeOid) //.map(v => (v.hakukohdeOid, v.valintatapajonoOid) -> v).toMap
-
-    lazy val hakutoiveetSijoittelussa = sijoitteluajoId.map(repository.getHakemuksenHakutoiveetSijoittelussa(hakemusOid, _).map(h => h.hakukohdeOid -> h).toMap).getOrElse(Map())
-    lazy val valintatapajonotSijoittelussa = sijoitteluajoId.map(repository.getHakemuksenHakutoiveidenValintatapajonotSijoittelussa(hakemusOid, _).groupBy(_.hakukohdeOid)).getOrElse(Map())
-    lazy val pistetiedotSijoittelussa = sijoitteluajoId.map(repository.getHakemuksenPistetiedotSijoittelussa(hakemusOid, _).groupBy(_.valintatapajonoOid)).getOrElse(Map())
-    lazy val hakijaryhmatSijoittelussa = sijoitteluajoId.map(repository.getHakemuksenHakutoiveidenHakijaryhmatSijoittelussa(hakemusOid, _).groupBy(_.hakukohdeOid)).getOrElse(Map())
-
-    lazy val tilankuvauksetSijoittelussa = repository.getValinnantilanKuvaukset(
-      valintatapajonotSijoittelussa.values.flatten.map(_.tilankuvausHash).toList.distinct
-    )
+    val hakemuksenValinnantulokset = repository.runBlocking(repository.getValinnantuloksetForHakemus(hakemusOid)).groupBy(_.hakukohdeOid) //.map(v => (v.hakukohdeOid, v.valintatapajonoOid) -> v).toMap
+    val hakutoiveetSijoittelussa = sijoitteluajoId.map(repository.getHakemuksenHakutoiveetSijoittelussa(hakemusOid, _).map(h => h.hakukohdeOid -> h).toMap).getOrElse(Map())
 
     def getVastaanotto(hakukohdeOid: HakukohdeOid): ValintatuloksenTila = {
       val vastaanotto = hakemuksenValinnantulokset.getOrElse(hakukohdeOid, Set()).map(_.vastaanottotila)
@@ -32,7 +23,11 @@ object SijoitteluajonHakija {
       }
     }
 
-    def hakukohdeDtoSijoittelu(hakukohdeOid: HakukohdeOid) = {
+    def hakukohdeDtoSijoittelu(hakukohdeOid: HakukohdeOid,
+                               valintatapajonotSijoittelussa: Map[HakukohdeOid, List[HakutoiveenValintatapajonoRecord]],
+                               pistetiedotSijoittelussa: Map[ValintatapajonoOid, List[PistetietoRecord]],
+                               hakijaryhmatSijoittelussa: Map[HakukohdeOid, List[HakutoiveenHakijaryhmaRecord]],
+                               tilankuvauksetSijoittelussa: Map[Int, TilankuvausRecord]) = {
       val hakutoive = hakutoiveetSijoittelussa(hakukohdeOid)
       val valintatapajonot = valintatapajonotSijoittelussa.getOrElse(hakukohdeOid, List())
       val valintatapajonoOidit = valintatapajonot.map(_.valintatapajonoOid)
@@ -61,13 +56,23 @@ object SijoitteluajonHakija {
     }
 
     val hakukohdeOidit = hakemuksenValinnantulokset.keySet.union(hakutoiveetSijoittelussa.keySet)
-    hakija.map(_.dto(hakukohdeOidit.map { hakukohdeOid =>
-      if (hakutoiveetSijoittelussa.contains(hakukohdeOid)) {
-        hakukohdeDtoSijoittelu(hakukohdeOid)
-      } else {
-        hakukohdeDtoEiSijoittelua(hakukohdeOid)
-      }
-    }.toList))
+    if (hakutoiveetSijoittelussa.isEmpty) {
+      hakija.map(_.dto(hakemuksenValinnantulokset.keySet.map(hakukohdeDtoEiSijoittelua).toList))
+    } else {
+      val valintatapajonotSijoittelussa = sijoitteluajoId.map(repository.getHakemuksenHakutoiveidenValintatapajonotSijoittelussa(hakemusOid, _).groupBy(_.hakukohdeOid)).getOrElse(Map())
+      val pistetiedotSijoittelussa = sijoitteluajoId.map(repository.getHakemuksenPistetiedotSijoittelussa(hakemusOid, _).groupBy(_.valintatapajonoOid)).getOrElse(Map())
+      val hakijaryhmatSijoittelussa = sijoitteluajoId.map(repository.getHakemuksenHakutoiveidenHakijaryhmatSijoittelussa(hakemusOid, _).groupBy(_.hakukohdeOid)).getOrElse(Map())
+      val tilankuvauksetSijoittelussa = repository.getValinnantilanKuvaukset(
+        valintatapajonotSijoittelussa.values.flatten.map(_.tilankuvausHash).toList.distinct
+      )
+      hakija.map(_.dto(hakukohdeOidit.map { hakukohdeOid =>
+        if (hakutoiveetSijoittelussa.contains(hakukohdeOid)) {
+          hakukohdeDtoSijoittelu(hakukohdeOid, valintatapajonotSijoittelussa, pistetiedotSijoittelussa, hakijaryhmatSijoittelussa, tilankuvauksetSijoittelussa)
+        } else {
+          hakukohdeDtoEiSijoittelua(hakukohdeOid)
+        }
+      }.toList))
+    }
   }
 
   def dto(repository: HakijaRepository with SijoitteluRepository with ValinnantulosRepository,
