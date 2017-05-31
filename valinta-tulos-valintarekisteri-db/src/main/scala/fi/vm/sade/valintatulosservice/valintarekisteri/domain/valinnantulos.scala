@@ -150,7 +150,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
       hakemusOid.toString,
       henkiloOid,
       hakukohdeOid.toString,
-      hakuOid.get,
+      hakuOid.getOrElse(null),
       0,  // hakutoive doesn't seem to be present in this context either
       hyvaksyttyVarasijalta.getOrElse(false),
       ilmoittautumistila.ilmoittautumistila,
