@@ -40,7 +40,7 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
       there was one (sijoitteluRepository).getHakukohteenTilahistoriat(sijoitteluajoId, hakukohdeOid)
       there was one (sijoitteluRepository).getHakukohteenHakijaryhmat(sijoitteluajoId, hakukohdeOid)
       there was one (sijoitteluRepository).getSijoitteluajonHakijaryhmistaHyvaksytytHakemukset(sijoitteluajoId, List("hakijaryhma1"))
-      there was one (sijoitteluRepository).getSijoitteluajonHakijaryhmanHakemukset(sijoitteluajoId, "hakijaryhma1")
+      there was one (sijoitteluRepository).getSijoitteluajonHakijaryhmienHakemukset(sijoitteluajoId, List("hakijaryhma1"))
       there was one (sijoitteluRepository).getValinnantilanKuvaukset(List(123))
 
       JsonFormats.javaObjectToJsonString(hakukohde) mustEqual JsonFormats.javaObjectToJsonString(createExpected)
