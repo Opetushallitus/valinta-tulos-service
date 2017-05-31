@@ -21,7 +21,7 @@ trait ValintarekisteriRepository extends ValintarekisteriResultExtractors with L
   private val logSqlOfSomeQueries = false // For debugging only. Do NOT enable in production.
 
   val db: Database
-  def runBlocking[R](operations: DBIO[R], timeout: Duration = Duration(10, TimeUnit.MINUTES)): R = {
+  def runBlocking[R](operations: DBIO[R], timeout: Duration = Duration(10, TimeUnit.MINUTES)): R = {  // TODO put these 3–4 different default timeouts behind common, configurable value
     if (logSqlOfSomeQueries) {
       logger.error("This should not happen in production.")
       operations.getClass.getDeclaredFields.foreach { f =>
@@ -37,7 +37,7 @@ trait ValintarekisteriRepository extends ValintarekisteriResultExtractors with L
       timeout + Duration(1, TimeUnit.SECONDS)
     )
   }
-  def runBlockingTransactionally[R](operations: DBIO[R], timeout: Duration = Duration(20, TimeUnit.SECONDS)): Either[Throwable, R] = {
+  def runBlockingTransactionally[R](operations: DBIO[R], timeout: Duration = Duration(20, TimeUnit.SECONDS)): Either[Throwable, R] = { //  // TODO put these 3–4 different default timeouts behind common, configurable value
     Try(runBlocking(operations.transactionally.withTransactionIsolation(Serializable), timeout)) match {
       case Success(r) => Right(r)
       case Failure(t) => Left(t)

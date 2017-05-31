@@ -9,7 +9,7 @@ import slick.dbio.DBIO
 import scala.concurrent.duration.Duration
 
 trait VirkailijaVastaanottoRepository {
-  def runBlocking[R](operations: DBIO[R], timeout: Duration = Duration(10, TimeUnit.MINUTES)): R
+  def runBlocking[R](operations: DBIO[R], timeout: Duration = Duration(10, TimeUnit.MINUTES)): R  // TODO put these 3–4 different default timeouts behind common, configurable value
   def findHenkilonVastaanototHaussa(henkiloOid: String, hakuOid: HakuOid): DBIO[Set[VastaanottoRecord]]
   def findHenkilonVastaanotot(personOid: String, alkuaika: Option[Date] = None): Set[VastaanottoRecord]
   def findHaunVastaanotot(hakuOid: HakuOid): Set[VastaanottoRecord]

@@ -11,7 +11,7 @@ import slick.driver.PostgresDriver.backend.Database
 import scala.concurrent.duration.Duration
 
 trait HakijaVastaanottoRepository {
-  def runBlocking[R](operations: DBIO[R], timeout: Duration = Duration(10, TimeUnit.MINUTES)): R
+  def runBlocking[R](operations: DBIO[R], timeout: Duration = Duration(10, TimeUnit.MINUTES)): R // TODO put these 3–4 different default timeouts behind common, configurable value
   def findVastaanottoHistoryHaussa(henkiloOid: String, hakuOid: HakuOid): Set[VastaanottoRecord]
   def findHenkilonVastaanototHaussa(henkiloOid: String, hakuOid: HakuOid): DBIO[Set[VastaanottoRecord]]
   def findHenkilonVastaanottoHakukohteeseen(henkiloOid: String, hakukohdeOid: HakukohdeOid): DBIO[Option[VastaanottoRecord]]
