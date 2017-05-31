@@ -5,6 +5,7 @@ import java.util.Date
 import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatapajono, Hakemus => SijoitteluHakemus, _}
+import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.StoreSijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.driver.PostgresDriver.api._
@@ -15,7 +16,7 @@ import scala.util.Try
 
 trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with ValintarekisteriRepository {
 
-  override def storeSijoittelu(sijoittelu: SijoitteluWrapper): Unit = time(s"Haun ${sijoittelu.sijoitteluajo.getHakuOid} koko sijoittelun ${sijoittelu.sijoitteluajo.getSijoitteluajoId} tallennus") {
+  override def storeSijoittelu(sijoittelu: SijoitteluWrapper): Unit = timed(s"Haun ${sijoittelu.sijoitteluajo.getHakuOid} koko sijoittelun ${sijoittelu.sijoitteluajo.getSijoitteluajoId} tallennus", 100) {
     val sijoitteluajoId = sijoittelu.sijoitteluajo.getSijoitteluajoId
     val hakuOid = HakuOid(sijoittelu.sijoitteluajo.getHakuOid)
     runBlocking(insertSijoitteluajo(sijoittelu.sijoitteluajo)
@@ -60,13 +61,13 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
               })
             })
           })
-          time(s"Haun $hakuOid tilankuvauksien tallennus") { tilankuvausStatement.get.executeBatch() }
-          time(s"Haun $hakuOid jonosijojen tallennus") { jonosijaStatement.get.executeBatch }
-          time(s"Haun $hakuOid pistetietojen tallennus") { pistetietoStatement.get.executeBatch }
-          time(s"Haun $hakuOid valinnantilojen tallennus") { valinnantilaStatement.get.executeBatch }
-          time(s"Haun $hakuOid uusien valinnantulosten tallennus") { insertValinnantulosStatement.get.executeBatch }
-          time(s"Haun $hakuOid päivittyneiden valinnantulosten tallennus") { updateValinnantulosStatement.get.executeBatch }
-          time(s"Haun $hakuOid tilankuvaus-mäppäysten tallennus") { tilaKuvausMappingStatement.get.executeBatch }
+          timed(s"Haun $hakuOid tilankuvauksien tallennus", 100) { tilankuvausStatement.get.executeBatch() }
+          timed(s"Haun $hakuOid jonosijojen tallennus", 100) { jonosijaStatement.get.executeBatch }
+          timed(s"Haun $hakuOid pistetietojen tallennus", 100) { pistetietoStatement.get.executeBatch }
+          timed(s"Haun $hakuOid valinnantilojen tallennus", 100) { valinnantilaStatement.get.executeBatch }
+          timed(s"Haun $hakuOid uusien valinnantulosten tallennus", 100) { insertValinnantulosStatement.get.executeBatch }
+          timed(s"Haun $hakuOid päivittyneiden valinnantulosten tallennus", 100) { updateValinnantulosStatement.get.executeBatch }
+          timed(s"Haun $hakuOid tilankuvaus-mäppäysten tallennus", 100) { tilaKuvausMappingStatement.get.executeBatch }
         } finally {
           Try(tilankuvausStatement.foreach(_.close))
           Try(jonosijaStatement.foreach(_.close))
@@ -97,14 +98,14 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
                 })
             })
           })
-          time(s"Haun $hakuOid hakijaryhmien hakemusten tallennus") { statement.get.executeBatch() }
+          timed(s"Haun $hakuOid hakijaryhmien hakemusten tallennus", 100) { statement.get.executeBatch() }
         } finally {
           Try(statement.foreach(_.close))
         }
       })
       .transactionally,
       Duration(30, TimeUnit.MINUTES))
-    time(s"Haun $hakuOid sijoittelun tallennuksen jälkeinen analyze") {
+    timed(s"Haun $hakuOid sijoittelun tallennuksen jälkeinen analyze", 100) {
       runBlocking(DBIO.seq(
         sqlu"""analyze pistetiedot""",
         sqlu"""analyze jonosijat""",

@@ -4,7 +4,8 @@ import java.sql.{Connection, JDBCType, PreparedStatement, Timestamp}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MINUTES
 
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{MigraatioRepository, Valintaesitys, MigratedIlmoittautuminen}
+import fi.vm.sade.utils.Timer.timed
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{MigraatioRepository, MigratedIlmoittautuminen, Valintaesitys}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.dbio.DBIO
 import slick.driver.PostgresDriver.api._
@@ -354,7 +355,7 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
 
     val (descriptions, sqls) = deleteOperationsWithDescriptions.unzip
 
-    time(s"Delete results of haku haku $hakuOid") {
+    timed(s"Delete results of haku haku $hakuOid", 100) {
       logger.info(s"Deleting results of haku $hakuOid ...")
       runBlockingTransactionally(DBIO.sequence(sqls), timeout = Duration(30, TimeUnit.MINUTES)) match {
         case Right(rowCounts) =>
@@ -416,7 +417,7 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
 
     val (descriptions, sqls) = deleteOperationsWithDescriptions.unzip
 
-    time(s"Delete sijoittelu contents of sijoitteluajo $sijoitteluajoId of haku $hakuOid") {
+    timed(s"Delete sijoittelu contents of sijoitteluajo $sijoitteluajoId of haku $hakuOid", 100) {
       logger.info(s"Deleting sijoitteluajo $sijoitteluajoId of haku $hakuOid ...")
       runBlockingTransactionally(DBIO.sequence(sqls), timeout = Duration(30, TimeUnit.MINUTES)) match {
         case Right(rowCounts) =>

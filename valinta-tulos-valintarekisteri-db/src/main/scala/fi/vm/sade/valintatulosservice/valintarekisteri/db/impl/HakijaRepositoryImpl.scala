@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
+import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakijaRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakutoiveRecord, _}
 import slick.dbio.DBIO
@@ -17,10 +18,10 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
       hakijat.headOption
     }
 
-    def getHakemuksenHakijatValinnantuloksissa = time(s"Hakemuksen $hakemusOid hakijan haku") {
+    def getHakemuksenHakijatValinnantuloksissa = timed(s"Hakemuksen $hakemusOid hakijan haku", 100) {
       runBlocking(hakijaValinnantuloksissaDBIO)}
 
-    def getHakemuksenHakijatSijoittelussaJaValinnantuloksissa = time(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid hakijan haku") {
+    def getHakemuksenHakijatSijoittelussaJaValinnantuloksissa = timed(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid hakijan haku", 100) {
       seqTupleToUnion(runBlocking(hakijaValinnantuloksissaDBIO.zip(hakijaSijoittelussaDBIO)))}
 
     def hakijaSijoittelussaDBIO: DBIO[Seq[HakijaRecord]] =
@@ -41,10 +42,10 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
 
   override def getHakukohteenHakijat(hakukohdeOid: HakukohdeOid, sijoitteluajoId: Option[Long] = None):List[HakijaRecord] = {
 
-    def getHakukohteenHakijatValinnantuloksissa = time(s"Hakukohteen $hakukohdeOid hakijan haku") {
+    def getHakukohteenHakijatValinnantuloksissa = timed(s"Hakukohteen $hakukohdeOid hakijan haku", 100) {
         runBlocking(hakukohdeValinnantuloksissaDBIO)}
 
-    def getHakukohteenHakijatSijoittelussa = time(s"Sijoitteluajon $sijoitteluajoId hakukohteen $hakukohdeOid hakijoiden haku") {
+    def getHakukohteenHakijatSijoittelussa = timed(s"Sijoitteluajon $sijoitteluajoId hakukohteen $hakukohdeOid hakijoiden haku", 100) {
         seqTupleToUnion(runBlocking(hakukohdeSijoittelussaDBIO.zip(hakukohdeValinnantuloksissaDBIO)))}
 
     def hakukohdeSijoittelussaDBIO: DBIO[Seq[HakijaRecord]] =
@@ -64,7 +65,7 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
   }
 
   override def getHakemuksenHakutoiveetSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId:Long): List[HakutoiveRecord] =
-    time(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid hakutoiveiden haku") {
+    timed(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid hakutoiveiden haku", 100) {
       runBlocking(
         sql"""select distinct j.hakemus_oid, j.prioriteetti, j.hakukohde_oid, sh.kaikki_jonot_sijoiteltu
               from jonosijat j
@@ -73,7 +74,7 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
   }
 
   override def getHakukohteenHakemuksienHakutoiveetSijoittelussa(hakukohdeOid: HakukohdeOid, sijoitteluajoId:Long): List[HakutoiveRecord] =
-    time(s"Sijoitteluajon $sijoitteluajoId hakukohteen $hakukohdeOid hakemuksien hakutoiveiden haku") {
+    timed(s"Sijoitteluajon $sijoitteluajoId hakukohteen $hakukohdeOid hakemuksien hakutoiveiden haku", 100) {
       runBlocking(
         sql"""with hakemukset as (
                 select j.hakemus_oid
@@ -92,7 +93,7 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
     }
 
   override def getHakukohteenHakemuksienHakutoiveSijoittelussa(hakukohdeOid: HakukohdeOid, sijoitteluajoId:Long): List[HakutoiveRecord] =
-    time(s"Sijoitteluajon $sijoitteluajoId hakukohteen $hakukohdeOid hakemuksien hakutoiveen haku") {
+    timed(s"Sijoitteluajon $sijoitteluajoId hakukohteen $hakukohdeOid hakemuksien hakutoiveen haku", 100) {
       runBlocking(
         sql"""select distinct j.hakemus_oid, j.prioriteetti, j.hakukohde_oid, sh.kaikki_jonot_sijoiteltu
               from jonosijat j
@@ -101,7 +102,7 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
     }
 
   override def getHakemuksenHakutoiveidenValintatapajonotSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId: Long): List[HakutoiveenValintatapajonoRecord] =
-    time(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid hakutoiveiden valintatapajonojen haku") {
+    timed(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid hakutoiveiden valintatapajonojen haku", 100) {
       runBlocking(
         sql"""select j.hakemus_oid, j.hakukohde_oid, v.prioriteetti, v.oid, v.nimi, v.ei_varasijatayttoa, j.jonosija,
                   j.varasijan_numero, j.hyvaksytty_harkinnanvaraisesti, j.tasasijajonosija, j.pisteet,
@@ -115,7 +116,7 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
     }
 
   override def getHakukohteenHakemuksienValintatapajonotSijoittelussa(hakukohdeOid: HakukohdeOid, sijoitteluajoId:Long): List[HakutoiveenValintatapajonoRecord] =
-    time(s"Sijoitteluajon $sijoitteluajoId hakukohteen $hakukohdeOid hakutoiveiden valintatapajonojen haku") {
+    timed(s"Sijoitteluajon $sijoitteluajoId hakukohteen $hakukohdeOid hakutoiveiden valintatapajonojen haku", 100) {
       runBlocking(
         sql"""with hakemukset as (
                  select j.hakemus_oid
@@ -139,7 +140,7 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
     }
 
   override def getHakukohteenHakemuksienHakutoiveenValintatapajonotSijoittelussa(hakukohdeOid: HakukohdeOid, sijoitteluajoId:Long): List[HakutoiveenValintatapajonoRecord] =
-    time(s"Sijoitteluajon $sijoitteluajoId hakukohteen $hakukohdeOid hakutoiveen valintatapajonojen haku") {
+    timed(s"Sijoitteluajon $sijoitteluajoId hakukohteen $hakukohdeOid hakutoiveen valintatapajonojen haku", 100) {
       runBlocking(
         sql"""select j.hakemus_oid, j.hakukohde_oid, v.prioriteetti, v.oid, v.nimi, v.ei_varasijatayttoa, j.jonosija,
                   j.varasijan_numero, j.hyvaksytty_harkinnanvaraisesti, j.tasasijajonosija, j.pisteet,
@@ -153,7 +154,7 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
     }
 
   override def getHakemuksenHakutoiveidenHakijaryhmatSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId: Long): List[HakutoiveenHakijaryhmaRecord] =
-    time(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid hakutoiveiden hakijaryhmien haku") {
+    timed(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid hakutoiveiden hakijaryhmien haku", 100) {
       runBlocking(
         sql"""select h.oid, h.nimi, h.hakukohde_oid, h.valintatapajono_oid,
                   h.kiintio, hh.hyvaksytty_hakijaryhmasta, h.hakijaryhmatyyppikoodi_uri
@@ -163,7 +164,7 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
     }
 
   override def getHakemuksenPistetiedotSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId: Long): List[PistetietoRecord] =
-    time(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid pistetietojen haku") {
+    timed(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid pistetietojen haku", 100) {
       runBlocking(
         sql"""
            select valintatapajono_oid, hakemus_oid, tunniste, arvo, laskennallinen_arvo, osallistuminen
