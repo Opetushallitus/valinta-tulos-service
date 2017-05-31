@@ -107,7 +107,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
 
   def latestSijoittelunTulos(hakuOid: HakuOid, henkiloOid: String, hakemusOid: HakemusOid,
                              vastaanottoaikataulu: Option[Vastaanottoaikataulu]): DBIO[HakemuksenSijoitteluntulos] = {
-    findLatestSijoitteluAjoForHaku(hakuOid).flatMap(findHakemus(hakemusOid, _)).map(hakija => {
+    findHakemus(hakemusOid, findLatestSijoitteluajoId(hakuOid), hakuOid).map(hakija => {
       hakijaVastaanottoRepository.findHenkilonVastaanototHaussa(henkiloOid, hakuOid).map(vastaanotot => {
         hakemuksenYhteenveto(hakija, vastaanottoaikataulu, vastaanotot, false)
       })
@@ -116,7 +116,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
 
   def latestSijoittelunTulosVirkailijana(hakuOid: HakuOid, henkiloOid: String, hakemusOid: HakemusOid,
                                          vastaanottoaikataulu: Option[Vastaanottoaikataulu]): DBIO[HakemuksenSijoitteluntulos] = {
-    findLatestSijoitteluAjoForHaku(hakuOid).flatMap(findHakemus(hakemusOid, _)).map(hakija => {
+    findHakemus(hakemusOid, findLatestSijoitteluajoId(hakuOid), hakuOid).map(hakija => {
       hakijaVastaanottoRepository.findHenkilonVastaanototHaussa(henkiloOid, hakuOid).map(vastaanotot => {
         hakemuksenYhteenveto(hakija, vastaanottoaikataulu, vastaanotot, true)
       })
