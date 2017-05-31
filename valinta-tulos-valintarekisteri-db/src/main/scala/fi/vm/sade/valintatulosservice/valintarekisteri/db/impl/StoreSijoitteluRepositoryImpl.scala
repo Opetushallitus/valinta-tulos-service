@@ -104,7 +104,7 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
         }
       })
       .transactionally,
-      Duration(30, TimeUnit.MINUTES))
+      Duration(60, TimeUnit.MINUTES))
     timed(s"Haun $hakuOid sijoittelun tallennuksen jälkeinen analyze", 100) {
       runBlocking(DBIO.seq(
         sqlu"""analyze pistetiedot""",
