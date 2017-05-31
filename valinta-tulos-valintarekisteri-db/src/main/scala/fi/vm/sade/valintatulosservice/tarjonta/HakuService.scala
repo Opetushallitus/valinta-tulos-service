@@ -82,7 +82,7 @@ class HakukohdeKelaSerializer extends CustomSerializer[HakukohdeKela]((formats: 
     case o: JObject =>
       val JString(hakukohdeOid) = o \ "hakukohdeOid"
       val JString(tarjoajaOid) = o \ "tarjoajaOid"
-      val JString(oppilaitoskoodi) = o \ "oppilaitoskoodi"
+      val JString(oppilaitoskoodi) = o \ "oppilaitosKoodi"
       val JInt(vuosi) = o \ "koulutuksenAlkamisvuosi"
 
       val kausi: Option[Kausi] = Try((o \ "koulutuksenAlkamiskausiUri") match {
