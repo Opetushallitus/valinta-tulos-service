@@ -23,16 +23,16 @@ trait SessionRepositoryImpl extends SessionRepository with ValintarekisteriRepos
         DBIO.sequence(roles.map(role =>
           sqlu"""insert into roolit (sessio, rooli) values ($id, ${role.s})"""
         ).toSeq)
-      ))
+      ), timeout = Duration(1, TimeUnit.MINUTES))
       id
   }
 
   override def delete(id: UUID): Unit = {
-    runBlocking(sqlu"""delete from sessiot where id = $id""")
+    runBlocking(sqlu"""delete from sessiot where id = $id""", timeout = Duration(10, TimeUnit.SECONDS))
   }
 
   override def delete(ticket: ServiceTicket): Unit = {
-    runBlocking(sqlu"""delete from sessiot where cas_tiketti = ${ticket.s}""")
+    runBlocking(sqlu"""delete from sessiot where cas_tiketti = ${ticket.s}""", timeout = Duration(10, TimeUnit.SECONDS))
   }
 
   override def get(id: UUID): Option[Session] = {
