@@ -83,14 +83,14 @@ class HakukohdeKelaSerializer extends CustomSerializer[HakukohdeKela]((formats: 
       val JString(hakukohdeOid) = o \ "hakukohdeOid"
       val JString(tarjoajaOid) = o \ "tarjoajaOid"
       val JString(oppilaitoskoodi) = o \ "oppilaitosKoodi"
-      val JInt(vuosi) = o \ "koulutuksenAlkamisvuosi"
+      val JInt(vuosi) = o \ "koulutuksenAlkamisVuosi"
 
       val kausi: Option[Kausi] = Try((o \ "koulutuksenAlkamiskausiUri") match {
         case JString(kevät) if kevät.contains("kausi_k") => Kevat(vuosi.toInt)
         case JString(syksy) if syksy.contains("kausi_s") => Syksy(vuosi.toInt)
         case x => throw new MappingException(s"Unrecognized kausi URI $x")
       }).toOption
-      val children = (o \ "koulutuslaajuusarvot").extractOpt[Seq[KoulutusLaajuusarvo]].getOrElse(Seq())
+      val children = (o \ "koulutusLaajuusarvos").extractOpt[Seq[KoulutusLaajuusarvo]].getOrElse(Seq())
       HakukohdeKela(
         koulutuksenAlkamiskausi = kausi,
         hakukohdeOid = hakukohdeOid,
