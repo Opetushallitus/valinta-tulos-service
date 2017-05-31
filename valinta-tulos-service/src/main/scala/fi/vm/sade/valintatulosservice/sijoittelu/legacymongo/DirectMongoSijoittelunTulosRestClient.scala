@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice.sijoittelu.legacymongo
 import java.util.Optional
 
 import fi.vm.sade.sijoittelu.domain.SijoitteluAjo
+import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
 
@@ -20,6 +21,10 @@ class DirectMongoSijoittelunTulosRestClient(sijoitteluContext:SijoitteluContext,
   }
 
   override def fetchLatestSijoitteluAjoWithoutHakukohdes(hakuOid: HakuOid): Option[SijoitteluAjo]= fetchLatestSijoitteluAjo(hakuOid, None)
+
+  override def fetchHakemuksenTulos(sijoitteluajoId: Option[Long], hakuOid: HakuOid, hakemusOid: HakemusOid): Option[HakijaDTO] = {
+    sijoitteluajoId.flatMap(id => raportointiService.hakemus(hakuOid, id.toString, hakemusOid))
+  }
 
   override def fetchHakemuksenTulos(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid) = {
     raportointiService.hakemus(HakuOid(sijoitteluAjo.getHakuOid), sijoitteluAjo.getSijoitteluajoId.toString, hakemusOid)
