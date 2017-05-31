@@ -13,6 +13,9 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuO
 class DirectMongoSijoittelunTulosRestClient(sijoitteluContext:SijoitteluContext, appConfig: VtsAppConfig) extends SijoittelunTulosRestClient(appConfig) {
   private val raportointiService = sijoitteluContext.raportointiService.asInstanceOf[MongoRaportointiService]
 
+  override def fetchLatestSijoitteluajoId(hakuOid: HakuOid): Option[Long] =
+    raportointiService.latestSijoitteluAjoForHaku(hakuOid).map(_.getSijoitteluajoId)
+
   override def fetchLatestSijoitteluAjo(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid]): Option[SijoitteluAjo] = {
     hakukohdeOid match {
       case Some(oid) => raportointiService.latestSijoitteluAjoForHakukohde(hakuOid, oid)

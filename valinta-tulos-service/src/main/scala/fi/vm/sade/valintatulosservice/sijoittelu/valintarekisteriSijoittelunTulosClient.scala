@@ -10,6 +10,8 @@ import scala.util.{Failure, Success, Try}
 
 trait ValintarekisteriSijoittelunTulosClient {
 
+  def fetchLatestSijoitteluajoId(hakuOid: HakuOid): Option[Long]
+
   def fetchLatestSijoitteluAjo(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid] = None): Option[SijoitteluAjo]
 
   def fetchLatestSijoitteluAjoWithoutHakukohdes(hakuOid: HakuOid): Option[SijoitteluAjo]
@@ -23,6 +25,10 @@ trait ValintarekisteriSijoittelunTulosClient {
 class ValintarekisteriSijoittelunTulosClientImpl(repository: HakijaRepository with SijoitteluRepository with ValinnantulosRepository) extends ValintarekisteriSijoittelunTulosClient {
 
   private def run[R](operations: slick.dbio.DBIO[R]): R = repository.runBlocking(operations)
+
+  override def fetchLatestSijoitteluajoId(hakuOid: HakuOid): Option[Long] = {
+    repository.getLatestSijoitteluajoId(hakuOid)
+  }
 
   override def fetchLatestSijoitteluAjo(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid] = None): Option[SijoitteluAjo] = {
     val latestId = repository.getLatestSijoitteluajoId(hakuOid)

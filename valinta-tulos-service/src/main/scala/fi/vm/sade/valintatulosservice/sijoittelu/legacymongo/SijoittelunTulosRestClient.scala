@@ -16,6 +16,10 @@ class SijoittelunTulosRestClient(appConfig: VtsAppConfig) extends Valintarekiste
   private val retriever = new StreamingJsonArrayRetriever(appConfig)
   private val targetService = appConfig.ophUrlProperties.url("sijoittelu-service.suffix")
 
+  override def fetchLatestSijoitteluajoId(hakuOid: HakuOid): Option[Long] = {
+    fetchLatestSijoitteluAjo(hakuOid).map(_.getSijoitteluajoId)
+  }
+
   @Deprecated
   override def fetchLatestSijoitteluAjo(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid]): Option[SijoitteluAjo] = {
     val ajo = new SijoitteluAjo
