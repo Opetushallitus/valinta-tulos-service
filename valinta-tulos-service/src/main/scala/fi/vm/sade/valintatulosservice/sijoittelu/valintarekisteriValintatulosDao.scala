@@ -31,5 +31,4 @@ class ValintarekisteriValintatulosDaoImpl(valinnantulosRepository: Valinnantulos
 
   override def loadValintatuloksetForHakemus(hakemusOid:HakemusOid):List[Valintatulos] =
     run(valinnantulosRepository.getValinnantuloksetForHakemus(hakemusOid)).map(_.toValintatulos).toList
-
 }

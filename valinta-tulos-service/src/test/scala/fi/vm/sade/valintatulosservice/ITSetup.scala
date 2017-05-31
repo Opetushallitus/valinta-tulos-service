@@ -32,8 +32,7 @@ trait ITSetup {
                  hakuFixture: HakuOid = HakuFixtures.korkeakouluYhteishaku,
                  yhdenPaikanSaantoVoimassa: Boolean = false,
                  kktutkintoonJohtava: Boolean = false,
-                 clearFixturesInitially: Boolean = true
-                ) {
+                 clearFixturesInitially: Boolean = true) {
 
     sijoitteluFixtures.importFixture(fixtureName, clear = clearFixturesInitially, yhdenPaikanSaantoVoimassa = yhdenPaikanSaantoVoimassa, kktutkintoonJohtava = kktutkintoonJohtava)
     extraFixtureNames.map(fixtureName =>

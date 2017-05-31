@@ -146,11 +146,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
   )
 
   def toValintatulos(): Valintatulos = {
-    val valintatulos = new Valintatulos()
-    valintatulos.setHakukohdeOid(hakukohdeOid.toString, "", "")
-    valintatulos.setValintatapajonoOid(valintatapajonoOid.toString, "", "")
-    valintatulos.setHakemusOid(hakemusOid.toString, "", "")
-    valintatulos.setHakijaOid(henkiloOid, "", "")
+    val valintatulos = new Valintatulos(valintatapajonoOid.toString, hakemusOid.toString, hakukohdeOid.toString, henkiloOid, ValintatuloksenTila.KESKEN)
     valintatulos.setIlmoittautumisTila(ilmoittautumistila.ilmoittautumistila, "", "")
     julkaistavissa.foreach(j => valintatulos.setJulkaistavissa(j, "", ""))
     hyvaksyttyVarasijalta.foreach(h => valintatulos.setHyvaksyttyVarasijalta(h, "", ""))

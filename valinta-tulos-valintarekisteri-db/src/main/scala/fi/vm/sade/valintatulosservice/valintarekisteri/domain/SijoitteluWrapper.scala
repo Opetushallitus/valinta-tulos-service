@@ -531,18 +531,16 @@ object SijoitteluajonIlmoittautumistila {
     SijoitteluajonIlmoittautumistila(IlmoittautumisTila.valueOf(ilmoittautumistila.toString))
 }
 
-case class SijoitteluajonValinnantulosWrapper(
-                                               valintatapajonoOid: ValintatapajonoOid,
-                                               hakemusOid: HakemusOid,
-                                               hakukohdeOid: HakukohdeOid,
-                                               ehdollisestiHyvaksyttavissa: Boolean = false,
-                                               julkaistavissa: Boolean = false,
-                                               hyvaksyttyVarasijalta: Boolean = false,
-                                               hyvaksyPeruuntunut: Boolean = false,
-                                               ilmoittautumistila: Option[SijoitteluajonIlmoittautumistila],
-                                               logEntries: Option[List[LogEntry]],
-                                               mailStatus: ValintatulosMailStatus
-                                             ) {
+case class SijoitteluajonValinnantulosWrapper(valintatapajonoOid: ValintatapajonoOid,
+                                              hakemusOid: HakemusOid,
+                                              hakukohdeOid: HakukohdeOid,
+                                              ehdollisestiHyvaksyttavissa: Boolean = false,
+                                              julkaistavissa: Boolean = false,
+                                              hyvaksyttyVarasijalta: Boolean = false,
+                                              hyvaksyPeruuntunut: Boolean = false,
+                                              ilmoittautumistila: Option[SijoitteluajonIlmoittautumistila],
+                                              logEntries: Option[List[LogEntry]],
+                                              mailStatus: ValintatulosMailStatus) {
   val valintatulos: Valintatulos = {
     val valintatulos = new Valintatulos()
     valintatulos.setValintatapajonoOid(valintatapajonoOid.toString, "")
