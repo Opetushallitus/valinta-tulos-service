@@ -309,8 +309,8 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
 
       "varasijojen käsittelypäivämäärät näytetään" in {
         useFixture("hyvaksytty-ylempi-varalla.json", hakuFixture = hakuFixture)
-        getHakutoive("1.2.246.562.5.16303028779").varasijojaKaytetaanAlkaen must_== Some(new DateTime("2014-08-01T16:00:00.000Z").toDate)
-        getHakutoive("1.2.246.562.5.16303028779").varasijojaTaytetaanAsti must_== Some(new DateTime("2014-08-31T16:00:00.000Z").toDate)
+        new DateTime(getHakutoive("1.2.246.562.5.16303028779").varasijojaKaytetaanAlkaen.get) must_== new DateTime("2014-08-01T16:00:00.000")
+        new DateTime(getHakutoive("1.2.246.562.5.16303028779").varasijojaTaytetaanAsti.get) must_== new DateTime("2014-08-31T16:00:00.000")
       }
 
       "Valintatulos kesken" in {
