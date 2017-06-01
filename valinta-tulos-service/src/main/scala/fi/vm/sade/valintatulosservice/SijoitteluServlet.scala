@@ -7,7 +7,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, NotFoundException}
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
-import org.scalatra.{NotFound, Ok}
+import org.scalatra.{NoContent, NotFound, Ok}
 
 class SijoitteluServlet(sijoitteluService: SijoitteluService,
                         val sessionRepository: SessionRepository)
@@ -63,7 +63,12 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
     val hakuOid = HakuOid(params("hakuOid"))
     val sijoitteluajoId = params("sijoitteluajoId")
     val hakemusOid = HakemusOid(params("hakemusOid"))
-    Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakemusBySijoitteluajo(hakuOid, sijoitteluajoId, hakemusOid)))
+    try {
+      Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakemusBySijoitteluajo(hakuOid, sijoitteluajoId, hakemusOid)))
+    } catch {
+      case e: NotFoundException =>
+        NoContent(reason = e.getMessage)
+    }
   }
 
   lazy val getHakukohdeBySijoitteluajoSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohdeBySijoitteluajoSwagger")
