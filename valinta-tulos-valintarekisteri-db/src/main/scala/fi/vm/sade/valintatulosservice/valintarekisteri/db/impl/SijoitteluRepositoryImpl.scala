@@ -107,7 +107,8 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
               from valintatapajonot as v
               join valintaesitykset as ve on ve.valintatapajono_oid = v.oid
               where v.sijoitteluajo_id = ${sijoitteluajoId}
-                  and v.hakukohde_oid = ${hakukohdeOid}""".as[ValintatapajonoRecord]).toList
+                  and v.hakukohde_oid = ${hakukohdeOid}
+              order by v.prioriteetti""".as[ValintatapajonoRecord]).toList
     }
 
   override def getSijoitteluajonHakemukset(sijoitteluajoId:Long): List[HakemusRecord] =
