@@ -153,7 +153,8 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
               on v.valintatapajono_oid = t_k.valintatapajono_oid
                 and v.hakemus_oid = t_k.hakemus_oid
               where j.sijoitteluajo_id = ${sijoitteluajoId}
-              and j.hakukohde_oid = ${hakukohdeOid}""".as[HakemusRecord], Duration(30, TimeUnit.SECONDS)).toList
+              and j.hakukohde_oid = ${hakukohdeOid}
+              order by j.jonosija, j.tasasijajonosija""".as[HakemusRecord], Duration(30, TimeUnit.SECONDS)).toList
     }
 
   override def getSijoitteluajonHakemuksetInChunks(sijoitteluajoId:Long, chunkSize:Int = 300): List[HakemusRecord] =
