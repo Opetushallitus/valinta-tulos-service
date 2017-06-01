@@ -42,7 +42,7 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
   def deleteValinnantulos(muokkaaja:String, valinnantulos:Valinnantulos, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
   def deleteIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
 
-  def getValinnantuloksetAndLastModifiedDateForHakukohde(hakukohdeOid: HakukohdeOid, timeout: Duration = Duration(2, TimeUnit.SECONDS)): Option[(Instant, Set[Valinnantulos])] =
+  def getValinnantuloksetAndLastModifiedDateForHakukohde(hakukohdeOid: HakukohdeOid, timeout: Duration = Duration(10, TimeUnit.SECONDS)): Option[(Instant, Set[Valinnantulos])] =
     runBlockingTransactionally(
       getLastModifiedForHakukohde(hakukohdeOid)
         .flatMap {
@@ -55,7 +55,7 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
       case Left(error) => throw error
     }
 
-  def getValinnantuloksetAndLastModifiedDateForValintatapajono(valintatapajonoOid: ValintatapajonoOid, timeout: Duration = Duration(2, TimeUnit.SECONDS)): Option[(Instant, Set[Valinnantulos])] =
+  def getValinnantuloksetAndLastModifiedDateForValintatapajono(valintatapajonoOid: ValintatapajonoOid, timeout: Duration = Duration(10, TimeUnit.SECONDS)): Option[(Instant, Set[Valinnantulos])] =
     runBlockingTransactionally(
       getLastModifiedForValintatapajono(valintatapajonoOid)
         .flatMap {
@@ -68,7 +68,7 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
       case Left(error) => throw error
     }
 
-  def getValinnantuloksetAndLastModifiedDatesForValintatapajono(valintatapajonoOid: ValintatapajonoOid, timeout: Duration = Duration(2, TimeUnit.SECONDS)): Set[(Instant, Valinnantulos)] =
+  def getValinnantuloksetAndLastModifiedDatesForValintatapajono(valintatapajonoOid: ValintatapajonoOid, timeout: Duration = Duration(10, TimeUnit.SECONDS)): Set[(Instant, Valinnantulos)] =
     runBlockingTransactionally(
       getLastModifiedForValintatapajononHakemukset(valintatapajonoOid).zip(getValinnantuloksetForValintatapajono(valintatapajonoOid)),
       timeout = timeout
