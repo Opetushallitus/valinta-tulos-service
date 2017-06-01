@@ -39,14 +39,7 @@ trait SessionRepositoryImpl extends SessionRepository with ValintarekisteriRepos
     runBlocking(
       sql"""select cas_tiketti, henkilo from sessiot
             where id = $id and viimeksi_luettu > now() - interval '30 minutes'
-      """.as[(Option[String], String)].map(_.headOption).flatMap {
-        case None =>
-          sqlu"""delete from sessiot where id = $id""".andThen(DBIO.successful(None))
-        case Some(t) =>
-          sqlu"""update sessiot set viimeksi_luettu = now()
-                 where id = $id and viimeksi_luettu > now() - interval '15 minutes'"""
-            .andThen(DBIO.successful(Some(t)))
-      }.transactionally, Duration(2, TimeUnit.SECONDS)
+      """.as[(Option[String], String)].map(_.headOption), Duration(2, TimeUnit.SECONDS)
     ).map {
       case (casTicket, personOid) =>
         val roolit = runBlocking(
