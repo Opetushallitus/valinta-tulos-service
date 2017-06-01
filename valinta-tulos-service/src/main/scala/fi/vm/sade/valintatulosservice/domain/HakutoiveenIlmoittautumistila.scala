@@ -39,7 +39,7 @@ object HakutoiveenIlmoittautumistila {
       if (hasHetu) {
         Some(oiliHetullinen)
       } else {
-        Some(oiliHetuton(appConfig))
+        None
       }
     }
     else {
