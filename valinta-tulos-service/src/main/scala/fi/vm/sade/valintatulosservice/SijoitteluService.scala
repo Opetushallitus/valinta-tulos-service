@@ -31,7 +31,8 @@ class SijoitteluService(val sijoitteluRepository: SijoitteluRepository with Haki
   }
 
   def getHakemusBySijoitteluajo(hakuOid: HakuOid, sijoitteluajoId: String, hakemusOid: HakemusOid): HakijaDTO = {
-    new SijoitteluajonHakija(sijoitteluRepository, sijoitteluajoId, hakuOid, hakemusOid).dto()
+    SijoitteluajonHakija.dto(sijoitteluRepository, sijoitteluajoId, hakuOid, hakemusOid)
+      .getOrElse(throw new NotFoundException(s"Hakijaa ei löytynyt hakemukselle $hakemusOid, sijoitteluajoid: $sijoitteluajoId"))
   }
 
   def getSijoitteluajonPerustiedot(hakuOid: HakuOid, sijoitteluajoId: String): SijoitteluajoDTO = {

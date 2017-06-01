@@ -10,17 +10,23 @@ import scala.util.{Failure, Success, Try}
 
 trait ValintarekisteriSijoittelunTulosClient {
 
+  def fetchLatestSijoitteluajoId(hakuOid: HakuOid): Option[Long]
+
   def fetchLatestSijoitteluAjo(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid] = None): Option[SijoitteluAjo]
 
   def fetchLatestSijoitteluAjoWithoutHakukohdes(hakuOid: HakuOid): Option[SijoitteluAjo]
 
-  def fetchHakemuksenTulos(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid): Option[HakijaDTO]
+  def fetchHakemuksenTulos(sijoitteluajoId: Option[Long], hakuOid: HakuOid, hakemusOid: HakemusOid): Option[HakijaDTO]
 
 }
 
 class ValintarekisteriSijoittelunTulosClientImpl(repository: HakijaRepository with SijoitteluRepository with ValinnantulosRepository) extends ValintarekisteriSijoittelunTulosClient {
 
   private def run[R](operations: slick.dbio.DBIO[R]): R = repository.runBlocking(operations)
+
+  override def fetchLatestSijoitteluajoId(hakuOid: HakuOid): Option[Long] = {
+    repository.getLatestSijoitteluajoId(hakuOid)
+  }
 
   override def fetchLatestSijoitteluAjo(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid] = None): Option[SijoitteluAjo] = {
     val latestId = repository.getLatestSijoitteluajoId(hakuOid)
@@ -50,10 +56,11 @@ class ValintarekisteriSijoittelunTulosClientImpl(repository: HakijaRepository wi
     }
   }
 
-  override def fetchHakemuksenTulos(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid): Option[HakijaDTO] =
-    Try(new SijoitteluajonHakija(repository, sijoitteluAjo, hakemusOid).dto()) match {
-      case Failure(e) if e.isInstanceOf[NotFoundException] => None
+  override def fetchHakemuksenTulos(sijoitteluajoId: Option[Long], hakuOid: HakuOid, hakemusOid: HakemusOid): Option[HakijaDTO] = {
+    Try(SijoitteluajonHakija.dto(repository, sijoitteluajoId, hakuOid, hakemusOid)) match {
       case Failure(e) => throw new RuntimeException(e)
-      case Success(r) => Some(r)
+      case Success(r) => r
     }
+  }
+
 }

@@ -16,6 +16,10 @@ class SijoittelunTulosRestClient(appConfig: VtsAppConfig) extends Valintarekiste
   private val retriever = new StreamingJsonArrayRetriever(appConfig)
   private val targetService = appConfig.ophUrlProperties.url("sijoittelu-service.suffix")
 
+  override def fetchLatestSijoitteluajoId(hakuOid: HakuOid): Option[Long] = {
+    fetchLatestSijoitteluAjo(hakuOid).map(_.getSijoitteluajoId)
+  }
+
   @Deprecated
   override def fetchLatestSijoitteluAjo(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid]): Option[SijoitteluAjo] = {
     val ajo = new SijoitteluAjo
@@ -55,17 +59,19 @@ class SijoittelunTulosRestClient(appConfig: VtsAppConfig) extends Valintarekiste
   }
 
   @Deprecated
-  override def fetchHakemuksenTulos(sijoitteluAjo: SijoitteluAjo, hakemusOid: HakemusOid): Option[HakijaDTO] = {
-    val hakuOid = sijoitteluAjo.getHakuOid
-    val url = appConfig.ophUrlProperties.url("sijoittelu-service.hakemus.for.sijoittelu", hakuOid, sijoitteluAjo.getSijoitteluajoId, hakemusOid.toString)
-    var result: HakijaDTO = null
-    val processor: HakijaDTO => HakijaDTO = { h =>
-      result = h
-      h
-    }
-    retriever.processStreaming[HakijaDTO,HakijaDTO](targetService, url, classOf[HakijaDTO], processor, responseIsArray = false)
-    Option(result)
+  override def fetchHakemuksenTulos(sijoitteluajoId: Option[Long], hakuOid: HakuOid, hakemusOid: HakemusOid): Option[HakijaDTO] = {
+    sijoitteluajoId.flatMap(id => {
+      val url = appConfig.ophUrlProperties.url("sijoittelu-service.hakemus.for.sijoittelu", hakuOid.toString, long2Long(id), hakemusOid.toString)
+      var result: HakijaDTO = null
+      val processor: HakijaDTO => HakijaDTO = { h =>
+        result = h
+        h
+      }
+      retriever.processStreaming[HakijaDTO, HakijaDTO](targetService, url, classOf[HakijaDTO], processor, responseIsArray = false)
+      Option(result)
+    })
   }
+
 }
 
 @Deprecated

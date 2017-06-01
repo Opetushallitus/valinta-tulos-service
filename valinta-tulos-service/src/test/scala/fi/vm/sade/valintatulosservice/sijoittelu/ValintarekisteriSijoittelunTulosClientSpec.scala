@@ -69,11 +69,11 @@ class ValintarekisteriSijoittelunTulosClientSpec extends ITSpecification with Va
     step(insertValinnantulos(hakuOid2, valinnantulos(sijoittelunHakukohdeOid2, sijoittelunValintatapajonoOid2, sijoittelunHakemusOid1)))
 
     "return None if hakija not found" in {
-      client.fetchHakemuksenTulos(client.fetchLatestSijoitteluAjo(hakuOid2).get, HakemusOid("fakeHakemusOid")) must_== None
+      client.fetchHakemuksenTulos(client.fetchLatestSijoitteluajoId(hakuOid2), hakuOid2, HakemusOid("fakeHakemusOid")) must beNone
     }
 
     "return hakijan hakutoiveet" in {
-      val hakijaDto = client.fetchHakemuksenTulos(client.fetchLatestSijoitteluAjo(hakuOid2).get, sijoittelunHakemusOid1).get
+      val hakijaDto = client.fetchHakemuksenTulos(client.fetchLatestSijoitteluajoId(hakuOid2), hakuOid2, sijoittelunHakemusOid1).get
       hakijaDto.getHakijaOid must_== sijoittelunHakemusOid1.toString
       hakijaDto.getHakemusOid must_== sijoittelunHakemusOid1.toString
 
@@ -92,7 +92,7 @@ class ValintarekisteriSijoittelunTulosClientSpec extends ITSpecification with Va
     }
 
     "return hakijan hakutoiveet (erillishaku, ei sijoittelua)" in {
-      val hakijaDto = client.fetchHakemuksenTulos(client.fetchLatestSijoitteluAjo(hakuOid1).get, hakemusOid2).get
+      val hakijaDto = client.fetchHakemuksenTulos(client.fetchLatestSijoitteluajoId(hakuOid1), hakuOid1, hakemusOid2).get
       hakijaDto.getHakijaOid must_== hakemusOid2.toString
       hakijaDto.getHakemusOid must_== hakemusOid2.toString
 
@@ -114,7 +114,7 @@ class ValintarekisteriSijoittelunTulosClientSpec extends ITSpecification with Va
     step(insertValinnantulos(hakuOid2, valinnantulosHylatty(oidHaku2hakukohde1, oidHaku2hakukohde1jono2, sijoittelunHakemusOid2)))
 
     "return hakijan hakutoiveet (both with and without sijoittelu)" in {
-      val hakijaDto = client.fetchHakemuksenTulos(client.fetchLatestSijoitteluAjo(hakuOid2).get, sijoittelunHakemusOid2).get
+      val hakijaDto = client.fetchHakemuksenTulos(client.fetchLatestSijoitteluajoId(hakuOid2), hakuOid2, sijoittelunHakemusOid2).get
       hakijaDto.getHakijaOid must_== sijoittelunHakemusOid2.toString
       hakijaDto.getHakemusOid must_== sijoittelunHakemusOid2.toString
 
