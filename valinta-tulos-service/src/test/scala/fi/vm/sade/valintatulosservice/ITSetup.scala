@@ -1,11 +1,9 @@
 package fi.vm.sade.valintatulosservice
 
-import com.typesafe.config.ConfigValueFactory
 import fi.vm.sade.valintatulosservice.config.{VtsAppConfig, VtsDynamicAppConfig}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusFixtures
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
 import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtures
-import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.SijoitteluSpringContext
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
@@ -14,7 +12,6 @@ trait ITSetup {
   implicit val appConfig = new VtsAppConfig.IT
   implicit val dynamicAppConfig: VtsDynamicAppConfig = VtsAppConfig.MockDynamicAppConfig(näytetäänSiirryKelaanURL= true)
   val dbConfig = appConfig.settings.valintaRekisteriDbConfig
-  lazy val sijoitteluContext = new SijoitteluSpringContext(appConfig, SijoitteluSpringContext.createApplicationContext(appConfig))
 
   lazy val singleConnectionValintarekisteriDb = new ValintarekisteriDb(
     dbConfig.copy(maxConnections = Some(1), minConnections = Some(1)))
