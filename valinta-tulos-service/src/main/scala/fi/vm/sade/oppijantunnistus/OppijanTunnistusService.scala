@@ -30,7 +30,7 @@ class RealOppijanTunnistusService(appConfig:VtsApplicationSettings) extends Oppi
       case "sv" => appConfig.omatsivutUrlSv
       case _ => appConfig.omatsivutUrlFi
     }
-    val oppijanTunnistusBody = OppijanTunnistusCreate(callbackUrl, email, lang, Metadata(hakemusOid, personOid))
+    val oppijanTunnistusBody = OppijanTunnistusCreate(callbackUrl, email, lang, Metadata(hakemusOid.s, personOid))
     fetch(url, oppijanTunnistusBody){ response =>
       (parse(response)).extract[OppijanTunnistus]
     }.left.map {
