@@ -132,9 +132,9 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               and eh.valintatapajono_oid = ti.valintatapajono_oid
           left join valinnantulokset as tu on tu.hakemus_oid = ti.hakemus_oid
               and tu.valintatapajono_oid = ti.valintatapajono_oid
-          left join vastaanotot as v on v.hakukohde = tu.hakukohde_oid
+          left join vastaanotot as v on v.hakukohde = ti.hakukohde_oid
               and v.henkilo = ti.henkilo_oid and v.deleted is null
-          left join ilmoittautumiset as i on i.hakukohde = tu.hakukohde_oid
+          left join ilmoittautumiset as i on i.hakukohde = ti.hakukohde_oid
               and i.henkilo = ti.henkilo_oid
           where ti.hakemus_oid = ${hakemusOid}
       """.as[Valinnantulos].map(_.toSet)
@@ -163,9 +163,9 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               and eh.valintatapajono_oid = ti.valintatapajono_oid
           left join valinnantulokset as tu on tu.hakemus_oid = ti.hakemus_oid
               and tu.valintatapajono_oid = ti.valintatapajono_oid
-          left join vastaanotot as v on v.hakukohde = tu.hakukohde_oid
+          left join vastaanotot as v on v.hakukohde = ti.hakukohde_oid
               and v.henkilo = ti.henkilo_oid and v.deleted is null
-          left join ilmoittautumiset as i on i.hakukohde = tu.hakukohde_oid
+          left join ilmoittautumiset as i on i.hakukohde = ti.hakukohde_oid
               and i.henkilo = ti.henkilo_oid
           where ti.hakukohde_oid = ${hakukohdeOid}
       """.as[Valinnantulos].map(_.toSet)
