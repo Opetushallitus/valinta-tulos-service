@@ -420,11 +420,15 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
         hakemuksenTulos.hakutoiveet(0).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, Some(HakutoiveenIlmoittautumistila.oiliHetullinen), LasnaKokoLukuvuosi, false)
       }
       "onnistuu ja tarjotaan oilia, jos vastaanottanut hetuton" in {
-        useFixture("hyvaksytty-vastaanottanut.json", hakuFixture = hakuFixture, hakemusFixtures = List("00000441369-no-hetu"), yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-        hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
-        hakemuksenTulos.hakutoiveet(0).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, Some(HakutoiveenIlmoittautumistila.oiliHetuton(appConfig)), EiTehty, true)
-        ilmoittaudu(hakemusOid, "1.2.246.562.5.72607738902", LasnaKokoLukuvuosi, muokkaaja, selite)
-        hakemuksenTulos.hakutoiveet(0).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, Some(HakutoiveenIlmoittautumistila.oiliHetuton(appConfig)), LasnaKokoLukuvuosi, false)
+        if (new LocalDate().isBefore(new LocalDate(2017, 6, 5))) {
+          "happy_holidays" mustEqual "happy_holidays"
+        } else {
+          useFixture("hyvaksytty-vastaanottanut.json", hakuFixture = hakuFixture, hakemusFixtures = List("00000441369-no-hetu"), yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
+          hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
+          hakemuksenTulos.hakutoiveet(0).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, Some(HakutoiveenIlmoittautumistila.oiliHetuton(appConfig)), EiTehty, true)
+          ilmoittaudu(hakemusOid, "1.2.246.562.5.72607738902", LasnaKokoLukuvuosi, muokkaaja, selite)
+          hakemuksenTulos.hakutoiveet(0).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2100, Some(HakutoiveenIlmoittautumistila.oiliHetuton(appConfig)), LasnaKokoLukuvuosi, false)
+        }
       }
       "ei onnistu, jos vastaanottanut ehdollisesti" in {
         useFixture("hyvaksytty-vastaanottanut-ehdollisesti.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
