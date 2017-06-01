@@ -27,7 +27,7 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
                   and v.hakukohde_oid = h.hakukohde_oid
                   and v.tila = h.tila
                   and v.transaction_id = h.transaction_id
-               where h.ilmoittaja = ${sijoitteluajoId})""", timeout = Duration(5, MINUTES))
+               where h.ilmoittaja = ${sijoitteluajoId})""", timeout = Duration(60, MINUTES))
   }
 
   override def storeBatch(valintaesitykset: Seq[Valintaesitys],
