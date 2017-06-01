@@ -18,6 +18,7 @@ import scalaj.http.HttpOptions
 
 trait HakuService {
   def getHaku(oid: HakuOid): Either[Throwable, Haku]
+  def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, HakukohdeKela]
   def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde]
   def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]]
   def getKomos(komoOids: Seq[String]): Either[Throwable, Seq[Komo]]
@@ -69,7 +70,36 @@ case class Koulutus(oid: String, koulutuksenAlkamiskausi: Kausi, tila: String, j
                     koulutuskoodi: Option[Koodi],
                     koulutusaste: Option[Koodi],
                     opintojenLaajuusarvo: Option[Koodi])
+case class HakukohdeKela(val koulutuksenAlkamiskausi: Option[Kausi],
+                         val hakukohdeOid: String,
+                         val tarjoajaOid: String,
+                         val oppilaitoskoodi: String,
+                         koulutuslaajuusarvot: Seq[KoulutusLaajuusarvo])
 
+class HakukohdeKelaSerializer extends CustomSerializer[HakukohdeKela]((formats: Formats) => {
+  implicit val f = formats
+  ( {
+    case o: JObject =>
+      val JString(hakukohdeOid) = o \ "hakukohdeOid"
+      val JString(tarjoajaOid) = o \ "tarjoajaOid"
+      val JString(oppilaitoskoodi) = o \ "oppilaitosKoodi"
+      val JInt(vuosi) = o \ "koulutuksenAlkamisVuosi"
+
+      val kausi: Option[Kausi] = Try((o \ "koulutuksenAlkamiskausiUri") match {
+        case JString(kevät) if kevät.contains("kausi_k") => Kevat(vuosi.toInt)
+        case JString(syksy) if syksy.contains("kausi_s") => Syksy(vuosi.toInt)
+        case x => throw new MappingException(s"Unrecognized kausi URI $x")
+      }).toOption
+      val children = (o \ "koulutusLaajuusarvos").extractOpt[Seq[KoulutusLaajuusarvo]].getOrElse(Seq())
+      HakukohdeKela(
+        koulutuksenAlkamiskausi = kausi,
+        hakukohdeOid = hakukohdeOid,
+        tarjoajaOid = tarjoajaOid,
+        oppilaitoskoodi = oppilaitoskoodi,
+        koulutuslaajuusarvot = children
+      )
+  }, { case o => ??? })
+})
 class KoulutusSerializer extends CustomSerializer[Koulutus]((formats: Formats) => {
   implicit val f = formats
   ( {
@@ -112,6 +142,7 @@ class KomoSerializer extends CustomSerializer[Komo]((formats: Formats) => {
 protected trait JsonHakuService {
   import org.json4s._
   implicit val formats: Formats = DefaultFormats ++ List(
+    new HakukohdeKelaSerializer,
     new KoulutusSerializer,
     new KomoSerializer,
     new HakuOidSerializer,
@@ -146,6 +177,7 @@ class CachedHakuService(wrappedService: HakuService) extends HakuService {
   private val all = TTLOptionalMemoize.memoize[Unit, List[Haku]](_ => wrappedService.kaikkiJulkaistutHaut, 4 * 60 * 60)
 
   override def getHaku(oid: HakuOid): Either[Throwable, Haku] = byOid(oid)
+  override def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, HakukohdeKela] = wrappedService.getHakukohdeKela(oid)
   override def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde] = wrappedService.getHakukohde(oid)
   override def getKomos(kOids: Seq[String]): Either[Throwable, Seq[Komo]] = wrappedService.getKomos(kOids)
   override def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]] = wrappedService.getKoulutuses(koulutusOids)
@@ -214,6 +246,18 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
   def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, List[Hakukohde]] = {
     MonadHelper.sequence(for {oid <- oids.toStream} yield getHakukohde(oid))
   }
+  def getHakukohdeKela(hakukohdeOid: HakukohdeOid): Either[Throwable, HakukohdeKela] = {
+    val hakukohdeUrl = config.ophProperties.url(
+      "tarjonta-service.hakukohdekela", hakukohdeOid)
+    fetch(hakukohdeUrl) { response =>
+      parse(response).extract[HakukohdeKela]
+    }.left.map {
+      case e: IllegalArgumentException => new IllegalArgumentException(s"No hakukohde $hakukohdeOid ($hakukohdeUrl) found", e)
+      case e: IllegalStateException => new IllegalStateException(s"Parsing hakukohde $hakukohdeOid ($hakukohdeUrl) failed", e)
+      case e: Exception => new RuntimeException(s"Failed to get hakukohde $hakukohdeOid ($hakukohdeUrl)", e)
+    }
+  }
+
   def getHakukohde(hakukohdeOid: HakukohdeOid): Either[Throwable, Hakukohde] = {
     val hakukohdeUrl = config.ophProperties.url(
       "tarjonta-service.hakukohde", hakukohdeOid, mapAsJavaMap(Map(

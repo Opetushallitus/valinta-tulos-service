@@ -107,8 +107,8 @@ object KelaKoulutus {
 
 
 
-  def apply(ks: Seq[Koulutus], komos: Seq[Komo] = Nil): Option[KelaKoulutus] = {
-    val tasot = (ks.flatMap(toKoulutusLaajuusarvo) ++ komos.map(toKoulutusLaajuusarvo)).flatMap(toTaso)
+  def apply(ks: Seq[KoulutusLaajuusarvo]): Option[KelaKoulutus] = {
+    val tasot = ks.flatMap(toTaso)
 
     val (alemmat, ylemmät, lääkis, hammas, muut)= separate(tasot)
 
@@ -155,14 +155,11 @@ object KelaKoulutus {
     }
   }
 
-  private def toKoulutusLaajuusarvo(k:Koulutus) = Seq(KoulutusLaajuusarvo(k.koulutuskoodi.map(_.arvo), k.opintojenLaajuusarvo)) ++ k.sisaltyvatKoulutuskoodit.map(arvo => KoulutusLaajuusarvo(Some(arvo), None))
-  private def toKoulutusLaajuusarvo(komo:Komo) = KoulutusLaajuusarvo(komo.koulutuskoodi.map(_.arvo), komo.opintojenLaajuusarvo)
-
   private def toTaso(k: KoulutusLaajuusarvo): Option[Taso] = {
     implicit class Regex(sc: StringContext) {
       def r = new util.matching.Regex(sc.parts.mkString, sc.parts.tail.map(_ => "x"): _*)
     }
-    val arvo = k.opintojenLaajuusarvo.map(_.arvo).filter(_.trim.nonEmpty)
+    val arvo = k.opintojenLaajuusarvo.filter(_.trim.nonEmpty)
     k.koulutuskoodi match {
       case Some(koodi) =>
         koodi match {
@@ -183,4 +180,4 @@ object KelaKoulutus {
   }
 
 }
-case class KoulutusLaajuusarvo(koulutuskoodi: Option[String], opintojenLaajuusarvo: Option[Koodi])
+case class KoulutusLaajuusarvo(oid: Option[String], koulutuskoodi: Option[String], opintojenLaajuusarvo: Option[String])
