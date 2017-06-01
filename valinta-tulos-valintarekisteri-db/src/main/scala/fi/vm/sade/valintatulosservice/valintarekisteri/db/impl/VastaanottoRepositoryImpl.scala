@@ -43,16 +43,32 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
         """.as[HakukohdeRecord]
     ).map(h => h.oid -> h).toMap
     val hakemusoidit = runBlocking(
-      sql"""select distinct
-                 vt.henkilo_oid,
-                 vt.hakukohde_oid,
-                 vt.hakemus_oid
-            from valinnantilat as vt
-            where exists (select 1 from newest_vastaanotot as v
-                          where v.hakukohde = vt.hakukohde_oid
-                              and v.henkilo = vt.henkilo_oid
-                              and v.koulutuksen_alkamiskausi = ${kausi.toKausiSpec}
-                              and v.yhden_paikan_saanto_voimassa)
+      sql"""select
+              vastaanotot.henkilo as henkilo,
+              hakukohde,
+              vt.hakemus_oid
+            from vastaanotot
+            join hakukohteet hk on hakukohde_oid = vastaanotot.hakukohde
+                and hk.koulutuksen_alkamiskausi = ${kausi.toKausiSpec}
+                and hk.yhden_paikan_saanto_voimassa
+            join valinnantilat vt on vt.henkilo_oid = vastaanotot.henkilo
+                and vt.hakukohde_oid = vastaanotot.hakukohde
+            where deleted is null
+                and action in ('VastaanotaSitovasti', 'VastaanotaEhdollisesti')
+            union
+            select
+              henkiloviitteet.linked_oid as henkilo,
+              hakukohde,
+              vt.hakemus_oid
+            from vastaanotot
+            join hakukohteet hk on hakukohde_oid = vastaanotot.hakukohde
+                and hk.koulutuksen_alkamiskausi = ${kausi.toKausiSpec}
+                and hk.yhden_paikan_saanto_voimassa
+            join henkiloviitteet on vastaanotot.henkilo = henkiloviitteet.person_oid
+            join valinnantilat vt on vt.henkilo_oid = vastaanotot.henkilo
+                and vt.hakukohde_oid = vastaanotot.hakukohde
+            where deleted is null
+                and action in ('VastaanotaSitovasti', 'VastaanotaEhdollisesti')
         """.as[((String, HakukohdeOid), HakemusOid)]
     ).toMap
     vastaanotot
