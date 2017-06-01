@@ -11,8 +11,13 @@ object SijoitteluajonHakija {
           hakuOid:HakuOid,
           hakemusOid:HakemusOid): Option[HakijaDTO] = {
     val hakija = repository.getHakemuksenHakija(hakemusOid, sijoitteluajoId)
-    val hakemuksenValinnantulokset = repository.runBlocking(repository.getValinnantuloksetForHakemus(hakemusOid)).groupBy(_.hakukohdeOid) //.map(v => (v.hakukohdeOid, v.valintatapajonoOid) -> v).toMap
-    val hakutoiveetSijoittelussa = sijoitteluajoId.map(repository.getHakemuksenHakutoiveetSijoittelussa(hakemusOid, _).map(h => h.hakukohdeOid -> h).toMap).getOrElse(Map())
+
+    val (hakemuksenValinnantulokset, hakutoiveetSijoittelussa) = hakija match {
+      case Some(x) => (
+        repository.runBlocking(repository.getValinnantuloksetForHakemus(hakemusOid)).groupBy(_.hakukohdeOid),
+        sijoitteluajoId.map(repository.getHakemuksenHakutoiveetSijoittelussa(hakemusOid, _).map(h => h.hakukohdeOid -> h).toMap).getOrElse(Map()))
+      case None => (Map[HakukohdeOid, Set[Valinnantulos]](), Map[HakukohdeOid, HakutoiveRecord]())
+    }
 
     def getVastaanotto(hakukohdeOid: HakukohdeOid): ValintatuloksenTila = {
       val vastaanotto = hakemuksenValinnantulokset.getOrElse(hakukohdeOid, Set()).map(_.vastaanottotila)
@@ -55,7 +60,6 @@ object SijoitteluajonHakija {
       hakutoive.dto(getVastaanotto(hakukohdeOid), valintatapajonoDtot, List(), List())
     }
 
-    val hakukohdeOidit = hakemuksenValinnantulokset.keySet.union(hakutoiveetSijoittelussa.keySet)
     if (hakutoiveetSijoittelussa.isEmpty) {
       hakija.map(_.dto(hakemuksenValinnantulokset.keySet.map(hakukohdeDtoEiSijoittelua).toList))
     } else {
@@ -65,6 +69,7 @@ object SijoitteluajonHakija {
       val tilankuvauksetSijoittelussa = repository.getValinnantilanKuvaukset(
         valintatapajonotSijoittelussa.values.flatten.map(_.tilankuvausHash).toList.distinct
       )
+      val hakukohdeOidit = hakemuksenValinnantulokset.keySet.union(hakutoiveetSijoittelussa.keySet)
       hakija.map(_.dto(hakukohdeOidit.map { hakukohdeOid =>
         if (hakutoiveetSijoittelussa.contains(hakukohdeOid)) {
           hakukohdeDtoSijoittelu(hakukohdeOid, valintatapajonotSijoittelussa, pistetiedotSijoittelussa, hakijaryhmatSijoittelussa, tilankuvauksetSijoittelussa)
