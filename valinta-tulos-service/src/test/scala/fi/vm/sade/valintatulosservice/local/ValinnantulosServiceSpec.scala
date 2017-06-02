@@ -193,8 +193,8 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       valinnantulosRepository.runBlockingTransactionally(any[DBIO[Unit]], any[Duration]) returns Right[Throwable, Unit](())
       val valinnantulokset = List(valinnantulosA.copy(julkaistavissa = Some(true)))
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo, true) mustEqual List()
-      there was one (valinnantulosRepository).updateValinnantuloksenOhjaus(valinnantulokset(0).getValinnantuloksenOhjaus(session.personOid, "Erillishaun tallennus"), Some(lastModified))
-      there was no (valinnantulosRepository).storeValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
+      there was no (valinnantulosRepository).updateValinnantuloksenOhjaus(valinnantulokset(0).getValinnantuloksenOhjaus(session.personOid, "Erillishaun tallennus"), Some(lastModified))
+      there was one (valinnantulosRepository).storeValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
       there was no (valinnantulosRepository).storeIlmoittautuminen(any[String], any[Ilmoittautuminen], any[Option[Instant]])
       there was no (valinnantulosRepository).storeValinnantila(any[ValinnantilanTallennus], any[Option[Instant]])
     }
