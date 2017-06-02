@@ -10,7 +10,9 @@ import org.apache.commons.lang3.BooleanUtils
 import scala.collection.JavaConverters._
 
 case class SijoitteluWrapper(sijoitteluajo: SijoitteluAjo, hakukohteet: List[Hakukohde], valintatulokset: List[Valintatulos]) {
-  lazy val valintatuloksetGroupedByHakemus: Map[HakemusOid, Valintatulos] = valintatulokset.map(vt => HakemusOid(vt.getHakemusOid) -> vt).toMap
+  lazy val groupedValintatulokset: Map[(HakukohdeOid, ValintatapajonoOid, HakemusOid), Valintatulos] = valintatulokset.map(vt =>
+    (HakukohdeOid(vt.getHakukohdeOid), ValintatapajonoOid(vt.getValintatapajonoOid), HakemusOid(vt.getHakemusOid)) -> vt
+  ).toMap
 }
 
 object SijoitteluWrapper {

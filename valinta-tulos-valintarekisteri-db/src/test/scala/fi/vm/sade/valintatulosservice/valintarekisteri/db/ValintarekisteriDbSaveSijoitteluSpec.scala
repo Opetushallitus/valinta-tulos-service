@@ -112,7 +112,7 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       val oldDate = new Date()
 
       def readJulkaistavissa() = singleConnectionValintarekisteriDb.runBlocking(
-        sql"""select julkaistavissa from valinnantulokset where hakemus_oid = '1.2.246.562.11.00000441369'""".as[Boolean]).toList
+        sql"""select julkaistavissa from valinnantulokset where hakemus_oid = '1.2.246.562.11.00000441369' order by valintatapajono_oid desc""".as[Boolean]).toList
 
       def startNewSijoittelu(wrapper:SijoitteluWrapper) = {
         val sijoitteluajoId = System.currentTimeMillis
@@ -124,7 +124,8 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
 
       val wrapper = loadSijoitteluFromFixture("hyvaksytty-korkeakoulu-erillishaku")
       singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
-      List(true, true) mustEqual readJulkaistavissa()
+      //Päivitetään julkaistavissa vain valintatuloksen jonolle
+      List(true, false) mustEqual readJulkaistavissa()
 
       startNewSijoittelu(wrapper)
       wrapper.valintatulokset.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(vt => {
@@ -132,7 +133,8 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
         vt.setRead(oldDate)
       })
       singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
-      List(true, true) mustEqual readJulkaistavissa()
+      //Ei päivitetä täppää, koska se "on muuttunut" sijoittelun aikana
+      List(true, false) mustEqual readJulkaistavissa()
 
       startNewSijoittelu(wrapper)
       wrapper.hakukohteet.head.getValintatapajonot.asScala.find(_.getOid.equals("14090336922663576781797489829887")
@@ -143,8 +145,22 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
         vt.setJulkaistavissa(false, "", "")
         vt.setRead(new Date())
       })
+      //Ei päivitetä täppää, koska tila on peruuntunut
       singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
       List(true, false).diff(readJulkaistavissa()) mustEqual List()
+
+      startNewSijoittelu(wrapper)
+      wrapper.hakukohteet.head.getValintatapajonot.asScala.find(_.getOid.equals("14090336922663576781797489829887")
+      ).get.getHakemukset.asScala.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(h => {
+        h.setTila(HakemuksenTila.HYVAKSYTTY)
+      })
+      wrapper.valintatulokset.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(vt => {
+        vt.setJulkaistavissa(false, "", "")
+        vt.setRead(new Date())
+      })
+      //Päivitetään täppä
+      singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
+      List(false, false).diff(readJulkaistavissa()) mustEqual List()
     }
     "not update existing valinnantulos if valintatulos not updated in sijoitteluajo" in {
       val wrapper = loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")

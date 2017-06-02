@@ -44,12 +44,15 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
           sijoittelu.hakukohteet.foreach(hakukohde => {
             hakukohde.getValintatapajonot.asScala.foreach(valintatapajono => {
               valintatapajono.getHakemukset.asScala.foreach(hakemus => {
+                val hakukohdeOid = HakukohdeOid(hakukohde.getOid)
+                val valintatapajonoOid = ValintatapajonoOid(valintatapajono.getOid)
+                val hakemusOid = HakemusOid(hakemus.getHakemusOid)
                 storeValintatapajononHakemus(
                   hakemus,
-                  sijoittelu.valintatuloksetGroupedByHakemus.get(HakemusOid(hakemus.getHakemusOid)),
+                  sijoittelu.groupedValintatulokset.get((hakukohdeOid, valintatapajonoOid, hakemusOid)),
                   sijoitteluajoId,
-                  HakukohdeOid(hakukohde.getOid),
-                  ValintatapajonoOid(valintatapajono.getOid),
+                  hakukohdeOid,
+                  valintatapajonoOid,
                   jonosijaStatement.get,
                   pistetietoStatement.get,
                   insertValinnantulosStatement.get,
