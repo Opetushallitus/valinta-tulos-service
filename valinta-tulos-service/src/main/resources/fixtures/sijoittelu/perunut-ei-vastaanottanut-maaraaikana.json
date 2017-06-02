@@ -1,197 +1,207 @@
 {
-    "Sijoittelu": [
+  "Sijoittelu": [
+    {
+      "_id": {
+        "$oid": "547f0c17e4b0755315d44e0a"
+      },
+      "className": "fi.vm.sade.sijoittelu.domain.Sijoittelu",
+      "hakuOid": "1.2.246.562.5.2013080813081926341928",
+      "sijoitteluId": {
+        "$numberLong": "1496148928107"
+      },
+      "created": {
+        "$date": "2014-12-03T13:11:51.186Z"
+      },
+      "sijoittele": true,
+      "sijoitteluajot": [
         {
-            "_id": {
-                "$oid": "547f0c17e4b0755315d44e0a"
+          "sijoitteluajoId": {
+            "$numberLong": "1496148928107"
+          },
+          "hakuOid": "1.2.246.562.5.2013080813081926341928",
+          "hakukohteet": [
+            {
+              "oid": "1.2.246.562.5.72607738902"
             },
-            "className" : "fi.vm.sade.sijoittelu.domain.Sijoittelu",
-            "hakuOid" : "1.2.246.562.29.173465377510",
-            "sijoitteluajoId": {
-                "$numberLong": "1409055160622"
-            },
-            "created": {
-                "$date": "2014-12-03T13:11:51.186Z"
-            },
-            "sijoittele" : true,
-            "sijoitteluajot" : [
-                {
-                    "sijoitteluajoId": {
-                        "$numberLong": "1409055160621"
-                    },
-                    "hakuOid" : "1.2.246.562.29.173465377510",
-                    "hakukohteet" : [
-                        {
-                            "oid" : "1.2.246.562.5.72607738902"
-                        }, {
-                            "oid" : "1.2.246.562.5.16303028779"
-                        }
-                    ]
-                }
-            ]
+            {
+              "oid": "1.2.246.562.5.16303028779"
+            }
+          ],
+          "startMils": {
+            "$numberLong": "14961489281071"
+          },
+          "endMils": {
+            "$numberLong": "14961499281071"
+          }
         }
-    ],
-    "Hakukohde": [
+      ]
+    }
+  ],
+  "Hakukohde": [
+    {
+      "_id": {
+        "$oid": "53fc79b8e4b0b0b110900764"
+      },
+      "className": "fi.vm.sade.sijoittelu.domain.Hakukohde",
+      "sijoitteluajoId": {
+        "$numberLong": "1496148928107"
+      },
+      "oid": "1.2.246.562.5.72607738902",
+      "tarjoajaOid": "1.2.246.562.10.591352080610",
+      "kaikkiJonotSijoiteltu": true,
+      "valintatapajonot": [
         {
-            "_id": {
-                "$oid": "53fc79b8e4b0b0b110900764"
-            },
-            "className": "fi.vm.sade.sijoittelu.domain.Hakukohde",
-            "sijoitteluajoId": {
-                "$numberLong": "1409055160621"
-            },
-            "oid": "1.2.246.562.5.72607738902",
-            "tarjoajaOid": "1.2.246.562.10.591352080610",
-            "kaikkiJonotSijoiteltu": true,
-            "valintatapajonot": [
+          "tasasijasaanto": "YLITAYTTO",
+          "oid": "14090336922663576781797489829887",
+          "nimi": "Toinen jono",
+          "prioriteetti": 1,
+          "aloituspaikat": 3,
+          "eiVarasijatayttoa": false,
+          "kaikkiEhdonTayttavatHyvaksytaan": false,
+          "poissaOlevaTaytto": false,
+          "hakemukset": [
+            {
+              "hakijaOid": "1.2.246.562.24.14229104472",
+              "hakemusOid": "1.2.246.562.11.00000441369",
+              "etunimi": "Teppo",
+              "sukunimi": "Testaaja",
+              "prioriteetti": 1,
+              "jonosija": 1,
+              "pisteet": 4,
+              "tasasijaJonosija": 1,
+              "tila": "PERUNUT",
+              "tilaHistoria": [
                 {
-                    "tasasijasaanto": "YLITAYTTO",
-                    "oid": "14090336922663576781797489829887",
-                    "nimi": "Toinen jono",
-                    "prioriteetti": 1,
-                    "aloituspaikat": 3,
-                    "eiVarasijatayttoa": false,
-                    "kaikkiEhdonTayttavatHyvaksytaan": false,
-                    "poissaOlevaTaytto": false,
-                    "hakemukset": [
-                        {
-                            "hakijaOid": "1.2.246.562.24.14229104472",
-                            "hakemusOid": "1.2.246.562.11.00000441369",
-                            "etunimi": "Teppo",
-                            "sukunimi": "Testaaja",
-                            "prioriteetti": 1,
-                            "jonosija": 1,
-                            "pisteet": "4",
-                            "tasasijaJonosija": 1,
-                            "tila": "PERUNUT",
-                            "tilaHistoria": [
-                                {
-                                    "luotu": {
-                                        "$date": "2014-08-24T15:12:40.623Z"
-                                    },
-                                    "tila": "HYVAKSYTTY"
-                                },
-                                {
-                                    "luotu": {
-                                        "$date": "2014-08-26T15:12:40.623Z"
-                                    },
-                                    "tila": "PERUNUT"
-                                }
-                            ],
-                            "hyvaksyttyHarkinnanvaraisesti": false,
-                            "tilanKuvaukset": {
-                                "FI": "Peruuntunut, ei vastaanottanut määräaikana",
-                                "SV": "Annullerad, har inte tagit emot platsen inom utsatt tid",
-                                "EN": "Cancelled, has not confirmed the study place within the deadline"
-                            }
-                        }
-                    ]
+                  "luotu": {
+                    "$date": "2014-08-24T15:12:40.623Z"
+                  },
+                  "tila": "HYVAKSYTTY"
+                },
+                {
+                  "luotu": {
+                    "$date": "2014-08-26T15:12:40.623Z"
+                  },
+                  "tila": "PERUNUT"
                 }
-            ]
+              ],
+              "hyvaksyttyHarkinnanvaraisesti": false,
+              "tilanKuvaukset": {
+                "FI": "Peruuntunut, ei vastaanottanut määräaikana",
+                "SV": "Annullerad, har inte tagit emot platsen inom utsatt tid",
+                "EN": "Cancelled, has not confirmed the study place within the deadline"
+              },
+              "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "_id": {
+        "$oid": "53fc79b8e4b0b0b110900765"
+      },
+      "className": "fi.vm.sade.sijoittelu.domain.Hakukohde",
+      "sijoitteluajoId": {
+        "$numberLong": "1496148928107"
+      },
+      "oid": "1.2.246.562.5.16303028779",
+      "tarjoajaOid": "1.2.246.562.10.591352080610",
+      "kaikkiJonotSijoiteltu": true,
+      "valintatapajonot": [
+        {
+          "tasasijasaanto": "YLITAYTTO",
+          "oid": "14090336922663576781797489829888",
+          "nimi": "Toinen jono",
+          "prioriteetti": 1,
+          "aloituspaikat": 3,
+          "eiVarasijatayttoa": false,
+          "kaikkiEhdonTayttavatHyvaksytaan": false,
+          "poissaOlevaTaytto": false,
+          "hakemukset": [
+            {
+              "hakijaOid": "1.2.246.562.24.14229104472",
+              "hakemusOid": "1.2.246.562.11.00000441369",
+              "etunimi": "Teppo",
+              "sukunimi": "Testaaja",
+              "prioriteetti": 2,
+              "jonosija": 1,
+              "pisteet": 4,
+              "tasasijaJonosija": 1,
+              "tila": "HYLATTY",
+              "tilaHistoria": [
+                {
+                  "luotu": {
+                    "$date": "2014-08-26T15:12:40.623Z"
+                  },
+                  "tila": "HYLATTY"
+                }
+              ],
+              "hyvaksyttyHarkinnanvaraisesti": false,
+              "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "Valintatulos": [
+    {
+      "_id": {
+        "$oid": "53fc8613e4b0b0b110900766"
+      },
+      "className": "fi.vm.sade.sijoittelu.domain.Valintatulos",
+      "valintatapajonoOid": "14090336922663576781797489829887",
+      "hakemusOid": "1.2.246.562.11.00000441369",
+      "hakukohdeOid": "1.2.246.562.5.72607738902",
+      "hakijaOid": "1.2.246.562.24.14229104472",
+      "hakuOid": "1.2.246.562.5.2013080813081926341928",
+      "hakutoive": 1,
+      "tila": "EI_VASTAANOTETTU_MAARA_AIKANA",
+      "ilmoittautumisTila": "EI_TEHTY",
+      "julkaistavissa": true,
+      "logEntries": [
+        {
+          "luotu": {
+            "$date": "2014-08-24T16:05:23.943Z"
+          },
+          "muokkaaja": "1.2.246.562.24.00000000001",
+          "muutos": "KESKEN",
+          "selite": "Massamuokkaus"
         },
         {
-            "_id": {
-                "$oid": "53fc79b8e4b0b0b110900765"
-            },
-            "className": "fi.vm.sade.sijoittelu.domain.Hakukohde",
-            "sijoitteluajoId": {
-                "$numberLong": "1409055160621"
-            },
-            "oid": "1.2.246.562.5.16303028779",
-            "tarjoajaOid": "1.2.246.562.10.591352080610",
-            "kaikkiJonotSijoiteltu": true,
-            "valintatapajonot": [
-                {
-                    "tasasijasaanto": "YLITAYTTO",
-                    "oid": "14090336922663576781797489829888",
-                    "nimi": "Toinen jono",
-                    "prioriteetti": 1,
-                    "aloituspaikat": 3,
-                    "eiVarasijatayttoa": false,
-                    "kaikkiEhdonTayttavatHyvaksytaan": false,
-                    "poissaOlevaTaytto": false,
-                    "hakemukset": [
-                        {
-                            "hakijaOid": "1.2.246.562.24.14229104472",
-                            "hakemusOid": "1.2.246.562.11.00000441369",
-                            "etunimi": "Teppo",
-                            "sukunimi": "Testaaja",
-                            "prioriteetti": 2,
-                            "jonosija": 1,
-                            "pisteet": "4",
-                            "tasasijaJonosija": 1,
-                            "tila": "HYLATTY",
-                            "tilaHistoria": [
-                                {
-                                    "luotu": {
-                                        "$date": "2014-08-26T15:12:40.623Z"
-                                    },
-                                    "tila": "HYLATTY"
-                                }
-                            ],
-                            "hyvaksyttyHarkinnanvaraisesti": false
-                        }
-                    ]
-                }
-            ]
+          "luotu": {
+            "$date": "2014-08-26T16:05:23.943Z"
+          },
+          "muokkaaja": "1.2.246.562.24.00000000001",
+          "muutos": "EI_VASTAANOTETTU_MAARA_AIKANA",
+          "selite": "Massamuokkaus"
         }
-    ],
-    "Valintatulos": [
+      ]
+    },
+    {
+      "_id": {
+        "$oid": "53fc8613e4b0b0b110900767"
+      },
+      "className": "fi.vm.sade.sijoittelu.domain.Valintatulos",
+      "valintatapajonoOid": "14090336922663576781797489829888",
+      "hakemusOid": "1.2.246.562.11.00000441369",
+      "hakukohdeOid": "1.2.246.562.5.16303028779",
+      "hakijaOid": "1.2.246.562.24.14229104472",
+      "hakuOid": "1.2.246.562.5.2013080813081926341928",
+      "hakutoive": 2,
+      "tila": "KESKEN",
+      "ilmoittautumisTila": "EI_TEHTY",
+      "julkaistavissa": true,
+      "logEntries": [
         {
-            "_id": {
-                "$oid": "53fc8613e4b0b0b110900766"
-            },
-            "className": "fi.vm.sade.sijoittelu.domain.Valintatulos",
-            "valintatapajonoOid": "14090336922663576781797489829887",
-            "hakemusOid": "1.2.246.562.11.00000441369",
-            "hakukohdeOid": "1.2.246.562.5.72607738902",
-            "hakijaOid": "1.2.246.562.24.14229104472",
-            "hakuOid": "1.2.246.562.5.2013080813081926341928",
-            "hakutoive": 1,
-            "tila": "EI_VASTAANOTETTU_MAARA_AIKANA",
-            "ilmoittautumisTila": "EI_TEHTY",
-            "julkaistavissa": true,
-            "logEntries": [
-                {
-                    "luotu": {
-                        "$date": "2014-08-24T16:05:23.943Z"
-                    },
-                    "muokkaaja": "1.2.246.562.24.00000000001",
-                    "muutos": "KESKEN",
-                    "selite": "Massamuokkaus"
-                }, {
-                    "luotu": {
-                        "$date": "2014-08-26T16:05:23.943Z"
-                    },
-                    "muokkaaja": "1.2.246.562.24.00000000001",
-                    "muutos": "EI_VASTAANOTETTU_MAARA_AIKANA",
-                    "selite": "Massamuokkaus"
-                }
-            ]
-        },
-        {
-            "_id": {
-                "$oid": "53fc8613e4b0b0b110900767"
-            },
-            "className": "fi.vm.sade.sijoittelu.domain.Valintatulos",
-            "valintatapajonoOid": "14090336922663576781797489829888",
-            "hakemusOid": "1.2.246.562.11.00000441369",
-            "hakukohdeOid": "1.2.246.562.5.16303028779",
-            "hakijaOid": "1.2.246.562.24.14229104472",
-            "hakuOid": "1.2.246.562.5.2013080813081926341928",
-            "hakutoive": 2,
-            "tila": "KESKEN",
-            "ilmoittautumisTila": "EI_TEHTY",
-            "julkaistavissa": true,
-            "logEntries": [
-                {
-                    "luotu": {
-                        "$date": "2014-08-26T16:05:23.943Z"
-                    },
-                    "muokkaaja": "1.2.246.562.24.00000000001",
-                    "muutos": "KESKEN",
-                    "selite": "Massamuokkaus"
-                }
-            ]
+          "luotu": {
+            "$date": "2014-08-26T16:05:23.943Z"
+          },
+          "muokkaaja": "1.2.246.562.24.00000000001",
+          "muutos": "KESKEN",
+          "selite": "Massamuokkaus"
         }
-    ]
+      ]
+    }
+  ]
 }

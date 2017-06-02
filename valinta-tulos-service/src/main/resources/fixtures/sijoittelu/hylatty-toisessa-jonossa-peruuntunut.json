@@ -58,7 +58,7 @@
               "sukunimi": "Testaaja",
               "prioriteetti": 1,
               "jonosija": 1,
-              "pisteet": "4",
+              "pisteet": 4,
               "tasasijaJonosija": 1,
               "tila": "PERUUNTUNUT",
               "tilaHistoria": [
@@ -90,7 +90,7 @@
               "sukunimi": "Testaaja",
               "prioriteetti": 1,
               "jonosija": 1,
-              "pisteet": "4",
+              "pisteet": 4,
               "tasasijaJonosija": 1,
               "tila": "HYLATTY",
               "tilaHistoria": [
