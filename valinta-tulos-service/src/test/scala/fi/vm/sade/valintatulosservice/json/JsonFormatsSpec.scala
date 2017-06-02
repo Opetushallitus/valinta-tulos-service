@@ -1,5 +1,7 @@
 package fi.vm.sade.valintatulosservice.json
 
+import java.util.Date
+
 import fi.vm.sade.valintatulosservice.{ServletSpecification, json4sCustomFormats}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.SijoitteluWrapper
 import org.joda.time.DateTime
@@ -11,7 +13,9 @@ import org.springframework.core.io.ClassPathResource
 
 @RunWith(classOf[JUnitRunner])
 class JsonFormatsSpec extends ServletSpecification with json4sCustomFormats {
+
   val expected = new DateTime("2014-08-01T16:00:00.000Z").toDate
+
 
   "SijoitteluWrapper.fromJson" should {
     "Parse date correctly" in {

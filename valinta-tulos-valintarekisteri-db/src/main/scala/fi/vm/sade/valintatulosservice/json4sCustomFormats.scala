@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice
 import java.util.Date
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Tasasijasaanto, Valinnantila, ValinnantilanTarkenne}
+import org.joda.time.DateTime
 import org.json4s.CustomSerializer
 import org.json4s.JsonAST.{JField, JObject, JString}
 
@@ -17,14 +18,10 @@ trait json4sCustomFormats {
   }))
 
   class DateSerializer extends  CustomSerializer[Date](format => ({
-    case JObject(List(JField("$date", JString(dateValue)))) if (dateValue.endsWith("Z")) =>
-      new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").parse(dateValue)
     case JObject(List(JField("$date", JString(dateValue)))) =>
-      new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").parse(dateValue)
-    case JString(dateValue) if dateValue.endsWith("Z") =>
-      new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse(dateValue)
+      new DateTime(dateValue).toDate
     case JString(dateValue) =>
-      new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(dateValue)
+      new DateTime(dateValue).toDate
   }, {
     case x: Date => JObject(List(JField("$date", JString("" + x))))
   }))
