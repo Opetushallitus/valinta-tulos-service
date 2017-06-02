@@ -29,17 +29,20 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
     val limitTimestamp: Timestamp = new Timestamp(limitDateTime.getTime)
 
     val res = runBlocking(
-      sql"""select hk.haku_oid, vo.hakemus_oid, vo.sent
-            from
-              viestinnan_ohjaus as vo
-              left join valinnantulokset as vt
-                on vo.hakukohde_oid = vt.hakukohde_oid and vo.hakemus_oid = vt.hakemus_oid and vo.valintatapajono_oid = vt.valintatapajono_oid
-              left join hakukohteet as hk
-                on hk.hakukohde_oid = vo.hakukohde_oid
+      sql"""select hk.haku_oid, vt.hakemus_oid, vo.sent
+            from valinnantulokset vt
+              right join hakukohteet as hk
+                on vt.hakukohde_oid = hk.hakukohde_oid
+              left join viestinnan_ohjaus vo
+                on vt.hakukohde_oid = vo.hakukohde_oid
+                   and vt.hakemus_oid = vo.hakemus_oid
+                   and vt.valintatapajono_oid = vo.valintatapajono_oid
             where
-              hk.haku_oid in (${hakuOidsIn}) and vt.julkaistavissa is true and vo.done is null
-              and vo.hakemus_oid not in (${hakemusOidsNotIn})
-              and vo.previous_check is null or vo.previous_check < (${limitTimestamp})
+              hk.haku_oid in (${hakuOidsIn})
+              and vt.julkaistavissa is true
+              and vo.done is null
+              and vt.hakemus_oid not in (${hakemusOidsNotIn})
+              and (vo.previous_check is null or vo.previous_check < (${limitTimestamp}))
             limit (${limit})
          """.as[HakemusIdentifier]).toSet
 
