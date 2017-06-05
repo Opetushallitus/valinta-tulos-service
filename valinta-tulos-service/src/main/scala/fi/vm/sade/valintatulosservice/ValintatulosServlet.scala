@@ -145,7 +145,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid").required
     )
-  get("/:hakuOid/hakukohde/:hakukohdeOid/hakijat") {
+  get("/:hakuOid/hakukohde/:hakukohdeOid/hakijat", operation(getHakukohteenKaikkiHakijatSwagger)) {
 
     val hakuOid = HakuOid(params("hakuOid"))
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
@@ -158,7 +158,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     summary """Listaus haun hakijoista, joilla ei ole koulutuspaikkaa (ilman hyväksyntää)"""
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     )
-  get("/:hakuOid/ilmanHyvaksyntaa") {
+  get("/:hakuOid/ilmanHyvaksyntaa", operation(getHaunIlmanHyvaksyntaaSwagger)) {
 
     val hakuOid = HakuOid(params("hakuOid"))
 
@@ -171,7 +171,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid").required
     )
-  get("/:hakuOid/hyvaksytyt") {
+  get("/:hakuOid/hyvaksytyt", operation(getHaunHyvaksytytSwagger)) {
 
     val hakuOid = HakuOid(params("hakuOid"))
 
@@ -184,7 +184,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid").required
     )
-  get("/:hakuOid/hakukohde/:hakukohdeOid/hyvaksytyt") {
+  get("/:hakuOid/hakukohde/:hakukohdeOid/hyvaksytyt", operation(getHakukohteenHyvaksytytSwagger)) {
 
     val hakuOid = HakuOid(params("hakuOid"))
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
