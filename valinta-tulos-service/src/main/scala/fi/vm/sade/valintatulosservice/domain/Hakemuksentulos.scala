@@ -90,10 +90,11 @@ object Hakutoiveentulos {
                                              checkJulkaisuAikaParametri: Boolean = true,
                                              hasHetu: Boolean)(implicit appConfig: VtsAppConfig): Hakutoiveentulos = {
     val saaJulkaista: Boolean = !checkJulkaisuAikaParametri || ohjausparametrit.flatMap(_.tulostenJulkistusAlkaa).map(_.isBeforeNow()).getOrElse(ohjausparametrit.isDefined)
+    val tarjoajaOid = if (tulos.tarjoajaOid != null) tulos.tarjoajaOid else hakutoive.tarjoajaOid
     Hakutoiveentulos(
       tulos.hakukohdeOid,
       hakutoive.nimi,
-      tulos.tarjoajaOid,
+      tarjoajaOid,
       hakutoive.tarjoajaNimi,
       tulos.valintatapajonoOid,
       tulos.valintatila,
