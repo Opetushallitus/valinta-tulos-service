@@ -113,7 +113,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     ilmoittautumisService.ilmoittaudu(hakemusOid, ilmoittautuminen)
   }
 
-  @Deprecated //Ei käytetä mistään? Jos tarvitaan hyväksymis/jälkiohjauskirjeitä varten, sivutuksen voi kuitenkin poistaa
+  @Deprecated //Ei käytetä mistään? Ei tarvita hyväksymis/jälkiohjauskirjeitäkään varten!
   lazy val getHaunSijoitteluajonTuloksetSwagger: OperationBuilder = (apiOperation[Unit]("getHaunSijoitteluajonTuloksetSwagger")
     summary """Sivutettu listaus hakemuksien/hakijoiden listaukseen. Yksityiskohtainen listaus kaikista hakutoiveista ja niiden valintatapajonoista"""
     parameter pathParam[String]("hakuOid").description("Haun oid").required
@@ -137,6 +137,59 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     val count = intParam("count")
     val index = intParam("index")
     val hakijaPaginationObject = valintatulosService.sijoittelunTulokset(hakuOid, sijoitteluajoId, hyvaksytyt, ilmanHyvaksyntaa, vastaanottaneet, hakukohdeOid, count, index)
+    Ok(JsonFormats.javaObjectToJsonString(hakijaPaginationObject))
+  }
+
+  lazy val getHakukohteenKaikkiHakijatSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohteenKaikkiHakijatSwagger")
+    summary """Listaus haun hakukohteen kaikista hakijoista"""
+    parameter pathParam[String]("hakuOid").description("Haun oid").required
+    parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid").required
+    )
+  get("/:hakuOid/hakukohde/:hakukohdeOid/hakijat") {
+
+    val hakuOid = HakuOid(params("hakuOid"))
+    val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
+
+    val hakijaPaginationObject = valintatulosService.sijoittelunTulokset(hakuOid, "latest", None, None, None, Some(List(hakukohdeOid)), None, None)
+    Ok(JsonFormats.javaObjectToJsonString(hakijaPaginationObject))
+  }
+
+  lazy val getHaunIlmanHyvaksyntaaSwagger: OperationBuilder = (apiOperation[Unit]("getHaunIlmanHyvaksyntaaSwagger")
+    summary """Listaus haun hakijoista, joilla ei ole koulutuspaikkaa (ilman hyväksyntää)"""
+    parameter pathParam[String]("hakuOid").description("Haun oid").required
+    )
+  get("/:hakuOid/ilmanHyvaksyntaa") {
+
+    val hakuOid = HakuOid(params("hakuOid"))
+
+    val hakijaPaginationObject = valintatulosService.sijoittelunTulokset(hakuOid, "latest", None, ilmanHyvaksyntaa = Some(true), None, None, None, None)
+    Ok(JsonFormats.javaObjectToJsonString(hakijaPaginationObject))
+  }
+
+  lazy val getHaunHyvaksytytSwagger: OperationBuilder = (apiOperation[Unit]("getHaunHyvaksytytSwagger")
+    summary """Listaus haun hyväksytyistä hakijoista"""
+    parameter pathParam[String]("hakuOid").description("Haun oid").required
+    parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid").required
+    )
+  get("/:hakuOid/hyvaksytyt") {
+
+    val hakuOid = HakuOid(params("hakuOid"))
+
+    val hakijaPaginationObject = valintatulosService.sijoittelunTulokset(hakuOid, "latest", hyvaksytyt = Some(true), None, None, None, None, None)
+    Ok(JsonFormats.javaObjectToJsonString(hakijaPaginationObject))
+  }
+
+  lazy val getHakukohteenHyvaksytytSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohteenHyvaksytytSwagger")
+    summary """Listaus haun hakukohteen hyväksytyistä hakijoista"""
+    parameter pathParam[String]("hakuOid").description("Haun oid").required
+    parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid").required
+    )
+  get("/:hakuOid/hakukohde/:hakukohdeOid/hyvaksytyt") {
+
+    val hakuOid = HakuOid(params("hakuOid"))
+    val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
+
+    val hakijaPaginationObject = valintatulosService.sijoittelunTulokset(hakuOid, "latest", hyvaksytyt = Some(true), None, None, Some(List(hakukohdeOid)), None, None)
     Ok(JsonFormats.javaObjectToJsonString(hakijaPaginationObject))
   }
 
