@@ -42,6 +42,7 @@ class CasLogin(casUrl: String, cas: CasSessionService) extends ScalatraServlet w
         contentType = formats("json")
         implicit val cookieOptions = CookieOptions(path = "/valinta-tulos-service", secure = false, httpOnly = true)
         cookies += ("session" -> id.toString)
+        request.setAttribute("session", id.toString)
         Ok(Map("personOid" -> session.personOid))
     }
   }
