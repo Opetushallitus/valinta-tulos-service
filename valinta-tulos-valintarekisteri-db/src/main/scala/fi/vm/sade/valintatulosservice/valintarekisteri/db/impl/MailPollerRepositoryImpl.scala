@@ -10,6 +10,8 @@ import org.joda.time.DateTime
 import slick.driver.PostgresDriver.api._
 import slick.jdbc.GetResult
 
+import scala.util.{Failure, Success}
+
 /**
   * Created by heikki.honkanen on 08/11/16.
   */
@@ -22,8 +24,8 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                         limit: Int,
                         recheckIntervalHours: Int = (24 * 3),
                         excludeHakemusOids: Set[HakemusOid] = Set.empty): Set[HakemusIdentifier] = {
-    val hakuOidsIn: String = hakuOids.map(oid => s"'$oid'").mkString(",")
-    val hakemusOidsNotIn: String = excludeHakemusOids.map(oid => s"'$oid'").mkString(",")
+    val hakuOidsIn: String = if (hakuOids.isEmpty) "''" else hakuOids.map(oid => s"'$oid'").mkString(",")
+    val hakemusOidsNotIn: String =  if (excludeHakemusOids.isEmpty) "''" else excludeHakemusOids.map(oid => s"'$oid'").mkString(",")
 
     val limitDateTime = new DateTime().minusHours(recheckIntervalHours).toDate
     val limitTimestamp: Timestamp = new Timestamp(limitDateTime.getTime)
@@ -38,15 +40,14 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                    and vt.hakemus_oid = vo.hakemus_oid
                    and vt.valintatapajono_oid = vo.valintatapajono_oid
             where
-              hk.haku_oid in (${hakuOidsIn})
+              hk.haku_oid in (#${hakuOidsIn})
               and vt.julkaistavissa is true
               and vo.done is null
-              and vt.hakemus_oid not in (${hakemusOidsNotIn})
-              and (vo.previous_check is null or vo.previous_check < (${limitTimestamp}))
-            limit (${limit})
+              and vt.hakemus_oid not in (#${hakemusOidsNotIn})
+              and (vo.previous_check is null or vo.previous_check < ${limitTimestamp})
+            limit ${limit}
          """.as[HakemusIdentifier]).toSet
 
-    // TODO: Hakukohdeoid?
     updateLastChecked(res.map(r => r.hakemusOid))
     res
   }
