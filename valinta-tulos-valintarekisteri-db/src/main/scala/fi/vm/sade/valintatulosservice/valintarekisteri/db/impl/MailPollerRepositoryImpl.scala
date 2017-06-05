@@ -20,12 +20,14 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
     Option(r.nextTimestamp())))
   val limit = 1000
 
+  private val allowedChars = "01234567890.,'".toCharArray.toSet
+
   def pollForCandidates(hakuOids: List[HakuOid],
                         limit: Int,
                         recheckIntervalHours: Int = (24 * 3),
                         excludeHakemusOids: Set[HakemusOid] = Set.empty): Set[HakemusIdentifier] = {
-    val hakuOidsIn: String = if (hakuOids.isEmpty) "''" else hakuOids.map(oid => s"'$oid'").mkString(",")
-    val hakemusOidsNotIn: String =  if (excludeHakemusOids.isEmpty) "''" else excludeHakemusOids.map(oid => s"'$oid'").mkString(",")
+    val hakuOidsIn: String = if (hakuOids.isEmpty) "''" else hakuOids.map(oid => s"'$oid'").mkString(",").filter(allowedChars.contains)
+    val hakemusOidsNotIn: String =  if (excludeHakemusOids.isEmpty) "''" else excludeHakemusOids.map(oid => s"'$oid'").mkString(",").filter(allowedChars.contains)
 
     val limitDateTime = new DateTime().minusHours(recheckIntervalHours).toDate
     val limitTimestamp: Timestamp = new Timestamp(limitDateTime.getTime)
