@@ -8,7 +8,7 @@ import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.json.JsonFormats._
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.HakemusIdentifier
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{HakemusIdentifier, ViestinnänOhjausKooste}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, MailPollerRepository, VastaanottoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
@@ -69,21 +69,21 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
   def alreadyMailed(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Option[Date] = mailPollerRepository.alreadyMailed(hakemusOid, hakukohdeOid)
 
   def pollForMailables(hakuOids: List[HakuOid] = etsiHaut, limit: Int = this.limit, excludeHakemusOids: Set[HakemusOid] = Set.empty): List[HakemusMailStatus] = {
-    val candidates: Set[HakemusIdentifier] = mailPollerRepository.pollForCandidates(hakuOids, limit, excludeHakemusOids = excludeHakemusOids)
+    val candidates: Set[ViestinnänOhjausKooste] = mailPollerRepository.pollForCandidates(hakuOids, limit, excludeHakemusOids = excludeHakemusOids)
     logger.info("candidates found {}", formatJson(candidates))
 
     // onlyIfHasKeskenVastaanottotiloja : if hakemuksenTulos.hakutoiveet.exists(hk => hk.vastaanottotila == Vastaanottotila.kesken)
     val statii: Set[HakemusMailStatus] = for {
-      candidateId <- candidates
-      hakemuksenTulos <- fetchHakemuksentulos(candidateId)
+      candidate <- candidates
+      hakemuksenTulos <- fetchHakemuksentulos(HakemusIdentifier(hakuOid = candidate.hakuOid, hakemusOid = candidate.hakemusOid))
     } yield {
       val (hakijaOid, hakuOid) = (hakemuksenTulos.hakijaOid, hakemuksenTulos.hakuOid)
       val vastaanotot = hakijaVastaanottoRepository.findVastaanottoHistoryHaussa(hakijaOid, hakuOid)
-      val uudetVastaanotot: Set[VastaanottoRecord] = candidateId.lastSent match {
+      val uudetVastaanotot: Set[VastaanottoRecord] = candidate.sendTime match {
         case Some(lastCheck) => vastaanotot.filter(_.timestamp.compareTo(lastCheck) >= 0)
         case None => vastaanotot
       }
-      val vanhatVastaanotot: Set[VastaanottoRecord] = candidateId.lastSent match {
+      val vanhatVastaanotot: Set[VastaanottoRecord] = candidate.sendTime match {
         case Some(lastCheck) => vastaanotot.filter(_.timestamp.before(lastCheck))
         case None => Set()
       }
@@ -112,7 +112,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
         case MailStatus.NEVER_MAIL =>
           mailPollerRepository.markAsNonMailable(hakemus.hakemusOid, hakukohde.hakukohdeOid, hakukohde.message)
         case _ =>
-          mailPollerRepository.addMessage(hakemus, hakukohde, hakukohde.message)
+          //mailPollerRepository.addMessage(hakemus, hakukohde, hakukohde.message) TODO: what to do here?
       }
     }
   }
