@@ -146,14 +146,8 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
   )
 
   def toValintatulos(): Valintatulos = {
-    val valintatulos = new Valintatulos(valintatapajonoOid.toString, hakemusOid.toString, hakukohdeOid.toString, henkiloOid, ValintatuloksenTila.KESKEN)
-    valintatulos.setIlmoittautumisTila(ilmoittautumistila.ilmoittautumistila, "", "")
-    julkaistavissa.foreach(j => valintatulos.setJulkaistavissa(j, "", ""))
-    hyvaksyttyVarasijalta.foreach(h => valintatulos.setHyvaksyttyVarasijalta(h, "", ""))
-    hyvaksyPeruuntunut.foreach(h => valintatulos.setHyvaksyPeruuntunut(h, "", ""))
-    ehdollisestiHyvaksyttavissa.foreach(e => valintatulos.setEhdollisestiHyvaksyttavissa(e, "", ""))
-    valintatulos.setTila(vastaanottotila, "")
-    valintatulos
+    new Valintatulos(hakemusOid.toString, henkiloOid, hakukohdeOid.toString, hyvaksyttyVarasijalta.getOrElse(false), ilmoittautumistila.ilmoittautumistila,
+      julkaistavissa.getOrElse(false), vastaanottotila, ehdollisestiHyvaksyttavissa.getOrElse(false), valintatapajonoOid.toString)
   }
 
   def toValintatulos(read: Instant): Valintatulos = {
