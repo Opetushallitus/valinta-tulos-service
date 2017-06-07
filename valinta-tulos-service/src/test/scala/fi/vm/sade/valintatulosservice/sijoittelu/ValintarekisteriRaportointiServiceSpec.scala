@@ -35,7 +35,7 @@ class ValintarekisteriRaportointiServiceSpec extends ITSpecification with Valint
     valintatapajono.getJonosija must_== null
   }
 
-  def assertErillishakuHakija(hakija:HakijaDTO, hakukohdeOid:HakukohdeOid, valintatapajonoOid:ValintatapajonoOid) = {
+  def assertErillishakuHakija(hakija:HakijaDTO, hakukohdeOid:HakukohdeOid, valintatapajonoOid:ValintatapajonoOid, hyvaksytty:Int) = {
     hakija.getHakutoiveet.size must_== 1
     val hakutoive = hakija.getHakutoiveet.asScala.head
     hakutoive.getHakukohdeOid must_== hakukohdeOid.toString
@@ -44,6 +44,8 @@ class ValintarekisteriRaportointiServiceSpec extends ITSpecification with Valint
     valintatapajono.getValintatapajonoOid must_== valintatapajonoOid.toString
     valintatapajono.getTila must_== fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.HYVAKSYTTY
     valintatapajono.getIlmoittautumisTila must_== fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila.LASNA
+    valintatapajono.getHakeneet must_== 3
+    valintatapajono.getHyvaksytty must_== hyvaksytty
   }
 
     "hakemukset (kevytHakijaDto)" should {
@@ -181,10 +183,10 @@ class ValintarekisteriRaportointiServiceSpec extends ITSpecification with Valint
       val hakijaDtot = paginationObject.getResults.asScala
       hakijaDtot.size must_== 20
 
-      assertErillishakuHakija(hakijaDtot.find(_.getHakemusOid.equals(hakemusOid5.toString)).get, oidHaku2hakukohde1, oidHaku2hakukohde1jono1)
-      assertErillishakuHakija(hakijaDtot.find(_.getHakemusOid.equals(hakemusOid6.toString)).get, oidHaku2hakukohde1, oidHaku2hakukohde1jono1)
-      assertErillishakuHakija(hakijaDtot.find(_.getHakemusOid.equals(hakemusOid7.toString)).get, oidHaku2hakukohde1, oidHaku2hakukohde1jono2)
-      assertErillishakuHakija(hakijaDtot.find(_.getHakemusOid.equals(hakemusOid8.toString)).get, oidHaku2hakukohde1, oidHaku2hakukohde1jono2)
+      assertErillishakuHakija(hakijaDtot.find(_.getHakemusOid.equals(hakemusOid5.toString)).get, oidHaku2hakukohde1, oidHaku2hakukohde1jono1, 3)
+      assertErillishakuHakija(hakijaDtot.find(_.getHakemusOid.equals(hakemusOid6.toString)).get, oidHaku2hakukohde1, oidHaku2hakukohde1jono1, 3)
+      assertErillishakuHakija(hakijaDtot.find(_.getHakemusOid.equals(hakemusOid7.toString)).get, oidHaku2hakukohde1, oidHaku2hakukohde1jono2, 2)
+      assertErillishakuHakija(hakijaDtot.find(_.getHakemusOid.equals(hakemusOid8.toString)).get, oidHaku2hakukohde1, oidHaku2hakukohde1jono2, 2)
 
       hakijaDtot.find(_.getHakemusOid.equals(sijoittelunHakemusOid2.toString)).foreach{ hakija =>
         hakija.getHakutoiveet.size must_== 2
@@ -196,17 +198,23 @@ class ValintarekisteriRaportointiServiceSpec extends ITSpecification with Valint
         valintatapajono1.getTila must_== fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.HYLATTY
         valintatapajono1.getIlmoittautumisTila must_== fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila.EI_TEHTY
         valintatapajono1.getJonosija must_== Integer.parseInt("" + hakija.getHakijaOid.charAt(hakija.getHakijaOid.length - 1))
+        valintatapajono1.getHakeneet must_== 2
+        valintatapajono1.getHyvaksytty must_== 0
 
         val hakutoive2 = hakija.getHakutoiveet.asScala.find(_.getHakukohdeOid.equals(oidHaku2hakukohde1.toString)).get
         hakutoive2.getHakutoiveenValintatapajonot.size must_== 2
         val valintatapajono2 = hakutoive2.getHakutoiveenValintatapajonot.asScala.find(_.getValintatapajonoOid.equals(oidHaku2hakukohde1jono1.toString)).get
         valintatapajono2.getTila must_== fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.HYVAKSYTTY
         valintatapajono2.getIlmoittautumisTila must_== fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila.LASNA
+        valintatapajono2.getHakeneet must_== 3
+        valintatapajono2.getHyvaksytty must_== 3
         //valintatapajono2.getJonosija must_== null
         val valintatapajono3 = hakutoive2.getHakutoiveenValintatapajonot.asScala.find(_.getValintatapajonoOid.equals(oidHaku2hakukohde1jono2.toString)).get
         valintatapajono3.getTila must_== fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.HYLATTY
         valintatapajono3.getIlmoittautumisTila must_== fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila.LASNA
         //valintatapajono3.getJonosija must_== null
+        valintatapajono3.getHakeneet must_== 3
+        valintatapajono3.getHyvaksytty must_== 2
       }
       true must_== true
     }
