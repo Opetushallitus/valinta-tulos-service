@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
 import fi.vm.sade.sijoittelu.domain.{SijoitteluAjo, ValintatuloksenTila}
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi._
+import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
@@ -14,7 +15,9 @@ object SijoitteluajonHakija {
 
     val (hakemuksenValinnantulokset, hakutoiveetSijoittelussa) = hakija match {
       case Some(x) => (
-        repository.runBlocking(repository.getValinnantuloksetForHakemus(hakemusOid)).groupBy(_.hakukohdeOid),
+        timed(s"Getting valinnantulokset for hakemus $hakemusOid") {
+          repository.runBlocking(repository.getValinnantuloksetForHakemus(hakemusOid)).groupBy(_.hakukohdeOid)
+        },
         sijoitteluajoId.map(repository.getHakemuksenHakutoiveetSijoittelussa(hakemusOid, _).map(h => h.hakukohdeOid -> h).toMap).getOrElse(Map()))
       case None => (Map[HakukohdeOid, Set[Valinnantulos]](), Map[HakukohdeOid, HakutoiveRecord]())
     }
@@ -109,7 +112,9 @@ class SijoitteluajonHakijat(val repository: HakijaRepository with SijoitteluRepo
     (valintatapajonot.groupBy(_.hakemusOid).mapValues(_.groupBy(_.hakukohdeOid)), valintatapajonot.map(_.tilankuvausHash).distinct)
   }
   lazy val tilankuvauksetSijoittelussa = repository.getValinnantilanKuvaukset(tilankuvausHashit)
-  lazy val haunValinnantulokset: Map[HakukohdeOid, Map[HakemusOid, Set[Valinnantulos]]] = repository.runBlocking(repository.getValinnantuloksetForHaku(hakuOid)).groupBy(_.hakukohdeOid).mapValues(_.groupBy(_.hakemusOid))
+  lazy val haunValinnantulokset: Map[HakukohdeOid, Map[HakemusOid, Set[Valinnantulos]]] = timed(s"Getting haun $hakuOid valinnantulokset") {
+    repository.runBlocking(repository.getValinnantuloksetForHaku(hakuOid)).groupBy(_.hakukohdeOid).mapValues(_.groupBy(_.hakemusOid))
+  }
 
   lazy val hakutoiveSijoittelussa = sijoitteluajoId.map(repository.getHakukohteenHakemuksienHakutoiveSijoittelussa(hakukohdeOid, _).groupBy(_.hakemusOid)).getOrElse(Map())
   lazy val (hakutoiveenValintatapajonotSijoittelussa, hakutoiveenTilankuvausHashit) = {
@@ -117,7 +122,9 @@ class SijoitteluajonHakijat(val repository: HakijaRepository with SijoitteluRepo
     (valintatapajonot.groupBy(_.hakemusOid).mapValues(_.groupBy(_.hakukohdeOid)), valintatapajonot.map(_.tilankuvausHash).distinct)
   }
   lazy val hakutoiveenTilankuvauksetSijoittelussa = repository.getValinnantilanKuvaukset(hakutoiveenTilankuvausHashit)
-  lazy val hakukohteenValinnantulokset: Map[HakemusOid, Set[Valinnantulos]] = repository.runBlocking(repository.getValinnantuloksetForHakukohde(hakukohdeOid)).groupBy(_.hakemusOid)
+  lazy val hakukohteenValinnantulokset: Map[HakemusOid, Set[Valinnantulos]] = timed(s"Getting hakukohteen $hakukohdeOid valinnantulokset") {
+    repository.runBlocking(repository.getValinnantuloksetForHakukohde(hakukohdeOid)).groupBy(_.hakemusOid)
+  }
 
   def hakukohdeDtotSijoittelu(hakemusOid: HakemusOid): List[KevytHakutoiveDTO] = {
     hakutoiveetSijoittelussa.getOrElse(hakemusOid, List()).map(hakukohde => hakukohde.kevytDto(
