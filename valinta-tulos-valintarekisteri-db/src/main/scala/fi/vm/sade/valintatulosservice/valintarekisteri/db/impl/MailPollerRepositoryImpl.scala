@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 import java.sql.Timestamp
 import java.util.Date
 
+import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -36,8 +37,9 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
     val limitDateTime = new DateTime().minusHours(recheckIntervalHours).toDate
     val limitTimestamp: Timestamp = new Timestamp(limitDateTime.getTime)
 
-    val res = runBlocking(
-      sql"""select
+    val res = timed("Fetching mailable candidates", 100) {
+      runBlocking(
+        sql"""select
               hk.haku_oid,
               vt.hakukohde_oid, vt.valintatapajono_oid, vt.hakemus_oid,
               vo.previous_check, vo.sent, vo.done, vo.message
@@ -56,40 +58,49 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
               and (vo.previous_check is null or vo.previous_check < ${limitTimestamp})
             limit ${limit}
          """.as[ViestinnänOhjausKooste]).toSet
+    }
 
     res.foreach(kooste => upsertLastChecked(kooste))
     res
   }
 
   private def upsertLastChecked(kooste: ViestinnänOhjausKooste) = {
+
     val timestamp = new Timestamp(new Date().getTime)
-    runBlocking(
-      sqlu"""insert into viestinnan_ohjaus as vo
-             (hakukohde_oid, valintatapajono_oid, hakemus_oid, previous_check, sent, done, message)
-             values (${kooste.hakukohdeOid}, ${kooste.valintatapajonoOid}, ${kooste.hakemusOid}, ${timestamp}, ${kooste.sendTime}, ${kooste.doneTime}, ${kooste.message})
-             on conflict on constraint viestinnan_ohjaus_pkey do
-                update set previous_check = ${timestamp}
-                where vo.hakukohde_oid = ${kooste.hakukohdeOid}
-                  and vo.valintatapajono_oid = ${kooste.valintatapajonoOid}
-                  and vo.hakemus_oid = ${kooste.hakemusOid}
-        """)
+
+    timed(s"Updating previous_check timestamp for hakemusOid ${kooste.hakemusOid} in hakukohde ${kooste.hakukohdeOid}", 100) {
+      runBlocking(
+        sqlu"""insert into viestinnan_ohjaus as vo
+               (hakukohde_oid, valintatapajono_oid, hakemus_oid, previous_check, sent, done, message)
+               values (${kooste.hakukohdeOid}, ${kooste.valintatapajonoOid}, ${kooste.hakemusOid}, ${timestamp}, ${kooste.sendTime}, ${kooste.doneTime}, ${kooste.message})
+               on conflict on constraint viestinnan_ohjaus_pkey do
+                  update set previous_check = ${timestamp}
+                  where vo.hakukohde_oid = ${kooste.hakukohdeOid}
+                    and vo.valintatapajono_oid = ${kooste.valintatapajonoOid}
+                    and vo.hakemus_oid = ${kooste.hakemusOid}
+          """)
+    }
   }
 
   def alreadyMailed(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Option[java.util.Date] = {
-    runBlocking(
-      sql"""select sent
-            from viestinnan_ohjaus
-            where hakemus_oid = ${hakemusOid}
-            and hakukohde_oid = ${hakukohdeOid}
-            and sent is not null
-        """.as[Timestamp]).headOption
+    timed(s"Marking hakemusOid $hakemusOid as already mailed in hakukohde $hakukohdeOid", 100) {
+      runBlocking(
+        sql"""select sent
+              from viestinnan_ohjaus
+              where hakemus_oid = ${hakemusOid}
+              and hakukohde_oid = ${hakukohdeOid}
+              and sent is not null
+          """.as[Timestamp]).headOption
+    }
   }
 
   def addMessage(hakemus: HakemusMailStatus, hakukohde: HakukohdeMailStatus, message: String): Unit = {
-    runBlocking(
-      sqlu"""update viestinnan_ohjaus
-             set message = ${message}
-             where hakemus_oid = ${hakemus.hakemusOid} and hakukohde_oid = ${hakukohde.hakukohdeOid}""")
+    timed(s"Adding message for hakemusOid ${hakemus.hakemusOid} in hakukohde ${hakukohde.hakukohdeOid}", 100) {
+      runBlocking(
+        sqlu"""update viestinnan_ohjaus
+               set message = ${message}
+               where hakemus_oid = ${hakemus.hakemusOid} and hakukohde_oid = ${hakukohde.hakukohdeOid}""")
+    }
   }
 
   def markAsSent(hakemusOid: HakemusOid, hakukohteet: List[HakukohdeOid], mediat: List[String]): Unit = {
@@ -106,10 +117,12 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
 
   private def updateViestinnänOhjaus(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid,
                                  done: Timestamp, sent: Timestamp, message: String): Unit = {
-    runBlocking(
-      sqlu"""update viestinnan_ohjaus
-             set done = ${done}, sent = ${sent}, message = ${message}
-             where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}""")
+    timed(s"Updating viestinta_ohjaus for hakemusOid $hakemusOid in hakukohde $hakukohdeOid", 100) {
+      runBlocking(
+        sqlu"""update viestinnan_ohjaus
+               set done = ${done}, sent = ${sent}, message = ${message}
+               where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}""")
+    }
   }
 }
 
