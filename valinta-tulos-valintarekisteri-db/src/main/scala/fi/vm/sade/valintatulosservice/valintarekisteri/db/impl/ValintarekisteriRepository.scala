@@ -33,7 +33,12 @@ trait ValintarekisteriRepository extends ValintarekisteriResultExtractors with L
       }
     }
     Await.result(
-      db.run(operations.withStatementParameters(statementInit = st => st.setQueryTimeout(timeout.toSeconds.toInt))),
+      db.run(operations.withStatementParameters(statementInit = st => {
+        //if (st.toString.contains("viestinnan_ohjaus")) { TODO: remove (for testing)
+        //  println(st)
+        //}
+        st.setQueryTimeout(timeout.toSeconds.toInt)
+      })),
       timeout + Duration(1, TimeUnit.SECONDS)
     )
   }

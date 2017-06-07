@@ -1,19 +1,24 @@
 package fi.vm.sade.valintatulosservice.vastaanottomeili
 
+import java.util.Date
+
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.ValintatulosService
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.json.JsonFormats._
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, VastaanottoRecord}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.{Vastaanottotila => _}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, VastaanotaEhdollisesti, VastaanotaSitovasti}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{HakemusIdentifier, ViestinnänOhjausKooste}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, MailPollerRepository, VastaanottoRecord}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
-class MailPoller(valintatulosCollection: ValintatulosMongoCollection, valintatulosService: ValintatulosService, hakijaVastaanottoRepository: HakijaVastaanottoRepository, hakuService: HakuService, ohjausparameteritService: OhjausparametritService, val limit: Integer) extends Logging {
-
-  // TODO Change from Mongo to Postgres!
-
+class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
+                        valintatulosService: ValintatulosService,
+                        hakijaVastaanottoRepository: HakijaVastaanottoRepository,
+                        hakuService: HakuService,
+                        ohjausparameteritService: OhjausparametritService,
+                        val limit: Integer
+                     ) extends Logging {
   def etsiHaut: List[HakuOid] = {
     val found = (hakuService.kaikkiJulkaistutHaut match {
       case Right(haut) => haut
@@ -61,23 +66,24 @@ class MailPoller(valintatulosCollection: ValintatulosMongoCollection, valintatul
     }
   }
 
+  def alreadyMailed(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Option[Date] = mailPollerRepository.alreadyMailed(hakemusOid, hakukohdeOid)
 
   def pollForMailables(hakuOids: List[HakuOid] = etsiHaut, limit: Int = this.limit, excludeHakemusOids: Set[HakemusOid] = Set.empty): List[HakemusMailStatus] = {
-    val candidates: Set[HakemusIdentifier] = valintatulosCollection.pollForCandidates(hakuOids, limit, excludeHakemusOids = excludeHakemusOids)
+    val candidates: Set[ViestinnänOhjausKooste] = mailPollerRepository.pollForCandidates(hakuOids, limit, excludeHakemusOids = excludeHakemusOids)
     logger.info("candidates found {}", formatJson(candidates))
 
     // onlyIfHasKeskenVastaanottotiloja : if hakemuksenTulos.hakutoiveet.exists(hk => hk.vastaanottotila == Vastaanottotila.kesken)
     val statii: Set[HakemusMailStatus] = for {
-      candidateId <- candidates
-      hakemuksenTulos <- fetchHakemuksentulos(candidateId)
+      candidate <- candidates
+      hakemuksenTulos <- fetchHakemuksentulos(HakemusIdentifier(hakuOid = candidate.hakuOid, hakemusOid = candidate.hakemusOid))
     } yield {
       val (hakijaOid, hakuOid) = (hakemuksenTulos.hakijaOid, hakemuksenTulos.hakuOid)
       val vastaanotot = hakijaVastaanottoRepository.findVastaanottoHistoryHaussa(hakijaOid, hakuOid)
-      val uudetVastaanotot: Set[VastaanottoRecord] = candidateId.lastSent match {
+      val uudetVastaanotot: Set[VastaanottoRecord] = candidate.sendTime match {
         case Some(lastCheck) => vastaanotot.filter(_.timestamp.compareTo(lastCheck) >= 0)
         case None => vastaanotot
       }
-      val vanhatVastaanotot: Set[VastaanottoRecord] = candidateId.lastSent match {
+      val vanhatVastaanotot: Set[VastaanottoRecord] = candidate.sendTime match {
         case Some(lastCheck) => vastaanotot.filter(_.timestamp.before(lastCheck))
         case None => Set()
       }
@@ -104,15 +110,17 @@ class MailPoller(valintatulosCollection: ValintatulosMongoCollection, valintatul
         case MailStatus.MAILED =>
         // already mailed. why here?
         case MailStatus.NEVER_MAIL =>
-          valintatulosCollection.markAsNonMailable(hakemus.hakemusOid, hakukohde.hakukohdeOid, hakukohde.message)
+          mailPollerRepository.markAsNonMailable(hakemus.hakemusOid, hakukohde.hakukohdeOid, hakukohde.message)
         case _ =>
-          valintatulosCollection.addMessage(hakemus, hakukohde, hakukohde.message)
+          //mailPollerRepository.addMessage(hakemus, hakukohde, hakukohde.message) TODO: what to do here?
       }
     }
   }
 
+  def markAsSent(mailContents: LahetysKuittaus): Unit = mailPollerRepository.markAsSent(mailContents.hakemusOid, mailContents.hakukohteet, mailContents.mediat)
+
   private def hakukohdeMailStatusFor(hakemusOid: HakemusOid, hakutoive: Hakutoiveentulos, uudetVastaanotot: Set[VastaanottoRecord], vanhatVastaanotot: Set[VastaanottoRecord]) = {
-    val alreadySentVastaanottoilmoitus = valintatulosCollection.alreadyMailed(hakemusOid, hakutoive.hakukohdeOid).isDefined
+    val alreadySentVastaanottoilmoitus = mailPollerRepository.alreadyMailed(hakemusOid, hakutoive.hakukohdeOid).isDefined
     val (status, reason, message) =
       if (Vastaanotettavuustila.isVastaanotettavissa(hakutoive.vastaanotettavuustila) && !alreadySentVastaanottoilmoitus) {
         (MailStatus.SHOULD_MAIL, Some(MailReason.VASTAANOTTOILMOITUS), "Vastaanotettavissa (" + hakutoive.valintatila + ")")
@@ -120,8 +128,8 @@ class MailPoller(valintatulosCollection: ValintatulosMongoCollection, valintatul
         (MailStatus.NEVER_MAIL, None, "Ei hyväksytty (" + hakutoive.valintatila + ")")
       } else {
         val newestSitovaIsNotVastaanotettuByHakija =
-          sitovaVastaanottoInHakukohdeThatIsNotVastaanotettuByHakija(hakutoive, uudetVastaanotot)
-        if (newestSitovaIsNotVastaanotettuByHakija && vastaanottoMuuttuuEhdollisestaSitovaksi(hakutoive, vanhatVastaanotot, uudetVastaanotot)) {
+          sitovaVastaanottoInHakukohdeThatIsNotVastaanotettuByHakija(hakutoive.hakukohdeOid, uudetVastaanotot)
+        if (newestSitovaIsNotVastaanotettuByHakija && vastaanottoMuuttuuEhdollisestaSitovaksi(hakutoive.hakukohdeOid, vanhatVastaanotot, uudetVastaanotot)) {
           (MailStatus.SHOULD_MAIL, Some(MailReason.SITOVAN_VASTAANOTON_ILMOITUS), "Sitova vastaanotto")
         } else {
           val newestEhdollinenNotVastaanotettuByHakija =
@@ -151,28 +159,6 @@ class MailPoller(valintatulosCollection: ValintatulosMongoCollection, valintatul
       hakutoive.ehdollisestiHyvaksyttavissa)
   }
 
-  def ehdollinenVastaanottoInHakukohdeThatIsNotVastaanotettuByHakija(hakutoive: Hakutoiveentulos, uudetVastaanotot: Set[VastaanottoRecord]): Boolean = {
-    uudetVastaanotot.toList.sortBy(_.timestamp).headOption
-      .filter(_.hakukohdeOid == hakutoive.hakukohdeOid)
-      .filter(vastaanotto => vastaanotto.henkiloOid != vastaanotto.ilmoittaja)
-      .exists(_.action == VastaanotaEhdollisesti)
-  }
-
-  def vastaanottoMuuttuuEhdollisestaSitovaksi(hakutoive: Hakutoiveentulos, vanhatVastaanotot: Set[VastaanottoRecord], uudetVastaanotot: Set[VastaanottoRecord]) = {
-    (vanhatVastaanotot ++ uudetVastaanotot).toList
-      .filter(_.hakukohdeOid == hakutoive.hakukohdeOid)
-      .sortBy(_.timestamp).reverse
-      .tail.headOption
-      .exists(_.action == VastaanotaEhdollisesti)
-  }
-
-  def sitovaVastaanottoInHakukohdeThatIsNotVastaanotettuByHakija(hakutoive: Hakutoiveentulos, uudetVastaanotot: Set[VastaanottoRecord]): Boolean = {
-    uudetVastaanotot.toList
-      .filter(_.hakukohdeOid == hakutoive.hakukohdeOid)
-      .sortBy(_.timestamp).reverse.headOption
-      .filter(vastaanotto => vastaanotto.henkiloOid != vastaanotto.ilmoittaja)
-      .exists(_.action == VastaanotaSitovasti)
-  }
 
   private def mailStatusFor(hakemuksenTulos: Hakemuksentulos, uudetVastaanotot: Set[VastaanottoRecord], vanhatVastaanotot: Set[VastaanottoRecord]): HakemusMailStatus = {
     val hakutoiveet = hakemuksenTulos.hakutoiveet
@@ -195,6 +181,31 @@ class MailPoller(valintatulosCollection: ValintatulosMongoCollection, valintatul
         None
     }
   }
+
+
+
+  def ehdollinenVastaanottoInHakukohdeThatIsNotVastaanotettuByHakija(hakutoive: Hakutoiveentulos, uudetVastaanotot: Set[VastaanottoRecord]): Boolean = {
+  uudetVastaanotot.toList.sortBy(_.timestamp).headOption
+  .filter(_.hakukohdeOid == hakutoive.hakukohdeOid)
+  .filter(vastaanotto => vastaanotto.henkiloOid != vastaanotto.ilmoittaja)
+  .exists(_.action == VastaanotaEhdollisesti)
+}
+
+  def vastaanottoMuuttuuEhdollisestaSitovaksi(hakukohdeOid: HakukohdeOid, vanhatVastaanotot: Set[VastaanottoRecord], uudetVastaanotot: Set[VastaanottoRecord]) = {
+  (vanhatVastaanotot ++ uudetVastaanotot).toList
+  .filter(_.hakukohdeOid == hakukohdeOid)
+  .sortBy(_.timestamp).reverse
+  .tail.headOption
+  .exists(_.action == VastaanotaEhdollisesti)
+}
+
+  def sitovaVastaanottoInHakukohdeThatIsNotVastaanotettuByHakija(hakukohdeOid: HakukohdeOid, uudetVastaanotot: Set[VastaanottoRecord]): Boolean = {
+  uudetVastaanotot.toList
+  .filter(_.hakukohdeOid == hakukohdeOid)
+  .sortBy(_.timestamp).reverse.headOption
+  .filter(vastaanotto => vastaanotto.henkiloOid != vastaanotto.ilmoittaja)
+  .exists(_.action == VastaanotaSitovasti)
+}
 }
 
 

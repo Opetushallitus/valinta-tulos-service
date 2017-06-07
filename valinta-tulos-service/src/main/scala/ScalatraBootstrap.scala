@@ -16,15 +16,16 @@ import fi.vm.sade.valintatulosservice.migraatio.valinta.Valintalaskentakoostepal
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.security.Role
+import fi.vm.sade.valintatulosservice.sijoittelu._
 import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtures
 import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{SijoitteluContext, SijoitteluSpringContext, SijoittelunTulosRestClient, StreamingHakijaDtoClient}
-import fi.vm.sade.valintatulosservice.sijoittelu.{ValintarekisteriValintatulosRepository, _}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.ValintarekisteriService
-import fi.vm.sade.valintatulosservice.vastaanottomeili.{MailDecorator, MailPoller, ValintatulosMongoCollection}
+import fi.vm.sade.valintatulosservice.vastaanottomeili._
 import org.scalatra._
 import org.slf4j.LoggerFactory
 
@@ -100,8 +101,6 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository(), valintatulosRepository)
     lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService,
       valintatulosRepository, valintarekisteriDb, valintarekisteriDb)
-    lazy val valintatulosCollection = new ValintatulosMongoCollection(appConfig.settings.valintatulosMongoConfig)
-    lazy val mailPoller = new MailPoller(valintatulosCollection, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 100)
     lazy val valintarekisteriService = new ValintarekisteriService(valintarekisteriDb, valintarekisteriDb, hakukohdeRecordService)
     lazy val authorizer = new OrganizationHierarchyAuthorizer(appConfig)
     lazy val yhdenPaikanSaannos = new YhdenPaikanSaannos(hakuService, valintarekisteriDb)
@@ -122,6 +121,9 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       valintarekisteriDb, hakukohdeRecordService, hakuService, valintalaskentakoostepalveluService, sijoitteluContext)
     lazy val sijoitteluntulosMigraatioScheduler = new SijoittelunTulosMigraatioScheduler(migraatioService, appConfig)
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
+    lazy val mailPoller: MailPollerAdapter = new MailPollerAdapter(valintarekisteriDb, valintatulosService,
+      valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 100)
+
 
     if (scheduledMigration) {
       sijoitteluntulosMigraatioScheduler.startMigrationScheduler()
@@ -156,7 +158,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService), "/lukuvuosimaksu")
       context.mount(new MuutoshistoriaServlet(valinnantulosService, valintarekisteriDb, skipAuditForServiceCall = true), "/muutoshistoria")
       context.mount(new PrivateValintatulosServlet(valintatulosService, vastaanottoService, ilmoittautumisService), "/haku")
-      context.mount(new EmailStatusServlet(mailPoller, valintatulosCollection, new MailDecorator(new HakemusRepository(), valintatulosCollection, hakuService, oppijanTunnistusService)), "/vastaanottoposti")
+      context.mount(new EmailStatusServlet(mailPoller, new MailDecorator(new HakemusRepository(), valintarekisteriDb, hakuService, oppijanTunnistusService)), "/vastaanottoposti")
       context.mount(new EnsikertalaisuusServlet(valintarekisteriDb, appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus")
       context.mount(new HakijanVastaanottoServlet(vastaanottoService), "/vastaanotto")
       context.mount(new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, ldapUserService), "/erillishaku/valinnan-tulos")
