@@ -108,21 +108,21 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
   private def konvertoiHakijat(hyvaksytyt: Boolean, ilmanHyvaksyntaa: Boolean, vastaanottaneet: Boolean, hakukohdeOids: java.util.List[String], count: Integer, index: Integer, valintatulokset: java.util.List[Valintatulos], hakukohteet: java.util.List[Hakukohde]): HakijaPaginationObject = {
 
     def filter(hakija: HakijaDTO): Boolean = {
-          var isPartOfHakukohdeList = false
-          var isHyvaksytty = false
-          var isVastaanottanut = false
-          import scala.collection.JavaConversions._
-          for (hakutoiveDTO <- hakija.getHakutoiveet) {
-            if (hakukohdeOids != null && hakukohdeOids.contains(hakutoiveDTO.getHakukohdeOid)) isPartOfHakukohdeList = true
-            if (hakutoiveDTO.getVastaanottotieto eq ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI) isVastaanottanut = true
-            import scala.collection.JavaConversions._
-            for (valintatapajono <- hakutoiveDTO.getHakutoiveenValintatapajonot) {
-              if ((valintatapajono.getTila eq HakemuksenTila.HYVAKSYTTY) || (valintatapajono.getTila eq VARASIJALTA_HYVAKSYTTY)) isHyvaksytty = true
-            }
-          }
-          ((hakukohdeOids == null || hakukohdeOids.size <= 0) || isPartOfHakukohdeList) &&
-            ((!hyvaksytyt || isHyvaksytty) && (!ilmanHyvaksyntaa || !isHyvaksytty) && (!vastaanottaneet || isVastaanottanut))
+      var isPartOfHakukohdeList = false
+      var isHyvaksytty = false
+      var isVastaanottanut = false
+      import scala.collection.JavaConversions._
+      for (hakutoiveDTO <- hakija.getHakutoiveet) {
+        if (hakukohdeOids != null && hakukohdeOids.contains(hakutoiveDTO.getHakukohdeOid)) isPartOfHakukohdeList = true
+        if (hakutoiveDTO.getVastaanottotieto eq ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI) isVastaanottanut = true
+        import scala.collection.JavaConversions._
+        for (valintatapajono <- hakutoiveDTO.getHakutoiveenValintatapajonot) {
+          if ((valintatapajono.getTila eq HakemuksenTila.HYVAKSYTTY) || (valintatapajono.getTila eq VARASIJALTA_HYVAKSYTTY)) isHyvaksytty = true
         }
+      }
+      ((hakukohdeOids == null || hakukohdeOids.size <= 0) || isPartOfHakukohdeList) &&
+        ((!hyvaksytyt || isHyvaksytty) && (!ilmanHyvaksyntaa || !isHyvaksytty) && (!vastaanottaneet || isVastaanottanut))
+    }
 
     @Deprecated //sivutusta ei käytetä mistään?
     def applyPagination(result: java.util.List[HakijaDTO], count: Integer, index: Integer): java.util.List[HakijaDTO] = {
