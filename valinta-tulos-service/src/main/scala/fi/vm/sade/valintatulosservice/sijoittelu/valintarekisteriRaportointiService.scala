@@ -79,12 +79,15 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
       valinnantulokset.filterNot(vt => sijoitteluajonHakukohteet.asScala.map(_.getOid).contains(vt.hakukohdeOid.toString))
         .groupBy(_.hakukohdeOid).mapValues(_.groupBy(_.valintatapajonoOid)))
 
-    val valintatulokset = Timer.timed("valinnantulos-Valintatulos-konversio", 1000) {
-      valinnantulokset.map(_.toValintatulos()).toList.asJava
-    }
     val hakukohteet = new util.ArrayList[Hakukohde]()
     hakukohteet.addAll(sijoitteluajonHakukohteet)
     hakukohteet.addAll(hakukohteetIlmanSijoittelua)
+
+    laskeHakeneetJaHyvaksytytHakukohteille(hakukohteet, valinnantulokset.toList)
+
+    val valintatulokset = Timer.timed("valinnantulos-Valintatulos-konversio", 1000) {
+      valinnantulokset.map(_.toValintatulos()).toList.asJava
+    }
 
     //laskeAlinHyvaksyttyPisteetEnsimmaiselleHakijaryhmalle(hakukohteet) TODO? ks alhaalla
     konvertoiHakijat(hyvaksytyt.getOrElse(false), ilmanHyvaksyntaa.getOrElse(false), vastaanottaneet.getOrElse(false),
@@ -104,6 +107,18 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
 
   override def hakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO] =
     tryOrThrow(new SijoitteluajonHakijat(repository, sijoitteluAjo, hakukohdeOid).kevytDto)
+
+  private def laskeHakeneetJaHyvaksytytHakukohteille(hakukohteet: java.util.List[Hakukohde], valinnantulokset: List[Valinnantulos]) = {
+    val valinnantuloksetByHakukohdeOid = valinnantulokset.groupBy(_.hakukohdeOid)
+    hakukohteet.asScala.foreach(hakukohde => {
+      val valinnantuloksetByValintatapajonoOid = valinnantuloksetByHakukohdeOid.getOrElse(HakukohdeOid(hakukohde.getOid), List()).groupBy(_.valintatapajonoOid)
+      hakukohde.getValintatapajonot.asScala.foreach(valintatapajono => {
+        val valintatapajononValinnantulokset = valinnantuloksetByValintatapajonoOid.getOrElse(ValintatapajonoOid(valintatapajono.getOid), List())
+        valintatapajono.setHyvaksytty(valintatapajononValinnantulokset.count(vt => vt.valinnantila == Hyvaksytty || vt.valinnantila == VarasijaltaHyvaksytty))
+        valintatapajono.setHakemustenMaara(valintatapajononValinnantulokset.size)
+      })
+    })
+  }
 
   private def konvertoiHakijat(hyvaksytyt: Boolean, ilmanHyvaksyntaa: Boolean, vastaanottaneet: Boolean, hakukohdeOids: java.util.List[String], count: Integer, index: Integer, valintatulokset: java.util.List[Valintatulos], hakukohteet: java.util.List[Hakukohde]): HakijaPaginationObject = {
 
