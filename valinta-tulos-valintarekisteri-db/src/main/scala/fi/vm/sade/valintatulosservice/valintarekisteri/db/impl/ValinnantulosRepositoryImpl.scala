@@ -209,33 +209,37 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   }
 
   override def getValinnantuloksetForHaku(hakuOid: HakuOid): DBIO[Set[Valinnantulos]] = {
-      sql"""select ti.hakukohde_oid,
-                ti.valintatapajono_oid,
-                ti.hakemus_oid,
-                ti.henkilo_oid,
-                ti.tila,
-                tu.ehdollisesti_hyvaksyttavissa,
-                eh.ehdollisen_hyvaksymisen_ehto_koodi,
-                eh.ehdollisen_hyvaksymisen_ehto_fi,
-                eh.ehdollisen_hyvaksymisen_ehto_sv,
-                eh.ehdollisen_hyvaksymisen_ehto_en,
-                tu.julkaistavissa,
-                tu.hyvaksytty_varasijalta,
-                tu.hyvaksy_peruuntunut,
-                v.action,
-                i.tila,
-                ti.tilan_viimeisin_muutos,
-                v.timestamp
-            from valinnantilat as ti
-            join hakukohteet hk on ti.hakukohde_oid = hk.hakukohde_oid and hk.haku_oid = ${hakuOid}
-            left join valinnantulokset as tu on tu.valintatapajono_oid = ti.valintatapajono_oid
-                and tu.hakemus_oid = ti.hakemus_oid
-            left join vastaanotot as v on v.hakukohde = hk.hakukohde_oid
-                and v.henkilo = ti.henkilo_oid and v.deleted is null
-            left join ehdollisen_hyvaksynnan_ehto as eh on eh.valintatapajono_oid = ti.valintatapajono_oid
-                and eh.hakemus_oid = ti.hakemus_oid
-            left join ilmoittautumiset as i on i.henkilo = ti.henkilo_oid
-                and i.hakukohde = ti.hakukohde_oid""".as[Valinnantulos].map(_.toSet)
+    /* This query was very slow in HT-2 (for some reason the joins were exremely slow)
+     * Fixed for now with a hacky join ocndition that forces all the joined tables
+     * to be related to the hakukohde_oids that belong to haku (hakuOid) */
+    sql"""with haun_hakukohteet as (select hakukohde_oid from hakukohteet where haku_oid = ${hakuOid})
+          select ti.hakukohde_oid,
+                 ti.valintatapajono_oid,
+                 ti.hakemus_oid,
+                 ti.henkilo_oid,
+                 ti.tila,
+                 tu.ehdollisesti_hyvaksyttavissa,
+                 eh.ehdollisen_hyvaksymisen_ehto_koodi,
+                 eh.ehdollisen_hyvaksymisen_ehto_fi,
+                 eh.ehdollisen_hyvaksymisen_ehto_sv,
+                 eh.ehdollisen_hyvaksymisen_ehto_en,
+                 tu.julkaistavissa,
+                 tu.hyvaksytty_varasijalta,
+                 tu.hyvaksy_peruuntunut,
+                 v.action,
+                 i.tila,
+                 ti.tilan_viimeisin_muutos,
+                 v.timestamp
+          from valinnantilat as ti
+            join hakukohteet hk on ti.hakukohde_oid = hk.hakukohde_oid and hk.haku_oid = '1.2.246.562.29.75203638285'
+            left join valinnantulokset as tu on tu.valintatapajono_oid = ti.valintatapajono_oid and tu.hakemus_oid = ti.hakemus_oid
+              and tu.hakukohde_oid in (select hakukohde_oid from haun_hakukohteet)
+            left join vastaanotot as v on v.hakukohde = hk.hakukohde_oid and v.henkilo = ti.henkilo_oid and v.deleted is null
+              and v.hakukohde in (select hakukohde_oid from haun_hakukohteet)
+            left join ehdollisen_hyvaksynnan_ehto as eh on eh.valintatapajono_oid = ti.valintatapajono_oid and eh.hakemus_oid = ti.hakemus_oid
+              and eh.hakukohde_oid in (select hakukohde_oid from haun_hakukohteet)
+            left join ilmoittautumiset as i on i.henkilo = ti.henkilo_oid and i.hakukohde = ti.hakukohde_oid
+              and i.hakukohde in (select hakukohde_oid from haun_hakukohteet)""".as[Valinnantulos].map(_.toSet)
     }
 
   override def getHaunValinnantilat(hakuOid: HakuOid): List[(HakukohdeOid, ValintatapajonoOid, HakemusOid, Valinnantila)] =
