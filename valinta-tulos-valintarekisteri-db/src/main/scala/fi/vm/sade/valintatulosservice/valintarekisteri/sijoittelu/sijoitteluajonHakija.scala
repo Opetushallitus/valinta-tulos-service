@@ -112,8 +112,13 @@ class SijoitteluajonHakijat(val repository: HakijaRepository with SijoitteluRepo
     (valintatapajonot.groupBy(_.hakemusOid).mapValues(_.groupBy(_.hakukohdeOid)), valintatapajonot.map(_.tilankuvausHash).distinct)
   }
   lazy val tilankuvauksetSijoittelussa = repository.getValinnantilanKuvaukset(tilankuvausHashit)
-  lazy val haunValinnantulokset: Map[HakukohdeOid, Map[HakemusOid, Set[Valinnantulos]]] = timed(s"Getting haun $hakuOid valinnantulokset") {
-    repository.runBlocking(repository.getValinnantuloksetForHaku(hakuOid)).groupBy(_.hakukohdeOid).mapValues(_.groupBy(_.hakemusOid))
+
+  lazy val (haunValinnantulokset:Map[HakukohdeOid, Map[HakemusOid, Set[Valinnantulos]]], haunHakutoiveetByHakija:Map[HakemusOid, Set[HakukohdeOid]]) = {
+    // Do this hacky thing to avoid iterating haunValinnantulokset every time just to get hakijan hakukohteet in haku.
+    timed(s"Getting and hrouping haun $hakuOid valinnantulokset") {
+      val tulokset = repository.runBlocking(repository.getValinnantuloksetForHaku(hakuOid))
+      (tulokset.groupBy(_.hakukohdeOid).mapValues(_.groupBy(_.hakemusOid)),tulokset.groupBy(_.hakemusOid).mapValues(_.map(_.hakukohdeOid)))
+    }
   }
 
   lazy val hakutoiveSijoittelussa = sijoitteluajoId.map(repository.getHakukohteenHakemuksienHakutoiveSijoittelussa(hakukohdeOid, _).groupBy(_.hakemusOid)).getOrElse(Map())
@@ -145,9 +150,9 @@ class SijoitteluajonHakijat(val repository: HakijaRepository with SijoitteluRepo
 
   def kevytDto: List[KevytHakijaDTO] = {
     hakijat.map(hakija => {
-      val hakijanHakutoiveetSijoittelussa = hakutoiveetSijoittelussa.get(hakija.hakemusOid).toSet.flatten.map(_.hakukohdeOid)
-      val hakijanHakutoiveetValinnantuloksissa = haunValinnantulokset.filter(_._2.keySet.contains(hakija.hakemusOid)).keySet
-      val hakijanHakutoiveetEiSijoittelua = hakijanHakutoiveetValinnantuloksissa.filterNot(hakijanHakutoiveetSijoittelussa)
+      val hakijanHakutoiveetSijoittelussa: Set[HakukohdeOid] = hakutoiveetSijoittelussa.get(hakija.hakemusOid).toSet.flatten.map(_.hakukohdeOid)
+      val hakijanHakutoiveetValinnantuloksissa: Set[HakukohdeOid] = haunHakutoiveetByHakija.getOrElse(hakija.hakemusOid, Set())
+      val hakijanHakutoiveetEiSijoittelua: Set[HakukohdeOid] = hakijanHakutoiveetValinnantuloksissa.filterNot(hakijanHakutoiveetSijoittelussa)
 
       hakija.kevytDto(
         hakukohdeDtotSijoittelu(hakija.hakemusOid).union(hakukohdeDtotEiSijoittelua(hakija.hakemusOid, hakijanHakutoiveetEiSijoittelua))
