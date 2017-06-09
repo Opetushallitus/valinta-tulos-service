@@ -2,11 +2,12 @@ package fi.vm.sade.valintatulosservice
 
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.concurrent.TimeoutException
 
 import fi.vm.sade.auditlog.Target.Builder
-import fi.vm.sade.auditlog.{Changes, Target, Audit}
+import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.kela.{KelaService, Vastaanotto, Henkilo}
+import fi.vm.sade.valintatulosservice.kela.{Henkilo, KelaService, Vastaanotto}
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import org.scalatra.{InternalServerError, NoContent, Ok}
@@ -25,6 +26,9 @@ class KelaServlet(audit: Audit, kelaService: KelaService, val sessionRepository:
   }
 
   error {
+    case a: TimeoutException => {
+      InternalServerError(a.getMessage)
+    }
     case e: Throwable => {
       InternalServerError(e.getMessage)
     }
