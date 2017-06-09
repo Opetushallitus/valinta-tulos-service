@@ -37,16 +37,23 @@ class KelaHealthCheckServlet(val audit: Audit, val sessionRepository: SessionRep
     response.setStatus(200)
     response.setContentType("text/plain")
 
-    !result.isEmpty match {
-      case true => {
-        val json = parse(result)
-        val henkilo : Option[fi.vm.sade.valintatulosservice.kela.Henkilo] = Option(json.extract[fi.vm.sade.valintatulosservice.kela.Henkilo])
-        henkilo match {
-          case Some(henkilo) => if(henkilo.henkilotunnus == hetu) "OK" else "ERROR"
-          case _ => "ERROR"
+    statusCode match {
+      // Accept NoContent() as valid response, because in production health check will be called with a fake social security ID
+      case 204 => "OK"
+      case 200 => {
+        !result.isEmpty match {
+          case true => {
+            val json = parse(result)
+            val henkilo: Option[fi.vm.sade.valintatulosservice.kela.Henkilo] = Option(json.extract[fi.vm.sade.valintatulosservice.kela.Henkilo])
+            henkilo match {
+              case Some(henkilo) => if (henkilo.henkilotunnus == hetu) "OK" else "ERROR"
+              case _ => "ERROR"
+            }
+          }
+          case false => "ERROR"
         }
       }
-      case false => "ERROR"
+      case _ => "ERROR"
     }
   }
 }
