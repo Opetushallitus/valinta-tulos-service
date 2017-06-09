@@ -24,6 +24,12 @@ class KelaServlet(audit: Audit, kelaService: KelaService, val sessionRepository:
 
   }
 
+  error {
+    case e: Throwable => {
+      InternalServerError(e.getMessage)
+    }
+  }
+
   post("/vastaanotot/henkilo") {
     implicit val authenticated = authenticate
     authorize(Role.KELA_READ)
@@ -34,16 +40,11 @@ class KelaServlet(audit: Audit, kelaService: KelaService, val sessionRepository:
     audit.log(auditInfo.user, VastaanottotietojenLuku, builder.build(), new Changes.Builder().build())
     parseParams() match {
       case HetuQuery(henkilotunnus, startingAt) =>
-        try {
-          kelaService.fetchVastaanototForPersonWithHetu(henkilotunnus, startingAt) match {
-            case Some(henkilo) =>
-              Ok(henkilo)
-            case _ =>
-              NoContent()
-          }
-        } catch {
-          case e: Exception =>
-            InternalServerError(e.getMessage)
+        kelaService.fetchVastaanototForPersonWithHetu(henkilotunnus, startingAt) match {
+          case Some(henkilo) =>
+            Ok(henkilo)
+          case _ =>
+            NoContent()
         }
     }
   }
