@@ -231,7 +231,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                  ti.tilan_viimeisin_muutos,
                  v.timestamp
           from valinnantilat as ti
-            join hakukohteet hk on ti.hakukohde_oid = hk.hakukohde_oid and hk.haku_oid = '1.2.246.562.29.75203638285'
+            join hakukohteet hk on ti.hakukohde_oid = hk.hakukohde_oid and hk.haku_oid = ${hakuOid}
             left join valinnantulokset as tu on tu.valintatapajono_oid = ti.valintatapajono_oid and tu.hakemus_oid = ti.hakemus_oid
               and tu.hakukohde_oid in (select hakukohde_oid from haun_hakukohteet)
             left join vastaanotot as v on v.hakukohde = hk.hakukohde_oid and v.henkilo = ti.henkilo_oid and v.deleted is null
