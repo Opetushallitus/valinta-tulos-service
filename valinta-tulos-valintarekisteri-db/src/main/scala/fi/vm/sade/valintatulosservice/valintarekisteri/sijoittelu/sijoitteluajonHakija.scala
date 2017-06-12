@@ -131,7 +131,7 @@ class SijoitteluajonHakijat(val repository: HakijaRepository with SijoitteluRepo
 
   lazy val (haunValinnantulokset:Map[HakukohdeOid, Map[HakemusOid, Set[Valinnantulos]]], haunHakutoiveetByHakija:Map[HakemusOid, Set[HakukohdeOid]]) = {
     // Do this hacky thing to avoid iterating haunValinnantulokset every time just to get hakijan hakukohteet in haku.
-    timed(s"Getting and hrouping haun $hakuOid valinnantulokset") {
+    timed(s"Getting and grouping haun $hakuOid valinnantulokset") {
       val tulokset = repository.runBlocking(repository.getValinnantuloksetForHaku(hakuOid))
       (tulokset.groupBy(_.hakukohdeOid).mapValues(_.groupBy(_.hakemusOid)),tulokset.groupBy(_.hakemusOid).mapValues(_.map(_.hakukohdeOid)))
     }
