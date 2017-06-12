@@ -9,7 +9,7 @@ import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationO
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, ValintatuloksenTila}
 import fi.vm.sade.sijoittelu.tulos.service.impl.comparators.HakijaDTOComparator
 import fi.vm.sade.sijoittelu.tulos.service.impl.converters.{RaportointiConverterImpl, SijoitteluTulosConverterImpl}
-import fi.vm.sade.utils.Timer
+import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.{SijoitteluajonHakijat, SijoitteluajonHakukohteet}
@@ -70,28 +70,35 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
                           vastaanottaneet: Option[Boolean],
                           hakukohdeOids: Option[List[HakukohdeOid]],
                           count: Option[Int],
-                          index: Option[Int]): HakijaPaginationObject = {
+                          index: Option[Int]): HakijaPaginationObject = timed("RaportointiService.hakemukset", 1000) {
 
-    val valinnantulokset = repository.runBlocking(repository.getValinnantuloksetForHaku(hakuOid))
+    val valinnantulokset = timed("RaportointiService.hakemukset -> valinnantulokset haulle", 1000) { repository.runBlocking(repository.getValinnantuloksetForHaku(hakuOid)) }
 
-    val sijoitteluajonHakukohteet = sijoitteluajoId.map(id => tryOrThrow(new SijoitteluajonHakukohteet(repository, id).entity)).getOrElse(new java.util.ArrayList[Hakukohde]())
-    def hakukohteetIlmanSijoittelua = hakukohteetValinnantuloksista(
-      valinnantulokset.filterNot(vt => sijoitteluajonHakukohteet.asScala.map(_.getOid).contains(vt.hakukohdeOid.toString))
-        .groupBy(_.hakukohdeOid).mapValues(_.groupBy(_.valintatapajonoOid)))
+    val sijoitteluajonHakukohteet = sijoitteluajoId.map(id => timed("RaportointiService.hakemukset -> sijoitteluajon hakukohteet", 1000) {
+      tryOrThrow(new SijoitteluajonHakukohteet(repository, id).entity)
+    }).getOrElse(new java.util.ArrayList[Hakukohde]())
+
+    def hakukohteetIlmanSijoittelua = timed("RaportointiService.hakemukset -> hakukohteet valinnantuloksista", 1000) {
+      val sijoitellutHakukohteet = sijoitteluajonHakukohteet.asScala.map(_.getOid)
+
+      hakukohteetValinnantuloksista( valinnantulokset.filterNot(vt => sijoitellutHakukohteet.contains(vt.hakukohdeOid.toString))
+          .groupBy(_.hakukohdeOid).mapValues(_.groupBy(_.valintatapajonoOid))
+      )
+    }
 
     val hakukohteet = new util.ArrayList[Hakukohde]()
     hakukohteet.addAll(sijoitteluajonHakukohteet)
     hakukohteet.addAll(hakukohteetIlmanSijoittelua)
 
-    laskeHakeneetJaHyvaksytytHakukohteille(hakukohteet, valinnantulokset.toList)
+    timed("RaportointiService.hakemukset -> lasketaan hakeneet ja hyväksytyt", 1000) { laskeHakeneetJaHyvaksytytHakukohteille(hakukohteet, valinnantulokset.toList) }
 
-    val valintatulokset = Timer.timed("valinnantulos-Valintatulos-konversio", 1000) {
+    val valintatulokset = timed("RaportointiService.hakemukset -> valinnantulos-Valintatulos-konversio", 1000) {
       valinnantulokset.map(_.toValintatulos()).toList.asJava
     }
 
     //laskeAlinHyvaksyttyPisteetEnsimmaiselleHakijaryhmalle(hakukohteet) TODO? ks alhaalla
-    konvertoiHakijat(hyvaksytyt.getOrElse(false), ilmanHyvaksyntaa.getOrElse(false), vastaanottaneet.getOrElse(false),
-      hakukohdeOids.getOrElse(List()).map(_.toString).asJava, toInteger(count), toInteger(index), valintatulokset, hakukohteet)
+    timed("RaportointiService.hakemukset -> hakijoiden konvertointi", 1000) { konvertoiHakijat(hyvaksytyt.getOrElse(false), ilmanHyvaksyntaa.getOrElse(false), vastaanottaneet.getOrElse(false),
+      hakukohdeOids.getOrElse(List()).map(_.toString).asJava, toInteger(count), toInteger(index), valintatulokset, hakukohteet) }
   }
 
   private def toInteger(x:Option[Int]):java.lang.Integer = x match {
