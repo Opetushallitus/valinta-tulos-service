@@ -42,7 +42,7 @@ trait ValintarekisteriRaportointiService {
 }
 
 class CachedValintarekisteriRaportointiServiceImpl(wrappedService: ValintarekisteriRaportointiServiceImpl) extends ValintarekisteriRaportointiService {
-  private val cachedValinnantulokset = TTLOptionalMemoize.memoize[HakuOid, Set[Valinnantulos]](hakuOid => wrappedService.getHaunValinnantuloksetEither(hakuOid), 4 * 60 * 60)
+  //private val cachedValinnantulokset = TTLOptionalMemoize.memoize[HakuOid, Set[Valinnantulos]](hakuOid => wrappedService.getHaunValinnantuloksetEither(hakuOid), 20 * 60)
   private val cachedHakukohteet = TTLOptionalMemoize.memoize[Long, java.util.List[Hakukohde]](sijoitteluajoId => wrappedService.getSijoitteluajonHakukohteetEither(Some(sijoitteluajoId)), 4 * 60 * 60)
 
   private def eitherToThrow[T](t: => Either[Throwable,T]):T = t match {
@@ -61,7 +61,7 @@ class CachedValintarekisteriRaportointiServiceImpl(wrappedService: Valintarekist
                           hakukohdeOids: Option[List[HakukohdeOid]],
                           count: Option[Int],
                           index: Option[Int]) = {
-    val valinnantulokset: Set[Valinnantulos] = eitherToThrow(cachedValinnantulokset(hakuOid))
+    val valinnantulokset: Set[Valinnantulos] = wrappedService.getHaunValinnantulokset(hakuOid) //eitherToThrow(cachedValinnantulokset(hakuOid))
     val sijoitteluajonHakukohteet: util.List[Hakukohde] = sijoitteluajoId.map(id => eitherToThrow(cachedHakukohteet(id))).getOrElse(new util.ArrayList[Hakukohde]())
     wrappedService.getHakijaPaginationObject(sijoitteluajoId, hakuOid, hyvaksytyt, ilmanHyvaksyntaa, vastaanottaneet, hakukohdeOids, count, index, valinnantulokset, sijoitteluajonHakukohteet)
   }
