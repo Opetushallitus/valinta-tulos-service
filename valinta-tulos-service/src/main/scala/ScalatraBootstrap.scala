@@ -49,6 +49,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
 
     val migrationMode = isTrue(System.getProperty("valinta-rekisteri-migration-mode"))
     val scheduledMigration = isTrue(System.getProperty("valinta-rekisteri-scheduled-migration"))
+    val scheduledDeleteSijoitteluAjot = isTrue(System.getProperty("valinta-rekisteri-scheduled-delete-sijoitteluajot"))
     val initMongoContext = !appConfig.settings.readFromValintarekisteri
     if(initMongoContext) {
       logger.warn("Initialisoidaan Mongo-context ja luetaan sijoittelun tulokset Mongosta!")
@@ -120,13 +121,18 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val migraatioService = new SijoitteluntulosMigraatioService(sijoittelunTulosClient, appConfig,
       valintarekisteriDb, hakukohdeRecordService, hakuService, valintalaskentakoostepalveluService, sijoitteluContext)
     lazy val sijoitteluntulosMigraatioScheduler = new SijoittelunTulosMigraatioScheduler(migraatioService, appConfig)
+    lazy val sijoitteluAjoDeleteScheduler = new SijoitteluAjoDeleteScheduler(valintarekisteriDb, appConfig)
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
     lazy val mailPoller: MailPollerAdapter = new MailPollerAdapter(valintarekisteriDb, valintatulosService,
       valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 100)
 
 
+    if(scheduledDeleteSijoitteluAjot) {
+      sijoitteluAjoDeleteScheduler.startScheduler()
+    }
+
     if (scheduledMigration) {
-      sijoitteluntulosMigraatioScheduler.startMigrationScheduler()
+      sijoitteluntulosMigraatioScheduler.startScheduler()
     }
 
     if(migrationMode) {

@@ -21,6 +21,9 @@ trait MigraatioRepository extends ValintarekisteriRepository {
   def deleteAllTulokset(hakuOid: HakuOid): Unit
   def saveSijoittelunHash(hakuOid: HakuOid, hash: String): Unit
   def getSijoitteluHash(hakuOid: HakuOid, hash: String): Option[String]
+
+  def findSijoitteluAjotSkippingFirst(hakuOid: HakuOid, offset: Int): Seq[Long]
+  def listHakuAndSijoitteluAjoCount(): Seq[(HakuOid, Int)]
 }
 
 case class MigratedIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, timestamp: Timestamp)

@@ -11,6 +11,8 @@ import org.joda.time.DateTime
 import slick.driver.PostgresDriver.api._
 import slick.jdbc.GetResult
 
+import scala.collection.immutable
+
 
 trait MailPollerRepositoryImpl extends MailPollerRepository with ValintarekisteriRepository with Logging {
 

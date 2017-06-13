@@ -60,6 +60,8 @@ valinta-tulos-service.read-from-valintarekisteri={{read_from_valintarekisteri}}
 valinta-tulos-service.haku-app-url=https://{{host_virkailija}}/haku-app
 valinta-tulos-service.authentication-service-url=https://{{host_virkailija}}/authentication-service
 valinta-tulos-service.scheduled-migration.start-hour=23
+valinta-tulos-service.scheduled-delete-sijoitteluajo.start-hour=23
+valinta-tulos-service.scheduled-delete-sijoitteluajo.limit=20
 valinta-tulos-service.scheduled-migration.end-hour=7
 
 # KELA
