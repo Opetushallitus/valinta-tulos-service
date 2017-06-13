@@ -171,4 +171,39 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
            from pistetiedot
            where sijoitteluajo_id = ${sijoitteluajoId} and hakemus_oid = ${hakemusOid}""".as[PistetietoRecord]).toList
     }
+
+  override def getHakijanHakutoiveidenHakijatSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId:Long):Map[(HakukohdeOid,ValintatapajonoOid),Int] =
+    timed("", 100) {
+      runBlocking(
+       sql"""
+         with hakijan_hakutoiveet as (select hakukohde_oid, valintatapajono_oid from jonosijat
+           where sijoitteluajo_id = ${sijoitteluajoId} and hakemus_oid = ${hakemusOid})
+         select j.hakukohde_oid, j.valintatapajono_oid, count(j.hakemus_oid) from jonosijat j
+           join hakijan_hakutoiveet hh on j.hakukohde_oid = hh.hakukohde_oid and j.valintatapajono_oid = hh.valintatapajono_oid
+           where j.sijoitteluajo_id = ${sijoitteluajoId}
+           group by j.hakukohde_oid, j.valintatapajono_oid""".as[(HakukohdeOid,ValintatapajonoOid,Int)]).map(r => (r._1, r._2) -> r._3).toMap
+  }
+
+  override def getHakijanHakutoiveidenHakijatValinnantuloksista(hakemusOid: HakemusOid):Map[(HakukohdeOid,ValintatapajonoOid),Int] =
+    timed("", 100) {
+      runBlocking(
+        sql"""
+            with hakijan_hakutoiveet as (select hakukohde_oid, valintatapajono_oid from valinnantilat
+              where hakemus_oid = ${hakemusOid})
+            select v.hakukohde_oid, v.valintatapajono_oid, count(v.hakemus_oid) from valinnantilat v
+              join hakijan_hakutoiveet hh on v.hakukohde_oid = hh.hakukohde_oid and v.valintatapajono_oid = hh.valintatapajono_oid
+              group by v.hakukohde_oid, v.valintatapajono_oid""".as[(HakukohdeOid,ValintatapajonoOid,Int)]).map(r => (r._1, r._2) -> r._3).toMap
+    }
+
+  override def getHakijanHakutoiveidenHyvaksytytValinnantuloksista(hakemusOid: HakemusOid):Map[(HakukohdeOid,ValintatapajonoOid),Int] =
+    timed("", 100) {
+      runBlocking(
+        sql"""
+            with hakijan_hakutoiveet as (select hakukohde_oid, valintatapajono_oid from valinnantilat
+              where hakemus_oid = ${hakemusOid})
+            select v.hakukohde_oid, v.valintatapajono_oid, count(v.hakemus_oid) from valinnantilat v
+              join hakijan_hakutoiveet hh on v.hakukohde_oid = hh.hakukohde_oid and v.valintatapajono_oid = hh.valintatapajono_oid
+              where v.tila IN ('Hyvaksytty', 'VarasijaltaHyvaksytty')
+              group by v.hakukohde_oid, v.valintatapajono_oid""".as[(HakukohdeOid,ValintatapajonoOid,Int)]).map(r => (r._1, r._2) -> r._3).toMap
+    }
 }

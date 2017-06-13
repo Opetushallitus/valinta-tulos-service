@@ -1,10 +1,11 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde
 
+import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.MonadHelper
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakukohdeRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, HakukohdeRecord, Kausi, Kevat, Syksy}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, HakukohdeRecord, Kausi}
 
 import scala.util.{Failure, Success, Try}
 
@@ -16,6 +17,11 @@ class HakukohdeRecordService(hakuService: HakuService, hakukohdeRepository: Haku
 
   def getHakukohteidenKoulutuksenAlkamiskausi(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[(HakukohdeOid, Option[Kausi])]] = {
     getHakukohdeRecords(oids).right.map(_.map(hakukohde =>
+      (hakukohde.oid, if (hakukohde.yhdenPaikanSaantoVoimassa) Some(hakukohde.koulutuksenAlkamiskausi) else None)))
+  }
+
+  def getHakukohteidenKoulutuksenAlkamiskausi(hakuOid: HakuOid, oids: Seq[HakukohdeOid]): Either[Throwable, Seq[(HakukohdeOid, Option[Kausi])]] = {
+    getHakukohdeRecords(hakuOid, oids.toSet).right.map(_.map(hakukohde =>
       (hakukohde.oid, if (hakukohde.yhdenPaikanSaantoVoimassa) Some(hakukohde.koulutuksenAlkamiskausi) else None)))
   }
 
@@ -32,11 +38,44 @@ class HakukohdeRecordService(hakuService: HakuService, hakukohdeRepository: Haku
     MonadHelper.sequence(for {oid <- oids.toStream} yield getHakukohdeRecord(oid))
   }
 
+  def getHakukohdeRecords(hakuOid: HakuOid, oids: Set[HakukohdeOid]): Either[Throwable, Seq[HakukohdeRecord]] = {
+    try {
+      val hakukohteet: Seq[HakukohdeRecord] = hakukohdeRepository.findHaunHakukohteet(hakuOid).filter(h => oids.contains(h.oid)).toSeq
+      val missingHakukohteet: Set[HakukohdeOid] = oids.diff(hakukohteet.map(_.oid).toSet)
+      val missingHakukohdeRecords: Seq[HakukohdeRecord] = getMissingHakukohdeRecords(hakuOid, missingHakukohteet)
+      Right(hakukohteet ++ missingHakukohdeRecords)
+    } catch {
+      case e: Exception => Left(e)
+    }
+  }
+
+  private def getMissingHakukohdeRecords(hakuOid: HakuOid, missingHakukohteet: Set[HakukohdeOid]) = {
+    if (missingHakukohteet.nonEmpty) {
+      timed(s"Fetch and store new hakukohdes for haku $hakuOid") {
+        MonadHelper.sequence(for {oid <- missingHakukohteet.toStream} yield fetchAndStoreHakukohde(oid)) match {
+          case Right(hakukohdeRecords) =>
+            logger.info(s"Created ${hakukohdeRecords.size} hakukohdes for $hakuOid. HakukohdeOids: ${hakukohdeRecords.map(_.oid)}")
+            hakukohdeRecords
+          case Left(e) => throw e
+        }
+      }
+    } else {
+      List()
+    }
+  }
+
   def getHakukohdeRecord(oid: HakukohdeOid): Either[Throwable, HakukohdeRecord] = {
     // hakukohdeRecord is cached in DB to enable vastaanotto queries
     Try(hakukohdeRepository.findHakukohde(oid)) match {
       case Success(Some(hakukohde)) => Right(hakukohde)
       case Success(None) => fetchAndStoreHakukohdeDetails(oid)
+      case Failure(e) => Left(e)
+    }
+  }
+
+  def fetchAndStoreHakukohde(oid: HakukohdeOid): Either[Throwable, HakukohdeRecord] = {
+    Try(fetchAndStoreHakukohdeDetails(oid)) match {
+      case Success(hakukohde) => hakukohde
       case Failure(e) => Left(e)
     }
   }

@@ -31,6 +31,13 @@ object SijoitteluajonHakija {
       }
     }
 
+    //TODO: Tämä voi olla väärin, jos sijoitteluajoId ei ole latest
+    val hakutoiveidenHakeneet = repository.getHakijanHakutoiveidenHakijatValinnantuloksista(hakemusOid)
+    //TODO: Ei tarvitse hakea, jos kaikki hakutoiveet sijoittelussa
+    val hakutoiveidenHyvaksytyt = repository.getHakijanHakutoiveidenHyvaksytytValinnantuloksista(hakemusOid)
+    val hakutoiveidenHakeneetSijoittelussa = sijoitteluajoId.map(repository.getHakijanHakutoiveidenHakijatSijoittelussa(hakemusOid, _)).getOrElse(Map())
+
+
     def hakukohdeDtoSijoittelu(hakukohdeOid: HakukohdeOid,
                                valintatapajonotSijoittelussa: Map[HakukohdeOid, List[HakutoiveenValintatapajonoRecord]],
                                pistetiedotSijoittelussa: Map[ValintatapajonoOid, List[PistetietoRecord]],
@@ -43,7 +50,12 @@ object SijoitteluajonHakija {
       val pistetiedot = pistetiedotSijoittelussa.filterKeys(valintatapajonoOidit.contains).values.flatten.map(HakutoiveenPistetietoRecord(_)).toList.distinct.map(_.dto)
       val hakijaryhmat = hakijaryhmatSijoittelussa.getOrElse(hakukohdeOid, List()).map(_.dto)
       val valintatapajonoDtot = valintatapajonot.map{ j =>
-        j.dto(valinnantulokset.find(_.valintatapajonoOid.equals(j.valintatapajonoOid)), j.tilankuvaukset(tilankuvauksetSijoittelussa.get(j.tilankuvausHash)))
+        j.dto(
+          valinnantulokset.find(_.valintatapajonoOid.equals(j.valintatapajonoOid)),
+          j.tilankuvaukset(tilankuvauksetSijoittelussa.get(j.tilankuvausHash)),
+          hakutoiveidenHakeneetSijoittelussa.getOrElse((hakukohdeOid, j.valintatapajonoOid), 0),
+          hakutoiveidenHyvaksytyt.getOrElse((hakukohdeOid, j.valintatapajonoOid), 0)
+        )
       }
 
       hakutoive.dto(
@@ -58,10 +70,14 @@ object SijoitteluajonHakija {
       val valinnantulokset = hakemuksenValinnantulokset.getOrElse(hakukohdeOid, List())
       val hakutoive = HakutoiveRecord(hakemusOid, Some(1), hakukohdeOid, None)
       val valintatapajonoDtot = valinnantulokset.map{ j =>
-        HakutoiveenValintatapajonoRecord.dto(j)
+        HakutoiveenValintatapajonoRecord.dto(j,
+          hakutoiveidenHakeneet.getOrElse((hakukohdeOid, j.valintatapajonoOid), 0),
+          hakutoiveidenHyvaksytyt.getOrElse((hakukohdeOid, j.valintatapajonoOid), 0))
       }.toList
       hakutoive.dto(getVastaanotto(hakukohdeOid), valintatapajonoDtot, List(), List())
     }
+
+
 
     if (hakutoiveetSijoittelussa.isEmpty) {
       hakija.map(_.dto(hakemuksenValinnantulokset.keySet.map(hakukohdeDtoEiSijoittelua).toList))
@@ -115,7 +131,7 @@ class SijoitteluajonHakijat(val repository: HakijaRepository with SijoitteluRepo
 
   lazy val (haunValinnantulokset:Map[HakukohdeOid, Map[HakemusOid, Set[Valinnantulos]]], haunHakutoiveetByHakija:Map[HakemusOid, Set[HakukohdeOid]]) = {
     // Do this hacky thing to avoid iterating haunValinnantulokset every time just to get hakijan hakukohteet in haku.
-    timed(s"Getting and hrouping haun $hakuOid valinnantulokset") {
+    timed(s"Getting and grouping haun $hakuOid valinnantulokset") {
       val tulokset = repository.runBlocking(repository.getValinnantuloksetForHaku(hakuOid))
       (tulokset.groupBy(_.hakukohdeOid).mapValues(_.groupBy(_.hakemusOid)),tulokset.groupBy(_.hakemusOid).mapValues(_.map(_.hakukohdeOid)))
     }

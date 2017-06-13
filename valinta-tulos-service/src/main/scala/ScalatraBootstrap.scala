@@ -84,7 +84,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         SijoittelunTulosRestClient(sijoitteluContext, appConfig), new StreamingHakijaDtoClient(appConfig))
     } else {
       val valintarekisteriValintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
-      val valintarekisteriRaportointiService = new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintarekisteriValintatulosDao)
+      val valintarekisteriRaportointiService = new CachedValintarekisteriRaportointiServiceImpl(new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintarekisteriValintatulosDao))
       val valintarekisteriSijoittelunTulosClient = new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb)
       ( valintarekisteriRaportointiService,
         valintarekisteriValintatulosDao,
