@@ -20,6 +20,8 @@ case class VtsApplicationSettings(config: Config) extends ApplicationSettings(co
   val organisaatioServiceUrl = withConfig(_.getString("cas.service.organisaatio-service"))
   val rootOrganisaatioOid = withConfig(_.getString("root.organisaatio.oid"))
   val scheduledMigrationStart = withConfig(_.getInt("valinta-tulos-service.scheduled-migration.start-hour"))
+  val scheduledDeleteSijoitteluAjoStart = withConfig(_.getInt("valinta-tulos-service.scheduled-delete-sijoitteluajo.start-hour"))
+  val scheduledDeleteSijoitteluAjoLimit = withConfig(_.getInt("valinta-tulos-service.scheduled-delete-sijoitteluajo.limit"))
   val scheduledMigrationEnd = withConfig(_.getInt("valinta-tulos-service.scheduled-migration.end-hour"))
   val oiliHetutonUrl = withConfig(_.getString("omatsivut.oili.hetutonUrl"))
   val readFromValintarekisteri = BooleanUtils.isTrue(withConfig(_.getBoolean("valinta-tulos-service.read-from-valintarekisteri")))
