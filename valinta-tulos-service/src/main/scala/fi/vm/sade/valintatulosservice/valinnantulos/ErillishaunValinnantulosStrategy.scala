@@ -33,7 +33,8 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
       case (Hylatty, ValintatuloksenTila.KESKEN) |
            (Varalla, ValintatuloksenTila.KESKEN) |
            (Peruuntunut, ValintatuloksenTila.KESKEN) |
-           (Perunut, ValintatuloksenTila.EI_VASTAANOTETTU_MAARA_AIKANA) | //TODO (Peruuntunut, OttanutVastaanToisenPaikan)
+           (Peruuntunut, ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN) |
+           (Perunut, ValintatuloksenTila.EI_VASTAANOTETTU_MAARA_AIKANA) |
            (VarasijaltaHyvaksytty, ValintatuloksenTila.KESKEN) |
            (VarasijaltaHyvaksytty, ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT) |
            (VarasijaltaHyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI) |
