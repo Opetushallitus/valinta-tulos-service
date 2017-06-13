@@ -311,7 +311,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
 
   @Deprecated //Ei käytetä/sivutusta ei käytetä
   def sijoittelunTulokset(hakuOid: HakuOid, sijoitteluajoId: String, hyvaksytyt: Option[Boolean], ilmanHyvaksyntaa: Option[Boolean], vastaanottaneet: Option[Boolean],
-                          hakukohdeOid: Option[List[HakukohdeOid]], count: Option[Int], index: Option[Int]): HakijaPaginationObject = {
+                          hakukohdeOid: Option[List[HakukohdeOid]], count: Option[Int], index: Option[Int]): HakijaPaginationObject = timed(s"Getting sijoittelun tulokset for haku ${hakuOid}") {
     val haunVastaanototByHakijaOid = timed("Fetch haun vastaanotot for haku: " + hakuOid, 1000) {
       virkailijaVastaanottoRepository.findHaunVastaanotot(hakuOid).groupBy(_.henkiloOid)
     }
@@ -321,7 +321,11 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
       case None => Map()
     }
 
-    val personOidsByHakemusOids = hakemusRepository.findHakemukset(hakuOid).map(h => (h.oid, h.henkiloOid)).toMap
+    val personOidsByHakemusOids: Map[HakemusOid, String] = hakukohdeOid match {
+      case Some(oids) => timed("Fetching hakemukset from hakemusRepository for haku and hakukohteet", 1000) (hakemusRepository.findPersonOids(hakuOid, oids))
+      case _ => timed("Fetching hakemukset from hakemusRepository for haku", 1000) (hakemusRepository.findPersonOids(hakuOid))
+    }
+    
     try {
       val haku = hakuService.getHaku(hakuOid) match {
         case Right(h) => h
