@@ -18,6 +18,7 @@ trait MigraatioRepository extends ValintarekisteriRepository {
   def deleteValinnantilaHistorySavedBySijoitteluajoAndMigration(sijoitteluajoId: String): Unit
 
   def deleteSijoittelunTulokset(hakuOid: HakuOid): Unit
+  def deleteSijoittelunTuloksetForSijoitteluAjot(hakuOid: HakuOid, sijoitteluAjoIds: Seq[Long]): Unit
   def deleteAllTulokset(hakuOid: HakuOid): Unit
   def saveSijoittelunHash(hakuOid: HakuOid, hash: String): Unit
   def getSijoitteluHash(hakuOid: HakuOid, hash: String): Option[String]

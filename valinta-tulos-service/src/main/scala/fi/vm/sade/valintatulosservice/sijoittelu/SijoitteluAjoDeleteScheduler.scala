@@ -27,6 +27,7 @@ class SijoitteluAjoDeleteScheduler(migraatioRepository: MigraatioRepository with
       sijoitteluAjosToBeDestroyed.foreach {
         case (haku, ids) =>
           logger.info(s"Deleting ${ids.size} sijoitteluajos from $haku! ${ids.take(3)} ...")
+          migraatioRepository.deleteSijoittelunTuloksetForSijoitteluAjot(haku,ids)
       }
 
     }

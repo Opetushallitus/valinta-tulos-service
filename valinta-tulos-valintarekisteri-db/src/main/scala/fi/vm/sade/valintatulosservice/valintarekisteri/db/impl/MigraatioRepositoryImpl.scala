@@ -305,7 +305,9 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
     logger.info(s"Found ${sijoitteluAjoIds.length} sijoitteluajos to delete of haku $hakuOid : $sijoitteluAjoIds")
     sijoitteluAjoIds.foreach(deleteSingleSijoitteluAjo(hakuOid, _))
   }
-
+  override def deleteSijoittelunTuloksetForSijoitteluAjot(hakuOid: HakuOid, sijoitteluAjoIds: Seq[Long]): Unit = {
+    sijoitteluAjoIds.foreach(deleteSingleSijoitteluAjo(hakuOid, _))
+  }
   /**
     * Note that this will probably produce too long transactions for large results if everything
     * is deleted at once.
