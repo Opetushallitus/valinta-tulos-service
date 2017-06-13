@@ -446,11 +446,11 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
 
   def findSijoitteluAjotSkippingFirst(hakuOid: HakuOid, offset: Int): Seq[Long] = {
     runBlocking(
-      sql"""select id from sijoitteluajot where haku_oid = ${hakuOid} order by start desc offset $offset""".as[Long])
+      sql"""select id from sijoitteluajot where haku_oid = ${hakuOid} and poistonesto = false order by start desc offset $offset""".as[Long])
   }
 
   def listHakuAndSijoitteluAjoCount(): Seq[(HakuOid, Int)] = {
     runBlocking(
-      sql"""select haku_oid, count(*) from sijoitteluajot group by haku_oid order by count desc""".as[(HakuOid,Int)])
+      sql"""select haku_oid, count(*) from sijoitteluajot where poistonesto = false group by haku_oid order by count desc""".as[(HakuOid,Int)])
   }
 }
