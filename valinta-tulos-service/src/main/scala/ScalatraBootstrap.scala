@@ -126,6 +126,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val mailPoller: MailPollerAdapter = new MailPollerAdapter(valintarekisteriDb, valintatulosService,
       valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 100)
 
+    sijoitteluAjoDeleteScheduler.task.run()
 
     if(scheduledDeleteSijoitteluAjot) {
       sijoitteluAjoDeleteScheduler.startScheduler()
