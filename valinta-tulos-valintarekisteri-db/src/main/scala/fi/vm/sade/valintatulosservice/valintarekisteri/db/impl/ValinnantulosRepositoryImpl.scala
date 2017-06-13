@@ -462,10 +462,10 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
              ehdollisen_hyvaksymisen_ehto_fi = excluded.ehdollisen_hyvaksymisen_ehto_fi,
              ehdollisen_hyvaksymisen_ehto_sv = excluded.ehdollisen_hyvaksymisen_ehto_sv,
              ehdollisen_hyvaksymisen_ehto_en = excluded.ehdollisen_hyvaksymisen_ehto_en
-           where ( ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_koodi <> excluded.ehdollisen_hyvaksymisen_ehto_koodi
-             or ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_fi <> excluded.ehdollisen_hyvaksymisen_ehto_fi
-             or ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_sv <> excluded.ehdollisen_hyvaksymisen_ehto_sv
-             or ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_en <> excluded.ehdollisen_hyvaksymisen_ehto_en )
+           where ( ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_koodi is distinct from excluded.ehdollisen_hyvaksymisen_ehto_koodi
+             or ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_fi is distinct from excluded.ehdollisen_hyvaksymisen_ehto_fi
+             or ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_sv is distinct from excluded.ehdollisen_hyvaksymisen_ehto_sv
+             or ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_en is distinct from excluded.ehdollisen_hyvaksymisen_ehto_en )
              and (
               ${ifUnmodifiedSince}::timestamptz is null or
               ehdollisen_hyvaksynnan_ehto.system_time @> ${ifUnmodifiedSince})""".flatMap {
