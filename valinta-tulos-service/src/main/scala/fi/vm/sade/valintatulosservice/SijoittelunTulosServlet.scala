@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
+import com.google.gson.GsonBuilder
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
 import fi.vm.sade.sijoittelu.tulos.dto.HakukohdeDTO
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
@@ -24,6 +25,8 @@ class SijoittelunTulosServlet(hyvaksymiskirjeService: HyvaksymiskirjeService,
 
   override protected def applicationDescription: String = "Sijoittelun Tulos REST API"
 
+  val gson = new GsonBuilder().create()
+
   get("/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakukohde/:hakukohdeOid") {
     implicit val authenticated = authenticate
     val ai: AuditInfo = auditInfo
@@ -40,7 +43,7 @@ class SijoittelunTulosServlet(hyvaksymiskirjeService: HyvaksymiskirjeService,
       val lukuvuosimaksu: Seq[Lukuvuosimaksu] = lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, ai)
       val hyvaksymiskirje: Set[Hyvaksymiskirje] = hyvaksymiskirjeService.getHyvaksymiskirjeet(hakukohdeOid, ai)
 
-      Ok(JsonFormats.javaObjectToJsonString(SijoittelunTulos(hakukohdeBySijoitteluAjo,lukuvuosimaksu,hyvaksymiskirje)))
+      Ok(gson.toJson(SijoittelunTulos(hakukohdeBySijoitteluAjo,lukuvuosimaksu,hyvaksymiskirje)))
     } catch {
       case e: NotFoundException =>
         val message = e.getMessage
