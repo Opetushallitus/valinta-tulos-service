@@ -18,6 +18,9 @@ class MongoRaportointiService(service:MongoService) extends ValintarekisteriRapo
   def hakemus(hakuOid: HakuOid, sijoitteluajoId: String, hakemusOid: HakemusOid): Option[HakijaDTO] =
     Option(service.hakemus(hakuOid.toString, sijoitteluajoId, hakemusOid.toString))
 
+  override def hakemukset(sijoitteluAjo: SijoitteluAjo, cachedHakukohteet: Boolean = false): HakijaPaginationObject =
+    hakemukset(SyntheticSijoitteluAjoForHakusWithoutSijoittelu.getSijoitteluajoId(sijoitteluAjo), HakuOid(sijoitteluAjo.getHakuOid), None, None, None, None, None, None)
+
   override def hakemukset(sijoitteluajoId: Option[Long], hakuOid: HakuOid, hyvaksytyt: Option[Boolean], ilmanHyvaksyntaa: Option[Boolean],
                           vastaanottaneet: Option[Boolean], hakukohdeOids: Option[List[HakukohdeOid]], count: Option[Int],
                           index: Option[Int]): HakijaPaginationObject = {

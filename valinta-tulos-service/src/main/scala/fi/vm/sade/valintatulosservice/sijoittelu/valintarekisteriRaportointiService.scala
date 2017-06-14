@@ -10,13 +10,13 @@ import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, ValintatuloksenTila}
 import fi.vm.sade.sijoittelu.tulos.service.impl.comparators.HakijaDTOComparator
 import fi.vm.sade.sijoittelu.tulos.service.impl.converters.{RaportointiConverterImpl, SijoitteluTulosConverterImpl}
 import fi.vm.sade.utils.Timer.timed
+import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.{SijoitteluajonHakijat, SijoitteluajonHakukohteet}
 
 import scala.util.{Failure, Success, Try}
 import scala.collection.JavaConverters._
-
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 
 trait ValintarekisteriRaportointiService {
@@ -24,8 +24,7 @@ trait ValintarekisteriRaportointiService {
 
   def hakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO]
 
-  def hakemukset(sijoitteluAjo: SijoitteluAjo):HakijaPaginationObject =
-    hakemukset(SyntheticSijoitteluAjoForHakusWithoutSijoittelu.getSijoitteluajoId(sijoitteluAjo), HakuOid(sijoitteluAjo.getHakuOid), None, None, None, None, None, None)
+  def hakemukset(sijoitteluAjo: SijoitteluAjo, cachedHakukohteet: Boolean = false):HakijaPaginationObject
 
   @Deprecated //sivutuksen (count/index) voi poistaa
   def hakemukset(sijoitteluajoId: Option[Long],
@@ -41,13 +40,18 @@ trait ValintarekisteriRaportointiService {
   def hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo: SijoitteluAjo, hakukohdeOid:HakukohdeOid): List[KevytHakijaDTO]
 }
 
-class CachedValintarekisteriRaportointiServiceImpl(wrappedService: ValintarekisteriRaportointiServiceImpl) extends ValintarekisteriRaportointiService {
+class CachedValintarekisteriRaportointiServiceImpl(wrappedService: ValintarekisteriRaportointiServiceImpl) extends ValintarekisteriRaportointiService with Logging {
   //private val cachedValinnantulokset = TTLOptionalMemoize.memoize[HakuOid, Set[Valinnantulos]](hakuOid => wrappedService.getHaunValinnantuloksetEither(hakuOid), 20 * 60)
   private val cachedHakukohteet = TTLOptionalMemoize.memoize[Long, java.util.List[Hakukohde]](sijoitteluajoId => wrappedService.getSijoitteluajonHakukohteetEither(Some(sijoitteluajoId)), 4 * 60 * 60)
 
   private def eitherToThrow[T](t: => Either[Throwable,T]):T = t match {
     case t if t.isRight => t.right.get
     case t => throw t.left.get
+  }
+
+  override def hakemukset(sijoitteluAjo: SijoitteluAjo, cachedHakukohteet: Boolean = false) = {
+    if(cachedHakukohteet) hakemukset(SyntheticSijoitteluAjoForHakusWithoutSijoittelu.getSijoitteluajoId(sijoitteluAjo), HakuOid(sijoitteluAjo.getHakuOid), None, None, None, None, None, None)
+    else wrappedService.hakemukset(sijoitteluAjo)
   }
 
   override def getSijoitteluAjo(sijoitteluajoId: Long) = wrappedService.getSijoitteluAjo(sijoitteluajoId)
@@ -61,6 +65,7 @@ class CachedValintarekisteriRaportointiServiceImpl(wrappedService: Valintarekist
                           hakukohdeOids: Option[List[HakukohdeOid]],
                           count: Option[Int],
                           index: Option[Int]) = {
+    logger.warn(s"Haetaan sijoitteluajon ${sijoitteluajoId} hakukohteet cachesta, jos ne ovat siellä.")
     val valinnantulokset: Set[Valinnantulos] = wrappedService.getHaunValinnantulokset(hakuOid) //eitherToThrow(cachedValinnantulokset(hakuOid))
     val sijoitteluajonHakukohteet: util.List[Hakukohde] = sijoitteluajoId.map(id => eitherToThrow(cachedHakukohteet(id))).getOrElse(new util.ArrayList[Hakukohde]())
     wrappedService.getHakijaPaginationObject(sijoitteluajoId, hakuOid, hyvaksytyt, ilmanHyvaksyntaa, vastaanottaneet, hakukohdeOids, count, index, valinnantulokset, sijoitteluajonHakukohteet)
@@ -68,7 +73,7 @@ class CachedValintarekisteriRaportointiServiceImpl(wrappedService: Valintarekist
 }
 
 class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with SijoitteluRepository with ValinnantulosRepository,
-                                             valintatulosDao: ValintarekisteriValintatulosDao) extends ValintarekisteriRaportointiService {
+                                             valintatulosDao: ValintarekisteriValintatulosDao) extends ValintarekisteriRaportointiService with Logging {
   private val sijoitteluTulosConverter = new SijoitteluTulosConverterImpl
   private val raportointiConverter = new RaportointiConverterImpl
 
@@ -93,6 +98,11 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
         }).toList
       )
     }).toList.asJava
+  }
+
+  override def hakemukset(sijoitteluAjo: SijoitteluAjo, cachedHakukohteet: Boolean = false) = {
+    if(cachedHakukohteet) logger.warn("Sijoitteluajon hakukohteiden cache ei ole päällä.")
+    hakemukset(SyntheticSijoitteluAjoForHakusWithoutSijoittelu.getSijoitteluajoId(sijoitteluAjo), HakuOid(sijoitteluAjo.getHakuOid), None, None, None, None, None, None)
   }
 
   @Deprecated //sivutuksen (count/index) voi poistaa
