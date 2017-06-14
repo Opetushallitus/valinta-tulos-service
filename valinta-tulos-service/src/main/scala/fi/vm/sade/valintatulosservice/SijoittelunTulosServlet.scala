@@ -16,10 +16,6 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra.{NotFound, Ok}
 import org.scalatra.swagger.{Swagger, SwaggerEngine}
 
-import scala.collection.JavaConverters._
-
-case class SijoittelunTulos(hakukohdeBySijoitteluAjo: HakukohdeDTO, lukuvuosimaksut: util.List[Lukuvuosimaksu], hyvaksymiskirjeet: util.Set[Hyvaksymiskirje], valinnantulokset: util.Set[Valinnantulos])
-
 class SijoittelunTulosServlet(valinnantulosService: ValinnantulosService,
                               hyvaksymiskirjeService: HyvaksymiskirjeService,
                               lukuvuosimaksuService: LukuvuosimaksuService, hakuService: HakuService,
@@ -47,17 +43,15 @@ class SijoittelunTulosServlet(valinnantulosService: ValinnantulosService,
 
     try {
       val hakukohdeBySijoitteluAjo: HakukohdeDTO = sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session)
-      val lukuvuosimaksu: util.List[Lukuvuosimaksu] = lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, ai).asJava
-      val hyvaksymiskirje: util.Set[Hyvaksymiskirje] = hyvaksymiskirjeService.getHyvaksymiskirjeet(hakukohdeOid, ai).asJava
+      val lukuvuosimaksu: Seq[Lukuvuosimaksu] = lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, ai)
+      val hyvaksymiskirje: Set[Hyvaksymiskirje] = hyvaksymiskirjeService.getHyvaksymiskirjeet(hakukohdeOid, ai)
 
 
       val (lastModified, valinnantulokset: Set[Valinnantulos]) = valinnantulosService.getValinnantuloksetForHakukohde(hakukohdeOid, ai).map(a => (Option(a._1), a._2)).getOrElse((None, Set()))
-
-      val vts: util.Set[Valinnantulos] = valinnantulokset.asJava
-
       val modifiedHeaders: Map[String, String] = lastModified.map(l => Map("Last-Modified" -> createLastModifiedHeader(l))).getOrElse(Map())
 
-      Ok(gson.toJson(SijoittelunTulos(hakukohdeBySijoitteluAjo,lukuvuosimaksu,hyvaksymiskirje, vts)), headers = modifiedHeaders)
+      val resultJson = s"""{"sijoittelunTulokset":${JsonFormats.javaObjectToJsonString(hakukohdeBySijoitteluAjo)},"valintatulokset":${JsonFormats.formatJson(valinnantulokset)},"kirjeLahetetty":${JsonFormats.formatJson(hyvaksymiskirje)},"lukuvuosimaksut":${JsonFormats.formatJson(lukuvuosimaksu)}}"""
+      Ok(resultJson, headers = modifiedHeaders)
     } catch {
       case e: NotFoundException =>
         val message = e.getMessage
