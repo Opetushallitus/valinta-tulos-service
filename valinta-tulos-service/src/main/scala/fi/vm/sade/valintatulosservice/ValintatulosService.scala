@@ -318,7 +318,10 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
     }
     val hakemustenTulokset = hakemustenTulosByHaku(hakuOid, Some(haunVastaanototByHakijaOid), cachedHakukohteet = true)
     val hakutoiveidenTuloksetByHakemusOid: Map[HakemusOid, List[Hakutoiveentulos]] = hakemustenTulokset match {
-      case Some(hakemustenTulosIterator) => hakemustenTulosIterator.map(h => (h.hakemusOid, h.hakutoiveet)).toMap
+      case Some(hakemustenTulosIterator) =>
+        /* ValintatulosService:173: `() => hakemusRepository.findHakemukset(hakuOid)`
+         * results are only realized here when the iterator is converted to map!! */
+        timed("Realizing hakemukset mongo calls from hakemuksenTulokset") {hakemustenTulosIterator.map(h => (h.hakemusOid, h.hakutoiveet)).toMap}
       case None => Map()
     }
 
