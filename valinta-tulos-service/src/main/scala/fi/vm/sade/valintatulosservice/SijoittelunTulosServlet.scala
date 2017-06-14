@@ -11,12 +11,12 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{Hyvaksymiskirje, SessionRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{Hyvaksymiskirje, SessionRepository, Valintaesitys}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra.{NotFound, Ok}
 import org.scalatra.swagger.{Swagger, SwaggerEngine}
 
-class SijoittelunTulosServlet(valinnantulosService: ValinnantulosService,
+class SijoittelunTulosServlet(valintaesitysService: ValintaesitysService, valinnantulosService: ValinnantulosService,
                               hyvaksymiskirjeService: HyvaksymiskirjeService,
                               lukuvuosimaksuService: LukuvuosimaksuService, hakuService: HakuService,
                               authorizer: OrganizationHierarchyAuthorizer,
@@ -45,12 +45,12 @@ class SijoittelunTulosServlet(valinnantulosService: ValinnantulosService,
       val hakukohdeBySijoitteluAjo: HakukohdeDTO = sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session)
       val lukuvuosimaksu: Seq[Lukuvuosimaksu] = lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, ai)
       val hyvaksymiskirje: Set[Hyvaksymiskirje] = hyvaksymiskirjeService.getHyvaksymiskirjeet(hakukohdeOid, ai)
-
+      val valintaesitys: Set[Valintaesitys] = valintaesitysService.get(hakukohdeOid, ai)
 
       val (lastModified, valinnantulokset: Set[Valinnantulos]) = valinnantulosService.getValinnantuloksetForHakukohde(hakukohdeOid, ai).map(a => (Option(a._1), a._2)).getOrElse((None, Set()))
       val modified: String = lastModified.map(createLastModifiedHeader(_)).getOrElse("")
 
-      val resultJson = s"""{"lastModified":"${modified}","sijoittelunTulokset":${JsonFormats.javaObjectToJsonString(hakukohdeBySijoitteluAjo)},"valintatulokset":${JsonFormats.formatJson(valinnantulokset)},"kirjeLahetetty":${JsonFormats.formatJson(hyvaksymiskirje)},"lukuvuosimaksut":${JsonFormats.formatJson(lukuvuosimaksu)}}"""
+      val resultJson = s"""{"valintaesitys":${JsonFormats.formatJson(valintaesitys)},"lastModified":"${modified}","sijoittelunTulokset":${JsonFormats.javaObjectToJsonString(hakukohdeBySijoitteluAjo)},"valintatulokset":${JsonFormats.formatJson(valinnantulokset)},"kirjeLahetetty":${JsonFormats.formatJson(hyvaksymiskirje)},"lukuvuosimaksut":${JsonFormats.formatJson(lukuvuosimaksu)}}"""
       Ok(resultJson)
     } catch {
       case e: NotFoundException =>
