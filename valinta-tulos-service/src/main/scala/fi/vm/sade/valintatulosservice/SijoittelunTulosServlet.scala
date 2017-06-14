@@ -1,5 +1,8 @@
 package fi.vm.sade.valintatulosservice
 
+import java.time.format.DateTimeFormatter
+import java.time.{Instant, ZoneId, ZonedDateTime}
+
 import com.google.gson.GsonBuilder
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
 import fi.vm.sade.sijoittelu.tulos.dto.HakukohdeDTO
@@ -8,13 +11,14 @@ import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{Hyvaksymiskirje, SessionRepository}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, Lukuvuosimaksu, NotFoundException}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra.{NotFound, Ok}
 import org.scalatra.swagger.{Swagger, SwaggerEngine}
 
-case class SijoittelunTulos(hakukohdeBySijoitteluAjo: HakukohdeDTO, lukuvuosimaksut: Seq[Lukuvuosimaksu], hyvaksymiskirjeet: Set[Hyvaksymiskirje])
+case class SijoittelunTulos(hakukohdeBySijoitteluAjo: HakukohdeDTO, lukuvuosimaksut: Seq[Lukuvuosimaksu], hyvaksymiskirjeet: Set[Hyvaksymiskirje], valinnantulokset: Set[Valinnantulos])
 
-class SijoittelunTulosServlet(hyvaksymiskirjeService: HyvaksymiskirjeService,
+class SijoittelunTulosServlet(valinnantulosService: ValinnantulosService,
+                              hyvaksymiskirjeService: HyvaksymiskirjeService,
                               lukuvuosimaksuService: LukuvuosimaksuService, hakuService: HakuService,
                               authorizer: OrganizationHierarchyAuthorizer,
                               sijoitteluService: SijoitteluService, val sessionRepository: SessionRepository)
@@ -43,11 +47,19 @@ class SijoittelunTulosServlet(hyvaksymiskirjeService: HyvaksymiskirjeService,
       val lukuvuosimaksu: Seq[Lukuvuosimaksu] = lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, ai)
       val hyvaksymiskirje: Set[Hyvaksymiskirje] = hyvaksymiskirjeService.getHyvaksymiskirjeet(hakukohdeOid, ai)
 
-      Ok(gson.toJson(SijoittelunTulos(hakukohdeBySijoitteluAjo,lukuvuosimaksu,hyvaksymiskirje)))
+
+      val (lastModified, valinnantulokset) = valinnantulosService.getValinnantuloksetForHakukohde(hakukohdeOid, ai).map(a => (Some(a._1), a._2)).getOrElse((None[Instant], Set()))
+
+      val modifiedHeaders: Map[String, String] = lastModified.map(l => Map("Last-Modified" -> createLastModifiedHeader(l))).getOrElse(Map())
+
+      Ok(gson.toJson(SijoittelunTulos(hakukohdeBySijoitteluAjo,lukuvuosimaksu,hyvaksymiskirje, valinnantulokset)), headers = modifiedHeaders)
     } catch {
       case e: NotFoundException =>
         val message = e.getMessage
         NotFound(body = Map("error" -> message), reason = message)
     }
+  }
+  protected def createLastModifiedHeader(instant: Instant): String = {
+    DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant((instant.truncatedTo(java.time.temporal.ChronoUnit.SECONDS).plusSeconds(1)), ZoneId.of("GMT")))
   }
 }
