@@ -48,10 +48,10 @@ class SijoittelunTulosServlet(valinnantulosService: ValinnantulosService,
 
 
       val (lastModified, valinnantulokset: Set[Valinnantulos]) = valinnantulosService.getValinnantuloksetForHakukohde(hakukohdeOid, ai).map(a => (Option(a._1), a._2)).getOrElse((None, Set()))
-      val modifiedHeaders: Map[String, String] = lastModified.map(l => Map("Last-Modified" -> createLastModifiedHeader(l))).getOrElse(Map())
+      val modified: String = lastModified.map(createLastModifiedHeader(_)).getOrElse("")
 
-      val resultJson = s"""{"sijoittelunTulokset":${JsonFormats.javaObjectToJsonString(hakukohdeBySijoitteluAjo)},"valintatulokset":${JsonFormats.formatJson(valinnantulokset)},"kirjeLahetetty":${JsonFormats.formatJson(hyvaksymiskirje)},"lukuvuosimaksut":${JsonFormats.formatJson(lukuvuosimaksu)}}"""
-      Ok(resultJson, headers = modifiedHeaders)
+      val resultJson = s"""{"lastModified":"${modified}","sijoittelunTulokset":${JsonFormats.javaObjectToJsonString(hakukohdeBySijoitteluAjo)},"valintatulokset":${JsonFormats.formatJson(valinnantulokset)},"kirjeLahetetty":${JsonFormats.formatJson(hyvaksymiskirje)},"lukuvuosimaksut":${JsonFormats.formatJson(lukuvuosimaksu)}}"""
+      Ok(resultJson)
     } catch {
       case e: NotFoundException =>
         val message = e.getMessage
