@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId, ZonedDateTime}
+import java.util
 
 import com.google.gson.GsonBuilder
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
@@ -15,7 +16,9 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra.{NotFound, Ok}
 import org.scalatra.swagger.{Swagger, SwaggerEngine}
 
-case class SijoittelunTulos(hakukohdeBySijoitteluAjo: HakukohdeDTO, lukuvuosimaksut: Seq[Lukuvuosimaksu], hyvaksymiskirjeet: Set[Hyvaksymiskirje], valinnantulokset: Set[Valinnantulos])
+import scala.collection.JavaConverters._
+
+case class SijoittelunTulos(hakukohdeBySijoitteluAjo: HakukohdeDTO, lukuvuosimaksut: util.List[Lukuvuosimaksu], hyvaksymiskirjeet: util.Set[Hyvaksymiskirje], valinnantulokset: util.Set[Valinnantulos])
 
 class SijoittelunTulosServlet(valinnantulosService: ValinnantulosService,
                               hyvaksymiskirjeService: HyvaksymiskirjeService,
@@ -44,15 +47,17 @@ class SijoittelunTulosServlet(valinnantulosService: ValinnantulosService,
 
     try {
       val hakukohdeBySijoitteluAjo: HakukohdeDTO = sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session)
-      val lukuvuosimaksu: Seq[Lukuvuosimaksu] = lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, ai)
-      val hyvaksymiskirje: Set[Hyvaksymiskirje] = hyvaksymiskirjeService.getHyvaksymiskirjeet(hakukohdeOid, ai)
+      val lukuvuosimaksu: util.List[Lukuvuosimaksu] = lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, ai).asJava
+      val hyvaksymiskirje: util.Set[Hyvaksymiskirje] = hyvaksymiskirjeService.getHyvaksymiskirjeet(hakukohdeOid, ai).asJava
 
 
-      val (lastModified, valinnantulokset) = valinnantulosService.getValinnantuloksetForHakukohde(hakukohdeOid, ai).map(a => (Option(a._1), a._2)).getOrElse((None, Set()))
+      val (lastModified, valinnantulokset: Set[Valinnantulos]) = valinnantulosService.getValinnantuloksetForHakukohde(hakukohdeOid, ai).map(a => (Option(a._1), a._2)).getOrElse((None, Set()))
+
+      val vts: util.Set[Valinnantulos] = valinnantulokset.asJava
 
       val modifiedHeaders: Map[String, String] = lastModified.map(l => Map("Last-Modified" -> createLastModifiedHeader(l))).getOrElse(Map())
 
-      Ok(gson.toJson(SijoittelunTulos(hakukohdeBySijoitteluAjo,lukuvuosimaksu,hyvaksymiskirje, valinnantulokset.toSet)), headers = modifiedHeaders)
+      Ok(gson.toJson(SijoittelunTulos(hakukohdeBySijoitteluAjo,lukuvuosimaksu,hyvaksymiskirje, vts)), headers = modifiedHeaders)
     } catch {
       case e: NotFoundException =>
         val message = e.getMessage
