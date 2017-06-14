@@ -36,6 +36,8 @@ class KelaHealthCheckServlet(val audit: Audit, val sessionRepository: SessionRep
         .postData(hetu)
       ).responseWithHeaders()
 
+    logger.warn("statusCode: " + statusCode)
+
     if (statusCode == HttpServletResponse.SC_MOVED_TEMPORARILY) {
       KelaHealthCheckSessionCookieHolder.clear()
       processRequest(hetu)
@@ -64,6 +66,7 @@ class KelaHealthCheckServlet(val audit: Audit, val sessionRepository: SessionRep
   private def authenticate(): SessionCookie = {
     KelaHealthCheckSessionCookieHolder.synchronized {
       if (KelaHealthCheckSessionCookieHolder.hasSessionCookie) {
+        logger.info("Returned existing session cookie")
         KelaHealthCheckSessionCookieHolder.sessionCookie.get()
       } else {
         var vtsSessionCookie = KelaHealthCheckSessionCookieHolder.NOT_FETCHED
@@ -72,6 +75,7 @@ class KelaHealthCheckServlet(val audit: Audit, val sessionRepository: SessionRep
           case _ => vtsKelaSessionCookie.retrieveSessionCookie()
         }
         KelaHealthCheckSessionCookieHolder.sessionCookie.set(vtsSessionCookie)
+        logger.info("Set new session cookie")
         vtsSessionCookie
       }
     }
@@ -84,6 +88,7 @@ class KelaHealthCheckServlet(val audit: Audit, val sessionRepository: SessionRep
     def hasSessionCookie: Boolean = sessionCookie.get() != NOT_FETCHED
 
     def clear(): Unit = KelaHealthCheckSessionCookieHolder.synchronized {
+      logger.info("Cleared stored session cookie")
       sessionCookie.set(NOT_FETCHED)
     }
   }
