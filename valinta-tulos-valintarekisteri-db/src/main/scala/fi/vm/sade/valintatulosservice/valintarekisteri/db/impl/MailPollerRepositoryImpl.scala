@@ -47,7 +47,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                 on vt.hakukohde_oid = vnt.hakukohde_oid
                 and vt.valintatapajono_oid = vnt.valintatapajono_oid
                 and vt.hakemus_oid = vnt.hakemus_oid
-              left join vastaanotot as vst
+              left join newest_vastaanotot as vst
                 on vnt.hakukohde_oid = vst.hakukohde
                 and vnt.henkilo_oid = vst.henkilo
               left join viestinnan_ohjaus as vo
