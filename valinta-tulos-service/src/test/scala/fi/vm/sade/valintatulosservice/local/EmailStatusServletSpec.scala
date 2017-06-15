@@ -5,10 +5,12 @@ import fi.vm.sade.valintatulosservice.{ServletSpecification, TimeWarp}
 import org.json4s._
 import org.json4s.jackson.Serialization
 import org.json4s.native.JsonMethods._
+import org.junit.Ignore
 import org.junit.runner.RunWith
 import org.specs2.matcher.MatchResult
 import org.specs2.runner.JUnitRunner
 
+@Ignore
 @RunWith(classOf[JUnitRunner])
 class EmailStatusServletSpec extends ServletSpecification with TimeWarp {
   "GET /vastaanottoposti" should {
