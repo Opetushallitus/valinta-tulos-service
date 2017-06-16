@@ -1,7 +1,9 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
+import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
+import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SijoitteluRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, NotFoundException}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
 class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, val sijoitteluajoId: Long, val hakukohdeOid:HakukohdeOid) {
 
