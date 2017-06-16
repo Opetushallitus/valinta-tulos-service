@@ -38,8 +38,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
   def hakemustenTulos(hakuOid: HakuOid,
                       hakukohdeOid: Option[HakukohdeOid],
                       personOidResolver: PersonOidFromHakemusResolver,
-                      haunVastaanotot: Option[Map[String, Set[VastaanottoRecord]]] = None,
-                      cachedHakukohteet: Boolean = false ): List[HakemuksenSijoitteluntulos] = {
+                      haunVastaanotot: Option[Map[String, Set[VastaanottoRecord]]] = None): List[HakemuksenSijoitteluntulos] = {
     def fetchVastaanottos(hakemusOid: HakemusOid, hakijaOidFromSijoittelunTulos: Option[String]): Set[VastaanottoRecord] =
       (hakijaOidFromSijoittelunTulos.orElse(personOidResolver.findBy(hakemusOid)), haunVastaanotot) match {
         case (Some(hakijaOid), Some(vastaanotot)) => vastaanotot.getOrElse(hakijaOid, Set())
@@ -55,7 +54,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
         hakukohdeOid match {
           case Some(hakukohde) => Option(Timer.timed("hakukohteen hakemukset", 1000)(raportointiService.hakemukset(sijoittelu, hakukohde)))
             .map(_.toList.map(h => hakemuksenKevytYhteenveto(h, aikataulu, fetchVastaanottos(HakemusOid(h.getHakemusOid), Option(h.getHakijaOid)))))
-          case None => Option(Timer.timed("hakemukset", 1000)(raportointiService.hakemukset(sijoittelu, cachedHakukohteet)))
+          case None => Option(Timer.timed("hakemukset", 1000)(raportointiService.hakemukset(sijoittelu)))
             .map(_.getResults.toList.map(h => hakemuksenYhteenveto(h, aikataulu, fetchVastaanottos(HakemusOid(h.getHakemusOid), Option(h.getHakijaOid)), false)))
         }
       }
