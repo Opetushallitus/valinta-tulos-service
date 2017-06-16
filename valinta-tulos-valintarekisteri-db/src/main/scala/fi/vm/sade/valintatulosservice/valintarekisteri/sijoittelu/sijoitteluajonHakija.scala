@@ -149,7 +149,7 @@ object SijoitteluajonHakijat {
       }
     }
 
-    def hakukohdeDtotSijoittelu(hakemusOid: HakemusOid): List[HakutoiveDTO] = timed("HakukohdeDTOt sijoittelu", 10 ) {
+    def hakukohdeDtotSijoittelu(hakemusOid: HakemusOid): List[HakutoiveDTO] = timed("HakukohdeDTOt sijoittelu", 10) {
       val hakemuksenValinnantulokset = haunValinnantulokset.getOrElse(hakemusOid, Map())
 
       hakutoiveetSijoittelussa.getOrElse(hakemusOid, List()).map(hakukohde =>
@@ -175,7 +175,7 @@ object SijoitteluajonHakijat {
       })
     }
 
-    def hakukohdeDtotEiSijoittelua(hakemusOid: HakemusOid, hakukohdeOids: Set[HakukohdeOid]): List[HakutoiveDTO] = timed("HakukohdeDTOt ei sijoittelua", 10 ) {
+    def hakukohdeDtotEiSijoittelua(hakemusOid: HakemusOid, hakukohdeOids: Set[HakukohdeOid]): List[HakutoiveDTO] = timed("HakukohdeDTOt ei sijoittelua", 10) {
       hakukohdeOids.map(hakukohdeOid => {
         val hakemuksenValinnantuloksetHakutoiveella = haunValinnantulokset.getOrElse(hakemusOid, Map()).getOrElse(hakukohdeOid, Set())
         val hakutoiveenHyvaksytytJaHakeneet = hyvaksytytJaHakeneet.getOrElse(hakukohdeOid, Map())
@@ -198,14 +198,11 @@ object SijoitteluajonHakijat {
       val hakijanHakutoiveetValinnantuloksissa: Set[HakukohdeOid] = haunHakutoiveet.getOrElse(hakija.hakemusOid, Set())
       val hakijanHakutoiveetEiSijoittelua: Set[HakukohdeOid] = hakijanHakutoiveetValinnantuloksissa.filterNot(hakijanHakutoiveetSijoittelussa)
 
-      timed("HakijaDTO", 10 )(hakija.dto(
+      timed("HakijaDTO", 10)(hakija.dto(
         hakukohdeDtotSijoittelu(hakija.hakemusOid).union(hakukohdeDtotEiSijoittelua(hakija.hakemusOid, hakijanHakutoiveetEiSijoittelua))
       ))
     }))
-
   }
-
-
 
   def dto(repository: HakijaRepository with SijoitteluRepository with ValinnantulosRepository,
           sijoitteluajoId:Option[Long],

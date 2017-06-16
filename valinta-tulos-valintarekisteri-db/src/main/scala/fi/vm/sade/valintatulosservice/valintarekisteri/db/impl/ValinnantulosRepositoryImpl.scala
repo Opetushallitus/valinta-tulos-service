@@ -210,7 +210,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
 
   override def getValinnantuloksetForHaku(hakuOid: HakuOid): DBIO[Set[Valinnantulos]] = {
     /* This query was very slow in HT-2 (for some reason the joins were exremely slow)
-     * Fixed for now with a hacky join ocndition that forces all the joined tables
+     * Fixed for now with a hacky join condition that forces all the joined tables
      * to be related to the hakukohde_oids that belong to haku (hakuOid) */
     sql"""with haun_hakukohteet as (select hakukohde_oid from hakukohteet where haku_oid = ${hakuOid})
           select ti.hakukohde_oid,
@@ -237,9 +237,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             left join vastaanotot as v on v.hakukohde = hk.hakukohde_oid and v.henkilo = ti.henkilo_oid and v.deleted is null
               and v.hakukohde in (select hakukohde_oid from haun_hakukohteet)
             left join ehdollisen_hyvaksynnan_ehto as eh on eh.valintatapajono_oid = ti.valintatapajono_oid and eh.hakemus_oid = ti.hakemus_oid
-              and eh.hakukohde_oid in (select hakukohde_oid from haun_hakukohteet)
-            left join ilmoittautumiset as i on i.henkilo = ti.henkilo_oid and i.hakukohde = ti.hakukohde_oid
-              and i.hakukohde in (select hakukohde_oid from haun_hakukohteet)""".as[Valinnantulos].map(_.toSet)
+            left join ilmoittautumiset as i on i.henkilo = ti.henkilo_oid and i.hakukohde = ti.hakukohde_oid""".as[Valinnantulos].map(_.toSet)
     }
 
   override def getHaunValinnantilat(hakuOid: HakuOid): List[(HakukohdeOid, ValintatapajonoOid, HakemusOid, Valinnantila)] =
