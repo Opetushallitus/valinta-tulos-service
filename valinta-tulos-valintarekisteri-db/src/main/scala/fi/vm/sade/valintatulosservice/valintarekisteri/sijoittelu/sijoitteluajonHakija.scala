@@ -115,21 +115,23 @@ object SijoitteluajonHakijat {
 
     val hakijat = repository.getHaunHakijat(hakuOid, sijoitteluajoId)
     val hakutoiveetSijoittelussa = sijoitteluajoId.map(repository.getHaunHakemuksienHakutoiveetSijoittelussa(hakuOid, _).groupBy(_.hakemusOid)).getOrElse(Map())
-    val (haunValinnantulokset:Map[HakukohdeOid, Map[HakemusOid, Set[Valinnantulos]]],
-    haunHakutoiveetByHakija:Map[HakemusOid, Set[HakukohdeOid]],
-    hyvaksytytJaHakeneet:Map[HakukohdeOid, Map[ValintatapajonoOid,(Int,Int)]]) = {
-      // Do this hacky thing to avoid iterating haunValinnantulokset every time just to get hakijan hakukohteet in haku.
-      timed(s"Getting and grouping haun $hakuOid valinnantulokset") {
+
+    val (
+      haunValinnantulokset:Map[HakemusOid, Map[HakukohdeOid, Set[Valinnantulos]]],
+      haunHakutoiveet:Map[HakemusOid, Set[HakukohdeOid]],
+      hyvaksytytJaHakeneet:Map[HakukohdeOid, Map[ValintatapajonoOid,(Int,Int)]]) = timed(s"Getting and grouping haun $hakuOid valinnantulokset") {
+        // Do this hacky thing to avoid iterating haunValinnantulokset every time just to get hakijan hakukohteet in haku.
         val tulokset = repository.runBlocking(repository.getValinnantuloksetForHaku(hakuOid))
-        (tulokset.groupBy(_.hakukohdeOid).mapValues(_.groupBy(_.hakemusOid)),
+
+        (
+          tulokset.groupBy(_.hakemusOid).mapValues(_.groupBy(_.hakukohdeOid)),
           tulokset.groupBy(_.hakemusOid).mapValues(_.map(_.hakukohdeOid)),
           tulokset.groupBy(_.hakukohdeOid).mapValues(_.groupBy(_.valintatapajonoOid).mapValues(jononTulokset => {
-            (jononTulokset.count(vt => vt.valinnantila == Hyvaksytty || vt.valinnantila == VarasijaltaHyvaksytty),
-              jononTulokset.size)
+            (jononTulokset.count(vt => vt.valinnantila == Hyvaksytty || vt.valinnantila == VarasijaltaHyvaksytty), jononTulokset.size)
           }))
         )
-      }
     }
+
     val (valintatapajonotSijoittelussa, tilankuvausHashit) = {
       val valintatapajonot = sijoitteluajoId.map(repository.getHaunHakemuksienValintatapajonotSijoittelussa(hakuOid, _)).getOrElse(List())
       (valintatapajonot.groupBy(_.hakemusOid).mapValues(_.groupBy(_.hakukohdeOid)), valintatapajonot.map(_.tilankuvausHash).distinct)
@@ -138,8 +140,8 @@ object SijoitteluajonHakijat {
     val pistetiedotSijoittelussa = sijoitteluajoId.map(repository.getHaunHakemuksienPistetiedotSijoittelussa(hakuOid, _)).getOrElse(Map())
     val hakijaryhmatSijoittelussa = sijoitteluajoId.map(repository.getHaunHakemuksienHakijaryhmatSijoittelussa(hakuOid, _)).getOrElse(Map())
 
-    def getVastaanotto(hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid): ValintatuloksenTila = {
-      val vastaanotto = haunValinnantulokset.getOrElse(hakukohdeOid, Map()).getOrElse(hakemusOid, Set()).map(_.vastaanottotila)
+    def getVastaanotto(hakemusOid:HakemusOid, hakukohdeOid: HakukohdeOid, hakemuksenValinnantuloksetHakutoiveella:Set[Valinnantulos]): ValintatuloksenTila = {
+      val vastaanotto = hakemuksenValinnantuloksetHakutoiveella.map(_.vastaanottotila)
       if(1 < vastaanotto.size) {
         throw new RuntimeException(s"Hakemukselle ${hakemusOid} löytyy monta vastaanottoa hakukohteelle ${hakukohdeOid}")
       } else {
@@ -147,18 +149,25 @@ object SijoitteluajonHakijat {
       }
     }
 
-    def hakukohdeDtotSijoittelu(hakemusOid: HakemusOid): List[HakutoiveDTO] = {
+    def hakukohdeDtotSijoittelu(hakemusOid: HakemusOid): List[HakutoiveDTO] = timed("HakukohdeDTOt sijoittelu", 10 ) {
+      val hakemuksenValinnantulokset = haunValinnantulokset.getOrElse(hakemusOid, Map())
+
       hakutoiveetSijoittelussa.getOrElse(hakemusOid, List()).map(hakukohde =>
       {
         val hakutoiveenPistetidot = pistetiedotSijoittelussa.getOrElse(hakukohde.hakukohdeOid, List()).groupBy(_.hakemusOid)
+        val hakemuksenValinnantuloksetHakutoiveella = hakemuksenValinnantulokset.getOrElse(hakukohde.hakukohdeOid, Set())
+        val hakutoiveenHyvaksytytJaHakeneet = hyvaksytytJaHakeneet.getOrElse(hakukohde.hakukohdeOid, Map())
+
         hakukohde.dto(
-          getVastaanotto(hakukohde.hakukohdeOid, hakemusOid),
-          valintatapajonotSijoittelussa.getOrElse(hakemusOid, Map()).getOrElse(hakukohde.hakukohdeOid, List()).map(jono => jono.dto(
+          getVastaanotto(hakemusOid, hakukohde.hakukohdeOid, hakemuksenValinnantuloksetHakutoiveella),
+          valintatapajonotSijoittelussa.getOrElse(hakemusOid, Map()).getOrElse(hakukohde.hakukohdeOid, List()).map(jono => {
+            val jononHyvaksytytJaHakeneet = hakutoiveenHyvaksytytJaHakeneet.getOrElse(jono.valintatapajonoOid, (0,0))
+            jono.dto(
             //valinnantulos: Option[Valinnantulos], tilankuvaukset: Map[String, String], hakeneet:Int, hyvaksytty:Int
-            haunValinnantulokset.get(hakukohde.hakukohdeOid).flatMap(_.get(hakemusOid)).flatMap(_.find(_.valintatapajonoOid.equals(jono.valintatapajonoOid))),
-            jono.tilankuvaukset(tilankuvauksetSijoittelussa.get(jono.tilankuvausHash)),
-            hyvaksytytJaHakeneet.getOrElse(hakukohde.hakukohdeOid, Map()).getOrElse(jono.valintatapajonoOid, (0,0))._2,
-            hyvaksytytJaHakeneet.getOrElse(hakukohde.hakukohdeOid, Map()).getOrElse(jono.valintatapajonoOid, (0,0))._1)
+              hakemuksenValinnantuloksetHakutoiveella.find(_.valintatapajonoOid.equals(jono.valintatapajonoOid)),
+              jono.tilankuvaukset(tilankuvauksetSijoittelussa.get(jono.tilankuvausHash)),
+              jononHyvaksytytJaHakeneet._2,
+              jononHyvaksytytJaHakeneet._1)}
           ),
           hakutoiveenPistetidot.getOrElse(hakemusOid, List()).map(_.dto),
           hakijaryhmatSijoittelussa.getOrElse(hakemusOid, List()).filter(_.hakukohdeOid == hakukohde.hakukohdeOid).map(_.dto)
@@ -166,30 +175,33 @@ object SijoitteluajonHakijat {
       })
     }
 
-    def hakukohdeDtotEiSijoittelua(hakemusOid: HakemusOid, hakukohdeOids: Set[HakukohdeOid]): List[HakutoiveDTO] = {
+    def hakukohdeDtotEiSijoittelua(hakemusOid: HakemusOid, hakukohdeOids: Set[HakukohdeOid]): List[HakutoiveDTO] = timed("HakukohdeDTOt ei sijoittelua", 10 ) {
       hakukohdeOids.map(hakukohdeOid => {
+        val hakemuksenValinnantuloksetHakutoiveella = haunValinnantulokset.getOrElse(hakemusOid, Map()).getOrElse(hakukohdeOid, Set())
+        val hakutoiveenHyvaksytytJaHakeneet = hyvaksytytJaHakeneet.getOrElse(hakukohdeOid, Map())
+
         //vastaanottotieto:fi.vm.sade.sijoittelu.domain.ValintatuloksenTila, valintatapajonot:List[HakutoiveenValintatapajonoDTO], pistetiedot:List[PistetietoDTO], hakijaryhmat:List[HakutoiveenHakijaryhmaDTO]
         HakutoiveRecord(hakemusOid, Some(1), hakukohdeOid, None).dto(
-          getVastaanotto(hakukohdeOid, hakemusOid),
-          haunValinnantulokset.getOrElse(hakukohdeOid, Map()).getOrElse(hakemusOid, Set()).map(valinnantulos => HakutoiveenValintatapajonoRecord.dto(
+          getVastaanotto(hakemusOid, hakukohdeOid, hakemuksenValinnantuloksetHakutoiveella),
+          haunValinnantulokset.getOrElse(hakemusOid, Map()).getOrElse(hakukohdeOid, Set()).map(valinnantulos => HakutoiveenValintatapajonoRecord.dto(
             valinnantulos,
-            hyvaksytytJaHakeneet.getOrElse(hakukohdeOid, Map()).getOrElse(valinnantulos.valintatapajonoOid, (0,0))._2,
-            hyvaksytytJaHakeneet.getOrElse(hakukohdeOid, Map()).getOrElse(valinnantulos.valintatapajonoOid, (0,0))._1)).toList,
+            hakutoiveenHyvaksytytJaHakeneet.getOrElse(valinnantulos.valintatapajonoOid, (0,0))._2,
+            hakutoiveenHyvaksytytJaHakeneet.getOrElse(valinnantulos.valintatapajonoOid, (0,0))._1)).toList,
           List(),
           List()
         )}
       ).toList
     }
 
-    hakijat.map(hakija => {
+    timed("HakijaDTOt", 10)(hakijat.map(hakija => {
       val hakijanHakutoiveetSijoittelussa: Set[HakukohdeOid] = hakutoiveetSijoittelussa.get(hakija.hakemusOid).toSet.flatten.map(_.hakukohdeOid)
-      val hakijanHakutoiveetValinnantuloksissa: Set[HakukohdeOid] = haunHakutoiveetByHakija.getOrElse(hakija.hakemusOid, Set())
+      val hakijanHakutoiveetValinnantuloksissa: Set[HakukohdeOid] = haunHakutoiveet.getOrElse(hakija.hakemusOid, Set())
       val hakijanHakutoiveetEiSijoittelua: Set[HakukohdeOid] = hakijanHakutoiveetValinnantuloksissa.filterNot(hakijanHakutoiveetSijoittelussa)
 
-      hakija.dto(
+      timed("HakijaDTO", 10 )(hakija.dto(
         hakukohdeDtotSijoittelu(hakija.hakemusOid).union(hakukohdeDtotEiSijoittelua(hakija.hakemusOid, hakijanHakutoiveetEiSijoittelua))
-      )
-    })
+      ))
+    }))
 
   }
 
