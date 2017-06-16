@@ -20,35 +20,25 @@ class KelaHealthCheckServlet(val audit: Audit, val sessionRepository: SessionRep
   protected val applicationDescription = "Valvonnan Kelan paikanvastaanottorajapinnan health check REST API"
 
   get("/") {
-    val hetu = appConfig.settings.securitySettings.kelaVastaanototTestihetu
-    processRequest(hetu)
-  }
+    val hetu: String = appConfig.settings.securitySettings.kelaVastaanototTestihetu
 
-  def processRequest(hetu: String): String = {
-    val vtsSessionCookie: SessionCookie = authenticate()
+    var vtsSessionCookie: SessionCookie = authenticate()
+    var kelaHealthCheckResponse: KelaHealthCheckResponse = doRequest(hetu, vtsSessionCookie)
 
-    val (statusCode, responseHeaders, result) =
-      new DefaultHttpRequest(Http(appConfig.settings.securitySettings.casServiceIdentifier + "/cas/kela/vastaanotot/henkilo")
-        .method("POST")
-        .options(Seq(HttpOptions.connTimeout(10000), HttpOptions.readTimeout(120000)))
-        .header("Content-Type", "text/plain")
-        .header("Cookie", s"session=$vtsSessionCookie")
-        .postData(hetu)
-      ).responseWithHeaders()
-
-    if (statusCode == HttpServletResponse.SC_UNAUTHORIZED) {
+    if (kelaHealthCheckResponse.statusCode == HttpServletResponse.SC_UNAUTHORIZED) {
       KelaHealthCheckSessionCookieHolder.clear()
-      processRequest(hetu)
+      vtsSessionCookie = authenticate()
+      kelaHealthCheckResponse = doRequest(hetu, vtsSessionCookie)
     }
 
     response.setStatus(HttpServletResponse.SC_OK)
     response.setContentType("text/plain")
 
-    statusCode match {
+    kelaHealthCheckResponse.statusCode match {
       case HttpServletResponse.SC_NO_CONTENT => "OK"
       case HttpServletResponse.SC_OK =>
-        if (result.isEmpty) "ERROR"
-        val json = parse(result)
+        if (kelaHealthCheckResponse.result.isEmpty) "ERROR"
+        val json = parse(kelaHealthCheckResponse.result)
         val henkilo: Option[fi.vm.sade.valintatulosservice.kela.Henkilo] =
           Option(json.extract[fi.vm.sade.valintatulosservice.kela.Henkilo])
         henkilo match {
@@ -59,6 +49,18 @@ class KelaHealthCheckServlet(val audit: Audit, val sessionRepository: SessionRep
         }
       case _ => "ERROR"
     }
+  }
+
+  private def doRequest(hetu: String, vtsSessionCookie: SessionCookie): KelaHealthCheckResponse = {
+    val (statusCode, responseHeaders, result) =
+      new DefaultHttpRequest(Http(appConfig.settings.securitySettings.casServiceIdentifier + "/cas/kela/vastaanotot/henkilo")
+        .method("POST")
+        .options(Seq(HttpOptions.connTimeout(10000), HttpOptions.readTimeout(120000)))
+        .header("Content-Type", "text/plain")
+        .header("Cookie", s"session=$vtsSessionCookie")
+        .postData(hetu)
+      ).responseWithHeaders()
+    KelaHealthCheckResponse(statusCode, responseHeaders, result)
   }
 
   private def authenticate(): SessionCookie = {
@@ -90,4 +92,6 @@ class KelaHealthCheckServlet(val audit: Audit, val sessionRepository: SessionRep
       sessionCookie.set(NOT_FETCHED)
     }
   }
+
+  case class KelaHealthCheckResponse(statusCode: Int, responseHeaders: Map[String, String], result: String)
 }
