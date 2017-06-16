@@ -36,9 +36,7 @@ class KelaHealthCheckServlet(val audit: Audit, val sessionRepository: SessionRep
         .postData(hetu)
       ).responseWithHeaders()
 
-    logger.warn("statusCode: " + statusCode)
-
-    if (statusCode == HttpServletResponse.SC_MOVED_TEMPORARILY) {
+    if (statusCode == HttpServletResponse.SC_UNAUTHORIZED) {
       KelaHealthCheckSessionCookieHolder.clear()
       processRequest(hetu)
     }
