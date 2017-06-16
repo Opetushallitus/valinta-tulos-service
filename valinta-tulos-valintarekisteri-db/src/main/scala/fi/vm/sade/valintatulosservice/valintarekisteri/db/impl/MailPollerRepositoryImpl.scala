@@ -44,16 +44,16 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
               right join hakukohteet as hk
                 on vt.hakukohde_oid = hk.hakukohde_oid
               join valinnantilat as vnt
-                on vt.hakukohde_oid = vnt.hakukohde_oid
-                and vt.valintatapajono_oid = vnt.valintatapajono_oid
+                on vt.valintatapajono_oid = vnt.valintatapajono_oid
                 and vt.hakemus_oid = vnt.hakemus_oid
+                and vt.hakukohde_oid = vnt.hakukohde_oid
               left join newest_vastaanotot as vst
-                on vnt.hakukohde_oid = vst.hakukohde
-                and vnt.henkilo_oid = vst.henkilo
+                on vnt.henkilo_oid = vst.henkilo
+                and vnt.hakukohde_oid = vst.hakukohde
               left join viestinnan_ohjaus as vo
-                on vt.hakukohde_oid = vo.hakukohde_oid
+                on vt.valintatapajono_oid = vo.valintatapajono_oid
                 and vt.hakemus_oid = vo.hakemus_oid
-                and vt.valintatapajono_oid = vo.valintatapajono_oid
+                and vt.hakukohde_oid = vo.hakukohde_oid
               where
                 hk.haku_oid in (#${hakuOidsIn})
                 and vt.julkaistavissa is true
