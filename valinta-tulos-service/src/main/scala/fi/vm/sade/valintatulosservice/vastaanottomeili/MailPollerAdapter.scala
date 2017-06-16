@@ -92,11 +92,11 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
     }
 
     val mailables = statii.filter(_.anyMailToBeSent).toList
-    logger.info("found {} mailables from {} candidates", mailables.size, candidates.size)
+    val newMailableCount = mailableCount + mailables.size
+
+    logger.info(s"found ${mailables.size} mailables from ${candidates.size} candidates. Total mailables now $newMailableCount (limit: $limit).")
 
     saveMessages(statii)
-
-    val newMailableCount = mailableCount + mailables.size
 
     if (candidates.nonEmpty && newMailableCount < limit) {
       logger.debug("fetching more mailables")
