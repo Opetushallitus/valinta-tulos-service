@@ -98,7 +98,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
 
     if (candidates.nonEmpty && mailables.size < limit) {
       logger.debug("fetching more mailables")
-      mailables ++ pollForMailables(hakuOids, limit = limit - mailables.size, excludeHakemusOids = excludeHakemusOids ++ mailables.map(_.hakemusOid).toSet)
+      mailables ++ pollForMailables(hakuOids, limit = limit, excludeHakemusOids = excludeHakemusOids ++ mailables.map(_.hakemusOid).toSet)
     } else {
       mailables
     }
