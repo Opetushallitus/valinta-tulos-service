@@ -68,7 +68,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
 
   def alreadyMailed(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Option[Date] = mailPollerRepository.alreadyMailed(hakemusOid, hakukohdeOid)
 
-  def pollForMailables(hakuOids: List[HakuOid] = etsiHaut, limit: Int = this.limit, excludeHakemusOids: Set[HakemusOid] = Set.empty): List[HakemusMailStatus] = {
+  def pollForMailables(hakuOids: List[HakuOid] = etsiHaut, mailableCount: Int = 0, limit: Int = this.limit, excludeHakemusOids: Set[HakemusOid] = Set.empty): List[HakemusMailStatus] = {
 
     val candidates: Set[ViestinnänOhjausKooste] = mailPollerRepository.pollForCandidates(hakuOids, limit, excludeHakemusOids = excludeHakemusOids)
     logger.info("candidates found {}", formatJson(candidates))
@@ -96,9 +96,11 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
 
     saveMessages(statii)
 
-    if (candidates.nonEmpty && mailables.size < limit) {
+    val newMailableCount = mailableCount + mailables.size
+
+    if (candidates.nonEmpty && newMailableCount < limit) {
       logger.debug("fetching more mailables")
-      mailables ++ pollForMailables(hakuOids, limit = limit, excludeHakemusOids = excludeHakemusOids ++ mailables.map(_.hakemusOid).toSet)
+      mailables ++ pollForMailables(hakuOids, mailableCount = newMailableCount, limit = limit, excludeHakemusOids = excludeHakemusOids ++ mailables.map(_.hakemusOid).toSet)
     } else {
       mailables
     }
