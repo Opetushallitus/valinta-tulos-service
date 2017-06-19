@@ -51,7 +51,7 @@ class ValintarekisteriRaportointiServiceSpec extends ITSpecification with Valint
     "hakemukset (kevytHakijaDto)" should {
 
     "return hakijat and hakutoiveet for hakukohde (sijoittelu)" in {
-      val kevytHakijaDtot = raportointiService.hakemukset(sijoitteluajo, sijoittelunHakukohdeOid1)
+      val kevytHakijaDtot = raportointiService.kevytHakemukset(sijoitteluajo, sijoittelunHakukohdeOid1)
 
       kevytHakijaDtot.size must_== 8
 
@@ -73,7 +73,7 @@ class ValintarekisteriRaportointiServiceSpec extends ITSpecification with Valint
       true must_== true
     }
     "return hakijat and hakutoiveet for hakukohde (erillishaku, ei sijoittelua)" in {
-      val kevytHakijaDtot = raportointiService.hakemukset(erillishaku, oidHaku1hakukohde1)
+      val kevytHakijaDtot = raportointiService.kevytHakemukset(erillishaku, oidHaku1hakukohde1)
 
       kevytHakijaDtot.size must_== 2
 
@@ -87,7 +87,7 @@ class ValintarekisteriRaportointiServiceSpec extends ITSpecification with Valint
     step(insertValinnantulos(hakuOid2, valinnantulosHylatty(oidHaku2hakukohde1, oidHaku2hakukohde1jono2, sijoittelunHakemusOid2)))
 
     "return hakijat and hakutoiveet for hakukohde (both with and without sijoittelu)" in {
-      val kevytHakijaDtot = raportointiService.hakemukset(sijoitteluajo, oidHaku2hakukohde1)
+      val kevytHakijaDtot = raportointiService.kevytHakemukset(sijoitteluajo, oidHaku2hakukohde1)
       kevytHakijaDtot.size must_== 5
       List(hakemusOid5.toString, hakemusOid6.toString, hakemusOid7.toString, hakemusOid8.toString, sijoittelunHakemusOid2.toString).diff(
         kevytHakijaDtot.map(_.getHakemusOid)) must_== List()
@@ -236,6 +236,41 @@ class ValintarekisteriRaportointiServiceSpec extends ITSpecification with Valint
       assert(15, List(HakemusOid("Haku2.1.1.1"), HakemusOid("Haku2.1.1.2")), raportointiService.hakemukset(sijoitteluajoId, hakuOid, None, Some(true), None, None, Some(2), None))
       assert(5, List(hakemusOid7, hakemusOid8), raportointiService.hakemukset(sijoitteluajoId, hakuOid, None, None, Some(true), None, Some(2), Some(3)))
       assert(0, List(), raportointiService.hakemukset(sijoitteluajoId, hakuOid, Some(true), None, None, Some(List(sijoittelunHakukohdeOid1)), Some(2), None))
+      true must_== true
+    }
+  }
+
+  "hakemukset (List[KevytHakijaDTO])" should {
+    "return hakijat and hakutoiveet for haku (both with and without sijoittelu)" in {
+      val hakijaDtot = raportointiService.kevytHakemukset(sijoitteluajo)
+      hakijaDtot.size must_== 20
+
+      assertErillishakuKevytHakija(hakijaDtot.find(_.getHakemusOid.equals(hakemusOid5.toString)).get, oidHaku2hakukohde1, oidHaku2hakukohde1jono1)
+      assertErillishakuKevytHakija(hakijaDtot.find(_.getHakemusOid.equals(hakemusOid6.toString)).get, oidHaku2hakukohde1, oidHaku2hakukohde1jono1)
+      assertErillishakuKevytHakija(hakijaDtot.find(_.getHakemusOid.equals(hakemusOid7.toString)).get, oidHaku2hakukohde1, oidHaku2hakukohde1jono2)
+      assertErillishakuKevytHakija(hakijaDtot.find(_.getHakemusOid.equals(hakemusOid8.toString)).get, oidHaku2hakukohde1, oidHaku2hakukohde1jono2)
+
+      hakijaDtot.find(_.getHakemusOid.equals(sijoittelunHakemusOid2.toString)).foreach { hakija =>
+        hakija.getHakutoiveet.size must_== 2
+        val hakutoive1 = hakija.getHakutoiveet.asScala.find(_.getHakukohdeOid.equals(sijoittelunHakukohdeOid2.toString)).get
+        hakutoive1.getHakutoiveenValintatapajonot.size must_== 1
+        hakutoive1.isKaikkiJonotSijoiteltu must_== true
+        val valintatapajono1 = hakutoive1.getHakutoiveenValintatapajonot.asScala.head
+        hakija.getHakemusOid.startsWith(valintatapajono1.getValintatapajonoOid) must_== true
+        valintatapajono1.getTila must_== fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.HYLATTY
+        valintatapajono1.getIlmoittautumisTila must_== fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila.EI_TEHTY
+        valintatapajono1.getJonosija must_== Integer.parseInt("" + hakija.getHakijaOid.charAt(hakija.getHakijaOid.length - 1))
+
+        val hakutoive2 = hakija.getHakutoiveet.asScala.find(_.getHakukohdeOid.equals(oidHaku2hakukohde1.toString)).get
+        hakutoive2.getHakutoiveenValintatapajonot.size must_== 2
+        val valintatapajono2 = hakutoive2.getHakutoiveenValintatapajonot.asScala.find(_.getValintatapajonoOid.equals(oidHaku2hakukohde1jono1.toString)).get
+        valintatapajono2.getTila must_== fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.HYVAKSYTTY
+        valintatapajono2.getIlmoittautumisTila must_== fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila.LASNA
+
+        val valintatapajono3 = hakutoive2.getHakutoiveenValintatapajonot.asScala.find(_.getValintatapajonoOid.equals(oidHaku2hakukohde1jono2.toString)).get
+        valintatapajono3.getTila must_== fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.HYLATTY
+        valintatapajono3.getIlmoittautumisTila must_== fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila.LASNA
+      }
       true must_== true
     }
   }
