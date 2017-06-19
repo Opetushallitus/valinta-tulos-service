@@ -32,26 +32,25 @@ class HakemusRepository()(implicit appConfig: VtsAppConfig) extends Logging {
   val application = MongoFactory.createCollection(appConfig.settings.hakemusMongoConfig, "application")
 
   // Yes, having the preference-stuff in the projection makes a big difference.
-  val fields = MongoDBObject(
-    "_id" -> 0,
-    DatabaseKeys.hakuOidKey -> 1,
-    DatabaseKeys.oidKey -> 1,
-    DatabaseKeys.personOidKey -> 1,
-    DatabaseKeys.asiointiKieliKey -> 1,
-    "answers.henkilotiedot.Kutsumanimi" -> 1,
-    "answers.henkilotiedot.Sähköposti" -> 1,
-    "answers.henkilotiedot.Henkilotunnus" -> 1,
-    "answers.hakutoiveet.preference1-Opetuspiste-id" -> 1,"answers.hakutoiveet.preference1-Opetuspiste" -> 1,"answers.hakutoiveet.preference1-Koulutus" -> 1,
-    "answers.hakutoiveet.preference2-Opetuspiste-id" -> 1,"answers.hakutoiveet.preference2-Opetuspiste" -> 1,"answers.hakutoiveet.preference2-Koulutus" -> 1,
-    "answers.hakutoiveet.preference3-Opetuspiste-id" -> 1,"answers.hakutoiveet.preference3-Opetuspiste" -> 1,"answers.hakutoiveet.preference3-Koulutus" -> 1,
-    "answers.hakutoiveet.preference4-Opetuspiste-id" -> 1,"answers.hakutoiveet.preference4-Opetuspiste" -> 1,"answers.hakutoiveet.preference4-Koulutus" -> 1,
-    "answers.hakutoiveet.preference5-Opetuspiste-id" -> 1,"answers.hakutoiveet.preference5-Opetuspiste" -> 1,"answers.hakutoiveet.preference5-Koulutus" -> 1,
-    "answers.hakutoiveet.preference6-Opetuspiste-id" -> 1,"answers.hakutoiveet.preference6-Opetuspiste" -> 1,"answers.hakutoiveet.preference6-Koulutus" -> 1,
-    "answers.hakutoiveet.preference7-Opetuspiste-id" -> 1,"answers.hakutoiveet.preference7-Opetuspiste" -> 1,"answers.hakutoiveet.preference7-Koulutus" -> 1,
-    "answers.hakutoiveet.preference8-Opetuspiste-id" -> 1,"answers.hakutoiveet.preference8-Opetuspiste" -> 1,"answers.hakutoiveet.preference8-Koulutus" -> 1,
-    "answers.hakutoiveet.preference9-Opetuspiste-id" -> 1,"answers.hakutoiveet.preference9-Opetuspiste" -> 1,"answers.hakutoiveet.preference9-Koulutus" -> 1,
-    "answers.hakutoiveet.preference10-Opetuspiste-id" -> 1,"answers.hakutoiveet.preference10-Opetuspiste" -> 1,"answers.hakutoiveet.preference10-Koulutus" -> 1
-  )
+  private def getProjectionFields(maxApplicationOptions: Int = 30): MongoDBObject = {
+    val baseFields = MongoDBObject(
+      "_id" -> 0,
+      DatabaseKeys.hakuOidKey -> 1,
+      DatabaseKeys.oidKey -> 1,
+      DatabaseKeys.personOidKey -> 1,
+      DatabaseKeys.asiointiKieliKey -> 1,
+      "answers.henkilotiedot.Kutsumanimi" -> 1,
+      "answers.henkilotiedot.Sähköposti" -> 1,
+      "answers.henkilotiedot.Henkilotunnus" -> 1
+    )
+
+    val hakutoiveet: Map[String, Int] = (1 to maxApplicationOptions).flatMap(i => {
+      List(s"answers.hakutoiveet.preference$i-Opetuspiste-id" -> 1, s"answers.hakutoiveet.preference$i-Opetuspiste" -> 1, s"answers.hakutoiveet.preference$i-Koulutus" -> 1)
+    }).toMap
+
+    baseFields.putAll(hakutoiveet)
+    baseFields
+  }
 
   val kieliKoodit = Map(("suomi", "FI"), ("ruotsi", "SV"), ("englanti", "EN"))
 
@@ -105,6 +104,7 @@ class HakemusRepository()(implicit appConfig: VtsAppConfig) extends Logging {
   }
 
   def findHakemuksetByQuery(query: commons.Imports.DBObject): Iterator[Hakemus] = {
+    val fields = getProjectionFields()
     val cursor = application.find(query, fields)
 
     for (hakemus <- cursor;
