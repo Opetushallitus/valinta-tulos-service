@@ -52,7 +52,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                 hk.haku_oid in (#${hakuOidsIn})
                 and vt.julkaistavissa is true
                 and (vnt.tila = 'Hyvaksytty' or vnt.tila = 'VarasijaltaHyvaksytty')
-                and (vo.done is null and vo.sent is null)
+                and vo.done is null
                 and (vo.previous_check is null or vo.previous_check < ${limitTimestamp})
               limit ${limit}
          """.as[ViestinnänOhjausKooste]).toSet
