@@ -42,8 +42,10 @@ class MongoRaportointiService(service:MongoService) extends ValintarekisteriRapo
   override def hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO] =
     service.hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo, hakukohdeOid.toString).asScala.toList
 
-  override def hakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO] =
+  override def kevytHakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO] =
     service.hakemukset(sijoitteluAjo, hakukohdeOid.toString).asScala.toList
+
+  override def kevytHakemukset(sijoitteluAjo: SijoitteluAjo): List[KevytHakijaDTO] = ???
 
   def toOption[R](opt:java.util.Optional[R]):Option[R] = if (opt.isPresent) Some(opt.get) else None
 
