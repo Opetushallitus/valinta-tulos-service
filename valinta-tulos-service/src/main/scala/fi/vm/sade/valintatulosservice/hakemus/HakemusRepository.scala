@@ -14,8 +14,7 @@ import scala.util.Try
 object DatabaseKeys {
   val oidKey: String = "oid"
   val personOidKey: String = "personOid"
-  val applicationSystemIdKey: String = "applicationSystemId"
-  val hakutoiveetPath: String = "answers.hakutoiveet"
+  val hakuOidKey: String = "applicationSystemId"
   val hakutoiveetSearchPath: String = "authorizationMeta.applicationPreferences.preferenceData.Koulutus-id"
   val henkilotiedotPath: String = "answers.henkilotiedot"
   val answersKey: String = "answers"
@@ -24,49 +23,62 @@ object DatabaseKeys {
   val tarjoajaIdKeyPostfix: String = "Opetuspiste-id"
   val hakutoiveKeyPostfix: String = "Koulutus"
   val tarjoajaKeyPostfix: String = "Opetuspiste"
-  val lisatiedotPath: String = "answers.lisatiedot"
-  val asiointiKieliKey: String = "lisatiedot.asiointikieli"
+  val asiointiKieliKey: String = "answers.lisatiedot.asiointikieli"
 }
 
 @deprecated("Should be removed ASAP. Has no idea of indexes. Also has no idea of search structures")
 class HakemusRepository()(implicit appConfig: VtsAppConfig) extends Logging {
 
   val application = MongoFactory.createCollection(appConfig.settings.hakemusMongoConfig, "application")
+
+  // Yes, having the preference-stuff in the projection makes a big difference.
   val fields = MongoDBObject(
-    DatabaseKeys.hakutoiveetPath -> 1,
-    DatabaseKeys.henkilotiedotPath -> 1,
-    DatabaseKeys.applicationSystemIdKey -> 1,
+    "_id" -> 0,
+    DatabaseKeys.hakuOidKey -> 1,
     DatabaseKeys.oidKey -> 1,
     DatabaseKeys.personOidKey -> 1,
-    DatabaseKeys.lisatiedotPath -> 1
+    DatabaseKeys.asiointiKieliKey -> 1,
+    "answers.henkilotiedot.Kutsumanimi" -> 1,
+    "answers.henkilotiedot.Sähköposti" -> 1,
+    "answers.henkilotiedot.Henkilotunnus" -> 1,
+    "answers.hakutoiveet.preference1-Opetuspiste-id" -> 1,"answers.hakutoiveet.preference1-Opetuspiste" -> 1,"answers.hakutoiveet.preference1-Koulutus" -> 1,
+    "answers.hakutoiveet.preference2-Opetuspiste-id" -> 1,"answers.hakutoiveet.preference2-Opetuspiste" -> 1,"answers.hakutoiveet.preference2-Koulutus" -> 1,
+    "answers.hakutoiveet.preference3-Opetuspiste-id" -> 1,"answers.hakutoiveet.preference3-Opetuspiste" -> 1,"answers.hakutoiveet.preference3-Koulutus" -> 1,
+    "answers.hakutoiveet.preference4-Opetuspiste-id" -> 1,"answers.hakutoiveet.preference4-Opetuspiste" -> 1,"answers.hakutoiveet.preference4-Koulutus" -> 1,
+    "answers.hakutoiveet.preference5-Opetuspiste-id" -> 1,"answers.hakutoiveet.preference5-Opetuspiste" -> 1,"answers.hakutoiveet.preference5-Koulutus" -> 1,
+    "answers.hakutoiveet.preference6-Opetuspiste-id" -> 1,"answers.hakutoiveet.preference6-Opetuspiste" -> 1,"answers.hakutoiveet.preference6-Koulutus" -> 1,
+    "answers.hakutoiveet.preference7-Opetuspiste-id" -> 1,"answers.hakutoiveet.preference7-Opetuspiste" -> 1,"answers.hakutoiveet.preference7-Koulutus" -> 1,
+    "answers.hakutoiveet.preference8-Opetuspiste-id" -> 1,"answers.hakutoiveet.preference8-Opetuspiste" -> 1,"answers.hakutoiveet.preference8-Koulutus" -> 1,
+    "answers.hakutoiveet.preference9-Opetuspiste-id" -> 1,"answers.hakutoiveet.preference9-Opetuspiste" -> 1,"answers.hakutoiveet.preference9-Koulutus" -> 1,
+    "answers.hakutoiveet.preference10-Opetuspiste-id" -> 1,"answers.hakutoiveet.preference10-Opetuspiste" -> 1,"answers.hakutoiveet.preference10-Koulutus" -> 1
   )
 
   val kieliKoodit = Map(("suomi", "FI"), ("ruotsi", "SV"), ("englanti", "EN"))
 
   def findPersonOids(hakuOid: HakuOid): Map[HakemusOid, String] = {
     application.find(
-      MongoDBObject(DatabaseKeys.applicationSystemIdKey -> hakuOid.toString),
+      MongoDBObject(DatabaseKeys.hakuOidKey -> hakuOid.toString),
       MongoDBObject(DatabaseKeys.oidKey -> 1, DatabaseKeys.personOidKey -> 1)
     ).map(o => HakemusOid(o.as[String](DatabaseKeys.oidKey)) -> o.getAs[String](DatabaseKeys.personOidKey).getOrElse("")).toMap
   }
 
   def findPersonOids(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Map[HakemusOid, String] = {
     application.find(
-      MongoDBObject(DatabaseKeys.applicationSystemIdKey -> hakuOid.toString, DatabaseKeys.hakutoiveetSearchPath -> hakukohdeOid.toString),
+      MongoDBObject(DatabaseKeys.hakuOidKey -> hakuOid.toString, DatabaseKeys.hakutoiveetSearchPath -> hakukohdeOid.toString),
       MongoDBObject(DatabaseKeys.oidKey -> 1, DatabaseKeys.personOidKey -> 1)
     ).map(o => HakemusOid(o.as[String](DatabaseKeys.oidKey)) -> o.getAs[String](DatabaseKeys.personOidKey).getOrElse("")).toMap
   }
 
   def findPersonOids(hakuOid: HakuOid, hakukohdeOids: List[HakukohdeOid]): Map[HakemusOid, String] = {
     application.find(
-      MongoDBObject(DatabaseKeys.applicationSystemIdKey -> hakuOid.toString) ++ (DatabaseKeys.hakutoiveetSearchPath $in hakukohdeOids.map(_.toString)),
+      MongoDBObject(DatabaseKeys.hakuOidKey -> hakuOid.toString) ++ (DatabaseKeys.hakutoiveetSearchPath $in hakukohdeOids.map(_.toString)),
       MongoDBObject(DatabaseKeys.oidKey -> 1, DatabaseKeys.personOidKey -> 1)
     ).map(o => HakemusOid(o.as[String](DatabaseKeys.oidKey)) -> o.getAs[String](DatabaseKeys.personOidKey).getOrElse("")).toMap
   }
 
 
   def findHakemukset(hakuOid: HakuOid): Iterator[Hakemus] = {
-    findHakemuksetByQuery(MongoDBObject(DatabaseKeys.applicationSystemIdKey -> hakuOid.toString))
+    findHakemuksetByQuery(MongoDBObject(DatabaseKeys.hakuOidKey -> hakuOid.toString))
   }
 
   def findHakemus(hakemusOid: HakemusOid): Either[Throwable, Hakemus] = {
@@ -81,11 +93,11 @@ class HakemusRepository()(implicit appConfig: VtsAppConfig) extends Logging {
   }
 
   def findHakemukset(hakuOid: HakuOid, personOid: String): Iterator[Hakemus] = {
-    findHakemuksetByQuery(MongoDBObject(DatabaseKeys.personOidKey -> personOid, DatabaseKeys.applicationSystemIdKey -> hakuOid.toString))
+    findHakemuksetByQuery(MongoDBObject(DatabaseKeys.personOidKey -> personOid, DatabaseKeys.hakuOidKey -> hakuOid.toString))
   }
 
   def findHakemuksetByHakukohde(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Iterator[Hakemus] = {
-    findHakemuksetByQuery(MongoDBObject(DatabaseKeys.applicationSystemIdKey -> hakuOid.toString, DatabaseKeys.hakutoiveetSearchPath -> hakukohdeOid.toString))
+    findHakemuksetByQuery(MongoDBObject(DatabaseKeys.hakuOidKey -> hakuOid.toString, DatabaseKeys.hakutoiveetSearchPath -> hakukohdeOid.toString))
   }
 
   def findHakemuksetByHakukohdeAndPerson(hakukohdeOid: HakukohdeOid, personOid: String): Iterator[Hakemus] = {
@@ -102,12 +114,12 @@ class HakemusRepository()(implicit appConfig: VtsAppConfig) extends Logging {
   private def parseHakemus(data: Imports.MongoDBObject): Option[Hakemus] = {
     for {
       hakemusOid <- data.getAs[String](DatabaseKeys.oidKey)
-      hakuOid <- data.getAs[String](DatabaseKeys.applicationSystemIdKey)
+      hakuOid <- data.getAs[String](DatabaseKeys.hakuOidKey)
       henkiloOid <- data.getAs[String](DatabaseKeys.personOidKey)
+      henkilotiedot <- data.getAs[MongoDBObject](DatabaseKeys.henkilotiedotPath)
+      asiointikieli = parseAsiointikieli(data.getAs[String](DatabaseKeys.asiointiKieliKey))
       answers <- data.getAs[MongoDBObject](DatabaseKeys.answersKey)
-      asiointikieli = parseAsiointikieli(answers.expand[String](DatabaseKeys.asiointiKieliKey))
       hakutoiveet <- extractHakutoiveet(answers)
-      henkilotiedot <- answers.getAs[MongoDBObject]("henkilotiedot")
     } yield {
       Hakemus(HakemusOid(hakemusOid), HakuOid(hakuOid), henkiloOid, asiointikieli, parseHakutoiveet(hakutoiveet), parseHenkilotiedot(henkilotiedot))
     }
