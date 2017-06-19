@@ -109,6 +109,70 @@ object SijoitteluajonHakija {
 
 object SijoitteluajonHakijat {
 
+
+
+  def kevytDto(repository: HakijaRepository with SijoitteluRepository with ValinnantulosRepository,
+               sijoitteluajoId:Option[Long],
+               hakuOid:HakuOid): List[KevytHakijaDTO] = {
+
+    val hakijat = repository.getHaunHakijat(hakuOid, sijoitteluajoId)
+    val hakutoiveetSijoittelussa = sijoitteluajoId.map(repository.getHaunHakemuksienHakutoiveetSijoittelussa(hakuOid, _).groupBy(_.hakemusOid)).getOrElse(Map())
+
+    val ( haunValinnantulokset:Map[HakemusOid, Map[HakukohdeOid, Set[Valinnantulos]]], haunHakutoiveet:Map[HakemusOid, Set[HakukohdeOid]]) =
+      timed(s"Getting and grouping haun $hakuOid valinnantulokset") {
+      // Do this hacky thing to avoid iterating haunValinnantulokset every time just to get hakijan hakukohteet in haku.
+      val tulokset = repository.runBlocking(repository.getValinnantuloksetForHaku(hakuOid))
+
+      (
+        tulokset.groupBy(_.hakemusOid).mapValues(_.groupBy(_.hakukohdeOid)),
+        tulokset.groupBy(_.hakemusOid).mapValues(_.map(_.hakukohdeOid))
+      )
+      }
+
+    val (valintatapajonotSijoittelussa, tilankuvausHashit) = {
+      val valintatapajonot = sijoitteluajoId.map(repository.getHaunHakemuksienValintatapajonotSijoittelussa(hakuOid, _)).getOrElse(List())
+      (valintatapajonot.groupBy(_.hakemusOid).mapValues(_.groupBy(_.hakukohdeOid)), valintatapajonot.map(_.tilankuvausHash).distinct)
+    }
+    val tilankuvauksetSijoittelussa = repository.getValinnantilanKuvaukset(tilankuvausHashit)
+
+    def hakukohdeDtotSijoittelu(hakemusOid: HakemusOid): List[KevytHakutoiveDTO] = {
+      val hakemuksenValinnantulokset = haunValinnantulokset.getOrElse(hakemusOid, Map())
+
+      hakutoiveetSijoittelussa.getOrElse(hakemusOid, List()).map(hakukohde => {
+        val hakemuksenValinnantuloksetHakutoiveella = hakemuksenValinnantulokset.getOrElse(hakukohde.hakukohdeOid, Set())
+
+        hakukohde.kevytDto(
+          valintatapajonotSijoittelussa.getOrElse(hakemusOid, Map()).getOrElse(hakukohde.hakukohdeOid, List()).map(jono => jono.kevytDto(
+            hakemuksenValinnantuloksetHakutoiveella.find(_.valintatapajonoOid.equals(jono.valintatapajonoOid)),
+            jono.tilankuvaukset(tilankuvauksetSijoittelussa.get(jono.tilankuvausHash))))
+      )}
+      )
+    }
+
+    def hakukohdeDtotEiSijoittelua(hakemusOid: HakemusOid, hakukohdeOids: Set[HakukohdeOid]): List[KevytHakutoiveDTO] = {
+      val hakemuksenValinnantulokset = haunValinnantulokset.getOrElse(hakemusOid, Map())
+
+      hakukohdeOids.map(hakukohdeOid => {
+        val hakemuksenValinnantuloksetHakutoiveella = hakemuksenValinnantulokset.getOrElse(hakukohdeOid, Set())
+
+        HakutoiveRecord(hakemusOid, Some(1), hakukohdeOid, None).kevytDto(
+          hakemuksenValinnantuloksetHakutoiveella.map(valinnantulos => HakutoiveenValintatapajonoRecord.kevytDto(valinnantulos)).toList
+        )}
+      ).toList
+    }
+
+
+    hakijat.map(hakija => {
+      val hakijanHakutoiveetSijoittelussa: Set[HakukohdeOid] = hakutoiveetSijoittelussa.get(hakija.hakemusOid).toSet.flatten.map(_.hakukohdeOid)
+      val hakijanHakutoiveetValinnantuloksissa: Set[HakukohdeOid] = haunHakutoiveet.getOrElse(hakija.hakemusOid, Set())
+      val hakijanHakutoiveetEiSijoittelua: Set[HakukohdeOid] = hakijanHakutoiveetValinnantuloksissa.filterNot(hakijanHakutoiveetSijoittelussa)
+
+      hakija.kevytDto(
+        hakukohdeDtotSijoittelu(hakija.hakemusOid).union(hakukohdeDtotEiSijoittelua(hakija.hakemusOid, hakijanHakutoiveetEiSijoittelua))
+      )
+    })
+  }
+
   def dto(repository: HakijaRepository with SijoitteluRepository with ValinnantulosRepository,
           sijoitteluajoId:Option[Long],
           hakuOid:HakuOid): List[HakijaDTO] = {
@@ -389,4 +453,8 @@ object SijoitteluajonHakijat {
     dto(repository, SyntheticSijoitteluAjoForHakusWithoutSijoittelu.getSijoitteluajoId(sijoitteluajo), HakuOid(sijoitteluajo.getHakuOid), hakukohdeOid)
   }
 
+  def kevytDto(repository: HakijaRepository with SijoitteluRepository with ValinnantulosRepository,
+               sijoitteluajo: SijoitteluAjo): List[KevytHakijaDTO] = {
+    kevytDto(repository, SyntheticSijoitteluAjoForHakusWithoutSijoittelu.getSijoitteluajoId(sijoitteluajo), HakuOid(sijoitteluajo.getHakuOid))
+  }
 }
