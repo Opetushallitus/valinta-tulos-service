@@ -8,7 +8,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
   */
 trait MailPollerRepository {
 
-  def pollForCandidates(hakuOids: List[HakuOid], limit: Int, recheckIntervalHours: Int = (24 * 3), excludeHakemusOids: Set[HakemusOid] = Set.empty): Set[ViestinnänOhjausKooste]
+  def pollForCandidates(hakuOids: List[HakuOid], limit: Int, recheckIntervalHours: Int = (24 * 3)): Set[ViestinnänOhjausKooste]
 
   def alreadyMailed(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Option[java.util.Date]
 

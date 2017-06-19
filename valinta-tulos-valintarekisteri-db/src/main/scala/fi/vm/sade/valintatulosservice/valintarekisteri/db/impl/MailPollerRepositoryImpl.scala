@@ -24,13 +24,10 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
 
   def pollForCandidates(hakuOids: List[HakuOid],
                         limit: Int,
-                        recheckIntervalHours: Int = (24 * 3),
-                        excludeHakemusOids: Set[HakemusOid] = Set.empty): Set[ViestinnänOhjausKooste] = {
+                        recheckIntervalHours: Int = (24 * 3)): Set[ViestinnänOhjausKooste] = {
 
     val allowedChars = "01234567890.,'".toCharArray.toSet
     val hakuOidsIn: String = if (hakuOids.isEmpty) "''" else hakuOids.map(oid => s"'$oid'").mkString(",").filter(allowedChars.contains)
-    val hakemusOidsNotIn: String =  if (excludeHakemusOids.isEmpty) "''" else excludeHakemusOids.map(oid => s"'$oid'").mkString(",").filter(allowedChars.contains)
-
     val limitDateTime = new DateTime().minusHours(recheckIntervalHours).toDate
     val limitTimestamp: Timestamp = new Timestamp(limitDateTime.getTime)
 
@@ -47,9 +44,6 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                 on vt.valintatapajono_oid = vnt.valintatapajono_oid
                 and vt.hakemus_oid = vnt.hakemus_oid
                 and vt.hakukohde_oid = vnt.hakukohde_oid
-              left join newest_vastaanotot as vst
-                on vnt.henkilo_oid = vst.henkilo
-                and vnt.hakukohde_oid = vst.hakukohde
               left join viestinnan_ohjaus as vo
                 on vt.valintatapajono_oid = vo.valintatapajono_oid
                 and vt.hakemus_oid = vo.hakemus_oid
@@ -58,9 +52,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                 hk.haku_oid in (#${hakuOidsIn})
                 and vt.julkaistavissa is true
                 and (vnt.tila = 'Hyvaksytty' or vnt.tila = 'VarasijaltaHyvaksytty')
-                and (vst.henkilo is null and vst.hakukohde is null)
                 and (vo.done is null and vo.sent is null)
-                and vt.hakemus_oid not in (#${hakemusOidsNotIn})
                 and (vo.previous_check is null or vo.previous_check < ${limitTimestamp})
               limit ${limit}
          """.as[ViestinnänOhjausKooste]).toSet
