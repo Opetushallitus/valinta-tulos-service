@@ -45,7 +45,8 @@ class HakemusRepository()(implicit appConfig: VtsAppConfig) extends Logging {
     )
 
     val hakutoiveet: Map[String, Int] = (1 to maxApplicationOptions).flatMap(i => {
-      List(s"answers.hakutoiveet.preference$i-Opetuspiste-id" -> 1, s"answers.hakutoiveet.preference$i-Opetuspiste" -> 1, s"answers.hakutoiveet.preference$i-Koulutus" -> 1)
+      List(s"answers.hakutoiveet.preference$i-Opetuspiste-id" -> 1, s"answers.hakutoiveet.preference$i-Opetuspiste" -> 1,
+        s"answers.hakutoiveet.preference$i-Koulutus" -> 1,s"answers.hakutoiveet.preference$i-Koulutus-id" -> 1)
     }).toMap
 
     baseFields.putAll(hakutoiveet)
