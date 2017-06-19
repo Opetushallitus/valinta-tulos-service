@@ -22,7 +22,9 @@ import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 trait ValintarekisteriRaportointiService {
   def getSijoitteluAjo(sijoitteluajoId: Long): Option[SijoitteluAjo]
 
-  def hakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO]
+  def kevytHakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO]
+
+  def kevytHakemukset(sijoitteluAjo: SijoitteluAjo): List[KevytHakijaDTO]
 
   def hakemukset(sijoitteluAjo: SijoitteluAjo):HakijaPaginationObject
 
@@ -81,8 +83,11 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
   override def hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO] =
     tryOrThrow(SijoitteluajonHakijat.kevytDtoVainHakukohde(repository, sijoitteluAjo, hakukohdeOid))
 
-  override def hakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO] =
+  override def kevytHakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO] =
     tryOrThrow(SijoitteluajonHakijat.kevytDto(repository, sijoitteluAjo, hakukohdeOid))
+
+  override def kevytHakemukset(sijoitteluAjo: SijoitteluAjo): List[KevytHakijaDTO] =
+    tryOrThrow(SijoitteluajonHakijat.kevytDto(repository, sijoitteluAjo))
 
   private def konvertoiHakijat(hyvaksytyt: Boolean, ilmanHyvaksyntaa: Boolean, vastaanottaneet: Boolean, hakukohdeOids: java.util.List[String], count: Integer, index: Integer, hakijat:java.util.ArrayList[HakijaDTO]): HakijaPaginationObject = {
 
