@@ -548,8 +548,9 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   }
 
   override def deleteValinnantulos(muokkaaja:String, valinnantulos: Valinnantulos, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
-      deleteValinnantuloksenOhjaus(valinnantulos.getValinnantuloksenOhjaus(muokkaaja, "Valinnantuloksen poisto")
-        ).andThen(deleteValinnantila(valinnantulos.getValinnantilanTallennus(muokkaaja)))
+    deleteViestinnanOhjaus(valinnantulos.getValinnantuloksenOhjaus(muokkaaja, "Viestinnänohjauksen poisto"))
+      .andThen(deleteValinnantuloksenOhjaus(valinnantulos.getValinnantuloksenOhjaus(muokkaaja, "Valinnantuloksen poisto")))
+        .andThen(deleteValinnantila(valinnantulos.getValinnantilanTallennus(muokkaaja)))
   }
 
   def deleteValinnantila(tila: ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
@@ -574,7 +575,19 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     deleteTilanKuvaukset.andThen(deleteValinnantila).transactionally
   }
 
-  def deleteValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+  def deleteViestinnanOhjaus(ohjaus: ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+    sqlu"""delete from viestinnan_ohjaus
+               where hakukohde_oid = ${ohjaus.hakukohdeOid}
+               and hakemus_oid = ${ohjaus.hakemusOid}
+               and valintatapajono_oid = ${ohjaus.valintatapajonoOid}
+               and (${ifUnmodifiedSince}::timestamptz is null
+                   or system_time @> ${ifUnmodifiedSince})""".flatMap {
+      case 1 => DBIO.successful(())
+      case _ => DBIO.failed(new ConcurrentModificationException(s"Viestinnän ohjausta $ohjaus ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
+    }
+  }
+
+  def deleteValinnantuloksenOhjaus(ohjaus: ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
     sqlu"""delete from valinnantulokset
                where hakukohde_oid = ${ohjaus.hakukohdeOid}
                and hakemus_oid = ${ohjaus.hakemusOid}
