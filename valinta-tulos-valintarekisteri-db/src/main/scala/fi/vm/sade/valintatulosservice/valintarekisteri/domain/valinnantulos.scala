@@ -37,7 +37,8 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     other.valinnantila != valinnantila ||
       other.vastaanottotila != vastaanottotila ||
       other.ilmoittautumistila != ilmoittautumistila ||
-      hasOhjausChanged(other)
+      hasOhjausChanged(other) ||
+      hasEhdollisenHyvaksynnanEhtoChanged(other)
 
   def isSameValinnantulos(other: Valinnantulos) =
     other.hakukohdeOid == hakukohdeOid &&

@@ -36,9 +36,9 @@ object JonoFinder {
   }
 
   def merkitseväJono(hakutoive: HakutoiveDTO): Option[HakutoiveenValintatapajonoDTO] = {
-    val ordering = Ordering.fromLessThan { (jonoWind1: (HakutoiveenValintatapajonoDTO, Int), jonoWind2: (HakutoiveenValintatapajonoDTO, Int)) =>
-      val (jono1,ind1) = jonoWind1
-      val (jono2,ind2) = jonoWind2
+    val ordering = Ordering.fromLessThan { (jonoWind1: HakutoiveenValintatapajonoDTO, jonoWind2: HakutoiveenValintatapajonoDTO) =>
+      val jono1 = jonoWind1
+      val jono2 = jonoWind2
       val tila1 = fromHakemuksenTila(jono1.getTila)
       val tila2 = fromHakemuksenTila(jono2.getTila)
       if (tila1 == Valintatila.varalla && tila2 == Valintatila.varalla) {
@@ -46,14 +46,14 @@ object JonoFinder {
       } else {
         val ord = tila1.compareTo(tila2)
         if(ord == 0) {
-          ind1.compareTo(ind2) < 0
+          jono1.getValintatapajonoPrioriteetti.compareTo(jono2.getValintatapajonoPrioriteetti) < 0
         } else {
           ord < 0
         }
       }
     }
 
-    val orderedJonot: List[HakutoiveenValintatapajonoDTO] = hakutoive.getHakutoiveenValintatapajonot.zipWithIndex.toList.sorted(ordering).map(_._1)
+    val orderedJonot: List[HakutoiveenValintatapajonoDTO] = hakutoive.getHakutoiveenValintatapajonot.toList.sorted(ordering)
     val headOption: Option[HakutoiveenValintatapajonoDTO] = orderedJonot.headOption
     headOption.map(jono => {
       val tila: Valintatila = fromHakemuksenTila(jono.getTila)
