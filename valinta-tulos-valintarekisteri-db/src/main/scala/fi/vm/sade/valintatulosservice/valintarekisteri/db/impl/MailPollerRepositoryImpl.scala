@@ -20,43 +20,41 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
       HakukohdeOid(r.nextString),
       ValintatapajonoOid(r.nextString),
       HakemusOid(r.nextString),
-      r.nextTimestampOption,
-      r.nextTimestampOption,
-      r.nextTimestampOption,
-      r.nextStringOption))
+      r.nextTimestampOption))
 
   def pollForCandidates(hakuOids: List[HakuOid],
                         limit: Int,
-                        recheckIntervalHours: Int = (24 * 3),
-                        excludeHakemusOids: Set[HakemusOid] = Set.empty): Set[ViestinnänOhjausKooste] = {
+                        recheckIntervalHours: Int = (24 * 3)): Set[ViestinnänOhjausKooste] = {
 
     val allowedChars = "01234567890.,'".toCharArray.toSet
     val hakuOidsIn: String = if (hakuOids.isEmpty) "''" else hakuOids.map(oid => s"'$oid'").mkString(",").filter(allowedChars.contains)
-    val hakemusOidsNotIn: String =  if (excludeHakemusOids.isEmpty) "''" else excludeHakemusOids.map(oid => s"'$oid'").mkString(",").filter(allowedChars.contains)
-
     val limitDateTime = new DateTime().minusHours(recheckIntervalHours).toDate
     val limitTimestamp: Timestamp = new Timestamp(limitDateTime.getTime)
 
     val res = timed("Fetching mailable candidates", 100) {
       runBlocking(
         sql"""select
-              hk.haku_oid,
-              vt.hakukohde_oid, vt.valintatapajono_oid, vt.hakemus_oid,
-              vo.previous_check, vo.sent, vo.done, vo.message
-            from valinnantulokset as vt
+                hk.haku_oid,
+                vt.hakukohde_oid, vt.valintatapajono_oid, vt.hakemus_oid,
+                vo.sent
+              from valinnantulokset as vt
               right join hakukohteet as hk
                 on vt.hakukohde_oid = hk.hakukohde_oid
+              join valinnantilat as vnt
+                on vt.valintatapajono_oid = vnt.valintatapajono_oid
+                and vt.hakemus_oid = vnt.hakemus_oid
+                and vt.hakukohde_oid = vnt.hakukohde_oid
               left join viestinnan_ohjaus as vo
-                on vt.hakukohde_oid = vo.hakukohde_oid
+                on vt.valintatapajono_oid = vo.valintatapajono_oid
                 and vt.hakemus_oid = vo.hakemus_oid
-                and vt.valintatapajono_oid = vo.valintatapajono_oid
-            where
-              hk.haku_oid in (#${hakuOidsIn})
-              and vt.julkaistavissa is true
-              and vo.done is null
-              and vt.hakemus_oid not in (#${hakemusOidsNotIn})
-              and (vo.previous_check is null or vo.previous_check < ${limitTimestamp})
-            limit ${limit}
+                and vt.hakukohde_oid = vo.hakukohde_oid
+              where
+                hk.haku_oid in (#${hakuOidsIn})
+                and vt.julkaistavissa is true
+                and (vnt.tila = 'Hyvaksytty' or vnt.tila = 'VarasijaltaHyvaksytty')
+                and vo.done is null
+                and (vo.previous_check is null or vo.previous_check < ${limitTimestamp})
+              limit ${limit}
          """.as[ViestinnänOhjausKooste]).toSet
     }
 
@@ -71,8 +69,8 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
     timed(s"Updating previous_check timestamp for hakemusOid ${kooste.hakemusOid} in hakukohde ${kooste.hakukohdeOid}", 100) {
       runBlocking(
         sqlu"""insert into viestinnan_ohjaus as vo
-               (hakukohde_oid, valintatapajono_oid, hakemus_oid, previous_check, sent, done, message)
-               values (${kooste.hakukohdeOid}, ${kooste.valintatapajonoOid}, ${kooste.hakemusOid}, ${timestamp}, ${kooste.sendTime}, ${kooste.doneTime}, ${kooste.message})
+               (hakukohde_oid, valintatapajono_oid, hakemus_oid, previous_check)
+               values (${kooste.hakukohdeOid}, ${kooste.valintatapajonoOid}, ${kooste.hakemusOid}, ${timestamp})
                on conflict on constraint viestinnan_ohjaus_pkey do
                   update set previous_check = ${timestamp}
                   where vo.hakukohde_oid = ${kooste.hakukohdeOid}
@@ -83,7 +81,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
   }
 
   def alreadyMailed(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Option[java.util.Date] = {
-    timed(s"Marking hakemusOid $hakemusOid as already mailed in hakukohde $hakukohdeOid", 100) {
+    timed(s"Checking if already mailed: hakemus $hakemusOid,  hakukohde $hakukohdeOid", 100) {
       runBlocking(
         sql"""select sent
               from viestinnan_ohjaus
@@ -129,8 +127,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
 case class HakemusIdentifier(hakuOid: HakuOid, hakemusOid: HakemusOid)
 
 case class ViestinnänOhjausKooste(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid,
-                                  hakemusOid: HakemusOid, previousCheckTime: Option[Timestamp], sendTime: Option[Timestamp],
-                                  doneTime: Option[Timestamp], message: Option[String])
+                                  hakemusOid: HakemusOid, sendTime: Option[Timestamp])
 
 object MailStatus extends Enumeration {
   val NOT_MAILED, MAILED, SHOULD_MAIL, NEVER_MAIL = Value
