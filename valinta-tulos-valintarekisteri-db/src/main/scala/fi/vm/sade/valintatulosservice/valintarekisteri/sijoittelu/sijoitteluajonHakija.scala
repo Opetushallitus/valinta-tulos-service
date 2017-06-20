@@ -15,7 +15,7 @@ object SijoitteluajonHakija {
 
     val (hakemuksenValinnantulokset, hakutoiveetSijoittelussa) = hakija match {
       case Some(x) => (
-        timed(s"Getting valinnantulokset for hakemus $hakemusOid") {
+        timed(s"Getting valinnantulokset for hakemus $hakemusOid", 100) {
           repository.runBlocking(repository.getValinnantuloksetForHakemus(hakemusOid)).groupBy(_.hakukohdeOid)
         },
         sijoitteluajoId.map(repository.getHakemuksenHakutoiveetSijoittelussa(hakemusOid, _).map(h => h.hakukohdeOid -> h).toMap).getOrElse(Map()))
