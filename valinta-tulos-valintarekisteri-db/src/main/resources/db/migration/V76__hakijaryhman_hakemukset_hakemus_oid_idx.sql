@@ -1,0 +1,1 @@
+create index hakijaryhman_hakemukset_sijoitteluajo_id_hakemus_oid_idx on hakijaryhman_hakemukset (sijoitteluajo_id, hakemus_oid);
