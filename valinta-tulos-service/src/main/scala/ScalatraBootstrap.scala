@@ -100,7 +100,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val ldapUserService = new LdapUserService(appConfig.securityContext.directoryClient)
     lazy val hyvaksymiskirjeService = new HyvaksymiskirjeService(valintarekisteriDb, hakuService, audit, authorizer)
 
-    lazy val sijoitteluAjoDeleteScheduler = new SijoitteluAjoDeleteScheduler(valintarekisteriDb, appConfig)
+    lazy val sijoitteluajoDeleteScheduler = new SijoitteluajoDeleteScheduler(valintarekisteriDb, appConfig)
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
     
     val migrationMode = isTrue(System.getProperty("valinta-rekisteri-migration-mode"))
@@ -108,7 +108,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     val scheduledDeleteSijoitteluAjot = isTrue(System.getProperty("valinta-rekisteri-scheduled-delete-sijoitteluajot"))
 
     if(scheduledDeleteSijoitteluAjot) {
-      sijoitteluAjoDeleteScheduler.startScheduler()
+      sijoitteluajoDeleteScheduler.startScheduler()
     }
 
     if (migrationMode || scheduledMigration) {

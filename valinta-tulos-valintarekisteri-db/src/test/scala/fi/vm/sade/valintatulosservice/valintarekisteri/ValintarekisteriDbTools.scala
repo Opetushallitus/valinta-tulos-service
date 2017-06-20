@@ -18,6 +18,7 @@ import slick.jdbc.GetResult
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable.IndexedSeq
+import scala.util.Try
 
 trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
 
@@ -526,7 +527,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
     storedHakukohteet.length mustEqual wrapper.hakukohteet.length
   }
 
-  def createHugeSijoittelu(sijoitteluajoId: Long, hakuOid: HakuOid, size: Int = 50) = {
+  def createHugeSijoittelu(sijoitteluajoId: Long, hakuOid: HakuOid, size: Int = 50, insertHakukohteet:Boolean = true) = {
     val sijoitteluajo = SijoitteluajoWrapper(sijoitteluajoId, hakuOid, System.currentTimeMillis(), System.currentTimeMillis())
     var valinnantulokset:IndexedSeq[SijoitteluajonValinnantulosWrapper] = IndexedSeq()
     val hakukohteet = (1 to size par).map(i => {
@@ -565,7 +566,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
       hakukohde.getValintatapajonot.get(0).getHakemukset().asScala.foreach(h => h.setHyvaksyttyHakijaryhmista(hakijaryhmaOids))
       hakukohde
     })
-    hakukohteet.foreach(h => insertHakukohde(HakukohdeOid(h.getOid), hakuOid))
+    if(insertHakukohteet) hakukohteet.foreach(h => insertHakukohde(HakukohdeOid(h.getOid), hakuOid))
     SijoitteluWrapper(sijoitteluajo.sijoitteluajo, hakukohteet.seq.asJava, valinnantulokset.map(_.valintatulos).asJava)
   }
 }

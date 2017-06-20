@@ -305,9 +305,7 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
     logger.info(s"Found ${sijoitteluAjoIds.length} sijoitteluajos to delete of haku $hakuOid : $sijoitteluAjoIds")
     sijoitteluAjoIds.foreach(deleteSingleSijoitteluAjo(hakuOid, _))
   }
-  override def deleteSijoittelunTuloksetForSijoitteluAjot(hakuOid: HakuOid, sijoitteluAjoIds: Seq[Long]): Unit = {
-    sijoitteluAjoIds.foreach(deleteSingleSijoitteluAjo(hakuOid, _))
-  }
+
   /**
     * Note that this will probably produce too long transactions for large results if everything
     * is deleted at once.
@@ -442,15 +440,5 @@ trait MigraatioRepositoryImpl extends MigraatioRepository with ValintarekisteriR
     runBlocking(
       sql"""select * from mongo_sijoittelu_hashes
             where haku_oid = ${hakuOid} and hash = ${hash}""".as[String]).headOption
-  }
-
-  def findSijoitteluAjotSkippingFirst(hakuOid: HakuOid, offset: Int): Seq[Long] = {
-    runBlocking(
-      sql"""select id from sijoitteluajot where haku_oid = ${hakuOid} and poistonesto = false order by start desc offset $offset""".as[Long])
-  }
-
-  def listHakuAndSijoitteluAjoCount(): Seq[(HakuOid, Int)] = {
-    runBlocking(
-      sql"""select haku_oid, count(*) from sijoitteluajot where poistonesto = false group by haku_oid order by count desc""".as[(HakuOid,Int)])
   }
 }
