@@ -81,7 +81,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
   }
 
   def alreadyMailed(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Option[java.util.Date] = {
-    timed(s"Marking hakemusOid $hakemusOid as already mailed in hakukohde $hakukohdeOid", 100) {
+    timed(s"Checking if already mailed: hakemus $hakemusOid,  hakukohde $hakukohdeOid", 100) {
       runBlocking(
         sql"""select sent
               from viestinnan_ohjaus
