@@ -176,7 +176,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   override def getValinnantuloksetForValintatapajono(valintatapajonoOid: ValintatapajonoOid): DBIO[Set[Valinnantulos]] = {
     sql"""with jonon_hakukohde as (select hakukohde_oid
               from valintaesitykset
-              where valintatapajono_oid = $valintatapajonoOid
+              where valintatapajono_oid = ${valintatapajonoOid}
           ) select ti.hakukohde_oid,
               ti.valintatapajono_oid,
               ti.hakemus_oid,
@@ -362,8 +362,8 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                valintatapajono_oid,
                hyvaksytty
            ) values (
-               $hakukohdeOid,
-               $valintatapajonoOid,
+               ${hakukohdeOid},
+               ${valintatapajonoOid},
                null::timestamp with time zone
            ) on conflict on constraint valintaesitykset_pkey do nothing
       """.map(_ => ())

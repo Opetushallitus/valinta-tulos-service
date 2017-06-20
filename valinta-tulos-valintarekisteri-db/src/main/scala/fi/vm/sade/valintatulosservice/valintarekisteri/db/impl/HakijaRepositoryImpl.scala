@@ -12,8 +12,10 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
 
   override def getHakemuksenHakija(hakemusOid: HakemusOid, sijoitteluajoId: Option[Long] = None):Option[HakijaRecord] = {
     def filterHakija(hakijat:Seq[HakijaRecord]): Option[HakijaRecord] = {
-      if(hakijat.map(_.hakijaOid).distinct.size > 1) {
-        throw new RuntimeException(s"Hakemukselle ${hakijat.head.hakemusOid} löytyi useita hakijaOideja")
+      val uniqueHakijaOids = hakijat.map(_.hakijaOid).distinct
+      if (uniqueHakijaOids.size > 1) {
+        val hakijaOidsString = uniqueHakijaOids.mkString(",")
+        throw new RuntimeException(s"Hakemukselle ${hakijat.head.hakemusOid} löytyi useita hakijaOideja: ${hakijaOidsString}")
       }
       hakijat.headOption
     }

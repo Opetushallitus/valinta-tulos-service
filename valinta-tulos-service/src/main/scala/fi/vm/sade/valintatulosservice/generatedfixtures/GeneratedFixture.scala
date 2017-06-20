@@ -10,6 +10,7 @@ import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
 import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtureCreator
 import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.SijoitteluContext
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 import org.mongodb.morphia.AdvancedDatastore
 
@@ -53,6 +54,8 @@ class GeneratedFixture(haut: List[GeneratedHakuFixture] = List(new GeneratedHaku
     }
     logger.info("Done")
   }
+
+  def apply(valintarekisteriDb: ValintarekisteriDb): Unit = ???
 
 
   def convert(scalaIterable: scala.collection.Iterable[Valintatulos]): java.lang.Iterable[Valintatulos] = {

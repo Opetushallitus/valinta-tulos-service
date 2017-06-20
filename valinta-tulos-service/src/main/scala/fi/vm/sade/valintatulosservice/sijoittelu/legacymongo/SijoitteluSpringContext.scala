@@ -16,7 +16,6 @@ import org.springframework.core.env.{MapPropertySource, MutablePropertySources}
 import scala.collection.JavaConversions._
 
 trait SijoitteluContext {
-
   def database:DB
   val morphiaDs:Datastore
   val valintatulosDao:ValintarekisteriValintatulosDao

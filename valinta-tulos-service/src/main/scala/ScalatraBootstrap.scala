@@ -47,28 +47,8 @@ class ScalatraBootstrap extends LifeCycle with Logging {
 
     def isTrue(string:String) = null != string && "true".equalsIgnoreCase(string)
 
-    val migrationMode = isTrue(System.getProperty("valinta-rekisteri-migration-mode"))
-    val scheduledMigration = isTrue(System.getProperty("valinta-rekisteri-scheduled-migration"))
-    val initMongoContext = !appConfig.settings.readFromValintarekisteri
-    if(initMongoContext) {
-      logger.warn("Initialisoidaan Mongo-context ja luetaan sijoittelun tulokset Mongosta!")
-    } else {
-      logger.warn("Luetaan sijoittelun tulokset valintarekisteristä! Ei initialisoida sijoittelun Mongo-contextia!")
-    }
-
-    if((migrationMode || scheduledMigration) && !initMongoContext) {
-      throw new RuntimeException("Migraatio-moodia voi käyttää vain Sijoittelun Mongon kanssa.")
-    }
-
-    lazy val sijoitteluContext:SijoitteluContext = if (initMongoContext) {
-      new SijoitteluSpringContext(appConfig, SijoitteluSpringContext.createApplicationContext(appConfig))
-    } else {
-      throw new NotImplementedError("Someone called Sijoittelu Mongo Context when useSijoitteluMongo=false!!!")
-    }
-
     if (appConfig.isInstanceOf[IT] || appConfig.isInstanceOf[Dev]) {
-      context.mount(new FixtureServlet(sijoitteluContext, valintarekisteriDb), "/util")
-      SijoitteluFixtures(sijoitteluContext.database, valintarekisteriDb).importFixture("hyvaksytty-kesken-julkaistavissa.json")
+      SijoitteluFixtures(valintarekisteriDb).importFixture("hyvaksytty-kesken-julkaistavissa.json")
     }
     implicit lazy val dynamicAppConfig = new OhjausparametritAppConfig(appConfig.ohjausparametritService)
 
@@ -79,65 +59,68 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing)
     lazy val sijoitteluService = new SijoitteluService(valintarekisteriDb, authorizer, hakuService)
 
-    lazy val (raportointiService, valintatulosDao, valintatulosRepository, sijoittelunTulosClient, hakijaDTOClient) = if(initMongoContext) {
-      (sijoitteluContext.raportointiService, sijoitteluContext.valintatulosDao, sijoitteluContext.valintatulosRepository,
-        SijoittelunTulosRestClient(sijoitteluContext, appConfig), new StreamingHakijaDtoClient(appConfig))
-    } else {
-      val valintarekisteriValintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
-      val valintarekisteriRaportointiService = new CachedValintarekisteriRaportointiServiceImpl(new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintarekisteriValintatulosDao))
-      val valintarekisteriSijoittelunTulosClient = new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb)
-      ( valintarekisteriRaportointiService,
+    lazy val valintarekisteriValintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
+    lazy val valintarekisteriRaportointiService = new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintarekisteriValintatulosDao)
+    lazy val valintarekisteriSijoittelunTulosClient = new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb)
+    lazy val (raportointiService, valintatulosDao, valintatulosRepository, sijoittelunTulosClient, hakijaDTOClient) =
+      (valintarekisteriRaportointiService,
         valintarekisteriValintatulosDao,
         new ValintarekisteriValintatulosRepositoryImpl(valintarekisteriValintatulosDao),
         valintarekisteriSijoittelunTulosClient,
         new ValintarekisteriHakijaDTOClientImpl(valintarekisteriRaportointiService, valintarekisteriSijoittelunTulosClient, valintarekisteriDb))
-    }
+
 
     lazy val sijoittelutulosService = new SijoittelutulosService(raportointiService,
-      appConfig.ohjausparametritService, valintarekisteriDb, sijoittelunTulosClient)
+        appConfig.ohjausparametritService, valintarekisteriDb, sijoittelunTulosClient)
     lazy val vastaanotettavuusService = new VastaanotettavuusService(hakukohdeRecordService, valintarekisteriDb)
     lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, hakijaDTOClient)(appConfig,dynamicAppConfig)
     lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService, valintarekisteriDb,
-      appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository(), valintatulosRepository)
+        appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository(), valintatulosRepository)
     lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService,
-      valintatulosRepository, valintarekisteriDb, valintarekisteriDb)
-    lazy val valintarekisteriService = new ValintarekisteriService(valintarekisteriDb, valintarekisteriDb, hakukohdeRecordService)
+        valintatulosRepository, valintarekisteriDb, valintarekisteriDb)
+    lazy val mailPollerRepository: MailPollerRepository = valintarekisteriDb
+    lazy val mailPoller: MailPollerAdapter =
+    new MailPollerAdapter(mailPollerRepository, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 100)
+
     lazy val authorizer = new OrganizationHierarchyAuthorizer(appConfig)
     lazy val yhdenPaikanSaannos = new YhdenPaikanSaannos(hakuService, valintarekisteriDb)
     lazy val valinnantulosService = new ValinnantulosService(
-      valintarekisteriDb,
-      authorizer,
-      hakuService,
-      appConfig.ohjausparametritService,
-      hakukohdeRecordService,
-      vastaanottoService,
-      yhdenPaikanSaannos,
-      appConfig,
-      audit)
+        valintarekisteriDb,
+        authorizer,
+        hakuService,
+        appConfig.ohjausparametritService,
+        hakukohdeRecordService,
+        vastaanottoService,
+        yhdenPaikanSaannos,
+        appConfig,
+        audit)
     lazy val valintalaskentakoostepalveluService = new ValintalaskentakoostepalveluService(appConfig)
     lazy val ldapUserService = new LdapUserService(appConfig.securityContext.directoryClient)
     lazy val hyvaksymiskirjeService = new HyvaksymiskirjeService(valintarekisteriDb, hakuService, audit, authorizer)
-    lazy val migraatioService = new SijoitteluntulosMigraatioService(sijoittelunTulosClient, appConfig,
-      valintarekisteriDb, hakukohdeRecordService, hakuService, valintalaskentakoostepalveluService, sijoitteluContext)
-    lazy val sijoitteluntulosMigraatioScheduler = new SijoittelunTulosMigraatioScheduler(migraatioService, appConfig)
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
-    lazy val mailPoller: MailPollerAdapter = new MailPollerAdapter(valintarekisteriDb, valintatulosService,
-      valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 100)
 
+    val migrationMode = isTrue(System.getProperty("valinta-rekisteri-migration-mode"))
+    val scheduledMigration = isTrue(System.getProperty("valinta-rekisteri-scheduled-migration"))
 
-    if (scheduledMigration) {
-      sijoitteluntulosMigraatioScheduler.startMigrationScheduler()
-    }
-
-    if(migrationMode) {
-      context.mount(new SijoittelunTulosMigraatioServlet(migraatioService), "/sijoittelun-tulos-migraatio")
-      val forceRunningBasicVtsWithMigration = System.getProperty("valinta-rekisteri-force-basic-vts-with-migration")
-      if (forceRunningBasicVtsWithMigration != null && "true".equals(forceRunningBasicVtsWithMigration)) {
+    if (migrationMode || scheduledMigration) {
+      lazy val sijoitteluContext: SijoitteluContext = new SijoitteluSpringContext(appConfig, SijoitteluSpringContext.createApplicationContext(appConfig))
+      lazy val migraatioService = new SijoitteluntulosMigraatioService(sijoittelunTulosClient, appConfig,
+        valintarekisteriDb, hakukohdeRecordService, hakuService, valintalaskentakoostepalveluService, sijoitteluContext)
+      lazy val sijoitteluntulosMigraatioScheduler = new SijoittelunTulosMigraatioScheduler(migraatioService, appConfig)
+      if (scheduledMigration) {
+        sijoitteluntulosMigraatioScheduler.startMigrationScheduler()
+      }
+      if (migrationMode) {
+        context.mount(new SijoittelunTulosMigraatioServlet(migraatioService), "/sijoittelun-tulos-migraatio")
+        val forceRunningBasicVtsWithMigration = System.getProperty("valinta-rekisteri-force-basic-vts-with-migration")
+        if (forceRunningBasicVtsWithMigration != null && "true".equals(forceRunningBasicVtsWithMigration)) {
+          mountBasicVts()
+        }
+      } else {
         mountBasicVts()
       }
-    } else {
-      mountBasicVts()
-    }
+    } else mountBasicVts()
+
     context.mount(new HakukohdeRefreshServlet(valintarekisteriDb, hakukohdeRecordService), "/virkistys")
 
     context.mount(new SwaggerServlet, "/swagger/*")
@@ -158,7 +141,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService), "/lukuvuosimaksu")
       context.mount(new MuutoshistoriaServlet(valinnantulosService, valintarekisteriDb, skipAuditForServiceCall = true), "/muutoshistoria")
       context.mount(new PrivateValintatulosServlet(valintatulosService, vastaanottoService, ilmoittautumisService), "/haku")
-      context.mount(new EmailStatusServlet(mailPoller, new MailDecorator(new HakemusRepository(), valintarekisteriDb, hakuService, oppijanTunnistusService)), "/vastaanottoposti")
+      context.mount(new EmailStatusServlet(mailPoller, new MailDecorator(new HakemusRepository(), mailPollerRepository, hakuService, oppijanTunnistusService)), "/vastaanottoposti")
       context.mount(new EnsikertalaisuusServlet(valintarekisteriDb, appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus")
       context.mount(new HakijanVastaanottoServlet(vastaanottoService), "/vastaanotto")
       context.mount(new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, ldapUserService), "/erillishaku/valinnan-tulos")

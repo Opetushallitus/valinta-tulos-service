@@ -22,14 +22,15 @@ object SijoitteluajonHakija {
       case None => (Map[HakukohdeOid, Set[Valinnantulos]](), Map[HakukohdeOid, HakutoiveRecord]())
     }
 
-    def getVastaanotto(hakukohdeOid: HakukohdeOid): ValintatuloksenTila = {
-      val vastaanotto = hakemuksenValinnantulokset.getOrElse(hakukohdeOid, Set()).map(_.vastaanottotila)
-      if(1 < vastaanotto.size) {
-        throw new RuntimeException(s"Hakemukselle ${hakemusOid} löytyy monta vastaanottoa hakukohteelle ${hakukohdeOid}")
-      } else {
-        vastaanotto.headOption.getOrElse(ValintatuloksenTila.KESKEN)
-      }
+  def getVastaanotto(hakukohdeOid: HakukohdeOid): ValintatuloksenTila = {
+    val vastaanotto = hakemuksenValinnantulokset.getOrElse(hakukohdeOid, Set()).map(_.vastaanottotila)
+    if(1 < vastaanotto.size) {
+      val vastaanottoString = vastaanotto.mkString(",")
+      throw new RuntimeException(s"Hakemukselle ${hakemusOid} löytyy monta vastaanottoa hakukohteelle ${hakukohdeOid}: ${vastaanottoString}")
+    } else {
+      vastaanotto.headOption.getOrElse(ValintatuloksenTila.KESKEN)
     }
+  }
 
     //TODO: Tämä voi olla väärin, jos sijoitteluajoId ei ole latest
     val hakutoiveidenHakeneet = repository.getHakijanHakutoiveidenHakijatValinnantuloksista(hakemusOid)
