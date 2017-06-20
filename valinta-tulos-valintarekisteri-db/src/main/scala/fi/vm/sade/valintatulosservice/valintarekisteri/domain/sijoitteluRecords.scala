@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.domain
 
+import java.time.OffsetDateTime
 import java.util
 import java.util.{Comparator, Date}
 
@@ -310,7 +311,7 @@ case class ValintatapajonoRecord(tasasijasaanto:String, oid: ValintatapajonoOid,
                                  eiVarasijatayttoa:Boolean, kaikkiEhdonTayttavatHyvaksytaan:Boolean,
                                  poissaOlevaTaytto:Boolean, valintaesitysHyvaksytty:Option[Boolean], hakeneet:Int,
                                  varasijat:Option[Int], varasijanTayttoPaivat:Option[Int],
-                                 varasijojaKaytetaanAlkaen:Option[java.sql.Date], varasijojaKaytetaanAsti:Option[java.sql.Date],
+                                 varasijojaKaytetaanAlkaen:Option[Date], varasijojaKaytetaanAsti:Option[Date],
                                  tayttoJono:Option[String], hakukohdeOid: HakukohdeOid) {
 
   def bigDecimal(bigDecimal:BigDecimal): java.math.BigDecimal = bigDecimal match {

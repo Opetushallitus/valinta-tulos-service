@@ -102,8 +102,8 @@ trait ValintarekisteriResultExtractors {
     hakeneet = 0,
     varasijat = r.nextIntOption,
     varasijanTayttoPaivat = r.nextIntOption,
-    varasijojaKaytetaanAlkaen = r.nextDateOption,
-    varasijojaKaytetaanAsti = r.nextDateOption,
+    varasijojaKaytetaanAlkaen = r.nextTimestampOption,
+    varasijojaKaytetaanAsti = r.nextTimestampOption,
     tayttoJono = r.nextStringOption,
     hakukohdeOid = HakukohdeOid(r.nextString)))
 

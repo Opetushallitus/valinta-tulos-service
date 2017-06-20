@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.sijoittelu
 import java.util
 import java.util.Collections.sort
 
-import fi.vm.sade.sijoittelu.domain._
+import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatulos}
 import fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.VARASIJALTA_HYVAKSYTTY
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationObject, KevytHakijaDTO}
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, ValintatuloksenTila}
@@ -12,12 +12,12 @@ import fi.vm.sade.sijoittelu.tulos.service.impl.converters.{RaportointiConverter
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, SijoitteluRepository, ValinnantulosRepository}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusRecord, HakuOid, HakukohdeOid, _}
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.{SijoitteluajonHakijat, SijoitteluajonHakukohteet}
 
-import scala.util.{Failure, Success, Try}
 import scala.collection.JavaConverters._
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
+import scala.util.{Failure, Success, Try}
 
 trait ValintarekisteriRaportointiService {
   def getSijoitteluAjo(sijoitteluajoId: Long): Option[SijoitteluAjo]

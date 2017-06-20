@@ -4,28 +4,35 @@
       "_id": {
         "$oid": "547f0c17e4b0755315d44e0a"
       },
-      "className" : "fi.vm.sade.sijoittelu.domain.Sijoittelu",
-      "hakuOid" : "1.2.246.562.29.173465377510",
-      "sijoitteluajoId": {
-        "$numberLong": "1409055160622"
+      "className": "fi.vm.sade.sijoittelu.domain.Sijoittelu",
+      "hakuOid": "korkeakoulu-lisahaku1",
+      "sijoitteluId": {
+        "$numberLong": "1496148928103"
       },
       "created": {
         "$date": "2014-12-03T13:11:51.186Z"
       },
-      "sijoittele" : true,
-      "sijoitteluajot" : [
+      "sijoittele": true,
+      "sijoitteluajot": [
         {
           "sijoitteluajoId": {
-            "$numberLong": "1409055160621"
+            "$numberLong": "1496148928103"
           },
-          "hakuOid" : "1.2.246.562.29.173465377510",
-          "hakukohteet" : [
+          "hakuOid": "korkeakoulu-lisahaku1",
+          "hakukohteet": [
             {
-              "oid" : "1.2.246.562.14.2013120515524070995659"
-            }, {
-              "oid" : "1.2.246.562.14.2014022408541751568934"
+              "oid": "1.2.246.562.14.2013120515524070995659"
+            },
+            {
+              "oid": "1.2.246.562.14.2014022408541751568934"
             }
-          ]
+          ],
+          "startMils": {
+            "$numberLong": "14961489281031"
+          },
+          "endMils": {
+            "$numberLong": "14961499281031"
+          }
         }
       ]
     }
@@ -37,7 +44,7 @@
       },
       "className": "fi.vm.sade.sijoittelu.domain.Hakukohde",
       "sijoitteluajoId": {
-        "$numberLong": "1409055160623"
+        "$numberLong": "1496148928103"
       },
       "oid": "1.2.246.562.14.2014022408541751568934",
       "tarjoajaOid": "1.2.246.562.10.81044480515",
@@ -62,7 +69,7 @@
               "sukunimi": "Testaaja",
               "prioriteetti": 2,
               "jonosija": 1,
-              "pisteet": "4",
+              "pisteet": 4,
               "tasasijaJonosija": 1,
               "tila": "HYVAKSYTTY",
               "varasijanNumero": 1,
@@ -80,7 +87,8 @@
                   "tila": "HYVAKSYTTY"
                 }
               ],
-              "hyvaksyttyHarkinnanvaraisesti": false
+              "hyvaksyttyHarkinnanvaraisesti": false,
+              "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
             }
           ]
         }

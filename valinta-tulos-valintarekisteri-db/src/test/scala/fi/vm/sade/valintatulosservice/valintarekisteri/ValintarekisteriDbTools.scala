@@ -5,64 +5,26 @@ import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain._
 import fi.vm.sade.sijoittelu.tulos.dto.SijoitteluajoDTO
+import fi.vm.sade.valintatulosservice.json4sCustomFormats
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Tasasijasaanto
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import org.json4s.JsonAST._
-import org.json4s.ext.EnumNameSerializer
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Tasasijasaanto, _}
+import org.json4s.DefaultFormats
 import org.json4s.native.JsonMethods._
-import org.json4s.{CustomSerializer, DefaultFormats, Formats}
 import org.specs2.mutable.Specification
 import slick.dbio.DBIOAction
 import slick.driver.PostgresDriver.api._
 import slick.jdbc.GetResult
+
 import scala.collection.JavaConverters._
 import scala.collection.immutable.IndexedSeq
 
-trait ValintarekisteriDbTools extends Specification {
+trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
 
   val singleConnectionValintarekisteriDb:ValintarekisteriDb
 
   def createTestSession(roles:Set[Role] = Set(Role.SIJOITTELU_CRUD, Role(s"${Role.SIJOITTELU_CRUD.s}_1.2.246.562.10.39804091914"))) =
     singleConnectionValintarekisteriDb.store(CasSession(ServiceTicket("myFakeTicket"), "1.2.246.562.24.1", roles)).toString
-
-  class NumberLongSerializer extends CustomSerializer[Long](format => ( {
-    case JObject(List(JField("$numberLong", JString(longValue)))) => longValue.toLong
-  }, {
-    case x: Long => JObject(List(JField("$numberLong", JString("" + x))))
-  }))
-
-  class DateSerializer extends  CustomSerializer[Date](format => ({
-    case JObject(List(JField("$date", JString(dateValue)))) if (dateValue.endsWith("Z")) =>
-      new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").parse(dateValue)
-    case JObject(List(JField("$date", JString(dateValue)))) =>
-      new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").parse(dateValue)
-    case JString(dateValue) if dateValue.endsWith("Z") =>
-      new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse(dateValue)
-    case JString(dateValue) =>
-      new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(dateValue)
-  }, {
-    case x: Date => JObject(List(JField("$date", JString("" + x))))
-  }))
-
-  class TasasijasaantoSerializer extends CustomSerializer[Tasasijasaanto](format => ( {
-    case JString(tasasijaValue) => Tasasijasaanto.getTasasijasaanto(fi.vm.sade.sijoittelu.domain.Tasasijasaanto.valueOf(tasasijaValue))
-  }, {
-    case x: Tasasijasaanto => JString(x.tasasijasaanto.toString)
-  }))
-
-  class ValinnantilaSerializer extends CustomSerializer[Valinnantila](format => ( {
-    case JString(tilaValue) => Valinnantila(fi.vm.sade.sijoittelu.domain.HakemuksenTila.valueOf(tilaValue))
-  }, {
-    case x: Valinnantila => JString(x.valinnantila.toString)
-  }))
-
-  class TilankuvauksenTarkenneSerializer extends CustomSerializer[ValinnantilanTarkenne](format => ({
-    case JString(tarkenneValue) => ValinnantilanTarkenne.getValinnantilanTarkenne(fi.vm.sade.sijoittelu.domain.TilankuvauksenTarkenne.valueOf(tarkenneValue))
-  }, {
-    case x: ValinnantilanTarkenne => JString(x.tilankuvauksenTarkenne.toString)
-  }))
 
   implicit val formats = DefaultFormats ++ List(
     new NumberLongSerializer,
@@ -317,59 +279,6 @@ trait ValintarekisteriDbTools extends Specification {
     true must beTrue
   }
 
-
-
-  def sijoitteluWrapperFromJson(json: JValue, tallennaHakukohteet: Boolean = true): SijoitteluWrapper = {
-    val JArray(sijoittelut) = (json \ "Sijoittelu")
-    val JArray(sijoitteluajot) = (sijoittelut(0) \ "sijoitteluajot")
-    val sijoitteluajo: SijoitteluAjo = sijoitteluajot(0).extract[SijoitteluajoWrapper].sijoitteluajo
-
-    val JArray(jsonHakukohteet) = (json \ "Hakukohde")
-    val hakukohteet: List[Hakukohde] = jsonHakukohteet.map(hakukohdeJson => {
-      val hakukohde = hakukohdeJson.extract[SijoitteluajonHakukohdeWrapper].hakukohde
-      hakukohde.setValintatapajonot({
-        val JArray(valintatapajonot) = (hakukohdeJson \ "valintatapajonot")
-        valintatapajonot.map(valintatapajono => {
-          val valintatapajonoExt = valintatapajono.extract[SijoitteluajonValintatapajonoWrapper].valintatapajono
-          val JArray(hakemukset) = (valintatapajono \ "hakemukset")
-          valintatapajonoExt.setHakemukset(hakemukset.map(hakemus => {
-            val hakemusExt = hakemus.extract[SijoitteluajonHakemusWrapper].hakemus
-            (hakemus \ "pistetiedot") match {
-              case JArray(pistetiedot) => hakemusExt.setPistetiedot(pistetiedot.map(pistetieto => pistetieto.extract[SijoitteluajonPistetietoWrapper].pistetieto).asJava)
-              case _ =>
-            }
-            hakemusExt
-          }).asJava)
-          valintatapajonoExt
-        }).asJava
-      })
-      (hakukohdeJson \ "hakijaryhmat") match {
-        case JArray(hakijaryhmat) => hakukohde.setHakijaryhmat(hakijaryhmat.map(hakijaryhma => hakijaryhma.extract[SijoitteluajonHakijaryhmaWrapper].hakijaryhma).asJava)
-        case _ =>
-      }
-      hakukohde
-    })
-
-    val JArray(jsonValintatulokset) = (json \ "Valintatulos")
-    val valintatulokset: List[Valintatulos] = jsonValintatulokset.map(valintaTulos => {
-      val tulos = valintaTulos.extract[SijoitteluajonValinnantulosWrapper].valintatulos
-      (valintaTulos \ "logEntries") match {
-        case JArray(entries) => tulos.setOriginalLogEntries(entries.map(e => e.extract[LogEntryWrapper].entry).asJava)
-        case _ =>
-      }
-      tulos.setMailStatus((valintaTulos \ "mailStatus").extract[MailStatusWrapper].status)
-      tulos
-    })
-
-    val wrapper: SijoitteluWrapper = SijoitteluWrapper(sijoitteluajo, hakukohteet.filter(h => {
-      h.getSijoitteluajoId.equals(sijoitteluajo.getSijoitteluajoId)
-    }), valintatulokset)
-    if(tallennaHakukohteet) {
-      hakukohteet.foreach(h => insertHakukohde(HakukohdeOid(h.getOid), HakuOid(sijoitteluajo.getHakuOid)))
-    }
-    wrapper
-  }
-
   def insertHakukohde(hakukohdeOid: HakukohdeOid, hakuOid: HakuOid) = {
     singleConnectionValintarekisteriDb.runBlocking(DBIOAction.seq(
       sqlu"""insert into hakukohteet (hakukohde_oid, haku_oid, kk_tutkintoon_johtava, yhden_paikan_saanto_voimassa, koulutuksen_alkamiskausi)
@@ -378,7 +287,14 @@ trait ValintarekisteriDbTools extends Specification {
 
   def loadSijoitteluFromFixture(fixture: String, path: String = "sijoittelu/", tallennaHakukohteet: Boolean = true):SijoitteluWrapper = {
     val json = parse(getClass.getClassLoader.getResourceAsStream("fixtures/" + path + fixture + ".json"))
-    sijoitteluWrapperFromJson(json, tallennaHakukohteet)
+    SijoitteluWrapper.fromJson(json) match {
+      case Some(wrapper) =>
+        if (tallennaHakukohteet) {
+          wrapper.hakukohteet.foreach(h => insertHakukohde(HakukohdeOid(h.getOid), HakuOid(wrapper.sijoitteluajo.getHakuOid)))
+        }
+        wrapper
+      case None => throw new IllegalArgumentException("Could not get SijoitteluWrapper: no sijoittelus.")
+    }
   }
 
   private implicit val getSijoitteluajoResult = GetResult(r => {

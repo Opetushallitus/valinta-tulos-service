@@ -1,14 +1,14 @@
 package fi.vm.sade.valintatulosservice.local
 
 import fi.vm.sade.valintatulosservice._
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import Vastaanottotila.Vastaanottotila
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
-import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelutulosService
-import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{DirectMongoSijoittelunTulosRestClient, StreamingHakijaDtoClient}
+import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.StreamingHakijaDtoClient
+import fi.vm.sade.valintatulosservice.sijoittelu._
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import org.joda.time.DateTime
 import org.junit.runner.RunWith
@@ -391,16 +391,17 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
   lazy val hakuService = HakuService(appConfig.hakuServiceConfig)
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, true)
-  lazy val sijoittelunTulosRestClient = new DirectMongoSijoittelunTulosRestClient(sijoitteluContext, appConfig)
-  lazy val sijoittelutulosService = new SijoittelutulosService(sijoitteluContext.raportointiService,
-    appConfig.ohjausparametritService, valintarekisteriDb, sijoittelunTulosRestClient)
+  lazy val sijoittelutulosService = new SijoittelutulosService(new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintatulosDao), appConfig.ohjausparametritService,
+    valintarekisteriDb, new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb))
   lazy val vastaanotettavuusService = new VastaanotettavuusService(hakukohdeRecordService, valintarekisteriDb)
+  lazy val valintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
   lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb,
-    hakuService, valintarekisteriDb, hakukohdeRecordService, sijoitteluContext.valintatulosDao, new StreamingHakijaDtoClient(appConfig))(appConfig, dynamicAppConfig)
+    hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, new StreamingHakijaDtoClient(appConfig))(appConfig, dynamicAppConfig)
+  lazy val valintatulosRepository = new ValintarekisteriValintatulosRepositoryImpl(valintatulosDao)
   lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService,
-    valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository(), sijoitteluContext.valintatulosRepository)
+    valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository(), valintatulosRepository)
   lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService,
-    sijoitteluContext.valintatulosRepository, valintarekisteriDb, valintarekisteriDb)
+    valintatulosRepository, valintarekisteriDb, valintarekisteriDb)
 
   private def hakemuksenTulos: Hakemuksentulos = valintatulosService.hakemuksentulos(hakemusOid).get
 

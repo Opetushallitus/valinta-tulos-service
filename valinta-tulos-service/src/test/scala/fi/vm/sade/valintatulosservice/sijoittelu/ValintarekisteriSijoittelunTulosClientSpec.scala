@@ -15,7 +15,6 @@ class ValintarekisteriSijoittelunTulosClientSpec extends ITSpecification with Va
   step(deleteAll())
 
   lazy val client = new ValintarekisteriSijoittelunTulosClientImpl(singleConnectionValintarekisteriDb)
-
   step(createSijoitteluajoHaulle2)
   step(createHakujen1Ja2ValinnantuloksetIlmanSijoittelua)
 

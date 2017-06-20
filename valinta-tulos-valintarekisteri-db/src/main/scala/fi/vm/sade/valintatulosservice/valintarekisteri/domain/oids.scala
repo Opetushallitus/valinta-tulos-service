@@ -51,3 +51,14 @@ class HakemusOidSerializer extends CustomSerializer[HakemusOid]((_: Formats) => 
     case hakemusOid: HakemusOid => JString(hakemusOid.toString)
   })
 })
+
+object Oids {
+  def getSerializers() = {
+    List(
+      new HakukohdeOidSerializer,
+      new HakuOidSerializer,
+      new ValintatapajonoOidSerializer,
+      new HakemusOidSerializer
+    )
+  }
+}

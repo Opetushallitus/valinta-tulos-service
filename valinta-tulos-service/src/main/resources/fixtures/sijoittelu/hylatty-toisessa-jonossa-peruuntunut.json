@@ -4,26 +4,32 @@
       "_id": {
         "$oid": "547f0c17e4b0755315d44e0a"
       },
-      "className" : "fi.vm.sade.sijoittelu.domain.Sijoittelu",
-      "hakuOid" : "1.2.246.562.29.173465377510",
-      "sijoitteluajoId": {
-        "$numberLong": "1409055160622"
+      "className": "fi.vm.sade.sijoittelu.domain.Sijoittelu",
+      "hakuOid": "1.2.246.562.5.2013080813081926341928",
+      "sijoitteluId": {
+        "$numberLong": "1496148928072"
       },
       "created": {
         "$date": "2014-12-03T13:11:51.186Z"
       },
-      "sijoittele" : true,
-      "sijoitteluajot" : [
+      "sijoittele": true,
+      "sijoitteluajot": [
         {
           "sijoitteluajoId": {
-            "$numberLong": "1409055160621"
+            "$numberLong": "1496148928072"
           },
-          "hakuOid" : "1.2.246.562.29.173465377510",
-          "hakukohteet" : [
+          "hakuOid": "1.2.246.562.5.2013080813081926341928",
+          "hakukohteet": [
             {
-              "oid" : "1.2.246.562.5.72607738902"
+              "oid": "1.2.246.562.5.72607738902"
             }
-          ]
+          ],
+          "startMils": {
+            "$numberLong": "14961489280721"
+          },
+          "endMils": {
+            "$numberLong": "14961499280721"
+          }
         }
       ]
     }
@@ -35,7 +41,7 @@
       },
       "className": "fi.vm.sade.sijoittelu.domain.Hakukohde",
       "sijoitteluajoId": {
-        "$numberLong": "1409055160621"
+        "$numberLong": "1496148928072"
       },
       "oid": "1.2.246.562.5.72607738902",
       "tarjoajaOid": "1.2.246.562.10.591352080610",
@@ -58,7 +64,7 @@
               "sukunimi": "Testaaja",
               "prioriteetti": 1,
               "jonosija": 1,
-              "pisteet": "4",
+              "pisteet": 4,
               "tasasijaJonosija": 1,
               "tila": "PERUUNTUNUT",
               "tilaHistoria": [
@@ -69,7 +75,8 @@
                   "tila": "PERUUNTUNUT"
                 }
               ],
-              "hyvaksyttyHarkinnanvaraisesti": false
+              "hyvaksyttyHarkinnanvaraisesti": false,
+              "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
             }
           ]
         },
@@ -90,7 +97,7 @@
               "sukunimi": "Testaaja",
               "prioriteetti": 1,
               "jonosija": 1,
-              "pisteet": "4",
+              "pisteet": 4,
               "tasasijaJonosija": 1,
               "tila": "HYLATTY",
               "tilaHistoria": [
@@ -101,7 +108,8 @@
                   "tila": "HYLATTY"
                 }
               ],
-              "hyvaksyttyHarkinnanvaraisesti": false
+              "hyvaksyttyHarkinnanvaraisesti": false,
+              "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
             }
           ]
         }
@@ -159,6 +167,5 @@
         }
       ]
     }
-
   ]
 }

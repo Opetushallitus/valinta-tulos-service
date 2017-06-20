@@ -2,20 +2,19 @@ package fi.vm.sade.valintatulosservice.testenvironment
 
 import java.io.File
 
-import fi.vm.sade.valintatulosservice.ValintatulosService
 import fi.vm.sade.valintatulosservice.config.{VtsAppConfig, VtsDynamicAppConfig}
 import fi.vm.sade.valintatulosservice.domain.Hakemuksentulos
-import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{SijoitteluSpringContext, SijoittelunTulosRestClient, StreamingHakijaDtoClient}
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelutulosService
+import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{SijoitteluSpringContext, SijoittelunTulosRestClient, StreamingHakijaDtoClient}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakemusOid
+import fi.vm.sade.valintatulosservice.{ITSpecification, ValintatulosService}
 import org.junit.runner.RunWith
 import org.specs2.execute._
-import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
-class ValintatulosIntegrationTest extends Specification {
+class ValintatulosIntegrationTest extends ITSpecification {
   "in luokka environment" should {
     "return valintatulos for " in {
       val varsFile = "ENVIRONMENT OPHITEST PATH HERE/deploy/ophitest_vars.yml"
