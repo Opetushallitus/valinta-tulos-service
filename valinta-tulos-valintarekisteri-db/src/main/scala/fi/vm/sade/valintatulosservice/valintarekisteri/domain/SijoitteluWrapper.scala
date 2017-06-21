@@ -62,7 +62,7 @@ object SijoitteluWrapper extends json4sCustomFormats {
 
       val JArray(jsonValintatulokset) = (json \ "Valintatulos")
       val valintatulokset: List[Valintatulos] = jsonValintatulokset.map(valintaTulos => {
-        val tulos = valintaTulos.extract[SijoitteluajonValinnantulosWrapper].valintatulos
+        val tulos: Valintatulos = valintaTulos.extract[SijoitteluajonValinnantulosWrapper].valintatulos
         (valintaTulos \ "logEntries") match {
           case JArray(entries) => tulos.setOriginalLogEntries(entries.map(e => e.extract[LogEntryWrapper].entry).asJava)
           case _ =>

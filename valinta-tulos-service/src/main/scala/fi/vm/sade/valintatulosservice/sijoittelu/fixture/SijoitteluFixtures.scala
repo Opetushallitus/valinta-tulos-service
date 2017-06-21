@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice.sijoittelu.fixture
 
+import fi.vm.sade.sijoittelu.domain.Valintatulos
 import fi.vm.sade.valintatulosservice.json4sCustomFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -8,6 +9,8 @@ import org.json4s.JsonAST.JArray
 import org.json4s.jackson.JsonMethods._
 import org.springframework.core.io.ClassPathResource
 import slick.driver.PostgresDriver.api.{actionBasedSQLInterpolation, _}
+
+import scala.collection.immutable
 
 case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends json4sCustomFormats {
 
@@ -31,14 +34,58 @@ case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends js
   private def importJsonFixturesToPostgres(fixtureName: String,
                                            yhdenPaikanSaantoVoimassa: Boolean = false,
                                            kktutkintoonJohtava: Boolean = false): Unit = {
-
-    val json = parse(scala.io.Source.fromInputStream(new ClassPathResource("fixtures/sijoittelu/" + fixtureName).getInputStream).mkString)
+    val text = scala.io.Source.fromInputStream(new ClassPathResource("fixtures/sijoittelu/" + fixtureName).getInputStream).mkString
+    val json = parse(text)
     SijoitteluWrapper.fromJson(json) match {
       case Some(wrapper) =>
         wrapper.hakukohteet.foreach(h => storeHakukohde(h.getOid, wrapper.sijoitteluajo.getHakuOid, wrapper.sijoitteluajo.getSijoitteluajoId, h.isKaikkiJonotSijoiteltu, yhdenPaikanSaantoVoimassa, kktutkintoonJohtava))
-        valintarekisteriDb.storeSijoittelu(wrapper)
+        val valintatulokset: Seq[Valintatulos] = wrapper.valintatulokset
+        valintarekisteriDb.storeSijoittelu(wrapper.copy(valintatulokset = List()))
+        storeValintatulokset(valintatulokset, wrapper.sijoitteluajo.getSijoitteluajoId)
+        storeEhdollisenHyvaksynnanEhto(json)
         storeVastaanotot(json)
-      case None => 
+      case None =>
+    }
+  }
+
+  private def storeValintatulokset(valintatulokset: Seq[Valintatulos], sijoitteluAjoId: Long) = {
+    valintatulokset.foreach(tulos => {
+      valintarekisteriDb.runBlocking(valintarekisteriDb.storeValinnantuloksenOhjaus(
+        ValinnantuloksenOhjaus(
+          HakemusOid(tulos.getHakemusOid),
+          ValintatapajonoOid(tulos.getValintatapajonoOid),
+          HakukohdeOid(tulos.getHakukohdeOid),
+          tulos.getEhdollisestiHyvaksyttavissa,
+          tulos.getJulkaistavissa,
+          tulos.getHyvaksyttyVarasijalta,
+          tulos.getHyvaksyPeruuntunut,
+          sijoitteluAjoId.toString,
+          "Sijoitteluajon tallennus")
+      ))
+    })
+  }
+
+  private def storeEhdollisenHyvaksynnanEhto(json: JValue) = {
+    val JArray(valintatulokset) = (json \ "Valintatulos")
+
+    for (valintatulos <- valintatulokset) {
+      val ehdollisenHyvaksynnanEhtoOption = (valintatulos \ "ehdollisestiHyvaksyttavissa").extractOpt[Boolean]
+      ehdollisenHyvaksynnanEhtoOption match {
+        case None =>
+        case Some(ehdollisenHyvaksynnanEhto) =>
+          if (ehdollisenHyvaksynnanEhto) {
+            val ehto = EhdollisenHyvaksynnanEhto(
+              (valintatulos \ "hakemusOid").extract[HakemusOid],
+              (valintatulos \ "valintatapajonoOid").extract[ValintatapajonoOid],
+              (valintatulos \ "hakukohdeOid").extract[HakukohdeOid],
+              (valintatulos \ "ehdollisenHyvaksymisenEhtoKoodi").extractOpt[String].orNull,
+              (valintatulos \ "ehdollisenHyvaksymisenEhtoFI").extractOpt[String].orNull,
+              (valintatulos \ "ehdollisenHyvaksymisenEhtoSV").extractOpt[String].orNull,
+              (valintatulos \ "ehdollisenHyvaksymisenEhtoEN").extractOpt[String].orNull
+            )
+            valintarekisteriDb.runBlocking(valintarekisteriDb.storeEhdollisenHyvaksynnanEhto(ehto))
+          }
+      }
     }
   }
 
