@@ -3,10 +3,10 @@ package fi.vm.sade.valintatulosservice.tarjonta
 import scala.collection.immutable
 import scala.util.Try
 
-case class KelaKoulutus(val tutkinnontaso: Option[String],val tutkinnonlaajuus1: String, val tutkinnonlaajuus2: Option[String]) extends KelaLaajuus with KelaTutkinnontaso
+case class KelaKoulutus(val tutkinnontaso: Option[String],val tutkinnonlaajuus1: Option[String], val tutkinnonlaajuus2: Option[String]) extends KelaLaajuus with KelaTutkinnontaso
 
 trait KelaLaajuus {
-  val tutkinnonlaajuus1: String
+  val tutkinnonlaajuus1: Option[String]
   val tutkinnonlaajuus2: Option[String]
 }
 trait KelaTutkinnontaso {
@@ -14,8 +14,7 @@ trait KelaTutkinnontaso {
 }
 private object MuuTutkinto {
   def apply(laajuus: Option[String]) = {
-    val (laajuus1, laajuus2) = KelaKoulutus.asLaajuus1AndLaajuus2(laajuus)
-    KelaKoulutus(tutkinnontaso = None, tutkinnonlaajuus1 = laajuus1, tutkinnonlaajuus2 = laajuus2)
+    KelaKoulutus(tutkinnontaso = None, tutkinnonlaajuus1 = None, tutkinnonlaajuus2 = None)
   }
 }
 private object AlempiKKTutkinto {
@@ -32,7 +31,7 @@ private object AlempiYlempiKKTutkinto {
   def apply(alempi: Alempi, ylempi: Ylempi) = {
 
     if(alempi.laajuusarvo.isDefined && !alempi.isCombinedLaajuusarvo && !ylempi.isCombinedLaajuusarvo) {
-      KelaKoulutus(tutkinnontaso = Some("060"), tutkinnonlaajuus1 = alempi.laajuusarvo.get, tutkinnonlaajuus2 = ylempi.laajuusarvo)
+      KelaKoulutus(tutkinnontaso = Some("060"), tutkinnonlaajuus1 = alempi.laajuusarvo, tutkinnonlaajuus2 = ylempi.laajuusarvo)
     } else {
       val (laajuus1, laajuus2) = KelaKoulutus.asLaajuus1AndLaajuus2(KelaKoulutus.mergeLaajuudet(alempi,ylempi).laajuusarvo)
       KelaKoulutus(tutkinnontaso = Some("060"), tutkinnonlaajuus1 = laajuus1, tutkinnonlaajuus2 = laajuus2)
@@ -43,7 +42,7 @@ private object ErillinenYlempiKKTutkinto {
   def apply(laajuus: Option[String]) = {
     val (laajuus1, laajuus2) = KelaKoulutus.asLaajuus1AndLaajuus2(laajuus)
     if(laajuus2.isDefined) {
-      KelaKoulutus(tutkinnontaso = Some("061"), tutkinnonlaajuus1 = laajuus2.get, tutkinnonlaajuus2 = None)
+      KelaKoulutus(tutkinnontaso = Some("061"), tutkinnonlaajuus1 = laajuus2, tutkinnonlaajuus2 = None)
     } else {
       KelaKoulutus(tutkinnontaso = Some("061"), tutkinnonlaajuus1 = laajuus1, tutkinnonlaajuus2 = None)
     }
@@ -90,7 +89,7 @@ object KelaKoulutus {
     }
   }
 
-   def asLaajuus1AndLaajuus2(laajuus: Option[String]): (String,Option[String]) = {
+   def asLaajuus1AndLaajuus2(laajuus: Option[String]): (Option[String],Option[String]) = {
      val l = laajuus.map(_.split("\\+").toList).getOrElse(List())
        .filter(_.forall(_.isDigit))
        .filter(_.length < 4)
@@ -98,9 +97,9 @@ object KelaKoulutus {
        .map(l0 => "%03d".format(l0.toInt))
 
      l match {
-       case List(l1,l2) => (l1, Some(l2))
-       case List(l1) => (l1, None)
-       case List() => ("", None)
+       case List(l1,l2) => (Some(l1), Some(l2))
+       case List(l1) => (Some(l1), None)
+       case List() => (Some(""), None)
        case _ => throw new RuntimeException("Unexpected laajuus format: " + laajuus)
      }
   }
