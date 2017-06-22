@@ -83,8 +83,8 @@ class ValintarekisteriSijoittelunTulosClientSpec extends ITSpecification with Va
 
       hakutoive.getHakutoiveenValintatapajonot.asScala.size must_== 1
       val valintatapajono = hakutoive.getHakutoiveenValintatapajonot.asScala.head
-      valintatapajono.getHakeneet must_== null
-      valintatapajono.getHyvaksytty must_== null
+      valintatapajono.getHakeneet must_== 2
+      valintatapajono.getHyvaksytty must_== 1
       valintatapajono.getIlmoittautumisTila must_== fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila.LASNA
       valintatapajono.getTila must_== fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.HYVAKSYTTY
       valintatapajono.getValintatapajonoOid must_== sijoittelunValintatapajonoOid2.toString
@@ -102,8 +102,8 @@ class ValintarekisteriSijoittelunTulosClientSpec extends ITSpecification with Va
 
       hakutoive.getHakutoiveenValintatapajonot.asScala.size must_== 1
       val valintatapajono = hakutoive.getHakutoiveenValintatapajonot.asScala.head
-      valintatapajono.getHakeneet must_== null
-      valintatapajono.getHyvaksytty must_== null
+      valintatapajono.getHakeneet must_== 2
+      valintatapajono.getHyvaksytty must_== 2
       valintatapajono.getIlmoittautumisTila must_== fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila.LASNA
       valintatapajono.getTila must_== fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.HYVAKSYTTY
       valintatapajono.getValintatapajonoOid must_== oidHaku1hakukohde1jono1.toString
@@ -126,21 +126,21 @@ class ValintarekisteriSijoittelunTulosClientSpec extends ITSpecification with Va
 
       hakutoive1.getHakutoiveenValintatapajonot.asScala.size must_== 2
       val valintatapajono1 = hakutoive1.getHakutoiveenValintatapajonot.asScala.find(_.getValintatapajonoOid.equals(oidHaku2hakukohde1jono1.toString)).get
-      valintatapajono1.getHakeneet must_== null
-      valintatapajono1.getHyvaksytty must_== null
+      valintatapajono1.getHakeneet must_== 3
+      valintatapajono1.getHyvaksytty must_== 3
       valintatapajono1.getIlmoittautumisTila must_== fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila.LASNA
       valintatapajono1.getTila must_== fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.HYVAKSYTTY
 
       val valintatapajono2 = hakutoive1.getHakutoiveenValintatapajonot.asScala.find(_.getValintatapajonoOid.equals(oidHaku2hakukohde1jono2.toString)).get
-      valintatapajono2.getHakeneet must_== null
-      valintatapajono2.getHyvaksytty must_== null
+      valintatapajono2.getHakeneet must_== 3
+      valintatapajono2.getHyvaksytty must_== 2
       valintatapajono2.getIlmoittautumisTila must_== fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila.LASNA
       valintatapajono2.getTila must_== fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.HYLATTY
 
       hakutoive2.getHakutoiveenValintatapajonot.asScala.size must_== 1
       val valintatapajono3 = hakutoive2.getHakutoiveenValintatapajonot.asScala.find(_.getValintatapajonoOid.equals(sijoittelunValintatapajonoOid2.toString)).get
-      valintatapajono3.getHakeneet must_== null
-      valintatapajono3.getHyvaksytty must_== null
+      valintatapajono3.getHakeneet must_== 2
+      valintatapajono3.getHyvaksytty must_== 1
       valintatapajono3.getIlmoittautumisTila must_== fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila.EI_TEHTY
       valintatapajono3.getTila must_== fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.HYLATTY
     }
