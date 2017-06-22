@@ -49,6 +49,7 @@ class ValintaesitysService(hakuService: HakuService,
     for {
       valintaesitys <- valintaesitysRepository.hyvaksyValintaesitys(valintatapajonoOid)
       _ <- valinnantulosRepository.setJulkaistavissa(valintatapajonoOid, ilmoittaja, "Valintaesityksen hyväksyntä")
+      _ <- valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(valintatapajonoOid, ilmoittaja, "Valintaesityksen hyväksyntä")
     } yield valintaesitys
   }
 

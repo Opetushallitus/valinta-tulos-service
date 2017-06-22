@@ -406,6 +406,23 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       """.map(_ => ())
   }
 
+  override def setHyvaksyttyJaJulkaistavissa(valintatapajonoOid: ValintatapajonoOid, ilmoittaja: String, selite: String): DBIO[Unit] = {
+    sqlu"""insert into hyvaksytyt_ja_julkaistut_hakutoiveet(
+             henkilo,
+             hakukohde,
+             hyvaksytty_ja_julkaistu,
+             ilmoittaja,
+             selite
+           ) select ti.henkilo_oid, ti.hakukohde_oid, now(), ${ilmoittaja}, ${selite}
+             from valinnantilat ti
+             inner join valinnantulokset tu on ti.hakukohde_oid = tu.hakukohde_oid and
+               ti.valintatapajono_oid = tu.valintatapajono_oid and ti.hakemus_oid = tu.hakemus_oid
+             where ti.valintatapajono_oid = ${valintatapajonoOid} and tu.julkaistavissa = true and
+               ti.tila in ('Hyvaksytty'::valinnantila, 'VarasijaltaHyvaksytty'::valinnantila)
+             on conflict on constraint hyvaksytyt_ja_julkaistut_hakutoiveet_pkey do nothing
+        """.map(_ => ())
+  }
+
   override def storeValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
     sqlu"""insert into valinnantulokset(
              valintatapajono_oid,
