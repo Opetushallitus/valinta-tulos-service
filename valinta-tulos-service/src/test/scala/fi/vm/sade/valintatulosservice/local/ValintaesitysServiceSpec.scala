@@ -59,9 +59,12 @@ class ValintaesitysServiceSpec extends Specification with MockitoMatchers with M
       val e = new AuthorizationFailedException("error")
       authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]]) returns Left(e)
       service.hyvaksyValintaesitys(valintatapajonoOidB, auditInfo) must throwAn[AuthorizationFailedException](e)
+      /* CheckAccess-kutsua ei voida tehdä ilman hakukohde oidia. Ensimmäinen tietokantakutsu ajetaan transaktiossa ennen
+         oikeustarkistusta, jotta saadaan kannasta haettua hakukohde oid ilman yhtä ylimääräistä kantakyselyä.
+         Jos oikeustarkistus feilaa, tulee rollback. */
       there was one (valintaesitysRepository).hyvaksyValintaesitys(valintatapajonoOidB)
-      there was one (valinnantulosRepository).setJulkaistavissa(valintatapajonoOidB, auditInfo.session._2.personOid, selite)
-      there was one (valinnantulosRepository).setHyvaksyttyJaJulkaistavissa(valintatapajonoOidB, auditInfo.session._2.personOid, selite)
+      there was no (valinnantulosRepository).setJulkaistavissa(valintatapajonoOidB, auditInfo.session._2.personOid, selite)
+      there was no (valinnantulosRepository).setHyvaksyttyJaJulkaistavissa(valintatapajonoOidB, auditInfo.session._2.personOid, selite)
     }
   }
 
