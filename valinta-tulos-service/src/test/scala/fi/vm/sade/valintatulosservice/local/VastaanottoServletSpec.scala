@@ -52,7 +52,7 @@ class VastaanottoServletSpec extends ServletSpecification {
           tulos.hakutoiveet.head.vastaanottotila.toString must_== "KESKEN"
           tulos.hakutoiveet.last.vastaanottotila.toString must_== "EHDOLLISESTI_VASTAANOTTANUT"
           val muutosAika = tulos.hakutoiveet.last.viimeisinValintatuloksenMuutos.get
-          tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.get.before(muutosAika) must beTrue
+          tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos must beNone
           muutosAika.getTime must be ~ (System.currentTimeMillis() +/- 4000)
         }
       }
