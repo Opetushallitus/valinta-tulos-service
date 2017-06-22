@@ -45,28 +45,30 @@ class ValintaesitysServiceSpec extends Specification with MockitoMatchers with M
   }
 
   "hyvaksyValintaesitys" in {
-    "hyvaksyy valintaesityksen ja julkaisee valinnantulokset" in new Mocks with Authorized with Hakukohde {
-      valintaesitysRepository.hyvaksyValintaesitys(valintatapajonoOidB) returns DBIO.successful(valintaesitysB)
-      valinnantulosRepository.setJulkaistavissa(valintatapajonoOidB, auditInfo.session._2.personOid, "Valintaesityksen hyväksyntä") returns DBIO.successful(())
+    "hyvaksyy valintaesityksen ja julkaisee valinnantulokset" in new Mocks with Authorized with Hakukohde with MockReturns {
       service.hyvaksyValintaesitys(valintatapajonoOidB, auditInfo) must_== valintaesitysB
       there was one (valintaesitysRepository).hyvaksyValintaesitys(valintatapajonoOidB)
-      there was one (valinnantulosRepository).setJulkaistavissa(valintatapajonoOidB, auditInfo.session._2.personOid, "Valintaesityksen hyväksyntä")
+      there was one (valinnantulosRepository).setJulkaistavissa(valintatapajonoOidB, auditInfo.session._2.personOid, selite)
+      there was one (valinnantulosRepository).setHyvaksyttyJaJulkaistavissa(valintatapajonoOidB, auditInfo.session._2.personOid, selite)
     }
-    "auditlogittaa valintaesityksen hyväksymisen" in new Mocks with Authorized with Hakukohde {
-      valintaesitysRepository.hyvaksyValintaesitys(valintatapajonoOidB) returns DBIO.successful(valintaesitysB)
-      valinnantulosRepository.setJulkaistavissa(valintatapajonoOidB, auditInfo.session._2.personOid, "Valintaesityksen hyväksyntä") returns DBIO.successful(())
+    "auditlogittaa valintaesityksen hyväksymisen" in new Mocks with Authorized with Hakukohde with MockReturns {
       service.hyvaksyValintaesitys(valintatapajonoOidB, auditInfo) must_== valintaesitysB
       there was one(audit).log(any[User], argThat[Operation, Operation](be_==(ValintaesityksenHyvaksyminen)), any[Target], any[Changes])
     }
-    "tarkistaa päivitysoikeudet" in new Mocks with Hakukohde {
+    "tarkistaa päivitysoikeudet" in new Mocks with Hakukohde with MockReturns {
       val e = new AuthorizationFailedException("error")
-      valintaesitysRepository.hyvaksyValintaesitys(valintatapajonoOidB) returns DBIO.successful(valintaesitysB)
-      valinnantulosRepository.setJulkaistavissa(valintatapajonoOidB, auditInfo.session._2.personOid, "Valintaesityksen hyväksyntä") returns DBIO.successful(())
       authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]]) returns Left(e)
       service.hyvaksyValintaesitys(valintatapajonoOidB, auditInfo) must throwAn[AuthorizationFailedException](e)
       there was one (valintaesitysRepository).hyvaksyValintaesitys(valintatapajonoOidB)
-      there was one (valinnantulosRepository).setJulkaistavissa(valintatapajonoOidB, auditInfo.session._2.personOid, "Valintaesityksen hyväksyntä")
+      there was one (valinnantulosRepository).setJulkaistavissa(valintatapajonoOidB, auditInfo.session._2.personOid, selite)
+      there was one (valinnantulosRepository).setHyvaksyttyJaJulkaistavissa(valintatapajonoOidB, auditInfo.session._2.personOid, selite)
     }
+  }
+
+  trait MockReturns { this: Mocks =>
+    valintaesitysRepository.hyvaksyValintaesitys(valintatapajonoOidB) returns DBIO.successful(valintaesitysB)
+    valinnantulosRepository.setJulkaistavissa(valintatapajonoOidB, auditInfo.session._2.personOid, selite) returns DBIO.successful(())
+    valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(valintatapajonoOidB, auditInfo.session._2.personOid, selite) returns DBIO.successful(())
   }
 
   trait Mocks extends Mockito with Scope with MustThrownExpectations {
@@ -81,6 +83,8 @@ class ValintaesitysServiceSpec extends Specification with MockitoMatchers with M
     val session = CasSession(ServiceTicket("myFakeTicket"), "1.2.246.562.24.1", Set(Role.SIJOITTELU_CRUD))
     val sessionId = UUID.randomUUID()
     val auditInfo = AuditInfo((sessionId, session), InetAddress.getLocalHost, "user-agent")
+
+    val selite = "Valintaesityksen hyväksyntä"
 
     val hakuService: HakuService = mock[HakuService]
     val authorizer: OrganizationHierarchyAuthorizer = mock[OrganizationHierarchyAuthorizer]
