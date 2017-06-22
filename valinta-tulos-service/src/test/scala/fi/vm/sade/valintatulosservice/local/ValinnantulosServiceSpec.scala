@@ -129,16 +129,18 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       val valinnantulokset = List(valinnantulosA.copy(julkaistavissa = Some(true)))
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo) mustEqual List()
       there was one (valinnantulosRepository).updateValinnantuloksenOhjaus(valinnantulokset(0).getValinnantuloksenOhjaus(session.personOid, "Virkailijan tallennus"), Some(lastModified))
+      there was no (valinnantulosRepository).setHyvaksyttyJaJulkaistavissa(any[HakemusOid], any[ValintatapajonoOid], any[String], any[String])
     }
     "authorization to change julkaistavissa" in new Mocks with ToisenAsteenHaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
       authorizer.checkAccess(session, Set(tarjoajaOid), Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Right(())
       authorizer.checkAccess(session, rootOrganisaatioOid, Set(Role.SIJOITTELU_CRUD)) returns Right(())
-      valinnantulosRepository.getValinnantuloksetAndLastModifiedDatesForValintatapajono(valintatapajonoOid) returns Set((lastModified, valinnantulosA))
+      valinnantulosRepository.getValinnantuloksetAndLastModifiedDatesForValintatapajono(valintatapajonoOid) returns Set((lastModified, valinnantulosA.copy(valinnantila = Hyvaksytty)))
       valinnantulosRepository.updateValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]]) returns DBIO.successful(())
       valinnantulosRepository.runBlockingTransactionally(any[DBIO[Unit]], any[Duration]) returns Right[Throwable, Unit](())
-      val valinnantulokset = List(valinnantulosA.copy(julkaistavissa = Some(true)))
+      val valinnantulokset = List(valinnantulosA.copy(valinnantila = Hyvaksytty, julkaistavissa = Some(true)))
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo) mustEqual List()
       there was one (valinnantulosRepository).updateValinnantuloksenOhjaus(valinnantulokset(0).getValinnantuloksenOhjaus(session.personOid, "Virkailijan tallennus"), Some(lastModified))
+      there was one (valinnantulosRepository).setHyvaksyttyJaJulkaistavissa(valinnantulosA.hakemusOid, valinnantulosA.valintatapajonoOid, session.personOid, "Virkailijan tallennus")
     }
     "no valinnantulos updates if vastaanotto update fails" in new Mocks with Authorized with Korkeakouluhaku with NoConflictingVastaanotto with TyhjatOhjausparametrit {
       vastaanottoService.vastaanotaVirkailijana(any[List[VastaanottoEventDto]]) answers (_ => List(
