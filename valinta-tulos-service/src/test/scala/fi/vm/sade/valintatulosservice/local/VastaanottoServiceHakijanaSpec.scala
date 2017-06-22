@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.local
 
-import fi.vm.sade.sijoittelu.domain.{LogEntry, Valintatulos}
+import fi.vm.sade.sijoittelu.domain.{LogEntry, ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
@@ -551,14 +551,12 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
     }
   }
 
-  private def assertSecondLogEntry(valintatulos: Valintatulos, tila: String, selite: String): Result = {
-    import scala.collection.JavaConversions._
-    val logEntries: List[LogEntry] = valintatulos.getLogEntries.toList
-    logEntries.size must_== 2
-    val logEntry: LogEntry = logEntries(1)
-    logEntry.getMuutos must_== tila
-    //logEntry.getSelite must_== selite
-    //logEntry.getMuokkaaja must_== muokkaaja
-    new LocalDate(logEntry.getLuotu) must_== new LocalDate(System.currentTimeMillis())
+  private def assertSecondLogEntry(valintatulos: Valintatulos, tila: String, selite: String) = {
+    val muutokset: List[Muutos] = valintarekisteriDb.getMuutoshistoriaForHakemus(HakemusOid(valintatulos.getHakemusOid), ValintatapajonoOid(valintatulos.getValintatapajonoOid))
+    muutokset.size must_== 3
+    val muutos: Muutos = muutokset(0)
+    muutos.changes(0).field must_== "vastaanottotila"
+    muutos.changes(0).from must_== None
+    muutos.changes(0).to must_== ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI
   }
 }
