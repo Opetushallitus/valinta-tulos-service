@@ -59,7 +59,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
       stringChanged(ehdollisenHyvaksymisenEhtoSV, other.ehdollisenHyvaksymisenEhtoSV) ||
       stringChanged(ehdollisenHyvaksymisenEhtoEN, other.ehdollisenHyvaksymisenEhtoEN)
 
-  private def booleanOptionChanged(thisParam: Option[Boolean], otherParam: Option[Boolean]) = thisParam != otherParam
+  private def booleanOptionChanged(thisParam: Option[Boolean], otherParam: Option[Boolean]) = thisParam.isDefined && thisParam != otherParam
 
   private def getBooleanOptionChange(thisParam: Option[Boolean], otherParam: Option[Boolean]) =
     if (booleanOptionChanged(thisParam, otherParam)) {
@@ -68,7 +68,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
       otherParam.getOrElse(false)
     }
 
-  private def stringChanged(thisParam: Option[String], otherParam: Option[String]) = thisParam != otherParam
+  private def stringChanged(thisParam: Option[String], otherParam: Option[String]) = thisParam.isDefined && thisParam != otherParam
 
   private def getStringChange(thisParam: Option[String], otherParam: Option[String]) =
     if (stringChanged(thisParam, otherParam)) {
