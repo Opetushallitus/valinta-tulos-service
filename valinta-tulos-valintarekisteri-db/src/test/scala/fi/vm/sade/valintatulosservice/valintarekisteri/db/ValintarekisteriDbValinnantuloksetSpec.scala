@@ -273,6 +273,27 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       checkJulkaistavissa() must_== true
       checkHyvaksyttyJaJulkaistu() must_== None
     }
+    "update hyväksytty/julkaistu date for valinnantulos" in {
+      storeValinnantilaAndValinnantulos()
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantilat set tila = 'Hylatty'::valinnantila")
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = true")
+
+      checkHyvaksyttyJaJulkaistu() must_== None
+
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.setHyvaksyttyJaJulkaistavissa(hakemusOid, valintatapajonoOid, "ilmoittaja", "selite")
+      ))
+
+      checkHyvaksyttyJaJulkaistu() must_== None
+
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantilat set tila = 'VarasijaltaHyvaksytty'::valinnantila")
+
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.setHyvaksyttyJaJulkaistavissa(hakemusOid, valintatapajonoOid, "ilmoittaja", "selite")
+      ))
+
+      checkHyvaksyttyJaJulkaistu().isDefined must_== true
+    }
   }
 
   private def checkJulkaistavissa():Boolean = {
