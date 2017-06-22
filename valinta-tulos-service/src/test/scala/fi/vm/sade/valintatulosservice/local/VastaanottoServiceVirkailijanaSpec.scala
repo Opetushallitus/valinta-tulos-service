@@ -317,7 +317,7 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
       val alinHyvaksyttyHakutoiveOid = HakukohdeOid("1.2.246.562.5.16303028779")
       val ylempiHakutoiveOid = HakukohdeOid("1.2.246.562.5.72607738902")
 
-      useFixture("hyvaksytty-ylempi-varalla.json", Nil, hakuFixture = HakuFixtures.korkeakouluYhteishaku, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
+      useFixture("hyvaksytty_ylempi_varalla_hyvaksy_peruuntunut.json", Nil, hakuFixture = HakuFixtures.korkeakouluYhteishaku, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
       vastaanota(hakemusOid, alinHyvaksyttyHakutoiveOid, Vastaanottotila.ehdollisesti_vastaanottanut, muokkaaja, selite, personOid)
       useFixture("hyvaksytty-kesken-julkaistavissa.json", Nil, hakuFixture = HakuFixtures.korkeakouluYhteishaku, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true, clearFixturesInitially = false)
 
