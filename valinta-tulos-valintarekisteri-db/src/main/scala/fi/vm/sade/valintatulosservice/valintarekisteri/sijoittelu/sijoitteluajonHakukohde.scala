@@ -12,13 +12,15 @@ class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, va
   lazy val tilankuvausHashit = kaikkiHakemukset.map(_.tilankuvausHash).distinct
 
   def getPistetiedotGroupedByValintatapajonoOidAndHakemusOid = {
-    sijoitteluRepository.getHakukohteenPistetiedot(sijoitteluajoId, hakukohde.oid
-    ).groupBy(_.valintatapajonoOid).mapValues(_.groupBy(_.hakemusOid))
+    sijoitteluRepository.getHakukohteenPistetiedot(sijoitteluajoId, hakukohde.oid)
+      .groupBy(_.valintatapajonoOid)
+      .map(t => (t._1, t._2.groupBy(_.hakemusOid)))
   }
 
   def getTilahistoriatGroupedByValintatapajonoOidAndHakemusOid = {
-    sijoitteluRepository.getHakukohteenTilahistoriat(sijoitteluajoId, hakukohde.oid
-    ).groupBy(_.valintatapajonoOid).mapValues(_.groupBy(_.hakemusOid))
+    sijoitteluRepository.getHakukohteenTilahistoriat(sijoitteluajoId, hakukohde.oid)
+      .groupBy(_.valintatapajonoOid)
+      .map(t => (t._1, t._2.groupBy(_.hakemusOid)))
   }
 
   val valintatapajonot = sijoitteluRepository.getHakukohteenValintatapajonot(sijoitteluajoId, hakukohde.oid)
