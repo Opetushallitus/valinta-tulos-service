@@ -49,8 +49,12 @@ case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends js
   private def storeValintatulokset(valintatulokset: Seq[Valintatulos], sijoitteluAjoId: Long) = {
     /* Remove all valinnantulokset since save storeSijoittelu(wrapper) creates and 'empty' valinnantulos for hakemus when it has no valinnantulos.
      * In the testing case valinnantulokset should only be saved from fixture valintatulokset. */
-    valintarekisteriDb.runBlocking(sqlu"""delete from valinnantulokset""")
-    valintarekisteriDb.runBlocking(sqlu"""delete from valinnantulokset_history""")
+    valintarekisteriDb.runBlocking(
+      sqlu"""delete from valinnantulokset
+             where transaction_id = (select max(transaction_id) from sijoitteluajot)""")
+    valintarekisteriDb.runBlocking(
+      sqlu"""delete from valinnantulokset_history
+             where transaction_id = (select max(transaction_id) from sijoitteluajot)""")
     valintatulokset.foreach(tulos => {
       valintarekisteriDb.runBlocking(valintarekisteriDb.storeValinnantuloksenOhjaus(
         ValinnantuloksenOhjaus(
