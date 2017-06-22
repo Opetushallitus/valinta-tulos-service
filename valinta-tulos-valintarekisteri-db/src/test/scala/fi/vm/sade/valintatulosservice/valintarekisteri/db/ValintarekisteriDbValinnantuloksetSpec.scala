@@ -241,6 +241,50 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       origin.changes must contain(KentanMuutos(field = "hyvaksyttyVarasijalta", from = None, to = false))
       origin.changes must contain(KentanMuutos(field = "hyvaksyPeruuntunut", from = None, to = false))
     }
+    "update julkaistavissa and hyväksytty/julkaistu dates for valintatapajono" in {
+      storeValinnantilaAndValinnantulos()
+      checkJulkaistavissa() must_== false
+      checkHyvaksyttyJaJulkaistu() must_== None
+
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.setJulkaistavissa(valintatapajonoOid, "ilmoittaja", "selite"),
+        singleConnectionValintarekisteriDb.setHyvaksyttyJaJulkaistavissa(valintatapajonoOid, "ilmoittaja", "selite")
+      ))
+
+      checkJulkaistavissa() must_== true
+      val hyvaksyttyJaJulkaistu = checkHyvaksyttyJaJulkaistu()
+      hyvaksyttyJaJulkaistu.isDefined must_== true
+
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.setHyvaksyttyJaJulkaistavissa(valintatapajonoOid, "ilmoittaja2", "selite2")
+      ))
+
+      hyvaksyttyJaJulkaistu.get must_== checkHyvaksyttyJaJulkaistu().get
+    }
+    "do not update hyväksytty/julkaistu date for hylätty valinnantulos" in {
+      storeValinnantilaAndValinnantulos()
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantilat set tila = 'Hylatty'::valinnantila")
+      checkJulkaistavissa() must_== false
+      checkHyvaksyttyJaJulkaistu() must_== None
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.setJulkaistavissa(valintatapajonoOid, "ilmoittaja", "selite"),
+        singleConnectionValintarekisteriDb.setHyvaksyttyJaJulkaistavissa(valintatapajonoOid, "ilmoittaja", "selite")
+      ))
+      checkJulkaistavissa() must_== true
+      checkHyvaksyttyJaJulkaistu() must_== None
+    }
+  }
+
+  private def checkJulkaistavissa():Boolean = {
+    singleConnectionValintarekisteriDb.runBlocking(
+      sql"select julkaistavissa from valinnantulokset where hakemus_oid = ${hakemusOid}".as[Boolean]
+    ).head
+  }
+
+  private def checkHyvaksyttyJaJulkaistu():Option[Timestamp] = {
+    singleConnectionValintarekisteriDb.runBlocking(
+      sql"select hyvaksytty_ja_julkaistu from hyvaksytyt_ja_julkaistut_hakutoiveet where henkilo = ${henkiloOid} and hakukohde = ${hakukohdeOid}".as[Timestamp]
+    ).headOption
   }
 
   private def assertValintaesitykset(valintaesitys: Valintaesitys) = {
