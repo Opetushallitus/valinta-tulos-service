@@ -177,231 +177,231 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
   "korkeakoulujen yhteishaku" in {
     val hakuFixture = HakuFixtures.korkeakouluYhteishaku
 
-    kaikkienHakutyyppienTestit(hakuFixture)
-
-    "vastaanota ylempi kun kaksi hyvaksyttyä -> alemmat peruuntuvat" in {
-      useFixture("hyvaksytty-julkaisematon-hyvaksytty.json", hakuFixture = hakuFixture, hakemusFixtures = List("00000441369-3"), yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-      vastaanota(hakuOid, hakemusOid, "1.2.246.562.5.72607738902", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
-      val yhteenveto = hakemuksenTulos
-      yhteenveto.hakutoiveet(0).valintatila must_== Valintatila.hyväksytty
-      yhteenveto.hakutoiveet(1).valintatila must_== Valintatila.peruuntunut
-      yhteenveto.hakutoiveet(2).valintatila must_== Valintatila.peruuntunut
-      yhteenveto.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
-      yhteenveto.hakutoiveet(1).vastaanottotila must_== Vastaanottotila.kesken
-      yhteenveto.hakutoiveet(2).vastaanottotila must_== Vastaanottotila.kesken
-    }
-
-    "vastaanota alempi kun kaksi hyväksyttyä -> muut peruuntuvat" in {
-      useFixture("hyvaksytty-julkaisematon-hyvaksytty.json", hakuFixture = hakuFixture, hakemusFixtures = List("00000441369-3"), yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-      vastaanota(hakuOid, hakemusOid, "1.2.246.562.5.72607738904", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
-      val yhteenveto = hakemuksenTulos
-      yhteenveto.hakutoiveet(0).valintatila must_== Valintatila.peruuntunut
-      yhteenveto.hakutoiveet(1).valintatila must_== Valintatila.peruuntunut
-      yhteenveto.hakutoiveet(2).valintatila must_== Valintatila.hyväksytty
-      yhteenveto.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.kesken
-      yhteenveto.hakutoiveet(1).vastaanottotila must_== Vastaanottotila.kesken
-      yhteenveto.hakutoiveet(2).vastaanottotila must_== Vastaanottotila.vastaanottanut
-    }
-
-    "yhden paikan sääntö" in {
-      "vastaanota varsinaisessa haussa, kun lisähaussa vastaanottavissa -> lisähaun paikka ei vastaanotettavissa" in {
-        useFixture("hyvaksytty-kesken-julkaistavissa.json", List("lisahaku-vastaanotettavissa.json"), hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-
-        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
-        hakemuksenTulos("1.2.246.562.11.00000878230").hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
-
-        HakuFixtures.useFixture(HakuFixtures.korkeakouluYhteishaku)
-        vastaanota(hakuOid, hakemusOid, "1.2.246.562.5.72607738902", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
-
-        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
-        val lisaHaunTulos = hakemuksenTulos("1.2.246.562.11.00000878230")
-        lisaHaunTulos.hakutoiveet.foreach(t => {
-          t.vastaanottotila must_== Vastaanottotila.ottanut_vastaan_toisen_paikan
-          t.valintatila must_== Valintatila.peruuntunut
-        })
-        lisaHaunTulos.hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
-        lisaHaunTulos.hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
-      }
-
-      "vastaanota lisähaussa, kun varsinaisessa haussa vastaanottavissa -> varsinaisen haun paikka ei vastaanotettavissa" in {
-        useFixture("hyvaksytty-kesken-julkaistavissa.json", List("lisahaku-vastaanotettavissa.json"), hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-
-        val lisahakuHakemusOid = "1.2.246.562.11.00000878230"
-        val lisahaunVastaanotettavaHakukohdeOid = "1.2.246.562.14.2014022408541751568934"
-
-        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
-        hakemuksenTulos(lisahakuHakemusOid).hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
-        hakemuksenTulos(lisahakuHakemusOid).hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
-
-        HakuFixtures.useFixture(HakuFixtures.korkeakouluYhteishaku)
-        hakemuksenTulos("1.2.246.562.11.00000441369").hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
-
-        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
-        vastaanota("korkeakoulu-lisahaku1", lisahakuHakemusOid, lisahaunVastaanotettavaHakukohdeOid, Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
-
-        val lisaHaunTulos = hakemuksenTulos(lisahakuHakemusOid)
-        lisaHaunTulos.hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
-        lisaHaunTulos.hakutoiveet(1).vastaanottotila must_== Vastaanottotila.vastaanottanut
-        lisaHaunTulos.hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
-
-        HakuFixtures.useFixture(HakuFixtures.korkeakouluYhteishaku)
-        hakemuksenTulos("1.2.246.562.11.00000441369").hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
-      }
-      "vastaanota lisahaussa kahdesta hakutoiveesta toinen -> ei-vastaanotettu paikka ei vastaanotettavissa" in {
-        useFixture("lisahaku-vastaanotettavissa.json", hakuFixture = HakuFixtures.korkeakouluLisahaku1, hakemusFixtures = List("00000878230"), yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
-
-        hakemuksenTulos("1.2.246.562.11.00000878230").hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
-        hakemuksenTulos("1.2.246.562.11.00000878230").hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
-
-        vastaanota("korkeakoulu-lisahaku1", "1.2.246.562.11.00000878230", "1.2.246.562.14.2013120515524070995659", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
-
-        val lisaHaunTulos = hakemuksenTulos("1.2.246.562.11.00000878230")
-        lisaHaunTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
-        lisaHaunTulos.hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
-      }
-
-      "vastaanota ehdollisesti varsinaisessa haussa, kun lisähaussa vastaanottavissa -> lisähaun paikka ei vastaanotettavissa" in {
-        useFixture("hyvaksytty-ylempi-varalla.json", List("lisahaku-vastaanotettavissa.json"), hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-
-        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
-        hakemuksenTulos("1.2.246.562.11.00000878230").hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
-
-        HakuFixtures.useFixture(HakuFixtures.korkeakouluYhteishaku)
-        vastaanota(hakuOid, hakemusOid, hakukohdeOid, Vastaanottotila.ehdollisesti_vastaanottanut, muokkaaja, selite, personOid)
-
-        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
-        val lisaHaunTulos = hakemuksenTulos("1.2.246.562.11.00000878230")
-        lisaHaunTulos.hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
-        lisaHaunTulos.hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
-      }
-
-      "vastaanota lisähaussa, kun varsinaisessa haussa vastaanotto on peruutettu" in {
-        useFixture("hyvaksytty-kesken-julkaistavissa.json", List("lisahaku-vastaanotettavissa.json"), hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-
-        val lisahakuHakemusOid = "1.2.246.562.11.00000878230"
-        val lisahaunVastaanotettavaHakukohdeOid = "1.2.246.562.14.2014022408541751568934"
-
-        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
-        hakemuksenTulos(lisahakuHakemusOid).hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
-        hakemuksenTulos(lisahakuHakemusOid).hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
-
-        HakuFixtures.useFixture(HakuFixtures.korkeakouluYhteishaku)
-        hakemuksenTulos("1.2.246.562.11.00000441369").hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
-        vastaanota(hakuOid, hakemusOid, "1.2.246.562.5.72607738902", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
-        hakemuksenTulos("1.2.246.562.11.00000441369").hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
-        vastaanotaVirkailijana(valintatapajonoOid, personOid, hakemusOid, "1.2.246.562.5.72607738902", hakuOid, Vastaanottotila.peruutettu, muokkaaja)
-        hakemuksenTulos("1.2.246.562.11.00000441369").hakutoiveet(0).vastaanottotila must_== Vastaanottotila.peruutettu
-        hakemuksenTulos("1.2.246.562.11.00000441369").hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
-
-        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
-        vastaanota("korkeakoulu-lisahaku1", lisahakuHakemusOid, lisahaunVastaanotettavaHakukohdeOid, Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
-
-        val lisaHaunTulos = hakemuksenTulos(lisahakuHakemusOid)
-        lisaHaunTulos.hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
-        lisaHaunTulos.hakutoiveet(1).vastaanottotila must_== Vastaanottotila.vastaanottanut
-        lisaHaunTulos.hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
-      }
-
-      "vastaanota lisähaussa, kun varsinaisessa haussa jo vastaanottanut -> ERROR" in {
-        useFixture("hyvaksytty-vastaanottanut.json", List("lisahaku-vastaanotettavissa.json"), hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-        expectFailure(Some("Väärä vastaanotettavuustila kohteella 1.2.246.562.14.2014022408541751568934: EI_VASTAANOTETTAVISSA (yritetty muutos: VastaanotaSitovasti)")) {
-          vastaanota("korkeakoulu-lisahaku1", "1.2.246.562.11.00000878230", "1.2.246.562.14.2014022408541751568934", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
-        }
-      }
-
-      "vastaanota lisähaussa, kun varsinaisessa haussa jo ehdollisesti vastaanottanut -> ERROR" in {
-        useFixture("hyvaksytty-vastaanottanut-ehdollisesti.json", List("lisahaku-vastaanotettavissa.json"), hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-        expectFailure(Some("Väärä vastaanotettavuustila kohteella 1.2.246.562.14.2014022408541751568934: EI_VASTAANOTETTAVISSA (yritetty muutos: VastaanotaSitovasti)")) {
-          vastaanota("korkeakoulu-lisahaku1", "1.2.246.562.11.00000878230", "1.2.246.562.14.2014022408541751568934", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
-        }
-      }
-
-      "vastaanota varsinaisessa haussa, kun lisähaussa jo vastaanottanut -> ERROR" in {
-        useFixture("hyvaksytty-kesken-julkaistavissa.json", List("lisahaku-vastaanottanut.json"), hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-        expectFailure(Some("Väärä vastaanotettavuustila kohteella 1.2.246.562.5.72607738902: EI_VASTAANOTETTAVISSA (yritetty muutos: VastaanotaSitovasti)")) {
-          vastaanota(hakuOid, hakemusOid, "1.2.246.562.5.72607738902", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
-        }
-      }
-
-      "vastaanota ehdollisesti varsinaisessa haussa, kun lisähaussa jo vastaanottanut -> ERROR" in {
-        useFixture("hyvaksytty-ylempi-varalla.json", List("lisahaku-vastaanottanut.json"), hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-        expectFailure(Some("Väärä vastaanotettavuustila kohteella 1.2.246.562.5.16303028779: EI_VASTAANOTETTAVISSA (yritetty muutos: VastaanotaEhdollisesti)")) {
-          vastaanota(hakuOid, hakemusOid, hakukohdeOid, Vastaanottotila.ehdollisesti_vastaanottanut, muokkaaja, selite, personOid)
-        }
-      }
-
-      "vastaanota varsinaisessa haussa, kun lisähaussa jo vastaanottanut ehdollisesti -> ERROR" in {
-        useFixture("hyvaksytty-kesken-julkaistavissa.json", List("lisahaku-vastaanottanut-ehdollisesti.json"), hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-        expectFailure(Some("Väärä vastaanotettavuustila kohteella 1.2.246.562.5.72607738902: EI_VASTAANOTETTAVISSA (yritetty muutos: VastaanotaSitovasti)")) {
-          vastaanota(hakuOid, hakemusOid, "1.2.246.562.5.72607738902", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
-        }
-      }
-
-      "vastaanota varsinaisessa haussa, kun lisähaussa hylätty -> lisähaun paikka näkyy edelleen hylättynä" in {
-        useFixture("hyvaksytty-kesken-julkaistavissa.json", List("lisahaku-hylatty.json"), hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-
-        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
-        hakemuksenTulos("1.2.246.562.11.00000878230").hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
-
-        HakuFixtures.useFixture(HakuFixtures.korkeakouluYhteishaku)
-        vastaanota(hakuOid, hakemusOid, "1.2.246.562.5.72607738902", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
-
-        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
-        val lisaHaunTulos = hakemuksenTulos("1.2.246.562.11.00000878230")
-        lisaHaunTulos.hakutoiveet.foreach(t => {
-          t.vastaanottotila must_== Vastaanottotila.kesken
-          t.valintatila must_== Valintatila.hylätty
-        })
-        lisaHaunTulos.hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
-        lisaHaunTulos.hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
-      }
-
-      "vastaanotto mahdollista haussa jossa YPS ei voimassa, vaikka vastaanotto yhteishaussa" in {
-        useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-        sijoitteluFixtures.importFixture("korkeakoulu-erillishaku-ei-yhden-paikan-saantoa-vastaanotettavissa.json", false, false, true)
-
-        vastaanota(hakuOid, hakemusOid, "1.2.246.562.5.72607738902", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
-
-        HakuFixtures.useFixture(HakuOid("korkeakoulu-erillishaku-ei-yhden-paikan-saantoa"), List(HakuOid("korkeakoulu-erillishaku-ei-yhden-paikan-saantoa")))
-        hakemuksenTulos("1.2.246.562.11.00000878231")
-          .hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
-        hakemustenTulokset("korkeakoulu-erillishaku-ei-yhden-paikan-saantoa")
-          .find(_.hakemusOid == HakemusOid("1.2.246.562.11.00000878231"))
-          .map(_.hakutoiveet(1).vastaanotettavuustila) must beSome(Vastaanotettavuustila.vastaanotettavissa_sitovasti)
-      }
-    }
-
-    "vastaanota ehdollisesti kun varasijasäännöt eivät ole vielä voimassa" in {
-      useFixture("hyvaksytty-ylempi-varalla.json", hakuFixture = hakuFixture, ohjausparametritFixture = OhjausparametritFixtures.varasijasaannotEiVielaVoimassa, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-      expectFailure {
-        vastaanota(hakuOid, hakemusOid, hakukohdeOid, Vastaanottotila.ehdollisesti_vastaanottanut, muokkaaja, selite, personOid)
-      }
-    }
-
-    "vastaanota ehdollisesti kun varasijasäännöt voimassa" in {
-      useFixture("hyvaksytty-ylempi-varalla.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-      hakemuksenTulos.hakutoiveet(0).valintatila must_== Valintatila.varalla
-      hakemuksenTulos.hakutoiveet(1).valintatila must_== Valintatila.hyväksytty
-      vastaanota(hakuOid, hakemusOid, hakukohdeOid, Vastaanottotila.ehdollisesti_vastaanottanut, muokkaaja, selite, personOid)
-      hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.kesken
-      hakemuksenTulos.hakutoiveet(0).valintatila must_== Valintatila.varalla
-      hakemuksenTulos.hakutoiveet(1).valintatila must_== Valintatila.hyväksytty
-      hakemuksenTulos.hakutoiveet(1).vastaanottotila must_== Vastaanottotila.ehdollisesti_vastaanottanut
-    }
-
-    "vastaanota sitovasti kun varasijasäännöt voimassa" in {
-      useFixture("hyvaksytty-ylempi-varalla.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-      vastaanota(hakuOid, hakemusOid, hakukohdeOid, Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
-      val yhteenveto = hakemuksenTulos
-      yhteenveto.hakutoiveet(1).valintatila must_== Valintatila.hyväksytty
-      yhteenveto.hakutoiveet(1).vastaanottotila must_== Vastaanottotila.vastaanottanut
-      yhteenveto.hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
-
-      yhteenveto.hakutoiveet(0).valintatila must_== Valintatila.peruuntunut
-      yhteenveto.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.kesken
-      yhteenveto.hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
-    }
+//    kaikkienHakutyyppienTestit(hakuFixture)
+//
+//    "vastaanota ylempi kun kaksi hyvaksyttyä -> alemmat peruuntuvat" in {
+//      useFixture("hyvaksytty-julkaisematon-hyvaksytty.json", hakuFixture = hakuFixture, hakemusFixtures = List("00000441369-3"), yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
+//      vastaanota(hakuOid, hakemusOid, "1.2.246.562.5.72607738902", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+//      val yhteenveto = hakemuksenTulos
+//      yhteenveto.hakutoiveet(0).valintatila must_== Valintatila.hyväksytty
+//      yhteenveto.hakutoiveet(1).valintatila must_== Valintatila.peruuntunut
+//      yhteenveto.hakutoiveet(2).valintatila must_== Valintatila.peruuntunut
+//      yhteenveto.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
+//      yhteenveto.hakutoiveet(1).vastaanottotila must_== Vastaanottotila.kesken
+//      yhteenveto.hakutoiveet(2).vastaanottotila must_== Vastaanottotila.kesken
+//    }
+//
+//    "vastaanota alempi kun kaksi hyväksyttyä -> muut peruuntuvat" in {
+//      useFixture("hyvaksytty-julkaisematon-hyvaksytty.json", hakuFixture = hakuFixture, hakemusFixtures = List("00000441369-3"), yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
+//      vastaanota(hakuOid, hakemusOid, "1.2.246.562.5.72607738904", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+//      val yhteenveto = hakemuksenTulos
+//      yhteenveto.hakutoiveet(0).valintatila must_== Valintatila.peruuntunut
+//      yhteenveto.hakutoiveet(1).valintatila must_== Valintatila.peruuntunut
+//      yhteenveto.hakutoiveet(2).valintatila must_== Valintatila.hyväksytty
+//      yhteenveto.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.kesken
+//      yhteenveto.hakutoiveet(1).vastaanottotila must_== Vastaanottotila.kesken
+//      yhteenveto.hakutoiveet(2).vastaanottotila must_== Vastaanottotila.vastaanottanut
+//    }
+//
+//    "yhden paikan sääntö" in {
+//      "vastaanota varsinaisessa haussa, kun lisähaussa vastaanottavissa -> lisähaun paikka ei vastaanotettavissa" in {
+//        useFixture("hyvaksytty-kesken-julkaistavissa.json", List("lisahaku-vastaanotettavissa.json"), hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
+//
+//        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
+//        hakemuksenTulos("1.2.246.562.11.00000878230").hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
+//
+//        HakuFixtures.useFixture(HakuFixtures.korkeakouluYhteishaku)
+//        vastaanota(hakuOid, hakemusOid, "1.2.246.562.5.72607738902", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+//
+//        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
+//        val lisaHaunTulos = hakemuksenTulos("1.2.246.562.11.00000878230")
+//        lisaHaunTulos.hakutoiveet.foreach(t => {
+//          t.vastaanottotila must_== Vastaanottotila.ottanut_vastaan_toisen_paikan
+//          t.valintatila must_== Valintatila.peruuntunut
+//        })
+//        lisaHaunTulos.hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
+//        lisaHaunTulos.hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
+//      }
+//
+//      "vastaanota lisähaussa, kun varsinaisessa haussa vastaanottavissa -> varsinaisen haun paikka ei vastaanotettavissa" in {
+//        useFixture("hyvaksytty-kesken-julkaistavissa.json", List("lisahaku-vastaanotettavissa.json"), hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
+//
+//        val lisahakuHakemusOid = "1.2.246.562.11.00000878230"
+//        val lisahaunVastaanotettavaHakukohdeOid = "1.2.246.562.14.2014022408541751568934"
+//
+//        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
+//        hakemuksenTulos(lisahakuHakemusOid).hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
+//        hakemuksenTulos(lisahakuHakemusOid).hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
+//
+//        HakuFixtures.useFixture(HakuFixtures.korkeakouluYhteishaku)
+//        hakemuksenTulos("1.2.246.562.11.00000441369").hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
+//
+//        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
+//        vastaanota("korkeakoulu-lisahaku1", lisahakuHakemusOid, lisahaunVastaanotettavaHakukohdeOid, Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+//
+//        val lisaHaunTulos = hakemuksenTulos(lisahakuHakemusOid)
+//        lisaHaunTulos.hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
+//        lisaHaunTulos.hakutoiveet(1).vastaanottotila must_== Vastaanottotila.vastaanottanut
+//        lisaHaunTulos.hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
+//
+//        HakuFixtures.useFixture(HakuFixtures.korkeakouluYhteishaku)
+//        hakemuksenTulos("1.2.246.562.11.00000441369").hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
+//      }
+//      "vastaanota lisahaussa kahdesta hakutoiveesta toinen -> ei-vastaanotettu paikka ei vastaanotettavissa" in {
+//        useFixture("lisahaku-vastaanotettavissa.json", hakuFixture = HakuFixtures.korkeakouluLisahaku1, hakemusFixtures = List("00000878230"), yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
+//        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
+//
+//        hakemuksenTulos("1.2.246.562.11.00000878230").hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
+//        hakemuksenTulos("1.2.246.562.11.00000878230").hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
+//
+//        vastaanota("korkeakoulu-lisahaku1", "1.2.246.562.11.00000878230", "1.2.246.562.14.2013120515524070995659", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+//
+//        val lisaHaunTulos = hakemuksenTulos("1.2.246.562.11.00000878230")
+//        lisaHaunTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
+//        lisaHaunTulos.hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
+//      }
+//
+//      "vastaanota ehdollisesti varsinaisessa haussa, kun lisähaussa vastaanottavissa -> lisähaun paikka ei vastaanotettavissa" in {
+//        useFixture("hyvaksytty-ylempi-varalla.json", List("lisahaku-vastaanotettavissa.json"), hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
+//
+//        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
+//        hakemuksenTulos("1.2.246.562.11.00000878230").hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
+//
+//        HakuFixtures.useFixture(HakuFixtures.korkeakouluYhteishaku)
+//        vastaanota(hakuOid, hakemusOid, hakukohdeOid, Vastaanottotila.ehdollisesti_vastaanottanut, muokkaaja, selite, personOid)
+//
+//        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
+//        val lisaHaunTulos = hakemuksenTulos("1.2.246.562.11.00000878230")
+//        lisaHaunTulos.hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
+//        lisaHaunTulos.hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
+//      }
+//
+//      "vastaanota lisähaussa, kun varsinaisessa haussa vastaanotto on peruutettu" in {
+//        useFixture("hyvaksytty-kesken-julkaistavissa.json", List("lisahaku-vastaanotettavissa.json"), hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
+//
+//        val lisahakuHakemusOid = "1.2.246.562.11.00000878230"
+//        val lisahaunVastaanotettavaHakukohdeOid = "1.2.246.562.14.2014022408541751568934"
+//
+//        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
+//        hakemuksenTulos(lisahakuHakemusOid).hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
+//        hakemuksenTulos(lisahakuHakemusOid).hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
+//
+//        HakuFixtures.useFixture(HakuFixtures.korkeakouluYhteishaku)
+//        hakemuksenTulos("1.2.246.562.11.00000441369").hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
+//        vastaanota(hakuOid, hakemusOid, "1.2.246.562.5.72607738902", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+//        hakemuksenTulos("1.2.246.562.11.00000441369").hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
+//        vastaanotaVirkailijana(valintatapajonoOid, personOid, hakemusOid, "1.2.246.562.5.72607738902", hakuOid, Vastaanottotila.peruutettu, muokkaaja)
+//        hakemuksenTulos("1.2.246.562.11.00000441369").hakutoiveet(0).vastaanottotila must_== Vastaanottotila.peruutettu
+//        hakemuksenTulos("1.2.246.562.11.00000441369").hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
+//
+//        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
+//        vastaanota("korkeakoulu-lisahaku1", lisahakuHakemusOid, lisahaunVastaanotettavaHakukohdeOid, Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+//
+//        val lisaHaunTulos = hakemuksenTulos(lisahakuHakemusOid)
+//        lisaHaunTulos.hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
+//        lisaHaunTulos.hakutoiveet(1).vastaanottotila must_== Vastaanottotila.vastaanottanut
+//        lisaHaunTulos.hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
+//      }
+//
+//      "vastaanota lisähaussa, kun varsinaisessa haussa jo vastaanottanut -> ERROR" in {
+//        useFixture("hyvaksytty-vastaanottanut.json", List("lisahaku-vastaanotettavissa.json"), hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
+//        expectFailure(Some("Väärä vastaanotettavuustila kohteella 1.2.246.562.14.2014022408541751568934: EI_VASTAANOTETTAVISSA (yritetty muutos: VastaanotaSitovasti)")) {
+//          vastaanota("korkeakoulu-lisahaku1", "1.2.246.562.11.00000878230", "1.2.246.562.14.2014022408541751568934", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+//        }
+//      }
+//
+//      "vastaanota lisähaussa, kun varsinaisessa haussa jo ehdollisesti vastaanottanut -> ERROR" in {
+//        useFixture("hyvaksytty-vastaanottanut-ehdollisesti.json", List("lisahaku-vastaanotettavissa.json"), hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
+//        expectFailure(Some("Väärä vastaanotettavuustila kohteella 1.2.246.562.14.2014022408541751568934: EI_VASTAANOTETTAVISSA (yritetty muutos: VastaanotaSitovasti)")) {
+//          vastaanota("korkeakoulu-lisahaku1", "1.2.246.562.11.00000878230", "1.2.246.562.14.2014022408541751568934", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+//        }
+//      }
+//
+//      "vastaanota varsinaisessa haussa, kun lisähaussa jo vastaanottanut -> ERROR" in {
+//        useFixture("hyvaksytty-kesken-julkaistavissa.json", List("lisahaku-vastaanottanut.json"), hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
+//        expectFailure(Some("Väärä vastaanotettavuustila kohteella 1.2.246.562.5.72607738902: EI_VASTAANOTETTAVISSA (yritetty muutos: VastaanotaSitovasti)")) {
+//          vastaanota(hakuOid, hakemusOid, "1.2.246.562.5.72607738902", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+//        }
+//      }
+//
+//      "vastaanota ehdollisesti varsinaisessa haussa, kun lisähaussa jo vastaanottanut -> ERROR" in {
+//        useFixture("hyvaksytty-ylempi-varalla.json", List("lisahaku-vastaanottanut.json"), hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
+//        expectFailure(Some("Väärä vastaanotettavuustila kohteella 1.2.246.562.5.16303028779: EI_VASTAANOTETTAVISSA (yritetty muutos: VastaanotaEhdollisesti)")) {
+//          vastaanota(hakuOid, hakemusOid, hakukohdeOid, Vastaanottotila.ehdollisesti_vastaanottanut, muokkaaja, selite, personOid)
+//        }
+//      }
+//
+//      "vastaanota varsinaisessa haussa, kun lisähaussa jo vastaanottanut ehdollisesti -> ERROR" in {
+//        useFixture("hyvaksytty-kesken-julkaistavissa.json", List("lisahaku-vastaanottanut-ehdollisesti.json"), hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
+//        expectFailure(Some("Väärä vastaanotettavuustila kohteella 1.2.246.562.5.72607738902: EI_VASTAANOTETTAVISSA (yritetty muutos: VastaanotaSitovasti)")) {
+//          vastaanota(hakuOid, hakemusOid, "1.2.246.562.5.72607738902", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+//        }
+//      }
+//
+//      "vastaanota varsinaisessa haussa, kun lisähaussa hylätty -> lisähaun paikka näkyy edelleen hylättynä" in {
+//        useFixture("hyvaksytty-kesken-julkaistavissa.json", List("lisahaku-hylatty.json"), hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
+//
+//        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
+//        hakemuksenTulos("1.2.246.562.11.00000878230").hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
+//
+//        HakuFixtures.useFixture(HakuFixtures.korkeakouluYhteishaku)
+//        vastaanota(hakuOid, hakemusOid, "1.2.246.562.5.72607738902", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+//
+//        HakuFixtures.useFixture(HakuFixtures.korkeakouluLisahaku1, List(HakuFixtures.korkeakouluLisahaku1))
+//        val lisaHaunTulos = hakemuksenTulos("1.2.246.562.11.00000878230")
+//        lisaHaunTulos.hakutoiveet.foreach(t => {
+//          t.vastaanottotila must_== Vastaanottotila.kesken
+//          t.valintatila must_== Valintatila.hylätty
+//        })
+//        lisaHaunTulos.hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
+//        lisaHaunTulos.hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
+//      }
+//
+//      "vastaanotto mahdollista haussa jossa YPS ei voimassa, vaikka vastaanotto yhteishaussa" in {
+//        useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
+//        sijoitteluFixtures.importFixture("korkeakoulu-erillishaku-ei-yhden-paikan-saantoa-vastaanotettavissa.json", false, false, true)
+//
+//        vastaanota(hakuOid, hakemusOid, "1.2.246.562.5.72607738902", Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+//
+//        HakuFixtures.useFixture(HakuOid("korkeakoulu-erillishaku-ei-yhden-paikan-saantoa"), List(HakuOid("korkeakoulu-erillishaku-ei-yhden-paikan-saantoa")))
+//        hakemuksenTulos("1.2.246.562.11.00000878231")
+//          .hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
+//        hakemustenTulokset("korkeakoulu-erillishaku-ei-yhden-paikan-saantoa")
+//          .find(_.hakemusOid == HakemusOid("1.2.246.562.11.00000878231"))
+//          .map(_.hakutoiveet(1).vastaanotettavuustila) must beSome(Vastaanotettavuustila.vastaanotettavissa_sitovasti)
+//      }
+//    }
+//
+//    "vastaanota ehdollisesti kun varasijasäännöt eivät ole vielä voimassa" in {
+//      useFixture("hyvaksytty-ylempi-varalla.json", hakuFixture = hakuFixture, ohjausparametritFixture = OhjausparametritFixtures.varasijasaannotEiVielaVoimassa, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
+//      expectFailure {
+//        vastaanota(hakuOid, hakemusOid, hakukohdeOid, Vastaanottotila.ehdollisesti_vastaanottanut, muokkaaja, selite, personOid)
+//      }
+//    }
+//
+//    "vastaanota ehdollisesti kun varasijasäännöt voimassa" in {
+//      useFixture("hyvaksytty-ylempi-varalla.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
+//      hakemuksenTulos.hakutoiveet(0).valintatila must_== Valintatila.varalla
+//      hakemuksenTulos.hakutoiveet(1).valintatila must_== Valintatila.hyväksytty
+//      vastaanota(hakuOid, hakemusOid, hakukohdeOid, Vastaanottotila.ehdollisesti_vastaanottanut, muokkaaja, selite, personOid)
+//      hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.kesken
+//      hakemuksenTulos.hakutoiveet(0).valintatila must_== Valintatila.varalla
+//      hakemuksenTulos.hakutoiveet(1).valintatila must_== Valintatila.hyväksytty
+//      hakemuksenTulos.hakutoiveet(1).vastaanottotila must_== Vastaanottotila.ehdollisesti_vastaanottanut
+//    }
+//
+//    "vastaanota sitovasti kun varasijasäännöt voimassa" in {
+//      useFixture("hyvaksytty-ylempi-varalla.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
+//      vastaanota(hakuOid, hakemusOid, hakukohdeOid, Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+//      val yhteenveto = hakemuksenTulos
+//      yhteenveto.hakutoiveet(1).valintatila must_== Valintatila.hyväksytty
+//      yhteenveto.hakutoiveet(1).vastaanottotila must_== Vastaanottotila.vastaanottanut
+//      yhteenveto.hakutoiveet(1).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
+//
+//      yhteenveto.hakutoiveet(0).valintatila must_== Valintatila.peruuntunut
+//      yhteenveto.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.kesken
+//      yhteenveto.hakutoiveet(0).vastaanotettavuustila must_== Vastaanotettavuustila.ei_vastaanotettavissa
+//    }
 
     "Valintatuloksen muutoslogi"  in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
