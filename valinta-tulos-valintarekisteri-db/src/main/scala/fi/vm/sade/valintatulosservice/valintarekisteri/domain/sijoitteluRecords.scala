@@ -41,7 +41,7 @@ case class HakijaRecord(hakemusOid: HakemusOid, hakijaOid: String) {
     val hakijaDTO = new HakijaDTO
     hakijaDTO.setHakijaOid(hakijaOid)
     hakijaDTO.setHakemusOid(hakemusOid.toString)
-    hakijaDTO.setHakutoiveet(sortHakutoiveet(hakutoiveet))
+    hakijaDTO.setHakutoiveet(sort(hakutoiveet))
     hakijaDTO
   }
 
@@ -50,26 +50,14 @@ case class HakijaRecord(hakemusOid: HakemusOid, hakijaOid: String) {
     val hakijaDTO = new KevytHakijaDTO
     hakijaDTO.setHakijaOid(hakijaOid)
     hakijaDTO.setHakemusOid(hakemusOid.toString)
-    hakijaDTO.setHakutoiveet(sortKevytHakutoiveet(hakutoiveet)) //TODO sorting order
+    hakijaDTO.setHakutoiveet(sort(hakutoiveet))
     hakijaDTO
   }
 
-  def sort[T](hakutoiveet:List[T], comparator:util.Comparator[T]): util.TreeSet[T] = {
-    val sortedJavaHakutoiveSet = new util.TreeSet[T](comparator)
-    sortedJavaHakutoiveSet.addAll(hakutoiveet.asJava)
-    sortedJavaHakutoiveSet
-  }
-
-  def sortHakutoiveet(hakutoiveet:List[HakutoiveDTO]) = {
-    sort(hakutoiveet, new Comparator[HakutoiveDTO] {
-      override def compare(o1: HakutoiveDTO, o2: HakutoiveDTO): Int = o1.getHakutoive.compareTo(o2.getHakutoive)
-    })
-  }
-
-  def sortKevytHakutoiveet(hakutoiveet:List[KevytHakutoiveDTO]) = {
-    sort(hakutoiveet, new Comparator[KevytHakutoiveDTO] {
-      override def compare(o1: KevytHakutoiveDTO, o2: KevytHakutoiveDTO): Int = o1.getHakutoive.compareTo(o2.getHakutoive)
-    })
+  def sort[T](hakutoiveet:List[T]): util.TreeSet[T] = {
+    val s = new util.TreeSet[T]
+    s.addAll(hakutoiveet.asJava)
+    s
   }
 }
 
