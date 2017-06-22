@@ -10,7 +10,7 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.{Dev, IT, VtsAppConfig
 import fi.vm.sade.valintatulosservice.config.{OhjausparametritAppConfig, VtsAppConfig}
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
-import fi.vm.sade.valintatulosservice.kela.KelaService
+import fi.vm.sade.valintatulosservice.kela.{KelaService, VtsKelaAuthenticationClient}
 import fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos.{SijoittelunTulosMigraatioScheduler, SijoittelunTulosMigraatioServlet, SijoitteluntulosMigraatioService}
 import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
@@ -177,6 +177,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/kela/*")
         context.mount(new PublicValintatulosServlet(valintatulosService, vastaanottoService, ilmoittautumisService), "/cas/haku")
       context.mount(new KelaServlet(audit, new KelaService(HakijaResolver(appConfig), hakuService, organisaatioService, valintarekisteriDb), valintarekisteriDb), "/cas/kela")
+      context.mount(new KelaHealthCheckServlet(audit, valintarekisteriDb, appConfig, new VtsKelaAuthenticationClient(appConfig)), "/health-check/kela")
 
       val valintaesitysService = new ValintaesitysService(hakuService, authorizer, valintarekisteriDb, valintarekisteriDb, audit)
 

@@ -8,6 +8,9 @@ class SecuritySettings(c: Config) {
   val casServiceIdentifier = c.getString("valinta-tulos-service.cas.service")
   val casUsername = c.getString("valinta-tulos-service.cas.username")
   val casPassword = c.getString("valinta-tulos-service.cas.password")
+  val casKelaUsername = c.getString("valinta-tulos-service.cas.kela.username")
+  val casKelaPassword = c.getString("valinta-tulos-service.cas.kela.password")
+  val kelaVastaanototTestihetu = c.getString("valinta-tulos-service.kela.vastaanotot.testihetu")
 
   val ldapConfig = LdapConfig(
     c.getString("ldap.server.host"),

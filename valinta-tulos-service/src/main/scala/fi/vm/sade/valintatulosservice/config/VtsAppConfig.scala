@@ -14,7 +14,6 @@ import fi.vm.sade.utils.tcp.{PortChecker, PortFromSystemPropertyOrFindFree}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusFixtures
 import fi.vm.sade.valintatulosservice.ohjausparametrit._
 import fi.vm.sade.valintatulosservice.security.Role
-import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{SijoitteluContext, SijoitteluSpringContext}
 
 object VtsAppConfig extends Logging {
   def getProfileProperty() = System.getProperty("valintatulos.profile", "default")
@@ -23,6 +22,7 @@ object VtsAppConfig extends Logging {
   private val embeddedMongoPortChooser = new PortFromSystemPropertyOrFindFree("valintatulos.embeddedmongo.port")
   private val itPostgresPortChooser = new PortFromSystemPropertyOrFindFree("valintatulos.it.postgres.port")
   lazy val organisaatioMockPort = PortChecker.findFreeLocalPort
+  lazy val vtsMockPort = PortChecker.findFreeLocalPort
 
   def fromOptionalString(profile: Option[String]) = {
     fromString(profile.getOrElse(getProfileProperty))
@@ -116,6 +116,12 @@ object VtsAppConfig extends Logging {
       .withOverride("valinta-tulos-service.valintarekisteri.db.maxConnections", "5")
       .withOverride("valinta-tulos-service.valintarekisteri.db.minConnections", "3")
       .withOverride(("cas.service.organisaatio-service", s"http://localhost:${organisaatioMockPort}/organisaatio-service"))
+      .withOverride(("cas.url", s"https://itest-virkailija.oph.ware.fi/cas"))
+      .withOverride(("valinta-tulos-service.cas.service", s"http://localhost:${vtsMockPort}/valinta-tulos-service"))
+      .withOverride(("valinta-tulos-service.cas.kela.username", s"kelatesti"))
+      .withOverride(("valinta-tulos-service.cas.kela.password", s"foobar123!"))
+      .withOverride(("valinta-tulos-service.read-from-valintarekisteri", s"false"))
+      .withOverride(("valinta-tulos-service.kela.vastaanotot.testihetu", s"090121-321C"))
   }
 
   /**
