@@ -144,6 +144,9 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         Some(valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(uusi.getEhdollisenHyvaksynnanEhto(), ifUnmodifiedSince)),
         Option(uusi.ilmoittautumistila != EiTehty).collect { case true => valinnantulosRepository.storeIlmoittautuminen(
           uusi.henkiloOid, Ilmoittautuminen(uusi.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), ifUnmodifiedSince)
+        },
+        Option(uusi.julkaistavissa.getOrElse(false) && uusi.isHyvaksytty).collect{
+          case true => valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(uusi.hakemusOid, uusi.valintatapajonoOid, muokkaaja, selite)
         }
       ).flatten
     }
@@ -162,6 +165,12 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         Option(uusi.ilmoittautumistila != vanha.ilmoittautumistila && !uusi.ohitaIlmoittautuminen.getOrElse(false)).collect {
           case true => valinnantulosRepository.storeIlmoittautuminen(
             vanha.henkiloOid, Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), ifUnmodifiedSince)
+        },
+        Option(uusi.julkaistavissa.getOrElse(false) && uusi.isHyvaksytty).collect{
+          case true => valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(uusi.hakemusOid, uusi.valintatapajonoOid, muokkaaja, selite)
+        },
+        Option(vanha.isHyvaksytty && !uusi.isHyvaksytty && uusi.julkaistavissa.getOrElse(false)).collect{
+          case true => valinnantulosRepository.deleteHyvaksyttyJaJulkaistavissa(uusi.henkiloOid, uusi.hakukohdeOid, ifUnmodifiedSince)
         }
       ).flatten
     }
@@ -171,7 +180,8 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         Some(valinnantulosRepository.deleteValinnantulos(muokkaaja, uusi, ifUnmodifiedSince)),
         Option(vanha.ilmoittautumistila != EiTehty).collect { case true => valinnantulosRepository.deleteIlmoittautuminen(
           uusi.henkiloOid, Ilmoittautuminen(uusi.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), ifUnmodifiedSince
-        )}
+        )},
+        Some(valinnantulosRepository.deleteHyvaksyttyJaJulkaistavissa(uusi.henkiloOid, uusi.hakukohdeOid, ifUnmodifiedSince))
       ).flatten
     }
 
