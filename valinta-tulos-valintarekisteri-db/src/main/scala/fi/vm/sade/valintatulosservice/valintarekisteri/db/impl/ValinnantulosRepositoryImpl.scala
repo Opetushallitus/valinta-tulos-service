@@ -440,6 +440,22 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
         """.map(_ => ())
   }
 
+  override def deleteHyvaksyttyJaJulkaistavissa(henkiloOid: String, hakukohdeOid: HakukohdeOid, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+    sqlu"""with hyvaksytty_jono as (
+              select hakukohde_oid
+              from valinnantilat
+              where hakukohde_oid = ${hakukohdeOid} and henkilo_oid = ${henkiloOid}
+              and tila in ('Hyvaksytty'::valinnantila, 'VarasijaltaHyvaksytty'::valinnantila) )
+           delete from hyvaksytyt_ja_julkaistut_hakutoiveet
+           where hakukohde = ${hakukohdeOid} and henkilo = ${henkiloOid}
+           and hakukohde not in (select * from hyvaksytty_jono)
+           and (${ifUnmodifiedSince}::timestamptz is null
+                or system_time @> ${ifUnmodifiedSince})""".flatMap {
+      case 1 => DBIO.successful(())
+      case _ => DBIO.failed(new ConcurrentModificationException(s"Hyväksytty ja julkaistu -päivämäärää (henkilo $henkiloOid, hakukohde $hakukohdeOid) ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
+    }
+  }
+
   override def storeValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
     sqlu"""insert into valinnantulokset(
              valintatapajono_oid,
