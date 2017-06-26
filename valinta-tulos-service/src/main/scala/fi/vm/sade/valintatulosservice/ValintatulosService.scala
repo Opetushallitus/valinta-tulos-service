@@ -70,7 +70,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
       latestSijoitteluajoId = sijoittelutulosService.findLatestSijoitteluajoId(h.hakuOid)
       hakukohdeRecords <- hakukohdeRecordService.getHakukohdeRecords(h.toiveet.map(_.oid)).right.toOption
       uniqueKaudet <- Right(hakukohdeRecords.filter(_.yhdenPaikanSaantoVoimassa)
-        .map(_.koulutuksenAlkamiskausi)).right.toOption
+        .map(_.koulutuksenAlkamiskausi).distinct).right.toOption
       vastaanototByKausi <- Some(uniqueKaudet.map(kausi => kausi ->
         hakijaVastaanottoRepository.runBlocking(hakijaVastaanottoRepository.findYhdenPaikanSaannonPiirissaOlevatVastaanotot(h.henkiloOid, kausi))).toMap)
       hakemus <- fetchTulokset(

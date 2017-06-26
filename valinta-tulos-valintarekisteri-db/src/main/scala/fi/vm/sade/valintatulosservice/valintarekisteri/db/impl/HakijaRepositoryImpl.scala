@@ -8,59 +8,34 @@ import slick.driver.PostgresDriver.api._
 
 trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriRepository {
 
-  def seqTupleToUnion[T](t:(Seq[T], Seq[T])):Seq[T] = Option(t).map(t => t._1.union(t._2)).getOrElse(Seq()).distinct
-
-  override def getHakemuksenHakija(hakemusOid: HakemusOid, sijoitteluajoId: Option[Long] = None):Option[HakijaRecord] = {
-    def filterHakija(hakijat:Seq[HakijaRecord]): Option[HakijaRecord] = {
-      if(hakijat.map(_.hakijaOid).distinct.size > 1) {
-        throw new RuntimeException(s"Hakemukselle ${hakijat.head.hakemusOid} löytyi useita hakijaOideja")
+  override def getHakemuksenHakija(hakemusOid: HakemusOid, sijoitteluajoId: Option[Long] = None): Option[HakijaRecord] = {
+    timed(s"Hakemuksen $hakemusOid hakijan haku", 100) {
+      runBlocking(
+        sql"""select distinct henkilo_oid from valinnantilat where hakemus_oid = $hakemusOid""".as[String]
+      ).toList match {
+        case Nil =>
+          None
+        case henkiloOid :: Nil =>
+          Some(HakijaRecord(hakemusOid, henkiloOid))
+        case multipleOids =>
+          throw new RuntimeException(s"Hakemukselle $hakemusOid löytyi useita hakijaoideja $multipleOids")
       }
-      hakijat.headOption
-    }
-
-    def getHakemuksenHakijatValinnantuloksissa = timed(s"Hakemuksen $hakemusOid hakijan haku", 100) {
-      runBlocking(hakijaValinnantuloksissaDBIO)}
-
-    def getHakemuksenHakijatSijoittelussaJaValinnantuloksissa = timed(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid hakijan haku", 100) {
-      seqTupleToUnion(runBlocking(hakijaValinnantuloksissaDBIO.zip(hakijaSijoittelussaDBIO)))}
-
-    def hakijaSijoittelussaDBIO: DBIO[Seq[HakijaRecord]] =
-    sql"""select hakemus_oid, hakija_oid
-            from jonosijat
-            where hakemus_oid = ${hakemusOid} and sijoitteluajo_id = ${sijoitteluajoId}""".as[HakijaRecord]
-
-    def hakijaValinnantuloksissaDBIO: DBIO[Seq[HakijaRecord]] =
-    sql"""select hakemus_oid, henkilo_oid
-            from valinnantilat
-            where hakemus_oid = ${hakemusOid}""".as[HakijaRecord]
-
-    sijoitteluajoId match {
-      case Some(id) if 0 < id => filterHakija(getHakemuksenHakijatSijoittelussaJaValinnantuloksissa)
-      case _ => filterHakija(getHakemuksenHakijatValinnantuloksissa)
     }
   }
 
-  override def getHakukohteenHakijat(hakukohdeOid: HakukohdeOid, sijoitteluajoId: Option[Long] = None):List[HakijaRecord] = {
-
-    def getHakukohteenHakijatValinnantuloksissa = timed(s"Hakukohteen $hakukohdeOid hakijan haku", 100) {
-        runBlocking(hakukohdeValinnantuloksissaDBIO)}
-
-    def getHakukohteenHakijatSijoittelussa = timed(s"Sijoitteluajon $sijoitteluajoId hakukohteen $hakukohdeOid hakijoiden haku", 100) {
-        seqTupleToUnion(runBlocking(hakukohdeSijoittelussaDBIO.zip(hakukohdeValinnantuloksissaDBIO)))}
-
-    def hakukohdeSijoittelussaDBIO: DBIO[Seq[HakijaRecord]] =
-      sql"""select hakemus_oid, hakija_oid
-            from jonosijat
-            where hakukohde_oid = ${hakukohdeOid} and sijoitteluajo_id = ${sijoitteluajoId}""".as[HakijaRecord]
-
-    def hakukohdeValinnantuloksissaDBIO: DBIO[Seq[HakijaRecord]] =
-      sql"""select hakemus_oid, henkilo_oid
+  override def getHakukohteenHakijat(hakukohdeOid: HakukohdeOid, sijoitteluajoId: Option[Long] = None): List[HakijaRecord] = {
+    timed(s"Hakukohteen $hakukohdeOid hakijan haku", 100) {
+      val hakijat = runBlocking(
+        sql"""select distinct hakemus_oid, henkilo_oid
             from valinnantilat
-            where hakukohde_oid = ${hakukohdeOid}""".as[HakijaRecord]
+            where hakukohde_oid = $hakukohdeOid""".as[HakijaRecord]
+      ).toList
 
-    sijoitteluajoId match {
-      case Some(id) if 0 < id => getHakukohteenHakijatSijoittelussa.toList
-      case _ => getHakukohteenHakijatValinnantuloksissa.toList
+      if (hakijat.map(_.hakemusOid).distinct.size != hakijat.size) {
+        throw new RuntimeException(s"Hakemuksille hakukohteessa $hakukohdeOid löytyi useita hakijaoideja ${hakijat.groupBy(_.hakemusOid).values.filter(_.size > 1)}")
+      }
+
+      hakijat
     }
   }
 
