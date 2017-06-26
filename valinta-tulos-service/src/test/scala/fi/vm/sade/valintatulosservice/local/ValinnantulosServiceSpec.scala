@@ -190,12 +190,13 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       )
     }
     "no status for succesfully modified valinnantulos" in new Mocks with Authorized with Korkeakouluhaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
-      valinnantulosRepository.getValinnantuloksetAndLastModifiedDatesForValintatapajono(valintatapajonoOid) returns Set((lastModified, valinnantulosA))
+      valinnantulosRepository.getValinnantuloksetAndLastModifiedDatesForValintatapajono(valintatapajonoOid) returns Set((lastModified, valinnantulosA.copy(valinnantila = Hyvaksytty)))
       valinnantulosRepository.updateValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]]) returns DBIO.successful(())
       valinnantulosRepository.runBlockingTransactionally(any[DBIO[Unit]], any[Duration]) returns Right[Throwable, Unit](())
-      val valinnantulokset = List(valinnantulosA.copy(julkaistavissa = Some(true)))
+      val valinnantulokset = List(valinnantulosA.copy(valinnantila = Hyvaksytty, julkaistavissa = Some(true)))
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo, true) mustEqual List()
       there was one (valinnantulosRepository).storeValinnantuloksenOhjaus(valinnantulokset(0).getValinnantuloksenOhjaus(session.personOid, "Erillishaun tallennus"), Some(lastModified))
+      there was one (valinnantulosRepository).setHyvaksyttyJaJulkaistavissa(valinnantulosA.hakemusOid, valintatapajonoOid, session.personOid, "Erillishaun tallennus")
       there was no (valinnantulosRepository).updateValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
       there was no (valinnantulosRepository).storeIlmoittautuminen(any[String], any[Ilmoittautuminen], any[Option[Instant]])
       there was no (valinnantulosRepository).storeValinnantila(any[ValinnantilanTallennus], any[Option[Instant]])
@@ -214,6 +215,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       there was one (valinnantulosRepository).deleteValinnantulos(session.personOid, valinnantulokset(0), Some(lastModified))
       there was one (valinnantulosRepository).deleteIlmoittautuminen(validiValinnantulos.henkiloOid, Ilmoittautuminen(validiValinnantulos.hakukohdeOid, validiValinnantulos.ilmoittautumistila,
         session.personOid, "Erillishaun tallennus"), Some(lastModified))
+      there was one (valinnantulosRepository).deleteHyvaksyttyJaJulkaistavissa(validiValinnantulos.henkiloOid, validiValinnantulos.hakukohdeOid, Some(lastModified))
       there was no (valinnantulosRepository).updateValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
       there was no (valinnantulosRepository).storeValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
       there was no (valinnantulosRepository).storeIlmoittautuminen(any[String], any[Ilmoittautuminen], any[Option[Instant]])
