@@ -294,6 +294,33 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
 
       checkHyvaksyttyJaJulkaistu().isDefined must_== true
     }
+    "delete hyväksytty/julkaistu date" in {
+      storeValinnantilaAndValinnantulos()
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = true")
+      checkHyvaksyttyJaJulkaistu() must_== None
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.setHyvaksyttyJaJulkaistavissa(hakemusOid, valintatapajonoOid, "ilmoittaja", "selite")
+      ))
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantilat set tila = 'Hylatty'::valinnantila")
+      checkHyvaksyttyJaJulkaistu().isDefined must_== true
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.deleteHyvaksyttyJaJulkaistavissa(henkiloOid, hakukohdeOid)
+      ))
+      checkHyvaksyttyJaJulkaistu() must_== None
+    }
+    "don't delete hyväksytty/julkaistu date if there is hyväksytty valinnantila" in {
+      storeValinnantilaAndValinnantulos()
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = true")
+      checkHyvaksyttyJaJulkaistu() must_== None
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.setHyvaksyttyJaJulkaistavissa(hakemusOid, valintatapajonoOid, "ilmoittaja", "selite")
+      ))
+      checkHyvaksyttyJaJulkaistu().isDefined must_== true
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.deleteHyvaksyttyJaJulkaistavissa(henkiloOid, hakukohdeOid)
+      )) must throwA[ConcurrentModificationException]
+      checkHyvaksyttyJaJulkaistu().isDefined must_== true
+    }
   }
 
   private def checkJulkaistavissa():Boolean = {
