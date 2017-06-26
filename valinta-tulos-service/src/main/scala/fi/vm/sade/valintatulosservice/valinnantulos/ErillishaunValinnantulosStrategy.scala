@@ -170,7 +170,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         Option(uusi.julkaistavissa.getOrElse(false) && uusi.isHyvaksytty).collect{
           case true => valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(uusi.hakemusOid, uusi.valintatapajonoOid, muokkaaja, selite)
         },
-        Option(vanha.isHyvaksytty && !uusi.isHyvaksytty && uusi.julkaistavissa.getOrElse(false)).collect{
+        Option(vanha.isHyvaksytty && !uusi.isHyvaksytty).collect{
           case true => valinnantulosRepository.deleteHyvaksyttyJaJulkaistavissa(uusi.henkiloOid, uusi.hakukohdeOid, ifUnmodifiedSince)
         }
       ).flatten
