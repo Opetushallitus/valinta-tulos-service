@@ -63,7 +63,7 @@ case class Hakutoiveentulos(hakukohdeOid: HakukohdeOid,
   }
 
   def toOdottaaYlempienHakutoiveidenTuloksia = {
-    if(valintatila == Valintatila.hyväksytty) {
+    if(Valintatila.isHyväksytty(valintatila)) {
       copy(
         vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa,
         vastaanottoDeadline = None

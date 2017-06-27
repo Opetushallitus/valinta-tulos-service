@@ -164,7 +164,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
       val virkailijanVastaanotettavuustila = laskeVastaanotettavuustila(valintatila, virkailijanVastaanottotila)
       val virkailijanTilat = HakutoiveenSijoittelunTilaTieto(virkailijanValintatila, virkailijanVastaanottotila, virkailijanVastaanotettavuustila)
 
-      val hyväksyttyJulkaistussaJonossa = valintatila == hyväksytty && jono.isJulkaistavissa
+      val hyväksyttyJulkaistussaJonossa = Valintatila.isHyväksytty(valintatila) && jono.isJulkaistavissa
       val julkaistavissa = hyväksyttyJulkaistussaJonossa || kaikkiJonotJulkaistu(hakutoive)
       val ehdollisestiHyvaksyttavissa = jono.isEhdollisestiHyvaksyttavissa
       val ehdollisenHyvaksymisenEhtoKoodi = Option(jono.getEhdollisenHyvaksymisenEhtoKoodi)
@@ -220,7 +220,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
       val virkailijanVastaanotettavuustila = laskeVastaanotettavuustila(valintatila, virkailijanVastaanottotila)
       val virkailijanTilat = HakutoiveenSijoittelunTilaTieto(virkailijanValintatila, virkailijanVastaanottotila, virkailijanVastaanotettavuustila)
 
-      val hyväksyttyJulkaistussaJonossa = valintatila == hyväksytty && jono.isJulkaistavissa
+      val hyväksyttyJulkaistussaJonossa = Valintatila.isHyväksytty(valintatila) && jono.isJulkaistavissa
       val julkaistavissa = hyväksyttyJulkaistussaJonossa || kaikkiJonotJulkaistu(hakutoive)
       val ehdollisestiHyvaksyttavissa = jono.isEhdollisestiHyvaksyttavissa
       val ehdollisenHyvaksymisenEhtoKoodi = Option(jono.getEhdollisenHyvaksymisenEhtoKoodi)
@@ -354,7 +354,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
 
   private def vastaanottotilanVaikutusValintatilaan(valintatila: Valintatila, vastaanottotila : Vastaanottotila): Valintatila = {
     if (List(Vastaanottotila.ehdollisesti_vastaanottanut, Vastaanottotila.vastaanottanut).contains(vastaanottotila)) {
-      if (List(Valintatila.harkinnanvaraisesti_hyväksytty, Valintatila.varasijalta_hyväksytty, Valintatila.hyväksytty).contains(valintatila)) {
+      if (Valintatila.isHyväksytty(valintatila)) {
         valintatila
       } else {
          Valintatila.hyväksytty
