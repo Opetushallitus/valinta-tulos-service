@@ -8,7 +8,7 @@ import slick.driver.PostgresDriver.api._
 
 trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriRepository {
 
-  override def getHakemuksenHakija(hakemusOid: HakemusOid, sijoitteluajoId: Option[Long] = None): Option[HakijaRecord] = {
+  override def getHakemuksenHakija(hakemusOid: HakemusOid, sijoitteluajoId: Option[Long] = None): Option[HakijaRecord] =
     timed(s"Hakemuksen $hakemusOid hakijan haku", 100) {
       runBlocking(
         sql"""select distinct henkilo_oid from valinnantilat where hakemus_oid = $hakemusOid""".as[String]
@@ -21,9 +21,8 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
           throw new RuntimeException(s"Hakemukselle $hakemusOid löytyi useita hakijaoideja $multipleOids")
       }
     }
-  }
 
-  override def getHakukohteenHakijat(hakukohdeOid: HakukohdeOid, sijoitteluajoId: Option[Long] = None): List[HakijaRecord] = {
+  override def getHakukohteenHakijat(hakukohdeOid: HakukohdeOid, sijoitteluajoId: Option[Long] = None): List[HakijaRecord] =
     timed(s"Hakukohteen $hakukohdeOid hakijan haku", 100) {
       val hakijat = runBlocking(
         sql"""select distinct hakemus_oid, henkilo_oid
@@ -37,32 +36,21 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
 
       hakijat
     }
-  }
 
-  override def getHaunHakijat(hakuOid: HakuOid, sijoitteluajoId: Option[Long] = None):List[HakijaRecord] = {
-    def getHaunHakijatValinnantuloksissa = timed(s"Haun ${hakuOid} hakijoiden haku", 100) {
-      runBlocking(hakuValinnantuloksissaDBIO)}
-
-    def getHaunHakijatSijoittelussa = timed(s"Sijoitteluajon $sijoitteluajoId haun ${hakuOid} hakijoiden haku", 100) {
-      seqTupleToUnion(runBlocking(hakuSijoittelussaDBIO.zip(hakuValinnantuloksissaDBIO)))}
-
-    def hakuSijoittelussaDBIO: DBIO[Seq[HakijaRecord]] =
-      sql"""select hakemus_oid, hakija_oid
-            from jonosijat
-            inner join hakukohteet on hakukohteet.hakukohde_oid = jonosijat.hakukohde_oid
-            where hakukohteet.haku_oid = ${hakuOid} and jonosijat.sijoitteluajo_id = ${sijoitteluajoId}""".as[HakijaRecord]
-
-    def hakuValinnantuloksissaDBIO: DBIO[Seq[HakijaRecord]] =
-      sql"""select hakemus_oid, henkilo_oid
+  override def getHaunHakijat(hakuOid: HakuOid, sijoitteluajoId: Option[Long] = None):List[HakijaRecord] =
+    timed(s"Haun ${hakuOid} hakijoiden haku", 100) {
+      val hakijat = runBlocking(sql"""select distinct hakemus_oid, henkilo_oid
             from valinnantilat
             inner join hakukohteet on hakukohteet.hakukohde_oid = valinnantilat.hakukohde_oid
             where hakukohteet.haku_oid = ${hakuOid}""".as[HakijaRecord]
+      ).toList
 
-    sijoitteluajoId match {
-      case Some(id) if 0 < id => getHaunHakijatSijoittelussa.toList
-      case _ => getHaunHakijatValinnantuloksissa.toList
+      if (hakijat.map(_.hakemusOid).distinct.size != hakijat.size) {
+        throw new RuntimeException(s"Hakemuksille haussa $hakuOid löytyi useita hakijaoideja ${hakijat.groupBy(_.hakemusOid).values.filter(_.size > 1)}")
+      }
+
+      hakijat
     }
-  }
 
   override def getHakemuksenHakutoiveetSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId:Long): List[HakutoiveRecord] =
     timed(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid hakutoiveiden haku", 100) {
