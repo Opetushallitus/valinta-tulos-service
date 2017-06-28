@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.sijoittelu
 
-import java.util.Date
+import java.time.OffsetDateTime
 
 import fi.vm.sade.sijoittelu.domain.SijoitteluAjo
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi._
@@ -28,11 +28,17 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
                              sijoittelunTulosClient: ValintarekisteriSijoittelunTulosClient) {
   import scala.collection.JavaConversions._
 
-  def hakemuksenTulos(haku: Haku, hakemusOid: HakemusOid, hakijaOidIfFound: Option[String], aikataulu: Option[Vastaanottoaikataulu], latestSijoitteluajoId: Option[Long]): Option[HakemuksenSijoitteluntulos] = {
+  def hakemuksenTulos(haku: Haku,
+                      hakemusOid: HakemusOid,
+                      hakijaOidIfFound: Option[String],
+                      aikataulu: Option[Vastaanottoaikataulu],
+                      latestSijoitteluajoId: Option[Long]): Option[HakemuksenSijoitteluntulos] = {
     for (
       hakijaOid <- hakijaOidIfFound;
       hakija: HakijaDTO <- findHakemus(hakemusOid, latestSijoitteluajoId, haku.oid)
-    ) yield hakemuksenYhteenveto(hakija, aikataulu, fetchVastaanotto(hakijaOid, haku.oid), false)
+    ) yield hakemuksenYhteenveto(hakija, aikataulu,
+                                 hakijaVastaanottoRepository.findHyvaksyttyJulkaistuDatesForHenkilo(hakijaOid),
+                                 fetchVastaanotto(hakijaOid, haku.oid), false)
   }
 
   def hakemustenTulos(hakuOid: HakuOid,
@@ -50,13 +56,14 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
 
     (for (
       sijoittelu <- findLatestSijoitteluAjo(hakuOid, hakukohdeOid);
+      hakijaDtot <- hakukohdeOid match {
+        case Some(hakukohde) => Option(Timer.timed("hakukohteen hakemukset", 1000)(raportointiService.kevytHakemukset(sijoittelu, hakukohde)))
+        case None => Option(Timer.timed("hakemukset", 1000)(raportointiService.kevytHakemukset(sijoittelu)))
+      };
       hakijat <- {
-        hakukohdeOid match {
-          case Some(hakukohde) => Option(Timer.timed("hakukohteen hakemukset", 1000)(raportointiService.kevytHakemukset(sijoittelu, hakukohde)))
-            .map(_.map(h => hakemuksenKevytYhteenveto(h, aikataulu, fetchVastaanottos(HakemusOid(h.getHakemusOid), Option(h.getHakijaOid)))))
-          case None => Option(Timer.timed("hakemukset", 1000)(raportointiService.kevytHakemukset(sijoittelu)))
-            .map(_.map(h => hakemuksenKevytYhteenveto(h, aikataulu, fetchVastaanottos(HakemusOid(h.getHakemusOid), Option(h.getHakijaOid)))))
-        }
+        val hyvaksyttyJaJulkaistuDates = hakijaVastaanottoRepository.findHyvaksyttyJulkaistuDatesForHaku(hakuOid)
+        Option(hakijaDtot.map(h => hakemuksenKevytYhteenveto(h, aikataulu, hyvaksyttyJaJulkaistuDates.getOrElse(h.getHakijaOid, Map()),
+          fetchVastaanottos(HakemusOid(h.getHakemusOid), Option(h.getHakijaOid)))))
       }
     ) yield {
       hakijat
@@ -105,23 +112,24 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     raportointiService.hakemukset(id, hakuOid, hyvaksytyt, ilmanHyvaksyntaa, vastaanottaneet, hakukohdeOid, count, index)
   }
 
-  def latestSijoittelunTulos(hakuOid: HakuOid, henkiloOid: String, hakemusOid: HakemusOid,
-                             vastaanottoaikataulu: Option[Vastaanottoaikataulu]): DBIO[HakemuksenSijoitteluntulos] = {
+  private def latestSijoittelunTulos(hakuOid: HakuOid, henkiloOid: String, hakemusOid: HakemusOid,
+                             vastaanottoaikataulu: Option[Vastaanottoaikataulu], virkailijana:Boolean): DBIO[HakemuksenSijoitteluntulos] = {
     findHakemus(hakemusOid, findLatestSijoitteluajoId(hakuOid), hakuOid).map(hakija => {
       hakijaVastaanottoRepository.findHenkilonVastaanototHaussa(henkiloOid, hakuOid).map(vastaanotot => {
-        hakemuksenYhteenveto(hakija, vastaanottoaikataulu, vastaanotot, false)
+        val hyvaksyttyJaJulkaistuDates = hakijaVastaanottoRepository.findHyvaksyttyJulkaistuDatesForHenkilo(henkiloOid)
+        hakemuksenYhteenveto(hakija, vastaanottoaikataulu, hyvaksyttyJaJulkaistuDates, vastaanotot, virkailijana)
       })
     }).getOrElse(DBIO.successful(HakemuksenSijoitteluntulos(hakemusOid, None, Nil)))
   }
 
+  def latestSijoittelunTulos(hakuOid: HakuOid, henkiloOid: String, hakemusOid: HakemusOid,
+                             vastaanottoaikataulu: Option[Vastaanottoaikataulu]): DBIO[HakemuksenSijoitteluntulos] =
+    latestSijoittelunTulos(hakuOid, henkiloOid, hakemusOid, vastaanottoaikataulu, false)
+
+
   def latestSijoittelunTulosVirkailijana(hakuOid: HakuOid, henkiloOid: String, hakemusOid: HakemusOid,
-                                         vastaanottoaikataulu: Option[Vastaanottoaikataulu]): DBIO[HakemuksenSijoitteluntulos] = {
-    findHakemus(hakemusOid, findLatestSijoitteluajoId(hakuOid), hakuOid).map(hakija => {
-      hakijaVastaanottoRepository.findHenkilonVastaanototHaussa(henkiloOid, hakuOid).map(vastaanotot => {
-        hakemuksenYhteenveto(hakija, vastaanottoaikataulu, vastaanotot, true)
-      })
-    }).getOrElse(DBIO.successful(HakemuksenSijoitteluntulos(hakemusOid, None, Nil)))
-  }
+                                         vastaanottoaikataulu: Option[Vastaanottoaikataulu]): DBIO[HakemuksenSijoitteluntulos] =
+    latestSijoittelunTulos(hakuOid, henkiloOid, hakemusOid, vastaanottoaikataulu, true)
 
   def sijoittelunTulosForAjoWithoutVastaanottoTieto(sijoitteluajoId: Option[Long], hakuOid: HakuOid, hakemusOid: HakemusOid): Option[HakijaDTO] =
     findHakemus(hakemusOid, sijoitteluajoId, hakuOid)
@@ -147,18 +155,19 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
 
   def hakemuksenYhteenveto(hakija: HakijaDTO,
                            aikataulu: Option[Vastaanottoaikataulu],
+                           hyvaksyttyJulkaistuDates: Map[HakukohdeOid, OffsetDateTime],
                            vastaanottoRecords: Set[VastaanottoRecord],
                            vastaanotettavuusVirkailijana: Boolean): HakemuksenSijoitteluntulos = {
 
     val hakutoiveidenYhteenvedot = hakija.getHakutoiveet.toList.map { hakutoive: HakutoiveDTO =>
-      val vastaanotto: Option[VastaanottoAction] = vastaanottoRecords.find(v => v.hakukohdeOid.toString == hakutoive.getHakukohdeOid).map(_.action)
-      val jono: HakutoiveenValintatapajonoDTO = JonoFinder.merkitseväJono(hakutoive).get
-      val valintatila: Valintatila = jononValintatila(jono, hakutoive)
+      val vastaanotto = vastaanottoRecords.find(v => v.hakukohdeOid.toString == hakutoive.getHakukohdeOid).map(_.action)
+      val jono = JonoFinder.merkitseväJono(hakutoive).get
+      val valintatila = jononValintatila(jono, hakutoive)
 
-      val viimeisinHakemuksenTilanMuutos: Option[Date] = Option(jono.getHakemuksenTilanViimeisinMuutos)
+      val hakutoiveenHyvaksyttyJaJulkaistuDate = hyvaksyttyJulkaistuDates.get(HakukohdeOid(hakutoive.getHakukohdeOid))
 
-      val (hakijanTilat, vastaanottoDeadline) = tilatietoJaVastaanottoDeadline(valintatila, vastaanotto, aikataulu, viimeisinHakemuksenTilanMuutos, vastaanotettavuusVirkailijana)
-      val (virkailijanTilat, _) = tilatietoJaVastaanottoDeadline(valintatila, vastaanotto, aikataulu, viimeisinHakemuksenTilanMuutos, true)
+      val (hakijanTilat, vastaanottoDeadline) = tilatietoJaVastaanottoDeadline(valintatila, vastaanotto, aikataulu, hakutoiveenHyvaksyttyJaJulkaistuDate, vastaanotettavuusVirkailijana)
+      val (virkailijanTilat, _) = tilatietoJaVastaanottoDeadline(valintatila, vastaanotto, aikataulu, hakutoiveenHyvaksyttyJaJulkaistuDate, true)
 
       val hyväksyttyJulkaistussaJonossa = Valintatila.isHyväksytty(valintatila) && jono.isJulkaistavissa
       val julkaistavissa = hyväksyttyJulkaistussaJonossa || kaikkiJonotJulkaistu(hakutoive)
@@ -172,7 +181,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
         virkailijanTilat = virkailijanTilat,
         vastaanottoDeadline.map(_.toDate),
         SijoitteluajonIlmoittautumistila(Option(jono.getIlmoittautumisTila).getOrElse(IlmoittautumisTila.EI_TEHTY)),
-        viimeisinHakemuksenTilanMuutos,
+        viimeisinHakemuksenTilanMuutos = Option(jono.getHakemuksenTilanViimeisinMuutos),
         viimeisinValintatuloksenMuutos = Option(jono.getValintatuloksenViimeisinMuutos),
         Option(jono.getJonosija).map(_.toInt),
         Option(jono.getVarasijojaKaytetaanAlkaen),
@@ -194,19 +203,21 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
 
   private def hakemuksenKevytYhteenveto(hakija: KevytHakijaDTO,
                                         aikataulu: Option[Vastaanottoaikataulu],
+                                        hyvaksyttyJulkaistuDates: Map[HakukohdeOid, OffsetDateTime],
                                         vastaanottoRecord: Set[VastaanottoRecord]): HakemuksenSijoitteluntulos = {
     val hakutoiveidenYhteenvedot = hakija.getHakutoiveet.toList.map { hakutoive: KevytHakutoiveDTO =>
       val vastaanotto = vastaanottoRecord.find(v => v.hakukohdeOid.toString == hakutoive.getHakukohdeOid).map(_.action)
-      val jono: KevytHakutoiveenValintatapajonoDTO = JonoFinder.merkitseväJono(hakutoive).get
-      val valintatila: Valintatila = jononValintatila(jono, hakutoive)
+      val jono = JonoFinder.merkitseväJono(hakutoive).get
+      val valintatila = jononValintatila(jono, hakutoive)
 
-      val viimeisinHakemuksenTilanMuutos: Option[Date] = Option(jono.getHakemuksenTilanViimeisinMuutos)
+      val hakutoiveenHyvaksyttyJaJulkaistuDate = hyvaksyttyJulkaistuDates.get(HakukohdeOid(hakutoive.getHakukohdeOid))
 
-      val (hakijanTilat, vastaanottoDeadline) = tilatietoJaVastaanottoDeadline(valintatila, vastaanotto, aikataulu, viimeisinHakemuksenTilanMuutos, false)
-      val (virkailijanTilat, _) = tilatietoJaVastaanottoDeadline(valintatila, vastaanotto, aikataulu, viimeisinHakemuksenTilanMuutos, true)
+      val (hakijanTilat, vastaanottoDeadline) = tilatietoJaVastaanottoDeadline(valintatila, vastaanotto, aikataulu, hakutoiveenHyvaksyttyJaJulkaistuDate, false)
+      val (virkailijanTilat, _) = tilatietoJaVastaanottoDeadline(valintatila, vastaanotto, aikataulu, hakutoiveenHyvaksyttyJaJulkaistuDate, true)
 
       val hyväksyttyJulkaistussaJonossa = Valintatila.isHyväksytty(valintatila) && jono.isJulkaistavissa
       val julkaistavissa = hyväksyttyJulkaistussaJonossa || kaikkiJonotJulkaistu(hakutoive)
+
       val pisteet: Option[BigDecimal] = Option(jono.getPisteet).map((p: java.math.BigDecimal) => new BigDecimal(p))
 
       HakutoiveenSijoitteluntulos(
@@ -217,7 +228,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
         virkailijanTilat = virkailijanTilat,
         vastaanottoDeadline.map(_.toDate),
         SijoitteluajonIlmoittautumistila(Option(jono.getIlmoittautumisTila).getOrElse(IlmoittautumisTila.EI_TEHTY)),
-        viimeisinHakemuksenTilanMuutos,
+        viimeisinHakemuksenTilanMuutos = Option(jono.getHakemuksenTilanViimeisinMuutos),
         viimeisinValintatuloksenMuutos = Option(jono.getValintatuloksenViimeisinMuutos),
         Option(jono.getJonosija).map(_.toInt),
         Option(jono.getVarasijojaKaytetaanAlkaen),
@@ -240,9 +251,9 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
   private def tilatietoJaVastaanottoDeadline(valintatila: Valintatila,
                                              vastaanotto: Option[VastaanottoAction],
                                              aikataulu: Option[Vastaanottoaikataulu],
-                                             viimeisinHakemuksenTilanMuutos: Option[Date],
+                                             hakutoiveenHyvaksyttyJaJulkaistuDate: Option[OffsetDateTime],
                                              vastaanotettavuusVirkailijana: Boolean):(HakutoiveenSijoittelunTilaTieto, Option[DateTime]) = {
-    val ( vastaanottotila, vastaanottoDeadline ) = laskeVastaanottotila(valintatila, vastaanotto, aikataulu, viimeisinHakemuksenTilanMuutos, vastaanotettavuusVirkailijana)
+    val ( vastaanottotila, vastaanottoDeadline ) = laskeVastaanottotila(valintatila, vastaanotto, aikataulu, hakutoiveenHyvaksyttyJaJulkaistuDate, vastaanotettavuusVirkailijana)
     val uusiValintatila = vastaanottotilanVaikutusValintatilaan(valintatila, vastaanottotila)
     val vastaanotettavuustila: Vastaanotettavuustila.Value = laskeVastaanotettavuustila(valintatila, vastaanottotila)
     (HakutoiveenSijoittelunTilaTieto(uusiValintatila, vastaanottotila, vastaanotettavuustila), vastaanottoDeadline)
@@ -295,8 +306,12 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     case Some(MerkitseMyohastyneeksi) => Vastaanottotila.ei_vastaanotettu_määräaikana
   }
 
-  private def laskeVastaanottotila(valintatila: Valintatila, vastaanotto: Option[VastaanottoAction], aikataulu: Option[Vastaanottoaikataulu], viimeisinHakemuksenTilanMuutos: Option[Date], vastaanotettavuusVirkailijana: Boolean = false): ( Vastaanottotila, Option[DateTime] ) = {
-    val deadline = laskeVastaanottoDeadline(aikataulu, viimeisinHakemuksenTilanMuutos)
+  private def laskeVastaanottotila(valintatila: Valintatila,
+                                   vastaanotto: Option[VastaanottoAction],
+                                   aikataulu: Option[Vastaanottoaikataulu],
+                                   hakutoiveenHyvaksyttyJaJulkaistuDate: Option[OffsetDateTime],
+                                   vastaanotettavuusVirkailijana: Boolean = false): ( Vastaanottotila, Option[DateTime] ) = {
+    val deadline = laskeVastaanottoDeadline(aikataulu, hakutoiveenHyvaksyttyJaJulkaistuDate)
     vastaanottotilaVainViimeisimmanVastaanottoActioninPerusteella(vastaanotto) match {
       case Vastaanottotila.kesken if Valintatila.isHyväksytty(valintatila) || valintatila == Valintatila.perunut =>
         if (deadline.exists(_.isBeforeNow) && !vastaanotettavuusVirkailijana) {
@@ -310,33 +325,35 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
   }
 
   def haeVastaanotonAikarajaTiedot(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid, hakemusOids: Set[HakemusOid]): Set[VastaanottoAikarajaMennyt] = {
-    def calculateLateness(aikataulu: Option[Vastaanottoaikataulu])(hakijaDto: KevytHakijaDTO): VastaanottoAikarajaMennyt = {
-      val hakutoiveDtoOfThisHakukohde: Option[KevytHakutoiveDTO] = hakijaDto.getHakutoiveet.toList.find(_.getHakukohdeOid == hakukohdeOid)
-      val vastaanottoDeadline: Option[DateTime] = hakutoiveDtoOfThisHakukohde.flatMap { hakutoive: KevytHakutoiveDTO =>
-        val jono: KevytHakutoiveenValintatapajonoDTO = JonoFinder.merkitseväJono(hakutoive).get
-        val viimeisinHakemuksenTilanMuutos: Option[Date] = Option(jono.getHakemuksenTilanViimeisinMuutos)
-        laskeVastaanottoDeadline(aikataulu, viimeisinHakemuksenTilanMuutos)
-      }
-      val isLate: Boolean = vastaanottoDeadline.exists(new DateTime().isAfter)
-      VastaanottoAikarajaMennyt(HakemusOid(hakijaDto.getHakemusOid), isLate, vastaanottoDeadline)
-    }
-
     findLatestSijoitteluAjo(hakuOid, Some(hakukohdeOid)) match {
+      case None => Set()
+
       case Some(sijoitteluAjo) =>
         val aikataulu = findAikatauluFromOhjausparametritService(hakuOid)
-        val allHakijasForHakukohde = Timer.timed(s"Fetch hakemukset just for hakukohde $hakukohdeOid of haku $hakuOid", 1000) {
-          raportointiService.hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo, hakukohdeOid)
+        val hyvaksyttyJaJulkaistuDates = hakijaVastaanottoRepository.findHyvaksyttyJulkaistuDatesForHakukohde(hakukohdeOid)
+        def queriedHakijasForHakukohde() = {
+          val allHakijasForHakukohde = Timer.timed(s"Fetch hakemukset just for hakukohde $hakukohdeOid of haku $hakuOid", 1000) {
+            raportointiService.hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo, hakukohdeOid)
+          }
+          allHakijasForHakukohde.filter(hakijaDto => hakemusOids.contains(hakijaDto.getHakemusOid))
         }
-        val queriedHakijasForHakukohde = allHakijasForHakukohde.filter(hakijaDto => hakemusOids.contains(hakijaDto.getHakemusOid))
-        queriedHakijasForHakukohde.map(calculateLateness(aikataulu)).toSet
-      case None => Set()
+
+        def calculateLateness(hakijaDto: KevytHakijaDTO): VastaanottoAikarajaMennyt = {
+          val hakutoiveDtoOfThisHakukohde: Option[KevytHakutoiveDTO] = hakijaDto.getHakutoiveet.toList.find(_.getHakukohdeOid == hakukohdeOid)
+          val vastaanottoDeadline: Option[DateTime] = hakutoiveDtoOfThisHakukohde.flatMap { hakutoive: KevytHakutoiveDTO =>
+            laskeVastaanottoDeadline(aikataulu, hyvaksyttyJaJulkaistuDates.get(hakijaDto.getHakijaOid))
+          }
+          val isLate: Boolean = vastaanottoDeadline.exists(new DateTime().isAfter)
+          VastaanottoAikarajaMennyt(HakemusOid(hakijaDto.getHakemusOid), isLate, vastaanottoDeadline)
+        }
+        queriedHakijasForHakukohde().map(calculateLateness).toSet
     }
   }
 
-  private def laskeVastaanottoDeadline(aikataulu: Option[Vastaanottoaikataulu], viimeisinHakemuksenTilanMuutos: Option[Date]): Option[DateTime] = {
+  private def laskeVastaanottoDeadline(aikataulu: Option[Vastaanottoaikataulu], hakutoiveenHyvaksyttyJaJulkaistuDate: Option[OffsetDateTime]): Option[DateTime] = {
     aikataulu match {
       case Some(Vastaanottoaikataulu(Some(deadlineFromHaku), buffer)) =>
-        val deadlineFromHakemuksenTilanMuutos = getDeadlineWithBuffer(viimeisinHakemuksenTilanMuutos, buffer, deadlineFromHaku)
+        val deadlineFromHakemuksenTilanMuutos = getDeadlineWithBuffer(hakutoiveenHyvaksyttyJaJulkaistuDate, buffer, deadlineFromHaku)
         val deadlines = Some(deadlineFromHaku) ++ deadlineFromHakemuksenTilanMuutos
         Some(deadlines.maxBy((a: DateTime) => a.getMillis))
       case _ => None
@@ -364,9 +381,9 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
   }
 
 
-  private def getDeadlineWithBuffer(viimeisinMuutosOption: Option[Date], bufferOption: Option[Int], deadline: DateTime): Option[DateTime] = {
+  private def getDeadlineWithBuffer(hakutoiveenHyvaksyttyJaJulkaistuOption: Option[OffsetDateTime], bufferOption: Option[Int], deadline: DateTime): Option[DateTime] = {
     for {
-      viimeisinMuutos <- viimeisinMuutosOption
+      viimeisinMuutos <- hakutoiveenHyvaksyttyJaJulkaistuOption
       buffer <- bufferOption
     } yield new DateTime(viimeisinMuutos).plusDays(buffer).withTime(deadline.getHourOfDay, deadline.getMinuteOfHour, deadline.getSecondOfMinute, deadline.getMillisOfSecond)
   }
