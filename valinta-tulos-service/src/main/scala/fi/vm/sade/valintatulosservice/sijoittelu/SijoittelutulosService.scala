@@ -145,32 +145,23 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     }
   }
 
-  def hakemuksenYhteenveto(hakija: HakijaDTO, aikataulu: Option[Vastaanottoaikataulu], vastaanottoRecord: Set[VastaanottoRecord], vastaanotettavuusVirkailijana: Boolean): HakemuksenSijoitteluntulos = {
+  def hakemuksenYhteenveto(hakija: HakijaDTO,
+                           aikataulu: Option[Vastaanottoaikataulu],
+                           vastaanottoRecord: Set[VastaanottoRecord],
+                           vastaanotettavuusVirkailijana: Boolean): HakemuksenSijoitteluntulos = {
 
     val hakutoiveidenYhteenvedot = hakija.getHakutoiveet.toList.map { hakutoive: HakutoiveDTO =>
-      val vastaanotto = vastaanottoRecord.find(v => v.hakukohdeOid.toString == hakutoive.getHakukohdeOid).map(_.action)
+      val vastaanotto: Option[VastaanottoAction] = vastaanottoRecord.find(v => v.hakukohdeOid.toString == hakutoive.getHakukohdeOid).map(_.action)
       val jono: HakutoiveenValintatapajonoDTO = JonoFinder.merkitseväJono(hakutoive).get
       val valintatila: Valintatila = jononValintatila(jono, hakutoive)
 
       val viimeisinHakemuksenTilanMuutos: Option[Date] = Option(jono.getHakemuksenTilanViimeisinMuutos)
-      val viimeisinValintatuloksenMuutos: Option[Date] = Option(jono.getValintatuloksenViimeisinMuutos)
-      val ( hakijanVastaanottotila, vastaanottoDeadline ) = laskeVastaanottotila(valintatila, vastaanotto, aikataulu, viimeisinHakemuksenTilanMuutos, vastaanotettavuusVirkailijana)
-      val hakijanValintatila = vastaanottotilanVaikutusValintatilaan(valintatila, hakijanVastaanottotila)
-      val hakijanVastaanotettavuustila: Vastaanotettavuustila.Value = laskeVastaanotettavuustila(valintatila, hakijanVastaanottotila)
-      val hakijanTilat = HakutoiveenSijoittelunTilaTieto(hakijanValintatila, hakijanVastaanottotila, hakijanVastaanotettavuustila)
 
-      val ( virkailijanVastaanottotila, _ ) = laskeVastaanottotila(valintatila, vastaanotto, aikataulu, viimeisinHakemuksenTilanMuutos, true)
-      val virkailijanValintatila = vastaanottotilanVaikutusValintatilaan(valintatila, virkailijanVastaanottotila)
-      val virkailijanVastaanotettavuustila = laskeVastaanotettavuustila(valintatila, virkailijanVastaanottotila)
-      val virkailijanTilat = HakutoiveenSijoittelunTilaTieto(virkailijanValintatila, virkailijanVastaanottotila, virkailijanVastaanotettavuustila)
+      val (hakijanTilat, vastaanottoDeadline) = tilatietoJaVastaanottoDeadline(valintatila, vastaanotto, aikataulu, viimeisinHakemuksenTilanMuutos, vastaanotettavuusVirkailijana)
+      val (virkailijanTilat, _) = tilatietoJaVastaanottoDeadline(valintatila, vastaanotto, aikataulu, viimeisinHakemuksenTilanMuutos, true)
 
       val hyväksyttyJulkaistussaJonossa = Valintatila.isHyväksytty(valintatila) && jono.isJulkaistavissa
       val julkaistavissa = hyväksyttyJulkaistussaJonossa || kaikkiJonotJulkaistu(hakutoive)
-      val ehdollisestiHyvaksyttavissa = jono.isEhdollisestiHyvaksyttavissa
-      val ehdollisenHyvaksymisenEhtoKoodi = Option(jono.getEhdollisenHyvaksymisenEhtoKoodi)
-      val ehdollisenHyvaksymisenEhtoFI = Option(jono.getEhdollisenHyvaksymisenEhtoFI)
-      val ehdollisenHyvaksymisenEhtoSV = Option(jono.getEhdollisenHyvaksymisenEhtoSV)
-      val ehdollisenHyvaksymisenEhtoEN = Option(jono.getEhdollisenHyvaksymisenEhtoEN)
       val pisteet: Option[BigDecimal] = Option(jono.getPisteet).map((p: java.math.BigDecimal) => new BigDecimal(p))
 
       HakutoiveenSijoitteluntulos(
@@ -182,17 +173,17 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
         vastaanottoDeadline.map(_.toDate),
         SijoitteluajonIlmoittautumistila(Option(jono.getIlmoittautumisTila).getOrElse(IlmoittautumisTila.EI_TEHTY)),
         viimeisinHakemuksenTilanMuutos,
-        viimeisinValintatuloksenMuutos,
+        viimeisinValintatuloksenMuutos = Option(jono.getValintatuloksenViimeisinMuutos),
         Option(jono.getJonosija).map(_.toInt),
         Option(jono.getVarasijojaKaytetaanAlkaen),
         Option(jono.getVarasijojaTaytetaanAsti),
         Option(jono.getVarasijanNumero).map(_.toInt),
         julkaistavissa,
-        ehdollisestiHyvaksyttavissa,
-        ehdollisenHyvaksymisenEhtoKoodi,
-        ehdollisenHyvaksymisenEhtoFI,
-        ehdollisenHyvaksymisenEhtoSV,
-        ehdollisenHyvaksymisenEhtoEN,
+        ehdollisestiHyvaksyttavissa = jono.isEhdollisestiHyvaksyttavissa,
+        ehdollisenHyvaksymisenEhtoKoodi = Option(jono.getEhdollisenHyvaksymisenEhtoKoodi),
+        ehdollisenHyvaksymisenEhtoFI = Option(jono.getEhdollisenHyvaksymisenEhtoFI),
+        ehdollisenHyvaksymisenEhtoSV = Option(jono.getEhdollisenHyvaksymisenEhtoSV),
+        ehdollisenHyvaksymisenEhtoEN = Option(jono.getEhdollisenHyvaksymisenEhtoEN),
         jono.getTilanKuvaukset.toMap,
         pisteet
       )
@@ -201,32 +192,21 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     HakemuksenSijoitteluntulos(HakemusOid(hakija.getHakemusOid), Option(StringUtils.trimToNull(hakija.getHakijaOid)), hakutoiveidenYhteenvedot)
   }
 
-  private def hakemuksenKevytYhteenveto(hakija: KevytHakijaDTO, aikataulu: Option[Vastaanottoaikataulu], vastaanottoRecord: Set[VastaanottoRecord]): HakemuksenSijoitteluntulos = {
+  private def hakemuksenKevytYhteenveto(hakija: KevytHakijaDTO,
+                                        aikataulu: Option[Vastaanottoaikataulu],
+                                        vastaanottoRecord: Set[VastaanottoRecord]): HakemuksenSijoitteluntulos = {
     val hakutoiveidenYhteenvedot = hakija.getHakutoiveet.toList.map { hakutoive: KevytHakutoiveDTO =>
       val vastaanotto = vastaanottoRecord.find(v => v.hakukohdeOid.toString == hakutoive.getHakukohdeOid).map(_.action)
       val jono: KevytHakutoiveenValintatapajonoDTO = JonoFinder.merkitseväJono(hakutoive).get
-
       val valintatila: Valintatila = jononValintatila(jono, hakutoive)
 
       val viimeisinHakemuksenTilanMuutos: Option[Date] = Option(jono.getHakemuksenTilanViimeisinMuutos)
-      val viimeisinValintatuloksenMuutos: Option[Date] = Option(jono.getValintatuloksenViimeisinMuutos)
-      val ( hakijanVastaanottotila, vastaanottoDeadline ) = laskeVastaanottotila(valintatila, vastaanotto, aikataulu, viimeisinHakemuksenTilanMuutos, false)
-      val hakijanValintatila = vastaanottotilanVaikutusValintatilaan(valintatila, hakijanVastaanottotila)
-      val hakijanVastaanotettavuustila: Vastaanotettavuustila.Value = laskeVastaanotettavuustila(valintatila, hakijanVastaanottotila)
-      val hakijanTilat = HakutoiveenSijoittelunTilaTieto(hakijanValintatila, hakijanVastaanottotila, hakijanVastaanotettavuustila)
 
-      val ( virkailijanVastaanottotila, _ ) = laskeVastaanottotila(valintatila, vastaanotto, aikataulu, viimeisinHakemuksenTilanMuutos, true)
-      val virkailijanValintatila = vastaanottotilanVaikutusValintatilaan(valintatila, virkailijanVastaanottotila)
-      val virkailijanVastaanotettavuustila = laskeVastaanotettavuustila(valintatila, virkailijanVastaanottotila)
-      val virkailijanTilat = HakutoiveenSijoittelunTilaTieto(virkailijanValintatila, virkailijanVastaanottotila, virkailijanVastaanotettavuustila)
+      val (hakijanTilat, vastaanottoDeadline) = tilatietoJaVastaanottoDeadline(valintatila, vastaanotto, aikataulu, viimeisinHakemuksenTilanMuutos, false)
+      val (virkailijanTilat, _) = tilatietoJaVastaanottoDeadline(valintatila, vastaanotto, aikataulu, viimeisinHakemuksenTilanMuutos, true)
 
       val hyväksyttyJulkaistussaJonossa = Valintatila.isHyväksytty(valintatila) && jono.isJulkaistavissa
       val julkaistavissa = hyväksyttyJulkaistussaJonossa || kaikkiJonotJulkaistu(hakutoive)
-      val ehdollisestiHyvaksyttavissa = jono.isEhdollisestiHyvaksyttavissa
-      val ehdollisenHyvaksymisenEhtoKoodi = Option(jono.getEhdollisenHyvaksymisenEhtoKoodi)
-      val ehdollisenHyvaksymisenEhtoFI = Option(jono.getEhdollisenHyvaksymisenEhtoFI)
-      val ehdollisenHyvaksymisenEhtoSV = Option(jono.getEhdollisenHyvaksymisenEhtoSV)
-      val ehdollisenHyvaksymisenEhtoEN = Option(jono.getEhdollisenHyvaksymisenEhtoEN)
       val pisteet: Option[BigDecimal] = Option(jono.getPisteet).map((p: java.math.BigDecimal) => new BigDecimal(p))
 
       HakutoiveenSijoitteluntulos(
@@ -238,23 +218,34 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
         vastaanottoDeadline.map(_.toDate),
         SijoitteluajonIlmoittautumistila(Option(jono.getIlmoittautumisTila).getOrElse(IlmoittautumisTila.EI_TEHTY)),
         viimeisinHakemuksenTilanMuutos,
-        viimeisinValintatuloksenMuutos,
+        viimeisinValintatuloksenMuutos = Option(jono.getValintatuloksenViimeisinMuutos),
         Option(jono.getJonosija).map(_.toInt),
         Option(jono.getVarasijojaKaytetaanAlkaen),
         Option(jono.getVarasijojaTaytetaanAsti),
         Option(jono.getVarasijanNumero).map(_.toInt),
         julkaistavissa,
-        ehdollisestiHyvaksyttavissa,
-        ehdollisenHyvaksymisenEhtoKoodi,
-        ehdollisenHyvaksymisenEhtoFI,
-        ehdollisenHyvaksymisenEhtoSV,
-        ehdollisenHyvaksymisenEhtoEN,
+        ehdollisestiHyvaksyttavissa = jono.isEhdollisestiHyvaksyttavissa,
+        ehdollisenHyvaksymisenEhtoKoodi = Option(jono.getEhdollisenHyvaksymisenEhtoKoodi),
+        ehdollisenHyvaksymisenEhtoFI = Option(jono.getEhdollisenHyvaksymisenEhtoFI),
+        ehdollisenHyvaksymisenEhtoSV = Option(jono.getEhdollisenHyvaksymisenEhtoSV),
+        ehdollisenHyvaksymisenEhtoEN = Option(jono.getEhdollisenHyvaksymisenEhtoEN),
         jono.getTilanKuvaukset.toMap,
         pisteet
       )
     }
 
     HakemuksenSijoitteluntulos(HakemusOid(hakija.getHakemusOid), Option(StringUtils.trimToNull(hakija.getHakijaOid)), hakutoiveidenYhteenvedot)
+  }
+
+  private def tilatietoJaVastaanottoDeadline(valintatila: Valintatila,
+                                             vastaanotto: Option[VastaanottoAction],
+                                             aikataulu: Option[Vastaanottoaikataulu],
+                                             viimeisinHakemuksenTilanMuutos: Option[Date],
+                                             vastaanotettavuusVirkailijana: Boolean):(HakutoiveenSijoittelunTilaTieto, Option[DateTime]) = {
+    val ( vastaanottotila, vastaanottoDeadline ) = laskeVastaanottotila(valintatila, vastaanotto, aikataulu, viimeisinHakemuksenTilanMuutos, vastaanotettavuusVirkailijana)
+    val uusiValintatila = vastaanottotilanVaikutusValintatilaan(valintatila, vastaanottotila)
+    val vastaanotettavuustila: Vastaanotettavuustila.Value = laskeVastaanotettavuustila(valintatila, vastaanottotila)
+    (HakutoiveenSijoittelunTilaTieto(uusiValintatila, vastaanottotila, vastaanotettavuustila), vastaanottoDeadline)
   }
 
   private def laskeVastaanotettavuustila(valintatila: Valintatila, vastaanottotila: Vastaanottotila): Vastaanotettavuustila.Value = {
