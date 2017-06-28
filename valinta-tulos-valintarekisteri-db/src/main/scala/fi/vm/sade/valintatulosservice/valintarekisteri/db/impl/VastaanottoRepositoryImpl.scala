@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
+import java.time.OffsetDateTime
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
@@ -12,6 +13,8 @@ import slick.jdbc.TransactionIsolation.Serializable
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 import scala.concurrent.ExecutionContext.Implicits.global
+
+import fi.vm.sade.utils.Timer.timed
 
 trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with VirkailijaVastaanottoRepository with ValintarekisteriRepository {
 
@@ -235,4 +238,29 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
     }
   }
 
+  override def findHyvaksyttyJulkaistuDatesForHenkilo(henkiloOid: HenkiloOid): Map[HakukohdeOid, OffsetDateTime] =
+    timed(s"Hyväksytty ja julkaistu -pvm henkilölle $henkiloOid", 100) {
+      runBlocking(
+        sql"""select hakukohde, hyvaksytty_ja_julkaistu
+              from hyvaksytyt_ja_julkaistut_hakutoiveet
+              where henkilo = ${henkiloOid}""".as[(HakukohdeOid, OffsetDateTime)]).toMap
+    }
+
+  override def findHyvaksyttyJulkaistuDatesForHaku(hakuOid: HakuOid): Map[HenkiloOid, Map[HakukohdeOid, OffsetDateTime]] =
+    timed(s"Hyväksytty ja julkaistu -pvm haulle $hakuOid", 100) {
+      runBlocking(
+        sql"""select hjh.henkilo, hjh.hakukohde, hjh.hyvaksytty_ja_julkaistu
+              from hyvaksytyt_ja_julkaistut_hakutoiveet hjh
+              inner join hakukohteet h on h.hakukohde_oid = hjh.hakukohde
+              where h.haku_oid = ${hakuOid}""".as[(HenkiloOid, HakukohdeOid, OffsetDateTime)])
+        .groupBy(_._1).map { case (k,v) => (k, v.map(t => (t._2, t._3)).toMap) }
+    }
+
+  override def findHyvaksyttyJulkaistuDatesForHakukohde(hakukohdeOid:HakukohdeOid): Map[HenkiloOid, OffsetDateTime] =
+    timed(s"Hyväksytty ja julkaistu -pvm hakukohteelle $hakukohdeOid", 100) {
+      runBlocking(
+        sql"""select henkilo, hyvaksytty_ja_julkaistu
+              from hyvaksytyt_ja_julkaistut_hakutoiveet
+              where hakukohde = ${hakukohdeOid}""".as[(HenkiloOid, OffsetDateTime)]).toMap
+    }
 }
