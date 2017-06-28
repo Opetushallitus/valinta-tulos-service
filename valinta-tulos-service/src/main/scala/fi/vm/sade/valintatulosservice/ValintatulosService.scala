@@ -344,7 +344,10 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
       val kausiToVastaanotto: Map[Kausi, Set[String]] = uniqueKaudetInHaku.map(kausi => kausi ->
         virkailijaVastaanottoRepository.findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(kausi).map(_.henkiloOid)).toMap
 
-      hakijaPaginationObject.getResults.asScala.foreach { hakijaDto =>
+      val hakijat = hakijaPaginationObject.getResults.asScala
+      assertNoMissingHakemusOidsInKeys(hakijat.map(_.getHakemusOid).map(HakemusOid).toSet, personOidsByHakemusOids.keySet)
+
+      hakijat.foreach { hakijaDto =>
         val hakijaOidFromHakemus = personOidsByHakemusOids(HakemusOid(hakijaDto.getHakemusOid))
         hakijaDto.setHakijaOid(hakijaOidFromHakemus)
         val hakijanVastaanotot = haunVastaanototByHakijaOid.get(hakijaDto.getHakijaOid)
@@ -372,7 +375,13 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
         new HakijaPaginationObject
     }
   }
-
+  private def assertNoMissingHakemusOidsInKeys(hakemusOids: Set[HakemusOid], keys: Set[HakemusOid]) = {
+    val missingHakemusOids = hakemusOids.diff(keys)
+    if(!missingHakemusOids.isEmpty) {
+      val missingOidsException = s"HakijaDTOs contained more hakemusOids than in hakukohteeseen hyväksytyt: ${missingHakemusOids}"
+      throw new RuntimeException(missingOidsException)
+    }
+  }
   def sijoittelunTulosHakemukselle(hakuOid: HakuOid, sijoitteluajoId: String, hakemusOid: HakemusOid): Option[HakijaDTO] = {
     val hakemuksenTulosOption = hakemuksentulos(hakemusOid)
     val hakijaOidFromHakemusOption = hakemusRepository.findHakemus(hakemusOid).right.map(_.henkiloOid)
