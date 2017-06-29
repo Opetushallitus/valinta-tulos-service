@@ -187,7 +187,9 @@ object SijoitteluajonHakijat {
     val valintatapajonot = ValintatapajonotGrouped.apply(sijoitteluajoId.map(repository.getHakukohteenHakemuksienHakutoiveenValintatapajonotSijoittelussa(hakukohdeOid, _)).getOrElse(List()))
     val hakutoiveenTilankuvauksetSijoittelussa = repository.getValinnantilanKuvaukset(valintatapajonot.tilankuvausHashit)
     val hakukohteenValinnantulokset = timed(s"Getting hakukohteen $hakukohdeOid valinnantulokset") {
-      repository.runBlocking(repository.getValinnantuloksetForHakukohde(hakukohdeOid)).groupBy(_.hakemusOid).mapValues(_.groupBy(_.hakukohdeOid))
+      repository.runBlocking(repository.getValinnantuloksetForHakukohde(hakukohdeOid))
+        .groupBy(_.hakemusOid)
+        .map(t => t._1 -> t._2.groupBy(_.hakukohdeOid))
     }
 
     hakijat.map(hakija => hakija.kevytDto( hakutoive.get(hakija.hakemusOid) match {
@@ -361,12 +363,11 @@ object SijoitteluajonHakijat {
   object ValinnantuloksetGrouped {
     def apply(valinnantulokset: Set[Valinnantulos], countHyvaksytytJaHakeneet:Boolean = true):ValinnantuloksetGrouped =
       ValinnantuloksetGrouped(
-        valinnantulokset.groupBy(_.hakemusOid).mapValues(_.groupBy(_.hakukohdeOid)),
-        valinnantulokset.groupBy(_.hakemusOid).mapValues(_.map(_.hakukohdeOid)),
+        valinnantulokset.groupBy(_.hakemusOid).map(t => t._1 -> t._2.groupBy(_.hakukohdeOid)),
+        valinnantulokset.groupBy(_.hakemusOid).map(t => t._1 -> t._2.map(_.hakukohdeOid)),
         Option(countHyvaksytytJaHakeneet).collect { case true =>
-          valinnantulokset.groupBy(_.hakukohdeOid).mapValues(_.groupBy(_.valintatapajonoOid).mapValues(jononTulokset => {
-            HyvaksytytJaHakeneet(jononTulokset.count(vt => vt.valinnantila == Hyvaksytty || vt.valinnantila == VarasijaltaHyvaksytty), jononTulokset.size)
-          }))
+          valinnantulokset.groupBy(_.hakukohdeOid)
+            .map(t => t._1 -> t._2.groupBy(_.valintatapajonoOid).map(t => t._1 -> HyvaksytytJaHakeneet(t._2)))
         }.getOrElse(Map())
       )
   }
@@ -377,7 +378,7 @@ object SijoitteluajonHakijat {
     def apply(hakutoiveet: List[HakutoiveRecord]):HakutoiveetGrouped =
       HakutoiveetGrouped(
         hakutoiveet.groupBy(_.hakemusOid),
-        hakutoiveet.groupBy(_.hakemusOid).mapValues(_.map(_.hakukohdeOid).toSet)
+        hakutoiveet.groupBy(_.hakemusOid).map(t => t._1 -> t._2.map(_.hakukohdeOid).toSet)
       )
   }
 
@@ -386,10 +387,16 @@ object SijoitteluajonHakijat {
   object ValintatapajonotGrouped {
     def apply(valintatapajonot: List[HakutoiveenValintatapajonoRecord]):ValintatapajonotGrouped =
       ValintatapajonotGrouped(
-        valintatapajonot.groupBy(_.hakemusOid).mapValues(_.groupBy(_.hakukohdeOid)),
+        valintatapajonot.groupBy(_.hakemusOid).map(t => t._1 -> t._2.groupBy(_.hakukohdeOid)),
         valintatapajonot.map(_.tilankuvausHash).distinct
       )
   }
 
   case class HyvaksytytJaHakeneet(hyvaksytyt:Int, hakeneet:Int)
+
+  object HyvaksytytJaHakeneet {
+    def apply(jononTulokset: Set[Valinnantulos]): HyvaksytytJaHakeneet = {
+      HyvaksytytJaHakeneet(jononTulokset.count(vt => vt.valinnantila == Hyvaksytty || vt.valinnantila == VarasijaltaHyvaksytty), jononTulokset.size)
+    }
+  }
 }
