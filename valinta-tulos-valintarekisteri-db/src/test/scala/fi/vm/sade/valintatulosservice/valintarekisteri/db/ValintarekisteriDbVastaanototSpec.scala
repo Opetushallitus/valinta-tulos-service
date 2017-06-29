@@ -1,7 +1,9 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
+import java.time.OffsetDateTime
 import java.util.Date
 import java.util.concurrent.TimeUnit
+
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.junit.runner.RunWith
@@ -13,7 +15,6 @@ import slick.driver.PostgresDriver.api._
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @RunWith(classOf[JUnitRunner])
@@ -313,6 +314,29 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
       c.action mustEqual VastaanotaSitovasti
       c.ilmoittaja mustEqual henkiloOid
       c.timestamp.before(new Date()) must beTrue
+    }
+
+    "find hyväksytty ja julkaistu -dates" in {
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        sqlu"""insert into hyvaksytyt_ja_julkaistut_hakutoiveet (henkilo, hakukohde, hyvaksytty_ja_julkaistu, ilmoittaja, selite) values (${henkiloOidA}, ${hakukohdeOid}, now(), 'ilmoittaja', 'selite')""",
+        sqlu"""insert into hyvaksytyt_ja_julkaistut_hakutoiveet (henkilo, hakukohde, hyvaksytty_ja_julkaistu, ilmoittaja, selite) values (${henkiloOidB}, ${hakukohdeOid}, now(), 'ilmoittaja', 'selite')""",
+        sqlu"""insert into hyvaksytyt_ja_julkaistut_hakutoiveet (henkilo, hakukohde, hyvaksytty_ja_julkaistu, ilmoittaja, selite) values (${henkiloOidC}, ${otherHakukohdeOidForHakuOid}, now(), 'ilmoittaja', 'selite')""",
+        sqlu"""insert into hyvaksytyt_ja_julkaistut_hakutoiveet (henkilo, hakukohde, hyvaksytty_ja_julkaistu, ilmoittaja, selite) values (${henkiloOidA}, ${otherHakukohdeOidForHakuOid}, now(), 'ilmoittaja', 'selite')""",
+        sqlu"""insert into hyvaksytyt_ja_julkaistut_hakutoiveet (henkilo, hakukohde, hyvaksytty_ja_julkaistu, ilmoittaja, selite) values (${henkiloOidA}, ${otherHakukohdeOid}, now(), 'ilmoittaja', 'selite')""",
+        sqlu"""insert into hyvaksytyt_ja_julkaistut_hakutoiveet (henkilo, hakukohde, hyvaksytty_ja_julkaistu, ilmoittaja, selite) values (${henkiloOid}, ${otherHakukohdeOid}, now(), 'ilmoittaja', 'selite')"""
+      ))
+
+      val haunPvmt = singleConnectionValintarekisteriDb.findHyvaksyttyJulkaistuDatesForHaku(hakuOid)
+      haunPvmt.keySet.diff(Set(henkiloOidA, henkiloOidB, henkiloOidC)) must_== Set()
+      haunPvmt(henkiloOidA).keySet.diff(Set(hakukohdeOid, otherHakukohdeOidForHakuOid)) must_== Set()
+      haunPvmt(henkiloOidB).keySet.diff(Set(hakukohdeOid)) must_== Set()
+      haunPvmt(henkiloOidC).keySet.diff(Set(otherHakukohdeOidForHakuOid)) must_== Set()
+      
+      val hakukohteenPvmt = singleConnectionValintarekisteriDb.findHyvaksyttyJulkaistuDatesForHakukohde(otherHakukohdeOidForHakuOid)
+      hakukohteenPvmt.keySet.diff(Set(henkiloOidA, henkiloOidC)) must_== Set()
+
+      val henkilonPvmt = singleConnectionValintarekisteriDb.findHyvaksyttyJulkaistuDatesForHenkilo(henkiloOidA)
+      henkilonPvmt.keySet.diff(Set(hakukohdeOid, otherHakukohdeOidForHakuOid, otherHakukohdeOid)) must_== Set()
     }
   }
 
