@@ -284,7 +284,7 @@ object SijoitteluajonHakijat {
                                       hyvaksytytJaHakeneet:Map[HakukohdeOid, Map[ValintatapajonoOid,HyvaksytytJaHakeneet]],
                                       tilankuvaukset: Map[Int, TilankuvausRecord]): List[HakutoiveDTO] = {
     hakemuksenHakutoiveet.map(hakukohde => {
-      val hakutoiveenPistetidot = pistetiedot.getOrElse(hakukohde.hakukohdeOid, List()).groupBy(_.hakemusOid)
+      val hakutoiveenPistetidot = pistetiedot.getOrElse(hakukohde.hakukohdeOid, List()).filter(_.hakemusOid == hakemusOid)
       val hakemuksenValinnantuloksetHakutoiveella = hakemuksenValinnantulokset.getOrElse(hakukohde.hakukohdeOid, Set())
       val hakutoiveenHyvaksytytJaHakeneet = hyvaksytytJaHakeneet.getOrElse(hakukohde.hakukohdeOid, Map())
 
@@ -298,7 +298,7 @@ object SijoitteluajonHakijat {
             jononHyvaksytytJaHakeneet.hakeneet,
             jononHyvaksytytJaHakeneet.hyvaksytyt)}
         ),
-        hakutoiveenPistetidot.getOrElse(hakemusOid, List()).map(_.dto),
+        hakutoiveenPistetidot.map(_.dto),
         hakemuksenHakijaryhmat.getOrElse(hakukohde.hakukohdeOid, List()).map(_.dto)
       )
     })
