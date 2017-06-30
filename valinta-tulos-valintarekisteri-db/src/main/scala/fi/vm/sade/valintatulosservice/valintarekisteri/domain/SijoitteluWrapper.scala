@@ -5,7 +5,10 @@ import java.math.{BigDecimal => javaBigDecimal}
 import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain.{Hakemus => SijoitteluHakemus, Tasasijasaanto => SijoitteluTasasijasaanto, _}
+import fi.vm.sade.valintatulosservice.json4sCustomFormats
 import org.apache.commons.lang3.BooleanUtils
+import org.json4s.{DefaultFormats, Formats}
+import org.json4s.JsonAST.{JArray, JValue}
 
 import scala.collection.JavaConverters._
 
@@ -15,17 +18,71 @@ case class SijoitteluWrapper(sijoitteluajo: SijoitteluAjo, hakukohteet: List[Hak
   ).toMap
 }
 
-object SijoitteluWrapper {
+object SijoitteluWrapper extends json4sCustomFormats {
   def apply(sijoitteluajo: SijoitteluAjo, hakukohteet: java.util.List[Hakukohde], valintatulokset: java.util.List[Valintatulos]): SijoitteluWrapper = {
     SijoitteluWrapper(sijoitteluajo, hakukohteet.asScala.toList, valintatulokset.asScala.toList)
   }
+
+  implicit val formats: Formats = DefaultFormats ++ Oids.getSerializers() ++ getCustomSerializers()
+
+  def fromJson(json: JValue): Option[SijoitteluWrapper] = {
+    val JArray(sijoittelut) = (json \ "Sijoittelu")
+    if (sijoittelut.size < 1) {
+       None
+    } else {
+      val JArray(sijoitteluajot) = (sijoittelut(0) \ "sijoitteluajot")
+      val sijoitteluajoWrapper = sijoitteluajot(0).extract[SijoitteluajoWrapper]
+      val sijoitteluajo = sijoitteluajoWrapper.sijoitteluajo
+
+      val JArray(jsonHakukohteet) = (json \ "Hakukohde")
+      val hakukohteet: List[Hakukohde] = jsonHakukohteet.map(hakukohdeJson => {
+        val hakukohde = hakukohdeJson.extract[SijoitteluajonHakukohdeWrapper].hakukohde
+        hakukohde.setValintatapajonot({
+          val JArray(valintatapajonot) = (hakukohdeJson \ "valintatapajonot")
+          valintatapajonot.map(valintatapajono => {
+            val valintatapajonoExt = valintatapajono.extract[SijoitteluajonValintatapajonoWrapper].valintatapajono
+            val JArray(hakemukset) = (valintatapajono \ "hakemukset")
+            valintatapajonoExt.setHakemukset(hakemukset.map(hakemus => {
+              val hakemusExt = hakemus.extract[SijoitteluajonHakemusWrapper].hakemus
+              (hakemus \ "pistetiedot") match {
+                case JArray(pistetiedot) => hakemusExt.setPistetiedot(pistetiedot.map(pistetieto => pistetieto.extract[SijoitteluajonPistetietoWrapper].pistetieto).asJava)
+                case _ =>
+              }
+              hakemusExt
+            }).asJava)
+            valintatapajonoExt
+          }).asJava
+        })
+        (hakukohdeJson \ "hakijaryhmat") match {
+          case JArray(hakijaryhmat) => hakukohde.setHakijaryhmat(hakijaryhmat.map(hakijaryhma => hakijaryhma.extract[SijoitteluajonHakijaryhmaWrapper].hakijaryhma).asJava)
+          case _ =>
+        }
+        hakukohde
+      })
+
+      val JArray(jsonValintatulokset) = (json \ "Valintatulos")
+      val valintatulokset: List[Valintatulos] = jsonValintatulokset.map(valintaTulos => {
+        val tulos: Valintatulos = valintaTulos.extract[SijoitteluajonValinnantulosWrapper].valintatulos
+        (valintaTulos \ "logEntries") match {
+          case JArray(entries) => tulos.setOriginalLogEntries(entries.map(e => e.extract[LogEntryWrapper].entry).asJava)
+          case _ =>
+        }
+        tulos.setMailStatus((valintaTulos \ "mailStatus").extract[MailStatusWrapper].status)
+        tulos
+      })
+
+      val wrapper: SijoitteluWrapper = SijoitteluWrapper(sijoitteluajo, hakukohteet.filter(h => {
+        h.getSijoitteluajoId.equals(sijoitteluajo.getSijoitteluajoId)
+      }), valintatulokset)
+      Some(wrapper)
+    }
+  }
 }
 
-case class SijoitteluajoWrapper(
-                                 sijoitteluajoId: Long,
-                                 hakuOid: HakuOid,
-                                 startMils: Long,
-                                 endMils: Long) {
+case class SijoitteluajoWrapper(sijoitteluajoId: Long,
+                                hakuOid: HakuOid,
+                                startMils: Long,
+                                endMils: Long) {
 
   val sijoitteluajo: SijoitteluAjo = {
     val sijoitteluajo = new SijoitteluAjo
@@ -476,18 +533,16 @@ object SijoitteluajonIlmoittautumistila {
     SijoitteluajonIlmoittautumistila(IlmoittautumisTila.valueOf(ilmoittautumistila.toString))
 }
 
-case class SijoitteluajonValinnantulosWrapper(
-                                               valintatapajonoOid: ValintatapajonoOid,
-                                               hakemusOid: HakemusOid,
-                                               hakukohdeOid: HakukohdeOid,
-                                               ehdollisestiHyvaksyttavissa: Boolean = false,
-                                               julkaistavissa: Boolean = false,
-                                               hyvaksyttyVarasijalta: Boolean = false,
-                                               hyvaksyPeruuntunut: Boolean = false,
-                                               ilmoittautumistila: Option[SijoitteluajonIlmoittautumistila],
-                                               logEntries: Option[List[LogEntry]],
-                                               mailStatus: ValintatulosMailStatus
-                                             ) {
+case class SijoitteluajonValinnantulosWrapper(valintatapajonoOid: ValintatapajonoOid,
+                                              hakemusOid: HakemusOid,
+                                              hakukohdeOid: HakukohdeOid,
+                                              ehdollisestiHyvaksyttavissa: Boolean = false,
+                                              julkaistavissa: Boolean = false,
+                                              hyvaksyttyVarasijalta: Boolean = false,
+                                              hyvaksyPeruuntunut: Boolean = false,
+                                              ilmoittautumistila: Option[SijoitteluajonIlmoittautumistila],
+                                              logEntries: Option[List[LogEntry]],
+                                              mailStatus: ValintatulosMailStatus) {
   val valintatulos: Valintatulos = {
     val valintatulos = new Valintatulos()
     valintatulos.setValintatapajonoOid(valintatapajonoOid.toString, "")

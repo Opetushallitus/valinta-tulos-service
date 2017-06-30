@@ -55,10 +55,14 @@ class JonoFinderSpec extends Specification {
     }
   }
 
-  private def jonoWithTila(tila: HakemuksenTila, varasijaNumero: Option[Integer]): HakutoiveenValintatapajonoDTO = {
+  private def jonoWithTila(tila: HakemuksenTila,
+                           varasijaNumero: Option[Integer],
+                           prioriteetti: Int = 0): HakutoiveenValintatapajonoDTO = {
+
     val jono = new HakutoiveenValintatapajonoDTO()
     jono.setTila(tila)
     jono.setVarasijanNumero(varasijaNumero.getOrElse(0))
+    jono.setValintatapajonoPrioriteetti(prioriteetti)
     jono
   }
 }

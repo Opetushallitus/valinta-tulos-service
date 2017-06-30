@@ -1,177 +1,175 @@
 {
-    "Sijoittelu": [
+  "Sijoittelu": [
+    {
+      "_id": {
+        "$oid": "53fc79b8e4b0b0b110900765"
+      },
+      "className": "fi.vm.sade.sijoittelu.domain.Sijoittelu",
+      "hakuOid": "1.2.246.562.5.2013080813081926341928",
+      "sijoitteluId": {
+        "$numberLong": "1409055160621"
+      },
+      "created": {
+        "$date": "2014-08-26T15:12:40.621Z"
+      },
+      "sijoittele": true,
+      "sijoitteluajot": [
         {
-            "_id": {
-                "$oid": "53fc79b8e4b0b0b110900765"
-            },
-            "className": "fi.vm.sade.sijoittelu.domain.Sijoittelu",
-            "hakuOid": "1.2.246.562.5.2013080813081926341928",
-            "sijoitteluId": {
-                "$numberLong": "1409055160621"
-            },
-            "created": {
-                "$date": "2014-08-26T15:12:40.621Z"
-            },
-            "sijoittele": true,
-            "sijoitteluajot": [
-                {
-                    "sijoitteluajoId": {
-                        "$numberLong": "1409055160621"
-                    },
-                    "hakuOid": "1.2.246.562.5.2013080813081926341928",
-                    "startMils": {
-                        "$numberLong": "1409055160617"
-                    },
-                    "endMils": {
-                        "$numberLong": "1409055160623"
-                    },
-                    "hakukohteet": [
-                        {
-                          "oid": "1.2.246.562.5.72607738902",
-                          "oid": "1.2.246.562.5.72607738903"
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "_id": {
-                "$oid": "53fc79b8e4b0b0b110900769"
-            },
-            "className": "fi.vm.sade.sijoittelu.domain.Sijoittelu",
-            "hakuOid": "1.2.246.562.29.62858726037",
-            "sijoitteluId": {
-                "$numberLong": "1409055160666"
-            },
-            "created": {
-                "$date": "2014-08-26T15:12:40.621Z"
-            },
-            "sijoittele": true,
-            "sijoitteluajot": [
-                {
-                    "sijoitteluajoId": {
-                        "$numberLong": "1409055160666"
-                    },
-                    "hakuOid": "1.2.246.562.29.62858726037",
-                    "startMils": {
-                        "$numberLong": "1409055160617"
-                    },
-                    "endMils": {
-                        "$numberLong": "1409055160623"
-                    },
-                    "hakukohteet": [
-                        {
-                          "oid": "1.2.246.562.20.93395603447",
-                          "oid": "1.2.246.562.20.42476855715"
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "_id": {
-                "$oid": "53fc79b8e4b0b0b110900766"
-            },
-            "className": "fi.vm.sade.sijoittelu.domain.Sijoittelu",
-            "hakuOid": "1.2.246.562.5.2013112910452702965370",
-            "sijoitteluId": {
-                "$numberLong": "1409055160622"
-            },
-            "created": {
-                "$date": "2014-08-26T15:12:40.621Z"
-            },
-            "sijoittele": true,
-            "sijoitteluajot": [
-                {
-                    "sijoitteluajoId": {
-                        "$numberLong": "1409055160622"
-                    },
-                    "hakuOid": "1.2.246.562.5.2013112910452702965370",
-                    "startMils": {
-                        "$numberLong": "1409055160617"
-                    },
-                    "endMils": {
-                        "$numberLong": "1409055160623"
-                    },
-                    "hakukohteet": [
-                        {
-                            "oid": "1.2.246.562.14.2013120515524070995659"
-                        },
-                        {
-                            "oid": "1.2.246.562.14.2014022408541751568934"
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "_id": {
-                "$oid": "53fc79b8e4b0b0b110900767"
-            },
-            "className": "fi.vm.sade.sijoittelu.domain.Sijoittelu",
-            "hakuOid": "korkeakoulu-lisahaku1",
-            "sijoitteluId": {
-                "$numberLong": "1409055160623"
-            },
-            "created": {
-                "$date": "2014-08-26T15:12:40.621Z"
-            },
-            "sijoittele": true,
-            "sijoitteluajot": [
-                {
-                    "sijoitteluajoId": {
-                        "$numberLong": "1409055160623"
-                    },
-                    "hakuOid": "korkeakoulu-lisahaku1",
-                    "startMils": {
-                        "$numberLong": "1409055160617"
-                    },
-                    "endMils": {
-                        "$numberLong": "1409055160623"
-                    },
-                    "hakukohteet": [
-                        {
-                            "oid": "1.2.246.562.14.2013120515524070995659"
-                        },
-                        {
-                            "oid": "1.2.246.562.14.2014022408541751568934"
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "_id": {
-                "$oid": "53fc79b8e4b0b0b110900768"
-            },
-            "className": "fi.vm.sade.sijoittelu.domain.Sijoittelu",
-            "hakuOid": "korkeakoulu-erillishaku",
-            "sijoitteluId": {
-                "$numberLong": "1409055160624"
-            },
-            "created": {
-                "$date": "2014-08-26T15:12:40.621Z"
-            },
-            "sijoittele": true,
-            "sijoitteluajot": [
-                {
-                    "sijoitteluajoId": {
-                        "$numberLong": "1409055160624"
-                    },
-                    "hakuOid": "korkeakoulu-erillishaku",
-                    "startMils": {
-                        "$numberLong": "1409055160617"
-                    },
-                    "endMils": {
-                        "$numberLong": "1409055160623"
-                    },
-                    "hakukohteet": [
-                        {
-                            "oid": "1.2.246.562.5.72607738902"
-                        }
-                    ]
-                }
-            ]
+          "sijoitteluajoId": {
+            "$numberLong": "1409055160621"
+          },
+          "hakuOid": "1.2.246.562.5.2013080813081926341928",
+          "startMils": {
+            "$numberLong": "1409055160617"
+          },
+          "endMils": {
+            "$numberLong": "1409055160623"
+          },
+          "hakukohteet": [
+            {
+              "oid": "1.2.246.562.5.72607738903"
+            }
+          ]
         }
-    ]
+      ]
+    },
+    {
+      "_id": {
+        "$oid": "53fc79b8e4b0b0b110900769"
+      },
+      "className": "fi.vm.sade.sijoittelu.domain.Sijoittelu",
+      "hakuOid": "1.2.246.562.29.62858726037",
+      "sijoitteluId": {
+        "$numberLong": "1409055160666"
+      },
+      "created": {
+        "$date": "2014-08-26T15:12:40.621Z"
+      },
+      "sijoittele": true,
+      "sijoitteluajot": [
+        {
+          "sijoitteluajoId": {
+            "$numberLong": "1409055160666"
+          },
+          "hakuOid": "1.2.246.562.29.62858726037",
+          "startMils": {
+            "$numberLong": "1409055160617"
+          },
+          "endMils": {
+            "$numberLong": "1409055160623"
+          },
+          "hakukohteet": [
+            {
+              "oid": "1.2.246.562.20.42476855715"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "_id": {
+        "$oid": "53fc79b8e4b0b0b110900766"
+      },
+      "className": "fi.vm.sade.sijoittelu.domain.Sijoittelu",
+      "hakuOid": "1.2.246.562.5.2013112910452702965370",
+      "sijoitteluId": {
+        "$numberLong": "1409055160622"
+      },
+      "created": {
+        "$date": "2014-08-26T15:12:40.621Z"
+      },
+      "sijoittele": true,
+      "sijoitteluajot": [
+        {
+          "sijoitteluajoId": {
+            "$numberLong": "1409055160622"
+          },
+          "hakuOid": "1.2.246.562.5.2013112910452702965370",
+          "startMils": {
+            "$numberLong": "1409055160617"
+          },
+          "endMils": {
+            "$numberLong": "1409055160623"
+          },
+          "hakukohteet": [
+            {
+              "oid": "1.2.246.562.14.2013120515524070995659"
+            },
+            {
+              "oid": "1.2.246.562.14.2014022408541751568934"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "_id": {
+        "$oid": "53fc79b8e4b0b0b110900767"
+      },
+      "className": "fi.vm.sade.sijoittelu.domain.Sijoittelu",
+      "hakuOid": "korkeakoulu-lisahaku1",
+      "sijoitteluId": {
+        "$numberLong": "1409055160623"
+      },
+      "created": {
+        "$date": "2014-08-26T15:12:40.621Z"
+      },
+      "sijoittele": true,
+      "sijoitteluajot": [
+        {
+          "sijoitteluajoId": {
+            "$numberLong": "1409055160623"
+          },
+          "hakuOid": "korkeakoulu-lisahaku1",
+          "startMils": {
+            "$numberLong": "1409055160617"
+          },
+          "endMils": {
+            "$numberLong": "1409055160623"
+          },
+          "hakukohteet": [
+            {
+              "oid": "1.2.246.562.14.2013120515524070995659"
+            },
+            {
+              "oid": "1.2.246.562.14.2014022408541751568934"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "_id": {
+        "$oid": "53fc79b8e4b0b0b110900768"
+      },
+      "className": "fi.vm.sade.sijoittelu.domain.Sijoittelu",
+      "hakuOid": "korkeakoulu-erillishaku",
+      "sijoitteluId": {
+        "$numberLong": "1409055160624"
+      },
+      "created": {
+        "$date": "2014-08-26T15:12:40.621Z"
+      },
+      "sijoittele": true,
+      "sijoitteluajot": [
+        {
+          "sijoitteluajoId": {
+            "$numberLong": "1409055160624"
+          },
+          "hakuOid": "korkeakoulu-erillishaku",
+          "startMils": {
+            "$numberLong": "1409055160617"
+          },
+          "endMils": {
+            "$numberLong": "1409055160623"
+          },
+          "hakukohteet": [
+            {
+              "oid": "1.2.246.562.5.72607738902"
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

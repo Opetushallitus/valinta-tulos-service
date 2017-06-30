@@ -1,7 +1,9 @@
 package fi.vm.sade.valintatulosservice.local
 
+import fi.vm.sade.valintatulosservice.ServletSpecification
+import fi.vm.sade.valintatulosservice.json.JsonFormats
+import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
 import fi.vm.sade.valintatulosservice.vastaanottomeili.{Ilmoitus, LahetysKuittaus}
-import fi.vm.sade.valintatulosservice.{ServletSpecification, TimeWarp}
 import org.json4s._
 import org.json4s.jackson.Serialization
 import org.json4s.native.JsonMethods._
@@ -9,36 +11,33 @@ import org.junit.Ignore
 import org.junit.runner.RunWith
 import org.specs2.matcher.MatchResult
 import org.specs2.runner.JUnitRunner
+import slick.driver.PostgresDriver.api._
+
 
 @Ignore
 @RunWith(classOf[JUnitRunner])
-class EmailStatusServletSpec extends ServletSpecification with TimeWarp {
+class EmailStatusServletSpec extends ServletSpecification with ValintarekisteriDbTools {
+  override implicit val formats = JsonFormats.jsonFormats
   "GET /vastaanottoposti" should {
     "Lista lähetettävistä sähköposteista" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakemusFixtures = List("00000441369"))
 
-      withFixedDateTime("10.10.2014 12:00") {
         verifyEmails { emails => {
-
             val ilmoitukset = parse(emails).extract[List[Ilmoitus]]
             ilmoitukset must_!= null
             ilmoitukset.isEmpty must_== false
           }
         }
-      }
     }
     "Lista sisältää tiedon ehdollisesta vastaanotosta" in {
       useFixture("hyvaksytty-ehdollisesti-kesken-julkaistavissa.json", hakemusFixtures = List("00000441369"))
 
-      withFixedDateTime("10.10.2014 12:00") {
         verifyEmails { emails => {
-
             val ilmoitukset = parse(emails).extract[List[Ilmoitus]]
             ilmoitukset must_!= null
             ilmoitukset.isEmpty must_== false
           }
         }
-      }
     }
     "Tyhjä lista lähetettävistä sähköposteista, kun ei lähetettävää" in {
       useFixture("hylatty-ei-valintatulosta.json", hakemusFixtures = List("00000441369"))
@@ -48,42 +47,37 @@ class EmailStatusServletSpec extends ServletSpecification with TimeWarp {
     }
 
     "Ei lähetetä, jos email-osoite puuttuu" in {
-      withFixedDateTime("10.10.2014 12:00") {
-        useFixture("hyvaksytty-kesken-julkaistavissa.json", hakemusFixtures = List("00000441369-no-email"))
-        verifyEmptyListOfEmails
-      }
+      useFixture("hyvaksytty-kesken-julkaistavissa.json", hakemusFixtures = List("00000441369-no-email"))
+      verifyEmptyListOfEmails
 
+      singleConnectionValintarekisteriDb.runBlocking(
+        sqlu"""update viestinnan_ohjaus set previous_check = now() - interval '4 days'"""
+      )
       // tarkistetaan, että lähetetään myöhemmin jos email on lisätty
-      withFixedDateTime("14.10.2014 12:00") {
-        hakemusFixtureImporter.clear.importFixture("00000441369")
-        verifyNonEmptyListOfEmails
-      }
+      hakemusFixtureImporter.clear.importFixture("00000441369")
+      verifyNonEmptyListOfEmails
     }
 
     "Ei lähetetä, jos henkilötunnus puuttuu" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakemusFixtures = List("00000441369-no-hetu"))
 
-      withFixedDateTime("10.10.2014 12:00") {
-        verifyEmptyListOfEmails
-      }
+      verifyEmptyListOfEmails
     }
   }
 
   "POST /vastaanottoposti" should {
     "Merkitsee postitukset tehdyiksi" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakemusFixtures = List("00000441369"))
-      withFixedDateTime("10.10.2014 12:00") {
-        get("vastaanottoposti") {
-          val mailsToSend = Serialization.read[List[Ilmoitus]](body)
-          mailsToSend.isEmpty must_== false
-          withFixedDateTime("12.10.2014 12:00") {
-            val kuittaukset = mailsToSend.map { mail =>
-              LahetysKuittaus(mail.hakemusOid, mail.hakukohteet.map(_.oid), List("email"))
-            }
-            postJSON("vastaanottoposti", Serialization.write(kuittaukset)) {
-              status must_== 200
-              verifyEmptyListOfEmails
-            }
+      get("vastaanottoposti") {
+        val mailsToSend = Serialization.read[List[Ilmoitus]](body)
+        mailsToSend.isEmpty must_== false
+        withFixedDateTime("12.10.2014 12:00") {
+          val kuittaukset = mailsToSend.map { mail =>
+            LahetysKuittaus(mail.hakemusOid, mail.hakukohteet.map(_.oid), List("email"))
+          }
+          postJSON("vastaanottoposti", Serialization.write(kuittaukset)) {
+            status must_== 200
+            verifyEmptyListOfEmails
           }
         }
       }

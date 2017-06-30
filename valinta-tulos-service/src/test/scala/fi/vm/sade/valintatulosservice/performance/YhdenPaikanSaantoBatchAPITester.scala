@@ -2,7 +2,6 @@ package fi.vm.sade.valintatulosservice.performance
 
 import java.util.concurrent.TimeUnit
 
-import com.typesafe.config.ConfigValueFactory
 import fi.vm.sade.utils.http.{DefaultHttpClient, DefaultHttpRequest}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.SharedJetty
@@ -25,8 +24,8 @@ object YhdenPaikanSaantoBatchAPITester extends App with Logging {
   implicit val appConfig = new VtsAppConfig.IT
   lazy val sijoitteluContext = new SijoitteluSpringContext(appConfig, SijoitteluSpringContext.createApplicationContext(appConfig))
   private val dbConfig = appConfig.settings.valintaRekisteriDbConfig
-  lazy val valintarekisteriDb = new ValintarekisteriDb(
-    dbConfig.copy(maxConnections = Some(1), minConnections = Some(1))).db
+  lazy val valintarekisteriDb: ValintarekisteriDb = new ValintarekisteriDb(
+    dbConfig.copy(maxConnections = Some(1), minConnections = Some(1)))
   SharedJetty.start
   private val testDataSize = 50000
 
@@ -35,7 +34,7 @@ object YhdenPaikanSaantoBatchAPITester extends App with Logging {
   new GeneratedFixture(new SimpleGeneratedHakuFixture2(5, testDataSize, HakuOid("1.2.246.562.5.2013080813081926341928"))).apply(sijoitteluContext)
 
   for(i <- 1 to 5) {
-    Await.ready(valintarekisteriDb.run(
+    Await.ready(valintarekisteriDb.db.run(
       sqlu"""insert into hakukohteet (hakukohde_oid, haku_oid, kk_tutkintoon_johtava, koulutuksen_alkamiskausi, yhden_paikan_saanto_voimassa)
              values (${i.toString}, '1.2.246.562.5.2013080813081926341928', true, '2015K', true)"""
     ), Duration(1, TimeUnit.SECONDS))
