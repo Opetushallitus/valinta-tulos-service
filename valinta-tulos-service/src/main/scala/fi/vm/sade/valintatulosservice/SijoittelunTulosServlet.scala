@@ -2,8 +2,8 @@ package fi.vm.sade.valintatulosservice
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId, ZonedDateTime}
-import java.util
 
+import com.fatboyindustrial.gsonjavatime.Converters
 import com.google.gson.GsonBuilder
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
 import fi.vm.sade.sijoittelu.tulos.dto.HakukohdeDTO
@@ -14,7 +14,7 @@ import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{Hyvaksymiskirje, SessionRepository, Valintaesitys}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra.{NotFound, Ok}
-import org.scalatra.swagger.{Swagger, SwaggerEngine}
+import org.scalatra.swagger.Swagger
 
 class SijoittelunTulosServlet(valintaesitysService: ValintaesitysService, valinnantulosService: ValinnantulosService,
                               hyvaksymiskirjeService: HyvaksymiskirjeService,
@@ -28,7 +28,7 @@ class SijoittelunTulosServlet(valintaesitysService: ValintaesitysService, valinn
 
   override protected def applicationDescription: String = "Sijoittelun Tulos REST API"
 
-  val gson = new GsonBuilder().create()
+  val gson = Converters.registerOffsetDateTime(new GsonBuilder).create
 
   get("/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakukohde/:hakukohdeOid") {
     implicit val authenticated = authenticate
