@@ -42,8 +42,25 @@ case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends js
         storeValintatulokset(valintatulokset, wrapper.sijoitteluajo.getSijoitteluajoId)
         storeEhdollisenHyvaksynnanEhto(json)
         storeVastaanotot(json)
+        setHyvaksyttyJaJulkaistu()
       case None =>
     }
+  }
+
+  private def setHyvaksyttyJaJulkaistu(): Unit = {
+    valintarekisteriDb.runBlocking(
+      sqlu"""insert into hyvaksytyt_ja_julkaistut_hakutoiveet (
+                 henkilo, hakukohde, hyvaksytty_ja_julkaistu, ilmoittaja, selite
+             ) select ti.henkilo_oid, ti.hakukohde_oid, ti.tilan_viimeisin_muutos, 'migraatio', 'Tilan viimeisin muutos'
+               from valinnantilat ti
+               inner join valinnantulokset tu on ti.hakukohde_oid = tu.hakukohde_oid
+                   and ti.valintatapajono_oid = tu.valintatapajono_oid
+                   and ti.hakemus_oid = tu.hakemus_oid
+               where tu.julkaistavissa
+                   and ti.tila in ('Hyvaksytty'::valinnantila, 'VarasijaltaHyvaksytty'::valinnantila)
+             on conflict on constraint hyvaksytyt_ja_julkaistut_hakutoiveet_pkey do nothing
+        """
+    )
   }
 
   private def storeValintatulokset(valintatulokset: Seq[Valintatulos], sijoitteluAjoId: Long) = {
@@ -150,7 +167,9 @@ case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends js
       sqlu"truncate table sijoitteluajon_hakukohteet cascade",
       sqlu"truncate table hakukohteet cascade",
       sqlu"truncate table sijoitteluajot cascade",
-      sqlu"truncate table lukuvuosimaksut cascade"
+      sqlu"truncate table lukuvuosimaksut cascade",
+      sqlu"truncate table hyvaksytyt_ja_julkaistut_hakutoiveet cascade",
+      sqlu"truncate table hyvaksytyt_ja_julkaistut_hakutoiveet_history cascade"
     ).transactionally)
   }
 
