@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.json
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import fi.vm.sade.utils.json4s.GenericJsonFormats
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusSerializer
@@ -32,9 +33,15 @@ object JsonFormats {
     org.json4s.jackson.Serialization.write(found)(jsonFormats)
   }
 
-  def javaObjectToJsonString(x: Object): String = new ObjectMapper().writeValueAsString(x)
+  private val mapper = {
+    val mapper = new ObjectMapper()
+    mapper.registerModule(new JavaTimeModule())
+    mapper
+  }
 
-  def writeJavaObjectToOutputStream(x: Object, s:java.io.OutputStream): Unit = new ObjectMapper().writeValue(s, x)
+  def javaObjectToJsonString(x: Object): String = mapper.writeValueAsString(x)
+
+  def writeJavaObjectToOutputStream(x: Object, s:java.io.OutputStream): Unit = mapper.writeValue(s, x)
 }
 
 trait JsonFormats {

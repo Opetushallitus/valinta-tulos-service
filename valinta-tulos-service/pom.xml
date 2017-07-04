@@ -202,6 +202,11 @@
             <artifactId>jackson-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.6.0</version>
+        </dependency>
+        <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>casbah-commons_2.11</artifactId>
             <version>${casbah_2.11.version}</version>
@@ -338,6 +343,12 @@
             <groupId>fi.vm.sade</groupId>
             <artifactId>auditlogger</artifactId>
             <version>7.0.0-rc1-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>gson</artifactId>
+                    <groupId>com.google.code.gson</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.mock-server</groupId>
@@ -350,6 +361,11 @@
                     <groupId>ch.qos.logback</groupId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <artifactId>gson</artifactId>
+            <groupId>com.google.code.gson</groupId>
+            <version>2.5</version>
         </dependency>
         <dependency>
             <groupId>com.fatboyindustrial.gson-javatime-serialisers</groupId>

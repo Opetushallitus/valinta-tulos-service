@@ -1,5 +1,7 @@
 package fi.vm.sade.valintatulosservice
 
+import com.fatboyindustrial.gsonjavatime.Converters
+import com.google.gson.GsonBuilder
 import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
@@ -17,6 +19,8 @@ import org.scalatra.swagger._
 import scala.util.Try
 
 abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vastaanottoService: VastaanottoService, ilmoittautumisService: IlmoittautumisService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
+
+ // val gson = Converters.registerOffsetDateTime(new GsonBuilder).create
 
   lazy val exampleHakemuksenTulos = Hakemuksentulos(
     HakuOid("2.2.2.2"),
