@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.sijoittelu
 
 import java.time.OffsetDateTime
+import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.sijoittelu.domain.SijoitteluAjo
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi._
@@ -17,7 +18,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.{PersonOidFromHakemusResolver, VastaanottoAikarajaMennyt}
 import org.apache.commons.lang.StringUtils
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, DateTimeZone}
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -383,9 +384,12 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
 
   private def getDeadlineWithBuffer(hakutoiveenHyvaksyttyJaJulkaistuOption: Option[OffsetDateTime], bufferOption: Option[Int], deadline: DateTime): Option[DateTime] = {
     for {
-      viimeisinMuutos <- hakutoiveenHyvaksyttyJaJulkaistuOption
+      viimeisinMuutos <- hakutoiveenHyvaksyttyJaJulkaistuOption.map(d => new DateTime(
+        d.toInstant.toEpochMilli,
+        DateTimeZone.forOffsetMillis(Math.toIntExact(TimeUnit.SECONDS.toMillis(d.getOffset.getTotalSeconds)))
+      ))
       buffer <- bufferOption
-    } yield new DateTime(viimeisinMuutos).plusDays(buffer).withTime(deadline.getHourOfDay, deadline.getMinuteOfHour, deadline.getSecondOfMinute, deadline.getMillisOfSecond)
+    } yield viimeisinMuutos.plusDays(buffer).withTime(deadline.getHourOfDay, deadline.getMinuteOfHour, deadline.getSecondOfMinute, deadline.getMillisOfSecond)
   }
 
   private def ifNull[T](value: T, defaultValue: T): T = {
