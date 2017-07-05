@@ -569,6 +569,20 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     }
   }
 
+  def getViestinnanOhjaus(valinnantuloksenOhjaus: ValinnantuloksenOhjaus): DBIO[Set[ViestinnanOhjaus]] = {
+    sql"""select vo.hakukohde_oid,
+              vo.valintatapajono_oid,
+              vo.hakemus_oid,
+              vo.previous_check,
+              vo.sent,
+              vo.done,
+              vo.message
+          from viestinnan_ohjaus as vo
+          where vo.hakukohde_oid = ${valinnantuloksenOhjaus.hakukohdeOid}
+            and vo.valintatapajono_oid = ${valinnantuloksenOhjaus.valintatapajonoOid}
+            and vo.hakemus_oid = ${valinnantuloksenOhjaus.hakemusOid}""".as[ViestinnanOhjaus].map(_.toSet)
+  }
+
   private def deleteTilanKuvaukset(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
     sqlu"""delete from tilat_kuvaukset
            where hakukohde_oid = $hakukohdeOid
