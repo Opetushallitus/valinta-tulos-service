@@ -503,7 +503,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
         .andThen(deleteValinnantila(valinnantulos.getValinnantilanTallennus(muokkaaja)))
   }
 
-  def deleteValinnantila(tila: ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+  private def deleteValinnantila(tila: ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
     val deleteTilanKuvaukset =
       sqlu"""delete from tilat_kuvaukset
              where hakukohde_oid = ${tila.hakukohdeOid}
@@ -525,7 +525,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     deleteTilanKuvaukset.andThen(deleteValinnantila).transactionally
   }
 
-  def deleteViestinnanOhjaus(ohjaus: ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+  private def deleteViestinnanOhjaus(ohjaus: ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
     sqlu"""delete from viestinnan_ohjaus
                where hakukohde_oid = ${ohjaus.hakukohdeOid}
                and hakemus_oid = ${ohjaus.hakemusOid}
@@ -537,7 +537,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     }
   }
 
-  def deleteValinnantuloksenOhjaus(ohjaus: ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+  private def deleteValinnantuloksenOhjaus(ohjaus: ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
     sqlu"""delete from valinnantulokset
                where hakukohde_oid = ${ohjaus.hakukohdeOid}
                and hakemus_oid = ${ohjaus.hakemusOid}
