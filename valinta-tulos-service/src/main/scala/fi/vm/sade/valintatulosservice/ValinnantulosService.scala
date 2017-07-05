@@ -4,6 +4,7 @@ import java.time.Instant
 
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
+import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
@@ -63,22 +64,31 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
     r
   }
 
+  /** FIXME
+    * Don't store OTTANUT_VASTAAN_TOISEN_PAIKAN. It's never a valid update,
+    * and vastaanotaVirkailijana throws if it is tried. Long term solution
+    * is to update vastaanotto along with other parts of Valinnantulos in
+    * [[ValinnantulosStrategy]] for correct validation and change detection.
+    */
   private def storeVastaanotot(valinnantulokset: List[Valinnantulos],
                                hakuOid: HakuOid,
                                valintatapajonoOid: ValintatapajonoOid,
                                muokkaaja: String,
                                selite: String): List[ValinnantulosUpdateStatus] = {
-    vastaanottoService.vastaanotaVirkailijana(valinnantulokset.map(v => VastaanottoEventDto(
-      v.valintatapajonoOid,
-      v.henkiloOid,
-      v.hakemusOid,
-      v.hakukohdeOid,
-      hakuOid,
-      Vastaanottotila.values.find(Vastaanottotila.matches(_, v.vastaanottotila))
-        .getOrElse(throw new IllegalArgumentException(s"Odottamaton vastaanottotila ${v.vastaanottotila}")),
-      muokkaaja,
-      selite
-    ))).filter(r => r.result.status != 200)
+    vastaanottoService.vastaanotaVirkailijana(valinnantulokset
+      .filterNot(_.vastaanottotila == ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)
+      .map(v => VastaanottoEventDto(
+        v.valintatapajonoOid,
+        v.henkiloOid,
+        v.hakemusOid,
+        v.hakukohdeOid,
+        hakuOid,
+        Vastaanottotila.values.find(Vastaanottotila.matches(_, v.vastaanottotila))
+          .getOrElse(throw new IllegalArgumentException(s"Odottamaton vastaanottotila ${v.vastaanottotila}")),
+        muokkaaja,
+        selite
+      )))
+      .filter(r => r.result.status != 200)
       .map(r => ValinnantulosUpdateStatus(
         r.result.status,
         r.result.message.orNull,
