@@ -551,18 +551,18 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     deleteViestinnanOhjaus(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince)
       .andThen(deleteValinnantuloksenOhjaus(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince))
       .andThen(deleteTilanKuvaukset(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince))
-      .andThen(deleteValinnantila(valinnantulos.getValinnantilanTallennus(muokkaaja)))
+      .andThen(deleteValinnantila(valinnantulos.getValinnantilanTallennus(muokkaaja), ifUnmodifiedSince))
       .transactionally
   }
 
-  private def deleteValinnantila(tila: ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+  private def deleteValinnantila(tila: ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
     sqlu"""delete from valinnantilat
            where hakukohde_oid = ${tila.hakukohdeOid}
                and hakemus_oid = ${tila.hakemusOid}
                and valintatapajono_oid = ${tila.valintatapajonoOid}
                and tila = ${tila.valinnantila.toString}::valinnantila
-               and (${ifUnmodifiedSince}::timestamptz is null
-                   or system_time @> ${ifUnmodifiedSince})
+               and ($ifUnmodifiedSince::timestamptz is null
+                   or system_time @> $ifUnmodifiedSince)
       """.flatMap {
       case 1 => DBIO.successful(())
       case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantilaa $tila ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
