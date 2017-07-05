@@ -88,6 +88,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
       (uusi.valinnantila, uusi.vastaanottotila, uusi.ilmoittautumistila) match {
         case (t, _, _) if uusi.ohitaVastaanotto.getOrElse(false) && uusi.ohitaIlmoittautuminen.getOrElse(false) => Right()
         case (t, v, _) if hyvaksytty(t) && keskenTaiPerunut(v) && uusi.ohitaIlmoittautuminen.getOrElse(false) => Right()
+        case (t, v, i) if t == Peruuntunut && v == ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN && i == EiTehty => Right()
         case (_, _, _) if uusi.ohitaVastaanotto.getOrElse(false) || uusi.ohitaIlmoittautuminen.getOrElse(false) => Left(ValinnantulosUpdateStatus(409,
           s"Vastaanoton tai ilmoittautumisen tallennusta ei voida ohittaa", uusi.valintatapajonoOid, uusi.hakemusOid))
         case (t, v, i) if ilmoittautunut(i) && !(hyvaksytty(t) && vastaanotto(v)) => Left(ValinnantulosUpdateStatus(409,
