@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.sijoittelu
 
-import java.time.OffsetDateTime
+import java.time.{Instant, OffsetDateTime, ZoneId}
 import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.sijoittelu.domain.SijoitteluAjo
@@ -10,7 +10,7 @@ import fi.vm.sade.sijoittelu.tulos.resource.SijoitteluResource
 import fi.vm.sade.utils.Timer
 import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.domain._
-import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
+import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.sijoittelu.JonoFinder.kaikkiJonotJulkaistu
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, VastaanottoRecord}
@@ -29,17 +29,23 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
                              sijoittelunTulosClient: ValintarekisteriSijoittelunTulosClient) {
   import scala.collection.JavaConversions._
 
+  def max(d1: OffsetDateTime, d2: OffsetDateTime): OffsetDateTime = if(d1.isAfter(d2)) d1 else d2
+
+  def toOffsetDateTime(dt: Option[DateTime]): OffsetDateTime = OffsetDateTime.ofInstant(Instant.ofEpochMilli(dt.map(_.getMillis).getOrElse(0)), ZoneId.systemDefault())
+
   def hakemuksenTulos(haku: Haku,
                       hakemusOid: HakemusOid,
                       hakijaOidIfFound: Option[String],
-                      aikataulu: Option[Vastaanottoaikataulu],
+                      ohjausparametrit: Option[Ohjausparametrit],
                       latestSijoitteluajoId: Option[Long]): Option[HakemuksenSijoitteluntulos] = {
-    for (
+    for(
       hakijaOid <- hakijaOidIfFound;
-      hakija: HakijaDTO <- findHakemus(hakemusOid, latestSijoitteluajoId, haku.oid)
-    ) yield hakemuksenYhteenveto(hakija, aikataulu,
-                                 hakijaVastaanottoRepository.findHyvaksyttyJulkaistuDatesForHenkilo(hakijaOid),
-                                 fetchVastaanotto(hakijaOid, haku.oid), false)
+      hakija: HakijaDTO <- findHakemus(hakemusOid, latestSijoitteluajoId, haku.oid)) yield {
+      val a: Option[DateTime] = ohjausparametrit.flatMap(s => s.valintaesitysHyvaksyttavissa)
+      val valintaesitysHyvaksyttavissa = toOffsetDateTime(a)
+      val hyvaksyttyJulkaistuDates: Map[HakukohdeOid, OffsetDateTime] = hakijaVastaanottoRepository.findHyvaksyttyJulkaistuDatesForHenkilo(hakijaOid).mapValues(v => max(v, valintaesitysHyvaksyttavissa))
+      hakemuksenYhteenveto(hakija, ohjausparametrit.map(_.vastaanottoaikataulu), hyvaksyttyJulkaistuDates, fetchVastaanotto(hakijaOid, haku.oid), vastaanotettavuusVirkailijana = false)
+    }
   }
 
   def hakemustenTulos(hakuOid: HakuOid,
@@ -75,6 +81,14 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     Timer.timed("findAikatauluFromOhjausparametritService -> ohjausparametritService.ohjausparametrit", 100) {
       ohjausparametritService.ohjausparametrit(hakuOid) match {
         case Right(o) => o.map(_.vastaanottoaikataulu)
+        case Left(e) => throw e
+      }
+    }
+  }
+  def findOhjausparametritFromOhjausparametritService(hakuOid: HakuOid): Option[Ohjausparametrit] = {
+    Timer.timed("findAikatauluFromOhjausparametritService -> ohjausparametritService.ohjausparametrit", 100) {
+      ohjausparametritService.ohjausparametrit(hakuOid) match {
+        case Right(o) => o
         case Left(e) => throw e
       }
     }

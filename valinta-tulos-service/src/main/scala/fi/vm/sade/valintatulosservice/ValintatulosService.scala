@@ -79,7 +79,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
         hakijaOidsByHakemusOids => sijoittelutulosService.hakemuksenTulos(haku,
           hakemusOid,
           hakijaOidsByHakemusOids.findBy(hakemusOid),
-          sijoittelutulosService.findAikatauluFromOhjausparametritService(h.hakuOid),
+          sijoittelutulosService.findOhjausparametritFromOhjausparametritService(h.hakuOid),
           latestSijoitteluajoId).toSeq,
         vastaanottoKaudella = hakukohdeOid => {
           hakukohdeRecords.find(_.oid == hakukohdeOid) match {
@@ -115,7 +115,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
           virkailijaVastaanottoRepository.findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(
             hakukohdes.filter(_.yhdenPaikanSaantoVoimassa).map(_.koulutuksenAlkamiskausi).toSet)
         })
-        val vastaanottoaikataulu = sijoittelutulosService.findAikatauluFromOhjausparametritService(hakuOid)
+        val vastaanottoaikataulu = sijoittelutulosService.findOhjausparametritFromOhjausparametritService(hakuOid)
         val latestSijoitteluajoId = sijoittelutulosService.findLatestSijoitteluajoId(hakuOid)
         val hakemustenTulokset = fetchTulokset(
           haku,
