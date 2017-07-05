@@ -222,6 +222,9 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
       ) mustEqual Set()
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.getViestinnanOhjaus(valinnantuloksenOhjaus)
+      ) mustEqual Set()
     }
     "generate muutoshistoria from updates" in {
       storeValinnantilaAndValinnantulos()

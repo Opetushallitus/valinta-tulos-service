@@ -27,6 +27,7 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
   def getValinnantuloksetForValintatapajono(valintatapajonoOid: ValintatapajonoOid): DBIO[Set[Valinnantulos]]
   def getValinnantuloksetForHaku(hakuOid: HakuOid): DBIO[Set[Valinnantulos]]
   def getValinnantuloksetForHakemus(hakemusOid: HakemusOid): DBIO[Set[Valinnantulos]]
+  def getViestinnanOhjaus(valinnantuloksenOhjaus: ValinnantuloksenOhjaus): DBIO[Set[ViestinnanOhjaus]]
 
   def getHaunValinnantilat(hakuOid: HakuOid): List[(HakukohdeOid, ValintatapajonoOid, HakemusOid, Valinnantila)]
 
