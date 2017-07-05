@@ -6,6 +6,7 @@ import java.util
 
 import com.google.gson.GsonBuilder
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
+import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, ValintatuloksenTila}
 import fi.vm.sade.sijoittelu.tulos.dto.HakukohdeDTO
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
@@ -16,7 +17,9 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra.{NotFound, Ok}
 import org.scalatra.swagger.{Swagger, SwaggerEngine}
 
-class SijoittelunTulosServlet(valintaesitysService: ValintaesitysService, valinnantulosService: ValinnantulosService,
+class SijoittelunTulosServlet(valintatulosService: ValintatulosService,
+                              valintaesitysService: ValintaesitysService,
+                              valinnantulosService: ValinnantulosService,
                               hyvaksymiskirjeService: HyvaksymiskirjeService,
                               lukuvuosimaksuService: LukuvuosimaksuService, hakuService: HakuService,
                               authorizer: OrganizationHierarchyAuthorizer,
@@ -50,12 +53,31 @@ class SijoittelunTulosServlet(valintaesitysService: ValintaesitysService, valinn
       val (lastModified, valinnantulokset: Set[Valinnantulos]) = valinnantulosService.getValinnantuloksetForHakukohde(hakukohdeOid, ai).map(a => (Option(a._1), a._2)).getOrElse((None, Set()))
       val modified: String = lastModified.map(createLastModifiedHeader(_)).getOrElse("")
 
-      val resultJson = s"""{"valintaesitys":${JsonFormats.formatJson(valintaesitys)},"lastModified":"${modified}","sijoittelunTulokset":${JsonFormats.javaObjectToJsonString(hakukohdeBySijoitteluAjo)},"valintatulokset":${JsonFormats.formatJson(valinnantulokset)},"kirjeLahetetty":${JsonFormats.formatJson(hyvaksymiskirje)},"lukuvuosimaksut":${JsonFormats.formatJson(lukuvuosimaksu)}}"""
+      val takarajat = valintatulosService.haeVastaanotonAikarajaTiedot(hakuOid, hakukohdeOid, valinnantulokset.flatMap(oiditHakemuksilleJotkaTarvitsevatAikarajaMennytTiedon))
+      val resultJson =
+        s"""{
+           |"valintaesitys":${JsonFormats.formatJson(valintaesitys)},
+           |"lastModified":"${modified}",
+           |"sijoittelunTulokset":${JsonFormats.javaObjectToJsonString(hakukohdeBySijoitteluAjo)},
+           |"valintatulokset":${JsonFormats.formatJson(valinnantulokset)},
+           |"kirjeLahetetty":${JsonFormats.formatJson(hyvaksymiskirje)},
+           |"lukuvuosimaksut":${JsonFormats.formatJson(lukuvuosimaksu)},
+           |"takarajat":${JsonFormats.formatJson(takarajat)}}""".stripMargin
       Ok(resultJson)
     } catch {
       case e: NotFoundException =>
         val message = e.getMessage
         NotFound(body = Map("error" -> message), reason = message)
+    }
+  }
+
+  private def oiditHakemuksilleJotkaTarvitsevatAikarajaMennytTiedon(v : Valinnantulos): Option[HakemusOid] = {
+    val tarvitseeAikarajaMennytTiedon = ValintatuloksenTila.KESKEN.equals(v.vastaanottotila) && v.julkaistavissa.getOrElse(false) &&
+      Set(HakemuksenTila.HYVAKSYTTY, HakemuksenTila.VARASIJALTA_HYVAKSYTTY, HakemuksenTila.PERUNUT).contains(v.valinnantila.valinnantila)
+    if(tarvitseeAikarajaMennytTiedon) {
+      Some(v.hakemusOid)
+    } else {
+      None
     }
   }
   protected def createLastModifiedHeader(instant: Instant): String = {
