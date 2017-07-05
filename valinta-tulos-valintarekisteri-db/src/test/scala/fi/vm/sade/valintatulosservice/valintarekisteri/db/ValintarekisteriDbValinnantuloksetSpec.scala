@@ -470,26 +470,27 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       }
     }
     singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
-      sqlu"""insert into valintaesitykset (
-                 hakukohde_oid,
+      sqlu"""INSERT INTO valintaesitykset (hakukohde_oid,
                  valintatapajono_oid,
                  hyvaksytty
-             ) values (
-                 $hakukohdeOid,
-                 $valintatapajonoOid,
-                 null::timestamp with time zone
-             )""",
-      sqlu"""insert into valinnantilat (
-                 hakukohde_oid,
+             ) VALUES (${hakukohdeOid},
+                 ${valintatapajonoOid},
+                 NULL::TIMESTAMP WITH TIME ZONE)""",
+      sqlu"""INSERT INTO valinnantilat (hakukohde_oid,
                  valintatapajono_oid,
                  hakemus_oid,
                  tila,
                  tilan_viimeisin_muutos,
                  ilmoittaja,
                  henkilo_oid
-             ) values (${hakukohdeOid}, ${valintatapajonoOid}, ${hakemusOid}, 'Hyvaksytty'::valinnantila, ${muutos}, 122344555::text, ${henkiloOid})""",
-      sqlu"""insert into valinnantulokset(
-                 valintatapajono_oid,
+             ) VALUES (${hakukohdeOid},
+                 ${valintatapajonoOid},
+                 ${hakemusOid},
+                 'Hyvaksytty'::VALINNANTILA,
+                 ${muutos},
+                 122344555::TEXT,
+                 ${henkiloOid})""",
+      sqlu"""INSERT INTO valinnantulokset(valintatapajono_oid,
                  hakemus_oid,
                  hakukohde_oid,
                  julkaistavissa,
@@ -498,7 +499,29 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
                  hyvaksy_peruuntunut,
                  ilmoittaja,
                  selite
-             ) values (${valintatapajonoOid}, ${hakemusOid}, ${hakukohdeOid}, false, false, false, false, 122344555::text, 'Sijoittelun tallennus')"""
+             ) VALUES (${valintatapajonoOid},
+                 ${hakemusOid},
+                 ${hakukohdeOid},
+                 FALSE,
+                 FALSE,
+                 FALSE,
+                 FALSE,
+                 122344555::TEXT,
+                 'Sijoittelun tallennus')""",
+      sqlu"""INSERT INTO viestinnan_ohjaus(hakukohde_oid,
+                 valintatapajono_oid,
+                 hakemus_oid,
+                 previous_check,
+                 sent,
+                 done,
+                 message
+             ) VALUES (${hakukohdeOid},
+                 ${valintatapajonoOid},
+                 ${hakemusOid},
+                 NULL::TIMESTAMP WITH TIME ZONE,
+                 NULL::TIMESTAMP WITH TIME ZONE,
+                 NULL::TIMESTAMP WITH TIME ZONE,
+                 'Sijoittelun tallennus')"""
     ).transactionally)
   }
 
