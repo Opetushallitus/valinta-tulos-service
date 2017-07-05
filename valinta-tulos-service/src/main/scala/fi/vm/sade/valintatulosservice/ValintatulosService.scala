@@ -503,7 +503,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
       val sijoitteluTulos = sijoitteluTulokset.getOrElse(hakemus.oid, tyhjäHakemuksenTulos(hakemus.oid, ohjausparametrit.map(_.vastaanottoaikataulu)))
       val hakemuksenVastaanototKaudella: HakukohdeOid => Option[(Kausi, Boolean)] = hakukohdeOid =>
         vastaanottoKaudella(hakukohdeOid).map(a => (a._1, a._2.contains(hakemus.henkiloOid)))
-
+      logger.debug("sijoittelunTulos " + sijoitteluTulos.toString)
       julkaistavaTulos(sijoitteluTulos, haku, ohjausparametrit, checkJulkaisuAikaParametri, hakemuksenVastaanototKaudella, hakemus.henkilotiedot.hasHetu)(hakemus)
     })
   }
@@ -543,6 +543,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
 
     tulokset.map {
       case tulos if vastaanottanut == tulos.vastaanottotila =>
+        logger.debug("asetaKelaURL vastaanottanut")
         tulos.copy(kelaURL = näytetäänKelaURL)
       case tulos =>
         tulos
@@ -584,21 +585,27 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
         val ehdollinenVastaanottoTallaHakemuksella = kaudenTulokset.exists(x => Vastaanottotila.ehdollisesti_vastaanottanut == x.vastaanottotila)
         val sitovaVastaanottoTallaHakemuksella = kaudenTulokset.exists(x => vastaanottanut == x.vastaanottotila)
         if (ehdollinenVastaanottoTallaHakemuksella) {
+          logger.debug("asetaVastaanotettavuusValintarekisterinPerusteella ehdollinenVastaanottoTallaHakemuksella")
           kaudenTulokset
         } else if (sitovaVastaanottoTallaHakemuksella) {
           kaudenTulokset.map(tulos => if (Vastaanottotila.kesken == tulos.virkailijanTilat.vastaanottotila && hyvaksyttyTaiVaralla(tulos)) {
+            logger.debug("asetaVastaanotettavuusValintarekisterinPerusteella sitovaVastaanottoTallaHakemuksella peruuntunutOttanutVastaanToisenPaikan")
             peruuntunutOttanutVastaanToisenPaikan(tulos)
           } else {
+            logger.debug("asetaVastaanotettavuusValintarekisterinPerusteella sitovaVastaanottoTallaHakemuksella")
             tulos
           })
         } else {
           kaudenTulokset.map(tulos => if (Vastaanottotila.kesken == tulos.virkailijanTilat.vastaanottotila && hyvaksyttyTaiVaralla(tulos) && vastaanotto) {
+            logger.debug("asetaVastaanotettavuusValintarekisterinPerusteella sitovaVastaanottoTallaHakemuksella peruuntunutOttanutVastaanToisenPaikan vastaanotto")
             peruuntunutOttanutVastaanToisenPaikan(tulos)
           } else {
             tulos
           })
         }
-      case (None, kaudettomatTulokset) => kaudettomatTulokset
+      case (None, kaudettomatTulokset) =>
+        logger.debug("asetaVastaanotettavuusValintarekisterinPerusteella kaudettomatTulokset")
+        kaudettomatTulokset
     }.toList.sorted(hakutoiveetToOriginalOrder(tulokset))
   }
 
@@ -660,27 +667,35 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
         case (tulos, index) if isHyväksytty(tulos.valintatila) && tulos.vastaanottotila == Vastaanottotila.kesken =>
           if (firstVastaanotettu >= 0 && index != firstVastaanotettu) {
             // Peru vastaanotettua paikkaa alemmat hyväksytyt hakutoiveet
+            logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja valintatila > peruuntunut, ei vastaanotettavissa {}", index)
             tulos.copy(valintatila = Valintatila.peruuntunut, vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa)
           } else if (index == firstHyvaksyttyUnderFirstVaralla) {
             if (ehdollinenVastaanottoMahdollista(ohjausparametrit)) {
+              logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja vastaanotettavuustila > vastaanotettavissa_ehdollisesti {}", index)
               // Ehdollinen vastaanotto mahdollista
               tulos.copy(vastaanotettavuustila = Vastaanotettavuustila.vastaanotettavissa_ehdollisesti)
             } else {
+              logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja toOdottaaYlempienHakutoiveidenTuloksia {} {}", index, Valintatila.isHyväksytty(tulos.valintatila))
               // Ehdollinen vastaanotto ei vielä mahdollista, näytetään keskeneräisenä
               tulos.toOdottaaYlempienHakutoiveidenTuloksia
             }
           } else if (firstKesken >= 0 && index > firstKesken) {
+            logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja toOdottaaYlempienHakutoiveidenTuloksia {} {}", index, Valintatila.isHyväksytty(tulos.valintatila))
             tulos.toOdottaaYlempienHakutoiveidenTuloksia
           } else {
+            logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja default")
             tulos
           }
         case (tulos, index) if firstVastaanotettu >= 0 && index != firstVastaanotettu && List(Valintatila.varalla, Valintatila.kesken).contains(tulos.valintatila) =>
           // Peru muut varalla/kesken toiveet, jos jokin muu vastaanotettu
+          logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja valintatila > peruuntunut, ei vastaanotettavissa {}", index)
           tulos.copy(valintatila = Valintatila.peruuntunut, vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa)
         case (tulos, index) =>
+          logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja ei muutosta {}", index)
           tulos
       }
     } else {
+      logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja ei käytä sijoittelua")
       tulokset
     }
   }
@@ -688,15 +703,17 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
   private def peruValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua(tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) = {
     if (haku.käyttääSijoittelua) {
       val firstFinished = tulokset.indexWhere { t =>
-        isHyväksytty(t.valintatila) || List(Valintatila.perunut, Valintatila.peruutettu, Valintatila.peruuntunut).contains(t.valintatila)
+        isHyväksytty(t.valintatila)
       }
-
       tulokset.zipWithIndex.map {
         case (tulos, index) if haku.käyttääSijoittelua && firstFinished > -1 && index > firstFinished && tulos.valintatila == Valintatila.kesken =>
+          logger.debug("peruValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua valintatila > peruuntunut {}", index)
           tulos.copy(valintatila = Valintatila.peruuntunut)
-        case (tulos, _) => tulos
+        case (tulos, _) =>
+          tulos
       }
     } else {
+      logger.debug("peruValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua ei käytä sijoittelua")
       tulokset
     }
   }
@@ -704,31 +721,44 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
   private def näytäAlemmatPeruutuneetKeskeneräisinäJosYlemmätKeskeneräisiä(tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) = {
     val firstKeskeneräinen = tulokset.indexWhere (_.valintatila == Valintatila.kesken)
     tulokset.zipWithIndex.map {
-      case (tulos, index) if firstKeskeneräinen >= 0 && index > firstKeskeneräinen && tulos.valintatila == Valintatila.peruuntunut => tulos.toKesken
-      case (tulos, _) => tulos
+      case (tulos, index) if firstKeskeneräinen >= 0 && index > firstKeskeneräinen && tulos.valintatila == Valintatila.peruuntunut =>
+        logger.debug("näytäAlemmatPeruutuneetKeskeneräisinäJosYlemmätKeskeneräisiä toKesken {}", index)
+        tulos.toKesken
+      case (tulos, _) =>
+        logger.debug("tulos.valintatila "+tulos.valintatila)
+        tulos
     }
   }
 
   private def näytäJulkaisematontaAlemmatPeruutetutKeskeneräisinä(tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) = {
     val firstJulkaisematon = tulokset.indexWhere (!_.julkaistavissa)
     tulokset.zipWithIndex.map {
-      case (tulos, index) if firstJulkaisematon >= 0 && index > firstJulkaisematon && tulos.valintatila == Valintatila.peruuntunut => tulos.toKesken
-      case (tulos, _) => tulos
+      case (tulos, index) if firstJulkaisematon >= 0 && index > firstJulkaisematon && tulos.valintatila == Valintatila.peruuntunut =>
+        logger.debug("näytäJulkaisematontaAlemmatPeruutetutKeskeneräisinä toKesken {}", index)
+        tulos.toKesken
+      case (tulos, _) =>
+        logger.debug("näytäJulkaisematontaAlemmatPeruutetutKeskeneräisinä {}", tulos.valintatila)
+        tulos
     }
   }
 
   private def piilotaKuvauksetKeskeneräisiltä(tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) = {
     tulokset.map {
-      case h if h.valintatila == Valintatila.kesken => h.copy(tilanKuvaukset = Map.empty)
-      case h => h
+      case h if h.valintatila == Valintatila.kesken =>
+        logger.debug("piilotaKuvauksetKeskeneräisiltä tilankuvaukset empty")
+        h.copy(tilanKuvaukset = Map.empty)
+      case h =>
+        h
     }
   }
 
   private def näytäVarasijaltaHyväksytytHyväksyttyinäJosVarasijasäännötEiVoimassa(tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) = {
     tulokset.map {
       case tulos if tulos.valintatila == Valintatila.varasijalta_hyväksytty && !ehdollinenVastaanottoMahdollista(ohjausparametrit) =>
+        logger.debug("näytäVarasijaltaHyväksytytHyväksyttyinäJosVarasijasäännötEiVoimassa valintatila > hyväksytty")
         tulos.copy(valintatila = Valintatila.hyväksytty, tilanKuvaukset = Map.empty)
-      case tulos => tulos
+      case tulos =>
+        tulos
     }
   }
 
