@@ -548,8 +548,8 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   }
 
   override def deleteValinnantulos(muokkaaja:String, valinnantulos: Valinnantulos, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
-    deleteViestinnanOhjaus(valinnantulos.getValinnantuloksenOhjaus(muokkaaja, "Viestinnänohjauksen poisto"))
-      .andThen(deleteValinnantuloksenOhjaus(valinnantulos.getValinnantuloksenOhjaus(muokkaaja, "Valinnantuloksen poisto")))
+    deleteViestinnanOhjaus(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince)
+      .andThen(deleteValinnantuloksenOhjaus(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince))
       .andThen(deleteTilanKuvaukset(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince))
       .andThen(deleteValinnantila(valinnantulos.getValinnantilanTallennus(muokkaaja)))
       .transactionally
@@ -582,27 +582,27 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     }
   }
 
-  private def deleteViestinnanOhjaus(ohjaus: ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+  private def deleteViestinnanOhjaus(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
     sqlu"""delete from viestinnan_ohjaus
-               where hakukohde_oid = ${ohjaus.hakukohdeOid}
-               and hakemus_oid = ${ohjaus.hakemusOid}
-               and valintatapajono_oid = ${ohjaus.valintatapajonoOid}
-               and (${ifUnmodifiedSince}::timestamptz is null
-                   or system_time @> ${ifUnmodifiedSince})""".flatMap {
+               where hakukohde_oid = $hakukohdeOid
+               and hakemus_oid = $hakemusOid
+               and valintatapajono_oid = $valintatapajonoOid
+               and ($ifUnmodifiedSince::timestamptz is null
+                   or system_time @> $ifUnmodifiedSince)""".flatMap {
       case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Viestinnän ohjausta $ohjaus ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
+      case _ => DBIO.failed(new ConcurrentModificationException(s"Viestinnän ohjausta ($hakukohdeOid, $valintatapajonoOid, $hakemusOid) ei voitu poistaa, koska joku oli muokannut sitä ${format(ifUnmodifiedSince)} jälkeen"))
     }
   }
 
-  private def deleteValinnantuloksenOhjaus(ohjaus: ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+  private def deleteValinnantuloksenOhjaus(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
     sqlu"""delete from valinnantulokset
-               where hakukohde_oid = ${ohjaus.hakukohdeOid}
-               and hakemus_oid = ${ohjaus.hakemusOid}
-               and valintatapajono_oid = ${ohjaus.valintatapajonoOid}
-               and (${ifUnmodifiedSince}::timestamptz is null
-                   or system_time @> ${ifUnmodifiedSince})""".flatMap {
+               where hakukohde_oid = $hakukohdeOid
+               and hakemus_oid = $hakemusOid
+               and valintatapajono_oid = $valintatapajonoOid
+               and ($ifUnmodifiedSince::timestamptz is null
+                   or system_time @> $ifUnmodifiedSince)""".flatMap {
       case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ohjausta $ohjaus ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
+      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ohjausta ($hakukohdeOid, $valintatapajonoOid, $hakemusOid) ei voitu poistaa, koska joku oli muokannut sitä ${format(ifUnmodifiedSince)} jälkeen"))
     }
   }
 
