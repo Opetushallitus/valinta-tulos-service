@@ -53,16 +53,18 @@ class SijoittelunTulosServlet(valintatulosService: ValintatulosService,
       val (lastModified, valinnantulokset: Set[Valinnantulos]) = valinnantulosService.getValinnantuloksetForHakukohde(hakukohdeOid, ai).map(a => (Option(a._1), a._2)).getOrElse((None, Set()))
       val modified: String = lastModified.map(createLastModifiedHeader(_)).getOrElse("")
 
-      val takarajat = valintatulosService.haeVastaanotonAikarajaTiedot(hakuOid, hakukohdeOid, valinnantulokset.flatMap(oiditHakemuksilleJotkaTarvitsevatAikarajaMennytTiedon))
+      val takarajat: Set[VastaanottoAikarajaMennyt] = valintatulosService.haeVastaanotonAikarajaTiedot(hakuOid, hakukohdeOid, valinnantulokset.flatMap(oiditHakemuksilleJotkaTarvitsevatAikarajaMennytTiedon))
+      val relevantTakarajat: Map[HakemusOid, Set[VastaanottoAikarajaMennyt]] = takarajat.filter(_.mennyt).groupBy(_.hakemusOid)
+      val valinnantuloksetWithTakarajat = valinnantulokset.map(decorateValinnantulosWithDeadline(relevantTakarajat))
+
       val resultJson =
         s"""{
            |"valintaesitys":${JsonFormats.formatJson(valintaesitys)},
            |"lastModified":"${modified}",
            |"sijoittelunTulokset":${JsonFormats.javaObjectToJsonString(hakukohdeBySijoitteluAjo)},
-           |"valintatulokset":${JsonFormats.formatJson(valinnantulokset)},
+           |"valintatulokset":${JsonFormats.formatJson(valinnantuloksetWithTakarajat)},
            |"kirjeLahetetty":${JsonFormats.formatJson(hyvaksymiskirje)},
-           |"lukuvuosimaksut":${JsonFormats.formatJson(lukuvuosimaksu)},
-           |"takarajat":${JsonFormats.formatJson(takarajat)}}""".stripMargin
+           |"lukuvuosimaksut":${JsonFormats.formatJson(lukuvuosimaksu)}}""".stripMargin
       Ok(resultJson)
     } catch {
       case e: NotFoundException =>
@@ -70,6 +72,9 @@ class SijoittelunTulosServlet(valintatulosService: ValintatulosService,
         NotFound(body = Map("error" -> message), reason = message)
     }
   }
+
+  private def decorateValinnantulosWithDeadline(relevantTakarajat: Map[HakemusOid, Set[VastaanottoAikarajaMennyt]])(v: Valinnantulos) =
+    relevantTakarajat.get(v.hakemusOid).flatMap(_.headOption).map(_.vastaanottoDeadline).map(deadline => v.copy(vastaanottoDeadline = deadline)).getOrElse(v)
 
   private def oiditHakemuksilleJotkaTarvitsevatAikarajaMennytTiedon(v : Valinnantulos): Option[HakemusOid] = {
     val tarvitseeAikarajaMennytTiedon = ValintatuloksenTila.KESKEN.equals(v.vastaanottotila) && v.julkaistavissa.getOrElse(false) &&
