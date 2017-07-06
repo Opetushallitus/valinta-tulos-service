@@ -336,7 +336,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
           val allHakijasForHakukohde = Timer.timed(s"Fetch hakemukset just for hakukohde $hakukohdeOid of haku $hakuOid", 1000) {
             raportointiService.hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo, hakukohdeOid)
           }
-          allHakijasForHakukohde.filter(hakijaDto => hakemusOids.contains(hakijaDto.getHakemusOid))
+          allHakijasForHakukohde.filter(hakijaDto => hakemusOids.contains(HakemusOid(hakijaDto.getHakemusOid)))
         }
 
         def calculateLateness(hakijaDto: KevytHakijaDTO): VastaanottoAikarajaMennyt = {
