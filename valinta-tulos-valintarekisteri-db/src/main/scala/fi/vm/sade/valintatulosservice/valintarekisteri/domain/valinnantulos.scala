@@ -4,6 +4,7 @@ import java.time.{Instant, OffsetDateTime}
 import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, ValintatuloksenTila, Valintatulos}
+import org.joda.time.DateTime
 
 case class ValinnantulosUpdateStatus(status: Int, message: String, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid)
 
@@ -31,7 +32,8 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
                          ohitaIlmoittautuminen: Option[Boolean] = None,
                          hyvaksymiskirjeLahetetty: Option[OffsetDateTime] = None,
                          valinnantilanViimeisinMuutos: Option[OffsetDateTime] = None,
-                         vastaanotonViimeisinMuutos: Option[OffsetDateTime] = None) {
+                         vastaanotonViimeisinMuutos: Option[OffsetDateTime] = None,
+                         vastaanottoDeadline: Option[DateTime] = None) {
 
   def isHyvaksytty = Hyvaksytty == valinnantila || VarasijaltaHyvaksytty == valinnantila
 
