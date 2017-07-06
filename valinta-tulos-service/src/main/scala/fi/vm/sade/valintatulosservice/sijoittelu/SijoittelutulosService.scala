@@ -71,14 +71,6 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     }).getOrElse(Nil)
   }
 
-  def findAikatauluFromOhjausparametritService(hakuOid: HakuOid): Option[Vastaanottoaikataulu] = {
-    Timer.timed("findAikatauluFromOhjausparametritService -> ohjausparametritService.ohjausparametrit", 100) {
-      ohjausparametritService.ohjausparametrit(hakuOid) match {
-        case Right(o) => o.map(_.vastaanottoaikataulu)
-        case Left(e) => throw e
-      }
-    }
-  }
   def findOhjausparametritFromOhjausparametritService(hakuOid: HakuOid): Option[Ohjausparametrit] = {
     Timer.timed("findAikatauluFromOhjausparametritService -> ohjausparametritService.ohjausparametrit", 100) {
       ohjausparametritService.ohjausparametrit(hakuOid) match {
