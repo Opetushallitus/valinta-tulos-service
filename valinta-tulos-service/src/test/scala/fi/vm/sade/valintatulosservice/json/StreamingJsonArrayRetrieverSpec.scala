@@ -26,7 +26,7 @@ class StreamingJsonArrayRetrieverSpec extends ServletSpecification {
       val firstResult = hakijaDtos.head
       firstResult.getHakijaOid must_== "1.2.246.562.24.14229104472"
       firstResult.getHakemusOid must_== "1.2.246.562.11.00000441369"
-      firstResult.getHakutoiveet.size must_== 1
+      firstResult.getHakutoiveet.size must_== 2
       hakijaDtos.size must_== 1
     }
   }
