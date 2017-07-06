@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice.local
 import fi.vm.sade.security.mock.MockSecurityContext
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
+import fi.vm.sade.valintatulosservice.production.Hakija
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, LasnaKokoLukuvuosi, Vastaanottotila}
 import org.joda.time.{DateTime, DateTimeZone}
@@ -118,8 +119,9 @@ class ValintaTulosServletSpec extends ServletSpecification {
 
       get("haku/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset") {
         val bodyJson = JsonMethods.parse(body)
-        (bodyJson \ "totalCount").extract[Int] must_== 1
-        stringInJson(bodyJson, "vastaanottotieto") must_== "KESKEN"
+        val tulos: List[Hakija] = (bodyJson \ "results").extract[List[Hakija]]
+
+        tulos.head.hakutoiveet.head.vastaanottotieto must_== Some(Vastaanottotila.kesken)
         status must_== 200
       }
 
@@ -129,7 +131,9 @@ class ValintaTulosServletSpec extends ServletSpecification {
           (bodyJson \ "totalCount").extract[Int] must_== 1
           stringInJson(bodyJson, "hakijaOid") must_== "1.2.246.562.24.14229104472"
           stringInJson(bodyJson, "hakemusOid") must_== "1.2.246.562.11.00000441369"
-          stringInJson(bodyJson, "vastaanottotieto") must_== "VASTAANOTTANUT_SITOVASTI"
+
+          val tulos: List[Hakija] = (bodyJson \ "results").extract[List[Hakija]]
+          tulos.head.hakutoiveet.head.vastaanottotieto must_== Some(Vastaanottotila.vastaanottanut)
           status must_== 200
         }
       }
