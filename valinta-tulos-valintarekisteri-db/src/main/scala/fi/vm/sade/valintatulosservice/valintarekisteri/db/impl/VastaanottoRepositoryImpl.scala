@@ -87,7 +87,7 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
   private def assertAllValinnantuloksetExist(vastaanotot: Set[VastaanottoRecord], hakemusoidit: Map[(String, HakukohdeOid), HakemusOid]): Unit = {
     val missingRecords: Map[HakukohdeOid, Set[VastaanottoRecord]] = vastaanotot.filter(v => !hakemusoidit.isDefinedAt(v.henkiloOid, v.hakukohdeOid)).groupBy(_.hakukohdeOid)
     if(!missingRecords.isEmpty) {
-      throw new IllegalStateException(s"Puuttuvia valinnantuloksia ${missingRecords.map(e => s"hakukohteessa ${e._1} henkiloOideille ${e._2.mkString(",")}").mkString(", ")}")
+      throw new IllegalStateException(s"Puuttuvia valinnantuloksia ${missingRecords.map(e => s"hakukohteessa ${e._1} henkiloOideille ${e._2.map(_.henkiloOid).mkString(",")}").mkString(", ")}")
     }
   }
 
