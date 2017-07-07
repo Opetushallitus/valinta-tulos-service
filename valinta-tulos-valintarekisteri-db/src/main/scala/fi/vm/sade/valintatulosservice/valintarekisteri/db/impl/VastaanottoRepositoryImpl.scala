@@ -74,14 +74,23 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
                 and action in ('VastaanotaSitovasti', 'VastaanotaEhdollisesti')
         """.as[((String, HakukohdeOid), HakemusOid)]
     ).toMap
+    assertAllValinnantuloksetExist(vastaanotot, hakemusoidit)
     vastaanotot
       .filter(v => henkiloOids.contains(v.henkiloOid))
       .map(v => (
-        hakemusoidit.getOrElse((v.henkiloOid, v.hakukohdeOid), throw new IllegalStateException(s"Henkilöllä ${v.henkiloOid} ei ole valinnantulosta hakukohteeseen ${v.hakukohdeOid}")),
+        hakemusoidit((v.henkiloOid, v.hakukohdeOid)),
         hakukohteet(v.hakukohdeOid),
         v
       ))
   }
+
+  private def assertAllValinnantuloksetExist(vastaanotot: Set[VastaanottoRecord], hakemusoidit: Map[(String, HakukohdeOid), HakemusOid]): Unit = {
+    val missingRecords: Map[HakukohdeOid, Set[VastaanottoRecord]] = vastaanotot.filter(v => !hakemusoidit.isDefinedAt(v.henkiloOid, v.hakukohdeOid)).groupBy(_.hakukohdeOid)
+    if(!missingRecords.isEmpty) {
+      throw new IllegalStateException(s"Puuttuvia valinnantuloksia ${missingRecords.map(e => s"hakukohteessa ${e._1} henkiloOideille ${e._2.mkString(",")}").mkString(", ")}")
+    }
+  }
+
 
   override def aliases(henkiloOid: String): DBIO[Set[String]] = {
     sql"""select linked_oid from henkiloviitteet where person_oid = ${henkiloOid}""".as[String].map(_.toSet)
