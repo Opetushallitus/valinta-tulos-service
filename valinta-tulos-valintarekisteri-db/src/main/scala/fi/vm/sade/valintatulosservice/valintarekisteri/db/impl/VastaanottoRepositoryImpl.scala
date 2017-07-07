@@ -34,6 +34,7 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
 
   override def findYpsVastaanotot(kausi: Kausi, henkiloOids: Set[String]): Set[(HakemusOid, HakukohdeRecord, VastaanottoRecord)] = {
     val vastaanotot = findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(kausi)
+      .filter(v => henkiloOids.contains(v.henkiloOid))
     val hakukohteet = runBlocking(
       sql"""select hakukohde_oid,
                    haku_oid,
@@ -76,7 +77,6 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
     ).toMap
     assertAllValinnantuloksetExist(vastaanotot, hakemusoidit)
     vastaanotot
-      .filter(v => henkiloOids.contains(v.henkiloOid))
       .map(v => (
         hakemusoidit((v.henkiloOid, v.hakukohdeOid)),
         hakukohteet(v.hakukohdeOid),
