@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import java.sql.JDBCType
-import java.time.{Instant, OffsetDateTime, ZoneId, ZoneOffset, ZonedDateTime}
+import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
 import java.util.UUID
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
@@ -168,6 +168,16 @@ trait ValintarekisteriResultExtractors {
     ilmoittautumistila = r.nextStringOption.map(SijoitteluajonIlmoittautumistila(_)).getOrElse(EiTehty),
     valinnantilanViimeisinMuutos = parseOffsetDateTime(r),
     vastaanotonViimeisinMuutos = parseOffsetDateTime(r)
+  ))
+
+  protected implicit val getViestinnanOhjausResult: GetResult[ViestinnanOhjaus] = GetResult(r => ViestinnanOhjaus(
+    hakukohdeOid = HakukohdeOid(r.nextString),
+    valintatapajonoOid = ValintatapajonoOid(r.nextString),
+    hakemusOid = HakemusOid(r.nextString),
+    previousCheck = parseOffsetDateTime(r),
+    sent = parseOffsetDateTime(r),
+    done = parseOffsetDateTime(r),
+    message = r.nextString()
   ))
 
   protected implicit val getInstantOptionResult: GetResult[Option[Instant]] = GetResult(r => r.nextTimestampOption().map(_.toInstant))
