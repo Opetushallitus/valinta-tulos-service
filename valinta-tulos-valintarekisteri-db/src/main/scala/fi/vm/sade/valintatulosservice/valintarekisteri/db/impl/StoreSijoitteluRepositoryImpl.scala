@@ -33,6 +33,8 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
         var valinnantilaStatement:Option[PreparedStatement] = None
         var tilankuvausStatement:Option[PreparedStatement] = None
         var tilaKuvausMappingStatement:Option[PreparedStatement] = None
+        var deleteHyvaksyttyJulkaistuStatement:Option[PreparedStatement] = None
+        var insertHyvaksyttyJulkaistuStatement:Option[PreparedStatement] = None
         try {
           jonosijaStatement = Some(createJonosijaStatement(session.connection))
           pistetietoStatement = Some(createPistetietoStatement(session.connection))
@@ -41,10 +43,12 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
           valinnantilaStatement = Some(createValinnantilaStatement(session.connection))
           tilankuvausStatement = Some(createTilankuvausStatement(session.connection))
           tilaKuvausMappingStatement = Some(createTilaKuvausMappingStatement(session.connection))
+          deleteHyvaksyttyJulkaistuStatement = Some(createHyvaksyttyJaJulkaistuDeleteStatement(session.connection))
+          insertHyvaksyttyJulkaistuStatement = Some(createHyvaksyttyJaJulkaistuInsertStatement(session.connection))
           sijoittelu.hakukohteet.foreach(hakukohde => {
+            val hakukohdeOid = HakukohdeOid(hakukohde.getOid)
             hakukohde.getValintatapajonot.asScala.foreach(valintatapajono => {
               valintatapajono.getHakemukset.asScala.foreach(hakemus => {
-                val hakukohdeOid = HakukohdeOid(hakukohde.getOid)
                 val valintatapajonoOid = ValintatapajonoOid(valintatapajono.getOid)
                 val hakemusOid = HakemusOid(hakemus.getHakemusOid)
                 storeValintatapajononHakemus(
@@ -63,6 +67,8 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
                 )
               })
             })
+            createHyvaksyttyJaJulkaistuDeleteRow(hakukohdeOid, deleteHyvaksyttyJulkaistuStatement.get)
+            createHyvaksyttyJaJulkaistuInsertRow(hakukohdeOid, sijoitteluajoId, insertHyvaksyttyJulkaistuStatement.get)
           })
           timed(s"Haun $hakuOid tilankuvauksien tallennus", 100) { tilankuvausStatement.get.executeBatch() }
           timed(s"Haun $hakuOid jonosijojen tallennus", 100) { jonosijaStatement.get.executeBatch }
@@ -71,6 +77,8 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
           timed(s"Haun $hakuOid uusien valinnantulosten tallennus", 100) { insertValinnantulosStatement.get.executeBatch }
           timed(s"Haun $hakuOid päivittyneiden valinnantulosten tallennus", 100) { updateValinnantulosStatement.get.executeBatch }
           timed(s"Haun $hakuOid tilankuvaus-mäppäysten tallennus", 100) { tilaKuvausMappingStatement.get.executeBatch }
+          timed(s"Haun $hakuOid hyväksytty ja julkaistu -päivämäärien poisto", 100) { deleteHyvaksyttyJulkaistuStatement.get.executeBatch }
+          timed(s"Haun $hakuOid hyväksytty ja julkaistu -päivämäärien tallennus", 100) { insertHyvaksyttyJulkaistuStatement.get.executeBatch }
         } finally {
           Try(tilankuvausStatement.foreach(_.close))
           Try(jonosijaStatement.foreach(_.close))
@@ -79,6 +87,8 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
           Try(insertValinnantulosStatement.foreach(_.close))
           Try(updateValinnantulosStatement.foreach(_.close))
           Try(tilaKuvausMappingStatement.foreach(_.close))
+          Try(deleteHyvaksyttyJulkaistuStatement.foreach(_.close))
+          Try(insertHyvaksyttyJulkaistuStatement.foreach(_.close))
         }
       })
       .andThen(DBIO.sequence(
@@ -426,6 +436,50 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
     statement.setLong(i, sijoitteluajoId); i += 1
     statement.setString(i, hakemusOid.toString); i += 1
     statement.setBoolean(i, hyvaksyttyHakijaryhmasta); i += 1
+    statement.addBatch()
+  }
+
+  private def createHyvaksyttyJaJulkaistuInsertStatement = createStatement(
+    """with hakukohteen_hyvaksytyt_ja_julkaistut as (
+         select distinct ti.henkilo_oid
+         from valinnantilat ti
+         inner join valinnantulokset tu on ti.hakukohde_oid = tu.hakukohde_oid and
+           ti.valintatapajono_oid = tu.valintatapajono_oid and ti.hakemus_oid = tu.hakemus_oid
+         where ti.hakukohde_oid = ? and tu.julkaistavissa = true and
+           ti.tila in ('Hyvaksytty'::valinnantila, 'VarasijaltaHyvaksytty'::valinnantila)
+       ) insert into hyvaksytyt_ja_julkaistut_hakutoiveet(
+            henkilo,
+            hakukohde,
+            hyvaksytty_ja_julkaistu,
+            ilmoittaja,
+            selite
+        ) select henkilo_oid, ?, now(), ?::text, 'Sijoittelun tallennus'
+          from hakukohteen_hyvaksytyt_ja_julkaistut
+          on conflict on constraint hyvaksytyt_ja_julkaistut_hakutoiveet_pkey do nothing"""
+  )
+
+  private def createHyvaksyttyJaJulkaistuInsertRow(hakukohdeOid: HakukohdeOid,
+                                                   sijoitteluajoId: Long,
+                                                   statement: PreparedStatement) = {
+    statement.setString(1, hakukohdeOid.toString)
+    statement.setString(2, hakukohdeOid.toString)
+    statement.setLong(3, sijoitteluajoId)
+    statement.addBatch()
+  }
+
+  private def createHyvaksyttyJaJulkaistuDeleteStatement = createStatement(
+    """with hakukohteen_hyvaksytyt as (
+         select distinct henkilo_oid
+         from valinnantilat
+         where hakukohde_oid = ? and
+         tila in ('Hyvaksytty'::valinnantila, 'VarasijaltaHyvaksytty'::valinnantila)
+       ) delete from hyvaksytyt_ja_julkaistut_hakutoiveet
+         where hakukohde = ? and henkilo not in (select * from hakukohteen_hyvaksytyt)""")
+
+  private def createHyvaksyttyJaJulkaistuDeleteRow(hakukohdeOid: HakukohdeOid,
+                                                   statement: PreparedStatement) = {
+    statement.setString(1, hakukohdeOid.toString)
+    statement.setString(2, hakukohdeOid.toString)
     statement.addBatch()
   }
 }

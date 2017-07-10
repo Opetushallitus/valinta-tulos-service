@@ -199,6 +199,51 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       readTable("valinnantulokset_history").size mustEqual 1
       readTable("valinnantulokset").size mustEqual 1
     }
+    "handle hyväksytty ja julkaistu -dates correctly" in {
+      def readHyvaksyttyJaJulkaistuTable() = singleConnectionValintarekisteriDb.runBlocking(
+        sql"""select * from hyvaksytyt_ja_julkaistut_hakutoiveet""".as[Map[String,Object]])
+
+      def validate(hyvaksyttyJaJulkaistu:Vector[Map[String,Object]]) = {
+        hyvaksyttyJaJulkaistu.map(_("henkilo")).distinct.size must_== 2
+        hyvaksyttyJaJulkaistu.foreach(m => m("henkilo") match {
+          case "1.2.246.562.24.14229104473" => m("hakukohde") must_== "1.2.246.562.5.72607738933"
+          case "1.2.246.562.24.14229104472" => m("hakukohde") must_== "1.2.246.562.5.72607738922"
+          case x => throw new AssertionError(s"Tuntematon henkilö oid ${x}")
+        })
+        val pvm = hyvaksyttyJaJulkaistu.map(_("hyvaksytty_ja_julkaistu")).distinct
+        pvm.size must_== 1
+        pvm.head
+      }
+
+      //Hakijat hyväksytty + julkaistu eri hakukohteista
+      val wrapper = loadSijoitteluFromFixture("hyvaksytty-julkaistu-pvm-1", "sijoittelu/")
+      singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
+      val pvm = validate(readHyvaksyttyJaJulkaistuTable())
+
+      //Julkaistavissa-täpän poistaminen ei poista päivämääriä
+      wrapper.valintatulokset.foreach(_.setJulkaistavissa(false, "", ""))
+      incrementSijoitteluajoId(wrapper)
+      singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
+      validate(readHyvaksyttyJaJulkaistuTable()) must_== pvm
+
+      //Hakijalta 1.2.246.562.24.14229104472 poistetaan yksi hyväksyntä -> päivämäärä ei poistu, koska hyväksyntä toisessa jonossa
+      //Hakija 1.2.246.562.24.14229104473 tulee hylätyksi vanhassa ja hyväksytyksi uudessa hakukohteessa -> vanha pvm poistuu, uusi tulee tilalle
+      val wrapper2 = loadSijoitteluFromFixture("hyvaksytty-julkaistu-pvm-2", "sijoittelu/", tallennaHakukohteet = false)
+      singleConnectionValintarekisteriDb.storeSijoittelu(wrapper2)
+      val hyvaksyttyJaJulkaistu = readHyvaksyttyJaJulkaistuTable()
+      hyvaksyttyJaJulkaistu.foreach(m => m("henkilo") match {
+        case "1.2.246.562.24.14229104473" => {
+          m("hakukohde") must_== "1.2.246.562.5.72607738922"
+          m("hyvaksytty_ja_julkaistu") must_!= pvm
+        }
+        case "1.2.246.562.24.14229104472" => {
+          m("hakukohde") must_== "1.2.246.562.5.72607738922"
+          m("hyvaksytty_ja_julkaistu") must_== pvm
+        }
+        case x => throw new AssertionError(s"Tuntematon henkilö oid ${x}")
+      })
+      hyvaksyttyJaJulkaistu.map(_("henkilo")).distinct.size must_== 2
+    }
   }
 
   private def incrementSijoitteluajoId(newSijoitteluajoWrapper: SijoitteluWrapper) = {

@@ -132,12 +132,14 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
     }
   }
 
+  final val selite = "Virkailijan tallennus"
+
   def save(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): DBIO[Unit] = {
     val muokkaaja = session.personOid
     val vanha = vanhaOpt.getOrElse(throw new IllegalStateException(s"Vain valinnantuloksen muokkaus sallittu haussa ${haku.oid}"))
     val updateOhjaus = if (uusi.hasOhjausChanged(vanha)) {
       valinnantulosRepository.updateValinnantuloksenOhjaus(
-        uusi.getValinnantuloksenOhjauksenMuutos(vanha, muokkaaja, "Virkailijan tallennus"), Some(ifUnmodifiedSince))
+        uusi.getValinnantuloksenOhjauksenMuutos(vanha, muokkaaja, selite), Some(ifUnmodifiedSince))
     } else {
       DBIO.successful(())
     }
@@ -150,11 +152,16 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
     }
     val updateIlmoittautuminen = if (uusi.ilmoittautumistila != vanha.ilmoittautumistila) {
       valinnantulosRepository.storeIlmoittautuminen(
-        vanha.henkiloOid, Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, "Virkailijan tallennus"), Some(ifUnmodifiedSince))
+        vanha.henkiloOid, Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), Some(ifUnmodifiedSince))
     } else {
       DBIO.successful(())
     }
-    updateOhjaus.andThen(updateEhdollisenHyvaksynnanEhto).andThen(updateIlmoittautuminen)
+    val updateHyvaksyttyJaJulkaistuDate = if(uusi.julkaistavissa.getOrElse(false) && uusi.isHyvaksytty) {
+      valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(uusi.hakemusOid, uusi.valintatapajonoOid, muokkaaja, selite)
+    } else {
+      DBIO.successful(())
+    }
+    updateOhjaus.andThen(updateEhdollisenHyvaksynnanEhto).andThen(updateIlmoittautuminen).andThen(updateHyvaksyttyJaJulkaistuDate)
   }
 
   def audit(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): Unit = {

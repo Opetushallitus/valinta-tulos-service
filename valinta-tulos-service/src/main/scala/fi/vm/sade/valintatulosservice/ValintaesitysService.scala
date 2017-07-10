@@ -24,8 +24,7 @@ class ValintaesitysService(hakuService: HakuService,
 
   def hyvaksyValintaesitys(valintatapajonoOid: ValintatapajonoOid, auditInfo: AuditInfo): Valintaesitys = {
     val valintaesitys = valinnantulosRepository.runBlockingTransactionally(
-      hyvaksyValintaesitys(valintatapajonoOid, auditInfo.session._2.personOid)
-        .flatMap(authorizeValintaesityksenHyvaksyminen(_, auditInfo.session._2))
+      hyvaksyValintaesitys(valintatapajonoOid, auditInfo.session._2)
     ).fold(throw _, v => v)
     auditlogValintaesityksenHyvaksyminen(valintaesitys, auditInfo)
     valintaesitys
@@ -45,10 +44,12 @@ class ValintaesitysService(hakuService: HakuService,
     } yield valintaesitys).fold(DBIO.failed, DBIO.successful)
   }
 
-  private def hyvaksyValintaesitys(valintatapajonoOid: ValintatapajonoOid, ilmoittaja: String): DBIO[Valintaesitys] = {
+  private def hyvaksyValintaesitys(valintatapajonoOid: ValintatapajonoOid, session: Session): DBIO[Valintaesitys] = {
     for {
       valintaesitys <- valintaesitysRepository.hyvaksyValintaesitys(valintatapajonoOid)
-      _ <- valinnantulosRepository.setJulkaistavissa(valintatapajonoOid, ilmoittaja, "Valintaesityksen hyväksyntä")
+      _ <- authorizeValintaesityksenHyvaksyminen(valintaesitys, session)
+      _ <- valinnantulosRepository.setJulkaistavissa(valintatapajonoOid, session.personOid, "Valintaesityksen hyväksyntä")
+      _ <- valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(valintatapajonoOid, session.personOid, "Valintaesityksen hyväksyntä")
     } yield valintaesitys
   }
 
