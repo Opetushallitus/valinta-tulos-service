@@ -222,6 +222,9 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
       ) mustEqual Set()
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.getViestinnanOhjaus(valinnantuloksenOhjaus)
+      ) mustEqual Set()
     }
     "generate muutoshistoria from updates" in {
       storeValinnantilaAndValinnantulos()
@@ -241,6 +244,98 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       origin.changes must contain(KentanMuutos(field = "hyvaksyttyVarasijalta", from = None, to = false))
       origin.changes must contain(KentanMuutos(field = "hyvaksyPeruuntunut", from = None, to = false))
     }
+    "update julkaistavissa and hyväksytty/julkaistu dates for valintatapajono" in {
+      storeValinnantilaAndValinnantulos()
+      checkJulkaistavissa() must_== false
+      checkHyvaksyttyJaJulkaistu() must_== None
+
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.setJulkaistavissa(valintatapajonoOid, "ilmoittaja", "selite"),
+        singleConnectionValintarekisteriDb.setHyvaksyttyJaJulkaistavissa(valintatapajonoOid, "ilmoittaja", "selite")
+      ))
+
+      checkJulkaistavissa() must_== true
+      val hyvaksyttyJaJulkaistu = checkHyvaksyttyJaJulkaistu()
+      hyvaksyttyJaJulkaistu.isDefined must_== true
+
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.setHyvaksyttyJaJulkaistavissa(valintatapajonoOid, "ilmoittaja2", "selite2")
+      ))
+
+      hyvaksyttyJaJulkaistu.get must_== checkHyvaksyttyJaJulkaistu().get
+    }
+    "do not update hyväksytty/julkaistu date for hylätty valinnantulos" in {
+      storeValinnantilaAndValinnantulos()
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantilat set tila = 'Hylatty'::valinnantila")
+      checkJulkaistavissa() must_== false
+      checkHyvaksyttyJaJulkaistu() must_== None
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.setJulkaistavissa(valintatapajonoOid, "ilmoittaja", "selite"),
+        singleConnectionValintarekisteriDb.setHyvaksyttyJaJulkaistavissa(valintatapajonoOid, "ilmoittaja", "selite")
+      ))
+      checkJulkaistavissa() must_== true
+      checkHyvaksyttyJaJulkaistu() must_== None
+    }
+    "update hyväksytty/julkaistu date for valinnantulos" in {
+      storeValinnantilaAndValinnantulos()
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantilat set tila = 'Hylatty'::valinnantila")
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = true")
+
+      checkHyvaksyttyJaJulkaistu() must_== None
+
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.setHyvaksyttyJaJulkaistavissa(hakemusOid, valintatapajonoOid, "ilmoittaja", "selite")
+      ))
+
+      checkHyvaksyttyJaJulkaistu() must_== None
+
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantilat set tila = 'VarasijaltaHyvaksytty'::valinnantila")
+
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.setHyvaksyttyJaJulkaistavissa(hakemusOid, valintatapajonoOid, "ilmoittaja", "selite")
+      ))
+
+      checkHyvaksyttyJaJulkaistu().isDefined must_== true
+    }
+    "delete hyväksytty/julkaistu date" in {
+      storeValinnantilaAndValinnantulos()
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = true")
+      checkHyvaksyttyJaJulkaistu() must_== None
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.setHyvaksyttyJaJulkaistavissa(hakemusOid, valintatapajonoOid, "ilmoittaja", "selite")
+      ))
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantilat set tila = 'Hylatty'::valinnantila")
+      checkHyvaksyttyJaJulkaistu().isDefined must_== true
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.deleteHyvaksyttyJaJulkaistavissa(henkiloOid, hakukohdeOid)
+      ))
+      checkHyvaksyttyJaJulkaistu() must_== None
+    }
+    "don't delete hyväksytty/julkaistu date if there is hyväksytty valinnantila" in {
+      storeValinnantilaAndValinnantulos()
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = true")
+      checkHyvaksyttyJaJulkaistu() must_== None
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.setHyvaksyttyJaJulkaistavissa(hakemusOid, valintatapajonoOid, "ilmoittaja", "selite")
+      ))
+      checkHyvaksyttyJaJulkaistu().isDefined must_== true
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.deleteHyvaksyttyJaJulkaistavissa(henkiloOid, hakukohdeOid)
+      )) must throwA[ConcurrentModificationException]
+      checkHyvaksyttyJaJulkaistu().isDefined must_== true
+    }
+  }
+
+  private def checkJulkaistavissa():Boolean = {
+    singleConnectionValintarekisteriDb.runBlocking(
+      sql"select julkaistavissa from valinnantulokset where hakemus_oid = ${hakemusOid}".as[Boolean]
+    ).head
+  }
+
+  private def checkHyvaksyttyJaJulkaistu():Option[Timestamp] = {
+    singleConnectionValintarekisteriDb.runBlocking(
+      sql"select hyvaksytty_ja_julkaistu from hyvaksytyt_ja_julkaistut_hakutoiveet where henkilo = ${henkiloOid} and hakukohde = ${hakukohdeOid}".as[Timestamp]
+    ).headOption
   }
 
   private def assertValintaesitykset(valintaesitys: Valintaesitys) = {
@@ -375,26 +470,27 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       }
     }
     singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
-      sqlu"""insert into valintaesitykset (
-                 hakukohde_oid,
+      sqlu"""INSERT INTO valintaesitykset (hakukohde_oid,
                  valintatapajono_oid,
                  hyvaksytty
-             ) values (
-                 $hakukohdeOid,
-                 $valintatapajonoOid,
-                 null::timestamp with time zone
-             )""",
-      sqlu"""insert into valinnantilat (
-                 hakukohde_oid,
+             ) VALUES (${hakukohdeOid},
+                 ${valintatapajonoOid},
+                 NULL::TIMESTAMP WITH TIME ZONE)""",
+      sqlu"""INSERT INTO valinnantilat (hakukohde_oid,
                  valintatapajono_oid,
                  hakemus_oid,
                  tila,
                  tilan_viimeisin_muutos,
                  ilmoittaja,
                  henkilo_oid
-             ) values (${hakukohdeOid}, ${valintatapajonoOid}, ${hakemusOid}, 'Hyvaksytty'::valinnantila, ${muutos}, 122344555::text, ${henkiloOid})""",
-      sqlu"""insert into valinnantulokset(
-                 valintatapajono_oid,
+             ) VALUES (${hakukohdeOid},
+                 ${valintatapajonoOid},
+                 ${hakemusOid},
+                 'Hyvaksytty'::VALINNANTILA,
+                 ${muutos},
+                 122344555::TEXT,
+                 ${henkiloOid})""",
+      sqlu"""INSERT INTO valinnantulokset(valintatapajono_oid,
                  hakemus_oid,
                  hakukohde_oid,
                  julkaistavissa,
@@ -403,7 +499,29 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
                  hyvaksy_peruuntunut,
                  ilmoittaja,
                  selite
-             ) values (${valintatapajonoOid}, ${hakemusOid}, ${hakukohdeOid}, false, false, false, false, 122344555::text, 'Sijoittelun tallennus')"""
+             ) VALUES (${valintatapajonoOid},
+                 ${hakemusOid},
+                 ${hakukohdeOid},
+                 FALSE,
+                 FALSE,
+                 FALSE,
+                 FALSE,
+                 122344555::TEXT,
+                 'Sijoittelun tallennus')""",
+      sqlu"""INSERT INTO viestinnan_ohjaus(hakukohde_oid,
+                 valintatapajono_oid,
+                 hakemus_oid,
+                 previous_check,
+                 sent,
+                 done,
+                 message
+             ) VALUES (${hakukohdeOid},
+                 ${valintatapajonoOid},
+                 ${hakemusOid},
+                 NULL::TIMESTAMP WITH TIME ZONE,
+                 NULL::TIMESTAMP WITH TIME ZONE,
+                 NULL::TIMESTAMP WITH TIME ZONE,
+                 'Sijoittelun tallennus')"""
     ).transactionally)
   }
 

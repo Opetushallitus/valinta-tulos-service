@@ -33,6 +33,8 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
                          valinnantilanViimeisinMuutos: Option[OffsetDateTime] = None,
                          vastaanotonViimeisinMuutos: Option[OffsetDateTime] = None) {
 
+  def isHyvaksytty = Hyvaksytty == valinnantila || VarasijaltaHyvaksytty == valinnantila
+
   def hasChanged(other: Valinnantulos) =
     other.valinnantila != valinnantila ||
       other.vastaanottotila != vastaanottotila ||
