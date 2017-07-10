@@ -158,8 +158,10 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
     }
     val updateHyvaksyttyJaJulkaistuDate = if(uusi.julkaistavissa.getOrElse(false) && uusi.isHyvaksytty) {
       valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(uusi.hakemusOid, uusi.valintatapajonoOid, muokkaaja, selite)
+    } else {
+      DBIO.successful(())
     }
-    updateOhjaus.andThen(updateEhdollisenHyvaksynnanEhto).andThen(updateIlmoittautuminen)
+    updateOhjaus.andThen(updateEhdollisenHyvaksynnanEhto).andThen(updateIlmoittautuminen).andThen(updateHyvaksyttyJaJulkaistuDate)
   }
 
   def audit(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): Unit = {
