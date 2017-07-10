@@ -33,6 +33,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
                          hyvaksymiskirjeLahetetty: Option[OffsetDateTime] = None,
                          valinnantilanViimeisinMuutos: Option[OffsetDateTime] = None,
                          vastaanotonViimeisinMuutos: Option[OffsetDateTime] = None,
+                         vastaanottoDeadlineMennyt: Option[Boolean] = None,
                          vastaanottoDeadline: Option[DateTime] = None) {
 
   def isHyvaksytty = Hyvaksytty == valinnantila || VarasijaltaHyvaksytty == valinnantila
