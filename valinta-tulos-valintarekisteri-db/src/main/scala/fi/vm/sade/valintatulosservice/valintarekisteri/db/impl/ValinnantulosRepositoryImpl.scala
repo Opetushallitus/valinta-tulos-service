@@ -551,7 +551,6 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     deleteViestinnanOhjaus(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince)
       .andThen(deleteEhdollisenHyvaksynnanEhto(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince))
       .andThen(deleteValinnantuloksenOhjaus(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince))
-      .andThen(deleteTilanKuvaukset(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince))
       .andThen(deleteValinnantila(valinnantulos.getValinnantilanTallennus(muokkaaja), ifUnmodifiedSince))
       .transactionally
   }
@@ -582,19 +581,6 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
           where vo.hakukohde_oid = ${valinnantuloksenOhjaus.hakukohdeOid}
             and vo.valintatapajono_oid = ${valinnantuloksenOhjaus.valintatapajonoOid}
             and vo.hakemus_oid = ${valinnantuloksenOhjaus.hakemusOid}""".as[ViestinnanOhjaus].map(_.toSet)
-  }
-
-  private def deleteTilanKuvaukset(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
-    sqlu"""delete from tilat_kuvaukset
-           where hakukohde_oid = $hakukohdeOid
-               and hakemus_oid = $hakemusOid
-               and valintatapajono_oid = $valintatapajonoOid
-               and ($ifUnmodifiedSince::timestamptz is null
-                   or system_time @> $ifUnmodifiedSince)
-      """.flatMap {
-      case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Tilan kuvauksia ($hakukohdeOid, $valintatapajonoOid, $hakemusOid) ei voitu poistaa, koska joku oli muokannut niitä ${format(ifUnmodifiedSince)} jälkeen"))
-    }
   }
 
   private def deleteViestinnanOhjaus(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
