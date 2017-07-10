@@ -54,7 +54,7 @@ class SijoittelunTulosServlet(valintatulosService: ValintatulosService,
       val modified: String = lastModified.map(createLastModifiedHeader(_)).getOrElse("")
 
       val takarajat: Set[VastaanottoAikarajaMennyt] = valintatulosService.haeVastaanotonAikarajaTiedot(hakuOid, hakukohdeOid, valinnantulokset.flatMap(oiditHakemuksilleJotkaTarvitsevatAikarajaMennytTiedon))
-      val relevantTakarajat: Map[HakemusOid, Set[VastaanottoAikarajaMennyt]] = takarajat.filter(_.mennyt).groupBy(_.hakemusOid)
+      val relevantTakarajat: Map[HakemusOid, Set[VastaanottoAikarajaMennyt]] = takarajat.groupBy(_.hakemusOid)
       val valinnantuloksetWithTakarajat = valinnantulokset.map(decorateValinnantulosWithDeadline(relevantTakarajat))
 
       val resultJson =
@@ -74,7 +74,7 @@ class SijoittelunTulosServlet(valintatulosService: ValintatulosService,
   }
 
   private def decorateValinnantulosWithDeadline(relevantTakarajat: Map[HakemusOid, Set[VastaanottoAikarajaMennyt]])(v: Valinnantulos) =
-    relevantTakarajat.get(v.hakemusOid).flatMap(_.headOption).map(_.vastaanottoDeadline).map(deadline => v.copy(vastaanottoDeadline = deadline)).getOrElse(v)
+    relevantTakarajat.get(v.hakemusOid).flatMap(_.headOption).map(aikaraja => v.copy(vastaanottoDeadline = aikaraja.vastaanottoDeadline, vastaanottoDeadlineMennyt = Some(aikaraja.mennyt))).getOrElse(v)
 
   private def oiditHakemuksilleJotkaTarvitsevatAikarajaMennytTiedon(v : Valinnantulos): Option[HakemusOid] = {
     val tarvitseeAikarajaMennytTiedon = ValintatuloksenTila.KESKEN.equals(v.vastaanottotila) && v.julkaistavissa.getOrElse(false) &&
