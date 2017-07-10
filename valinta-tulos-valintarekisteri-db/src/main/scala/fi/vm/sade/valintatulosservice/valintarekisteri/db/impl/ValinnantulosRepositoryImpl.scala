@@ -549,6 +549,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
 
   override def deleteValinnantulos(muokkaaja:String, valinnantulos: Valinnantulos, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
     deleteViestinnanOhjaus(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince)
+      .andThen(deleteEhdollisenHyvaksynnanEhto(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince))
       .andThen(deleteValinnantuloksenOhjaus(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince))
       .andThen(deleteTilanKuvaukset(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince))
       .andThen(deleteValinnantila(valinnantulos.getValinnantilanTallennus(muokkaaja), ifUnmodifiedSince))
@@ -600,9 +601,18 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     sqlu"""delete from viestinnan_ohjaus
                where hakukohde_oid = $hakukohdeOid
                and hakemus_oid = $hakemusOid
-               and valintatapajono_oid = $valintatapajonoOid""".flatMap {
+               and valintatapajono_oid = $valintatapajonoOid""".map(_ => ())
+  }
+
+  private def deleteEhdollisenHyvaksynnanEhto(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+    sqlu"""delete from ehdollisen_hyvaksynnan_ehto
+           where hakukohde_oid = ${hakukohdeOid}
+           and hakemus_oid = ${hakemusOid}
+           and valintatapajono_oid = ${valintatapajonoOid}
+           and (${ifUnmodifiedSince}::timestamptz is null or
+              system_time @> ${ifUnmodifiedSince})""".flatMap {
       case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Viestinnän ohjausta ($hakukohdeOid, $valintatapajonoOid, $hakemusOid) ei voitu poistaa, koska joku oli muokannut sitä ${format(ifUnmodifiedSince)} jälkeen"))
+      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ehdollisen hyväksynnän ehtoa ($hakukohdeOid, $valintatapajonoOid, $hakemusOid) ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
     }
   }
 
