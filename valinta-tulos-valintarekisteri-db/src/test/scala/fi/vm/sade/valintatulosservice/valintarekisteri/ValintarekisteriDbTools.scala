@@ -71,7 +71,9 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
       sqlu"truncate table sijoitteluajon_hakukohteet cascade",
       sqlu"truncate table hakukohteet cascade",
       sqlu"truncate table sijoitteluajot cascade",
-      sqlu"truncate table lukuvuosimaksut cascade"
+      sqlu"truncate table lukuvuosimaksut cascade",
+      sqlu"truncate table ehdollisen_hyvaksynnan_ehto cascade",
+      sqlu"truncate table ehdollisen_hyvaksynnan_ehto_history cascade"
       ).transactionally)
   }
 

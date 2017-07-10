@@ -107,7 +107,6 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
     "update hakemus-related objects in batches in migraatio" in {
       storeValinnantilaAndValinnantulos()
       storeIlmoittautuminen()
-      storeEhdollisenHyvaksynnanEhto()
       storeHyvaksymiskirje()
       assertValinnantila(valinnantilanTallennus)
       assertValinnantuloksenOhjaus(valinnantuloksenOhjaus)
@@ -508,6 +507,15 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
                  FALSE,
                  122344555::TEXT,
                  'Sijoittelun tallennus')""",
+      sqlu"""insert into ehdollisen_hyvaksynnan_ehto (
+                 hakemus_oid,
+                 valintatapajono_oid,
+                 hakukohde_oid,
+                 ehdollisen_hyvaksymisen_ehto_koodi,
+                 ehdollisen_hyvaksymisen_ehto_fi,
+                 ehdollisen_hyvaksymisen_ehto_sv,
+                 ehdollisen_hyvaksymisen_ehto_en
+             ) values ($hakemusOid, $valintatapajonoOid, $hakukohdeOid, 'muu', 'muu', 'andra', 'other')""",
       sqlu"""INSERT INTO viestinnan_ohjaus(hakukohde_oid,
                  valintatapajono_oid,
                  hakemus_oid,
@@ -529,13 +537,6 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
     singleConnectionValintarekisteriDb.runBlocking(
       sqlu"""insert into ilmoittautumiset
              values (${henkiloOid}, ${hakukohdeOid}, ${Lasna.toString}::ilmoittautumistila, 'muokkaaja', 'selite')"""
-    )
-  }
-
-  def storeEhdollisenHyvaksynnanEhto() = {
-    singleConnectionValintarekisteriDb.runBlocking(
-      sqlu"""insert into ehdollisen_hyvaksynnan_ehto
-             values (${hakemusOid}, ${valintatapajonoOid}, ${hakukohdeOid}, 'muu', 'muu', 'andra', 'other')"""
     )
   }
 
