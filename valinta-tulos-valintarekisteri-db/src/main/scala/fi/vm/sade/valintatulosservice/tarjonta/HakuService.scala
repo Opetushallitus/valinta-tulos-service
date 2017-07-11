@@ -153,7 +153,8 @@ protected trait JsonHakuService {
 
   protected def toHaku(haku: HakuTarjonnassa): Haku = {
     val korkeakoulu: Boolean = haku.kohdejoukkoUri.startsWith("haunkohdejoukko_12#")
-    val sallittuKohdejoukkoKelaLinkille: Boolean = !Set("haunkohdejoukko_2#", "haunkohdejoukko_4#", "haunkohdejoukko_5#", "haunkohdejoukko_6#").exists(haku.kohdejoukkoUri.startsWith)
+    val amkopeTarkenteet = Set("haunkohdejoukontarkenne_2#", "haunkohdejoukontarkenne_4#", "haunkohdejoukontarkenne_5#", "haunkohdejoukontarkenne_6#")
+    val sallittuKohdejoukkoKelaLinkille: Boolean = !(haku.kohdejoukonTarkenne.exists(tarkenne => amkopeTarkenteet.exists(tarkenne.startsWith)))
     val yhteishaku: Boolean = haku.hakutapaUri.startsWith("hakutapa_01#")
     val varsinainenhaku: Boolean = haku.hakutyyppiUri.startsWith("hakutyyppi_01#1")
     val lisähaku: Boolean = haku.hakutyyppiUri.startsWith("hakutyyppi_03#1")
@@ -189,11 +190,19 @@ class CachedHakuService(wrappedService: HakuService) extends HakuService {
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = all()
 }
 
-private case class HakuTarjonnassa(oid: HakuOid, hakutapaUri: String, hakutyyppiUri: String, kohdejoukkoUri: String,
-                                   koulutuksenAlkamisVuosi: Option[Int], koulutuksenAlkamiskausiUri: Option[String],
+private case class HakuTarjonnassa(oid: HakuOid,
+                                   hakutapaUri: String,
+                                   hakutyyppiUri: String,
+                                   kohdejoukkoUri: String,
+                                   kohdejoukonTarkenne: Option[String],
+                                   koulutuksenAlkamisVuosi: Option[Int],
+                                   koulutuksenAlkamiskausiUri: Option[String],
                                    sijoittelu: Boolean,
-                                   parentHakuOid: Option[String], sisaltyvatHaut: Set[String], tila: String,
-                                   hakuaikas: List[Hakuaika], yhdenPaikanSaanto: YhdenPaikanSaanto,
+                                   parentHakuOid: Option[String],
+                                   sisaltyvatHaut: Set[String],
+                                   tila: String,
+                                   hakuaikas: List[Hakuaika],
+                                   yhdenPaikanSaanto: YhdenPaikanSaanto,
                                    nimi: Map[String, String],
                                    organisaatioOids: Seq[String],
                                    tarjoajaOids: Seq[String]) {
