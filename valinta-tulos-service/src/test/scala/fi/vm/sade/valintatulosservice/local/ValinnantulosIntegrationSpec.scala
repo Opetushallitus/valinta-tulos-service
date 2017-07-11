@@ -156,11 +156,16 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
   }
 
   "poistaa valinnantuloksen erillishaussa" in {
-    val update = valinnantulos.copy(poistettava = Some(true))
-
-    val Some(lastModified) = hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
-    paivita(update, true, session, lastModified) must beNone
-    hae(None, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session) must beNone
+    val erillishaunValintatapajono = ValintatapajonoOid("1.2.3.4")
+    val update = valinnantulos.copy(valintatapajonoOid = erillishaunValintatapajono,
+      ehdollisenHyvaksymisenEhtoKoodi = Some("<koodi>"),
+      ehdollisenHyvaksymisenEhtoFI = Some("syy"),
+      ehdollisenHyvaksymisenEhtoSV = Some("anledning"),
+      ehdollisenHyvaksymisenEhtoEN = Some("reason"))
+    paivita(update, true, session, Instant.now()) must beNone
+    val Some(lastModified) = hae(Some(update), update.valintatapajonoOid, update.hakemusOid, session)
+    paivita(update.copy(poistettava = Some(true)), true, session, lastModified) must beNone
+    hae(None, update.valintatapajonoOid, update.hakemusOid, session) must beNone
   }
 
   "palauttaa virheen päivitystä yritettäessä jos valinnantulosta muokattu lukemisen jälkeen" in {
