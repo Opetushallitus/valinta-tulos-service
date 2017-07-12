@@ -260,7 +260,8 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                      max(lower(il.system_time)),
                      max(upper(ih.system_time)),
                      max(va.timestamp),
-                     max(vh.timestamp))
+                     max(vh.timestamp),
+                     max(lower(hjj.system_time)))
           from valinnantilat ti
           left join valinnantulokset tu on ti.valintatapajono_oid = tu.valintatapajono_oid
             and ti.hakemus_oid = tu.hakemus_oid
@@ -271,6 +272,8 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
           left join ilmoittautumiset_history ih on ti.henkilo_oid = ih.henkilo and ti.hakukohde_oid = ih.hakukohde
           left join vastaanotot va on ti.henkilo_oid = va.henkilo and ti.hakukohde_oid = va.hakukohde
           left join deleted_vastaanotot vh on va.deleted = vh.id and vh.id >= 0
+          left join hyvaksytyt_ja_julkaistut_hakutoiveet as hjj on hjj.henkilo = ti.henkilo_oid
+              and hjj.hakukohde = ti.hakukohde_oid
           where ti.hakukohde_oid = ${hakukohdeOid}""".as[Option[Instant]].head
   }
 
@@ -283,7 +286,8 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                      max(lower(il.system_time)),
                      max(upper(ih.system_time)),
                      max(va.timestamp),
-                     max(vh.timestamp))
+                     max(vh.timestamp),
+                     max(lower(hjj.system_time)))
           from valinnantilat ti
           left join valinnantulokset tu on ti.valintatapajono_oid = tu.valintatapajono_oid
             and ti.hakemus_oid = tu.hakemus_oid
@@ -294,6 +298,8 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
           left join ilmoittautumiset_history ih on ti.henkilo_oid = ih.henkilo and ti.hakukohde_oid = ih.hakukohde
           left join vastaanotot va on ti.henkilo_oid = va.henkilo and ti.hakukohde_oid = va.hakukohde
           left join deleted_vastaanotot vh on va.deleted = vh.id and vh.id >= 0
+          left join hyvaksytyt_ja_julkaistut_hakutoiveet as hjj on hjj.henkilo = ti.henkilo_oid
+              and hjj.hakukohde = ti.hakukohde_oid
           where ti.valintatapajono_oid = ${valintatapajonoOid}""".as[Option[Instant]].head
   }
 
@@ -307,7 +313,8 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                      max(lower(ehto.system_time)),
                      max(upper(ehto_h.system_time)),
                      max(va.timestamp),
-                     max(vh.timestamp))
+                     max(vh.timestamp),
+                     max(lower(hjj.system_time)))
           from valinnantilat ti
           left join valinnantulokset tu on ti.valintatapajono_oid = tu.valintatapajono_oid
             and ti.hakemus_oid = tu.hakemus_oid
@@ -320,6 +327,8 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               and ti.hakukohde_oid = va.hakukohde
           left join deleted_vastaanotot vh on va.deleted = vh.id
               and vh.id >= 0
+          left join hyvaksytyt_ja_julkaistut_hakutoiveet as hjj on hjj.henkilo = ti.henkilo_oid
+              and hjj.hakukohde = ti.hakukohde_oid
           where ti.valintatapajono_oid = ${valintatapajonoOid}
           group by ti.hakemus_oid""".as[(HakemusOid, Instant)].map(_.toSet)
   }
