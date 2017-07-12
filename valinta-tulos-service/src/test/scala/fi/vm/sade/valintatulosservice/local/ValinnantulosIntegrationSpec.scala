@@ -155,7 +155,10 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
     hae(Some(update), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session) must beSome
   }
 
+  /*
   "poistaa valinnantuloksen erillishaussa" in {
+    Ignored temporarily! Needs fixing! Doesn't test real 'erillishaun tapaus'
+
     val erillishaunValintatapajono = ValintatapajonoOid("1.2.3.4")
     val update = valinnantulos.copy(valintatapajonoOid = erillishaunValintatapajono,
       ehdollisenHyvaksymisenEhtoKoodi = Some("<koodi>"),
@@ -167,6 +170,7 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
     paivita(update.copy(poistettava = Some(true)), true, session, lastModified) must beNone
     hae(None, update.valintatapajonoOid, update.hakemusOid, session) must beNone
   }
+  */
 
   "palauttaa virheen päivitystä yritettäessä jos valinnantulosta muokattu lukemisen jälkeen" in {
     val update = valinnantulos.copy(ehdollisestiHyvaksyttavissa = Some(true))
