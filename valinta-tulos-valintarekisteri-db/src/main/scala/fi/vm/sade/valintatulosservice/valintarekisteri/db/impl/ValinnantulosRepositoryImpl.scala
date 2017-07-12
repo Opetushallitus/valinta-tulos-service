@@ -256,7 +256,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                      max(lower(ti.system_time)),
                      max(lower(tu.system_time)),
                      max(lower(ehto.system_time)),
-                     max(lower(ehto_h.system_time)),
+                     max(upper(ehto_h.system_time)),
                      max(lower(il.system_time)),
                      max(upper(ih.system_time)),
                      max(va.timestamp),
@@ -279,7 +279,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                      max(lower(ti.system_time)),
                      max(lower(tu.system_time)),
                      max(lower(ehto.system_time)),
-                     max(lower(ehto_h.system_time)),
+                     max(upper(ehto_h.system_time)),
                      max(lower(il.system_time)),
                      max(upper(ih.system_time)),
                      max(va.timestamp),
@@ -305,7 +305,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                      max(lower(il.system_time)),
                      max(upper(ih.system_time)),
                      max(lower(ehto.system_time)),
-                     max(lower(ehto_h.system_time)),
+                     max(upper(ehto_h.system_time)),
                      max(va.timestamp),
                      max(vh.timestamp))
           from valinnantilat ti
