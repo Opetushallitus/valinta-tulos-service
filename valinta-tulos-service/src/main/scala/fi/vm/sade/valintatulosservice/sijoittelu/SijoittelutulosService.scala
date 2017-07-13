@@ -274,8 +274,6 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
       Valintatila.harkinnanvaraisesti_hyväksytty
     } else if (!jono.getTila.isHyvaksytty && !hakutoive.isKaikkiJonotSijoiteltu) {
       Valintatila.kesken
-    } else if (valintatila == Valintatila.varalla && jono.isHyvaksyttyVarasijalta) {
-      Valintatila.hyväksytty
     } else if (valintatila == Valintatila.varalla && jono.isEiVarasijatayttoa) {
       Valintatila.kesken
     } else {
@@ -289,8 +287,6 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
       Valintatila.harkinnanvaraisesti_hyväksytty
     } else if (!jono.getTila.isHyvaksytty && !hakutoive.isKaikkiJonotSijoiteltu) {
       Valintatila.kesken
-    } else if (valintatila == Valintatila.varalla && jono.isHyvaksyttyVarasijalta) {
-      Valintatila.hyväksytty
     } else if (valintatila == Valintatila.varalla && jono.isEiVarasijatayttoa) {
       Valintatila.kesken
     } else {
