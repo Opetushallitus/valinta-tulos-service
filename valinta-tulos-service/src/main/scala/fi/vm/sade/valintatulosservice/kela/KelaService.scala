@@ -41,13 +41,18 @@ class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, orga
 
     henkilo match {
       case Some(henkilo) =>
-        val vastaanotot = valintarekisteriService.findHenkilonVastaanotot(henkilo.oidHenkilo, alkaen)
+        val vastaanototByHaku: Map[HakuOid, Set[VastaanottoRecord]] = valintarekisteriService
+          .findHenkilonVastaanotot(henkilo.oidHenkilo, alkaen).groupBy(_.hakuOid)
+
+        val kelaVastaanotot: Seq[VastaanottoRecord] = vastaanototByHaku
+          .filterKeys(hakuOid => !hakuService.getHaku(hakuOid).right.get.sallittuKohdejoukkoKelaLinkille)
+          .values.flatten.toSeq
 
         Some(fi.vm.sade.valintatulosservice.kela.Henkilo(
           henkilotunnus = henkilo.hetu,
           sukunimi = henkilo.sukunimi,
           etunimet = henkilo.etunimet,
-          vastaanotot = recordsToVastaanotot(vastaanotot.toSeq)))
+          vastaanotot = recordsToVastaanotot(kelaVastaanotot)))
       case _ =>
         None
     }
