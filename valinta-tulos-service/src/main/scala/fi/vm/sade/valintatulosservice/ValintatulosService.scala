@@ -703,10 +703,10 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
   private def peruValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua(tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) = {
     if (haku.käyttääSijoittelua) {
       val firstFinished = tulokset.indexWhere { t =>
-        isHyväksytty(t.valintatila)
+        isHyväksytty(t.valintatila) || t.valintatila == Valintatila.perunut
       }
       tulokset.zipWithIndex.map {
-        case (tulos, index) if haku.käyttääSijoittelua && firstFinished > -1 && index > firstFinished && tulos.valintatila == Valintatila.kesken =>
+        case (tulos, index) if firstFinished > -1 && index > firstFinished && tulos.valintatila == Valintatila.kesken =>
           logger.debug("peruValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua valintatila > peruuntunut {}", index)
           tulos.copy(valintatila = Valintatila.peruuntunut)
         case (tulos, _) =>
