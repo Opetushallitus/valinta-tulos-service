@@ -389,7 +389,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
       "Valintatulos hyvaksytty varasijalta" in {
         // VARALLA KESKEN true ( hyvaksyttyVarasijalta true )
         useFixture("varalla-valintatulos-hyvaksytty-varasijalta-flag.json", hakuFixture = hakuFixture, hakemusFixtures = List( "00000441369-flipped"))
-        checkHakutoiveState(getHakutoive("1.2.246.562.5.16303028779"), Valintatila.varalla, Vastaanottotila.kesken, Vastaanotettavuustila.vastaanotettavissa_sitovasti, true)
+        checkHakutoiveState(getHakutoive("1.2.246.562.5.16303028779"), Valintatila.varalla, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
       }
     }
 
