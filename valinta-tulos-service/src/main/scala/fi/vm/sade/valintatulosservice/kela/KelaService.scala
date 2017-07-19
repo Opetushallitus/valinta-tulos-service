@@ -45,7 +45,7 @@ class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, orga
           .findHenkilonVastaanotot(henkilo.oidHenkilo, alkaen).groupBy(_.hakuOid)
 
         val kelaVastaanotot: Seq[VastaanottoRecord] = vastaanototByHaku
-          .filterKeys(hakuOid => !hakuService.getHaku(hakuOid).right.get.sallittuKohdejoukkoKelaLinkille)
+          .filterKeys(hakuOid => hakuService.getHaku(hakuOid).right.get.sallittuKohdejoukkoKelaLinkille)
           .values.flatten.toSeq
 
         Some(fi.vm.sade.valintatulosservice.kela.Henkilo(
