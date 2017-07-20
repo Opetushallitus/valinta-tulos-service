@@ -25,7 +25,7 @@ class ValintarekisteriValintatulosRepositoryImpl(val dao: ValintarekisteriValint
 
   override def modifyValintatulos(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid,
                                   hakemusOid: HakemusOid, block: (Valintatulos) => Unit): Either[Throwable, Unit] = {
-    logger.warn("Yritettiin muokata valintatulosta, mutta Mongoon kirjoitus ei ole päällä.")
+    logger.warn("Yritettiin muokata valintatulosta, mutta Mongoon kirjoitus ei ole päällä. StackTrace:", new Exception("StackTrace"))
     Right()
   }
 
@@ -33,7 +33,7 @@ class ValintarekisteriValintatulosRepositoryImpl(val dao: ValintarekisteriValint
   override def createIfMissingAndModifyValintatulos(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid,
                                                     hakemusOid: HakemusOid, henkiloOid: String, hakuOid: HakuOid,
                                                     hakutoiveenJarjestysnumero: Int, block: (Valintatulos) => Unit): Either[Throwable, Unit] = {
-    logger.warn("Yritettiin luoda tai muokata valintatulosta, mutta Mongoon kirjoitus ei ole päällä.")
+    logger.warn("Yritettiin luoda tai muokata valintatulosta, mutta Mongoon kirjoitus ei ole päällä. StackTrace:", new Exception("StackTrace"))
     Right()
   }
 }
