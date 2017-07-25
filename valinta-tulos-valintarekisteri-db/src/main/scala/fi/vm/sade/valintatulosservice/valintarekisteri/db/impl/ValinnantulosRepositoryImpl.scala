@@ -252,8 +252,16 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
 
 
   override def getLastModifiedForHakukohde(hakukohdeOid: HakukohdeOid): DBIO[Option[Instant]] = {
-    sql"""select greatest(max(lower(ti.system_time)), max(lower(tu.system_time)), max(lower(ehto.system_time)), max(lower(ehto_h.system_time)),
-                          max(lower(il.system_time)), max(upper(ih.system_time)), max(va.timestamp), max(vh.timestamp))
+    sql"""select greatest(
+                     max(lower(ti.system_time)),
+                     max(lower(tu.system_time)),
+                     max(lower(ehto.system_time)),
+                     max(upper(ehto_h.system_time)),
+                     max(lower(il.system_time)),
+                     max(upper(ih.system_time)),
+                     max(va.timestamp),
+                     max(vh.timestamp),
+                     max(lower(hjj.system_time)))
           from valinnantilat ti
           left join valinnantulokset tu on ti.valintatapajono_oid = tu.valintatapajono_oid
             and ti.hakemus_oid = tu.hakemus_oid
@@ -264,12 +272,22 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
           left join ilmoittautumiset_history ih on ti.henkilo_oid = ih.henkilo and ti.hakukohde_oid = ih.hakukohde
           left join vastaanotot va on ti.henkilo_oid = va.henkilo and ti.hakukohde_oid = va.hakukohde
           left join deleted_vastaanotot vh on va.deleted = vh.id and vh.id >= 0
+          left join hyvaksytyt_ja_julkaistut_hakutoiveet as hjj on hjj.henkilo = ti.henkilo_oid
+              and hjj.hakukohde = ti.hakukohde_oid
           where ti.hakukohde_oid = ${hakukohdeOid}""".as[Option[Instant]].head
   }
 
   override def getLastModifiedForValintatapajono(valintatapajonoOid: ValintatapajonoOid):DBIO[Option[Instant]] = {
-    sql"""select greatest(max(lower(ti.system_time)), max(lower(tu.system_time)), max(lower(ehto.system_time)), max(lower(ehto_h.system_time)),
-                          max(lower(il.system_time)), max(upper(ih.system_time)), max(va.timestamp), max(vh.timestamp))
+    sql"""select greatest(
+                     max(lower(ti.system_time)),
+                     max(lower(tu.system_time)),
+                     max(lower(ehto.system_time)),
+                     max(upper(ehto_h.system_time)),
+                     max(lower(il.system_time)),
+                     max(upper(ih.system_time)),
+                     max(va.timestamp),
+                     max(vh.timestamp),
+                     max(lower(hjj.system_time)))
           from valinnantilat ti
           left join valinnantulokset tu on ti.valintatapajono_oid = tu.valintatapajono_oid
             and ti.hakemus_oid = tu.hakemus_oid
@@ -280,12 +298,23 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
           left join ilmoittautumiset_history ih on ti.henkilo_oid = ih.henkilo and ti.hakukohde_oid = ih.hakukohde
           left join vastaanotot va on ti.henkilo_oid = va.henkilo and ti.hakukohde_oid = va.hakukohde
           left join deleted_vastaanotot vh on va.deleted = vh.id and vh.id >= 0
+          left join hyvaksytyt_ja_julkaistut_hakutoiveet as hjj on hjj.henkilo = ti.henkilo_oid
+              and hjj.hakukohde = ti.hakukohde_oid
           where ti.valintatapajono_oid = ${valintatapajonoOid}""".as[Option[Instant]].head
   }
 
   override def getLastModifiedForValintatapajononHakemukset(valintatapajonoOid: ValintatapajonoOid):DBIO[Set[(HakemusOid, Instant)]] = {
-    sql"""select ti.hakemus_oid, greatest(max(lower(ti.system_time)), max(lower(tu.system_time)), max(lower(il.system_time)), max(upper(ih.system_time)),
-                                          max(lower(ehto.system_time)), max(lower(ehto_h.system_time)))
+    sql"""select ti.hakemus_oid,
+                 greatest(
+                     max(lower(ti.system_time)),
+                     max(lower(tu.system_time)),
+                     max(lower(il.system_time)),
+                     max(upper(ih.system_time)),
+                     max(lower(ehto.system_time)),
+                     max(upper(ehto_h.system_time)),
+                     max(va.timestamp),
+                     max(vh.timestamp),
+                     max(lower(hjj.system_time)))
           from valinnantilat ti
           left join valinnantulokset tu on ti.valintatapajono_oid = tu.valintatapajono_oid
             and ti.hakemus_oid = tu.hakemus_oid
@@ -294,6 +323,12 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             and ti.hakemus_oid = ehto_h.hakemus_oid
           left join ilmoittautumiset il on ti.henkilo_oid = il.henkilo and ti.hakukohde_oid = il.hakukohde
           left join ilmoittautumiset_history ih on ti.henkilo_oid = ih.henkilo and ti.hakukohde_oid = ih.hakukohde
+          left join vastaanotot va on ti.henkilo_oid = va.henkilo
+              and ti.hakukohde_oid = va.hakukohde
+          left join deleted_vastaanotot vh on va.deleted = vh.id
+              and vh.id >= 0
+          left join hyvaksytyt_ja_julkaistut_hakutoiveet as hjj on hjj.henkilo = ti.henkilo_oid
+              and hjj.hakukohde = ti.hakukohde_oid
           where ti.valintatapajono_oid = ${valintatapajonoOid}
           group by ti.hakemus_oid""".as[(HakemusOid, Instant)].map(_.toSet)
   }
