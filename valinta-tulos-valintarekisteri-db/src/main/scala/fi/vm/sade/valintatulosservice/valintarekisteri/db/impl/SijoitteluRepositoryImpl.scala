@@ -114,7 +114,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
   override def getSijoitteluajonHakemukset(sijoitteluajoId:Long): List[HakemusRecord] =
     timed(s"Sijoitteluajon $sijoitteluajoId hakemusten haku", 100) {
       runBlocking(
-      sql"""select j.hakija_oid, j.hakemus_oid, j.pisteet, j.prioriteetti, j.jonosija,
+      sql"""select vt.henkilo_oid, j.hakemus_oid, j.pisteet, j.prioriteetti, j.jonosija,
               j.tasasijajonosija, vt.tila, t_k.tilankuvaus_hash, t_k.tarkenteen_lisatieto, j.hyvaksytty_harkinnanvaraisesti, j.varasijan_numero,
               j.onko_muuttunut_viime_sijoittelussa,
               j.siirtynyt_toisesta_valintatapajonosta, j.valintatapajono_oid
@@ -136,7 +136,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
   override def getHakukohteenHakemukset(sijoitteluajoId: Long, hakukohdeOid: HakukohdeOid): List[HakemusRecord] =
     timed(s"Sijoitteluajon $sijoitteluajoId hakukohteen $hakukohdeOid hakemuksien haku", 100) {
       runBlocking(
-      sql"""select j.hakija_oid, j.hakemus_oid, j.pisteet, j.prioriteetti, j.jonosija,
+      sql"""select vt.henkilo_oid, j.hakemus_oid, j.pisteet, j.prioriteetti, j.jonosija,
               j.tasasijajonosija, vt.tila, t_k.tilankuvaus_hash, t_k.tarkenteen_lisatieto, j.hyvaksytty_harkinnanvaraisesti, j.varasijan_numero,
               j.onko_muuttunut_viime_sijoittelussa,
               j.siirtynyt_toisesta_valintatapajonosta, j.valintatapajono_oid
@@ -164,7 +164,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
                        with vj as (
                          select oid from valintatapajonot where sijoitteluajo_id = ${sijoitteluajoId}
                          order by oid desc limit ${chunkSize} offset ${offset} )
-                         select j.hakija_oid, j.hakemus_oid, j.pisteet, j.prioriteetti, j.jonosija,
+                         select vt.henkilo_oid, j.hakemus_oid, j.pisteet, j.prioriteetti, j.jonosija,
               j.tasasijajonosija, vt.tila, t_k.tilankuvaus_hash, t_k.tarkenteen_lisatieto, j.hyvaksytty_harkinnanvaraisesti, j.varasijan_numero,
               j.onko_muuttunut_viime_sijoittelussa,
               j.siirtynyt_toisesta_valintatapajonosta, j.valintatapajono_oid

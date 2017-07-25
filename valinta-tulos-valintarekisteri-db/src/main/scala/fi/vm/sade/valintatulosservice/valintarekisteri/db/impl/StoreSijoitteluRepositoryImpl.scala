@@ -153,9 +153,9 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
 
   private def createStatement(sql:String) = (connection:java.sql.Connection) => connection.prepareStatement(sql)
 
-  private def createJonosijaStatement = createStatement("""insert into jonosijat (valintatapajono_oid, sijoitteluajo_id, hakukohde_oid, hakemus_oid, hakija_oid, prioriteetti,
+  private def createJonosijaStatement = createStatement("""insert into jonosijat (valintatapajono_oid, sijoitteluajo_id, hakukohde_oid, hakemus_oid, prioriteetti,
           jonosija, varasijan_numero, onko_muuttunut_viime_sijoittelussa, pisteet, tasasijajonosija, hyvaksytty_harkinnanvaraisesti,
-          siirtynyt_toisesta_valintatapajonosta, tila) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::valinnantila)""")
+          siirtynyt_toisesta_valintatapajonosta, tila) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::valinnantila)""")
 
   private def createJonosijaInsertRow(sijoitteluajoId: Long, hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemus: SijoitteluajonHakemusWrapper, statement: PreparedStatement) = {
     val SijoitteluajonHakemusWrapper(hakemusOid, hakijaOid, prioriteetti, jonosija, varasijanNumero,

@@ -380,7 +380,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
   private def findValintatapajononJonosijat(valintatapajonoOid:String): Seq[Hakemus] = {
     val hakemukset = singleConnectionValintarekisteriDb.runBlocking(
       sql"""select
-                j.hakija_oid,
+                vt.henkilo_oid,
                 j.hakemus_oid,
                 j.pisteet,
                 j.prioriteetti,
