@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice
 
 import java.time.Instant
+import java.util.ConcurrentModificationException
 
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
@@ -113,10 +114,9 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
       if (vastaanottoResults.nonEmpty) {
         return vastaanottoResults
       }
-      val vanhatValinnantulokset = valinnantulosRepository.getValinnantuloksetAndLastModifiedDatesForValintatapajono(valintatapajonoOid)
-      val lastModifiedByHakemusOid = vanhatValinnantulokset.map(t => t._2.hakemusOid -> t._1).toMap
-      val vanhatValinnantuloksetByHakemusOid = yhdenPaikanSaannos(vanhatValinnantulokset.map(_._2))
-        .fold(throw _, vs => vs.map(v => v.hakemusOid -> (lastModifiedByHakemusOid(v.hakemusOid), v)).toMap)
+      val vanhatValinnantulokset = yhdenPaikanSaannos(
+        valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid)
+      ).fold(throw _, vs => vs.map(v => v.hakemusOid -> v).toMap)
       val strategy = if (erillishaku) {
         new ErillishaunValinnantulosStrategy(
           auditInfo,
@@ -140,7 +140,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
           audit
         )
       }
-      handle(strategy, valinnantulokset, vanhatValinnantuloksetByHakemusOid, ifUnmodifiedSince)
+      handle(strategy, valinnantulokset, vanhatValinnantulokset, ifUnmodifiedSince)
     }) match {
       case Right(l) => l
       case Left(t) => throw t
@@ -150,22 +150,22 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
   private def handle(s: ValinnantulosStrategy, uusi: Valinnantulos, vanha: Option[Valinnantulos]) = {
     for {
       _ <- s.validate(uusi, vanha).right
-      _ <- valinnantulosRepository.runBlockingTransactionally(s.save(uusi, vanha)).left.map(t => {
-        logger.warn(s"Valinnantuloksen $uusi tallennus epäonnistui", t)
-        ValinnantulosUpdateStatus(500, s"Valinnantuloksen tallennus epäonnistui", uusi.valintatapajonoOid, uusi.hakemusOid)
-      }).right
+      _ <- valinnantulosRepository.runBlockingTransactionally(s.save(uusi, vanha)).left.map {
+        case t: ConcurrentModificationException =>
+          logger.warn(s"Valinnantuloksen $uusi tallennus epäonnistui", t)
+          ValinnantulosUpdateStatus(409, "Hakemus on muuttunut lukemisen jälkeen", uusi.valintatapajonoOid, uusi.hakemusOid)
+        case t =>
+          logger.warn(s"Valinnantuloksen $uusi tallennus epäonnistui", t)
+          ValinnantulosUpdateStatus(500, s"Valinnantuloksen tallennus epäonnistui", uusi.valintatapajonoOid, uusi.hakemusOid)
+      }.right
     } yield s.audit(uusi, vanha)
   }
 
-  private def handle(s: ValinnantulosStrategy, valinnantulokset: List[Valinnantulos], vanhatValinnantulokset: Map[HakemusOid, (Instant, Valinnantulos)], ifUnmodifiedSince: Option[Instant]): List[ValinnantulosUpdateStatus] = {
+  private def handle(s: ValinnantulosStrategy, valinnantulokset: List[Valinnantulos], vanhatValinnantulokset: Map[HakemusOid, Valinnantulos], ifUnmodifiedSince: Option[Instant]): List[ValinnantulosUpdateStatus] = {
     valinnantulokset.map(uusiValinnantulos => {
       vanhatValinnantulokset.get(uusiValinnantulos.hakemusOid) match {
-        case Some((_, vanhaValinnantulos)) if !s.hasChange(uusiValinnantulos, vanhaValinnantulos) => Right()
-        case Some((lastModified, _)) if ifUnmodifiedSince.isDefined && lastModified.isAfter(ifUnmodifiedSince.get) =>
-          logger.warn(s"Hakemus ${uusiValinnantulos.hakemusOid} valintatapajonossa ${uusiValinnantulos.valintatapajonoOid} " +
-            s"on muuttunut $lastModified lukemisajan ${ifUnmodifiedSince.get} jälkeen.")
-          Left(ValinnantulosUpdateStatus(409, s"Hakemus on muuttunut lukemisajan ${ifUnmodifiedSince.get} jälkeen", uusiValinnantulos.valintatapajonoOid, uusiValinnantulos.hakemusOid))
-        case Some((_, vanhaValinnantulos)) => handle(s, uusiValinnantulos, Some(vanhaValinnantulos))
+        case Some(vanhaValinnantulos) if !s.hasChange(uusiValinnantulos, vanhaValinnantulos) => Right()
+        case Some(vanhaValinnantulos) => handle(s, uusiValinnantulos, Some(vanhaValinnantulos))
         case None => handle(s, uusiValinnantulos, None)
       }
     }).collect { case Left(s) => s }

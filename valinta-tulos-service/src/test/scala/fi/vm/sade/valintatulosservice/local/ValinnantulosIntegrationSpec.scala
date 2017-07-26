@@ -173,12 +173,18 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
   */
 
   "palauttaa virheen päivitystä yritettäessä jos valinnantulosta muokattu lukemisen jälkeen" in {
-    val update = valinnantulos.copy(ehdollisestiHyvaksyttavissa = Some(true))
+    val update = valinnantulos.copy(
+      ehdollisestiHyvaksyttavissa = Some(true),
+      ehdollisenHyvaksymisenEhtoKoodi = Some("muu"),
+      ehdollisenHyvaksymisenEhtoFI = Some("muu"),
+      ehdollisenHyvaksymisenEhtoSV = Some("muu"),
+      ehdollisenHyvaksymisenEhtoEN = Some("muu")
+    )
 
     val Some(lastModified) = hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
     val ifUnmodifiedSince = lastModified.minusSeconds(2)
     paivita(update, false, session, ifUnmodifiedSince) must beSome(
-      ValinnantulosUpdateStatus(409, s"Hakemus on muuttunut lukemisajan $ifUnmodifiedSince jälkeen", valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid)
+      ValinnantulosUpdateStatus(409, s"Hakemus on muuttunut lukemisen jälkeen", valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid)
     )
     hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session) must beSome
   }
@@ -199,7 +205,7 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
     hae(Some(updateKesken), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
     val ifUnmodifiedSince = lastModified.minusSeconds(2)
     paivita(update, false, session, ifUnmodifiedSince) must beSome(
-      ValinnantulosUpdateStatus(409, s"Hakemus on muuttunut lukemisajan $ifUnmodifiedSince jälkeen", valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid)
+      ValinnantulosUpdateStatus(409, s"Hakemus on muuttunut lukemisen jälkeen", valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid)
     )
     hae(Some(updateKesken), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session) must beSome
   }
