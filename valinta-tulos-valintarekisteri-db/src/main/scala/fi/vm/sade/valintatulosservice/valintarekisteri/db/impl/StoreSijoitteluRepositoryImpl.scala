@@ -158,7 +158,7 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
           siirtynyt_toisesta_valintatapajonosta, tila) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::valinnantila)""")
 
   private def createJonosijaInsertRow(sijoitteluajoId: Long, hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemus: SijoitteluajonHakemusWrapper, statement: PreparedStatement) = {
-    val SijoitteluajonHakemusWrapper(hakemusOid, hakijaOid, prioriteetti, jonosija, varasijanNumero,
+    val SijoitteluajonHakemusWrapper(hakemusOid, _, prioriteetti, jonosija, varasijanNumero,
     onkoMuuttunutViimeSijoittelussa, pisteet, tasasijaJonosija, hyvaksyttyHarkinnanvaraisesti, siirtynytToisestaValintatapajonosta,
     valinnantila, tilanKuvaukset, tilankuvauksenTarkenne, tarkenteenLisatieto, hyvaksyttyHakijaryhmista, _) = hakemus
 
@@ -166,19 +166,18 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
     statement.setLong(2, sijoitteluajoId)
     statement.setString(3, hakukohdeOid.toString)
     statement.setString(4, hakemusOid.toString)
-    statement.setString(5, hakijaOid.orNull)
-    statement.setInt(6, prioriteetti)
-    statement.setInt(7, jonosija)
+    statement.setInt(5, prioriteetti)
+    statement.setInt(6, jonosija)
     varasijanNumero match {
-      case Some(x) => statement.setInt(8, x)
-      case _ => statement.setNull(8, Types.INTEGER)
+      case Some(x) => statement.setInt(7, x)
+      case _ => statement.setNull(7, Types.INTEGER)
     }
-    statement.setBoolean(9, onkoMuuttunutViimeSijoittelussa)
-    statement.setBigDecimal(10, pisteet.map(_.bigDecimal).orNull)
-    statement.setInt(11, tasasijaJonosija)
-    statement.setBoolean(12, hyvaksyttyHarkinnanvaraisesti)
-    statement.setBoolean(13, siirtynytToisestaValintatapajonosta)
-    statement.setString(14, valinnantila.toString)
+    statement.setBoolean(8, onkoMuuttunutViimeSijoittelussa)
+    statement.setBigDecimal(9, pisteet.map(_.bigDecimal).orNull)
+    statement.setInt(10, tasasijaJonosija)
+    statement.setBoolean(11, hyvaksyttyHarkinnanvaraisesti)
+    statement.setBoolean(12, siirtynytToisestaValintatapajonosta)
+    statement.setString(13, valinnantila.toString)
     statement.addBatch()
   }
 
