@@ -27,7 +27,7 @@ class PublicValintaesitysServlet(valintaesitysService: ValintaesitysService, val
     parameter queryParam[String]("ticket").description("CAS ticket")
     )
   get("/", operation(valintaesitysSwagger)) {
-    val authenticated = authenticate
+    implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
     Ok(valintaesitysService.get(parseHakukohdeOid, auditInfo))
   }
