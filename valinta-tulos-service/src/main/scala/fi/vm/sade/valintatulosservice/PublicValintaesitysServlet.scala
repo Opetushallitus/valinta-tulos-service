@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
+import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SessionRepository, Valintaesitys}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakukohdeOid
 import org.scalatra.Ok
@@ -23,9 +24,12 @@ class PublicValintaesitysServlet(valintaesitysService: ValintaesitysService, val
   val valintaesitysSwagger: OperationBuilder = (apiOperation[List[Valintaesitys]]("valintaesityksien haku")
     summary "Hae valintaesityksiä"
     parameter queryParam[String]("hakukohdeOid").description("Hakukohde OID")
+    parameter queryParam[String]("ticket").description("CAS ticket")
     )
   get("/", operation(valintaesitysSwagger)) {
-    Ok(valintaesitysService.get(parseHakukohdeOid, auditInfo(authenticate)))
+    val authenticated = authenticate
+    authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
+    Ok(valintaesitysService.get(parseHakukohdeOid, auditInfo))
   }
 
 }
