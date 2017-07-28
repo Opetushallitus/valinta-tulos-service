@@ -155,11 +155,13 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         valintarekisteriDb
       )
 
-      context.addFilter("cas", createCasLdapFilter(casSessionService, appConfig.securityContext.requiredLdapRoles))
+      context.addFilter("hakuCas", createCasLdapFilter(casSessionService, appConfig.securityContext.requiredLdapRoles))
         .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/haku/*")
+      context.addFilter("valintaesitysCas", createCasLdapFilter(casSessionService, appConfig.securityContext.requiredLdapRoles))
+        .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/valintaesitys/*")
       context.addFilter("kelaCas", createCasLdapFilter(casSessionService, Set.empty))
         .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/kela/*")
-        context.mount(new PublicValintatulosServlet(valintatulosService, vastaanottoService, ilmoittautumisService), "/cas/haku")
+      context.mount(new PublicValintatulosServlet(valintatulosService, vastaanottoService, ilmoittautumisService), "/cas/haku")
       context.mount(new KelaServlet(audit, new KelaService(HakijaResolver(appConfig), hakuService, organisaatioService, valintarekisteriDb), valintarekisteriDb), "/cas/kela")
       context.mount(new KelaHealthCheckServlet(audit, valintarekisteriDb, appConfig, new VtsKelaAuthenticationClient(appConfig)), "/health-check/kela")
 
@@ -171,7 +173,8 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new HyvaksymiskirjeServlet(hyvaksymiskirjeService, valintarekisteriDb), "/auth/hyvaksymiskirje")
       context.mount(new LukuvuosimaksuServletWithCAS(lukuvuosimaksuService, valintarekisteriDb, hakuService, authorizer), "/auth/lukuvuosimaksu")
       context.mount(new MuutoshistoriaServlet(valinnantulosService, valintarekisteriDb), "/auth/muutoshistoria")
-      context.mount(new ValintaesitysServlet(valintaesitysService, valintarekisteriDb), "/auth/valintaesitys")
+      context.mount(new PrivateValintaesitysServlet(valintaesitysService, valintarekisteriDb), "/auth/valintaesitys")
+      context.mount(new PublicValintaesitysServlet(valintaesitysService, valintarekisteriDb), "/cas/valintaesitys")
     }
   }
 

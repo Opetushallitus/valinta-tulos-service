@@ -7,7 +7,7 @@ import org.scalatra.Ok
 import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 
-class ValintaesitysServlet(valintaesitysService: ValintaesitysService,
+class PrivateValintaesitysServlet(valintaesitysService: ValintaesitysService,
                            val sessionRepository: SessionRepository
                           )(implicit val swagger: Swagger)
   extends VtsServletBase with CasAuthenticatedServlet {
