@@ -1,6 +1,5 @@
 package fi.vm.sade.valintatulosservice
 
-import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SessionRepository, Valintaesitys}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakukohdeOid
 import org.scalatra.Ok
@@ -26,9 +25,7 @@ class PublicValintaesitysServlet(valintaesitysService: ValintaesitysService, val
     parameter queryParam[String]("hakukohdeOid").description("Hakukohde OID")
     )
   get("/", operation(valintaesitysSwagger)) {
-    implicit val authenticated = authenticate
-    authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
-    Ok(valintaesitysService.get(parseHakukohdeOid, auditInfo))
+    Ok(valintaesitysService.get(parseHakukohdeOid, auditInfo(authenticate)))
   }
 
 }
