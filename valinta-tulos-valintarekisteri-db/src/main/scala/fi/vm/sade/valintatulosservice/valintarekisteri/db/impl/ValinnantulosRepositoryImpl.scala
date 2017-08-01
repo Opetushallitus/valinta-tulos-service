@@ -92,7 +92,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                 (deletedId, ts, KentanMuutos(field = "Vastaanoton poistaja", from = None, to = poistaja)),
                 (deletedId, ts, KentanMuutos(field = "Vastaanoton poiston selite", from = None, to = selite))
               )
-          }).map(formMuutoshistoria),
+          }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten),
       sql"""(select i.tila, lower(i.system_time) as ts, i.transaction_id
             from ilmoittautumiset as i
             join valinnantilat as ti on ti.hakukohde_oid = i.hakukohde
