@@ -68,7 +68,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               (txid, ts, KentanMuutos(field = "hyvaksyPeruuntunut", from = None, to = hyvaksyPeruuntunut))
             )
         }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten),
-      sql"""select v.action, system_time, v.timestamp
+      sql"""select v.action, lower(ti.system_time), v.timestamp
             from vastaanotot as v
             join valinnantilat as ti on ti.hakukohde_oid = v.hakukohde
                 and ti.henkilo_oid = v.henkilo
