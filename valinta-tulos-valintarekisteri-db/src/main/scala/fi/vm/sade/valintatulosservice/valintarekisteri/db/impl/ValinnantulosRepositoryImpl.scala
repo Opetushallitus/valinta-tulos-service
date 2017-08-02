@@ -68,15 +68,15 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               (txid, ts, KentanMuutos(field = "hyvaksyPeruuntunut", from = None, to = hyvaksyPeruuntunut))
             )
         }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten),
-      sql"""select v.action, v.timestamp
+      sql"""select v.action, system_time, v.timestamp
             from vastaanotot as v
             join valinnantilat as ti on ti.hakukohde_oid = v.hakukohde
                 and ti.henkilo_oid = v.henkilo
             where ti.valintatapajono_oid = ${valintatapajonoOid}
                 and ti.hakemus_oid = ${hakemusOid}
             order by v.timestamp asc
-        """.as[(ValintatuloksenTila, OffsetDateTime)]
-        .map(r => formMuutoshistoria(r.map(t => (0, t._2, KentanMuutos(field = "vastaanottotila", from = None, to = t._1))))),
+        """.as[(ValintatuloksenTila, OffsetDateTime, OffsetDateTime)]
+        .map(r => formMuutoshistoria(r.map(t => (t._2, t._3, KentanMuutos(field = "vastaanottotila", from = None, to = t._1))))),
         sql"""select v.action, vd.id, vd.poistaja, vd.selite, vd.timestamp
             from vastaanotot as v
             join deleted_vastaanotot as vd on vd.id = v.deleted
