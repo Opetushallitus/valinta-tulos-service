@@ -85,7 +85,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             where ti.valintatapajono_oid = ${valintatapajonoOid}
                 and ti.hakemus_oid = ${hakemusOid}
             order by v.timestamp asc
-        """.as[(Valinnantila, OffsetDateTime)]
+        """.as[(ValintatuloksenTila, OffsetDateTime)]
           .map(r => formMuutoshistoria(r.map(t => (0, t._2, KentanMuutos(field = "vastaanottotila", from = Some(t._1), to = Vastaanottotila.kesken))))),
       sql"""(select i.tila, lower(i.system_time) as ts, i.transaction_id
             from ilmoittautumiset as i
