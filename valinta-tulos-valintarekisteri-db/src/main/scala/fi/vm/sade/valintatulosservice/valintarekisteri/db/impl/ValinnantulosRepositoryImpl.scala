@@ -35,7 +35,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     }
   }
 
-  type MuutosDBIOAction = DBIOAction[Iterable[(Long, OffsetDateTime, KentanMuutos)], NoStream, Effect]
+  type MuutosDBIOAction = DBIOAction[Iterable[(Any, OffsetDateTime, KentanMuutos)], NoStream, Effect]
 
   private def getValinnantilaMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {
     sql"""(select tila, tilan_viimeisin_muutos, lower(system_time) as ts, transaction_id
@@ -100,7 +100,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                 and ti.hakemus_oid = ${hakemusOid}
             order by v.timestamp asc
         """.as[(ValintatuloksenTila, OffsetDateTime)]
-      .map(r => formMuutoshistoria(r.map(t => (0L, t._2, KentanMuutos(field = "vastaanottotila", from = None, to = t._1)))))
+      .map(r => formMuutoshistoria(r.map(t => (t._2, t._2, KentanMuutos(field = "vastaanottotila", from = None, to = t._1)))))
   }
 
   private def getVastaanotonPoistoMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {
