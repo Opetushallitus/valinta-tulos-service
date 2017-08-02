@@ -85,7 +85,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             where ti.valintatapajono_oid = ${valintatapajonoOid}
                 and ti.hakemus_oid = ${hakemusOid}
             order by v.timestamp asc
-        """.as[(Long, String, String, OffsetDateTime)]
+        """.as[(ValintatuloksenTila, Long, String, String, OffsetDateTime)]
           .map(_.flatMap {
             case (vanhaTila, deletedId, poistaja, selite, ts) =>
               List(
