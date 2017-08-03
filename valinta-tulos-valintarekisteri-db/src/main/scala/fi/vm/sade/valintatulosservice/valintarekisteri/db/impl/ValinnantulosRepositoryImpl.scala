@@ -17,10 +17,28 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
 trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with ValintarekisteriRepository {
-  override def getMuutoshistoriaForHakemus(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[Muutos] =
+  override def getMuutoshistoriaForHakemus(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[Muutos] = {
     timed(s"Getting muutoshistoria for hakemus $hakemusOid in valintatapajono $valintatapajonoOid") {
-      runBlocking(DBIO.sequence(List(
-      sql"""(select tila, tilan_viimeisin_muutos, lower(system_time) as ts, transaction_id
+      val actions: List[MuutosDBIOAction] = List(
+        getValinnantilaMuutos(hakemusOid, valintatapajonoOid),
+        getValinnantulosMuutos(hakemusOid, valintatapajonoOid),
+        getVastaanottoMuutos(hakemusOid, valintatapajonoOid),
+        getVastaanotonPoistoMuutos(hakemusOid, valintatapajonoOid),
+        getIlmoittautumisMuutos(hakemusOid, valintatapajonoOid)
+      )
+      runBlocking(DBIO.sequence(actions).map(r => r.flatten
+        .groupBy(_._1)
+        .mapValues(changes => Muutos(changes = changes.map(_._3), timestamp = changes.map(_._2).max))
+        .values.toList
+        .sortBy(_.timestamp).reverse)
+      )
+    }
+  }
+
+  type MuutosDBIOAction = DBIOAction[Iterable[(Long, OffsetDateTime, KentanMuutos)], NoStream, Effect]
+
+  private def getValinnantilaMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {
+    sql"""(select tila, tilan_viimeisin_muutos, lower(system_time) as ts, transaction_id
             from valinnantilat
             where valintatapajono_oid = ${valintatapajonoOid}
                 and hakemus_oid = ${hakemusOid}
@@ -31,14 +49,17 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                 and hakemus_oid = ${hakemusOid})
             order by ts asc
         """.as[(Valinnantila, OffsetDateTime, OffsetDateTime, Long)]
-        .map(_.flatMap {
-          case (tila, tilanViimeisinMuutos, ts,txid) =>
-            List(
-              (txid, ts, KentanMuutos(field = "valinnantila", from = None, to = tila)),
-              (txid, ts, KentanMuutos(field = "valinnantilanViimeisinMuutos", from = None, to = tilanViimeisinMuutos))
-            )
-        }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten),
-      sql"""(select julkaistavissa,
+      .map(_.flatMap {
+        case (tila, tilanViimeisinMuutos, ts,txid) =>
+          List(
+            (txid, ts, KentanMuutos(field = "valinnantila", from = None, to = tila)),
+            (txid, ts, KentanMuutos(field = "valinnantilanViimeisinMuutos", from = None, to = tilanViimeisinMuutos))
+          )
+      }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten)
+  }
+
+  private def getValinnantulosMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {
+    sql"""(select julkaistavissa,
                 ehdollisesti_hyvaksyttavissa,
                 hyvaksytty_varasijalta,
                 hyvaksy_peruuntunut,
@@ -59,16 +80,19 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                 and hakemus_oid = ${hakemusOid})
             order by ts asc
         """.as[(Boolean, Boolean, Boolean, Boolean, OffsetDateTime, Long)]
-        .map(_.flatMap {
-          case (julkaistavissa, ehdollisestiHyvaksyttavissa, hyvaksyttyVarasijalta, hyvaksyPeruuntunut, ts, txid) =>
-            List(
-              (txid, ts, KentanMuutos(field = "julkaistavissa", from = None, to = julkaistavissa)),
-              (txid, ts, KentanMuutos(field = "ehdollisestiHyvaksyttavissa", from = None, to = ehdollisestiHyvaksyttavissa)),
-              (txid, ts, KentanMuutos(field = "hyvaksyttyVarasijalta", from = None, to = hyvaksyttyVarasijalta)),
-              (txid, ts, KentanMuutos(field = "hyvaksyPeruuntunut", from = None, to = hyvaksyPeruuntunut))
-            )
-        }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten),
-      sql"""select v.action, v.timestamp
+      .map(_.flatMap {
+        case (julkaistavissa, ehdollisestiHyvaksyttavissa, hyvaksyttyVarasijalta, hyvaksyPeruuntunut, ts, txid) =>
+          List(
+            (txid, ts, KentanMuutos(field = "julkaistavissa", from = None, to = julkaistavissa)),
+            (txid, ts, KentanMuutos(field = "ehdollisestiHyvaksyttavissa", from = None, to = ehdollisestiHyvaksyttavissa)),
+            (txid, ts, KentanMuutos(field = "hyvaksyttyVarasijalta", from = None, to = hyvaksyttyVarasijalta)),
+            (txid, ts, KentanMuutos(field = "hyvaksyPeruuntunut", from = None, to = hyvaksyPeruuntunut))
+          )
+      }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten)
+  }
+
+  private def getVastaanottoMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {
+    sql"""select v.action, v.timestamp
             from vastaanotot as v
             join valinnantilat as ti on ti.hakukohde_oid = v.hakukohde
                 and ti.henkilo_oid = v.henkilo
@@ -76,8 +100,11 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                 and ti.hakemus_oid = ${hakemusOid}
             order by v.timestamp asc
         """.as[(ValintatuloksenTila, OffsetDateTime)]
-        .map(r => formMuutoshistoria(r.map(t => (0, t._2, KentanMuutos(field = "vastaanottotila", from = None, to = t._1))))),
-        sql"""select v.action, vd.id, vd.poistaja, vd.selite, vd.timestamp
+      .map(r => formMuutoshistoria(r.map(t => (0L, t._2, KentanMuutos(field = "vastaanottotila", from = None, to = t._1)))))
+  }
+
+  private def getVastaanotonPoistoMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {
+    sql"""select v.action, vd.id, vd.poistaja, vd.selite, vd.timestamp
             from vastaanotot as v
             join deleted_vastaanotot as vd on vd.id = v.deleted
             join valinnantilat as ti on ti.hakukohde_oid = v.hakukohde
@@ -86,15 +113,18 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                 and ti.hakemus_oid = ${hakemusOid}
             order by v.timestamp asc
         """.as[(ValintatuloksenTila, Long, String, String, OffsetDateTime)]
-          .map(_.flatMap {
-            case (vanhaTila, deletedId, poistaja, selite, ts) =>
-              List(
-                (deletedId, ts, KentanMuutos(field = "vastaanottotila", from = Some(vanhaTila), to = "Kesken (poistettu)")),
-                (deletedId, ts, KentanMuutos(field = "Vastaanoton poistaja", from = None, to = poistaja)),
-                (deletedId, ts, KentanMuutos(field = "Vastaanoton poiston selite", from = None, to = selite))
-              )
-          }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten),
-      sql"""(select i.tila, lower(i.system_time) as ts, i.transaction_id
+      .map(_.flatMap {
+        case (vanhaTila, deletedId, poistaja, selite, ts) =>
+          List(
+            (deletedId, ts, KentanMuutos(field = "vastaanottotila", from = Some(vanhaTila), to = "Kesken (poistettu)")),
+            (deletedId, ts, KentanMuutos(field = "Vastaanoton poistaja", from = None, to = poistaja)),
+            (deletedId, ts, KentanMuutos(field = "Vastaanoton poiston selite", from = None, to = selite))
+          )
+      }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten)
+  }
+
+  private def getIlmoittautumisMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {
+    sql"""(select i.tila, lower(i.system_time) as ts, i.transaction_id
             from ilmoittautumiset as i
             join valinnantilat as ti on ti.hakukohde_oid = i.hakukohde
                 and ti.henkilo_oid = i.henkilo
@@ -109,13 +139,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                 and ti.hakemus_oid = ${hakemusOid})
             order by ts asc
         """.as[(SijoitteluajonIlmoittautumistila, OffsetDateTime, Long)]
-        .map(r => formMuutoshistoria(r.map(t => (t._3, t._2, KentanMuutos(field = "ilmoittautumistila", from = None, to = t._1)))))
-      )).map(r => r.flatten
-        .groupBy(_._1)
-        .mapValues(changes => Muutos(changes = changes.map(_._3), timestamp = changes.map(_._2).max))
-        .values.toList
-        .sortBy(_.timestamp).reverse)
-      )
+      .map(r => formMuutoshistoria(r.map(t => (t._3, t._2, KentanMuutos(field = "ilmoittautumistila", from = None, to = t._1)))))
   }
 
   override def getValinnantulostenHakukohdeOiditForHaku(hakuOid: HakuOid): DBIO[List[HakukohdeOid]] = {
