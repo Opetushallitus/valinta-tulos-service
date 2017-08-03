@@ -35,7 +35,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     }
   }
 
-  type MuutosDBIOAction = DBIOAction[Iterable[(Long, OffsetDateTime, KentanMuutos)], NoStream, Effect]
+  type MuutosDBIOAction = DBIOAction[Iterable[(Any, OffsetDateTime, KentanMuutos)], NoStream, Effect]
 
   private def getValinnantilaMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {
     sql"""(select tila, tilan_viimeisin_muutos, lower(system_time) as ts, transaction_id
