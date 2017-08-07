@@ -23,7 +23,7 @@ trait DeleteSijoitteluRepositoryImpl extends DeleteSijoitteluRepository with Val
       sql"""select haku_oid, count(*) from sijoitteluajot where poistonesto = false group by haku_oid order by count desc""".as[(HakuOid,Int)])
   }
 
-  override def deleteSijoitteluajot(hakuOid: HakuOid, sijoitteluajoIds: Seq[Long]): Unit = sijoitteluajoIds.foreach(deleteSijoitteluajo(hakuOid, _))
+  override def deleteSijoitteluajot(hakuOid: HakuOid, sijoitteluajoIds: Seq[Long]): Unit = sijoitteluajoIds.sorted.foreach(deleteSijoitteluajo(hakuOid, _))
 
   override def deleteSijoitteluajo(hakuOid: HakuOid, sijoitteluajoId: Long): Unit = timed(s"Delete haun $hakuOid sijoitteluajo $sijoitteluajoId", 100) {
     val deleteOperationsWithDescriptions: Seq[(String, DBIO[Any])] = Seq(
