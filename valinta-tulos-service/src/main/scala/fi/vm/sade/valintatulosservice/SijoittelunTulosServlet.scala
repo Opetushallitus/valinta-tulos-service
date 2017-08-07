@@ -6,7 +6,6 @@ import java.util
 
 import com.google.gson.GsonBuilder
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
-import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, ValintatuloksenTila}
 import fi.vm.sade.sijoittelu.tulos.dto.HakukohdeDTO
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
@@ -17,7 +16,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra.{NotFound, Ok}
 import org.scalatra.swagger.{Swagger, SwaggerEngine}
 
-class SijoittelunTulosServlet(valintatulosService: ValintatulosService,
+class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
                               valintaesitysService: ValintaesitysService,
                               valinnantulosService: ValinnantulosService,
                               hyvaksymiskirjeService: HyvaksymiskirjeService,
@@ -25,7 +24,7 @@ class SijoittelunTulosServlet(valintatulosService: ValintatulosService,
                               authorizer: OrganizationHierarchyAuthorizer,
                               sijoitteluService: SijoitteluService, val sessionRepository: SessionRepository)
                              (implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase
-  with CasAuthenticatedServlet {
+  with CasAuthenticatedServlet with DeadlineDecorator {
 
   override val applicationName = Some("auth/sijoitteluntulos")
 
@@ -53,9 +52,7 @@ class SijoittelunTulosServlet(valintatulosService: ValintatulosService,
       val (lastModified, valinnantulokset: Set[Valinnantulos]) = valinnantulosService.getValinnantuloksetForHakukohde(hakukohdeOid, ai).map(a => (Option(a._1), a._2)).getOrElse((None, Set()))
       val modified: String = lastModified.map(createLastModifiedHeader(_)).getOrElse("")
 
-      val takarajat: Set[VastaanottoAikarajaMennyt] = valintatulosService.haeVastaanotonAikarajaTiedot(hakuOid, hakukohdeOid, valinnantulokset.flatMap(oiditHakemuksilleJotkaTarvitsevatAikarajaMennytTiedon))
-      val relevantTakarajat: Map[HakemusOid, Set[VastaanottoAikarajaMennyt]] = takarajat.groupBy(_.hakemusOid)
-      val valinnantuloksetWithTakarajat = valinnantulokset.map(decorateValinnantulosWithDeadline(relevantTakarajat))
+      val valinnantuloksetWithTakarajat: Set[Valinnantulos] = decorateValinnantuloksetWithDeadlines(hakuOid, hakukohdeOid, valinnantulokset)
 
       val resultJson =
         s"""{
@@ -70,19 +67,6 @@ class SijoittelunTulosServlet(valintatulosService: ValintatulosService,
       case e: NotFoundException =>
         val message = e.getMessage
         NotFound(body = Map("error" -> message), reason = message)
-    }
-  }
-
-  private def decorateValinnantulosWithDeadline(relevantTakarajat: Map[HakemusOid, Set[VastaanottoAikarajaMennyt]])(v: Valinnantulos) =
-    relevantTakarajat.get(v.hakemusOid).flatMap(_.headOption).map(aikaraja => v.copy(vastaanottoDeadline = aikaraja.vastaanottoDeadline, vastaanottoDeadlineMennyt = Some(aikaraja.mennyt))).getOrElse(v)
-
-  private def oiditHakemuksilleJotkaTarvitsevatAikarajaMennytTiedon(v : Valinnantulos): Option[HakemusOid] = {
-    val tarvitseeAikarajaMennytTiedon = ValintatuloksenTila.KESKEN.equals(v.vastaanottotila) && v.julkaistavissa.getOrElse(false) &&
-      Set(HakemuksenTila.HYVAKSYTTY, HakemuksenTila.VARASIJALTA_HYVAKSYTTY, HakemuksenTila.PERUNUT).contains(v.valinnantila.valinnantila)
-    if(tarvitseeAikarajaMennytTiedon) {
-      Some(v.hakemusOid)
-    } else {
-      None
     }
   }
   protected def createLastModifiedHeader(instant: Instant): String = {

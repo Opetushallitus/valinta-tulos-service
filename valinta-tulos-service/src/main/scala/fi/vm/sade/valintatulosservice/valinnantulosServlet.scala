@@ -74,9 +74,10 @@ trait ValinnantulosServletBase extends VtsServletBase {
 }
 
 class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
+                           val valintatulosService: ValintatulosService,
                            val sessionRepository: SessionRepository)
                           (implicit val swagger: Swagger)
-  extends ValinnantulosServletBase with CasAuthenticatedServlet {
+  extends ValinnantulosServletBase with CasAuthenticatedServlet with DeadlineDecorator {
 
   override val applicationName = Some("auth/valinnan-tulos")
   override val applicationDescription = "Valinnantuloksen REST API"
@@ -99,7 +100,16 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
       .left.flatMap(_ => parseHakukohdeOid.right.map(valinnantulosService.getValinnantuloksetForHakukohde(_, auditInfo)))
       .fold(throw _, {
         case Some((lastModified, valinnantulokset)) =>
-          Ok(body = valinnantulokset, headers = Map("Last-Modified" -> createLastModifiedHeader(lastModified)))
+          val hakuOid: Option[String] = params.get("hakuOid")
+          // if hakuOid was specified, decorate with deadlines
+          val tulokset: Set[Valinnantulos] =
+            if (hakuOid.isDefined && valinnantulokset.nonEmpty) {
+              val hakukohdeOid = valinnantulokset.head.hakukohdeOid
+              decorateValinnantuloksetWithDeadlines(HakuOid(hakuOid.get), hakukohdeOid, valinnantulokset)
+            } else {
+              valinnantulokset
+            }
+          Ok(body = tulokset, headers = Map("Last-Modified" -> createLastModifiedHeader(lastModified)))
         case None =>
           Ok(List())
       })

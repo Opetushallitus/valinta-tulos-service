@@ -172,7 +172,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
 
       val valintaesitysService = new ValintaesitysService(hakuService, authorizer, valintarekisteriDb, valintarekisteriDb, audit)
 
-      context.mount(new ValinnantulosServlet(valinnantulosService, valintarekisteriDb), "/auth/valinnan-tulos")
+      context.mount(new ValinnantulosServlet(valinnantulosService, valintatulosService, valintarekisteriDb), "/auth/valinnan-tulos")
       context.mount(new SijoitteluServlet(sijoitteluService, valintarekisteriDb), "/auth/sijoittelu")
       context.mount(new SijoittelunTulosServlet(valintatulosService, valintaesitysService, valinnantulosService, hyvaksymiskirjeService, lukuvuosimaksuService, hakuService, authorizer, sijoitteluService, valintarekisteriDb), "/auth/sijoitteluntulos")
       context.mount(new HyvaksymiskirjeServlet(hyvaksymiskirjeService, valintarekisteriDb), "/auth/hyvaksymiskirje")
