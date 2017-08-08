@@ -99,17 +99,24 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val valintalaskentakoostepalveluService = new ValintalaskentakoostepalveluService(appConfig)
     lazy val ldapUserService = new LdapUserService(appConfig.securityContext.directoryClient)
     lazy val hyvaksymiskirjeService = new HyvaksymiskirjeService(valintarekisteriDb, hakuService, audit, authorizer)
-    lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
 
+    lazy val sijoitteluajoDeleteScheduler = new SijoitteluajoDeleteScheduler(valintarekisteriDb, appConfig)
+    lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
+    
     val migrationMode = isTrue(System.getProperty("valinta-rekisteri-migration-mode"))
     val scheduledMigration = isTrue(System.getProperty("valinta-rekisteri-scheduled-migration"))
+    val scheduledDeleteSijoitteluAjot = isTrue(System.getProperty("valinta-rekisteri-scheduled-delete-sijoitteluajot"))
+
+    if(scheduledDeleteSijoitteluAjot) {
+      sijoitteluajoDeleteScheduler.startScheduler()
+    }
 
     if (migrationMode || scheduledMigration) {
       lazy val migraatioService = new SijoitteluntulosMigraatioService(sijoittelunTulosClient, appConfig,
         valintarekisteriDb, hakukohdeRecordService, hakuService, valintalaskentakoostepalveluService, sijoitteluContext)
       lazy val sijoitteluntulosMigraatioScheduler = new SijoittelunTulosMigraatioScheduler(migraatioService, appConfig)
       if (scheduledMigration) {
-        sijoitteluntulosMigraatioScheduler.startMigrationScheduler()
+        sijoitteluntulosMigraatioScheduler.startScheduler()
       }
       if (migrationMode) {
         context.mount(new SijoittelunTulosMigraatioServlet(migraatioService), "/sijoittelun-tulos-migraatio")
