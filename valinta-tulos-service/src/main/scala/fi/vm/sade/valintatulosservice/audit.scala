@@ -42,6 +42,10 @@ case object HyvaksymiskirjeidenMuokkaus extends Operation {
   def name: String = "HYVAKSYMISKIRJEIDEN_MUOKKAUS"
 }
 
+case object HyvaksymiskirjeidenPoisto extends Operation {
+  def name: String = "HYVAKSYMISKIRJEIDEN_POISTO"
+}
+
 case object VastaanottotietojenLuku extends Operation {
   def name: String = "VASTAANOTTOTIETOJEN_LUKU"
 }
