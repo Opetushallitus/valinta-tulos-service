@@ -6,10 +6,10 @@ import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.DeleteSijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 import slick.dbio.DBIO
-
-import scala.concurrent.duration.Duration
 import slick.driver.PostgresDriver.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
 
 trait DeleteSijoitteluRepositoryImpl extends DeleteSijoitteluRepository with ValintarekisteriRepository {
 
@@ -42,23 +42,21 @@ trait DeleteSijoitteluRepositoryImpl extends DeleteSijoitteluRepository with Val
       sql"""select id from sijoitteluajot where id = ${sijoitteluajoId} and poistonesto = false and id not in (
             select max(id) from sijoitteluajot group by haku_oid)""".as[Long]
 
-    timed(s"Delete haun $hakuOid sijoitteluajo $sijoitteluajoId", 100) {
-      logger.info(s"Deleting haun $hakuOid sijoitteluajo $sijoitteluajoId")
-      runBlockingTransactionally(
-        checkNoPoistonestoAndNotLatest.headOption.flatMap {
-          case Some(id) => DBIO.successful(id)
-          case None => DBIO.failed(new IllegalArgumentException(s"Sijoitteluajoa $sijoitteluajoId ei voida poistaa!"))
-        }.andThen(
-          DBIO.sequence(sqls)
-        ), timeout = Duration(30, TimeUnit.MINUTES)) match {
+    logger.info(s"Deleting haun $hakuOid sijoitteluajo $sijoitteluajoId")
+    runBlockingTransactionally(
+      checkNoPoistonestoAndNotLatest.headOption.flatMap {
+        case Some(id) => DBIO.successful(id)
+        case None => DBIO.failed(new IllegalArgumentException(s"Sijoitteluajoa $sijoitteluajoId ei voida poistaa!"))
+      }.andThen(
+        DBIO.sequence(sqls)
+      ), timeout = Duration(30, TimeUnit.MINUTES)) match {
 
-        case Right(rowCounts) =>
-          logger.info(s"Delete of sijoitteluajo $sijoitteluajoId of haku $hakuOid successful. " +
-            s"Lines affected:\n\t${descriptions.zip(rowCounts).mkString("\n\t")}")
-        case Left(t) =>
-          logger.error(s"Could not delete sijoitteluajo $sijoitteluajoId of haku $hakuOid", t)
-          throw t
-      }
+      case Right(rowCounts) =>
+        logger.info(s"Delete of sijoitteluajo $sijoitteluajoId of haku $hakuOid successful. " +
+          s"Lines affected:\n\t${descriptions.zip(rowCounts).mkString("\n\t")}")
+      case Left(t) =>
+        logger.error(s"Could not delete sijoitteluajo $sijoitteluajoId of haku $hakuOid", t)
+        throw t
     }
   }
 }
