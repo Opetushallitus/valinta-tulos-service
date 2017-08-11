@@ -211,6 +211,18 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
         singleConnectionValintarekisteriDb.getViestinnanOhjaus(valinnantuloksenOhjaus)
       ) mustEqual Set()
     }
+    "delete valinnantulos if no ehdollisen hyväksynnän ehto" in {
+      storeValinnantilaAndValinnantulos
+      singleConnectionValintarekisteriDb.runBlocking(
+        sqlu"""delete from ehdollisen_hyvaksynnan_ehto"""
+      )
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid).size mustEqual 1
+      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.deleteValinnantulos(muokkaaja, valinnantulos.copy(poistettava = Some(true))))
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid) mustEqual Set()
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.getViestinnanOhjaus(valinnantuloksenOhjaus)
+      ) mustEqual Set()
+    }
     "generate muutoshistoria from updates" in {
       storeValinnantilaAndValinnantulos()
       singleConnectionValintarekisteriDb.runBlocking(
