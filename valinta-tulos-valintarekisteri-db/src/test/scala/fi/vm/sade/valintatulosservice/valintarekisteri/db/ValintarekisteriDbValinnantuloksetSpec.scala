@@ -287,12 +287,32 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = true")
       checkHyvaksyttyJaJulkaistu() must_== None
       singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.deleteHyvaksyttyJaJulkaistavissa(henkiloOid, hakukohdeOid)
+      )) must throwA[ConcurrentModificationException]
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
         singleConnectionValintarekisteriDb.setHyvaksyttyJaJulkaistavissa(hakemusOid, valintatapajonoOid, "ilmoittaja", "selite")
       ))
       singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantilat set tila = 'Hylatty'::valinnantila")
       checkHyvaksyttyJaJulkaistu().isDefined must_== true
       singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
         singleConnectionValintarekisteriDb.deleteHyvaksyttyJaJulkaistavissa(henkiloOid, hakukohdeOid)
+      ))
+      checkHyvaksyttyJaJulkaistu() must_== None
+    }
+    "delete hyväksytty/julkaistu date if exists" in {
+      storeValinnantilaAndValinnantulos()
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = true")
+      checkHyvaksyttyJaJulkaistu() must_== None
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.deleteHyvaksyttyJaJulkaistavissaIfExists(henkiloOid, hakukohdeOid)
+      ))
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.setHyvaksyttyJaJulkaistavissa(hakemusOid, valintatapajonoOid, "ilmoittaja", "selite")
+      ))
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantilat set tila = 'Hylatty'::valinnantila")
+      checkHyvaksyttyJaJulkaistu().isDefined must_== true
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.deleteHyvaksyttyJaJulkaistavissaIfExists(henkiloOid, hakukohdeOid)
       ))
       checkHyvaksyttyJaJulkaistu() must_== None
     }

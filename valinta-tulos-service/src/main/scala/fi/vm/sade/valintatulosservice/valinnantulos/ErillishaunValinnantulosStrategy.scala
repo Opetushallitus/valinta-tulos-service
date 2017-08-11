@@ -171,7 +171,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
           case true => valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(uusi.hakemusOid, uusi.valintatapajonoOid, muokkaaja, selite)
         },
         Option(vanha.isHyvaksytty && !uusi.isHyvaksytty).collect{
-          case true => valinnantulosRepository.deleteHyvaksyttyJaJulkaistavissa(uusi.henkiloOid, uusi.hakukohdeOid, ifUnmodifiedSince)
+          case true => valinnantulosRepository.deleteHyvaksyttyJaJulkaistavissaIfExists(uusi.henkiloOid, uusi.hakukohdeOid, ifUnmodifiedSince)
         }
       ).flatten
     }
@@ -182,7 +182,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         Option(vanha.ilmoittautumistila != EiTehty).collect { case true => valinnantulosRepository.deleteIlmoittautuminen(
           uusi.henkiloOid, Ilmoittautuminen(uusi.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), ifUnmodifiedSince
         )},
-        Some(valinnantulosRepository.deleteHyvaksyttyJaJulkaistavissa(uusi.henkiloOid, uusi.hakukohdeOid, ifUnmodifiedSince))
+        Some(valinnantulosRepository.deleteHyvaksyttyJaJulkaistavissaIfExists(uusi.henkiloOid, uusi.hakukohdeOid, ifUnmodifiedSince))
       ).flatten
     }
 
