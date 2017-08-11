@@ -503,6 +503,19 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
         """.map(_ => ())
   }
 
+  private def getHyvaksyttyJaJulkaistavissa(henkiloOid: String, hakukohdeOid: HakukohdeOid): DBIOAction[Option[OffsetDateTime], NoStream, Effect] = {
+    sql"""select hyvaksytty_ja_julkaistu
+          from hyvaksytyt_ja_julkaistut_hakutoiveet
+          where henkilo = ${henkiloOid} and hakukohde = ${hakukohdeOid}""".as[OffsetDateTime].map(_.headOption)
+  }
+
+  override def deleteHyvaksyttyJaJulkaistavissaIfExists(henkiloOid: String, hakukohdeOid: HakukohdeOid, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+    getHyvaksyttyJaJulkaistavissa(henkiloOid, hakukohdeOid).flatMap {
+      case None => DBIO.successful(None)
+      case Some(x) => deleteHyvaksyttyJaJulkaistavissa(henkiloOid, hakukohdeOid, ifUnmodifiedSince)
+    }
+  }
+
   override def deleteHyvaksyttyJaJulkaistavissa(henkiloOid: String, hakukohdeOid: HakukohdeOid, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
     sqlu"""with hyvaksytty_jono as (
               select hakukohde_oid
