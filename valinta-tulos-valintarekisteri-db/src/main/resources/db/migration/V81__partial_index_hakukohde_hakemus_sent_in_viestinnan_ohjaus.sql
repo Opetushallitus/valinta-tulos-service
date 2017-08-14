@@ -1,0 +1,1 @@
+create index viestinnan_ohjaus_hakukohde_oid_hakemus_oid_sent_idx on viestinnan_ohjaus (hakukohde_oid, hakemus_oid) where sent is not null;
