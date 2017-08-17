@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
-import java.sql.{PreparedStatement, Timestamp, Types}
+import java.sql.{PreparedStatement, SQLTimeoutException, Timestamp, Types}
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
@@ -11,6 +11,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.driver.PostgresDriver.api._
 
 import scala.collection.JavaConverters._
+import scala.concurrent.TimeoutException
 import scala.concurrent.duration.Duration
 import scala.util.Try
 
@@ -118,12 +119,19 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
       })
       .transactionally,
       Duration(60, TimeUnit.MINUTES))
-    timed(s"Haun $hakuOid sijoittelun tallennuksen jälkeinen analyze", 100) {
-      runBlocking(DBIO.seq(
-        sqlu"""analyze pistetiedot""",
-        sqlu"""analyze jonosijat""",
-        sqlu"""analyze valinnantulokset"""),
-        Duration(15, TimeUnit.MINUTES))
+
+    try {
+      timed(s"Haun $hakuOid sijoittelun tallennuksen jälkeinen analyze", 100) {
+        runBlocking(DBIO.seq(
+          sqlu"""ANALYZE pistetiedot""",
+          sqlu"""ANALYZE jonosijat""",
+          sqlu"""ANALYZE valinnantulokset"""),
+          Duration(20, TimeUnit.MINUTES))
+      }
+    } catch {
+      case te:TimeoutException => logger.warn(s"Timeout haun $hakuOid sijoittelun tallennuksen jälkeisestä analyzestä!!!", te)
+      case sqlt:SQLTimeoutException => logger.warn(s"Timeout haun $hakuOid sijoittelun tallennuksen jälkeisestä analyzestä!!!", sqlt)
+      case t => throw t
     }
   }
 
