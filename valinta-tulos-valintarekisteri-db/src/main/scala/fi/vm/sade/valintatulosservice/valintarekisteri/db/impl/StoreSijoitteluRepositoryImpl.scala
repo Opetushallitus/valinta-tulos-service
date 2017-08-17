@@ -17,6 +17,8 @@ import scala.util.Try
 
 trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with ValintarekisteriRepository {
 
+  private val ANALYZE_AFTER_INSERT_THRESHOLD = 1000 // hakukohdetta haussa
+
   override def storeSijoittelu(sijoittelu: SijoitteluWrapper): Unit = timed(s"Haun ${sijoittelu.sijoitteluajo.getHakuOid} koko sijoittelun ${sijoittelu.sijoitteluajo.getSijoitteluajoId} tallennus", 100) {
     val sijoitteluajoId = sijoittelu.sijoitteluajo.getSijoitteluajoId
     val hakuOid = HakuOid(sijoittelu.sijoitteluajo.getHakuOid)
@@ -120,18 +122,19 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
       .transactionally,
       Duration(60, TimeUnit.MINUTES))
 
-    try {
-      timed(s"Haun $hakuOid sijoittelun tallennuksen jälkeinen analyze", 100) {
-        runBlocking(DBIO.seq(
-          sqlu"""ANALYZE pistetiedot""",
-          sqlu"""ANALYZE jonosijat""",
-          sqlu"""ANALYZE valinnantulokset"""),
-          Duration(20, TimeUnit.MINUTES))
+    if(sijoittelu.hakukohteet.length > ANALYZE_AFTER_INSERT_THRESHOLD) {
+      try {
+        timed(s"Haun $hakuOid sijoittelun tallennuksen jälkeinen analyze", 100) {
+          runBlocking(DBIO.seq(
+            sqlu"""analyze pistetiedot""",
+            sqlu"""analyze jonosijat"""),
+            Duration(20, TimeUnit.MINUTES))
+        }
+      } catch {
+        case te: TimeoutException => logger.warn(s"Timeout haun $hakuOid sijoittelun tallennuksen jälkeisestä analyzestä!!!", te)
+        case sqlt: SQLTimeoutException => logger.warn(s"Timeout haun $hakuOid sijoittelun tallennuksen jälkeisestä analyzestä!!!", sqlt)
+        case t => throw t
       }
-    } catch {
-      case te:TimeoutException => logger.warn(s"Timeout haun $hakuOid sijoittelun tallennuksen jälkeisestä analyzestä!!!", te)
-      case sqlt:SQLTimeoutException => logger.warn(s"Timeout haun $hakuOid sijoittelun tallennuksen jälkeisestä analyzestä!!!", sqlt)
-      case t => throw t
     }
   }
 
