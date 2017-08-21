@@ -169,18 +169,14 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
               j.onko_muuttunut_viime_sijoittelussa,
               j.siirtynyt_toisesta_valintatapajonosta, j.valintatapajono_oid
               from jonosijat as j
-              join valinnantulokset as v
-              on v.valintatapajono_oid = j.valintatapajono_oid
-                and v.hakemus_oid = j.hakemus_oid
-                and v.hakukohde_oid = j.hakukohde_oid
               join valinnantilat as vt
-              on vt.valintatapajono_oid = v.valintatapajono_oid
-                and vt.hakemus_oid = v.hakemus_oid
-                and vt.hakukohde_oid = v.hakukohde_oid
+              on vt.valintatapajono_oid = j.valintatapajono_oid
+                and vt.hakemus_oid = j.hakemus_oid
+                and vt.hakukohde_oid = j.hakukohde_oid
               join tilat_kuvaukset t_k
-              on t_k.valintatapajono_oid = vt.valintatapajono_oid
-                and t_k.hakemus_oid = vt.hakemus_oid
-                and t_k.hakukohde_oid = vt.hakukohde_oid
+              on t_k.valintatapajono_oid = j.valintatapajono_oid
+                and t_k.hakemus_oid = j.hakemus_oid
+                and t_k.hakukohde_oid = j.hakukohde_oid
               inner join vj on vj.oid = j.valintatapajono_oid
               where j.sijoitteluajo_id = ${sijoitteluajoId}""".as[HakemusRecord]).toList match {
           case result if result.size == 0 => result
