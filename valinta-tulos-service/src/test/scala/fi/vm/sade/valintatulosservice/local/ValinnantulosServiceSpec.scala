@@ -201,7 +201,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       there was one (valinnantulosRepository).deleteValinnantulos(session.personOid, valinnantulokset(0), Some(lastModified))
       there was one (valinnantulosRepository).deleteIlmoittautuminen(validiValinnantulos.henkiloOid, Ilmoittautuminen(validiValinnantulos.hakukohdeOid, validiValinnantulos.ilmoittautumistila,
         session.personOid, "Erillishaun tallennus"), Some(lastModified))
-      there was one (valinnantulosRepository).deleteHyvaksyttyJaJulkaistavissa(validiValinnantulos.henkiloOid, validiValinnantulos.hakukohdeOid, Some(lastModified))
+      there was no (valinnantulosRepository).deleteHyvaksyttyJaJulkaistavissa(validiValinnantulos.henkiloOid, validiValinnantulos.hakukohdeOid, Some(lastModified))
       there was no (valinnantulosRepository).updateValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
       there was no (valinnantulosRepository).storeValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
       there was no (valinnantulosRepository).storeIlmoittautuminen(any[String], any[Ilmoittautuminen], any[Option[Instant]])
