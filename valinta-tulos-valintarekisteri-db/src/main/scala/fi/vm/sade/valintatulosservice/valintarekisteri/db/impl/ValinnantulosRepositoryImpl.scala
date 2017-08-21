@@ -503,6 +503,19 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
         """.map(_ => ())
   }
 
+  private def getHyvaksyttyJaJulkaistavissa(henkiloOid: String, hakukohdeOid: HakukohdeOid): DBIOAction[Option[OffsetDateTime], NoStream, Effect] = {
+    sql"""select hyvaksytty_ja_julkaistu
+          from hyvaksytyt_ja_julkaistut_hakutoiveet
+          where henkilo = ${henkiloOid} and hakukohde = ${hakukohdeOid}""".as[OffsetDateTime].map(_.headOption)
+  }
+
+  override def deleteHyvaksyttyJaJulkaistavissaIfExists(henkiloOid: String, hakukohdeOid: HakukohdeOid, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+    getHyvaksyttyJaJulkaistavissa(henkiloOid, hakukohdeOid).flatMap {
+      case None => DBIO.successful(None)
+      case Some(x) => deleteHyvaksyttyJaJulkaistavissa(henkiloOid, hakukohdeOid, ifUnmodifiedSince)
+    }
+  }
+
   override def deleteHyvaksyttyJaJulkaistavissa(henkiloOid: String, hakukohdeOid: HakukohdeOid, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
     sqlu"""with hyvaksytty_jono as (
               select hakukohde_oid
@@ -612,7 +625,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
 
   override def deleteValinnantulos(muokkaaja:String, valinnantulos: Valinnantulos, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
     deleteViestinnanOhjaus(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince)
-      .andThen(deleteEhdollisenHyvaksynnanEhto(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince))
+      .andThen(deleteEhdollisenHyvaksynnanEhtoIfExists(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince))
       .andThen(deleteValinnantuloksenOhjaus(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince))
       .andThen(deleteValinnantila(valinnantulos.getValinnantilanTallennus(muokkaaja), ifUnmodifiedSince))
       .transactionally
@@ -651,6 +664,17 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                where hakukohde_oid = $hakukohdeOid
                and hakemus_oid = $hakemusOid
                and valintatapajono_oid = $valintatapajonoOid""".map(_ => ())
+  }
+
+  private def deleteEhdollisenHyvaksynnanEhtoIfExists(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+    sql"""select count(*) from ehdollisen_hyvaksynnan_ehto
+          where hakukohde_oid = ${hakukohdeOid}
+          and hakemus_oid = ${hakemusOid}
+          and valintatapajono_oid = ${valintatapajonoOid}
+       """.as[Int].head.flatMap {
+      case x if x > 0 => deleteEhdollisenHyvaksynnanEhto(hakukohdeOid, valintatapajonoOid, hakemusOid, ifUnmodifiedSince)
+      case x => DBIO.successful()
+    }
   }
 
   private def deleteEhdollisenHyvaksynnanEhto(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {

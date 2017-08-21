@@ -211,6 +211,18 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
         singleConnectionValintarekisteriDb.getViestinnanOhjaus(valinnantuloksenOhjaus)
       ) mustEqual Set()
     }
+    "delete valinnantulos if no ehdollisen hyväksynnän ehto" in {
+      storeValinnantilaAndValinnantulos
+      singleConnectionValintarekisteriDb.runBlocking(
+        sqlu"""delete from ehdollisen_hyvaksynnan_ehto"""
+      )
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid).size mustEqual 1
+      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.deleteValinnantulos(muokkaaja, valinnantulos.copy(poistettava = Some(true))))
+      singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid) mustEqual Set()
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.getViestinnanOhjaus(valinnantuloksenOhjaus)
+      ) mustEqual Set()
+    }
     "generate muutoshistoria from updates" in {
       storeValinnantilaAndValinnantulos()
       singleConnectionValintarekisteriDb.runBlocking(
@@ -287,12 +299,32 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = true")
       checkHyvaksyttyJaJulkaistu() must_== None
       singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.deleteHyvaksyttyJaJulkaistavissa(henkiloOid, hakukohdeOid)
+      )) must throwA[ConcurrentModificationException]
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
         singleConnectionValintarekisteriDb.setHyvaksyttyJaJulkaistavissa(hakemusOid, valintatapajonoOid, "ilmoittaja", "selite")
       ))
       singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantilat set tila = 'Hylatty'::valinnantila")
       checkHyvaksyttyJaJulkaistu().isDefined must_== true
       singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
         singleConnectionValintarekisteriDb.deleteHyvaksyttyJaJulkaistavissa(henkiloOid, hakukohdeOid)
+      ))
+      checkHyvaksyttyJaJulkaistu() must_== None
+    }
+    "delete hyväksytty/julkaistu date if exists" in {
+      storeValinnantilaAndValinnantulos()
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = true")
+      checkHyvaksyttyJaJulkaistu() must_== None
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.deleteHyvaksyttyJaJulkaistavissaIfExists(henkiloOid, hakukohdeOid)
+      ))
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.setHyvaksyttyJaJulkaistavissa(hakemusOid, valintatapajonoOid, "ilmoittaja", "selite")
+      ))
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"update valinnantilat set tila = 'Hylatty'::valinnantila")
+      checkHyvaksyttyJaJulkaistu().isDefined must_== true
+      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+        singleConnectionValintarekisteriDb.deleteHyvaksyttyJaJulkaistavissaIfExists(henkiloOid, hakukohdeOid)
       ))
       checkHyvaksyttyJaJulkaistu() must_== None
     }
