@@ -92,4 +92,19 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
         NotFound(body = Map("error" -> message), reason = message)
     }
   }
+
+  //1.2.246.562.29.59856749474/sijoitteluajo/latest/hakukohde/1.2.246.562.20.18496942519
+  lazy val sijoitteluajoExistsForHakukohdeJonoSwagger: OperationBuilder = (apiOperation[Unit]("sijoitteluajoExistsForHakukohdeJonoSwagger")
+    summary "Näyttää listan jonoista."
+    parameter pathParam[String]("hakuOid").description("Haun yksilöllinen tunniste")
+    parameter pathParam[String]("hakukohde").description("Hakukohteen yksilöllinen tunniste"))
+  get("/:hakuOid/hakukohde/:hakemusOid/jono", operation(sijoitteluajoExistsForHakukohdeJonoSwagger)) {
+    val hakuOid = HakuOid(params("hakuOid"))
+    val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
+
+    implicit val authenticated = authenticate
+    authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
+
+    Ok(JsonFormats.formatJson(sijoitteluService.(hakuOid, hakukohdeOid, authenticated.session)))
+  }
 }
