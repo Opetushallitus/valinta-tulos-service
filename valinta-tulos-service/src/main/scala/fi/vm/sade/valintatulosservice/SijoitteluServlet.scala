@@ -105,6 +105,6 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
 
-    Ok(JsonFormats.formatJson(sijoitteluService.(hakuOid, hakukohdeOid, authenticated.session)))
+    Ok(JsonFormats.formatJson(sijoitteluService.getJonosBySijoitteluajo(hakuOid, hakukohdeOid, authenticated.session)))
   }
 }
