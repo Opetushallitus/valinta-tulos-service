@@ -10,8 +10,6 @@ import org.json4s.jackson.JsonMethods._
 import org.springframework.core.io.ClassPathResource
 import slick.driver.PostgresDriver.api.{actionBasedSQLInterpolation, _}
 
-import scala.collection.immutable
-
 case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends json4sCustomFormats {
 
   implicit val formats = DefaultFormats ++ List(
@@ -184,8 +182,5 @@ case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends js
 
   def clearFixtures() {
     deleteAll()
-    //    MongoMockData.clear(db)
-    //    val base = MongoMockData.readJson("fixtures/sijoittelu/sijoittelu-basedata.json")
-    //    MongoMockData.insertData(db, base)
   }
 }

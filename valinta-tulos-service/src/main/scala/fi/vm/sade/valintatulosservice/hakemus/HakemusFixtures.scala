@@ -1,7 +1,6 @@
 package fi.vm.sade.valintatulosservice.hakemus
 
 import com.mongodb._
-import fi.vm.sade.sijoittelu.tulos.testfixtures.MongoMockData
 import fi.vm.sade.utils.config.MongoConfig
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.mongo.MongoFactory
@@ -94,6 +93,24 @@ object HakemusFixtures {
 
   def apply()(implicit appConfig: VtsAppConfig) = {
     new HakemusFixtures(appConfig.settings.hakemusMongoConfig)
+  }
+}
+
+object MongoMockData {
+  import org.springframework.core.io.ClassPathResource
+  import org.apache.commons.io.IOUtils
+  import java.io.StringWriter
+  import java.io.IOException
+  import com.mongodb.util.JSON
+
+  def readJson(path:String):DBObject = {
+    val writer = new StringWriter()
+    try {
+      IOUtils.copy(new ClassPathResource(path).getInputStream, writer)
+    } catch {
+      case ioe:IOException => throw new RuntimeException(ioe)
+    }
+    JSON.parse(writer.toString()).asInstanceOf[DBObject]
   }
 }
 
