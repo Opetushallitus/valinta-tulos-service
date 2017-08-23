@@ -653,39 +653,51 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
 
   private def sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja(tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) = {
     if (haku.korkeakoulu && haku.käyttääSijoittelua) {
+      val indexedTulokset = tulokset.zipWithIndex
       val firstVaralla = tulokset.indexWhere(_.valintatila == Valintatila.varalla)
+      val firstPeruttuAfterFirstVaralla = if (firstVaralla >= 0) {
+        indexedTulokset.indexWhere {
+          case (tulos, index) => index > firstVaralla && Valintatila.perunut == tulos.valintatila
+        }
+      } else {
+        -1
+      }
       val firstVastaanotettu = tulokset.indexWhere(_.vastaanottotila == vastaanottanut)
       val firstKesken = tulokset.indexWhere(_.valintatila == Valintatila.kesken)
-      val indexedTulokset = tulokset.zipWithIndex
-      val firstHyvaksyttyUnderFirstVaralla = if (firstVaralla >= 0) {
-        indexedTulokset.indexWhere { case (tulos, index) => index > firstVaralla && Valintatila.isHyväksytty(tulos.valintatila) }
+      val firstHyvaksyttyUnderFirstVarallaAndNoPeruttuInBetween = if (firstVaralla >= 0) {
+        indexedTulokset.indexWhere {
+          case (tulos, index) => index > firstVaralla && Valintatila.isHyväksytty(tulos.valintatila) && (firstPeruttuAfterFirstVaralla == -1 || firstPeruttuAfterFirstVaralla > index)
+        }
       } else {
         -1
       }
 
-      tulokset.zipWithIndex.map {
-        case (tulos, index) if isHyväksytty(tulos.valintatila) && tulos.vastaanottotila == Vastaanottotila.kesken =>
-          if (firstVastaanotettu >= 0 && index != firstVastaanotettu) {
-            // Peru vastaanotettua paikkaa alemmat hyväksytyt hakutoiveet
-            logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja valintatila > peruuntunut, ei vastaanotettavissa {}", index)
-            tulos.copy(valintatila = Valintatila.peruuntunut, vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa)
-          } else if (index == firstHyvaksyttyUnderFirstVaralla) {
-            if (ehdollinenVastaanottoMahdollista(ohjausparametrit)) {
-              logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja vastaanotettavuustila > vastaanotettavissa_ehdollisesti {}", index)
-              // Ehdollinen vastaanotto mahdollista
-              tulos.copy(vastaanotettavuustila = Vastaanotettavuustila.vastaanotettavissa_ehdollisesti)
-            } else {
-              logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja toOdottaaYlempienHakutoiveidenTuloksia {} {}", index, Valintatila.isHyväksytty(tulos.valintatila))
-              // Ehdollinen vastaanotto ei vielä mahdollista, näytetään keskeneräisenä
-              tulos.toOdottaaYlempienHakutoiveidenTuloksia
-            }
-          } else if (firstKesken >= 0 && index > firstKesken) {
-            logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja toOdottaaYlempienHakutoiveidenTuloksia {} {}", index, Valintatila.isHyväksytty(tulos.valintatila))
-            tulos.toOdottaaYlempienHakutoiveidenTuloksia
+      def hyvaksyttyJaVastaanottamatta(tulos: Hakutoiveentulos, index: Int): Hakutoiveentulos = {
+        if (firstVastaanotettu >= 0 && index != firstVastaanotettu) {
+          // Peru vastaanotettua paikkaa alemmat hyväksytyt hakutoiveet
+          logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja valintatila > peruuntunut, ei vastaanotettavissa {}", index)
+          tulos.copy(valintatila = Valintatila.peruuntunut, vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa)
+        } else if (index == firstHyvaksyttyUnderFirstVarallaAndNoPeruttuInBetween) {
+          if (ehdollinenVastaanottoMahdollista(ohjausparametrit)) {
+            logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja vastaanotettavuustila > vastaanotettavissa_ehdollisesti {}", index)
+            // Ehdollinen vastaanotto mahdollista
+            tulos.copy(vastaanotettavuustila = Vastaanotettavuustila.vastaanotettavissa_ehdollisesti)
           } else {
-            logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja default")
-            tulos
+            logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja toOdottaaYlempienHakutoiveidenTuloksia {} {}", index, Valintatila.isHyväksytty(tulos.valintatila))
+            // Ehdollinen vastaanotto ei vielä mahdollista, näytetään keskeneräisenä
+            tulos.toOdottaaYlempienHakutoiveidenTuloksia
           }
+        } else if (firstKesken >= 0 && index > firstKesken) {
+          logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja toOdottaaYlempienHakutoiveidenTuloksia {} {}", index, Valintatila.isHyväksytty(tulos.valintatila))
+          tulos.toOdottaaYlempienHakutoiveidenTuloksia
+        } else {
+          logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja default")
+          tulos
+        }
+      }
+
+      tulokset.zipWithIndex.map {
+        case (tulos, index) if isHyväksytty(tulos.valintatila) && tulos.vastaanottotila == Vastaanottotila.kesken => hyvaksyttyJaVastaanottamatta(tulos,index)
         case (tulos, index) if firstVastaanotettu >= 0 && index != firstVastaanotettu && List(Valintatila.varalla, Valintatila.kesken).contains(tulos.valintatila) =>
           // Peru muut varalla/kesken toiveet, jos jokin muu vastaanotettu
           logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja valintatila > peruuntunut, ei vastaanotettavissa {}", index)
