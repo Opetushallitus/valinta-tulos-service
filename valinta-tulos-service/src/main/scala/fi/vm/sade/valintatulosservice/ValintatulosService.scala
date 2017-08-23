@@ -663,29 +663,32 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
         -1
       }
 
-      tulokset.zipWithIndex.map {
-        case (tulos, index) if isHyväksytty(tulos.valintatila) && tulos.vastaanottotila == Vastaanottotila.kesken =>
-          if (firstVastaanotettu >= 0 && index != firstVastaanotettu) {
-            // Peru vastaanotettua paikkaa alemmat hyväksytyt hakutoiveet
-            logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja valintatila > peruuntunut, ei vastaanotettavissa {}", index)
-            tulos.copy(valintatila = Valintatila.peruuntunut, vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa)
-          } else if (index == firstHyvaksyttyUnderFirstVaralla) {
-            if (ehdollinenVastaanottoMahdollista(ohjausparametrit)) {
-              logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja vastaanotettavuustila > vastaanotettavissa_ehdollisesti {}", index)
-              // Ehdollinen vastaanotto mahdollista
-              tulos.copy(vastaanotettavuustila = Vastaanotettavuustila.vastaanotettavissa_ehdollisesti)
-            } else {
-              logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja toOdottaaYlempienHakutoiveidenTuloksia {} {}", index, Valintatila.isHyväksytty(tulos.valintatila))
-              // Ehdollinen vastaanotto ei vielä mahdollista, näytetään keskeneräisenä
-              tulos.toOdottaaYlempienHakutoiveidenTuloksia
-            }
-          } else if (firstKesken >= 0 && index > firstKesken) {
-            logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja toOdottaaYlempienHakutoiveidenTuloksia {} {}", index, Valintatila.isHyväksytty(tulos.valintatila))
-            tulos.toOdottaaYlempienHakutoiveidenTuloksia
+      def hyvaksyttyJaVastaanottamatta(tulos: Hakutoiveentulos, index: Int) = {
+        if (firstVastaanotettu >= 0 && index != firstVastaanotettu) {
+          // Peru vastaanotettua paikkaa alemmat hyväksytyt hakutoiveet
+          logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja valintatila > peruuntunut, ei vastaanotettavissa {}", index)
+          tulos.copy(valintatila = Valintatila.peruuntunut, vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa)
+        } else if (index == firstHyvaksyttyUnderFirstVaralla) {
+          if (ehdollinenVastaanottoMahdollista(ohjausparametrit)) {
+            logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja vastaanotettavuustila > vastaanotettavissa_ehdollisesti {}", index)
+            // Ehdollinen vastaanotto mahdollista
+            tulos.copy(vastaanotettavuustila = Vastaanotettavuustila.vastaanotettavissa_ehdollisesti)
           } else {
-            logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja default")
-            tulos
+            logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja toOdottaaYlempienHakutoiveidenTuloksia {} {}", index, Valintatila.isHyväksytty(tulos.valintatila))
+            // Ehdollinen vastaanotto ei vielä mahdollista, näytetään keskeneräisenä
+            tulos.toOdottaaYlempienHakutoiveidenTuloksia
           }
+        } else if (firstKesken >= 0 && index > firstKesken) {
+          logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja toOdottaaYlempienHakutoiveidenTuloksia {} {}", index, Valintatila.isHyväksytty(tulos.valintatila))
+          tulos.toOdottaaYlempienHakutoiveidenTuloksia
+        } else {
+          logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja default")
+          tulos
+        }
+      }
+
+      tulokset.zipWithIndex.map {
+        case (tulos, index) if isHyväksytty(tulos.valintatila) && tulos.vastaanottotila == Vastaanottotila.kesken => hyvaksyttyJaVastaanottamatta(tulos,index)
         case (tulos, index) if firstVastaanotettu >= 0 && index != firstVastaanotettu && List(Valintatila.varalla, Valintatila.kesken).contains(tulos.valintatila) =>
           // Peru muut varalla/kesken toiveet, jos jokin muu vastaanotettu
           logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja valintatila > peruuntunut, ei vastaanotettavissa {}", index)
