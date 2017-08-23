@@ -18,7 +18,7 @@ class HenkiloviiteDb(configuration: DbConfiguration) {
 
   Class.forName("org.postgresql.Driver")
 
-  def refresh(henkiloviitteet: Set[HenkiloRelation]): Try[Unit] = {
+  def refresh(masterHenkiloviitteet: Seq[Henkiloviite], allHenkiloviitteet: Set[HenkiloRelation]): Try[Unit] = {
     var connection: Connection = null
     var statement: PreparedStatement = null
 
@@ -33,9 +33,9 @@ class HenkiloviiteDb(configuration: DbConfiguration) {
       }
       henkiloResultSetBeforeUpdate.close()
       statement.close()
-      logger.info(s"Before update, we have ${henkiloviitteetEnnenPaivitysta.size} relations in the database.")
-      logger.info(s"New relations: ${henkiloviitteet -- henkiloviitteetEnnenPaivitysta.toSet}")
-      logger.info(s"Removed relations: ${henkiloviitteetEnnenPaivitysta.toSet -- henkiloviitteet}")
+      logger.info(s"Before update, we have ${henkiloviitteetEnnenPaivitysta.size} relations in the henkiloviitteet table.")
+      logger.info(s"New relations: ${allHenkiloviitteet -- henkiloviitteetEnnenPaivitysta.toSet}")
+      logger.info(s"Removed relations: ${henkiloviitteetEnnenPaivitysta.toSet -- allHenkiloviitteet}")
     }
 
     def emptyHenkiloviitteetTable(): Unit = {
@@ -50,9 +50,9 @@ class HenkiloviiteDb(configuration: DbConfiguration) {
       val insert = "insert into henkiloviitteet (person_oid, linked_oid) values (?, ?)"
       statement = connection.prepareStatement(insert)
 
-      logger.info(s"Inserting ${henkiloviitteet.size} henkiloviite rows.")
+      logger.info(s"Inserting ${allHenkiloviitteet.size} henkiloviite rows.")
 
-      for ((henkiloviite, i) <- henkiloviitteet.zipWithIndex) {
+      for ((henkiloviite, i) <- allHenkiloviitteet.zipWithIndex) {
         statement.setString(1, henkiloviite.personOid)
         statement.setString(2, henkiloviite.linkedOid)
         statement.addBatch()
@@ -69,6 +69,23 @@ class HenkiloviiteDb(configuration: DbConfiguration) {
       connection.commit()
     }
 
+    def updateValinnantilat(): Unit = {
+      masterHenkiloviitteet.foreach { henkiloviite =>
+        val (masterOid, henkiloOid) = (henkiloviite.masterOid, henkiloviite.henkiloOid)
+        logger.debug(s"Updating valinnantilat henkilo_oid from $masterOid to $henkiloOid")
+
+        val update = "update valinnantilat set henkilo_oid = ? where henkilo_oid = ?"
+        statement = connection.prepareStatement(update)
+        statement.setString(1, masterOid)
+        statement.setString(2, henkiloOid)
+
+        statement = connection.prepareStatement(update)
+        statement.execute()
+      }
+
+      statement.close()
+    }
+
     try {
       connection = DriverManager.getConnection(url, user.orNull, password.orNull)
       connection.setAutoCommit(false)
@@ -76,6 +93,7 @@ class HenkiloviiteDb(configuration: DbConfiguration) {
       logChanges()
       emptyHenkiloviitteetTable()
       insertHenkiloviitteet()
+      updateValinnantilat()
 
       logger.debug("Henkiloviitteet updated nicely")
       Success(())
