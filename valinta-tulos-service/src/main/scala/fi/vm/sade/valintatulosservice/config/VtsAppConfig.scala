@@ -70,8 +70,6 @@ object VtsAppConfig extends Logging {
 
     override lazy val settings = loadSettings
       .withOverride(("hakemus.mongodb.uri", "mongodb://localhost:27017"))
-      .withOverride(("sijoittelu-service.mongodb.uri", "mongodb://localhost:27017"))
-      .withOverride("sijoittelu-service.mongodb.dbname", "sijoittelu")
   }
 
   class IT_luokka extends IT {
@@ -107,8 +105,6 @@ object VtsAppConfig extends Logging {
 
     override lazy val settings = loadSettings
       .withOverride(("hakemus.mongodb.uri", "mongodb://localhost:" + embeddedMongoPortChooser.chosenPort))
-      .withOverride(("sijoittelu-service.mongodb.uri", "mongodb://localhost:" + embeddedMongoPortChooser.chosenPort))
-      .withOverride(("sijoittelu-service.mongodb.dbname", "sijoittelu"))
       .withOverride(("valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids", "100"))
       .withOverride("valinta-tulos-service.valintarekisteri.db.url", s"jdbc:postgresql://localhost:${itPostgresPortChooser.chosenPort}/valintarekisteri")
       .withoutPath("valinta-tulos-service.valintarekisteri.db.user")
@@ -130,8 +126,6 @@ object VtsAppConfig extends Logging {
   class IT_externalHakemus extends IT {
     override lazy val settings = loadSettings
       .withOverride("hakemus.mongodb.uri", "mongodb://localhost:" + System.getProperty("hakemus.embeddedmongo.port", "28018"))
-      .withOverride(("sijoittelu-service.mongodb.uri", "mongodb://localhost:" + embeddedMongoPortChooser.chosenPort))
-      .withOverride(("sijoittelu-service.mongodb.dbname", "sijoittelu"))
       .withOverride(("valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids", "100"))
       .withOverride("valinta-tulos-service.valintarekisteri.db.url", s"jdbc:postgresql://localhost:${itPostgresPortChooser.chosenPort}/valintarekisteri")
       .withoutPath("valinta-tulos-service.valintarekisteri.db.user")
@@ -143,8 +137,6 @@ object VtsAppConfig extends Logging {
   class IT_localSijoitteluMongo extends IT {
     override lazy val settings = loadSettings
       .withOverride(("hakemus.mongodb.uri", "mongodb://localhost:" + embeddedMongoPortChooser.chosenPort))
-      .withOverride(("sijoittelu-service.mongodb.uri", "mongodb://localhost:27017"))
-      .withOverride(("sijoittelu-service.mongodb.dbname", "sijoitteludb"))
       .withOverride(("valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids", "100"))
       .withOverride("valinta-tulos-service.valintarekisteri.db.url", s"jdbc:postgresql://localhost:${itPostgresPortChooser.chosenPort}/valintarekisteri")
       .withoutPath("valinta-tulos-service.valintarekisteri.db.user")
