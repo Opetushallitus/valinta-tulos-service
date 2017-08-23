@@ -2,18 +2,16 @@ package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.generatedfixtures.{GeneratedFixture, SimpleGeneratedHakuFixture}
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
 import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtures
-import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.SijoitteluContext
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 import org.scalatra.ScalatraServlet
 import org.scalatra.json.JacksonJsonSupport
 
-class FixtureServlet(sijoitteluContext: SijoitteluContext, valintarekisteriDb: ValintarekisteriDb)(implicit val appConfig: VtsAppConfig)
+class FixtureServlet(valintarekisteriDb: ValintarekisteriDb)(implicit val appConfig: VtsAppConfig)
   extends ScalatraServlet with Logging with JacksonJsonSupport with JsonFormats {
 
   options("/fixtures/apply") {
@@ -41,13 +39,6 @@ class FixtureServlet(sijoitteluContext: SijoitteluContext, valintarekisteriDb: V
       }
 
     }
-  }
-
-  put("/fixtures/generate") {
-    response.addHeader("Access-Control-Allow-Origin", "*")
-    val hakemuksia: Int = params.get("hakemuksia").map(_.toInt).getOrElse(50)
-    val hakukohteita: Int = params.get("hakukohteita").map(_.toInt).getOrElse(5)
-    new GeneratedFixture(new SimpleGeneratedHakuFixture(hakukohteita, hakemuksia)).apply(sijoitteluContext)
   }
 
   error {

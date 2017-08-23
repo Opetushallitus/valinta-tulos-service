@@ -21,7 +21,7 @@ class ITPostgres(portChooser: PortChooser) extends Logging {
     logger.info(s"PostgreSQL data directory $dataDirPath does not exist, initing new database there.")
     Files.createDirectories(dataDirFile.toPath)
     runBlocking(s"chmod 0700 $dataDirPath")
-    runBlocking(s"initdb -D $dataDirPath")
+    runBlocking(s"initdb -D $dataDirPath --no-locale")
   }
   logger.info(s"Using PostgreSQL in port $port with data directory $dataDirPath")
 

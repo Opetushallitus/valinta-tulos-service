@@ -6,7 +6,6 @@ import java.util.concurrent.TimeUnit
 import fi.vm.sade.sijoittelu.domain.SijoitteluAjo
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi._
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, IlmoittautumisTila}
-import fi.vm.sade.sijoittelu.tulos.resource.SijoitteluResource
 import fi.vm.sade.utils.Timer
 import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.domain._
@@ -137,7 +136,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
 
   @Deprecated //TODO: Ei toimi erillishaulla, jolla ei ole laskentaa, jos käytössä PostgreSQL eikä Mongo. Käytetäänkö vielä oikeasti?
   def findSijoitteluAjo(hakuOid: HakuOid, sijoitteluajoId: String): Option[Long] = {
-    if (SijoitteluResource.LATEST == sijoitteluajoId) {
+    if ("latest" == sijoitteluajoId) {
       findLatestSijoitteluajoId(hakuOid)
     } else raportointiService.getSijoitteluAjo(sijoitteluajoId.toLong).map(_.getSijoitteluajoId)
   }

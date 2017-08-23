@@ -22,7 +22,7 @@ abstract class Scheduler extends Logging {
     scheduler.scheduleAtFixedRate(task, initialDelay, 24 * 60 * 60 /* Seconds in a day */, TimeUnit.SECONDS)
     Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
       override def run(): Unit = {
-        logger.info("Shutting down migration scheduler")
+        logger.info(s"Shutting down scheduler $schedulerName")
         scheduler.shutdown()
       }
     }))
