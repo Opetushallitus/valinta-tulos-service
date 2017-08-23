@@ -12,7 +12,6 @@ case class VtsApplicationSettings(config: Config) extends ApplicationSettings(co
   val omatsivutUrlSv = withConfig(_.getString("omatsivut.sv"))
   val oppijanTunnistusUrl = withConfig(_.getString("oppijan-tunnistus-service.url"))
   val hakemusMongoConfig: MongoConfig = getMongoConfig(config.getConfig("hakemus.mongodb"))
-  val valintatulosMongoConfig: MongoConfig = getMongoConfig(config.getConfig("sijoittelu-service.mongodb"))
   val securitySettings = new SecuritySettings(config)
   val valintaRekisteriEnsikertalaisuusMaxPersonOids = withConfig(_.getInt("valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids"))
   val lenientSijoitteluntuloksetParsing: Boolean = BooleanUtils.isTrue(withConfig(_.getBoolean("valinta-tulos-service.parseleniently.sijoitteluajontulos")))

@@ -10,8 +10,6 @@ host.virkailija={{host_virkailija}}
 #valinta-tulos-service.ilmoittautuminen.enabled={{valintatulosservice_ilmoittautuminen_enabled}}
 
 #SIJOITTELU-SERVICE
-#sijoittelu-service.mongodb.dbname=sijoitteludb
-#sijoittelu-service.mongodb.uri=mongodb://{{mongodb_virkailija_auth}}@{{mongodb_virkailija_host}}:{{mongodb_virkailija_port}}
 #sijoittelu-service.rest.url=https://{{host_virkailija}}/sijoittelu-service
 #valinta-tulos-service.parseleniently.sijoitteluajontulos={{valintatulosservice_parseleniently_sijoitteluajontulos}}
 #sijoittelu-service.hakukohdeCache.populate=false
