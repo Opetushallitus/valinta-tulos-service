@@ -79,7 +79,6 @@ class HenkiloviiteDb(configuration: DbConfiguration) {
         statement.setString(1, masterOid)
         statement.setString(2, henkiloOid)
 
-        statement = connection.prepareStatement(update)
         statement.execute()
       }
 
