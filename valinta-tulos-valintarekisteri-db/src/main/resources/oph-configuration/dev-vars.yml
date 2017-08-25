@@ -1,7 +1,4 @@
 ---
-mongodb_virkailija_auth:
-mongodb_virkailija_host: localhost
-mongodb_virkailija_port: 27017
 mongodb_hakemus_auth:
 mongodb_hakemus_host: localhost
 mongodb_hakemus_port: 27017

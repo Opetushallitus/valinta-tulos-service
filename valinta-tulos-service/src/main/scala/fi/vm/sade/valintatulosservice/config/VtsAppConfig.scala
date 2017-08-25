@@ -40,7 +40,6 @@ object VtsAppConfig extends Logging {
       case "dev" => new Dev
       case "it" => new IT
       case "it-externalHakemus" => new IT_externalHakemus
-      case "it-localSijoittelu" => new IT_localSijoitteluMongo
       case name => throw new IllegalArgumentException("Unknown value for valintatulos.profile: " + name);
     }
   }
@@ -121,7 +120,7 @@ object VtsAppConfig extends Logging {
   }
 
   /**
-   * IT profile, uses embedded mongo for sijoittelu, external mongo for Hakemus and stubbed external deps
+   * IT profile, uses embedded postgresql and external mongo for Hakemus and stubbed external deps
    */
   class IT_externalHakemus extends IT {
     override lazy val settings = loadSettings
@@ -132,15 +131,6 @@ object VtsAppConfig extends Logging {
       .withoutPath("valinta-tulos-service.valintarekisteri.db.password")
 
     override def importFixturesToHakemusDatabase { /* Don't import initial fixtures, as database is considered external */ }
-  }
-
-  class IT_localSijoitteluMongo extends IT {
-    override lazy val settings = loadSettings
-      .withOverride(("hakemus.mongodb.uri", "mongodb://localhost:" + embeddedMongoPortChooser.chosenPort))
-      .withOverride(("valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids", "100"))
-      .withOverride("valinta-tulos-service.valintarekisteri.db.url", s"jdbc:postgresql://localhost:${itPostgresPortChooser.chosenPort}/valintarekisteri")
-      .withoutPath("valinta-tulos-service.valintarekisteri.db.user")
-      .withoutPath("valinta-tulos-service.valintarekisteri.db.password")
   }
 
   class IT_disabledIlmoittautuminen extends IT {
