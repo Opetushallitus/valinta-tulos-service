@@ -68,8 +68,11 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
 
     hakijat.map({
       case hakija: HakijaRecord if latestHakemusToHakijaMap.contains(hakija.hakemusOid) =>
-        hakija.copy(hakijaOid = latestHakemusToHakijaMap(hakija.hakemusOid))
-      case hakija: HakijaRecord => hakija
+        val hakijaOidFromLatest = latestHakemusToHakijaMap(hakija.hakemusOid)
+        logger.info(s"Korvataan hakijaOid ${hakija.hakemusOid} viimeisimmällä oidilla ${hakijaOidFromLatest}")
+        hakija.copy(hakijaOid = hakijaOidFromLatest)
+      case hakija: HakijaRecord =>
+        hakija
     })
   }
 
