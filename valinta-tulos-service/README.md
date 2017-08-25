@@ -6,7 +6,6 @@ Valintatuloksien ja vastaanottotietojen REST-rajapinta.
 Tavoitteena luoda kaikkien hakujen valintatuloksille ja vastaanottotietojen hallinnalle (valintarekisterille) yhteinen rajapinta.
 
 Rajapinta käyttää
-* `sijoitteludb`-Mongo-kantaa
 * `hakulomake`-Mongo-kantaa
 * `valintarekisteri`-PostgreSQL-kantaa
 
@@ -99,6 +98,8 @@ QA (CAS, korvaa tiketti uudella): https://testi.virkailija.opintopolku.fi/valint
 ```
 
 ## Vastaanottosähköpostit
+
+VANHENTUNUT
 
 Palvelu `valinta-tulos-emailer` käyttää valinta-tulos-serviceä hakemaan listan lähetettävistä vastaanottosähköposteista. Ks MailPoller.scala.
 
