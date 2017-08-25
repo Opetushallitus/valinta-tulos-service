@@ -100,62 +100,6 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       )
       assertValinnantila(valinnantilanTallennus.copy(valinnantila = VarasijaltaHyvaksytty))
     }
-    "update hakemus-related objects in batches in migraatio" in {
-      storeValinnantilaAndValinnantulos()
-      storeIlmoittautuminen()
-      storeHyvaksymiskirje()
-      assertValinnantila(valinnantilanTallennus)
-      assertValinnantuloksenOhjaus(valinnantuloksenOhjaus)
-      assertIlmoittautuminen(ilmoittautuminen)
-      assertEhdollisenHyvaksynnanEhto(ehdollisenHyvaksynnanEhto)
-      assertHyvaksymiskirjeet(ancient)
-      val valintaesitys = Valintaesitys(hakukohdeOid, valintatapajonoOid, Some(ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.of("Europe/Helsinki"))))
-      singleConnectionValintarekisteriDb.runBlocking(
-        singleConnectionValintarekisteriDb.storeBatch(
-          Seq(
-            valintaesitys
-          ),
-          Seq(
-            (valinnantilanTallennus.copy(valinnantila = VarasijaltaHyvaksytty), new Timestamp(System.currentTimeMillis() - 1000)),
-            (valinnantilanTallennus.copy(valinnantila = Peruutettu), new Timestamp(System.currentTimeMillis()))
-          ),
-          Seq(
-            valinnantuloksenOhjaus.copy(julkaistavissa = true),
-            valinnantuloksenOhjaus.copy(hyvaksyPeruuntunut = true)
-          ),
-          Seq(
-            MigratedIlmoittautuminen(henkiloOid, ilmoittautuminen.copy(selite = "en kerro", tila = PoissaSyksy), new Timestamp(System.currentTimeMillis())),
-            MigratedIlmoittautuminen(henkiloOid, ilmoittautuminen.copy(selite = "no kerron", tila = Lasna), new Timestamp(System.currentTimeMillis())),
-            MigratedIlmoittautuminen(henkiloOid, ilmoittautuminen.copy(selite = "ehkä kerron", tila = PoissaSyksy), new Timestamp(System.currentTimeMillis()))
-          ),
-          Seq(
-            ehdollisenHyvaksynnanEhto.copy(ehdollisenHyvaksymisenEhtoFI = "hähäääää!"),
-            ehdollisenHyvaksynnanEhto.copy(ehdollisenHyvaksymisenEhtoFI = "anteeksi...")
-          ),
-          Seq(
-            hyvaksymisKirje.copy(lahetetty = new java.util.Date(100000)),
-            hyvaksymisKirje.copy(lahetetty = new java.util.Date(300000))
-          )
-        )
-      )
-      assertValintaesitykset(valintaesitys)
-      assertValintaesityksetHistory()
-
-      assertValinnantila(valinnantilanTallennus.copy(valinnantila = Peruutettu))
-      assertValinnantilaHistory(2, VarasijaltaHyvaksytty)
-
-      assertValinnantuloksenOhjaus(valinnantuloksenOhjaus.copy(hyvaksyPeruuntunut = true))
-      assertValinnantuloksenOhjausHistory(2, valinnantuloksenOhjaus.copy(julkaistavissa = true))
-
-      assertIlmoittautuminen(ilmoittautuminen.copy(selite = "ehkä kerron", tila = PoissaSyksy))
-      assertIlmoittautuminenHistory(3, ilmoittautuminen.copy(selite = "no kerron", tila = Lasna))
-
-      assertEhdollisenHyvaksynnanEhto(ehdollisenHyvaksynnanEhto.copy(ehdollisenHyvaksymisenEhtoFI = "anteeksi..."))
-      assertEhdollisenHyvaksynnanEhtoHistory(2, ehdollisenHyvaksynnanEhto.copy(ehdollisenHyvaksymisenEhtoFI = "muu"))
-
-      assertHyvaksymiskirjeet(new java.util.Date(300000))
-      assertHyvaksymiskirjeetHistory(2, new java.util.Date(100000))
-    }
     "not update existing valinnantila if modified" in {
       val notModifiedSince = ZonedDateTime.now.minusDays(1).toInstant
       storeValinnantilaAndValinnantulos

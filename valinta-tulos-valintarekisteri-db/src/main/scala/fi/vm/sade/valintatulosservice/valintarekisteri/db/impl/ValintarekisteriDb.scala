@@ -19,7 +19,6 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
   with VastaanottoRepositoryImpl
   with SijoitteluRepositoryImpl
   with StoreSijoitteluRepositoryImpl
-  with MigraatioRepositoryImpl
   with HakukohdeRepositoryImpl
   with SessionRepositoryImpl
   with EnsikertalaisuusRepositoryImpl
