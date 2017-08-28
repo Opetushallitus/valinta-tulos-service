@@ -64,4 +64,8 @@ class SijoitteluService(val sijoitteluRepository: SijoitteluRepository with Haki
     sijoitteluRepository.getValintatapajonoOidByHakuAndHakukohde(hakuOid, hakukohdeOid)
   }
 
+  def isJonoSijoiteltu(hakuOid: HakuOid, jonoOid: JonoOid, session: Session): Boolean = {
+    sijoitteluRepository.getValintatapajonoByOidAndHaku(jonoOid, hakuOid)
+  }
+
 }

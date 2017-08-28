@@ -4,7 +4,7 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, NotFoundException}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 import org.scalatra.{NoContent, NotFound, Ok}
@@ -93,17 +93,14 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
     }
   }
 
-  lazy val sijoitteluajoExistsForHakukohdeJonoSwagger: OperationBuilder = (apiOperation[Unit]("sijoitteluajoExistsForHakukohdeJonoSwagger")
+  lazy val sijoitteluajoExistsForHakuJonoSwagger: OperationBuilder = (apiOperation[Unit]("sijoitteluajoExistsForHakuJonoSwagger")
     summary "Näyttää listan jonoista."
-    parameter pathParam[String]("hakuOid").description("Haun yksilöllinen tunniste")
-    parameter pathParam[String]("hakukohdeOid").description("Hakukohteen yksilöllinen tunniste"))
-  get("/:hakuOid/hakukohde/:hakukohdeOid/jono", operation(sijoitteluajoExistsForHakukohdeJonoSwagger)) {
+    parameter pathParam[String]("hakuOid").description("Haun yksilöllinen tunniste"))
+  get("/:hakuOid/jono/:jonoOid", operation(sijoitteluajoExistsForHakuJonoSwagger)) {
     val hakuOid = HakuOid(params("hakuOid"))
-    val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
-
+    val jonoOid = JonoOid(params("jonoOid"))
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
-
-    Ok(JsonFormats.formatJson(sijoitteluService.getJonosBySijoitteluajo(hakuOid, hakukohdeOid, authenticated.session)))
+    Ok(sijoitteluService.isJonoSijoiteltu(hakuOid, jonoOid, authenticated.session))
   }
 }

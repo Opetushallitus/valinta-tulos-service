@@ -68,4 +68,5 @@ trait SijoitteluRepository extends PerformanceLogger { this:Logging =>
   def getHakukohteenTilahistoriat(sijoitteluajoId: Long, hakukohdeOid: HakukohdeOid): List[TilaHistoriaRecord]
   def getHakukohteenHakemukset(sijoitteluajoId: Long, hakukohdeOid: HakukohdeOid): List[HakemusRecord]
   def getValintatapajonoOidByHakuAndHakukohde(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): List[String]
+  def getValintatapajonoByOidAndHaku(jonoOid: JonoOid, hakuOid: HakuOid): Boolean
 }
