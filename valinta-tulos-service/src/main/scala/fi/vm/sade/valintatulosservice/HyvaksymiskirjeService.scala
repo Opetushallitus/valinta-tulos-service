@@ -32,19 +32,22 @@ class HyvaksymiskirjeService(hyvaksymiskirjeRepository: HyvaksymiskirjeRepositor
         Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).fold(throw _, x => x)
     })
     hyvaksymiskirjeRepository.update(hyvaksymiskirjeet)
-    hyvaksymiskirjeet.foreach(h => {
-      audit.log(auditInfo.user, HyvaksymiskirjeidenMuokkaus,
-        new Target.Builder()
-          .setField("henkilö", h.henkiloOid)
-          .setField("hakukohde", h.hakukohdeOid.toString)
-          .build(),
-        h match {
-          case HyvaksymiskirjePatch(_, _, None) =>
-            new Changes.Builder().removed("lähetetty", null).build()
-          case HyvaksymiskirjePatch(_, _, Some(lahetetty)) =>
-            new Changes.Builder().updated("lähetetty", null, lahetetty.toString).build()
-        }
-      )
-    })
+    hyvaksymiskirjeet.foreach {
+      case deleted@HyvaksymiskirjePatch(_, _, None) =>
+        audit.log(auditInfo.user, HyvaksymiskirjeidenPoisto,
+          new Target.Builder()
+            .setField("henkilö", deleted.henkiloOid)
+            .setField("hakukohde", deleted.hakukohdeOid.toString)
+            .build(),
+          new Changes.Builder().removed("lähetetty", null).build())
+
+      case updated@HyvaksymiskirjePatch(_, _, Some(lahetetty)) =>
+        audit.log(auditInfo.user, HyvaksymiskirjeidenMuokkaus,
+          new Target.Builder()
+            .setField("henkilö", updated.henkiloOid)
+            .setField("hakukohde", updated.hakukohdeOid.toString)
+            .build(),
+          new Changes.Builder().updated("lähetetty", null, lahetetty.toString).build())
+    }
   }
 }
