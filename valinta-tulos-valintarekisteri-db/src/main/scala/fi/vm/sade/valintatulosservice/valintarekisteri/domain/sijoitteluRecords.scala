@@ -37,7 +37,7 @@ case class SijoitteluajoRecord(sijoitteluajoId:Long, hakuOid: HakuOid, startMils
   }
 }
 
-case class HakijaRecord(hakemusOid: HakemusOid, hakijaOid: String) {
+case class HakijaRecord(hakemusOid: HakemusOid, hakijaOid: String, tilanViimeisinMuutos: Option[OffsetDateTime] = None) {
   def dto(hakutoiveet:List[HakutoiveDTO]) = {
     val hakijaDTO = new HakijaDTO
     hakijaDTO.setHakijaOid(hakijaOid)

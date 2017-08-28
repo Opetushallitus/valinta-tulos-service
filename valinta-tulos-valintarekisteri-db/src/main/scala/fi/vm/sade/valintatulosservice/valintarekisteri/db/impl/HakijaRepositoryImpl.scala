@@ -2,55 +2,80 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakijaRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakutoiveRecord, _}
-import slick.dbio.DBIO
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.driver.PostgresDriver.api._
 
-trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriRepository {
+trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriRepository{
 
   override def getHakemuksenHakija(hakemusOid: HakemusOid, sijoitteluajoId: Option[Long] = None): Option[HakijaRecord] =
     timed(s"Hakemuksen $hakemusOid hakijan haku", 100) {
       runBlocking(
-        sql"""select distinct henkilo_oid from valinnantilat where hakemus_oid = $hakemusOid""".as[String]
+        sql"""select distinct henkilo_oid from valinnantilat where hakemus_oid = ${hakemusOid}""".as[String]
       ).toList match {
         case Nil =>
           None
         case henkiloOid :: Nil =>
           Some(HakijaRecord(hakemusOid, henkiloOid))
         case multipleOids =>
-          throw new RuntimeException(s"Hakemukselle $hakemusOid löytyi useita hakijaoideja $multipleOids")
+          throw new RuntimeException(s"Hakemukselle $hakemusOid löytyi useita hakijaoideja ${multipleOids}")
       }
     }
 
   override def getHakukohteenHakijat(hakukohdeOid: HakukohdeOid, sijoitteluajoId: Option[Long] = None): List[HakijaRecord] =
     timed(s"Hakukohteen $hakukohdeOid hakijan haku", 100) {
       val hakijat = runBlocking(
-        sql"""select distinct hakemus_oid, henkilo_oid
+        sql"""select distinct on (hakemus_oid, henkilo_oid) hakemus_oid, henkilo_oid, max(tilan_viimeisin_muutos)
             from valinnantilat
-            where hakukohde_oid = $hakukohdeOid""".as[HakijaRecord]
+            where hakukohde_oid = ${hakukohdeOid}
+            group by hakemus_oid, henkilo_oid""".as[HakijaRecord]
       ).toList
 
-      if (hakijat.map(_.hakemusOid).distinct.size != hakijat.size) {
-        throw new RuntimeException(s"Hakemuksille hakukohteessa $hakukohdeOid löytyi useita hakijaoideja ${hakijat.groupBy(_.hakemusOid).values.filter(_.size > 1)}")
+      if(hakijat.map(_.hakemusOid).distinct.size != hakijat.size) {
+        logger.info(s"Hakemuksille hakukohteessa $hakukohdeOid löytyi useita hakijaoideja")
+        overwriteHakijaOidsWithLatest(hakijat)
+      } else {
+        hakijat
       }
-
-      hakijat
     }
 
-  override def getHaunHakijat(hakuOid: HakuOid, sijoitteluajoId: Option[Long] = None):List[HakijaRecord] =
+
+  override def getHaunHakijat(hakuOid: HakuOid, sijoitteluajoId: Option[Long] = None): List[HakijaRecord] =
     timed(s"Haun ${hakuOid} hakijoiden haku", 100) {
-      val hakijat = runBlocking(sql"""select distinct hakemus_oid, henkilo_oid
+      val hakijat = runBlocking(sql"""select distinct on (hakemus_oid, henkilo_oid) hakemus_oid, henkilo_oid, max(tilan_viimeisin_muutos)
             from valinnantilat
             inner join hakukohteet on hakukohteet.hakukohde_oid = valinnantilat.hakukohde_oid
-            where hakukohteet.haku_oid = ${hakuOid}""".as[HakijaRecord]
+            where hakukohteet.haku_oid = ${hakuOid}
+            group by hakemus_oid, henkilo_oid""".as[HakijaRecord]
       ).toList
 
-      if (hakijat.map(_.hakemusOid).distinct.size != hakijat.size) {
-        throw new RuntimeException(s"Hakemuksille haussa $hakuOid löytyi useita hakijaoideja ${hakijat.groupBy(_.hakemusOid).values.filter(_.size > 1)}")
-      }
 
-      hakijat
+      if(hakijat.map(_.hakemusOid).distinct.size != hakijat.size) {
+        logger.info(s"Hakemuksille haussa $hakuOid löytyi useita hakijaoideja")
+        overwriteHakijaOidsWithLatest(hakijat)
+      } else {
+        hakijat
+      }
     }
+
+  private def overwriteHakijaOidsWithLatest(hakijat: List[HakijaRecord]): List[HakijaRecord] = {
+    val multipleHakijaOidsForHakemus = hakijat.groupBy(_.hakemusOid).values.filter(_.size > 1).toList
+    logger.info(s"Selvitetään hakemus, hakija duplikaatit: ${multipleHakijaOidsForHakemus}")
+
+    val latestHakemusToHakijaMap = multipleHakijaOidsForHakemus
+      .map(hakijaRecords => hakijaRecords.maxBy(_.tilanViimeisinMuutos))
+      .map(hakija => (hakija.hakemusOid, hakija.hakijaOid))
+      .toMap
+
+    hakijat.map({
+      case hakija: HakijaRecord if latestHakemusToHakijaMap.contains(hakija.hakemusOid) =>
+        val hakijaOidFromLatest = latestHakemusToHakijaMap(hakija.hakemusOid)
+        logger.info(s"Korvataan hakijaOid ${hakija.hakemusOid} viimeisimmällä oidilla ${hakijaOidFromLatest}")
+        hakija.copy(hakijaOid = hakijaOidFromLatest)
+      case hakija: HakijaRecord =>
+        hakija
+    })
+  }
+
 
   override def getHakemuksenHakutoiveetSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId:Long): List[HakutoiveRecord] =
     timed(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid hakutoiveiden haku", 100) {
