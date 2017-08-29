@@ -94,8 +94,9 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
   }
 
   lazy val sijoitteluajoExistsForHakuJonoSwagger: OperationBuilder = (apiOperation[Unit]("sijoitteluajoExistsForHakuJonoSwagger")
-    summary "Näyttää listan jonoista."
-    parameter pathParam[String]("hakuOid").description("Haun yksilöllinen tunniste"))
+    summary "Kertoo onko valintatapajonolle suoritettu sijoittelua"
+    parameter pathParam[String]("hakuOid").description("Haun yksilöllinen tunniste")
+    parameter pathParam[String]("jonoOid").description("Valintatapajonon yksilöllinen tunniste"))
   get("/:hakuOid/jono/:jonoOid", operation(sijoitteluajoExistsForHakuJonoSwagger)) {
     val hakuOid = HakuOid(params("hakuOid"))
     val jonoOid = ValintatapajonoOid(params("jonoOid"))
