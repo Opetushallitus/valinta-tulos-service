@@ -58,14 +58,8 @@ class SijoitteluService(val sijoitteluRepository: SijoitteluRepository with Haki
     }).getOrElse(throw new IllegalArgumentException(s"Sijoitteluajoa $sijoitteluajoId ei löytynyt haulle $hakuOid"))
   }
 
-  def getJonosBySijoitteluajo(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid, session: Session): List[String] = {
-    val latestSijoitteluAjoId = sijoitteluRepository.getLatestSijoitteluajoIdThrowFailure("latest", hakuOid)
-    val jonot = sijoitteluRepository.getHakukohteenValintatapajonot(latestSijoitteluAjoId, hakukohdeOid)
-    sijoitteluRepository.getValintatapajonoOidByHakuAndHakukohde(hakuOid, hakukohdeOid)
-  }
-
-  def isJonoSijoiteltu(hakuOid: HakuOid, jonoOid: JonoOid, session: Session): Boolean = {
-    sijoitteluRepository.getValintatapajonoByOidAndHaku(jonoOid, hakuOid)
+  def isJonoSijoiteltu(hakuOid: HakuOid, jonoOid: ValintatapajonoOid, session: Session): Boolean = {
+    sijoitteluRepository.isJonoSijoiteltuByOidAndHaku(jonoOid, hakuOid)
   }
 
 }

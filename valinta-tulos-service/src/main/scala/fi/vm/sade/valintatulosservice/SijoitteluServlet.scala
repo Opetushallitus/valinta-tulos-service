@@ -98,7 +98,7 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
     parameter pathParam[String]("hakuOid").description("Haun yksilöllinen tunniste"))
   get("/:hakuOid/jono/:jonoOid", operation(sijoitteluajoExistsForHakuJonoSwagger)) {
     val hakuOid = HakuOid(params("hakuOid"))
-    val jonoOid = JonoOid(params("jonoOid"))
+    val jonoOid = ValintatapajonoOid(params("jonoOid"))
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
     Ok(sijoitteluService.isJonoSijoiteltu(hakuOid, jonoOid, authenticated.session))

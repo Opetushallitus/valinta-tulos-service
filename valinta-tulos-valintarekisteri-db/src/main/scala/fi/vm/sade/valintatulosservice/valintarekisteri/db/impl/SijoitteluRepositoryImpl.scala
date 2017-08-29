@@ -340,33 +340,18 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
       readPistetiedot()
     }
 
-  override def getValintatapajonoOidByHakuAndHakukohde(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): List[String] = {
-    timed(s"Valintatapajonojen haku", 100) {
-      runBlocking(sql"""
-        SELECT v.oid
-        FROM valintatapajonot AS v
-        JOIN valintaesitykset AS ve ON ve.valintatapajono_oid = v.oid
-        WHERE v.sijoitteluajo_id = (SELECT id
-                               FROM sijoitteluajot
-                               WHERE haku_oid = ${hakuOid}
-                               ORDER BY id DESC
-                               LIMIT 1)
-         AND v.hakukohde_oid = ${hakukohdeOid};
-         """.as[String]).toList
-    }
-  }
-
-  override def getValintatapajonoByOidAndHaku(jonoOid: JonoOid, hakuOid: HakuOid): Boolean = {
-    timed(s"Valintatapajonojen haku", 100) {
+  override def isJonoSijoiteltuByOidAndHaku(jonoOid: ValintatapajonoOid, hakuOid: HakuOid): Boolean = {
+    val exists: Boolean = timed(s"getValintatapajonoByOidAndHaku", 100) {
       runBlocking(sql"""
          SELECT exists( SELECT 1 FROM valintatapajonot v
          WHERE v.oid = ${jonoOid}
          AND v.sijoitteluajo_id = (SELECT id
-                                   FROM sijoitteluajot
-                                   WHERE haku_oid = ${hakuOid}
-                                   ORDER BY id DESC
+                                   FROM sijoitteluajot AS s
+                                   WHERE s.haku_oid = ${hakuOid}
+                                   ORDER BY s.id DESC
                                    LIMIT 1));
        """.as[Boolean]).head
     }
+    exists
   }
 }

@@ -20,10 +20,6 @@ case class HakuOid(s: String) {
   override def toString: String = s
 }
 
-case class JonoOid(s: String) {
-  override def toString: String = s
-}
-
 class HakuOidSerializer extends CustomSerializer[HakuOid]((_: Formats) => {
   ({
     case json: JString => HakuOid(json.s)
