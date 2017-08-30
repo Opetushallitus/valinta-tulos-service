@@ -8,6 +8,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.SijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.driver.PostgresDriver.api._
 
+import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
@@ -338,4 +339,19 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
       }
       readPistetiedot()
     }
+
+  override def isJonoSijoiteltuByOidAndHaku(jonoOid: ValintatapajonoOid, hakuOid: HakuOid): Boolean = {
+    val exists: Boolean = timed(s"getValintatapajonoByOidAndHaku", 100) {
+      runBlocking(sql"""
+         SELECT exists( SELECT 1 FROM valintatapajonot v
+         WHERE v.oid = ${jonoOid}
+         AND v.sijoitteluajo_id = (SELECT id
+                                   FROM sijoitteluajot AS s
+                                   WHERE s.haku_oid = ${hakuOid}
+                                   ORDER BY s.id DESC
+                                   LIMIT 1));
+       """.as[Boolean]).head
+    }
+    exists
+  }
 }
