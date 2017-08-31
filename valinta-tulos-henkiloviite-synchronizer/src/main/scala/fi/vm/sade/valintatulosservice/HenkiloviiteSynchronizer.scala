@@ -47,7 +47,7 @@ class HenkiloviiteSynchronizer(henkiloClient: HenkiloviiteClient, db: Henkilovii
       logger.info("Henkiloviite sync starts.")
       val result: Try[Unit] = for {
         henkiloviitteetList <- henkiloClient.fetchHenkiloviitteet()
-        _ <- db.refresh(henkiloviitteetList, HenkiloviiteSynchronizer.henkiloRelations(henkiloviitteetList))
+        _ <- db.refresh(HenkiloviiteSynchronizer.henkiloRelations(henkiloviitteetList))
       } yield ()
       state = Stopped(LocalDateTime.now(), result)
       result match {
