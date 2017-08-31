@@ -18,7 +18,7 @@ class HenkiloviiteDb(configuration: DbConfiguration) {
 
   Class.forName("org.postgresql.Driver")
 
-  def refresh(masterHenkiloviitteet: Seq[Henkiloviite], allHenkiloviitteet: Set[HenkiloRelation]): Try[Unit] = {
+  def refresh(henkiloviitteet: Set[HenkiloRelation]): Try[Unit] = {
     var connection: Connection = null
     var statement: PreparedStatement = null
 
@@ -33,9 +33,9 @@ class HenkiloviiteDb(configuration: DbConfiguration) {
       }
       henkiloResultSetBeforeUpdate.close()
       statement.close()
-      logger.info(s"Before update, we have ${henkiloviitteetEnnenPaivitysta.size} relations in the henkiloviitteet table.")
-      logger.info(s"New relations: ${allHenkiloviitteet -- henkiloviitteetEnnenPaivitysta.toSet}")
-      logger.info(s"Removed relations: ${henkiloviitteetEnnenPaivitysta.toSet -- allHenkiloviitteet}")
+      logger.info(s"Before update, we have ${henkiloviitteetEnnenPaivitysta.size} relations in the database.")
+      logger.info(s"New relations: ${henkiloviitteet -- henkiloviitteetEnnenPaivitysta.toSet}")
+      logger.info(s"Removed relations: ${henkiloviitteetEnnenPaivitysta.toSet -- henkiloviitteet}")
     }
 
     def emptyHenkiloviitteetTable(): Unit = {
@@ -50,9 +50,9 @@ class HenkiloviiteDb(configuration: DbConfiguration) {
       val insert = "insert into henkiloviitteet (person_oid, linked_oid) values (?, ?)"
       statement = connection.prepareStatement(insert)
 
-      logger.info(s"Inserting ${allHenkiloviitteet.size} henkiloviite rows.")
+      logger.info(s"Inserting ${henkiloviitteet.size} henkiloviite rows.")
 
-      for ((henkiloviite, i) <- allHenkiloviitteet.zipWithIndex) {
+      for ((henkiloviite, i) <- henkiloviitteet.zipWithIndex) {
         statement.setString(1, henkiloviite.personOid)
         statement.setString(2, henkiloviite.linkedOid)
         statement.addBatch()
@@ -68,6 +68,7 @@ class HenkiloviiteDb(configuration: DbConfiguration) {
       statement.executeBatch()
       connection.commit()
     }
+
     try {
       connection = DriverManager.getConnection(url, user.orNull, password.orNull)
       connection.setAutoCommit(false)
