@@ -3,6 +3,8 @@ valinta-tulos-valintarekisteri-db
 
 Valintarekisterin kanta sekä kirjasto sijoittelun tallentamiseksi valintarekisteriin.
 
+VANHENTUNUT! Ei ole enää Sijoittelu-Mongoa!
+
 ## Sijoittelun ajaminen lokaalisti
 
 Sijoittelun voi ajaa ja tallentaa valintarekisterikantaan lokaalisti siten, että 

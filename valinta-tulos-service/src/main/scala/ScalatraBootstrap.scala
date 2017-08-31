@@ -11,14 +11,12 @@ import fi.vm.sade.valintatulosservice.config.{OhjausparametritAppConfig, VtsAppC
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.kela.{KelaService, VtsKelaAuthenticationClient}
-import fi.vm.sade.valintatulosservice.migraatio.sijoitteluntulos.{SijoittelunTulosMigraatioScheduler, SijoittelunTulosMigraatioServlet, SijoitteluntulosMigraatioService}
 import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.sijoittelu._
 import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtures
-import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{SijoitteluContext, SijoitteluSpringContext}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
@@ -46,10 +44,8 @@ class ScalatraBootstrap extends LifeCycle with Logging {
 
     def isTrue(string:String) = null != string && "true".equalsIgnoreCase(string)
 
-    lazy val sijoitteluContext: SijoitteluContext = new SijoitteluSpringContext(appConfig, SijoitteluSpringContext.createApplicationContext(appConfig))
-
     if (appConfig.isInstanceOf[IT] || appConfig.isInstanceOf[Dev]) {
-      context.mount(new FixtureServlet(sijoitteluContext, valintarekisteriDb), "/util")
+      context.mount(new FixtureServlet(valintarekisteriDb), "/util")
       SijoitteluFixtures(valintarekisteriDb).importFixture("hyvaksytty-kesken-julkaistavissa.json")
     }
     implicit lazy val dynamicAppConfig = new OhjausparametritAppConfig(appConfig.ohjausparametritService)
@@ -103,31 +99,12 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val sijoitteluajoDeleteScheduler = new SijoitteluajoDeleteScheduler(valintarekisteriDb, appConfig)
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
     
-    val migrationMode = isTrue(System.getProperty("valinta-rekisteri-migration-mode"))
-    val scheduledMigration = isTrue(System.getProperty("valinta-rekisteri-scheduled-migration"))
     val scheduledDeleteSijoitteluAjot = isTrue(System.getProperty("valinta-rekisteri-scheduled-delete-sijoitteluajot"))
-
     if(scheduledDeleteSijoitteluAjot) {
       sijoitteluajoDeleteScheduler.startScheduler()
     }
 
-    if (migrationMode || scheduledMigration) {
-      lazy val migraatioService = new SijoitteluntulosMigraatioService(sijoittelunTulosClient, appConfig,
-        valintarekisteriDb, hakukohdeRecordService, hakuService, valintalaskentakoostepalveluService, sijoitteluContext)
-      lazy val sijoitteluntulosMigraatioScheduler = new SijoittelunTulosMigraatioScheduler(migraatioService, appConfig)
-      if (scheduledMigration) {
-        sijoitteluntulosMigraatioScheduler.startScheduler()
-      }
-      if (migrationMode) {
-        context.mount(new SijoittelunTulosMigraatioServlet(migraatioService), "/sijoittelun-tulos-migraatio")
-        val forceRunningBasicVtsWithMigration = System.getProperty("valinta-rekisteri-force-basic-vts-with-migration")
-        if (forceRunningBasicVtsWithMigration != null && "true".equals(forceRunningBasicVtsWithMigration)) {
-          mountBasicVts()
-        }
-      } else {
-        mountBasicVts()
-      }
-    } else mountBasicVts()
+    mountBasicVts()
 
     context.mount(new HakukohdeRefreshServlet(valintarekisteriDb, hakukohdeRecordService), "/virkistys")
 
