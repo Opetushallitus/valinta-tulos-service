@@ -68,23 +68,6 @@ class HenkiloviiteDb(configuration: DbConfiguration) {
       statement.executeBatch()
       connection.commit()
     }
-
-    def updateValinnantilat(): Unit = {
-      masterHenkiloviitteet.foreach { henkiloviite =>
-        val (masterOid, henkiloOid) = (henkiloviite.masterOid, henkiloviite.henkiloOid)
-        logger.debug(s"Updating valinnantilat henkilo_oid from $masterOid to $henkiloOid")
-
-        val update = "update valinnantilat set henkilo_oid = ? where henkilo_oid = ?"
-        statement = connection.prepareStatement(update)
-        statement.setString(1, masterOid)
-        statement.setString(2, henkiloOid)
-
-        statement.execute()
-      }
-
-      statement.close()
-    }
-
     try {
       connection = DriverManager.getConnection(url, user.orNull, password.orNull)
       connection.setAutoCommit(false)
@@ -92,7 +75,6 @@ class HenkiloviiteDb(configuration: DbConfiguration) {
       logChanges()
       emptyHenkiloviitteetTable()
       insertHenkiloviitteet()
-      updateValinnantilat()
 
       logger.debug("Henkiloviitteet updated nicely")
       Success(())

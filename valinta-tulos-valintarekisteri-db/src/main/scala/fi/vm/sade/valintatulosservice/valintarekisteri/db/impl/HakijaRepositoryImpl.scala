@@ -5,19 +5,22 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakijaRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.driver.PostgresDriver.api._
 
-trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriRepository{
+trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriRepository {
 
   override def getHakemuksenHakija(hakemusOid: HakemusOid, sijoitteluajoId: Option[Long] = None): Option[HakijaRecord] =
     timed(s"Hakemuksen $hakemusOid hakijan haku", 100) {
       runBlocking(
-        sql"""select distinct henkilo_oid from valinnantilat where hakemus_oid = ${hakemusOid}""".as[String]
+        sql"""select ${hakemusOid}, henkilo_oid, max(tilan_viimeisin_muutos)
+              from valinnantilat where hakemus_oid = ${hakemusOid}
+              group by henkilo_oid""".as[HakijaRecord]
       ).toList match {
         case Nil =>
           None
-        case henkiloOid :: Nil =>
-          Some(HakijaRecord(hakemusOid, henkiloOid))
-        case multipleOids =>
-          throw new RuntimeException(s"Hakemukselle $hakemusOid löytyi useita hakijaoideja ${multipleOids}")
+        case hakijaRecord :: Nil =>
+          Some(hakijaRecord)
+        case multipleRecords =>
+          logger.debug(s"Hakemukselle $hakemusOid löytyi useita hakijaoideja")
+          replaceHakijaOidsWithLatest(multipleRecords).headOption
       }
     }
 
@@ -30,9 +33,9 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
             group by hakemus_oid, henkilo_oid""".as[HakijaRecord]
       ).toList
 
-      if(hakijat.map(_.hakemusOid).distinct.size != hakijat.size) {
-        logger.info(s"Hakemuksille hakukohteessa $hakukohdeOid löytyi useita hakijaoideja")
-        overwriteHakijaOidsWithLatest(hakijat)
+      if (hakijat.map(_.hakemusOid).distinct.size != hakijat.size) {
+        logger.debug(s"Hakemuksille hakukohteessa $hakukohdeOid löytyi useita hakijaoideja")
+        replaceHakijaOidsWithLatest(hakijat)
       } else {
         hakijat
       }
@@ -49,19 +52,34 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
       ).toList
 
 
-      if(hakijat.map(_.hakemusOid).distinct.size != hakijat.size) {
-        logger.info(s"Hakemuksille haussa $hakuOid löytyi useita hakijaoideja")
-        overwriteHakijaOidsWithLatest(hakijat)
+      if (hakijat.map(_.hakemusOid).distinct.size != hakijat.size) {
+        logger.debug(s"Hakemuksille haussa $hakuOid löytyi useita hakijaoideja")
+        replaceHakijaOidsWithLatest(hakijat)
       } else {
         hakijat
       }
     }
 
-  private def overwriteHakijaOidsWithLatest(hakijat: List[HakijaRecord]): List[HakijaRecord] = {
-    val multipleHakijaOidsForHakemus = hakijat.groupBy(_.hakemusOid).values.filter(_.size > 1).toList
-    logger.info(s"Selvitetään hakemus, hakija duplikaatit: ${multipleHakijaOidsForHakemus}")
+  private def replaceHakijaOidsWithLatest(hakijat: List[HakijaRecord]): List[HakijaRecord] = {
+    val multipleHakijasForHakemus: Seq[List[HakijaRecord]] = hakijat.groupBy(_.hakemusOid).values.filter(_.size > 1).toList
 
-    val latestHakemusToHakijaMap = multipleHakijaOidsForHakemus
+    val hakijaOids: Seq[String] = multipleHakijasForHakemus.flatMap(_.map(_.hakijaOid)).distinct
+    val henkiloviitteet = timed(s"Henkilöviitteiden haku ${hakijaOids.size} hakijaOidille", 1000) {
+      runBlocking(sql"""
+           SELECT * FROM henkiloviitteet WHERE person_oid IN ${hakijaOids}
+        """.as[(String, String)]
+      ).toSet
+    }
+
+    hakijaOids.foreach( hakija1 =>
+      hakijaOids.foreach( hakija2 =>
+          if (!henkiloviitteet.contains((hakija1, hakija2))) {
+            throw new RuntimeException(s"henkiloviitteet-taulu ei ajan tasalla: ei sisältänyt linkitystä ($hakija1, $hakija2). Ei voida korjata saman hakemuksen eri hakijaOideja.")
+          }
+        )
+      )
+
+    val latestHakemusToHakijaMap = multipleHakijasForHakemus
       .map(hakijaRecords => hakijaRecords.maxBy(_.tilanViimeisinMuutos))
       .map(hakija => (hakija.hakemusOid, hakija.hakijaOid))
       .toMap
@@ -69,7 +87,7 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
     hakijat.map({
       case hakija: HakijaRecord if latestHakemusToHakijaMap.contains(hakija.hakemusOid) =>
         val hakijaOidFromLatest = latestHakemusToHakijaMap(hakija.hakemusOid)
-        logger.info(s"Korvataan hakijaOid ${hakija.hakijaOid} viimeisimmällä oidilla ${hakijaOidFromLatest}")
+        logger.debug(s"Korvataan hakijaOid ${hakija.hakijaOid} viimeisimmällä oidilla ${hakijaOidFromLatest}")
         hakija.copy(hakijaOid = hakijaOidFromLatest)
       case hakija: HakijaRecord =>
         hakija
