@@ -28,8 +28,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                         limit: Int,
                         recheckIntervalHours: Int = (24 * 3)): Set[ViestinnänOhjausKooste] = {
 
-    val allowedChars = "01234567890.,'".toCharArray.toSet
-    val hakuOidsIn: String = if (hakuOids.isEmpty) "''" else hakuOids.map(oid => s"'$oid'").mkString(",").filter(allowedChars.contains)
+    val hakuOidsIn: String = formatMultipleValuesForSql(hakuOids.map(_.s))
     val limitDateTime = new DateTime().minusHours(recheckIntervalHours).toDate
     val limitTimestamp: Timestamp = new Timestamp(limitDateTime.getTime)
 

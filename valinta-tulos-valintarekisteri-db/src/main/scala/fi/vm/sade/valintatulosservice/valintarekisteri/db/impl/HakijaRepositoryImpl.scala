@@ -65,7 +65,7 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
 
     val hakijaOids: Seq[String] = multipleHakijasForHakemus.flatMap(_.map(_.hakijaOid)).distinct
 
-    val oidsIn = hakijaOids.mkString(",")
+    val oidsIn: String = formatMultipleValuesForSql(hakijaOids)
     val henkiloviitteet: Set[(String, String)] = timed(s"Henkilöviitteiden haku ${hakijaOids.size} hakijaOidille", 1000) {
       runBlocking(sql"""
            SELECT * FROM henkiloviitteet WHERE person_oid IN (#${oidsIn})
