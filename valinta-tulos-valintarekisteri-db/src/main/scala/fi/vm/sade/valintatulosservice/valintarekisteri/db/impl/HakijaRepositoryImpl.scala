@@ -64,9 +64,11 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
     val multipleHakijasForHakemus: Seq[List[HakijaRecord]] = hakijat.groupBy(_.hakemusOid).values.filter(_.size > 1).toList
 
     val hakijaOids: Seq[String] = multipleHakijasForHakemus.flatMap(_.map(_.hakijaOid)).distinct
-    val henkiloviitteet = timed(s"Henkilöviitteiden haku ${hakijaOids.size} hakijaOidille", 1000) {
+
+    val oidsIn = hakijaOids.mkString(",")
+    val henkiloviitteet: Set[(String, String)] = timed(s"Henkilöviitteiden haku ${hakijaOids.size} hakijaOidille", 1000) {
       runBlocking(sql"""
-           SELECT * FROM henkiloviitteet WHERE person_oid IN ${hakijaOids}
+           SELECT * FROM henkiloviitteet WHERE person_oid IN (#${oidsIn})
         """.as[(String, String)]
       ).toSet
     }
