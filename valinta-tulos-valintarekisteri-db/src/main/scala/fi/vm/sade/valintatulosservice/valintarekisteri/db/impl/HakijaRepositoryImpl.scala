@@ -74,15 +74,17 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
       ).toSet
     }
 
-    multipleHakijasForHakemus.foreach(aliases =>
-      aliases.foreach(hakija1 =>
-        aliases.foreach(hakija2 =>
-          if (!henkiloviitteet.contains((hakija1._1.hakijaOid, hakija2._1.hakijaOid))) {
-            throw new RuntimeException(s"henkiloviitteet-taulu ei ajan tasalla: ei sisältänyt linkitystä ($hakija1, $hakija2). Ei voida korjata saman hakemuksen eri hakijaOideja.")
+    multipleHakijasForHakemus.foreach { aliases =>
+      aliases.foreach { hakija1 =>
+        aliases.foreach { hakija2 =>
+          val oid1 = hakija1._1.hakijaOid
+          val oid2 = hakija2._1.hakijaOid
+          if (oid1 != oid2 && !henkiloviitteet.contains((oid1, oid2))) {
+            throw new RuntimeException(s"henkiloviitteet-taulu ei ajan tasalla: ei sisältänyt linkitystä ($oid1, $oid2). Ei voida korjata saman hakemuksen ${hakija1._1.hakemusOid} eri hakijaOideja.")
           }
-        )
-      )
-    )
+        }
+      }
+    }
 
     val latestHakemusToHakijaMap = multipleHakijasForHakemus
       .map(hakijaRecords => hakijaRecords.maxBy(_._2))
