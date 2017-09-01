@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
+import java.time.OffsetDateTime
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakijaRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -12,11 +13,11 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
       runBlocking(
         sql"""select ${hakemusOid}, henkilo_oid, max(tilan_viimeisin_muutos)
               from valinnantilat where hakemus_oid = ${hakemusOid}
-              group by henkilo_oid""".as[HakijaRecord]
+              group by henkilo_oid""".as[(HakijaRecord, OffsetDateTime)]
       ).toList match {
         case Nil =>
           None
-        case hakijaRecord :: Nil =>
+        case (hakijaRecord, _) :: Nil =>
           Some(hakijaRecord)
         case multipleRecords =>
           logger.debug(s"Hakemukselle $hakemusOid löytyi useita hakijaoideja")
@@ -26,44 +27,44 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
 
   override def getHakukohteenHakijat(hakukohdeOid: HakukohdeOid, sijoitteluajoId: Option[Long] = None): List[HakijaRecord] =
     timed(s"Hakukohteen $hakukohdeOid hakijan haku", 100) {
-      val hakijat = runBlocking(
+      val hakijatJaAjat = runBlocking(
         sql"""select distinct on (hakemus_oid, henkilo_oid) hakemus_oid, henkilo_oid, max(tilan_viimeisin_muutos)
             from valinnantilat
             where hakukohde_oid = ${hakukohdeOid}
-            group by hakemus_oid, henkilo_oid""".as[HakijaRecord]
+            group by hakemus_oid, henkilo_oid""".as[(HakijaRecord, OffsetDateTime)]
       ).toList
 
-      if (hakijat.map(_.hakemusOid).distinct.size != hakijat.size) {
+      if (hakijatJaAjat.map(_._1.hakemusOid).distinct.size != hakijatJaAjat.size) {
         logger.debug(s"Hakemuksille hakukohteessa $hakukohdeOid löytyi useita hakijaoideja")
-        replaceHakijaOidsWithLatest(hakijat)
+        replaceHakijaOidsWithLatest(hakijatJaAjat)
       } else {
-        hakijat
+        hakijatJaAjat.map(_._1)
       }
     }
 
 
   override def getHaunHakijat(hakuOid: HakuOid, sijoitteluajoId: Option[Long] = None): List[HakijaRecord] =
     timed(s"Haun ${hakuOid} hakijoiden haku", 100) {
-      val hakijat = runBlocking(sql"""select distinct on (hakemus_oid, henkilo_oid) hakemus_oid, henkilo_oid, max(tilan_viimeisin_muutos)
+      val hakijatJaAjat = runBlocking(sql"""select distinct on (hakemus_oid, henkilo_oid) hakemus_oid, henkilo_oid, max(tilan_viimeisin_muutos)
             from valinnantilat
             inner join hakukohteet on hakukohteet.hakukohde_oid = valinnantilat.hakukohde_oid
             where hakukohteet.haku_oid = ${hakuOid}
-            group by hakemus_oid, henkilo_oid""".as[HakijaRecord]
+            group by hakemus_oid, henkilo_oid""".as[(HakijaRecord, OffsetDateTime)]
       ).toList
 
 
-      if (hakijat.map(_.hakemusOid).distinct.size != hakijat.size) {
+      if (hakijatJaAjat.map(_._1.hakemusOid).distinct.size != hakijatJaAjat.size) {
         logger.debug(s"Hakemuksille haussa $hakuOid löytyi useita hakijaoideja")
-        replaceHakijaOidsWithLatest(hakijat)
+        replaceHakijaOidsWithLatest(hakijatJaAjat)
       } else {
-        hakijat
+        hakijatJaAjat.map(_._1)
       }
     }
 
-  private def replaceHakijaOidsWithLatest(hakijat: List[HakijaRecord]): List[HakijaRecord] = {
-    val multipleHakijasForHakemus: Seq[List[HakijaRecord]] = hakijat.groupBy(_.hakemusOid).values.filter(_.size > 1).toList
+  private def replaceHakijaOidsWithLatest(hakijatJaAjat: List[(HakijaRecord, OffsetDateTime)]): List[HakijaRecord] = {
+    val multipleHakijasForHakemus: Seq[List[(HakijaRecord, OffsetDateTime)]] = hakijatJaAjat.groupBy(_._1.hakemusOid).values.filter(_.size > 1).toList
 
-    val hakijaOids: Seq[String] = multipleHakijasForHakemus.flatMap(_.map(_.hakijaOid)).distinct
+    val hakijaOids: Seq[String] = multipleHakijasForHakemus.flatMap(_.map(_._1.hakijaOid)).distinct
 
     val oidsIn: String = formatMultipleValuesForSql(hakijaOids)
     val henkiloviitteet: Set[(String, String)] = timed(s"Henkilöviitteiden haku ${hakijaOids.size} hakijaOidille", 1000) {
@@ -76,7 +77,7 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
     multipleHakijasForHakemus.foreach(aliases =>
       aliases.foreach(hakija1 =>
         aliases.foreach(hakija2 =>
-          if (!henkiloviitteet.contains((hakija1.hakijaOid, hakija2.hakijaOid))) {
+          if (!henkiloviitteet.contains((hakija1._1.hakijaOid, hakija2._1.hakijaOid))) {
             throw new RuntimeException(s"henkiloviitteet-taulu ei ajan tasalla: ei sisältänyt linkitystä ($hakija1, $hakija2). Ei voida korjata saman hakemuksen eri hakijaOideja.")
           }
         )
@@ -84,18 +85,18 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
     )
 
     val latestHakemusToHakijaMap = multipleHakijasForHakemus
-      .map(hakijaRecords => hakijaRecords.maxBy(_.tilanViimeisinMuutos))
-      .map(hakija => (hakija.hakemusOid, hakija.hakijaOid))
+      .map(hakijaRecords => hakijaRecords.maxBy(_._2))
+      .map{case (hakija, _) => (hakija.hakemusOid, hakija.hakijaOid)}
       .toMap
 
-    hakijat.map({
-      case hakija: HakijaRecord if latestHakemusToHakijaMap.contains(hakija.hakemusOid) =>
+    hakijatJaAjat.map({
+      case (hakija, aika) if latestHakemusToHakijaMap.contains(hakija.hakemusOid) =>
         val hakijaOidFromLatest = latestHakemusToHakijaMap(hakija.hakemusOid)
         logger.debug(s"Korvataan hakijaOid ${hakija.hakijaOid} viimeisimmällä oidilla ${hakijaOidFromLatest}")
         hakija.copy(hakijaOid = hakijaOidFromLatest)
-      case hakija: HakijaRecord =>
+      case (hakija, aika) =>
         hakija
-    })
+    }).distinct
   }
 
 
