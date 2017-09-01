@@ -96,7 +96,7 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
         hakija.copy(hakijaOid = hakijaOidFromLatest)
       case (hakija, aika) =>
         hakija
-    })
+    }).distinct
   }
 
 
