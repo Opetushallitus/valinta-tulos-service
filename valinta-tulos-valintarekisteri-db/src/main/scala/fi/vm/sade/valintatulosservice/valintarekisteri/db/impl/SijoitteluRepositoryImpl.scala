@@ -340,16 +340,13 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
       readPistetiedot()
     }
 
-  override def isJonoSijoiteltuByOidAndHaku(jonoOid: ValintatapajonoOid, hakuOid: HakuOid): Boolean = {
+  override def isJonoSijoiteltuByOid(jonoOid: ValintatapajonoOid): Boolean = {
     val exists: Boolean = timed(s"getValintatapajonoByOidAndHaku", 100) {
       runBlocking(sql"""
-         SELECT exists( SELECT 1 FROM valintatapajonot v
-         WHERE v.oid = ${jonoOid}
-         AND v.sijoitteluajo_id = (SELECT id
-                                   FROM sijoitteluajot AS s
-                                   WHERE s.haku_oid = ${hakuOid}
-                                   ORDER BY s.id DESC
-                                   LIMIT 1));
+        SELECT EXISTS(SELECT 1 FROM VALINTATAPAJONOT V
+        JOIN sijoitteluajot SA ON SA.ID = V.sijoitteluajo_id
+        WHERE V.oid = ${jonoOid}
+        ORDER BY SA."end" DESC LIMIT 1)
        """.as[Boolean]).head
     }
     exists

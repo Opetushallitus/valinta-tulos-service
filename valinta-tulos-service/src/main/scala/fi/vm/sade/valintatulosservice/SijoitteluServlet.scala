@@ -95,13 +95,11 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
 
   lazy val sijoitteluajoExistsForHakuJonoSwagger: OperationBuilder = (apiOperation[Unit]("sijoitteluajoExistsForHakuJonoSwagger")
     summary "Kertoo onko valintatapajonolle suoritettu sijoittelua"
-    parameter pathParam[String]("hakuOid").description("Haun yksilöllinen tunniste")
     parameter pathParam[String]("jonoOid").description("Valintatapajonon yksilöllinen tunniste"))
-  get("/:hakuOid/jono/:jonoOid", operation(sijoitteluajoExistsForHakuJonoSwagger)) {
-    val hakuOid = HakuOid(params("hakuOid"))
+  get("/jono/:jonoOid", operation(sijoitteluajoExistsForHakuJonoSwagger)) {
     val jonoOid = ValintatapajonoOid(params("jonoOid"))
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
-    Ok(sijoitteluService.isJonoSijoiteltu(hakuOid, jonoOid, authenticated.session))
+    Ok(sijoitteluService.isJonoSijoiteltu(jonoOid, authenticated.session))
   }
 }

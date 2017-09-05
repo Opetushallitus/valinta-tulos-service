@@ -58,8 +58,8 @@ class SijoitteluService(val sijoitteluRepository: SijoitteluRepository with Haki
     }).getOrElse(throw new IllegalArgumentException(s"Sijoitteluajoa $sijoitteluajoId ei löytynyt haulle $hakuOid"))
   }
 
-  def isJonoSijoiteltu(hakuOid: HakuOid, jonoOid: ValintatapajonoOid, session: Session): Boolean = {
-    sijoitteluRepository.isJonoSijoiteltuByOidAndHaku(jonoOid, hakuOid)
+  def isJonoSijoiteltu(jonoOid: ValintatapajonoOid, session: Session): Boolean = {
+    sijoitteluRepository.isJonoSijoiteltuByOid(jonoOid)
   }
 
 }
