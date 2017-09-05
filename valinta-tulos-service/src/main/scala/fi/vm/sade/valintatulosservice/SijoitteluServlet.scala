@@ -100,6 +100,8 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
     val jonoOid = ValintatapajonoOid(params("jonoOid"))
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
-    Ok(sijoitteluService.isJonoSijoiteltu(jonoOid, authenticated.session))
+
+    val isSijoiteltu: Boolean = sijoitteluService.isJonoSijoiteltu(jonoOid, authenticated.session)
+    Ok(JsonFormats.javaObjectToJsonString(Map("IsSijoiteltu" -> isSijoiteltu)))
   }
 }
