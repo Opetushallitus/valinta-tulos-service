@@ -97,11 +97,15 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
     summary "Kertoo onko valintatapajonolle suoritettu sijoittelua"
     parameter pathParam[String]("jonoOid").description("Valintatapajonon yksilöllinen tunniste"))
   get("/jono/:jonoOid", operation(sijoitteluajoExistsForHakuJonoSwagger)) {
+
+    import org.json4s.native.Json
+    import org.json4s.DefaultFormats
+
     val jonoOid = ValintatapajonoOid(params("jonoOid"))
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
 
     val isSijoiteltu: Boolean = sijoitteluService.isJonoSijoiteltu(jonoOid, authenticated.session)
-    Ok(JsonFormats.javaObjectToJsonString(Map("IsSijoiteltu" -> isSijoiteltu)))
+    Ok(Json(DefaultFormats).write(Map("IsSijoiteltu" -> isSijoiteltu)))
   }
 }
