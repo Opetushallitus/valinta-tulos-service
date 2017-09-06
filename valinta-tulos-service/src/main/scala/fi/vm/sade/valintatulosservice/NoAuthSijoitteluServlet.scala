@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.valintatulosservice.json.JsonFormats
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, NotFoundException}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, NotFoundException, ValintatapajonoOid}
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 import org.scalatra.{NotFound, Ok}
@@ -31,5 +31,18 @@ class NoAuthSijoitteluServlet(sijoitteluService: SijoitteluService)
         val message = e.getMessage
         NotFound(body = Map("error" -> message), reason = message)
     }
+  }
+
+  lazy val sijoitteluajoExistsForHakuJonoSwaggerWithoutCas: OperationBuilder = (apiOperation[Unit]("sijoitteluajoExistsForHakuJonoSwaggerWithoutCas")
+    summary "Kertoo onko valintatapajonolle suoritettu sijoittelua"
+    parameter pathParam[String]("jonoOid").description("Valintatapajonon yksilöllinen tunniste"))
+  get("/jono/:jonoOid", operation(sijoitteluajoExistsForHakuJonoSwaggerWithoutCas)) {
+
+    import org.json4s.native.Json
+    import org.json4s.DefaultFormats
+
+    val jonoOid = ValintatapajonoOid(params("jonoOid"))
+    val isSijoiteltu: Boolean = sijoitteluService.isJonoSijoiteltu(jonoOid)
+    Ok(Json(DefaultFormats).write(Map("IsSijoiteltu" -> isSijoiteltu)))
   }
 }
