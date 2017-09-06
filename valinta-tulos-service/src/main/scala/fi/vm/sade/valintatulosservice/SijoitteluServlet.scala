@@ -105,7 +105,7 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
 
-    val isSijoiteltu: Boolean = sijoitteluService.isJonoSijoiteltu(jonoOid, authenticated.session)
+    val isSijoiteltu: Boolean = sijoitteluService.isJonoSijoiteltu(jonoOid)
     Ok(Json(DefaultFormats).write(Map("IsSijoiteltu" -> isSijoiteltu)))
   }
 }
