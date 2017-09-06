@@ -17,10 +17,10 @@ class SijoitteluServletWithoutCAS(sijoitteluService: SijoitteluService,
 
   override protected def applicationDescription: String = "Sijoittelu unauthenticated REST API"
 
-  lazy val sijoitteluajoExistsForHakuJonoSwagger: OperationBuilder = (apiOperation[Unit]("sijoitteluajoExistsForHakuJonoSwagger")
+  lazy val sijoitteluajoExistsForHakuJonoSwaggerWithoutCas: OperationBuilder = (apiOperation[Unit]("sijoitteluajoExistsForHakuJonoSwaggerWithoutCas")
     summary "Kertoo onko valintatapajonolle suoritettu sijoittelua"
     parameter pathParam[String]("jonoOid").description("Valintatapajonon yksilöllinen tunniste"))
-  get("/jono/:jonoOid", operation(sijoitteluajoExistsForHakuJonoSwagger)) {
+  get("/jono/:jonoOid", operation(sijoitteluajoExistsForHakuJonoSwaggerWithoutCas)) {
 
     import org.json4s.native.Json
     import org.json4s.DefaultFormats
