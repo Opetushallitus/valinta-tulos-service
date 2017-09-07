@@ -48,6 +48,8 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
     hakuJaSenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid)._2
   }
 
+  import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.ehdollinenVastaanottoMahdollista
+
   private def hakuJaSenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid: HakuOid): (Haku, Set[VastaanottoRecord]) = {
     val haku = hakuService.getHaku(hakuOid) match {
       case Right(h) => h
@@ -772,13 +774,6 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
       case tulos =>
         tulos
     }
-  }
-
-  private def ehdollinenVastaanottoMahdollista(ohjausparametrit: Option[Ohjausparametrit]): Boolean = {
-    val now: DateTime = new DateTime()
-    val varasijaSaannotVoimassa = ohjausparametrit.flatMap(_.varasijaSaannotAstuvatVoimaan).fold(true)(_.isBefore(now))
-    val kaikkiJonotSijoittelussa = ohjausparametrit.flatMap(_.kaikkiJonotSijoittelussa).fold(true)(_.isBefore(now))
-    varasijaSaannotVoimassa && kaikkiJonotSijoittelussa
   }
 
   case class Välitulos(tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) {
