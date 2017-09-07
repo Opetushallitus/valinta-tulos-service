@@ -14,7 +14,7 @@ import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, Ohjaus
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.{AuditInfo, Result, ValinnantulosService, VastaanottoResult, VastaanottoService}
@@ -135,17 +135,6 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       there was one (valinnantulosRepository).updateValinnantuloksenOhjaus(valinnantulokset(0).getValinnantuloksenOhjaus(session.personOid, "Virkailijan tallennus"), Some(lastModified))
       there was one (valinnantulosRepository).setHyvaksyttyJaJulkaistavissa(valinnantulosA.hakemusOid, valinnantulosA.valintatapajonoOid, session.personOid, "Virkailijan tallennus")
     }
-    "no valinnantulos updates if vastaanotto update fails" in new Mocks with Authorized with Korkeakouluhaku with NoConflictingVastaanotto with TyhjatOhjausparametrit {
-      vastaanottoService.vastaanotaVirkailijana(any[List[VastaanottoEventDto]]) answers (_ => List(
-        VastaanottoResult(valinnantulosA.henkiloOid, valinnantulosA.hakemusOid, valinnantulosA.hakukohdeOid, Result(400, Some("Error")))
-      ))
-      val valinnantulokset = List(valinnantulosA)
-      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo) must contain(
-        ValinnantulosUpdateStatus(400, "Error", valintatapajonoOid, hakemusOidA)
-      )
-      there was no (valinnantulosRepository).getValinnantuloksetForValintatapajono(any[ValintatapajonoOid])
-      there was no (valinnantulosRepository).updateValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
-    }
   }
 
   "Erillishaku / ValinnantulosService" in {
@@ -233,7 +222,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
   }
 
   trait Mocks extends Mockito with Scope with MustThrownExpectations {
-    val valinnantulosRepository = mock[ValinnantulosRepository]
+    val valinnantulosRepository = mock[ValinnantulosRepository with HakijaVastaanottoRepository]
     val authorizer = mock[OrganizationHierarchyAuthorizer]
     val appConfig = mock[VtsAppConfig]
     val hakuService = mock[HakuService]
