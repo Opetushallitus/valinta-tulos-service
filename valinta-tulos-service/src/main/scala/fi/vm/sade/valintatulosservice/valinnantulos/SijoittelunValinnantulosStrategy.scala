@@ -7,10 +7,12 @@ import fi.vm.sade.security.OrganizationHierarchyAuthorizer
 import fi.vm.sade.sijoittelu.domain.{EhdollisenHyvaksymisenEhtoKoodi, ValintatuloksenTila}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.domain.Valintatila
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantuloksenMuokkaus}
 import slick.dbio.DBIO
@@ -20,13 +22,16 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
                                        tarjoajaOids: Set[String],
                                        haku: Haku,
+                                       hakukohdeOid: HakukohdeOid,
                                        ohjausparametrit: Option[Ohjausparametrit],
                                        authorizer: OrganizationHierarchyAuthorizer,
                                        appConfig: VtsAppConfig,
-                                       valinnantulosRepository: ValinnantulosRepository,
+                                       valinnantulosRepository: ValinnantulosRepository with HakijaVastaanottoRepository,
                                        ifUnmodifiedSince: Instant,
                                        audit: Audit) extends ValinnantulosStrategy with Logging {
   private val session = auditInfo.session._2
+
+  lazy val vastaanottoValidator = new SijoittelunVastaanotonValidator(haku, hakukohdeOid, ohjausparametrit, valinnantulosRepository)
 
   def hasChange(uusi:Valinnantulos, vanha:Valinnantulos) = (uusi.hasChanged(vanha) || uusi.hasOhjausChanged(vanha) || uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha))
 
@@ -45,16 +50,9 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
           _ <- validateEhdollisestiHyvaksytty.right
           hyvaksyttyVarasijalta <- validateHyvaksyttyVarasijalta().right
           hyvaksyPeruuntunut <- validateHyvaksyPeruuntunut().right
-          vastaanottoNotChanged <- validateVastaanottoNotChanged().right
-          //TODO vastaanotto <- validateVastaanotto(vanha, uusi, session, tarjoajaOid).right
+          vastaanotto <- vastaanottoValidator.validateVastaanotto(uusi, vanha).right
           ilmoittautumistila <- validateIlmoittautumistila().right
         } yield ilmoittautumistila
-      }
-
-      def validateVastaanottoNotChanged() = vanha.vastaanottotila match {
-        case uusi.vastaanottotila => Right()
-        case _ => Left(ValinnantulosUpdateStatus(404,
-          s"Valinnantulosta ei voida päivittää, koska vastaanottoa ${uusi.vastaanottotila} on muutettu samanaikaisesti tilaan ${vanha.vastaanottotila}", uusi.valintatapajonoOid, uusi.hakemusOid))
       }
 
       def validateValinnantila() = uusi.valinnantila match {
@@ -150,6 +148,14 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
     } else {
       DBIO.successful(())
     }
+    val updateVastaanotto = if (uusi.vastaanottotila != vanha.vastaanottotila &&
+      !(uusi.vastaanottotila == ValintatuloksenTila.KESKEN && vanha.vastaanottotila == ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)) {
+      valinnantulosRepository.storeAction(VirkailijanVastaanotto(haku.oid, uusi.valintatapajonoOid, uusi.henkiloOid, uusi.hakemusOid, hakukohdeOid,
+        VirkailijanVastaanottoAction.getVirkailijanVastaanottoAction(Vastaanottotila.values.find(Vastaanottotila.matches(_, uusi.vastaanottotila))
+          .getOrElse(throw new IllegalArgumentException(s"Odottamaton vastaanottotila ${uusi.vastaanottotila}"))), muokkaaja, selite))
+    } else {
+      DBIO.successful(())
+    }
     val updateIlmoittautuminen = if (uusi.ilmoittautumistila != vanha.ilmoittautumistila) {
       valinnantulosRepository.storeIlmoittautuminen(
         vanha.henkiloOid, Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), Some(ifUnmodifiedSince))
@@ -161,7 +167,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
     } else {
       DBIO.successful(())
     }
-    updateOhjaus.andThen(updateEhdollisenHyvaksynnanEhto).andThen(updateIlmoittautuminen).andThen(updateHyvaksyttyJaJulkaistuDate)
+    updateOhjaus.andThen(updateEhdollisenHyvaksynnanEhto).andThen(updateVastaanotto).andThen(updateIlmoittautuminen).andThen(updateHyvaksyttyJaJulkaistuDate)
   }
 
   def audit(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): Unit = {
