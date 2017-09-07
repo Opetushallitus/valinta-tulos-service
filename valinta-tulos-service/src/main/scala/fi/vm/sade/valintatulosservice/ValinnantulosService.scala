@@ -5,7 +5,6 @@ import java.util.ConcurrentModificationException
 
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
-import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
@@ -13,11 +12,11 @@ import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService}
 import fi.vm.sade.valintatulosservice.valinnantulos._
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 
-class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
+class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository with HakijaVastaanottoRepository,
                            val authorizer:OrganizationHierarchyAuthorizer,
                            val hakuService: HakuService,
                            val ohjausparametritService: OhjausparametritService,
@@ -65,39 +64,6 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
     r
   }
 
-  /** FIXME
-    * Don't store OTTANUT_VASTAAN_TOISEN_PAIKAN. It's never a valid update,
-    * and vastaanotaVirkailijana throws if it is tried. Long term solution
-    * is to update vastaanotto along with other parts of Valinnantulos in
-    * [[ValinnantulosStrategy]] for correct validation and change detection.
-    */
-  private def storeVastaanotot(valinnantulokset: List[Valinnantulos],
-                               hakuOid: HakuOid,
-                               valintatapajonoOid: ValintatapajonoOid,
-                               muokkaaja: String,
-                               selite: String): List[ValinnantulosUpdateStatus] = {
-    vastaanottoService.vastaanotaVirkailijana(valinnantulokset
-      .filterNot(_.vastaanottotila == ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)
-      .map(v => VastaanottoEventDto(
-        v.valintatapajonoOid,
-        v.henkiloOid,
-        v.hakemusOid,
-        v.hakukohdeOid,
-        hakuOid,
-        Vastaanottotila.values.find(Vastaanottotila.matches(_, v.vastaanottotila))
-          .getOrElse(throw new IllegalArgumentException(s"Odottamaton vastaanottotila ${v.vastaanottotila}")),
-        muokkaaja,
-        selite
-      )))
-      .filter(r => r.result.status != 200)
-      .map(r => ValinnantulosUpdateStatus(
-        r.result.status,
-        r.result.message.orNull,
-        valintatapajonoOid,
-        r.hakemusOid
-      )).toList
-  }
-
   def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid: ValintatapajonoOid,
                                                valinnantulokset: List[Valinnantulos],
                                                ifUnmodifiedSince: Option[Instant],
@@ -110,10 +76,6 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
       haku <- hakuService.getHaku(hakukohde.hakuOid).right
       ohjausparametrit <- ohjausparametritService.ohjausparametrit(hakukohde.hakuOid).right
     } yield {
-      val vastaanottoResults = storeVastaanotot(valinnantulokset, haku.oid, valintatapajonoOid, auditInfo.session._2.personOid, "Virkailijan vastaanoton muokkaus")
-      if (vastaanottoResults.nonEmpty) {
-        return vastaanottoResults
-      }
       val vanhatValinnantulokset = yhdenPaikanSaannos(
         valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid)
       ).fold(throw _, vs => vs.map(v => v.hakemusOid -> v).toMap)
@@ -132,6 +94,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository,
           auditInfo,
           hakukohde.tarjoajaOids,
           haku,
+          hakukohdeOid,
           ohjausparametrit,
           authorizer,
           appConfig,
