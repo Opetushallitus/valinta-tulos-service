@@ -298,6 +298,34 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             left join ilmoittautumiset as i on i.henkilo = ti.henkilo_oid and i.hakukohde = ti.hakukohde_oid""".as[Valinnantulos].map(_.toSet)
     }
 
+  override def getHakutoiveetForHakemus(hakuOid:HakuOid, hakemusOid:HakemusOid): List[HakutoiveenValinnantulos] = {
+    runBlocking(
+    sql"""with latest as (
+            select id from sijoitteluajot where haku_oid = ${hakuOid} order by id desc limit 1
+          )
+          select
+              js.prioriteetti as hakutoive,
+              jo.prioriteetti as prioriteetti,
+              js.varasijan_numero,
+              ti.hakukohde_oid,
+              ti.valintatapajono_oid,
+              ti.hakemus_oid,
+              ti.tila,
+              tu.julkaistavissa,
+              v.action
+          from valinnantilat as ti
+          left join valinnantulokset as tu on tu.hakemus_oid = ti.hakemus_oid
+            and tu.valintatapajono_oid = ti.valintatapajono_oid
+          left join vastaanotot as v on v.hakukohde = ti.hakukohde_oid
+            and v.henkilo = ti.henkilo_oid and v.deleted is null
+          left join jonosijat js on ti.hakemus_oid = js.hakemus_oid
+            and ti.valintatapajono_oid = js.valintatapajono_oid
+          left join valintatapajonot jo on jo.sijoitteluajo_id = js.sijoitteluajo_id
+            and jo.oid = js.valintatapajono_oid
+          where ti.hakemus_oid = ${hakemusOid} and js.sijoitteluajo_id in ( select id from latest )
+      """.as[HakutoiveenValinnantulos]).toList
+  }
+
   override def getHaunValinnantilat(hakuOid: HakuOid): List[(HakukohdeOid, ValintatapajonoOid, HakemusOid, Valinnantila)] =
     timed(s"Getting haun $hakuOid valinnantilat") {
       runBlocking(
