@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.sijoittelu.fixture
 
-import fi.vm.sade.sijoittelu.domain.Valintatulos
+import fi.vm.sade.sijoittelu.domain.{Hakemus, Hakukohde, Valintatulos}
 import fi.vm.sade.valintatulosservice.json4sCustomFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -37,7 +37,7 @@ case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends js
         wrapper.hakukohteet.foreach(h => storeHakukohde(h.getOid, wrapper.sijoitteluajo.getHakuOid, wrapper.sijoitteluajo.getSijoitteluajoId, h.isKaikkiJonotSijoiteltu, yhdenPaikanSaantoVoimassa, kktutkintoonJohtava))
         val valintatulokset: Seq[Valintatulos] = wrapper.valintatulokset
         valintarekisteriDb.storeSijoittelu(wrapper.copy(valintatulokset = List()))
-        storeValintatulokset(valintatulokset, wrapper.sijoitteluajo.getSijoitteluajoId)
+        storeValintatulokset(valintatulokset, wrapper.sijoitteluajo.getSijoitteluajoId, wrapper.hakukohteet)
         storeEhdollisenHyvaksynnanEhto(json)
         storeVastaanotot(json)
         setHyvaksyttyJaJulkaistu()
@@ -61,7 +61,7 @@ case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends js
     )
   }
 
-  private def storeValintatulokset(valintatulokset: Seq[Valintatulos], sijoitteluAjoId: Long) = {
+  private def storeValintatulokset(valintatulokset: Seq[Valintatulos], sijoitteluAjoId: Long, hakukohteet: List[Hakukohde]) = {
     /* Remove all valinnantulokset since save storeSijoittelu(wrapper) creates and 'empty' valinnantulos for hakemus when it has no valinnantulos.
      * In the testing case valinnantulokset should only be saved from fixture valintatulokset. */
     valintarekisteriDb.runBlocking(
@@ -84,6 +84,26 @@ case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends js
           "Sijoittelun tallennus")
       ))
     })
+    //Jokaista valinnantilaa kohden pitää olla valinnantulos => lisätään myös tyhjät
+    import scala.collection.JavaConverters._
+    hakukohteet.foreach(hakukohde =>
+      hakukohde.getValintatapajonot.asScala.foreach(valintatapajono =>
+        valintatapajono.getHakemukset.asScala.filter(h => !valintatulokset.exists(t => t.getValintatapajonoOid == valintatapajono.getOid && t.getHakemusOid == h.getHakemusOid)).foreach(hakemus => {
+          valintarekisteriDb.runBlocking(valintarekisteriDb.storeValinnantuloksenOhjaus(
+            ValinnantuloksenOhjaus(
+              HakemusOid(hakemus.getHakemusOid),
+              ValintatapajonoOid(valintatapajono.getOid),
+              HakukohdeOid(hakukohde.getOid),
+              false,
+              false,
+              false,
+              false,
+              sijoitteluAjoId.toString,
+              "Sijoittelun tallennus")
+          ))
+        })
+      )
+    )
   }
 
   private def storeEhdollisenHyvaksynnanEhto(json: JValue) = {
