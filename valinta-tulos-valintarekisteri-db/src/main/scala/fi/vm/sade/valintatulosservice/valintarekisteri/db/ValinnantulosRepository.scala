@@ -42,6 +42,8 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
 
   def getHakuForHakukohde(hakukohdeOid: HakukohdeOid): HakuOid
 
+  def getHakutoiveetForHakemus(hakuOid:HakuOid, hakemusOid:HakemusOid): List[HakutoiveenValinnantulos]
+
   def deleteValinnantulos(muokkaaja:String, valinnantulos:Valinnantulos, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
   def deleteIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
   def deleteHyvaksyttyJaJulkaistavissa(henkiloOid: String, hakukohdeOid: HakukohdeOid, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
