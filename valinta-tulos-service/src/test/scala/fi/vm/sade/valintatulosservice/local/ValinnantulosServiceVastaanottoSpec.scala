@@ -11,15 +11,13 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.sijoittelu._
-import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService, YhdenPaikanSaanto}
+import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice._
-import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.domain.{Valintatila, Vastaanottoaikataulu}
+import fi.vm.sade.valintatulosservice.domain.Vastaanottoaikataulu
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 import org.joda.time.DateTime
 import org.junit.runner.RunWith
@@ -42,7 +40,6 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
     HakukohdeOid("1.2.246.562.5.16303028779")
   )
 
-  //val lastModified = Instant.now()
   val session = CasSession(ServiceTicket("myFakeTicket"), "1.2.246.562.24.1", Set(Role.SIJOITTELU_CRUD))
   val sessionId = UUID.randomUUID()
   val auditInfo = AuditInfo((sessionId, session), InetAddress.getLocalHost, "user-agent")
@@ -54,19 +51,11 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
   "Vastaanota" should {
     "vastaanota sitovasti yksi hakija" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
-      julkaiseKaikki()
       val valinnantulosForSave = findOne(hakemuksenValinnantulokset, tila(Hyvaksytty)).copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
       tallenna(List(valinnantulosForSave))
       val valinnantulosAfter = findOne(hakemuksenValinnantulokset, tila(Hyvaksytty))
       valinnantulosAfter.copy(vastaanotonViimeisinMuutos = None) must_== valinnantulosForSave
       valinnantulosAfter.vastaanotonViimeisinMuutos.isDefined must_== true
-    }
-    "estä vastaanotto, koska kaikki valinnantulokset eivät ole julkaistavissa" in {
-      useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
-      val valinnantulosForSave = findOne(hakemuksenValinnantulokset, tila(Hyvaksytty)).copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
-      tallennaVirheella(List(valinnantulosForSave), Some("Ei voi tallentaa vastaanottotietoa, koska hakemuksen valinnantulokset eivät ole julkaistavissa"))
-      val valinnantulosAfter = findOne(hakemuksenValinnantulokset, tila(Hyvaksytty))
-      tila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.KESKEN)
     }
     "vastaanota ja julkaise samanaikaisesti" in {
       useFixture("hyvaksytty-kesken.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
@@ -178,7 +167,6 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
     }
     "virkailija voi vastaanottaa peruutetun hakutoiveen" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
-      julkaiseKaikki()
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
       tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
       tallenna(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.PERUUTETTU)))
@@ -221,7 +209,6 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
     }
     "vastaanota sitovasti yksi hakija vaikka toinen vastaanotto ei onnistu" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
-      julkaiseKaikki()
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
       tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
       val failingValinnantulos = valinnantulosBefore.copy(hakukohdeOid = HakukohdeOid("1234"), henkiloOid = "1234",
@@ -307,17 +294,10 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
     success
   }
 
-  private def julkaiseKaikki() = {
-    import slick.driver.PostgresDriver.api._
-    valintarekisteriDb.runBlocking(sqlu"""update valinnantulokset set julkaistavissa = true""")
-  }
-
   step(valintarekisteriDb.db.shutdown)
 
   val authorizer = mock[OrganizationHierarchyAuthorizer]
   authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]]) returns Right(())
-
-  //val hakuService = mock[HakuService]
 
   val ohjausparametritService = mock[OhjausparametritService]
 
@@ -332,9 +312,6 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
   )))
 
   val audit = mock[Audit]
-
-  //lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
-  //lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, false)
 
   lazy val hakuService = HakuService(appConfig.hakuServiceConfig)
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
@@ -357,14 +334,6 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
 
   lazy val valinnantulosService = new ValinnantulosService(valintarekisteriDb, authorizer, hakuService, ohjausparametritService,
     hakukohdeRecordService, vastaanottoService, yhdenPaikanSaannos, appConfig, audit)
-  /*val authorizer:OrganizationHierarchyAuthorizer,
-  val hakuService: HakuService,
-  val ohjausparametritService: OhjausparametritService,
-  val hakukohdeRecordService: HakukohdeRecordService,
-  vastaanottoService: VastaanottoService,
-  yhdenPaikanSaannos: YhdenPaikanSaannos,
-  val appConfig: VtsAppConfig,
-  val audit: Audit)*/
 
   private def expectFailure[T](block: => T): Result = expectFailure[T](None)(block)
 
