@@ -5,9 +5,10 @@ import java.time.Instant
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantuloksenLisays, ValinnantuloksenMuokkaus, ValinnantuloksenPoisto}
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import slick.dbio.DBIO
@@ -17,13 +18,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
                                        haku: Haku,
                                        hakukohdeOid: HakukohdeOid,
-                                       valinnantulosRepository: ValinnantulosRepository,
+                                       ohjausparametrit: Option[Ohjausparametrit],
+                                       valinnantulosRepository: ValinnantulosRepository with HakijaVastaanottoRepository,
                                        hakukohdeRecordService: HakukohdeRecordService,
                                        ifUnmodifiedSince: Option[Instant],
                                        audit: Audit) extends ValinnantulosStrategy with Logging {
   private val session = auditInfo.session._2
 
   lazy val hakukohdeRecord: Either[Throwable, HakukohdeRecord] = hakukohdeRecordService.getHakukohdeRecord(hakukohdeOid)
+  lazy val vastaanottoValidator = new ErillishaunVastaanottoValidator(haku, hakukohdeOid, ohjausparametrit, valinnantulosRepository)
 
   def hasChange(uusi:Valinnantulos, vanha:Valinnantulos) = uusi.hasChanged(vanha) || uusi.poistettava.getOrElse(false)
 
@@ -124,8 +127,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         tilat <- validateTilat.right
         valinnantila <- validateValinnantila.right
         ehdollinenHyvaksynta <- validateEhdollisestiHyvaksyttavissa.right
-        vastaanottoNotChanged <- validateVastaanottoNotChanged.right
-        //TODO vastaanotto <- validateVastaanotto.right
+        vastaanotto <- vastaanottoValidator.validateVastaanotto(uusi, vanha).right
         julkaistavissa <- validateJulkaistavissa.right
         ilmoittautuminen <- validateIlmoittautuminen.right
       } yield ilmoittautuminen

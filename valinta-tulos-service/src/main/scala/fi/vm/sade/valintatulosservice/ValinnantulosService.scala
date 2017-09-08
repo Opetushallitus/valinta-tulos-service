@@ -84,6 +84,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository 
           auditInfo,
           haku,
           hakukohdeOid,
+          ohjausparametrit,
           valinnantulosRepository,
           hakukohdeRecordService,
           ifUnmodifiedSince,

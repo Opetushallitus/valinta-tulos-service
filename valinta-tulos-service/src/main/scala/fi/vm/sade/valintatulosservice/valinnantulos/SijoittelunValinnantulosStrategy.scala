@@ -31,7 +31,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
                                        audit: Audit) extends ValinnantulosStrategy with Logging {
   private val session = auditInfo.session._2
 
-  lazy val vastaanottoValidator = new SijoittelunVastaanotonValidator(haku, hakukohdeOid, ohjausparametrit, valinnantulosRepository)
+  lazy val vastaanottoValidator = new SijoittelunVastaanottoValidator(haku, hakukohdeOid, ohjausparametrit, valinnantulosRepository)
 
   def hasChange(uusi:Valinnantulos, vanha:Valinnantulos) = (uusi.hasChanged(vanha) || uusi.hasOhjausChanged(vanha) || uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha))
 

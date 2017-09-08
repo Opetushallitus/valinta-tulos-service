@@ -51,8 +51,6 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
     hakemusFixtureImporter.clear
     hakemusFixtureImporter.importFixture("00000441369")
     singleConnectionValintarekisteriDb.storeSijoittelu(loadSijoitteluFromFixture("hyvaksytty-kesken-julkaistavissa"))
-    import slick.driver.PostgresDriver.api._
-    singleConnectionValintarekisteriDb.runBlocking(sqlu"""update valinnantulokset set julkaistavissa = true""")
 
     organisaatioService = ClientAndServer.startClientAndServer(VtsAppConfig.organisaatioMockPort)
     organisaatioService.when(new HttpRequest().withPath(
