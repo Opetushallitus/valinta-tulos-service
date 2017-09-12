@@ -14,8 +14,8 @@ import org.json4s.native.JsonMethods._
 import org.specs2.matcher.MatchResult
 import org.specs2.mutable.Specification
 import slick.dbio.DBIOAction
-import slick.driver.PostgresDriver.api._
 import slick.jdbc.GetResult
+import slick.jdbc.PostgresProfile.api._
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable.IndexedSeq
