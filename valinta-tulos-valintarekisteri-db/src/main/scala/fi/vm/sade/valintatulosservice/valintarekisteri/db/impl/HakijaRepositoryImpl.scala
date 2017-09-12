@@ -1,9 +1,9 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
+import java.time.OffsetDateTime
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakijaRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakutoiveRecord, _}
-import slick.dbio.DBIO
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.driver.PostgresDriver.api._
 
 trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriRepository {
@@ -11,46 +11,96 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
   override def getHakemuksenHakija(hakemusOid: HakemusOid, sijoitteluajoId: Option[Long] = None): Option[HakijaRecord] =
     timed(s"Hakemuksen $hakemusOid hakijan haku", 100) {
       runBlocking(
-        sql"""select distinct henkilo_oid from valinnantilat where hakemus_oid = $hakemusOid""".as[String]
+        sql"""select ${hakemusOid}, henkilo_oid, max(tilan_viimeisin_muutos)
+              from valinnantilat where hakemus_oid = ${hakemusOid}
+              group by henkilo_oid""".as[(HakijaRecord, OffsetDateTime)]
       ).toList match {
         case Nil =>
           None
-        case henkiloOid :: Nil =>
-          Some(HakijaRecord(hakemusOid, henkiloOid))
-        case multipleOids =>
-          throw new RuntimeException(s"Hakemukselle $hakemusOid löytyi useita hakijaoideja $multipleOids")
+        case (hakijaRecord, _) :: Nil =>
+          Some(hakijaRecord)
+        case multipleRecords =>
+          logger.debug(s"Hakemukselle $hakemusOid löytyi useita hakijaoideja")
+          replaceHakijaOidsWithLatest(multipleRecords).headOption
       }
     }
 
   override def getHakukohteenHakijat(hakukohdeOid: HakukohdeOid, sijoitteluajoId: Option[Long] = None): List[HakijaRecord] =
     timed(s"Hakukohteen $hakukohdeOid hakijan haku", 100) {
-      val hakijat = runBlocking(
-        sql"""select distinct hakemus_oid, henkilo_oid
+      val hakijatJaAjat = runBlocking(
+        sql"""select distinct on (hakemus_oid, henkilo_oid) hakemus_oid, henkilo_oid, max(tilan_viimeisin_muutos)
             from valinnantilat
-            where hakukohde_oid = $hakukohdeOid""".as[HakijaRecord]
+            where hakukohde_oid = ${hakukohdeOid}
+            group by hakemus_oid, henkilo_oid""".as[(HakijaRecord, OffsetDateTime)]
       ).toList
 
-      if (hakijat.map(_.hakemusOid).distinct.size != hakijat.size) {
-        throw new RuntimeException(s"Hakemuksille hakukohteessa $hakukohdeOid löytyi useita hakijaoideja ${hakijat.groupBy(_.hakemusOid).values.filter(_.size > 1)}")
+      if (hakijatJaAjat.map(_._1.hakemusOid).distinct.size != hakijatJaAjat.size) {
+        logger.debug(s"Hakemuksille hakukohteessa $hakukohdeOid löytyi useita hakijaoideja")
+        replaceHakijaOidsWithLatest(hakijatJaAjat)
+      } else {
+        hakijatJaAjat.map(_._1)
       }
-
-      hakijat
     }
 
-  override def getHaunHakijat(hakuOid: HakuOid, sijoitteluajoId: Option[Long] = None):List[HakijaRecord] =
+
+  override def getHaunHakijat(hakuOid: HakuOid, sijoitteluajoId: Option[Long] = None): List[HakijaRecord] =
     timed(s"Haun ${hakuOid} hakijoiden haku", 100) {
-      val hakijat = runBlocking(sql"""select distinct hakemus_oid, henkilo_oid
+      val hakijatJaAjat = runBlocking(sql"""select distinct on (hakemus_oid, henkilo_oid) hakemus_oid, henkilo_oid, max(tilan_viimeisin_muutos)
             from valinnantilat
             inner join hakukohteet on hakukohteet.hakukohde_oid = valinnantilat.hakukohde_oid
-            where hakukohteet.haku_oid = ${hakuOid}""".as[HakijaRecord]
+            where hakukohteet.haku_oid = ${hakuOid}
+            group by hakemus_oid, henkilo_oid""".as[(HakijaRecord, OffsetDateTime)]
       ).toList
 
-      if (hakijat.map(_.hakemusOid).distinct.size != hakijat.size) {
-        throw new RuntimeException(s"Hakemuksille haussa $hakuOid löytyi useita hakijaoideja ${hakijat.groupBy(_.hakemusOid).values.filter(_.size > 1)}")
-      }
 
-      hakijat
+      if (hakijatJaAjat.map(_._1.hakemusOid).distinct.size != hakijatJaAjat.size) {
+        logger.debug(s"Hakemuksille haussa $hakuOid löytyi useita hakijaoideja")
+        replaceHakijaOidsWithLatest(hakijatJaAjat)
+      } else {
+        hakijatJaAjat.map(_._1)
+      }
     }
+
+  private def replaceHakijaOidsWithLatest(hakijatJaAjat: List[(HakijaRecord, OffsetDateTime)]): List[HakijaRecord] = {
+    val multipleHakijasForHakemus: Seq[List[(HakijaRecord, OffsetDateTime)]] = hakijatJaAjat.groupBy(_._1.hakemusOid).values.filter(_.size > 1).toList
+
+    val hakijaOids: Seq[String] = multipleHakijasForHakemus.flatMap(_.map(_._1.hakijaOid)).distinct
+
+    val oidsIn: String = formatMultipleValuesForSql(hakijaOids)
+    val henkiloviitteet: Set[(String, String)] = timed(s"Henkilöviitteiden haku ${hakijaOids.size} hakijaOidille", 1000) {
+      runBlocking(sql"""
+           SELECT * FROM henkiloviitteet WHERE person_oid IN (#${oidsIn})
+        """.as[(String, String)]
+      ).toSet
+    }
+
+    multipleHakijasForHakemus.foreach { aliases =>
+      aliases.foreach { hakija1 =>
+        aliases.foreach { hakija2 =>
+          val oid1 = hakija1._1.hakijaOid
+          val oid2 = hakija2._1.hakijaOid
+          if (oid1 != oid2 && !henkiloviitteet.contains((oid1, oid2))) {
+            throw new RuntimeException(s"henkiloviitteet-taulu ei ajan tasalla: ei sisältänyt linkitystä ($oid1, $oid2). Ei voida korjata saman hakemuksen ${hakija1._1.hakemusOid} eri hakijaOideja.")
+          }
+        }
+      }
+    }
+
+    val latestHakemusToHakijaMap = multipleHakijasForHakemus
+      .map(hakijaRecords => hakijaRecords.maxBy(_._2))
+      .map{case (hakija, _) => (hakija.hakemusOid, hakija.hakijaOid)}
+      .toMap
+
+    hakijatJaAjat.map({
+      case (hakija, aika) if latestHakemusToHakijaMap.contains(hakija.hakemusOid) =>
+        val hakijaOidFromLatest = latestHakemusToHakijaMap(hakija.hakemusOid)
+        logger.debug(s"Korvataan hakijaOid ${hakija.hakijaOid} viimeisimmällä oidilla ${hakijaOidFromLatest}")
+        hakija.copy(hakijaOid = hakijaOidFromLatest)
+      case (hakija, aika) =>
+        hakija
+    }).distinct
+  }
+
 
   override def getHakemuksenHakutoiveetSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId:Long): List[HakutoiveRecord] =
     timed(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid hakutoiveiden haku", 100) {
