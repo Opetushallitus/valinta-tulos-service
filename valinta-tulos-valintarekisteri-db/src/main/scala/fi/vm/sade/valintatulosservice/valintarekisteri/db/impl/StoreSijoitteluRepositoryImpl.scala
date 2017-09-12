@@ -8,7 +8,7 @@ import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatapajono, 
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.StoreSijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 
 import scala.collection.JavaConverters._
 import scala.concurrent.TimeoutException
