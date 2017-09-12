@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
-import fi.vm.sade.valintatulosservice.security.{Session => _, _}
+import fi.vm.sade.valintatulosservice.security.{AuditSession, CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import slick.jdbc.PostgresProfile.api._
 
