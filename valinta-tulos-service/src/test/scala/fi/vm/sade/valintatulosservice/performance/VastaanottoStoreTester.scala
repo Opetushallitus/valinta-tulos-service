@@ -6,8 +6,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.ValintarekisteriAppConfig
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijanVastaanotto, HakuOid, HakukohdeOid, VastaanotaSitovasti}
-import slick.driver.PostgresDriver.api._
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration

@@ -4,7 +4,7 @@ import java.time.ZonedDateTime
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{Valintaesitys, ValintaesitysRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, ValintatapajonoOid}
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 

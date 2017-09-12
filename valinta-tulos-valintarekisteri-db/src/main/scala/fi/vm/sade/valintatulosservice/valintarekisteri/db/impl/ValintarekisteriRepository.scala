@@ -8,8 +8,8 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import org.springframework.util.ReflectionUtils
 import slick.dbio._
-import slick.driver.PostgresDriver.api.jdbcActionExtensionMethods
-import slick.driver.PostgresDriver.backend.Database
+import slick.jdbc.PostgresProfile.api.jdbcActionExtensionMethods
+import slick.jdbc.PostgresProfile.backend.Database
 import slick.jdbc.TransactionIsolation.Serializable
 
 import scala.concurrent.Await
@@ -44,7 +44,7 @@ trait ValintarekisteriRepository extends ValintarekisteriResultExtractors with L
     }
   }
 
-  import slick.driver.PostgresDriver.api._
+  import slick.jdbc.PostgresProfile.api._
   def now(): DBIO[Instant] = sql"select now()".as[Instant].head
 
   protected def formatMultipleValuesForSql(oids: Seq[String]): String = {
