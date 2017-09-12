@@ -487,6 +487,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
       hakukohde.getValintatapajonot.asScala.toList.foreach(valintatapajono => {
         val storedValintatapajono = storedValintatapajonot.find(_.getOid.equals(valintatapajono.getOid))
         storedValintatapajono.isDefined must beTrue
+        storedValintatapajono.get.getSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa mustEqual valintatapajono.getSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa
         SijoitteluajonValintatapajonoWrapper(valintatapajono) mustEqual SijoitteluajonValintatapajonoWrapper(storedValintatapajono.get)
         val storedJonosijat = findValintatapajononJonosijat(valintatapajono.getOid)
         valintatapajono.getHakemukset.asScala.toList.foreach(hakemus => {
