@@ -2,7 +2,6 @@ package fi.vm.sade.valintatulosservice.performance
 
 import java.util.concurrent.TimeUnit
 
-import com.typesafe.config.ConfigValueFactory
 import fi.vm.sade.utils.http.{DefaultHttpClient, DefaultHttpRequest}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.SharedJetty
@@ -11,7 +10,7 @@ import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Ensikertalaisuus
 import org.json4s.jackson.Serialization
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration

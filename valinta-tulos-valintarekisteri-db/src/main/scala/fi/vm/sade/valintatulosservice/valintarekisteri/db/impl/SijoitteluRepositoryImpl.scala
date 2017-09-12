@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 
 import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global

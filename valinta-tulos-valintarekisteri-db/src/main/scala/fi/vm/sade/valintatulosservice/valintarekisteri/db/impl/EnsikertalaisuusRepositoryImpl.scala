@@ -1,15 +1,13 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import java.sql.PreparedStatement
-import java.util.Date
 import java.util.concurrent.TimeUnit
 
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{EnsikertalaisuusRepository, VastaanottoRecord}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.EnsikertalaisuusRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.duration.Duration
-import slick.driver.PostgresDriver.api._
-
 import scala.util.Try
 
 trait EnsikertalaisuusRepositoryImpl extends EnsikertalaisuusRepository with ValintarekisteriRepository {

@@ -11,7 +11,7 @@ import org.junit.Ignore
 import org.junit.runner.RunWith
 import org.specs2.matcher.MatchResult
 import org.specs2.runner.JUnitRunner
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 
 
 @Ignore

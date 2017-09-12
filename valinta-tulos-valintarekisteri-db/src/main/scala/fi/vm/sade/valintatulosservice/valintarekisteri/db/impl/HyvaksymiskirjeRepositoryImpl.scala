@@ -5,7 +5,7 @@ import java.time.OffsetDateTime
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{Hyvaksymiskirje, HyvaksymiskirjePatch, HyvaksymiskirjeRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakukohdeOid
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 
 import scala.util.Try
 

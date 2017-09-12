@@ -4,7 +4,7 @@ import java.sql.Timestamp
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.LukuvuosimaksuRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, Lukuvuosimaksu, Maksuntila}
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 
 trait LukuvuosimaksuRepositoryImpl extends LukuvuosimaksuRepository with ValintarekisteriRepository {
   def getLukuvuosimaksus(hakukohdeOid: HakukohdeOid): List[Lukuvuosimaksu] = {

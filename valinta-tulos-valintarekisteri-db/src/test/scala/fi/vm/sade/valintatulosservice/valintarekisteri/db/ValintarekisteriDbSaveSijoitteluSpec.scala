@@ -13,8 +13,8 @@ import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.BeforeAfterExample
-import slick.driver.PostgresDriver.api.actionBasedSQLInterpolation
 import slick.jdbc.GetResult
+import slick.jdbc.PostgresProfile.api.actionBasedSQLInterpolation
 
 @RunWith(classOf[JUnitRunner])
 class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterExample
