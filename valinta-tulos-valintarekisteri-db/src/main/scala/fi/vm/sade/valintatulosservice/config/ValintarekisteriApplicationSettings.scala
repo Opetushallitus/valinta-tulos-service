@@ -17,7 +17,7 @@ abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.conf
     numThreads = getInt(config, "valinta-tulos-service.valintarekisteri.db.numThreads"),
     queueSize = getInt(config, "valinta-tulos-service.valintarekisteri.db.queueSize"),
     registerMbeans = getBoolean(config, "valinta-tulos-service.valintarekisteri.db.registerMbeans"),
-    initializationFailFast = getBoolean(config, "valinta-tulos-service.valintarekisteri.db.initializationFailFast")
+    initializationFailTimeout = getLong(config, "valinta-tulos-service.valintarekisteri.db.initializationFailFast")
   )
   withConfig(_.getConfig("valinta-tulos-service.valintarekisteri.db"))
   val lenientTarjontaDataParsing: Boolean = BooleanUtils.isTrue(withConfig(_.getBoolean("valinta-tulos-service.parseleniently.tarjonta")))
@@ -38,6 +38,10 @@ abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.conf
 
   private def getInt(config: Config, key: String): Option[Int] = {
     if (config.hasPath(key)) Some(config.getInt(key)) else None
+  }
+
+  private def getLong(config: Config, key: String): Option[Long] = {
+    if (config.hasPath(key)) Some(config.getLong(key)) else None
   }
 
   private def getBoolean(config: Config, key: String): Option[Boolean] = {
