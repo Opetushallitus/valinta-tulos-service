@@ -133,7 +133,6 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
       } catch {
         case te: TimeoutException => logger.warn(s"Timeout haun $hakuOid sijoittelun tallennuksen jälkeisestä analyzestä!!!", te)
         case sqlt: SQLTimeoutException => logger.warn(s"Timeout haun $hakuOid sijoittelun tallennuksen jälkeisestä analyzestä!!!", sqlt)
-        case t => throw t
       }
     }
   }
