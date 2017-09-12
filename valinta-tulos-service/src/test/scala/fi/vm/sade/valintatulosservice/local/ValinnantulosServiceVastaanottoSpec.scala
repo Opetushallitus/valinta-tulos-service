@@ -342,11 +342,9 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
   lazy val hakijaDtoClient = new ValintarekisteriHakijaDTOClientImpl(raportointiService, sijoittelunTulosClient, valintarekisteriDb)
   lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb,
     hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, hakijaDtoClient)(appConfig, dynamicAppConfig)
-  lazy val valintatulosRepository = new ValintarekisteriValintatulosRepositoryImpl(valintatulosDao)
   lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService,
-    valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository(), valintatulosRepository)
-  lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService,
-    valintatulosRepository, valintarekisteriDb, valintarekisteriDb)
+    valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository())
+  lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService, valintarekisteriDb, valintarekisteriDb)
   lazy val yhdenPaikanSaannos = new YhdenPaikanSaannos(hakuService, valintarekisteriDb)
 
   lazy val valinnantulosService = new ValinnantulosService(valintarekisteriDb, authorizer, hakuService, ohjausparametritService,

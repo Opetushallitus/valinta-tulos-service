@@ -9,7 +9,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
-import fi.vm.sade.valintatulosservice.sijoittelu.{SijoittelutulosService, ValintarekisteriValintatulosRepository}
+import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelutulosService
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, VastaanottoEvent, VastaanottoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
@@ -17,20 +17,11 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import slick.dbio.{DBIO, SuccessAction}
 
-import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
-import scala.util.{Failure, Try}
+import scala.util.Try
 
-class VastaanottoService(hakuService: HakuService,
-                         hakukohdeRecordService: HakukohdeRecordService,
-                         vastaanotettavuusService: VastaanotettavuusService,
-                         valintatulosService: ValintatulosService,
-                         hakijaVastaanottoRepository: HakijaVastaanottoRepository,
-                         ohjausparametritService: OhjausparametritService,
-                         sijoittelutulosService: SijoittelutulosService,
-                         hakemusRepository: HakemusRepository,
-                         valintatulosRepository: ValintarekisteriValintatulosRepository) extends Logging {
+class VastaanottoService(hakuService: HakuService, hakukohdeRecordService: HakukohdeRecordService, vastaanotettavuusService: VastaanotettavuusService, valintatulosService: ValintatulosService, hakijaVastaanottoRepository: HakijaVastaanottoRepository, ohjausparametritService: OhjausparametritService, sijoittelutulosService: SijoittelutulosService, hakemusRepository: HakemusRepository) extends Logging {
 
   private val statesMatchingInexistentActions = Set(
     Vastaanottotila.kesken,
@@ -110,24 +101,6 @@ class VastaanottoService(hakuService: HakuService,
             hakutoive <- tarkistaHakutoiveenVastaanotettavuusVirkailijana(hakemuksenTulos, hakukohdeOid, vastaanottoDto, maybeAiempiVastaanottoKaudella).fold(DBIO.failed, DBIO.successful)
             _ <- hakutoive.fold[DBIO[Unit]](DBIO.successful())(_ => hakijaVastaanottoRepository.storeAction(vastaanotto))
           } yield hakutoive).right
-        _ <- hakutoive.fold[Either[Throwable, Unit]](Right(())) {
-          case (hakutoive, hakutoiveenJarjestysnumero) =>
-            valintatulosRepository.createIfMissingAndModifyValintatulos(
-              hakukohdeOid,
-              vastaanotto.valintatapajonoOid,
-              vastaanotto.hakemusOid,
-              vastaanotto.henkiloOid,
-              vastaanotto.hakuOid,
-              hakutoiveenJarjestysnumero,
-              valintatulos =>
-                valintatulos.setTila(
-                  ValintatuloksenTila.valueOf(hakutoive.vastaanottotila.toString),
-                  vastaanotto.action.valintatuloksenTila,
-                  vastaanotto.selite,
-                  vastaanotto.ilmoittaja
-                )
-            )
-        }.right
       } yield hakutoive) match {
         case Right(_) => createVastaanottoResult(200, None, vastaanotto)
         case Left(e: PriorAcceptanceException) => createVastaanottoResult(403, Some(e), vastaanotto)
@@ -184,18 +157,6 @@ class VastaanottoService(hakuService: HakuService,
           hakutoive <- tarkistaHakutoiveenVastaanotettavuus(hakemuksenTulos, hakukohdeOid, vastaanotto.action).fold(DBIO.failed, DBIO.successful)
           _ <- hakijaVastaanottoRepository.storeAction(vastaanotto)
         } yield hakutoive).right
-      _ <- valintatulosRepository.modifyValintatulos(
-        hakukohdeOid,
-        hakutoive.valintatapajonoOid,
-        hakemusOid,
-        valintatulos =>
-          valintatulos.setTila(
-            ValintatuloksenTila.valueOf(hakutoive.vastaanottotila.toString),
-            vastaanotto.action.valintatuloksenTila,
-            vastaanotto.selite,
-            vastaanotto.ilmoittaja
-          )
-      ).right
     } yield ()
   }
 
