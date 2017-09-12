@@ -308,16 +308,6 @@
                 <version>0.12.4</version>
             </dependency>
             <dependency>
-                <groupId>org.json4s</groupId>
-                <artifactId>json4s-jackson_2.11</artifactId>
-                <version>${json4s_2.11.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.json4s</groupId>
-                <artifactId>json4s-ext_2.11</artifactId>
-                <version>${json4s_2.11.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
