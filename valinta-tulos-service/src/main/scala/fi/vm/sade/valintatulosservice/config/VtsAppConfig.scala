@@ -71,8 +71,9 @@ object VtsAppConfig extends Logging {
       .withOverride(("hakemus.mongodb.uri", "mongodb://localhost:27017"))
   }
 
-  class IT_luokka extends IT {
-    override val ophUrlProperties = new OphUrlProperties(propertiesFile, false, Some("itest-virkailija.oph.ware.fi"))
+  class IT_sysprops extends IT {
+    override val ophUrlProperties = new OphUrlProperties(propertiesFile, false, Some(System.getProperty("valinta-tulos-service.it-profile.hostname",
+      "testi.virkailija.opintopolku.fi")))
   }
 
   /**
