@@ -92,6 +92,7 @@ class ValintarekisteriDbReadSijoitteluSpec extends Specification with ITSetup wi
       valintatapajonot.size mustEqual 1
       valintatapajonot.head.oid mustEqual ValintatapajonoOid("14538080612623056182813241345174")
       valintatapajonot.head.nimi mustEqual "Marata YAMK yhteispisteet (yhteistyö)"
+      valintatapajonot.head.sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa mustEqual true
     }
 
     "get hakukohteen pistetiedot" in {
