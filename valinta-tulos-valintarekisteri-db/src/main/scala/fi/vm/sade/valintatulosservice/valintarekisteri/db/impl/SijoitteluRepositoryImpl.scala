@@ -78,6 +78,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
                   v.varasijoja_kaytetaan_alkaen,
                   v.varasijoja_taytetaan_asti,
                   v.tayttojono,
+                  v.sijoiteltu_ilman_varasijasaantoja_niiden_ollessa_voimassa,
                   v.hakukohde_oid
               from valintatapajonot as v
               join valintaesitykset as ve on ve.valintatapajono_oid = v.oid
@@ -104,6 +105,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
                   v.varasijoja_kaytetaan_alkaen,
                   v.varasijoja_taytetaan_asti,
                   v.tayttojono,
+                  v.sijoiteltu_ilman_varasijasaantoja_niiden_ollessa_voimassa,
                   v.hakukohde_oid
               from valintatapajonot as v
               join valintaesitykset as ve on ve.valintatapajono_oid = v.oid

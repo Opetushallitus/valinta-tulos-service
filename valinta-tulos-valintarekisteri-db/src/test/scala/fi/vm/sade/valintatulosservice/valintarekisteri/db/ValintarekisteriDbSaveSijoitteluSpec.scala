@@ -245,6 +245,12 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       hyvaksyttyJaJulkaistu.map(_("henkilo")).distinct.size must_== 2
     }
   }
+  "store sijoiteltu ilman varasijasääntöjä niiden ollessa voimassa flag by valintatapajono" in {
+    val wrapper = loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")
+    wrapper.hakukohteet.head.getValintatapajonot.get(0).setSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa(true)
+    singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
+    assertSijoittelu(wrapper)
+  }
 
   private def incrementSijoitteluajoId(newSijoitteluajoWrapper: SijoitteluWrapper) = {
     val newSijoitteluajoId = newSijoitteluajoWrapper.sijoitteluajo.getSijoitteluajoId + 1

@@ -326,7 +326,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
     SijoitteluajonValintatapajonoWrapper(ValintatapajonoOid(r.nextString), r.nextString, r.nextInt, Tasasijasaanto(r.nextString()),
       r.nextIntOption, r.nextIntOption, r.nextBoolean, r.nextBoolean, r.nextBoolean, r.nextIntOption, r.nextIntOption,
       r.nextTimestampOption(), r.nextTimestampOption(), r.nextStringOption(),
-      r.nextBigDecimalOption, Some(false)).valintatapajono
+      r.nextBigDecimalOption, Some(false), r.nextBoolean()).valintatapajono
   })
 
   def findHakukohteenValintatapajonot(hakukohdeOid:String): Seq[Valintatapajono] = {
@@ -334,7 +334,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
       sql"""select oid, nimi, prioriteetti, tasasijasaanto, aloituspaikat, alkuperaiset_aloituspaikat, ei_varasijatayttoa,
             kaikki_ehdon_tayttavat_hyvaksytaan, poissaoleva_taytto,
             varasijat, varasijatayttopaivat, varasijoja_kaytetaan_alkaen, varasijoja_taytetaan_asti, tayttojono,
-            alin_hyvaksytty_pistemaara
+            alin_hyvaksytty_pistemaara, sijoiteltu_ilman_varasijasaantoja_niiden_ollessa_voimassa
             from valintatapajonot
             where hakukohde_oid = ${hakukohdeOid}""".as[Valintatapajono])
   }

@@ -105,6 +105,7 @@ trait ValintarekisteriResultExtractors {
     varasijojaKaytetaanAlkaen = r.nextTimestampOption,
     varasijojaKaytetaanAsti = r.nextTimestampOption,
     tayttoJono = r.nextStringOption,
+    sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa = r.nextBoolean(),
     hakukohdeOid = HakukohdeOid(r.nextString)))
 
   protected implicit val getHakemuksetForValintatapajonosResult = GetResult(r => HakemusRecord(

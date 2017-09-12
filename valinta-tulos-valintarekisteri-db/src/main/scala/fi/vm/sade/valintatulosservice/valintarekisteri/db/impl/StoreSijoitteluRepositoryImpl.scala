@@ -361,7 +361,8 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
   private def insertValintatapajono(sijoitteluajoId: Long, hakukohdeOid: HakukohdeOid, valintatapajono: Valintatapajono) = {
     val SijoitteluajonValintatapajonoWrapper(oid, nimi, prioriteetti, tasasijasaanto, aloituspaikat, alkuperaisetAloituspaikat,
     eiVarasijatayttoa, kaikkiEhdonTayttavatHyvaksytaan, poissaOlevaTaytto, varasijat, varasijaTayttoPaivat,
-    varasijojaKaytetaanAlkaen, varasijojaTaytetaanAsti, tayttojono, alinHyvaksyttyPistemaara, _)
+    varasijojaKaytetaanAlkaen, varasijojaTaytetaanAsti, tayttojono, alinHyvaksyttyPistemaara, _,
+    sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa)
     = SijoitteluajonValintatapajonoWrapper(valintatapajono)
 
     val varasijojaKaytetaanAlkaenTs:Option[Timestamp] = varasijojaKaytetaanAlkaen.flatMap(d => Option(new Timestamp(d.getTime)))
@@ -396,7 +397,8 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
                  varasijoja_kaytetaan_alkaen,
                  varasijoja_taytetaan_asti,
                  tayttojono,
-                 alin_hyvaksytty_pistemaara
+                 alin_hyvaksytty_pistemaara,
+                 sijoiteltu_ilman_varasijasaantoja_niiden_ollessa_voimassa
              ) values (
                  ${oid},
                  ${sijoitteluajoId},
@@ -414,7 +416,8 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
                  ${varasijojaKaytetaanAlkaenTs},
                  ${varasijojaTaytetaanAstiTs},
                  ${tayttojono},
-                 ${alinHyvaksyttyPistemaara}
+                 ${alinHyvaksyttyPistemaara},
+                 ${sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa}
              )"""
     ensureValintaesitys.andThen(insert)
   }
