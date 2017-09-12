@@ -343,6 +343,7 @@ case class ValintatapajonoRecord(tasasijasaanto:String, oid: ValintatapajonoOid,
     valintatapajono.setEiVarasijatayttoa(eiVarasijatayttoa)
     valintatapajono.setKaikkiEhdonTayttavatHyvaksytaan(kaikkiEhdonTayttavatHyvaksytaan)
     valintatapajono.setPoissaOlevaTaytto(poissaOlevaTaytto)
+    valintatapajono.setSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa(sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa)
     valintaesitysHyvaksytty.foreach(valintatapajono.setValintaesitysHyvaksytty(_))
     //valintatapajono.setHyvaksytty(hyvaksytty)
     //valintatapajono.setVaralla(varalla)

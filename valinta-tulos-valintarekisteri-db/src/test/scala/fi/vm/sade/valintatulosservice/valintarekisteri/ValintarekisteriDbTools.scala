@@ -241,6 +241,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
         dvalintatapajono.getVaralla mustEqual wvalintatapajono.getVaralla
         dvalintatapajono.getVarasijat mustEqual wvalintatapajono.getVarasijat
         dvalintatapajono.getVarasijaTayttoPaivat mustEqual wvalintatapajono.getVarasijaTayttoPaivat
+        dvalintatapajono.getSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa mustEqual wvalintatapajono.getSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa
         format(dvalintatapajono.getVarasijojaKaytetaanAlkaen) mustEqual format(wvalintatapajono.getVarasijojaKaytetaanAlkaen)
         format(dvalintatapajono.getVarasijojaTaytetaanAsti) mustEqual format(wvalintatapajono.getVarasijojaTaytetaanAsti)
 
