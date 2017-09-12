@@ -1,21 +1,14 @@
 package fi.vm.sade.valintatulosservice
 
-import java.time.Instant
-import java.time.temporal.ChronoUnit
-
-import fi.vm.sade.sijoittelu.domain.IlmoittautumisTila
 import fi.vm.sade.valintatulosservice.json.JsonFormats
-import fi.vm.sade.valintatulosservice.sijoittelu.ValintarekisteriValintatulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, Ilmoittautuminen, SijoitteluajonIlmoittautumistila, ValintatapajonoOid, VastaanotaSitovasti}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, Ilmoittautuminen, VastaanotaSitovasti}
 import org.json4s.jackson.Serialization
 import org.slf4j.LoggerFactory
 
 import scala.util.Try
 
-class IlmoittautumisService(valintatulosService: ValintatulosService,
-                            tulokset: ValintarekisteriValintatulosRepository,
-                            hakijaVastaanottoRepository: HakijaVastaanottoRepository, valinnantulosRepository: ValinnantulosRepository) extends JsonFormats {
+class IlmoittautumisService(valintatulosService: ValintatulosService, hakijaVastaanottoRepository: HakijaVastaanottoRepository, valinnantulosRepository: ValinnantulosRepository) extends JsonFormats {
   private val logger = LoggerFactory.getLogger(classOf[IlmoittautumisService])
 
   def ilmoittaudu(hakemusOid: HakemusOid, ilmoittautuminen: Ilmoittautuminen) {
@@ -37,17 +30,6 @@ class IlmoittautumisService(valintatulosService: ValintatulosService,
       throw new IllegalStateException(s"Hakija ${hakemuksenTulos.hakijaOid} ei voi ilmoittautua hakukohteeseen ${hakutoive.hakukohdeOid} koska sitovaa vastaanottoa ei löydy.")
     }
 
-    tulokset.modifyValintatulos(
-      ilmoittautuminen.hakukohdeOid,
-      hakutoive.valintatapajonoOid,
-      hakemusOid,
-      valintatulos =>
-        valintatulos.setIlmoittautumisTila(
-          ilmoittautuminen.tila.ilmoittautumistila,
-          ilmoittautuminen.selite,
-          ilmoittautuminen.muokkaaja
-        )
-    ).left.foreach(e => throw e)
     Try(valinnantulosRepository.runBlocking(valinnantulosRepository.storeIlmoittautuminen(hakemuksenTulos.hakijaOid, ilmoittautuminen))).recover {
       case e =>
         logger.error(s"Hakijan ${hakemuksenTulos.hakijaOid} ilmoittautumista ei saatu SQL-kantaan!",e)

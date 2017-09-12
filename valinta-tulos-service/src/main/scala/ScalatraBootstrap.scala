@@ -60,10 +60,9 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val valintarekisteriValintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
     lazy val valintarekisteriRaportointiService = new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintarekisteriValintatulosDao)
     lazy val valintarekisteriSijoittelunTulosClient = new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb)
-    lazy val (raportointiService, valintatulosDao, valintatulosRepository, sijoittelunTulosClient, hakijaDTOClient) =
+    lazy val (raportointiService, valintatulosDao, sijoittelunTulosClient, hakijaDTOClient) =
       (valintarekisteriRaportointiService,
         valintarekisteriValintatulosDao,
-        new ValintarekisteriValintatulosRepositoryImpl(valintarekisteriValintatulosDao),
         valintarekisteriSijoittelunTulosClient,
         new ValintarekisteriHakijaDTOClientImpl(valintarekisteriRaportointiService, valintarekisteriSijoittelunTulosClient, valintarekisteriDb))
 
@@ -72,10 +71,8 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         appConfig.ohjausparametritService, valintarekisteriDb, sijoittelunTulosClient)
     lazy val vastaanotettavuusService = new VastaanotettavuusService(hakukohdeRecordService, valintarekisteriDb)
     lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, hakijaDTOClient)(appConfig,dynamicAppConfig)
-    lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService, valintarekisteriDb,
-        appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository(), valintatulosRepository)
-    lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService,
-        valintatulosRepository, valintarekisteriDb, valintarekisteriDb)
+    lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService, valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository())
+    lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService, valintarekisteriDb, valintarekisteriDb)
     lazy val mailPollerRepository: MailPollerRepository = valintarekisteriDb
     lazy val mailPoller: MailPollerAdapter =
     new MailPollerAdapter(mailPollerRepository, valintatulosService, valintarekisteriDb, hakuService, appConfig.ohjausparametritService, limit = 100)
