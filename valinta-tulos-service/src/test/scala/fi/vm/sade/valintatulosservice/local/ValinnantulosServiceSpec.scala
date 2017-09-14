@@ -14,7 +14,7 @@ import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, Ohjaus
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository, VastaanottoEvent}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice._
@@ -27,6 +27,7 @@ import org.specs2.mock.mockito.{MockitoMatchers, MockitoStubs}
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.Scope
+import slick.dbio.DBIO
 
 @RunWith(classOf[JUnitRunner])
 class ValinnantulosServiceSpec extends Specification with MockitoMatchers with MockitoStubs {
@@ -221,8 +222,10 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       valinnantulosRepository.storeValinnantila(any[ValinnantilanTallennus], any[Option[Instant]]) returns DBIO.successful(())
       valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(any[EhdollisenHyvaksynnanEhto], any[Option[Instant]]) returns DBIO.successful(())
       valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(any[HakemusOid], any[ValintatapajonoOid], any[String], any[String]) returns DBIO.successful(())
+      valinnantulosRepository.storeAction(any[VastaanottoEvent]) returns DBIO.successful(())
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo, true) mustEqual List()
       there was no (valinnantulosRepository).updateValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
+      there was one (valinnantulosRepository).storeAction(any[VastaanottoEvent])
       there was one (valinnantulosRepository).storeValinnantuloksenOhjaus(erillishaunValinnantulos.getValinnantuloksenOhjaus(session.personOid, "Erillishaun tallennus"), Some(lastModified))
       there was one (valinnantulosRepository).storeIlmoittautuminen(erillishaunValinnantulos.henkiloOid, Ilmoittautuminen(erillishaunValinnantulos.hakukohdeOid, erillishaunValinnantulos.ilmoittautumistila, session.personOid, "Erillishaun tallennus"), Some(lastModified))
       there was one (valinnantulosRepository).storeValinnantila(erillishaunValinnantulos.getValinnantilanTallennus(session.personOid), Some(lastModified))
@@ -230,7 +233,9 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
   }
 
   trait Mocks extends Mockito with Scope with MustThrownExpectations with RunBlockingMock {
-    val valinnantulosRepository = mock[ValinnantulosRepository with HakijaVastaanottoRepository]
+    trait Repository extends ValinnantulosRepository with HakijaVastaanottoRepository
+
+    val valinnantulosRepository = mock[Repository]
     mockRunBlocking(valinnantulosRepository)
 
     val authorizer = mock[OrganizationHierarchyAuthorizer]
