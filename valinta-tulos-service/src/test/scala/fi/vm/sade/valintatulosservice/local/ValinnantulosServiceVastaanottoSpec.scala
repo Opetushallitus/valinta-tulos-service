@@ -25,6 +25,8 @@ import org.specs2.execute.{FailureException, Result}
 import org.specs2.matcher.ThrownMessages
 import org.specs2.mock.mockito.{MockitoMatchers, MockitoStubs}
 import org.specs2.runner.JUnitRunner
+import slick.driver.PostgresDriver
+import slick.sql.SqlStreamingAction
 
 @RunWith(classOf[JUnitRunner])
 class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp with ThrownMessages with MockitoMatchers with MockitoStubs {
@@ -56,6 +58,34 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
       val valinnantulosAfter = findOne(hakemuksenValinnantulokset, tila(Hyvaksytty))
       valinnantulosAfter.copy(vastaanotonViimeisinMuutos = None) must_== valinnantulosForSave
       valinnantulosAfter.vastaanotonViimeisinMuutos.isDefined must_== true
+    }
+    "foo" in {
+      useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
+      import slick.driver.PostgresDriver.api._
+      import scala.concurrent.ExecutionContext.Implicits.global
+
+
+
+      val moi: SqlStreamingAction[Vector[String], String, Effect] = sql"""select hakemus_oid from valinnantulokset""".as[String]
+      val mof: (Vector[String]) => SqlStreamingAction[Vector[String], String, Effect] = (list:Vector[String]) => {
+        println(list.mkString(","))
+        sql"""select valintatapajono_oid from valinnantilat where hakemus_oid = ${list.head}""".as[String]
+      }
+      val foo: (Vector[String]) => SqlStreamingAction[Vector[String], String, Effect] = (list:Vector[String]) => {
+        println(list.mkString(","))
+        sql"""select henkilo_oid from valinnantilat where valintatapajono_oid = ${list.head}""".as[String]
+      }
+
+      singleConnectionValintarekisteriDb.runBlockingTransactionally(
+        moi.flatMap(mof).flatMap(foo)
+
+
+      ) match {
+        case Right(x) => println(s"""moi ${x}""")
+        case x if x.isLeft => "LFET"
+      }
+
+      true must_== true
     }
     "vastaanota ja julkaise samanaikaisesti" in {
       useFixture("hyvaksytty-kesken.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
@@ -220,6 +250,16 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
       val valinnantulosAfter = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
       tila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
     }
+    "kaksi epäonnistunutta vastaanottoa" in {
+      useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
+      val valinnantulos = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
+      val failingValinnantulos1 = valinnantulos.copy(hakukohdeOid = HakukohdeOid("1234"), henkiloOid = "1234",
+        hakemusOid = HakemusOid("1234"), vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+      val failingValinnantulos2 = valinnantulos.copy(hakukohdeOid = HakukohdeOid("1234"), henkiloOid = "12345",
+        hakemusOid = HakemusOid("12345"), vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+      tallennaVirheella(List(failingValinnantulos1, failingValinnantulos2), expectedStatus = 404)
+      true must_== true
+    }
     "hyväksytty, ylempi varalla, vastaanotto loppunut, virkailija asettaa ehdollisesti vastaanottanut" in {
       useFixture("hyvaksytty-ylempi-varalla.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku, ohjausparametritFixture = "vastaanotto-loppunut")
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, tila(Hyvaksytty))
@@ -278,12 +318,12 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
     status.size aka status.map(_.message).mkString(", ") must_== 0
   }
 
-  def tallennaVirheella(valinnantulokset:List[Valinnantulos], message:Option[String] = None) = {
+  def tallennaVirheella(valinnantulokset:List[Valinnantulos], message:Option[String] = None, expectedStatus:Int = 400) = {
     val status = valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
       valinnantulokset.head.valintatapajonoOid, valinnantulokset, Some(Instant.now), auditInfo)
     status.size must_== valinnantulokset.size
     status.foreach(s => {
-      s.status must_== 400
+      s.status must_== expectedStatus
       message.foreach(m => s.message must_== m)
     })
   }

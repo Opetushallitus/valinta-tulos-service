@@ -9,12 +9,15 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
 import fi.vm.sade.valintatulosservice.security.Role
-import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService}
+import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valinnantulos._
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
+import slick.dbio._
+
+import scala.util.{Failure, Success}
 
 class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository with HakijaVastaanottoRepository,
                            val authorizer:OrganizationHierarchyAuthorizer,
@@ -76,9 +79,6 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository 
       haku <- hakuService.getHaku(hakukohde.hakuOid).right
       ohjausparametrit <- ohjausparametritService.ohjausparametrit(hakukohde.hakuOid).right
     } yield {
-      val vanhatValinnantulokset = yhdenPaikanSaannos(
-        valinnantulosRepository.getValinnantuloksetForValintatapajono(valintatapajonoOid)
-      ).fold(throw _, vs => vs.map(v => v.hakemusOid -> v).toMap)
       val strategy = if (erillishaku) {
         new ErillishaunValinnantulosStrategy(
           auditInfo,
@@ -104,34 +104,58 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository 
           audit
         )
       }
-      handle(strategy, valinnantulokset, vanhatValinnantulokset, ifUnmodifiedSince)
+      handle(valintatapajonoOid, hakukohde, strategy, valinnantulokset, ifUnmodifiedSince)
     }) match {
       case Right(l) => l
       case Left(t) => throw t
     }
   }
 
-  private def handle(s: ValinnantulosStrategy, uusi: Valinnantulos, vanha: Option[Valinnantulos]) = {
-    for {
-      _ <- s.validate(uusi, vanha).right
-      _ <- valinnantulosRepository.runBlockingTransactionally(s.save(uusi, vanha)).left.map {
-        case t: ConcurrentModificationException =>
-          logger.warn(s"Valinnantuloksen $uusi tallennus epäonnistui", t)
-          ValinnantulosUpdateStatus(409, "Hakemus on muuttunut lukemisen jälkeen", uusi.valintatapajonoOid, uusi.hakemusOid)
-        case t =>
-          logger.warn(s"Valinnantuloksen $uusi tallennus epäonnistui", t)
-          ValinnantulosUpdateStatus(500, s"Valinnantuloksen tallennus epäonnistui", uusi.valintatapajonoOid, uusi.hakemusOid)
-      }.right
-    } yield s.audit(uusi, vanha)
-  }
+  def ok(valinnantulos:Valinnantulos) = new ValinnantulosUpdateStatus(200, "ok", valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid)
 
-  private def handle(s: ValinnantulosStrategy, valinnantulokset: List[Valinnantulos], vanhatValinnantulokset: Map[HakemusOid, Valinnantulos], ifUnmodifiedSince: Option[Instant]): List[ValinnantulosUpdateStatus] = {
-    valinnantulokset.map(uusiValinnantulos => {
-      vanhatValinnantulokset.get(uusiValinnantulos.hakemusOid) match {
-        case Some(vanhaValinnantulos) if !s.hasChange(uusiValinnantulos, vanhaValinnantulos) => Right()
-        case Some(vanhaValinnantulos) => handle(s, uusiValinnantulos, Some(vanhaValinnantulos))
-        case None => handle(s, uusiValinnantulos, None)
-      }
-    }).collect { case Left(s) => s }
+  import scala.concurrent.ExecutionContext.Implicits.global
+  private def handle(valintatapajonoOid: ValintatapajonoOid, hakukohde: Hakukohde, s: ValinnantulosStrategy, valinnantulokset: List[Valinnantulos], ifUnmodifiedSince: Option[Instant]): List[ValinnantulosUpdateStatus] = {
+    def save(uusi: Valinnantulos, vanha: Option[Valinnantulos]):DBIO[ValinnantulosUpdateStatus] = {
+      s.save(uusi, vanha).asTry.flatMap(r => r match {
+        case Failure(t:ConcurrentModificationException) => {
+          logger.warn(s"Valinnantuloksen $uusi tallennus epäonnistui", t)
+          DBIO.successful(ValinnantulosUpdateStatus(409, "Hakemus on muuttunut lukemisen jälkeen", uusi.valintatapajonoOid, uusi.hakemusOid))
+        }
+        case Failure(t) => {
+          logger.warn(s"Valinnantuloksen $uusi tallennus epäonnistui", t)
+          DBIO.successful(ValinnantulosUpdateStatus(500, s"Valinnantuloksen tallennus epäonnistui", uusi.valintatapajonoOid, uusi.hakemusOid))
+        }
+        case Success(_) => {
+          s.audit(uusi, vanha)
+          DBIO.successful(ok(uusi))
+        }
+      })
+    }
+
+    def vanhatValinnantuloksetYhdenPaikanSaannolla(): DBIO[Set[Valinnantulos]] = {
+      valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid).flatMap(vanhatValinnantulokset => {
+        yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(hakukohde, vanhatValinnantulokset)
+      })
+    }
+
+    valinnantulosRepository.runBlockingTransactionally(vanhatValinnantuloksetYhdenPaikanSaannolla().flatMap(vanhatValinnantulokset => {
+      val seq = DBIO.sequence(
+      valinnantulokset.map(uusi =>
+        vanhatValinnantulokset.find(_.hakemusOid == uusi.hakemusOid) match {
+          case Some(vanha) if !s.hasChange(uusi, vanha) => DBIO.successful(ok(uusi))
+          case vanha => s.validate(uusi, vanha) match {
+            case Left(status) => DBIO.successful(status)
+            case _ => s.validateVastaanotto(uusi, vanha).flatMap(status => status.status match {
+              case 200 => save(uusi, vanha)
+              case _ => DBIO.successful(status)
+            })
+          }
+        })
+      )
+      seq
+    })) match {
+      case Left(t) => throw t
+      case Right(statusList) => statusList.filter(_.status != 200)
+    }
   }
 }

@@ -33,6 +33,8 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
   lazy val vastaanottoValidator = new SijoittelunVastaanottoValidator(haku, hakukohdeOid, ohjausparametrit, valinnantulosRepository)
 
+  def validateVastaanotto(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]) = vastaanottoValidator.validateVastaanotto(uusi, vanhaOpt)
+
   def hasChange(uusi:Valinnantulos, vanha:Valinnantulos) = (uusi.hasChanged(vanha) || uusi.hasOhjausChanged(vanha) || uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha))
 
   def validate(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): Either[ValinnantulosUpdateStatus, Unit] = {
@@ -50,7 +52,6 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
           _ <- validateEhdollisestiHyvaksytty.right
           hyvaksyttyVarasijalta <- validateHyvaksyttyVarasijalta().right
           hyvaksyPeruuntunut <- validateHyvaksyPeruuntunut().right
-          vastaanotto <- vastaanottoValidator.validateVastaanotto(uusi, vanha).right
           ilmoittautumistila <- validateIlmoittautumistila().right
         } yield ilmoittautumistila
       }

@@ -6,6 +6,7 @@ import java.util.UUID
 
 import fi.vm.sade.auditlog.{Audit, Changes, Operation, Target, User}
 import fi.vm.sade.security.{AuthorizationFailedException, OrganizationHierarchyAuthorizer}
+import fi.vm.sade.valintatulosservice.mock.RunBlockingMock
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{ValinnantulosRepository, Valintaesitys, ValintaesitysRepository}
@@ -74,7 +75,7 @@ class ValintaesitysServiceSpec extends Specification with MockitoMatchers with M
     valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(valintatapajonoOidB, auditInfo.session._2.personOid, selite) returns DBIO.successful(())
   }
 
-  trait Mocks extends Mockito with Scope with MustThrownExpectations {
+  trait Mocks extends Mockito with Scope with MustThrownExpectations with RunBlockingMock {
     val hakukohdeOid = HakukohdeOid("1.2.246.562.20.26643418986")
     val tarjoajaOid = "1.2.3.4.5"
     val valintatapajonoOidA = ValintatapajonoOid("14538080612623056182813241345174")
@@ -93,6 +94,7 @@ class ValintaesitysServiceSpec extends Specification with MockitoMatchers with M
     val authorizer: OrganizationHierarchyAuthorizer = mock[OrganizationHierarchyAuthorizer]
     val valintaesitysRepository: ValintaesitysRepository = mock[ValintaesitysRepository]
     val valinnantulosRepository: ValinnantulosRepository = mock[ValinnantulosRepository]
+    mockRunBlocking(valinnantulosRepository)
     val audit: Audit = mock[Audit]
     val service = new ValintaesitysService(
       hakuService,
@@ -101,30 +103,6 @@ class ValintaesitysServiceSpec extends Specification with MockitoMatchers with M
       valinnantulosRepository,
       audit
     )
-
-    private def answerRun(params: Any): Either[Throwable, Any] = mockRun(params.asInstanceOf[Array[Any]].head.asInstanceOf[DBIO[Any]])
-    private def mockRun(dbio: DBIO[Any]): Either[Throwable, Any] = dbio match {
-      case FailureAction(t) => Left(t)
-      case SuccessAction(r) => Right(r)
-      case FlatMapAction(m, f, _) => mockRun(m).right.flatMap(x => mockRun(f(x)))
-      case AndThenAction(actions) =>
-        def loop(actions: List[DBIO[Any]]): Either[Throwable, Any] = actions match {
-          case a :: Nil => mockRun(a)
-          case a :: rest => mockRun(a).right.flatMap(_ => loop(rest))
-          case _ => throw new RuntimeException("This should not happen")
-        }
-        loop(actions.toList)
-      case SequenceAction(actions) =>
-        def loop(actions: List[DBIO[Any]]): Either[Throwable, Any] = actions match {
-          case a :: Nil => mockRun(a)
-          case a :: rest => mockRun(a).right.flatMap(_ => loop(rest))
-          case _ => throw new RuntimeException("This should not happen either")
-        }
-        loop(actions.toList)
-      case _ => throw new RuntimeException("problem")
-    }
-    valinnantulosRepository.runBlocking(any[DBIO[Any]], any[Duration]) answers (x => answerRun(x).fold(throw _, x => x))
-    valinnantulosRepository.runBlockingTransactionally(any[DBIO[Any]], any[Duration]) answers (x => answerRun(x))
   }
 
   trait Hakukohde { this: Mocks =>

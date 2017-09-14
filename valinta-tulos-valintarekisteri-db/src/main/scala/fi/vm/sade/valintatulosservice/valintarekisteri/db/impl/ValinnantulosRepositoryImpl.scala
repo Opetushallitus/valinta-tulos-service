@@ -214,7 +214,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       """.as[Valinnantulos].map(_.toSet)
   }
 
-  private def getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid: ValintatapajonoOid): DBIO[Set[Valinnantulos]] = {
+  def getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid: ValintatapajonoOid): DBIO[Set[Valinnantulos]] = {
     sql"""with jonon_hakukohde as (select hakukohde_oid
               from valintaesitykset
               where valintatapajono_oid = ${valintatapajonoOid}
@@ -298,8 +298,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             left join ilmoittautumiset as i on i.henkilo = ti.henkilo_oid and i.hakukohde = ti.hakukohde_oid""".as[Valinnantulos].map(_.toSet)
     }
 
-  override def getHakutoiveetForHakemus(hakuOid:HakuOid, hakemusOid:HakemusOid): List[HakutoiveenValinnantulos] = {
-    runBlocking(
+  override def getHakutoiveetForHakemusDBIO(hakuOid:HakuOid, hakemusOid:HakemusOid): DBIO[List[HakutoiveenValinnantulos]] = {
     sql"""with latest as (
             select id from sijoitteluajot where haku_oid = ${hakuOid} order by id desc limit 1
           )
@@ -323,7 +322,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
           left join valintatapajonot jo on jo.sijoitteluajo_id = js.sijoitteluajo_id
             and jo.oid = js.valintatapajono_oid
           where ti.hakemus_oid = ${hakemusOid} and js.sijoitteluajo_id in ( select id from latest )
-      """.as[HakutoiveenValinnantulos]).toList
+      """.as[HakutoiveenValinnantulos].map(_.toList)
   }
 
   override def getHaunValinnantilat(hakuOid: HakuOid): List[(HakukohdeOid, ValintatapajonoOid, HakemusOid, Valinnantila)] =

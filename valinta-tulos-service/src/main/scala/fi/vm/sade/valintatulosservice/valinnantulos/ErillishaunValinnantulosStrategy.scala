@@ -30,6 +30,8 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
 
   def hasChange(uusi:Valinnantulos, vanha:Valinnantulos) = uusi.hasChanged(vanha) || uusi.poistettava.getOrElse(false)
 
+  def validateVastaanotto(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]) = vastaanottoValidator.validateVastaanotto(uusi, vanhaOpt)
+
   def validate(uusi: Valinnantulos, vanha: Option[Valinnantulos]) = {
 
     def validateValinnantila() = (uusi.valinnantila, uusi.vastaanottotila) match {
@@ -127,7 +129,6 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         tilat <- validateTilat.right
         valinnantila <- validateValinnantila.right
         ehdollinenHyvaksynta <- validateEhdollisestiHyvaksyttavissa.right
-        vastaanotto <- vastaanottoValidator.validateVastaanotto(uusi, vanha).right
         julkaistavissa <- validateJulkaistavissa.right
         ilmoittautuminen <- validateIlmoittautuminen.right
       } yield ilmoittautuminen
@@ -140,6 +141,10 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
     val muokkaaja = session.personOid
     val selite = "Erillishaun tallennus"
 
+    def vastaanottoAction() = new VirkailijanVastaanotto(haku.oid, uusi.valintatapajonoOid, uusi.henkiloOid, uusi.hakemusOid, hakukohdeOid,
+      VirkailijanVastaanottoAction.getVirkailijanVastaanottoAction(Vastaanottotila.values.find(Vastaanottotila.matches(_, uusi.vastaanottotila))
+        .getOrElse(throw new IllegalArgumentException(s"Odottamaton vastaanottotila ${uusi.vastaanottotila}"))), muokkaaja, selite)
+
     def createInsertOperations = {
       List(
         Some(valinnantulosRepository.storeValinnantila(uusi.getValinnantilanTallennus(muokkaaja), ifUnmodifiedSince)),
@@ -150,6 +155,9 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         },
         Option(uusi.julkaistavissa.getOrElse(false) && uusi.isHyvaksytty).collect{
           case true => valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(uusi.hakemusOid, uusi.valintatapajonoOid, muokkaaja, selite)
+        },
+        Option(uusi.vastaanottotila != ValintatuloksenTila.KESKEN && uusi.vastaanottotila != ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN).collect{
+          case true => valinnantulosRepository.storeAction(vastaanottoAction())
         }
       ).flatten
     }
@@ -174,6 +182,10 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         },
         Option(vanha.isHyvaksytty && !uusi.isHyvaksytty).collect{
           case true => valinnantulosRepository.deleteHyvaksyttyJaJulkaistavissaIfExists(uusi.henkiloOid, uusi.hakukohdeOid, ifUnmodifiedSince)
+        },
+        Option(uusi.vastaanottotila != vanha.vastaanottotila &&
+          !(uusi.vastaanottotila == ValintatuloksenTila.KESKEN && vanha.vastaanottotila == ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)).collect{
+          case true => valinnantulosRepository.storeAction(vastaanottoAction())
         }
       ).flatten
     }
@@ -184,6 +196,9 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         Option(vanha.ilmoittautumistila != EiTehty).collect { case true => valinnantulosRepository.deleteIlmoittautuminen(
           uusi.henkiloOid, Ilmoittautuminen(uusi.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), ifUnmodifiedSince
         )},
+        Option(uusi.vastaanottotila == ValintatuloksenTila.KESKEN && vanha.vastaanottotila != ValintatuloksenTila.KESKEN).collect {
+          case true => valinnantulosRepository.storeAction(vastaanottoAction())
+        },
         Some(valinnantulosRepository.deleteHyvaksyttyJaJulkaistavissaIfExists(uusi.henkiloOid, uusi.hakukohdeOid, ifUnmodifiedSince))
       ).flatten
     }
