@@ -24,19 +24,18 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
                       where haku_oid = ${hakuOid}""".as[VastaanottoRecord]).toSet
   }
 
-  override def findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(kausi: Kausi): Set[VastaanottoRecord] = {
-    runBlocking(
-      sql"""select henkilo, haku_oid, hakukohde, action, ilmoittaja, "timestamp"
+  private def findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissaDBIO(kausi: Kausi): DBIO[Set[VastaanottoRecord]] = {
+    sql"""select henkilo, haku_oid, hakukohde, action, ilmoittaja, "timestamp"
             from newest_vastaanotot
             where koulutuksen_alkamiskausi = ${kausi.toKausiSpec}
-                and yhden_paikan_saanto_voimassa""".as[VastaanottoRecord]).toSet
+                and yhden_paikan_saanto_voimassa""".as[VastaanottoRecord].map(_.toSet)
   }
 
-  override def findYpsVastaanotot(kausi: Kausi, henkiloOids: Set[String]): Set[(HakemusOid, HakukohdeRecord, VastaanottoRecord)] = {
-    val vastaanotot = findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(kausi)
-      .filter(v => henkiloOids.contains(v.henkiloOid))
-    val hakukohteet = runBlocking(
-      sql"""select hakukohde_oid,
+  override def findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(kausi: Kausi): Set[VastaanottoRecord] =
+    runBlocking(findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissaDBIO(kausi))
+
+  private def findYpsHakukohteetDBIO(kausi: Kausi): DBIO[List[HakukohdeRecord]] = {
+    sql"""select hakukohde_oid,
                    haku_oid,
                    yhden_paikan_saanto_voimassa,
                    kk_tutkintoon_johtava,
@@ -44,10 +43,11 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
             from hakukohteet
             where koulutuksen_alkamiskausi = ${kausi.toKausiSpec}
                 and yhden_paikan_saanto_voimassa
-        """.as[HakukohdeRecord]
-    ).map(h => h.oid -> h).toMap
-    val hakemusoidit = runBlocking(
-      sql"""select
+        """.as[HakukohdeRecord].map(_.toList)
+  }
+
+  private def findYpsHakemusOiditDBIO(kausi: Kausi): DBIO[List[((String, HakukohdeOid), HakemusOid)]] = {
+    sql"""select
               vastaanotot.henkilo as henkilo,
               hakukohde,
               vt.hakemus_oid
@@ -73,15 +73,26 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
                 and vt.hakukohde_oid = vastaanotot.hakukohde
             where deleted is null
                 and action in ('VastaanotaSitovasti', 'VastaanotaEhdollisesti')
-        """.as[((String, HakukohdeOid), HakemusOid)]
-    ).toMap
-    assertAllValinnantuloksetExist(vastaanotot, hakemusoidit)
-    vastaanotot
-      .map(v => (
-        hakemusoidit((v.henkiloOid, v.hakukohdeOid)),
-        hakukohteet(v.hakukohdeOid),
-        v
-      ))
+        """.as[((String, HakukohdeOid), HakemusOid)].map(_.toList)
+  }
+
+  override def findYpsVastaanotot(kausi: Kausi, henkiloOids: Set[String]): Set[(HakemusOid, HakukohdeRecord, VastaanottoRecord)] = {
+    runBlockingTransactionally(findYpsVastaanototDBIO(kausi, henkiloOids)).fold(throw _, r => r)
+  }
+
+  override def findYpsVastaanototDBIO(kausi: Kausi, henkiloOids: Set[String]): DBIO[Set[(HakemusOid, HakukohdeRecord, VastaanottoRecord)]] = {
+    findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissaDBIO(kausi).zip(findYpsHakukohteetDBIO(kausi)).zip(findYpsHakemusOiditDBIO(kausi))
+      .map{ case ((x, y), z) => { (x.filter(v => henkiloOids.contains(v.henkiloOid)), y.map(h => h.oid -> h).toMap, z.toMap) } }
+      .flatMap { case (vastaanotot, hakukohteet, hakemusoidit) => {
+        assertAllValinnantuloksetExist(vastaanotot, hakemusoidit)
+        DBIO.successful(vastaanotot
+          .map(v => (
+            hakemusoidit((v.henkiloOid, v.hakukohdeOid)),
+            hakukohteet(v.hakukohdeOid),
+            v
+          )))
+      }
+    }
   }
 
   private def assertAllValinnantuloksetExist(vastaanotot: Set[VastaanottoRecord], hakemusoidit: Map[(String, HakukohdeOid), HakemusOid]): Unit = {

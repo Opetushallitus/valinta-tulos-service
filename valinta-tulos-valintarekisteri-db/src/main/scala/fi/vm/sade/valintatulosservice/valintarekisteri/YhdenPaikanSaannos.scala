@@ -2,12 +2,26 @@ package fi.vm.sade.valintatulosservice.valintarekisteri
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.valintatulosservice.MonadHelper
-import fi.vm.sade.valintatulosservice.tarjonta.HakuService
+import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoRecord, VirkailijaVastaanottoRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import slick.dbio.DBIO
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class YhdenPaikanSaannos(hakuService: HakuService,
                          virkailijaVastaanottoRepository: VirkailijaVastaanottoRepository) {
+
+  def ottanutVastaanToisenPaikanDBIO(hakukohde: Hakukohde,
+                                             valinnantulokset: Set[Valinnantulos]): DBIO[Set[Valinnantulos]] = {
+    if(hakukohde.yhdenPaikanSaanto.voimassa) hakukohde.koulutuksenAlkamiskausi match {
+      case Left(t) => DBIO.failed(t)
+      case Right(kausi) => virkailijaVastaanottoRepository.findYpsVastaanototDBIO(kausi, valinnantulokset.map(_.henkiloOid)).flatMap(vastaanotot =>
+        DBIO.successful(valinnantulokset.map(v => ottanutVastaanToisenPaikan(v, vastaanotot.find(_._3.henkiloOid == v.henkiloOid))))
+      )
+    } else {
+      DBIO.successful(valinnantulokset)
+    }
+  }
 
   def apply(valinnantulokset: Set[Valinnantulos]): Either[Throwable, Set[Valinnantulos]] = {
     MonadHelper.sequence(
