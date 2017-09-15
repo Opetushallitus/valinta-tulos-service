@@ -283,4 +283,9 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
               from hyvaksytyt_ja_julkaistut_hakutoiveet
               where hakukohde = ${hakukohdeOid}""".as[(HenkiloOid, OffsetDateTime)]).toMap
     }
+
+  override def findHyvaksyttyJaJulkaistuDateForHenkiloAndHakukohdeDBIO(henkiloOid: HenkiloOid, hakukohdeOid:HakukohdeOid): DBIO[Option[OffsetDateTime]] =
+    sql"""select hyvaksytty_ja_julkaistu
+          from hyvaksytyt_ja_julkaistut_hakutoiveet
+          where henkilo = ${henkiloOid} and hakukohde = ${hakukohdeOid}""".as[OffsetDateTime].headOption
 }
