@@ -30,8 +30,6 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
 
   def hasChange(uusi:Valinnantulos, vanha:Valinnantulos) = uusi.hasChanged(vanha) || uusi.poistettava.getOrElse(false)
 
-  def validateVastaanotto(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]) = vastaanottoValidator.validateVastaanotto(uusi, vanhaOpt)
-
   def validate(uusi: Valinnantulos, vanha: Option[Valinnantulos]) = {
 
     def validateValinnantila() = (uusi.valinnantila, uusi.vastaanottotila) match {
@@ -134,7 +132,10 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
       } yield ilmoittautuminen
     }
 
-    validateMuutos()
+    validateMuutos().fold(
+      e => DBIO.successful(Left(e)),
+      _ => vastaanottoValidator.validateVastaanotto(uusi, vanha)
+    )
   }
 
   def save(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): DBIO[Unit] = {

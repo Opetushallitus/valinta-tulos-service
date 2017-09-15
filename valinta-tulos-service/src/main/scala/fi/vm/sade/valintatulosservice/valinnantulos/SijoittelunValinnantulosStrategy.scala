@@ -7,12 +7,10 @@ import fi.vm.sade.security.OrganizationHierarchyAuthorizer
 import fi.vm.sade.sijoittelu.domain.{EhdollisenHyvaksymisenEhtoKoodi, ValintatuloksenTila}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.domain.Valintatila
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantuloksenMuokkaus}
 import slick.dbio.DBIO
@@ -33,15 +31,13 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
   lazy val vastaanottoValidator = new SijoittelunVastaanottoValidator(haku, hakukohdeOid, ohjausparametrit, valinnantulosRepository)
 
-  def validateVastaanotto(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]) = vastaanottoValidator.validateVastaanotto(uusi, vanhaOpt)
-
   def hasChange(uusi:Valinnantulos, vanha:Valinnantulos) = (uusi.hasChanged(vanha) || uusi.hasOhjausChanged(vanha) || uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha))
 
-  def validate(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): Either[ValinnantulosUpdateStatus, Unit] = {
+  def validate(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): DBIO[Either[ValinnantulosUpdateStatus, Unit]] = {
     if (vanhaOpt.isEmpty) {
       logger.warn(s"Hakemuksen ${uusi.hakemusOid} valinnan tulosta ei löydy " +
         s"valintatapajonosta ${uusi.valintatapajonoOid}.")
-      Left(ValinnantulosUpdateStatus(404, s"Valinnantulosta ei löydy", uusi.valintatapajonoOid, uusi.hakemusOid))
+      DBIO.successful(Left(ValinnantulosUpdateStatus(404, s"Valinnantulosta ei löydy", uusi.valintatapajonoOid, uusi.hakemusOid)))
     } else {
       val vanha = vanhaOpt.get
 
@@ -127,7 +123,10 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
       def allowMusiikkiUpdate(session: Session, tarjoajaOids: Set[String]) =
         authorizer.checkAccess(session, tarjoajaOids, Set(Role.VALINTAKAYTTAJA_MUSIIKKIALA)).isRight
 
-      validateMuutos()
+      validateMuutos().fold(
+        e => DBIO.successful(Left(e)),
+        _ => vastaanottoValidator.validateVastaanotto(uusi, vanhaOpt)
+      )
     }
   }
 
@@ -140,7 +139,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
       valinnantulosRepository.updateValinnantuloksenOhjaus(
         uusi.getValinnantuloksenOhjauksenMuutos(vanha, muokkaaja, selite), Some(ifUnmodifiedSince))
     } else {
-      DBIO.successful(())
+      DBIO.successful()
     }
     val updateEhdollisenHyvaksynnanEhto = if (uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha)) {
       valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(
