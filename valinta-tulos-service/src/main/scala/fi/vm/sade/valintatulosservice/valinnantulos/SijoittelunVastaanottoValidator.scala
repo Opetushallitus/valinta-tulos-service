@@ -47,14 +47,14 @@ class SijoittelunVastaanottoValidator(val haku: Haku,
             case Some(perunutAfterVaralla) => findHakutoiveenValinnantulos(h => h.isHyväksytty() && varalla.hakutoive < h.hakutoive && perunutAfterVaralla.hakutoive > h.hakutoive)
           }).map(_.hakutoive)
 
-      findHakutoiveenValinnantulos(toive => toive.valintatapajonoOid == uusi.valintatapajonoOid).map(vastaanotettavaHakutoive => {
+      findHakutoiveenValinnantulos(toive => toive.valintatapajonoOid == uusi.valintatapajonoOid).exists(vastaanotettavaHakutoive => {
         val sovellaKorkeakouluSääntöjä = haku.korkeakoulu && haku.käyttääSijoittelua
         val ehdollinenVastaanottoSallittu = ehdollinenVastaanottoMahdollista(ohjausparametrit)
         val hakutoiveOnEhdollisestiVastaanotettavissa = ehdollisestiVastaanotettavaHakutoive.exists(_ == vastaanotettavaHakutoive.hakutoive)
 
         sovellaKorkeakouluSääntöjä && ehdollinenVastaanottoSallittu && hakutoiveOnEhdollisestiVastaanotettavissa && julkaistavissa(uusi)
 
-      }).getOrElse(false) //Vastaanotto ei kohdistu merkitsevälle jonolle
+      }) //Vastaanotto ei kohdistu merkitsevälle jonolle
     }
 
     valinnantulosRepository.getHakutoiveetForHakemusDBIO(haku.oid, uusi.hakemusOid)
