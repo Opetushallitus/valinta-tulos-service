@@ -28,4 +28,5 @@ trait HakijaVastaanottoRepository {
   def findHyvaksyttyJulkaistuDatesForHenkilo(henkiloOid: HenkiloOid): Map[HakukohdeOid, OffsetDateTime]
   def findHyvaksyttyJulkaistuDatesForHaku(hakuOid: HakuOid): Map[HenkiloOid, Map[HakukohdeOid, OffsetDateTime]]
   def findHyvaksyttyJulkaistuDatesForHakukohde(hakukohdeOid:HakukohdeOid): Map[HenkiloOid, OffsetDateTime]
+  def findHyvaksyttyJaJulkaistuDateForHenkiloAndHakukohdeDBIO(henkiloOid: HenkiloOid, hakukohdeOid:HakukohdeOid): DBIO[Option[OffsetDateTime]]
 }
