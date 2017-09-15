@@ -59,34 +59,6 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
       valinnantulosAfter.copy(vastaanotonViimeisinMuutos = None) must_== valinnantulosForSave
       valinnantulosAfter.vastaanotonViimeisinMuutos.isDefined must_== true
     }
-    "foo" in {
-      useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
-      import slick.driver.PostgresDriver.api._
-      import scala.concurrent.ExecutionContext.Implicits.global
-
-
-
-      val moi: SqlStreamingAction[Vector[String], String, Effect] = sql"""select hakemus_oid from valinnantulokset""".as[String]
-      val mof: (Vector[String]) => SqlStreamingAction[Vector[String], String, Effect] = (list:Vector[String]) => {
-        println(list.mkString(","))
-        sql"""select valintatapajono_oid from valinnantilat where hakemus_oid = ${list.head}""".as[String]
-      }
-      val foo: (Vector[String]) => SqlStreamingAction[Vector[String], String, Effect] = (list:Vector[String]) => {
-        println(list.mkString(","))
-        sql"""select henkilo_oid from valinnantilat where valintatapajono_oid = ${list.head}""".as[String]
-      }
-
-      singleConnectionValintarekisteriDb.runBlockingTransactionally(
-        moi.flatMap(mof).flatMap(foo)
-
-
-      ) match {
-        case Right(x) => println(s"""moi ${x}""")
-        case x if x.isLeft => "LFET"
-      }
-
-      true must_== true
-    }
     "vastaanota ja julkaise samanaikaisesti" in {
       useFixture("hyvaksytty-kesken.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, tila(Hyvaksytty))
