@@ -6,7 +6,6 @@ import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
-import fi.vm.sade.valintatulosservice.sijoittelu.JonoFinder
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.laskeVastaanottoDeadline
@@ -26,15 +25,15 @@ trait VastaanottoValidator {
   val keskenTaiEhdollisestiVastaanottanut = List(ValintatuloksenTila.KESKEN, ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT)
   val virkailijanHyvaksytytTilat = List(Perunut, Peruutettu, Hyvaksytty, HyvaksyttyVarasijalta)
 
-  def error(valinnantulos:Valinnantulos, msg:String) = DBIO.successful(new ValinnantulosUpdateStatus(400, msg, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid))
-  def ok(valinnantulos: Valinnantulos) = DBIO.successful(new ValinnantulosUpdateStatus(200, "ok", valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid))
+  def error(valinnantulos:Valinnantulos, msg:String) = DBIO.successful(Left(new ValinnantulosUpdateStatus(400, msg, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid)))
+  def right = DBIO.successful(Right(()))
   def julkaistavissa(valinnantulos: Valinnantulos):Boolean = valinnantulos.julkaistavissa.exists(_ == true) && tuloksetJulkaistavissa
 
   lazy val tuloksetJulkaistavissa = ohjausparametrit.flatMap(_.tulostenJulkistusAlkaa).map(_.isBeforeNow()).getOrElse(ohjausparametrit.isDefined)
 
   def onkoEhdollisestiVastaanotettavissa(valinnantulos: Valinnantulos): DBIO[Boolean]
 
-  def tarkistaVastaanottoDeadline(valinnantulos: Valinnantulos):DBIO[ValinnantulosUpdateStatus] = {
+  def tarkistaVastaanottoDeadline(valinnantulos: Valinnantulos):DBIO[Either[ValinnantulosUpdateStatus, Unit]] = {
     def ollaankoHyvaksymassaJaJulkaisemassa() = valinnantulos.isHyvaksytty && valinnantulos.julkaistavissa.exists(_ == true)
 
     def hakijanHyvaksyttyJaJulkaistuDate() = valinnantulosRepository.findHyvaksyttyJaJulkaistuDateForHenkiloAndHakukohdeDBIO(valinnantulos.henkiloOid, hakukohdeOid)
@@ -44,15 +43,14 @@ trait VastaanottoValidator {
       case deadline if deadline.exists(_.after(new Date())) => error(valinnantulos,
         s"""Hakijakohtaista määräaikaa ${new SimpleDateFormat("dd-MM-yyyy").format(deadline)}
               kohteella ${hakukohdeOid} : ${valinnantulos.vastaanottotila} ei ole vielä ohitettu.""")
-      case _ => ok(valinnantulos)
+      case _ => right
     })
   }
 
-  def validateVastaanotto(uusi: Valinnantulos, vanha: Valinnantulos): DBIO[ValinnantulosUpdateStatus] = validateVastaanotto(uusi, Some(vanha))
+  def validateVastaanotto(uusi: Valinnantulos, vanha: Valinnantulos): DBIO[Either[ValinnantulosUpdateStatus, Unit]] = validateVastaanotto(uusi, Some(vanha))
 
-  def validateVastaanotto(uusi: Valinnantulos, vanha: Option[Valinnantulos]): DBIO[ValinnantulosUpdateStatus] = {
+  def validateVastaanotto(uusi: Valinnantulos, vanha: Option[Valinnantulos]): DBIO[Either[ValinnantulosUpdateStatus, Unit]] = {
     def left = error(uusi, _:String)
-    def right = ok(uusi)
 
     (vanha.map(_.vastaanottotila).getOrElse(ValintatuloksenTila.KESKEN), uusi.vastaanottotila) match {
       case (_, ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN) => right
