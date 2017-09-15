@@ -298,7 +298,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             left join ilmoittautumiset as i on i.henkilo = ti.henkilo_oid and i.hakukohde = ti.hakukohde_oid""".as[Valinnantulos].map(_.toSet)
     }
 
-  override def getHakutoiveetForHakemusDBIO(hakuOid:HakuOid, hakemusOid:HakemusOid): DBIO[List[HakutoiveenValinnantulos]] = {
+  override def getHakutoiveidenValinnantuloksetForHakemusDBIO(hakuOid:HakuOid, hakemusOid:HakemusOid): DBIO[List[HakutoiveenValinnantulos]] = {
     sql"""with latest as (
             select id from sijoitteluajot where haku_oid = ${hakuOid} order by id desc limit 1
           )
