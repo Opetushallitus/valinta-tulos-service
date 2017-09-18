@@ -38,13 +38,13 @@ trait SessionRepositoryImpl extends SessionRepository with ValintarekisteriRepos
   override def get(id: UUID): Option[Session] = {
     runBlocking(
       sql"""select cas_tiketti, henkilo from sessiot
-            where id = $id and viimeksi_luettu > now() - interval '30 minutes'
+            where id = $id and viimeksi_luettu > now() - interval '60 minutes'
       """.as[(Option[String], String)].map(_.headOption).flatMap {
         case None =>
           sqlu"""delete from sessiot where id = $id""".andThen(DBIO.successful(None))
         case Some(t) =>
           sqlu"""update sessiot set viimeksi_luettu = now()
-                 where id = $id and viimeksi_luettu > now() - interval '30 minutes'"""
+                 where id = $id and viimeksi_luettu < now() - interval '30 minutes'"""
             .andThen(DBIO.successful(Some(t)))
       }.transactionally, Duration(2, TimeUnit.SECONDS)
     ).map {
