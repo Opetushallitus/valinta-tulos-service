@@ -44,7 +44,7 @@ trait SessionRepositoryImpl extends SessionRepository with ValintarekisteriRepos
           sqlu"""delete from sessiot where id = $id""".andThen(DBIO.successful(None))
         case Some(t) =>
           sqlu"""update sessiot set viimeksi_luettu = now()
-                 where id = $id and viimeksi_luettu > now() - interval '15 minutes'"""
+                 where id = $id and viimeksi_luettu > now() - interval '30 minutes'"""
             .andThen(DBIO.successful(Some(t)))
       }.transactionally, Duration(2, TimeUnit.SECONDS)
     ).map {
