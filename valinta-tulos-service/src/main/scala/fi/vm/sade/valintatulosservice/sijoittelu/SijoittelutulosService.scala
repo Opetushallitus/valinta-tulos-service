@@ -1,7 +1,6 @@
 package fi.vm.sade.valintatulosservice.sijoittelu
 
-import java.time.{Instant, OffsetDateTime, ZoneId}
-import java.util.concurrent.TimeUnit
+import java.time.OffsetDateTime
 
 import fi.vm.sade.sijoittelu.domain.SijoitteluAjo
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi._
@@ -17,7 +16,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.{PersonOidFromHakemusResolver, VastaanottoAikarajaMennyt}
 import org.apache.commons.lang.StringUtils
-import org.joda.time.{DateTime, DateTimeZone}
+import org.joda.time.DateTime
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -27,6 +26,8 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
                              hakijaVastaanottoRepository: HakijaVastaanottoRepository,
                              sijoittelunTulosClient: ValintarekisteriSijoittelunTulosClient) {
   import scala.collection.JavaConversions._
+
+  import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.laskeVastaanottoDeadline
 
   def hakemuksenTulos(haku: Haku,
                       hakemusOid: HakemusOid,
@@ -346,16 +347,6 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     }
   }
 
-  private def laskeVastaanottoDeadline(ohjausparametrit: Option[Ohjausparametrit], hakutoiveenHyvaksyttyJaJulkaistuDate: Option[OffsetDateTime]): Option[DateTime] = {
-    ohjausparametrit.map(_.vastaanottoaikataulu) match {
-      case Some(Vastaanottoaikataulu(Some(deadlineFromHaku), buffer)) =>
-        val deadlineFromHakemuksenTilanMuutos = getDeadlineWithBuffer(ohjausparametrit, hakutoiveenHyvaksyttyJaJulkaistuDate, buffer, deadlineFromHaku)
-        val deadlines = Some(deadlineFromHaku) ++ deadlineFromHakemuksenTilanMuutos
-        Some(deadlines.maxBy((a: DateTime) => a.getMillis))
-      case _ => None
-    }
-  }
-
   private def vastaanottotilanVaikutusValintatilaan(valintatila: Valintatila, vastaanottotila : Vastaanottotila): Valintatila = {
     if (List(Vastaanottotila.ehdollisesti_vastaanottanut, Vastaanottotila.vastaanottanut).contains(vastaanottotila)) {
       if (Valintatila.isHyväksytty(valintatila)) {
@@ -374,19 +365,6 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
 
   private def fromHakemuksenTila(tila: HakemuksenTila): Valintatila = {
     Valintatila.withName(tila.name)
-  }
-
-  def max(d1: DateTime, d2: DateTime): DateTime = if(d1.isAfter(d2)) d1 else d2
-
-  private def getDeadlineWithBuffer(ohjausparametrit: Option[Ohjausparametrit], hakutoiveenHyvaksyttyJaJulkaistuOption: Option[OffsetDateTime], bufferOption: Option[Int], deadline: DateTime): Option[DateTime] = {
-    for {
-      viimeisinMuutos <- hakutoiveenHyvaksyttyJaJulkaistuOption.map(d => new DateTime(
-        d.toInstant.toEpochMilli,
-        DateTimeZone.forOffsetMillis(Math.toIntExact(TimeUnit.SECONDS.toMillis(d.getOffset.getTotalSeconds)))
-      ))
-      haunValintaesitysHyvaksyttavissa: DateTime <- ohjausparametrit.map(_.valintaesitysHyvaksyttavissa.getOrElse(new DateTime(0)))
-      buffer <- bufferOption
-    } yield max(viimeisinMuutos, haunValintaesitysHyvaksyttavissa).plusDays(buffer).withZone(DateTimeZone.forID("Europe/Helsinki")).withTime(deadline.getHourOfDay, deadline.getMinuteOfHour, deadline.getSecondOfMinute, deadline.getMillisOfSecond)
   }
 
   private def ifNull[T](value: T, defaultValue: T): T = {

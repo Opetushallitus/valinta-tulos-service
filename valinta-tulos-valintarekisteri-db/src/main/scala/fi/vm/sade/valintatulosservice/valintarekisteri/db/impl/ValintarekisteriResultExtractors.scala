@@ -170,6 +170,18 @@ trait ValintarekisteriResultExtractors {
     vastaanotonViimeisinMuutos = parseOffsetDateTime(r)
   ))
 
+  protected implicit val getHakutoiveenValinnantulosResult: GetResult[HakutoiveenValinnantulos] = GetResult(r => HakutoiveenValinnantulos(
+    hakutoive = r.nextInt(),
+    prioriteetti = r.nextIntOption(),
+    varasijanNumero = r.nextIntOption(),
+    hakukohdeOid = HakukohdeOid(r.nextString),
+    valintatapajonoOid = ValintatapajonoOid(r.nextString),
+    hakemusOid = HakemusOid(r.nextString),
+    valinnantila = Valinnantila(r.nextString),
+    julkaistavissa = r.nextBooleanOption,
+    vastaanottotila = r.nextStringOption.map(VastaanottoAction(_).valintatuloksenTila).getOrElse(ValintatuloksenTila.KESKEN)
+  ))
+
   protected implicit val getViestinnanOhjausResult: GetResult[ViestinnanOhjaus] = GetResult(r => ViestinnanOhjaus(
     hakukohdeOid = HakukohdeOid(r.nextString),
     valintatapajonoOid = ValintatapajonoOid(r.nextString),

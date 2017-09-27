@@ -17,5 +17,6 @@ trait VirkailijaVastaanottoRepository {
   def findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(kaudet: Set[Kausi]): Map[Kausi, Set[VastaanottoRecord]] =
     kaudet.map(kausi => kausi -> findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(kausi)).toMap
   def findYpsVastaanotot(kausi: Kausi, henkiloOids: Set[String]): Set[(HakemusOid, HakukohdeRecord, VastaanottoRecord)]
+  def findYpsVastaanototDBIO(kausi: Kausi, henkiloOids: Set[String]): DBIO[Set[(HakemusOid, HakukohdeRecord, VastaanottoRecord)]]
   def aliases(henkiloOid: String): DBIO[Set[String]]
 }

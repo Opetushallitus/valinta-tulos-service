@@ -33,6 +33,8 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
   def getValinnantuloksetForHakemus(hakemusOid: HakemusOid): DBIO[Set[Valinnantulos]]
   def getViestinnanOhjaus(valinnantuloksenOhjaus: ValinnantuloksenOhjaus): DBIO[Set[ViestinnanOhjaus]]
 
+  def getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid: ValintatapajonoOid): DBIO[Set[Valinnantulos]]
+
   def getHaunValinnantilat(hakuOid: HakuOid): List[(HakukohdeOid, ValintatapajonoOid, HakemusOid, Valinnantila)]
 
   def getValinnantulostenHakukohdeOiditForHaku(hakuOid: HakuOid): DBIO[List[HakukohdeOid]]
@@ -41,6 +43,8 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
   def getLastModifiedForValintatapajono(valintatapajonoOid: ValintatapajonoOid):DBIO[Option[Instant]]
 
   def getHakuForHakukohde(hakukohdeOid: HakukohdeOid): HakuOid
+
+  def getHakutoiveidenValinnantuloksetForHakemusDBIO(hakuOid:HakuOid, hakemusOid:HakemusOid): DBIO[List[HakutoiveenValinnantulos]]
 
   def deleteValinnantulos(muokkaaja:String, valinnantulos:Valinnantulos, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
   def deleteIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]

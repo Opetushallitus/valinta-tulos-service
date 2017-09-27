@@ -4,6 +4,7 @@ import fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakutoiveDTO, HakutoiveenValintatapajonoDTO, KevytHakutoiveDTO, KevytHakutoiveenValintatapajonoDTO}
 import fi.vm.sade.valintatulosservice.domain.Valintatila
 import fi.vm.sade.valintatulosservice.domain.Valintatila._
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakijanHakutoive, HakutoiveenValinnantulos, Valinnantulos}
 
 import scala.collection.JavaConversions._
 
@@ -60,6 +61,28 @@ object JonoFinder {
       if (tila.equals(Valintatila.hylätty)) jono.setTilanKuvaukset(orderedJonot.last.getTilanKuvaukset)
       jono
     })
+  }
+
+  def merkitseväJono(valinnantulokset: List[HakijanHakutoive]): Option[HakijanHakutoive] = {
+
+    def tila(hakutoive:HakijanHakutoive) = hakutoive match {
+      case x:HakutoiveenValinnantulos => Valintatila.withName(x.valinnantila.valinnantila.name)
+      case _ => Valintatila.kesken
+    }
+
+    def varasijanNumero(hakutoive:HakijanHakutoive) = hakutoive.asInstanceOf[HakutoiveenValinnantulos].varasijanNumero.get
+    def prioriteetti(hakutoive:HakijanHakutoive) = hakutoive.asInstanceOf[HakutoiveenValinnantulos].prioriteetti.get
+
+    val ordering = Ordering.fromLessThan { (jono1: HakijanHakutoive, jono2: HakijanHakutoive) =>
+      (tila(jono1), tila(jono2)) match {
+        case (Valintatila.varalla, Valintatila.varalla) => varasijanNumero(jono1) < varasijanNumero(jono2)
+        case (Valintatila.kesken, Valintatila.kesken) => jono1.hakutoive < jono2.hakutoive  //TODO?
+        case (t1, t2) if t1.compareTo(t2) == 0 => prioriteetti(jono1).compareTo(prioriteetti(jono2)) < 0
+        case (t1, t2) => t1.compareTo(t2) < 0
+      }
+    }
+
+    valinnantulokset.sorted(ordering).headOption
   }
 
   private def fromHakemuksenTila(tila: HakemuksenTila): Valintatila = {
