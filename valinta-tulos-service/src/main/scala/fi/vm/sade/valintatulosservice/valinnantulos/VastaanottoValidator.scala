@@ -23,7 +23,7 @@ trait VastaanottoValidator {
   val sitovaTaiEhdollinenVastaanotto = List(ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
   val keskenTaiVastaanottanutToisenPaikan = List(ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN, ValintatuloksenTila.KESKEN)
   val keskenTaiEhdollisestiVastaanottanut = List(ValintatuloksenTila.KESKEN, ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT)
-  val virkailijanHyvaksytytTilat = List(Perunut, Peruutettu, Hyvaksytty, HyvaksyttyVarasijalta)
+  val virkailijanHyvaksytytTilat = List(Perunut, Peruutettu, Hyvaksytty, VarasijaltaHyvaksytty)
 
   def error(valinnantulos:Valinnantulos, msg:String) = DBIO.successful(Left(new ValinnantulosUpdateStatus(400, msg, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid)))
   def right = DBIO.successful(Right(()))

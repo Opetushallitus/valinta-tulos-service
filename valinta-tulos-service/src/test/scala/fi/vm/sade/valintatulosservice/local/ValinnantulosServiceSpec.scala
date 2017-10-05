@@ -61,6 +61,17 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo) mustEqual List()
       there was one (valinnantulosRepository).updateValinnantuloksenOhjaus(valinnantulokset(0).getValinnantuloksenOhjaus(session.personOid, "Virkailijan tallennus"), Some(lastModified))
     }
+    "vastaanotto can be stored for varasijalta hyvaksytty" in new Mocks with Authorized with Korkeakouluhaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
+      val varasijaltaHyvaksytty = valinnantulosA.copy(julkaistavissa = Some(true), valinnantila = VarasijaltaHyvaksytty)
+      valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set(varasijaltaHyvaksytty))
+      yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(Set(varasijaltaHyvaksytty))
+      valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(any[HakemusOid], any[ValintatapajonoOid], any[String], any[String]) returns DBIO.successful(())
+      valinnantulosRepository.storeAction(any[VastaanottoEvent]) returns DBIO.successful(())
+
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(varasijaltaHyvaksytty.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)), Some(lastModified), auditInfo) mustEqual List()
+      there was one (valinnantulosRepository).storeAction(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, varasijaltaHyvaksytty.henkiloOid, varasijaltaHyvaksytty.hakemusOid, hakukohdeOid,
+        VastaanotaSitovasti, session.personOid, "Virkailijan tallennus"))
+    }
     "different statuses for all failing valinnantulokset" in new Mocks with Authorized with Korkeakouluhaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
       val valinnantulokset1 = Set(valinnantulosA, valinnantulosB, valinnantulosC.copy(julkaistavissa = Some(true)), valinnantulosD, valinnantulosE, valinnantulosF)
       valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(valinnantulokset1)
