@@ -20,10 +20,10 @@ trait VastaanottoValidator {
   val valinnantulosRepository: ValinnantulosRepository with HakijaVastaanottoRepository
   val ohjausparametrit: Option[Ohjausparametrit]
 
-  val sitovaTaiEhdollinenVastaanotto = List(ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
-  val keskenTaiVastaanottanutToisenPaikan = List(ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN, ValintatuloksenTila.KESKEN)
-  val keskenTaiEhdollisestiVastaanottanut = List(ValintatuloksenTila.KESKEN, ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT)
-  val virkailijanHyvaksytytTilat = List(Perunut, Peruutettu, Hyvaksytty, VarasijaltaHyvaksytty)
+  val sitovaTaiEhdollinenVastaanotto: Seq[ValintatuloksenTila] = List(ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+  val keskenTaiVastaanottanutToisenPaikan: Seq[ValintatuloksenTila] = List(ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN, ValintatuloksenTila.KESKEN)
+  val keskenTaiEhdollisestiVastaanottanut: Seq[ValintatuloksenTila] = List(ValintatuloksenTila.KESKEN, ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT)
+  val virkailijanHyvaksytytTilat: Seq[Valinnantila] = List(Perunut, Peruutettu, Hyvaksytty, VarasijaltaHyvaksytty)
 
   def error(valinnantulos:Valinnantulos, msg:String) = DBIO.successful(Left(new ValinnantulosUpdateStatus(400, msg, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid)))
   def right = DBIO.successful(Right(()))
