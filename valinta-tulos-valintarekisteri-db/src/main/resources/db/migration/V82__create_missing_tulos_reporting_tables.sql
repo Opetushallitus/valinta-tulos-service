@@ -1,6 +1,5 @@
 create table puuttuvat_tulokset_haku (
   haku_oid text not null,
-  hakukohteiden_lkm integer not null,
   tarkistettu timestamp with time zone null
 );
 alter table puuttuvat_tulokset_haku add constraint puuttuvat_tulokset_haku_pk primary key(haku_oid);

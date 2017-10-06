@@ -7,9 +7,12 @@ import java.util.concurrent.TimeUnit.MINUTES
 import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
+import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.apache.commons.lang3.StringUtils
+import org.json4s.jackson.Serialization
+import org.json4s.{Formats, JValue}
 import slick.dbio.DBIO
 import slick.driver.PostgresDriver.api._
 import slick.sql.SqlAction
@@ -26,7 +29,8 @@ case class HaunTiedotListalle(hakuOid: HakuOid, myohaisinKoulutuksenAlkamiskausi
 case class HaunPuuttuvatTulokset(hakuOid: HakuOid, puuttuvatTulokset: Seq[OrganisaationPuuttuvatTulokset])
 case class OrganisaationPuuttuvatTulokset(tarjoajaOid: TarjoajaOid, tarjoajanNimi: String, puuttuvatTulokset: Seq[HakukohteenPuuttuvatTulokset])
 case class HakukohteenPuuttuvatTulokset(hakukohdeOid: HakukohdeOid, kohteenNimi: String, kohteenValintaUiUrl: URL, puuttuvatTulokset: Seq[HakutoiveTulosHakemuksella]) {
-  def createHakemuksetJson: String = """[{"TODO": "implement"}]"""
+  private implicit val jsonFormats: Formats = JsonFormats.jsonFormats
+  def createHakemuksetJson: JValue = Serialization.read("""[{"TODO": "implement"}]""")
 }
 
 case class HakutoiveTulosHakemuksella(hakijaOid: Option[HakijaOid], hakemusOid: HakemusOid, hakukotoiveOid: HakukohdeOid, hakutoiveenNimi: String, tarjoajaOid: TarjoajaOid, tarjoajanNimi: String)
@@ -36,10 +40,12 @@ class PuuttuvatTuloksetService(valintarekisteriDb: ValintarekisteriDb, hakemusRe
   def haeJaTallenna(hakuOid: HakuOid): String = {
     initialiseMissingRequestsFuture(hakuOid).onComplete {
       case Success(results) =>
+        val puuttuviaYhteensa = results.flatMap(_.puuttuvatTulokset.map(_.puuttuvatTulokset.size)).sum
+        logger.info(s"Aletaan tallentaa haun $hakuOid tuloksia. ${results.size} tarjoajalta $puuttuviaYhteensa puuttuvaa tulosta.")
         Timer.timed(s"Tallennettiin haun $hakuOid puuttuvien tulosten tiedot", 1000) {
           dao.save(results, hakuOid)
         }
-      case Failure(e) => logger.error(s"Error when handling haku $hakuOid", e)
+      case Failure(e) => logger.error(s"Virhe tallennettaessa haun $hakuOid tuloksia", e)
     }
     s"Initialised searching and storing results for haku $hakuOid"
   }
@@ -85,24 +91,35 @@ class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb, hakemusReposi
     val saveHakuRow =
       sqlu"""insert into puuttuvat_tulokset_haku (haku_oid, tarkistettu)
              values (${hakuOid.toString}, now())
-             on conflict do update set tarkistettu = now() where haku_oid = ${hakuOid.toString}"""
+             on conflict on constraint puuttuvat_tulokset_haku_pk
+               do update set tarkistettu = now() where puuttuvat_tulokset_haku.haku_oid = ${hakuOid.toString}"""
 
     val saveTheRest = results.flatMap { tarjoajaEntry =>
       val tarjoajaOid = tarjoajaEntry.tarjoajaOid.toString
       val saveTarjoajaRow: SqlAction[Int, NoStream, Effect] =
         sqlu"""insert into puuttuvat_tulokset_tarjoaja (haku_oid, tarjoaja_oid)
-             values (${hakuOid.toString}, ${tarjoajaOid})"""
+               values (${hakuOid.toString}, ${tarjoajaOid})
+               on conflict on constraint puuttuvat_tulokset_tarjoaja_pk do nothing"""
       val saveHakukohdeRows: Seq[SqlAction[Int, NoStream, Effect]] = tarjoajaEntry.puuttuvatTulokset.map { hakukohdeEntry =>
         val puuttuvienMaara = hakukohdeEntry.puuttuvatTulokset.size
-        val puuttuvatJson = hakukohdeEntry.createHakemuksetJson
+        // val puuttuvatJson = hakukohdeEntry.createHakemuksetJson
+        val hakukohdeOid = hakukohdeEntry.hakukohdeOid.toString
         sqlu"""insert into puuttuvat_tulokset_hakukohde
-                              (haku_oid, tarjoaja_oid, hakukohde_oid, puuttuvien_maara, puuttuvat_hakemukset) values
-                              (${hakuOid.toString}, ${tarjoajaOid}, ${hakukohdeEntry.hakukohdeOid.toString},
-                                ${puuttuvienMaara}, ${puuttuvatJson})"""
+                              (haku_oid, tarjoaja_oid, hakukohde_oid, puuttuvien_maara) values
+                              (${hakuOid.toString}, ${tarjoajaOid}, ${hakukohdeOid},
+                                ${puuttuvienMaara})
+               on conflict on constraint puuttuvat_tulokset_hakukohde_pk
+                 do update set puuttuvien_maara = excluded.puuttuvien_maara
+                   where puuttuvat_tulokset_hakukohde.hakukohde_oid = ${hakukohdeOid}
+                     and puuttuvat_tulokset_hakukohde.tarjoaja_oid = ${tarjoajaOid}"""
       }
       saveHakukohdeRows.+:(saveTarjoajaRow)
     }
-    valintarekisteriDb.runBlockingTransactionally(DBIO.sequence(saveTheRest.toSeq.+:(saveHakuRow)), Duration(1, MINUTES))
+    val saveResults = valintarekisteriDb.runBlockingTransactionally(DBIO.sequence(saveTheRest.toSeq.+:(saveHakuRow)), Duration(1, MINUTES))
+    saveResults match {
+      case Right(savedRowCounts) => logger.info(s"Tallennettujen rivien määrät haulle $hakuOid : $savedRowCounts")
+      case Left(e) => logger.error(s"Virhe tallennettaessa haun $hakuOid tietoja:", e)
+    }
   }
 
   def findSummary(): DBIO[Seq[HaunTiedotListalle]] = {
@@ -112,8 +129,9 @@ class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb, hakemusReposi
             left join puuttuvat_tulokset_haku pth on pth.haku_oid = hk.haku_oid
             left join puuttuvat_tulokset_tarjoaja ptt on ptt.haku_oid = pth.haku_oid
             left join puuttuvat_tulokset_hakukohde pthk on pthk.haku_oid = ptt.haku_oid and pthk.tarjoaja_oid = ptt.tarjoaja_oid
-          group by hk.haku_oid, pth.haku_oid, pth.hakukohteiden_lkm, pth.tarkistettu
-          order by myohaisin_koulutuksen_alkamiskausi desc, hk.haku_oid""".as[(String, String, Int, Option[java.sql.Timestamp], Option[Int])].
+          group by hk.haku_oid, pth.haku_oid, pth.tarkistettu
+          order by haun_puuttuvien_maara desc nulls last, myohaisin_koulutuksen_alkamiskausi desc, hk.haku_oid""".
+      as[(String, String, Int, Option[java.sql.Timestamp], Option[Int])].
       map(_.map { row =>
         HaunTiedotListalle(HakuOid(row._1), Kausi(row._2), row._3, row._4.map(_.toLocalDateTime), row._5)
       })
