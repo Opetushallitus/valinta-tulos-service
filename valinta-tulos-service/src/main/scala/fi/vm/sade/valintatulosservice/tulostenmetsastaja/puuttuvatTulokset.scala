@@ -65,20 +65,17 @@ class PuuttuvatTuloksetService(valintarekisteriDb: ValintarekisteriDb, hakemusRe
   private def initialiseMissingRequestsFuture(hakuOid: HakuOid) = {
     val puuttuvatToiveetHakemuksilta: Future[Iterator[HakutoiveTulosHakemuksella]] = dao.rekisteristaLoytyvatHakutoiveet(hakuOid).
       zip(dao.hakemuksiltaLoytyvatHakutoiveet(hakuOid)).map { case (toiveetRekisterista, toiveetHakemuksiltaIterator) =>
-      for {
-        toiveHakemukselta <- toiveetHakemuksiltaIterator
-        if !toiveetRekisterista.contains((toiveHakemukselta.hakemusOid, toiveHakemukselta.hakukotoiveOid))
-      } yield toiveHakemukselta
+        toiveetHakemuksiltaIterator.filterNot(t => toiveetRekisterista.contains((t.hakemusOid, t.hakukotoiveOid)))
     }
     val eventualOrganisaatioidenTulokset = puuttuvatToiveetHakemuksilta.map(_.toSeq.groupBy(h => (h.tarjoajaOid, h.tarjoajanNimi))).map { tarjoajittain => {
       tarjoajittain.map {
-        case ((tarjoajaOid, tarjoajanNimi), tulokset) => {
-          val hakukohteidenPuuttuvatTulokset = tulokset.groupBy(t => (t.hakukotoiveOid, t.hakutoiveenNimi)).map { case ((hakukohdeOid, hakukohteenNimi), hakemustenTulokset) =>
-            val url = s"https://$virkailijaBaseUrl/valintalaskenta-ui/app/index.html#/haku/$hakuOid/hakukohde/$hakukohdeOid/sijoitteluntulos"
-            HakukohteenPuuttuvatTulokset(hakukohdeOid, hakukohteenNimi, new URL(url), hakemustenTulokset)
+        case ((tarjoajaOid, tarjoajanNimi), tulokset) =>
+          val hakukohteidenPuuttuvatTulokset = tulokset.groupBy(t => (t.hakukotoiveOid, t.hakutoiveenNimi)).map {
+              case ((hakukohdeOid, hakukohteenNimi), hakemustenTulokset) =>
+                val url = s"https://$virkailijaBaseUrl/valintalaskenta-ui/app/index.html#/haku/$hakuOid/hakukohde/$hakukohdeOid/sijoitteluntulos"
+                HakukohteenPuuttuvatTulokset(hakukohdeOid, hakukohteenNimi, new URL(url), hakemustenTulokset)
           }
           OrganisaationPuuttuvatTulokset(tarjoajaOid, tarjoajanNimi, hakukohteidenPuuttuvatTulokset.toSeq)
-        }
       }
     }
     }
@@ -124,7 +121,7 @@ class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb, hakemusReposi
 
   def findSummary(): DBIO[Seq[HaunTiedotListalle]] = {
     sql"""select distinct hk.haku_oid, max(koulutuksen_alkamiskausi) as myohaisin_koulutuksen_alkamiskausi,
-            count(*) as hakukohteiden_lkm, pth.tarkistettu, sum(pthk.puuttuvien_maara) as haun_puuttuvien_maara
+            count(distinct hk.hakukohde_oid) as hakukohteiden_lkm, pth.tarkistettu, sum(pthk.puuttuvien_maara) as haun_puuttuvien_maara
           from hakukohteet hk
             left join puuttuvat_tulokset_haku pth on pth.haku_oid = hk.haku_oid
             left join puuttuvat_tulokset_tarjoaja ptt on ptt.haku_oid = pth.haku_oid
