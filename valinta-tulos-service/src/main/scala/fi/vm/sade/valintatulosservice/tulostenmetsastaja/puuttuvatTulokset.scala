@@ -133,16 +133,6 @@ class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb, hakemusReposi
       })
   }
 
-  private val sql = """
-      select distinct hk.haku_oid, max(koulutuksen_alkamiskausi) as myohaisin_koulutuksen_alkamiskausi,
-        count(*) as hakukohteiden_lkm, pth.tarkistettu, sum(pthk.puuttuvien_maara) as haun_puuttuvien_maara
-      from hakukohteet hk
-        left join puuttuvat_tulokset_haku pth on pth.haku_oid = hk.haku_oid
-        left join puuttuvat_tulokset_tarjoaja ptt on ptt.haku_oid = pth.haku_oid
-        left join puuttuvat_tulokset_hakukohde pthk on pthk.haku_oid = ptt.haku_oid and pthk.tarjoaja_oid = ptt.tarjoaja_oid
-      group by hk.haku_oid, pth.haku_oid, pth.hakukohteiden_lkm, pth.tarkistettu
-      order by haun_puuttuvien_maara desc, myohaisin_koulutuksen_alkamiskausi desc, hk.haku_oid"""
-
   def hakemuksiltaLoytyvatHakutoiveet(hakuOid: HakuOid): Future[Iterator[HakutoiveTulosHakemuksella]] = {
     logger.info(s"Aletaan hakea hakutoiveita haun $hakuOid hakemuksilta...")
     Future(hakemusRepository.findHakemukset(hakuOid).flatMap {
