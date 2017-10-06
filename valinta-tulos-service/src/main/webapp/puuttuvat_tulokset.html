@@ -17,9 +17,9 @@
         var list = document.getElementById('haku-list');
         var parsedResponse = JSON.parse(responseText);
         parsedResponse.forEach(function(row) {
-          var row = document.createElement("li");
-          row.appendChild(document.createTextNode(JSON.stringify(row)));
-          list.appendChild(row);
+          var rowElement = document.createElement("li");
+          rowElement.appendChild(document.createTextNode(JSON.stringify(row)));
+          list.appendChild(rowElement);
         });
       }
 
