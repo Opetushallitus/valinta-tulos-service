@@ -127,7 +127,7 @@ class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb, hakemusReposi
         left join puuttuvat_tulokset_tarjoaja ptt on ptt.haku_oid = pth.haku_oid
         left join puuttuvat_tulokset_hakukohde pthk on pthk.haku_oid = ptt.haku_oid and pthk.tarjoaja_oid = ptt.tarjoaja_oid
       group by hk.haku_oid, pth.haku_oid, pth.hakukohteiden_lkm, pth.tarkistettu
-      order by myohaisin_koulutuksen_alkamiskausi desc, hk.haku_oid"""
+      order by haun_puuttuvien_maara desc, myohaisin_koulutuksen_alkamiskausi desc, hk.haku_oid"""
 
   def hakemuksiltaLoytyvatHakutoiveet(hakuOid: HakuOid): Future[Iterator[HakutoiveTulosHakemuksella]] = {
     logger.info(s"Aletaan hakea hakutoiveita haun $hakuOid hakemuksilta...")
