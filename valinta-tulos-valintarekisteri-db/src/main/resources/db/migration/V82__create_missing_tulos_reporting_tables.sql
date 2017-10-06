@@ -19,7 +19,7 @@ create table puuttuvat_tulokset_hakukohde (
   haku_oid text not null,
   tarjoaja_oid text not null,
   hakukohde_oid text not null,
-  puuttuvien_maara int not null,
+  puuttuvien_maara integer not null,
   puuttuvat_hakemukset jsonb null
 );
 alter table puuttuvat_tulokset_hakukohde
