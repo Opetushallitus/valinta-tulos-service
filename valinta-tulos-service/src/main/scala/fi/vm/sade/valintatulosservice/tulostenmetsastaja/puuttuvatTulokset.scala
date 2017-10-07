@@ -100,19 +100,19 @@ class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb, hakemusReposi
     val saveTheRest = results.flatMap { tarjoajaEntry =>
       val tarjoajaOid = tarjoajaEntry.tarjoajaOid.toString
       val saveTarjoajaRow: SqlAction[Int, NoStream, Effect] =
-        sqlu"""insert into puuttuvat_tulokset_tarjoaja (haku_oid, tarjoaja_oid)
-               values (${hakuOid.toString}, ${tarjoajaOid})
+        sqlu"""insert into puuttuvat_tulokset_tarjoaja (haku_oid, tarjoaja_oid, tarjoajan_nimi)
+               values (${hakuOid.toString}, ${tarjoajaOid}, ${tarjoajaEntry.tarjoajanNimi})
                on conflict on constraint puuttuvat_tulokset_tarjoaja_pk do nothing"""
       val saveHakukohdeRows: Seq[SqlAction[Int, NoStream, Effect]] = tarjoajaEntry.puuttuvatTulokset.map { hakukohdeEntry =>
         val puuttuvienMaara = hakukohdeEntry.puuttuvatTulokset.size
         // val puuttuvatJson = hakukohdeEntry.createHakemuksetJson
         val hakukohdeOid = hakukohdeEntry.hakukohdeOid.toString
         sqlu"""insert into puuttuvat_tulokset_hakukohde
-                              (haku_oid, tarjoaja_oid, hakukohde_oid, puuttuvien_maara) values
-                              (${hakuOid.toString}, ${tarjoajaOid}, ${hakukohdeOid},
+                              (haku_oid, tarjoaja_oid, hakukohde_oid, hakukohteen_nimi, puuttuvien_maara) values
+                              (${hakuOid.toString}, ${tarjoajaOid}, ${hakukohdeOid}, ${hakukohdeEntry.kohteenNimi},
                                 ${puuttuvienMaara})
                on conflict on constraint puuttuvat_tulokset_hakukohde_pk
-                 do update set puuttuvien_maara = excluded.puuttuvien_maara
+                 do update set puuttuvien_maara = excluded.puuttuvien_maara, hakukohteen_nimi = excluded.hakukohteen_nimi
                    where puuttuvat_tulokset_hakukohde.hakukohde_oid = ${hakukohdeOid}
                      and puuttuvat_tulokset_hakukohde.tarjoaja_oid = ${tarjoajaOid}"""
       }
@@ -142,19 +142,19 @@ class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb, hakemusReposi
 
   def findMissingResultsByOrganisation(hakuOid: HakuOid): DBIO[Seq[OrganisaationPuuttuvatTulokset]] = {
     val hakuOidString = hakuOid.toString
-    val tarjoajaRivit = sql"select haku_oid, tarjoaja_oid from puuttuvat_tulokset_tarjoaja where haku_oid = ${hakuOidString}".
-      as[(String,String)].map(_.map(r => (HakuOid(r._1), TarjoajaOid(r._2))))
-    tarjoajaRivit.map(_.map { case (hakuOid, tarjoajaOid) =>
-      val hakukohteittain = sql"""SELECT hakukohde_oid, puuttuvien_maara FROM puuttuvat_tulokset_hakukohde
-                WHERE haku_oid = ${hakuOidString} AND tarjoaja_oid = ${tarjoajaOid.toString}""".as[(String, Int)].
-        map(_.map { case (hakukohdeOidString, puuttuvienMaara) =>
+    val tarjoajaRivit = sql"select tarjoaja_oid, tarjoajan_nimi from puuttuvat_tulokset_tarjoaja where haku_oid = ${hakuOidString}".
+      as[(String, String)].map(_.map(r => (TarjoajaOid(r._1), r._2)))
+    tarjoajaRivit.map(_.map { case (tarjoajaOid, tarjoajanNimi) =>
+      val hakukohteittain = sql"""SELECT hakukohde_oid, hakukohteen_nimi, puuttuvien_maara FROM puuttuvat_tulokset_hakukohde
+                WHERE haku_oid = ${hakuOidString} AND tarjoaja_oid = ${tarjoajaOid.toString}""".as[(String, String, Int)].
+        map(_.map { case (hakukohdeOidString, kohteenNimi, puuttuvienMaara) =>
           val hakukohdeOid = HakukohdeOid(hakukohdeOidString)
-          HakukohteenPuuttuvatTulokset(hakukohdeOid, "TODO", new URL(hakukohdeLinkCreator.createHakukohdeLink(hakuOid, hakukohdeOid)),
+          HakukohteenPuuttuvatTulokset(hakukohdeOid, kohteenNimi, new URL(hakukohdeLinkCreator.createHakukohdeLink(hakuOid, hakukohdeOid)),
             List.range(1, puuttuvienMaara).map(i => new HakutoiveTulosHakemuksella(None, HakemusOid("-1"), hakukohdeOid, "kohteen nimi",
-              tarjoajaOid, "tarjoajanNimi")))
+              tarjoajaOid, tarjoajanNimi)))
 
         })
-      hakukohteittain.map(hakukohteidenPuuttuvat => OrganisaationPuuttuvatTulokset(tarjoajaOid, "tarjoajanNimi", hakukohteidenPuuttuvat))
+      hakukohteittain.map(hakukohteidenPuuttuvat => OrganisaationPuuttuvatTulokset(tarjoajaOid, tarjoajanNimi, hakukohteidenPuuttuvat))
     }).flatMap(DBIO.sequence(_))
   }
 

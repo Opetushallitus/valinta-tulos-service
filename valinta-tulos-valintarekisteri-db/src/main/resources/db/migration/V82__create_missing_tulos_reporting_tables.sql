@@ -8,7 +8,8 @@ comment on table puuttuvat_tulokset_haku is
 
 create table puuttuvat_tulokset_tarjoaja (
   haku_oid text not null,
-  tarjoaja_oid text not null
+  tarjoaja_oid text not null,
+  tarjoajan_nimi text not null
 );
 alter table puuttuvat_tulokset_tarjoaja
   add constraint puuttuvat_tulokset_tarjoaja_pk primary key (haku_oid, tarjoaja_oid);
@@ -19,6 +20,7 @@ create table puuttuvat_tulokset_hakukohde (
   haku_oid text not null,
   tarjoaja_oid text not null,
   hakukohde_oid text not null,
+  hakukohteen_nimi text not null,
   puuttuvien_maara integer not null,
   puuttuvat_hakemukset jsonb null
 );
