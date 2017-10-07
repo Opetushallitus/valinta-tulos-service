@@ -41,6 +41,19 @@
           parsedResponse.forEach(function(tarjoajaRow) {
             var tarjoajaElement = document.createElement("li");
             tarjoajaElement.appendChild(document.createTextNode(tarjoajaRow.tarjoajanNimi + " (" + tarjoajaRow.tarjoajaOid + ")"));
+            var hakukohdeList = document.createElement("ul");
+            tarjoajaRow.puuttuvatTulokset.forEach(function(hakukohdeRow) {
+              var hakukohdeElement = document.createElement("li");
+              var linkToSijoittelunTuloksetElement = document.createElement("a");
+              var puuttuvaTulosText = hakukohdeRow.puuttuvienMaara === 1 ?
+                "1 puuttuva tulos" : hakukohdeRow.puuttuvienMaara + " puuttuvaa tulosta";
+              linkToSijoittelunTuloksetElement.appendChild(document.createTextNode(hakukohdeRow.kohteenNimi +
+                " (" + hakukohdeRow.hakukohdeOid + "), " + puuttuvaTulosText));
+              linkToSijoittelunTuloksetElement.href = hakukohdeRow.kohteenValintaUiUrl;
+              hakukohdeElement.appendChild(linkToSijoittelunTuloksetElement);
+              hakukohdeList.appendChild(hakukohdeElement);
+            });
+            tarjoajaElement.appendChild(hakukohdeList);
             tarjoajaList.appendChild(tarjoajaElement);
           });
         }
