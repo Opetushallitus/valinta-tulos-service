@@ -7,12 +7,9 @@ import java.util.concurrent.TimeUnit.MINUTES
 import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
-import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.apache.commons.lang3.StringUtils
-import org.json4s.jackson.Serialization
-import org.json4s.{Formats, JValue}
 import slick.dbio.DBIO
 import slick.driver.PostgresDriver.api._
 import slick.sql.SqlAction
@@ -26,13 +23,17 @@ import scala.util.{Failure, Success}
 case class HaunTiedotListalle(hakuOid: HakuOid, myohaisinKoulutuksenAlkamiskausi: Kausi, hakukohteidenLkm: Int,
                               tarkistettu: Option[ZonedDateTime], haunPuuttuvienMaara: Option[Int])
 
-case class HaunPuuttuvatTulokset(hakuOid: HakuOid, puuttuvatTulokset: Seq[OrganisaationPuuttuvatTulokset])
-case class OrganisaationPuuttuvatTulokset(tarjoajaOid: TarjoajaOid, tarjoajanNimi: String, puuttuvatTulokset: Seq[HakukohteenPuuttuvatTulokset])
-case class HakukohteenPuuttuvatTulokset(hakukohdeOid: HakukohdeOid, kohteenNimi: String, kohteenValintaUiUrl: URL, puuttuvatTulokset: Seq[HakutoiveTulosHakemuksella]) {
-  private implicit val jsonFormats: Formats = JsonFormats.jsonFormats
-  def createHakemuksetJson: JValue = Serialization.read("""[{"TODO": "implement"}]""")
+case class HaunPuuttuvatTulokset[T <: HakukohteenPuuttuvatTuloksetBase](hakuOid: HakuOid, puuttuvatTulokset: Seq[OrganisaationPuuttuvatTulokset[T]])
+case class OrganisaationPuuttuvatTulokset[T <: HakukohteenPuuttuvatTuloksetBase](tarjoajaOid: TarjoajaOid, tarjoajanNimi: String, puuttuvatTulokset: Seq[T])
+trait HakukohteenPuuttuvatTuloksetBase {
+  def hakukohdeOid: HakukohdeOid
+  def kohteenNimi: String
+  def kohteenValintaUiUrl: URL
 }
-
+case class HakukohteenPuuttuvatTulokset(override val hakukohdeOid: HakukohdeOid, override val kohteenNimi: String,
+                                        override val kohteenValintaUiUrl: URL, puuttuvatTulokset: Seq[HakutoiveTulosHakemuksella]) extends HakukohteenPuuttuvatTuloksetBase
+case class HakukohteenPuuttuvatSummary(override val hakukohdeOid: HakukohdeOid, override val kohteenNimi: String,
+                                       override val kohteenValintaUiUrl: URL, puuttuvienMaara: Int) extends HakukohteenPuuttuvatTuloksetBase
 case class HakutoiveTulosHakemuksella(hakijaOid: Option[HakijaOid], hakemusOid: HakemusOid, hakukotoiveOid: HakukohdeOid, hakutoiveenNimi: String, tarjoajaOid: TarjoajaOid, tarjoajanNimi: String)
 case class HakutoiveTulosRekisterissa(hakemusOid: HakemusOid, hakutoiveOid: HakukohdeOid)
 
@@ -57,12 +58,12 @@ class PuuttuvatTuloksetService(valintarekisteriDb: ValintarekisteriDb, hakemusRe
     valintarekisteriDb.runBlocking(dao.findSummary(), Duration(1, MINUTES))
   }
 
-  def findMissingResultsByOrganisation(hakuOid: HakuOid): Seq[OrganisaationPuuttuvatTulokset] = {
+  def findMissingResultsByOrganisation(hakuOid: HakuOid): Seq[OrganisaationPuuttuvatTulokset[HakukohteenPuuttuvatSummary]] = {
     valintarekisteriDb.runBlocking(dao.findMissingResultsByOrganisation(hakuOid), Duration(1, MINUTES))
   }
 
-  def find(hakuOid: HakuOid): HaunPuuttuvatTulokset = {
-    val eventualOrganisaatioidenTulokset: Future[immutable.Iterable[OrganisaationPuuttuvatTulokset]] = initialiseMissingRequestsFuture(hakuOid)
+  def find(hakuOid: HakuOid): HaunPuuttuvatTulokset[HakukohteenPuuttuvatTulokset] = {
+    val eventualOrganisaatioidenTulokset: Future[immutable.Iterable[OrganisaationPuuttuvatTulokset[HakukohteenPuuttuvatTulokset]]] = initialiseMissingRequestsFuture(hakuOid)
     HaunPuuttuvatTulokset(hakuOid, Await.result(eventualOrganisaatioidenTulokset, Duration(1, MINUTES)).toSeq)
   }
 
@@ -90,7 +91,7 @@ class PuuttuvatTuloksetService(valintarekisteriDb: ValintarekisteriDb, hakemusRe
 
 class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb, hakemusRepository: HakemusRepository,
                            hakukohdeLinkCreator: SijoittelunTuloksetLinkCreator) extends Logging {
-  def save(results: Iterable[OrganisaationPuuttuvatTulokset], hakuOid: HakuOid): Unit = {
+  def save(results: Iterable[OrganisaationPuuttuvatTulokset[HakukohteenPuuttuvatTulokset]], hakuOid: HakuOid): Unit = {
     val saveHakuRow =
       sqlu"""insert into puuttuvat_tulokset_haku (haku_oid, tarkistettu)
              values (${hakuOid.toString}, now())
@@ -105,7 +106,6 @@ class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb, hakemusReposi
                on conflict on constraint puuttuvat_tulokset_tarjoaja_pk do nothing"""
       val saveHakukohdeRows: Seq[SqlAction[Int, NoStream, Effect]] = tarjoajaEntry.puuttuvatTulokset.map { hakukohdeEntry =>
         val puuttuvienMaara = hakukohdeEntry.puuttuvatTulokset.size
-        // val puuttuvatJson = hakukohdeEntry.createHakemuksetJson
         val hakukohdeOid = hakukohdeEntry.hakukohdeOid.toString
         sqlu"""insert into puuttuvat_tulokset_hakukohde
                               (haku_oid, tarjoaja_oid, hakukohde_oid, hakukohteen_nimi, puuttuvien_maara) values
@@ -140,7 +140,7 @@ class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb, hakemusReposi
       })
   }
 
-  def findMissingResultsByOrganisation(hakuOid: HakuOid): DBIO[Seq[OrganisaationPuuttuvatTulokset]] = {
+  def findMissingResultsByOrganisation(hakuOid: HakuOid): DBIO[Seq[OrganisaationPuuttuvatTulokset[HakukohteenPuuttuvatSummary]]] = {
     val hakuOidString = hakuOid.toString
     val tarjoajaRivit = sql"select tarjoaja_oid, tarjoajan_nimi from puuttuvat_tulokset_tarjoaja where haku_oid = ${hakuOidString}".
       as[(String, String)].map(_.map(r => (TarjoajaOid(r._1), r._2)))
@@ -149,9 +149,8 @@ class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb, hakemusReposi
                 WHERE haku_oid = ${hakuOidString} AND tarjoaja_oid = ${tarjoajaOid.toString}""".as[(String, String, Int)].
         map(_.map { case (hakukohdeOidString, kohteenNimi, puuttuvienMaara) =>
           val hakukohdeOid = HakukohdeOid(hakukohdeOidString)
-          HakukohteenPuuttuvatTulokset(hakukohdeOid, kohteenNimi, new URL(hakukohdeLinkCreator.createHakukohdeLink(hakuOid, hakukohdeOid)),
-            List.range(1, puuttuvienMaara).map(i => new HakutoiveTulosHakemuksella(None, HakemusOid("-1"), hakukohdeOid, "kohteen nimi",
-              tarjoajaOid, tarjoajanNimi)))
+          HakukohteenPuuttuvatSummary(hakukohdeOid, kohteenNimi,
+            new URL(hakukohdeLinkCreator.createHakukohdeLink(hakuOid, hakukohdeOid)), puuttuvienMaara)
 
         })
       hakukohteittain.map(hakukohteidenPuuttuvat => OrganisaationPuuttuvatTulokset(tarjoajaOid, tarjoajanNimi, hakukohteidenPuuttuvat))

@@ -22,7 +22,7 @@ class PuuttuvienTulostenMetsastajaServlet(valintarekisteriDb: ValintarekisteriDb
 
   private val puuttuvatTuloksetService = new PuuttuvatTuloksetService(valintarekisteriDb, hakemusRepository, virkailijaBaseUrl)
 
-  val puuttuvatTuloksetHaulleSwagger: OperationBuilder = (apiOperation[HaunPuuttuvatTulokset]("puuttuvien tulosten haku")
+  val puuttuvatTuloksetHaulleSwagger: OperationBuilder = (apiOperation[HaunPuuttuvatTulokset[HakukohteenPuuttuvatTulokset]]("puuttuvien tulosten haku")
     summary "Etsi sellaiset hakemuksilta löytyvät hakutoiveet, joille ei löydy tulosta valintarekisteristä"
     parameter queryParam[String]("hakuOid").description("haun OID")
     )
@@ -49,7 +49,7 @@ class PuuttuvienTulostenMetsastajaServlet(valintarekisteriDb: ValintarekisteriDb
     Ok(puuttuvatTuloksetService.findSummary())
   }
 
-  val haunPuuttuvatSwagger: OperationBuilder = (apiOperation[Seq[OrganisaationPuuttuvatTulokset]]("Yksittäisen organisaation puuttuvat")
+  val haunPuuttuvatSwagger: OperationBuilder = (apiOperation[Seq[OrganisaationPuuttuvatTulokset[HakukohteenPuuttuvatSummary]]]("Yksittäisen organisaation puuttuvat")
     summary "Organisaation puuttuvien tulosten määrät hakukohteittain"
     parameter pathParam[String]("hakuOid").description("Haun OID"))
   get("/haku/:hakuOid", operation(haunPuuttuvatSwagger)) {
