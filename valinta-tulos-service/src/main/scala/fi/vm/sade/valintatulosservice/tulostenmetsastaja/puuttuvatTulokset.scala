@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.tulostenmetsastaja
 
 import java.net.URL
-import java.util.Date
+import java.time.{ZoneId, ZonedDateTime}
 import java.util.concurrent.TimeUnit.MINUTES
 
 import fi.vm.sade.utils.Timer
@@ -24,7 +24,7 @@ import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
 
 case class HaunTiedotListalle(hakuOid: HakuOid, myohaisinKoulutuksenAlkamiskausi: Kausi, hakukohteidenLkm: Int,
-                              tarkistettu: Option[Date], haunPuuttuvienMaara: Option[Int])
+                              tarkistettu: Option[ZonedDateTime], haunPuuttuvienMaara: Option[Int])
 
 case class HaunPuuttuvatTulokset(hakuOid: HakuOid, puuttuvatTulokset: Seq[OrganisaationPuuttuvatTulokset])
 case class OrganisaationPuuttuvatTulokset(tarjoajaOid: TarjoajaOid, tarjoajanNimi: String, puuttuvatTulokset: Seq[HakukohteenPuuttuvatTulokset])
@@ -129,7 +129,8 @@ class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb, hakemusReposi
           order by haun_puuttuvien_maara desc nulls last, myohaisin_koulutuksen_alkamiskausi desc, hk.haku_oid""".
       as[(String, String, Int, Option[java.sql.Timestamp], Option[Int])].
       map(_.map { row =>
-        HaunTiedotListalle(HakuOid(row._1), Kausi(row._2), row._3, row._4, row._5)
+        val tarkistettuDateTime = row._4.map(_.toLocalDateTime.atZone(ZoneId.of("Europe/Helsinki")))
+        HaunTiedotListalle(HakuOid(row._1), Kausi(row._2), row._3, tarkistettuDateTime, row._5)
       })
   }
 
