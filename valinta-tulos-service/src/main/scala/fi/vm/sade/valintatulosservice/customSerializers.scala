@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
+import java.net.URL
 import java.time.format.DateTimeFormatter
 import java.time.{OffsetDateTime, ZoneId, ZonedDateTime}
 
@@ -70,5 +71,13 @@ class KausiSerializer extends CustomSerializer[Kausi]((_: Formats) => {
     case json: JString => Kausi(json.s)
   }, {
     case k: Kausi => JString(k.toKausiSpec)
+  })
+})
+
+class UrlSerializer extends CustomSerializer[URL]((_: Formats) => {
+  ({
+    case json: JString => new URL(json.s)
+  }, {
+    case url: URL => JString(url.toString)
   })
 })

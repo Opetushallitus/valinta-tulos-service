@@ -7,7 +7,7 @@ import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, Oids}
-import fi.vm.sade.valintatulosservice.{Authenticated, CasAuthenticatedServlet, VtsServletBase}
+import fi.vm.sade.valintatulosservice.{Authenticated, CasAuthenticatedServlet, UrlSerializer, VtsServletBase}
 import org.json4s.Formats
 import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
@@ -15,7 +15,7 @@ import org.scalatra.{ActionResult, Forbidden, Found, Ok}
 
 class PuuttuvienTulostenMetsastajaServlet(valintarekisteriDb: ValintarekisteriDb, hakemusRepository: HakemusRepository, virkailijaBaseUrl: String)
                                          (implicit val swagger: Swagger) extends VtsServletBase with CasAuthenticatedServlet {
-  override implicit val jsonFormats: Formats = JsonFormats.jsonFormats ++ Oids.getSerializers()
+  override implicit val jsonFormats: Formats = JsonFormats.jsonFormats ++ Oids.getSerializers() ++ Seq(new UrlSerializer)
   override val applicationName = Some("auth/puuttuvat")
   override val applicationDescription = "REST API puuttuvien tuloksien etsimiseen"
   override val sessionRepository: SessionRepository = valintarekisteriDb

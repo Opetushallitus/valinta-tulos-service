@@ -37,7 +37,8 @@ case class HakutoiveTulosHakemuksella(hakijaOid: Option[HakijaOid], hakemusOid: 
 case class HakutoiveTulosRekisterissa(hakemusOid: HakemusOid, hakutoiveOid: HakukohdeOid)
 
 class PuuttuvatTuloksetService(valintarekisteriDb: ValintarekisteriDb, hakemusRepository: HakemusRepository, virkailijaBaseUrl: String) extends Logging {
-  private val dao = new PuuttuvatTuloksetDao(valintarekisteriDb, hakemusRepository)
+  private val hakukohdeLinkCreator = new SijoittelunTuloksetLinkCreator(virkailijaBaseUrl)
+  private val dao = new PuuttuvatTuloksetDao(valintarekisteriDb, hakemusRepository, hakukohdeLinkCreator)
 
   def haeJaTallenna(hakuOid: HakuOid): String = {
     initialiseMissingRequestsFuture(hakuOid).onComplete {
@@ -76,7 +77,7 @@ class PuuttuvatTuloksetService(valintarekisteriDb: ValintarekisteriDb, hakemusRe
         case ((tarjoajaOid, tarjoajanNimi), tulokset) =>
           val hakukohteidenPuuttuvatTulokset = tulokset.groupBy(t => (t.hakukotoiveOid, t.hakutoiveenNimi)).map {
               case ((hakukohdeOid, hakukohteenNimi), hakemustenTulokset) =>
-                val url = s"https://$virkailijaBaseUrl/valintalaskenta-ui/app/index.html#/haku/$hakuOid/hakukohde/$hakukohdeOid/sijoitteluntulos"
+                val url = hakukohdeLinkCreator.createHakukohdeLink(hakuOid, hakukohdeOid)
                 HakukohteenPuuttuvatTulokset(hakukohdeOid, hakukohteenNimi, new URL(url), hakemustenTulokset)
           }
           OrganisaationPuuttuvatTulokset(tarjoajaOid, tarjoajanNimi, hakukohteidenPuuttuvatTulokset.toSeq)
@@ -87,7 +88,8 @@ class PuuttuvatTuloksetService(valintarekisteriDb: ValintarekisteriDb, hakemusRe
   }
 }
 
-class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb, hakemusRepository: HakemusRepository) extends Logging {
+class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb, hakemusRepository: HakemusRepository,
+                           hakukohdeLinkCreator: SijoittelunTuloksetLinkCreator) extends Logging {
   def save(results: Iterable[OrganisaationPuuttuvatTulokset], hakuOid: HakuOid): Unit = {
     val saveHakuRow =
       sqlu"""insert into puuttuvat_tulokset_haku (haku_oid, tarkistettu)
@@ -143,15 +145,16 @@ class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb, hakemusReposi
     val tarjoajaRivit = sql"select haku_oid, tarjoaja_oid from puuttuvat_tulokset_tarjoaja where haku_oid = ${hakuOidString}".
       as[(String,String)].map(_.map(r => (HakuOid(r._1), TarjoajaOid(r._2))))
     tarjoajaRivit.map(_.map { case (hakuOid, tarjoajaOid) =>
-        val hakukohteittain = sql"""select hakukohde_oid, puuttuvien_maara from puuttuvat_tulokset_hakukohde
-                where haku_oid = ${hakuOidString} and tarjoaja_oid = ${tarjoajaOid.toString}""".as[(String, Int)].
-          map(_.map { case (hakukohdeOid, puuttuvienMaara) =>
-              HakukohteenPuuttuvatTulokset(HakukohdeOid(hakukohdeOid), "TODO", new URL("https://testi.virkailija.opintopolku.fi"),
-                List.range(1, puuttuvienMaara).map(i => new HakutoiveTulosHakemuksella(None, HakemusOid("-1"), HakukohdeOid(hakukohdeOid), "kohteen nimi",
-                  tarjoajaOid, "tarjoajanNimi")))
+      val hakukohteittain = sql"""SELECT hakukohde_oid, puuttuvien_maara FROM puuttuvat_tulokset_hakukohde
+                WHERE haku_oid = ${hakuOidString} AND tarjoaja_oid = ${tarjoajaOid.toString}""".as[(String, Int)].
+        map(_.map { case (hakukohdeOidString, puuttuvienMaara) =>
+          val hakukohdeOid = HakukohdeOid(hakukohdeOidString)
+          HakukohteenPuuttuvatTulokset(hakukohdeOid, "TODO", new URL(hakukohdeLinkCreator.createHakukohdeLink(hakuOid, hakukohdeOid)),
+            List.range(1, puuttuvienMaara).map(i => new HakutoiveTulosHakemuksella(None, HakemusOid("-1"), hakukohdeOid, "kohteen nimi",
+              tarjoajaOid, "tarjoajanNimi")))
 
-          })
-        hakukohteittain.map(hakukohteidenPuuttuvat => OrganisaationPuuttuvatTulokset(tarjoajaOid, "tarjoajanNimi", hakukohteidenPuuttuvat))
+        })
+      hakukohteittain.map(hakukohteidenPuuttuvat => OrganisaationPuuttuvatTulokset(tarjoajaOid, "tarjoajanNimi", hakukohteidenPuuttuvat))
     }).flatMap(DBIO.sequence(_))
   }
 
@@ -181,4 +184,9 @@ class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb, hakemusReposi
       Some(HakijaOid(oidFromHakemus))
     }
   }
+}
+
+class SijoittelunTuloksetLinkCreator(virkailijaBaseUrl: String) {
+  def createHakukohdeLink(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): String =
+    s"https://$virkailijaBaseUrl/valintalaskenta-ui/app/index.html#/haku/$hakuOid/hakukohde/$hakukohdeOid/sijoitteluntulos"
 }
