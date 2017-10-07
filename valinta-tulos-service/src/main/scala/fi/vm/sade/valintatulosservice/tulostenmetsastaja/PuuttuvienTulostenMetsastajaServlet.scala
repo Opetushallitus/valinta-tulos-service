@@ -49,6 +49,14 @@ class PuuttuvienTulostenMetsastajaServlet(valintarekisteriDb: ValintarekisteriDb
     Ok(puuttuvatTuloksetService.findSummary())
   }
 
+  val haunPuuttuvatSwagger: OperationBuilder = (apiOperation[Seq[OrganisaationPuuttuvatTulokset]]("Yksittäisen organisaation puuttuvat")
+    summary "Organisaation puuttuvien tulosten määrät hakukohteittain"
+    parameter pathParam[String]("hakuOid").description("Haun OID"))
+  get("/haku/:hakuOid", operation(haunPuuttuvatSwagger)) {
+    // tarkistaOikeudet()
+    Ok(puuttuvatTuloksetService.findMissingResultsByOrganisation(HakuOid(params("hakuOid"))))
+  }
+
   private def parseHakuOid: HakuOid = HakuOid(params.getOrElse("hakuOid",
     throw new IllegalArgumentException("URL-parametri hakuOid on pakollinen.")))
 

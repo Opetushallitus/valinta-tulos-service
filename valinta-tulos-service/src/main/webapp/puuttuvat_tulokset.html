@@ -13,11 +13,12 @@
         return response.text();
       }
 
-      function displayResponseBody(responseText) {
+      function displayHakuListResponse(responseText) {
         var list = document.getElementById('haku-list');
         var parsedResponse = JSON.parse(responseText);
         parsedResponse.forEach(function(row) {
           var rowElement = document.createElement("li");
+          rowElement.onclick = function() { loadHakukohdeSpecificDataFor(row.hakuOid, rowElement) };
           rowElement.appendChild(document.createTextNode(JSON.stringify(row)));
           list.appendChild(rowElement);
         });
@@ -28,7 +29,27 @@
         console.log('About to get from URL ' + url);
         fetch(url, { method: 'get'})
           .then(handleResponse)
-          .then(displayResponseBody)
+          .then(displayHakuListResponse)
+          .catch(handleResponse);
+      }
+
+      function displaySingleHakuResponse(hakuRowElement) {
+        return function(responseText) {
+          var parsedResponse = JSON.parse(responseText);
+          var tarjoajaList = document.createElement("ul");
+          hakuRowElement.appendChild(tarjoajaList);
+          parsedResponse.forEach(function(tarjoajaRow) {
+            var tarjoajaElement = document.createElement("li");
+            tarjoajaElement.appendChild(document.createTextNode(tarjoajaRow.tarjoajanNimi + " (" + tarjoajaRow.tarjoajaOid + ")"));
+            tarjoajaList.appendChild(tarjoajaElement);
+          });
+        }
+      }
+
+      function loadHakukohdeSpecificDataFor(hakuOid, hakuRowElement) {
+        fetch('/valinta-tulos-service/auth/puuttuvat/haku/' + hakuOid, { method: 'get' })
+          .then(handleResponse)
+          .then(displaySingleHakuResponse(hakuRowElement))
           .catch(handleResponse);
       }
     </script>

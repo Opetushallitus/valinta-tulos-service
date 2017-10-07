@@ -37,6 +37,8 @@ case class HakutoiveTulosHakemuksella(hakijaOid: Option[HakijaOid], hakemusOid: 
 case class HakutoiveTulosRekisterissa(hakemusOid: HakemusOid, hakutoiveOid: HakukohdeOid)
 
 class PuuttuvatTuloksetService(valintarekisteriDb: ValintarekisteriDb, hakemusRepository: HakemusRepository, virkailijaBaseUrl: String) extends Logging {
+  private val dao = new PuuttuvatTuloksetDao(valintarekisteriDb, hakemusRepository)
+
   def haeJaTallenna(hakuOid: HakuOid): String = {
     initialiseMissingRequestsFuture(hakuOid).onComplete {
       case Success(results) =>
@@ -50,11 +52,13 @@ class PuuttuvatTuloksetService(valintarekisteriDb: ValintarekisteriDb, hakemusRe
     s"Initialised searching and storing results for haku $hakuOid"
   }
 
-  private val dao = new PuuttuvatTuloksetDao(valintarekisteriDb, hakemusRepository)
   def findSummary(): Seq[HaunTiedotListalle] = {
     valintarekisteriDb.runBlocking(dao.findSummary(), Duration(1, MINUTES))
   }
 
+  def findMissingResultsByOrganisation(hakuOid: HakuOid): Seq[OrganisaationPuuttuvatTulokset] = {
+    valintarekisteriDb.runBlocking(dao.findMissingResultsByOrganisation(hakuOid), Duration(1, MINUTES))
+  }
 
   def find(hakuOid: HakuOid): HaunPuuttuvatTulokset = {
     val eventualOrganisaatioidenTulokset: Future[immutable.Iterable[OrganisaationPuuttuvatTulokset]] = initialiseMissingRequestsFuture(hakuOid)
@@ -132,6 +136,23 @@ class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb, hakemusReposi
         val tarkistettuDateTime = row._4.map(_.toLocalDateTime.atZone(ZoneId.of("Europe/Helsinki")))
         HaunTiedotListalle(HakuOid(row._1), Kausi(row._2), row._3, tarkistettuDateTime, row._5)
       })
+  }
+
+  def findMissingResultsByOrganisation(hakuOid: HakuOid): DBIO[Seq[OrganisaationPuuttuvatTulokset]] = {
+    val hakuOidString = hakuOid.toString
+    val tarjoajaRivit = sql"select haku_oid, tarjoaja_oid from puuttuvat_tulokset_tarjoaja where haku_oid = ${hakuOidString}".
+      as[(String,String)].map(_.map(r => (HakuOid(r._1), TarjoajaOid(r._2))))
+    tarjoajaRivit.map(_.map { case (hakuOid, tarjoajaOid) =>
+        val hakukohteittain = sql"""select hakukohde_oid, puuttuvien_maara from puuttuvat_tulokset_hakukohde
+                where haku_oid = ${hakuOidString} and tarjoaja_oid = ${tarjoajaOid.toString}""".as[(String, Int)].
+          map(_.map { case (hakukohdeOid, puuttuvienMaara) =>
+              HakukohteenPuuttuvatTulokset(HakukohdeOid(hakukohdeOid), "TODO", new URL("https://testi.virkailija.opintopolku.fi"),
+                List.range(1, puuttuvienMaara).map(i => new HakutoiveTulosHakemuksella(None, HakemusOid("-1"), HakukohdeOid(hakukohdeOid), "kohteen nimi",
+                  tarjoajaOid, "tarjoajanNimi")))
+
+          })
+        hakukohteittain.map(hakukohteidenPuuttuvat => OrganisaationPuuttuvatTulokset(tarjoajaOid, "tarjoajanNimi", hakukohteidenPuuttuvat))
+    }).flatMap(DBIO.sequence(_))
   }
 
   def hakemuksiltaLoytyvatHakutoiveet(hakuOid: HakuOid): Future[Iterator[HakutoiveTulosHakemuksella]] = {
