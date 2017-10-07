@@ -1,7 +1,5 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.domain
 
-import java.util.Date
-
 sealed trait Kausi {
   def year: Int
   def toKausiSpec: String
