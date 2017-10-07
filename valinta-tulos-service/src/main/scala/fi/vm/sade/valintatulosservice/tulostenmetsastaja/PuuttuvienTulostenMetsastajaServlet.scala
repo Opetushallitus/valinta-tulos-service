@@ -2,19 +2,20 @@ package fi.vm.sade.valintatulosservice.tulostenmetsastaja
 
 import fi.vm.sade.security.AuthorizationFailedException
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
+import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, Oids}
 import fi.vm.sade.valintatulosservice.{Authenticated, CasAuthenticatedServlet, VtsServletBase}
-import org.json4s.{DefaultFormats, Formats}
-import org.scalatra.{ActionResult, Forbidden, Found, Ok}
+import org.json4s.Formats
 import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
+import org.scalatra.{ActionResult, Forbidden, Found, Ok}
 
 class PuuttuvienTulostenMetsastajaServlet(valintarekisteriDb: ValintarekisteriDb, hakemusRepository: HakemusRepository, virkailijaBaseUrl: String)
                                          (implicit val swagger: Swagger) extends VtsServletBase with CasAuthenticatedServlet {
-  override implicit val jsonFormats: Formats = DefaultFormats ++ Oids.getSerializers()
+  override implicit val jsonFormats: Formats = JsonFormats.jsonFormats ++ Oids.getSerializers()
   override val applicationName = Some("auth/puuttuvat")
   override val applicationDescription = "REST API puuttuvien tuloksien etsimiseen"
   override val sessionRepository: SessionRepository = valintarekisteriDb

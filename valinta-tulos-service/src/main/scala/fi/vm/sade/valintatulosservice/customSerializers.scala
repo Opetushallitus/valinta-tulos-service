@@ -64,3 +64,11 @@ class ZonedDateTimeSerializer extends CustomSerializer[ZonedDateTime]((_: Format
     case d: ZonedDateTime => JString(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(d.withZoneSameInstant(ZoneId.of("Europe/Helsinki"))))
   })
 })
+
+class KausiSerializer extends CustomSerializer[Kausi]((_: Formats) => {
+  ({
+    case json: JString => Kausi(json.s)
+  }, {
+    case k: Kausi => JString(k.toKausiSpec)
+  })
+})
