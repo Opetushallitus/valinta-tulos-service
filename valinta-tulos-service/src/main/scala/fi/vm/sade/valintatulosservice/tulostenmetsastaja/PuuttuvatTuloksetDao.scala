@@ -1,7 +1,9 @@
 package fi.vm.sade.valintatulosservice.tulostenmetsastaja
 
 import java.net.URL
-import java.time.ZoneId
+import java.sql.Timestamp
+import java.time.{ZoneId, ZonedDateTime}
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MINUTES
 
 import fi.vm.sade.utils.slf4j.Logging
@@ -9,6 +11,7 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, Kausi, TarjoajaOid}
 import slick.dbio.DBIO
+import slick.jdbc.GetResult
 import slick.jdbc.PostgresProfile.api._
 import slick.sql.SqlAction
 
@@ -17,6 +20,51 @@ import scala.concurrent.duration.Duration
 
 class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb, hakemusRepository: HakemusRepository,
                            hakukohdeLinkCreator: SijoittelunTuloksetLinkCreator) extends Logging {
+  private implicit val getTimestampResultAsZonedDateTime: GetResult[ZonedDateTime] = GetResult(r => {
+    timestampToZonedDateTime(r.nextTimestamp())
+  })
+  private val shortTimeout = Duration(10, TimeUnit.SECONDS)
+
+  def saveNewTaustapaivityksenTila(hakuCount: Int): TaustapaivityksenTila = {
+    val startTime = valintarekisteriDb.runBlocking(sql"select now()".as[ZonedDateTime].map(_.head))
+    val startTimeTimestamp = Timestamp.from(startTime.toInstant)
+    valintarekisteriDb.runBlockingTransactionally(
+      sqlu"""update puuttuvat_tulokset_taustapaivityksen_tila
+               set kaynnistetty = ${startTimeTimestamp}, valmistui = null, hakujen_maara = ${hakuCount}""") match {
+        case Right(n) if n == 1 =>
+          val uusiTila = TaustapaivityksenTila(kaynnistettiin = true, Some(startTime), None, Some(hakuCount))
+          logger.info(s"Tallennettiin $uusiTila")
+          uusiTila
+        case Right(n) => throw new RuntimeException(s"Odotettiin 1 rivin päivittyvän, mutta $n päivittyi. Vaikuttaa bugilta.")
+        case Left(e) =>
+          logger.error("Virhe tallennettaessa taustapäivityksen tilaa", e)
+          throw e
+      }
+  }
+
+  def merkitseTaustapaivitysValmiiksi(): Unit = {
+    valintarekisteriDb.runBlocking(sqlu"update puuttuvat_tulokset_taustapaivityksen_tila set valmistui = now()", shortTimeout)
+  }
+
+  def findTaustapaivityksenTila: TaustapaivityksenTila = valintarekisteriDb.runBlocking(findTaustapaivityksenTilaAction, shortTimeout)
+
+  private def findTaustapaivityksenTilaAction: DBIO[TaustapaivityksenTila] = {
+    sql"select kaynnistetty, valmistui, hakujen_maara from puuttuvat_tulokset_taustapaivityksen_tila".
+      as[(Option[Timestamp], Option[Timestamp], Option[Int])].map(_.head).map { case (kaynnistetty, valmistui, hakujenMaara) =>
+      TaustapaivityksenTila(kaynnistettiin = false, kaynnistetty.map(timestampToZonedDateTime), valmistui.map(timestampToZonedDateTime), hakujenMaara)
+    }
+  }
+
+  def findHakuOidsToUpdate(paivitaMyosOlemassaolevat: Boolean): Seq[HakuOid] = {
+    val query = if (paivitaMyosOlemassaolevat) {
+      sql"select distinct haku_oid from hakukohteet"
+    } else {
+      sql"""select distinct haku_oid from hakukohteet hk
+            where not exists (select haku_oid from puuttuvat_tulokset_haku pth where pth.haku_oid = hk.haku_oid)"""
+    }
+    valintarekisteriDb.runBlocking(query.as[String], shortTimeout).map(HakuOid)
+  }
+
   def save(results: Iterable[TarjoajanPuuttuvat[HakukohteenPuuttuvat]], hakuOid: HakuOid): Unit = {
     val saveHakuRow =
       sqlu"""insert into puuttuvat_tulokset_haku (haku_oid, tarkistettu)
@@ -61,7 +109,7 @@ class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb, hakemusReposi
           order by haun_puuttuvien_maara desc nulls last, myohaisin_koulutuksen_alkamiskausi desc, hk.haku_oid""".
       as[(String, String, Int, Option[java.sql.Timestamp], Option[Int])].
       map(_.map { row =>
-        val tarkistettuDateTime = row._4.map(_.toLocalDateTime.atZone(ZoneId.of("Europe/Helsinki")))
+        val tarkistettuDateTime = row._4.map(timestampToZonedDateTime)
         HaunTiedotListalle(HakuOid(row._1), Kausi(row._2), row._3, tarkistettuDateTime, row._5)
       })
   }
@@ -81,5 +129,9 @@ class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb, hakemusReposi
         })
       hakukohteittain.map(hakukohteidenPuuttuvat => TarjoajanPuuttuvat(tarjoajaOid, tarjoajanNimi, hakukohteidenPuuttuvat))
     }).flatMap(DBIO.sequence(_))
+  }
+
+  private def timestampToZonedDateTime(timestamp: Timestamp): ZonedDateTime = {
+    timestamp.toLocalDateTime.atZone(ZoneId.of("Europe/Helsinki"))
   }
 }

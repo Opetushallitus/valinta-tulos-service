@@ -36,10 +36,6 @@
           .catch(handleResponse);
       }
 
-      function clearHakuList() {
-        document.getElementById('haku-list').innerHTML = '';
-      }
-
       function updateMissingResultsForAllHakus() {
         var paivitaMyosOlemassaolevat = document.getElementById("paivitaMyosOlemassaolevat").checked;
         var request = {
@@ -53,11 +49,15 @@
         showAjaxIndicator();
         fetch('/valinta-tulos-service/auth/puuttuvat/paivitaKaikki', request)
           .then(handleResponse)
-          .then(function() {
-            showStatus('Käynnistettiin' + statusSuffix);
+          .then(function(responseText) {
+            var taustapaivityksenTila = JSON.parse(responseText);
+            if (taustapaivityksenTila.kaynnistettiin) {
+              showStatus('Käynnistettiin' + statusSuffix);
+            } else {
+              showStatus('Ei käynnistetty taustapäivitystä, koska se on jo käynnistetty ' + taustapaivityksenTila.kaynnistetty +
+                ' ' + taustapaivityksenTila.hakujenMaara + ' haulle.');
+            }
           })
-          .then(clearHakuList)
-          .then(loadHakuList)
           .catch(handleResponse);
       }
 

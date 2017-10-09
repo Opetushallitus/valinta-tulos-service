@@ -31,15 +31,15 @@ class PuuttuvienTulostenMetsastajaServlet(valintarekisteriDb: ValintarekisteriDb
     Ok(puuttuvatTuloksetService.kokoaPuuttuvatTulokset(parseHakuOid))
   }
 
-  val puuttuvatTuloksetHauilleTaustallaSwagger: OperationBuilder = (apiOperation[String]("puuttuvien tulosten haku taustalla")
+  val puuttuvatTuloksetHauilleTaustallaSwagger: OperationBuilder = (apiOperation[TaustapaivityksenTila]("puuttuvien tulosten haku taustalla")
     summary "Etsi sellaiset hakemuksilta löytyvät hakutoiveet, joille ei löydy tulosta valintarekisteristä, ja tallenna tulos kirjanpitoon"
     parameter bodyParam[Seq[String]]("hakuOids").description("Hakujen OIDit"))
   post("/", operation(puuttuvatTuloksetHauilleTaustallaSwagger)) {
     //tarkistaOikeudet()
     val hakuOids = parsedBody.extract[Seq[String]].map(HakuOid)
     logger.info(s"Haetaan hakuOideille $hakuOids")
-    val messages = hakuOids.map(puuttuvatTuloksetService.haeJaTallenna)
-    Ok(Map("message" -> messages))
+
+    Ok(puuttuvatTuloksetService.haeJaTallenna(hakuOids))
   }
 
   val hakuListaSwagger: OperationBuilder = (apiOperation[Seq[HaunTiedotListalle]]("Yhteenveto kaikista hauista")
@@ -57,7 +57,7 @@ class PuuttuvienTulostenMetsastajaServlet(valintarekisteriDb: ValintarekisteriDb
     Ok(puuttuvatTuloksetService.findMissingResultsByOrganisation(HakuOid(params("hakuOid"))))
   }
 
-  val paivitaKaikkiSwagger : OperationBuilder = (apiOperation[String]("Käynnistetään puuttuvien tuloksien haku kaikille hauille")
+  val paivitaKaikkiSwagger : OperationBuilder = (apiOperation[TaustapaivityksenTila]("Käynnistetään puuttuvien tuloksien haku kaikille hauille")
       parameter bodyParam[Boolean]("paivitaMyosOlemassaolevat").description("Päivitetäänkö myös hauille, joilta löytyy jo tieto puuttuvista"))
   post("/paivitaKaikki", operation(paivitaKaikkiSwagger)) {
     //tarkistaOikeudet()
@@ -67,8 +67,7 @@ class PuuttuvienTulostenMetsastajaServlet(valintarekisteriDb: ValintarekisteriDb
       } else {
         "hauille, joilta ei löydy tietoa puuttuvista."
       }))
-    val message = puuttuvatTuloksetService.haeJaTallennaKaikki(paivitaMyosOlemassaolevat)
-    Ok(Map("message" -> message))
+    Ok(puuttuvatTuloksetService.haeJaTallennaKaikki(paivitaMyosOlemassaolevat))
   }
 
   private def parseHakuOid: HakuOid = HakuOid(params.getOrElse("hakuOid",

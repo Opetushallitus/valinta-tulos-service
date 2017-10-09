@@ -1,3 +1,10 @@
+create table puuttuvat_tulokset_taustapaivityksen_tila (
+  kaynnistetty timestamp with time zone null,
+  valmistui timestamp with time zone null,
+  hakujen_maara integer null
+);
+insert into puuttuvat_tulokset_taustapaivityksen_tila (kaynnistetty, valmistui, hakujen_maara) values (null, null, null);
+
 create table puuttuvat_tulokset_haku (
   haku_oid text not null,
   tarkistettu timestamp with time zone null

@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice.tulostenmetsastaja
 
 import java.net.URL
 import java.time.ZonedDateTime
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit.MINUTES
 
 import fi.vm.sade.utils.Timer
@@ -9,10 +10,10 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import org.springframework.util.StopWatch
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
 
 case class HaunTiedotListalle(hakuOid: HakuOid, myohaisinKoulutuksenAlkamiskausi: Kausi, hakukohteidenLkm: Int,
@@ -32,25 +33,62 @@ case class HakukohteenPuuttuvatSummary(override val hakukohdeOid: HakukohdeOid, 
 case class HakutoiveTulosHakemuksella(hakijaOid: Option[HakijaOid], hakemusOid: HakemusOid, hakukotoiveOid: HakukohdeOid, hakutoiveenNimi: String, tarjoajaOid: TarjoajaOid, tarjoajanNimi: String)
 case class HakutoiveTulosRekisterissa(hakemusOid: HakemusOid, hakutoiveOid: HakukohdeOid)
 
+case class TaustapaivityksenTila(kaynnistettiin: Boolean, kaynnistetty: Option[ZonedDateTime], valmistui: Option[ZonedDateTime], hakujenMaara: Option[Int])
+
 class PuuttuvatTuloksetService(valintarekisteriDb: ValintarekisteriDb, hakemusRepository: HakemusRepository, virkailijaBaseUrl: String) extends Logging {
   private val hakukohdeLinkCreator = new SijoittelunTuloksetLinkCreator(virkailijaBaseUrl)
   private val dao = new PuuttuvatTuloksetDao(valintarekisteriDb, hakemusRepository, hakukohdeLinkCreator)
   private val puuttuvienTulostenKokoaja = new PuuttuvienTulostenKokoaja(valintarekisteriDb, hakemusRepository, hakukohdeLinkCreator)
+  private implicit val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
 
-  def haeJaTallenna(hakuOid: HakuOid): String = {
-    puuttuvienTulostenKokoaja.kokoaPuuttuvatTulokset(hakuOid).onComplete {
-      case Success(results) =>
-        val puuttuviaYhteensa = results.flatMap(_.puuttuvatTulokset.map(_.puuttuvatTulokset.size)).sum
-        logger.info(s"Aletaan tallentaa haun $hakuOid tuloksia. ${results.size} tarjoajalta $puuttuviaYhteensa puuttuvaa tulosta.")
-        Timer.timed(s"Tallennettiin haun $hakuOid puuttuvien tulosten tiedot", 1000) {
-          dao.save(results, hakuOid)
-        }
-      case Failure(e) => logger.error(s"Virhe tallennettaessa haun $hakuOid tuloksia", e)
+  def haeJaTallenna(hakuOids: Seq[HakuOid]): TaustapaivityksenTila = {
+    val tila = dao.findTaustapaivityksenTila match {
+      case TaustapaivityksenTila(_, None, _, _) => dao.saveNewTaustapaivityksenTila(hakuOids.size)
+      case TaustapaivityksenTila(_, _, valmistui: Some[ZonedDateTime], _) => dao.saveNewTaustapaivityksenTila(hakuOids.size)
+      case t@TaustapaivityksenTila(_, kaynnistetty, None, _) if kaynnistetty.exists(_.isBefore(ZonedDateTime.now().minusDays(1))) =>
+        logger.warn(s"Kannasta löytyi tieto epäilyttävän vanhasta kesken olevasta päivityksestä, ei välitetä siitä: $t")
+        dao.saveNewTaustapaivityksenTila(hakuOids.size)
+      case t@TaustapaivityksenTila(_, Some(kaynnistetty), None, existingHakuCount) =>
+        logger.info(s"Päivitys on jo käynnistetty " +
+          s"${existingHakuCount.getOrElse { throw new IllegalStateException() }} haulle $kaynnistetty, ei aloiteta uutta")
+        t.copy(kaynnistettiin = false)
     }
-    s"Initialised searching and storing results for haku $hakuOid"
+
+    if (tila.kaynnistettiin) {
+      val stopWatch = new StopWatch(hakuOids.size + " haun tietojen päivitys")
+      stopWatch.start()
+      val start = System.currentTimeMillis
+      Future.sequence(hakuOids.map { hakuOid =>
+        val f = puuttuvienTulostenKokoaja.kokoaPuuttuvatTulokset(hakuOid)
+        f.onComplete {
+          case Success(results) =>
+            val puuttuviaYhteensa = results.flatMap(_.puuttuvatTulokset.map(_.puuttuvatTulokset.size)).sum
+            logger.info(s"Aletaan tallentaa haun $hakuOid tuloksia. ${results.size} tarjoajalta $puuttuviaYhteensa puuttuvaa tulosta.")
+            Timer.timed(s"Tallennettiin haun $hakuOid puuttuvien tulosten tiedot", 1000) {
+              dao.save(results, hakuOid)
+            }
+          case Failure(e) => logger.error(s"Virhe tallennettaessa haun $hakuOid tuloksia", e)
+        }
+        f
+      }).onComplete(x => {
+        dao.merkitseTaustapaivitysValmiiksi()
+        stopWatch.stop()
+        logger.info(stopWatch.shortSummary())
+      })
+    }
+    tila
   }
 
-  def haeJaTallennaKaikki(paivitaMyosOlemassaolevat: Boolean): String = "TODO"
+  def haeJaTallennaKaikki(paivitaMyosOlemassaolevat: Boolean): TaustapaivityksenTila = {
+    val hakuOidsToUpdate = dao.findHakuOidsToUpdate(paivitaMyosOlemassaolevat)
+    logger.info(s"Löytyi ${hakuOidsToUpdate.size} hakua, joille aletaan hakea tietoja puuttuvista. " +
+      (if (paivitaMyosOlemassaolevat) {
+        "Päivitetään myös olemassaolevat tiedot."
+      } else {
+        "Ei päivitetä tietoja hauille, joille ne jo löytyvät."
+      }))
+    haeJaTallenna(hakuOidsToUpdate)
+  }
 
   def findSummary(): Seq[HaunTiedotListalle] = {
     valintarekisteriDb.runBlocking(dao.findSummary(), Duration(1, MINUTES))
