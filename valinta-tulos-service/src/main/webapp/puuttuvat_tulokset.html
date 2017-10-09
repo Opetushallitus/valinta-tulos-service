@@ -45,6 +45,7 @@
             tarjoajaRow.puuttuvatTulokset.forEach(function(hakukohdeRow) {
               var hakukohdeElement = document.createElement("li");
               var linkToSijoittelunTuloksetElement = document.createElement("a");
+              linkToSijoittelunTuloksetElement.onclick = function(e) { e.stopPropagation(); };
               var puuttuvaTulosText = hakukohdeRow.puuttuvienMaara === 1 ?
                 "1 puuttuva tulos" : hakukohdeRow.puuttuvienMaara + " puuttuvaa tulosta";
               linkToSijoittelunTuloksetElement.appendChild(document.createTextNode(hakukohdeRow.kohteenNimi +
