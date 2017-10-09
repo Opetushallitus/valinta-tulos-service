@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <script type="application/javascript">
       function handleResponse(response) {
-        //document.getElementById('ajaxIndicator').style.visibility = 'hidden';
+        hideAjaxIndicator();
         if (!response.text) {
           console.error('Kutsu palautti virheen', response);
           document.getElementById('response').innerHTML = 'Virhe palvelimelta: ' + response;
@@ -27,6 +27,7 @@
       function loadHakuList() {
         var url = '/valinta-tulos-service/auth/puuttuvat/yhteenveto';
         console.log('About to get from URL ' + url);
+        showAjaxIndicator();
         fetch(url, { method: 'get'})
           .then(handleResponse)
           .then(displayHakuListResponse)
@@ -61,16 +62,24 @@
       }
 
       function loadHakukohdeSpecificDataFor(hakuOid, hakuRowElement) {
+        showAjaxIndicator();
         fetch('/valinta-tulos-service/auth/puuttuvat/haku/' + hakuOid, { method: 'get' })
           .then(handleResponse)
           .then(displaySingleHakuResponse(hakuRowElement))
           .catch(handleResponse);
       }
+
+      function showAjaxIndicator() {
+        document.getElementById('ajaxIndicator').style.visibility = 'visible';
+      }
+      function hideAjaxIndicator() {
+        document.getElementById('ajaxIndicator').style.visibility = 'hidden';
+      }
     </script>
 </head>
 <body onload="loadHakuList();">
 <div>
-    <h3>Haut</h3>
+    <h3>Haut <img id="ajaxIndicator" src="ajax-loader.gif" style="position: absolute; margin: 0; visibility: hidden"/></h3>
     <ul id="haku-list">
     </ul>
 </div>
