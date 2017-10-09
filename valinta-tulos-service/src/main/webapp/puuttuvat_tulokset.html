@@ -34,6 +34,12 @@
           .then(handleResponse)
           .then(displayHakuListResponse)
           .catch(handleResponse);
+        fetch('/valinta-tulos-service/auth/puuttuvat/taustapaivityksenTila')
+          .then(handleResponse)
+          .then(function (responseText) {
+            displayBackgroundUpdateStatus(JSON.parse(responseText));
+          })
+          .catch(handleResponse)
       }
 
       function updateMissingResultsForAllHakus() {
@@ -51,6 +57,7 @@
           .then(handleResponse)
           .then(function(responseText) {
             var taustapaivityksenTila = JSON.parse(responseText);
+            displayBackgroundUpdateStatus(taustapaivityksenTila);
             if (taustapaivityksenTila.kaynnistettiin) {
               showStatus('Käynnistettiin' + statusSuffix);
             } else {
@@ -102,6 +109,16 @@
           .catch(handleResponse);
       }
 
+      function displayBackgroundUpdateStatus(taustapaivityksenTila) {
+        console.log('tpt', taustapaivityksenTila);
+        var finished = taustapaivityksenTila.valmistui;
+        var statusBeginning = taustapaivityksenTila.kaynnistetty ?
+            'Viimeisin päivitys ' + taustapaivityksenTila.hakujenMaara + ' haulle on käynnistetty ' + taustapaivityksenTila.kaynnistetty :
+            'Päivitystä ei ole käynnistetty';
+        var statusText = statusBeginning + (finished ? ' ja valmistui ' + finished : '');
+        document.getElementById('latestBackgroundUpdateStatus').innerText = statusText;
+      }
+
       function showAjaxIndicator() {
         document.getElementById('ajaxIndicator').style.visibility = 'visible';
       }
@@ -117,6 +134,9 @@
 <body onload="loadHakuList();">
 <div>
     <h3>Tiedot puuttuvista tuloksista hauittain <img id="ajaxIndicator" src="ajax-loader.gif" style="position: absolute; margin: 0; visibility: hidden"/></h3>
+    <div>
+        <span id="latestBackgroundUpdateStatus"/>
+    </div>
     <div>
         <span id="statusLine"/>
     </div>

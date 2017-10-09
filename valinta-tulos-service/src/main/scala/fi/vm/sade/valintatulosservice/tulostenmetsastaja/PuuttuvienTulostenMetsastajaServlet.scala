@@ -70,6 +70,12 @@ class PuuttuvienTulostenMetsastajaServlet(valintarekisteriDb: ValintarekisteriDb
     Ok(puuttuvatTuloksetService.haeJaTallennaKaikki(paivitaMyosOlemassaolevat))
   }
 
+  val taustapaivityksenTilaSwagger : OperationBuilder = apiOperation[TaustapaivityksenTila]("Lue taustapäivityksen tila")
+  get("/taustapaivityksenTila", operation(taustapaivityksenTilaSwagger)) {
+    //tarkistaOikeudet()
+    Ok(puuttuvatTuloksetService.haeTaustapaivityksenTila)
+  }
+
   private def parseHakuOid: HakuOid = HakuOid(params.getOrElse("hakuOid",
     throw new IllegalArgumentException("URL-parametri hakuOid on pakollinen.")))
 

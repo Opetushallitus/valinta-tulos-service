@@ -41,6 +41,8 @@ class PuuttuvatTuloksetService(valintarekisteriDb: ValintarekisteriDb, hakemusRe
   private val puuttuvienTulostenKokoaja = new PuuttuvienTulostenKokoaja(valintarekisteriDb, hakemusRepository, hakukohdeLinkCreator)
   private implicit val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
 
+  def haeTaustapaivityksenTila: TaustapaivityksenTila = dao.findTaustapaivityksenTila
+
   def haeJaTallenna(hakuOids: Seq[HakuOid]): TaustapaivityksenTila = {
     val tila = dao.findTaustapaivityksenTila match {
       case TaustapaivityksenTila(_, None, _, _) => dao.saveNewTaustapaivityksenTila(hakuOids.size)
