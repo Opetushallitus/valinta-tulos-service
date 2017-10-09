@@ -57,6 +57,20 @@ class PuuttuvienTulostenMetsastajaServlet(valintarekisteriDb: ValintarekisteriDb
     Ok(puuttuvatTuloksetService.findMissingResultsByOrganisation(HakuOid(params("hakuOid"))))
   }
 
+  val paivitaKaikkiSwagger : OperationBuilder = (apiOperation[String]("Käynnistetään puuttuvien tuloksien haku kaikille hauille")
+      parameter bodyParam[Boolean]("paivitaMyosOlemassaolevat").description("Päivitetäänkö myös hauille, joilta löytyy jo tieto puuttuvista"))
+  post("/paivitaKaikki", operation(paivitaKaikkiSwagger)) {
+    //tarkistaOikeudet()
+    var paivitaMyosOlemassaolevat = (parsedBody \ "paivitaMyosOlemassaolevat").extract[Boolean]
+    logger.info("Käynnistetään puuttuvien tulosten etsiminen " + (if (paivitaMyosOlemassaolevat) {
+        "kaikille hauille."
+      } else {
+        "hauille, joilta ei löydy tietoa puuttuvista."
+      }))
+    val message = puuttuvatTuloksetService.haeJaTallennaKaikki(paivitaMyosOlemassaolevat)
+    Ok(Map("message" -> message))
+  }
+
   private def parseHakuOid: HakuOid = HakuOid(params.getOrElse("hakuOid",
     throw new IllegalArgumentException("URL-parametri hakuOid on pakollinen.")))
 

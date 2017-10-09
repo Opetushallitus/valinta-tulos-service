@@ -50,6 +50,8 @@ class PuuttuvatTuloksetService(valintarekisteriDb: ValintarekisteriDb, hakemusRe
     s"Initialised searching and storing results for haku $hakuOid"
   }
 
+  def haeJaTallennaKaikki(paivitaMyosOlemassaolevat: Boolean): String = "TODO"
+
   def findSummary(): Seq[HaunTiedotListalle] = {
     valintarekisteriDb.runBlocking(dao.findSummary(), Duration(1, MINUTES))
   }

@@ -22,15 +22,42 @@
           rowElement.appendChild(document.createTextNode(JSON.stringify(row)));
           list.appendChild(rowElement);
         });
+        showStatus('Hakujen tiedot ladattu ' + new Date());
       }
 
       function loadHakuList() {
+        showStatus('Ladataan kaikkien hakujen tiedot...');
         var url = '/valinta-tulos-service/auth/puuttuvat/yhteenveto';
         console.log('About to get from URL ' + url);
         showAjaxIndicator();
         fetch(url, { method: 'get'})
           .then(handleResponse)
           .then(displayHakuListResponse)
+          .catch(handleResponse);
+      }
+
+      function clearHakuList() {
+        document.getElementById('haku-list').innerHTML = '';
+      }
+
+      function updateMissingResultsForAllHakus() {
+        var paivitaMyosOlemassaolevat = document.getElementById("paivitaMyosOlemassaolevat").checked;
+        var request = {
+          method: 'post',
+          body: JSON.stringify({paivitaMyosOlemassaolevat: paivitaMyosOlemassaolevat}),
+          headers: new Headers({'Content-Type': 'application/json'})
+        };
+        var statusSuffix = paivitaMyosOlemassaolevat ? ' tietojen päivitys puuttuvista tuloksista kaikille hauille.' :
+                  ' tietojen päivitys puuttuvista tuloksista hauille, joille ei vielä löydy tietoa puuttuvista.';
+        showStatus('Käynnistetään' + statusSuffix + '..');
+        showAjaxIndicator();
+        fetch('/valinta-tulos-service/auth/puuttuvat/paivitaKaikki', request)
+          .then(handleResponse)
+          .then(function() {
+            showStatus('Käynnistettiin' + statusSuffix);
+          })
+          .then(clearHakuList)
+          .then(loadHakuList)
           .catch(handleResponse);
       }
 
@@ -81,11 +108,24 @@
       function hideAjaxIndicator() {
         document.getElementById('ajaxIndicator').style.visibility = 'hidden';
       }
+
+      function showStatus(text) {
+        document.getElementById('statusLine').innerText = text;
+      }
     </script>
 </head>
 <body onload="loadHakuList();">
 <div>
     <h3>Tiedot puuttuvista tuloksista hauittain <img id="ajaxIndicator" src="ajax-loader.gif" style="position: absolute; margin: 0; visibility: hidden"/></h3>
+    <div>
+        <span id="statusLine"/>
+    </div>
+    <div>
+        <button onclick="updateMissingResultsForAllHakus()">Hae tiedot puuttuvista tuloksista kaikille hauille</button> (tässä voi kestää)
+        <p>
+            <input type="checkbox" id="paivitaMyosOlemassaolevat"/>Päivitä tiedot myös hauille, joilta tiedot jo löytyvät
+        </p>
+    </div>
     <ul id="haku-list">
     </ul>
 </div>
