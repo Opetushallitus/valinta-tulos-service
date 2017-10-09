@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice.tulostenmetsastaja
 
 import java.net.URL
 
+import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
@@ -22,16 +23,18 @@ class PuuttuvienTulostenKokoaja(valintarekisteriDb: ValintarekisteriDb,
       zip(hakemuksiltaLoytyvatHakutoiveet(hakuOid)).map { case (toiveetRekisterista, toiveetHakemuksiltaIterator) =>
       toiveetHakemuksiltaIterator.filterNot(t => toiveetRekisterista.contains((t.hakemusOid, t.hakukotoiveOid)))
     }
-    puuttuvatToiveetHakemuksilta.map(_.toSeq.groupBy(h => (h.tarjoajaOid, h.tarjoajanNimi))).map {
-      tarjoajittain => {
-        tarjoajittain.map {
-          case ((tarjoajaOid, tarjoajanNimi), tulokset) =>
-            val hakukohteidenPuuttuvatTulokset = tulokset.groupBy(t => (t.hakukotoiveOid, t.hakutoiveenNimi)).map {
-              case ((hakukohdeOid, hakukohteenNimi), hakemustenTulokset) =>
-                val urlToSijoittelunTulokset = hakukohdeLinkCreator.createHakukohdeLink(hakuOid, hakukohdeOid)
-                HakukohteenPuuttuvat(hakukohdeOid, hakukohteenNimi, new URL(urlToSijoittelunTulokset), hakemustenTulokset)
-            }
-            TarjoajanPuuttuvat(tarjoajaOid, tarjoajanNimi, hakukohteidenPuuttuvatTulokset.toSeq)
+    Timer.timed(s"Retrieving and processing hakemus data for haku $hakuOid", 5000) {
+      puuttuvatToiveetHakemuksilta.map(_.toSeq.groupBy(h => (h.tarjoajaOid, h.tarjoajanNimi))).map {
+        tarjoajittain => {
+          tarjoajittain.map {
+            case ((tarjoajaOid, tarjoajanNimi), tulokset) =>
+              val hakukohteidenPuuttuvatTulokset = tulokset.groupBy(t => (t.hakukotoiveOid, t.hakutoiveenNimi)).map {
+                case ((hakukohdeOid, hakukohteenNimi), hakemustenTulokset) =>
+                  val urlToSijoittelunTulokset = hakukohdeLinkCreator.createHakukohdeLink(hakuOid, hakukohdeOid)
+                  HakukohteenPuuttuvat(hakukohdeOid, hakukohteenNimi, new URL(urlToSijoittelunTulokset), hakemustenTulokset)
+              }
+              TarjoajanPuuttuvat(tarjoajaOid, tarjoajanNimi, hakukohteidenPuuttuvatTulokset.toSeq)
+          }
         }
       }
     }
