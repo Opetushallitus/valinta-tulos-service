@@ -157,9 +157,14 @@ function displayBackgroundUpdateStatus(taustapaivityksenTila) {
 
 function handleResponse(response) {
   markAjaxRequestFinished();
-  if (!response.text) {
+  if (response.status !== 200) {
+    showStatus('Palvelimelta palasi virhekoodi ' + response.status);
+    if (response.status === 401) {
+      window.location.replace('/valinta-tulos-service/auth/login');
+    }
+  } else if (!response.text) {
     console.error('Kutsu palautti virheen', response);
-    document.getElementById('response').innerHTML = 'Virhe palvelimelta: ' + response;
+    showStatus('Virhe palvelimelta: ' + response);
     return;
   }
   return response.text();
@@ -177,6 +182,7 @@ function showStatus(text) {
 }
 
 function puuttuvatFetch(url, request) {
+  request.credentials = 'same-origin';
   showAjaxIndicator();
   puuttuvatAjaxCounter = puuttuvatAjaxCounter + 1;
   return fetch(url, request);

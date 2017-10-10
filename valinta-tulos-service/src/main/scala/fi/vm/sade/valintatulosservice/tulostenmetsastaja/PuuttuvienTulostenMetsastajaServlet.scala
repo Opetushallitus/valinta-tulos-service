@@ -35,7 +35,7 @@ class PuuttuvienTulostenMetsastajaServlet(valintarekisteriDb: ValintarekisteriDb
     summary "Etsi sellaiset hakemuksilta löytyvät hakutoiveet, joille ei löydy tulosta valintarekisteristä, ja tallenna tulos kirjanpitoon"
     parameter bodyParam[Seq[String]]("hakuOids").description("Hakujen OIDit"))
   post("/", operation(puuttuvatTuloksetHauilleTaustallaSwagger)) {
-    //tarkistaOikeudet()
+    tarkistaOikeudet()
     val hakuOids = parsedBody.extract[Seq[String]].map(HakuOid)
     logger.info(s"Haetaan hakuOideille $hakuOids")
 
@@ -45,7 +45,7 @@ class PuuttuvienTulostenMetsastajaServlet(valintarekisteriDb: ValintarekisteriDb
   val hakuListaSwagger: OperationBuilder = (apiOperation[Seq[HaunTiedotListalle]]("Yhteenveto kaikista hauista")
     summary "Listaa kaikki haut ja yhteenveto niiden puuttuvista tiedoista")
   get("/yhteenveto", operation(hakuListaSwagger)) {
-    // tarkistaOikeudet()
+    tarkistaOikeudet()
     Ok(puuttuvatTuloksetService.findSummary())
   }
 
@@ -53,14 +53,14 @@ class PuuttuvienTulostenMetsastajaServlet(valintarekisteriDb: ValintarekisteriDb
     summary "Organisaation puuttuvien tulosten määrät hakukohteittain"
     parameter pathParam[String]("hakuOid").description("Haun OID"))
   get("/haku/:hakuOid", operation(haunPuuttuvatSwagger)) {
-    // tarkistaOikeudet()
+    tarkistaOikeudet()
     Ok(puuttuvatTuloksetService.findMissingResultsByOrganisation(HakuOid(params("hakuOid"))))
   }
 
   val paivitaKaikkiSwagger : OperationBuilder = (apiOperation[TaustapaivityksenTila]("Käynnistetään puuttuvien tuloksien haku kaikille hauille")
       parameter bodyParam[Boolean]("paivitaMyosOlemassaolevat").description("Päivitetäänkö myös hauille, joilta löytyy jo tieto puuttuvista"))
   post("/paivitaKaikki", operation(paivitaKaikkiSwagger)) {
-    //tarkistaOikeudet()
+    tarkistaOikeudet()
     var paivitaMyosOlemassaolevat = (parsedBody \ "paivitaMyosOlemassaolevat").extract[Boolean]
     logger.info("Käynnistetään puuttuvien tulosten etsiminen " + (if (paivitaMyosOlemassaolevat) {
         "kaikille hauille."
@@ -72,7 +72,7 @@ class PuuttuvienTulostenMetsastajaServlet(valintarekisteriDb: ValintarekisteriDb
 
   val taustapaivityksenTilaSwagger : OperationBuilder = apiOperation[TaustapaivityksenTila]("Lue taustapäivityksen tila")
   get("/taustapaivityksenTila", operation(taustapaivityksenTilaSwagger)) {
-    //tarkistaOikeudet()
+    tarkistaOikeudet()
     Ok(puuttuvatTuloksetService.haeTaustapaivityksenTila)
   }
 
