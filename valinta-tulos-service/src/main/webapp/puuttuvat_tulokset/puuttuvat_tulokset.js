@@ -1,5 +1,7 @@
+var puuttuvatAjaxCounter = 0;
+
 function handleResponse(response) {
-  hideAjaxIndicator();
+  markAjaxRequestFinished();
   if (!response.text) {
     console.error('Kutsu palautti virheen', response);
     document.getElementById('response').innerHTML = 'Virhe palvelimelta: ' + response;
@@ -20,7 +22,7 @@ function createSingleHakuUpdatingInputsFor(hakuOid) {
       body: JSON.stringify([ hakuOid ]),
       headers: new Headers({'Content-Type': 'application/json'})
     };
-    fetch('/valinta-tulos-service/auth/puuttuvat/', request)
+    puuttuvatFetch('/valinta-tulos-service/auth/puuttuvat/', request)
       .then(handleResponse)
       .then(function(responseText) {
         var taustapaivityksenTila = JSON.parse(responseText);
@@ -70,11 +72,11 @@ function loadHakuList() {
   var url = '/valinta-tulos-service/auth/puuttuvat/yhteenveto';
   console.log('About to get from URL ' + url);
   showAjaxIndicator();
-  fetch(url, { method: 'get'})
+  puuttuvatFetch(url, { method: 'get'})
     .then(handleResponse)
     .then(displayHakuListResponse)
     .catch(handleResponse);
-  fetch('/valinta-tulos-service/auth/puuttuvat/taustapaivityksenTila')
+  puuttuvatFetch('/valinta-tulos-service/auth/puuttuvat/taustapaivityksenTila')
     .then(handleResponse)
     .then(function (responseText) {
       displayBackgroundUpdateStatus(JSON.parse(responseText));
@@ -93,7 +95,7 @@ function updateMissingResultsForAllHakus() {
             ' tietojen päivitys puuttuvista tuloksista hauille, joille ei vielä löydy tietoa puuttuvista.';
   showStatus('Käynnistetään' + statusSuffix + '..');
   showAjaxIndicator();
-  fetch('/valinta-tulos-service/auth/puuttuvat/paivitaKaikki', request)
+  puuttuvatFetch('/valinta-tulos-service/auth/puuttuvat/paivitaKaikki', request)
     .then(handleResponse)
     .then(function(responseText) {
       var taustapaivityksenTila = JSON.parse(responseText);
@@ -145,7 +147,7 @@ function createTarjoajaElement(tarjoajaRow) {
 
 function loadHakukohdeSpecificDataFor(hakuOid, hakuRowElement) {
   showAjaxIndicator();
-  fetch('/valinta-tulos-service/auth/puuttuvat/haku/' + hakuOid, { method: 'get' })
+  puuttuvatFetch('/valinta-tulos-service/auth/puuttuvat/haku/' + hakuOid, { method: 'get' })
     .then(handleResponse)
     .then(displaySingleHakuResponse(hakuOid, hakuRowElement))
     .catch(handleResponse);
@@ -169,4 +171,17 @@ function hideAjaxIndicator() {
 
 function showStatus(text) {
   document.getElementById('statusLine').innerText = text;
+}
+
+function puuttuvatFetch(url, request) {
+  showAjaxIndicator();
+  puuttuvatAjaxCounter = puuttuvatAjaxCounter + 1;
+  return fetch(url, request);
+}
+
+function markAjaxRequestFinished() {
+  puuttuvatAjaxCounter = puuttuvatAjaxCounter - 1;
+  if (puuttuvatAjaxCounter < 1) {
+    hideAjaxIndicator();
+  }
 }
