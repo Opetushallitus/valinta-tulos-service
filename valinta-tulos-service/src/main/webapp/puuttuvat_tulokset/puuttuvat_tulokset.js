@@ -36,7 +36,9 @@ function displayHakuListResponse(responseText) {
     var hakuRowText = 'Haku ' + row.hakuOid + ' : myöhäisin koulutuksen alkamiskausi ' + row.myohaisinKoulutuksenAlkamiskausi +
       ' , hakukohteita kaikkiaan ' + row.hakukohteidenLkm + ' , puuttuvat tarkistettu ' + row.tarkistettu + ', ' +
       'puuttuvia tuloksia yhteensä ' + (row.haunPuuttuvienMaara || 0);
-    rowElement.appendChild(document.createTextNode(hakuRowText));
+    var hakuRowTextSpan = document.createElement('span');
+    hakuRowTextSpan.appendChild(document.createTextNode(hakuRowText));
+    rowElement.appendChild(hakuRowTextSpan);
     rowElement.appendChild(createSingleHakuUpdatingInputsFor(row.hakuOid));
     list.appendChild(rowElement);
   });

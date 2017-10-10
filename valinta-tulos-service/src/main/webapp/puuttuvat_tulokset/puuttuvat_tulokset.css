@@ -6,6 +6,10 @@
     position: relative; top: 200px;
 }
 
+#haku-list li.clickable span {
+    color: -webkit-link;
+}
+
 .ajax-indicator {
     position: absolute; margin: 0; visibility: hidden;
 }
@@ -24,3 +28,7 @@
 .clickable {
     cursor: pointer;
 }
+.clickable span:hover,a:hover {
+    background-color: lightyellow;
+}
+
