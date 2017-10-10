@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <link href='css/puuttuvat_tulokset.css' media='screen' rel='stylesheet' type='text/css'/>
     <script type="application/javascript">
       function handleResponse(response) {
         hideAjaxIndicator();
@@ -138,7 +139,7 @@
 </head>
 <body onload="loadHakuList();">
 <div>
-    <h3>Tiedot puuttuvista tuloksista hauittain <img id="ajaxIndicator" src="ajax-loader.gif" style="position: absolute; margin: 0; visibility: hidden"/></h3>
+    <h3>Tiedot puuttuvista tuloksista hauittain <img id="ajaxIndicator" src="ajax-loader.gif" class="ajax-indicator"/></h3>
     <div>
         <span id="latestBackgroundUpdateStatus"/>
     </div>
