@@ -14,6 +14,37 @@
         return response.text();
       }
 
+      function createSingleHakuUpdatingInputsFor(hakuOid) {
+        var wrapper = document.createElement("div");
+        wrapper.classList.add('update-haku');
+        var updateButton = document.createElement("button");
+        updateButton.innerText = 'Päivitä haun tiedot puuttuvista';
+        updateButton.onclick = function(e) {
+          e.stopPropagation();
+          var request = {
+            method: 'post',
+            body: JSON.stringify([ hakuOid ]),
+            headers: new Headers({'Content-Type': 'application/json'})
+          };
+          fetch('/valinta-tulos-service/auth/puuttuvat/', request)
+            .then(handleResponse)
+            .then(function(responseText) {
+              var taustapaivityksenTila = JSON.parse(responseText);
+              displayBackgroundUpdateStatus(taustapaivityksenTila);
+              if (taustapaivityksenTila.kaynnistettiin) {
+                showStatus('Käynnistettiin taustapäivitys haulle ' + hakuOid);
+              } else {
+                showStatus('Ei käynnistetty taustapäivitystä haulle ' + hakuOid + ', koska se on jo käynnistetty ' +
+                  taustapaivityksenTila.kaynnistetty + ' ' + taustapaivityksenTila.hakujenMaara + ' haulle.');
+              }
+            })
+            .catch(handleResponse);
+          wrapper.appendChild(document.createTextNode('Käynnistettiin päivitys ' + new Date()));
+        };
+        wrapper.appendChild(updateButton);
+        return wrapper;
+      }
+
       function displayHakuListResponse(responseText) {
         var list = document.getElementById('haku-list');
         var parsedResponse = JSON.parse(responseText);
@@ -24,7 +55,7 @@
             rowElement.classList.add('clickable');
           }
           rowElement.onclick = function() {
-            if (rowElement.childElementCount === 0) {
+            if (rowElement.getElementsByClassName('tarjoaja-list').length === 0) {
               loadHakukohdeSpecificDataFor(row.hakuOid, rowElement);
             } else {
               rowElement.removeChild(rowElement.getElementsByTagName('ul')[0]);
@@ -34,6 +65,7 @@
             ' , hakukohteita kaikkiaan ' + row.hakukohteidenLkm + ' , puuttuvat tarkistettu ' + row.tarkistettu + ', ' +
             'puuttuvia tuloksia yhteensä ' + (row.haunPuuttuvienMaara || 0);
           rowElement.appendChild(document.createTextNode(hakuRowText));
+          rowElement.appendChild(createSingleHakuUpdatingInputsFor(row.hakuOid));
           list.appendChild(rowElement);
         });
         showStatus('Hakujen tiedot ladattu ' + new Date());
@@ -82,15 +114,17 @@
           .catch(handleResponse);
       }
 
-      function displaySingleHakuResponse(hakuRowElement) {
+      function displaySingleHakuResponse(hakuOid, hakuRowElement) {
         return function(responseText) {
           var parsedResponse = JSON.parse(responseText);
           var tarjoajaList = document.createElement("ul");
+          tarjoajaList.classList.add("tarjoaja-list");
           hakuRowElement.appendChild(tarjoajaList);
           parsedResponse.forEach(function(tarjoajaRow) {
             tarjoajaList.appendChild(createTarjoajaElement(tarjoajaRow));
           });
-        }
+        };
+
       }
 
       function createTarjoajaElement(tarjoajaRow) {
@@ -119,7 +153,7 @@
         showAjaxIndicator();
         fetch('/valinta-tulos-service/auth/puuttuvat/haku/' + hakuOid, { method: 'get' })
           .then(handleResponse)
-          .then(displaySingleHakuResponse(hakuRowElement))
+          .then(displaySingleHakuResponse(hakuOid, hakuRowElement))
           .catch(handleResponse);
       }
 
