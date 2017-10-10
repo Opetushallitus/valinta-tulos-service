@@ -11,13 +11,11 @@
 }
 
 .haku-row {
-    list-style: none;
-    margin-bottom: 20px;
+    list-style: none; margin-bottom: 20px;
 }
 
 .background-updater {
-    margin: 20px 0 20px 0;
-    background-color: lightyellow;
+    margin: 20px 0 20px 0; background-color: lightyellow;
 }
 .background-updater input,button {
     margin: 10px;
