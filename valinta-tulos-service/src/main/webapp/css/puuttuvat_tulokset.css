@@ -7,6 +7,14 @@
     margin-bottom: 10px;
 }
 
+.background-updater {
+    margin: 20px 0 20px 0;
+    background-color: lightyellow;
+}
+.background-updater input,button {
+    margin: 10px;
+}
+
 .clickable {
     cursor: pointer;
 }
