@@ -110,7 +110,7 @@ function updateMissingResultsForAllHakus() {
     .catch(handleResponse);
 }
 
-function displaySingleHakuResponse(hakuOid, hakuRowElement) {
+function displaySingleHakuResponse(hakuRowElement) {
   return function(responseText) {
     var parsedResponse = JSON.parse(responseText);
     var tarjoajaList = document.createElement("ul");
@@ -149,7 +149,7 @@ function loadHakukohdeSpecificDataFor(hakuOid, hakuRowElement) {
   showAjaxIndicator();
   puuttuvatFetch('/valinta-tulos-service/auth/puuttuvat/haku/' + hakuOid, { method: 'get' })
     .then(handleResponse)
-    .then(displaySingleHakuResponse(hakuOid, hakuRowElement))
+    .then(displaySingleHakuResponse(hakuRowElement))
     .catch(handleResponse);
 }
 
