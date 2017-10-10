@@ -18,7 +18,13 @@
         var parsedResponse = JSON.parse(responseText);
         parsedResponse.forEach(function(row) {
           var rowElement = document.createElement("li");
-          rowElement.onclick = function() { loadHakukohdeSpecificDataFor(row.hakuOid, rowElement) };
+          rowElement.onclick = function() {
+            if (rowElement.childElementCount === 0) {
+              loadHakukohdeSpecificDataFor(row.hakuOid, rowElement);
+            } else {
+              rowElement.removeChild(rowElement.getElementsByTagName('ul')[0]);
+            }
+          };
           rowElement.appendChild(document.createTextNode(JSON.stringify(row)));
           list.appendChild(rowElement);
         });
