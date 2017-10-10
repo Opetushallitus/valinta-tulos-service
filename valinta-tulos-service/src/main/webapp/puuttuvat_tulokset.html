@@ -19,6 +19,10 @@
         var parsedResponse = JSON.parse(responseText);
         parsedResponse.forEach(function(row) {
           var rowElement = document.createElement("li");
+          rowElement.classList.add('haku-row');
+          if (row.haunPuuttuvienMaara > 0) {
+            rowElement.classList.add('clickable');
+          }
           rowElement.onclick = function() {
             if (rowElement.childElementCount === 0) {
               loadHakukohdeSpecificDataFor(row.hakuOid, rowElement);
@@ -26,7 +30,10 @@
               rowElement.removeChild(rowElement.getElementsByTagName('ul')[0]);
             }
           };
-          rowElement.appendChild(document.createTextNode(JSON.stringify(row)));
+          var hakuRowText = 'Haku ' + row.hakuOid + ' : myöhäisin koulutuksen alkamiskausi ' + row.myohaisinKoulutuksenAlkamiskausi +
+            ' , hakukohteita kaikkiaan ' + row.hakukohteidenLkm + ' , puuttuvat tarkistettu ' + row.tarkistettu + ', ' +
+            'puuttuvia tuloksia yhteensä ' + (row.haunPuuttuvienMaara || 0);
+          rowElement.appendChild(document.createTextNode(hakuRowText));
           list.appendChild(rowElement);
         });
         showStatus('Hakujen tiedot ladattu ' + new Date());
