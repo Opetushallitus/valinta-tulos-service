@@ -23,21 +23,21 @@ function displayHakuListResponse(responseText) {
   parsedResponse.forEach(function(row) {
     var rowElement = document.createElement("li");
     rowElement.classList.add('haku-row');
+    var hakuRowText = 'Haku ' + row.hakuOid + ' : myöhäisin koulutuksen alkamiskausi ' + row.myohaisinKoulutuksenAlkamiskausi +
+      ' , hakukohteita kaikkiaan ' + row.hakukohteidenLkm + ' , puuttuvat tarkistettu ' + row.tarkistettu + ', ' +
+      'puuttuvia tuloksia yhteensä ' + (row.haunPuuttuvienMaara || 0);
+    var hakuRowTextSpan = document.createElement('span');
+    hakuRowTextSpan.appendChild(document.createTextNode(hakuRowText));
     if (row.haunPuuttuvienMaara > 0) {
-      rowElement.classList.add('clickable');
+      hakuRowTextSpan.classList.add('clickable');
     }
-    rowElement.onclick = function() {
+    hakuRowTextSpan.onclick = function() {
       if (rowElement.getElementsByClassName('tarjoaja-list').length === 0) {
         loadHakukohdeSpecificDataFor(row.hakuOid, rowElement);
       } else {
         rowElement.removeChild(rowElement.getElementsByTagName('ul')[0]);
       }
     };
-    var hakuRowText = 'Haku ' + row.hakuOid + ' : myöhäisin koulutuksen alkamiskausi ' + row.myohaisinKoulutuksenAlkamiskausi +
-      ' , hakukohteita kaikkiaan ' + row.hakukohteidenLkm + ' , puuttuvat tarkistettu ' + row.tarkistettu + ', ' +
-      'puuttuvia tuloksia yhteensä ' + (row.haunPuuttuvienMaara || 0);
-    var hakuRowTextSpan = document.createElement('span');
-    hakuRowTextSpan.appendChild(document.createTextNode(hakuRowText));
     rowElement.appendChild(hakuRowTextSpan);
     rowElement.appendChild(createSingleHakuUpdatingInputsFor(row.hakuOid));
     list.appendChild(rowElement);

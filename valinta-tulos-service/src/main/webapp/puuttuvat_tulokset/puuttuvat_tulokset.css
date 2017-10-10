@@ -6,7 +6,7 @@
     position: relative; top: 200px;
 }
 
-#haku-list li.clickable span {
+#haku-list span.clickable {
     color: -webkit-link;
 }
 
@@ -28,7 +28,7 @@
 .clickable {
     cursor: pointer;
 }
-.clickable span:hover,a:hover {
+span.clickable:hover,a:hover {
     background-color: lightyellow;
 }
 
