@@ -10,7 +10,7 @@ import scala.collection.JavaConversions._
 import scala.util.Try
 
 case class DbConfiguration(user: Option[String], password: Option[String], url: String)
-case class AuthenticationConfiguration(since: Date, url: Uri, cas: CasConfiguration)
+case class AuthenticationConfiguration(url: Uri, cas: CasConfiguration)
 case class CasConfiguration(user: String, password: String, host: String)
 case class SchedulerConfiguration(startHour: Option[Long], intervalHours: Option[Long])
 case class Buildversion(version: String, branch: String, commit: String, timestamp: String)
@@ -62,7 +62,6 @@ object Configuration {
 
   def readAuthentication(properties: Properties): AuthenticationConfiguration = {
     AuthenticationConfiguration(
-      getDate(properties, "henkiloviite.duplicatehenkilos.since"),
       getUri(properties, "henkiloviite.duplicatehenkilos.url"),
       readCas(properties)
     )
