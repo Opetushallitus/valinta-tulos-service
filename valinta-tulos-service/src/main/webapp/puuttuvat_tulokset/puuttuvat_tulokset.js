@@ -23,13 +23,20 @@ function displayHakuListResponse(responseText) {
   parsedResponse.forEach(function(row) {
     var rowElement = document.createElement("li");
     rowElement.classList.add('haku-row');
+    var hakuOnTarkistettu = row.tarkistettu;
     var hakuRowText = 'Haku ' + row.hakuOid + ' : myöhäisin koulutuksen alkamiskausi ' + row.myohaisinKoulutuksenAlkamiskausi +
-      ' , hakukohteita kaikkiaan ' + row.hakukohteidenLkm + ' , puuttuvat tarkistettu ' + row.tarkistettu + ', ' +
-      'puuttuvia tuloksia yhteensä ' + (row.haunPuuttuvienMaara || 0);
+      ' , hakukohteita kaikkiaan ' + row.hakukohteidenLkm + ' , ' +
+      (hakuOnTarkistettu ? 'puuttuvat tarkistettu ' + row.tarkistettu : 'puuttuvia ei ole tarkistettu') +
+      (hakuOnTarkistettu ? ' , puuttuvia tuloksia yhteensä ' + (row.haunPuuttuvienMaara || 0) : '');
     var hakuRowTextSpan = document.createElement('span');
     hakuRowTextSpan.appendChild(document.createTextNode(hakuRowText));
-    if (row.haunPuuttuvienMaara > 0) {
+
+    var tuloksiaPuuttuu = row.haunPuuttuvienMaara > 0;
+    if (tuloksiaPuuttuu) {
       hakuRowTextSpan.classList.add('clickable');
+    }
+    if (hakuOnTarkistettu && !tuloksiaPuuttuu) {
+      rowElement.classList.add('ei-loydy-puuttuvia');
     }
     hakuRowTextSpan.onclick = function() {
       if (rowElement.getElementsByClassName('tarjoaja-list').length === 0) {
@@ -153,6 +160,14 @@ function displayBackgroundUpdateStatus(taustapaivityksenTila) {
       'Päivitystä ei ole käynnistetty';
   var statusText = statusBeginning + (finished ? ' ja valmistui ' + finished : '');
   document.getElementById('latestBackgroundUpdateStatus').innerText = statusText;
+}
+
+function toggleShowingHakusWithNoMissingData() {
+  var rowsOfHakusThatAreOk = document.getElementsByClassName('ei-loydy-puuttuvia');
+  for (var i = 0; i < rowsOfHakusThatAreOk.length; i++) {
+    var row = rowsOfHakusThatAreOk[i];
+    row.style.display = (row.style.display === 'block' ? '' : 'block');
+  }
 }
 
 function handleResponse(response) {

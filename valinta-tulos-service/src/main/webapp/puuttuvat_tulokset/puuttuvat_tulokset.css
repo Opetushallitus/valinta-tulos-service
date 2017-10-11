@@ -18,6 +18,11 @@
     list-style: none; margin-bottom: 20px;
 }
 
+.ei-loydy-puuttuvia {
+    background-color: lightgreen;
+    display: none;
+}
+
 .background-updater {
     margin: 20px 0 20px 0; background-color: lightyellow;
 }
