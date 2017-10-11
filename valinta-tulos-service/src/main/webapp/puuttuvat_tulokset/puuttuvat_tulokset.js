@@ -197,6 +197,7 @@ function showStatus(text) {
 }
 
 function puuttuvatFetch(url, request) {
+  request = (request ? request : {});
   request.credentials = 'same-origin';
   showAjaxIndicator();
   puuttuvatAjaxCounter = puuttuvatAjaxCounter + 1;
