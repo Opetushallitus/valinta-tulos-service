@@ -18,7 +18,8 @@ import slick.sql.SqlAction
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
-class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb, hakemusRepository: HakemusRepository,
+class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb,
+                           hakemusRepository: HakemusRepository,
                            hakukohdeLinkCreator: SijoittelunTuloksetLinkCreator) extends Logging {
   private implicit val getTimestampResultAsZonedDateTime: GetResult[ZonedDateTime] = GetResult(r => {
     timestampToZonedDateTime(r.nextTimestamp())

@@ -16,8 +16,11 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
 
-case class HaunTiedotListalle(hakuOid: HakuOid, myohaisinKoulutuksenAlkamiskausi: Kausi, hakukohteidenLkm: Int,
-                              tarkistettu: Option[ZonedDateTime], haunPuuttuvienMaara: Option[Int])
+case class HaunTiedotListalle(hakuOid: HakuOid,
+                              myohaisinKoulutuksenAlkamiskausi: Kausi,
+                              hakukohteidenLkm: Int,
+                              tarkistettu: Option[ZonedDateTime],
+                              haunPuuttuvienMaara: Option[Int])
 
 case class HaunPuuttuvat[T <: HakukohteenPuuttuvatBase](hakuOid: HakuOid, puuttuvatTulokset: Seq[TarjoajanPuuttuvat[T]])
 case class TarjoajanPuuttuvat[T <: HakukohteenPuuttuvatBase](tarjoajaOid: TarjoajaOid, tarjoajanNimi: String, puuttuvatTulokset: Seq[T])
@@ -26,11 +29,20 @@ trait HakukohteenPuuttuvatBase {
   def kohteenNimi: String
   def kohteenValintaUiUrl: URL
 }
-case class HakukohteenPuuttuvat(override val hakukohdeOid: HakukohdeOid, override val kohteenNimi: String,
-                                override val kohteenValintaUiUrl: URL, puuttuvatTulokset: Seq[HakutoiveTulosHakemuksella]) extends HakukohteenPuuttuvatBase
-case class HakukohteenPuuttuvatSummary(override val hakukohdeOid: HakukohdeOid, override val kohteenNimi: String,
-                                       override val kohteenValintaUiUrl: URL, puuttuvienMaara: Int) extends HakukohteenPuuttuvatBase
-case class HakutoiveTulosHakemuksella(hakijaOid: Option[HakijaOid], hakemusOid: HakemusOid, hakukotoiveOid: HakukohdeOid, hakutoiveenNimi: String, tarjoajaOid: TarjoajaOid, tarjoajanNimi: String)
+case class HakukohteenPuuttuvat(override val hakukohdeOid: HakukohdeOid,
+                                override val kohteenNimi: String,
+                                override val kohteenValintaUiUrl: URL,
+                                puuttuvatTulokset: Seq[HakutoiveTulosHakemuksella]) extends HakukohteenPuuttuvatBase
+case class HakukohteenPuuttuvatSummary(override val hakukohdeOid: HakukohdeOid,
+                                       override val kohteenNimi: String,
+                                       override val kohteenValintaUiUrl: URL,
+                                       puuttuvienMaara: Int) extends HakukohteenPuuttuvatBase
+case class HakutoiveTulosHakemuksella(hakijaOid: Option[HakijaOid],
+                                      hakemusOid: HakemusOid,
+                                      hakukotoiveOid: HakukohdeOid,
+                                      hakutoiveenNimi: String,
+                                      tarjoajaOid: TarjoajaOid,
+                                      tarjoajanNimi: String)
 case class HakutoiveTulosRekisterissa(hakemusOid: HakemusOid, hakutoiveOid: HakukohdeOid)
 
 case class TaustapaivityksenTila(kaynnistettiin: Boolean, kaynnistetty: Option[ZonedDateTime], valmistui: Option[ZonedDateTime], hakujenMaara: Option[Int])
