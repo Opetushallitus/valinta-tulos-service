@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.hakemus
 
-import com.mongodb.casbah.Imports.MongoDBObject
+import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.{Imports, commons}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
