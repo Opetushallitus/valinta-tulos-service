@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.local
 
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
-import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
+import fi.vm.sade.valintatulosservice.hakemus.{HakemusRepository, HakuAppRepository}
 import fi.vm.sade.valintatulosservice.sijoittelu._
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
@@ -410,8 +410,11 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
   lazy val hakijaDtoClient = new ValintarekisteriHakijaDTOClientImpl(raportointiService, sijoittelunTulosClient, valintarekisteriDb)
   lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb,
     hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, hakijaDtoClient)
-  lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService, valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository())
-  lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService, valintarekisteriDb, valintarekisteriDb)
+  lazy val hakemusRepository = new HakemusRepository(new HakuAppRepository())
+  lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService,
+    valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, hakemusRepository)
+  lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService,
+    valintarekisteriDb, valintarekisteriDb)
 
   private def hakemuksenTulos: Hakemuksentulos = valintatulosService.hakemuksentulos(hakemusOid).get
 
