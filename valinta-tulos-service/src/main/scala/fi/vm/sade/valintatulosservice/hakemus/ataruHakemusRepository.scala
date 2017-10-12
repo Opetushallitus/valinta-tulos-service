@@ -16,7 +16,7 @@ case class AtaruHakemus(oid: HakemusOid,
 
 class AtaruHakemusRepository(config: OphProperties) {
   def getHakemukset(hakuOid: HakuOid): Either[Throwable, Haku] = {
-    val url = config.ophProperties.url("ataru-service.applications", hakuOid)
+    val url = config.url("ataru-service.applications", hakuOid)
     HttpHelper.fetch(url) { response =>
       val hakemukset: List[AtaruHakemus] = (parse(response) \ "result").extract[List[AtaruHakemus]]
     }.left.map {

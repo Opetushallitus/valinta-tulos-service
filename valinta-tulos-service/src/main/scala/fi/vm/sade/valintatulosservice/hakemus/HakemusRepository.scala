@@ -5,7 +5,9 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain.Hakemus
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
 
-class HakemusRepository(hakuAppRepository: HakuAppRepository)(implicit appConfig: VtsAppConfig) extends Logging {
+class HakemusRepository(hakuAppRepository: HakuAppRepository,
+                        ataruHakemusRepository: AtaruHakemusRepository)
+                       (implicit appConfig: VtsAppConfig) extends Logging {
 
     def findPersonOids(hakuOid: HakuOid): Map[HakemusOid, String] = {
     hakuAppRepository.findPersonOids(hakuOid)
