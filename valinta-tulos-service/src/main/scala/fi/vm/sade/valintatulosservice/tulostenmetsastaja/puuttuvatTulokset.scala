@@ -57,8 +57,10 @@ class PuuttuvatTuloksetService(valintarekisteriDb: ValintarekisteriDb, hakemusRe
 
   def haeJaTallenna(hakuOids: Seq[HakuOid]): TaustapaivityksenTila = {
     val tila = dao.findTaustapaivityksenTila match {
-      case TaustapaivityksenTila(_, None, _, _) => dao.saveNewTaustapaivityksenTila(hakuOids.size)
-      case TaustapaivityksenTila(_, _, valmistui: Some[ZonedDateTime], _) => dao.saveNewTaustapaivityksenTila(hakuOids.size)
+      case TaustapaivityksenTila(_, None, _, _) =>
+        dao.saveNewTaustapaivityksenTila(hakuOids.size)
+      case TaustapaivityksenTila(_, _, valmistui: Some[ZonedDateTime], _) =>
+        dao.saveNewTaustapaivityksenTila(hakuOids.size)
       case t@TaustapaivityksenTila(_, kaynnistetty, None, _) if kaynnistetty.exists(_.isBefore(ZonedDateTime.now().minusDays(1))) =>
         logger.warn(s"Kannasta löytyi tieto epäilyttävän vanhasta kesken olevasta päivityksestä, ei välitetä siitä: $t")
         dao.saveNewTaustapaivityksenTila(hakuOids.size)

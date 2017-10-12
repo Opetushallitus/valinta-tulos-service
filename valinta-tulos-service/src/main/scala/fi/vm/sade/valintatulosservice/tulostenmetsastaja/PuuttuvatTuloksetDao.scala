@@ -36,7 +36,8 @@ class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb,
           val uusiTila = TaustapaivityksenTila(kaynnistettiin = true, Some(startTime), None, Some(hakuCount))
           logger.info(s"Tallennettiin $uusiTila")
           uusiTila
-        case Right(n) => throw new RuntimeException(s"Odotettiin 1 rivin päivittyvän, mutta $n päivittyi. Vaikuttaa bugilta.")
+        case Right(n) =>
+          throw new RuntimeException(s"Odotettiin 1 rivin päivittyvän, mutta $n päivittyi. Vaikuttaa bugilta.")
         case Left(e) =>
           logger.error("Virhe tallennettaessa taustapäivityksen tilaa", e)
           throw e
@@ -50,9 +51,11 @@ class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb,
   def findTaustapaivityksenTila: TaustapaivityksenTila = valintarekisteriDb.runBlocking(findTaustapaivityksenTilaAction, shortTimeout)
 
   private def findTaustapaivityksenTilaAction: DBIO[TaustapaivityksenTila] = {
-    sql"select kaynnistetty, valmistui, hakujen_maara from puuttuvat_tulokset_taustapaivityksen_tila".
+    sql"SELECT kaynnistetty, valmistui, hakujen_maara FROM puuttuvat_tulokset_taustapaivityksen_tila".
       as[(Option[Timestamp], Option[Timestamp], Option[Int])].map(_.head).map { case (kaynnistetty, valmistui, hakujenMaara) =>
-      TaustapaivityksenTila(kaynnistettiin = false, kaynnistetty.map(timestampToZonedDateTime), valmistui.map(timestampToZonedDateTime), hakujenMaara)
+        TaustapaivityksenTila(kaynnistettiin = false,
+          kaynnistetty = kaynnistetty.map(timestampToZonedDateTime),
+          valmistui = valmistui.map(timestampToZonedDateTime), hakujenMaara = hakujenMaara)
     }
   }
 
