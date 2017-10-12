@@ -1,4 +1,4 @@
-package fi.vm.sade.valintatulosservice.valintarekisteri
+package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.utils.http.DefaultHttpClient
 import org.json4s.jackson.JsonMethods.parse
