@@ -6,7 +6,7 @@ import com.mongodb.casbah.Imports.{$and, MongoDBObject, _}
 import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.domain.Hakemus
-import fi.vm.sade.valintatulosservice.hakemus.{DatabaseKeys, HakemusRepository}
+import fi.vm.sade.valintatulosservice.hakemus.{DatabaseKeys, HakemusRepository, HakuAppRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.apache.commons.lang3.StringUtils
@@ -18,7 +18,7 @@ import scala.concurrent.Future
  * Etsitään hakutoiveet hakemuksilta ja tarkistetaan, miltä kaikilta niistä puuttuu tulos Valintarekisteristä.
  */
 class PuuttuvienTulostenKokoaja(valintarekisteriDb: ValintarekisteriDb,
-                                hakemusRepository: HakemusRepository,
+                                hakemusRepository: HakuAppRepository,
                                 hakukohdeLinkCreator: SijoittelunTuloksetLinkCreator) extends Logging {
   private val hakemusStatesToInclude = Array("ACTIVE", "INCOMPLETE")
 
