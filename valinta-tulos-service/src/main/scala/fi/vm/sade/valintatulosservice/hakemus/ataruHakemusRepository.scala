@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.hakemus
 import fi.vm.sade.properties.OphProperties
 import fi.vm.sade.valintatulosservice.HttpHelper
 import fi.vm.sade.valintatulosservice.domain.Henkilotiedot
-import fi.vm.sade.valintatulosservice.tarjonta.Haku
+import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.jackson.JsonMethods._
 
@@ -14,7 +14,7 @@ case class AtaruHakemus(oid: HakemusOid,
                         hakukohteet: List[String],
                         henkilotiedot: Henkilotiedot)
 
-class AtaruHakemusRepository(config: OphProperties) {
+class AtaruHakemusRepository(config: OphProperties) extends JsonFormats{
   def getHakemukset(hakuOid: HakuOid): Either[Throwable, Haku] = {
     val url = config.url("ataru-service.applications", hakuOid)
     HttpHelper.fetch(url) { response =>
