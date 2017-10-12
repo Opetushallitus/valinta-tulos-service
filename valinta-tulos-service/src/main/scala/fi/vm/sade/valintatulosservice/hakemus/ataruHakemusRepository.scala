@@ -1,9 +1,9 @@
 package fi.vm.sade.valintatulosservice.hakemus
 
 import fi.vm.sade.properties.OphProperties
+import fi.vm.sade.valintatulosservice.HttpHelper
 import fi.vm.sade.valintatulosservice.domain.Henkilotiedot
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
-import fi.vm.sade.valintatulosservice.valintarekisteri.HttpHelper
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.jackson.JsonMethods._
 
