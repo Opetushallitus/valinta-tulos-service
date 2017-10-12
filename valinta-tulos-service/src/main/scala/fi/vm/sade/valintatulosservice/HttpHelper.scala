@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.utils.http.DefaultHttpClient
+import org.json4s.DefaultFormats
 import org.json4s.jackson.JsonMethods.parse
 
 import scala.util.Try
@@ -8,6 +9,8 @@ import scala.util.control.NonFatal
 import scalaj.http.HttpOptions
 
 object HttpHelper {
+  implicit val jsonFormats = DefaultFormats
+
   private def parseStatus(json: String): Option[String] = {
     for {
       status <- (parse(json) \ "status").extractOpt[String]
