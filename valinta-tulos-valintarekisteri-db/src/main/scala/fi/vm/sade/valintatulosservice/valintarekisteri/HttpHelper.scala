@@ -7,7 +7,7 @@ import scala.util.Try
 import scala.util.control.NonFatal
 import scalaj.http.HttpOptions
 
-trait HttpHelper {
+object HttpHelper {
   private def parseStatus(json: String): Option[String] = {
     for {
       status <- (parse(json) \ "status").extractOpt[String]
