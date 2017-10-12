@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.tulostenmetsastaja
 
 import fi.vm.sade.security.AuthorizationFailedException
-import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
+import fi.vm.sade.valintatulosservice.hakemus.{HakemusRepository, HakuAppRepository}
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
@@ -14,7 +14,7 @@ import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.{ActionResult, Forbidden, Found, Ok}
 
 class PuuttuvienTulostenMetsastajaServlet(valintarekisteriDb: ValintarekisteriDb,
-                                          hakemusRepository: HakemusRepository,
+                                          hakemusRepository: HakuAppRepository,
                                           virkailijaBaseUrl: String)
                                          (implicit val swagger: Swagger) extends VtsServletBase with CasAuthenticatedServlet {
   override implicit val jsonFormats: Formats = JsonFormats.jsonFormats ++ Oids.getSerializers() ++ Seq(new UrlSerializer)

@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MINUTES
 
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
+import fi.vm.sade.valintatulosservice.hakemus.{HakemusRepository, HakuAppRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, Kausi, TarjoajaOid}
 import slick.dbio.DBIO
@@ -19,7 +19,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
 class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb,
-                           hakemusRepository: HakemusRepository,
+                           hakemusRepository: HakuAppRepository,
                            hakukohdeLinkCreator: SijoittelunTuloksetLinkCreator) extends Logging {
   private implicit val getTimestampResultAsZonedDateTime: GetResult[ZonedDateTime] = GetResult(r => {
     timestampToZonedDateTime(r.nextTimestamp())
