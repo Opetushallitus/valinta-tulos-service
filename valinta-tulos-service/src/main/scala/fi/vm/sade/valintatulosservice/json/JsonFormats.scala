@@ -2,10 +2,10 @@ package fi.vm.sade.valintatulosservice.json
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import fi.vm.sade.utils.json4s.GenericJsonFormats
+import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusSerializer
-import fi.vm.sade.valintatulosservice._
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOidSerializer, HakuOidSerializer, HakukohdeOidSerializer, ValintatapajonoOidSerializer}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.Formats
 import org.json4s.ext.EnumNameSerializer
 
@@ -25,7 +25,8 @@ object JsonFormats {
     new HakukohdeOidSerializer,
     new ValintatapajonoOidSerializer,
     new HakemusOidSerializer,
-    new KausiSerializer
+    new KausiSerializer,
+    new HakijaOidSerializer
   )
   val jsonFormats: Formats = GenericJsonFormats.genericFormats ++ customSerializers
 
