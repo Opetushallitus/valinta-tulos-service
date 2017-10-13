@@ -1,7 +1,10 @@
 package fi.vm.sade.valintatulosservice
 
+import java.util.concurrent.ConcurrentHashMap
+
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.hakemus.AtaruHakemus
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
 import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtures
@@ -10,6 +13,10 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriD
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 import org.scalatra.ScalatraServlet
 import org.scalatra.json.JacksonJsonSupport
+
+object AtaruFixtures {
+  var fixture: List[AtaruHakemus] = List.empty
+}
 
 class FixtureServlet(valintarekisteriDb: ValintarekisteriDb)(implicit val appConfig: VtsAppConfig)
   extends ScalatraServlet with Logging with JacksonJsonSupport with JsonFormats {
@@ -39,6 +46,11 @@ class FixtureServlet(valintarekisteriDb: ValintarekisteriDb)(implicit val appCon
       }
 
     }
+  }
+
+  get("/ataru/applications") {
+    contentType = formats("json")
+    AtaruFixtures.fixture
   }
 
   error {
