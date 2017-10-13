@@ -40,15 +40,7 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
     hakuAppRepository.findHakemuksetByOids(hakemusOids)
   }
 
-  def findHakemukset(hakuOid: HakuOid, personOid: String): Iterator[Hakemus] = {
-    hakuAppRepository.findHakemukset(hakuOid, personOid)
-  }
-
   def findHakemuksetByHakukohde(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Iterator[Hakemus] = {
     hakuAppRepository.findHakemuksetByHakukohde(hakuOid, hakukohdeOid)
-  }
-
-  def findHakemuksetByHakukohdeAndPerson(hakukohdeOid: HakukohdeOid, personOid: String): Iterator[Hakemus] = {
-    hakuAppRepository.findHakemuksetByHakukohdeAndPerson(hakukohdeOid, personOid)
   }
 }
