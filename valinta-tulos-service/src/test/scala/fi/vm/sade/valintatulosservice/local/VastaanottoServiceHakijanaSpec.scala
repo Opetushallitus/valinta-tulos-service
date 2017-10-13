@@ -3,8 +3,9 @@ package fi.vm.sade.valintatulosservice.local
 import fi.vm.sade.sijoittelu.domain.{LogEntry, ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
-import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusRepository, AtaruHakemusTarjontaEnricher, HakemusRepository, HakuAppRepository}
+import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusRepository, HakuAppRepository}
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
+import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.sijoittelu._
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
@@ -511,7 +512,8 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
   lazy val sijoittelunTulosClient = new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb)
   lazy val raportointiService = new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintatulosDao)
   lazy val hakijaDtoClient = new ValintarekisteriHakijaDTOClientImpl(raportointiService, sijoittelunTulosClient, valintarekisteriDb)
-  lazy val hakemusRepository = new HakemusRepository(new HakuAppRepository(), new AtaruHakemusRepository(appConfig), new AtaruHakemusTarjontaEnricher(hakuService))
+  lazy val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
+  lazy val hakemusRepository = new HakemusRepository(new HakuAppRepository(), new AtaruHakemusRepository(appConfig), new AtaruHakemusEnricher(hakuService, oppijanumerorekisteriService))
   lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, hakemusRepository, valintarekisteriDb,
     hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, hakijaDtoClient)
   lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService,

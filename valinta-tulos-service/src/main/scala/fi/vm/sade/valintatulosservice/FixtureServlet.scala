@@ -1,21 +1,24 @@
 package fi.vm.sade.valintatulosservice
 
-import java.util.concurrent.ConcurrentHashMap
-
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.hakemus.AtaruHakemus
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
+import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.Henkilo
 import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtures
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
-import org.scalatra.ScalatraServlet
 import org.scalatra.json.JacksonJsonSupport
+import org.scalatra.{NotFound, Ok, ScalatraServlet}
 
-object AtaruFixtures {
+object AtaruFixture {
   var fixture: List[AtaruHakemus] = List.empty
+}
+
+object HenkiloFixture {
+  var fixture: Option[Henkilo] = None
 }
 
 class FixtureServlet(valintarekisteriDb: ValintarekisteriDb)(implicit val appConfig: VtsAppConfig)
@@ -50,7 +53,15 @@ class FixtureServlet(valintarekisteriDb: ValintarekisteriDb)(implicit val appCon
 
   get("/ataru/applications") {
     contentType = formats("json")
-    AtaruFixtures.fixture
+    AtaruFixture.fixture
+  }
+
+  get("/oppijanumerorekisteri/henkilo") {
+    contentType = formats("json")
+    HenkiloFixture.fixture match {
+      case Some(h) => Ok(Henkilo.henkiloWriter.write(h))
+      case None => NotFound()
+    }
   }
 
   error {
