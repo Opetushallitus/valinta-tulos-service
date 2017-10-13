@@ -92,16 +92,8 @@ class HakuAppRepository()(implicit appConfig: VtsAppConfig) extends Logging {
     findHakemuksetByQuery(DatabaseKeys.oidKey $in hakemusOids.map(_.toString))
   }
 
-  def findHakemukset(hakuOid: HakuOid, personOid: String): Iterator[Hakemus] = {
-    findHakemuksetByQuery(MongoDBObject(DatabaseKeys.personOidKey -> personOid, DatabaseKeys.hakuOidKey -> hakuOid.toString))
-  }
-
   def findHakemuksetByHakukohde(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Iterator[Hakemus] = {
     findHakemuksetByQuery(MongoDBObject(DatabaseKeys.hakuOidKey -> hakuOid.toString, DatabaseKeys.hakutoiveetSearchPath -> hakukohdeOid.toString))
-  }
-
-  def findHakemuksetByHakukohdeAndPerson(hakukohdeOid: HakukohdeOid, personOid: String): Iterator[Hakemus] = {
-    findHakemuksetByQuery(MongoDBObject(DatabaseKeys.hakutoiveetSearchPath -> hakukohdeOid.toString, DatabaseKeys.personOidKey -> personOid))
   }
 
   def findHakemuksetByQuery(query: commons.Imports.DBObject): Iterator[Hakemus] = {
