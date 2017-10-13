@@ -1,0 +1,39 @@
+.heading {
+    position: fixed; z-index: 2; background-color: lightsteelblue; padding: 10px;
+}
+
+#haku-list {
+    position: relative; top: 200px;
+}
+
+#haku-list span.clickable {
+    color: -webkit-link;
+}
+
+.ajax-indicator {
+    position: absolute; margin: 0; visibility: hidden;
+}
+
+.haku-row {
+    list-style: none; margin-bottom: 20px;
+}
+
+.ei-loydy-puuttuvia {
+    background-color: lightgreen;
+    display: none;
+}
+
+.background-updater {
+    margin: 20px 0 20px 0; background-color: lightyellow;
+}
+.background-updater input,button {
+    margin: 10px;
+}
+
+.clickable {
+    cursor: pointer;
+}
+span.clickable:hover,a:hover {
+    background-color: lightyellow;
+}
+

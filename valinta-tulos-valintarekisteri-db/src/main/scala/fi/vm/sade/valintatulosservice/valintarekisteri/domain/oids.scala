@@ -20,6 +20,14 @@ case class HakuOid(s: String) {
   override def toString: String = s
 }
 
+case class TarjoajaOid(s: String) {
+  override def toString: String = s
+}
+
+case class HakijaOid(s: String) {
+  override def toString: String = s
+}
+
 class HakuOidSerializer extends CustomSerializer[HakuOid]((_: Formats) => {
   ({
     case json: JString => HakuOid(json.s)
@@ -52,13 +60,31 @@ class HakemusOidSerializer extends CustomSerializer[HakemusOid]((_: Formats) => 
   })
 })
 
+class TarjoajaOidSerializer extends CustomSerializer[TarjoajaOid]((_: Formats) => {
+  ({
+    case json: JString => TarjoajaOid(json.s)
+  }, {
+    case tarjoajaOid: TarjoajaOid => JString(tarjoajaOid.toString)
+  })
+})
+
+class HakijaOidSerializer extends CustomSerializer[HakijaOid]((_: Formats) => {
+  ({
+    case json: JString => HakijaOid(json.s)
+  }, {
+    case hakijaOid: HakijaOid => JString(hakijaOid.toString)
+  })
+})
+
 object Oids {
   def getSerializers() = {
     List(
       new HakukohdeOidSerializer,
       new HakuOidSerializer,
       new ValintatapajonoOidSerializer,
-      new HakemusOidSerializer
+      new HakemusOidSerializer,
+      new TarjoajaOidSerializer,
+      new HakijaOidSerializer
     )
   }
 }
