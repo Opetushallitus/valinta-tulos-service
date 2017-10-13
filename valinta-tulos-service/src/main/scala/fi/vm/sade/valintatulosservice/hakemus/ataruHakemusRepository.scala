@@ -14,7 +14,7 @@ case class AtaruHakemus(oid: HakemusOid,
                         hakukohteet: List[String],
                         henkilotiedot: Henkilotiedot)
 
-class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats{
+class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats {
   def getHakemukset(hakuOid: HakuOid): Either[Throwable, List[AtaruHakemus]] = {
     val url = config.ophUrlProperties.url("ataru-service.applications", hakuOid)
     HttpHelper.fetch(url) { response =>
