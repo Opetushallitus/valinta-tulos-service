@@ -1,7 +1,6 @@
 package fi.vm.sade.valintatulosservice.hakemus
 
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.MonadHelper
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain.Hakemus
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
@@ -26,7 +25,7 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
   def findHakemukset(hakuOid: HakuOid): Iterator[Hakemus] = {
     val hakuAppHakemukset = hakuAppRepository.findHakemukset(hakuOid)
     val ataruHakemukset = ataruHakemusRepository.getHakemukset(hakuOid)
-      .right.flatMap(hs => MonadHelper.sequence(hs.map(ataruHakemusTarjontaEnricher.apply)))
+      .right.flatMap(ataruHakemusTarjontaEnricher.apply)
       .left.map(t => new RuntimeException(s"Hakemuksien haku haulle $hakuOid Atarusta epäonnistui.", t))
       .fold(throw _, x => x)
     hakuAppHakemukset ++ ataruHakemukset
