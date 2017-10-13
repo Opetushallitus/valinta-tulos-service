@@ -56,15 +56,6 @@ class HakemusRepositorySpec extends ITSpecification with ValintarekisteriDbTools
       )
     }
 
-    "palauttaa kaikki henkilön tiettyyn hakuun liittyvät Hakemukset" in {
-      val hakemukset = repo.findHakemukset(HakuOid("korkeakoulu-lisahaku1"), "1.2.246.562.24.14229104472").toList
-      hakemukset must_== List(Hakemus(HakemusOid("1.2.246.562.11.00000878230"), HakuOid("korkeakoulu-lisahaku1"), "1.2.246.562.24.14229104472", "FI",
-          List(Hakutoive(HakukohdeOid("1.2.246.562.14.2013120515524070995659"), "1.2.246.562.10.83122281013", "stevari amk hakukohde", "Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta"),
-            Hakutoive(HakukohdeOid("1.2.246.562.14.2014022408541751568934"), "1.2.246.562.10.83122281012", "", "")),
-        Henkilotiedot(Some("Teppo"), None, true))
-      )
-    }
-
     "palauttaa yksittäisen Hakemuksen jolla on eri asiointikieli" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakemusFixtures = HakemusFixtures.defaultFixtures)
 
