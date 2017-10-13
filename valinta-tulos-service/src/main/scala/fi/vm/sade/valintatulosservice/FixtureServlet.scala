@@ -17,8 +17,8 @@ object AtaruFixture {
   var fixture: List[AtaruHakemus] = List.empty
 }
 
-object HenkiloFixture {
-  var fixture: Option[Henkilo] = None
+object HenkilotFixture {
+  var fixture: List[Henkilo] = List.empty
 }
 
 class FixtureServlet(valintarekisteriDb: ValintarekisteriDb)(implicit val appConfig: VtsAppConfig)
@@ -56,12 +56,9 @@ class FixtureServlet(valintarekisteriDb: ValintarekisteriDb)(implicit val appCon
     AtaruFixture.fixture
   }
 
-  get("/oppijanumerorekisteri/henkilo") {
+  post("/oppijanumerorekisteri/henkilot") {
     contentType = formats("json")
-    HenkiloFixture.fixture match {
-      case Some(h) => Ok(Henkilo.henkiloWriter.write(h))
-      case None => NotFound()
-    }
+    org.json4s.DefaultWriters.arrayWriter[Henkilo](Henkilo.henkiloWriter, manifest[Henkilo]).write(HenkilotFixture.fixture.toArray)
   }
 
   error {
