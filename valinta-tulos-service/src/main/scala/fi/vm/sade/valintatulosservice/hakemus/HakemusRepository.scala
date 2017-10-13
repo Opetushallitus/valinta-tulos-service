@@ -8,7 +8,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuO
 
 class HakemusRepository(hakuAppRepository: HakuAppRepository,
                         ataruHakemusRepository: AtaruHakemusRepository,
-                        ataruHakemusTarjontaEnricher: AtaruHakemusTarjontaEnricher)
+                        ataruHakemusTarjontaEnricher: AtaruHakemusEnricher)
                        (implicit appConfig: VtsAppConfig) extends Logging {
 
   def findPersonOids(hakuOid: HakuOid): Map[HakemusOid, String] = {
