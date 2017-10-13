@@ -6,11 +6,13 @@ import java.util.concurrent.TimeUnit
 import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasClient, CasParams}
 import org.http4s.Status.ResponseClass.Successful
 import org.http4s.client.Client
+import org.http4s.headers.`Content-Type`
 import org.http4s.json4s.native.jsonOf
-import org.http4s.{Method, Request, Uri}
+import org.http4s.json4s.native.jsonEncoderOf
+import org.http4s._
 import org.json4s.DefaultReaders.{StringReader, arrayReader}
 import org.json4s.JsonAST.JValue
-import org.json4s.Reader
+import org.json4s.{Formats, Reader}
 
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
@@ -18,17 +20,18 @@ import scalaz.concurrent.Task
 import scalaz.{-\/, \/-}
 
 case class Henkiloviite(masterOid: String, henkiloOid: String)
+case class Duplicates(tyyppi: String)
 
 class HenkiloviiteClient(configuration: AuthenticationConfiguration) {
-  private val dateFormater = new SimpleDateFormat("yyyy-MM-dd")
-  private val resourceUrl: Uri = configuration.url.withQueryParam("date", dateFormater.format(configuration.since)).asInstanceOf[Uri]
+  private val resourceUrl: Uri = configuration.url.asInstanceOf[Uri]
   private val client = createCasClient()
 
   def fetchHenkiloviitteet(): Try[List[Henkiloviite]] = {
+    val duplicates = Duplicates("OPPIJA")
     val request = Request(
-      method = Method.GET,
+      method = Method.POST,
       uri = resourceUrl
-    )
+    ).withBody("{}")(EntityEncoder.stringEncoder(Charset.`UTF-8`).withContentType(`Content-Type`(MediaType.`application/json`)))
 
     client.fetch(request) {
       case Successful(response) => response.as[Array[Henkiloviite]](HenkiloviiteClient.henkiloviiteDecoder).map(_.toList)
@@ -40,7 +43,7 @@ class HenkiloviiteClient(configuration: AuthenticationConfiguration) {
   }
 
   private def createCasClient(): Client = {
-    val casParams = CasParams("/authentication-service", configuration.cas.user, configuration.cas.password)
+    val casParams = CasParams("/oppijanumerorekisteri-service", configuration.cas.user, configuration.cas.password)
     CasAuthenticatingClient(
       new CasClient(configuration.cas.host, org.http4s.client.blaze.defaultClient),
       casParams,
