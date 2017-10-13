@@ -2,7 +2,8 @@ package fi.vm.sade.valintatulosservice.local
 
 import fi.vm.sade.valintatulosservice.ITSpecification
 import fi.vm.sade.valintatulosservice.domain.{Hakemus, Hakutoive, Henkilotiedot}
-import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusRepository, AtaruHakemusTarjontaEnricher, HakemusFixtures, HakemusRepository, HakuAppRepository}
+import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusFixtures, HakemusRepository, HakuAppRepository}
+import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
@@ -12,10 +13,11 @@ import org.specs2.runner.JUnitRunner
 @RunWith(classOf[JUnitRunner])
 class HakemusRepositorySpec extends ITSpecification with ValintarekisteriDbTools {
   val hakuService = HakuService(appConfig.hakuServiceConfig)
+  val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
   val repo = new HakemusRepository(
     new HakuAppRepository(),
     new AtaruHakemusRepository(appConfig),
-    new AtaruHakemusTarjontaEnricher(hakuService)
+    new AtaruHakemusEnricher(hakuService, oppijanumerorekisteriService)
   )
 
   override def afterAll = deleteAll()
