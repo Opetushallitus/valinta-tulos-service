@@ -2,28 +2,60 @@ package fi.vm.sade.valintatulosservice.hakemus
 
 import fi.vm.sade.valintatulosservice.MonadHelper
 import fi.vm.sade.valintatulosservice.domain.{Hakemus, Hakutoive, Henkilotiedot}
-import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
+import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.{Henkilo, OppijanumerorekisteriService}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakukohdeOid
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakijaOid, HakukohdeOid}
 
 class AtaruHakemusEnricher(hakuService: HakuService,
                            oppijanumerorekisteriService: OppijanumerorekisteriService) {
-  def apply(ataruHakemus: AtaruHakemus): Either[Throwable, Hakemus] = {
+  def apply(ataruHakemukset: List[AtaruHakemus]): Either[Throwable, List[Hakemus]] = {
     for {
-      hakutoiveet <- MonadHelper.sequence(ataruHakemus.hakukohteet.map(HakukohdeOid).map(hakutoive)).right
-      henkilo <- oppijanumerorekisteriService.henkilo(ataruHakemus.henkiloOid).right
-    } yield Hakemus(
-      oid = ataruHakemus.oid,
-      hakuOid = ataruHakemus.hakuOid,
+      henkilot <- henkilot(ataruHakemukset).right
+      hakutoiveet <- hakutoiveet(ataruHakemukset).right
+    } yield ataruHakemukset.map(hakemus => toHakemus(henkilot, hakutoiveet, hakemus))
+  }
+
+  private def toHakemus(henkilot: Map[HakijaOid, Henkilo], hakutoiveet: Map[HakukohdeOid, Hakutoive], hakemus: AtaruHakemus): Hakemus = {
+    val henkilo = henkilot(hakemus.henkiloOid)
+    Hakemus(
+      oid = hakemus.oid,
+      hakuOid = hakemus.hakuOid,
       henkiloOid = henkilo.oid.toString,
-      asiointikieli = ataruHakemus.asiointikieli,
-      toiveet = hakutoiveet,
+      asiointikieli = hakemus.asiointikieli,
+      toiveet = hakemus.hakukohteet.map(s => hakutoiveet(HakukohdeOid(s))),
       henkilotiedot = Henkilotiedot(
         kutsumanimi = henkilo.kutsumanimi,
-        email = ataruHakemus.henkilotiedot.email,
+        email = hakemus.henkilotiedot.email,
         hasHetu = henkilo.hetu.isDefined
       )
     )
+  }
+
+  private def henkilot(hakemukset: List[AtaruHakemus]): Either[Throwable, Map[HakijaOid, Henkilo]] = {
+    val personOids = uniquePersonOids(hakemukset)
+    oppijanumerorekisteriService.henkilot(personOids)
+      .right.map(hs => hs.map(h => h.oid -> h).toMap)
+      .right.flatMap(hs => {
+      val missingOids = personOids.diff(hs.keySet)
+      if (missingOids.isEmpty) {
+        Right(hs)
+      } else {
+        Left(new IllegalArgumentException(s"No henkilöt $missingOids found"))
+      }
+    })
+  }
+
+  private def hakutoiveet(hakemukset: List[AtaruHakemus]): Either[Throwable, Map[HakukohdeOid, Hakutoive]] = {
+    MonadHelper.sequence(uniqueHakukohdeOids(hakemukset).map(hakutoive))
+      .right.map(_.map(h => h.oid -> h).toMap)
+  }
+
+  private def uniquePersonOids(hakemukset: List[AtaruHakemus]): Set[HakijaOid] = {
+    hakemukset.map(_.henkiloOid).toSet
+  }
+
+  private def uniqueHakukohdeOids(hakemukset: List[AtaruHakemus]): Set[HakukohdeOid] = {
+    hakemukset.flatMap(_.hakukohteet).toSet.map(HakukohdeOid)
   }
 
   private def hakutoive(oid: HakukohdeOid): Either[Throwable, Hakutoive] = {
