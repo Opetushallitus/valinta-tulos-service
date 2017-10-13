@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice.config
 import java.io.File
 import java.net.URL
 
+import fi.vm.sade.properties.OphProperties
 import fi.vm.sade.security.ldap.LdapUser
 import fi.vm.sade.security.mock.MockSecurityContext
 import fi.vm.sade.security.{ProductionSecurityContext, SecurityContext}
@@ -65,14 +66,18 @@ object VtsAppConfig extends Logging {
    * Dev profile, uses local mongo db
    */
   class Dev extends VtsAppConfig with ExampleTemplatedProps with CasLdapSecurity with StubbedExternalDeps {
-    override val ophUrlProperties = new DevOphUrlProperties(propertiesFile)
+    override val ophUrlProperties: OphUrlProperties = {
+      val ps = new DevOphUrlProperties(propertiesFile)
+      ps.addOverride("ataru-service.applications", s"http://localhost:$vtsMockPort/valinta-tulos-service/util/ataru/applications")
+      ps
+    }
 
     override lazy val settings = loadSettings
       .withOverride(("hakemus.mongodb.uri", "mongodb://localhost:27017"))
   }
 
   class IT_sysprops extends IT {
-    override val ophUrlProperties = new OphUrlProperties(propertiesFile, false, Some(System.getProperty("valinta-tulos-service.it-profile.hostname",
+    override val ophUrlProperties: OphUrlProperties = new OphUrlProperties(propertiesFile, false, Some(System.getProperty("valinta-tulos-service.it-profile.hostname",
       "testi.virkailija.opintopolku.fi")))
   }
 
@@ -80,7 +85,12 @@ object VtsAppConfig extends Logging {
    *  IT (integration test) profiles. Uses embedded mongo and PostgreSQL databases, and stubbed external deps
    */
   class IT extends ExampleTemplatedProps with StubbedExternalDeps with MockSecurity {
-    override val ophUrlProperties:OphUrlProperties = new DevOphUrlProperties(propertiesFile)
+    override val ophUrlProperties: OphUrlProperties = {
+      val ps = new DevOphUrlProperties(propertiesFile)
+      ps.addOverride("ataru-service.applications", s"http://localhost:$vtsMockPort/valinta-tulos-service/util/ataru/applications")
+      ps
+    }
+
     private lazy val itPostgres = new ITPostgres(itPostgresPortChooser)
 
     override def start {
