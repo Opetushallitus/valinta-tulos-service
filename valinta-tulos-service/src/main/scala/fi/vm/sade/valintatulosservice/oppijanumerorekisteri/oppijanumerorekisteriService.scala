@@ -3,9 +3,10 @@ package fi.vm.sade.valintatulosservice.oppijanumerorekisteri
 import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasParams}
-import fi.vm.sade.valintatulosservice.MonadHelper
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakijaOid
+import org.http4s.Method.POST
+import org.http4s.json4s.native.{jsonEncoderOf, jsonOf}
 import org.http4s.{Request, Uri}
 import org.json4s.DefaultReaders.StringReader
 import org.json4s.JsonAST.{JNull, JObject, JString}
@@ -53,19 +54,20 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) {
     "valinta-tulos-service"
   )
 
-  def henkilo(oid: HakijaOid): Either[Throwable, Henkilo] = {
-    Uri.fromString(appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.henkiloByOid", oid.toString))
+  def henkilot(oids: Set[HakijaOid]): Either[Throwable, Set[Henkilo]] = {
+    import org.json4s.DefaultWriters.{StringWriter, arrayWriter}
+    implicit val henkiloReader = Henkilo.henkiloReader
+    import org.json4s.DefaultReaders.arrayReader
+
+    Uri.fromString(appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.henkilotByOids"))
       .fold(Task.fail, uri => {
-        client.httpClient.fetch(Request(uri = uri)) {
-          case r if r.status.code == 200 => r.as[Henkilo](org.http4s.json4s.native.jsonOf[Henkilo](Henkilo.henkiloReader))
-            .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing henkilö $oid failed", t)) }
-          case r if r.status.code == 404 => Task.fail(new IllegalArgumentException(s"No henkilö $oid found"))
-          case r => Task.fail(new RuntimeException(s"Failed to get henkilö $oid: ${r.toString()}"))
+        val req = Request(method = POST, uri = uri)
+          .withBody[Array[String]](oids.map(_.toString).toArray)(jsonEncoderOf[Array[String]])
+        client.httpClient.fetch(req) {
+          case r if r.status.code == 200 => r.as[Array[Henkilo]](jsonOf[Array[Henkilo]]).map(_.toSet)
+            .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing henkilöt $oids failed", t)) }
+          case r => Task.fail(new RuntimeException(s"Failed to get henkilöt $oids: ${r.toString()}"))
         }
       }).attemptRunFor(Duration(10, TimeUnit.SECONDS)).toEither
-  }
-
-  def henkilot(oids: Set[HakijaOid]): Either[Throwable, Set[Henkilo]] = {
-    MonadHelper.sequence(oids.map(henkilo)).right.map(_.toSet)
   }
 }
