@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice.oppijanumerorekisteri
 import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasParams}
+import fi.vm.sade.valintatulosservice.MonadHelper
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakijaOid
 import org.http4s.{Request, Uri}
@@ -57,10 +58,14 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) {
       .fold(Task.fail, uri => {
         client.httpClient.fetch(Request(uri = uri)) {
           case r if r.status.code == 200 => r.as[Henkilo](org.http4s.json4s.native.jsonOf[Henkilo](Henkilo.henkiloReader))
-            .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing henkilo $oid failed", t)) }
-          case r if r.status.code == 404 => Task.fail(new IllegalArgumentException(s"No henkilo $oid found"))
-          case r => Task.fail(new RuntimeException(s"Failed to get henkilo $oid: ${r.toString()}"))
+            .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing henkilö $oid failed", t)) }
+          case r if r.status.code == 404 => Task.fail(new IllegalArgumentException(s"No henkilö $oid found"))
+          case r => Task.fail(new RuntimeException(s"Failed to get henkilö $oid: ${r.toString()}"))
         }
       }).attemptRunFor(Duration(10, TimeUnit.SECONDS)).toEither
+  }
+
+  def henkilot(oids: Set[HakijaOid]): Either[Throwable, Set[Henkilo]] = {
+    MonadHelper.sequence(oids.map(henkilo)).right.map(_.toSet)
   }
 }
