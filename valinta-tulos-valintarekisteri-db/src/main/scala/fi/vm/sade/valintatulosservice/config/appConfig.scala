@@ -18,7 +18,7 @@ protected[config] class DevOphUrlProperties(propertiesFile:String) extends OphUr
 
 protected[config] class ProdOphUrlProperties(propertiesFile:String) extends OphUrlProperties(propertiesFile, true, None)
 
-protected[config] class OphUrlProperties(propertiesFile:String, readUserHome:Boolean = false, hostVirkailija:Option[String] = None)
+protected[config] class OphUrlProperties(propertiesFile: String, readUserHome: Boolean = false, host: Option[String] = None)
   extends OphProperties(propertiesFile)
     with Logging {
 
@@ -27,7 +27,8 @@ protected[config] class OphUrlProperties(propertiesFile:String, readUserHome:Boo
     addOptionalFiles(Paths.get(sys.props.getOrElse("user.home", ""), "/oph-configuration/valinta-tulos-service.properties").toString)
   }
 
-  hostVirkailija.foreach(
-    addDefault("host.virkailija", _)
+  host.foreach(h =>
+    addDefault("host.virkailija", h)
+    addDefault("host.oppija", h)
   )
 }
