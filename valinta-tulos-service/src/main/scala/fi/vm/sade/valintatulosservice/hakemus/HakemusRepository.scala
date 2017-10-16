@@ -24,7 +24,7 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
 
   def findHakemukset(hakuOid: HakuOid): Iterator[Hakemus] = {
     val hakuAppHakemukset = hakuAppRepository.findHakemukset(hakuOid)
-    val ataruHakemukset = ataruHakemusRepository.getHakemukset(hakuOid)
+    val ataruHakemukset = ataruHakemusRepository.getHakemukset(Some(hakuOid), None, None)
       .right.flatMap(ataruHakemusTarjontaEnricher.apply)
       .left.map(t => new RuntimeException(s"Hakemuksien haku haulle $hakuOid Atarusta epäonnistui.", t))
       .fold(throw _, x => x)
