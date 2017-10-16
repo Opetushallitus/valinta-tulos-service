@@ -23,12 +23,13 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
   }
 
   def findHakemukset(hakuOid: HakuOid): Iterator[Hakemus] = {
-    val hakuAppHakemukset = hakuAppRepository.findHakemukset(hakuOid)
-    val ataruHakemukset = ataruHakemusRepository.getHakemukset(WithHakuOid(hakuOid, None, None))
-      .right.flatMap(ataruHakemusTarjontaEnricher.apply)
-      .left.map(t => new RuntimeException(s"Hakemuksien haku haulle $hakuOid Atarusta epäonnistui.", t))
-      .fold(throw _, x => x)
-    hakuAppHakemukset ++ ataruHakemukset
+    hakuAppRepository.findHakemukset(hakuOid) match {
+      case hakemukset if hakemukset.hasNext => hakemukset
+      case hakemukset if !hakemukset.hasNext => ataruHakemusRepository.getHakemukset(WithHakuOid(hakuOid, None, None))
+        .right.flatMap(ataruHakemusTarjontaEnricher.apply)
+        .left.map(t => new RuntimeException(s"Hakemuksien haku haulle $hakuOid Atarusta epäonnistui.", t))
+        .fold(throw _, x => x.toIterator)
+    }
   }
 
   def findHakemus(hakemusOid: HakemusOid): Either[Throwable, Hakemus] = {
