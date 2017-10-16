@@ -25,7 +25,7 @@ class AtaruHakemusEnricher(hakuService: HakuService,
       toiveet = hakemus.hakukohteet.map(s => hakutoiveet(HakukohdeOid(s))),
       henkilotiedot = Henkilotiedot(
         kutsumanimi = henkilo.kutsumanimi,
-        email = hakemus.henkilotiedot.email,
+        email = hakemus.email,
         hasHetu = henkilo.hetu.isDefined
       )
     )
