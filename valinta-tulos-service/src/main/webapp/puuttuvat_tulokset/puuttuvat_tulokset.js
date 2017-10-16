@@ -1,6 +1,14 @@
 var puuttuvatAjaxCounter = 0;
 
 // 1. Initial loading
+function initializeUi() {
+  puuttuvatFetch('/valinta-tulos-service/auth/login', { mode: 'no-cors' })
+    .then(handleResponse)
+    .then(loadHakuList)
+    .catch(function(responseText) {
+      showStatus(responseText);
+  });
+}
 function loadHakuList() {
   showStatus('Ladataan kaikkien hakujen tiedot...');
   var url = '/valinta-tulos-service/auth/puuttuvat/yhteenveto';
