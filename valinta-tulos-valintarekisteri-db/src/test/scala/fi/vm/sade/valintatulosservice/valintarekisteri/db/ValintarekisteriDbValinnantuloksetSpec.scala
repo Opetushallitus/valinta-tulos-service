@@ -185,6 +185,42 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       origin.changes must contain(KentanMuutos(field = "hyvaksyttyVarasijalta", from = None, to = false))
       origin.changes must contain(KentanMuutos(field = "hyvaksyPeruuntunut", from = None, to = false))
     }
+
+    "vastaanotto -> delete -> vastaanotto should be correct in muutoshistoria" in {
+      storeValinnantilaAndValinnantulos()
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.storeValinnantuloksenOhjaus(valinnantuloksenOhjaus.copy(julkaistavissa = true))
+      )
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.storeAction(HakijanVastaanotto(henkiloOid, hakemusOid, hakukohdeOid, VastaanotaSitovasti))
+      )
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.storeAction(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid, Poista, henkiloOid, "poistettu"))
+      )
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.storeAction(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid, VastaanotaSitovasti, henkiloOid, "vastaanotto"))
+      )
+
+
+      val result = singleConnectionValintarekisteriDb.getMuutoshistoriaForHakemus(hakemusOid, valintatapajonoOid)
+      result.size must_== 5
+      result(0).changes.size must_== 1
+      result(0).changes.head must_== KentanMuutos(field = "vastaanottotila", from = Some("Kesken (poistettu)"), to = VastaanotaSitovasti.valintatuloksenTila)
+      result(1).changes.size must_== 3
+      result(1).changes must contain(KentanMuutos(field = "vastaanottotila", from = Some(VastaanotaSitovasti.valintatuloksenTila), to = "Kesken (poistettu)"))
+      result(2).changes.size must_== 1
+      result(2).changes.head must_== KentanMuutos(field = "vastaanottotila", from = None, to = VastaanotaSitovasti.valintatuloksenTila)
+      result(3).changes.size must_== 1
+      result(3).changes.head must_== KentanMuutos(field = "julkaistavissa", from = Some(false), to = true)
+      result(4).changes must contain(KentanMuutos(field = "valinnantila", from = None, to = Hyvaksytty))
+      result(4).changes must contain(KentanMuutos(field = "valinnantilanViimeisinMuutos", from = None, to = muutos))
+      result(4).changes must contain(KentanMuutos(field = "julkaistavissa", from = None, to = false))
+      result(4).changes must contain(KentanMuutos(field = "ehdollisestiHyvaksyttavissa", from = None, to = false))
+      result(4).changes must contain(KentanMuutos(field = "hyvaksyttyVarasijalta", from = None, to = false))
+      result(4).changes must contain(KentanMuutos(field = "hyvaksyPeruuntunut", from = None, to = false))
+    }
+
+
     "update julkaistavissa and hyväksytty/julkaistu dates for valintatapajono" in {
       storeValinnantilaAndValinnantulos()
       checkJulkaistavissa() must_== false
