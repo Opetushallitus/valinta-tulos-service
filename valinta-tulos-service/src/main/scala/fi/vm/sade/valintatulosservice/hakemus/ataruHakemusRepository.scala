@@ -16,15 +16,26 @@ case class AtaruHakemus(oid: HakemusOid,
                         hakukohteet: List[String],
                         henkilotiedot: Henkilotiedot)
 
+sealed trait HakemuksetQuery
+case class WithHakuOid(hakuOid: HakuOid,
+                       hakukohdeOid: Option[HakukohdeOid],
+                       hakemusOids: Option[List[HakemusOid]]) extends HakemuksetQuery
+case class WithHakemusOids(hakuOid: Option[HakuOid],
+                           hakukohdeOid: Option[HakukohdeOid],
+                           hakemusOids: List[HakemusOid]) extends HakemuksetQuery
+
 class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats {
-  def getHakemukset(hakuOid: Option[HakuOid], hakukohdeOid: Option[HakukohdeOid],
-                    hakemusOids: Option[List[HakemusOid]]): Either[Throwable, List[AtaruHakemus]] = {
-    if (hakuOid.isEmpty && hakemusOids.isEmpty) throw new IllegalArgumentException("Must specify either hakuOid or hakemusOid(s)")
-    val params = (
-      hakuOid.map("hakuOid" -> _.toString) ++
-        hakukohdeOid.map("hakukohdeOid" -> _.toString) ++
-        hakemusOids.map("hakemusOids" -> _.map(_.toString))
-      ).toMap
+  def getHakemukset(query: HakemuksetQuery): Either[Throwable, List[AtaruHakemus]] = {
+    val params = query match {
+      case WithHakuOid(hakuOid, hakukohdeOid, hakemusOids) =>
+        (Option("hakuOid" -> hakuOid.toString) ++
+          hakukohdeOid.map("hakukohdeOid" -> _.toString) ++
+          hakemusOids.map("hakemusOids" -> _.map(_.toString))).toMap
+      case WithHakemusOids(hakuOid, hakukohdeOid, hakemusOids) =>
+        (hakuOid.map("hakuOid" -> _.toString) ++
+          hakukohdeOid.map("hakukohdeOid" -> _.toString) ++
+          Option("hakemusOids" -> hakemusOids.map(_.toString))).toMap
+    }
     val url = config.ophUrlProperties.url("ataru-service.applications", params.asJava)
     HttpHelper.fetch(url) { response =>
       parse(response).extract[List[AtaruHakemus]]
