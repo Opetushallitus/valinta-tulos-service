@@ -18,7 +18,7 @@ case class AtaruHakemus(oid: HakemusOid,
 class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats {
   def getHakemukset(hakuOid: Option[HakuOid], hakukohdeOid: Option[HakukohdeOid],
                     hakemusOids: Option[List[HakemusOid]]): Either[Throwable, List[AtaruHakemus]] = {
-    if (hakuOid.isEmpty && hakukohdeOid.isEmpty) throw new IllegalArgumentException("Must specify either haku or hakukohde oid")
+    if (hakuOid.isEmpty && hakemusOids.isEmpty) throw new IllegalArgumentException("Must specify either hakuOid or hakemusOid(s)")
     val params = ((if (hakuOid.isDefined) Seq("hakuOid" -> hakuOid.get) else Nil) ++
       (if (hakukohdeOid.isDefined) Seq("hakukohdeOid" -> hakukohdeOid.get) else Nil) ++
       (if (hakemusOids.isDefined) Seq("hakemusOids" -> hakemusOids.get) else Nil)).toMap.asJava
