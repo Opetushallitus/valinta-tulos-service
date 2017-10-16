@@ -40,9 +40,9 @@ class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats {
     HttpHelper.fetch(url) { response =>
       parse(response).extract[List[AtaruHakemus]]
     }.left.map {
-      case e: IllegalArgumentException => new IllegalArgumentException(s"No applications for $hakuOid found", e)
-      case e: IllegalStateException => new IllegalStateException(s"Parsing applications for $hakuOid failed", e)
-      case e: Exception => new RuntimeException(s"Failed to get applications for $hakuOid", e)
+      case e: IllegalArgumentException => new IllegalArgumentException(s"No applications for $query found", e)
+      case e: IllegalStateException => new IllegalStateException(s"Parsing applications for $query failed", e)
+      case e: Exception => new RuntimeException(s"Failed to get applications for $query", e)
     }
   }
 }
