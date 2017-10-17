@@ -52,7 +52,7 @@ class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats {
       case WithHakuOid(hakuOid, hakukohdeOid, hakemusOids) =>
         (Option("hakuOid" -> hakuOid.toString) ++
           hakukohdeOid.map("hakukohdeOid" -> _.toString) ++
-          hakemusOids.map("hakemusOids" -> _.map(_.toString))).toMap
+          hakemusOids.map("hakemusOids" -> _.mkString(","))).toMap
       case WithHakemusOids(hakuOid, hakukohdeOid, hakemusOids) =>
         (hakuOid.map("hakuOid" -> _.toString) ++
           hakukohdeOid.map("hakukohdeOid" -> _.toString) ++
