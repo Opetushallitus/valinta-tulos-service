@@ -33,7 +33,13 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
   }
 
   def findHakemus(hakemusOid: HakemusOid): Either[Throwable, Hakemus] = {
-    hakuAppRepository.findHakemus(hakemusOid)
+    hakuAppRepository.findHakemus(hakemusOid) match {
+      case Right(hakemus) => Right(hakemus)
+      case Left(e) => ataruHakemusRepository.getHakemukset(WithHakemusOids(None, None, List(hakemusOid)))
+        .right.flatMap(ataruHakemusTarjontaEnricher.apply)
+        .left.map(t => new RuntimeException(s"Hakemuksen $hakemusOid haku Atarusta epäonnistui.", t))
+        .fold(throw _, x => Right(x.head))
+    }
   }
 
   def findHakemuksetByOids(hakemusOids: Iterable[HakemusOid]): Iterator[Hakemus] = {

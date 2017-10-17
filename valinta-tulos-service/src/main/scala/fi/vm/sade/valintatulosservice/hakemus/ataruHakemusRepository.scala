@@ -35,7 +35,7 @@ class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats {
       case WithHakemusOids(hakuOid, hakukohdeOid, hakemusOids) =>
         (hakuOid.map("hakuOid" -> _.toString) ++
           hakukohdeOid.map("hakukohdeOid" -> _.toString) ++
-          Option("hakemusOids" -> hakemusOids.map(_.toString))).toMap
+          Option("hakemusOids" -> hakemusOids.mkString(","))).toMap
     }
     val url = config.ophUrlProperties.url("ataru-service.applications", params.asJava)
     HttpHelper.fetch(url) { response =>
