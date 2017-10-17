@@ -67,4 +67,17 @@ class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats {
         }
       }).attemptRunFor(Duration(10, TimeUnit.SECONDS)).toEither
   }
+
+  def getHakemusToHakijaOidMapping(hakuOid: HakuOid, hakukohdeOids: Option[List[HakukohdeOid]]): Either[Throwable, Map[HakemusOid, String]] = {
+    val params = (Option("hakuOid" -> hakuOid.toString) ++
+      hakukohdeOids.map("hakukohdeOids" -> _.mkString(","))).toMap.asJava
+    val url = config.ophUrlProperties.url("ataru-service.persons", params)
+    HttpHelper.fetch(url) { response =>
+      parse(response).extract[Map[HakemusOid, String]]
+    }.left.map {
+      case e: IllegalArgumentException => new IllegalArgumentException(s"No applications for ${params.toString} found", e)
+      case e: IllegalStateException => new IllegalStateException(s"Parsing applications for ${params.toString} failed", e)
+      case e: Exception => new RuntimeException(s"Failed to get applications for ${params.toString}", e)
+    }
+  }
 }

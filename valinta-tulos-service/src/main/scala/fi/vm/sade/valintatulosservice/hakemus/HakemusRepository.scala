@@ -11,7 +11,12 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
                        (implicit appConfig: VtsAppConfig) extends Logging {
 
   def findPersonOids(hakuOid: HakuOid): Map[HakemusOid, String] = {
-    hakuAppRepository.findPersonOids(hakuOid)
+    hakuAppRepository.findPersonOids(hakuOid) match {
+      case oids if oids.nonEmpty => oids
+      case _ => ataruHakemusRepository.getHakemusToHakijaOidMapping(hakuOid, None)
+          .left.map(t => new RuntimeException(s"Hakijoiden haku haulle $hakuOid Atarusta epäonnistui.", t))
+          .fold(throw _, x => x)
+    }
   }
 
   def findPersonOids(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Map[HakemusOid, String] = {

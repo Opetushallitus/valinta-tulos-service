@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.domain
 
-import org.json4s.{CustomSerializer, Formats}
+import org.json4s.{CustomKeySerializer, CustomSerializer, Formats}
 import org.json4s.JsonAST.JString
 
 case class HakemusOid(s: String) {
@@ -57,6 +57,14 @@ class HakemusOidSerializer extends CustomSerializer[HakemusOid]((_: Formats) => 
     case json: JString => HakemusOid(json.s)
   }, {
     case hakemusOid: HakemusOid => JString(hakemusOid.toString)
+  })
+})
+
+class HakemusOidKeySerializer extends CustomKeySerializer[HakemusOid]((_: Formats) => {
+  ({
+    case json: String => HakemusOid(json)
+  }, {
+    case hakemusOid: HakemusOid => hakemusOid.toString
   })
 })
 
