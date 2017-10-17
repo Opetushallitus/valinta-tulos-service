@@ -28,16 +28,18 @@ class PuuttuvienTulostenKokoaja(valintarekisteriDb: ValintarekisteriDb,
       toiveetHakemuksiltaIterator.filterNot(t => toiveetRekisterista.contains((t.hakemusOid, t.hakukotoiveOid)))
     }
     Timer.timed(s"Retrieving and processing hakemus data for haku $hakuOid", 5000) {
-      puuttuvatToiveetHakemuksilta.map(_.toSeq.groupBy(h => (h.tarjoajaOid, h.tarjoajanNimi))).map {
+      puuttuvatToiveetHakemuksilta.map(_.toSeq.groupBy(h => h.tarjoajaOid)).map {
         tarjoajittain => {
           tarjoajittain.map {
-            case ((tarjoajaOid, tarjoajanNimi), tulokset) =>
-              val hakukohteidenPuuttuvatTulokset = tulokset.groupBy(t => (t.hakukotoiveOid, t.hakutoiveenNimi)).map {
-                case ((hakukohdeOid, hakukohteenNimi), hakemustenTulokset) =>
+            case (tarjoajaOid, tulokset) =>
+              val ensimmaisenTuloksenTarjoajanNimi = tulokset.headOption.map(_.tarjoajanNimi).getOrElse("N/A")
+              val hakukohteidenPuuttuvatTulokset = tulokset.groupBy(t => t.hakukotoiveOid).map {
+                case (hakukohdeOid, hakemustenTulokset) =>
+                  val ensimmaisenHakukohteenNimi = hakemustenTulokset.headOption.map(_.hakutoiveenNimi).getOrElse("N/A")
                   val urlToSijoittelunTulokset = hakukohdeLinkCreator.createHakukohdeLink(hakuOid, hakukohdeOid)
-                  HakukohteenPuuttuvat(hakukohdeOid, hakukohteenNimi, new URL(urlToSijoittelunTulokset), hakemustenTulokset)
+                  HakukohteenPuuttuvat(hakukohdeOid, ensimmaisenHakukohteenNimi, new URL(urlToSijoittelunTulokset), hakemustenTulokset)
               }
-              TarjoajanPuuttuvat(tarjoajaOid, tarjoajanNimi, hakukohteidenPuuttuvatTulokset.toSeq)
+              TarjoajanPuuttuvat(tarjoajaOid, ensimmaisenTuloksenTarjoajanNimi, hakukohteidenPuuttuvatTulokset.toSeq)
           }
         }
       }
