@@ -47,6 +47,12 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
   }
 
   def findHakemuksetByHakukohde(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Iterator[Hakemus] = {
-    hakuAppRepository.findHakemuksetByHakukohde(hakuOid, hakukohdeOid)
+    hakuAppRepository.findHakemuksetByHakukohde(hakuOid, hakukohdeOid) match {
+      case hakemukset if hakemukset.hasNext => hakemukset
+      case hakemukset if !hakemukset.hasNext => ataruHakemusRepository.getHakemukset(WithHakuOid(hakuOid, Some(hakukohdeOid), None))
+        .right.flatMap(ataruHakemusTarjontaEnricher.apply)
+        .left.map(t => new RuntimeException(s"Hakemuksien haku haulle $hakuOid Atarusta epäonnistui.", t))
+        .fold(throw _, x => x.toIterator)
+    }
   }
 }
