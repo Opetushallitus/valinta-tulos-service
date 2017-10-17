@@ -76,6 +76,8 @@ class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb,
              on conflict on constraint puuttuvat_tulokset_haku_pk
                do update set tarkistettu = now() where puuttuvat_tulokset_haku.haku_oid = ${hakuOid.toString}"""
 
+    val deleteOldResults: SqlAction[Int, NoStream, Effect] =
+      sqlu"delete from puuttuvat_tulokset_hakukohde where haku_oid = ${hakuOid.toString}"
     val saveTarjoajaAndHakukohdeRows = results.flatMap { tarjoajaEntry =>
       val tarjoajaOid = tarjoajaEntry.tarjoajaOid.toString
       val saveTarjoajaRow: SqlAction[Int, NoStream, Effect] =
@@ -96,7 +98,9 @@ class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb,
       }
       saveHakukohdeRows.+:(saveTarjoajaRow)
     }
-    val saveResults = valintarekisteriDb.runBlockingTransactionally(DBIO.sequence(saveTarjoajaAndHakukohdeRows.toSeq.+:(saveHakuRow)), Duration(1, MINUTES))
+    val saveResults = valintarekisteriDb.runBlockingTransactionally(DBIO.sequence(saveTarjoajaAndHakukohdeRows.toSeq.
+      +:(saveHakuRow).
+      +:(deleteOldResults)), Duration(1, MINUTES))
     saveResults match {
       case Right(savedRowCounts) => logger.info(s"Tallennettujen rivien määrät haulle $hakuOid : $savedRowCounts")
       case Left(e) => logger.error(s"Virhe tallennettaessa haun $hakuOid tietoja:", e)
