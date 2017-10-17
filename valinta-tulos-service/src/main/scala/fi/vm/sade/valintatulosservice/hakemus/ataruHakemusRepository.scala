@@ -1,12 +1,18 @@
 package fi.vm.sade.valintatulosservice.hakemus
 
-import fi.vm.sade.valintatulosservice.HttpHelper
+import java.util.concurrent.TimeUnit
+
+import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasParams}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import org.json4s.jackson.JsonMethods._
+import org.http4s.Method.GET
+import org.http4s.json4s.native.jsonExtract
+import org.http4s.{Request, Uri}
 
 import scala.collection.JavaConverters._
+import scala.concurrent.duration.Duration
+import scalaz.concurrent.Task
 
 case class AtaruHakemus(oid: HakemusOid,
                         hakuOid: HakuOid,
@@ -26,6 +32,21 @@ case class WithHakemusOids(hakuOid: Option[HakuOid],
                            hakemusOids: List[HakemusOid]) extends HakemuksetQuery
 
 class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats {
+
+  private implicit val jsonFormat = JsonFormats.jsonFormats
+
+  private val params = CasParams(
+    "/lomake-editori",
+    config.settings.securitySettings.casUsername,
+    config.settings.securitySettings.casPassword
+  )
+  private val client = new CasAuthenticatingClient(
+    config.securityContext.casClient,
+    params,
+    org.http4s.client.blaze.defaultClient,
+    "valinta-tulos-service"
+  )
+
   def getHakemukset(query: HakemuksetQuery): Either[Throwable, List[AtaruHakemus]] = {
     val params = query match {
       case WithHakuOid(hakuOid, hakukohdeOid, hakemusOids) =>
@@ -37,13 +58,13 @@ class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats {
           hakukohdeOid.map("hakukohdeOid" -> _.toString) ++
           Option("hakemusOids" -> hakemusOids.mkString(","))).toMap
     }
-    val url = config.ophUrlProperties.url("ataru-service.applications", params.asJava)
-    HttpHelper.fetch(url) { response =>
-      parse(response).extract[List[AtaruHakemus]]
-    }.left.map {
-      case e: IllegalArgumentException => new IllegalArgumentException(s"No applications for $query found", e)
-      case e: IllegalStateException => new IllegalStateException(s"Parsing applications for $query failed", e)
-      case e: Exception => new RuntimeException(s"Failed to get applications for $query", e)
-    }
+    Uri.fromString(config.ophUrlProperties.url("ataru-service.applications", params.asJava))
+      .fold(Task.fail, uri => {
+        client.httpClient.fetch(Request(method = GET, uri = uri)) {
+          case r if r.status.code == 200 => r.as[List[AtaruHakemus]](jsonExtract[List[AtaruHakemus]])
+            .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing hakemukset for $query failed", t)) }
+          case r => Task.fail(new RuntimeException(s"Failed to get hakemukset for $query: ${r.toString()}"))
+        }
+      }).attemptRunFor(Duration(10, TimeUnit.SECONDS)).toEither
   }
 }
