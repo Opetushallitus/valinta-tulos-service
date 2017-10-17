@@ -28,7 +28,7 @@ object JsonFormats {
     new KausiSerializer,
     new HakijaOidSerializer
   )
-  val jsonFormats: Formats = GenericJsonFormats.genericFormats ++ customSerializers
+  val jsonFormats: Formats = (GenericJsonFormats.genericFormats ++ customSerializers).addKeySerializers(List(new HakemusOidKeySerializer))
 
   def formatJson(found: AnyRef): String = {
     org.json4s.jackson.Serialization.write(found)(jsonFormats)
