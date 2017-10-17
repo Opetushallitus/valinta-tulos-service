@@ -36,7 +36,8 @@ class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats {
   private implicit val jsonFormat = JsonFormats.jsonFormats
 
   private val params = CasParams(
-    "/lomake-editori",
+    config.ophUrlProperties.url("url-ataru-service"),
+    "auth/cas",
     config.settings.securitySettings.casUsername,
     config.settings.securitySettings.casPassword
   )
@@ -44,7 +45,8 @@ class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats {
     config.securityContext.casClient,
     params,
     org.http4s.client.blaze.defaultClient,
-    "valinta-tulos-service"
+    "valinta-tulos-service",
+    "ring-session"
   )
 
   def getHakemukset(query: HakemuksetQuery): Either[Throwable, List[AtaruHakemus]] = {
