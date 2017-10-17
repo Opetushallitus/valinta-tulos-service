@@ -38,7 +38,7 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
       case Left(e) => ataruHakemusRepository.getHakemukset(WithHakemusOids(None, None, List(hakemusOid)))
         .right.flatMap(ataruHakemusTarjontaEnricher.apply)
         .left.map(t => new RuntimeException(s"Hakemuksen $hakemusOid haku Atarusta epäonnistui.", t))
-        .fold(throw _, x => Right(x.head))
+        .fold(throw _, x => x.headOption.toRight(new IllegalArgumentException(s"No hakemus $hakemusOid found")))
     }
   }
 
