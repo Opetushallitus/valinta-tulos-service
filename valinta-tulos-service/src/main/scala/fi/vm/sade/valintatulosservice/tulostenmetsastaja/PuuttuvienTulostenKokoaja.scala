@@ -2,15 +2,17 @@ package fi.vm.sade.valintatulosservice.tulostenmetsastaja
 
 import java.net.URL
 
+import com.mongodb.casbah.Imports.{$and, MongoDBObject, _}
 import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
+import fi.vm.sade.valintatulosservice.domain.Hakemus
+import fi.vm.sade.valintatulosservice.hakemus.{DatabaseKeys, HakemusRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.apache.commons.lang3.StringUtils
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * Etsitään hakutoiveet hakemuksilta ja tarkistetaan, miltä kaikilta niistä puuttuu tulos Valintarekisteristä.
@@ -18,6 +20,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class PuuttuvienTulostenKokoaja(valintarekisteriDb: ValintarekisteriDb,
                                 hakemusRepository: HakemusRepository,
                                 hakukohdeLinkCreator: SijoittelunTuloksetLinkCreator) extends Logging {
+  private val hakemusStatesToInclude = Array("ACTIVE", "INCOMPLETE")
+
   def kokoaPuuttuvatTulokset(hakuOid: HakuOid): Future[Iterable[TarjoajanPuuttuvat[HakukohteenPuuttuvat]]] = {
     val puuttuvatToiveetHakemuksilta: Future[Iterator[HakutoiveTulosHakemuksella]] = rekisteristaLoytyvatHakutoiveet(hakuOid).
       zip(hakemuksiltaLoytyvatHakutoiveet(hakuOid)).map { case (toiveetRekisterista, toiveetHakemuksiltaIterator) =>
@@ -41,8 +45,15 @@ class PuuttuvienTulostenKokoaja(valintarekisteriDb: ValintarekisteriDb,
   }
 
   private def hakemuksiltaLoytyvatHakutoiveet(hakuOid: HakuOid): Future[Iterator[HakutoiveTulosHakemuksella]] = {
-    logger.info(s"Aletaan hakea hakutoiveita haun $hakuOid hakemuksilta...")
-    Future(hakemusRepository.findHakemukset(hakuOid).flatMap {
+    def findRelevantHakemuses: Iterator[Hakemus] = {
+      hakemusRepository.findHakemuksetByQuery(
+        $and(Seq(
+          MongoDBObject(DatabaseKeys.hakuOidKey -> hakuOid.toString),
+          DatabaseKeys.state $in hakemusStatesToInclude
+        )))
+    }
+    logger.info(s"Aletaan hakea hakutoiveita haun $hakuOid hakemuksilta, jotka ovat tiloissa ${hakemusStatesToInclude.mkString(", ")}...")
+    Future(findRelevantHakemuses.flatMap {
       logger.info(s"Käsitellään hakutoiveita haun $hakuOid hakemuksilta...")
       h =>
         h.toiveet.map { t =>

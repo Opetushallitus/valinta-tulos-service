@@ -24,6 +24,7 @@ object DatabaseKeys {
   val hakutoiveKeyPostfix: String = "Koulutus"
   val tarjoajaKeyPostfix: String = "Opetuspiste"
   val asiointiKieliKey: String = "answers.lisatiedot.asiointikieli"
+  val state: String = "state"
 }
 
 @deprecated("Should be removed ASAP. Has no idea of indexes. Also has no idea of search structures")
