@@ -47,11 +47,12 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) {
     appConfig.settings.securitySettings.casUsername,
     appConfig.settings.securitySettings.casPassword
   )
-  private val client = new CasAuthenticatingClient(
+  private val client = CasAuthenticatingClient(
     appConfig.securityContext.casClient,
     params,
     org.http4s.client.blaze.defaultClient,
-    "valinta-tulos-service"
+    Some("valinta-tulos-service"),
+    "JSESSIONID"
   )
 
   def henkilot(oids: Set[HakijaOid]): Either[Throwable, Set[Henkilo]] = {
@@ -63,7 +64,7 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) {
       .fold(Task.fail, uri => {
         val req = Request(method = POST, uri = uri)
           .withBody[Array[String]](oids.map(_.toString).toArray)(jsonEncoderOf[Array[String]])
-        client.httpClient.fetch(req) {
+        client.fetch(req) {
           case r if r.status.code == 200 => r.as[Array[Henkilo]](jsonOf[Array[Henkilo]]).map(_.toSet)
             .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing henkilöt $oids failed", t)) }
           case r => Task.fail(new RuntimeException(s"Failed to get henkilöt $oids: ${r.toString()}"))

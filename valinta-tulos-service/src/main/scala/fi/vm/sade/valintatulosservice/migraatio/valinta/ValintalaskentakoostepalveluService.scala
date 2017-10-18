@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit.SECONDS
 import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasParams}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import org.http4s.client.Client
 import org.http4s.client.middleware.Retry
 import org.http4s.client.middleware.RetryPolicy.exponentialBackoff
 import org.http4s.{Method, Request, Uri}
@@ -39,7 +40,7 @@ class ValintalaskentakoostepalveluService(appConfig: VtsAppConfig) extends Loggi
 
     implicit val hakukohdeResponseDecoder =  org.http4s.json4s.native.jsonOf[HakukohdeResponse]
 
-    val retryingClient = Retry(exponentialBackoff(Duration(30, SECONDS), maxRetry = 10))(valintalaskentakoosteClient.httpClient)
+    val retryingClient = Retry(exponentialBackoff(Duration(30, SECONDS), maxRetry = 10))(valintalaskentakoosteClient)
     retryingClient.fetch(Request(method = Method.GET, uri = createUri(url, ""))) {
       case r if 200 == r.status.code => r.as[HakukohdeResponse]
       case r => Task.fail(new RuntimeException(s"Error when checking hakukohde $hakukohdeOid from url $url : ${r.toString}"))
@@ -54,9 +55,15 @@ class ValintalaskentakoostepalveluService(appConfig: VtsAppConfig) extends Loggi
     Uri.fromString(stringUri).getOrElse(throw new RuntimeException(s"Invalid uri: $stringUri"))
   }
 
-  private def createCasClient(appConfig: VtsAppConfig, targetService: String): CasAuthenticatingClient = {
+  private def createCasClient(appConfig: VtsAppConfig, targetService: String): Client = {
     val params = CasParams(targetService, appConfig.settings.securitySettings.casUsername, appConfig.settings.securitySettings.casPassword)
-    new CasAuthenticatingClient(appConfig.securityContext.casClient, params, org.http4s.client.blaze.defaultClient, "valinta-tulos-service") // TODO read from constant
+    CasAuthenticatingClient(
+      appConfig.securityContext.casClient,
+      params,
+      org.http4s.client.blaze.defaultClient,
+      Some("valinta-tulos-service"), // TODO read from constant
+      "JSESSIONID"
+    )
   }
 
   def parseStatus(json: String): Option[String] = {
