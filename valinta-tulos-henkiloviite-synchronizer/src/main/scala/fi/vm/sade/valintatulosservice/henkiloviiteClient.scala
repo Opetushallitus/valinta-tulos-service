@@ -48,7 +48,8 @@ class HenkiloviiteClient(configuration: AuthenticationConfiguration) {
       new CasClient(configuration.cas.host, org.http4s.client.blaze.defaultClient),
       casParams,
       org.http4s.client.blaze.defaultClient,
-      null
+      None,
+      "JSESSIONID"
     )
   }
 }
