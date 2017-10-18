@@ -114,8 +114,6 @@ object VtsAppConfig extends Logging {
       .withOverride(("cas.service.organisaatio-service", s"http://localhost:${organisaatioMockPort}/organisaatio-service"))
       .withOverride(("cas.url", s"https://itest-virkailija.oph.ware.fi/cas"))
       .withOverride(("valinta-tulos-service.cas.service", s"http://localhost:${vtsMockPort}/valinta-tulos-service"))
-      .withOverride(("valinta-tulos-service.cas.kela.username", s"kelatesti"))
-      .withOverride(("valinta-tulos-service.cas.kela.password", s"foobar123!"))
       .withOverride(("valinta-tulos-service.read-from-valintarekisteri", s"false"))
       .withOverride(("valinta-tulos-service.kela.vastaanotot.testihetu", s"090121-321C"))
   }
