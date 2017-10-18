@@ -41,11 +41,11 @@ class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats {
     config.settings.securitySettings.casUsername,
     config.settings.securitySettings.casPassword
   )
-  private val client = new CasAuthenticatingClient(
+  private val client = CasAuthenticatingClient(
     config.securityContext.casClient,
     params,
     org.http4s.client.blaze.defaultClient,
-    "valinta-tulos-service",
+    Some("valinta-tulos-service"),
     "ring-session"
   )
 
@@ -62,7 +62,7 @@ class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats {
     }
     Uri.fromString(config.ophUrlProperties.url("ataru-service.applications", params.asJava))
       .fold(Task.fail, uri => {
-        client.httpClient.fetch(Request(method = GET, uri = uri)) {
+        client.fetch(Request(method = GET, uri = uri)) {
           case r if r.status.code == 200 => r.as[List[AtaruHakemus]](jsonExtract[List[AtaruHakemus]])
             .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing hakemukset for $query failed", t)) }
           case r => Task.fail(new RuntimeException(s"Failed to get hakemukset for $query: ${r.toString()}"))
@@ -75,7 +75,7 @@ class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats {
       hakukohdeOids.map("hakukohdeOids" -> _.mkString(","))).toMap.asJava
     Uri.fromString(config.ophUrlProperties.url("ataru-service.persons", params))
       .fold(Task.fail, uri => {
-        client.httpClient.fetch(Request(method = GET, uri = uri)) {
+        client.fetch(Request(method = GET, uri = uri)) {
           case r if r.status.code == 200 => r.as[Map[HakemusOid, String]](jsonExtract[Map[HakemusOid, String]])
             .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing hakemukset for $params failed", t)) }
           case r => Task.fail(new RuntimeException(s"Failed to get hakemukset for $params: ${r.toString()}"))
