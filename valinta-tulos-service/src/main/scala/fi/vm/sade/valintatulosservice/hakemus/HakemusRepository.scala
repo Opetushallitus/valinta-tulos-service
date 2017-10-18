@@ -14,17 +14,27 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
     hakuAppRepository.findPersonOids(hakuOid) match {
       case oids if oids.nonEmpty => oids
       case _ => ataruHakemusRepository.getHakemusToHakijaOidMapping(hakuOid, None)
-          .left.map(t => new RuntimeException(s"Hakijoiden haku haulle $hakuOid Atarusta epäonnistui.", t))
-          .fold(throw _, x => x)
+          .left.map(t => logger.error(s"Hakijoiden haku haulle $hakuOid Atarusta epäonnistui.", t))
+          .fold(_ => Map(), x => x)
     }
   }
 
   def findPersonOids(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Map[HakemusOid, String] = {
-    hakuAppRepository.findPersonOids(hakuOid, hakukohdeOid)
+    hakuAppRepository.findPersonOids(hakuOid, hakukohdeOid) match {
+      case oids if oids.nonEmpty => oids
+      case _ => ataruHakemusRepository.getHakemusToHakijaOidMapping(hakuOid, Some(List(hakukohdeOid)))
+        .left.map(t => logger.error(s"Hakijoiden haku haulle $hakuOid Atarusta epäonnistui.", t))
+        .fold(_ => Map(), x => x)
+    }
   }
 
   def findPersonOids(hakuOid: HakuOid, hakukohdeOids: List[HakukohdeOid]): Map[HakemusOid, String] = {
-    hakuAppRepository.findPersonOids(hakuOid, hakukohdeOids)
+    hakuAppRepository.findPersonOids(hakuOid, hakukohdeOids) match {
+      case oids if oids.nonEmpty => oids
+      case _ => ataruHakemusRepository.getHakemusToHakijaOidMapping(hakuOid, Some(hakukohdeOids))
+        .left.map(t => logger.error(s"Hakijoiden haku haulle $hakuOid Atarusta epäonnistui.", t))
+        .fold(_ => Map(), x => x)
+    }
   }
 
   def findHakemukset(hakuOid: HakuOid): Iterator[Hakemus] = {
@@ -32,8 +42,8 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
       case hakemukset if hakemukset.hasNext => hakemukset
       case hakemukset if !hakemukset.hasNext => ataruHakemusRepository.getHakemukset(WithHakuOid(hakuOid, None, None))
         .right.flatMap(ataruHakemusTarjontaEnricher.apply)
-        .left.map(t => new RuntimeException(s"Hakemuksien haku haulle $hakuOid Atarusta epäonnistui.", t))
-        .fold(throw _, x => x.toIterator)
+        .left.map(t => logger.error(s"Hakemuksien haku haulle $hakuOid Atarusta epäonnistui.", t))
+        .fold(_ => Iterator(), x => x.toIterator)
     }
   }
 
@@ -56,8 +66,8 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
       case hakemukset if hakemukset.hasNext => hakemukset
       case hakemukset if !hakemukset.hasNext => ataruHakemusRepository.getHakemukset(WithHakuOid(hakuOid, Some(hakukohdeOid), None))
         .right.flatMap(ataruHakemusTarjontaEnricher.apply)
-        .left.map(t => new RuntimeException(s"Hakemuksien haku haulle $hakuOid Atarusta epäonnistui.", t))
-        .fold(throw _, x => x.toIterator)
+        .left.map(t => logger.error(s"Hakemuksien haku haulle $hakuOid Atarusta epäonnistui.", t))
+        .fold(_ => Iterator(), x => x.toIterator)
     }
   }
 }
