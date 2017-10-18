@@ -3,9 +3,11 @@ package fi.vm.sade.valintatulosservice.local
 import fi.vm.sade.security.mock.MockSecurityContext
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
+import fi.vm.sade.valintatulosservice.hakemus.AtaruHakemus
+import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.Henkilo
 import fi.vm.sade.valintatulosservice.production.Hakija
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, LasnaKokoLukuvuosi, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.joda.time.{DateTime, DateTimeZone}
 import org.json4s.JValue
 import org.json4s.jackson.Serialization
@@ -77,6 +79,31 @@ class ValintaTulosServletSpec extends ServletSpecification {
           body must_== """{"error":"Not found"}"""
           status must_== 404
         }
+      }
+    }
+
+    "palauttaa ataru-hakemuksen valintatuloksen" in {
+      AtaruFixture.fixture = List(
+        AtaruHakemus(
+          HakemusOid("1.2.246.562.11.00000000000000000005"),
+          HakuOid("1.2.246.562.5.2013080813081926341928"),
+          HakijaOid("ataru-tyyppi"),
+          "fi",
+          List("1.2.246.562.5.72607738902"),
+          None)
+      )
+      HenkilotFixture.fixture = List(
+        Henkilo(
+          HakijaOid("ataru-tyyppi"),
+          None,
+          Some("Ataru")
+        )
+      )
+      useFixture("hyvaksytty-kesken-julkaistavissa.json")
+      get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000000000000000005") {
+        status must_== 200
+        body must_==
+          """{"hakuOid":"1.2.246.562.5.2013080813081926341928","hakemusOid":"1.2.246.562.11.00000000000000000005","hakijaOid":"ataru-tyyppi","aikataulu":{"vastaanottoEnd":"2100-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.5.72607738902","hakukohdeNimi":"Lukion ilmaisutaitolinja","tarjoajaOid":"123.123.123.123","tarjoajaNimi":"Kallion lukio","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2100-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oiliHetuton/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]}"""
       }
     }
   }
