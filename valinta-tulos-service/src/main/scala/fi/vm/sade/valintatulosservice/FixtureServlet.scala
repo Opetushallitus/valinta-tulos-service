@@ -10,8 +10,8 @@ import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtures
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
+import org.scalatra.ScalatraServlet
 import org.scalatra.json.JacksonJsonSupport
-import org.scalatra.{NotFound, Ok, ScalatraServlet}
 
 object AtaruFixture {
   var fixture: List[AtaruHakemus] = List.empty
