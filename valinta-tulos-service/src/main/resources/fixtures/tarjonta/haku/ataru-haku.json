@@ -1,0 +1,74 @@
+{
+  "accessRights": {
+    "update": true,
+    "create": true,
+    "delete": true
+  },
+  "result": {
+    "modified": 1507714285387,
+    "modifiedBy": "1.2.246.562.24.30121845486",
+    "oid": "1.2.246.562.29.37061034627",
+    "hakukausiUri": "kausi_s#1",
+    "hakukausiVuosi": 2017,
+    "hakutapaUri": "hakutapa_02#1",
+    "ataruLomakeAvain": "dcc89e90-6529-4f8c-8a61-37017fe3ad1d",
+    "hakutyyppiUri": "hakutyyppi_01#1",
+    "kohdejoukkoUri": "haunkohdejoukko_12#1",
+    "kohdejoukonTarkenne": "haunkohdejoukontarkenne_3#1",
+    "koulutuksenAlkamisVuosi": 2017,
+    "koulutuksenAlkamiskausiUri": "kausi_s#1",
+    "tila": "JULKAISTU",
+    "ylioppilastutkintoAntaaHakukelpoisuuden": false,
+    "hakukohdeOidsYlioppilastutkintoAntaaHakukelpoisuuden": [
+
+    ],
+    "sijoittelu": false,
+    "jarjestelmanHakulomake": false,
+    "hakuaikas": [
+      {
+        "hakuaikaId": "16144927",
+        "alkuPvm": 1504266373403,
+        "loppuPvm": 1540554360000,
+        "nimet": {
+          "kieli_sv": "",
+          "kieli_fi": "Aika",
+          "kieli_en": ""
+        }
+      }
+    ],
+    "hakukohdeOids": [
+      "1.2.246.562.20.14875157126",
+      "1.2.246.562.20.27958725015"
+    ],
+    "nimi": {
+      "kieli_sv": "",
+      "kieli_fi": "Ataru testihaku",
+      "kieli_en": ""
+    },
+    "maxHakukohdes": 0,
+    "canSubmitMultipleApplications": true,
+    "organisaatioOids": [
+      "1.2.246.562.10.00000000001"
+    ],
+    "tarjoajaOids": [
+      "1.2.246.562.10.00000000001"
+    ],
+    "usePriority": false,
+    "sisaltyvatHaut": [
+
+    ],
+    "organisaatioryhmat": [
+
+    ],
+    "koulutusmoduuliTyyppi": "TUTKINTO",
+    "maksumuuriKaytossa": false,
+    "tunnistusKaytossa": false,
+    "yhdenPaikanSaanto": {
+      "voimassa": true,
+      "syy": "Haun kohdejoukon tarkenne on 'haunkohdejoukontarkenne_3#1'"
+    },
+    "autosyncTarjonta": false,
+    "korkeakouluHaku": true
+  },
+  "status": "OK"
+}

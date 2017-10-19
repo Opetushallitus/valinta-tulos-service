@@ -86,10 +86,10 @@ class ValintaTulosServletSpec extends ServletSpecification {
       AtaruFixture.fixture = List(
         AtaruHakemus(
           HakemusOid("1.2.246.562.11.00000000000000000005"),
-          HakuOid("1.2.246.562.5.2013080813081926341928"),
+          HakuOid("1.2.246.562.29.37061034627"),
           HakijaOid("ataru-tyyppi"),
           "fi",
-          List("1.2.246.562.5.72607738902"),
+          List("1.2.246.562.20.14875157126"),
           None)
       )
       HenkilotFixture.fixture = List(
@@ -99,11 +99,11 @@ class ValintaTulosServletSpec extends ServletSpecification {
           Some("Ataru")
         )
       )
-      useFixture("hyvaksytty-kesken-julkaistavissa.json")
+      useFixture("ei-tuloksia.json", hakemusFixtures = List.empty, hakuFixture = HakuOid("ataru-haku"))
       get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000000000000000005") {
         status must_== 200
         body must_==
-          """{"hakuOid":"1.2.246.562.5.2013080813081926341928","hakemusOid":"1.2.246.562.11.00000000000000000005","hakijaOid":"ataru-tyyppi","aikataulu":{"vastaanottoEnd":"2100-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.5.72607738902","hakukohdeNimi":"Lukion ilmaisutaitolinja","tarjoajaOid":"123.123.123.123","tarjoajaNimi":"Kallion lukio","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2100-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oiliHetuton/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]}"""
+          """{"hakuOid":"1.2.246.562.29.37061034627","hakemusOid":"1.2.246.562.11.00000000000000000005","hakijaOid":"ataru-tyyppi","aikataulu":{"vastaanottoEnd":"2100-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.20.14875157126","hakukohdeNimi":"Ataru testihakukohde","tarjoajaOid":"1.2.246.562.10.72985435253","tarjoajaNimi":"Aalto-yliopisto, Insinööritieteiden korkeakoulu","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2100-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oiliHetuton/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]}"""
       }
     }
   }
