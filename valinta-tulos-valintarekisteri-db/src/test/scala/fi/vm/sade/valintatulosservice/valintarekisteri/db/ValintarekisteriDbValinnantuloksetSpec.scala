@@ -5,6 +5,7 @@ import java.time.{OffsetDateTime, ZoneId, ZonedDateTime}
 import java.util.ConcurrentModificationException
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
+import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila.{EHDOLLISESTI_VASTAANOTTANUT, VASTAANOTTANUT_SITOVASTI}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Hyvaksymiskirje => Kirje, _}
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
 import org.junit.runner.RunWith
@@ -220,6 +221,21 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       result(4).changes must contain(KentanMuutos(field = "hyvaksyPeruuntunut", from = None, to = false))
     }
 
+    "skip kludged special case of overriding vastaanotto deleting vastaanotto" in {
+      storeValinnantilaAndValinnantulos()
+      singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid,
+        VastaanotaEhdollisesti, "tester", "First vastaanotto"))
+      singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid,
+        VastaanotaSitovasti, "tester", "Second vastaanotto"))
+      val result = singleConnectionValintarekisteriDb.getMuutoshistoriaForHakemus(hakemusOid, valintatapajonoOid).sortBy(_.timestamp)
+      result must have size 3
+      val ehdollinenVastaanotto = result(1)
+      val sitovaVastaanotto = result(2)
+      ehdollinenVastaanotto.changes must have size 1
+      ehdollinenVastaanotto.changes must contain(KentanMuutos(field = "vastaanottotila", from = None, to = EHDOLLISESTI_VASTAANOTTANUT))
+      sitovaVastaanotto.changes must have size 1
+      sitovaVastaanotto.changes must contain(KentanMuutos(field = "vastaanottotila", from = Some(EHDOLLISESTI_VASTAANOTTANUT), to = VASTAANOTTANUT_SITOVASTI))
+    }
 
     "update julkaistavissa and hyväksytty/julkaistu dates for valintatapajono" in {
       storeValinnantilaAndValinnantulos()
