@@ -8,7 +8,7 @@ import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatapajono, 
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.StoreSijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 
 import scala.collection.JavaConverters._
 import scala.concurrent.TimeoutException
@@ -133,7 +133,6 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
       } catch {
         case te: TimeoutException => logger.warn(s"Timeout haun $hakuOid sijoittelun tallennuksen jälkeisestä analyzestä!!!", te)
         case sqlt: SQLTimeoutException => logger.warn(s"Timeout haun $hakuOid sijoittelun tallennuksen jälkeisestä analyzestä!!!", sqlt)
-        case t => throw t
       }
     }
   }
@@ -361,7 +360,8 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
   private def insertValintatapajono(sijoitteluajoId: Long, hakukohdeOid: HakukohdeOid, valintatapajono: Valintatapajono) = {
     val SijoitteluajonValintatapajonoWrapper(oid, nimi, prioriteetti, tasasijasaanto, aloituspaikat, alkuperaisetAloituspaikat,
     eiVarasijatayttoa, kaikkiEhdonTayttavatHyvaksytaan, poissaOlevaTaytto, varasijat, varasijaTayttoPaivat,
-    varasijojaKaytetaanAlkaen, varasijojaTaytetaanAsti, tayttojono, alinHyvaksyttyPistemaara, _)
+    varasijojaKaytetaanAlkaen, varasijojaTaytetaanAsti, tayttojono, alinHyvaksyttyPistemaara, _,
+    sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa)
     = SijoitteluajonValintatapajonoWrapper(valintatapajono)
 
     val varasijojaKaytetaanAlkaenTs:Option[Timestamp] = varasijojaKaytetaanAlkaen.flatMap(d => Option(new Timestamp(d.getTime)))
@@ -396,7 +396,8 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
                  varasijoja_kaytetaan_alkaen,
                  varasijoja_taytetaan_asti,
                  tayttojono,
-                 alin_hyvaksytty_pistemaara
+                 alin_hyvaksytty_pistemaara,
+                 sijoiteltu_ilman_varasijasaantoja_niiden_ollessa_voimassa
              ) values (
                  ${oid},
                  ${sijoitteluajoId},
@@ -414,7 +415,8 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
                  ${varasijojaKaytetaanAlkaenTs},
                  ${varasijojaTaytetaanAstiTs},
                  ${tayttojono},
-                 ${alinHyvaksyttyPistemaara}
+                 ${alinHyvaksyttyPistemaara},
+                 ${sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa}
              )"""
     ensureValintaesitys.andThen(insert)
   }

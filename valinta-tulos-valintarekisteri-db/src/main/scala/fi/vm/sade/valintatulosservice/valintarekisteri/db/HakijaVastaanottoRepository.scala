@@ -4,10 +4,8 @@ import java.time.OffsetDateTime
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, Kausi}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, Kausi}
 import slick.dbio.DBIO
-import slick.driver.PostgresDriver.backend.Database
 
 import scala.concurrent.duration.Duration
 

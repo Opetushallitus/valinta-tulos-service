@@ -4,11 +4,11 @@ import fi.vm.sade.sijoittelu.domain.{Hakemus, Hakukohde, Valintatulos}
 import fi.vm.sade.valintatulosservice.json4sCustomFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import org.json4s.{DefaultFormats, JValue}
 import org.json4s.JsonAST.JArray
 import org.json4s.jackson.JsonMethods._
+import org.json4s.{DefaultFormats, JValue}
 import org.springframework.core.io.ClassPathResource
-import slick.driver.PostgresDriver.api.{actionBasedSQLInterpolation, _}
+import slick.jdbc.PostgresProfile.api.{actionBasedSQLInterpolation, _}
 
 case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends json4sCustomFormats {
 

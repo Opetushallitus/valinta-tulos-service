@@ -10,7 +10,7 @@ import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.After
 import slick.dbio.DBIOAction
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 
 @RunWith(classOf[JUnitRunner])
 class EnsikertalaisuusServletSpec extends ServletSpecification with ValintarekisteriDbTools with After {

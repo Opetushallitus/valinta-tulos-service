@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
 import java.sql.{JDBCType, Timestamp}
-import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
+import java.time.{OffsetDateTime, ZoneId, ZonedDateTime}
 import java.util.ConcurrentModificationException
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
@@ -13,7 +13,7 @@ import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.BeforeExample
 import slick.dbio.DBIO
-import slick.driver.PostgresDriver.api.{actionBasedSQLInterpolation, jdbcActionExtensionMethods}
+import slick.jdbc.PostgresProfile.api.{actionBasedSQLInterpolation, jdbcActionExtensionMethods}
 import slick.jdbc.{PositionedParameters, SetParameter}
 
 @RunWith(classOf[JUnitRunner])

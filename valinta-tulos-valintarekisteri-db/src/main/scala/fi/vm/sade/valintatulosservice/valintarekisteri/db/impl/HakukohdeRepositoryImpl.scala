@@ -1,9 +1,9 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakukohdeRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, HakukohdeRecord, OidValidator}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, HakukohdeRecord}
 import org.postgresql.util.PSQLException
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 
 trait HakukohdeRepositoryImpl extends HakukohdeRepository with ValintarekisteriRepository {
 

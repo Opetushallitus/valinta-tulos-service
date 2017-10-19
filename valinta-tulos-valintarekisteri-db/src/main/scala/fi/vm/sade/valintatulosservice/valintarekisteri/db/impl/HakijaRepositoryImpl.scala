@@ -1,10 +1,11 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import java.time.OffsetDateTime
+
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakijaRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 
 trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriRepository {
 

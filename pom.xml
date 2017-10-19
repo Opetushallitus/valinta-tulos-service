@@ -5,7 +5,7 @@
     <groupId>fi.vm.sade</groupId>
     <artifactId>valinta-tulos-service-parent</artifactId>
     <packaging>pom</packaging>
-    <version>4.6-SNAPSHOT</version>
+    <version>4.7-SNAPSHOT</version>
     <name>valinta-tulos-service-parent</name>
 
     <modules>
@@ -306,16 +306,6 @@
                 <groupId>org.http4s</groupId>
                 <artifactId>blaze-http_2.11</artifactId>
                 <version>0.12.4</version>
-            </dependency>
-            <dependency>
-                <groupId>org.json4s</groupId>
-                <artifactId>json4s-jackson_2.11</artifactId>
-                <version>${json4s_2.11.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.json4s</groupId>
-                <artifactId>json4s-ext_2.11</artifactId>
-                <version>${json4s_2.11.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>

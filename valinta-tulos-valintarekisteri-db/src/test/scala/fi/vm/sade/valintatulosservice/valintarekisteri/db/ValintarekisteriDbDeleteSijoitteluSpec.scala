@@ -1,13 +1,13 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, SijoitteluajoWrapper}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.BeforeAfterExample
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 
 import scala.util.Try
 

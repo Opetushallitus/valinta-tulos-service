@@ -11,14 +11,14 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriD
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Tasasijasaanto, _}
 import org.json4s.DefaultFormats
 import org.json4s.native.JsonMethods._
+import org.specs2.matcher.MatchResult
 import org.specs2.mutable.Specification
 import slick.dbio.DBIOAction
-import slick.driver.PostgresDriver.api._
 import slick.jdbc.GetResult
+import slick.jdbc.PostgresProfile.api._
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable.IndexedSeq
-import scala.util.Try
 
 trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
 
@@ -241,6 +241,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
         dvalintatapajono.getVaralla mustEqual wvalintatapajono.getVaralla
         dvalintatapajono.getVarasijat mustEqual wvalintatapajono.getVarasijat
         dvalintatapajono.getVarasijaTayttoPaivat mustEqual wvalintatapajono.getVarasijaTayttoPaivat
+        dvalintatapajono.getSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa mustEqual wvalintatapajono.getSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa
         format(dvalintatapajono.getVarasijojaKaytetaanAlkaen) mustEqual format(wvalintatapajono.getVarasijojaKaytetaanAlkaen)
         format(dvalintatapajono.getVarasijojaTaytetaanAsti) mustEqual format(wvalintatapajono.getVarasijojaTaytetaanAsti)
 
@@ -300,8 +301,12 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
     }
   }
 
-  private implicit val getSijoitteluajoResult = GetResult(r => {
-    SijoitteluajoWrapper(r.nextLong, HakuOid(r.nextString), r.nextTimestamp.getTime, r.nextTimestamp.getTime).sijoitteluajo
+  private implicit val getSijoitteluajoResult: GetResult[SijoitteluAjo] = GetResult(r => {
+    SijoitteluajoWrapper(
+      sijoitteluajoId = r.nextLong,
+      hakuOid = HakuOid(r.nextString),
+      startMils = r.nextTimestamp.getTime,
+      endMils = r.nextTimestamp.getTime).sijoitteluajo
   })
 
   def findSijoitteluajo(sijoitteluajoId:Long): Option[SijoitteluAjo] = {
@@ -311,8 +316,11 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
             where id = ${sijoitteluajoId}""".as[SijoitteluAjo]).headOption
   }
 
-  private implicit val getSijoitteluajonHakukohdeResult = GetResult(r => {
-    SijoitteluajonHakukohdeWrapper(r.nextLong, HakukohdeOid(r.nextString), r.nextBoolean).hakukohde
+  private implicit val getSijoitteluajonHakukohdeResult: GetResult[Hakukohde] = GetResult(r => {
+    SijoitteluajonHakukohdeWrapper(
+      sijoitteluajoId = r.nextLong,
+      oid = HakukohdeOid(r.nextString),
+      kaikkiJonotSijoiteltu = r.nextBoolean).hakukohde
   })
 
   def findSijoitteluajonHakukohteet(sijoitteluajoId:Long): Seq[Hakukohde] = {
@@ -322,11 +330,25 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
             where sijoitteluajo_id = ${sijoitteluajoId}""".as[Hakukohde])
   }
 
-  private implicit val getSijoitteluajonValintatapajonoResult = GetResult(r => {
-    SijoitteluajonValintatapajonoWrapper(ValintatapajonoOid(r.nextString), r.nextString, r.nextInt, Tasasijasaanto(r.nextString()),
-      r.nextIntOption, r.nextIntOption, r.nextBoolean, r.nextBoolean, r.nextBoolean, r.nextIntOption, r.nextIntOption,
-      r.nextTimestampOption(), r.nextTimestampOption(), r.nextStringOption(),
-      r.nextBigDecimalOption, Some(false)).valintatapajono
+  private implicit val getSijoitteluajonValintatapajonoResult: GetResult[Valintatapajono] = GetResult(r => {
+    SijoitteluajonValintatapajonoWrapper(
+      oid = ValintatapajonoOid(r.nextString),
+      nimi = r.nextString,
+      prioriteetti = r.nextInt,
+      tasasijasaanto = Tasasijasaanto(r.nextString()),
+      aloituspaikat = r.nextIntOption,
+      alkuperaisetAloituspaikat = r.nextIntOption,
+      eiVarasijatayttoa = r.nextBoolean,
+      kaikkiEhdonTayttavatHyvaksytaan = r.nextBoolean,
+      poissaOlevaTaytto = r.nextBoolean,
+      varasijat = r.nextIntOption,
+      varasijaTayttoPaivat = r.nextIntOption,
+      varasijojaKaytetaanAlkaen = r.nextTimestampOption(),
+      varasijojaTaytetaanAsti = r.nextTimestampOption(),
+      tayttojono = r.nextStringOption(),
+      alinHyvaksyttyPistemaara = r.nextBigDecimalOption,
+      valintaesitysHyvaksytty = Some(false),
+      sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa = r.nextBoolean()).valintatapajono
   })
 
   def findHakukohteenValintatapajonot(hakukohdeOid:String): Seq[Valintatapajono] = {
@@ -334,14 +356,23 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
       sql"""select oid, nimi, prioriteetti, tasasijasaanto, aloituspaikat, alkuperaiset_aloituspaikat, ei_varasijatayttoa,
             kaikki_ehdon_tayttavat_hyvaksytaan, poissaoleva_taytto,
             varasijat, varasijatayttopaivat, varasijoja_kaytetaan_alkaen, varasijoja_taytetaan_asti, tayttojono,
-            alin_hyvaksytty_pistemaara
+            alin_hyvaksytty_pistemaara, sijoiteltu_ilman_varasijasaantoja_niiden_ollessa_voimassa
             from valintatapajonot
             where hakukohde_oid = ${hakukohdeOid}""".as[Valintatapajono])
   }
 
   private implicit val getSijoitteluajonHakijaryhmaResult = GetResult(r => {
-    SijoitteluajonHakijaryhmaWrapper(r.nextString, r.nextString, r.nextInt, r.nextInt, r.nextBoolean, r.nextBoolean,
-      r.nextBoolean, List(), r.nextStringOption.map(ValintatapajonoOid), r.nextStringOption.map(HakukohdeOid), r.nextStringOption).hakijaryhma
+    SijoitteluajonHakijaryhmaWrapper(oid = r.nextString,
+      nimi = r.nextString,
+      prioriteetti = r.nextInt,
+      kiintio = r.nextInt,
+      kaytaKaikki = r.nextBoolean,
+      tarkkaKiintio = r.nextBoolean,
+      kaytetaanRyhmaanKuuluvia = r.nextBoolean,
+      hakemusOid = List(),
+      valintatapajonoOid = r.nextStringOption.map(ValintatapajonoOid),
+      hakukohdeOid = r.nextStringOption.map(HakukohdeOid),
+      hakijaryhmatyyppikoodiUri = r.nextStringOption).hakijaryhma
   })
 
   def findHakukohteenHakijaryhmat(hakukohdeOid:String): Seq[Hakijaryhma] = {
@@ -362,7 +393,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
     )
   }
 
-  implicit val getHakemuksetForValintatapajonosResult = GetResult(r => HakemusRecord(
+  implicit val getHakemuksetForValintatapajonosResult: GetResult[HakemusRecord] = GetResult(r => HakemusRecord(
     hakijaOid = r.nextStringOption,
     hakemusOid = HakemusOid(r.nextString),
     pisteet = r.nextBigDecimalOption,
@@ -441,8 +472,8 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
 
   case class JonosijanTilankuvauksetResult(tila:Valinnantila, tilankuvausHash:Long, tarkenteenLisatieto:Option[String])
 
-  private implicit val findJonosijanTilaAndtilankuvauksetResult = GetResult(r => {
-    JonosijanTilankuvauksetResult(Valinnantila(r.nextString), r.nextLong, r.nextStringOption)
+  private implicit val findJonosijanTilaAndtilankuvauksetResult: GetResult[JonosijanTilankuvauksetResult] = GetResult(r => {
+    JonosijanTilankuvauksetResult(tila = Valinnantila(r.nextString), tilankuvausHash = r.nextLong, tarkenteenLisatieto = r.nextStringOption)
   })
 
   private def findJonosijanTilaAndtilankuvaukset(hakemusOid:String, sijoitteluajoId:Long, valintatapajonoOid:String) = {
@@ -454,7 +485,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
          """.as[JonosijanTilankuvauksetResult]).head
   }
 
-  private implicit val getSijoitteluajonPistetietoResult = GetResult(r => {
+  private implicit val getSijoitteluajonPistetietoResult: GetResult[Pistetieto] = GetResult(r => {
     SijoitteluajonPistetietoWrapper(r.nextString, r.nextStringOption, r.nextStringOption, r.nextStringOption).pistetieto
   })
 
@@ -473,7 +504,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
     )
   }
 
-  def assertSijoittelu(wrapper:SijoitteluWrapper) = {
+  def assertSijoittelu(wrapper:SijoitteluWrapper): MatchResult[Any] = {
     val stored: Option[SijoitteluAjo] = findSijoitteluajo(wrapper.sijoitteluajo.getSijoitteluajoId)
     stored.isDefined must beTrue
     SijoitteluajoWrapper(stored.get) mustEqual SijoitteluajoWrapper(wrapper.sijoitteluajo)
@@ -487,6 +518,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
       hakukohde.getValintatapajonot.asScala.toList.foreach(valintatapajono => {
         val storedValintatapajono = storedValintatapajonot.find(_.getOid.equals(valintatapajono.getOid))
         storedValintatapajono.isDefined must beTrue
+        storedValintatapajono.get.getSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa mustEqual valintatapajono.getSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa
         SijoitteluajonValintatapajonoWrapper(valintatapajono) mustEqual SijoitteluajonValintatapajonoWrapper(storedValintatapajono.get)
         val storedJonosijat = findValintatapajononJonosijat(valintatapajono.getOid)
         valintatapajono.getHakemukset.asScala.toList.foreach(hakemus => {
@@ -527,7 +559,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
     storedHakukohteet.length mustEqual wrapper.hakukohteet.length
   }
 
-  def createHugeSijoittelu(sijoitteluajoId: Long, hakuOid: HakuOid, size: Int = 50, insertHakukohteet:Boolean = true) = {
+  def createHugeSijoittelu(sijoitteluajoId: Long, hakuOid: HakuOid, size: Int = 50, insertHakukohteet:Boolean = true): SijoitteluWrapper = {
     val sijoitteluajo = SijoitteluajoWrapper(sijoitteluajoId, hakuOid, System.currentTimeMillis(), System.currentTimeMillis())
     var valinnantulokset:IndexedSeq[SijoitteluajonValinnantulosWrapper] = IndexedSeq()
     val hakukohteet = (1 to size par).map(i => {

@@ -6,7 +6,7 @@ import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.DeleteSijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 import slick.dbio.DBIO
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration

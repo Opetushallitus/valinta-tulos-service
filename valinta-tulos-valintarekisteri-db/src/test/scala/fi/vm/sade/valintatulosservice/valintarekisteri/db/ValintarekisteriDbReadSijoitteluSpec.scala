@@ -4,13 +4,13 @@ import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, Hylatty, Hyvaksytty, SijoittelunHakukohdeRecord, ValintatapajonoOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
-import slick.driver.PostgresDriver.api._
 import slick.jdbc.GetResult
+import slick.jdbc.PostgresProfile.api._
 
 
 @RunWith(classOf[JUnitRunner])
@@ -92,6 +92,7 @@ class ValintarekisteriDbReadSijoitteluSpec extends Specification with ITSetup wi
       valintatapajonot.size mustEqual 1
       valintatapajonot.head.oid mustEqual ValintatapajonoOid("14538080612623056182813241345174")
       valintatapajonot.head.nimi mustEqual "Marata YAMK yhteispisteet (yhteistyö)"
+      valintatapajonot.head.sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa mustEqual true
     }
 
     "get hakukohteen pistetiedot" in {

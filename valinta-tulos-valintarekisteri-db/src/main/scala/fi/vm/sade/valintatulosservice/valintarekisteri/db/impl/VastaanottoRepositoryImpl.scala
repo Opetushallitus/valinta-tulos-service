@@ -4,17 +4,16 @@ import java.time.OffsetDateTime
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
+import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db._
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{ConflictingAcceptancesException, HakemusOid, HakuOid, HakukohdeOid, HakukohdeRecord, Kausi, Poista}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.postgresql.util.PSQLException
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.TransactionIsolation.Serializable
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
-import scala.concurrent.ExecutionContext.Implicits.global
-
-import fi.vm.sade.utils.Timer.timed
 
 trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with VirkailijaVastaanottoRepository with ValintarekisteriRepository {
 

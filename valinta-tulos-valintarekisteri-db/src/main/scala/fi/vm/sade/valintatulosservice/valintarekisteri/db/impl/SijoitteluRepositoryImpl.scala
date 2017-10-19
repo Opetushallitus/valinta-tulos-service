@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import slick.driver.PostgresDriver.api._
+import slick.jdbc.PostgresProfile.api._
 
 import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -78,6 +78,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
                   v.varasijoja_kaytetaan_alkaen,
                   v.varasijoja_taytetaan_asti,
                   v.tayttojono,
+                  v.sijoiteltu_ilman_varasijasaantoja_niiden_ollessa_voimassa,
                   v.hakukohde_oid
               from valintatapajonot as v
               join valintaesitykset as ve on ve.valintatapajono_oid = v.oid
@@ -104,6 +105,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
                   v.varasijoja_kaytetaan_alkaen,
                   v.varasijoja_taytetaan_asti,
                   v.tayttojono,
+                  v.sijoiteltu_ilman_varasijasaantoja_niiden_ollessa_voimassa,
                   v.hakukohde_oid
               from valintatapajonot as v
               join valintaesitykset as ve on ve.valintatapajono_oid = v.oid
