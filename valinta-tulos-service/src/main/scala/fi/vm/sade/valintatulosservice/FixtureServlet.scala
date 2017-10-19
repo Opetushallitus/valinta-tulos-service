@@ -9,12 +9,16 @@ import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.Henkilo
 import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtures
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid}
 import org.scalatra.ScalatraServlet
 import org.scalatra.json.JacksonJsonSupport
 
-object AtaruFixture {
+object AtaruApplicationsFixture {
   var fixture: List[AtaruHakemus] = List.empty
+}
+
+object AtaruPersonOidHAkemusOisFixture {
+  var fixture: Map[HakemusOid, String] = Map.empty
 }
 
 object HenkilotFixture {
@@ -53,7 +57,12 @@ class FixtureServlet(valintarekisteriDb: ValintarekisteriDb)(implicit val appCon
 
   get("/ataru/applications") {
     contentType = formats("json")
-    AtaruFixture.fixture
+    AtaruApplicationsFixture.fixture
+  }
+
+  get("/ataru/persons") {
+    contentType = formats("json")
+    AtaruPersonOidHAkemusOisFixture.fixture
   }
 
   post("/oppijanumerorekisteri/henkilot") {
