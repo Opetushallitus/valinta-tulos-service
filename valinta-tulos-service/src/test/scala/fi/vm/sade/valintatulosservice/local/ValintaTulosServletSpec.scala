@@ -34,6 +34,43 @@ class ValintaTulosServletSpec extends ServletSpecification {
       }
     }
 
+    "palauttaa Ataru-hakemusten tiedot" in {
+      val ataruHakemukset = List(
+        AtaruHakemus(
+          HakemusOid("1.2.246.562.11.00000000000000000005"),
+          HakuOid("1.2.246.562.29.37061034627"),
+          HakijaOid("ataru-tyyppi"),
+          "fi",
+          List("1.2.246.562.20.14875157126"),
+          None),
+        AtaruHakemus(
+          HakemusOid("1.2.246.562.11.00000000000000000006"),
+          HakuOid("1.2.246.562.29.37061034627"),
+          HakijaOid("ataru-tyyppi2"),
+          "fi",
+          List("1.2.246.562.20.14875157126", "1.2.246.562.20.27958725015"),
+          None)
+      )
+      val ataruHenkilot = List(
+        Henkilo(
+          HakijaOid("ataru-tyyppi"),
+          None,
+          Some("Ataru")
+        ),
+        Henkilo(
+          HakijaOid("ataru-tyyppi2"),
+          None,
+          Some("Ataru2")
+        )
+      )
+      useFixture("ei-tuloksia.json", hakemusFixtures = List.empty, hakuFixture = HakuOid("ataru-haku"),
+        ataruHakemusFixture = ataruHakemukset, ataruHenkiloFixture = ataruHenkilot)
+      get("haku/1.2.246.562.29.37061034627/hakukohde/1.2.246.562.20.14875157126") {
+        //        status must_== 200
+        body must_== """[{"hakuOid":"1.2.246.562.29.37061034627","hakemusOid":"1.2.246.562.11.00000000000000000005","hakijaOid":"ataru-tyyppi","aikataulu":{"vastaanottoEnd":"2100-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.20.14875157126","hakukohdeNimi":"Ataru testihakukohde","tarjoajaOid":"1.2.246.562.10.72985435253","tarjoajaNimi":"Aalto-yliopisto, Insinööritieteiden korkeakoulu","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2100-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oiliHetuton/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]},{"hakuOid":"1.2.246.562.29.37061034627","hakemusOid":"1.2.246.562.11.00000000000000000006","hakijaOid":"ataru-tyyppi2","aikataulu":{"vastaanottoEnd":"2100-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.20.14875157126","hakukohdeNimi":"Ataru testihakukohde","tarjoajaOid":"1.2.246.562.10.72985435253","tarjoajaNimi":"Aalto-yliopisto, Insinööritieteiden korkeakoulu","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2100-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oiliHetuton/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}},{"hakukohdeOid":"1.2.246.562.20.27958725015","hakukohdeNimi":"Ataru testihakukohde","tarjoajaOid":"1.2.246.562.10.72985435253","tarjoajaNimi":"Aalto-yliopisto, Insinööritieteiden korkeakoulu","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2100-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oiliHetuton/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]}]"""
+      }
+    }
+
     "kun hakukohdetta ei löydy" in {
       "404" in {
         HakuFixtures.useFixture(HakuOid("notfound"))
@@ -75,6 +112,7 @@ class ValintaTulosServletSpec extends ServletSpecification {
 
     "kun hakemusta ei löydy" in {
       "404" in {
+        useFixture("hyvaksytty-ehdollisesti-syy-kesken-julkaistavissa.json")
         get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.LOLLERSTRÖM") {
           body must_== """{"error":"Not found"}"""
           status must_== 404
@@ -83,7 +121,7 @@ class ValintaTulosServletSpec extends ServletSpecification {
     }
 
     "palauttaa ataru-hakemuksen valintatuloksen" in {
-      AtaruFixture.fixture = List(
+      val ataruHakemukset = List(
         AtaruHakemus(
           HakemusOid("1.2.246.562.11.00000000000000000005"),
           HakuOid("1.2.246.562.29.37061034627"),
@@ -92,14 +130,15 @@ class ValintaTulosServletSpec extends ServletSpecification {
           List("1.2.246.562.20.14875157126"),
           None)
       )
-      HenkilotFixture.fixture = List(
+      val ataruHenkilot = List(
         Henkilo(
           HakijaOid("ataru-tyyppi"),
           None,
           Some("Ataru")
         )
       )
-      useFixture("ei-tuloksia.json", hakemusFixtures = List.empty, hakuFixture = HakuOid("ataru-haku"))
+      useFixture("ei-tuloksia.json", hakemusFixtures = List.empty, hakuFixture = HakuOid("ataru-haku"),
+        ataruHakemusFixture = ataruHakemukset, ataruHenkiloFixture = ataruHenkilot)
       get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000000000000000005") {
         status must_== 200
         body must_==
