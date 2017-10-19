@@ -1,8 +1,9 @@
 package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.valintatulosservice.config.{VtsAppConfig, VtsDynamicAppConfig}
-import fi.vm.sade.valintatulosservice.hakemus.HakemusFixtures
+import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemus, HakemusFixtures}
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
+import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.Henkilo
 import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtures
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
@@ -29,7 +30,9 @@ trait ITSetup {
                  hakuFixture: HakuOid = HakuFixtures.korkeakouluYhteishaku,
                  yhdenPaikanSaantoVoimassa: Boolean = false,
                  kktutkintoonJohtava: Boolean = false,
-                 clearFixturesInitially: Boolean = true) {
+                 clearFixturesInitially: Boolean = true,
+                 ataruHakemusFixture: List[AtaruHakemus] = List.empty,
+                 ataruHenkiloFixture: List[Henkilo] = List.empty) {
 
     sijoitteluFixtures.importFixture(fixtureName, clear = clearFixturesInitially, yhdenPaikanSaantoVoimassa = yhdenPaikanSaantoVoimassa, kktutkintoonJohtava = kktutkintoonJohtava)
     extraFixtureNames.map(fixtureName =>
@@ -40,5 +43,8 @@ trait ITSetup {
     HakuFixtures.useFixture(hakuFixture)
     hakemusFixtureImporter.clear
     hakemusFixtures.foreach(hakemusFixtureImporter.importFixture)
+
+    AtaruApplicationsFixture.fixture = ataruHakemusFixture
+    HenkilotFixture.fixture = ataruHenkiloFixture
   }
 }
