@@ -220,8 +220,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       result(4).changes must contain(KentanMuutos(field = "hyvaksyttyVarasijalta", from = None, to = false))
       result(4).changes must contain(KentanMuutos(field = "hyvaksyPeruuntunut", from = None, to = false))
     }
-
-    "skip kludged special case of overriding vastaanotto deleting vastaanotto" in {
+   "skip kludged special case of overriding vastaanotto deleting vastaanotto" in {
       storeValinnantilaAndValinnantulos()
       singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid,
         VastaanotaEhdollisesti, "tester", "First vastaanotto"))
@@ -236,7 +235,6 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       sitovaVastaanotto.changes must have size 1
       sitovaVastaanotto.changes must contain(KentanMuutos(field = "vastaanottotila", from = Some(EHDOLLISESTI_VASTAANOTTANUT), to = VASTAANOTTANUT_SITOVASTI))
     }
-
     "update julkaistavissa and hyväksytty/julkaistu dates for valintatapajono" in {
       storeValinnantilaAndValinnantulos()
       checkJulkaistavissa() must_== false

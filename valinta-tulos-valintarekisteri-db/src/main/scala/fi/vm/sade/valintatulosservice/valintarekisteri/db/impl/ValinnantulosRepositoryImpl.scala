@@ -13,7 +13,6 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.dbio.DBIO
 import slick.jdbc.PostgresProfile.api._
 
-import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
@@ -92,6 +91,8 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   }
 
   private def getVastaanottoMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {
+    def vastaanottotilaMuutos[T](x:T, tila:ValintatuloksenTila) = (x, x, KentanMuutos(field = "vastaanottotila", from = None, to = tila))
+
     sql"""select v.action, v.timestamp, vd.id, vd.poistaja, vd.selite, vd.timestamp
             from vastaanotot as v
             left join deleted_vastaanotot as vd on vd.id = v.deleted
@@ -102,13 +103,15 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             order by v.timestamp asc
         """.as[(ValintatuloksenTila, OffsetDateTime, Option[Long], Option[String], Option[String], Option[OffsetDateTime])]
       .map(_.flatMap {
-        case (tila, ts, None, _, _, _) => List((ts, ts, KentanMuutos(field = "vastaanottotila", from = None, to = tila)))
+        case (tila, ts, None, _, _, _) => List(vastaanottotilaMuutos(ts, tila))
+        case (tila, ts, Some(-2), _, _, _) => List(vastaanottotilaMuutos(ts, tila))
         case (tila, ts, Some(deletedId), Some(poistaja), Some(selite), Some(deletedTs)) => List(
-          (ts, ts, KentanMuutos(field="vastaanottotila", from = None, to = tila)),
+          vastaanottotilaMuutos(ts, tila),
           (deletedId, deletedTs, KentanMuutos(field = "vastaanottotila", from = Some(tila), to = "Kesken (poistettu)")),
           (deletedId, deletedTs, KentanMuutos(field = "Vastaanoton poistaja", from = None, to = poistaja)),
           (deletedId, deletedTs, KentanMuutos(field = "Vastaanoton poiston selite", from = None, to = selite))
         )
+        case (_, _, Some(id), _, _, _) => throw new RuntimeException(s"Poistetulta vastaanottoriviltä ${id} puuttuu tietoja!")
       }.groupBy(_._3.field).mapValues(v => formMuutoshistoria(v.sortWith{case (a, b) => a._2.compareTo(b._2) < 0})).values.flatten)
   }
 
