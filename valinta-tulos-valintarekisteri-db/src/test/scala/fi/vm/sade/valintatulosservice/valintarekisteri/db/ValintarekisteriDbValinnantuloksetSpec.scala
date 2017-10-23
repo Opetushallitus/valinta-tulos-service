@@ -5,6 +5,7 @@ import java.time.{OffsetDateTime, ZoneId, ZonedDateTime}
 import java.util.ConcurrentModificationException
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
+import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila.{EHDOLLISESTI_VASTAANOTTANUT, VASTAANOTTANUT_SITOVASTI}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Hyvaksymiskirje => Kirje, _}
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
 import org.junit.runner.RunWith
@@ -184,6 +185,55 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       origin.changes must contain(KentanMuutos(field = "ehdollisestiHyvaksyttavissa", from = None, to = false))
       origin.changes must contain(KentanMuutos(field = "hyvaksyttyVarasijalta", from = None, to = false))
       origin.changes must contain(KentanMuutos(field = "hyvaksyPeruuntunut", from = None, to = false))
+    }
+
+    "vastaanotto -> delete -> vastaanotto should be correct in muutoshistoria" in {
+      storeValinnantilaAndValinnantulos()
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.storeValinnantuloksenOhjaus(valinnantuloksenOhjaus.copy(julkaistavissa = true))
+      )
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.storeAction(HakijanVastaanotto(henkiloOid, hakemusOid, hakukohdeOid, VastaanotaSitovasti))
+      )
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.storeAction(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid, Poista, henkiloOid, "poistettu"))
+      )
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.storeAction(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid, VastaanotaSitovasti, henkiloOid, "vastaanotto"))
+      )
+
+
+      val result = singleConnectionValintarekisteriDb.getMuutoshistoriaForHakemus(hakemusOid, valintatapajonoOid)
+      result.size must_== 5
+      result(0).changes.size must_== 1
+      result(0).changes.head must_== KentanMuutos(field = "vastaanottotila", from = Some("Kesken (poistettu)"), to = VastaanotaSitovasti.valintatuloksenTila)
+      result(1).changes.size must_== 3
+      result(1).changes must contain(KentanMuutos(field = "vastaanottotila", from = Some(VastaanotaSitovasti.valintatuloksenTila), to = "Kesken (poistettu)"))
+      result(2).changes.size must_== 1
+      result(2).changes.head must_== KentanMuutos(field = "vastaanottotila", from = None, to = VastaanotaSitovasti.valintatuloksenTila)
+      result(3).changes.size must_== 1
+      result(3).changes.head must_== KentanMuutos(field = "julkaistavissa", from = Some(false), to = true)
+      result(4).changes must contain(KentanMuutos(field = "valinnantila", from = None, to = Hyvaksytty))
+      result(4).changes must contain(KentanMuutos(field = "valinnantilanViimeisinMuutos", from = None, to = muutos))
+      result(4).changes must contain(KentanMuutos(field = "julkaistavissa", from = None, to = false))
+      result(4).changes must contain(KentanMuutos(field = "ehdollisestiHyvaksyttavissa", from = None, to = false))
+      result(4).changes must contain(KentanMuutos(field = "hyvaksyttyVarasijalta", from = None, to = false))
+      result(4).changes must contain(KentanMuutos(field = "hyvaksyPeruuntunut", from = None, to = false))
+    }
+   "skip kludged special case of overriding vastaanotto deleting vastaanotto" in {
+      storeValinnantilaAndValinnantulos()
+      singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid,
+        VastaanotaEhdollisesti, "tester", "First vastaanotto"))
+      singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid,
+        VastaanotaSitovasti, "tester", "Second vastaanotto"))
+      val result = singleConnectionValintarekisteriDb.getMuutoshistoriaForHakemus(hakemusOid, valintatapajonoOid).sortBy(_.timestamp)
+      result must have size 3
+      val ehdollinenVastaanotto = result(1)
+      val sitovaVastaanotto = result(2)
+      ehdollinenVastaanotto.changes must have size 1
+      ehdollinenVastaanotto.changes must contain(KentanMuutos(field = "vastaanottotila", from = None, to = EHDOLLISESTI_VASTAANOTTANUT))
+      sitovaVastaanotto.changes must have size 1
+      sitovaVastaanotto.changes must contain(KentanMuutos(field = "vastaanottotila", from = Some(EHDOLLISESTI_VASTAANOTTANUT), to = VASTAANOTTANUT_SITOVASTI))
     }
     "update julkaistavissa and hyväksytty/julkaistu dates for valintatapajono" in {
       storeValinnantilaAndValinnantulos()

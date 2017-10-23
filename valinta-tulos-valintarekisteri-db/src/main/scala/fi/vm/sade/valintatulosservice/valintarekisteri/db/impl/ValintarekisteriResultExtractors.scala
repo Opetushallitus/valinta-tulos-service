@@ -171,6 +171,16 @@ trait ValintarekisteriResultExtractors {
     vastaanotonViimeisinMuutos = parseOffsetDateTime(r)
   ))
 
+  protected implicit val getVastaanottoMuutosResult: GetResult[(ValintatuloksenTila, OffsetDateTime,
+    Option[Long], Option[String], Option[String], Option[OffsetDateTime])] = GetResult(r => (
+    VastaanottoAction(r.nextString).valintatuloksenTila,
+    parseOffsetDateTime(r).get,
+    r.nextLongOption(),
+    r.nextStringOption(),
+    r.nextStringOption(),
+    parseOffsetDateTime(r)
+  ))
+
   protected implicit val getHakutoiveenValinnantulosResult: GetResult[HakutoiveenValinnantulos] = GetResult(r => HakutoiveenValinnantulos(
     hakutoive = r.nextInt(),
     prioriteetti = r.nextIntOption(),
