@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+    <root>
+        <level value="{{ENV_LOGLEVEL}}"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+    {% raw %}
+    <appender name="FILE" class="org.apache.log4j.RollingFileAppender">
+        <param name="Append" value="true"/>
+        <param name="File" value="${user.home}/tomcat/logs/oph-valintatulosservice.log"/>
+        <param name="MaxBackupIndex" value="100"/>
+        <param name="MaxFileSize" value="10MB"/>
+        <param name="Threshold" value="DEBUG"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{yyyy-MM-dd'T'HH:mm:ss.SSSX} %-5p {%X{user}} [%t] %-5p %c: %m%n"/>
+        </layout>
+    </appender>
+    <appender name="STDOUT" class="org.apache.log4j.ConsoleAppender">
+        <param name="Threshold" value="ERROR"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{yyyy-MM-dd'T'HH:mm:ss.SSSX} %-5p {%X{user}} [%t] %-5p %c: %m%n"/>
+        </layout>
+    </appender>
+    {% endraw %}
+
+    <logger name="fi.vm.sade.auditlog.Audit" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="AUDIT"/>
+    </logger>
+    <appender name="AUDIT" class="org.apache.log4j.rolling.RollingFileAppender">
+        <param name="Append" value="true"/>
+        <param name="encoding" value="UTF-8"/>
+        <param name="File" value="${user.home}/tomcat/logs/auditlog_valinta-tulos-service.log"/>
+        <param name="MaxBackupIndex" value="20"/>
+        <param name="rollingPolicy" value="org.apache.log4j.rolling.TimeBasedRollingPolicy"/>
+        <param name="FileNamePattern" value="${user.home}/tomcat/logs/auditlog_valinta-tulos-service.%d{yyyy-MM-dd_HH}.log.gz"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%m%n"/>
+        </layout>
+    </appender>
+
+    <logger name="fi.vm.sade.sijoittelu">
+        <level value="INFO"/>
+    </logger>
+    <logger name="fi.vm.sade.utils">
+        <level value="INFO"/>
+    </logger>
+    <logger name="fi.vm.sade.valintatulosservice">
+        <level value="INFO"/>
+    </logger>
+    <logger name="fi.vm.sade.valintatulosservice.VastaanottoService">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="javax.sql">
+        <level value="ERROR"/>
+    </logger>
+    <logger name="org.apache.activemq">
+        <level value="INFO"/>
+    </logger>
+    <logger name="org.apache.activemq.spring">
+        <level value="{{ENV_LOGLEVEL}}"/>
+    </logger>
+    <logger name="org.apache.cxf">
+        <level value="ERROR"/>
+    </logger>
+    <logger name="org.flywaydb">
+        <level value="INFO"/>
+    </logger>
+    <logger name="org.jasig.cas.client.session">
+        <level value="INFO"/>
+    </logger>
+    <logger name="org.springframework">
+        <level value="ERROR"/>
+    </logger>
+    <logger name="org.vaadin">
+        <level value="ERROR"/>
+    </logger>
+
+
+</log4j:configuration>
