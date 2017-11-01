@@ -35,7 +35,7 @@ log4j.logger.org.flywaydb=INFO
 # Audit logging
 log4j.additivity.fi.vm.sade.auditlog.Audit=false
 log4j.logger.fi.vm.sade.auditlog.Audit=INFO, AUDIT
-log4j.appender.AUDIT=org.apache.log4j.RollingFileAppender
+log4j.appender.AUDIT=org.apache.log4j.rolling.RollingFileAppender
 log4j.appender.AUDIT.File=${user.home}/tomcat/logs/auditlog_valinta-tulos-service.log
 log4j.appender.AUDIT.rollingPolicy=org.apache.log4j.rolling.TimeBasedRollingPolicy
 log4j.appender.AUDIT.rollingPolicy.FileNamePattern=${user.home}/tomcat/logs/auditlog_valinta-tulos-service.%d{yyyy-MM-dd_HH}.log.gz
