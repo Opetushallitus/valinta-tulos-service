@@ -13,7 +13,8 @@ case class DbConfig(url: String,
                     numThreads: Option[Int],
                     queueSize: Option[Int],
                     registerMbeans: Option[Boolean],
-                    initializationFailTimeout: Option[Long])
+                    initializationFailTimeout: Option[Long],
+                    leakDetectionThresholdMillis: Option[Long])
 
 class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends ValintarekisteriRepository
   with VastaanottoRepositoryImpl
@@ -43,6 +44,7 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
     config.minConnections.foreach(c.setMinimumIdle)
     config.registerMbeans.foreach(c.setRegisterMbeans)
     config.initializationFailTimeout.foreach(c.setInitializationFailTimeout)
+    c.setLeakDetectionThreshold(config.leakDetectionThresholdMillis.getOrElse(c.getMaxLifetime))
     val maxConnections = config.numThreads.getOrElse(20)
     val executor = AsyncExecutor("valintarekisteri", maxConnections, config.queueSize.getOrElse(1000))
     Database.forDataSource(new HikariDataSource(c), maxConnections = Some(maxConnections), executor)
