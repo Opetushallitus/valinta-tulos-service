@@ -6,6 +6,7 @@ import fi.vm.sade.oppijantunnistus.{OppijanTunnistus, OppijanTunnistusService}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.domain.{Hakemus, Henkilotiedot}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
+import fi.vm.sade.valintatulosservice.tarjonta
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -23,15 +24,17 @@ class MailDecorator(hakemusRepository: HakemusRepository,
     status.anyMailToBeSent match {
       case true => {
         hakemusRepository.findHakemus(status.hakemusOid) match {
-          case Right(Hakemus(_, _, henkiloOid, asiointikieli, _, Henkilotiedot(Some(kutsumanimi), Some(email), henkilötunnuksellinen))) =>
+          case Right(Hakemus(_, _, henkiloOid, asiointikieli, _, Henkilotiedot(Some(kutsumanimi), Some(email), hasHetu))) =>
             val mailables = status.hakukohteet.filter(_.shouldMail)
             val deadline: Option[Date] = mailables.flatMap(_.deadline).sorted.headOption
 
             try {
+              val tarjontaHaku = fetchHaku(status.hakuOid)
               val ilmoitus = Ilmoitus(
-                status.hakemusOid, henkiloOid, None, asiointikieli, kutsumanimi, email, deadline, mailables.map(toHakukohde),
-                toHaku(status.hakuOid))
-              if(henkilötunnuksellinen) {
+                status.hakemusOid, henkiloOid, None, asiointikieli, kutsumanimi, email, deadline,
+                mailables.map(toHakukohde), toHaku(tarjontaHaku))
+
+              if(hasHetu && !tarjontaHaku.toinenAste) {
                 Some(ilmoitus)
               } else {
                 oppijanTunnistusService.luoSecureLink(henkiloOid, status.hakemusOid, email, asiointikieli) match {
@@ -45,20 +48,20 @@ class MailDecorator(hakemusRepository: HakemusRepository,
             } catch {
               case e: Exception =>
                 status.hakukohteet.filter(_.shouldMail).foreach {
-                  mailPollerRepository.addMessage(status, _,  e.getMessage)
+                  mailPollerRepository.addMessage(status, _, e.getMessage)
                 }
                 None
             }
           case Right(hakemus) =>
             logger.warn("Hakemukselta puuttuu kutsumanimi tai email: " + status.hakemusOid)
             status.hakukohteet.filter(_.shouldMail).foreach {
-              mailPollerRepository.addMessage(status, _,  "Hakemukselta puuttuu kutsumanimi tai email")
+              mailPollerRepository.addMessage(status, _, "Hakemukselta puuttuu kutsumanimi tai email")
             }
             None
           case Left(e) =>
             logger.error("Hakemusta ei löydy: " + status.hakemusOid, e)
             status.hakukohteet.filter(_.shouldMail).foreach {
-              mailPollerRepository.addMessage(status, _,  "Hakemusta ei löydy")
+              mailPollerRepository.addMessage(status, _, "Hakemusta ei löydy")
             }
             None
         }
@@ -67,7 +70,7 @@ class MailDecorator(hakemusRepository: HakemusRepository,
     }
   }
 
-  def toHakukohde(hakukohdeMailStatus: HakukohdeMailStatus) : Hakukohde = {
+  def toHakukohde(hakukohdeMailStatus: HakukohdeMailStatus): Hakukohde = {
     hakuService.getHakukohde(hakukohdeMailStatus.hakukohdeOid) match {
       case Right(hakukohde) =>
         Hakukohde(hakukohdeMailStatus.hakukohdeOid,
@@ -89,10 +92,15 @@ class MailDecorator(hakemusRepository: HakemusRepository,
     }
   }
 
-  def toHaku(oid: HakuOid) : Haku = {
+  def toHaku(haku: tarjonta.Haku): Haku = {
+    Haku(haku.oid, haku.nimi, haku.toinenAste)
+  }
+
+
+  def fetchHaku(oid: HakuOid): tarjonta.Haku = {
     hakuService.getHaku(oid) match {
-      case Right(haku) =>
-        Haku(haku.oid, haku.nimi)
+      case Right(haku: tarjonta.Haku) =>
+        haku
       case Left(e) =>
         val msg = "Hakua ei löydy, oid: " + oid
         logger.error(msg, e)
