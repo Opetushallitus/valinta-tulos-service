@@ -29,7 +29,8 @@ case class Hakukohde(
 
 case class Haku(
   oid: HakuOid,
-  nimi: Map[String, String]
+  nimi: Map[String, String],
+  toinenAste: Boolean
 )
 
 case class LahetysKuittaus(
