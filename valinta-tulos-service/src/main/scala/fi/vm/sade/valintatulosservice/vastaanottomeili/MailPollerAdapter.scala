@@ -23,7 +23,8 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
     val found = (hakuService.kaikkiJulkaistutHaut match {
       case Right(haut) => haut
       case Left(e) => throw e
-    }).filter { haku =>
+    }).filter { haku => haku.toinenAste || haku.korkeakoulu}
+      .filter { haku =>
         val include = haku.hakuAjat.isEmpty || haku.hakuAjat.exists(hakuaika => hakuaika.hasStarted)
         if (!include) logger.info("Pudotetaan haku " + haku.oid + " koska hakuaika ei alkanut")
         include
