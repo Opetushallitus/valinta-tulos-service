@@ -35,7 +35,7 @@ class StoreSijoitteluPerformanceSpec extends Specification with ITSetup with Val
   val dbPasswd = System.getProperty("db_passwd")
 
   def readSijoitteluFromDb = Try(new ValintarekisteriDb(DbConfig(
-    dbUrl, Some(dbUser), Some(dbPasswd), Some(1), Some(1), Some(1), None, None, None), false)) match {
+    dbUrl, Some(dbUser), Some(dbPasswd), Some(1), Some(1), Some(1), None, None, None, None), false)) match {
 
     case Failure(t) => throw t
     case Success(db) => try {

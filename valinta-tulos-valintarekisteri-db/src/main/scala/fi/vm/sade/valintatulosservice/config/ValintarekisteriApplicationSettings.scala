@@ -1,7 +1,6 @@
 package fi.vm.sade.valintatulosservice.config
 
 import com.typesafe.config.Config
-import fi.vm.sade.properties.OphProperties
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.DbConfig
 import org.apache.commons.lang3.BooleanUtils
 
@@ -17,7 +16,8 @@ abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.conf
     numThreads = getInt(config, "valinta-tulos-service.valintarekisteri.db.numThreads"),
     queueSize = getInt(config, "valinta-tulos-service.valintarekisteri.db.queueSize"),
     registerMbeans = getBoolean(config, "valinta-tulos-service.valintarekisteri.db.registerMbeans"),
-    initializationFailTimeout = getLong(config, "valinta-tulos-service.valintarekisteri.db.initializationFailFast")
+    initializationFailTimeout = getLong(config, "valinta-tulos-service.valintarekisteri.db.initializationFailFast"),
+    leakDetectionThresholdMillis = getLong(config, "valinta-tulos-service.valintarekisteri.db.leakDetectionThresholdMillis")
   )
   withConfig(_.getConfig("valinta-tulos-service.valintarekisteri.db"))
   val lenientTarjontaDataParsing: Boolean = BooleanUtils.isTrue(withConfig(_.getBoolean("valinta-tulos-service.parseleniently.tarjonta")))
