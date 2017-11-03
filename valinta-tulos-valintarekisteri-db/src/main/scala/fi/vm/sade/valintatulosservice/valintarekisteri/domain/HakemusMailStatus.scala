@@ -6,7 +6,7 @@ import fi.vm.sade.valintatulosservice.domain.Valintatila.Valintatila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
 
 case class HakemusMailStatus(hakijaOid: String, hakemusOid: HakemusOid, hakukohteet: List[HakukohdeMailStatus], hakuOid: HakuOid) {
-  def anyMailToBeSent = hakukohteet.find(_.shouldMail).nonEmpty
+  def anyMailToBeSent = hakukohteet.exists(_.shouldMail)
 }
 
 case class HakukohdeMailStatus(hakukohdeOid: HakukohdeOid,
