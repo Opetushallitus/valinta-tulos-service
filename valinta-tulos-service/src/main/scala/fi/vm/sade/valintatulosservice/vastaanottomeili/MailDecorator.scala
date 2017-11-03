@@ -29,9 +29,7 @@ class MailDecorator(hakemusRepository: HakemusRepository,
 
           try {
             val tarjontaHaku = fetchHaku(status.hakuOid)
-            val ilmoitus = Ilmoitus(
-              status.hakemusOid, henkiloOid, None, asiointikieli, kutsumanimi, email, deadline,
-              mailables.map(toHakukohde), toHaku(tarjontaHaku))
+            val ilmoitus = Ilmoitus(status.hakemusOid, henkiloOid, None, asiointikieli, kutsumanimi, email, deadline, mailables.map(toHakukohde), toHaku(tarjontaHaku))
 
             if(hasHetu && !tarjontaHaku.toinenAste) {
               Some(ilmoitus)
@@ -74,7 +72,8 @@ class MailDecorator(hakemusRepository: HakemusRepository,
       case Right(hakukohde) =>
         Hakukohde(hakukohdeMailStatus.hakukohdeOid,
           hakukohdeMailStatus.reasonToMail match {
-            case Some(MailReason.VASTAANOTTOILMOITUS) => LahetysSyy.vastaanottoilmoitus
+            case Some(MailReason.VASTAANOTTOILMOITUS) if hakukohde.kkTutkintoonJohtava => LahetysSyy.vastaanottoilmoitusKk
+            case Some(MailReason.VASTAANOTTOILMOITUS) => LahetysSyy.vastaanottoilmoitus2aste
             case Some(MailReason.EHDOLLISEN_PERIYTYMISEN_ILMOITUS) => LahetysSyy.ehdollisen_periytymisen_ilmoitus
             case Some(MailReason.SITOVAN_VASTAANOTON_ILMOITUS) => LahetysSyy.sitovan_vastaanoton_ilmoitus
             case _ =>
