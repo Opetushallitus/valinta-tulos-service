@@ -48,7 +48,7 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
     c.setLeakDetectionThreshold(config.leakDetectionThresholdMillis.getOrElse(c.getMaxLifetime))
     val maxConnections = config.numThreads.getOrElse(20)
     val executor = AsyncExecutor("valintarekisteri", maxConnections, config.queueSize.getOrElse(1000))
-    logger.info(s"Configured Hikari with ${classOf[HikariConfig].getSimpleName} ${ToStringBuilder.reflectionToString(c).replaceAll("password=.*?,", "password=<HIDDEN>")}" +
+    logger.info(s"Configured Hikari with ${classOf[HikariConfig].getSimpleName} ${ToStringBuilder.reflectionToString(c).replaceAll("password=.*?,", "password=<HIDDEN>,")}" +
          s" and executor ${ToStringBuilder.reflectionToString(executor)}")
     Database.forDataSource(new HikariDataSource(c), maxConnections = Some(maxConnections), executor)
   }
