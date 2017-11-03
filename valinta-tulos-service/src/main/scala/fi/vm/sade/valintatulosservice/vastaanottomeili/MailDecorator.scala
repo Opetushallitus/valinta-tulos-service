@@ -21,52 +21,51 @@ class MailDecorator(hakemusRepository: HakemusRepository,
                     oppijanTunnistusService: OppijanTunnistusService
                    ) extends Logging {
   def statusToMail(status: HakemusMailStatus): Option[Ilmoitus] = {
-    status.anyMailToBeSent match {
-      case true => {
-        hakemusRepository.findHakemus(status.hakemusOid) match {
-          case Right(Hakemus(_, _, henkiloOid, asiointikieli, _, Henkilotiedot(Some(kutsumanimi), Some(email), hasHetu))) =>
-            val mailables = status.hakukohteet.filter(_.shouldMail)
-            val deadline: Option[Date] = mailables.flatMap(_.deadline).sorted.headOption
+    if(status.anyMailToBeSent) {
+      hakemusRepository.findHakemus(status.hakemusOid) match {
+        case Right(Hakemus(_, _, henkiloOid, asiointikieli, _, Henkilotiedot(Some(kutsumanimi), Some(email), hasHetu))) =>
+          val mailables = status.hakukohteet.filter(_.shouldMail)
+          val deadline: Option[Date] = mailables.flatMap(_.deadline).sorted.headOption
 
-            try {
-              val tarjontaHaku = fetchHaku(status.hakuOid)
-              val ilmoitus = Ilmoitus(
-                status.hakemusOid, henkiloOid, None, asiointikieli, kutsumanimi, email, deadline,
-                mailables.map(toHakukohde), toHaku(tarjontaHaku))
+          try {
+            val tarjontaHaku = fetchHaku(status.hakuOid)
+            val ilmoitus = Ilmoitus(
+              status.hakemusOid, henkiloOid, None, asiointikieli, kutsumanimi, email, deadline,
+              mailables.map(toHakukohde), toHaku(tarjontaHaku))
 
-              if(hasHetu && !tarjontaHaku.toinenAste) {
-                Some(ilmoitus)
-              } else {
-                oppijanTunnistusService.luoSecureLink(henkiloOid, status.hakemusOid, email, asiointikieli) match {
-                  case Right(OppijanTunnistus(securelink)) =>
-                    Some(ilmoitus.copy(secureLink = Some(securelink)))
-                  case Left(e) =>
-                    logger.error("Hakemukselle ei lähetetty vastaanottomeiliä, koska securelinkkiä ei saatu! " + status.hakemusOid, e)
-                    None
-                }
+            if(hasHetu && !tarjontaHaku.toinenAste) {
+              Some(ilmoitus)
+            } else {
+              oppijanTunnistusService.luoSecureLink(henkiloOid, status.hakemusOid, email, asiointikieli) match {
+                case Right(OppijanTunnistus(securelink)) =>
+                  Some(ilmoitus.copy(secureLink = Some(securelink)))
+                case Left(e) =>
+                  logger.error("Hakemukselle ei lähetetty vastaanottomeiliä, koska securelinkkiä ei saatu! " + status.hakemusOid, e)
+                  None
               }
-            } catch {
-              case e: Exception =>
-                status.hakukohteet.filter(_.shouldMail).foreach {
-                  mailPollerRepository.addMessage(status, _, e.getMessage)
-                }
-                None
             }
-          case Right(hakemus) =>
-            logger.warn("Hakemukselta puuttuu kutsumanimi tai email: " + status.hakemusOid)
-            status.hakukohteet.filter(_.shouldMail).foreach {
-              mailPollerRepository.addMessage(status, _, "Hakemukselta puuttuu kutsumanimi tai email")
-            }
-            None
-          case Left(e) =>
-            logger.error("Hakemusta ei löydy: " + status.hakemusOid, e)
-            status.hakukohteet.filter(_.shouldMail).foreach {
-              mailPollerRepository.addMessage(status, _, "Hakemusta ei löydy")
-            }
-            None
-        }
+          } catch {
+            case e: Exception =>
+              status.hakukohteet.filter(_.shouldMail).foreach {
+                mailPollerRepository.addMessage(status, _, e.getMessage)
+              }
+              None
+          }
+        case Right(hakemus) =>
+          logger.warn("Hakemukselta puuttuu kutsumanimi tai email: " + status.hakemusOid)
+          status.hakukohteet.filter(_.shouldMail).foreach {
+            mailPollerRepository.addMessage(status, _, "Hakemukselta puuttuu kutsumanimi tai email")
+          }
+          None
+        case Left(e) =>
+          logger.error("Hakemusta ei löydy: " + status.hakemusOid, e)
+          status.hakukohteet.filter(_.shouldMail).foreach {
+            mailPollerRepository.addMessage(status, _, "Hakemusta ei löydy")
+          }
+          None
       }
-      case _ => None
+    } else {
+      None
     }
   }
 
