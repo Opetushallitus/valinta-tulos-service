@@ -44,7 +44,7 @@
         <scalaz-stream_2.11.version>0.7a</scalaz-stream_2.11.version> <!-- required by specs2 3.5 -->
         <scalaz_2.11.version>7.1.11</scalaz_2.11.version> <!-- latest that works with http4s 0.15.8 -->
         <sijoittelu.version>6.0-SNAPSHOT</sijoittelu.version>
-        <slf4j-api.version>1.7.25</slf4j-api.version>
+        <slf4j-api.version>1.7.5</slf4j-api.version>
         <slick_2.11.version>3.2.0</slick_2.11.version>
         <specs2_2.11.version>3.8.6-scalaz-7.1</specs2_2.11.version>
         <spring.version>4.3.2.RELEASE</spring.version>
@@ -131,10 +131,11 @@
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j-api.version}</version>
             </dependency>
+            <!-- log4j2 -->
             <dependency>
                 <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
-                <version>${slf4j-api.version}</version>
+                <artifactId>log4j-slf4j-impl</artifactId>
+                <version>2.6</version>
             </dependency>
             <!-- jotta aktiivinen lokitiedosto voitaisiin nimetä aikaleimalla, ks.
                 https://logging.apache.org/log4j/extras/apidocs/org/apache/log4j/rolling/TimeBasedRollingPolicy.html -->

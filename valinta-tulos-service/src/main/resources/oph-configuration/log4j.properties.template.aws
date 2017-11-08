@@ -1,45 +1,75 @@
 # Logger
-log4j.rootLogger={{env_loglevel}}, FILE
-{# raw-endraw -välillä template engine ei tee mitään! #} 
+rootLogger.level = {{env:env_loglevel}}
+rootLogger.appenderRefs = FILE
+
+{# raw-endraw -välillä template engine ei tee mitään! #}
 {% raw %}
 # Console output
-log4j.appender.STDOUT=org.apache.log4j.ConsoleAppender
-log4j.appender.STDOUT.Threshold=ERROR
-log4j.appender.STDOUT.layout=org.apache.log4j.PatternLayout
-log4j.appender.STDOUT.layout.ConversionPattern=%d{yyyy-MM-dd'T'HH:mm:ss.SSSX} %-5p {%X{user}} [%t] %-5p %c: %m%n
+appender.console.type = Console
+appender.console.name = STDOUT
+appender.console.filter.threshold.type = ThresholdFilter
+appender.console.filter.threshold.level = error
+appender.console.layout.type = PatternLayout
+appender.console.layout.pattern = %d{yyyy-MM-dd'T'HH:mm:ss.SSSX} %-5p {%X{user}} [%t] %-5p %c: %m%n
+
 # File output
-log4j.appender.FILE.Threshold=DEBUG
-log4j.appender.FILE.File=/root/logs/oph-valintatulosservice.log
-log4j.appender.FILE=org.apache.log4j.RollingFileAppender
-log4j.appender.FILE.Append=true
-log4j.appender.FILE.layout=org.apache.log4j.PatternLayout
-log4j.appender.FILE.layout.ConversionPattern=%d{yyyy-MM-dd'T'HH:mm:ss.SSSX} %-5p {%X{user}} [%t] %-5p %c: %m%n
-log4j.appender.FILE.MaxFileSize=10MB
-log4j.appender.FILE.MaxBackupIndex=100
+appender.file.type = RollingFile
+appender.file.name = FILE
+appender.console.filter.threshold.type = ThresholdFilter
+appender.console.filter.threshold.level = debug
+appender.file.fileName = /root/logs/oph-valintatulosservice.log
+appender.file.layout.type = PatternLayout
+appender.file.layout.pattern = %d{yyyy-MM-dd'T'HH:mm:ss.SSSX} %-5p {%X{user}} [%t] %-5p %c: %m%n
+appender.file.policies.type = Policies
+appender.file.policies.time.type = TimeBasedTriggeringPolicy
+appender.file.policies.size.type = SizeBasedTriggeringPolicy
+appender.file.policies.size.size = 10MB
+appender.file.strategy.type = DefaultRolloverStrategy
+appender.file.strategy.max = 100
 {% endraw %}
+
 # Log valintatulosservice with INFO
-log4j.logger.fi.vm.sade.utils=INFO
-log4j.logger.fi.vm.sade.valintatulosservice=INFO
-log4j.logger.fi.vm.sade.valintatulosservice.VastaanottoService=DEBUG
-log4j.logger.fi.vm.sade.sijoittelu=INFO
+logger.utils.name = fi.vm.sade.utils
+logger.utils.level = info
+logger.vts.name = fi.vm.sade.valintatulosservice
+logger.vts.level = info
+logger.vastaanotto.name = fi.vm.sade.valintatulosservice.VastaanottoService
+logger.vastaanotto.level = debug
+logger.sijoittelu.name = fi.vm.sade.sijoittelu
+logger.sijoittelu.level = info
+
 # By default hide these spammers by default
-log4j.logger.org.apache.cxf=ERROR
-log4j.logger.org.springframework=ERROR
-log4j.logger.org.vaadin=ERROR
-log4j.logger.javax.sql=ERROR
-log4j.logger.org.apache.activemq=INFO
-log4j.logger.org.apache.activemq.spring={{env_loglevel}}
+logger.cxf.name = org.apache.cxf
+logger.cxf.level = error
+logger.spring.name = org.springframework
+logger.spring.level = error
+logger.vaadin.name = org.vaadin
+logger.vaadin.level = error
+logger.sql.name = javax.sql
+logger.sql.level = error
+logger.activemq.name = org.apache.activemq
+logger.activemq.level =  error
+logger.activemqspring.name = org.apache.activemq.spring
+logger.activemqspring.level = {{env:env_loglevel}}
+
 # cas session + singlelogout tracing
-log4j.logger.org.jasig.cas.client.session=INFO
-log4j.logger.org.flywaydb=INFO
-# Audit loggin
-log4j.additivity.fi.vm.sade.auditlog.Audit=false
-log4j.logger.fi.vm.sade.auditlog.Audit=INFO, AUDIT
-log4j.appender.AUDIT=org.apache.log4j.RollingFileAppender
-log4j.appender.AUDIT.File=/root/logs/auditlog_valinta-tulos-service.log
-log4j.appender.AUDIT.Append=true
-log4j.appender.AUDIT.MaxFileSize=20MB
-log4j.appender.AUDIT.MaxBackupIndex=20
-log4j.appender.AUDIT.layout=org.apache.log4j.PatternLayout
-log4j.appender.AUDIT.layout.ConversionPattern=%m%n
-log4j.appender.AUDIT.encoding=UTF-8
+logger.jasig.name = log4j.logger.org.jasig.cas.client.session
+logger.jasig.level = info
+logger.flyway.name = log4j.logger.org.flywaydb
+logger.flyway.level = info
+
+# Audit logging
+logger.audit.name = fi.vm.sade.auditlog.Audit
+logger.audit.appenderref = AUDIT
+logger.audit.level = info
+logger.audit.additivity = false
+appender.audit.type = RollingFile
+appender.audit.name = AUDIT
+appender.audit.fileName = /root/logs/auditlog_valinta-tulos-service.log
+appender.audit.policies.type = Policies
+appender.audit.policies.time.type = TimeBasedTriggeringPolicy
+appender.audit.policies.size.type = SizeBasedTriggeringPolicy
+appender.audit.policies.size.size = 20MB
+appender.audit.strategy.type = DefaultRolloverStrategy
+appender.audit.strategy.max = 20
+appender.audit.charset = UTF-8
