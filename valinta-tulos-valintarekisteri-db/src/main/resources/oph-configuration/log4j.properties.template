@@ -11,7 +11,6 @@ appender.console.filter.threshold.type = ThresholdFilter
 appender.console.filter.threshold.level = error
 appender.console.layout.type = PatternLayout
 appender.console.layout.pattern = %d{yyyy-MM-dd'T'HH:mm:ss.SSSX} %-5p {%X{user}} [%t] %-5p %c: %m%n
-{% endraw %}
 
 # File output
 appender.file.type = RollingFile
@@ -27,6 +26,7 @@ appender.file.policies.size.type = SizeBasedTriggeringPolicy
 appender.file.policies.size.size = 10MB
 appender.file.strategy.type = DefaultRolloverStrategy
 appender.file.strategy.max = 100
+{% endraw %}
 
 # By default hide these spammers by default
 logger.cxf.name = org.apache.cxf
@@ -40,7 +40,7 @@ logger.sql.level = error
 logger.activemq.name = org.apache.activemq
 logger.activemq.level =  error
 logger.activemqspring.name = org.apache.activemq.spring
-logger.activemqspring.level = {{env:env_loglevel}}
+logger.activemqspring.level = {{env_loglevel}}
 
 # cas session + singlelogout tracing
 logger.jasig.name = log4j.logger.org.jasig.cas.client.session

@@ -47,7 +47,7 @@
 
 
     <Loggers>
-        <Root level="{{env:env_loglevel}}">
+        <Root level="{{env_loglevel}}">
             <AppenderRef ref="FILE"/>
         </Root>
 
@@ -81,7 +81,7 @@
         </Logger>
         <Logger name="org.apache.activemq" level="info"/>
         </Logger>
-        <Logger name="org.apache.activemq.spring" level="{{env:env_loglevel}}"/>
+        <Logger name="org.apache.activemq.spring" level="{{env_loglevel}}"/>
         </Logger>
         <Logger name="org.jasig.cas.client.session" level="info"/>
         </Logger>
