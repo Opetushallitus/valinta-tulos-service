@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import fi.vm.sade.utils.Timer
+import org.apache.commons.lang3.builder.ToStringBuilder
 import org.flywaydb.core.Flyway
 import slick.jdbc.PostgresProfile.api._
 
@@ -13,7 +14,8 @@ case class DbConfig(url: String,
                     numThreads: Option[Int],
                     queueSize: Option[Int],
                     registerMbeans: Option[Boolean],
-                    initializationFailTimeout: Option[Long])
+                    initializationFailTimeout: Option[Long],
+                    leakDetectionThresholdMillis: Option[Long])
 
 class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends ValintarekisteriRepository
   with VastaanottoRepositoryImpl
@@ -43,8 +45,11 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
     config.minConnections.foreach(c.setMinimumIdle)
     config.registerMbeans.foreach(c.setRegisterMbeans)
     config.initializationFailTimeout.foreach(c.setInitializationFailTimeout)
+    c.setLeakDetectionThreshold(config.leakDetectionThresholdMillis.getOrElse(c.getMaxLifetime))
     val maxConnections = config.numThreads.getOrElse(20)
     val executor = AsyncExecutor("valintarekisteri", maxConnections, config.queueSize.getOrElse(1000))
+    logger.info(s"Configured Hikari with ${classOf[HikariConfig].getSimpleName} ${ToStringBuilder.reflectionToString(c).replaceAll("password=.*?,", "password=<HIDDEN>")}" +
+         s" and executor ${ToStringBuilder.reflectionToString(executor)}")
     Database.forDataSource(new HikariDataSource(c), maxConnections = Some(maxConnections), executor)
   }
   if(isItProfile) {
