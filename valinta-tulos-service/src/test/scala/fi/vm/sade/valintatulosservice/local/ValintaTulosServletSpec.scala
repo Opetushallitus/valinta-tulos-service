@@ -190,6 +190,30 @@ class ValintaTulosServletSpec extends ServletSpecification {
         }
       }
     }
+
+    "palauttaa haun sijoitteluajon hakemusten tulokset vain merkitsevälle jonolle" in {
+
+      useFixture("hyvaksytty-kesken-julkaistavissa-korjattu.json")
+
+      checkData()
+
+      vastaanota("VastaanotaSitovasti") {
+        get("haku/streaming/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset?vainMerkitsevaJono=true") {
+          val streamedJson = JsonMethods.parse(body)
+          println("BO DY: " + body)
+          stringInJson(streamedJson, "hakijaOid") must_== "1.2.246.562.24.14229104472"
+          stringInJson(streamedJson, "hakemusOid") must_== "1.2.246.562.11.00000441369"
+          stringInJson(streamedJson, "vastaanottotieto") must_== "VASTAANOTTANUT_SITOVASTI"
+          val hakutoiveet = (streamedJson \\ "hakutoiveet").asInstanceOf[JArray]
+          hakutoiveet.arr.size must_== 1
+          val valintatapajonot = (hakutoiveet.arr(0) \\ "hakutoiveenValintatapajonot").asInstanceOf[JArray]
+          valintatapajonot.arr.size must_== 2
+          List(stringInJson(valintatapajonot.arr(0), "valintatapajonoOid"), stringInJson(valintatapajonot.arr(1), "valintatapajonoOid")) diff
+            List("14090336922663576781797489829886") must_== List()
+          status must_== 200
+        }
+      }
+    }
   }
 
   "POST /haku/:hakuId/hakemus/:hakemusId/ilmoittaudu" should {
