@@ -211,10 +211,12 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
   lazy val getStreamingHaunSijoitteluajonTuloksetSwagger: OperationBuilder = (apiOperation[Unit]("getStreamingHaunSijoitteluajonTuloksetSwagger")
     summary """Streamaava listaus hakemuksien/hakijoiden listaukseen. Yksityiskohtainen listaus kaikista hakutoiveista ja niiden valintatapajonoista"""
     parameter pathParam[String]("hakuOid").description("Haun oid").required
-    parameter pathParam[String]("sijoitteluajoId").description("""Sijoitteluajon id tai "latest"""").required)
+    parameter pathParam[String]("sijoitteluajoId").description("""Sijoitteluajon id tai "latest"""").required
+    parameter queryParam[Boolean]("vainMerkitsevaJono").description("Jos true, palautetaan vain merkitsevän valintatapajonon tiedot").optional)
   get("/streaming/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakemukset", operation(getStreamingHaunSijoitteluajonTuloksetSwagger)) {
     val hakuOid = HakuOid(params("hakuOid"))
     val sijoitteluajoId = params("sijoitteluajoId")
+    val vainMerkitsevaJono = params.get("vainMerkitsevaJono").map(_.toBoolean)
 
     val writer = response.writer
 
@@ -228,7 +230,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
         writer.print(JsonFormats.javaObjectToJsonString(hakijaDto))
         index = index + 1
       }
-      valintatulosService.streamSijoittelunTulokset(hakuOid, sijoitteluajoId, writeResult)
+      valintatulosService.streamSijoittelunTulokset(hakuOid, sijoitteluajoId, writeResult, vainMerkitsevaJono)
     } catch {
       case t: Throwable => throw new StreamingFailureException(t, s""", {"error": "${t.getMessage}"}] """)
     }

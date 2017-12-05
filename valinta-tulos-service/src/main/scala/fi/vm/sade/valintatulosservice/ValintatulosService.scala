@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.sijoittelu.tulos.dto
-import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationObject}
+import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationObject, HakutoiveDTO}
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
@@ -395,11 +395,11 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
     })
   }
 
-  def streamSijoittelunTulokset(hakuOid: HakuOid, sijoitteluajoId: String, writeResult: HakijaDTO => Unit): Unit = {
+  def streamSijoittelunTulokset(hakuOid: HakuOid, sijoitteluajoId: String, writeResult: HakijaDTO => Unit, vainMerkitsevaJono : Option[Boolean] = None): Unit = {
     val haunVastaanototByHakijaOid = timed("Fetch haun vastaanotot for haku: " + hakuOid, 1000) {
       virkailijaVastaanottoRepository.findHaunVastaanotot(hakuOid).groupBy(_.henkiloOid)
     }
-    val hakemustenTulokset = hakemustenTulosByHaku(hakuOid, Some(haunVastaanototByHakijaOid))
+    val hakemustenTulokset: Option[Iterator[Hakemuksentulos]] = hakemustenTulosByHaku(hakuOid, Some(haunVastaanototByHakijaOid))
     val hakutoiveidenTuloksetByHakemusOid: Map[HakemusOid, (String, List[Hakutoiveentulos])] = timed(s"Find hakutoiveiden tulokset for haku $hakuOid", 1000) {
       hakemustenTulokset match {
         case Some(hakemustenTulosIterator) => hakemustenTulosIterator.map(h => (h.hakemusOid, (h.hakijaOid, h.hakutoiveet))).toMap
@@ -408,13 +408,20 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
     }
     logger.info(s"Found ${hakutoiveidenTuloksetByHakemusOid.keySet.size} hakemus objects for sijoitteluajo $sijoitteluajoId of haku $hakuOid")
 
+    def processTulos(hakijaDto: HakijaDTO, hakijaOid: String, hakutoiveidenTulokset: List[Hakutoiveentulos]): Unit = {
+      hakijaDto.setHakijaOid(hakijaOid)
+      if(vainMerkitsevaJono.getOrElse(false)) {
+        populateMerkitsevatJonot(hakijaDto, hakutoiveidenTulokset)
+      } else {
+        populateVastaanottotieto(hakijaDto, hakutoiveidenTulokset)
+      }
+      writeResult(hakijaDto)
+    }
+
     try {
       hakijaDTOClient.processSijoittelunTulokset(hakuOid, sijoitteluajoId, { hakijaDto: HakijaDTO =>
         hakutoiveidenTuloksetByHakemusOid.get(HakemusOid(hakijaDto.getHakemusOid)) match {
-          case Some((hakijaOid, hakutoiveidenTulokset)) =>
-            hakijaDto.setHakijaOid(hakijaOid)
-            populateVastaanottotieto(hakijaDto, hakutoiveidenTulokset)
-            writeResult(hakijaDto)
+          case Some((hakijaOid, hakutoiveidenTulokset)) => processTulos(hakijaDto, hakijaOid, hakutoiveidenTulokset)
           case None => crashOrLog(s"Hakemus ${hakijaDto.getHakemusOid} not found in hakemusten tulokset for haku $hakuOid")
         }
       })
@@ -425,15 +432,32 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
     }
   }
 
+  private def copyVastaanottotieto(hakutoiveDto: HakutoiveDTO, hakutoiveenTulos: Hakutoiveentulos) = {
+    hakutoiveDto.setVastaanottotieto(fi.vm.sade.sijoittelu.tulos.dto.ValintatuloksenTila.valueOf(hakutoiveenTulos.vastaanottotila.toString))
+    hakutoiveDto.getHakutoiveenValintatapajonot.asScala.foreach(_.setTilanKuvaukset(hakutoiveenTulos.tilanKuvaukset.asJava))
+  }
+
   private def populateVastaanottotieto(hakijaDto: HakijaDTO, hakemuksenHakutoiveidenTuloksetVastaanottotiedonKanssa: List[Hakutoiveentulos]): Unit = {
     hakijaDto.getHakutoiveet.asScala.foreach(palautettavaHakutoiveDto =>
       hakemuksenHakutoiveidenTuloksetVastaanottotiedonKanssa.find(_.hakukohdeOid.toString == palautettavaHakutoiveDto.getHakukohdeOid) match {
-        case Some(hakutoiveenOikeaTulos) =>
-          palautettavaHakutoiveDto.setVastaanottotieto(fi.vm.sade.sijoittelu.tulos.dto.ValintatuloksenTila.valueOf(hakutoiveenOikeaTulos.vastaanottotila.toString))
-          palautettavaHakutoiveDto.getHakutoiveenValintatapajonot.asScala.foreach(_.setTilanKuvaukset(hakutoiveenOikeaTulos.tilanKuvaukset.asJava))
+        case Some(hakutoiveenOikeaTulos) => copyVastaanottotieto(palautettavaHakutoiveDto, hakutoiveenOikeaTulos)
         case None => palautettavaHakutoiveDto.setVastaanottotieto(dto.ValintatuloksenTila.KESKEN)
       }
     )
+  }
+
+  private def populateMerkitsevatJonot(hakijaDto: HakijaDTO, hakemuksenHakutoiveidenTuloksetVastaanottotiedonKanssa: List[Hakutoiveentulos]) = {
+    hakijaDto.getHakutoiveet.asScala.foreach(hakutoiveDto => {
+      hakemuksenHakutoiveidenTuloksetVastaanottotiedonKanssa.find(_.hakukohdeOid.toString == hakutoiveDto.getHakukohdeOid) match {
+        case Some(hakutoiveenTulos: Hakutoiveentulos) => {
+          hakutoiveDto.setHakutoiveenValintatapajonot(
+            hakutoiveDto.getHakutoiveenValintatapajonot.asScala.filter(_.getValintatapajonoOid == hakutoiveenTulos.valintatapajonoOid.toString).asJava
+          )
+          copyVastaanottotieto(hakutoiveDto, hakutoiveenTulos)
+        }
+        case None => hakutoiveDto.setHakutoiveenValintatapajonot(List().asJava)
+      }
+    })
   }
 
   private def mapHakemustenTuloksetByHakemusOid(hakemustenTulokset:Iterator[Hakemuksentulos]):Map[HakemusOid, Hakemuksentulos] = {
