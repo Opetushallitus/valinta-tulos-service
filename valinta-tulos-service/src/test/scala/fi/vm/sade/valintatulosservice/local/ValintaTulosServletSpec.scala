@@ -214,9 +214,8 @@ class ValintaTulosServletSpec extends ServletSpecification {
           stringInJson(streamedJson, "hakijaOid") must_== "1.2.246.562.24.14229104472"
           stringInJson(streamedJson, "hakemusOid") must_== "1.2.246.562.11.00000441369"
           stringInJson(streamedJson, "vastaanottotieto") must_== "VASTAANOTTANUT_SITOVASTI"
-          val hakutoiveet = (streamedJson \\ "hakutoiveet").asInstanceOf[JArray]
-          hakutoiveet.arr.size must_== 1
-          val valintatapajonot = (hakutoiveet.arr(0) \\ "hakutoiveenValintatapajonot").asInstanceOf[JArray]
+          (streamedJson \\ "hakutoiveet").asInstanceOf[JArray].arr.size must_== 1
+          val valintatapajonot = (streamedJson \\ "hakutoiveenValintatapajonot").asInstanceOf[JArray]
           valintatapajonot.arr.size must_== 2
           List(stringInJson(valintatapajonot.arr(0), "valintatapajonoOid"), stringInJson(valintatapajonot.arr(1), "valintatapajonoOid")) diff
             List("14090336922663576781797489829886", "14090336922663576781797489829887") must_== List()
@@ -238,12 +237,9 @@ class ValintaTulosServletSpec extends ServletSpecification {
           stringInJson(streamedJson, "hakijaOid") must_== "1.2.246.562.24.14229104472"
           stringInJson(streamedJson, "hakemusOid") must_== "1.2.246.562.11.00000441369"
           stringInJson(streamedJson, "vastaanottotieto") must_== "VASTAANOTTANUT_SITOVASTI"
-          val hakutoiveet = (streamedJson \\ "hakutoiveet").asInstanceOf[JArray]
-          hakutoiveet.arr.size must_== 1
-          val valintatapajonot = (hakutoiveet.arr(0) \\ "hakutoiveenValintatapajonot").asInstanceOf[JArray]
-          valintatapajonot.arr.size must_== 2
-          List(stringInJson(valintatapajonot.arr(0), "valintatapajonoOid"), stringInJson(valintatapajonot.arr(1), "valintatapajonoOid")) diff
-            List("14090336922663576781797489829886") must_== List()
+          (streamedJson \\ "hakutoiveet").asInstanceOf[JArray].arr.size must_== 1
+          (streamedJson \\ "hakutoiveenValintatapajonot").asInstanceOf[JArray].arr.size must_== 1
+          stringInJson(streamedJson, "valintatapajonoOid") must_== "14090336922663576781797489829886"
           status must_== 200
         }
       }
