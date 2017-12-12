@@ -67,8 +67,6 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         valintarekisteriValintatulosDao,
         valintarekisteriSijoittelunTulosClient,
         new ValintarekisteriHakijaDTOClientImpl(valintarekisteriRaportointiService, valintarekisteriSijoittelunTulosClient, valintarekisteriDb))
-
-
     lazy val sijoittelutulosService = new SijoittelutulosService(raportointiService,
         appConfig.ohjausparametritService, valintarekisteriDb, sijoittelunTulosClient)
     lazy val vastaanotettavuusService = new VastaanotettavuusService(hakukohdeRecordService, valintarekisteriDb)
@@ -102,10 +100,13 @@ class ScalatraBootstrap extends LifeCycle with Logging {
 
     lazy val sijoitteluajoDeleteScheduler = new SijoitteluajoDeleteScheduler(valintarekisteriDb, appConfig)
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
-    
-    val scheduledDeleteSijoitteluAjot = isTrue(System.getProperty("valinta-rekisteri-scheduled-delete-sijoitteluajot"))
-    if(scheduledDeleteSijoitteluAjot) {
+
+    val removerInstance = valintarekisteriDb.acquireLockForSijoitteluajoCleaning(55).head
+    if(removerInstance) {
+      logger.info("Tämä VTS-node on vastuussa vanhojen sijoitteluajojen poistosta")
       sijoitteluajoDeleteScheduler.startScheduler()
+    } else {
+      logger.info("Joku toinen VTS-node on vastuussa vanhojen sijoitteluajojen poistosta")
     }
 
     mountBasicVts()
