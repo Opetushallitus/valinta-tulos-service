@@ -11,4 +11,6 @@ trait DeleteSijoitteluRepository extends ValintarekisteriRepository {
   def deleteSijoitteluajot(hakuOid:HakuOid, sijoitteluajoIds: Seq[Long])
   def deleteSijoitteluajo(hakuOid:HakuOid, sijoitteluajoId:Long)
 
+  def acquireLockForSijoitteluajoCleaning(lockId: Int): Seq[Boolean]
+
 }
