@@ -10,6 +10,7 @@ import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.joda.time.{DateTime, DateTimeZone}
 import org.json4s.JValue
+import org.json4s.JsonAST.JArray
 import org.json4s.jackson.Serialization
 import org.json4s.native.JsonMethods
 import org.junit.runner.RunWith
@@ -183,17 +184,26 @@ class ValintaTulosServletSpec extends ServletSpecification {
   }
 
   "GET /haku/streaming/:hakuOid/sijoitteluAjo/:sijoitteluAjoId/hakemukset" should {
-    "palauttaa haun sijoitteluajon hakemusten tulokset vastaanottotiloineen" in {
-      skipped  // TODO see if this can be tested
 
-      useFixture("hyvaksytty-kesken-julkaistavissa.json")
-
+    def checkData() = {
       get("haku/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset") {
         val bodyJson = JsonMethods.parse(body)
         (bodyJson \ "totalCount").extract[Int] must_== 1
         stringInJson(bodyJson, "vastaanottotieto") must_== "KESKEN"
+        stringInJson(bodyJson, "hakukohdeOid") must_== "1.2.246.562.5.72607738902"
+        val valintatapajonot = (bodyJson \\ "hakutoiveenValintatapajonot").asInstanceOf[JArray]
+        valintatapajonot.arr.size must_== 2
+        List(stringInJson(valintatapajonot.arr(0), "valintatapajonoOid"), stringInJson(valintatapajonot.arr(1), "valintatapajonoOid")) diff
+          List("14090336922663576781797489829886", "14090336922663576781797489829887") must_== List()
         status must_== 200
       }
+    }
+
+    "palauttaa haun sijoitteluajon hakemusten tulokset vastaanottotiloineen" in {
+
+      useFixture("hyvaksytty-kesken-julkaistavissa-korjattu.json")
+
+      checkData()
 
       vastaanota("VastaanotaSitovasti") {
         get("haku/streaming/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset") {
@@ -202,8 +212,53 @@ class ValintaTulosServletSpec extends ServletSpecification {
           stringInJson(streamedJson, "hakijaOid") must_== "1.2.246.562.24.14229104472"
           stringInJson(streamedJson, "hakemusOid") must_== "1.2.246.562.11.00000441369"
           stringInJson(streamedJson, "vastaanottotieto") must_== "VASTAANOTTANUT_SITOVASTI"
+          (streamedJson \\ "hakutoiveet").asInstanceOf[JArray].arr.size must_== 1
+          val valintatapajonot = (streamedJson \\ "hakutoiveenValintatapajonot").asInstanceOf[JArray]
+          valintatapajonot.arr.size must_== 2
+          List(stringInJson(valintatapajonot.arr(0), "valintatapajonoOid"), stringInJson(valintatapajonot.arr(1), "valintatapajonoOid")) diff
+            List("14090336922663576781797489829886", "14090336922663576781797489829887") must_== List()
           status must_== 200
         }
+      }
+    }
+
+    "palauttaa haun sijoitteluajon hakemusten tulokset vain merkitsevälle jonolle" in {
+
+      useFixture("hyvaksytty-kesken-julkaistavissa-korjattu.json")
+
+      checkData()
+
+      vastaanota("VastaanotaSitovasti") {
+        get("haku/streaming/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset?vainMerkitsevaJono=true") {
+          val streamedJson = JsonMethods.parse(body)
+          println("BO DY: " + body)
+          stringInJson(streamedJson, "hakijaOid") must_== "1.2.246.562.24.14229104472"
+          stringInJson(streamedJson, "hakemusOid") must_== "1.2.246.562.11.00000441369"
+          stringInJson(streamedJson, "vastaanottotieto") must_== "VASTAANOTTANUT_SITOVASTI"
+          (streamedJson \\ "hakutoiveet").asInstanceOf[JArray].arr.size must_== 1
+          (streamedJson \\ "hakutoiveenValintatapajonot").asInstanceOf[JArray].arr.size must_== 1
+          stringInJson(streamedJson, "valintatapajonoOid") must_== "14090336922663576781797489829886"
+          status must_== 200
+        }
+      }
+    }
+
+    "palauttaa haun sijoitteluajon keskeneräisen tuloksen merkitsevälle jonolle" in {
+
+      useFixture("hyvaksytty-kesken-julkaistavissa-korjattu.json")
+
+      checkData()
+
+      get("haku/streaming/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset?vainMerkitsevaJono=true") {
+        val streamedJson = JsonMethods.parse(body)
+        println("BO DY: " + body)
+        stringInJson(streamedJson, "hakijaOid") must_== "1.2.246.562.24.14229104472"
+        stringInJson(streamedJson, "hakemusOid") must_== "1.2.246.562.11.00000441369"
+        stringInJson(streamedJson, "vastaanottotieto") must_== "KESKEN"
+        (streamedJson \\ "hakutoiveet").asInstanceOf[JArray].arr.size must_== 1
+        (streamedJson \\ "hakutoiveenValintatapajonot").asInstanceOf[JArray].arr.size must_== 1
+        stringInJson(streamedJson, "valintatapajonoOid") must_== "14090336922663576781797489829886"
+        status must_== 200
       }
     }
   }
