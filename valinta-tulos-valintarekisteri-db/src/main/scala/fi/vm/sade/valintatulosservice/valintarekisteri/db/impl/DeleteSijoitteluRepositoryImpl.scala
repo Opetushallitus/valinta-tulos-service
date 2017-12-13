@@ -65,4 +65,10 @@ trait DeleteSijoitteluRepositoryImpl extends DeleteSijoitteluRepository with Val
       sql"""select pg_try_advisory_lock($lockId)""".as[Boolean]
     )
   }
+
+  override def clearLockForSijoitteluajoCleaning(lockId: Int): Seq[Boolean] = {
+    runBlocking(
+      sql"""select pg_advisory_unlock($lockId)""".as[Boolean]
+    )
+  }
 }

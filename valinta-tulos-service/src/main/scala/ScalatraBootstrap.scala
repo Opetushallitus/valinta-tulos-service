@@ -97,17 +97,10 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val valintalaskentakoostepalveluService = new ValintalaskentakoostepalveluService(appConfig)
     lazy val ldapUserService = new LdapUserService(appConfig.securityContext.directoryClient)
     lazy val hyvaksymiskirjeService = new HyvaksymiskirjeService(valintarekisteriDb, hakuService, audit, authorizer)
-
-    lazy val sijoitteluajoDeleteScheduler = new SijoitteluajoDeleteScheduler(valintarekisteriDb, appConfig)
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
 
-    val removerInstance = valintarekisteriDb.acquireLockForSijoitteluajoCleaning(55).head
-    if(removerInstance) {
-      logger.info("Tämä VTS-node on vastuussa vanhojen sijoitteluajojen poistosta")
-      sijoitteluajoDeleteScheduler.startScheduler()
-    } else {
-      logger.info("Joku toinen VTS-node on vastuussa vanhojen sijoitteluajojen poistosta")
-    }
+    val sijoitteluajoDeleteScheduler = new SijoitteluajoDeleteScheduler(valintarekisteriDb, appConfig)
+    sijoitteluajoDeleteScheduler.startScheduler()
 
     mountBasicVts()
 
