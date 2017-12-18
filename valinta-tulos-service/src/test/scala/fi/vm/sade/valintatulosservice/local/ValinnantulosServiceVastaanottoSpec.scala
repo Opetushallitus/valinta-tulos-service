@@ -9,8 +9,9 @@ import fi.vm.sade.security.OrganizationHierarchyAuthorizer
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain.Vastaanottoaikataulu
-import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
+import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusRepository, HakuAppRepository}
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
+import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.sijoittelu._
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
@@ -340,11 +341,14 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
   lazy val sijoittelunTulosClient = new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb)
   lazy val raportointiService = new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintatulosDao)
   lazy val hakijaDtoClient = new ValintarekisteriHakijaDTOClientImpl(raportointiService, sijoittelunTulosClient, valintarekisteriDb)
-  lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb,
+  lazy val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
+  lazy val hakemusRepository = new HakemusRepository(new HakuAppRepository(), new AtaruHakemusRepository(appConfig), new AtaruHakemusEnricher(hakuService, oppijanumerorekisteriService))
+  lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, hakemusRepository, valintarekisteriDb,
     hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, hakijaDtoClient)(appConfig, dynamicAppConfig)
   lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService,
-    valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository())
-  lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService, valintarekisteriDb, valintarekisteriDb)
+    valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, hakemusRepository)
+  lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService,
+    valintarekisteriDb, valintarekisteriDb)
   lazy val yhdenPaikanSaannos = new YhdenPaikanSaannos(hakuService, valintarekisteriDb)
 
   lazy val valinnantulosService = new ValinnantulosService(valintarekisteriDb, authorizer, hakuService, ohjausparametritService,

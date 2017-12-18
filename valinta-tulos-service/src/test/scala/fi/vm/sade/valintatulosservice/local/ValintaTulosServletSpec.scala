@@ -3,9 +3,11 @@ package fi.vm.sade.valintatulosservice.local
 import fi.vm.sade.security.mock.MockSecurityContext
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
+import fi.vm.sade.valintatulosservice.hakemus.AtaruHakemus
+import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.Henkilo
 import fi.vm.sade.valintatulosservice.production.Hakija
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, LasnaKokoLukuvuosi, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.joda.time.{DateTime, DateTimeZone}
 import org.json4s.JValue
 import org.json4s.jackson.Serialization
@@ -15,6 +17,14 @@ import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class ValintaTulosServletSpec extends ServletSpecification {
+  val ataruHakemus1 = AtaruHakemus(HakemusOid("1.2.246.562.11.00000000000000000005"),
+    HakuOid("1.2.246.562.29.37061034627"), HakijaOid("ataru-tyyppi"), "fi", List("1.2.246.562.20.14875157126"), None)
+  val ataruHakemus2 = AtaruHakemus(HakemusOid("1.2.246.562.11.00000000000000000006"),
+    HakuOid("1.2.246.562.29.37061034627"), HakijaOid("ataru-tyyppi2"), "fi",
+    List("1.2.246.562.20.14875157126", "1.2.246.562.20.27958725015"), None)
+  val ataruHenkilo1 = Henkilo(HakijaOid("ataru-tyyppi"), None, Some("Ataru"))
+  val ataruHenkilo2 = Henkilo(HakijaOid("ataru-tyyppi2"), None, Some("Ataru2"))
+
   "GET /haku/:hakuOid/hakukohde/:hakukohdeOid" should {
     "palauttaa julkaistun yksittäisen hakukohteen valintatulokset" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")
@@ -29,6 +39,17 @@ class ValintaTulosServletSpec extends ServletSpecification {
       get("haku/1.2.246.562.5.2013080813081926341928/hakukohde/1.2.246.562.5.72607738902") {
         status must_== 200
         body must_== """[{"hakuOid":"1.2.246.562.5.2013080813081926341928","hakemusOid":"1.2.246.562.11.00000441369","hakijaOid":"1.2.246.562.24.14229104472","aikataulu":{"vastaanottoEnd":"2100-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.5.72607738902","hakukohdeNimi":"stevari amk hakukohde","tarjoajaOid":"1.2.246.562.10.591352080610","tarjoajaNimi":"Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta","valintatapajonoOid":"14090336922663576781797489829886","valintatila":"HYVAKSYTTY","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2100-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"VASTAANOTETTAVISSA_SITOVASTI","vastaanottoDeadline":"2100-01-10T10:00:00Z","viimeisinHakemuksenTilanMuutos":"2014-08-26T15:12:40Z","jonosija":1,"varasijojaKaytetaanAlkaen":"2014-08-26T16:05:23Z","varasijojaTaytetaanAsti":"2014-08-26T16:05:23Z","julkaistavissa":true,"ehdollisestiHyvaksyttavissa":true,"tilanKuvaukset":{},"pisteet":4.0},{"hakukohdeOid":"1.2.246.562.5.16303028779","hakukohdeNimi":"","tarjoajaOid":"1.2.246.562.10.455978782510","tarjoajaNimi":"","valintatapajonoOid":"","valintatila":"PERUUNTUNUT","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2100-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]},{"hakuOid":"1.2.246.562.5.2013080813081926341928","hakemusOid":"1.2.246.562.11.00000441370","hakijaOid":"1.2.246.562.24.14229104472","aikataulu":{"vastaanottoEnd":"2100-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.5.72607738902","hakukohdeNimi":"stevari amk hakukohde","tarjoajaOid":"1.2.246.562.10.591352080610","tarjoajaNimi":"Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2100-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}},{"hakukohdeOid":"1.2.246.562.20.83060182827","hakukohdeNimi":"","tarjoajaOid":"1.2.246.562.10.83122281013","tarjoajaNimi":"","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2100-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]},{"hakuOid":"1.2.246.562.5.2013080813081926341928","hakemusOid":"1.2.246.562.11.00000441371","hakijaOid":"1.2.246.562.24.14229104472","aikataulu":{"vastaanottoEnd":"2100-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.5.72607738902","hakukohdeNimi":"stevari amk hakukohde","tarjoajaOid":"1.2.246.562.10.591352080610","tarjoajaNimi":"Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2100-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}},{"hakukohdeOid":"1.2.246.562.20.83060182827","hakukohdeNimi":"","tarjoajaOid":"1.2.246.562.10.83122281013","tarjoajaNimi":"","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2100-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]}]"""
+      }
+    }
+
+    "palauttaa Ataru-hakemusten tiedot" in {
+      val ataruHakemukset = List(ataruHakemus1, ataruHakemus2)
+      val ataruHenkilot = List(ataruHenkilo1, ataruHenkilo2)
+      useFixture("ei-tuloksia.json", hakemusFixtures = List.empty, hakuFixture = HakuOid("ataru-haku"),
+        ataruHakemusFixture = ataruHakemukset, ataruHenkiloFixture = ataruHenkilot)
+      get("haku/1.2.246.562.29.37061034627/hakukohde/1.2.246.562.20.14875157126") {
+        status must_== 200
+        body must_== """[{"hakuOid":"1.2.246.562.29.37061034627","hakemusOid":"1.2.246.562.11.00000000000000000005","hakijaOid":"ataru-tyyppi","aikataulu":{"vastaanottoEnd":"2100-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.20.14875157126","hakukohdeNimi":"Ataru testihakukohde","tarjoajaOid":"1.2.246.562.10.72985435253","tarjoajaNimi":"Aalto-yliopisto, Insinööritieteiden korkeakoulu","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2100-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oiliHetuton/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]},{"hakuOid":"1.2.246.562.29.37061034627","hakemusOid":"1.2.246.562.11.00000000000000000006","hakijaOid":"ataru-tyyppi2","aikataulu":{"vastaanottoEnd":"2100-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.20.14875157126","hakukohdeNimi":"Ataru testihakukohde","tarjoajaOid":"1.2.246.562.10.72985435253","tarjoajaNimi":"Aalto-yliopisto, Insinööritieteiden korkeakoulu","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2100-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oiliHetuton/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}},{"hakukohdeOid":"1.2.246.562.20.27958725015","hakukohdeNimi":"Ataru testihakukohde","tarjoajaOid":"1.2.246.562.10.72985435253","tarjoajaNimi":"Aalto-yliopisto, Insinööritieteiden korkeakoulu","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2100-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oiliHetuton/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]}]"""
       }
     }
 
@@ -73,10 +94,21 @@ class ValintaTulosServletSpec extends ServletSpecification {
 
     "kun hakemusta ei löydy" in {
       "404" in {
+        useFixture("hyvaksytty-ehdollisesti-syy-kesken-julkaistavissa.json")
         get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.LOLLERSTRÖM") {
           body must_== """{"error":"Not found"}"""
           status must_== 404
         }
+      }
+    }
+
+    "palauttaa ataru-hakemuksen valintatuloksen" in {
+      useFixture("ei-tuloksia.json", hakemusFixtures = List.empty, hakuFixture = HakuOid("ataru-haku"),
+        ataruHakemusFixture = List(ataruHakemus1), ataruHenkiloFixture = List(ataruHenkilo1))
+      get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000000000000000005") {
+        status must_== 200
+        body must_==
+          """{"hakuOid":"1.2.246.562.29.37061034627","hakemusOid":"1.2.246.562.11.00000000000000000005","hakijaOid":"ataru-tyyppi","aikataulu":{"vastaanottoEnd":"2100-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.20.14875157126","hakukohdeNimi":"Ataru testihakukohde","tarjoajaOid":"1.2.246.562.10.72985435253","tarjoajaNimi":"Aalto-yliopisto, Insinööritieteiden korkeakoulu","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2100-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oiliHetuton/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]}"""
       }
     }
   }

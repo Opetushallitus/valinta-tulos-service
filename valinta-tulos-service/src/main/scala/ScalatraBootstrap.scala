@@ -9,10 +9,11 @@ import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.{Dev, IT, VtsAppConfig}
 import fi.vm.sade.valintatulosservice.config.{OhjausparametritAppConfig, VtsAppConfig}
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
-import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
+import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusRepository, HakuAppRepository}
 import fi.vm.sade.valintatulosservice.kela.{KelaService, VtsKelaAuthenticationClient}
 import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
+import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.sijoittelu._
@@ -71,9 +72,13 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val sijoittelutulosService = new SijoittelutulosService(raportointiService,
         appConfig.ohjausparametritService, valintarekisteriDb, sijoittelunTulosClient)
     lazy val vastaanotettavuusService = new VastaanotettavuusService(hakukohdeRecordService, valintarekisteriDb)
-    lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, valintarekisteriDb, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, hakijaDTOClient)(appConfig,dynamicAppConfig)
-    lazy val hakemusRepository = new HakemusRepository()
-    lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService, valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, new HakemusRepository())
+    lazy val hakuAppRepository = new HakuAppRepository()
+    lazy val ataruHakemusRepository = new AtaruHakemusRepository(appConfig)
+    lazy val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
+    lazy val ataruHakemusTarjontaEnricher = new AtaruHakemusEnricher(hakuService, oppijanumerorekisteriService)
+    lazy val hakemusRepository = new HakemusRepository(hakuAppRepository, ataruHakemusRepository, ataruHakemusTarjontaEnricher)
+    lazy val valintatulosService = new ValintatulosService(vastaanotettavuusService, sijoittelutulosService, hakemusRepository, valintarekisteriDb, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, hakijaDTOClient)(appConfig,dynamicAppConfig)
+    lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService, valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, hakemusRepository)
     lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService, valintarekisteriDb, valintarekisteriDb)
     lazy val mailPollerRepository: MailPollerRepository = valintarekisteriDb
     lazy val mailPoller: MailPollerAdapter =
@@ -125,7 +130,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService), "/lukuvuosimaksu")
       context.mount(handler = new MuutoshistoriaServlet(valinnantulosService, valintarekisteriDb, skipAuditForServiceCall = true), urlPattern = "/muutoshistoria", name = "PrivateMuutosHistoriaServlet")
       context.mount(new PrivateValintatulosServlet(valintatulosService, vastaanottoService, ilmoittautumisService), "/haku")
-      context.mount(new EmailStatusServlet(mailPoller, new MailDecorator(new HakemusRepository(), mailPollerRepository, hakuService, oppijanTunnistusService)), "/vastaanottoposti")
+      context.mount(new EmailStatusServlet(mailPoller, new MailDecorator(hakemusRepository, mailPollerRepository, hakuService, oppijanTunnistusService)), "/vastaanottoposti")
       context.mount(new EnsikertalaisuusServlet(valintarekisteriDb, appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus")
       context.mount(new HakijanVastaanottoServlet(vastaanottoService), "/vastaanotto")
       context.mount(new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, ldapUserService), "/erillishaku/valinnan-tulos")
@@ -155,7 +160,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new LukuvuosimaksuServletWithCAS(lukuvuosimaksuService, valintarekisteriDb, hakuService, authorizer), "/auth/lukuvuosimaksu")
       context.mount(handler = new MuutoshistoriaServlet(valinnantulosService, valintarekisteriDb), urlPattern = "/auth/muutoshistoria", name = "PublicMuutosHistoriaServlet")
       context.mount(new ValintaesitysServlet(valintaesitysService, valintarekisteriDb), "/auth/valintaesitys")
-      context.mount(new PuuttuvienTulostenMetsastajaServlet(valintarekisteriDb, hakemusRepository, appConfig.properties("host.virkailija")), "/auth/puuttuvat")
+      context.mount(new PuuttuvienTulostenMetsastajaServlet(valintarekisteriDb, hakuAppRepository, appConfig.properties("host.virkailija")), "/auth/puuttuvat")
     }
   }
 

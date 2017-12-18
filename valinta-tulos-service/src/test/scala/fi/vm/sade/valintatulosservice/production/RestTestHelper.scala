@@ -32,12 +32,13 @@ trait RestTestHelper {
 
   protected def createCasClientForOldData(target:String): Client = {
     val casParams = CasParams(target, casUserOld, casPasswordOld)
-    new CasAuthenticatingClient(
+    CasAuthenticatingClient(
       new CasClient(casUrlOld, org.http4s.client.blaze.defaultClient),
       casParams,
       org.http4s.client.blaze.defaultClient,
-      "RestTestHelper"
-    ).httpClient
+      Some("RestTestHelper"),
+      "JSESSIONID"
+    )
   }
 
   protected def get[T](fetch:() => String)(implicit m: Manifest[T]): T = parse(fetch()).extract[T]

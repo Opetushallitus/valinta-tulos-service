@@ -9,6 +9,7 @@ import fi.vm.sade.valintatulosservice.config.StubbedExternalDeps
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import org.http4s._
+import org.http4s.client.Client
 import org.http4s.client.middleware.{Retry, RetryPolicy}
 import org.http4s.headers.`Content-Type`
 import org.json4s.JsonAST.JValue
@@ -66,7 +67,7 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
     implicit val henkiloDecoder = org.http4s.json4s.native.jsonOf[Option[Henkilo]]
 
     val requestUri = createUri(appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.henkiloPerusByHetu",hetu))
-    oppijanumerorekisteriClient.httpClient.fetch(Request(uri = requestUri)) {
+    oppijanumerorekisteriClient.fetch(Request(uri = requestUri)) {
       case r if 200 == r.status.code => r.as[Option[Henkilo]]
       case r if 404 == r.status.code => Task.now(None)
       case r => Task.fail(new RuntimeException(r.toString))
@@ -96,7 +97,7 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
 
     val stringUri = appConfig.ophUrlProperties.url("haku-app.application.queryBase", hakemusOid)
     val url = Uri.fromString(stringUri).getOrElse(throw new RuntimeException(s"Invalid uri: $stringUri"))
-    val retryingClient = Retry(RetryPolicy.exponentialBackoff(Duration(30, TimeUnit.SECONDS), maxRetry = 10))(hakuClient.httpClient)
+    val retryingClient = Retry(RetryPolicy.exponentialBackoff(Duration(30, TimeUnit.SECONDS), maxRetry = 10))(hakuClient)
     val henkiloFromHakemus = retryingClient.fetch(Request(method = Method.GET, uri = url)) {
       case r if 200 == r.status.code => r.as[HakemusHenkilo]
       case r => Task.fail(new RuntimeException(s"Got non-OK response from haku-app when fetching hakemus $hakemusOid: ${r.toString}"))
@@ -132,7 +133,7 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
     val task: Task[Request] = Request(method = Method.POST, uri = createUri(henkiloPalveluUrlBase + "/", ""))
       .withBody(json)(jsonStringEncoder)
 
-    henkiloClient.httpClient.fetch(task) {
+    henkiloClient.fetch(task) {
       case r if 200 == r.status.code => r.as[String]
       case r => Task.fail(new RuntimeException(r.toString))
     }.attemptRunFor(Duration(30, TimeUnit.SECONDS)) match {
@@ -155,8 +156,14 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
     Uri.fromString(stringUri).getOrElse(throw new RuntimeException(s"Invalid uri: $stringUri"))
   }
 
-  private def createCasClient(appConfig: VtsAppConfig, targetService: String): CasAuthenticatingClient = {
+  private def createCasClient(appConfig: VtsAppConfig, targetService: String): Client = {
     val params = CasParams(targetService, appConfig.settings.securitySettings.casUsername, appConfig.settings.securitySettings.casPassword)
-    new CasAuthenticatingClient(appConfig.securityContext.casClient, params, org.http4s.client.blaze.defaultClient, "valinta-tulos-service") // TODO move clientSubSystemCode to constant
+    CasAuthenticatingClient(
+      appConfig.securityContext.casClient,
+      params,
+      org.http4s.client.blaze.defaultClient,
+      Some("valinta-tulos-service"), // TODO move clientSubSystemCode to constant
+      "JSESSIONID"
+    )
   }
 }

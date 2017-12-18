@@ -2,7 +2,9 @@ package fi.vm.sade.valintatulosservice.local
 
 import fi.vm.sade.valintatulosservice.ITSpecification
 import fi.vm.sade.valintatulosservice.domain.{Hakemus, Hakutoive, Henkilotiedot}
-import fi.vm.sade.valintatulosservice.hakemus.{HakemusFixtures, HakemusRepository}
+import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusFixtures, HakemusRepository, HakuAppRepository}
+import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
+import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
 import org.junit.runner.RunWith
@@ -10,7 +12,13 @@ import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class HakemusRepositorySpec extends ITSpecification with ValintarekisteriDbTools {
-  val repo = new HakemusRepository()
+  val hakuService = HakuService(appConfig.hakuServiceConfig)
+  val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
+  val repo = new HakemusRepository(
+    new HakuAppRepository(),
+    new AtaruHakemusRepository(appConfig),
+    new AtaruHakemusEnricher(hakuService, oppijanumerorekisteriService)
+  )
 
   override def afterAll = deleteAll()
 
@@ -47,15 +55,6 @@ class HakemusRepositorySpec extends ITSpecification with ValintarekisteriDbTools
             Hakutoive(HakukohdeOid("1.2.246.562.20.83060182827"), "1.2.246.562.10.83122281013", "", "")
           ),
           Henkilotiedot(Some("Teppo"),None,true))
-      )
-    }
-
-    "palauttaa kaikki henkilön tiettyyn hakuun liittyvät Hakemukset" in {
-      val hakemukset = repo.findHakemukset(HakuOid("korkeakoulu-lisahaku1"), "1.2.246.562.24.14229104472").toList
-      hakemukset must_== List(Hakemus(HakemusOid("1.2.246.562.11.00000878230"), HakuOid("korkeakoulu-lisahaku1"), "1.2.246.562.24.14229104472", "FI",
-          List(Hakutoive(HakukohdeOid("1.2.246.562.14.2013120515524070995659"), "1.2.246.562.10.83122281013", "stevari amk hakukohde", "Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta"),
-            Hakutoive(HakukohdeOid("1.2.246.562.14.2014022408541751568934"), "1.2.246.562.10.83122281012", "", "")),
-        Henkilotiedot(Some("Teppo"), None, true))
       )
     }
 

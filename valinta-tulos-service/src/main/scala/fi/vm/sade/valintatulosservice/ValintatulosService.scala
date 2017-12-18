@@ -36,13 +36,14 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
                           hakijaDTOClient: ValintarekisteriHakijaDTOClient)(implicit appConfig: VtsAppConfig, dynamicAppConfig: VtsDynamicAppConfig) extends Logging {
   def this(vastaanotettavuusService: VastaanotettavuusService,
            sijoittelutulosService: SijoittelutulosService,
+           hakemusRepository: HakemusRepository,
            virkailijaVastaanottoRepository: VirkailijaVastaanottoRepository,
            hakuService: HakuService,
            hakijaVastaanottoRepository: HakijaVastaanottoRepository,
            hakukohdeRecordService: HakukohdeRecordService,
            valintatulosDao: ValintarekisteriValintatulosDao,
            hakijaDTOClient: ValintarekisteriHakijaDTOClient )(implicit appConfig: VtsAppConfig, dynamicAppConfig: VtsDynamicAppConfig) =
-    this(vastaanotettavuusService, sijoittelutulosService, appConfig.ohjausparametritService, new HakemusRepository(), virkailijaVastaanottoRepository, hakuService, hakijaVastaanottoRepository, hakukohdeRecordService, valintatulosDao, hakijaDTOClient)
+    this(vastaanotettavuusService, sijoittelutulosService, appConfig.ohjausparametritService, hakemusRepository, virkailijaVastaanottoRepository, hakuService, hakijaVastaanottoRepository, hakukohdeRecordService, valintatulosDao, hakijaDTOClient)
 
   def haunKoulutuksenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid: HakuOid) : Set[VastaanottoRecord] = {
     hakuJaSenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid)._2
