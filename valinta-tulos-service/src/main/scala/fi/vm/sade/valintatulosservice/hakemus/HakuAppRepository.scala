@@ -134,11 +134,11 @@ class HakuAppRepository()(implicit appConfig: VtsAppConfig) extends Logging {
     Henkilotiedot(emptyStringToNone(data.getAs[String]("Kutsumanimi")), emptyStringToNone(data.getAs[String]("Sähköposti")), data.getAs[String]("Henkilotunnus").isDefined)
   }
 
-  private val HakutoiveKey = s"preference([0-9]+)-${DatabaseKeys.hakutoiveIdKeyPostfix}".r
+  private val hakutoiveKey = s"preference([0-9]+)-${DatabaseKeys.hakutoiveIdKeyPostfix}".r
 
   private def parseHakutoiveet(hakutoiveet: Imports.MongoDBObject): List[Hakutoive] = {
     hakutoiveet.toList.collect {
-      case (key@HakutoiveKey(index), value: String) if value != "" => (index.toInt, key, value)
+      case (key@hakutoiveKey(index), value: String) if value != "" => (index.toInt, key, value)
     }.sortBy(_._1).map {
       case (index, _, hakukohdeOid) =>
         Hakutoive(
