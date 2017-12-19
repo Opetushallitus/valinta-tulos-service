@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice
 import java.net.InetAddress
 import java.util.UUID
 
+import fi.vm.sade.javautils.http.HttpServletRequestUtils
 import fi.vm.sade.security.{AuthenticationFailedException, AuthorizationFailedException}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
@@ -26,16 +27,8 @@ trait CasAuthenticatedServlet { this:ScalatraServlet with Logging =>
 
   protected def auditInfo(implicit authenticated: Authenticated): AuditInfo = {
     AuditInfo(
-      Authenticated.unapply(authenticated).get,
-      InetAddress.getByName(
-        request.headers.get("X-Real-IP").getOrElse({
-          request.headers.get("X-Forwarded-For").getOrElse({
-            logger.warn("X-Real-IP or X-Forwarded-For was not set. Are we not running behind a load balancer?")
-            request.getRemoteAddr
-          })
-        })
-      ),
-      request.headers.get("User-Agent").getOrElse(throw new IllegalArgumentException("Otsake User-Agent on pakollinen."))
+      Authenticated.unapply(authenticated).get, InetAddress.getByName(HttpServletRequestUtils.getRemoteAddress(request)),
+        request.headers.get("User-Agent").getOrElse(throw new IllegalArgumentException("Otsake User-Agent on pakollinen."))
     )
   }
 }

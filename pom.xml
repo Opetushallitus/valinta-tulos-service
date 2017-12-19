@@ -419,6 +419,11 @@
                 <artifactId>jawn-json4s_2.11</artifactId>
                 <version>0.10.5-SNAPSHOT</version>
             </dependency>
+            <dependency>
+                <groupId>fi.vm.sade.java-utils</groupId>
+                <artifactId>java-cas</artifactId>
+                <version>0.3.1-SNAPSHOT</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
