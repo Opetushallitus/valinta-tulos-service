@@ -59,4 +59,16 @@ trait DeleteSijoitteluRepositoryImpl extends DeleteSijoitteluRepository with Val
         throw t
     }
   }
+
+  override def acquireLockForSijoitteluajoCleaning(lockId: Int): Seq[Boolean] = {
+    runBlocking(
+      sql"""select pg_try_advisory_lock($lockId)""".as[Boolean]
+    )
+  }
+
+  override def clearLockForSijoitteluajoCleaning(lockId: Int): Seq[Boolean] = {
+    runBlocking(
+      sql"""select pg_advisory_unlock($lockId)""".as[Boolean]
+    )
+  }
 }
