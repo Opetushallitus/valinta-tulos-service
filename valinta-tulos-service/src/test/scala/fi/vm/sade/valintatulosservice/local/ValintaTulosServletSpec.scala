@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.local
 import fi.vm.sade.security.mock.MockSecurityContext
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
-import fi.vm.sade.valintatulosservice.hakemus.AtaruHakemus
+import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemus, AtaruHakutoive}
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.Henkilo
 import fi.vm.sade.valintatulosservice.production.Hakija
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
@@ -17,11 +17,13 @@ import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class ValintaTulosServletSpec extends ServletSpecification {
+  val ataruHakutoive1 = AtaruHakutoive("unprocessed", "unreviewed", "unreviewed", "1.2.246.562.20.14875157126")
+  val ataruHakutoive2 = AtaruHakutoive("unprocessed", "unreviewed", "unreviewed", "1.2.246.562.20.27958725015")
   val ataruHakemus1 = AtaruHakemus(HakemusOid("1.2.246.562.11.00000000000000000005"),
-    HakuOid("1.2.246.562.29.37061034627"), HakijaOid("ataru-tyyppi"), "fi", List("1.2.246.562.20.14875157126"), None)
+    HakuOid("1.2.246.562.29.37061034627"), HakijaOid("ataru-tyyppi"), "fi", List(ataruHakutoive1), None)
   val ataruHakemus2 = AtaruHakemus(HakemusOid("1.2.246.562.11.00000000000000000006"),
     HakuOid("1.2.246.562.29.37061034627"), HakijaOid("ataru-tyyppi2"), "fi",
-    List("1.2.246.562.20.14875157126", "1.2.246.562.20.27958725015"), None)
+    List(ataruHakutoive1, ataruHakutoive2), None)
   val ataruHenkilo1 = Henkilo(HakijaOid("ataru-tyyppi"), None, Some("Ataru"))
   val ataruHenkilo2 = Henkilo(HakijaOid("ataru-tyyppi2"), None, Some("Ataru2"))
 
