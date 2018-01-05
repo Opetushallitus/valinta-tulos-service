@@ -14,11 +14,16 @@ import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
 import scalaz.concurrent.Task
 
+case class AtaruHakutoive(processingState: String,
+                          eligibilityState: String,
+                          paymentObligation: String,
+                          hakukohdeOid: String)
+
 case class AtaruHakemus(oid: HakemusOid,
                         hakuOid: HakuOid,
                         henkiloOid: HakijaOid,
                         asiointikieli: String,
-                        hakukohteet: List[String],
+                        hakutoiveet: List[AtaruHakutoive],
                         email: Option[String])
 
 sealed trait HakemuksetQuery

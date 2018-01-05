@@ -22,7 +22,7 @@ class AtaruHakemusEnricher(hakuService: HakuService,
       hakuOid = hakemus.hakuOid,
       henkiloOid = henkilo.oid.toString,
       asiointikieli = hakemus.asiointikieli,
-      toiveet = hakemus.hakukohteet.map(s => hakutoiveet(HakukohdeOid(s))),
+      toiveet = hakemus.hakutoiveet.map(s => hakutoiveet(HakukohdeOid(s.hakukohdeOid))),
       henkilotiedot = Henkilotiedot(
         kutsumanimi = henkilo.kutsumanimi,
         email = hakemus.email,
@@ -55,7 +55,7 @@ class AtaruHakemusEnricher(hakuService: HakuService,
   }
 
   private def uniqueHakukohdeOids(hakemukset: List[AtaruHakemus]): Set[HakukohdeOid] = {
-    hakemukset.flatMap(_.hakukohteet).toSet.map(HakukohdeOid)
+    hakemukset.flatMap(_.hakutoiveet).map(_.hakukohdeOid).toSet.map(HakukohdeOid)
   }
 
   private def hakutoive(oid: HakukohdeOid): Either[Throwable, Hakutoive] = {
