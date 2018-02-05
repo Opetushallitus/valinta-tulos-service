@@ -11,8 +11,8 @@ class BuildversionServlet(buildversion: Buildversion) extends HttpServlet {
     response.setStatus(status)
     response.setCharacterEncoding("UTF-8")
     response.setContentType("text/plain")
-    response.setContentLength(message.length)
     response.getOutputStream.println(message)
+    response.getOutputStream.flush()
     response.getOutputStream.close()
   }
 }
