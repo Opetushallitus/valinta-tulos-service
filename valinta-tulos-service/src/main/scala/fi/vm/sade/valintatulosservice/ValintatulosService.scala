@@ -396,7 +396,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
     })
   }
 
-  def streamSijoittelunTulokset(hakuOid: HakuOid, sijoitteluajoId: String, writeResult: HakijaDTO => Unit, vainMerkitsevaJono : Option[Boolean] = None): Unit = {
+  def streamSijoittelunTulokset(hakuOid: HakuOid, sijoitteluajoId: String, writeResult: HakijaDTO => Unit, vainMerkitsevaJono : Boolean): Unit = {
     val haunVastaanototByHakijaOid = timed("Fetch haun vastaanotot for haku: " + hakuOid, 1000) {
       virkailijaVastaanottoRepository.findHaunVastaanotot(hakuOid).groupBy(_.henkiloOid)
     }
@@ -411,7 +411,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
 
     def processTulos(hakijaDto: HakijaDTO, hakijaOid: String, hakutoiveidenTulokset: List[Hakutoiveentulos]): Unit = {
       hakijaDto.setHakijaOid(hakijaOid)
-      if(vainMerkitsevaJono.getOrElse(false)) {
+      if(vainMerkitsevaJono) {
         populateMerkitsevatJonot(hakijaDto, hakutoiveidenTulokset)
       } else {
         populateVastaanottotieto(hakijaDto, hakutoiveidenTulokset)

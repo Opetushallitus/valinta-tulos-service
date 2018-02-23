@@ -216,7 +216,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
   get("/streaming/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakemukset", operation(getStreamingHaunSijoitteluajonTuloksetSwagger)) {
     val hakuOid = HakuOid(params("hakuOid"))
     val sijoitteluajoId = params("sijoitteluajoId")
-    val vainMerkitsevaJono = params.get("vainMerkitsevaJono").map(_.toBoolean)
+    val vainMerkitsevaJono = params.get("vainMerkitsevaJono").map(_.toBoolean).getOrElse(false)
 
     val writer = response.writer
 
