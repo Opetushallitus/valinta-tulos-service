@@ -14,7 +14,7 @@ USERNAME=$1
 PASSWORD=$2
 
 if [ -z $3 ]; then
-  VIRKAILIJA=https://testi.virkailija.opintopolku.fi
+  VIRKAILIJA=https://virkailija.testiopintopolku.fi
 else
   VIRKAILIJA=$3
 fi
