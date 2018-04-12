@@ -260,9 +260,18 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
   override def findHyvaksyttyJulkaistuDatesForHenkilo(henkiloOid: HenkiloOid): Map[HakukohdeOid, OffsetDateTime] =
     timed(s"Hyväksytty ja julkaistu -pvm henkilölle $henkiloOid", 100) {
       runBlocking(
-        sql"""select hakukohde, hyvaksytty_ja_julkaistu
+        sql"""select
+                hyvaksytyt_ja_julkaistut_hakutoiveet.hakukohde,
+                hyvaksytyt_ja_julkaistut_hakutoiveet.hyvaksytty_ja_julkaistu
               from hyvaksytyt_ja_julkaistut_hakutoiveet
-              where henkilo = ${henkiloOid}""".as[(HakukohdeOid, OffsetDateTime)]).toMap
+              where hyvaksytyt_ja_julkaistut_hakutoiveet.henkilo = ${henkiloOid}
+              union
+              select
+                hyvaksytyt_ja_julkaistut_hakutoiveet.hakukohde,
+                hyvaksytyt_ja_julkaistut_hakutoiveet.hyvaksytty_ja_julkaistu
+              from hyvaksytyt_ja_julkaistut_hakutoiveet
+              join henkiloviitteet on hyvaksytyt_ja_julkaistut_hakutoiveet.henkilo = henkiloviitteet.linked_oid
+              where henkiloviitteet.person_oid = ${henkiloOid}""".as[(HakukohdeOid, OffsetDateTime)]).toMap
     }
 
   override def findHyvaksyttyJulkaistuDatesForHaku(hakuOid: HakuOid): Map[HenkiloOid, Map[HakukohdeOid, OffsetDateTime]] =
