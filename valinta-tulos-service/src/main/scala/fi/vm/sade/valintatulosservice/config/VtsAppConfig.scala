@@ -80,7 +80,7 @@ object VtsAppConfig extends Logging {
 
   class IT_sysprops extends IT {
     override val ophUrlProperties: OphUrlProperties = new OphUrlProperties(propertiesFile, false, Some(System.getProperty("valinta-tulos-service.it-profile.hostname",
-      "testi.virkailija.opintopolku.fi")))
+      "virkailija.testiopintopolku.fi")))
   }
 
   /**
