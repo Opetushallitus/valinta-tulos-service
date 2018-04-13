@@ -11,7 +11,7 @@ import org.specs2.runner.JUnitRunner
 class TarjontaIntegrationTest extends Specification {
   "HakuService" should {
     "Extract response from tarjonta API"in {
-      val response = new TarjontaHakuService((new VtsAppConfig.IT_sysprops).hakuServiceConfig).getHaku(HakuOid("1.2.246.562.5.2013080813081926341927"))
+      val response: Either[Throwable, Haku] = new TarjontaHakuService((new VtsAppConfig.IT_sysprops).hakuServiceConfig).getHaku(HakuOid("1.2.246.562.5.2013080813081926341927"))
       val haku = response.right.get
       haku.korkeakoulu must_== false
       haku.varsinaisenHaunOid must_== None

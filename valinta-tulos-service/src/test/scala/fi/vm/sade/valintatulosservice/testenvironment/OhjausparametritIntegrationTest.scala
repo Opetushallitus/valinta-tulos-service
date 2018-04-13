@@ -13,8 +13,7 @@ class OhjausparametritIntegrationTest extends Specification {
     "Extract response from API"in {
       implicit val testConfig = new IT_sysprops
       val response: Either[Throwable, Option[Ohjausparametrit]] = new RemoteOhjausparametritService().ohjausparametrit(HakuOid("1.2.246.562.29.52925694235"))
-      val parametriOpt = response.right.get
-      val parametri: Ohjausparametrit = parametriOpt.get
+      val parametri: Ohjausparametrit = response.right.get.get
       parametri.ilmoittautuminenPaattyy must beNone
       parametri.vastaanottoaikataulu.vastaanottoEnd.get.getMillis must_== 1500033600000L
     }
@@ -23,9 +22,8 @@ class OhjausparametritIntegrationTest extends Specification {
   "OhjausparametritService fail case" should {
     "return None for non existing parametri ID" in {
       implicit val testConfig = new IT_sysprops
-      val response = new RemoteOhjausparametritService().ohjausparametrit(HakuOid("987654321"))
-      val parametriOpt: Option[Ohjausparametrit] = response.right.get
-      parametriOpt must beNone
+      val response: Either[Throwable, Option[Ohjausparametrit]] = new RemoteOhjausparametritService().ohjausparametrit(HakuOid("987654321"))
+      response.right.get must beNone
     }
   }
 }
