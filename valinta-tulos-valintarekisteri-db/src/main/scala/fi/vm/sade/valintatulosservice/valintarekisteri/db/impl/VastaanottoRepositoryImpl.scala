@@ -270,8 +270,8 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
                 hyvaksytyt_ja_julkaistut_hakutoiveet.hakukohde,
                 hyvaksytyt_ja_julkaistut_hakutoiveet.hyvaksytty_ja_julkaistu
               from hyvaksytyt_ja_julkaistut_hakutoiveet
-              join henkiloviitteet on hyvaksytyt_ja_julkaistut_hakutoiveet.henkilo = henkiloviitteet.linked_oid
-              where henkiloviitteet.person_oid = ${henkiloOid}""".as[(HakukohdeOid, OffsetDateTime)]).toMap
+              join henkiloviitteet on hyvaksytyt_ja_julkaistut_hakutoiveet.henkilo = henkiloviitteet.person_oid
+              where henkiloviitteet.linked_oid = ${henkiloOid}""".as[(HakukohdeOid, OffsetDateTime)]).toMap
     }
 
   override def findHyvaksyttyJulkaistuDatesForHaku(hakuOid: HakuOid): Map[HenkiloOid, Map[HakukohdeOid, OffsetDateTime]] =
