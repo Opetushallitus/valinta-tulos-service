@@ -11,15 +11,12 @@ import fi.vm.sade.valintatulosservice.json.JsonFormats
 import org.http4s._
 import org.http4s.client.Client
 import org.http4s.client.middleware.{Retry, RetryPolicy}
-import org.http4s.headers.`Content-Type`
 import org.json4s.JsonAST.JValue
-import org.json4s.JsonDSL._
 import org.json4s._
-import org.json4s.native.JsonMethods._
-
-import scala.concurrent.duration._
 import scalaz.concurrent.Task
 import scalaz.{-\/, \/-}
+
+import scala.concurrent.duration._
 
 case class Henkilo(oidHenkilo: String, hetu: String, etunimet: String, sukunimi: String)
 
@@ -45,9 +42,7 @@ object HakijaResolver {
 
 class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with Logging with HakijaResolver {
   private val hakuClient = createCasClient(appConfig, "/haku-app")
-  private val henkiloClient = createCasClient(appConfig, "/authentication-service")
   private val oppijanumerorekisteriClient = createCasClient(appConfig, "/oppijanumerorekisteri-service")
-  private val henkiloPalveluUrlBase = appConfig.ophUrlProperties.url("authentication-service.henkilo")
 
   case class HakemusHenkilo(personOid: Option[String], hetu: Option[String], etunimet: String, sukunimi: String, kutsumanimet: String,
                             syntymaaika: String, aidinkieli: Option[String], sukupuoli: Option[String])
@@ -110,37 +105,6 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
       case Some(henkilo) if henkilo.personOid.isDefined => henkilo.personOid
       case Some(henkilo) => henkilo.hetu.map(findPersonOidByHetu).getOrElse({throw new RuntimeException(s"Hakemuksella $hakemusOid ei hakijaoidia!")})
       case None => throw new RuntimeException(s"Hakemuksen $hakemusOid henkilotietoja ei saatu parsittua.")
-    }
-  }
-
-  private def createPerson(henkilo: HakemusHenkilo): Option[String] = {
-    val syntymaaika = new java.text.SimpleDateFormat("dd.MM.yyyy").parse(henkilo.syntymaaika)
-
-    val json: String = compact(render(
-      ("etunimet" -> henkilo.etunimet) ~
-      ("sukunimi" -> henkilo.sukunimi) ~
-      ("kutsumanimi" -> henkilo.kutsumanimet) ~
-      ("hetu" -> henkilo.hetu) ~
-      ("henkiloTyyppi" -> "OPPIJA") ~
-      ("syntymaaika" -> new java.text.SimpleDateFormat("yyyy-MM-dd").format(syntymaaika)) ~
-      ("sukupuoli" -> henkilo.sukupuoli) ~
-      ("asiointiKieli" -> ("kieliKoodi" -> "fi")) ~
-      ("aidinkieli" -> ("kieliKoodi" -> henkilo.aidinkieli.getOrElse("fi").toLowerCase))))
-
-    implicit val jsonStringEncoder: EntityEncoder[String] = EntityEncoder
-      .stringEncoder(Charset.`UTF-8`).withContentType(`Content-Type`(MediaType.`application/json`, Charset.`UTF-8`))
-
-    val task: Task[Request] = Request(method = Method.POST, uri = createUri(henkiloPalveluUrlBase + "/", ""))
-      .withBody(json)(jsonStringEncoder)
-
-    henkiloClient.fetch(task) {
-      case r if 200 == r.status.code => r.as[String]
-      case r => Task.fail(new RuntimeException(r.toString))
-    }.attemptRunFor(Duration(30, TimeUnit.SECONDS)) match {
-      case \/-(response) =>
-        logger.info(s"Luotiin henkilo oid=$response")
-        Some(response)
-      case -\/(t) => handleFailure(t, "creating person")
     }
   }
 
