@@ -71,7 +71,7 @@ valinta-tulos-service.scheduled-delete-sijoitteluajo.limit=2
 valinta-tulos-service.scheduled-migration.end-hour=7
 
 # KELA
-valinta-tulos-service.kela.url=https://asiointi.kela.fi/eOTh/EOThApplication?reitti=oph
+valinta-tulos-service.kela.url=https://asiointi.kela.fi/go_app/EArtApplication?reitti=oph
 
 # Oppijan tunnistus
 oppijan-tunnistus-service.url=https://{{host_virkailija}}/oppijan-tunnistus/api/v1/only_token
