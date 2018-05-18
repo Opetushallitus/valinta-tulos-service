@@ -94,9 +94,21 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
     }
   }
 
+  private def vastaanottoHasNoValintatulos(vastaanotonHenkiloOid: String, vastaanotonHakukohdeOid: HakukohdeOid, hakukohteenHenkiloOiditIndex: Map[HakukohdeOid, Set[String]]): Boolean = {
+    !hakukohteenHenkiloOiditIndex.getOrElse(vastaanotonHakukohdeOid, Set.empty).contains(vastaanotonHenkiloOid)
+  }
+
+  private def createHakukohteenHenkiloOiditIndex(hakemusOidit: Map[(String, HakukohdeOid), HakemusOid]): Map[HakukohdeOid, Set[String]] = {
+    val duplicates: Map[String, Set[String]] = runBlockingTransactionally(aliases(hakemusOidit.map(_._1._1).toSet)).fold(throw _, r => r)
+      .groupBy(_._1).mapValues(_.map(_._2))
+    hakemusOidit.keys.map{case (k, v) => v -> (duplicates.getOrElse(k, Set.empty) + k)}
+      .groupBy(_._1).mapValues(_.map(_._2).toSet.flatten).map(identity)
+  }
+
   private def assertAllValinnantuloksetExist(vastaanotot: Set[VastaanottoRecord], hakemusoidit: Map[(String, HakukohdeOid), HakemusOid]): Unit = {
-    val missingRecords: Map[HakukohdeOid, Set[VastaanottoRecord]] = vastaanotot.filter(v => !hakemusoidit.isDefinedAt(v.henkiloOid, v.hakukohdeOid)).groupBy(_.hakukohdeOid)
-    if(!missingRecords.isEmpty) {
+    val hakukohteenHenkiloOiditIndex: Map[HakukohdeOid, Set[String]] = createHakukohteenHenkiloOiditIndex(hakemusoidit)
+    val missingRecords: Map[HakukohdeOid, Set[VastaanottoRecord]] = vastaanotot.filter(v => vastaanottoHasNoValintatulos(v.henkiloOid, v.hakukohdeOid, hakukohteenHenkiloOiditIndex)).groupBy(_.hakukohdeOid)
+    if (!missingRecords.isEmpty) {
       throw new IllegalStateException(s"Puuttuvia valinnantuloksia ${missingRecords.map(e => s"hakukohteessa ${e._1} henkiloOideille ${e._2.map(_.henkiloOid).mkString(",")}").mkString(", ")}")
     }
   }
@@ -104,6 +116,11 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
 
   override def aliases(henkiloOid: String): DBIO[Set[String]] = {
     sql"""select linked_oid from henkiloviitteet where person_oid = ${henkiloOid}""".as[String].map(_.toSet)
+  }
+
+  private def aliases(henkiloOids: Set[String]): DBIO[Set[(String, String)]] = {
+    val henkiloOidsForIn = formatMultipleValuesForSql(henkiloOids.toSeq)
+    sql"""select person_oid, linked_oid from henkiloviitteet where person_oid in (#${henkiloOidsForIn})""".as[(String, String)].map(_.toSet)
   }
 
   def runAsSerialized[T](retries: Int, wait: Duration, description: String, action: DBIO[T]): Either[Throwable, T] = {
