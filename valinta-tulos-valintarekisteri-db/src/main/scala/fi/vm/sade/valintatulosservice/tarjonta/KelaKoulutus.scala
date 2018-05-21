@@ -1,5 +1,7 @@
 package fi.vm.sade.valintatulosservice.tarjonta
 
+import fi.vm.sade.utils.slf4j.Logging
+
 import scala.collection.immutable
 import scala.util.Try
 
@@ -106,7 +108,7 @@ private case class AmmatillinenPerus(val laajuusarvo: Option[String]) extends Ta
 private case class Lukio(val laajuusarvo: Option[String]) extends Taso
 private case class Muu(val laajuusarvo: Option[String]) extends Taso
 
-object KelaKoulutus {
+object KelaKoulutus extends Logging {
   def mergeLaajuudet[A <: Taso](l1: A, l2: A): A = {
     l1.laajuusarvo match {
       case Some(laajuus1) =>
@@ -212,7 +214,7 @@ object KelaKoulutus {
       def r = new util.matching.Regex(sc.parts.mkString, sc.parts.tail.map(_ => "x"): _*)
     }
     val arvo = k.opintojenLaajuusarvo.filter(_.trim.nonEmpty)
-    k.koulutuskoodi match {
+    val result: Option[Taso] = k.koulutuskoodi match {
       case Some(koodi) =>
         koodi match {
           case r"772101" =>
@@ -229,6 +231,8 @@ object KelaKoulutus {
       case _ =>
         None
     }
+    logger.info("Koulutuskoodi {} and koulutustyyppi {} resulted in taso {}", k.koulutuskoodi, k.koulutustyyppi, result.map(_.getClass.getSimpleName))
+    result
   }
 
   private def resolveToinenAsteOrMuu(koulutustyyppi: Option[String], arvo: Option[String]): Option[Taso] = {
