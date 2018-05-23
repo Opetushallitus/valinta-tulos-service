@@ -1,10 +1,11 @@
 package fi.vm.sade.valintatulosservice.json
 
+import java.time.LocalDateTime
 import java.util.Date
 
 import fi.vm.sade.valintatulosservice.domain.Valintatila.Valintatila
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila.Vastaanotettavuustila
-import fi.vm.sade.valintatulosservice.domain.{HakutoiveenIlmoittautumistila, HakutoiveenSijoittelunTilaTieto, Hakutoiveentulos}
+import fi.vm.sade.valintatulosservice.domain.{HakutoiveenIlmoittautumistila, HakutoiveenSijoittelunTilaTieto, Hakutoiveentulos, Ilmoittautumisaika}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, ValintatapajonoOid}
 import org.json4s.Extraction._
 import org.json4s.JsonAST.JObject
@@ -27,6 +28,7 @@ class HakutoiveentulosSerializer extends CustomSerializer[Hakutoiveentulos]((for
       valintatila = valintatila,
       vastaanottotila = vastaanottotila,
       ilmoittautumistila = (x \ "ilmoittautumistila").extract[HakutoiveenIlmoittautumistila],
+      ilmoittautumisenAikaleima = (x \ "ilmoittautumisenAikaleima").extractOpt[Date],
       vastaanotettavuustila = vastaanotettavuustila,
       vastaanottoDeadline = (x \ "vastaanottoDeadline").extractOpt[Date],
       viimeisinHakemuksenTilanMuutos = (x \ "viimeisinHakemuksenTilanMuutos").extractOpt[Date],
@@ -53,6 +55,7 @@ class HakutoiveentulosSerializer extends CustomSerializer[Hakutoiveentulos]((for
       ("valintatila" -> decompose(tulos.valintatila)) ~
       ("vastaanottotila" -> decompose(tulos.vastaanottotila)) ~
       ("ilmoittautumistila" -> decompose(tulos.ilmoittautumistila)) ~
+      ("ilmoittautumisenAikaleima" -> decompose(tulos.ilmoittautumisenAikaleima)) ~
       ("vastaanotettavuustila" -> decompose(tulos.vastaanotettavuustila)) ~
       ("vastaanottoDeadline" -> decompose(tulos.vastaanottoDeadline)) ~
       ("viimeisinHakemuksenTilanMuutos" -> decompose(tulos.viimeisinHakemuksenTilanMuutos)) ~

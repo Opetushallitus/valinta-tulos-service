@@ -29,6 +29,8 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository 
                            val appConfig: VtsAppConfig,
                            val audit: Audit) extends Logging {
 
+
+
   def getMuutoshistoriaForHakemusWithoutAuditInfo(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[Muutos] = {
     valinnantulosRepository.getMuutoshistoriaForHakemus(hakemusOid, valintatapajonoOid)
   }
@@ -65,6 +67,10 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository 
       new Changes.Builder().build()
     )
     r
+  }
+
+  def getIlmoittautumisenAikaleima(henkiloOid: String, hakukohdeOid: HakukohdeOid): Option[Instant] = {
+    valinnantulosRepository.getIlmoittautumisenAikaleima(henkiloOid, hakukohdeOid)
   }
 
   def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid: ValintatapajonoOid,

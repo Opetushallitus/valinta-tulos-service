@@ -1,5 +1,7 @@
 package fi.vm.sade.valintatulosservice
 
+import java.util.Date
+
 import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.sijoittelu.tulos.dto
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationObject, HakutoiveDTO}
@@ -13,7 +15,7 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.sijoittelu.{SijoittelutulosService, ValintarekisteriHakijaDTOClient, ValintarekisteriValintatulosDao}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService}
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, VastaanottoRecord, VirkailijaVastaanottoRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository, VastaanottoRecord, VirkailijaVastaanottoRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.vastaanottanut
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
@@ -24,7 +26,8 @@ import scala.collection.JavaConverters._
 
 private object HakemustenTulosHakuLock
 
-class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
+class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
+                           vastaanotettavuusService: VastaanotettavuusService,
                           sijoittelutulosService: SijoittelutulosService,
                           ohjausparametritService: OhjausparametritService,
                           hakemusRepository: HakemusRepository,
@@ -34,7 +37,8 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
                           hakukohdeRecordService: HakukohdeRecordService,
                           valintatulosDao: ValintarekisteriValintatulosDao,
                           hakijaDTOClient: ValintarekisteriHakijaDTOClient)(implicit appConfig: VtsAppConfig, dynamicAppConfig: VtsDynamicAppConfig) extends Logging {
-  def this(vastaanotettavuusService: VastaanotettavuusService,
+  def this(valinnantulosRepository: ValinnantulosRepository,
+            vastaanotettavuusService: VastaanotettavuusService,
            sijoittelutulosService: SijoittelutulosService,
            hakemusRepository: HakemusRepository,
            virkailijaVastaanottoRepository: VirkailijaVastaanottoRepository,
@@ -43,7 +47,7 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
            hakukohdeRecordService: HakukohdeRecordService,
            valintatulosDao: ValintarekisteriValintatulosDao,
            hakijaDTOClient: ValintarekisteriHakijaDTOClient )(implicit appConfig: VtsAppConfig, dynamicAppConfig: VtsDynamicAppConfig) =
-    this(vastaanotettavuusService, sijoittelutulosService, appConfig.ohjausparametritService, hakemusRepository, virkailijaVastaanottoRepository, hakuService, hakijaVastaanottoRepository, hakukohdeRecordService, valintatulosDao, hakijaDTOClient)
+    this(valinnantulosRepository, vastaanotettavuusService, sijoittelutulosService, appConfig.ohjausparametritService, hakemusRepository, virkailijaVastaanottoRepository, hakuService, hakijaVastaanottoRepository, hakukohdeRecordService, valintatulosDao, hakijaDTOClient)
 
   def haunKoulutuksenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid: HakuOid) : Set[VastaanottoRecord] = {
     hakuJaSenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid)._2
@@ -547,7 +551,8 @@ class ValintatulosService(vastaanotettavuusService: VastaanotettavuusService,
         t.hakukohdeOid == toive.oid
       }.getOrElse(HakutoiveenSijoitteluntulos.kesken(toive.oid, toive.tarjoajaOid))
 
-      Hakutoiveentulos.julkaistavaVersioSijoittelunTuloksesta(hakutoiveenSijoittelunTulos, toive, haku, ohjausparametrit, checkJulkaisuAikaParametri, hasHetu)
+      val ilmoittautumisenAikaleima: Option[Date] = valinnantulosRepository.getIlmoittautumisenAikaleima(sijoitteluTulos.hakijaOid.toString, toive.oid).map(instant => Date.from(instant))
+      Hakutoiveentulos.julkaistavaVersioSijoittelunTuloksesta(ilmoittautumisenAikaleima, hakutoiveenSijoittelunTulos, toive, haku, ohjausparametrit, checkJulkaisuAikaParametri, hasHetu)
     }
 
     val lopullisetTulokset = Välitulos(tulokset, haku, ohjausparametrit)
