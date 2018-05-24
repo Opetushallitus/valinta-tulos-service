@@ -627,7 +627,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   }
 
   override def getIlmoittautumisenAikaleima(henkiloOid: String, hakukohdeOid: HakukohdeOid): Option[Instant] = {
-    runBlocking(sql"""select system_time
+    runBlocking(sql"""select lower(system_time)
           from ilmoittautumiset
           where henkilo = ${henkiloOid}
               and hakukohde = ${hakukohdeOid}

@@ -551,7 +551,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         t.hakukohdeOid == toive.oid
       }.getOrElse(HakutoiveenSijoitteluntulos.kesken(toive.oid, toive.tarjoajaOid))
 
-      val ilmoittautumisenAikaleima: Option[Date] = valinnantulosRepository.getIlmoittautumisenAikaleima(sijoitteluTulos.hakijaOid.toString, toive.oid).map(instant => Date.from(instant))
+      val ilmoittautumisenAikaleima: Option[Date] = valinnantulosRepository.getIlmoittautumisenAikaleima(sijoitteluTulos.hakijaOid.map(_.toString).getOrElse(""), toive.oid).map(instant => Date.from(instant))
       Hakutoiveentulos.julkaistavaVersioSijoittelunTuloksesta(ilmoittautumisenAikaleima, hakutoiveenSijoittelunTulos, toive, haku, ohjausparametrit, checkJulkaisuAikaParametri, hasHetu)
     }
 
