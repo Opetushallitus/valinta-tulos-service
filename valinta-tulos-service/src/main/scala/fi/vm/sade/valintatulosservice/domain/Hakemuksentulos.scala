@@ -7,7 +7,7 @@ import fi.vm.sade.valintatulosservice.domain.Valintatila.Valintatila
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila.Vastaanotettavuustila
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 
 case class Hakemuksentulos(hakuOid: HakuOid, hakemusOid: HakemusOid, hakijaOid: String, aikataulu: Option[Vastaanottoaikataulu], hakutoiveet: List[Hakutoiveentulos]) {
@@ -26,6 +26,7 @@ case class Hakutoiveentulos(hakukohdeOid: HakukohdeOid,
                             valintatila: Valintatila,
                             vastaanottotila: Vastaanottotila,
                             ilmoittautumistila: HakutoiveenIlmoittautumistila,
+                            ilmoittautumisenAikaleima: Option[Date],
                             vastaanotettavuustila: Vastaanotettavuustila,
                             vastaanottoDeadline: Option[Date],
                             viimeisinHakemuksenTilanMuutos: Option[Date],
@@ -83,7 +84,8 @@ case class Hakutoiveentulos(hakukohdeOid: HakukohdeOid,
 }
 
 object Hakutoiveentulos {
-  def julkaistavaVersioSijoittelunTuloksesta(tulos: HakutoiveenSijoitteluntulos,
+  def julkaistavaVersioSijoittelunTuloksesta(ilmoittautumisenAikaleima: Option[Date],
+                                             tulos: HakutoiveenSijoitteluntulos,
                                              hakutoive: Hakutoive,
                                              haku: Haku,
                                              ohjausparametrit: Option[Ohjausparametrit],
@@ -100,6 +102,7 @@ object Hakutoiveentulos {
       tulos.valintatila,
       tulos.vastaanottotila,
       HakutoiveenIlmoittautumistila.getIlmoittautumistila(tulos, haku, ohjausparametrit, hasHetu),
+      ilmoittautumisenAikaleima,
       tulos.vastaanotettavuustila,
       tulos.vastaanottoDeadline,
       tulos.viimeisinHakemuksenTilanMuutos,

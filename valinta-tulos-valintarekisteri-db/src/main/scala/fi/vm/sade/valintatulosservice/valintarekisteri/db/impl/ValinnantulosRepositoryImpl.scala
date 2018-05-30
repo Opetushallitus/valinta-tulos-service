@@ -17,6 +17,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
 trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with ValintarekisteriRepository {
+
   override def getMuutoshistoriaForHakemus(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[Muutos] = {
     timed(s"Getting muutoshistoria for hakemus $hakemusOid in valintatapajono $valintatapajonoOid") {
       val actions: List[MuutosDBIOAction] = List(
@@ -133,6 +134,8 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
         """.as[(SijoitteluajonIlmoittautumistila, OffsetDateTime, Long)]
       .map(r => formMuutoshistoria(r.map(t => (t._3, t._2, KentanMuutos(field = "ilmoittautumistila", from = None, to = t._1)))))
   }
+
+
 
   override def getValinnantulostenHakukohdeOiditForHaku(hakuOid: HakuOid): DBIO[List[HakukohdeOid]] = {
     sql"""select hk.hakukohde_oid
@@ -621,6 +624,15 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       case 1 => DBIO.successful(())
       case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ehdollisen hyväksynnän ehtoa $ehto ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
     }
+  }
+
+  override def getIlmoittautumisenAikaleima(henkiloOid: String, hakukohdeOid: HakukohdeOid): Option[Instant] = {
+    runBlocking(sql"""select lower(system_time)
+          from ilmoittautumiset
+          where henkilo = ${henkiloOid}
+              and hakukohde = ${hakukohdeOid}
+              and tila in ('Lasna', 'LasnaSyksy', 'LasnaKokoLukuvuosi')
+          order by system_time desc limit 1""".as[Instant]).headOption
   }
 
   override def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {

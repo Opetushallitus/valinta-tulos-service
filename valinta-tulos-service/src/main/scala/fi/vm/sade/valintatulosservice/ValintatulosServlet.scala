@@ -1,5 +1,7 @@
 package fi.vm.sade.valintatulosservice
 
+import java.util.Date
+
 import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
@@ -7,6 +9,7 @@ import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.json.{JsonFormats, JsonStreamWriter, StreamingFailureException}
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, Hakuaika, YhdenPaikanSaanto}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.joda.time.DateTime
 import org.json4s.Extraction
@@ -16,15 +19,15 @@ import org.scalatra.swagger._
 
 import scala.util.Try
 
-abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vastaanottoService: VastaanottoService, ilmoittautumisService: IlmoittautumisService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
-
+abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vastaanottoService: VastaanottoService, ilmoittautumisService: IlmoittautumisService, valintarekisteriDb: ValintarekisteriDb)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
+  val ilmoittautumisenAikaleima: Option[Date] = Option(new Date())
   lazy val exampleHakemuksenTulos = Hakemuksentulos(
     HakuOid("2.2.2.2"),
     HakemusOid("4.3.2.1"),
     "1.3.3.1",
     Some(Vastaanottoaikataulu(Some(new DateTime()), Some(14))),
     List(
-      Hakutoiveentulos.julkaistavaVersioSijoittelunTuloksesta(
+      Hakutoiveentulos.julkaistavaVersioSijoittelunTuloksesta(ilmoittautumisenAikaleima,
         HakutoiveenSijoitteluntulos.kesken(HakukohdeOid("1.2.3.4"), "4.4.4.4"),
         Hakutoive(HakukohdeOid("1.2.3.4"), "4.4.4.4", "Hakukohde1", "Tarjoaja1"),
         Haku(HakuOid("5.5.5.5"), korkeakoulu = true, toinenAste = false, sallittuKohdejoukkoKelaLinkille = true, käyttääSijoittelua = true, None, Set(),
