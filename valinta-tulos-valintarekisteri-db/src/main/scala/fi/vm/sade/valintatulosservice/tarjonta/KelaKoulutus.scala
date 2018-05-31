@@ -239,7 +239,7 @@ object KelaKoulutus extends Logging {
     koulutustyyppi match {
       case Some(koodi) =>
         koodi match {
-          case "1" | "4" | "26" =>
+          case "1" | "4" | "13" | "26" =>
             Some(AmmatillinenPerus(laajuusarvo = arvo))
           case "2" | "14" | "21" =>
             Some(Lukio(laajuusarvo = arvo))
