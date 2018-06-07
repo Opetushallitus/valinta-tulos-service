@@ -579,6 +579,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       .map(näytäAlemmatPeruutuneetKeskeneräisinäJosYlemmätKeskeneräisiä)
       .map(piilotaKuvauksetKeskeneräisiltä)
       .map(asetaVastaanotettavuusValintarekisterinPerusteella(vastaanottoKaudella))
+      .map(näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä)
       .map(asetaKelaURL)
       .tulokset
 
@@ -821,6 +822,25 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         tulos
     }
   }
+
+  //TODO: start
+
+  private def näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä(tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) = {
+    val firstJulkaisematon = tulokset.indexWhere (!_.julkaistavissa)
+    tulokset.zipWithIndex.map {
+      case (tulos, index) if firstJulkaisematon >= 0 && index > firstJulkaisematon && tulos.valintatila == Valintatila.peruuntunut =>
+        logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä toOdottaaYlempienHakutoiveidenTuloksia {}", index)
+        //TODO: haetaan historia kannasta tähän ja muutetaan jos edellinen tila on ollut hyväksytty.
+        tulos
+        //TODO: tulos.toOdottaaYlempienHakutoiveidenTuloksia
+      case (tulos, _) =>
+        logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä {}", tulos.valintatila)
+        tulos
+    }
+  }
+
+  //TODO: end
+
 
   case class Välitulos(tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) {
     def map(f: (List[Hakutoiveentulos], Haku, Option[Ohjausparametrit]) => List[Hakutoiveentulos]) = {
