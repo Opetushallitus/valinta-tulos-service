@@ -336,20 +336,20 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     valintatulokset
   }
 
-  @Deprecated //Ei käytetä/sivutusta ei käytetä
   def sijoittelunTulokset(hakuOid: HakuOid, sijoitteluajoId: String, hyvaksytyt: Option[Boolean], ilmanHyvaksyntaa: Option[Boolean], vastaanottaneet: Option[Boolean],
                           hakukohdeOid: Option[List[HakukohdeOid]], count: Option[Int], index: Option[Int]): HakijaPaginationObject = timed(s"Getting sijoittelun tulokset for haku ${hakuOid}") {
     val haunVastaanototByHakijaOid = timed("Fetch haun vastaanotot for haku: " + hakuOid, 1000) {
       virkailijaVastaanottoRepository.findHaunVastaanotot(hakuOid).groupBy(_.henkiloOid)
     }
-    val hakemustenTulokset = hakemustenTulosByHaku(hakuOid, Some(haunVastaanototByHakijaOid))
-    val hakutoiveidenTuloksetByHakemusOid: Map[HakemusOid, List[Hakutoiveentulos]] = hakemustenTulokset match {
-      case Some(hakemustenTulosIterator) =>
-        /* ValintatulosService:173: `() => hakemusRepository.findHakemukset(hakuOid)`
-         * results are only realized here when the iterator is converted to map!! */
-        timed("Realizing hakemukset mongo calls from hakemuksenTulokset") {hakemustenTulosIterator.map(h => (h.hakemusOid, h.hakutoiveet)).toMap}
-      case None => Map()
+    val hakemustenTulokset = hakukohdeOid match {
+      case Some(oid :: Nil) => hakemustenTulosByHakukohde(hakuOid, oid, Some(haunVastaanototByHakijaOid)).right.get
+      case _ => hakemustenTulosByHaku(hakuOid, Some(haunVastaanototByHakijaOid)).getOrElse(Iterator.empty)
     }
+
+    val hakutoiveidenTuloksetByHakemusOid: Map[HakemusOid, List[Hakutoiveentulos]] =
+      timed("Realizing hakemukset mongo calls from hakemuksenTulokset") {
+        hakemustenTulokset.map(h => (h.hakemusOid, h.hakutoiveet)).toMap
+      }
 
     val personOidsByHakemusOids: Map[HakemusOid, String] = hakukohdeOid match {
       case Some(oids) => timed("Fetching hakemukset from hakemusRepository for haku and hakukohteet", 1000) (hakemusRepository.findPersonOids(hakuOid, oids))
