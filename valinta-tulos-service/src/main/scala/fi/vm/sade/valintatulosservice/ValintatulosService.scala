@@ -357,7 +357,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         case Left(e) => throw e
       }
       val hakijaPaginationObject = sijoittelutulosService.sijoittelunTuloksetWithoutVastaanottoTieto(hakuOid, sijoitteluajoId, hyvaksytyt, ilmanHyvaksyntaa, vastaanottaneet,
-        hakukohdeOid, count, index, haunVastaanototByHakijaOid)
+        hakukohdeOid, count, index)
       val hakukohdes: Map[HakukohdeOid, Option[Kausi]] = (hakukohdeRecordService.getHaunHakukohdeRecords(hakuOid) match {
         case Right(hks) => hks.map(hk => hk.oid -> {if(hk.yhdenPaikanSaantoVoimassa) Some(hk.koulutuksenAlkamiskausi) else None})
         case Left(e) => throw e
