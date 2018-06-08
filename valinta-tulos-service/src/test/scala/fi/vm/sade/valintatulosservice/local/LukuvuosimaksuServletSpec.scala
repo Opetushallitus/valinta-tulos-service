@@ -1,5 +1,7 @@
 package fi.vm.sade.valintatulosservice.local
 
+import java.util.Date
+
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.lukuvuosimaksut.LukuvuosimaksuMuutos
@@ -7,6 +9,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.{DefaultFormats, Formats}
 import org.json4s.ext.EnumNameSerializer
+import org.json4s.native.JsonParser
 import org.junit.runner.RunWith
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.model.{HttpRequest, HttpResponse}
@@ -42,6 +45,23 @@ class LukuvuosimaksuServletSpec extends ServletSpecification with Valintarekiste
     "fail with 400 when calling without 'auditInfo'" in {
       post(s"lukuvuosimaksu/write/1.2.3.200", muutosAsJson(vapautettu), httpHeaders) {
         status must_== 400
+      }
+    }
+    "find lukuvuosimaksut by several hakukohde oids" in {
+      val maksettavaKohde = HakukohdeOid("1.2.3.200")
+      post(s"lukuvuosimaksu/write/${maksettavaKohde.s}", muutosAsJsonWithAuditSession(maksettu), httpHeaders) {
+        status must_== 204
+      }
+      post("lukuvuosimaksu/read", serialiseToJson(LukuvuosimaksuBulkReadRequest(List(maksettavaKohde, HakukohdeOid("1.2.3.300")), auditSession)), httpHeaders) {
+        val maksut = JsonParser.parse(body).extract[Seq[Lukuvuosimaksu]]
+        maksut must have size 1
+        val maksu = maksut.head
+        maksu.personOid must_== maksettu.personOid
+        maksu.maksuntila must_== maksettu.maksuntila
+        maksu.hakukohdeOid must_== maksettavaKohde
+        maksu.muokkaaja must_== auditSession.personOid
+        maksu.luotu.getTime must be_< (System.currentTimeMillis() + (60 * 1000))
+        status must_== 200
       }
     }
   }

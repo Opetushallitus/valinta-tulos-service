@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice
 import java.util.Date
 
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.lukuvuosimaksut.LukuvuosimaksuMuutos
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, Lukuvuosimaksu, Maksuntila}
 import org.json4s.DefaultFormats
@@ -17,12 +18,15 @@ class LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService: LukuvuosimaksuServi
                                   (implicit val swagger: Swagger, appConfig: VtsAppConfig)
   extends VtsServletBase with AuditInfoParameter {
 
-  implicit val defaultFormats = DefaultFormats + new EnumNameSerializer(Maksuntila)
+  implicit val vtsJsonFormats = JsonFormats.jsonFormats + new EnumNameSerializer(Maksuntila)
 
   override val applicationName = Some("lukuvuosimaksut")
 
   override protected def applicationDescription: String = "Lukuvuosimaksut unauthenticated REST API"
 
+  /**
+    * Deprecated: Use the version which accepts multiple hakukohde oids instead
+    */
   post("/read/:hakukohdeOid") {
     val hakukohdeOid = hakukohdeOidParam
 
@@ -33,6 +37,10 @@ class LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService: LukuvuosimaksuServi
     Ok(lukuvuosimaksus)
   }
 
+  post("/read") {
+    val maksuRequest: LukuvuosimaksuBulkReadRequest = parsedBody.extract[LukuvuosimaksuBulkReadRequest]
+    Ok(lukuvuosimaksuService.getLukuvuosimaksut(maksuRequest.hakukohdeOids.toSet, getAuditInfo(maksuRequest)))
+  }
 
   post("/write/:hakukohdeOid") {
     val hakukohdeOid = hakukohdeOidParam
@@ -62,4 +70,7 @@ class LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService: LukuvuosimaksuServi
 }
 
 case class LukuvuosimaksuRequest(lukuvuosimaksuMuutokset: List[LukuvuosimaksuMuutos], auditSession: AuditSessionRequest)
+  extends RequestWithAuditSession
+
+case class LukuvuosimaksuBulkReadRequest(hakukohdeOids: List[HakukohdeOid], auditSession: AuditSessionRequest)
   extends RequestWithAuditSession

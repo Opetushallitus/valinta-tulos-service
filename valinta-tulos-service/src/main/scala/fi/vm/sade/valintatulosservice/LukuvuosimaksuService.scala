@@ -18,6 +18,22 @@ class LukuvuosimaksuService(lukuvuosimaksuRepository: LukuvuosimaksuRepository,
         .build(),
       new Changes.Builder().build()
     )
+    filterRelevantMaksusOfEachperson(result)
+  }
+
+  def getLukuvuosimaksut(hakukohdeOids: Set[HakukohdeOid], auditInfo: AuditInfo): Seq[Lukuvuosimaksu] = {
+    val result = lukuvuosimaksuRepository.getLukuvuosimaksus(hakukohdeOids)
+    audit.log(auditInfo.user, LukuvuosimaksujenLuku,
+      new Target.Builder()
+        .setField("hakukohde", hakukohdeOids.mkString(","))
+        .setField("muokkaaja", "")
+        .build(),
+      new Changes.Builder().build()
+    )
+    filterRelevantMaksusOfEachperson(result)
+  }
+
+  private def filterRelevantMaksusOfEachperson(result: List[Lukuvuosimaksu]) = {
     result
       .groupBy(l => l.personOid).values
       .map(l => l.sortBy(a => a.luotu).reverse)
