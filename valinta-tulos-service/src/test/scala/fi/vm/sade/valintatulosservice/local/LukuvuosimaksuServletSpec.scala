@@ -70,27 +70,19 @@ class LukuvuosimaksuServletSpec extends ServletSpecification with Valintarekiste
         status must_== 500
       }
     }
-
-  }
-
-  private def muutosAsJsonWithAuditSession(l: LukuvuosimaksuMuutos) = {
-    val request = LukuvuosimaksuRequest(List(l), auditSession)
-
-    import org.json4s.native.Serialization.write
-    val json = write(request)
-
-    json.getBytes("UTF-8")
-  }
-
-  private def muutosAsJson(l: LukuvuosimaksuMuutos) = {
-    val request = List(l)
-
-    import org.json4s.native.Serialization.write
-    val json = write(request)
-
-    json.getBytes("UTF-8")
   }
 
   step(organisaatioService.stop())
   step(deleteAll())
+
+  private def muutosAsJsonWithAuditSession(l: LukuvuosimaksuMuutos) = {
+    serialiseToJson(LukuvuosimaksuRequest(List(l), auditSession))
+  }
+
+  private def muutosAsJson(l: LukuvuosimaksuMuutos) = serialiseToJson(List(l))
+
+  private def serialiseToJson(request: AnyRef): Array[Byte] = {
+    import org.json4s.native.Serialization.write
+    write(request).getBytes("UTF-8")
+  }
 }
