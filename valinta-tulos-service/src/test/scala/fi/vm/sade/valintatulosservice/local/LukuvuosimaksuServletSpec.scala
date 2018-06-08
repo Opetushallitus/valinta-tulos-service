@@ -4,7 +4,7 @@ import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.lukuvuosimaksut.LukuvuosimaksuMuutos
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOidSerializer, HakukohdeOidSerializer, Lukuvuosimaksu, Maksuntila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.{DefaultFormats, Formats}
 import org.json4s.ext.EnumNameSerializer
 import org.junit.runner.RunWith
@@ -30,16 +30,17 @@ class LukuvuosimaksuServletSpec extends ServletSpecification with Valintarekiste
   lazy val auditSession: AuditSessionRequest = AuditSessionRequest("1.2.3.4", List(), "userAgent", "localhost")
 
 
-  lazy val headers = Map("Cookie" -> s"session=${testSession}", "Content-type" -> "application/json")
+  private val httpHeaders: Map[String, String] = Map("Content-type" -> "application/json")
+  private lazy val httpHeadersWithSession: Map[String, String] = Map("Cookie" -> s"session=${testSession}", "Content-type" -> "application/json")
 
   "Lukuvuosimaksu API without CAS should work" should {
     "palauttaa 204 when POST with 'auditInfo'" in {
-      post(s"lukuvuosimaksu/write/1.2.3.200", muutosAsJsonWithAuditSession(vapautettu), Map("Content-type" -> "application/json")) {
+      post(s"lukuvuosimaksu/write/1.2.3.200", muutosAsJsonWithAuditSession(vapautettu), httpHeaders) {
         status must_== 204
       }
     }
     "fail with 400 when calling without 'auditInfo'" in {
-      post(s"lukuvuosimaksu/write/1.2.3.200", muutosAsJson(vapautettu), Map("Content-type" -> "application/json")) {
+      post(s"lukuvuosimaksu/write/1.2.3.200", muutosAsJson(vapautettu), httpHeaders) {
         status must_== 400
       }
     }
@@ -47,16 +48,16 @@ class LukuvuosimaksuServletSpec extends ServletSpecification with Valintarekiste
 
   "POST /auth/lukuvuosimaksu" should {
     "palauttaa 204 kun tallennus onnistuu" in {
-      post(s"auth/lukuvuosimaksu/1.2.3.100", muutosAsJson(vapautettu), headers) {
+      post(s"auth/lukuvuosimaksu/1.2.3.100", muutosAsJson(vapautettu), httpHeadersWithSession) {
         status must_== 204
       }
-      post(s"auth/lukuvuosimaksu/1.2.3.100", muutosAsJson(maksettu), headers) {
+      post(s"auth/lukuvuosimaksu/1.2.3.100", muutosAsJson(maksettu), httpHeadersWithSession) {
         status must_== 204
       }
     }
 
     "palauttaa tallennetut datat pyydettäessä" in {
-      get(s"auth/lukuvuosimaksu/1.2.3.100", Nil, headers) {
+      get(s"auth/lukuvuosimaksu/1.2.3.100", Nil, httpHeadersWithSession) {
         status must_== 200
         import org.json4s.native.JsonMethods._
         val maksu = parse(body).extract[List[Lukuvuosimaksu]]
@@ -66,7 +67,7 @@ class LukuvuosimaksuServletSpec extends ServletSpecification with Valintarekiste
     }
 
     "palauttaa 500 kun syötetty data on virheellistä" in {
-      post(s"auth/lukuvuosimaksu/1.2.3.100", """[]""".getBytes("UTF-8"), headers) {
+      post(s"auth/lukuvuosimaksu/1.2.3.100", """[]""".getBytes("UTF-8"), httpHeadersWithSession) {
         status must_== 500
       }
     }
