@@ -346,16 +346,11 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       case _ => hakemustenTulosByHaku(hakuOid, Some(haunVastaanototByHakijaOid)).getOrElse(Iterator.empty)
     }
 
-    val hakutoiveidenTuloksetByHakemusOid: Map[HakemusOid, List[Hakutoiveentulos]] =
+    val hakemustenTuloksetByHakemusOid: Map[HakemusOid, Hakemuksentulos] =
       timed("Realizing hakemukset mongo calls from hakemuksenTulokset") {
-        hakemustenTulokset.map(h => (h.hakemusOid, h.hakutoiveet)).toMap
+        hakemustenTulokset.map(h => h.hakemusOid -> h).toMap
       }
 
-    val personOidsByHakemusOids: Map[HakemusOid, String] = hakukohdeOid match {
-      case Some(oids) => timed("Fetching hakemukset from hakemusRepository for haku and hakukohteet", 1000) (hakemusRepository.findPersonOids(hakuOid, oids))
-      case _ => timed("Fetching hakemukset from hakemusRepository for haku", 1000) (hakemusRepository.findPersonOids(hakuOid))
-    }
-    
     try {
       val haku = hakuService.getHaku(hakuOid) match {
         case Right(h) => h
@@ -372,16 +367,18 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         virkailijaVastaanottoRepository.findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(kausi).map(_.henkiloOid)).toMap
 
       val hakijat = hakijaPaginationObject.getResults.asScala
-      assertNoMissingHakemusOidsInKeys(hakijat.map(_.getHakemusOid).map(HakemusOid).toSet, personOidsByHakemusOids.keySet)
+      assertNoMissingHakemusOidsInKeys(hakijat.map(_.getHakemusOid).map(HakemusOid).toSet, hakemustenTuloksetByHakemusOid.keySet)
 
       hakijat.foreach { hakijaDto =>
-        val hakijaOidFromHakemus = personOidsByHakemusOids(HakemusOid(hakijaDto.getHakemusOid))
-        hakijaDto.setHakijaOid(hakijaOidFromHakemus)
+        val hakemuksenTulos = hakemustenTuloksetByHakemusOid.getOrElse(
+          HakemusOid(hakijaDto.getHakemusOid),
+          throw new IllegalArgumentException(s"Hakemusta ${hakijaDto.getHakemusOid} ei löydy")
+        )
+        hakijaDto.setHakijaOid(hakemuksenTulos.hakijaOid)
         val hakijanVastaanotot = haunVastaanototByHakijaOid.get(hakijaDto.getHakijaOid)
-        val hakutoiveidenTulokset = hakutoiveidenTuloksetByHakemusOid.getOrElse(HakemusOid(hakijaDto.getHakemusOid), throw new IllegalArgumentException(s"Hakemusta ${hakijaDto.getHakemusOid} ei löydy"))
         val yhdenPaikanSannonHuomioiminen = asetaVastaanotettavuusValintarekisterinPerusteella(hakukohdeOid => {
           hakukohdes.get(hakukohdeOid).flatten.flatMap(kausi => Some(kausi, kausiToVastaanotto.get(kausi).map(_.contains(hakijaDto.getHakijaOid)).getOrElse(false)))
-        })(hakutoiveidenTulokset, haku, None)
+        })(hakemuksenTulos.hakutoiveet, haku, None)
         hakijaDto.getHakutoiveet.asScala.foreach(palautettavaHakutoiveDto =>
           hakijanVastaanotot match {
             case Some(vastaanottos) =>
