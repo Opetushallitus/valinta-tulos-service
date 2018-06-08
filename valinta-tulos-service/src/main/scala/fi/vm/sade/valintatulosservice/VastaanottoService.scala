@@ -11,7 +11,7 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelutulosService
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, VastaanottoEvent, VastaanottoRecord}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository, VastaanottoEvent, VastaanottoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
@@ -21,7 +21,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.util.Try
 
-class VastaanottoService(hakuService: HakuService, hakukohdeRecordService: HakukohdeRecordService, vastaanotettavuusService: VastaanotettavuusService, valintatulosService: ValintatulosService, hakijaVastaanottoRepository: HakijaVastaanottoRepository, ohjausparametritService: OhjausparametritService, sijoittelutulosService: SijoittelutulosService, hakemusRepository: HakemusRepository) extends Logging {
+class VastaanottoService(hakuService: HakuService,
+                         hakukohdeRecordService: HakukohdeRecordService,
+                         vastaanotettavuusService: VastaanotettavuusService,
+                         valintatulosService: ValintatulosService,
+                         hakijaVastaanottoRepository: HakijaVastaanottoRepository,
+                         ohjausparametritService: OhjausparametritService,
+                         sijoittelutulosService: SijoittelutulosService,
+                         hakemusRepository: HakemusRepository,
+                         valinnantulosRepository: ValinnantulosRepository) extends Logging {
 
   private val statesMatchingInexistentActions = Set(
     Vastaanottotila.kesken,
@@ -94,10 +102,20 @@ class VastaanottoService(hakuService: HakuService, hakukohdeRecordService: Hakuk
           for {
             sijoittelunTulos <- sijoittelutulosService.latestSijoittelunTulosVirkailijana(hakuOid, henkiloOid, hakemusOid, ohjausparametrit)
             maybeAiempiVastaanottoKaudella <- aiempiVastaanottoKaudella(hakukohdes.find(_.oid == hakukohdeOid).get, henkiloOid)
-            hakemuksenTulos = valintatulosService.julkaistavaTulos(sijoittelunTulos, haku, ohjausparametrit, true,
+            ilmoittautumisenAikaleimat <- valinnantulosRepository.getIlmoittautumisenAikaleimat(henkiloOid)
+            hakemuksenTulos = valintatulosService.julkaistavaTulos(
+              sijoittelunTulos,
+              haku,
+              ohjausparametrit,
+              checkJulkaisuAikaParametri = true,
               vastaanottoKaudella = hakukohdeOid => {
-                hakukohdes.find(_.oid == hakukohdeOid).filter(_.yhdenPaikanSaantoVoimassa).flatMap(hakukohde => Some(hakukohde.koulutuksenAlkamiskausi, maybeAiempiVastaanottoKaudella.flatten.isDefined))
-              }, hakemus.henkilotiedot.hasHetu)(hakemus)
+                hakukohdes.find(_.oid == hakukohdeOid)
+                  .filter(_.yhdenPaikanSaantoVoimassa)
+                  .flatMap(hakukohde => Some(hakukohde.koulutuksenAlkamiskausi, maybeAiempiVastaanottoKaudella.flatten.isDefined))
+              },
+              ilmoittautumisenAikaleimat,
+              hasHetu = hakemus.henkilotiedot.hasHetu
+            )(hakemus)
             hakutoive <- tarkistaHakutoiveenVastaanotettavuusVirkailijana(hakemuksenTulos, hakukohdeOid, vastaanottoDto, maybeAiempiVastaanottoKaudella).fold(DBIO.failed, DBIO.successful)
             _ <- hakutoive.fold[DBIO[Unit]](DBIO.successful())(_ => hakijaVastaanottoRepository.storeAction(vastaanotto))
           } yield hakutoive).right
@@ -150,10 +168,18 @@ class VastaanottoService(hakuService: HakuService, hakukohdeRecordService: Hakuk
         for {
           sijoittelunTulos <- sijoittelutulosService.latestSijoittelunTulos(haku.oid, henkiloOid, hakemusOid, ohjausparametrit)
           maybeAiempiVastaanottoKaudella <- aiempiVastaanottoKaudella(hakukohde, henkiloOid)
-          hakemuksenTulos = valintatulosService.julkaistavaTulos(sijoittelunTulos, haku, ohjausparametrit, true,
+          ilmoittautumisenAikaleimat <- valinnantulosRepository.getIlmoittautumisenAikaleimat(henkiloOid)
+          hakemuksenTulos = valintatulosService.julkaistavaTulos(
+            sijoittelunTulos,
+            haku,
+            ohjausparametrit,
+            checkJulkaisuAikaParametri = true,
             vastaanottoKaudella = hakukohdeOid => {
               hakukohdes.find(_.oid == hakukohdeOid).filter(_.yhdenPaikanSaantoVoimassa).flatMap(hakukohde => Some(hakukohde.koulutuksenAlkamiskausi, maybeAiempiVastaanottoKaudella.flatten.isDefined))
-            }, hakemus.henkilotiedot.hasHetu)(hakemus)
+            },
+            ilmoittautumisenAikaleimat,
+            hasHetu = hakemus.henkilotiedot.hasHetu
+          )(hakemus)
           hakutoive <- tarkistaHakutoiveenVastaanotettavuus(hakemuksenTulos, hakukohdeOid, vastaanotto.action).fold(DBIO.failed, DBIO.successful)
           _ <- hakijaVastaanottoRepository.storeAction(vastaanotto)
         } yield hakutoive).right

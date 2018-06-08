@@ -626,13 +626,21 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     }
   }
 
-  override def getIlmoittautumisenAikaleima(henkiloOid: String, hakukohdeOid: HakukohdeOid): Option[Instant] = {
-    runBlocking(sql"""select lower(system_time)
+  override def getIlmoittautumisenAikaleimat(henkiloOid: String): DBIO[Iterable[(HakukohdeOid, Instant)]] = {
+    sql"""select hakukohde, lower(system_time)
           from ilmoittautumiset
           where henkilo = ${henkiloOid}
-              and hakukohde = ${hakukohdeOid}
               and tila in ('Lasna', 'LasnaSyksy', 'LasnaKokoLukuvuosi')
-          order by system_time desc limit 1""".as[Instant]).headOption
+      """.as[(HakukohdeOid, Instant)]
+  }
+
+  override def getIlmoittautumisenAikaleimat(hakuOid: HakuOid): DBIO[Iterable[(String, HakukohdeOid, Instant)]] = {
+    sql"""select henkilo, hakukohde, lower(system_time)
+          from ilmoittautumiset
+          join hakukohteet on hakukohteet.hakukohde_oid = ilmoittautumiset.hakukohde
+          where hakukohteet.haku_oid = ${hakuOid}
+            and tila in ('Lasna', 'LasnaSyksy', 'LasnaKokoLukuvuosi')
+      """.as[(String, HakukohdeOid, Instant)]
   }
 
   override def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {

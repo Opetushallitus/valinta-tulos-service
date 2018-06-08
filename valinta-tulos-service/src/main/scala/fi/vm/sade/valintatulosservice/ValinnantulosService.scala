@@ -69,10 +69,6 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository 
     r
   }
 
-  def getIlmoittautumisenAikaleima(henkiloOid: String, hakukohdeOid: HakukohdeOid): Option[Instant] = {
-    valinnantulosRepository.getIlmoittautumisenAikaleima(henkiloOid, hakukohdeOid)
-  }
-
   def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid: ValintatapajonoOid,
                                                valinnantulokset: List[Valinnantulos],
                                                ifUnmodifiedSince: Option[Instant],
