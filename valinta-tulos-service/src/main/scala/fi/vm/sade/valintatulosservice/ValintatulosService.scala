@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
+import java.time.Instant
 import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
@@ -75,6 +76,9 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       h <- hakemusRepository.findHakemus(hakemusOid).right.toOption
       haku <- hakuService.getHaku(h.hakuOid).right.toOption
       latestSijoitteluajoId = sijoittelutulosService.findLatestSijoitteluajoId(h.hakuOid)
+      ilmoittautumisenAikaleimat = timed(s"Ilmoittautumisten aikaleimojen haku hakijalle ${h.henkiloOid}", 1000) {
+        Map(h.henkiloOid -> valinnantulosRepository.runBlocking(valinnantulosRepository.getIlmoittautumisenAikaleimat(h.henkiloOid)))
+      }
       hakukohdeRecords <- hakukohdeRecordService.getHakukohdeRecords(h.toiveet.map(_.oid)).right.toOption
       uniqueKaudet <- Right(hakukohdeRecords.filter(_.yhdenPaikanSaantoVoimassa)
         .map(_.koulutuksenAlkamiskausi).distinct).right.toOption
@@ -97,7 +101,8 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
             case Some(hakukohde) => None
             case None => throw new RuntimeException(s"Hakukohde $hakukohdeOid not found!")
           }
-        }
+        },
+        ilmoittautumisenAikaleimat = ilmoittautumisenAikaleimat
       ).toSeq.headOption
     } yield hakemus
 
@@ -122,6 +127,10 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
           virkailijaVastaanottoRepository.findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(
             hakukohdes.filter(_.yhdenPaikanSaantoVoimassa).map(_.koulutuksenAlkamiskausi).toSet)
         })
+        val ilmoittautumisenAikaleimat = timed(s"Ilmoittautumisten aikaleimojen haku haulle $hakuOid", 1000) {
+          valinnantulosRepository.runBlocking(valinnantulosRepository.getIlmoittautumisenAikaleimat(hakuOid))
+            .groupBy(_._1).mapValues(i => i.map(t => (t._2, t._3)))
+        }
         val vastaanottoaikataulu = sijoittelutulosService.findOhjausparametritFromOhjausparametritService(hakuOid)
         val latestSijoitteluajoId = sijoittelutulosService.findLatestSijoitteluajoId(hakuOid)
         val hakemustenTulokset = fetchTulokset(
@@ -130,14 +139,15 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
           personOidFromHakemusResolver => hakemusOids.flatMap(hakemusOid => sijoittelutulosService.hakemuksenTulos(haku, hakemusOid, personOidFromHakemusResolver.findBy(hakemusOid), vastaanottoaikataulu, latestSijoitteluajoId)).toSeq,
           vastaanottoKaudella = hakukohdeOid => {
             hakukohdes.find(_.oid == hakukohdeOid) match {
-              case Some(hakukohde) if(hakukohde.yhdenPaikanSaantoVoimassa) =>
+              case Some(hakukohde) if (hakukohde.yhdenPaikanSaantoVoimassa) =>
                 val vastaanottaneet: Set[String] = vastaanototByKausi.get(hakukohde.koulutuksenAlkamiskausi).map(_.map(_.henkiloOid)).getOrElse(
                   throw new RuntimeException(s"Missing vastaanotot for kausi ${hakukohde.koulutuksenAlkamiskausi} and hakukohde ${hakukohde.oid}"))
                 Some(hakukohde.koulutuksenAlkamiskausi, vastaanottaneet)
               case Some(hakukohde) => None
               case None => throw new RuntimeException(s"Hakukohde $hakukohdeOid is missing")
             }
-          }
+          },
+          ilmoittautumisenAikaleimat = ilmoittautumisenAikaleimat
         )
         hakemustenTulokset.map { hakemuksenTulos =>
           hakemuksenTulos.hakutoiveet.find(_.valintatapajonoOid == valintatapajonoOid).map { hakutoiveenTulos =>
@@ -174,6 +184,10 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
           virkailijaVastaanottoRepository.findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(koulutuksenAlkamisKaudet.values.flatten.toSet)
             .map { case (kausi, vastaanotot) => kausi -> vastaanotot.map(_.henkiloOid) }
         })
+        ilmoittautumisenAikaleimat = timed(s"Ilmoittautumisten aikaleimojen haku haulle $hakuOid", 1000) {
+          valinnantulosRepository.runBlocking(valinnantulosRepository.getIlmoittautumisenAikaleimat(hakuOid))
+            .groupBy(_._1).mapValues(i => i.map(t => (t._2, t._3)))
+        }
       } yield {
         fetchTulokset(
           haku,
@@ -195,7 +209,8 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
                 None // throwing exception here would be better. overhaul needed for test fixtures if exception is thrown here
             }
             result
-          }
+          },
+          ilmoittautumisenAikaleimat
         )
       }
     )
@@ -217,6 +232,10 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
             hakukohdes.filter(_.yhdenPaikanSaantoVoimassa).map(_.koulutuksenAlkamiskausi).toSet)
             .map { case (kausi, vastaanotot) => kausi -> vastaanotot.map(_.henkiloOid) }
         })
+        val ilmoittautumisenAikaleimat = timed(s"Ilmoittautumisten aikaleimojen haku haulle $hakuOid", 1000) {
+          valinnantulosRepository.runBlocking(valinnantulosRepository.getIlmoittautumisenAikaleimat(hakuOid))
+            .groupBy(_._1).mapValues(i => i.map(t => (t._2, t._3)))
+        }
         fetchTulokset(
           haku,
           () => hakemukset.toIterator,
@@ -236,7 +255,8 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
               case None => throw new RuntimeException(s"Missing hakukohde $hakukohdeOid")
             }
             result
-          }
+          },
+          ilmoittautumisenAikaleimat
         )
       }
     )
@@ -316,64 +336,37 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     valintatulokset
   }
 
-  @Deprecated //Ei käytetä/sivutusta ei käytetä
   def sijoittelunTulokset(hakuOid: HakuOid, sijoitteluajoId: String, hyvaksytyt: Option[Boolean], ilmanHyvaksyntaa: Option[Boolean], vastaanottaneet: Option[Boolean],
                           hakukohdeOid: Option[List[HakukohdeOid]], count: Option[Int], index: Option[Int]): HakijaPaginationObject = timed(s"Getting sijoittelun tulokset for haku ${hakuOid}") {
     val haunVastaanototByHakijaOid = timed("Fetch haun vastaanotot for haku: " + hakuOid, 1000) {
       virkailijaVastaanottoRepository.findHaunVastaanotot(hakuOid).groupBy(_.henkiloOid)
     }
-    val hakemustenTulokset = hakemustenTulosByHaku(hakuOid, Some(haunVastaanototByHakijaOid))
-    val hakutoiveidenTuloksetByHakemusOid: Map[HakemusOid, List[Hakutoiveentulos]] = hakemustenTulokset match {
-      case Some(hakemustenTulosIterator) =>
-        /* ValintatulosService:173: `() => hakemusRepository.findHakemukset(hakuOid)`
-         * results are only realized here when the iterator is converted to map!! */
-        timed("Realizing hakemukset mongo calls from hakemuksenTulokset") {hakemustenTulosIterator.map(h => (h.hakemusOid, h.hakutoiveet)).toMap}
-      case None => Map()
+    val hakemustenTulokset = hakukohdeOid match {
+      case Some(oid :: Nil) => hakemustenTulosByHakukohde(hakuOid, oid, Some(haunVastaanototByHakijaOid)).right.get
+      case _ => hakemustenTulosByHaku(hakuOid, Some(haunVastaanototByHakijaOid)).getOrElse(Iterator.empty)
     }
-
-    val personOidsByHakemusOids: Map[HakemusOid, String] = hakukohdeOid match {
-      case Some(oids) => timed("Fetching hakemukset from hakemusRepository for haku and hakukohteet", 1000) (hakemusRepository.findPersonOids(hakuOid, oids))
-      case _ => timed("Fetching hakemukset from hakemusRepository for haku", 1000) (hakemusRepository.findPersonOids(hakuOid))
-    }
-    
-    try {
-      val haku = hakuService.getHaku(hakuOid) match {
-        case Right(h) => h
-        case Left(e) => throw e
+    val hakemustenTuloksetByHakemusOid: Map[HakemusOid, Hakemuksentulos] =
+      timed("Realizing hakemukset mongo calls from hakemuksenTulokset") {
+        hakemustenTulokset.map(h => h.hakemusOid -> h).toMap
       }
+
+    try {
       val hakijaPaginationObject = sijoittelutulosService.sijoittelunTuloksetWithoutVastaanottoTieto(hakuOid, sijoitteluajoId, hyvaksytyt, ilmanHyvaksyntaa, vastaanottaneet,
-        hakukohdeOid, count, index, haunVastaanototByHakijaOid)
-      val hakukohdes: Map[HakukohdeOid, Option[Kausi]] = (hakukohdeRecordService.getHaunHakukohdeRecords(hakuOid) match {
-        case Right(hks) => hks.map(hk => hk.oid -> {if(hk.yhdenPaikanSaantoVoimassa) Some(hk.koulutuksenAlkamiskausi) else None})
-        case Left(e) => throw e
-      }).toMap
-      val uniqueKaudetInHaku: Set[Kausi] = hakukohdes.values.flatten.toSet
-      val kausiToVastaanotto: Map[Kausi, Set[String]] = uniqueKaudetInHaku.map(kausi => kausi ->
-        virkailijaVastaanottoRepository.findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(kausi).map(_.henkiloOid)).toMap
-
-      val hakijat = hakijaPaginationObject.getResults.asScala
-      assertNoMissingHakemusOidsInKeys(hakijat.map(_.getHakemusOid).map(HakemusOid).toSet, personOidsByHakemusOids.keySet)
-
-      hakijat.foreach { hakijaDto =>
-        val hakijaOidFromHakemus = personOidsByHakemusOids(HakemusOid(hakijaDto.getHakemusOid))
-        hakijaDto.setHakijaOid(hakijaOidFromHakemus)
-        val hakijanVastaanotot = haunVastaanototByHakijaOid.get(hakijaDto.getHakijaOid)
-        val hakutoiveidenTulokset = hakutoiveidenTuloksetByHakemusOid.getOrElse(HakemusOid(hakijaDto.getHakemusOid), throw new IllegalArgumentException(s"Hakemusta ${hakijaDto.getHakemusOid} ei löydy"))
-        val yhdenPaikanSannonHuomioiminen = asetaVastaanotettavuusValintarekisterinPerusteella(hakukohdeOid => {
-          hakukohdes.get(hakukohdeOid).flatten.flatMap(kausi => Some(kausi, kausiToVastaanotto.get(kausi).map(_.contains(hakijaDto.getHakijaOid)).getOrElse(false)))
-        })(hakutoiveidenTulokset, haku, None)
-        hakijaDto.getHakutoiveet.asScala.foreach(palautettavaHakutoiveDto =>
-          hakijanVastaanotot match {
-            case Some(vastaanottos) =>
-              vastaanottos.find(_.hakukohdeOid.toString == palautettavaHakutoiveDto.getHakukohdeOid).foreach(vastaanotto => {
-                yhdenPaikanSannonHuomioiminen.find(_.hakukohdeOid.toString == palautettavaHakutoiveDto.getHakukohdeOid).foreach(hakutoiveenOikeaTulos => {
-                  palautettavaHakutoiveDto.setVastaanottotieto(fi.vm.sade.sijoittelu.tulos.dto.ValintatuloksenTila.valueOf(hakutoiveenOikeaTulos.vastaanottotila.toString))
-                  palautettavaHakutoiveDto.getHakutoiveenValintatapajonot.asScala.foreach(_.setTilanKuvaukset(hakutoiveenOikeaTulos.tilanKuvaukset.asJava))
-                })
-              })
-            case None => palautettavaHakutoiveDto.setVastaanottotieto(dto.ValintatuloksenTila.KESKEN)
+        hakukohdeOid, count, index)
+      assertNoMissingHakemusOidsInKeys(
+        hakijaPaginationObject.getResults.asScala.map(h => HakemusOid(h.getHakemusOid)).toSet,
+        hakemustenTuloksetByHakemusOid.keySet
+      )
+      hakijaPaginationObject.getResults.asScala.foreach { hakijaDto =>
+        val hakemuksenTulos = hakemustenTuloksetByHakemusOid(HakemusOid(hakijaDto.getHakemusOid))
+        hakijaDto.setHakijaOid(hakemuksenTulos.hakijaOid)
+        hakijaDto.getHakutoiveet.asScala.foreach(hakutoiveDto => {
+          val tulos = hakemuksenTulos.findHakutoive(HakukohdeOid(hakutoiveDto.getHakukohdeOid)).get._1
+          hakutoiveDto.setVastaanottotieto(fi.vm.sade.sijoittelu.tulos.dto.ValintatuloksenTila.valueOf(tulos.vastaanottotila.toString))
+          if (tulos.julkaistavissa) {
+            hakutoiveDto.getHakutoiveenValintatapajonot.asScala.foreach(_.setTilanKuvaukset(tulos.tilanKuvaukset.asJava))
           }
-        )
+        })
       }
       hakijaPaginationObject
     } catch {
@@ -382,13 +375,15 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         new HakijaPaginationObject
     }
   }
-  private def assertNoMissingHakemusOidsInKeys(hakemusOids: Set[HakemusOid], keys: Set[HakemusOid]) = {
+
+  private def assertNoMissingHakemusOidsInKeys(hakemusOids: Set[HakemusOid], keys: Set[HakemusOid]): Unit = {
     val missingHakemusOids = hakemusOids.diff(keys)
-    if(!missingHakemusOids.isEmpty) {
-      val missingOidsException = s"HakijaDTOs contained more hakemusOids than in hakukohteeseen hyväksytyt: ${missingHakemusOids}"
+    if (missingHakemusOids.nonEmpty) {
+      val missingOidsException = s"HakijaDTOs contained more hakemusOids than in hakukohteeseen hyväksytyt: $missingHakemusOids"
       throw new RuntimeException(missingOidsException)
     }
   }
+
   def sijoittelunTulosHakemukselle(hakuOid: HakuOid, sijoitteluajoId: String, hakemusOid: HakemusOid): Option[HakijaDTO] = {
     val hakemuksenTulosOption = hakemuksentulos(hakemusOid)
     val hakijaOidFromHakemusOption = hakemusRepository.findHakemus(hakemusOid).right.map(_.henkiloOid)
@@ -516,7 +511,8 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
                     getSijoittelunTulos: PersonOidFromHakemusResolver => Seq[HakemuksenSijoitteluntulos],
                     personOidFromHakemusResolver: Option[PersonOidFromHakemusResolver] = None,
                     checkJulkaisuAikaParametri: Boolean = true,
-                    vastaanottoKaudella: HakukohdeOid => Option[(Kausi, Set[String])]): Iterator[Hakemuksentulos] = {
+                    vastaanottoKaudella: HakukohdeOid => Option[(Kausi, Set[String])],
+                    ilmoittautumisenAikaleimat: Map[String, Iterable[(HakukohdeOid, Instant)]]): Iterator[Hakemuksentulos] = {
     val ohjausparametrit = ohjausparametritService.ohjausparametrit(haku.oid) match {
       case Right(o) => o
       case Left(e) => throw e
@@ -532,10 +528,19 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
     hakemukset.map(hakemus => {
       val sijoitteluTulos = sijoitteluTulokset.getOrElse(hakemus.oid, tyhjäHakemuksenTulos(hakemus.oid, ohjausparametrit.map(_.vastaanottoaikataulu)))
+      val henkiloOid = sijoitteluTulos.hakijaOid.getOrElse(hakemus.henkiloOid)
       val hakemuksenVastaanototKaudella: HakukohdeOid => Option[(Kausi, Boolean)] = hakukohdeOid =>
-        vastaanottoKaudella(hakukohdeOid).map(a => (a._1, a._2.contains(hakemus.henkiloOid)))
+        vastaanottoKaudella(hakukohdeOid).map(a => (a._1, a._2.contains(henkiloOid)))
       logger.debug("sijoittelunTulos " + sijoitteluTulos.toString)
-      julkaistavaTulos(sijoitteluTulos, haku, ohjausparametrit, checkJulkaisuAikaParametri, hakemuksenVastaanototKaudella, hakemus.henkilotiedot.hasHetu)(hakemus)
+      julkaistavaTulos(
+        sijoitteluTulos,
+        haku,
+        ohjausparametrit,
+        checkJulkaisuAikaParametri,
+        hakemuksenVastaanototKaudella,
+        ilmoittautumisenAikaleimat.getOrElse(henkiloOid, Iterable.empty),
+        hakemus.henkilotiedot.hasHetu
+      )(hakemus)
     })
   }
 
@@ -544,15 +549,23 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
                        ohjausparametrit: Option[Ohjausparametrit],
                        checkJulkaisuAikaParametri: Boolean,
                        vastaanottoKaudella: HakukohdeOid => Option[(Kausi, Boolean)],
+                       ilmoittautumisenAikaleimat: Iterable[(HakukohdeOid, Instant)],
                        hasHetu: Boolean
                       )(h:Hakemus): Hakemuksentulos = {
     val tulokset = h.toiveet.map { toive =>
       val hakutoiveenSijoittelunTulos: HakutoiveenSijoitteluntulos = sijoitteluTulos.hakutoiveet.find { t =>
         t.hakukohdeOid == toive.oid
       }.getOrElse(HakutoiveenSijoitteluntulos.kesken(toive.oid, toive.tarjoajaOid))
-
-      val ilmoittautumisenAikaleima: Option[Date] = valinnantulosRepository.getIlmoittautumisenAikaleima(sijoitteluTulos.hakijaOid.map(_.toString).getOrElse(""), toive.oid).map(instant => Date.from(instant))
-      Hakutoiveentulos.julkaistavaVersioSijoittelunTuloksesta(ilmoittautumisenAikaleima, hakutoiveenSijoittelunTulos, toive, haku, ohjausparametrit, checkJulkaisuAikaParametri, hasHetu)
+      val ilmoittautumisenAikaleima = ilmoittautumisenAikaleimat.find(_._1 == toive.oid).map(t => Date.from(t._2))
+      Hakutoiveentulos.julkaistavaVersioSijoittelunTuloksesta(
+        ilmoittautumisenAikaleima,
+        hakutoiveenSijoittelunTulos,
+        toive,
+        haku,
+        ohjausparametrit,
+        checkJulkaisuAikaParametri,
+        hasHetu
+      )
     }
 
     val lopullisetTulokset = Välitulos(tulokset, haku, ohjausparametrit)
