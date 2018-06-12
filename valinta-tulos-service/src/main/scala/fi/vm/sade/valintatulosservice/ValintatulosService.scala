@@ -360,7 +360,13 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       hakijaPaginationObject.getResults.asScala.foreach { hakijaDto =>
         val hakemuksenTulos = hakemustenTuloksetByHakemusOid(HakemusOid(hakijaDto.getHakemusOid))
         hakijaDto.setHakijaOid(hakemuksenTulos.hakijaOid)
-        populateVastaanottotieto(hakijaDto, hakemuksenTulos.hakutoiveet)
+        hakijaDto.getHakutoiveet.asScala.foreach(hakutoiveDto => {
+          val tulos = hakemuksenTulos.findHakutoive(HakukohdeOid(hakutoiveDto.getHakukohdeOid)).get._1
+          hakutoiveDto.setVastaanottotieto(fi.vm.sade.sijoittelu.tulos.dto.ValintatuloksenTila.valueOf(tulos.vastaanottotila.toString))
+          if (tulos.julkaistavissa) {
+            hakutoiveDto.getHakutoiveenValintatapajonot.asScala.foreach(_.setTilanKuvaukset(tulos.tilanKuvaukset.asJava))
+          }
+        })
       }
       hakijaPaginationObject
     } catch {
