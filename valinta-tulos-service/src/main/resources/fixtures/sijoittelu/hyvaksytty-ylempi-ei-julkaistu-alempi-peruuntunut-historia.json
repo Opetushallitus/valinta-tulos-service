@@ -10,7 +10,7 @@
         "$numberLong": "1496148928094"
       },
       "created": {
-        "$date": "2014-12-03T13:11:51.186Z"
+        "$date": "2018-06-11T13:11:51.186Z"
       },
       "sijoittele": true,
       "sijoitteluajot": [
@@ -76,7 +76,7 @@
               "tilaHistoria": [
                 {
                   "luotu": {
-                    "$date": "2014-08-26T15:12:40.623Z"
+                    "$date": "2018-06-11T15:12:40.623Z"
                   },
                   "tila": "VARALLA"
                 }
@@ -123,7 +123,7 @@
               "tilaHistoria": [
                 {
                   "luotu": {
-                    "$date": "2014-08-26T15:12:40.623Z"
+                    "$date": "2018-06-11T15:12:40.623Z"
                   },
                   "tila": "HYVAKSYTTY"
                 }
@@ -170,7 +170,7 @@
               "tilaHistoria": [
                 {
                   "luotu": {
-                    "$date": "2014-08-26T15:12:40.623Z"
+                    "$date": "2018-06-11T15:12:40.623Z"
                   },
                   "tila": "PERUUNTUNUT"
                 }
@@ -201,7 +201,7 @@
       "logEntries": [
         {
           "luotu": {
-            "$date": "2014-08-26T16:05:23.943Z"
+            "$date": "2018-06-11T16:05:23.943Z"
           },
           "muokkaaja": "1.2.246.562.24.00000000001",
           "muutos": "KESKEN",
@@ -226,7 +226,7 @@
       "logEntries": [
         {
           "luotu": {
-            "$date": "2014-08-26T16:05:23.943Z"
+            "$date": "2018-06-11T16:05:23.943Z"
           },
           "muokkaaja": "1.2.246.562.24.00000000001",
           "muutos": "KESKEN",
@@ -251,7 +251,7 @@
       "logEntries": [
         {
           "luotu": {
-            "$date": "2014-08-26T16:05:23.943Z"
+            "$date": "2018-06-11T16:05:23.943Z"
           },
           "muokkaaja": "1.2.246.562.24.00000000001",
           "muutos": "KESKEN",

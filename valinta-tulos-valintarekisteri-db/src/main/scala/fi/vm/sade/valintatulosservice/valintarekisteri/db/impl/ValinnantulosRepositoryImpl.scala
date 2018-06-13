@@ -58,6 +58,14 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten)
   }
 
+  override def getViimeisinValinnantilaMuutosHistoriasta(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid): Option[Valinnantila] = {
+    runBlocking(sql""" select tila
+            from valinnantilat_history
+            where valintatapajono_oid = ${valintatapajonoOid}
+              and hakukohde_oid = ${hakukohdeOid}
+            order by lower(system_time) desc limit 1 """.as[Valinnantila].headOption)
+  }
+
   private def getValinnantulosMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {
     sql"""(select julkaistavissa,
                 ehdollisesti_hyvaksyttavissa,

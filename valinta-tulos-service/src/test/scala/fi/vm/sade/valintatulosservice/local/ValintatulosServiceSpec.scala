@@ -11,12 +11,13 @@ import fi.vm.sade.valintatulosservice.sijoittelu._
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.{ITSpecification, TimeWarp, ValintatulosService, VastaanotettavuusService}
 import org.joda.time.DateTime
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
+import slick.jdbc.PostgresProfile.api._
 
 @RunWith(classOf[JUnitRunner])
 class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
@@ -26,17 +27,16 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
     "yhteishaku korkeakouluihin" in {
       // julkaistu, sijoittelu true, yhdenPaikanSaanto true
       val hakuFixture = HakuFixtures.korkeakouluYhteishaku
-
-      //testitKaikilleHakutyypeille(hakuFixture)
-      //testitSijoittelunPiirissäOlevilleHakutyypeille(hakuFixture)
+      testitKaikilleHakutyypeille(hakuFixture)
+      testitSijoittelunPiirissäOlevilleHakutyypeille(hakuFixture)
       testitSijoiteltavilleKorkeakouluHauille(hakuFixture)
     }
-    /*    "erillishaku korkeakouluihin" in {
+        "erillishaku korkeakouluihin" in {
           // julkaistu, sijoittelu false, yhdenPaikanSaanto true
           val hakuFixture = HakuFixtures.korkeakouluErillishaku
-        //  testitKaikilleHakutyypeille(hakuFixture)
-          //testitSijoiteltavilleKorkeakouluHauille(hakuFixture)
-        //  testitSijoittelunPiirissäOlevilleHakutyypeille(hakuFixture)
+          testitKaikilleHakutyypeille(hakuFixture)
+          testitSijoiteltavilleKorkeakouluHauille(hakuFixture)
+          testitSijoittelunPiirissäOlevilleHakutyypeille(hakuFixture)
         }
 
         "korkeakoulun yhteishaku ilman sijoittelua" in {
@@ -61,7 +61,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           testitKaikilleHakutyypeille(hakuFixture)
           testitTyypillisilleHauille(hakuFixture)
           testitSijoittelunPiirissäOlemattomilleHakutyypeille(hakuFixture)
-        }*/
+        }
   }
 
   step(valintarekisteriDb.db.shutdown)
@@ -146,7 +146,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
   def testitSijoiteltavilleKorkeakouluHauille(hakuFixture: HakuOid) = {
 
     "hyväksytty, sijoittelua käyttävä korkeakouluhaku" in {
-/*      "hyväksyttyä hakutoivetta alemmat julkaisemattomat merkitään tilaan PERUUNTUNUT" in {
+      "hyväksyttyä hakutoivetta alemmat julkaisemattomat merkitään tilaan PERUUNTUNUT" in {
         // HYVÄKSYTTY KESKEN true
         // HYVÄKSYTTY - -
         // HYVÄKSYTTY KESKEN true
@@ -196,7 +196,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.varalla, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
         checkHakutoiveState(getHakutoive("1.2.246.562.5.16303028779"), Valintatila.hyväksytty, Vastaanottotila.ei_vastaanotettu_määräaikana, Vastaanotettavuustila.ei_vastaanotettavissa, true)
       }
-v
+
       "hakutoiveista 1. kesken 2. hyväksytty 3. peruuntunut" in {
         // HYLÄTTY KESKEN true
         // HYVÄKSYTTY KESKEN true
@@ -205,9 +205,8 @@ v
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
-      }*/
+      }
 
-      //TODO: starts
       "hakutoiveista 1. hyväksytty, ei julkaistu 2. hyväksytty, odottaa ylempiä toiveita 3. peruuntunut" in {
         // VARALLA KESKEN true
         // HYVÄKSYTTY KESKEN true
@@ -216,19 +215,69 @@ v
         useFixture("hyvaksytty-ylempi-ei-julkaistu-alempi-peruuntunut-historia.json", hakuFixture = hakuFixture, hakemusFixtures = List("00000441369-3"))
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila. ei_vastaanotettavissa, true)
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+        checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
 
-        // HYVÄKSYTTY KESKEN false
-        // PERUUNTUNUT KESKEN true
-        // PERUUNTUNUT KESKEN true
-        // Ajetaan hyväksytyksi, mutta ei julkaistuksi
-        useFixture("hyvaksytty-ylempi-ei-julkaistu-alempi-peruuntunut.json", hakuFixture = hakuFixture, hakemusFixtures = List("00000441369-3"))
-        checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila. ei_vastaanotettavissa, false)
+        val ekaToHyvaksytty = ValinnantilanTallennus(HakemusOid("1.2.246.562.11.00000441369"),
+          ValintatapajonoOid("14090336922663576781797489829886"),
+          HakukohdeOid("1.2.246.562.5.72607738902"),
+          "1.2.246.562.24.14229104472",
+          Valinnantila("Hyvaksytty"),
+          "testi")
+
+        val tokaToPeruuntunut = ValinnantilanTallennus(HakemusOid("1.2.246.562.11.00000441369"),
+          ValintatapajonoOid("14090336922663576781797489829887"),
+          HakukohdeOid("1.2.246.562.5.72607738903"),
+          "1.2.246.562.24.14229104472",
+          Valinnantila("Peruuntunut"),
+          "testi")
+
+        // Ensimmäinen hakutoive julkaisemattomaksi:
+        valintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = 'false' where hakukohde_oid = '1.2.246.562.5.72607738902' and valintatapajono_oid = '14090336922663576781797489829886' and hakemus_oid = '1.2.246.562.11.00000441369'")
+
+        // Ajetaan uudet valintatilat:
+        valintarekisteriDb.runBlocking(valintarekisteriDb.storeValinnantila(tokaToPeruuntunut, None))
+        valintarekisteriDb.runBlocking(valintarekisteriDb.storeValinnantila(ekaToHyvaksytty, None))
+
+        checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
-        //checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
+        checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
       }
-      //TODO: ends
+
+      "hakutoiveista 1. hyväksytty, julkaistu 2. hyväksytty, odottaa ylempiä toiveita 3. peruuntunut" in {
+        // VARALLA KESKEN true
+        // HYVÄKSYTTY KESKEN true
+        // PERUUNTUNUT KESKEN true
+        // Ajetaan ensin historiadata
+        useFixture("hyvaksytty-ylempi-ei-julkaistu-alempi-peruuntunut-historia.json", hakuFixture = hakuFixture, hakemusFixtures = List("00000441369-3"))
+        checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila. ei_vastaanotettavissa, true)
+        checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+        checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
+
+        val ekaToHyvaksytty = ValinnantilanTallennus(HakemusOid("1.2.246.562.11.00000441369"),
+          ValintatapajonoOid("14090336922663576781797489829886"),
+          HakukohdeOid("1.2.246.562.5.72607738902"),
+          "1.2.246.562.24.14229104472",
+          Valinnantila("Hyvaksytty"),
+          "testi")
+
+        val tokaToPeruuntunut = ValinnantilanTallennus(HakemusOid("1.2.246.562.11.00000441369"),
+          ValintatapajonoOid("14090336922663576781797489829887"),
+          HakukohdeOid("1.2.246.562.5.72607738903"),
+          "1.2.246.562.24.14229104472",
+          Valinnantila("Peruuntunut"),
+          "testi")
+
+        // Ajetaan uudet valintatilat:
+        valintarekisteriDb.runBlocking(valintarekisteriDb.storeValinnantila(tokaToPeruuntunut, None))
+        valintarekisteriDb.runBlocking(valintarekisteriDb.storeValinnantila(ekaToHyvaksytty, None))
+
+        checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.vastaanotettavissa_sitovasti, true)
+        checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.peruuntunut, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+        checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.peruuntunut, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+      }
+
     }
-/*
+
     "peruuntunut, sijoittelua käyttävä korkeakouluhaku" in {
       "ylempi hyväksytty kesken, koska varasijasäännöt ei vielä voimassa -> näytetään peruuntunut keskeneräisenä" in {
         // VARALLA KESKEN true
@@ -259,7 +308,7 @@ v
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.vastaanotettavissa_ehdollisesti, true)
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.peruuntunut, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
       }
-    }*/
+    }
   }
 
   def testitKaikilleHakutyypeille(hakuFixture: HakuOid) = {
