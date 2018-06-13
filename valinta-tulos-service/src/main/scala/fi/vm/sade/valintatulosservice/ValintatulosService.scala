@@ -571,6 +571,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
 
     val lopullisetTulokset = Välitulos(tulokset, haku, ohjausparametrit)
+      .map(näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä)
       .map(näytäJulkaisematontaAlemmatPeruutetutKeskeneräisinä)
       .map(peruValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua)
       .map(näytäVarasijaltaHyväksytytHyväksyttyinäJosVarasijasäännötEiVoimassa)
@@ -578,7 +579,6 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       .map(näytäAlemmatPeruutuneetKeskeneräisinäJosYlemmätKeskeneräisiä)
       .map(piilotaKuvauksetKeskeneräisiltä)
       .map(asetaVastaanotettavuusValintarekisterinPerusteella(vastaanottoKaudella))
-      .map(näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä)
       .map(asetaKelaURL)
       .tulokset
 
@@ -802,6 +802,35 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
+
+  //TODO: start
+
+  private def näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä(tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) = {
+    val firstJulkaisematon = tulokset.indexWhere (!_.julkaistavissa)
+    tulokset.zipWithIndex.map {
+      case (tulos, index) if firstJulkaisematon >= 0 && index > firstJulkaisematon && tulos.valintatila == Valintatila.peruuntunut =>
+        //val historiaTila = valinnantulosRepository.getViimeisinValinnantilaMuutosHistoriasta(tulos.hakukohdeOid, tulos.valintatapajonoOid).map(tila => Valinnantila.apply(tila.toString)).getOrElse("")
+
+        //if (valinnantulosRepository.getViimeisinValinnantilaMuutosHistoriasta(tulos.hakukohdeOid, tulos.valintatapajonoOid) == Valintatila.hyväksytty) {
+
+        if (valinnantulosRepository.getViimeisinValinnantilaMuutosHistoriasta(tulos.hakukohdeOid, tulos.valintatapajonoOid).map(tila => Valinnantila.apply(tila.toString)).getOrElse("") == Valinnantila.apply("Hyvaksytty")) {
+        //if (historiaTila == Valinnantila.apply("Hyvaksytty")) {
+          logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä valintatila > hyväksytty {}", index)
+          tulos.copy(valintatila = Valintatila.hyväksytty)
+        } else {
+          logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä {}", tulos.valintatila)
+          tulos
+        }
+      case (tulos, _) =>
+        logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä {}", tulos.valintatila)
+        tulos
+    }
+  }
+  //TODO: end
+
+
+
+
   private def piilotaKuvauksetKeskeneräisiltä(tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) = {
     tulokset.map {
       case h if h.valintatila == Valintatila.kesken =>
@@ -821,24 +850,6 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         tulos
     }
   }
-
-  //TODO: start
-
-  private def näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä(tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) = {
-    val firstJulkaisematon = tulokset.indexWhere (!_.julkaistavissa)
-    tulokset.zipWithIndex.map {
-      case (tulos, index) if firstJulkaisematon >= 0 && index > firstJulkaisematon && tulos.valintatila == Valintatila.peruuntunut =>
-        logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä toOdottaaYlempienHakutoiveidenTuloksia {}", index)
-        //TODO: haetaan historia kannasta tähän ja muutetaan jos edellinen tila on ollut hyväksytty.
-        tulos
-        //TODO: tulos.toOdottaaYlempienHakutoiveidenTuloksia
-      case (tulos, _) =>
-        logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä {}", tulos.valintatila)
-        tulos
-    }
-  }
-
-  //TODO: end
 
 
   case class Välitulos(tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) {
