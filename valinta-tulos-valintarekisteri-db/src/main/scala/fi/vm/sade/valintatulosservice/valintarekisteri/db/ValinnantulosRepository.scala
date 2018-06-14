@@ -28,7 +28,7 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
 
   def getMuutoshistoriaForHakemus(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[Muutos]
 
-  def getViimeisinValinnantilaMuutosHistoriasta(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid): Option[Valinnantila]
+  def getViimeisinValinnantilaMuutosHistoriasta(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid): Option[Valinnantila]
 
   def getValinnantuloksetForHakukohde(hakukohdeOid: HakukohdeOid): DBIO[Set[Valinnantulos]]
   def getValinnantuloksetForValintatapajono(valintatapajonoOid: ValintatapajonoOid): Set[Valinnantulos]
