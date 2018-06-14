@@ -361,7 +361,9 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         val hakemuksenTulos = hakemustenTuloksetByHakemusOid(HakemusOid(hakijaDto.getHakemusOid))
         hakijaDto.setHakijaOid(hakemuksenTulos.hakijaOid)
         hakijaDto.getHakutoiveet.asScala.foreach(hakutoiveDto => {
-          val tulos = hakemuksenTulos.findHakutoive(HakukohdeOid(hakutoiveDto.getHakukohdeOid)).get._1
+          val tulos = hakemuksenTulos.findHakutoive(HakukohdeOid(hakutoiveDto.getHakukohdeOid)).
+            getOrElse(throw new IllegalStateException(s"Ei löydy hakutoiveelle ${hakutoiveDto.getHakukohdeOid} tulosta hakemukselta ${hakijaDto.getHakemusOid}. " +
+              s"Hakutoive saattaa olla poistettu hakemukselta sijoittelun jälkeen."))._1
           hakutoiveDto.setVastaanottotieto(fi.vm.sade.sijoittelu.tulos.dto.ValintatuloksenTila.valueOf(tulos.vastaanottotila.toString))
           if (tulos.julkaistavissa) {
             hakutoiveDto.getHakutoiveenValintatapajonot.asScala.foreach(_.setTilanKuvaukset(tulos.tilanKuvaukset.asJava))
