@@ -808,7 +808,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
 
     tulokset.zipWithIndex.map {
       case (tulos, index) if firstJulkaisematon >= 0 && index > firstJulkaisematon && tulos.valintatila == Valintatila.peruuntunut =>
-        if (valinnantulosRepository.getViimeisinValinnantilaMuutosHistoriasta(hakemusOid, tulos.hakukohdeOid, tulos.valintatapajonoOid).map(tila => Valinnantila.apply(tila.toString)).getOrElse("") == Valinnantila.apply("Hyvaksytty")) {
+        if (valinnantulosRepository.getViimeisinValinnantilaMuutosHistoriasta(hakemusOid, tulos.hakukohdeOid).map(tila => Valinnantila.apply(tila.toString)).getOrElse("") == Valinnantila.apply("Hyvaksytty")) {
           logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä valintatila > hyväksytty {}", index)
           tulos.copy(valintatila = Valintatila.hyväksytty)
         } else {
