@@ -46,33 +46,16 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
   }
 
   private def findYpsHakemusOiditDBIO(kausi: Kausi): DBIO[List[((String, HakukohdeOid), HakemusOid)]] = {
-    sql"""select
-              vastaanotot.henkilo as henkilo,
-              hakukohde,
-              vt.hakemus_oid
-            from vastaanotot
-            join hakukohteet hk on hakukohde_oid = vastaanotot.hakukohde
-                and hk.koulutuksen_alkamiskausi = ${kausi.toKausiSpec}
-                and hk.yhden_paikan_saanto_voimassa
-            join valinnantilat vt on vt.henkilo_oid = vastaanotot.henkilo
-                and vt.hakukohde_oid = vastaanotot.hakukohde
-            where deleted is null
-                and action in ('VastaanotaSitovasti', 'VastaanotaEhdollisesti')
-            union
-            select
-              henkiloviitteet.linked_oid as henkilo,
-              hakukohde,
-              vt.hakemus_oid
-            from vastaanotot
-            join hakukohteet hk on hakukohde_oid = vastaanotot.hakukohde
-                and hk.koulutuksen_alkamiskausi = ${kausi.toKausiSpec}
-                and hk.yhden_paikan_saanto_voimassa
-            join henkiloviitteet on vastaanotot.henkilo = henkiloviitteet.person_oid
-            join valinnantilat vt on vt.henkilo_oid = vastaanotot.henkilo
-                and vt.hakukohde_oid = vastaanotot.hakukohde
-            where deleted is null
-                and action in ('VastaanotaSitovasti', 'VastaanotaEhdollisesti')
-        """.as[((String, HakukohdeOid), HakemusOid)].map(_.toList)
+    sql"""select newest_vastaanotot.henkilo,
+                 hakukohteet.hakukohde_oid,
+                 valinnantilat.hakemus_oid
+          from newest_vastaanotot
+          join hakukohteet on hakukohteet.hakukohde_oid = newest_vastaanotot.hakukohde
+          join valinnantilat on valinnantilat.henkilo_oid = newest_vastaanotot.henkilo
+            and valinnantilat.hakukohde_oid = newest_vastaanotot.hakukohde
+          where hakukohteet.yhden_paikan_saanto_voimassa
+            and hakukohteet.koulutuksen_alkamiskausi = ${kausi.toKausiSpec}
+      """.as[((String, HakukohdeOid), HakemusOid)].map(_.toList)
   }
 
   override def findYpsVastaanotot(kausi: Kausi, henkiloOids: Set[String]): Set[(HakemusOid, HakukohdeRecord, VastaanottoRecord)] = {
@@ -81,22 +64,26 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
 
   override def findYpsVastaanototDBIO(kausi: Kausi, henkiloOids: Set[String]): DBIO[Set[(HakemusOid, HakukohdeRecord, VastaanottoRecord)]] = {
     findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissaDBIO(kausi).zip(findYpsHakukohteetDBIO(kausi)).zip(findYpsHakemusOiditDBIO(kausi))
-      .map{ case ((x, y), z) => { (x.filter(v => henkiloOids.contains(v.henkiloOid)), y.map(h => h.oid -> h).toMap, z.toMap) } }
-      .flatMap { case (vastaanotot, hakukohteet, hakemusoidit) => {
-        assertAllValinnantuloksetExist(vastaanotot, hakemusoidit)
-        DBIO.successful(vastaanotot
-          .map(v => (
-            hakemusoidit((v.henkiloOid, v.hakukohdeOid)),
-            hakukohteet(v.hakukohdeOid),
-            v
-          )))
+      .map {
+        case ((vastaanotot, hakukohteet), hakemusoidit) => (
+          vastaanotot.filter(v => henkiloOids.contains(v.henkiloOid)),
+          hakukohteet.map(h => h.oid -> h).toMap,
+          hakemusoidit.toMap
+        )
       }
-    }
+      .flatMap { case (vastaanotot, hakukohteet, hakemusoidit) =>
+        assertAllValinnantuloksetExist(vastaanotot, hakemusoidit)
+        DBIO.successful(vastaanotot.map(v => (
+          hakemusoidit((v.henkiloOid, v.hakukohdeOid)),
+          hakukohteet(v.hakukohdeOid),
+          v
+        )))
+      }
   }
 
   private def assertAllValinnantuloksetExist(vastaanotot: Set[VastaanottoRecord], hakemusoidit: Map[(String, HakukohdeOid), HakemusOid]): Unit = {
-    val missingRecords: Map[HakukohdeOid, Set[VastaanottoRecord]] = vastaanotot.filter(v => !hakemusoidit.isDefinedAt(v.henkiloOid, v.hakukohdeOid)).groupBy(_.hakukohdeOid)
-    if(!missingRecords.isEmpty) {
+    val missingRecords: Map[HakukohdeOid, Set[VastaanottoRecord]] = vastaanotot.filter(v => !hakemusoidit.contains(v.henkiloOid, v.hakukohdeOid)).groupBy(_.hakukohdeOid)
+    if (missingRecords.nonEmpty) {
       throw new IllegalStateException(s"Puuttuvia valinnantuloksia ${missingRecords.map(e => s"hakukohteessa ${e._1} henkiloOideille ${e._2.map(_.henkiloOid).mkString(",")}").mkString(", ")}")
     }
   }
