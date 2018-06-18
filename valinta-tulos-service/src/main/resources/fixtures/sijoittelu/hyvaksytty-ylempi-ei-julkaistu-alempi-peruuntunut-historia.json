@@ -115,17 +115,17 @@
               "hakemusOid": "1.2.246.562.11.00000441369",
               "etunimi": "Teppo",
               "sukunimi": "Testaaja",
-              "prioriteetti": 2,
+              "prioriteetti": 1,
               "jonosija": 1,
               "pisteet": 4,
               "tasasijaJonosija": 1,
-              "tila": "HYVAKSYTTY",
+              "tila": "VARALLA",
               "tilaHistoria": [
                 {
                   "luotu": {
                     "$date": "2018-06-11T15:12:40.623Z"
                   },
-                  "tila": "HYVAKSYTTY"
+                  "tila": "VARALLA"
                 }
               ],
               "hyvaksyttyHarkinnanvaraisesti": false,
@@ -152,13 +152,13 @@
               "jonosija": 1,
               "pisteet": 4,
               "tasasijaJonosija": 1,
-              "tila": "PERUUNTUNUT",
+              "tila": "HYVAKSYTTY",
               "tilaHistoria": [
                 {
                   "luotu": {
                     "$date": "2018-06-11T15:12:40.623Z"
                   },
-                  "tila": "PERUUNTUNUT"
+                  "tila": "HYVAKSYTTY"
                 }
               ],
               "hyvaksyttyHarkinnanvaraisesti": false,
@@ -181,17 +181,17 @@
               "hakemusOid": "1.2.246.562.11.00000441369",
               "etunimi": "Teppo",
               "sukunimi": "Testaaja",
-              "prioriteetti": 2,
+              "prioriteetti": 3,
               "jonosija": 100,
               "pisteet": 0,
               "tasasijaJonosija": 1,
-              "tila": "HYLATTY",
+              "tila": "PERUUNTUNUT",
               "tilaHistoria": [
                 {
                   "luotu": {
                     "$date": "2018-06-11T15:12:40.623Z"
                   },
-                  "tila": "HYLATTY"
+                  "tila": "PERUUNTUNUT"
                 }
               ],
               "hyvaksyttyHarkinnanvaraisesti": false,
@@ -232,13 +232,13 @@
               "jonosija": 1,
               "pisteet": 4,
               "tasasijaJonosija": 1,
-              "tila": "PERUUNTUNUT",
+              "tila": "HYVAKSYTTY",
               "tilaHistoria": [
                 {
                   "luotu": {
                     "$date": "2018-06-11T15:12:40.623Z"
                   },
-                  "tila": "PERUUNTUNUT"
+                  "tila": "HYVAKSYTTY"
                 }
               ],
               "hyvaksyttyHarkinnanvaraisesti": false,
