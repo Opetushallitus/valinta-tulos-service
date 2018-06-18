@@ -217,14 +217,14 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
 
-        val ekaToHyvaksytty = ValinnantilanTallennus(HakemusOid("1.2.246.562.11.00000441369"),
+        val hakemus1 = ValinnantilanTallennus(HakemusOid("1.2.246.562.11.00000441369"),
           ValintatapajonoOid("14090336922663576781797489829884"),
           HakukohdeOid("1.2.246.562.5.72607738902"),
           "1.2.246.562.24.14229104472",
           Valinnantila("Hyvaksytty"),
           "testi")
 
-        val tokaToPeruuntunut = ValinnantilanTallennus(HakemusOid("1.2.246.562.11.00000441369"),
+        val hakemus2 = ValinnantilanTallennus(HakemusOid("1.2.246.562.11.00000441369"),
           ValintatapajonoOid("14090336922663576781797489829885"),
           HakukohdeOid("1.2.246.562.5.72607738903"),
           "1.2.246.562.24.14229104472",
@@ -235,8 +235,8 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
         valintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = 'false' where hakukohde_oid = '1.2.246.562.5.72607738902' and valintatapajono_oid = '14090336922663576781797489829884' and hakemus_oid = '1.2.246.562.11.00000441369'")
 
         // Ajetaan uudet valintatilat:
-        valintarekisteriDb.runBlocking(valintarekisteriDb.storeValinnantila(tokaToPeruuntunut, None))
-        valintarekisteriDb.runBlocking(valintarekisteriDb.storeValinnantila(ekaToHyvaksytty, None))
+        valintarekisteriDb.runBlocking(valintarekisteriDb.storeValinnantila(hakemus2, None))
+        valintarekisteriDb.runBlocking(valintarekisteriDb.storeValinnantila(hakemus1, None))
 
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
@@ -253,14 +253,14 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
 
-        val ekaToHyvaksytty = ValinnantilanTallennus(HakemusOid("1.2.246.562.11.00000441369"),
+        val hakemus1 = ValinnantilanTallennus(HakemusOid("1.2.246.562.11.00000441369"),
           ValintatapajonoOid("14090336922663576781797489829884"),
           HakukohdeOid("1.2.246.562.5.72607738902"),
           "1.2.246.562.24.14229104472",
           Valinnantila("Hyvaksytty"),
           "testi")
 
-        val tokaToPeruuntunut = ValinnantilanTallennus(HakemusOid("1.2.246.562.11.00000441369"),
+        val hakemus2 = ValinnantilanTallennus(HakemusOid("1.2.246.562.11.00000441369"),
           ValintatapajonoOid("14090336922663576781797489829885"),
           HakukohdeOid("1.2.246.562.5.72607738903"),
           "1.2.246.562.24.14229104472",
@@ -268,8 +268,8 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           "testi")
 
         // Ajetaan uudet valintatilat:
-        valintarekisteriDb.runBlocking(valintarekisteriDb.storeValinnantila(tokaToPeruuntunut, None))
-        valintarekisteriDb.runBlocking(valintarekisteriDb.storeValinnantila(ekaToHyvaksytty, None))
+        valintarekisteriDb.runBlocking(valintarekisteriDb.storeValinnantila(hakemus2, None))
+        valintarekisteriDb.runBlocking(valintarekisteriDb.storeValinnantila(hakemus1, None))
 
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.vastaanotettavissa_sitovasti, true)
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.peruuntunut, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
