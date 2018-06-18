@@ -58,7 +58,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten)
   }
 
-  override def getViimeisinValinnantilaMuutosHistoriasta(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Int = {
+  override def getViimeisinValinnantilaMuutosHyvaksyttyCount(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Int = {
     runBlocking(sql""" select count(*)
             from valinnantilat_history
             where hakemus_oid = ${hakemusOid}
