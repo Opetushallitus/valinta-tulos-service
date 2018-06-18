@@ -58,12 +58,13 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten)
   }
 
-  override def getViimeisinValinnantilaMuutosHistoriasta(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Option[Valinnantila] = {
-    runBlocking(sql""" select tila
+  override def getViimeisinValinnantilaMuutosHistoriasta(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Int = {
+    runBlocking(sql""" select count(*)
             from valinnantilat_history
             where hakemus_oid = ${hakemusOid}
               and hakukohde_oid = ${hakukohdeOid}
-            order by lower(system_time) desc limit 1 """.as[Valinnantila].headOption)
+              and tila = 'Hyvaksytty'
+              and transaction_id = (select max(transaction_id) from valinnantilat_history)""".as[Int].head)
   }
 
   private def getValinnantulosMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {

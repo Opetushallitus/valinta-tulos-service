@@ -805,12 +805,15 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
 
   private def näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) = {
     val firstJulkaisematon = tulokset.indexWhere (!_.julkaistavissa)
-
+    var counter = 0
     tulokset.zipWithIndex.map {
+
       case (tulos, index) if firstJulkaisematon >= 0 && index > firstJulkaisematon && tulos.valintatila == Valintatila.peruuntunut =>
-        if (valinnantulosRepository.getViimeisinValinnantilaMuutosHistoriasta(hakemusOid, tulos.hakukohdeOid).map(tila => Valinnantila.apply(tila.toString)).getOrElse("") == Valinnantila.apply("Hyvaksytty")) {
+        if (valinnantulosRepository.getViimeisinValinnantilaMuutosHistoriasta(hakemusOid, tulos.hakukohdeOid) > 0 && counter == 0 ) {
           logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä valintatila > hyväksytty {}", index)
+          counter += 1
           tulos.copy(valintatila = Valintatila.hyväksytty)
+
         } else {
           logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä {}", tulos.valintatila)
           tulos

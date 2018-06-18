@@ -201,8 +201,6 @@ trait ValintarekisteriResultExtractors {
 
   protected implicit val getValinnantila: GetResult[Valinnantila] = GetResult(r => Valinnantila(r.nextString))
 
-  protected implicit val getViimeisinValinnantilaMuutosHistoriasta: GetResult[Option[(Valinnantila)]] = GetResult(r => r.nextStringOption().map(Valinnantila(_)))
-
   protected implicit val getHaunValinnantilat: GetResult[(HakukohdeOid, ValintatapajonoOid, HakemusOid, Valinnantila)] = GetResult(r =>
     (HakukohdeOid(r.nextString), ValintatapajonoOid(r.nextString), HakemusOid(r.nextString), Valinnantila(r.nextString)))
 
