@@ -809,7 +809,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     tulokset.zipWithIndex.map {
 
       case (tulos, index) if firstJulkaisematon >= 0 && index > firstJulkaisematon && tulos.valintatila == Valintatila.peruuntunut =>
-        if (valinnantulosRepository.getViimeisinValinnantilaMuutosHyvaksyttyCount(hakemusOid, tulos.hakukohdeOid) > 0 && counter == 0 ) {
+        if (valinnantulosRepository.getViimeisinValinnantilaMuutosHyvaksyttyCountHistoriasta(hakemusOid, tulos.hakukohdeOid) > 0 && counter == 0 ) {
           logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä valintatila > hyväksytty {}", index)
           counter += 1
           tulos.copy(valintatila = Valintatila.hyväksytty)
