@@ -335,6 +335,9 @@ case object PeruuntunutVastaanottanutToisenPaikanYhdenSaannonPaikanPiirissa exte
   val tilankuvauksenTarkenne = PERUUNTUNUT_VASTAANOTTANUT_TOISEN_PAIKAN_YHDEN_SAANNON_PAIKAN_PIIRISSA
 }
 
+case object PeruuntunutHyvaksyttyAlemmalleHakutoiveelle extends ValinnantilanTarkenne {
+  val tilankuvauksenTarkenne = PERUUNTUNUT_HYVAKSYTTY_ALEMMALLE_HAKUTOIVEELLE
+}
 case object EiTilankuvauksenTarkennetta extends ValinnantilanTarkenne {
   val tilankuvauksenTarkenne = EI_TILANKUVAUKSEN_TARKENNETTA
 }
@@ -375,6 +378,7 @@ object ValinnantilanTarkenne {
       case HYVAKSYTTY_TAYTTOJONO_SAANNOLLA => HyvaksyttyTayttojonoSaannolla
       case HYLATTY_HAKIJARYHMAAN_KUULUMATTOMANA => HylattyHakijaryhmaanKuulumattomana
       case PERUUNTUNUT_VASTAANOTTANUT_TOISEN_PAIKAN_YHDEN_SAANNON_PAIKAN_PIIRISSA => PeruuntunutVastaanottanutToisenPaikanYhdenSaannonPaikanPiirissa
+      case PERUUNTUNUT_HYVAKSYTTY_ALEMMALLE_HAKUTOIVEELLE => PeruuntunutHyvaksyttyAlemmalleHakutoiveelle
       case EI_TILANKUVAUKSEN_TARKENNETTA => EiTilankuvauksenTarkennetta
     }
   }
