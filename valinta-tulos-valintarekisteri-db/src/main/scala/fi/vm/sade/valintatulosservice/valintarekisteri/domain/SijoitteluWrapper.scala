@@ -356,6 +356,7 @@ object ValinnantilanTarkenne {
     "HyvaksyttyTayttojonoSaannolla" -> HyvaksyttyTayttojonoSaannolla,
     "HylattyHakijaryhmaanKuulumattomana" -> HylattyHakijaryhmaanKuulumattomana,
     "PeruuntunutVastaanottanutToisenPaikanYhdenSaannonPaikanPiirissa" -> PeruuntunutVastaanottanutToisenPaikanYhdenSaannonPaikanPiirissa,
+    "PeruuntunutHyvaksyttyAlemmalleHakutoiveelle" -> PeruuntunutHyvaksyttyAlemmalleHakutoiveelle,
     "EiTilankuvauksenTarkennetta" -> EiTilankuvauksenTarkennetta
   )
   val values: List[String] = valueMapping.keysIterator.toList
