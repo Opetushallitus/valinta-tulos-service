@@ -360,20 +360,22 @@ object ValinnantilanTarkenne {
     throw new IllegalArgumentException(s"Unknown valinnantilantarkenne '$value', expected one of $values")
   })
 
-  def getValinnantilanTarkenne(tilankuvauksenTarkenne: TilankuvauksenTarkenne) = tilankuvauksenTarkenne match {
-    case TilankuvauksenTarkenne.PERUUNTUNUT_HYVAKSYTTY_YLEMMALLE_HAKUTOIVEELLE => PeruuntunutHyvaksyttyYlemmalleHakutoiveelle
-    case TilankuvauksenTarkenne.PERUUNTUNUT_ALOITUSPAIKAT_TAYNNA => PeruuntunutAloituspaikatTaynna
-    case TilankuvauksenTarkenne.PERUUNTUNUT_HYVAKSYTTY_TOISESSA_JONOSSA => PeruuntunutHyvaksyttyToisessaJonossa
-    case TilankuvauksenTarkenne.HYVAKSYTTY_VARASIJALTA => HyvaksyttyVarasijalta
-    case TilankuvauksenTarkenne.PERUUNTUNUT_EI_VASTAANOTTANUT_MAARAAIKANA => PeruuntunutEiVastaanottanutMaaraaikana
-    case TilankuvauksenTarkenne.PERUUNTUNUT_VASTAANOTTANUT_TOISEN_PAIKAN => PeruuntunutVastaanottanutToisenPaikan
-    case TilankuvauksenTarkenne.PERUUNTUNUT_EI_MAHDU_VARASIJOJEN_MAARAAN => PeruuntunutEiMahduVarasijojenMaaraan
-    case TilankuvauksenTarkenne.PERUUNTUNUT_HAKUKIERROS_PAATTYNYT => PeruuntunutHakukierrosPaattynyt
-    case TilankuvauksenTarkenne.PERUUNTUNUT_EI_VARASIJATAYTTOA => PeruuntunutEiVarasijatayttoa
-    case TilankuvauksenTarkenne.HYVAKSYTTY_TAYTTOJONO_SAANNOLLA => HyvaksyttyTayttojonoSaannolla
-    case TilankuvauksenTarkenne.HYLATTY_HAKIJARYHMAAN_KUULUMATTOMANA => HylattyHakijaryhmaanKuulumattomana
-    case TilankuvauksenTarkenne.PERUUNTUNUT_VASTAANOTTANUT_TOISEN_PAIKAN_YHDEN_SAANNON_PAIKAN_PIIRISSA => PeruuntunutVastaanottanutToisenPaikanYhdenSaannonPaikanPiirissa
-    case TilankuvauksenTarkenne.EI_TILANKUVAUKSEN_TARKENNETTA => EiTilankuvauksenTarkennetta
+  def getValinnantilanTarkenne(tilankuvauksenTarkenne: TilankuvauksenTarkenne): ValinnantilanTarkenne = {
+    tilankuvauksenTarkenne match {
+      case TilankuvauksenTarkenne.PERUUNTUNUT_HYVAKSYTTY_YLEMMALLE_HAKUTOIVEELLE => PeruuntunutHyvaksyttyYlemmalleHakutoiveelle
+      case TilankuvauksenTarkenne.PERUUNTUNUT_ALOITUSPAIKAT_TAYNNA => PeruuntunutAloituspaikatTaynna
+      case TilankuvauksenTarkenne.PERUUNTUNUT_HYVAKSYTTY_TOISESSA_JONOSSA => PeruuntunutHyvaksyttyToisessaJonossa
+      case TilankuvauksenTarkenne.HYVAKSYTTY_VARASIJALTA => HyvaksyttyVarasijalta
+      case TilankuvauksenTarkenne.PERUUNTUNUT_EI_VASTAANOTTANUT_MAARAAIKANA => PeruuntunutEiVastaanottanutMaaraaikana
+      case TilankuvauksenTarkenne.PERUUNTUNUT_VASTAANOTTANUT_TOISEN_PAIKAN => PeruuntunutVastaanottanutToisenPaikan
+      case TilankuvauksenTarkenne.PERUUNTUNUT_EI_MAHDU_VARASIJOJEN_MAARAAN => PeruuntunutEiMahduVarasijojenMaaraan
+      case TilankuvauksenTarkenne.PERUUNTUNUT_HAKUKIERROS_PAATTYNYT => PeruuntunutHakukierrosPaattynyt
+      case TilankuvauksenTarkenne.PERUUNTUNUT_EI_VARASIJATAYTTOA => PeruuntunutEiVarasijatayttoa
+      case TilankuvauksenTarkenne.HYVAKSYTTY_TAYTTOJONO_SAANNOLLA => HyvaksyttyTayttojonoSaannolla
+      case TilankuvauksenTarkenne.HYLATTY_HAKIJARYHMAAN_KUULUMATTOMANA => HylattyHakijaryhmaanKuulumattomana
+      case TilankuvauksenTarkenne.PERUUNTUNUT_VASTAANOTTANUT_TOISEN_PAIKAN_YHDEN_SAANNON_PAIKAN_PIIRISSA => PeruuntunutVastaanottanutToisenPaikanYhdenSaannonPaikanPiirissa
+      case TilankuvauksenTarkenne.EI_TILANKUVAUKSEN_TARKENNETTA => EiTilankuvauksenTarkennetta
+    }
   }
 }
 
