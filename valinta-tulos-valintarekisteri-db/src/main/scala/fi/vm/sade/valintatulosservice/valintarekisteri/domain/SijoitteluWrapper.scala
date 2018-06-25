@@ -7,7 +7,7 @@ import java.util.Date
 import fi.vm.sade.sijoittelu.domain.TilankuvauksenTarkenne._
 import fi.vm.sade.sijoittelu.domain.{Hakemus => SijoitteluHakemus, Tasasijasaanto => SijoitteluTasasijasaanto, _}
 import fi.vm.sade.valintatulosservice.json4sCustomFormats
-import org.apache.commons.lang3.BooleanUtils
+import org.apache.commons.lang3.{BooleanUtils, StringUtils}
 import org.json4s.JsonAST.{JArray, JValue}
 import org.json4s.{DefaultFormats, Formats}
 
@@ -423,8 +423,8 @@ case class SijoitteluajonHakemusWrapper(
     hakemus.setHyvaksyttyHarkinnanvaraisesti(hyvaksyttyHarkinnanvaraisesti)
     hakemus.setSiirtynytToisestaValintatapajonosta(siirtynytToisestaValintatapajonosta)
     hakemus.setTila(tila.valinnantila)
-    hakemus.setTilanKuvaukset(tilanKuvaukset.getOrElse(Map()).asJava)
     hakemus.setTilankuvauksenTarkenne(tilankuvauksenTarkenne.tilankuvauksenTarkenne)
+    SijoitteluajonHakemusWrapper.ensureTilankuvauksetFromLegacyTestDataWithoutTilankuvauksenTarkenne(hakemus, tilanKuvaukset)
     tarkenteenLisatieto.foreach(hakemus.setTarkenteenLisatieto)
     hakemus.setHyvaksyttyHakijaryhmista(hyvaksyttyHakijaryhmista.asJava)
     hakemus.setTilaHistoria(tilaHistoria.map(_.tilahistoria).asJava)
@@ -455,6 +455,12 @@ object SijoitteluajonHakemusWrapper extends OptionConverter {
       hakemus.getHyvaksyttyHakijaryhmista.asScala.toSet,
       hakemus.getTilaHistoria.asScala.map(TilahistoriaWrapper(_)).toList
     )
+  }
+
+  private def ensureTilankuvauksetFromLegacyTestDataWithoutTilankuvauksenTarkenne(h: SijoitteluHakemus, tk: Option[Map[String, String]]): Unit = {
+    if (h.getTilanKuvaukset == null || StringUtils.isBlank(h.getTilanKuvaukset.get("FI"))) {
+      h.setTilanKuvaukset(tk.getOrElse(Map()).asJava)
+    }
   }
 }
 
