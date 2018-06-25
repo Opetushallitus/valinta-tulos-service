@@ -1,3 +1,24 @@
-insert into pg_enum (enumtypid, enumlabel, enumsortorder)
-    select 'valinnantilanTarkenne'::regtype::oid, 'PeruuntunutHyvaksyttyAlemmalleHakutoiveelle',
-      ( select max(enumsortorder) + 1 from pg_enum where enumtypid = 'valinnantilanTarkenne'::regtype );
+alter type valinnantilantarkenne rename to valinnantilantarkenne_pre_20180625;
+create type valinnantilanTarkenne as enum (
+  'PeruuntunutHyvaksyttyYlemmalleHakutoiveelle',
+  'PeruuntunutAloituspaikatTaynna',
+  'PeruuntunutHyvaksyttyToisessaJonossa',
+  'HyvaksyttyVarasijalta',
+  'PeruuntunutEiVastaanottanutMaaraaikana',
+  'PeruuntunutVastaanottanutToisenPaikan',
+  'PeruuntunutEiMahduVarasijojenMaaraan',
+  'PeruuntunutHakukierrosPaattynyt',
+  'PeruuntunutEiVarasijatayttoa',
+  'HyvaksyttyTayttojonoSaannolla',
+  'HylattyHakijaryhmaanKuulumattomana',
+  'PeruuntunutVastaanottanutToisenPaikanYhdenSaannonPaikanPiirissa',
+  'PeruuntunutHyvaksyttyAlemmalleHakutoiveelle',
+  'EiTilankuvauksenTarkennetta'
+);
+alter type valinnantilanTarkenne owner to oph;
+
+alter table valinnantilan_kuvaukset
+  alter column tilan_tarkenne type valinnantilanTarkenne
+  using tilan_tarkenne::text::valinnantilanTarkenne;
+
+drop type valinnantilantarkenne_pre_20180625;
