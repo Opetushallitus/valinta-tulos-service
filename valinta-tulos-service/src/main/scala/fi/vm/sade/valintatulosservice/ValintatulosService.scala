@@ -22,6 +22,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import org.apache.commons.lang3.StringUtils
 import org.joda.time.DateTime
+import scalaz.std.boolean
 
 import scala.collection.JavaConverters._
 
@@ -805,10 +806,13 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
 
   private def näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) = {
     val firstJulkaisematon = tulokset.indexWhere (!_.julkaistavissa)
+    var firstChanged = false
+
     tulokset.zipWithIndex.map {
-      case (tulos, index) if firstJulkaisematon >= 0 && index == firstJulkaisematon + 1 && tulos.valintatila == Valintatila.peruuntunut =>
-        if (valinnantulosRepository.getViimeisinValinnantilaMuutosHyvaksyttyCountHistoriasta(hakemusOid, tulos.hakukohdeOid) > 0) {
+      case (tulos, index) if firstJulkaisematon >= 0 && index > firstJulkaisematon && tulos.valintatila == Valintatila.peruuntunut =>
+        if (valinnantulosRepository.getViimeisinValinnantilaMuutosHyvaksyttyCountHistoriasta(hakemusOid, tulos.hakukohdeOid) > 0 && firstChanged == false) {
           logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä valintatila > hyväksytty {}", index)
+          firstChanged = true
           tulos.copy(valintatila = Valintatila.hyväksytty)
         } else {
           logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä {}", tulos.valintatila)
