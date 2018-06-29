@@ -24,9 +24,6 @@
               "oid": "1.2.246.562.5.72607738902"
             },
             {
-              "oid": "1.2.246.562.5.72607738903"
-            },
-            {
               "oid": "1.2.246.562.5.72607738904"
             }
           ],
@@ -98,7 +95,7 @@
       },
       "oid": "1.2.246.562.5.72607738903",
       "tarjoajaOid": "1.2.246.562.10.591352080610",
-      "kaikkiJonotSijoiteltu": true,
+      "kaikkiJonotSijoiteltu": false,
       "valintatapajonot": [
         {
           "tasasijasaanto": "YLITAYTTO",
@@ -120,14 +117,7 @@
               "pisteet": 4,
               "tasasijaJonosija": 1,
               "tila": "VARALLA",
-              "tilaHistoria": [
-                {
-                  "luotu": {
-                    "$date": "2018-06-11T15:12:40.623Z"
-                  },
-                  "tila": "VARALLA"
-                }
-              ],
+              "tilaHistoria": [],
               "hyvaksyttyHarkinnanvaraisesti": false,
               "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
             }
