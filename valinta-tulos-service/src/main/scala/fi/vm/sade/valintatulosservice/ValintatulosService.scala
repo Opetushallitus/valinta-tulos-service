@@ -336,39 +336,64 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     valintatulokset
   }
 
+  @Deprecated //Ei käytetä/sivutusta ei käytetä
   def sijoittelunTulokset(hakuOid: HakuOid, sijoitteluajoId: String, hyvaksytyt: Option[Boolean], ilmanHyvaksyntaa: Option[Boolean], vastaanottaneet: Option[Boolean],
                           hakukohdeOid: Option[List[HakukohdeOid]], count: Option[Int], index: Option[Int]): HakijaPaginationObject = timed(s"Getting sijoittelun tulokset for haku ${hakuOid}") {
     val haunVastaanototByHakijaOid = timed("Fetch haun vastaanotot for haku: " + hakuOid, 1000) {
       virkailijaVastaanottoRepository.findHaunVastaanotot(hakuOid).groupBy(_.henkiloOid)
     }
-    val hakemustenTulokset = hakukohdeOid match {
-      case Some(oid :: Nil) => hakemustenTulosByHakukohde(hakuOid, oid, Some(haunVastaanototByHakijaOid)).right.get
-      case _ => hakemustenTulosByHaku(hakuOid, Some(haunVastaanototByHakijaOid)).getOrElse(Iterator.empty)
+    val hakemustenTulokset = hakemustenTulosByHaku(hakuOid, Some(haunVastaanototByHakijaOid))
+    val hakutoiveidenTuloksetByHakemusOid: Map[HakemusOid, List[Hakutoiveentulos]] = hakemustenTulokset match {
+      case Some(hakemustenTulosIterator) =>
+        /* ValintatulosService:173: `() => hakemusRepository.findHakemukset(hakuOid)`
+         * results are only realized here when the iterator is converted to map!! */
+        timed("Realizing hakemukset mongo calls from hakemuksenTulokset") {hakemustenTulosIterator.map(h => (h.hakemusOid, h.hakutoiveet)).toMap}
+      case None => Map()
     }
-    val hakemustenTuloksetByHakemusOid: Map[HakemusOid, Hakemuksentulos] =
-      timed("Realizing hakemukset mongo calls from hakemuksenTulokset") {
-        hakemustenTulokset.map(h => h.hakemusOid -> h).toMap
-      }
 
+    val personOidsByHakemusOids: Map[HakemusOid, String] = hakukohdeOid match {
+      case Some(oids) => timed("Fetching hakemukset from hakemusRepository for haku and hakukohteet", 1000) (hakemusRepository.findPersonOids(hakuOid, oids))
+      case _ => timed("Fetching hakemukset from hakemusRepository for haku", 1000) (hakemusRepository.findPersonOids(hakuOid))
+    }
+    
     try {
+      val haku = hakuService.getHaku(hakuOid) match {
+        case Right(h) => h
+        case Left(e) => throw e
+      }
       val hakijaPaginationObject = sijoittelutulosService.sijoittelunTuloksetWithoutVastaanottoTieto(hakuOid, sijoitteluajoId, hyvaksytyt, ilmanHyvaksyntaa, vastaanottaneet,
-        hakukohdeOid, count, index)
-      assertNoMissingHakemusOidsInKeys(
-        hakijaPaginationObject.getResults.asScala.map(h => HakemusOid(h.getHakemusOid)).toSet,
-        hakemustenTuloksetByHakemusOid.keySet
-      )
-      hakijaPaginationObject.getResults.asScala.foreach { hakijaDto =>
-        val hakemuksenTulos = hakemustenTuloksetByHakemusOid(HakemusOid(hakijaDto.getHakemusOid))
-        hakijaDto.setHakijaOid(hakemuksenTulos.hakijaOid)
-        hakijaDto.getHakutoiveet.asScala.foreach(hakutoiveDto => {
-          val tulos = hakemuksenTulos.findHakutoive(HakukohdeOid(hakutoiveDto.getHakukohdeOid)).
-            getOrElse(throw new IllegalStateException(s"Ei löydy hakutoiveelle ${hakutoiveDto.getHakukohdeOid} tulosta hakemukselta ${hakijaDto.getHakemusOid}. " +
-              s"Hakutoive saattaa olla poistettu hakemukselta sijoittelun jälkeen."))._1
-          hakutoiveDto.setVastaanottotieto(fi.vm.sade.sijoittelu.tulos.dto.ValintatuloksenTila.valueOf(tulos.vastaanottotila.toString))
-          if (tulos.julkaistavissa) {
-            hakutoiveDto.getHakutoiveenValintatapajonot.asScala.foreach(_.setTilanKuvaukset(tulos.tilanKuvaukset.asJava))
+        hakukohdeOid, count, index, haunVastaanototByHakijaOid)
+      val hakukohdes: Map[HakukohdeOid, Option[Kausi]] = (hakukohdeRecordService.getHaunHakukohdeRecords(hakuOid) match {
+        case Right(hks) => hks.map(hk => hk.oid -> {if(hk.yhdenPaikanSaantoVoimassa) Some(hk.koulutuksenAlkamiskausi) else None})
+        case Left(e) => throw e
+      }).toMap
+      val uniqueKaudetInHaku: Set[Kausi] = hakukohdes.values.flatten.toSet
+      val kausiToVastaanotto: Map[Kausi, Set[String]] = uniqueKaudetInHaku.map(kausi => kausi ->
+        virkailijaVastaanottoRepository.findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(kausi).map(_.henkiloOid)).toMap
+
+      val hakijat = hakijaPaginationObject.getResults.asScala
+      assertNoMissingHakemusOidsInKeys(hakijat.map(_.getHakemusOid).map(HakemusOid).toSet, personOidsByHakemusOids.keySet)
+
+      hakijat.foreach { hakijaDto =>
+        val hakijaOidFromHakemus = personOidsByHakemusOids(HakemusOid(hakijaDto.getHakemusOid))
+        hakijaDto.setHakijaOid(hakijaOidFromHakemus)
+        val hakijanVastaanotot = haunVastaanototByHakijaOid.get(hakijaDto.getHakijaOid)
+        val hakutoiveidenTulokset = hakutoiveidenTuloksetByHakemusOid.getOrElse(HakemusOid(hakijaDto.getHakemusOid), throw new IllegalArgumentException(s"Hakemusta ${hakijaDto.getHakemusOid} ei löydy"))
+        val yhdenPaikanSannonHuomioiminen = asetaVastaanotettavuusValintarekisterinPerusteella(hakukohdeOid => {
+          hakukohdes.get(hakukohdeOid).flatten.flatMap(kausi => Some(kausi, kausiToVastaanotto.get(kausi).map(_.contains(hakijaDto.getHakijaOid)).getOrElse(false)))
+        })(hakutoiveidenTulokset, haku, None)
+        hakijaDto.getHakutoiveet.asScala.foreach(palautettavaHakutoiveDto =>
+          hakijanVastaanotot match {
+            case Some(vastaanottos) =>
+              vastaanottos.find(_.hakukohdeOid.toString == palautettavaHakutoiveDto.getHakukohdeOid).foreach(vastaanotto => {
+                yhdenPaikanSannonHuomioiminen.find(_.hakukohdeOid.toString == palautettavaHakutoiveDto.getHakukohdeOid).foreach(hakutoiveenOikeaTulos => {
+                  palautettavaHakutoiveDto.setVastaanottotieto(fi.vm.sade.sijoittelu.tulos.dto.ValintatuloksenTila.valueOf(hakutoiveenOikeaTulos.vastaanottotila.toString))
+                  palautettavaHakutoiveDto.getHakutoiveenValintatapajonot.asScala.foreach(_.setTilanKuvaukset(hakutoiveenOikeaTulos.tilanKuvaukset.asJava))
+                })
+              })
+            case None => palautettavaHakutoiveDto.setVastaanottotieto(dto.ValintatuloksenTila.KESKEN)
           }
-        })
+        )
       }
       hakijaPaginationObject
     } catch {
@@ -377,15 +402,13 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         new HakijaPaginationObject
     }
   }
-
-  private def assertNoMissingHakemusOidsInKeys(hakemusOids: Set[HakemusOid], keys: Set[HakemusOid]): Unit = {
+  private def assertNoMissingHakemusOidsInKeys(hakemusOids: Set[HakemusOid], keys: Set[HakemusOid]) = {
     val missingHakemusOids = hakemusOids.diff(keys)
-    if (missingHakemusOids.nonEmpty) {
-      val missingOidsException = s"HakijaDTOs contained more hakemusOids than in hakukohteeseen hyväksytyt: $missingHakemusOids"
+    if(!missingHakemusOids.isEmpty) {
+      val missingOidsException = s"HakijaDTOs contained more hakemusOids than in hakukohteeseen hyväksytyt: ${missingHakemusOids}"
       throw new RuntimeException(missingOidsException)
     }
   }
-
   def sijoittelunTulosHakemukselle(hakuOid: HakuOid, sijoitteluajoId: String, hakemusOid: HakemusOid): Option[HakijaDTO] = {
     val hakemuksenTulosOption = hakemuksentulos(hakemusOid)
     val hakijaOidFromHakemusOption = hakemusRepository.findHakemus(hakemusOid).right.map(_.henkiloOid)
