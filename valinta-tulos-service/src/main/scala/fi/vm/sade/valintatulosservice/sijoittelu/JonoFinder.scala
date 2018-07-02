@@ -23,7 +23,12 @@ object JonoFinder {
       if (tila1 == Valintatila.varalla && tila2 == Valintatila.varalla) {
         jono1.getVarasijanNumero < jono2.getVarasijanNumero
       } else {
-        tila1.compareTo(tila2) < 0
+        val ord = tila1.compareTo(tila2)
+        if(ord == 0) {
+          jono1.getPrioriteetti.compareTo(jono2.getPrioriteetti) < 0
+        } else {
+          ord < 0
+        }
       }
     }
 
