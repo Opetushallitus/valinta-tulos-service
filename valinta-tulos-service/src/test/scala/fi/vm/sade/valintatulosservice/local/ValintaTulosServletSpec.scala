@@ -9,6 +9,7 @@ import fi.vm.sade.valintatulosservice.production.Hakija
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.joda.time.{DateTime, DateTimeZone}
+import org.json4s.native.JsonMethods.{compact, render}
 import org.json4s.JValue
 import org.json4s.JsonAST.JArray
 import org.json4s.jackson.Serialization
@@ -371,6 +372,21 @@ class ValintaTulosServletSpec extends ServletSpecification {
           tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos must beNone
           muutosAika.getTime() must be ~ (System.currentTimeMillis() +/- 2000)
         }
+      }
+    }
+  }
+
+  "GET /haku/:hakuOid/ilmanHyvaksyntaa" should {
+    "palauttaa oikea hylkäyksen syy" in {
+      useFixture("hylatty-peruste-viimeisesta-jonosta.json")
+      val hakuOid = "1.2.246.562.5.2013080813081926341928"
+      get(s"haku/$hakuOid/ilmanHyvaksyntaa") {
+        status must_== 200
+        val streamedJson = JsonMethods.parse(body)
+
+        val result = (((streamedJson \\ "results").asInstanceOf[JArray](0) \\ "hakutoiveet").asInstanceOf[JArray](0) \\ "hakutoiveenValintatapajonot").asInstanceOf[JArray](0) \\ "tilanKuvaukset"
+
+        compact(render(result)) must_== """{"FI":"Toinen jono","SV":"Toinen jono sv","EN":"Toinen jono en"}"""
       }
     }
   }
