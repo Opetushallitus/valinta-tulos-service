@@ -140,7 +140,7 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
     }
     "peruuta yhden hakijan vastaanotto" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
-      vastaanota(hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+      vastaanota(hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.vastaanottanut)
       hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
       val r = vastaanotaVirkailijana(valintatapajonoOid, personOid, hakemusOid, vastaanotettavissaHakuKohdeOid, hakuOid, Vastaanottotila.peruutettu, muokkaaja).head
       r.result.status must_== 200
@@ -152,7 +152,7 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
       r.result.status must_== 200
       hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.peruutettu
       expectFailure {
-        vastaanota(hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+        vastaanota(hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.vastaanottanut)
       }
       hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.peruutettu
     }
@@ -205,7 +205,7 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
     }
     "poista yhden hakijan vastaanotto" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
-      vastaanota(hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+      vastaanota(hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.vastaanottanut)
       val r = vastaanotaVirkailijana(valintatapajonoOid, personOid, hakemusOid, vastaanotettavissaHakuKohdeOid, hakuOid, Vastaanottotila.kesken, muokkaaja).head
       r.result.status must_== 200
       hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.kesken
@@ -284,7 +284,7 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
     }
     "peruuta yhden hakijan vastaanotto" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
-      vastaanota(hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+      vastaanota(hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.vastaanottanut)
       hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
       vastaanotaVirkailijanaTransaktiossa(List(
         VastaanottoEventDto(valintatapajonoOid, personOid, hakemusOid, vastaanotettavissaHakuKohdeOid, hakuOid, Vastaanottotila.peruutettu, muokkaaja, "testiselite")
@@ -298,7 +298,7 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
       )).isSuccess must beTrue
       hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.peruutettu
       expectFailure {
-        vastaanota(hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+        vastaanota(hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.vastaanottanut)
       }
       hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.peruutettu
     }
@@ -318,7 +318,7 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
     }
     "poista yhden hakijan vastaanotto" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
-      vastaanota(hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+      vastaanota(hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.vastaanottanut)
       vastaanotaVirkailijanaTransaktiossa(List(
         VastaanottoEventDto(valintatapajonoOid, personOid, hakemusOid, vastaanotettavissaHakuKohdeOid, hakuOid, Vastaanottotila.kesken, muokkaaja, "testiselite")
       )).isSuccess must beTrue
@@ -329,7 +329,7 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
       val ylempiHakutoiveOid = HakukohdeOid("1.2.246.562.5.72607738902")
 
       useFixture("hyvaksytty_ylempi_varalla_hyvaksy_peruuntunut.json", Nil, hakuFixture = HakuFixtures.korkeakouluYhteishaku, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-      vastaanota(hakemusOid, alinHyvaksyttyHakutoiveOid, Vastaanottotila.ehdollisesti_vastaanottanut, muokkaaja, selite, personOid)
+      vastaanota(hakemusOid, alinHyvaksyttyHakutoiveOid, Vastaanottotila.ehdollisesti_vastaanottanut)
       useFixture("hyvaksytty-kesken-julkaistavissa.json", Nil, hakuFixture = HakuFixtures.korkeakouluYhteishaku, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true, clearFixturesInitially = false)
 
       val `hakemuksentulosHakijanVastaanotonJa"Sijoittelun"Jalkeen` = hakemuksenTulos
@@ -363,7 +363,7 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
       val keskimmainenHakukohdeOid = hakemuksentulosEnnen.hakutoiveet(1).hakukohdeOid
       val alinHakukohdeOid = hakemuksentulosEnnen.hakutoiveet(2).hakukohdeOid
 
-      vastaanota(hakemusOid, keskimmainenHakukohdeOid, Vastaanottotila.ehdollisesti_vastaanottanut, muokkaaja, selite, personOid)
+      vastaanota(hakemusOid, keskimmainenHakukohdeOid, Vastaanottotila.ehdollisesti_vastaanottanut)
 
       val vastaanotonTulos = vastaanotaVirkailijanaTransaktiossa(List(
         VastaanottoEventDto(valintatapajonoOid, personOid, hakemusOid, keskimmainenHakukohdeOid, hakuOid, Vastaanottotila.vastaanottanut, muokkaaja, "testiselite"),
@@ -420,8 +420,8 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
 
   private def hakemuksenTulos: Hakemuksentulos = valintatulosService.hakemuksentulos(hakemusOid).get
 
-  private def vastaanota(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, tila: Vastaanottotila, muokkaaja: String, selite: String, personOid: String) = {
-    vastaanottoService.vastaanotaHakijana(HakijanVastaanotto(personOid, hakemusOid, hakukohdeOid, HakijanVastaanottoAction.getHakijanVastaanottoAction(tila)))
+  private def vastaanota(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, tila: Vastaanottotila) = {
+    vastaanottoService.vastaanotaHakijana(HakijanVastaanottoDto(hakemusOid, hakukohdeOid, HakijanVastaanottoAction.getHakijanVastaanottoAction(tila)))
       .left.foreach(e => throw e)
     success
   }

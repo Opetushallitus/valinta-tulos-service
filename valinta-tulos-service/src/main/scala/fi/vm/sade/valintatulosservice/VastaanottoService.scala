@@ -156,19 +156,20 @@ class VastaanottoService(hakuService: HakuService,
   def tarkistaVastaanotettavuus(vastaanotettavaHakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Unit = {
     findHakutoive(vastaanotettavaHakemusOid, hakukohdeOid).get
   }
-  def vastaanotaHakijana(vastaanotto: VastaanottoEvent): Either[Throwable, Unit] = {
-    val VastaanottoEvent(henkiloOid, hakemusOid, hakukohdeOid, _, _, _) = vastaanotto
+
+  def vastaanotaHakijana(vastaanottoDto: HakijanVastaanottoDto): Either[Throwable, Unit] = {
+    val HakijanVastaanottoDto(hakemusOid, hakukohdeOid, action) = vastaanottoDto
     for {
       hakemus <- hakemusRepository.findHakemus(hakemusOid).right
       hakukohdes <- hakukohdeRecordService.getHakukohdeRecords(hakemus.toiveet.map(_.oid)).right
       hakukohde <- (hakukohdes.find(_.oid == hakukohdeOid) match { case Some(hk) => Right(hk) case None => Left(new RuntimeException(s"Hakukohde $hakukohdeOid not in hakemus $hakemusOid"))}).right
       haku <- hakuService.getHaku(hakukohde.hakuOid).right
       ohjausparametrit <- ohjausparametritService.ohjausparametrit(haku.oid).right
-      hakutoive <- hakijaVastaanottoRepository.runAsSerialized(10, Duration(5, TimeUnit.MILLISECONDS), s"Storing vastaanotto $vastaanotto",
+      _ <- hakijaVastaanottoRepository.runAsSerialized(10, Duration(5, TimeUnit.MILLISECONDS), s"Storing vastaanotto $vastaanottoDto",
         for {
-          sijoittelunTulos <- sijoittelutulosService.latestSijoittelunTulos(haku.oid, henkiloOid, hakemusOid, ohjausparametrit)
-          maybeAiempiVastaanottoKaudella <- aiempiVastaanottoKaudella(hakukohde, henkiloOid)
-          ilmoittautumisenAikaleimat <- valinnantulosRepository.getIlmoittautumisenAikaleimat(henkiloOid)
+          sijoittelunTulos <- sijoittelutulosService.latestSijoittelunTulos(haku.oid, hakemus.henkiloOid, hakemusOid, ohjausparametrit)
+          maybeAiempiVastaanottoKaudella <- aiempiVastaanottoKaudella(hakukohde, hakemus.henkiloOid)
+          ilmoittautumisenAikaleimat <- valinnantulosRepository.getIlmoittautumisenAikaleimat(hakemus.henkiloOid)
           hakemuksenTulos = valintatulosService.julkaistavaTulos(
             sijoittelunTulos,
             haku,
@@ -180,9 +181,9 @@ class VastaanottoService(hakuService: HakuService,
             ilmoittautumisenAikaleimat,
             hasHetu = hakemus.henkilotiedot.hasHetu
           )(hakemus)
-          hakutoive <- tarkistaHakutoiveenVastaanotettavuus(hakemuksenTulos, hakukohdeOid, vastaanotto.action).fold(DBIO.failed, DBIO.successful)
-          _ <- hakijaVastaanottoRepository.storeAction(vastaanotto)
-        } yield hakutoive).right
+          _ <- tarkistaHakutoiveenVastaanotettavuus(hakemuksenTulos, hakukohdeOid, action).fold(DBIO.failed, DBIO.successful)
+          _ <- hakijaVastaanottoRepository.storeAction(HakijanVastaanotto(hakemuksenTulos.hakijaOid, hakemusOid, hakukohdeOid, action))
+        } yield ()).right
     } yield ()
   }
 

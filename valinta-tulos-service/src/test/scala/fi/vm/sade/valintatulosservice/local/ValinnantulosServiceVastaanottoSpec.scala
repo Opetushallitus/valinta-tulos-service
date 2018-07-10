@@ -144,7 +144,7 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
     }
     "peruuta yhden hakijan vastaanotto" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
-      vastaanotaHakijana(hakemusOid, HakukohdeOid("1.2.246.562.5.72607738902"), Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+      vastaanotaHakijana(hakemusOid, HakukohdeOid("1.2.246.562.5.72607738902"), Vastaanottotila.vastaanottanut)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
       valinnantulosBefore.vastaanotonViimeisinMuutos.isDefined must_== true
       tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
@@ -162,7 +162,7 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
       tallenna(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.PERUUTETTU)))
       tila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
       expectFailure {
-        vastaanotaHakijana(hakemusOid, HakukohdeOid("1.2.246.562.5.72607738902"), Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+        vastaanotaHakijana(hakemusOid, HakukohdeOid("1.2.246.562.5.72607738902"), Vastaanottotila.vastaanottanut)
       }
       tila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
     }
@@ -208,7 +208,7 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
     }
     "poista yhden hakijan vastaanotto" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
-      vastaanotaHakijana(hakemusOid, HakukohdeOid("1.2.246.562.5.72607738902"), Vastaanottotila.vastaanottanut, muokkaaja, selite, personOid)
+      vastaanotaHakijana(hakemusOid, HakukohdeOid("1.2.246.562.5.72607738902"), Vastaanottotila.vastaanottanut)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
       tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
       tallenna(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.KESKEN)))
@@ -306,8 +306,8 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
     })
   }
 
-  private def vastaanotaHakijana(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, tila: Vastaanottotila, muokkaaja: String, selite: String, personOid: String) = {
-    vastaanottoService.vastaanotaHakijana(HakijanVastaanotto(personOid, hakemusOid, hakukohdeOid, HakijanVastaanottoAction.getHakijanVastaanottoAction(tila)))
+  private def vastaanotaHakijana(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, tila: Vastaanottotila) = {
+    vastaanottoService.vastaanotaHakijana(HakijanVastaanottoDto(hakemusOid, hakukohdeOid, HakijanVastaanottoAction.getHakijanVastaanottoAction(tila)))
       .left.foreach(e => throw e)
     success
   }
