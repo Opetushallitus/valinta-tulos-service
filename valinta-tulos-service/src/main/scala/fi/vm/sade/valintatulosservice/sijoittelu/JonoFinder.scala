@@ -23,11 +23,23 @@ object JonoFinder {
       if (tila1 == Valintatila.varalla && tila2 == Valintatila.varalla) {
         jono1.getVarasijanNumero < jono2.getVarasijanNumero
       } else {
-        tila1.compareTo(tila2) < 0
+        val ord = tila1.compareTo(tila2)
+        if (ord == 0 && jono1.getPrioriteetti != null) {
+          jono1.getPrioriteetti.compareTo(jono2.getPrioriteetti) < 0
+        } else {
+          ord < 0
+        }
       }
     }
 
-    val orderedJonot: List[KevytHakutoiveenValintatapajonoDTO] = hakutoive.getHakutoiveenValintatapajonot.toList.sorted(ordering)
+    val jonot = hakutoive.getHakutoiveenValintatapajonot.toList
+    val jonotWithNullPrioriteettiCount: Int = jonot.count(_.getPrioriteetti == null)
+    if (jonotWithNullPrioriteettiCount != 0 && jonotWithNullPrioriteettiCount != jonot.size) {
+      throw new RuntimeException(s"Hakukohteella ${hakutoive.getHakukohdeOid} oli sekä nullin että ei-nullin " +
+        "prioriteetin jonoja. Hakukohteella joko kaikkien tai ei minkään jonojen prioriteettien tulee olla null. " +
+        "Onko sijoittelua käyttäviä ja käyttämättömiä jonoja mennyt sekaisin?")
+    }
+    val orderedJonot: List[KevytHakutoiveenValintatapajonoDTO] = jonot.sorted(ordering)
     val headOption: Option[KevytHakutoiveenValintatapajonoDTO] = orderedJonot.headOption
     headOption.map(jono => {
       val tila: Valintatila = fromHakemuksenTila(jono.getTila)

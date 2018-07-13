@@ -155,6 +155,7 @@ case class HakutoiveenValintatapajonoRecord(hakemusOid: HakemusOid, hakukohdeOid
     hakutoiveenValintatapajonoDto.setTilanKuvaukset(tilankuvaukset.asJava)
     hakutoiveenValintatapajonoDto.setHyvaksyttyHarkinnanvaraisesti(hyvaksyttyHarkinnanvaraisesti)
     hakutoiveenValintatapajonoDto.setValintatapajonoOid(valintatapajonoOid.toString)
+    hakutoiveenValintatapajonoDto.setPrioriteetti(valintatapajonoPrioriteetti)
     hakutoiveenValintatapajonoDto
   }
 
