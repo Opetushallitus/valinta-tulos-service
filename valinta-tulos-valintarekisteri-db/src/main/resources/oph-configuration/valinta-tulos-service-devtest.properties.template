@@ -50,7 +50,7 @@ valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids=1000000
 valinta-tulos-service.valintarekisteri.use-sijoittelu-mongo=true
 
 # Valintarekisteri flag
-valinta-tulos-service.read-from-valintarekisteri={{read_from_valintarekisteri}}
+valinta-tulos-service.read-from-valintarekisteri={{read_from_valintarekisteri | default('true') }}
 
 # Valintarekisterin migraatio
 #valinta-tulos-service.haku-app-url=https://{{host_virkailija}}/haku-app
