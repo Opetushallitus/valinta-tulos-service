@@ -7,6 +7,8 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.VastaanottoEvent
 @Deprecated //Used by old Vastaanotto API
 case class Vastaanotto(hakukohdeOid: String, tila: Vastaanottotila, muokkaaja: String, selite: String)
 
+case class HakijanVastaanottoDto(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, action: HakijanVastaanottoAction)
+
 case class HakijanVastaanotto(henkiloOid: String, hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, action: HakijanVastaanottoAction) extends VastaanottoEvent {
   val ilmoittaja = henkiloOid
   val selite = "Hakijan oma vastaanotto"
