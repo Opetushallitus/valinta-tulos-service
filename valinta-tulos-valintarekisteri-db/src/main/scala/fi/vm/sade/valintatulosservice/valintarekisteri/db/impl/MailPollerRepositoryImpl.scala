@@ -121,6 +121,18 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}""")
     }
   }
+
+  def getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid: HakukohdeOid): List[String] = {
+    runBlocking(
+      sql"""select distinct hakemus_oid
+            from viestinnan_ohjaus
+            where hakemus_oid in (select distinct hakemus_oid from viestinnan_ohjaus where hakukohde_oid = ${hakukohdeOid})
+              and (sent is not null or done is not null)""".as[String]).toList
+  }
+
+  def deleteHakemusMailEntry(hakemusOid: HakemusOid): Unit = {
+    runBlocking(sqlu"""delete from viestinnan_ohjaus where hakemus_oid = ${hakemusOid}""")
+  }
 }
 
 case class HakemusIdentifier(hakuOid: HakuOid, hakemusOid: HakemusOid)

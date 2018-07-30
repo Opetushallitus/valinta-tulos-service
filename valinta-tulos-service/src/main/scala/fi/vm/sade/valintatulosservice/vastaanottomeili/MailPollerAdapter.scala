@@ -207,6 +207,14 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
   .filter(vastaanotto => vastaanotto.henkiloOid != vastaanotto.ilmoittaja)
   .exists(_.action == VastaanotaSitovasti)
 }
+
+  def getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid: HakukohdeOid): List[String] = {
+    mailPollerRepository.getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid)
+  }
+
+  def deleteMailEntries(hakemusOid: HakemusOid) = {
+    mailPollerRepository.deleteHakemusMailEntry(hakemusOid)
+  }
 }
 
 
