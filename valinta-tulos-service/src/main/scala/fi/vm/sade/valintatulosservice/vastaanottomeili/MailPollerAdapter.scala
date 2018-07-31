@@ -72,24 +72,15 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
     val candidates: Set[MailCandidate] = mailPollerRepository.pollForCandidates(hakuOids, limit)
     logger.info("candidates found {}", candidates.map(_.hakemusOid).mkString(", "))
 
-    val statii: Set[HakemusMailStatus] = for {
-      candidate <- candidates
-      hakemuksenTulos <- fetchHakemuksentulos(candidate)
-    } yield {
-      val vastaanotot = hakijaVastaanottoRepository.findVastaanottoHistoryHaussa(
-        hakemuksenTulos.hakijaOid,
-        hakemuksenTulos.hakuOid
-      )
-      mailStatusFor(hakemuksenTulos, candidate.sent, vastaanotot)
-    }
+    val statii: Set[HakemusMailStatus] = candidates.flatMap(candidateToMailStatus)
 
     val mailables = statii.filter(_.anyMailToBeSent).toList
     val newMailableCount = mailableCount + mailables.size
 
     logger.info(s"found ${mailables.size} mailables from ${candidates.size} candidates. Total mailables now $newMailableCount (limit: $limit).")
 
+    mailPollerRepository.markAsChecked(candidates.map(_.hakemusOid))
     saveMessages(statii)
-    mailPollerRepository.markAsChecked(statii.map(_.hakemusOid))
 
     if (candidates.nonEmpty && newMailableCount < limit) {
       logger.debug("fetching more mailables")
@@ -97,6 +88,20 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
     } else {
       mailables
     }
+  }
+
+  private def candidateToMailStatus(candidate: MailCandidate): Option[HakemusMailStatus] = {
+    fetchHakemuksentulos(candidate)
+      .map(hakemuksenTulos =>
+        mailStatusFor(
+          hakemuksenTulos,
+          candidate.sent,
+          hakijaVastaanottoRepository.findVastaanottoHistoryHaussa(
+            hakemuksenTulos.hakijaOid,
+            hakemuksenTulos.hakuOid
+          )
+        )
+      )
   }
 
   def saveMessages(statii: Set[HakemusMailStatus]): Unit = {
