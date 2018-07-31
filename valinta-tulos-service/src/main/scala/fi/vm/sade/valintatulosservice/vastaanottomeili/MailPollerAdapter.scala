@@ -89,6 +89,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
     logger.info(s"found ${mailables.size} mailables from ${candidates.size} candidates. Total mailables now $newMailableCount (limit: $limit).")
 
     saveMessages(statii)
+    mailPollerRepository.markAsChecked(statii.map(_.hakemusOid))
 
     if (candidates.nonEmpty && newMailableCount < limit) {
       logger.debug("fetching more mailables")
