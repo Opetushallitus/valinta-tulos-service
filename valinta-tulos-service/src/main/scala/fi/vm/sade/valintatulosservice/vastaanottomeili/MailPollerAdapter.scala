@@ -60,7 +60,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
       acc
     } else {
       val mailablesNeeded = limit - acc.size
-      val (candidates, statii, mailables) = mailPollerRepository.pollForCandidates(hakuOids, limit)
+      val (candidates, statii, mailables) = mailPollerRepository.pollForCandidates(hakuOids, mailablesNeeded * 10)
         .foldLeft((Set.empty[MailCandidate], Set.empty[HakemusMailStatus], List.empty[Ilmoitus]))({
           case ((candidatesAcc, statiiAcc, mailablesAcc), candidate) if mailablesAcc.size < mailablesNeeded =>
             val status = candidateToMailStatus(candidate)
