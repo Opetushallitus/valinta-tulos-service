@@ -160,9 +160,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
                             sent: Map[HakukohdeOid, Option[OffsetDateTime]],
                             vastaanotot: Set[VastaanottoRecord]): HakemusMailStatus = {
     val mailables = hakemuksenTulos.hakutoiveet.map(hakutoive => {
-      val sentOfHakukohde = sent.getOrElse(hakutoive.hakukohdeOid, throw new IllegalStateException(
-        s"Hakemuksen ${hakemuksenTulos.hakemusOid} hakukohteen ${hakutoive.hakukohdeOid} vastaanottopostin lähettämistietoa ei löydy"
-      ))
+      val sentOfHakukohde = sent.getOrElse(hakutoive.hakukohdeOid, None)
       val (vanhatVastaanotot, uudetVastaanotot) = vastaanotot.partition(v => sentOfHakukohde.exists(s => v.timestamp.toInstant.isBefore(s.toInstant)))
       hakukohdeMailStatusFor(
         hakemuksenTulos.hakemusOid,
