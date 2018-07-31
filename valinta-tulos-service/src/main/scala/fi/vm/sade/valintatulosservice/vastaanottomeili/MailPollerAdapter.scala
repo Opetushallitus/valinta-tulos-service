@@ -70,7 +70,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
   def pollForMailables(hakuOids: List[HakuOid] = etsiHaut, mailableCount: Int = 0, limit: Int = this.limit): List[HakemusMailStatus] = {
 
     val candidates: Set[MailCandidate] = mailPollerRepository.pollForCandidates(hakuOids, limit)
-    logger.info("candidates found {}", formatJson(candidates))
+    logger.info("candidates found {}", candidates.map(_.hakemusOid).mkString(", "))
 
     val statii: Set[HakemusMailStatus] = for {
       candidate <- candidates
