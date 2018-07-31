@@ -10,6 +10,8 @@ trait MailPollerRepository {
 
   def pollForCandidates(hakuOids: List[HakuOid], limit: Int, recheckIntervalHours: Int = 24 * 3): Set[MailCandidate]
 
+  def markAsChecked(hakemusOids: Set[HakemusOid]): Unit
+
   def addMessage(hakemus: HakemusMailStatus, hakukohde: HakukohdeMailStatus, message: String): Unit
 
   def markAsSent(hakemusOid: HakemusOid, hakukohteet: List[HakukohdeOid], mediat: List[String]): Unit

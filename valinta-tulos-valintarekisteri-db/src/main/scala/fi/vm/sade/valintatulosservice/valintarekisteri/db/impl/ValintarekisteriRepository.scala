@@ -47,7 +47,7 @@ trait ValintarekisteriRepository extends ValintarekisteriResultExtractors with L
   import slick.jdbc.PostgresProfile.api._
   def now(): DBIO[Instant] = sql"select now()".as[Instant].head
 
-  protected def formatMultipleValuesForSql(oids: Seq[String]): String = {
+  protected def formatMultipleValuesForSql(oids: Iterable[String]): String = {
     val allowedChars = "01234567890.,'".toCharArray.toSet
     if (oids.isEmpty) {
       "''"

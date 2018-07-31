@@ -23,37 +23,57 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
 
     timed("Fetching mailable candidates", 100) {
       runBlocking(
-        sql"""insert into viestinnan_ohjaus
-              (hakukohde_oid, valintatapajono_oid, hakemus_oid, previous_check)
-              (select vt.hakukohde_oid,
-                      vt.valintatapajono_oid,
-                      vt.hakemus_oid,
-                      now()
-               from valinnantulokset as vt
-               join hakukohteet as hk
-                 on vt.hakukohde_oid = hk.hakukohde_oid
-               join valinnantilat as vnt
-                 on vt.valintatapajono_oid = vnt.valintatapajono_oid
-                 and vt.hakemus_oid = vnt.hakemus_oid
-                 and vt.hakukohde_oid = vnt.hakukohde_oid
-               left join viestinnan_ohjaus as vo
-                 on vt.valintatapajono_oid = vo.valintatapajono_oid
-                 and vt.hakemus_oid = vo.hakemus_oid
-                 and vt.hakukohde_oid = vo.hakukohde_oid
-               where hk.haku_oid in (#$hakuOidsIn)
-                 and vt.julkaistavissa is true
-                 and (vnt.tila = 'Hyvaksytty' or vnt.tila = 'VarasijaltaHyvaksytty')
-                 and vo.done is null
-                 and (vo.previous_check is null or vo.previous_check < now() - make_interval(hours => $recheckIntervalHours))
-               limit $limit)
-              on conflict (valintatapajono_oid, hakemus_oid, hakukohde_oid) do
-              update set previous_check = now()
-              returning hakukohde_oid, valintatapajono_oid, hakemus_oid, previous_check, sent, done, message
+        sql"""select vt.hakukohde_oid,
+                     vt.valintatapajono_oid,
+                     vt.hakemus_oid,
+                     vo.previous_check,
+                     vo.sent,
+                     vo.done,
+                     vo.message
+              from valinnantulokset as vt
+              join hakukohteet as hk
+                on vt.hakukohde_oid = hk.hakukohde_oid
+              join valinnantilat as vnt
+                on vt.valintatapajono_oid = vnt.valintatapajono_oid
+                and vt.hakemus_oid = vnt.hakemus_oid
+                and vt.hakukohde_oid = vnt.hakukohde_oid
+              left join viestinnan_ohjaus as vo
+                on vt.valintatapajono_oid = vo.valintatapajono_oid
+                and vt.hakemus_oid = vo.hakemus_oid
+                and vt.hakukohde_oid = vo.hakukohde_oid
+              where hk.haku_oid in (#$hakuOidsIn)
+                and vt.julkaistavissa is true
+                and (vnt.tila = 'Hyvaksytty' or vnt.tila = 'VarasijaltaHyvaksytty')
+                and vo.done is null
+                and (vo.previous_check is null or vo.previous_check < now() - make_interval(hours => $recheckIntervalHours))
+              limit $limit
          """.as[ViestinnanOhjaus])
         .groupBy(_.hakemusOid)
         .mapValues(latestSentByHakukohdeOid)
         .map(v => MailCandidate(v._1, v._2))
         .toSet
+    }
+  }
+
+  override def markAsChecked(hakemusOids: Set[HakemusOid]): Unit = {
+    val hakemusOidsIn = formatMultipleValuesForSql(hakemusOids.map(_.s))
+    timed("Marking as checked", 100) {
+      runBlocking(
+        sqlu"""insert into viestinnan_ohjaus
+               (hakukohde_oid, valintatapajono_oid, hakemus_oid, previous_check)
+               (select vt.hakukohde_oid,
+                       vt.valintatapajono_oid,
+                       vt.hakemus_oid,
+                       now()
+                from valinnantulokset as vt
+                left join viestinnan_ohjaus as vo
+                  on vt.valintatapajono_oid = vo.valintatapajono_oid
+                  and vt.hakemus_oid = vo.hakemus_oid
+                  and vt.hakukohde_oid = vo.hakukohde_oid
+                where vt.hakemus_oid in (#$hakemusOidsIn))
+               on conflict (valintatapajono_oid, hakemus_oid, hakukohde_oid) do
+               update set previous_check = now()
+          """)
     }
   }
 
