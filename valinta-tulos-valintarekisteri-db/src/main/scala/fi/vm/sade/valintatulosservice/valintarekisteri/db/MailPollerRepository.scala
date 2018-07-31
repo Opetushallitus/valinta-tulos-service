@@ -1,7 +1,5 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
-import java.util.Date
-
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.MailCandidate
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
@@ -11,8 +9,6 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 trait MailPollerRepository {
 
   def pollForCandidates(hakuOids: List[HakuOid], limit: Int, recheckIntervalHours: Int = 24 * 3): Set[MailCandidate]
-
-  def alreadyMailed(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Option[Date]
 
   def addMessage(hakemus: HakemusMailStatus, hakukohde: HakukohdeMailStatus, message: String): Unit
 
