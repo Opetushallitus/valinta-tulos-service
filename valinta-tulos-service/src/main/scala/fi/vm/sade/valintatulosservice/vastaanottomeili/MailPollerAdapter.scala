@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice.vastaanottomeili
 
+import java.time.OffsetDateTime
 import java.util.Date
 
 import fi.vm.sade.utils.slf4j.Logging
@@ -66,8 +67,6 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
     }
   }
 
-  def alreadyMailed(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Option[Date] = mailPollerRepository.alreadyMailed(hakemusOid, hakukohdeOid)
-
   def pollForMailables(hakuOids: List[HakuOid] = etsiHaut, mailableCount: Int = 0, limit: Int = this.limit): List[HakemusMailStatus] = {
 
     val candidates: Set[MailCandidate] = mailPollerRepository.pollForCandidates(hakuOids, limit)
@@ -77,18 +76,11 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
       candidate <- candidates
       hakemuksenTulos <- fetchHakemuksentulos(candidate)
     } yield {
-      val (hakijaOid, hakuOid) = (hakemuksenTulos.hakijaOid, hakemuksenTulos.hakuOid)
-      val vastaanotot = hakijaVastaanottoRepository.findVastaanottoHistoryHaussa(hakijaOid, hakuOid)
-      val uudetVastaanotot: Set[VastaanottoRecord] = candidate.sent match {
-        case Some(lastCheck) => vastaanotot.filter(!_.timestamp.toInstant.isBefore(lastCheck.toInstant))
-        case None => vastaanotot
-      }
-      val vanhatVastaanotot: Set[VastaanottoRecord] = candidate.sent match {
-        case Some(lastCheck) => vastaanotot.filter(_.timestamp.toInstant.isBefore(lastCheck.toInstant))
-        case None => Set()
-      }
-
-      mailStatusFor(hakemuksenTulos, uudetVastaanotot, vanhatVastaanotot)
+      val vastaanotot = hakijaVastaanottoRepository.findVastaanottoHistoryHaussa(
+        hakemuksenTulos.hakijaOid,
+        hakemuksenTulos.hakuOid
+      )
+      mailStatusFor(hakemuksenTulos, candidate.sent, vastaanotot)
     }
 
     val mailables = statii.filter(_.anyMailToBeSent).toList
@@ -120,8 +112,11 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
 
   def markAsSent(mailContents: LahetysKuittaus): Unit = mailPollerRepository.markAsSent(mailContents.hakemusOid, mailContents.hakukohteet, mailContents.mediat)
 
-  private def hakukohdeMailStatusFor(hakemusOid: HakemusOid, hakutoive: Hakutoiveentulos, uudetVastaanotot: Set[VastaanottoRecord], vanhatVastaanotot: Set[VastaanottoRecord]) = {
-    val alreadySentVastaanottoilmoitus = mailPollerRepository.alreadyMailed(hakemusOid, hakutoive.hakukohdeOid).isDefined
+  private def hakukohdeMailStatusFor(hakemusOid: HakemusOid,
+                                     hakutoive: Hakutoiveentulos,
+                                     alreadySentVastaanottoilmoitus: Boolean,
+                                     uudetVastaanotot: Set[VastaanottoRecord],
+                                     vanhatVastaanotot: Set[VastaanottoRecord]) = {
     val (status, reason, message) =
       if (Vastaanotettavuustila.isVastaanotettavissa(hakutoive.vastaanotettavuustila) && !alreadySentVastaanottoilmoitus) {
         (MailStatus.SHOULD_MAIL, Some(MailReason.VASTAANOTTOILMOITUS), "Vastaanotettavissa (" + hakutoive.valintatila + ")")
@@ -161,15 +156,22 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
   }
 
 
-  private def mailStatusFor(hakemuksenTulos: Hakemuksentulos, uudetVastaanotot: Set[VastaanottoRecord], vanhatVastaanotot: Set[VastaanottoRecord]): HakemusMailStatus = {
-    val hakutoiveet = hakemuksenTulos.hakutoiveet
-    val mailables = hakutoiveet.map { (hakutoive: Hakutoiveentulos) =>
+  private def mailStatusFor(hakemuksenTulos: Hakemuksentulos,
+                            sent: Map[HakukohdeOid, Option[OffsetDateTime]],
+                            vastaanotot: Set[VastaanottoRecord]): HakemusMailStatus = {
+    val mailables = hakemuksenTulos.hakutoiveet.map(hakutoive => {
+      val sentOfHakukohde = sent.getOrElse(hakutoive.hakukohdeOid, throw new IllegalStateException(
+        s"Hakemuksen ${hakemuksenTulos.hakemusOid} hakukohteen ${hakutoive.hakukohdeOid} vastaanottopostin lähettämistietoa ei löydy"
+      ))
+      val (vanhatVastaanotot, uudetVastaanotot) = vastaanotot.partition(v => sentOfHakukohde.exists(s => v.timestamp.toInstant.isBefore(s.toInstant)))
       hakukohdeMailStatusFor(
         hakemuksenTulos.hakemusOid,
         hakutoive,
+        sentOfHakukohde.isDefined,
         uudetVastaanotot,
-        vanhatVastaanotot)
-    }
+        vanhatVastaanotot
+      )
+    })
     HakemusMailStatus(hakemuksenTulos.hakijaOid, hakemuksenTulos.hakemusOid, mailables, hakemuksenTulos.hakuOid)
   }
 
