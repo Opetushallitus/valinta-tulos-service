@@ -55,38 +55,31 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
     found
   }
 
-  def searchMailsToSend(limit: Int = this.limit, mailDecorator: MailDecorator): List[Ilmoitus] = {
-    val mailCandidates: List[HakemusMailStatus] = pollForMailables(limit = limit)
-    val sendableMails: List[Ilmoitus] = mailCandidates.flatMap(mailDecorator.statusToMail)
-    logger.info("{} statuses converted to {} mails", mailCandidates.size, sendableMails.size)
-
-    if (sendableMails.nonEmpty || mailCandidates.isEmpty) {
-      sendableMails
+  def pollForMailables(mailDecorator: MailDecorator, limit: Int, hakuOids: List[HakuOid] = etsiHaut, acc: List[Ilmoitus] = List.empty): List[Ilmoitus] = {
+    if (acc.size >= limit) {
+      acc
     } else {
-      searchMailsToSend(limit, mailDecorator)
-    }
-  }
-
-  def pollForMailables(hakuOids: List[HakuOid] = etsiHaut, mailableCount: Int = 0, limit: Int = this.limit): List[HakemusMailStatus] = {
-
-    val candidates: Set[MailCandidate] = mailPollerRepository.pollForCandidates(hakuOids, limit)
-    logger.info("candidates found {}", candidates.map(_.hakemusOid).mkString(", "))
-
-    val statii: Set[HakemusMailStatus] = candidates.flatMap(candidateToMailStatus)
-
-    val mailables = statii.filter(_.anyMailToBeSent).toList
-    val newMailableCount = mailableCount + mailables.size
-
-    logger.info(s"found ${mailables.size} mailables from ${candidates.size} candidates. Total mailables now $newMailableCount (limit: $limit).")
-
-    mailPollerRepository.markAsChecked(candidates.map(_.hakemusOid))
-    saveMessages(statii)
-
-    if (candidates.nonEmpty && newMailableCount < limit) {
-      logger.debug("fetching more mailables")
-      mailables ++ pollForMailables(hakuOids, mailableCount = newMailableCount, limit = limit)
-    } else {
-      mailables
+      val mailablesNeeded = limit - acc.size
+      val (candidates, statii, mailables) = mailPollerRepository.pollForCandidates(hakuOids, limit)
+        .foldLeft((Set.empty[MailCandidate], Set.empty[HakemusMailStatus], List.empty[Ilmoitus]))({
+          case ((candidatesAcc, statiiAcc, mailablesAcc), candidate) if mailablesAcc.size < mailablesNeeded =>
+            val status = candidateToMailStatus(candidate)
+            val mailable = status.flatMap(mailDecorator.statusToMail)
+            (
+              candidatesAcc + candidate,
+              status.fold(statiiAcc)(statiiAcc + _),
+              mailable.fold(mailablesAcc)(_ :: mailablesAcc)
+            )
+          case (r, _) => r
+        })
+      logger.info(s"${mailables.size} mailables from ${statii.size} statii from ${candidates.size} candidates")
+      mailPollerRepository.markAsChecked(candidates.map(_.hakemusOid))
+      saveMessages(statii)
+      if (candidates.isEmpty) {
+        acc ++ mailables
+      } else {
+        pollForMailables(mailDecorator, limit, hakuOids, acc ++ mailables)
+      }
     }
   }
 
