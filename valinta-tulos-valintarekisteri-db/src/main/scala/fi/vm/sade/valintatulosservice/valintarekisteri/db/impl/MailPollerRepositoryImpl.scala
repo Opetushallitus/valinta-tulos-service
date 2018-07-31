@@ -1,81 +1,55 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import java.sql.Timestamp
+import java.time.OffsetDateTime
 import java.util.Date
 
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import org.joda.time.DateTime
-import slick.jdbc.GetResult
 import slick.jdbc.PostgresProfile.api._
 
 
 trait MailPollerRepositoryImpl extends MailPollerRepository with ValintarekisteriRepository with Logging {
-
-  private implicit val pollForCandidatesResult = GetResult(r =>
-    ViestinnänOhjausKooste(
-      HakuOid(r.nextString),
-      HakukohdeOid(r.nextString),
-      ValintatapajonoOid(r.nextString),
-      HakemusOid(r.nextString),
-      r.nextTimestampOption))
-
   def pollForCandidates(hakuOids: List[HakuOid],
                         limit: Int,
-                        recheckIntervalHours: Int = (24 * 3)): Set[ViestinnänOhjausKooste] = {
-
+                        recheckIntervalHours: Int = 24 * 3): Set[MailCandidate] = {
     val hakuOidsIn: String = formatMultipleValuesForSql(hakuOids.map(_.s))
-    val limitDateTime = new DateTime().minusHours(recheckIntervalHours).toDate
-    val limitTimestamp: Timestamp = new Timestamp(limitDateTime.getTime)
 
-    val res = timed("Fetching mailable candidates", 100) {
+    timed("Fetching mailable candidates", 100) {
       runBlocking(
-        sql"""select
-                hk.haku_oid,
-                vt.hakukohde_oid, vt.valintatapajono_oid, vt.hakemus_oid,
-                vo.sent
-              from valinnantulokset as vt
-              right join hakukohteet as hk
-                on vt.hakukohde_oid = hk.hakukohde_oid
-              join valinnantilat as vnt
-                on vt.valintatapajono_oid = vnt.valintatapajono_oid
-                and vt.hakemus_oid = vnt.hakemus_oid
-                and vt.hakukohde_oid = vnt.hakukohde_oid
-              left join viestinnan_ohjaus as vo
-                on vt.valintatapajono_oid = vo.valintatapajono_oid
-                and vt.hakemus_oid = vo.hakemus_oid
-                and vt.hakukohde_oid = vo.hakukohde_oid
-              where
-                hk.haku_oid in (#${hakuOidsIn})
-                and vt.julkaistavissa is true
-                and (vnt.tila = 'Hyvaksytty' or vnt.tila = 'VarasijaltaHyvaksytty')
-                and vo.done is null
-                and (vo.previous_check is null or vo.previous_check < ${limitTimestamp})
-              limit ${limit}
-         """.as[ViestinnänOhjausKooste]).toSet
-    }
-
-    res.foreach(kooste => upsertLastChecked(kooste))
-    res
-  }
-
-  private def upsertLastChecked(kooste: ViestinnänOhjausKooste) = {
-
-    val timestamp = new Timestamp(new Date().getTime)
-
-    timed(s"Updating previous_check timestamp for hakemusOid ${kooste.hakemusOid} in hakukohde ${kooste.hakukohdeOid}", 100) {
-      runBlocking(
-        sqlu"""insert into viestinnan_ohjaus as vo
-               (hakukohde_oid, valintatapajono_oid, hakemus_oid, previous_check)
-               values (${kooste.hakukohdeOid}, ${kooste.valintatapajonoOid}, ${kooste.hakemusOid}, ${timestamp})
-               on conflict on constraint viestinnan_ohjaus_pkey do
-                  update set previous_check = ${timestamp}
-                  where vo.hakukohde_oid = ${kooste.hakukohdeOid}
-                    and vo.valintatapajono_oid = ${kooste.valintatapajonoOid}
-                    and vo.hakemus_oid = ${kooste.hakemusOid}
-          """)
+        sql"""insert into viestinnan_ohjaus
+              (hakukohde_oid, valintatapajono_oid, hakemus_oid, previous_check)
+              (select vt.hakukohde_oid,
+                      vt.valintatapajono_oid,
+                      vt.hakemus_oid,
+                      now()
+               from valinnantulokset as vt
+               join hakukohteet as hk
+                 on vt.hakukohde_oid = hk.hakukohde_oid
+               join valinnantilat as vnt
+                 on vt.valintatapajono_oid = vnt.valintatapajono_oid
+                 and vt.hakemus_oid = vnt.hakemus_oid
+                 and vt.hakukohde_oid = vnt.hakukohde_oid
+               left join viestinnan_ohjaus as vo
+                 on vt.valintatapajono_oid = vo.valintatapajono_oid
+                 and vt.hakemus_oid = vo.hakemus_oid
+                 and vt.hakukohde_oid = vo.hakukohde_oid
+               where hk.haku_oid in (#$hakuOidsIn)
+                 and vt.julkaistavissa is true
+                 and (vnt.tila = 'Hyvaksytty' or vnt.tila = 'VarasijaltaHyvaksytty')
+                 and vo.done is null
+                 and (vo.previous_check is null or vo.previous_check < now() - make_interval(hours => $recheckIntervalHours))
+               limit $limit)
+              on conflict (valintatapajono_oid, hakemus_oid, hakukohde_oid) do
+              update set previous_check = now()
+              returning hakukohde_oid, valintatapajono_oid, hakemus_oid, previous_check, sent, done, message
+         """.as[ViestinnanOhjaus])
+        .groupBy(_.hakemusOid)
+        .mapValues(_.map(_.sent).max)
+        .map(v => MailCandidate(v._1, v._2))
+        .toSet
     }
   }
 
@@ -135,10 +109,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
   }
 }
 
-case class HakemusIdentifier(hakuOid: HakuOid, hakemusOid: HakemusOid)
-
-case class ViestinnänOhjausKooste(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid,
-                                  hakemusOid: HakemusOid, sendTime: Option[Timestamp])
+case class MailCandidate(hakemusOid: HakemusOid, sent: Option[OffsetDateTime])
 
 object MailStatus extends Enumeration {
   val NOT_MAILED, MAILED, SHOULD_MAIL, NEVER_MAIL = Value

@@ -8,7 +8,7 @@ import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.json.JsonFormats._
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{HakemusIdentifier, ViestinnänOhjausKooste}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.MailCandidate
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, MailPollerRepository, VastaanottoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
@@ -70,21 +70,21 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
 
   def pollForMailables(hakuOids: List[HakuOid] = etsiHaut, mailableCount: Int = 0, limit: Int = this.limit): List[HakemusMailStatus] = {
 
-    val candidates: Set[ViestinnänOhjausKooste] = mailPollerRepository.pollForCandidates(hakuOids, limit)
+    val candidates: Set[MailCandidate] = mailPollerRepository.pollForCandidates(hakuOids, limit)
     logger.info("candidates found {}", formatJson(candidates))
 
     val statii: Set[HakemusMailStatus] = for {
       candidate <- candidates
-      hakemuksenTulos <- fetchHakemuksentulos(HakemusIdentifier(hakuOid = candidate.hakuOid, hakemusOid = candidate.hakemusOid))
+      hakemuksenTulos <- fetchHakemuksentulos(candidate)
     } yield {
       val (hakijaOid, hakuOid) = (hakemuksenTulos.hakijaOid, hakemuksenTulos.hakuOid)
       val vastaanotot = hakijaVastaanottoRepository.findVastaanottoHistoryHaussa(hakijaOid, hakuOid)
-      val uudetVastaanotot: Set[VastaanottoRecord] = candidate.sendTime match {
-        case Some(lastCheck) => vastaanotot.filter(_.timestamp.compareTo(lastCheck) >= 0)
+      val uudetVastaanotot: Set[VastaanottoRecord] = candidate.sent match {
+        case Some(lastCheck) => vastaanotot.filter(!_.timestamp.toInstant.isBefore(lastCheck.toInstant))
         case None => vastaanotot
       }
-      val vanhatVastaanotot: Set[VastaanottoRecord] = candidate.sendTime match {
-        case Some(lastCheck) => vastaanotot.filter(_.timestamp.before(lastCheck))
+      val vanhatVastaanotot: Set[VastaanottoRecord] = candidate.sent match {
+        case Some(lastCheck) => vastaanotot.filter(_.timestamp.toInstant.isBefore(lastCheck.toInstant))
         case None => Set()
       }
 
@@ -173,12 +173,12 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
     HakemusMailStatus(hakemuksenTulos.hakijaOid, hakemuksenTulos.hakemusOid, mailables, hakemuksenTulos.hakuOid)
   }
 
-  private def fetchHakemuksentulos(id: HakemusIdentifier): Option[Hakemuksentulos] = {
+  private def fetchHakemuksentulos(candidate: MailCandidate): Option[Hakemuksentulos] = {
     try {
-      valintatulosService.hakemuksentulos(id.hakemusOid)
+      valintatulosService.hakemuksentulos(candidate.hakemusOid)
     } catch {
       case e: Exception =>
-        logger.error("Error fetching data for email polling. Candidate identifier=" + id, e)
+        logger.error("Error fetching data for email polling. Candidate identifier=" + candidate, e)
         None
     }
   }
