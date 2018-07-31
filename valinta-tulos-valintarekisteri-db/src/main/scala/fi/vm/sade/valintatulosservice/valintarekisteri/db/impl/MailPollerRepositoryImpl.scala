@@ -15,6 +15,10 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
   def pollForCandidates(hakuOids: List[HakuOid],
                         limit: Int,
                         recheckIntervalHours: Int = 24 * 3): Set[MailCandidate] = {
+    def latestSentByHakukohdeOid(hakemuksenViestinnanOhjaukset: Iterable[ViestinnanOhjaus]): Map[HakukohdeOid, Option[OffsetDateTime]] = {
+      hakemuksenViestinnanOhjaukset.groupBy(_.hakukohdeOid).mapValues(_.map(_.sent).max)
+    }
+
     val hakuOidsIn: String = formatMultipleValuesForSql(hakuOids.map(_.s))
 
     timed("Fetching mailable candidates", 100) {
@@ -47,21 +51,9 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
               returning hakukohde_oid, valintatapajono_oid, hakemus_oid, previous_check, sent, done, message
          """.as[ViestinnanOhjaus])
         .groupBy(_.hakemusOid)
-        .mapValues(_.map(_.sent).max)
+        .mapValues(latestSentByHakukohdeOid)
         .map(v => MailCandidate(v._1, v._2))
         .toSet
-    }
-  }
-
-  def alreadyMailed(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Option[java.util.Date] = {
-    timed(s"Checking if already mailed: hakemus $hakemusOid,  hakukohde $hakukohdeOid", 100) {
-      runBlocking(
-        sql"""select sent
-              from viestinnan_ohjaus
-              where hakemus_oid = ${hakemusOid}
-              and hakukohde_oid = ${hakukohdeOid}
-              and sent is not null
-          """.as[Timestamp]).headOption
     }
   }
 
@@ -109,7 +101,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
   }
 }
 
-case class MailCandidate(hakemusOid: HakemusOid, sent: Option[OffsetDateTime])
+case class MailCandidate(hakemusOid: HakemusOid, sent: Map[HakukohdeOid, Option[OffsetDateTime]])
 
 object MailStatus extends Enumeration {
   val NOT_MAILED, MAILED, SHOULD_MAIL, NEVER_MAIL = Value
