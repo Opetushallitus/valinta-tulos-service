@@ -21,7 +21,7 @@ class EmailStatusServlet(mailPoller: MailPollerAdapter, mailDecorator: MailDecor
   get("/", operation(getVastaanottoposti)) {
     contentType = formats("json")
     val limit: Int = params.get("limit").map(_.toInt).getOrElse(mailPoller.limit)
-    mailPoller.searchMailsToSend(limit = limit, mailDecorator)
+    mailPoller.pollForMailables(mailDecorator, limit)
   }
 
   lazy val postVastaanottoposti: OperationBuilder = (apiOperation[Unit]("postMailit")
