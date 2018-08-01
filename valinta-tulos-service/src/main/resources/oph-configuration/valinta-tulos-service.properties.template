@@ -59,6 +59,10 @@ valinta-tulos-service.valintarekisteri.db.leakDetectionThresholdMillis=1800000
 valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids=1000000
 valinta-tulos-service.valintarekisteri.use-sijoittelu-mongo=true
 
+# MailPoller
+valinta-tulos-service.mail-poller.concurrency: {{valintatulosservice_mail_poller_concurrency}}
+valinta-tulos-service.mail-poller.candidate-count: {{valintatulosservice_mail_poller_candidate_count}}
+
 # Valintarekisteri flag
 valinta-tulos-service.read-from-valintarekisteri={{read_from_valintarekisteri}}
 

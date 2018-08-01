@@ -1,7 +1,6 @@
 package fi.vm.sade.valintatulosservice.config
 
 import com.typesafe.config.Config
-import fi.vm.sade.properties.OphProperties
 import fi.vm.sade.utils.config.MongoConfig
 import fi.vm.sade.valintatulosservice.SecuritySettings
 import org.apache.commons.lang3.BooleanUtils
@@ -24,7 +23,6 @@ case class VtsApplicationSettings(config: Config) extends ApplicationSettings(co
   val scheduledMigrationEnd = withConfig(_.getInt("valinta-tulos-service.scheduled-migration.end-hour"))
   val oiliHetutonUrl = withConfig(_.getString("omatsivut.oili.hetutonUrl"))
   val readFromValintarekisteri = BooleanUtils.isTrue(withConfig(_.getBoolean("valinta-tulos-service.read-from-valintarekisteri")))
-
   val ilmoittautuminenEnabled = {
     val value = config.getString("valinta-tulos-service.ilmoittautuminen.enabled")
     if(value.trim.length > 0) {
@@ -34,6 +32,8 @@ case class VtsApplicationSettings(config: Config) extends ApplicationSettings(co
       false
     }
   }
+  val mailPollerConcurrency: Int = withConfig(_.getInt("valinta-tulos-service.mail-poller.concurrency"))
+  val mailPollerCandidateCount: Int = withConfig(_.getInt("valinta-tulos-service.mail-poller.candidate-count"))
 }
 
 object VtsApplicationSettingsParser extends fi.vm.sade.utils.config.ApplicationSettingsParser[VtsApplicationSettings] {

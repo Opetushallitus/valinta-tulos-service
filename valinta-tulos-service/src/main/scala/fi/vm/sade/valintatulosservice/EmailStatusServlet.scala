@@ -20,7 +20,7 @@ class EmailStatusServlet(mailPoller: MailPollerAdapter, mailDecorator: MailDecor
 
   get("/", operation(getVastaanottoposti)) {
     contentType = formats("json")
-    val limit: Int = params.get("limit").map(_.toInt).getOrElse(mailPoller.limit)
+    val limit: Int = params.get("limit").map(_.toInt).getOrElse(100)
     mailPoller.pollForMailables(mailDecorator, limit)
   }
 

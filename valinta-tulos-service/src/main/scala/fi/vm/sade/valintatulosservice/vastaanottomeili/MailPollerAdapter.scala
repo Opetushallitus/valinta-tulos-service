@@ -4,6 +4,7 @@ import java.time.OffsetDateTime
 
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.ValintatulosService
+import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.json.JsonFormats._
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
@@ -22,8 +23,11 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
                         hakijaVastaanottoRepository: HakijaVastaanottoRepository,
                         hakuService: HakuService,
                         ohjausparameteritService: OhjausparametritService,
-                        val limit: Integer
-                     ) extends Logging {
+                        vtsApplicationSettings: VtsApplicationSettings) extends Logging {
+
+  private val pollConcurrency: Int = vtsApplicationSettings.mailPollerConcurrency
+  private val candidateCount: Int = vtsApplicationSettings.mailPollerCandidateCount
+
   def etsiHaut: List[HakuOid] = {
     val found = (hakuService.kaikkiJulkaistutHaut match {
       case Right(haut) => haut
@@ -61,7 +65,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
 
   def pollForMailables(mailDecorator: MailDecorator, limit: Int): List[Ilmoitus] = {
     val hakuOids = etsiHaut.par
-    hakuOids.tasksupport = new ForkJoinTaskSupport(new ForkJoinPool(4))
+    hakuOids.tasksupport = new ForkJoinTaskSupport(new ForkJoinPool(pollConcurrency))
     pollForMailables(mailDecorator, limit, hakuOids, List.empty)
   }
 
@@ -87,7 +91,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
       acc
     } else {
       val mailablesNeeded = limit - acc.size
-      val (candidates, statii, mailables) = mailPollerRepository.pollForCandidates(hakuOid, mailablesNeeded * 10)
+      val (candidates, statii, mailables) = mailPollerRepository.pollForCandidates(hakuOid, candidateCount)
         .foldLeft((Set.empty[MailCandidate], Set.empty[HakemusMailStatus], List.empty[Ilmoitus]))({
           case ((candidatesAcc, statiiAcc, mailablesAcc), candidate) if mailablesAcc.size < mailablesNeeded =>
             val status = candidateToMailStatus(candidate)
