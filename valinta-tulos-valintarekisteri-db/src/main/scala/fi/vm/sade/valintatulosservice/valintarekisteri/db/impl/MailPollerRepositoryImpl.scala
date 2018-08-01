@@ -12,12 +12,13 @@ import slick.jdbc.PostgresProfile.api._
 
 
 trait MailPollerRepositoryImpl extends MailPollerRepository with ValintarekisteriRepository with Logging {
-  def pollForCandidates(hakuOid: HakuOid,
+  def pollForCandidates(hakuOids: Set[HakuOid],
                         limit: Int,
                         recheckIntervalHours: Int = 24 * 3): Set[MailCandidate] = {
     def latestSentByHakukohdeOid(hakemuksenViestinnanOhjaukset: Iterable[ViestinnanOhjaus]): Map[HakukohdeOid, Option[OffsetDateTime]] = {
       hakemuksenViestinnanOhjaukset.groupBy(_.hakukohdeOid).mapValues(_.map(_.sent).max)
     }
+    val hakuOidsIn = formatMultipleValuesForSql(hakuOids.map(_.s))
     timed("Fetching mailable candidates", 100) {
       runBlocking(
         sql"""select vt.hakukohde_oid,
@@ -38,7 +39,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                 on vt.valintatapajono_oid = vo.valintatapajono_oid
                 and vt.hakemus_oid = vo.hakemus_oid
                 and vt.hakukohde_oid = vo.hakukohde_oid
-              where hk.haku_oid = $hakuOid
+              where hk.haku_oid in (#$hakuOidsIn)
                 and vt.julkaistavissa is true
                 and (vnt.tila = 'Hyvaksytty' or vnt.tila = 'VarasijaltaHyvaksytty')
                 and vo.done is null

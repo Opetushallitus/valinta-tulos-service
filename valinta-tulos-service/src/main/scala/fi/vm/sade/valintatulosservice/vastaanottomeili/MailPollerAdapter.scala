@@ -14,8 +14,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepo
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
 import scala.annotation.tailrec
-import scala.collection.parallel.ForkJoinTaskSupport
-import scala.collection.parallel.immutable.ParSeq
+import scala.collection.parallel.{ForkJoinTaskSupport, ParSeq}
 import scala.concurrent.forkjoin.ForkJoinPool
 
 class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
@@ -64,34 +63,34 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
   }
 
   def pollForMailables(mailDecorator: MailDecorator, limit: Int): List[Ilmoitus] = {
-    val hakuOids = etsiHaut.par
-    hakuOids.tasksupport = new ForkJoinTaskSupport(new ForkJoinPool(pollConcurrency))
-    pollForMailables(mailDecorator, limit, hakuOids, List.empty)
+    val hakuOids = etsiHaut
+    val hakuOidChunks = hakuOids.grouped(math.ceil(hakuOids.size.toDouble / pollConcurrency).toInt).toSeq.map(_.toSet).par
+    hakuOidChunks.tasksupport = new ForkJoinTaskSupport(new ForkJoinPool(pollConcurrency))
+    pollForMailables(mailDecorator, limit, hakuOidChunks, List.empty)
   }
 
   @tailrec
-  private def pollForMailables(mailDecorator: MailDecorator, limit: Int, hakuOids: ParSeq[HakuOid], acc: List[Ilmoitus]): List[Ilmoitus] = {
-    if (hakuOids.isEmpty || acc.size >= limit) {
+  private def pollForMailables(mailDecorator: MailDecorator, limit: Int, hakuOidChunks: ParSeq[Set[HakuOid]], acc: List[Ilmoitus]): List[Ilmoitus] = {
+    if (hakuOidChunks.isEmpty || acc.size >= limit) {
       acc
     } else {
       val mailablesNeeded = limit - acc.size
-      val (toPoll, rest) = hakuOids.splitAt(mailablesNeeded)
-      val mailablesNeededPerHaku = mailablesNeeded / toPoll.size
-      val r = toPoll.map(hakuOid => (hakuOid, pollForMailables(mailDecorator, mailablesNeededPerHaku, hakuOid, List.empty)))
-      val oidsWithCandidatesLeft = r.filter(_._2.size == mailablesNeededPerHaku).map(_._1)
+      val (toPoll, rest) = hakuOidChunks.splitAt(mailablesNeeded)
+      val mailablesNeededPerChunk = mailablesNeeded / toPoll.size
+      val r = toPoll.map(hakuOids => (hakuOids, pollForMailables(mailDecorator, mailablesNeededPerChunk, hakuOids, List.empty)))
+      val chunksWithCandidatesLeft = r.filter(_._2.size == mailablesNeededPerChunk).map(_._1)
       val mailables = r.flatMap(_._2)
-      logger.info(s"${mailables.size} mailables from ${toPoll.size} haku")
-      pollForMailables(mailDecorator, limit, oidsWithCandidatesLeft ++ rest, acc ++ mailables)
+      pollForMailables(mailDecorator, limit, chunksWithCandidatesLeft ++ rest, acc ++ mailables)
     }
   }
 
   @tailrec
-  private def pollForMailables(mailDecorator: MailDecorator, limit: Int, hakuOid: HakuOid, acc: List[Ilmoitus]): List[Ilmoitus] = {
+  private def pollForMailables(mailDecorator: MailDecorator, limit: Int, hakuOids: Set[HakuOid], acc: List[Ilmoitus]): List[Ilmoitus] = {
     if (acc.size >= limit) {
       acc
     } else {
       val mailablesNeeded = limit - acc.size
-      val (candidates, statii, mailables) = mailPollerRepository.pollForCandidates(hakuOid, candidateCount)
+      val (candidates, statii, mailables) = mailPollerRepository.pollForCandidates(hakuOids, candidateCount)
         .foldLeft((Set.empty[MailCandidate], Set.empty[HakemusMailStatus], List.empty[Ilmoitus]))({
           case ((candidatesAcc, statiiAcc, mailablesAcc), candidate) if mailablesAcc.size < mailablesNeeded =>
             val status = candidateToMailStatus(candidate)
@@ -103,13 +102,13 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
             )
           case (r, _) => r
         })
-      logger.info(s"${mailables.size} mailables from ${statii.size} statii from ${candidates.size} candidates for haku $hakuOid")
+      logger.info(s"${mailables.size} mailables from ${statii.size} statii from ${candidates.size} candidates for haut $hakuOids")
       mailPollerRepository.markAsChecked(candidates.map(_.hakemusOid))
       saveMessages(statii)
       if (candidates.isEmpty) {
         acc ++ mailables
       } else {
-        pollForMailables(mailDecorator, limit, hakuOid, acc ++ mailables)
+        pollForMailables(mailDecorator, limit, hakuOids, acc ++ mailables)
       }
     }
   }
