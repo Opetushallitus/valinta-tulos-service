@@ -13,6 +13,8 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.MailCandidate
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, MailPollerRepository, VastaanottoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
+import scala.annotation.tailrec
+
 class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
                         valintatulosService: ValintatulosService,
                         hakijaVastaanottoRepository: HakijaVastaanottoRepository,
@@ -55,7 +57,8 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
     found
   }
 
-  def pollForMailables(mailDecorator: MailDecorator, limit: Int, hakuOids: List[HakuOid] = etsiHaut, acc: List[Ilmoitus] = List.empty): List[Ilmoitus] = {
+  @tailrec
+  final def pollForMailables(mailDecorator: MailDecorator, limit: Int, hakuOids: List[HakuOid] = etsiHaut, acc: List[Ilmoitus] = List.empty): List[Ilmoitus] = {
     if (acc.size >= limit) {
       acc
     } else {
