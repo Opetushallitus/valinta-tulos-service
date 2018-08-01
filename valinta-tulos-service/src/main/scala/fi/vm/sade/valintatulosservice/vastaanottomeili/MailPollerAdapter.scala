@@ -75,7 +75,9 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
       val mailablesNeededPerHaku = mailablesNeeded / toPoll.size
       val r = toPoll.map(hakuOid => (hakuOid, pollForMailables(mailDecorator, mailablesNeededPerHaku, hakuOid, List.empty)))
       val oidsWithCandidatesLeft = r.filter(_._2.size == mailablesNeededPerHaku).map(_._1)
-      pollForMailables(mailDecorator, limit, oidsWithCandidatesLeft ++ rest, acc ++ r.flatMap(_._2))
+      val mailables = r.flatMap(_._2)
+      logger.info(s"${mailables.size} mailables from ${toPoll.size} haku")
+      pollForMailables(mailDecorator, limit, oidsWithCandidatesLeft ++ rest, acc ++ mailables)
     }
   }
 
