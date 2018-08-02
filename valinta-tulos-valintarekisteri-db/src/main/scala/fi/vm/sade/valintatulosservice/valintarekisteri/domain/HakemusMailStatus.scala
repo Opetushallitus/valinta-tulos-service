@@ -5,7 +5,14 @@ import java.util.Date
 import fi.vm.sade.valintatulosservice.domain.Valintatila.Valintatila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
 
-case class HakemusMailStatus(hakijaOid: String, hakemusOid: HakemusOid, hakukohteet: List[HakukohdeMailStatus], hakuOid: HakuOid) {
+case class HakemusMailStatus(hakijaOid: String,
+                             hakemusOid: HakemusOid,
+                             asiointikieli: String,
+                             kutsumanimi: String,
+                             email: String,
+                             hasHetu: Boolean,
+                             hakuOid: HakuOid,
+                             hakukohteet: List[HakukohdeMailStatus]) {
   def anyMailToBeSent = hakukohteet.exists(_.shouldMail)
 }
 
