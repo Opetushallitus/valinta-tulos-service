@@ -27,23 +27,31 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                      vo.sent,
                      vo.done,
                      vo.message
-              from valinnantulokset as vt
-              join hakukohteet as hk
-                on vt.hakukohde_oid = hk.hakukohde_oid
-              join valinnantilat as vnt
-                on vt.valintatapajono_oid = vnt.valintatapajono_oid
-                and vt.hakemus_oid = vnt.hakemus_oid
-                and vt.hakukohde_oid = vnt.hakukohde_oid
-              left join viestinnan_ohjaus as vo
+              from valinnantilat as vt
+              left join viestinnan_ohjaus vo
                 on vt.valintatapajono_oid = vo.valintatapajono_oid
                 and vt.hakemus_oid = vo.hakemus_oid
                 and vt.hakukohde_oid = vo.hakukohde_oid
-              where hk.haku_oid = $hakuOid
-                and vt.julkaistavissa is true
-                and (vnt.tila = 'Hyvaksytty' or vnt.tila = 'VarasijaltaHyvaksytty')
-                and vo.done is null
-                and (vo.previous_check is null or vo.previous_check < now() - make_interval(hours => $recheckIntervalHours))
-              limit $limit
+              where vt.hakemus_oid in (
+                select vt.hakemus_oid
+                from valinnantilat as vt
+                join hakukohteet as hk
+                  on vt.hakukohde_oid = hk.hakukohde_oid
+                join valinnantulokset as vnt
+                  on vt.valintatapajono_oid = vnt.valintatapajono_oid
+                  and vt.hakemus_oid = vnt.hakemus_oid
+                  and vt.hakukohde_oid = vnt.hakukohde_oid
+                left join viestinnan_ohjaus as vo
+                  on vt.valintatapajono_oid = vo.valintatapajono_oid
+                  and vt.hakemus_oid = vo.hakemus_oid
+                  and vt.hakukohde_oid = vo.hakukohde_oid
+                where hk.haku_oid = $hakuOid
+                  and vnt.julkaistavissa is true
+                  and (vt.tila = 'Hyvaksytty' or vt.tila = 'VarasijaltaHyvaksytty')
+                  and vo.sent is null
+                  and (vo.previous_check is null or vo.previous_check < now() - make_interval(hours => $recheckIntervalHours))
+                limit $limit
+              )
          """.as[ViestinnanOhjaus])
         .groupBy(_.hakemusOid)
         .mapValues(latestSentByHakukohdeOid)
@@ -62,7 +70,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                        vt.valintatapajono_oid,
                        vt.hakemus_oid,
                        now()
-                from valinnantulokset as vt
+                from valinnantilat as vt
                 left join viestinnan_ohjaus as vo
                   on vt.valintatapajono_oid = vo.valintatapajono_oid
                   and vt.hakemus_oid = vo.hakemus_oid
