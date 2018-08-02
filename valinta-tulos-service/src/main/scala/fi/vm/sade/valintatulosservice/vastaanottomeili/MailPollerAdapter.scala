@@ -2,11 +2,11 @@ package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import java.time.OffsetDateTime
 
+import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.ValintatulosService
 import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
 import fi.vm.sade.valintatulosservice.domain._
-import fi.vm.sade.valintatulosservice.json.JsonFormats._
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.MailCandidate
@@ -76,12 +76,22 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
     } else {
       val mailablesNeeded = limit - acc.size
       val (toPoll, rest) = hakuOids.splitAt(mailablesNeeded)
-      val mailablesNeededPerHaku = mailablesNeeded / toPoll.size
-      val r = toPoll.map(hakuOid => (hakuOid, pollForMailables(mailDecorator, mailablesNeededPerHaku, hakuOid, List.empty)))
-      val oidsWithCandidatesLeft = r.filter(_._2.size == mailablesNeededPerHaku).map(_._1)
-      val mailables = r.flatMap(_._2)
-      logger.info(s"${mailables.size} mailables from ${toPoll.size} haku")
-      pollForMailables(mailDecorator, limit, oidsWithCandidatesLeft ++ rest, acc ++ mailables)
+      val mailablesNeededPerHaku = (mailablesNeeded / toPoll.size) + (mailablesNeeded % toPoll.size) :: List.fill(toPoll.size - 1)(mailablesNeeded / toPoll.size)
+      assert(mailablesNeededPerHaku.size == toPoll.size)
+      assert(mailablesNeededPerHaku.sum == mailablesNeeded)
+      val (oidsWithCandidatesLeft, mailables) = toPoll.zip(mailablesNeededPerHaku)
+        .map {
+          case (hakuOid, n) =>
+            val mailables = timed(s"Fetching mailables for haku $hakuOid", 1000) {
+              pollForMailables(mailDecorator, n, hakuOid, List.empty)
+            }
+            (
+              if (mailables.size == n) { List(hakuOid) } else { List.empty },
+              mailables
+            )
+        }
+        .reduce[(List[HakuOid], List[Ilmoitus])] { case (t, tt) => (t._1 ++ tt._1, t._2 ++ tt._2) }
+      pollForMailables(mailDecorator, limit, rest ++ oidsWithCandidatesLeft, acc ++ mailables)
     }
   }
 
