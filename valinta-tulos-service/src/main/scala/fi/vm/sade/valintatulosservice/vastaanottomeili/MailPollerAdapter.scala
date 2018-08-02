@@ -7,6 +7,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.ValintatulosService
 import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
 import fi.vm.sade.valintatulosservice.domain._
+import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.MailCandidate
@@ -22,6 +23,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
                         valintatulosService: ValintatulosService,
                         hakijaVastaanottoRepository: HakijaVastaanottoRepository,
                         hakuService: HakuService,
+                        hakemusRepository: HakemusRepository,
                         ohjausparameteritService: OhjausparametritService,
                         vtsApplicationSettings: VtsApplicationSettings) extends Logging {
 
@@ -105,7 +107,12 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
       val (candidates, statii, mailables) = mailPollerRepository.pollForCandidates(hakuOid, candidateCount)
         .foldLeft((Set.empty[MailCandidate], Set.empty[HakemusMailStatus], List.empty[Ilmoitus]))({
           case ((candidatesAcc, statiiAcc, mailablesAcc), candidate) if mailablesAcc.size < mailablesNeeded =>
-            val status = candidateToMailStatus(candidate)
+            val status = for {
+              hakemus <- fetchHakemus(candidate.hakemusOid)
+              hakemuksentulos <- fetchHakemuksentulos(hakemus)
+              vastaanottoHistory <- fetchVastaanottoHistory(hakemuksentulos)
+              s <- mailStatusFor(hakemus, hakemuksentulos, candidate.sent, vastaanottoHistory)
+            } yield s
             val mailable = status.flatMap(mailDecorator.statusToMail)
             (
               candidatesAcc + candidate,
@@ -123,20 +130,6 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
         pollForMailables(mailDecorator, limit, hakuOid, acc ++ mailables)
       }
     }
-  }
-
-  private def candidateToMailStatus(candidate: MailCandidate): Option[HakemusMailStatus] = {
-    fetchHakemuksentulos(candidate)
-      .map(hakemuksenTulos =>
-        mailStatusFor(
-          hakemuksenTulos,
-          candidate.sent,
-          hakijaVastaanottoRepository.findVastaanottoHistoryHaussa(
-            hakemuksenTulos.hakijaOid,
-            hakemuksenTulos.hakuOid
-          )
-        )
-      )
   }
 
   def saveMessages(statii: Set[HakemusMailStatus]): Unit = {
@@ -196,35 +189,69 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
       hakutoive.ehdollisestiHyvaksyttavissa)
   }
 
-
-  private def mailStatusFor(hakemuksenTulos: Hakemuksentulos,
+  private def mailStatusFor(hakemus: Hakemus,
+                            hakemuksenTulos: Hakemuksentulos,
                             sent: Map[HakukohdeOid, Option[OffsetDateTime]],
-                            vastaanotot: Set[VastaanottoRecord]): HakemusMailStatus = {
-    val mailables = hakemuksenTulos.hakutoiveet.map(hakutoive => {
-      val sentOfHakukohde = sent.getOrElse(hakutoive.hakukohdeOid, None)
-      val (vanhatVastaanotot, uudetVastaanotot) = vastaanotot.partition(v => sentOfHakukohde.exists(s => v.timestamp.toInstant.isBefore(s.toInstant)))
-      hakukohdeMailStatusFor(
+                            vastaanotot: Set[VastaanottoRecord]): Option[HakemusMailStatus] = hakemus match {
+    case Hakemus(_, _, _, asiointikieli, _, Henkilotiedot(Some(kutsumanimi), Some(email), hasHetu)) =>
+      val mailables = hakemuksenTulos.hakutoiveet.map(hakutoive => {
+        val sentOfHakukohde = sent.getOrElse(hakutoive.hakukohdeOid, None)
+        val (vanhatVastaanotot, uudetVastaanotot) = vastaanotot.partition(v => sentOfHakukohde.exists(s => v.timestamp.toInstant.isBefore(s.toInstant)))
+        hakukohdeMailStatusFor(
+          hakemuksenTulos.hakemusOid,
+          hakutoive,
+          sentOfHakukohde.isDefined,
+          uudetVastaanotot,
+          vanhatVastaanotot
+        )
+      })
+      Some(HakemusMailStatus(
+        hakemuksenTulos.hakijaOid,
         hakemuksenTulos.hakemusOid,
-        hakutoive,
-        sentOfHakukohde.isDefined,
-        uudetVastaanotot,
-        vanhatVastaanotot
-      )
-    })
-    HakemusMailStatus(hakemuksenTulos.hakijaOid, hakemuksenTulos.hakemusOid, mailables, hakemuksenTulos.hakuOid)
+        asiointikieli,
+        kutsumanimi,
+        email,
+        hasHetu,
+        hakemuksenTulos.hakuOid,
+        mailables
+      ))
+    case _ =>
+      logger.error(s"Hakemus ${hakemus.oid} is missing ${hakemus.asiointikieli}, ${hakemus.henkilotiedot.kutsumanimi}, ${hakemus.henkilotiedot.email} or ${hakemus.henkilotiedot.hasHetu}")
+      None
   }
 
-  private def fetchHakemuksentulos(candidate: MailCandidate): Option[Hakemuksentulos] = {
-    try {
-      valintatulosService.hakemuksentulos(candidate.hakemusOid)
-    } catch {
-      case e: Exception =>
-        logger.error("Error fetching data for email polling. Candidate identifier=" + candidate, e)
+  private def fetchHakemus(hakemusOid: HakemusOid): Option[Hakemus] = {
+    hakemusRepository.findHakemus(hakemusOid) match {
+      case Right(h) =>
+        Some(h)
+      case Left(e) =>
+        logger.error(s"Fetching hakemus $hakemusOid failed", e)
         None
     }
   }
 
+  private def fetchHakemuksentulos(hakemus: Hakemus): Option[Hakemuksentulos] = {
+    try {
+      valintatulosService.hakemuksentulos(hakemus)
+    } catch {
+      case e: Exception =>
+        logger.error(s"Fetching hakemuksentulos ${hakemus.oid} failed", e)
+        None
+    }
+  }
 
+  private def fetchVastaanottoHistory(hakemuksentulos: Hakemuksentulos): Option[Set[VastaanottoRecord]] = {
+    try {
+      Some(hakijaVastaanottoRepository.findVastaanottoHistoryHaussa(
+        hakemuksentulos.hakijaOid,
+        hakemuksentulos.hakuOid
+      ))
+    } catch {
+      case e: Exception =>
+        logger.error(s"Fetching vastaanotto history for ${hakemuksentulos.hakijaOid} in ${hakemuksentulos.hakuOid} failed", e)
+        None
+    }
+  }
 
   def ehdollinenVastaanottoInHakukohdeThatIsNotVastaanotettuByHakija(hakutoive: Hakutoiveentulos, uudetVastaanotot: Set[VastaanottoRecord]): Boolean = {
   uudetVastaanotot.toList.sortBy(_.timestamp).headOption

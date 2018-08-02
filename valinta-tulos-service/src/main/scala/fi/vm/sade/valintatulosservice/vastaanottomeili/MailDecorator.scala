@@ -4,62 +4,38 @@ import java.util.Date
 
 import fi.vm.sade.oppijantunnistus.{OppijanTunnistus, OppijanTunnistusService}
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.domain.{Hakemus, Henkilotiedot}
-import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.tarjonta
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
 class HakukohdeNotFoundException(message: String) extends RuntimeException(message)
 
 class HakuNotFoundException(message: String) extends RuntimeException(message)
 
-class MailDecorator(hakemusRepository: HakemusRepository,
-                    mailPollerRepository: MailPollerRepository,
-                    hakuService: HakuService,
-                    oppijanTunnistusService: OppijanTunnistusService
-                   ) extends Logging {
+class MailDecorator(hakuService: HakuService,
+                    oppijanTunnistusService: OppijanTunnistusService) extends Logging {
   def statusToMail(status: HakemusMailStatus): Option[Ilmoitus] = {
-    if(status.anyMailToBeSent) {
-      hakemusRepository.findHakemus(status.hakemusOid) match {
-        case Right(Hakemus(_, _, henkiloOid, asiointikieli, _, Henkilotiedot(Some(kutsumanimi), Some(email), hasHetu))) =>
-          val mailables = status.hakukohteet.filter(_.shouldMail)
-          val deadline: Option[Date] = mailables.flatMap(_.deadline).sorted.headOption
+    if (status.anyMailToBeSent) {
+      try {
+        val mailables = status.hakukohteet.filter(_.shouldMail)
+        val deadline: Option[Date] = mailables.flatMap(_.deadline).sorted.headOption
+        val tarjontaHaku = fetchHaku(status.hakuOid)
+        val ilmoitus = Ilmoitus(status.hakemusOid, status.hakijaOid, None, status.asiointikieli, status.kutsumanimi, status.email, deadline, mailables.map(toHakukohde), toHaku(tarjontaHaku))
 
-          try {
-            val tarjontaHaku = fetchHaku(status.hakuOid)
-            val ilmoitus = Ilmoitus(status.hakemusOid, henkiloOid, None, asiointikieli, kutsumanimi, email, deadline, mailables.map(toHakukohde), toHaku(tarjontaHaku))
-
-            if(hasHetu && !tarjontaHaku.toinenAste) {
-              Some(ilmoitus)
-            } else {
-              oppijanTunnistusService.luoSecureLink(henkiloOid, status.hakemusOid, email, asiointikieli) match {
-                case Right(OppijanTunnistus(securelink)) =>
-                  Some(ilmoitus.copy(secureLink = Some(securelink)))
-                case Left(e) =>
-                  logger.error("Hakemukselle ei lähetetty vastaanottomeiliä, koska securelinkkiä ei saatu! " + status.hakemusOid, e)
-                  None
-              }
-            }
-          } catch {
-            case e: Exception =>
-              status.hakukohteet.filter(_.shouldMail).foreach {
-                mailPollerRepository.addMessage(status, _, e.getMessage)
-              }
+        if (status.hasHetu && !tarjontaHaku.toinenAste) {
+          Some(ilmoitus)
+        } else {
+          oppijanTunnistusService.luoSecureLink(status.hakijaOid, status.hakemusOid, status.email, status.asiointikieli) match {
+            case Right(OppijanTunnistus(securelink)) =>
+              Some(ilmoitus.copy(secureLink = Some(securelink)))
+            case Left(e) =>
+              logger.error("Hakemukselle ei lähetetty vastaanottomeiliä, koska securelinkkiä ei saatu! " + status.hakemusOid, e)
               None
           }
-        case Right(hakemus) =>
-          logger.warn("Hakemukselta puuttuu kutsumanimi tai email: " + status.hakemusOid)
-          status.hakukohteet.filter(_.shouldMail).foreach {
-            mailPollerRepository.addMessage(status, _, "Hakemukselta puuttuu kutsumanimi tai email")
-          }
-          None
-        case Left(e) =>
-          logger.error("Hakemusta ei löydy: " + status.hakemusOid, e)
-          status.hakukohteet.filter(_.shouldMail).foreach {
-            mailPollerRepository.addMessage(status, _, "Hakemusta ei löydy")
-          }
+        }
+      } catch {
+        case e: Exception =>
+          logger.error(s"Creating ilmoitus for ${status.hakemusOid} failed", e)
           None
       }
     } else {

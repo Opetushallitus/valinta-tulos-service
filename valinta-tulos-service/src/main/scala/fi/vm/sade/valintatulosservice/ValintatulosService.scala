@@ -71,9 +71,11 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
-  def hakemuksentulos(hakemusOid: HakemusOid): Option[Hakemuksentulos] = {
+  def hakemuksentulos(hakemusOid: HakemusOid): Option[Hakemuksentulos] =
+    hakemusRepository.findHakemus(hakemusOid).right.toOption.flatMap(hakemuksentulos)
+
+  def hakemuksentulos(h: Hakemus): Option[Hakemuksentulos] = {
     for {
-      h <- hakemusRepository.findHakemus(hakemusOid).right.toOption
       haku <- hakuService.getHaku(h.hakuOid).right.toOption
       latestSijoitteluajoId = sijoittelutulosService.findLatestSijoitteluajoId(h.hakuOid)
       ilmoittautumisenAikaleimat = timed(s"Ilmoittautumisten aikaleimojen haku hakijalle ${h.henkiloOid}", 1000) {
@@ -88,8 +90,8 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         haku,
         () => List(h).iterator,
         hakijaOidsByHakemusOids => sijoittelutulosService.hakemuksenTulos(haku,
-          hakemusOid,
-          hakijaOidsByHakemusOids.findBy(hakemusOid),
+          h.oid,
+          hakijaOidsByHakemusOids.findBy(h.oid),
           sijoittelutulosService.findOhjausparametritFromOhjausparametritService(h.hakuOid),
           latestSijoitteluajoId).toSeq,
         vastaanottoKaudella = hakukohdeOid => {
@@ -105,7 +107,6 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         ilmoittautumisenAikaleimat = ilmoittautumisenAikaleimat
       ).toSeq.headOption
     } yield hakemus
-
   }
 
   def hakemustenTulosByHaku(hakuOid: HakuOid, checkJulkaisuAikaParametri: Boolean): Option[Iterator[Hakemuksentulos]] = {
