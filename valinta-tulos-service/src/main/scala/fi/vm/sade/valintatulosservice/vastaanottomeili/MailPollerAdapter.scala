@@ -41,32 +41,33 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
       .filter { haku =>
         ohjausparameteritService.ohjausparametrit(haku.oid) match {
           case Right(Some(Ohjausparametrit(_, _, _, Some(hakukierrosPaattyy), _, _, _))) if hakukierrosPaattyy.isBeforeNow =>
-            logger.info("Pudotetaan haku " + haku.oid + " koska hakukierros päättynyt " + hakukierrosPaattyy)
+            logger.debug("Pudotetaan haku " + haku.oid + " koska hakukierros päättynyt " + hakukierrosPaattyy)
             false
           case Right(Some(Ohjausparametrit(_, _, _, _, Some(tulostenJulkistusAlkaa), _, _))) if tulostenJulkistusAlkaa.isAfterNow =>
             logger.info("Pudotetaan haku " + haku.oid + " koska tulosten julkistus alkaa " + tulostenJulkistusAlkaa)
             false
           case Right(None) =>
-            logger.warn("Pudotetaan haku " + haku.oid + " koska ei saatu haettua ohjausparametreja")
+            logger.error("Pudotetaan haku " + haku.oid + " koska ei saatu haettua ohjausparametreja")
             false
           case Left(e) =>
-            logger.warn("Pudotetaan haku " + haku.oid + " koska ei saatu haettua ohjausparametreja", e)
+            logger.error("Pudotetaan haku " + haku.oid + " koska ei saatu haettua ohjausparametreja", e)
             false
-          case x =>
+          case _ =>
             true
         }
       }
       .map(_.oid)
 
-
-    logger.info("haut {}", formatJson(found))
+    logger.info(s"haut ${found.mkString(", ")}")
     found
   }
 
   def pollForMailables(mailDecorator: MailDecorator, limit: Int): List[Ilmoitus] = {
     val hakuOids = etsiHaut.par
     hakuOids.tasksupport = new ForkJoinTaskSupport(new ForkJoinPool(pollConcurrency))
-    pollForMailables(mailDecorator, limit, hakuOids, List.empty)
+    timed(s"Fetching mailables for ${hakuOids.size} haku", 1000) {
+      pollForMailables(mailDecorator, limit, hakuOids, List.empty)
+    }
   }
 
   @tailrec
