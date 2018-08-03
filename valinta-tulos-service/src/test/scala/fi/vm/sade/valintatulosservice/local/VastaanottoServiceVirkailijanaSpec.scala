@@ -217,7 +217,7 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
         VastaanottoEventDto(valintatapajonoOid, "1234", HakemusOid("1234"), HakukohdeOid("1234"), hakuOid, Vastaanottotila.vastaanottanut, muokkaaja, "testiselite")
       ))
       r.size must_== 2
-      r.head.result.message must_== Some(s"No hakemus 1234 found")
+      r.head.result.message must_== Some(s"No hakemus 1234 found from Haku-app or Ataru")
       r.head.result.status must_== 400
       r.tail.head.result.status must_== 200
       hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
