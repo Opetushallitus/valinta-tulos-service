@@ -109,7 +109,11 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
 
   private def pollForMailables(mailDecorator: MailDecorator, limit: Int, hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): List[Ilmoitus] = {
     val candidates = mailPollerRepository.candidates(hakukohdeOid)
-    val hakemuksetByOid = fetchHakemukset(hakuOid, hakukohdeOid).map(h => h.oid -> h).toMap
+    val hakemuksetByOid = if (candidates.isEmpty) {
+      Map.empty[HakemusOid, Hakemus]
+    } else {
+      fetchHakemukset(hakuOid, hakukohdeOid).map(h => h.oid -> h).toMap
+    }
     val (checkedCandidates, statii, mailables) = candidates
       .foldLeft((Set.empty[MailCandidate], Set.empty[HakemusMailStatus], List.empty[Ilmoitus]))({
         case ((candidatesAcc, statiiAcc, mailablesAcc), candidate) if mailablesAcc.size < limit =>
