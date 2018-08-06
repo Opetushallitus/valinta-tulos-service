@@ -9,4 +9,3 @@ valintatulosservice_parseleniently_sijoitteluajontulos: false
 oili_hetuton_url: "/oiliHetuton/"
 read_from_valintarekisteri: false
 valintatulosservice_mail_poller_concurrency: 4
-valintatulosservice_mail_poller_candidate_count: 1000

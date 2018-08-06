@@ -33,7 +33,6 @@ case class VtsApplicationSettings(config: Config) extends ApplicationSettings(co
     }
   }
   val mailPollerConcurrency: Int = withConfig(_.getInt("valinta-tulos-service.mail-poller.concurrency"))
-  val mailPollerCandidateCount: Int = withConfig(_.getInt("valinta-tulos-service.mail-poller.candidate-count"))
 }
 
 object VtsApplicationSettingsParser extends fi.vm.sade.utils.config.ApplicationSettingsParser[VtsApplicationSettings] {
