@@ -27,6 +27,7 @@ class HakutoiveentulosSerializer extends CustomSerializer[Hakutoiveentulos]((for
       valintatapajonoOid = (x \ "valintatapajonoOid").extract[ValintatapajonoOid],
       valintatila = valintatila,
       vastaanottotila = vastaanottotila,
+      vastaanotonIlmoittaja = None,
       ilmoittautumistila = (x \ "ilmoittautumistila").extract[HakutoiveenIlmoittautumistila],
       ilmoittautumisenAikaleima = (x \ "ilmoittautumisenAikaleima").extractOpt[Date],
       vastaanotettavuustila = vastaanotettavuustila,
@@ -45,7 +46,7 @@ class HakutoiveentulosSerializer extends CustomSerializer[Hakutoiveentulos]((for
       ehdollisenHyvaksymisenEhtoEN = (x \ "ehdollisenHyvaksymisenEhtoEN").extractOpt[String],
       tilanKuvaukset = (x \ "tilanKuvaukset").extract[Map[String, String]],
       pisteet = (x \ "pisteet").extractOpt[BigDecimal],
-      virkailijanTilat = HakutoiveenSijoittelunTilaTieto(valintatila, vastaanottotila, vastaanotettavuustila))
+      virkailijanTilat = HakutoiveenSijoittelunTilaTieto(valintatila, vastaanottotila, None, vastaanotettavuustila))
   }, {
   case tulos: Hakutoiveentulos =>
     implicit val f = formats
