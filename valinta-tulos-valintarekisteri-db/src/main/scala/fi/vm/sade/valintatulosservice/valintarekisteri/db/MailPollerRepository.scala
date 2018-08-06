@@ -11,11 +11,11 @@ trait MailPollerRepository {
 
   def markAsChecked(hakemusOids: Set[HakemusOid]): Unit
 
-  def addMessage(hakemus: HakemusMailStatus, hakukohde: HakukohdeMailStatus, message: String): Unit
+  def addMessage(hakemusOids: Set[HakemusOid], hakukohde: HakukohdeOid, message: String): Unit
 
   def markAsSent(hakemusOid: HakemusOid, hakukohteet: List[HakukohdeOid], mediat: List[String]): Unit
 
-  def markAsNonMailable(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, message: String): Unit
+  def markAsNonMailable(hakemusOids: Set[HakemusOid], hakukohdeOid: HakukohdeOid, message: String): Unit
 
   def getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid: HakukohdeOid): List[String]
 

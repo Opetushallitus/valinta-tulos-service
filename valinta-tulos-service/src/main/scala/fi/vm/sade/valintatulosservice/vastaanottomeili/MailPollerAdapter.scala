@@ -133,15 +133,17 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
   }
 
   def saveMessages(statii: Set[HakemusMailStatus]): Unit = {
-    for {hakemus <- statii
-         hakukohde <- hakemus.hakukohteet} {
-      hakukohde.status match {
-        case MailStatus.NEVER_MAIL =>
-          mailPollerRepository.markAsNonMailable(hakemus.hakemusOid, hakukohde.hakukohdeOid, hakukohde.message)
-        case _ =>
-          mailPollerRepository.addMessage(hakemus, hakukohde, hakukohde.message)
+    statii.flatMap(s => s.hakukohteet.map(h => (s.hakemusOid, h.hakukohdeOid, h.status, h.message)))
+      .groupBy {
+        case (_, hakukohdeOid, status, message) => (hakukohdeOid, status, message)
       }
-    }
+      .mapValues(_.map(_._1))
+      .foreach {
+        case ((hakukohdeOid, MailStatus.NEVER_MAIL, message), hakemusOids) =>
+          mailPollerRepository.markAsNonMailable(hakemusOids, hakukohdeOid, message)
+        case ((hakukohdeOid, _, message), hakemusOids) =>
+          mailPollerRepository.addMessage(hakemusOids, hakukohdeOid, message)
+      }
   }
 
   def markAsSent(mailContents: LahetysKuittaus): Unit = mailPollerRepository.markAsSent(mailContents.hakemusOid, mailContents.hakukohteet, mailContents.mediat)
