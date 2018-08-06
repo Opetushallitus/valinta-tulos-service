@@ -37,12 +37,18 @@ case class HakutoiveenSijoitteluntulos(
 ) {
   def valintatila: Valintatila = hakijanTilat.valintatila
   def vastaanottotila: Vastaanottotila = hakijanTilat.vastaanottotila
+  def vastaanotonIlmoittaja: Option[VastaanotonIlmoittaja] = hakijanTilat.vastaanotonIlmoittaja
   def vastaanotettavuustila: Vastaanotettavuustila = hakijanTilat.vastaanotettavuustila
 }
 
 object HakutoiveenSijoitteluntulos {
   def kesken(hakukohdeOid: HakukohdeOid, tarjoajaOid: String) = {
-    val tilat = HakutoiveenSijoittelunTilaTieto(Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa)
+    val tilat = HakutoiveenSijoittelunTilaTieto(
+      Valintatila.kesken,
+      Vastaanottotila.kesken,
+      None,
+      Vastaanotettavuustila.ei_vastaanotettavissa
+    )
     HakutoiveenSijoitteluntulos(
       hakukohdeOid,
       tarjoajaOid,
@@ -69,4 +75,7 @@ object HakutoiveenSijoitteluntulos {
   }
 }
 
-case class HakutoiveenSijoittelunTilaTieto(valintatila: Valintatila, vastaanottotila: Vastaanottotila, vastaanotettavuustila: Vastaanotettavuustila)
+case class HakutoiveenSijoittelunTilaTieto(valintatila: Valintatila,
+                                           vastaanottotila: Vastaanottotila,
+                                           vastaanotonIlmoittaja: Option[VastaanotonIlmoittaja],
+                                           vastaanotettavuustila: Vastaanotettavuustila)

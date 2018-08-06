@@ -123,22 +123,6 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
     }
   }
 
-  override def findVastaanottoHistoryHaussa(henkiloOid: String, hakuOid: HakuOid): Set[VastaanottoRecord] = {
-    runBlocking(
-      sql"""select henkilo, haku_oid, hakukohde, action, ilmoittaja, "timestamp"
-            from (
-                select henkilo, haku_oid, hakukohde, action, ilmoittaja, "timestamp", id
-                from vastaanotot
-                    join hakukohteet on hakukohde_oid = vastaanotot.hakukohde and haku_oid = ${hakuOid}
-                where henkilo = ${henkiloOid}
-                union
-                select henkiloviitteet.linked_oid as henkilo, haku_oid, hakukohde, action, ilmoittaja, "timestamp", id
-                from vastaanotot
-                    join hakukohteet on hakukohde_oid = vastaanotot.hakukohde and haku_oid = ${hakuOid}
-                    join henkiloviitteet on vastaanotot.henkilo = henkiloviitteet.person_oid and henkiloviitteet.linked_oid = ${henkiloOid}) as t
-            order by id""".as[VastaanottoRecord]).toSet
-  }
-
   override def findHenkilonVastaanototHaussa(henkiloOid: String, hakuOid: HakuOid): DBIO[Set[VastaanottoRecord]] = {
     sql"""select henkilo, haku_oid, hakukohde, action, ilmoittaja, "timestamp"
           from (
