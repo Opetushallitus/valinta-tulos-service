@@ -12,9 +12,9 @@ import slick.jdbc.PostgresProfile.api._
 
 
 trait MailPollerRepositoryImpl extends MailPollerRepository with ValintarekisteriRepository with Logging {
-  def pollForCandidates(hakuOid: HakuOid,
-                        limit: Int,
-                        recheckIntervalHours: Int = 24 * 3): Set[MailCandidate] = {
+
+  override def candidates(hakukohdeOid: HakukohdeOid,
+                          recheckIntervalHours: Int = 24 * 3): Set[MailCandidate] = {
     def latestSentByHakukohdeOid(hakemuksenViestinnanOhjaukset: Iterable[ViestinnanOhjaus]): Map[HakukohdeOid, Option[OffsetDateTime]] = {
       hakemuksenViestinnanOhjaukset.groupBy(_.hakukohdeOid).mapValues(_.map(_.sent).max)
     }
@@ -35,8 +35,6 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
               where vt.hakemus_oid in (
                 select vt.hakemus_oid
                 from valinnantilat as vt
-                join hakukohteet as hk
-                  on vt.hakukohde_oid = hk.hakukohde_oid
                 join valinnantulokset as vnt
                   on vt.valintatapajono_oid = vnt.valintatapajono_oid
                   and vt.hakemus_oid = vnt.hakemus_oid
@@ -45,12 +43,11 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                   on vt.valintatapajono_oid = vo.valintatapajono_oid
                   and vt.hakemus_oid = vo.hakemus_oid
                   and vt.hakukohde_oid = vo.hakukohde_oid
-                where hk.haku_oid = $hakuOid
+                where vt.hakukohde_oid = $hakukohdeOid
                   and vnt.julkaistavissa is true
                   and (vt.tila = 'Hyvaksytty' or vt.tila = 'VarasijaltaHyvaksytty')
                   and vo.sent is null
                   and (vo.previous_check is null or vo.previous_check < now() - make_interval(hours => $recheckIntervalHours))
-                limit $limit
               )
          """.as[ViestinnanOhjaus])
         .groupBy(_.hakemusOid)

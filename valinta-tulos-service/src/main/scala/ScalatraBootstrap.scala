@@ -79,7 +79,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService, valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, hakemusRepository, valintarekisteriDb)
     lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService, valintarekisteriDb, valintarekisteriDb)
     lazy val mailPollerRepository: MailPollerRepository = valintarekisteriDb
-    lazy val mailPoller: MailPollerAdapter = new MailPollerAdapter(mailPollerRepository, valintatulosService, valintarekisteriDb, hakuService, hakemusRepository, appConfig.ohjausparametritService, appConfig.settings)
+    lazy val mailPoller: MailPollerAdapter = new MailPollerAdapter(mailPollerRepository, valintatulosService, hakuService, hakemusRepository, appConfig.ohjausparametritService, appConfig.settings)
 
     lazy val authorizer = new OrganizationHierarchyAuthorizer(appConfig)
     lazy val yhdenPaikanSaannos = new YhdenPaikanSaannos(hakuService, valintarekisteriDb)
