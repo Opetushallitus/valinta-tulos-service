@@ -18,6 +18,10 @@ case class Hakemuksentulos(hakuOid: HakuOid, hakemusOid: HakemusOid, hakijaOid: 
     } yield (toive, indeksi + 1)).headOption
 }
 
+sealed trait VastaanotonIlmoittaja
+case class Henkilo(oid: String) extends VastaanotonIlmoittaja
+case object Sijoittelu extends VastaanotonIlmoittaja
+
 case class Hakutoiveentulos(hakukohdeOid: HakukohdeOid,
                             hakukohdeNimi: String,
                             tarjoajaOid: String,
@@ -25,6 +29,7 @@ case class Hakutoiveentulos(hakukohdeOid: HakukohdeOid,
                             valintatapajonoOid: ValintatapajonoOid,
                             valintatila: Valintatila,
                             vastaanottotila: Vastaanottotila,
+                            vastaanotonIlmoittaja: Option[VastaanotonIlmoittaja],
                             ilmoittautumistila: HakutoiveenIlmoittautumistila,
                             ilmoittautumisenAikaleima: Option[Date],
                             vastaanotettavuustila: Vastaanotettavuustila,
@@ -59,7 +64,12 @@ case class Hakutoiveentulos(hakukohdeOid: HakukohdeOid,
         ehdollisestiHyvaksyttavissa = false,
         tilanKuvaukset = Map(),
         pisteet = None,
-        virkailijanTilat = HakutoiveenSijoittelunTilaTieto.apply(valintatila, vastaanottotila, vastaanotettavuustila)
+        virkailijanTilat = HakutoiveenSijoittelunTilaTieto.apply(
+          valintatila,
+          vastaanottotila,
+          vastaanotonIlmoittaja,
+          vastaanotettavuustila
+        )
     )
   }
 
@@ -101,6 +111,7 @@ object Hakutoiveentulos {
       tulos.valintatapajonoOid,
       tulos.valintatila,
       tulos.vastaanottotila,
+      tulos.vastaanotonIlmoittaja,
       HakutoiveenIlmoittautumistila.getIlmoittautumistila(tulos, haku, ohjausparametrit, hasHetu),
       ilmoittautumisenAikaleima,
       tulos.vastaanotettavuustila,

@@ -159,7 +159,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
                            vastaanotettavuusVirkailijana: Boolean): HakemuksenSijoitteluntulos = {
 
     val hakutoiveidenYhteenvedot = hakija.getHakutoiveet.toList.map { hakutoive: HakutoiveDTO =>
-      val vastaanotto = vastaanottoRecords.find(v => v.hakukohdeOid.toString == hakutoive.getHakukohdeOid).map(_.action)
+      val vastaanotto = vastaanottoRecords.find(v => v.hakukohdeOid.toString == hakutoive.getHakukohdeOid)
       val jono = JonoFinder.merkitseväJono(hakutoive).get
       val valintatila = jononValintatila(jono, hakutoive)
 
@@ -205,7 +205,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
                                         hyvaksyttyJulkaistuDates: Map[HakukohdeOid, OffsetDateTime],
                                         vastaanottoRecord: Set[VastaanottoRecord]): HakemuksenSijoitteluntulos = {
     val hakutoiveidenYhteenvedot = hakija.getHakutoiveet.toList.map { hakutoive: KevytHakutoiveDTO =>
-      val vastaanotto = vastaanottoRecord.find(v => v.hakukohdeOid.toString == hakutoive.getHakukohdeOid).map(_.action)
+      val vastaanotto = vastaanottoRecord.find(v => v.hakukohdeOid.toString == hakutoive.getHakukohdeOid)
       val jono = JonoFinder.merkitseväJono(hakutoive).get
       val valintatila = jononValintatila(jono, hakutoive)
 
@@ -248,14 +248,22 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
   }
 
   private def tilatietoJaVastaanottoDeadline(valintatila: Valintatila,
-                                             vastaanotto: Option[VastaanottoAction],
+                                             vastaanotto: Option[VastaanottoRecord],
                                              ohjausparametrit: Option[Ohjausparametrit],
                                              hakutoiveenHyvaksyttyJaJulkaistuDate: Option[OffsetDateTime],
                                              vastaanotettavuusVirkailijana: Boolean):(HakutoiveenSijoittelunTilaTieto, Option[DateTime]) = {
     val ( vastaanottotila, vastaanottoDeadline ) = laskeVastaanottotila(valintatila, vastaanotto, ohjausparametrit, hakutoiveenHyvaksyttyJaJulkaistuDate, vastaanotettavuusVirkailijana)
     val uusiValintatila = vastaanottotilanVaikutusValintatilaan(valintatila, vastaanottotila)
     val vastaanotettavuustila: Vastaanotettavuustila.Value = laskeVastaanotettavuustila(valintatila, vastaanottotila)
-    (HakutoiveenSijoittelunTilaTieto(uusiValintatila, vastaanottotila, vastaanotettavuustila), vastaanottoDeadline)
+    (
+      HakutoiveenSijoittelunTilaTieto(
+        uusiValintatila,
+        vastaanottotila,
+        vastaanotto.map(v => if (v.ilmoittaja == "järjestelmä") { Sijoittelu } else { Henkilo(v.ilmoittaja) }),
+        vastaanotettavuustila
+      ),
+      vastaanottoDeadline
+    )
   }
 
   private def laskeVastaanotettavuustila(valintatila: Valintatila, vastaanottotila: Vastaanottotila): Vastaanotettavuustila.Value = {
@@ -292,7 +300,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     }
   }
 
-  def vastaanottotilaVainViimeisimmanVastaanottoActioninPerusteella(vastaanotto: Option[VastaanottoAction]): Vastaanottotila = vastaanotto match {
+  def vastaanottotilaVainViimeisimmanVastaanottoActioninPerusteella(vastaanotto: Option[VastaanottoRecord]): Vastaanottotila = vastaanotto.map(_.action) match {
     case Some(Poista) | None => Vastaanottotila.kesken
     case Some(Peru) => Vastaanottotila.perunut
     case Some(VastaanotaSitovasti) => Vastaanottotila.vastaanottanut
@@ -302,7 +310,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
   }
 
   private def laskeVastaanottotila(valintatila: Valintatila,
-                                   vastaanotto: Option[VastaanottoAction],
+                                   vastaanotto: Option[VastaanottoRecord],
                                    ohjausparametrit: Option[Ohjausparametrit],
                                    hakutoiveenHyvaksyttyJaJulkaistuDate: Option[OffsetDateTime],
                                    vastaanotettavuusVirkailijana: Boolean = false): ( Vastaanottotila, Option[DateTime] ) = {

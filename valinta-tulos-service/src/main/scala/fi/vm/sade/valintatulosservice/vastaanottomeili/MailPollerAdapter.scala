@@ -11,7 +11,7 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.MailCandidate
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, MailPollerRepository, VastaanottoRecord}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, MailPollerRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
 import scala.annotation.tailrec
@@ -110,8 +110,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
             val status = for {
               hakemus <- fetchHakemus(candidate.hakemusOid)
               hakemuksentulos <- fetchHakemuksentulos(hakemus)
-              vastaanottoHistory <- fetchVastaanottoHistory(hakemuksentulos)
-              s <- mailStatusFor(hakemus, hakemuksentulos, candidate.sent, vastaanottoHistory)
+              s <- mailStatusFor(hakemus, hakemuksentulos, candidate.sent)
             } yield s
             val mailable = status.flatMap(mailDecorator.statusToMail)
             (
@@ -146,39 +145,25 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
 
   def markAsSent(mailContents: LahetysKuittaus): Unit = mailPollerRepository.markAsSent(mailContents.hakemusOid, mailContents.hakukohteet, mailContents.mediat)
 
-  private def hakukohdeMailStatusFor(hakemusOid: HakemusOid,
-                                     hakutoive: Hakutoiveentulos,
-                                     alreadySentVastaanottoilmoitus: Boolean,
-                                     uudetVastaanotot: Set[VastaanottoRecord],
-                                     vanhatVastaanotot: Set[VastaanottoRecord]) = {
+  private def hakukohdeMailStatusFor(hakutoive: Hakutoiveentulos,
+                                     alreadySentVastaanottoilmoitus: Boolean) = {
     val (status, reason, message) =
-      if (Vastaanotettavuustila.isVastaanotettavissa(hakutoive.vastaanotettavuustila) && !alreadySentVastaanottoilmoitus) {
-        (MailStatus.SHOULD_MAIL, Some(MailReason.VASTAANOTTOILMOITUS), "Vastaanotettavissa (" + hakutoive.valintatila + ")")
-      } else if (!Valintatila.isHyväksytty(hakutoive.valintatila) && Valintatila.isFinal(hakutoive.valintatila)) {
+      if (!Valintatila.isHyväksytty(hakutoive.valintatila) && Valintatila.isFinal(hakutoive.valintatila)) {
         (MailStatus.NEVER_MAIL, None, "Ei hyväksytty (" + hakutoive.valintatila + ")")
-      } else {
-        val newestSitovaIsNotVastaanotettuByHakija =
-          sitovaVastaanottoInHakukohdeThatIsNotVastaanotettuByHakija(hakutoive.hakukohdeOid, uudetVastaanotot)
-        if (newestSitovaIsNotVastaanotettuByHakija && vastaanottoMuuttuuEhdollisestaSitovaksi(hakutoive.hakukohdeOid, vanhatVastaanotot, uudetVastaanotot)) {
+      } else if (alreadySentVastaanottoilmoitus) {
+        (MailStatus.MAILED, None, "Already mailed")
+      } else if (Vastaanotettavuustila.isVastaanotettavissa(hakutoive.vastaanotettavuustila)) {
+        (MailStatus.SHOULD_MAIL, Some(MailReason.VASTAANOTTOILMOITUS), "Vastaanotettavissa (" + hakutoive.valintatila + ")")
+      } else if (hakutoive.vastaanotonIlmoittaja.contains(Sijoittelu)) {
+        if (hakutoive.vastaanottotila == Vastaanottotila.vastaanottanut) {
           (MailStatus.SHOULD_MAIL, Some(MailReason.SITOVAN_VASTAANOTON_ILMOITUS), "Sitova vastaanotto")
+        } else if (hakutoive.vastaanottotila == Vastaanottotila.ehdollisesti_vastaanottanut) {
+          (MailStatus.SHOULD_MAIL, Some(MailReason.EHDOLLISEN_PERIYTYMISEN_ILMOITUS), "Ehdollinen vastaanotto periytynyt")
         } else {
-          val newestEhdollinenNotVastaanotettuByHakija =
-            ehdollinenVastaanottoInHakukohdeThatIsNotVastaanotettuByHakija(hakutoive, uudetVastaanotot)
-
-          val atLeastOneOtherEhdollinenVastaanottoCanBeFound =
-            (uudetVastaanotot ++ vanhatVastaanotot).filter(_.hakukohdeOid != hakutoive.hakukohdeOid)
-              .exists(_.action == VastaanotaEhdollisesti)
-
-          if (newestEhdollinenNotVastaanotettuByHakija && atLeastOneOtherEhdollinenVastaanottoCanBeFound) {
-            (MailStatus.SHOULD_MAIL, Some(MailReason.EHDOLLISEN_PERIYTYMISEN_ILMOITUS), "Ehdollinen vastaanotto periytynyt")
-          } else {
-            if (alreadySentVastaanottoilmoitus) {
-              (MailStatus.MAILED, None, "Already mailed")
-            } else {
-              (MailStatus.NOT_MAILED, None, "Ei vastaanotettavissa (" + hakutoive.valintatila + ")")
-            }
-          }
+          throw new IllegalStateException(s"Vastaanoton ilmoittaja Sijoittelu, but vastaanottotila is ${hakutoive.vastaanottotila}")
         }
+      } else {
+        (MailStatus.NOT_MAILED, None, "Ei vastaanotettavissa (" + hakutoive.valintatila + ")")
       }
 
     HakukohdeMailStatus(hakutoive.hakukohdeOid, hakutoive.valintatapajonoOid, status,
@@ -191,19 +176,10 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
 
   private def mailStatusFor(hakemus: Hakemus,
                             hakemuksenTulos: Hakemuksentulos,
-                            sent: Map[HakukohdeOid, Option[OffsetDateTime]],
-                            vastaanotot: Set[VastaanottoRecord]): Option[HakemusMailStatus] = hakemus match {
+                            sent: Map[HakukohdeOid, Option[OffsetDateTime]]): Option[HakemusMailStatus] = hakemus match {
     case Hakemus(_, _, _, asiointikieli, _, Henkilotiedot(Some(kutsumanimi), Some(email), hasHetu)) =>
       val mailables = hakemuksenTulos.hakutoiveet.map(hakutoive => {
-        val sentOfHakukohde = sent.getOrElse(hakutoive.hakukohdeOid, None)
-        val (vanhatVastaanotot, uudetVastaanotot) = vastaanotot.partition(v => sentOfHakukohde.exists(s => v.timestamp.toInstant.isBefore(s.toInstant)))
-        hakukohdeMailStatusFor(
-          hakemuksenTulos.hakemusOid,
-          hakutoive,
-          sentOfHakukohde.isDefined,
-          uudetVastaanotot,
-          vanhatVastaanotot
-        )
+        hakukohdeMailStatusFor(hakutoive, sent.getOrElse(hakutoive.hakukohdeOid, None).isDefined)
       })
       Some(HakemusMailStatus(
         hakemuksenTulos.hakijaOid,
@@ -239,42 +215,6 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
         None
     }
   }
-
-  private def fetchVastaanottoHistory(hakemuksentulos: Hakemuksentulos): Option[Set[VastaanottoRecord]] = {
-    try {
-      Some(hakijaVastaanottoRepository.findVastaanottoHistoryHaussa(
-        hakemuksentulos.hakijaOid,
-        hakemuksentulos.hakuOid
-      ))
-    } catch {
-      case e: Exception =>
-        logger.error(s"Fetching vastaanotto history for ${hakemuksentulos.hakijaOid} in ${hakemuksentulos.hakuOid} failed", e)
-        None
-    }
-  }
-
-  def ehdollinenVastaanottoInHakukohdeThatIsNotVastaanotettuByHakija(hakutoive: Hakutoiveentulos, uudetVastaanotot: Set[VastaanottoRecord]): Boolean = {
-  uudetVastaanotot.toList.sortBy(_.timestamp).headOption
-  .filter(_.hakukohdeOid == hakutoive.hakukohdeOid)
-  .filter(vastaanotto => vastaanotto.henkiloOid != vastaanotto.ilmoittaja)
-  .exists(_.action == VastaanotaEhdollisesti)
-}
-
-  def vastaanottoMuuttuuEhdollisestaSitovaksi(hakukohdeOid: HakukohdeOid, vanhatVastaanotot: Set[VastaanottoRecord], uudetVastaanotot: Set[VastaanottoRecord]) = {
-  (vanhatVastaanotot ++ uudetVastaanotot).toList
-  .filter(_.hakukohdeOid == hakukohdeOid)
-  .sortBy(_.timestamp).reverse
-  .tail.headOption
-  .exists(_.action == VastaanotaEhdollisesti)
-}
-
-  def sitovaVastaanottoInHakukohdeThatIsNotVastaanotettuByHakija(hakukohdeOid: HakukohdeOid, uudetVastaanotot: Set[VastaanottoRecord]): Boolean = {
-  uudetVastaanotot.toList
-  .filter(_.hakukohdeOid == hakukohdeOid)
-  .sortBy(_.timestamp).reverse.headOption
-  .filter(vastaanotto => vastaanotto.henkiloOid != vastaanotto.ilmoittaja)
-  .exists(_.action == VastaanotaSitovasti)
-}
 }
 
 

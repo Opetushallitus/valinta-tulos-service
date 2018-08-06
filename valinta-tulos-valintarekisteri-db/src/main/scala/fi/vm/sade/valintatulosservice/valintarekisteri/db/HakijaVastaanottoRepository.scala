@@ -13,7 +13,6 @@ trait HakijaVastaanottoRepository {
   type HenkiloOid = String
 
   def runBlocking[R](operations: DBIO[R], timeout: Duration = Duration(10, TimeUnit.MINUTES)): R // TODO put these 3–4 different default timeouts behind common, configurable value
-  def findVastaanottoHistoryHaussa(henkiloOid: HenkiloOid, hakuOid: HakuOid): Set[VastaanottoRecord]
   def findHenkilonVastaanototHaussa(henkiloOid: HenkiloOid, hakuOid: HakuOid): DBIO[Set[VastaanottoRecord]]
   def findHenkilonVastaanottoHakukohteeseen(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid): DBIO[Option[VastaanottoRecord]]
   def findYhdenPaikanSaannonPiirissaOlevatVastaanotot(henkiloOid: HenkiloOid, koulutuksenAlkamiskausi: Kausi): DBIO[Option[VastaanottoRecord]]
