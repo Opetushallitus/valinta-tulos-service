@@ -10,8 +10,8 @@ import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.MailCandidate
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, MailPollerRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
 import scala.annotation.tailrec
@@ -21,16 +21,14 @@ import scala.concurrent.forkjoin.ForkJoinPool
 
 class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
                         valintatulosService: ValintatulosService,
-                        hakijaVastaanottoRepository: HakijaVastaanottoRepository,
                         hakuService: HakuService,
                         hakemusRepository: HakemusRepository,
                         ohjausparameteritService: OhjausparametritService,
                         vtsApplicationSettings: VtsApplicationSettings) extends Logging {
 
   private val pollConcurrency: Int = vtsApplicationSettings.mailPollerConcurrency
-  private val candidateCount: Int = vtsApplicationSettings.mailPollerCandidateCount
 
-  def etsiHaut: List[HakuOid] = {
+  def etsiHaut: List[(HakuOid, HakukohdeOid)] = {
     val found = (hakuService.kaikkiJulkaistutHaut match {
       case Right(haut) => haut
       case Left(e) => throw e
@@ -58,9 +56,20 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
             true
         }
       }
-      .map(_.oid)
+      .map(h => (h.oid, hakuService.getHakukohdeOids(h.oid).right.map(_.toList)))
+      .filter {
+        case (hakuOid, Left(e)) =>
+          logger.error(s"Pudotetaan haku $hakuOid koska hakukohdeoidien haku epäonnistui", e)
+          false
+        case (hakuOid, Right(Nil)) =>
+          logger.warn(s"Pudotetaan haku $hakuOid koska siihen ei kuulu yhtään hakukohdetta")
+          false
+        case _ =>
+          true
+      }
+      .flatMap(t => t._2.right.get.map((t._1, _)))
 
-    logger.info(s"haut ${found.mkString(", ")}")
+    logger.info(s"haut ${found.map(_._1).distinct.mkString(", ")}")
     found
   }
 
@@ -73,62 +82,54 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
   }
 
   @tailrec
-  private def pollForMailables(mailDecorator: MailDecorator, limit: Int, hakuOids: ParSeq[HakuOid], acc: List[Ilmoitus]): List[Ilmoitus] = {
-    if (hakuOids.isEmpty || acc.size >= limit) {
+  private def pollForMailables(mailDecorator: MailDecorator, limit: Int, hakukohdeOids: ParSeq[(HakuOid, HakukohdeOid)], acc: List[Ilmoitus]): List[Ilmoitus] = {
+    if (hakukohdeOids.isEmpty || acc.size >= limit) {
       acc
     } else {
       val mailablesNeeded = limit - acc.size
-      val (toPoll, rest) = hakuOids.splitAt(mailablesNeeded)
-      val mailablesNeededPerHaku = (mailablesNeeded / toPoll.size) + (mailablesNeeded % toPoll.size) :: List.fill(toPoll.size - 1)(mailablesNeeded / toPoll.size)
-      assert(mailablesNeededPerHaku.size == toPoll.size)
-      assert(mailablesNeededPerHaku.sum == mailablesNeeded)
-      val (oidsWithCandidatesLeft, mailables) = toPoll.zip(mailablesNeededPerHaku)
+      val (toPoll, rest) = hakukohdeOids.splitAt(mailablesNeeded)
+      val mailablesNeededPerHakukohde = (mailablesNeeded / toPoll.size) + (mailablesNeeded % toPoll.size) :: List.fill(toPoll.size - 1)(mailablesNeeded / toPoll.size)
+      assert(mailablesNeededPerHakukohde.size == toPoll.size)
+      assert(mailablesNeededPerHakukohde.sum == mailablesNeeded)
+      val (oidsWithCandidatesLeft, mailables) = toPoll.zip(mailablesNeededPerHakukohde)
         .map {
-          case (hakuOid, n) =>
-            val mailables = timed(s"Fetching mailables for haku $hakuOid", 1000) {
-              pollForMailables(mailDecorator, n, hakuOid, List.empty)
+          case ((hakuOid, hakukohdeOid), n) =>
+            val mailables = timed(s"Fetching mailables for hakukohde $hakukohdeOid in haku $hakuOid", 1000) {
+              pollForMailables(mailDecorator, n, hakuOid, hakukohdeOid)
             }
             (
-              if (mailables.size == n) { List(hakuOid) } else { List.empty },
+              if (mailables.size == n) { List((hakuOid, hakukohdeOid)) } else { List.empty },
               mailables
             )
         }
-        .reduce[(List[HakuOid], List[Ilmoitus])] { case (t, tt) => (t._1 ++ tt._1, t._2 ++ tt._2) }
+        .reduce[(List[(HakuOid, HakukohdeOid)], List[Ilmoitus])] { case (t, tt) => (t._1 ++ tt._1, t._2 ++ tt._2) }
       pollForMailables(mailDecorator, limit, rest ++ oidsWithCandidatesLeft, acc ++ mailables)
     }
   }
 
-  @tailrec
-  private def pollForMailables(mailDecorator: MailDecorator, limit: Int, hakuOid: HakuOid, acc: List[Ilmoitus]): List[Ilmoitus] = {
-    if (acc.size >= limit) {
-      acc
-    } else {
-      val mailablesNeeded = limit - acc.size
-      val (candidates, statii, mailables) = mailPollerRepository.pollForCandidates(hakuOid, candidateCount)
-        .foldLeft((Set.empty[MailCandidate], Set.empty[HakemusMailStatus], List.empty[Ilmoitus]))({
-          case ((candidatesAcc, statiiAcc, mailablesAcc), candidate) if mailablesAcc.size < mailablesNeeded =>
-            val status = for {
-              hakemus <- fetchHakemus(candidate.hakemusOid)
-              hakemuksentulos <- fetchHakemuksentulos(hakemus)
-              s <- mailStatusFor(hakemus, hakemuksentulos, candidate.sent)
-            } yield s
-            val mailable = status.flatMap(mailDecorator.statusToMail)
-            (
-              candidatesAcc + candidate,
-              status.fold(statiiAcc)(statiiAcc + _),
-              mailable.fold(mailablesAcc)(_ :: mailablesAcc)
-            )
-          case (r, _) => r
-        })
-      logger.info(s"${mailables.size} mailables from ${statii.size} statii from ${candidates.size} candidates for haku $hakuOid")
-      mailPollerRepository.markAsChecked(candidates.map(_.hakemusOid))
-      saveMessages(statii)
-      if (candidates.isEmpty) {
-        acc ++ mailables
-      } else {
-        pollForMailables(mailDecorator, limit, hakuOid, acc ++ mailables)
-      }
-    }
+  private def pollForMailables(mailDecorator: MailDecorator, limit: Int, hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): List[Ilmoitus] = {
+    val candidates = mailPollerRepository.candidates(hakukohdeOid)
+    val hakemuksetByOid = fetchHakemukset(hakuOid, hakukohdeOid).map(h => h.oid -> h).toMap
+    val (checkedCandidates, statii, mailables) = candidates
+      .foldLeft((Set.empty[MailCandidate], Set.empty[HakemusMailStatus], List.empty[Ilmoitus]))({
+        case ((candidatesAcc, statiiAcc, mailablesAcc), candidate) if mailablesAcc.size < limit =>
+          val status = for {
+            hakemus <- hakemuksetByOid.get(candidate.hakemusOid)
+            hakemuksentulos <- fetchHakemuksentulos(hakemus)
+            s <- mailStatusFor(hakemus, hakemuksentulos, candidate.sent)
+          } yield s
+          val mailable = status.flatMap(mailDecorator.statusToMail)
+          (
+            candidatesAcc + candidate,
+            status.fold(statiiAcc)(statiiAcc + _),
+            mailable.fold(mailablesAcc)(_ :: mailablesAcc)
+          )
+        case (r, _) => r
+      })
+    logger.info(s"${mailables.size} mailables from ${statii.size} statii from ${checkedCandidates.size} candidates for hakukohde $hakukohdeOid in haku $hakuOid")
+    mailPollerRepository.markAsChecked(checkedCandidates.map(_.hakemusOid))
+    saveMessages(statii)
+    mailables
   }
 
   def saveMessages(statii: Set[HakemusMailStatus]): Unit = {
@@ -196,16 +197,6 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
       None
   }
 
-  private def fetchHakemus(hakemusOid: HakemusOid): Option[Hakemus] = {
-    hakemusRepository.findHakemus(hakemusOid) match {
-      case Right(h) =>
-        Some(h)
-      case Left(e) =>
-        logger.error(s"Fetching hakemus $hakemusOid failed", e)
-        None
-    }
-  }
-
   private def fetchHakemuksentulos(hakemus: Hakemus): Option[Hakemuksentulos] = {
     try {
       valintatulosService.hakemuksentulos(hakemus)
@@ -213,6 +204,12 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
       case e: Exception =>
         logger.error(s"Fetching hakemuksentulos ${hakemus.oid} failed", e)
         None
+    }
+  }
+
+  private def fetchHakemukset(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Vector[Hakemus] = {
+    timed(s"Hakemusten haku hakukohteeseen $hakukohdeOid haussa $hakuOid", 1000) {
+      hakemusRepository.findHakemuksetByHakukohde(hakuOid, hakukohdeOid).toVector
     }
   }
 
