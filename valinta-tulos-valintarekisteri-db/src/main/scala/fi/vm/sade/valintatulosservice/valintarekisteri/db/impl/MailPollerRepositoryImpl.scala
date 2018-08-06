@@ -58,10 +58,11 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
   }
 
   override def markAsChecked(hakemusOids: Set[HakemusOid]): Unit = {
-    val hakemusOidsIn = formatMultipleValuesForSql(hakemusOids.map(_.s))
-    timed("Marking as checked", 100) {
-      runBlocking(
-        sqlu"""insert into viestinnan_ohjaus
+    if (hakemusOids.nonEmpty) {
+      val hakemusOidsIn = formatMultipleValuesForSql(hakemusOids.map(_.s))
+      timed("Marking as checked", 100) {
+        runBlocking(
+          sqlu"""insert into viestinnan_ohjaus
                (hakukohde_oid, valintatapajono_oid, hakemus_oid, previous_check)
                (select vt.hakukohde_oid,
                        vt.valintatapajono_oid,
@@ -76,6 +77,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                on conflict (valintatapajono_oid, hakemus_oid, hakukohde_oid) do
                update set previous_check = now()
           """)
+      }
     }
   }
 
