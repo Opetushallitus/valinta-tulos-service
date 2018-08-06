@@ -79,12 +79,15 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
     }
   }
 
-  def addMessage(hakemus: HakemusMailStatus, hakukohde: HakukohdeMailStatus, message: String): Unit = {
-    timed(s"Adding message for hakemusOid ${hakemus.hakemusOid} in hakukohde ${hakukohde.hakukohdeOid}", 100) {
+  override def addMessage(hakemusOids: Set[HakemusOid], hakukohdeOid: HakukohdeOid, message: String): Unit = {
+    val hakemusOidsIn = formatMultipleValuesForSql(hakemusOids.map(_.s))
+    timed(s"Adding message for ${hakemusOids.size} hakemus in hakukohde $hakukohdeOid", 100) {
       runBlocking(
         sqlu"""update viestinnan_ohjaus
-               set message = ${message}
-               where hakemus_oid = ${hakemus.hakemusOid} and hakukohde_oid = ${hakukohde.hakukohdeOid}""")
+               set message = $message
+               where hakemus_oid in (#$hakemusOidsIn)
+                 and hakukohde_oid = $hakukohdeOid
+          """)
     }
   }
 
@@ -96,8 +99,18 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
     updateViestinnänOhjaus(hakemusOid, hakukohdeOid, null, new Timestamp(new Date().getTime), message)
   }
 
-  def markAsNonMailable(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, message: String) {
-    updateViestinnänOhjaus(hakemusOid, hakukohdeOid, new Timestamp(new Date().getTime), null, message)
+  def markAsNonMailable(hakemusOids: Set[HakemusOid], hakukohdeOid: HakukohdeOid, message: String) {
+    val hakemusOidsIn = formatMultipleValuesForSql(hakemusOids.map(_.s))
+    timed(s"Marking as non mailable ${hakemusOids.size} hakemus in hakukohde $hakukohdeOid", 100) {
+      runBlocking(
+        sqlu"""update viestinnan_ohjaus
+               set done = now(),
+                   message = $message
+               where hakemus_oid in (#$hakemusOidsIn)
+                 and hakukohde_oid = $hakukohdeOid
+          """
+      )
+    }
   }
 
   private def updateViestinnänOhjaus(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid,
