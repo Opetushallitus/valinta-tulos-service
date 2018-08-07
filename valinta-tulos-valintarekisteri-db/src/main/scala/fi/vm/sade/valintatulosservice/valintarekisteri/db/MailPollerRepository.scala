@@ -15,8 +15,6 @@ trait MailPollerRepository {
 
   def markAsSent(hakemusOid: HakemusOid, hakukohteet: List[HakukohdeOid], mediat: List[String]): Unit
 
-  def markAsNonMailable(hakemusOids: Set[HakemusOid], hakukohdeOid: HakukohdeOid, message: String): Unit
-
   def getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid: HakukohdeOid): List[String]
 
   def deleteHakemusMailEntry(hakemusOid: HakemusOid): Unit
