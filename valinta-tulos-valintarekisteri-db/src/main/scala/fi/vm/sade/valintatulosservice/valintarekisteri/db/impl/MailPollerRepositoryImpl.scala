@@ -101,20 +101,6 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
     updateViestinnänOhjaus(hakemusOid, hakukohdeOid, null, new Timestamp(new Date().getTime), message)
   }
 
-  def markAsNonMailable(hakemusOids: Set[HakemusOid], hakukohdeOid: HakukohdeOid, message: String) {
-    val hakemusOidsIn = formatMultipleValuesForSql(hakemusOids.map(_.s))
-    timed(s"Marking as non mailable ${hakemusOids.size} hakemus in hakukohde $hakukohdeOid", 100) {
-      runBlocking(
-        sqlu"""update viestinnan_ohjaus
-               set done = now(),
-                   message = $message
-               where hakemus_oid in (#$hakemusOidsIn)
-                 and hakukohde_oid = $hakukohdeOid
-          """
-      )
-    }
-  }
-
   private def updateViestinnänOhjaus(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid,
                                  done: Timestamp, sent: Timestamp, message: String): Unit = {
     timed(s"Updating viestinta_ohjaus for hakemusOid $hakemusOid in hakukohde $hakukohdeOid", 100) {
@@ -139,13 +125,3 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
 }
 
 case class MailCandidate(hakemusOid: HakemusOid, sent: Map[HakukohdeOid, Option[OffsetDateTime]])
-
-object MailStatus extends Enumeration {
-  val NOT_MAILED, MAILED, SHOULD_MAIL, NEVER_MAIL = Value
-}
-
-object MailReason extends Enumeration {
-  val VASTAANOTTOILMOITUS,
-  EHDOLLISEN_PERIYTYMISEN_ILMOITUS,
-  SITOVAN_VASTAANOTON_ILMOITUS = Value
-}

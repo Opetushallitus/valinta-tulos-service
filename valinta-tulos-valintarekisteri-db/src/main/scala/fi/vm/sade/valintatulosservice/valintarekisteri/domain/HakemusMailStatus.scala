@@ -13,23 +13,18 @@ case class HakemusMailStatus(hakijaOid: String,
                              hasHetu: Boolean,
                              hakuOid: HakuOid,
                              hakukohteet: List[HakukohdeMailStatus]) {
-  def anyMailToBeSent = hakukohteet.exists(_.shouldMail)
+  def anyMailToBeSent: Boolean = hakukohteet.exists(_.shouldMail)
 }
 
 case class HakukohdeMailStatus(hakukohdeOid: HakukohdeOid,
                                valintatapajonoOid: ValintatapajonoOid,
-                               status: MailStatus.Value,
                                reasonToMail: Option[MailReason.Value],
                                deadline: Option[Date],
                                message: String,
                                valintatila: Valintatila,
                                vastaanottotila: Vastaanottotila,
                                ehdollisestiHyvaksyttavissa: Boolean) {
-  def shouldMail = status == MailStatus.SHOULD_MAIL
-}
-
-object MailStatus extends Enumeration {
-  val NOT_MAILED, MAILED, SHOULD_MAIL, NEVER_MAIL = Value
+  def shouldMail: Boolean = reasonToMail.isDefined
 }
 
 object MailReason extends Enumeration {
