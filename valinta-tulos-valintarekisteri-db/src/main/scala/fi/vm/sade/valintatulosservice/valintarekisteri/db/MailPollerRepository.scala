@@ -14,6 +14,4 @@ trait MailPollerRepository {
   def addMessage(hakemusOids: Set[HakemusOid], hakukohde: HakukohdeOid, message: String): Unit
 
   def markAsSent(hakemusOid: HakemusOid, hakukohteet: List[HakukohdeOid], mediat: List[String]): Unit
-
-  def markAsNonMailable(hakemusOids: Set[HakemusOid], hakukohdeOid: HakukohdeOid, message: String): Unit
 }

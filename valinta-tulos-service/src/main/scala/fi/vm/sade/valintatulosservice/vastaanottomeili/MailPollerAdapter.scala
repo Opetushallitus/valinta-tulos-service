@@ -137,15 +137,13 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
   }
 
   def saveMessages(statii: Set[HakemusMailStatus]): Unit = {
-    statii.flatMap(s => s.hakukohteet.map(h => (s.hakemusOid, h.hakukohdeOid, h.status, h.message)))
+    statii.flatMap(s => s.hakukohteet.map(h => (s.hakemusOid, h.hakukohdeOid, h.message)))
       .groupBy {
-        case (_, hakukohdeOid, status, message) => (hakukohdeOid, status, message)
+        case (_, hakukohdeOid, message) => (hakukohdeOid, message)
       }
       .mapValues(_.map(_._1))
       .foreach {
-        case ((hakukohdeOid, MailStatus.NEVER_MAIL, message), hakemusOids) =>
-          mailPollerRepository.markAsNonMailable(hakemusOids, hakukohdeOid, message)
-        case ((hakukohdeOid, _, message), hakemusOids) =>
+        case ((hakukohdeOid, message), hakemusOids) =>
           mailPollerRepository.addMessage(hakemusOids, hakukohdeOid, message)
       }
   }
@@ -154,31 +152,33 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
 
   private def hakukohdeMailStatusFor(hakutoive: Hakutoiveentulos,
                                      alreadySentVastaanottoilmoitus: Boolean) = {
-    val (status, reason, message) =
-      if (!Valintatila.isHyväksytty(hakutoive.valintatila) && Valintatila.isFinal(hakutoive.valintatila)) {
-        (MailStatus.NEVER_MAIL, None, "Ei hyväksytty (" + hakutoive.valintatila + ")")
-      } else if (alreadySentVastaanottoilmoitus) {
-        (MailStatus.MAILED, None, "Already mailed")
+    val (reason, message) =
+      if (alreadySentVastaanottoilmoitus) {
+        (None, "Already mailed")
       } else if (Vastaanotettavuustila.isVastaanotettavissa(hakutoive.vastaanotettavuustila)) {
-        (MailStatus.SHOULD_MAIL, Some(MailReason.VASTAANOTTOILMOITUS), "Vastaanotettavissa (" + hakutoive.valintatila + ")")
+        (Some(MailReason.VASTAANOTTOILMOITUS), "Vastaanotettavissa (" + hakutoive.valintatila + ")")
       } else if (hakutoive.vastaanotonIlmoittaja.contains(Sijoittelu)) {
         if (hakutoive.vastaanottotila == Vastaanottotila.vastaanottanut) {
-          (MailStatus.SHOULD_MAIL, Some(MailReason.SITOVAN_VASTAANOTON_ILMOITUS), "Sitova vastaanotto")
+          (Some(MailReason.SITOVAN_VASTAANOTON_ILMOITUS), "Sitova vastaanotto")
         } else if (hakutoive.vastaanottotila == Vastaanottotila.ehdollisesti_vastaanottanut) {
-          (MailStatus.SHOULD_MAIL, Some(MailReason.EHDOLLISEN_PERIYTYMISEN_ILMOITUS), "Ehdollinen vastaanotto periytynyt")
+          (Some(MailReason.EHDOLLISEN_PERIYTYMISEN_ILMOITUS), "Ehdollinen vastaanotto periytynyt")
         } else {
           throw new IllegalStateException(s"Vastaanoton ilmoittaja Sijoittelu, but vastaanottotila is ${hakutoive.vastaanottotila}")
         }
       } else {
-        (MailStatus.NOT_MAILED, None, "Ei vastaanotettavissa (" + hakutoive.valintatila + ")")
+        (None, "Ei vastaanotettavissa (" + hakutoive.valintatila + ")")
       }
 
-    HakukohdeMailStatus(hakutoive.hakukohdeOid, hakutoive.valintatapajonoOid, status,
+    HakukohdeMailStatus(
+      hakutoive.hakukohdeOid,
+      hakutoive.valintatapajonoOid,
       reason,
-      hakutoive.vastaanottoDeadline, message,
+      hakutoive.vastaanottoDeadline,
+      message,
       hakutoive.valintatila,
       hakutoive.vastaanottotila,
-      hakutoive.ehdollisestiHyvaksyttavissa)
+      hakutoive.ehdollisestiHyvaksyttavissa
+    )
   }
 
   private def mailStatusFor(hakemus: Hakemus,
