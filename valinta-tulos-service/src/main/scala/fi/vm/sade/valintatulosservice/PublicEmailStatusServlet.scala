@@ -8,7 +8,7 @@ import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 
 class PublicEmailStatusServlet(mailPoller: MailPollerAdapter,
-                               sessionRepository: SessionRepository)
+                               val sessionRepository: SessionRepository)
                               (implicit val swagger: Swagger)
   extends VtsServletBase
     with CasAuthenticatedServlet {
