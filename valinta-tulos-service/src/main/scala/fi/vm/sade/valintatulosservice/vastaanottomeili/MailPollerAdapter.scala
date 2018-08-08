@@ -156,12 +156,12 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
       if (alreadySentVastaanottoilmoitus) {
         (None, "Already mailed")
       } else if (Vastaanotettavuustila.isVastaanotettavissa(hakutoive.vastaanotettavuustila)) {
-        (Some(MailReason.VASTAANOTTOILMOITUS), "Vastaanotettavissa (" + hakutoive.valintatila + ")")
+        (Some(Vastaanottoilmoitus), "Vastaanotettavissa (" + hakutoive.valintatila + ")")
       } else if (hakutoive.vastaanotonIlmoittaja.contains(Sijoittelu)) {
         if (hakutoive.vastaanottotila == Vastaanottotila.vastaanottanut) {
-          (Some(MailReason.SITOVAN_VASTAANOTON_ILMOITUS), "Sitova vastaanotto")
+          (Some(SitovanVastaanotonIlmoitus), "Sitova vastaanotto")
         } else if (hakutoive.vastaanottotila == Vastaanottotila.ehdollisesti_vastaanottanut) {
-          (Some(MailReason.EHDOLLISEN_PERIYTYMISEN_ILMOITUS), "Ehdollinen vastaanotto periytynyt")
+          (Some(EhdollisenPeriytymisenIlmoitus), "Ehdollinen vastaanotto periytynyt")
         } else {
           throw new IllegalStateException(s"Vastaanoton ilmoittaja Sijoittelu, but vastaanottotila is ${hakutoive.vastaanottotila}")
         }

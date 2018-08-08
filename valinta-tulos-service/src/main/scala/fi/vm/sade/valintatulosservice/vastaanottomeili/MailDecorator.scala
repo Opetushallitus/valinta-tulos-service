@@ -48,10 +48,10 @@ class MailDecorator(hakuService: HakuService,
       case Right(hakukohde) =>
         Hakukohde(hakukohdeMailStatus.hakukohdeOid,
           hakukohdeMailStatus.reasonToMail match {
-            case Some(MailReason.VASTAANOTTOILMOITUS) if hakukohde.kkTutkintoonJohtava => LahetysSyy.vastaanottoilmoitusKk
-            case Some(MailReason.VASTAANOTTOILMOITUS) => LahetysSyy.vastaanottoilmoitus2aste
-            case Some(MailReason.EHDOLLISEN_PERIYTYMISEN_ILMOITUS) => LahetysSyy.ehdollisen_periytymisen_ilmoitus
-            case Some(MailReason.SITOVAN_VASTAANOTON_ILMOITUS) => LahetysSyy.sitovan_vastaanoton_ilmoitus
+            case Some(Vastaanottoilmoitus) if hakukohde.kkTutkintoonJohtava => LahetysSyy.vastaanottoilmoitusKk
+            case Some(Vastaanottoilmoitus) => LahetysSyy.vastaanottoilmoitus2aste
+            case Some(EhdollisenPeriytymisenIlmoitus) => LahetysSyy.ehdollisen_periytymisen_ilmoitus
+            case Some(SitovanVastaanotonIlmoitus) => LahetysSyy.sitovan_vastaanoton_ilmoitus
             case _ =>
               throw new RuntimeException(s"Tuntematon lähetyssyy ${hakukohdeMailStatus.reasonToMail}")
           },
