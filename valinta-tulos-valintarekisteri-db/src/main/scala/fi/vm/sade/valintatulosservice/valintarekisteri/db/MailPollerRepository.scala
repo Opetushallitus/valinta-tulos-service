@@ -11,8 +11,6 @@ trait MailPollerRepository {
 
   def markAsChecked(hakemusOids: Set[HakemusOid]): Unit
 
-  def addMessage(hakemusOids: Set[HakemusOid], hakukohde: HakukohdeOid, message: String): Unit
-
   def markAsSent(toMark: Set[(HakemusOid, HakukohdeOid)]): Unit
 
   def getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid: HakukohdeOid): List[String]
