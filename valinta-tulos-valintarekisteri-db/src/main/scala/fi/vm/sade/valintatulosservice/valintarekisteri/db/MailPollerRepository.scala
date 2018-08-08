@@ -13,7 +13,7 @@ trait MailPollerRepository {
 
   def addMessage(hakemusOids: Set[HakemusOid], hakukohde: HakukohdeOid, message: String): Unit
 
-  def markAsSent(hakemusOid: HakemusOid, hakukohteet: List[HakukohdeOid], mediat: List[String]): Unit
+  def markAsSent(toMark: Set[(HakemusOid, HakukohdeOid)]): Unit
 
   def getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid: HakukohdeOid): List[String]
 
