@@ -148,7 +148,8 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
       }
   }
 
-  def markAsSent(mailContents: LahetysKuittaus): Unit = mailPollerRepository.markAsSent(mailContents.hakemusOid, mailContents.hakukohteet, mailContents.mediat)
+  def markAsSent(mailed: List[LahetysKuittaus]): Unit =
+    mailPollerRepository.markAsSent(mailed.flatMap(m => m.hakukohteet.map((m.hakemusOid, _))).toSet)
 
   private def hakukohdeMailStatusFor(hakutoive: Hakutoiveentulos,
                                      alreadySentVastaanottoilmoitus: Boolean) = {

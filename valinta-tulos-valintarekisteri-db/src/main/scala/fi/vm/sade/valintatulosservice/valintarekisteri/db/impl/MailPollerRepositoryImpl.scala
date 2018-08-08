@@ -1,8 +1,6 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
-import java.sql.Timestamp
 import java.time.OffsetDateTime
-import java.util.Date
 
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
@@ -93,21 +91,19 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
     }
   }
 
-  def markAsSent(hakemusOid: HakemusOid, hakukohteet: List[HakukohdeOid], mediat: List[String]): Unit = {
-    hakukohteet.foreach(hakukohde => markAsSent(hakemusOid, hakukohde, "Lähetetty " + mediat.mkString(",")))
-  }
-
-  private def markAsSent(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, message: String) {
-    updateViestinnänOhjaus(hakemusOid, hakukohdeOid, null, new Timestamp(new Date().getTime), message)
-  }
-
-  private def updateViestinnänOhjaus(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid,
-                                 done: Timestamp, sent: Timestamp, message: String): Unit = {
-    timed(s"Updating viestinta_ohjaus for hakemusOid $hakemusOid in hakukohde $hakukohdeOid", 100) {
-      runBlocking(
-        sqlu"""update viestinnan_ohjaus
-               set done = ${done}, sent = ${sent}, message = ${message}
-               where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}""")
+  def markAsSent(toMark: Set[(HakemusOid, HakukohdeOid)]): Unit = {
+    timed("Marking as sent", 1000) {
+      toMark.groupBy(_._2).mapValues(_.map(_._1)).foreach {
+        case (hakukohdeOid, hakemusOids) =>
+          val hakemusOidsIn = formatMultipleValuesForSql(hakemusOids.map(_.s))
+          runBlocking(
+            sqlu"""
+                   update viestinnan_ohjaus
+                   set sent = now()
+                   where hakemus_oid in (#$hakemusOidsIn)
+                     and hakukohde_oid = $hakukohdeOid
+              """)
+      }
     }
   }
 }
