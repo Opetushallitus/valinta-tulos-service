@@ -35,7 +35,7 @@ class EmailStatusServlet(mailPoller: MailPollerAdapter, mailDecorator: MailDecor
       throw new IllegalArgumentException("got confirmation of 0 applications")
     }
     logger.info("got confirmation for " + kuitatut.size + " applications: " + kuitatut.map(_.hakemusOid).mkString(","))
-    kuitatut.foreach(mailPoller.markAsSent)
+    mailPoller.markAsSent(kuitatut)
   }
 
 }
