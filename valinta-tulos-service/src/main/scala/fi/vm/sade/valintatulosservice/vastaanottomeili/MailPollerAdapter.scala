@@ -132,20 +132,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
       })
     logger.info(s"${mailables.size} mailables from ${statii.size} statii from ${checkedCandidates.size} candidates for hakukohde $hakukohdeOid in haku $hakuOid")
     mailPollerRepository.markAsChecked(checkedCandidates.map(_.hakemusOid))
-    saveMessages(statii)
     mailables
-  }
-
-  def saveMessages(statii: Set[HakemusMailStatus]): Unit = {
-    statii.flatMap(s => s.hakukohteet.map(h => (s.hakemusOid, h.hakukohdeOid, h.message)))
-      .groupBy {
-        case (_, hakukohdeOid, message) => (hakukohdeOid, message)
-      }
-      .mapValues(_.map(_._1))
-      .foreach {
-        case ((hakukohdeOid, message), hakemusOids) =>
-          mailPollerRepository.addMessage(hakemusOids, hakukohdeOid, message)
-      }
   }
 
   def markAsSent(mailed: List[LahetysKuittaus]): Unit =

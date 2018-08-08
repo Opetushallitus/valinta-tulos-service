@@ -79,18 +79,6 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
     }
   }
 
-  override def addMessage(hakemusOids: Set[HakemusOid], hakukohdeOid: HakukohdeOid, message: String): Unit = {
-    val hakemusOidsIn = formatMultipleValuesForSql(hakemusOids.map(_.s))
-    timed(s"Adding message for ${hakemusOids.size} hakemus in hakukohde $hakukohdeOid", 100) {
-      runBlocking(
-        sqlu"""update viestinnan_ohjaus
-               set message = $message
-               where hakemus_oid in (#$hakemusOidsIn)
-                 and hakukohde_oid = $hakukohdeOid
-          """)
-    }
-  }
-
   def markAsSent(toMark: Set[(HakemusOid, HakukohdeOid)]): Unit = {
     timed("Marking as sent", 1000) {
       toMark.groupBy(_._2).mapValues(_.map(_._1)).foreach {
