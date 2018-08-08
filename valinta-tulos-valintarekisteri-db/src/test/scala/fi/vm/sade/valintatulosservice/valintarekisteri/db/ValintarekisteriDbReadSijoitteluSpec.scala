@@ -130,23 +130,18 @@ class ValintarekisteriDbReadSijoitteluSpec extends Specification with ITSetup wi
     }
   }
 
-  case class HakemusInfoRecord(selite:String, ilmoittaja:String, tilanViimeisinMuutos:Timestamp,
-                               previousCheck:Timestamp, sent:Timestamp, done:Timestamp, message:String)
+  case class HakemusInfoRecord(selite:String, tilanViimeisinMuutos:Timestamp)
 
-  private implicit val getHakemusInfoResult = GetResult(r => HakemusInfoRecord(r.nextString, r.nextString,
-    r.nextTimestamp, r.nextTimestamp, r.nextTimestamp, r.nextTimestamp, r.nextString))
+  private implicit val getHakemusInfoResult = GetResult(r => HakemusInfoRecord(r.nextString, r.nextTimestamp()))
 
   def getHakemusInfo(hakemusOid: String): Option[HakemusInfoRecord] = {
     singleConnectionValintarekisteriDb.runBlocking(
-      sql"""select v.selite, v.ilmoittaja, vt.tilan_viimeisin_muutos, o.previous_check, o.sent, o.done, o.message
+      sql"""select v.selite, vt.tilan_viimeisin_muutos
             from valinnantulokset as v
             join valinnantilat as vt on vt.hakukohde_oid = v.hakukohde_oid
                 and vt.valintatapajono_oid = v.valintatapajono_oid
                 and vt.hakemus_oid = v.hakemus_oid
-            left join viestinnan_ohjaus as o on o.hakukohde_oid = v.hakukohde_oid
-                and o.valintatapajono_oid = v.valintatapajono_oid
-                and o.hakemus_oid = v.hakemus_oid
-            where v.hakemus_oid = ${hakemusOid}""".as[HakemusInfoRecord]).headOption
+            where v.hakemus_oid = $hakemusOid""".as[HakemusInfoRecord]).headOption
   }
 
   step(deleteAll())

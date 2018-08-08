@@ -193,15 +193,7 @@ trait ValintarekisteriResultExtractors {
     vastaanottotila = r.nextStringOption.map(VastaanottoAction(_).valintatuloksenTila).getOrElse(ValintatuloksenTila.KESKEN)
   ))
 
-  protected implicit val getViestinnanOhjausResult: GetResult[ViestinnanOhjaus] = GetResult(r => ViestinnanOhjaus(
-    hakukohdeOid = HakukohdeOid(r.nextString),
-    valintatapajonoOid = ValintatapajonoOid(r.nextString),
-    hakemusOid = HakemusOid(r.nextString),
-    previousCheck = parseOffsetDateTime(r),
-    sent = parseOffsetDateTime(r),
-    done = parseOffsetDateTime(r),
-    message = r.nextString()
-  ))
+  protected implicit val getMailReasonOptionResult: GetResult[Option[MailReason]] = GetResult(r => r.nextStringOption().map(MailReason.apply))
 
   protected implicit val getInstantOptionResult: GetResult[Option[Instant]] = GetResult(r => r.nextTimestampOption().map(_.toInstant))
 

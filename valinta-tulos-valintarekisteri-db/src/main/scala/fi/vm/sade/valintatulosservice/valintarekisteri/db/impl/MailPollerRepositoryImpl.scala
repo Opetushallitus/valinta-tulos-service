@@ -1,7 +1,5 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
-import java.time.OffsetDateTime
-
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
@@ -12,88 +10,97 @@ import slick.jdbc.PostgresProfile.api._
 trait MailPollerRepositoryImpl extends MailPollerRepository with ValintarekisteriRepository with Logging {
 
   override def candidates(hakukohdeOid: HakukohdeOid,
-                          recheckIntervalHours: Int = 24 * 3): Set[MailCandidate] = {
-    def latestSentByHakukohdeOid(hakemuksenViestinnanOhjaukset: Iterable[ViestinnanOhjaus]): Map[HakukohdeOid, Option[OffsetDateTime]] = {
-      hakemuksenViestinnanOhjaukset.groupBy(_.hakukohdeOid).mapValues(_.map(_.sent).max)
-    }
+                          recheckIntervalHours: Int = 24 * 3): Set[(HakemusOid, HakukohdeOid, Option[MailReason])] = {
     timed("Fetching mailable candidates", 100) {
       runBlocking(
-        sql"""select vt.hakukohde_oid,
-                     vt.valintatapajono_oid,
-                     vt.hakemus_oid,
-                     vo.previous_check,
-                     vo.sent,
-                     vo.done,
-                     vo.message
+        sql"""select vt.hakemus_oid,
+                     vt.hakukohde_oid,
+                     v.syy
               from valinnantilat as vt
-              left join viestinnan_ohjaus vo
-                on vt.valintatapajono_oid = vo.valintatapajono_oid
-                and vt.hakemus_oid = vo.hakemus_oid
-                and vt.hakukohde_oid = vo.hakukohde_oid
+              left join viestit as v
+              on vt.hakemus_oid = v.hakemus_oid and
+                 vt.hakukohde_oid = v.hakukohde_oid
               where vt.hakemus_oid in (
                 select vt.hakemus_oid
                 from valinnantilat as vt
                 join valinnantulokset as vnt
-                  on vt.valintatapajono_oid = vnt.valintatapajono_oid
-                  and vt.hakemus_oid = vnt.hakemus_oid
-                  and vt.hakukohde_oid = vnt.hakukohde_oid
-                left join viestinnan_ohjaus as vo
-                  on vt.valintatapajono_oid = vo.valintatapajono_oid
-                  and vt.hakemus_oid = vo.hakemus_oid
-                  and vt.hakukohde_oid = vo.hakukohde_oid
+                on vt.valintatapajono_oid = vnt.valintatapajono_oid and
+                   vt.hakemus_oid = vnt.hakemus_oid and
+                   vt.hakukohde_oid = vnt.hakukohde_oid
+                left join viestit as v
+                on vt.hakemus_oid = v.hakemus_oid and
+                   vt.hakukohde_oid = v.hakukohde_oid
+                left join newest_vastaanotot as nv
+                on vt.henkilo_oid = nv.henkilo and
+                   vt.hakukohde_oid = nv.hakukohde
                 where vt.hakukohde_oid = $hakukohdeOid
                   and vnt.julkaistavissa is true
                   and (vt.tila = 'Hyvaksytty' or vt.tila = 'VarasijaltaHyvaksytty')
-                  and vo.sent is null
-                  and (vo.previous_check is null or vo.previous_check < now() - make_interval(hours => $recheckIntervalHours))
-              )
-         """.as[ViestinnanOhjaus])
-        .groupBy(_.hakemusOid)
-        .mapValues(latestSentByHakukohdeOid)
-        .map(v => MailCandidate(v._1, v._2))
-        .toSet
+                  and (v.lahettaminen_aloitettu is null or v.lahettaminen_aloitettu < now() - make_interval(hours => $recheckIntervalHours))
+                  and (v.lahetetty is null or (v.syy is not distinct from 'EHDOLLISEN_PERIYTYMISEN_ILMOITUS' and
+                                               nv.action is not distinct from 'VastaanotaSitovasti' and
+                                               nv.ilmoittaja is not distinct from 'järjestelmä')))
+         """.as[(HakemusOid, HakukohdeOid, Option[MailReason])]).toSet
     }
   }
 
-  override def markAsChecked(hakemusOids: Set[HakemusOid]): Unit = {
-    if (hakemusOids.nonEmpty) {
-      val hakemusOidsIn = formatMultipleValuesForSql(hakemusOids.map(_.s))
-      timed("Marking as checked", 100) {
+  override def markAsToBeSent(toMark: Set[(HakemusOid, HakukohdeOid, MailReason)]): Unit = {
+    if (toMark.nonEmpty) {
+      timed("Marking as to be sent", 100) {
         runBlocking(
-          sqlu"""insert into viestinnan_ohjaus
-               (hakukohde_oid, valintatapajono_oid, hakemus_oid, previous_check)
-               (select vt.hakukohde_oid,
-                       vt.valintatapajono_oid,
-                       vt.hakemus_oid,
-                       now()
-                from valinnantilat as vt
-                left join viestinnan_ohjaus as vo
-                  on vt.valintatapajono_oid = vo.valintatapajono_oid
-                  and vt.hakemus_oid = vo.hakemus_oid
-                  and vt.hakukohde_oid = vo.hakukohde_oid
-                where vt.hakemus_oid in (#$hakemusOidsIn))
-               on conflict (valintatapajono_oid, hakemus_oid, hakukohde_oid) do
-               update set previous_check = now()
-          """)
+          SimpleDBIO { session =>
+            val statement = session.connection.prepareStatement(
+              """
+                   insert into viestit
+                   (hakemus_oid, hakukohde_oid, syy)
+                   values (?, ?, ?)
+                   on conflict (hakemus_oid, hakukohde_oid) do
+                   update set syy = excluded.syy
+                """)
+            try {
+              toMark.foreach {
+                case (hakemusOid, hakukohdeOid, reason) =>
+                  statement.setString(1, hakemusOid.s)
+                  statement.setString(2, hakukohdeOid.s)
+                  statement.setString(3, reason.toString)
+                  statement.addBatch()
+              }
+              statement.execute()
+            } finally {
+              statement.close()
+            }
+          })
       }
     }
   }
 
   def markAsSent(toMark: Set[(HakemusOid, HakukohdeOid)]): Unit = {
-    timed("Marking as sent", 1000) {
-      toMark.groupBy(_._2).mapValues(_.map(_._1)).foreach {
-        case (hakukohdeOid, hakemusOids) =>
-          val hakemusOidsIn = formatMultipleValuesForSql(hakemusOids.map(_.s))
-          runBlocking(
-            sqlu"""
-                   update viestinnan_ohjaus
-                   set sent = now()
-                   where hakemus_oid in (#$hakemusOidsIn)
-                     and hakukohde_oid = $hakukohdeOid
-              """)
+    if (toMark.nonEmpty) {
+      timed("Marking as sent", 1000) {
+        runBlocking(
+          SimpleDBIO { session =>
+            val statement = session.connection.prepareStatement(
+              """
+               update viestit
+               set lahetetty = now()
+               where hakemus_oid = ? and
+                     hakukohde_oid = ?
+            """
+            )
+            try {
+              toMark.foreach {
+                case (hakemusOid, hakukohdeOid) =>
+                  statement.setString(1, hakemusOid.s)
+                  statement.setString(2, hakukohdeOid.s)
+                  statement.addBatch()
+              }
+              statement.execute()
+            } finally {
+              statement.close()
+            }
+          }
+        )
       }
     }
   }
 }
-
-case class MailCandidate(hakemusOid: HakemusOid, sent: Map[HakukohdeOid, Option[OffsetDateTime]])

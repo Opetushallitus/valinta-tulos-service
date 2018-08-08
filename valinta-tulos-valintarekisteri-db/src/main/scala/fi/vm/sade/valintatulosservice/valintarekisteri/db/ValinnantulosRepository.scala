@@ -33,7 +33,6 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
   def getValinnantuloksetAndLastModifiedDateForValintatapajono(valintatapajonoOid: ValintatapajonoOid, timeout: Duration = Duration(10, TimeUnit.SECONDS)): Option[(Instant, Set[Valinnantulos])]
   def getValinnantuloksetForHaku(hakuOid: HakuOid): DBIO[Set[Valinnantulos]]
   def getValinnantuloksetForHakemus(hakemusOid: HakemusOid): DBIO[Set[Valinnantulos]]
-  def getViestinnanOhjaus(valinnantuloksenOhjaus: ValinnantuloksenOhjaus): DBIO[Set[ViestinnanOhjaus]]
 
   def getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid: ValintatapajonoOid): DBIO[Set[Valinnantulos]]
 

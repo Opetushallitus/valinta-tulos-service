@@ -663,7 +663,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   }
 
   override def deleteValinnantulos(muokkaaja:String, valinnantulos: Valinnantulos, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
-    deleteViestinnanOhjaus(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince)
+    deleteViestit(valinnantulos.hakukohdeOid, valinnantulos.hakemusOid)
       .andThen(deleteEhdollisenHyvaksynnanEhtoIfExists(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince))
       .andThen(deleteValinnantuloksenOhjaus(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince))
       .andThen(deleteValinnantila(valinnantulos.getValinnantilanTallennus(muokkaaja), ifUnmodifiedSince))
@@ -684,25 +684,12 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     }
   }
 
-  def getViestinnanOhjaus(valinnantuloksenOhjaus: ValinnantuloksenOhjaus): DBIO[Set[ViestinnanOhjaus]] = {
-    sql"""select vo.hakukohde_oid,
-              vo.valintatapajono_oid,
-              vo.hakemus_oid,
-              vo.previous_check,
-              vo.sent,
-              vo.done,
-              vo.message
-          from viestinnan_ohjaus as vo
-          where vo.hakukohde_oid = ${valinnantuloksenOhjaus.hakukohdeOid}
-            and vo.valintatapajono_oid = ${valinnantuloksenOhjaus.valintatapajonoOid}
-            and vo.hakemus_oid = ${valinnantuloksenOhjaus.hakemusOid}""".as[ViestinnanOhjaus].map(_.toSet)
-  }
-
-  private def deleteViestinnanOhjaus(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
-    sqlu"""delete from viestinnan_ohjaus
-               where hakukohde_oid = $hakukohdeOid
-               and hakemus_oid = $hakemusOid
-               and valintatapajono_oid = $valintatapajonoOid""".map(_ => ())
+  private def deleteViestit(hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid): DBIO[Unit] = {
+    sqlu"""
+           delete from viestit
+           where hakukohde_oid = $hakukohdeOid and
+                 hakemus_oid = $hakemusOid
+      """.map(_ => ())
   }
 
   private def deleteEhdollisenHyvaksynnanEhtoIfExists(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {

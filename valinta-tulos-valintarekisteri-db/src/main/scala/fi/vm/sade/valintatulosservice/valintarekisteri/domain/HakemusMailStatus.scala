@@ -20,7 +20,6 @@ case class HakukohdeMailStatus(hakukohdeOid: HakukohdeOid,
                                valintatapajonoOid: ValintatapajonoOid,
                                reasonToMail: Option[MailReason],
                                deadline: Option[Date],
-                               message: String,
                                valintatila: Valintatila,
                                vastaanottotila: Vastaanottotila,
                                ehdollisestiHyvaksyttavissa: Boolean) {
