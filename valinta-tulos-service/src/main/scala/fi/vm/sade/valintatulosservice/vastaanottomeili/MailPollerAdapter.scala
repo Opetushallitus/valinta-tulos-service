@@ -1,7 +1,5 @@
 package fi.vm.sade.valintatulosservice.vastaanottomeili
 
-import java.time.OffsetDateTime
-
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.ValintatulosService
@@ -11,7 +9,6 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.MailCandidate
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
 import scala.annotation.tailrec
@@ -114,24 +111,30 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
     } else {
       fetchHakemukset(hakuOid, hakukohdeOid).map(h => h.oid -> h).toMap
     }
-    val (checkedCandidates, statii, mailables) = candidates
-      .foldLeft((Set.empty[MailCandidate], Set.empty[HakemusMailStatus], List.empty[Ilmoitus]))({
-        case ((candidatesAcc, statiiAcc, mailablesAcc), candidate) if mailablesAcc.size < limit =>
-          val status = for {
-            hakemus <- hakemuksetByOid.get(candidate.hakemusOid)
+    val (checkedCandidates, mailableStatii, mailables) = candidates
+      .groupBy(_._1)
+      .foldLeft((Set.empty[HakemusOid], Set.empty[HakemusMailStatus], List.empty[Ilmoitus]))({
+        case ((candidatesAcc, mailableStatiiAcc, mailablesAcc), (hakemusOid, mailReasons)) if mailablesAcc.size < limit =>
+          (for {
+            hakemus <- hakemuksetByOid.get(hakemusOid)
             hakemuksentulos <- fetchHakemuksentulos(hakemus)
-            s <- mailStatusFor(hakemus, hakemuksentulos, candidate.sent)
-          } yield s
-          val mailable = status.flatMap(mailDecorator.statusToMail)
-          (
-            candidatesAcc + candidate,
-            status.fold(statiiAcc)(statiiAcc + _),
-            mailable.fold(mailablesAcc)(_ :: mailablesAcc)
-          )
+            status <- mailStatusFor(hakemus, hakemuksentulos, mailReasons.map(m => m._2 -> m._3).toMap)
+            mailable <- mailDecorator.statusToMail(status)
+          } yield {
+            (
+              candidatesAcc + hakemusOid,
+              mailableStatiiAcc + status,
+              mailable :: mailablesAcc
+            )
+          }).getOrElse((candidatesAcc + hakemusOid, mailableStatiiAcc, mailablesAcc))
         case (r, _) => r
       })
-    logger.info(s"${mailables.size} mailables from ${statii.size} statii from ${checkedCandidates.size} candidates for hakukohde $hakukohdeOid in haku $hakuOid")
-    mailPollerRepository.markAsChecked(checkedCandidates.map(_.hakemusOid))
+    logger.info(s"${mailables.size} mailables from ${checkedCandidates.size} candidates for hakukohde $hakukohdeOid in haku $hakuOid")
+    mailPollerRepository.markAsToBeSent(
+      mailableStatii
+        .flatMap(s => s.hakukohteet.map(h => (s.hakemusOid, h.hakukohdeOid, h.reasonToMail)))
+        .collect { case (hakemusOid, hakukohdeOid, Some(reason)) => (hakemusOid, hakukohdeOid, reason) }
+    )
     mailables
   }
 
@@ -139,22 +142,16 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
     mailPollerRepository.markAsSent(mailed.flatMap(m => m.hakukohteet.map((m.hakemusOid, _))).toSet)
 
   private def hakukohdeMailStatusFor(hakutoive: Hakutoiveentulos,
-                                     alreadySentVastaanottoilmoitus: Boolean) = {
-    val (reason, message) =
-      if (alreadySentVastaanottoilmoitus) {
-        (None, "Already mailed")
-      } else if (Vastaanotettavuustila.isVastaanotettavissa(hakutoive.vastaanotettavuustila)) {
-        (Some(Vastaanottoilmoitus), "Vastaanotettavissa (" + hakutoive.valintatila + ")")
-      } else if (hakutoive.vastaanotonIlmoittaja.contains(Sijoittelu)) {
-        if (hakutoive.vastaanottotila == Vastaanottotila.vastaanottanut) {
-          (Some(SitovanVastaanotonIlmoitus), "Sitova vastaanotto")
-        } else if (hakutoive.vastaanottotila == Vastaanottotila.ehdollisesti_vastaanottanut) {
-          (Some(EhdollisenPeriytymisenIlmoitus), "Ehdollinen vastaanotto periytynyt")
-        } else {
-          throw new IllegalStateException(s"Vastaanoton ilmoittaja Sijoittelu, but vastaanottotila is ${hakutoive.vastaanottotila}")
-        }
+                                     mailReason: Option[MailReason]) = {
+    val reason =
+      if (Vastaanotettavuustila.isVastaanotettavissa(hakutoive.vastaanotettavuustila) && !mailReason.contains(Vastaanottoilmoitus)) {
+        Some(Vastaanottoilmoitus)
+      } else if (hakutoive.vastaanotonIlmoittaja.contains(Sijoittelu) && hakutoive.vastaanottotila == Vastaanottotila.vastaanottanut && !mailReason.contains(SitovanVastaanotonIlmoitus)) {
+        Some(SitovanVastaanotonIlmoitus)
+      } else if (hakutoive.vastaanotonIlmoittaja.contains(Sijoittelu) && hakutoive.vastaanottotila == Vastaanottotila.ehdollisesti_vastaanottanut && !mailReason.contains(EhdollisenPeriytymisenIlmoitus)) {
+        Some(EhdollisenPeriytymisenIlmoitus)
       } else {
-        (None, "Ei vastaanotettavissa (" + hakutoive.valintatila + ")")
+        None
       }
 
     HakukohdeMailStatus(
@@ -162,7 +159,6 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
       hakutoive.valintatapajonoOid,
       reason,
       hakutoive.vastaanottoDeadline,
-      message,
       hakutoive.valintatila,
       hakutoive.vastaanottotila,
       hakutoive.ehdollisestiHyvaksyttavissa
@@ -171,10 +167,10 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
 
   private def mailStatusFor(hakemus: Hakemus,
                             hakemuksenTulos: Hakemuksentulos,
-                            sent: Map[HakukohdeOid, Option[OffsetDateTime]]): Option[HakemusMailStatus] = hakemus match {
+                            mailReasons: Map[HakukohdeOid, Option[MailReason]]): Option[HakemusMailStatus] = hakemus match {
     case Hakemus(_, _, _, asiointikieli, _, Henkilotiedot(Some(kutsumanimi), Some(email), hasHetu)) =>
       val mailables = hakemuksenTulos.hakutoiveet.map(hakutoive => {
-        hakukohdeMailStatusFor(hakutoive, sent.getOrElse(hakutoive.hakukohdeOid, None).isDefined)
+        hakukohdeMailStatusFor(hakutoive, mailReasons.getOrElse(hakutoive.hakukohdeOid, None))
       })
       Some(HakemusMailStatus(
         hakemuksenTulos.hakijaOid,

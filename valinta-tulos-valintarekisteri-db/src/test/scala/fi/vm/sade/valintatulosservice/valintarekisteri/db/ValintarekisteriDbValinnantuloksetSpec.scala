@@ -152,9 +152,6 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid).size mustEqual 1
       singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.deleteValinnantulos(muokkaaja, valinnantulos.copy(poistettava = Some(true))))
       singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid) mustEqual Set()
-      singleConnectionValintarekisteriDb.runBlocking(
-        singleConnectionValintarekisteriDb.getViestinnanOhjaus(valinnantuloksenOhjaus)
-      ) mustEqual Set()
     }
     "delete valinnantulos if no ehdollisen hyväksynnän ehto" in {
       storeValinnantilaAndValinnantulos
@@ -164,9 +161,6 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid).size mustEqual 1
       singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.deleteValinnantulos(muokkaaja, valinnantulos.copy(poistettava = Some(true))))
       singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid) mustEqual Set()
-      singleConnectionValintarekisteriDb.runBlocking(
-        singleConnectionValintarekisteriDb.getViestinnanOhjaus(valinnantuloksenOhjaus)
-      ) mustEqual Set()
     }
     "generate muutoshistoria from updates" in {
       storeValinnantilaAndValinnantulos()
@@ -523,21 +517,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
                  ehdollisen_hyvaksymisen_ehto_fi,
                  ehdollisen_hyvaksymisen_ehto_sv,
                  ehdollisen_hyvaksymisen_ehto_en
-             ) values ($hakemusOid, $valintatapajonoOid, $hakukohdeOid, 'muu', 'muu', 'andra', 'other')""",
-      sqlu"""INSERT INTO viestinnan_ohjaus(hakukohde_oid,
-                 valintatapajono_oid,
-                 hakemus_oid,
-                 previous_check,
-                 sent,
-                 done,
-                 message
-             ) VALUES (${hakukohdeOid},
-                 ${valintatapajonoOid},
-                 ${hakemusOid},
-                 NULL::TIMESTAMP WITH TIME ZONE,
-                 NULL::TIMESTAMP WITH TIME ZONE,
-                 NULL::TIMESTAMP WITH TIME ZONE,
-                 'Sijoittelun tallennus')"""
+             ) values ($hakemusOid, $valintatapajonoOid, $hakukohdeOid, 'muu', 'muu', 'andra', 'other')"""
     ).transactionally)
   }
 
