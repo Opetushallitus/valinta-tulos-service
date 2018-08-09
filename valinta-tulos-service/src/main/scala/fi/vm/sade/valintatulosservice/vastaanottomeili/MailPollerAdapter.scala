@@ -25,7 +25,18 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
 
   private val pollConcurrency: Int = vtsApplicationSettings.mailPollerConcurrency
 
-  def etsiHaut: List[(HakuOid, HakukohdeOid)] = {
+  def pollForMailables(mailDecorator: MailDecorator, limit: Int): List[Ilmoitus] = {
+    val hakuOids = etsiHaut.par
+    hakuOids.tasksupport = new ForkJoinTaskSupport(new ForkJoinPool(pollConcurrency))
+    timed(s"Fetching mailables for ${hakuOids.size} haku", 1000) {
+      pollForMailables(mailDecorator, limit, hakuOids, List.empty)
+    }
+  }
+
+  def markAsSent(mailed: List[LahetysKuittaus]): Unit =
+    mailPollerRepository.markAsSent(mailed.flatMap(m => m.hakukohteet.map((m.hakemusOid, _))).toSet)
+
+  private def etsiHaut: List[(HakuOid, HakukohdeOid)] = {
     val found = (hakuService.kaikkiJulkaistutHaut match {
       case Right(haut) => haut
       case Left(e) => throw e
@@ -68,14 +79,6 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
 
     logger.info(s"haut ${found.map(_._1).distinct.mkString(", ")}")
     found
-  }
-
-  def pollForMailables(mailDecorator: MailDecorator, limit: Int): List[Ilmoitus] = {
-    val hakuOids = etsiHaut.par
-    hakuOids.tasksupport = new ForkJoinTaskSupport(new ForkJoinPool(pollConcurrency))
-    timed(s"Fetching mailables for ${hakuOids.size} haku", 1000) {
-      pollForMailables(mailDecorator, limit, hakuOids, List.empty)
-    }
   }
 
   @tailrec
@@ -138,31 +141,20 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
     mailables
   }
 
-  def markAsSent(mailed: List[LahetysKuittaus]): Unit =
-    mailPollerRepository.markAsSent(mailed.flatMap(m => m.hakukohteet.map((m.hakemusOid, _))).toSet)
+  private def fetchHakemukset(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Vector[Hakemus] = {
+    timed(s"Hakemusten haku hakukohteeseen $hakukohdeOid haussa $hakuOid", 1000) {
+      hakemusRepository.findHakemuksetByHakukohde(hakuOid, hakukohdeOid).toVector
+    }
+  }
 
-  private def hakukohdeMailStatusFor(hakutoive: Hakutoiveentulos,
-                                     mailReason: Option[MailReason]) = {
-    val reason =
-      if (Vastaanotettavuustila.isVastaanotettavissa(hakutoive.vastaanotettavuustila) && !mailReason.contains(Vastaanottoilmoitus)) {
-        Some(Vastaanottoilmoitus)
-      } else if (hakutoive.vastaanotonIlmoittaja.contains(Sijoittelu) && hakutoive.vastaanottotila == Vastaanottotila.vastaanottanut && !mailReason.contains(SitovanVastaanotonIlmoitus)) {
-        Some(SitovanVastaanotonIlmoitus)
-      } else if (hakutoive.vastaanotonIlmoittaja.contains(Sijoittelu) && hakutoive.vastaanottotila == Vastaanottotila.ehdollisesti_vastaanottanut && !mailReason.contains(EhdollisenPeriytymisenIlmoitus)) {
-        Some(EhdollisenPeriytymisenIlmoitus)
-      } else {
+  private def fetchHakemuksentulos(hakemus: Hakemus): Option[Hakemuksentulos] = {
+    try {
+      valintatulosService.hakemuksentulos(hakemus)
+    } catch {
+      case e: Exception =>
+        logger.error(s"Fetching hakemuksentulos ${hakemus.oid} failed", e)
         None
-      }
-
-    HakukohdeMailStatus(
-      hakutoive.hakukohdeOid,
-      hakutoive.valintatapajonoOid,
-      reason,
-      hakutoive.vastaanottoDeadline,
-      hakutoive.valintatila,
-      hakutoive.vastaanottotila,
-      hakutoive.ehdollisestiHyvaksyttavissa
-    )
+    }
   }
 
   private def mailStatusFor(hakemus: Hakemus,
@@ -187,20 +179,28 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
       None
   }
 
-  private def fetchHakemuksentulos(hakemus: Hakemus): Option[Hakemuksentulos] = {
-    try {
-      valintatulosService.hakemuksentulos(hakemus)
-    } catch {
-      case e: Exception =>
-        logger.error(s"Fetching hakemuksentulos ${hakemus.oid} failed", e)
+  private def hakukohdeMailStatusFor(hakutoive: Hakutoiveentulos,
+                                     mailReason: Option[MailReason]) = {
+    val reason =
+      if (Vastaanotettavuustila.isVastaanotettavissa(hakutoive.vastaanotettavuustila) && !mailReason.contains(Vastaanottoilmoitus)) {
+        Some(Vastaanottoilmoitus)
+      } else if (hakutoive.vastaanotonIlmoittaja.contains(Sijoittelu) && hakutoive.vastaanottotila == Vastaanottotila.vastaanottanut && !mailReason.contains(SitovanVastaanotonIlmoitus)) {
+        Some(SitovanVastaanotonIlmoitus)
+      } else if (hakutoive.vastaanotonIlmoittaja.contains(Sijoittelu) && hakutoive.vastaanottotila == Vastaanottotila.ehdollisesti_vastaanottanut && !mailReason.contains(EhdollisenPeriytymisenIlmoitus)) {
+        Some(EhdollisenPeriytymisenIlmoitus)
+      } else {
         None
-    }
-  }
+      }
 
-  private def fetchHakemukset(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Vector[Hakemus] = {
-    timed(s"Hakemusten haku hakukohteeseen $hakukohdeOid haussa $hakuOid", 1000) {
-      hakemusRepository.findHakemuksetByHakukohde(hakuOid, hakukohdeOid).toVector
-    }
+    HakukohdeMailStatus(
+      hakutoive.hakukohdeOid,
+      hakutoive.valintatapajonoOid,
+      reason,
+      hakutoive.vastaanottoDeadline,
+      hakutoive.valintatila,
+      hakutoive.vastaanottotila,
+      hakutoive.ehdollisestiHyvaksyttavissa
+    )
   }
 }
 
