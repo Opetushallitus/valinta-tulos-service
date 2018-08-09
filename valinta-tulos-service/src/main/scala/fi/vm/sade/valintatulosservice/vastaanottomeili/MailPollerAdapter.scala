@@ -133,11 +133,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
         case (r, _) => r
       })
     logger.info(s"${mailables.size} mailables from ${checkedCandidates.size} candidates for hakukohde $hakukohdeOid in haku $hakuOid")
-    mailPollerRepository.markAsToBeSent(
-      mailableStatii
-        .flatMap(s => s.hakukohteet.map(h => (s.hakemusOid, h.hakukohdeOid, h.reasonToMail)))
-        .collect { case (hakemusOid, hakukohdeOid, Some(reason)) => (hakemusOid, hakukohdeOid, reason) }
-    )
+    markAsToBeSent(mailableStatii)
     mailables
   }
 
@@ -200,6 +196,14 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
       hakutoive.valintatila,
       hakutoive.vastaanottotila,
       hakutoive.ehdollisestiHyvaksyttavissa
+    )
+  }
+
+  private def markAsToBeSent(mailableStatii: Set[HakemusMailStatus]): Unit = {
+    mailPollerRepository.markAsToBeSent(
+      mailableStatii
+        .flatMap(s => s.hakukohteet.map(h => (s.hakemusOid, h.hakukohdeOid, h.reasonToMail)))
+        .collect { case (hakemusOid, hakukohdeOid, Some(reason)) => (hakemusOid, hakukohdeOid, reason) }
     )
   }
 }
