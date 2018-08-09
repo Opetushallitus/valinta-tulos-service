@@ -9,7 +9,7 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, YhdenPaikanSaanto}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EhdollisenPeriytymisenIlmoitus, EiTehty, HakemusOid, HakuOid, HakukohdeOid, Kevat, SitovanVastaanotonIlmoitus, ValintatapajonoOid, Vastaanottoilmoitus, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EhdollisenPeriytymisenIlmoitus, EiTehty, HakemusOid, HakuOid, HakukohdeOid, Kevat, MailReason, SitovanVastaanotonIlmoitus, ValintatapajonoOid, Vastaanottoilmoitus, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.{ValintatulosService, tarjonta}
 import org.joda.time.DateTime
 import org.junit.runner.RunWith
@@ -56,6 +56,7 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
             toinenAste = false
           )
         ))
+        there was one (mailPollerRepository).markAsToBeSent(Set((hakemusOidA, hakukohdeOidA, Vastaanottoilmoitus)))
         there was no (oppijanTunnistusService).luoSecureLink(any[String], any[HakemusOid], any[String], any[String])
       }
       "Ilmoitus vastaanotettavasta paikasta secure linkillä jos hetuton hakija" in new Mocks {
@@ -91,6 +92,7 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
             toinenAste = false
           )
         ))
+        there was one (mailPollerRepository).markAsToBeSent(Set((hakemusOidB, hakukohdeOidA, Vastaanottoilmoitus)))
       }
       "Ilmoitus ehdollisen vastaanoton siirtymisestä ylempään hakutoiveeseen" in new Mocks {
         hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
@@ -134,6 +136,7 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
             toinenAste = false
           )
         ))
+        there was one (mailPollerRepository).markAsToBeSent(Set((hakemusOidC, hakukohdeOidB, EhdollisenPeriytymisenIlmoitus)))
       }
       "Ilmoitus ehdollisen vastaanoton muuttumisesta sitovaksi sen siirtyessä ylimpään hakutoiveeseen" in new Mocks {
         hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
@@ -177,6 +180,7 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
             toinenAste = false
           )
         ))
+        there was one (mailPollerRepository).markAsToBeSent(Set((hakemusOidC, hakukohdeOidC, SitovanVastaanotonIlmoitus)))
       }
       "Ilmoitus ehdollisen vastaanoton muuttumisesta sitovaksi ylimmän hakutoiveen peruuntuessa" in new Mocks {
         hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
@@ -220,6 +224,7 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
             toinenAste = false
           )
         ))
+        there was one (mailPollerRepository).markAsToBeSent(Set((hakemusOidC, hakukohdeOidB, SitovanVastaanotonIlmoitus)))
       }
       "Ei uutta ilmoitusta vastaanotettavasta paikasta" in new Mocks {
         hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
@@ -230,6 +235,7 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusA)
         valintatulosService.hakemuksentulos(hakemusA) returns Some(hakemuksentulosA)
         service.pollForMailables(mailDecorator, 1) mustEqual Nil
+        there was one (mailPollerRepository).markAsToBeSent(Set.empty)
       }
       "Ei uutta ilmoitusta ehdollisen vastaanoton siirtymisestä ylempään hakutoiveeseen" in new Mocks {
         hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
@@ -250,6 +256,7 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidC) returns Iterator(hakemusC)
         valintatulosService.hakemuksentulos(hakemusC) returns Some(hakemuksentulosC)
         service.pollForMailables(mailDecorator, 1) mustEqual Nil
+        there was three (mailPollerRepository).markAsToBeSent(Set.empty)
       }
       "Ei uutta ilmoitusta ehdollisen vastaanoton muuttumisesta sitovaksi sen siirtyessä ylimpään hakutoiveeseen" in new Mocks {
         hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
@@ -270,6 +277,7 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidC) returns Iterator(hakemusC)
         valintatulosService.hakemuksentulos(hakemusC) returns Some(hakemuksentulosD)
         service.pollForMailables(mailDecorator, 1) mustEqual Nil
+        there was three (mailPollerRepository).markAsToBeSent(Set.empty)
       }
       "Ei uutta ilmoitusta ehdollisen vastaanoton muuttumisesta sitovaksi ylimmän hakutoiveen peruuntuessa" in new Mocks {
         hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
@@ -290,6 +298,7 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidC) returns Iterator(hakemusC)
         valintatulosService.hakemuksentulos(hakemusC) returns Some(hakemuksentulosE)
         service.pollForMailables(mailDecorator, 1) mustEqual Nil
+        there was three (mailPollerRepository).markAsToBeSent(Set.empty)
       }
     }
   }
