@@ -7,14 +7,11 @@ import fi.vm.sade.valintatulosservice.vastaanottomeili.{Ilmoitus, LahetysKuittau
 import org.json4s._
 import org.json4s.jackson.Serialization
 import org.json4s.native.JsonMethods._
-import org.junit.Ignore
 import org.junit.runner.RunWith
 import org.specs2.matcher.MatchResult
 import org.specs2.runner.JUnitRunner
-import slick.jdbc.PostgresProfile.api._
 
 
-@Ignore
 @RunWith(classOf[JUnitRunner])
 class EmailStatusServletSpec extends ServletSpecification with ValintarekisteriDbTools {
   override implicit val formats = JsonFormats.jsonFormats
@@ -50,9 +47,6 @@ class EmailStatusServletSpec extends ServletSpecification with ValintarekisteriD
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakemusFixtures = List("00000441369-no-email"))
       verifyEmptyListOfEmails
 
-      singleConnectionValintarekisteriDb.runBlocking(
-        sqlu"""update viestinnan_ohjaus set previous_check = now() - interval '4 days'"""
-      )
       // tarkistetaan, että lähetetään myöhemmin jos email on lisätty
       hakemusFixtureImporter.clear.importFixture("00000441369")
       verifyNonEmptyListOfEmails
