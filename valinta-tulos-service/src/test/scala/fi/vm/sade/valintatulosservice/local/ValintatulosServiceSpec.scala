@@ -342,6 +342,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
 
       "hakutoiveista 1. hyväksytty, ei julkaistu 2. ei tehty 3. hyväksytty, odottaa ylempiä toiveita" in {
         // VARALLA KESKEN true
+        // VARALLA KESKEN true
         // HYVÄKSYTTY KESKEN true
         // Ajetaan ensin historiadata
         useFixture("hyvaksytty-ylempi-ei-julkaistu-toinen-ei-sijoittelua-alin-peruuntunut.json", hakuFixture = hakuFixture, hakemusFixtures = List("00000441369-3"))
@@ -349,7 +350,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
 
-        //Poistetaan kannasta valintatilan tiedot:
+        //Poistetaan kannasta 2. hakutoiveen valintatilan tiedot:
         valintarekisteriDb.runBlocking(sqlu"delete from jonosijat where valintatapajono_oid = '14090336922663576781797489829885' and hakukohde_oid = '1.2.246.562.5.72607738903'"
           .transactionally,
           Duration(60, TimeUnit.MINUTES))
@@ -366,10 +367,6 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           .transactionally,
           Duration(60, TimeUnit.MINUTES))
 
-        valintarekisteriDb.runBlocking(sqlu"delete from valinnantulokset_history where hakukohde_oid = '1.2.246.562.5.72607738903' and hakemus_oid = '1.2.246.562.11.00000441369'"
-          .transactionally,
-          Duration(60, TimeUnit.MINUTES))
-
         valintarekisteriDb.runBlocking(sqlu"delete from valinnantulokset where hakukohde_oid = '1.2.246.562.5.72607738903' and hakemus_oid = '1.2.246.562.11.00000441369'"
           .transactionally,
           Duration(60, TimeUnit.MINUTES))
@@ -378,13 +375,15 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           .transactionally,
           Duration(60, TimeUnit.MINUTES))
 
-
         valintarekisteriDb.runBlocking(sqlu"delete from valinnantilat where hakukohde_oid = '1.2.246.562.5.72607738903' and hakemus_oid = '1.2.246.562.11.00000441369'"
           .transactionally,
           Duration(60, TimeUnit.MINUTES))
 
-        // Poistetaan 2. hakutoiveen valinnantila:
         valintarekisteriDb.runBlocking(sqlu"delete from valinnantilat_history where hakukohde_oid = '1.2.246.562.5.72607738903' and hakemus_oid = '1.2.246.562.11.00000441369'"
+          .transactionally,
+          Duration(60, TimeUnit.MINUTES))
+
+        valintarekisteriDb.runBlocking(sqlu"delete from sijoitteluajon_hakukohteet where hakukohde_oid = '1.2.246.562.5.72607738903'"
           .transactionally,
           Duration(60, TimeUnit.MINUTES))
 
@@ -394,7 +393,6 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           "1.2.246.562.24.14229104472",
           Valinnantila("Hyvaksytty"),
           "testi")
-
 
         val hakemuksen3tila = ValinnantilanTallennus(HakemusOid("1.2.246.562.11.00000441369"),
           ValintatapajonoOid("14090336922663576781797489829888"),
