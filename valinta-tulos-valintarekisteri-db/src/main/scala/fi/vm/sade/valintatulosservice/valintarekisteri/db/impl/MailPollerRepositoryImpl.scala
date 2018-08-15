@@ -76,7 +76,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
 
   def markAsSent(toMark: Set[(HakemusOid, HakukohdeOid)]): Unit = {
     if (toMark.nonEmpty) {
-      timed("Marking as sent", 1000) {
+      timed(s"Marking as sent ${toMark.size} records in db", 1000) {
         runBlocking(
           SimpleDBIO { session =>
             val statement = session.connection.prepareStatement(
