@@ -58,13 +58,22 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten)
   }
 
-  override def getViimeisinValinnantilaMuutosHyvaksyttyCountHistoriasta(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Int = {
-    runBlocking(sql""" select count(*)
-            from valinnantilat_history
-            where hakemus_oid = ${hakemusOid}
-              and hakukohde_oid = ${hakukohdeOid}
-              and tila = 'Hyvaksytty'
-              and transaction_id = (select max(transaction_id) from valinnantilat_history)""".as[Int].head)
+  override def getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuCountHistoriasta(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Int = {
+    runBlocking(sql"""select count(*)
+    from valinnantilat_history vth, valinnantulokset vt
+    where vth.hakemus_oid = vt.hakemus_oid
+      and vth.hakukohde_oid = vt.hakukohde_oid
+      and vth.valintatapajono_oid = vt.valintatapajono_oid
+      and vth.hakemus_oid = ${hakemusOid}
+      and vth.hakukohde_oid = ${hakukohdeOid}
+      and vth.tila = 'Hyvaksytty'
+      and vt.julkaistavissa = 'true'
+      and vth.transaction_id = (
+        select max(transaction_id)
+        from valinnantilat_history
+        where vth.hakemus_oid = ${hakemusOid}
+          and vth.hakukohde_oid = ${hakukohdeOid}
+      )""".as[Int].head)
   }
 
   private def getValinnantulosMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {

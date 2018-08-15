@@ -780,6 +780,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
+
   private def näytäAlemmatPeruutuneetKeskeneräisinäJosYlemmätKeskeneräisiä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) = {
     val firstKeskeneräinen = tulokset.indexWhere (_.valintatila == Valintatila.kesken)
     tulokset.zipWithIndex.map {
@@ -810,7 +811,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
 
     tulokset.zipWithIndex.map {
       case (tulos, index) if firstJulkaisematon >= 0 && index > firstJulkaisematon && tulos.valintatila == Valintatila.peruuntunut =>
-        if (valinnantulosRepository.getViimeisinValinnantilaMuutosHyvaksyttyCountHistoriasta(hakemusOid, tulos.hakukohdeOid) > 0 && firstChanged == false) {
+        if (valinnantulosRepository.getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuCountHistoriasta(hakemusOid, tulos.hakukohdeOid) > 0 && firstChanged == false) {
           logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä valintatila > hyväksytty {}", index)
           firstChanged = true
           tulos.copy(valintatila = Valintatila.hyväksytty)
