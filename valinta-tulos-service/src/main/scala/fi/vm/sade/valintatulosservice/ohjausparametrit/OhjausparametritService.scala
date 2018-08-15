@@ -57,7 +57,7 @@ object CachedRemoteOhjausparametritService {
 class RemoteOhjausparametritService(implicit appConfig: VtsAppConfig) extends OhjausparametritService with JsonFormats {
   import org.json4s.jackson.JsonMethods._
 
-  def parametrit[T](target: String)(parser: (String => T)): Either[Throwable, Option[T]] = {
+  def parametrit[T](target: String)(parser: String => T): Either[Throwable, Option[T]] = {
     val url = appConfig.ophUrlProperties.url("ohjausparametrit-service.parametri",target)
     Try(DefaultHttpClient.httpGet(url)
       .header("clientSubSystemCode", "valinta-tulos-service")
@@ -67,7 +67,7 @@ class RemoteOhjausparametritService(implicit appConfig: VtsAppConfig) extends Oh
         Try(Right(Some(parser(body)))).recover {
           case NonFatal(e) => Left(new IllegalStateException(s"Parsing result $body of GET $url failed", e))
         }.get
-      case (404, _, body) => Right(None)
+      case (404, _, _) => Right(None)
       case (status, _, body) => Left(new RuntimeException(s"GET $url failed with $status: $body"))
     }).recover {
       case NonFatal(e) => Left(new RuntimeException(s"GET $url failed", e))
