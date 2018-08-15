@@ -302,7 +302,7 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
     }
 
   override def getHakijanHakutoiveidenHakijatSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId:Long):Map[(HakukohdeOid,ValintatapajonoOid),Int] =
-    timed("", 100) {
+    timed(s"Hakemuksen $hakemusOid hakutoiveiden sijojen hakeminen sijoitteluajossa $sijoitteluajoId", 100) {
       runBlocking(
        sql"""
          with hakijan_hakutoiveet as (select hakukohde_oid, valintatapajono_oid from jonosijat
@@ -314,7 +314,7 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
   }
 
   override def getHakijanHakutoiveidenHakijatValinnantuloksista(hakemusOid: HakemusOid):Map[(HakukohdeOid,ValintatapajonoOid),Int] =
-    timed("", 100) {
+    timed(s"Hakemuksen $hakemusOid hakutoiveiden hakijoiden hakeminen tuloksista", 100) {
       runBlocking(
         sql"""
             with hakijan_hakutoiveet as (select hakukohde_oid, valintatapajono_oid from valinnantilat
@@ -325,7 +325,7 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
     }
 
   override def getHakijanHakutoiveidenHyvaksytytValinnantuloksista(hakemusOid: HakemusOid):Map[(HakukohdeOid,ValintatapajonoOid),Int] =
-    timed("", 100) {
+    timed(s"Hakemuksen $hakemusOid hakutoiveiden hyväksyttyjen hakeminen tuloksista", 100) {
       runBlocking(
         sql"""
             with hakijan_hakutoiveet as (select hakukohde_oid, valintatapajono_oid from valinnantilat
