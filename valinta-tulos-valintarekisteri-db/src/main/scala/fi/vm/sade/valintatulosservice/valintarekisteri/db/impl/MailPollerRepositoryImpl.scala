@@ -11,7 +11,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
 
   override def candidates(hakukohdeOid: HakukohdeOid,
                           recheckIntervalHours: Int = 24 * 3): Set[(HakemusOid, HakukohdeOid, Option[MailReason])] = {
-    timed("Fetching mailable candidates", 100) {
+    timed(s"Fetching mailable candidates database call for hakukohde $hakukohdeOid", 100) {
       runBlocking(
         sql"""select vt.hakemus_oid,
                      vt.hakukohde_oid,
