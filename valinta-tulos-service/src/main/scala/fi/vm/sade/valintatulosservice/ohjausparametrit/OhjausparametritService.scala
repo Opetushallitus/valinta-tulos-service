@@ -1,6 +1,8 @@
 package fi.vm.sade.valintatulosservice.ohjausparametrit
 
+import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.http.DefaultHttpClient
+import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain.Vastaanottoaikataulu
 import fi.vm.sade.valintatulosservice.json.JsonFormats
@@ -54,11 +56,15 @@ object CachedRemoteOhjausparametritService {
   }
 }
 
-class RemoteOhjausparametritService(implicit appConfig: VtsAppConfig) extends OhjausparametritService with JsonFormats {
+class RemoteOhjausparametritService(implicit appConfig: VtsAppConfig) extends OhjausparametritService with JsonFormats with Logging {
   import org.json4s.jackson.JsonMethods._
 
   def parametrit[T](target: String)(parser: String => T): Either[Throwable, Option[T]] = {
-    val url = appConfig.ophUrlProperties.url("ohjausparametrit-service.parametri",target)
+    Timer.timed(s"Find parameters for target $target", 100) { loadParametersFromService(target, parser) }
+  }
+
+  private def loadParametersFromService[T](target: String, parser: String => T) = {
+    val url = appConfig.ophUrlProperties.url("ohjausparametrit-service.parametri", target)
     Try(DefaultHttpClient.httpGet(url)
       .header("clientSubSystemCode", "valinta-tulos-service")
       .header("Caller-id", "valinta-tulos-service")
