@@ -59,7 +59,7 @@ select vo.hakemus_oid,
              else 'VASTAANOTTOILMOITUS'
             end,
         vo.sent,
-        max(vo.previous_check)
+        coalesce(max(vo.previous_check), vo.sent)
 from viestinnan_ohjaus vo
 join valinnantilat vt on vt.hakemus_oid = vo.hakemus_oid and vt.valintatapajono_oid = vo.valintatapajono_oid and vt.hakukohde_oid = vo.hakukohde_oid
 left join nv on nv.henkilo = vt.henkilo_oid and nv.hakukohde = vo.hakukohde_oid and nv.hakukohde = vt.hakukohde_oid
