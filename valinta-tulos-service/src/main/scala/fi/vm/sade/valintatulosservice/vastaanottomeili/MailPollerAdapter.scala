@@ -26,7 +26,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
   private val pollConcurrency: Int = vtsApplicationSettings.mailPollerConcurrency
 
   def pollForMailables(mailDecorator: MailDecorator, limit: Int): List[Ilmoitus] = {
-    val fetchHakusTaskLabel = "Looking for hakus with their hakukohdes to process."
+    val fetchHakusTaskLabel = "Looking for hakus with their hakukohdes to process"
     logger.info(s"Start: $fetchHakusTaskLabel")
     val hakukohdeOidsWithTheirHakuOids: ParSeq[(HakuOid, HakukohdeOid)] = timed(fetchHakusTaskLabel, 1000) { etsiHaut.par }
 
