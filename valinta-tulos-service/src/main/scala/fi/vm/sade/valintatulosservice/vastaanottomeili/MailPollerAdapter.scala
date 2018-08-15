@@ -26,10 +26,16 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
   private val pollConcurrency: Int = vtsApplicationSettings.mailPollerConcurrency
 
   def pollForMailables(mailDecorator: MailDecorator, limit: Int): List[Ilmoitus] = {
-    val hakuOids = etsiHaut.par
-    hakuOids.tasksupport = new ForkJoinTaskSupport(new ForkJoinPool(pollConcurrency))
-    timed(s"Fetching mailables for ${hakuOids.size} haku", 1000) {
-      pollForMailables(mailDecorator, limit, hakuOids, List.empty)
+    val fetchHakusTaskLabel = "Looking for hakus with their hakukohdes to process."
+    logger.info(s"Start: $fetchHakusTaskLabel")
+    val hakukohdeOidsWithTheirHakuOids: ParSeq[(HakuOid, HakukohdeOid)] = timed(fetchHakusTaskLabel, 1000) { etsiHaut.par }
+
+    hakukohdeOidsWithTheirHakuOids.tasksupport = new ForkJoinTaskSupport(new ForkJoinPool(pollConcurrency))
+    val fetchMailablesTaskLabel = s"Fetching mailables for ${hakukohdeOidsWithTheirHakuOids.size} hakukohdes " +
+      s"with poll concurrency of $pollConcurrency and limit of $limit"
+    logger.info(s"Start: $fetchMailablesTaskLabel")
+    timed(fetchMailablesTaskLabel, 1000) {
+      pollForMailables(mailDecorator, limit, hakukohdeOidsWithTheirHakuOids, List.empty)
     }
   }
 
