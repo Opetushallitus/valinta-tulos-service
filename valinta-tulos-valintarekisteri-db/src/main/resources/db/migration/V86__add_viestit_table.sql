@@ -7,7 +7,7 @@ values ('VASTAANOTTOILMOITUS'),
        ('EHDOLLISEN_PERIYTYMISEN_ILMOITUS'),
        ('SITOVAN_VASTAANOTON_ILMOITUS');
 
-create table viestit_preliminary (
+create table viestit (
     hakemus_oid text not null,
     hakukohde_oid text not null,
     syy text references viestin_syy,
@@ -18,14 +18,13 @@ create table viestit_preliminary (
     primary key (hakemus_oid, hakukohde_oid)
 );
 
-/*
-
 -- NB: Running the old data migration requires too much time to do it
--- automatically as a part of the Flyway migration run on service startup.
--- Hence, this must be run separately.
+-- automatically as a part of the Flyway migration run on service startup
+-- in production.
+-- Hence, this migration must be run separately in production.
 -- It _must_ be completed before the first valinta-tulos-emailer run takes place!
 
-insert into viestit_preliminary(hakemus_oid, hakukohde_oid, syy, lahetetty, lahettaminen_aloitettu)
+insert into viestit(hakemus_oid, hakukohde_oid, syy, lahetetty, lahettaminen_aloitettu)
 (with nv as (
     select all_vastaanotot.henkilo,
            all_vastaanotot.hakukohde,
@@ -66,8 +65,6 @@ left join nv on nv.henkilo = vt.henkilo_oid and nv.hakukohde = vo.hakukohde_oid 
 where vo.sent is not null
 group by vo.hakemus_oid, vo.hakukohde_oid, nv.action, nv.ilmoittaja, vo.sent);
 
-alter table viestit_preliminary rename to viestit;
-
 create table viestit_history (like viestit);
 
 create trigger set_temporal_columns_on_viestit_on_insert
@@ -107,5 +104,3 @@ create trigger delete_viestit_history
     after delete on viestit
     for each row
 execute procedure update_viestit_history();
-
-*/
