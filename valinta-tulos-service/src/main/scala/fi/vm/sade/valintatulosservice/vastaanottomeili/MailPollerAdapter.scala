@@ -181,8 +181,14 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
         hakemuksenTulos.hakuOid,
         mailables
       ))
-    case _ =>
-      logger.error(s"Hakemus ${hakemus.oid} is missing ${hakemus.asiointikieli}, ${hakemus.henkilotiedot.kutsumanimi}, ${hakemus.henkilotiedot.email} or ${hakemus.henkilotiedot.hasHetu}")
+    case Hakemus(_, _, _, _, _, Henkilotiedot(None, None, _)) =>
+      logger.error(s"Hakemus ${hakemus.oid} is missing hakemus.henkilotiedot.kutsumanimi and hakemus.henkilotiedot.email")
+      None
+    case Hakemus(_, _, _, _, _, Henkilotiedot(None, Some(email), _)) =>
+      logger.error(s"Hakemus ${hakemus.oid} is missing hakemus.henkilotiedot.kutsumanimi")
+      None
+    case Hakemus(_, _, _, _, _, Henkilotiedot(Some(kutsumanimi), None, _)) =>
+      logger.error(s"Hakemus ${hakemus.oid} is missing hakemus.henkilotiedot.email")
       None
   }
 
