@@ -814,7 +814,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         if (valinnantulosRepository.getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuCountHistoriasta(hakemusOid, tulos.hakukohdeOid) > 0 && firstChanged == false) {
           logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä valintatila > hyväksytty {}", index)
           firstChanged = true
-          tulos.copy(valintatila = Valintatila.hyväksytty)
+          tulos.copy(valintatila = Valintatila.hyväksytty, tilanKuvaukset = Map.empty)
         } else {
           logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä {}", tulos.valintatila)
           tulos

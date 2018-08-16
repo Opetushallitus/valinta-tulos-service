@@ -60,19 +60,19 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
 
   override def getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuCountHistoriasta(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Int = {
     runBlocking(sql"""select count(*)
-    from valinnantilat_history vth, valinnantulokset vt
-    where vth.hakemus_oid = vt.hakemus_oid
-      and vth.hakukohde_oid = vt.hakukohde_oid
-      and vth.valintatapajono_oid = vt.valintatapajono_oid
-      and vth.hakemus_oid = ${hakemusOid}
-      and vth.hakukohde_oid = ${hakukohdeOid}
-      and vth.tila = 'Hyvaksytty'
-      and vt.julkaistavissa = 'true'
-      and vth.transaction_id = (
-        select max(transaction_id)
-        from valinnantilat_history
-        where vth.hakemus_oid = ${hakemusOid}
-          and vth.hakukohde_oid = ${hakukohdeOid}
+      from valinnantilat_history vth
+      join valinnantulokset as vt on vt.hakemus_oid = vth.hakemus_oid
+        and vt.hakukohde_oid = vth.hakukohde_oid
+        and vt.valintatapajono_oid = vth.valintatapajono_oid
+      where vth.hakemus_oid = ${hakemusOid}
+        and vth.hakukohde_oid = ${hakukohdeOid}
+        and vth.tila = 'Hyvaksytty'
+        and vt.julkaistavissa = 'true'
+        and vth.transaction_id = (
+          select max(transaction_id)
+          from valinnantilat_history
+          where vth.hakemus_oid = ${hakemusOid}
+            and vth.hakukohde_oid = ${hakukohdeOid}
       )""".as[Int].head)
   }
 
