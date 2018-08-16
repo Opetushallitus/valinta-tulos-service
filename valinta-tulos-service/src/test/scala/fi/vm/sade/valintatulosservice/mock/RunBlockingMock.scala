@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.mock
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriRepository
+import org.mockito.stubbing.OngoingStubbing
 import org.specs2.mock.Mockito
 import slick.dbio._
 
@@ -42,7 +43,7 @@ trait RunBlockingMock { this: Mockito =>
     case x => if (x == null) throw new RuntimeException("Got null dbio") else throw new RuntimeException(x.getClass.toString)
   }
 
-  def mockRunBlocking(repository:ValintarekisteriRepository) = {
+  def mockRunBlocking[T](repository:ValintarekisteriRepository): OngoingStubbing[Either[Throwable, T]] = {
     repository.runBlocking(any[DBIO[Any]], any[Duration]) answers (x => answerRun(x).fold(throw _, x => x))
     repository.runBlockingTransactionally(any[DBIO[Any]], any[Duration]) answers (x => answerRun(x))
   }
