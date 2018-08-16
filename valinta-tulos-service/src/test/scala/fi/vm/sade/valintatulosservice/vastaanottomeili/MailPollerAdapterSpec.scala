@@ -300,6 +300,20 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
         service.pollForMailables(mailDecorator, 1) mustEqual Nil
         there was three (mailPollerRepository).markAsToBeSent(Set.empty)
       }
+
+      "Ei ilmoitusta, jos kutsumanimi puuttuu" in new Mocks {
+        hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
+        hakuService.getHaku(hakuOidA) returns Right(tarjontaHakuA)
+        hakuService.getHakukohde(hakukohdeOidA) returns Right(tarjontaHakukohdeA)
+        hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA))
+        mailPollerRepository.candidates(hakukohdeOidA) returns Set((hakemusOidA, hakukohdeOidA, None))
+        val hakemusAWithoutKutsumanimi: Hakemus = hakemusA.copy(
+          henkilotiedot = hakemusA.henkilotiedot.copy(kutsumanimi = None))
+        hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusAWithoutKutsumanimi)
+        valintatulosService.hakemuksentulos(hakemusAWithoutKutsumanimi) returns Some(hakemuksentulosA)
+        service.pollForMailables(mailDecorator, 1) mustEqual Nil
+        there was one (mailPollerRepository).markAsToBeSent(Set.empty)
+      }
     }
   }
 
