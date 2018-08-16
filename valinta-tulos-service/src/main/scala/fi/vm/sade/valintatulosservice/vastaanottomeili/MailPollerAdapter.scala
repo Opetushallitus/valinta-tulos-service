@@ -138,7 +138,12 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
           }).getOrElse((candidatesAcc + hakemusOid, mailableStatiiAcc, mailablesAcc))
         case (r, _) => r
       })
-    logger.info(s"${mailables.size} mailables from ${checkedCandidates.size} candidates for hakukohde $hakukohdeOid in haku $hakuOid")
+    val logMessage = s"${mailables.size} mailables from ${checkedCandidates.size} candidates for hakukohde $hakukohdeOid in haku $hakuOid"
+    if (mailables.isEmpty && checkedCandidates.isEmpty) {
+      logger.debug(logMessage)
+    } else {
+      logger.info(logMessage)
+    }
     markAsToBeSent(mailableStatii)
     mailables
   }
