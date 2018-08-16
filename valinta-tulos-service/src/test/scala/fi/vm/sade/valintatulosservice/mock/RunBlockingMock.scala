@@ -24,7 +24,10 @@ trait RunBlockingMock { this: Mockito =>
       val result = actions.toList.map(a => mockRun(a))
       result.find(_.isLeft) match {
         case Some(left) => left
-        case None => Right(result.map{ case Right(r) => r})
+        case None => Right(result.map {
+          case Right(r) => r
+          case Left(e) => throw e
+        } )
       }
     }
     case AsTryAction(action) => mockRun(action) match {
@@ -35,7 +38,6 @@ trait RunBlockingMock { this: Mockito =>
     case FailedAction(actions) => throw new RuntimeException("FailedAction not implemented in mock")
     case NamedAction(actions, _) => throw new RuntimeException("NamedAction not implemented in mock")
     case CleanUpAction(actions, _, _, _) => throw new RuntimeException("ClenUpAction not implemented in mock")
-    case SuccessAction(actions) => throw new RuntimeException("SuccessAction not implemented in mock")
     case x if x.isInstanceOf[DBIOAction[_, _, _]] => throw new RuntimeException(x.getDumpInfo.getNamePlusMainInfo)
     case x => if (x == null) throw new RuntimeException("Got null dbio") else throw new RuntimeException(x.getClass.toString)
   }
