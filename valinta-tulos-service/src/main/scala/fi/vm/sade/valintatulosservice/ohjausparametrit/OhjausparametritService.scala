@@ -60,7 +60,7 @@ class RemoteOhjausparametritService(implicit appConfig: VtsAppConfig) extends Oh
   import org.json4s.jackson.JsonMethods._
 
   def parametrit[T](target: String)(parser: String => T): Either[Throwable, Option[T]] = {
-    Timer.timed(s"Find parameters for target $target", 100) { loadParametersFromService(target, parser) }
+    Timer.timed(s"Find parameters for target $target", 500) { loadParametersFromService(target, parser) }
   }
 
   private def loadParametersFromService[T](target: String, parser: String => T) = {
