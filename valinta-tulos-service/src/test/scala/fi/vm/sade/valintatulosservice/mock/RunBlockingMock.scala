@@ -43,7 +43,7 @@ trait RunBlockingMock { this: Mockito =>
     case x => if (x == null) throw new RuntimeException("Got null dbio") else throw new RuntimeException(x.getClass.toString)
   }
 
-  def mockRunBlocking[T](repository:ValintarekisteriRepository): OngoingStubbing[Either[Throwable, T]] = {
+  def mockRunBlocking(repository:ValintarekisteriRepository): OngoingStubbing[Either[Throwable, Any]] = {
     repository.runBlocking(any[DBIO[Any]], any[Duration]) answers (x => answerRun(x).fold(throw _, x => x))
     repository.runBlockingTransactionally(any[DBIO[Any]], any[Duration]) answers (x => answerRun(x))
   }
