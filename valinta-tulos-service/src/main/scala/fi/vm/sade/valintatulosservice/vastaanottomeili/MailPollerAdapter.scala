@@ -90,6 +90,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
   @tailrec
   private def pollForMailables(mailDecorator: MailDecorator, limit: Int, hakukohdeOids: ParSeq[(HakuOid, HakukohdeOid)], acc: List[Ilmoitus]): List[Ilmoitus] = {
     if (hakukohdeOids.isEmpty || acc.size >= limit) {
+      logger.info(s"Returning ${acc.size} mailables for limit of $limit")
       acc
     } else {
       val mailablesNeeded = limit - acc.size
