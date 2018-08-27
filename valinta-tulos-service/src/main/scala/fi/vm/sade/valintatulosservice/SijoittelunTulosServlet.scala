@@ -2,7 +2,6 @@ package fi.vm.sade.valintatulosservice
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId, ZonedDateTime}
-import java.util
 
 import com.google.gson.GsonBuilder
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
@@ -15,6 +14,10 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.{Hyvaksymiskirje, Sess
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra.{NotFound, Ok}
 import org.scalatra.swagger.{Swagger, SwaggerEngine}
+
+import scala.concurrent.{Await, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
 
 class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
                               valintaesitysService: ValintaesitysService,
@@ -42,33 +45,40 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
 
     authorizer.checkAccess(ai.session._2, hakukohde.tarjoajaOids,
       Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).fold(throw _, x => x)
-
     try {
-      val hakukohdeBySijoitteluAjo: HakukohdeDTO = sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session)
-      val lukuvuosimaksu: Seq[Lukuvuosimaksu] = lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, ai)
-      val hyvaksymiskirje: Set[Hyvaksymiskirje] = hyvaksymiskirjeService.getHyvaksymiskirjeet(hakukohdeOid, ai)
-      val valintaesitys: Set[Valintaesitys] = valintaesitysService.get(hakukohdeOid, ai)
+      val fhakukohdeBySijoitteluAjo: Future[HakukohdeDTO] = Future {sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session)}
+      val flukuvuosimaksu: Future[Seq[Lukuvuosimaksu]] = Future {lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, ai)}
+      val fhyvaksymiskirje: Future[Set[Hyvaksymiskirje]] = Future {hyvaksymiskirjeService.getHyvaksymiskirjeet(hakukohdeOid, ai)}
+      val fvalintaesitys: Future[Set[Valintaesitys]] = Future {valintaesitysService.get(hakukohdeOid, ai)}
 
       val (lastModified, valinnantulokset: Set[Valinnantulos]) = valinnantulosService.getValinnantuloksetForHakukohde(hakukohdeOid, ai).map(a => (Option(a._1), a._2)).getOrElse((None, Set()))
-      val modified: String = lastModified.map(createLastModifiedHeader(_)).getOrElse("")
-
+      val modified: String = lastModified.map(createLastModifiedHeader).getOrElse("")
       val valinnantuloksetWithTakarajat: Set[Valinnantulos] = decorateValinnantuloksetWithDeadlines(hakuOid, hakukohdeOid, valinnantulokset)
 
-      val resultJson =
+      val resultJson = for {
+        sijoittelunTulokset <- fhakukohdeBySijoitteluAjo
+        lukuvuosimaksut <- flukuvuosimaksu
+        kirjeet <- fhyvaksymiskirje
+        valintaesitys <- fvalintaesitys
+      } yield {
         s"""{
            |"valintaesitys":${JsonFormats.formatJson(valintaesitys)},
-           |"lastModified":"${modified}",
-           |"sijoittelunTulokset":${JsonFormats.javaObjectToJsonString(hakukohdeBySijoitteluAjo)},
+           |"lastModified":"$modified",
+           |"sijoittelunTulokset":${JsonFormats.javaObjectToJsonString(sijoittelunTulokset)},
            |"valintatulokset":${JsonFormats.formatJson(valinnantuloksetWithTakarajat)},
-           |"kirjeLahetetty":${JsonFormats.formatJson(hyvaksymiskirje)},
-           |"lukuvuosimaksut":${JsonFormats.formatJson(lukuvuosimaksu)}}""".stripMargin
-      Ok(resultJson)
+           |"kirjeLahetetty":${JsonFormats.formatJson(kirjeet)},
+           |"lukuvuosimaksut":${JsonFormats.formatJson(lukuvuosimaksut)}}""".stripMargin
+      }
+
+      val rtt = Await.result(resultJson, Duration.Inf)
+      Ok(rtt)
     } catch {
       case e: NotFoundException =>
         val message = e.getMessage
         NotFound(body = Map("error" -> message), reason = message)
     }
   }
+
   protected def createLastModifiedHeader(instant: Instant): String = {
     DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant((instant.truncatedTo(java.time.temporal.ChronoUnit.SECONDS).plusSeconds(1)), ZoneId.of("GMT")))
   }
