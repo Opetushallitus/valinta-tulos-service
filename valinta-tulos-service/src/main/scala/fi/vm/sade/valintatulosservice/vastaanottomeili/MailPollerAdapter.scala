@@ -35,7 +35,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
       s"with poll concurrency of $pollConcurrency and limit of $limit"
     logger.info(s"Start: $fetchMailablesTaskLabel")
     timed(fetchMailablesTaskLabel, 1000) {
-      pollForMailables(mailDecorator, limit, hakukohdeOidsWithTheirHakuOids, List.empty)
+      processHakukohteesForMailables(mailDecorator, limit, hakukohdeOidsWithTheirHakuOids, List.empty)
     }
   }
 
@@ -88,7 +88,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
   }
 
   @tailrec
-  private def pollForMailables(mailDecorator: MailDecorator, limit: Int, hakukohdeOids: ParSeq[(HakuOid, HakukohdeOid)], acc: List[Ilmoitus]): List[Ilmoitus] = {
+  private def processHakukohteesForMailables(mailDecorator: MailDecorator, limit: Int, hakukohdeOids: ParSeq[(HakuOid, HakukohdeOid)], acc: List[Ilmoitus]): List[Ilmoitus] = {
     if (hakukohdeOids.isEmpty || acc.size >= limit) {
       logger.info(s"Returning ${acc.size} mailables for limit of $limit")
       acc
@@ -102,7 +102,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
         .map {
           case ((hakuOid, hakukohdeOid), n) =>
             val mailables = timed(s"Fetching mailables for hakukohde $hakukohdeOid in haku $hakuOid", 1000) {
-              pollForMailables(mailDecorator, n, hakuOid, hakukohdeOid)
+              searchAndCreateMailablesForSingleHakukohde(mailDecorator, n, hakuOid, hakukohdeOid)
             }
             (
               if (mailables.size == n) { List((hakuOid, hakukohdeOid)) } else { List.empty },
@@ -110,11 +110,11 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
             )
         }
         .reduce[(List[(HakuOid, HakukohdeOid)], List[Ilmoitus])] { case (t, tt) => (t._1 ++ tt._1, t._2 ++ tt._2) }
-      pollForMailables(mailDecorator, limit, rest ++ oidsWithCandidatesLeft, acc ++ mailables)
+      processHakukohteesForMailables(mailDecorator, limit, rest ++ oidsWithCandidatesLeft, acc ++ mailables)
     }
   }
 
-  private def pollForMailables(mailDecorator: MailDecorator, limit: Int, hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): List[Ilmoitus] = {
+  private def searchAndCreateMailablesForSingleHakukohde(mailDecorator: MailDecorator, limit: Int, hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): List[Ilmoitus] = {
     val candidates = mailPollerRepository.candidates(hakukohdeOid)
     val hakemuksetByOid = if (candidates.isEmpty) {
       Map.empty[HakemusOid, Hakemus]
