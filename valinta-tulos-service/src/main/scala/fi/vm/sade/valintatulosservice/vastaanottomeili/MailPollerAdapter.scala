@@ -32,10 +32,10 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
 
     hakukohdeOidsWithTheirHakuOids.tasksupport = new ForkJoinTaskSupport(new ForkJoinPool(pollConcurrency))
     val fetchMailablesTaskLabel = s"Fetching mailables for ${hakukohdeOidsWithTheirHakuOids.size} hakukohdes " +
-      s"with poll concurrency of $pollConcurrency and limit of $limit"
+      s"with poll concurrency of $pollConcurrency and totalMailablesWanted of $limit"
     logger.info(s"Start: $fetchMailablesTaskLabel")
     timed(fetchMailablesTaskLabel, 1000) {
-      pollForMailables(mailDecorator, limit, hakukohdeOidsWithTheirHakuOids, List.empty)
+      processHakukohteesForMailables(mailDecorator, limit, hakukohdeOidsWithTheirHakuOids, List.empty)
     }
   }
 
@@ -88,21 +88,26 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
   }
 
   @tailrec
-  private def pollForMailables(mailDecorator: MailDecorator, limit: Int, hakukohdeOids: ParSeq[(HakuOid, HakukohdeOid)], acc: List[Ilmoitus]): List[Ilmoitus] = {
-    if (hakukohdeOids.isEmpty || acc.size >= limit) {
-      logger.info(s"Returning ${acc.size} mailables for limit of $limit")
+  private def processHakukohteesForMailables(mailDecorator: MailDecorator, totalMailablesWanted: Int, hakukohdeOids: ParSeq[(HakuOid, HakukohdeOid)], acc: List[Ilmoitus]): List[Ilmoitus] = {
+    if (hakukohdeOids.isEmpty || acc.size >= totalMailablesWanted) {
+      logger.info(s"Returning ${acc.size} mailables for totalMailablesWanted of $totalMailablesWanted")
       acc
     } else {
-      val mailablesNeeded = limit - acc.size
-      val (toPoll, rest) = hakukohdeOids.splitAt(mailablesNeeded)
+      val mailablesNeeded = totalMailablesWanted - acc.size
+      var hakukohteesToProcessOnThisIteration = mailablesNeeded / 10 //todo: arvot järkeviksi
+      if (hakukohteesToProcessOnThisIteration > hakukohdeOids.size) {
+        hakukohteesToProcessOnThisIteration = hakukohdeOids.size
+      }
+      val (toPoll, rest) = hakukohdeOids.splitAt(hakukohteesToProcessOnThisIteration)
       val mailablesNeededPerHakukohde = (mailablesNeeded / toPoll.size) + (mailablesNeeded % toPoll.size) :: List.fill(toPoll.size - 1)(mailablesNeeded / toPoll.size)
       assert(mailablesNeededPerHakukohde.size == toPoll.size)
       assert(mailablesNeededPerHakukohde.sum == mailablesNeeded)
+      logger.info(s"(rest.size: ${rest.size}) Prosessoidaan $hakukohteesToProcessOnThisIteration hakukohdetta. Max. ${mailablesNeeded/toPoll.size} ilmoitusta per hakukohde (jakojäännös ${mailablesNeeded % toPoll.size}). Totalwanted: $totalMailablesWanted, acc now: ${acc.size}")
       val (oidsWithCandidatesLeft, mailables) = toPoll.zip(mailablesNeededPerHakukohde)
         .map {
           case ((hakuOid, hakukohdeOid), n) =>
             val mailables = timed(s"Fetching mailables for hakukohde $hakukohdeOid in haku $hakuOid", 1000) {
-              pollForMailables(mailDecorator, n, hakuOid, hakukohdeOid)
+              searchAndCreateMailablesForSingleHakukohde(mailDecorator, n, hakuOid, hakukohdeOid)
             }
             (
               if (mailables.size == n) { List((hakuOid, hakukohdeOid)) } else { List.empty },
@@ -110,11 +115,11 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
             )
         }
         .reduce[(List[(HakuOid, HakukohdeOid)], List[Ilmoitus])] { case (t, tt) => (t._1 ++ tt._1, t._2 ++ tt._2) }
-      pollForMailables(mailDecorator, limit, rest ++ oidsWithCandidatesLeft, acc ++ mailables)
+      processHakukohteesForMailables(mailDecorator, totalMailablesWanted, rest ++ oidsWithCandidatesLeft, acc ++ mailables)
     }
   }
 
-  private def pollForMailables(mailDecorator: MailDecorator, limit: Int, hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): List[Ilmoitus] = {
+  private def searchAndCreateMailablesForSingleHakukohde(mailDecorator: MailDecorator, limit: Int, hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): List[Ilmoitus] = {
     val candidates = mailPollerRepository.candidates(hakukohdeOid)
     val hakemuksetByOid = if (candidates.isEmpty) {
       Map.empty[HakemusOid, Hakemus]
@@ -127,7 +132,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
         case ((candidatesAcc, mailableStatiiAcc, mailablesAcc), (hakemusOid, mailReasons)) if mailablesAcc.size < limit =>
           (for {
             hakemus <- hakemuksetByOid.get(hakemusOid)
-            hakemuksentulos <- fetchHakemuksentulos(hakemus)
+            hakemuksentulos <- fetchHakemuksentulos(hakemus) //Todo: nämä voisi varmaankin hakea valmiiksi yhtenä satsina koko haulle/hakukohteelle kuten hakemukset yllä, tässä tehdään paljon turhia kutsuja
             status <- mailStatusFor(hakemus, hakemuksentulos, mailReasons.map(m => m._2 -> m._3).toMap)
             mailable <- mailDecorator.statusToMail(status)
           } yield {
