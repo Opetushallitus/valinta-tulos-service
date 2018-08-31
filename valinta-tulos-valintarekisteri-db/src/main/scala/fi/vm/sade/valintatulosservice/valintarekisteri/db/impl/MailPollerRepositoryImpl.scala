@@ -46,6 +46,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
 
   override def markAsToBeSent(toMark: Set[(HakemusOid, HakukohdeOid, MailReason)]): Unit = {
     if (toMark.nonEmpty) {
+      logger.info(s"Marking as to be sent: ${toMark.size} kpl ")
       timed("Marking as to be sent", 100) {
         runBlocking(
           SimpleDBIO { session =>
@@ -65,7 +66,8 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                   statement.setString(3, reason.toString)
                   statement.addBatch()
               }
-              statement.execute()
+              val result = statement.executeBatch()
+              logger.info(s"Tried to mark ${toMark.size} viestis to be sent. Successes: ${result.count(s => s.equals(1))}")
             } finally {
               statement.close()
             }
@@ -94,7 +96,8 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                   statement.setString(2, hakukohdeOid.s)
                   statement.addBatch()
               }
-              statement.execute()
+              val result = statement.executeBatch()
+              logger.info(s"Tried to mark ${toMark.size} viestis as sent. Successes: ${result.count(s => s.equals(1))}")
             } finally {
               statement.close()
             }
