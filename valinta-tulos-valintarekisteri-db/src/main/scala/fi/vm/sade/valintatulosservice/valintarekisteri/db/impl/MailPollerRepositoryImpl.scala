@@ -10,7 +10,7 @@ import slick.jdbc.PostgresProfile.api._
 trait MailPollerRepositoryImpl extends MailPollerRepository with ValintarekisteriRepository with Logging {
 
   override def candidates(hakukohdeOid: HakukohdeOid,
-                          recheckIntervalHours: Int = 24 * 3): Set[(HakemusOid, HakukohdeOid, Option[MailReason])] = {
+                          recheckIntervalHours: Int = 24): Set[(HakemusOid, HakukohdeOid, Option[MailReason])] = {
     timed(s"Fetching mailable candidates database call for hakukohde $hakukohdeOid", 100) {
       runBlocking(
         sql"""select vt.hakemus_oid,
