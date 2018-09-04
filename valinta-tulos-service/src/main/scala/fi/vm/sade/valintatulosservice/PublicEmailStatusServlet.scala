@@ -36,8 +36,8 @@ class PublicEmailStatusServlet(mailPoller: MailPollerAdapter,
     implicit val authenticated: Authenticated = authenticate
     authorize(Role.SIJOITTELU_CRUD)
     val hakemusOid: HakemusOid = parseHakemusOid.fold(throw _, x => x)
-    logger.info(s"Removing viestinnan_ohjaus entries for hakemus $hakemusOid to enable re-sending of emails.")
-    mailPoller.deleteMailEntries(hakemusOid)
+    val deletedCount: Int = mailPoller.deleteMailEntries(hakemusOid)
+    logger.info(s"Removed $deletedCount mail bookkeeping entries for hakemus $hakemusOid to enable re-sending of emails.")
   }
 
   protected def parseHakukohdeOid: Either[Throwable, HakukohdeOid] = {

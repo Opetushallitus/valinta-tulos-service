@@ -114,7 +114,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
               and (sent is not null or done is not null)""".as[String]).toList
   }
 
-  def deleteHakemusMailEntry(hakemusOid: HakemusOid): Unit = {
-    runBlocking(sqlu"""delete from viestinnan_ohjaus where hakemus_oid = ${hakemusOid}""")
+  def deleteHakemusMailEntries(hakemusOid: HakemusOid): Int = {
+    runBlocking[Int](sqlu"""delete from viestinnan_ohjaus where hakemus_oid = ${hakemusOid}""")
   }
 }

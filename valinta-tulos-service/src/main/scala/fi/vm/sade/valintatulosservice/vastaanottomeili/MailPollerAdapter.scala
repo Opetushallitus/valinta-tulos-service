@@ -236,8 +236,8 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
     mailPollerRepository.getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid)
   }
 
-  def deleteMailEntries(hakemusOid: HakemusOid): Unit = {
-    mailPollerRepository.deleteHakemusMailEntry(hakemusOid)
+  def deleteMailEntries(hakemusOid: HakemusOid): Int = {
+    mailPollerRepository.deleteHakemusMailEntries(hakemusOid)
   }
 }
 
