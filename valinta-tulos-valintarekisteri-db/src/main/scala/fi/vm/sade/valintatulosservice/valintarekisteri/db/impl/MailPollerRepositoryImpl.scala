@@ -108,13 +108,12 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
 
   def getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid: HakukohdeOid): List[String] = {
     runBlocking(
-      sql"""select distinct hakemus_oid
-            from viestinnan_ohjaus
-            where hakemus_oid in (select distinct hakemus_oid from viestinnan_ohjaus where hakukohde_oid = ${hakukohdeOid})
-              and (sent is not null or done is not null)""".as[String]).toList
+      sql"""select distinct hakemus_oid from viestit
+            where hakukohde_oid = ${hakukohdeOid} and lahetetty is not null
+            order by hakemus_oid""".as[String]).toList
   }
 
   def deleteHakemusMailEntries(hakemusOid: HakemusOid): Int = {
-    runBlocking[Int](sqlu"""delete from viestinnan_ohjaus where hakemus_oid = ${hakemusOid}""")
+    runBlocking[Int](sqlu"""delete from viestit where hakemus_oid = ${hakemusOid}""")
   }
 }
