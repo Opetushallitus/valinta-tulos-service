@@ -11,5 +11,5 @@ trait MailPollerRepository {
 
   def getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid: HakukohdeOid): List[String]
 
-  def deleteHakemusMailEntry(hakemusOid: HakemusOid): Unit
+  def deleteHakemusMailEntries(hakemusOid: HakemusOid): Int
 }
