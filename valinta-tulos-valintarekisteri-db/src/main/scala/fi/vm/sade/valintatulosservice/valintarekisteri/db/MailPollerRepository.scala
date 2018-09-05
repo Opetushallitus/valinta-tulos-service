@@ -8,4 +8,8 @@ trait MailPollerRepository {
   def markAsToBeSent(toMark: Set[(HakemusOid, HakukohdeOid, MailReason)]): Unit
 
   def markAsSent(toMark: Set[(HakemusOid, HakukohdeOid)]): Unit
+
+  def getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid: HakukohdeOid): List[String]
+
+  def deleteHakemusMailEntries(hakemusOid: HakemusOid): Int
 }
