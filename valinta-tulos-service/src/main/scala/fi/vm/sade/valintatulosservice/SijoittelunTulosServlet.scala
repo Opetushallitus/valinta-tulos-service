@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId, ZonedDateTime}
+import java.util.concurrent.TimeUnit
 
 import com.google.gson.GsonBuilder
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
@@ -70,7 +71,7 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
            |"lukuvuosimaksut":${JsonFormats.formatJson(lukuvuosimaksut)}}""".stripMargin
       }
 
-      val rtt = Await.result(resultJson, Duration.Inf)
+      val rtt = Await.result(resultJson, Duration(1, TimeUnit.MINUTES))
       Ok(rtt)
     } catch {
       case e: NotFoundException =>
