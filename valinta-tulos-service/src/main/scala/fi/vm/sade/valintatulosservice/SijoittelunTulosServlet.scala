@@ -47,20 +47,20 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
     authorizer.checkAccess(ai.session._2, hakukohde.tarjoajaOids,
       Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).fold(throw _, x => x)
     try {
-      val fhakukohdeBySijoitteluAjo: Future[HakukohdeDTO] = Future {sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session)}
-      val flukuvuosimaksu: Future[Seq[Lukuvuosimaksu]] = Future {lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, ai)}
-      val fhyvaksymiskirje: Future[Set[Hyvaksymiskirje]] = Future {hyvaksymiskirjeService.getHyvaksymiskirjeet(hakukohdeOid, ai)}
-      val fvalintaesitys: Future[Set[Valintaesitys]] = Future {valintaesitysService.get(hakukohdeOid, ai)}
+      val futureSijoittelunTulokset: Future[HakukohdeDTO] = Future { sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session) }
+      val futureLukuvuosimaksut: Future[Seq[Lukuvuosimaksu]] = Future { lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, ai) }
+      val futureHyvaksymiskirjeet: Future[Set[Hyvaksymiskirje]] = Future { hyvaksymiskirjeService.getHyvaksymiskirjeet(hakukohdeOid, ai) }
+      val futureValintaesitys: Future[Set[Valintaesitys]] = Future { valintaesitysService.get(hakukohdeOid, ai) }
 
       val (lastModified, valinnantulokset: Set[Valinnantulos]) = valinnantulosService.getValinnantuloksetForHakukohde(hakukohdeOid, ai).map(a => (Option(a._1), a._2)).getOrElse((None, Set()))
       val modified: String = lastModified.map(createLastModifiedHeader).getOrElse("")
       val valinnantuloksetWithTakarajat: Set[Valinnantulos] = decorateValinnantuloksetWithDeadlines(hakuOid, hakukohdeOid, valinnantulokset)
 
       val resultJson = for {
-        sijoittelunTulokset <- fhakukohdeBySijoitteluAjo
-        lukuvuosimaksut <- flukuvuosimaksu
-        kirjeet <- fhyvaksymiskirje
-        valintaesitys <- fvalintaesitys
+        sijoittelunTulokset <- futureSijoittelunTulokset
+        lukuvuosimaksut <- futureLukuvuosimaksut
+        kirjeet <- futureHyvaksymiskirjeet
+        valintaesitys <- futureValintaesitys
       } yield {
         s"""{
            |"valintaesitys":${JsonFormats.formatJson(valintaesitys)},
