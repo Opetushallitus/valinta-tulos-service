@@ -134,7 +134,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
         case ((candidatesAcc, mailableStatiiAcc, mailablesAcc), (hakemusOid, mailReasons)) if mailablesAcc.size < limit =>
           (for {
             hakemus <- hakemuksetByOid.get(hakemusOid)
-            hakemuksentulos <- fetchHakemuksentulos(hakemus) //Todo: nämä voisi ehkä hakea valmiiksi yhtenä satsina koko hakukohteelle kuten hakemukset yllä
+            hakemuksentulos <- fetchHakemuksentulos(hakemus)
             status <- mailStatusFor(hakemus, hakemuksentulos, mailReasons.map(m => m._2 -> m._3).toMap)
             mailable <- mailDecorator.statusToMail(status)
           } yield {
