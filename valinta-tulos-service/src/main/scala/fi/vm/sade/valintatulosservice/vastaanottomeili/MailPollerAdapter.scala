@@ -231,6 +231,14 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
         .collect { case (hakemusOid, hakukohdeOid, Some(reason)) => (hakemusOid, hakukohdeOid, reason) }
     )
   }
+
+  def getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid: HakukohdeOid): List[String] = {
+    mailPollerRepository.getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid)
+  }
+
+  def deleteMailEntries(hakemusOid: HakemusOid): Int = {
+    mailPollerRepository.deleteHakemusMailEntries(hakemusOid)
+  }
 }
 
 
