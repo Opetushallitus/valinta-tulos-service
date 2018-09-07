@@ -7,6 +7,7 @@ import java.util.concurrent.{Executors, TimeUnit}
 import com.google.gson.GsonBuilder
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
 import fi.vm.sade.sijoittelu.tulos.dto.HakukohdeDTO
+import fi.vm.sade.utils.Timer
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.Role
@@ -33,7 +34,7 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
 
   override protected def applicationDescription: String = "Sijoittelun Tulos REST API"
 
-  private implicit val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(8))
+  private implicit val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(20))
 
   val gson = new GsonBuilder().create()
 
@@ -48,10 +49,11 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
     authorizer.checkAccess(ai.session._2, hakukohde.tarjoajaOids,
       Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).fold(throw _, x => x)
     try {
-      val futureSijoittelunTulokset: Future[HakukohdeDTO] = Future { sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session) }
-      val futureLukuvuosimaksut: Future[Seq[Lukuvuosimaksu]] = Future { lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, ai) }
-      val futureHyvaksymiskirjeet: Future[Set[Hyvaksymiskirje]] = Future { hyvaksymiskirjeService.getHyvaksymiskirjeet(hakukohdeOid, ai) }
-      val futureValintaesitys: Future[Set[Valintaesitys]] = Future { valintaesitysService.get(hakukohdeOid, ai) }
+      val start = System.currentTimeMillis()
+      val futureSijoittelunTulokset: Future[HakukohdeDTO] = Future { Timer.timed("future 1"){sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session)} }
+      val futureLukuvuosimaksut: Future[Seq[Lukuvuosimaksu]] = Future { Timer.timed("future 2"){lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, ai)} }
+      val futureHyvaksymiskirjeet: Future[Set[Hyvaksymiskirje]] = Future { Timer.timed("future 3"){hyvaksymiskirjeService.getHyvaksymiskirjeet(hakukohdeOid, ai)} }
+      val futureValintaesitys: Future[Set[Valintaesitys]] = Future { Timer.timed("future 4"){valintaesitysService.get(hakukohdeOid, ai)} }
 
       val (lastModified, valinnantulokset: Set[Valinnantulos]) = valinnantulosService.getValinnantuloksetForHakukohde(hakukohdeOid, ai).map(a => (Option(a._1), a._2)).getOrElse((None, Set()))
       val modified: String = lastModified.map(createLastModifiedHeader).getOrElse("")
@@ -72,6 +74,7 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
            |"lukuvuosimaksut":${JsonFormats.formatJson(lukuvuosimaksut)}}""".stripMargin
       }
 
+      logger.info("Jäädään odottamaan futureiden valmistumista. Aikaa kulunut nyt (ms): " + (System.currentTimeMillis() - start))
       val rtt = Await.result(resultJson, Duration(1, TimeUnit.MINUTES))
       Ok(rtt)
     } catch {
