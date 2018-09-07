@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId, ZonedDateTime}
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{Executors, TimeUnit}
 
 import com.google.gson.GsonBuilder
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
@@ -16,8 +16,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra.{NotFound, Ok}
 import org.scalatra.swagger.{Swagger, SwaggerEngine}
 
-import scala.concurrent.{Await, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.concurrent.duration.Duration
 
 class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
@@ -33,6 +32,8 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
   override val applicationName = Some("auth/sijoitteluntulos")
 
   override protected def applicationDescription: String = "Sijoittelun Tulos REST API"
+
+  private implicit val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(8))
 
   val gson = new GsonBuilder().create()
 
