@@ -1,5 +1,8 @@
 package fi.vm.sade.valintatulosservice.vastaanottomeili
 
+import java.util.Date
+import java.util.concurrent.TimeUnit.DAYS
+
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.ValintatulosService
@@ -14,6 +17,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import scala.annotation.tailrec
 import scala.collection.parallel.ForkJoinTaskSupport
 import scala.collection.parallel.immutable.ParSeq
+import scala.concurrent.duration.Duration
 import scala.concurrent.forkjoin.ForkJoinPool
 
 class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
@@ -177,7 +181,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
                             mailReasons: Map[HakukohdeOid, Option[MailReason]]): Option[HakemusMailStatus] = hakemus match {
     case Hakemus(_, _, _, asiointikieli, _, Henkilotiedot(Some(kutsumanimi), Some(email), hasHetu)) =>
       val mailables = hakemuksenTulos.hakutoiveet.map(hakutoive => {
-        hakukohdeMailStatusFor(hakutoive, mailReasons.getOrElse(hakutoive.hakukohdeOid, None))
+        hakukohdeMailStatusFor(hakutoive, mailReasons.getOrElse(hakutoive.hakukohdeOid, mailReasons.get(hakutoive.hakukohdeOid).flatten))
       })
       Some(HakemusMailStatus(
         hakemuksenTulos.hakijaOid,
