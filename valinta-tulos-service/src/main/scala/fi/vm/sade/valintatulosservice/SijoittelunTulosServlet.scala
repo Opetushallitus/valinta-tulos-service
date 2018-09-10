@@ -35,7 +35,8 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
 
   override protected def applicationDescription: String = "Sijoittelun Tulos REST API"
 
-  private implicit val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(20))
+  private implicit val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(8))
+  private val ecFast: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
 
   val gson = new GsonBuilder().create()
 
@@ -56,13 +57,13 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
         sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session)} }
       val futureLukuvuosimaksut: Future[Seq[Lukuvuosimaksu]] = Future { Timer.timed("future 2"){
         logger.info("haetaan future 2, aikaa alusta: " + (System.currentTimeMillis() - start))
-        lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, ai)} }
+        lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, ai)} }(ecFast)
       val futureHyvaksymiskirjeet: Future[Set[Hyvaksymiskirje]] = Future { Timer.timed("future 3"){
         logger.info("haetaan future 3, aikaa alusta: " + (System.currentTimeMillis() - start))
-        hyvaksymiskirjeService.getHyvaksymiskirjeet(hakukohdeOid, ai)} }
+        hyvaksymiskirjeService.getHyvaksymiskirjeet(hakukohdeOid, ai)} }(ecFast)
       val futureValintaesitys: Future[Set[Valintaesitys]] = Future { Timer.timed("future 4"){
         logger.info("haetaan future 4, aikaa alusta: " + (System.currentTimeMillis() - start))
-        valintaesitysService.get(hakukohdeOid, ai)} }
+        valintaesitysService.get(hakukohdeOid, ai)} }(ecFast)
 
       futureSijoittelunTulokset.onComplete({
         case Success(s) => logger.info("future 1 valmis. aikaa kulunut alusta: " + (System.currentTimeMillis() - start))
