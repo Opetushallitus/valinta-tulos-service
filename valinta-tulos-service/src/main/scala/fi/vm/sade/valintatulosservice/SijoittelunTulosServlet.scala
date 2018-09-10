@@ -36,7 +36,7 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
   override protected def applicationDescription: String = "Sijoittelun Tulos REST API"
 
   private implicit val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(8))
-  private val ecFast: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
+  private val ecFast: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(9))
 
   val gson = new GsonBuilder().create()
 
@@ -51,6 +51,7 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
     authorizer.checkAccess(ai.session._2, hakukohde.tarjoajaOids,
       Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).fold(throw _, x => x)
     try {
+      logger.info("saatiin kutsu sijoitteluntulos-rajapintaan. luodaan futuret ja kootaan tulokset")
       val start = System.currentTimeMillis()
       val futureSijoittelunTulokset: Future[HakukohdeDTO] = Future { Timer.timed("future 1"){
         logger.info("haetaan future 1, aikaa alusta: " + (System.currentTimeMillis() - start))
