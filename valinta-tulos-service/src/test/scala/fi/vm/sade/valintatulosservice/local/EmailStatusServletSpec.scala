@@ -3,24 +3,26 @@ package fi.vm.sade.valintatulosservice.local
 import fi.vm.sade.valintatulosservice.ServletSpecification
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
-import fi.vm.sade.valintatulosservice.vastaanottomeili.{Ilmoitus, LahetysKuittaus}
+import fi.vm.sade.valintatulosservice.vastaanottomeili.{LahetysKuittaus, PollResult}
 import org.json4s._
 import org.json4s.jackson.Serialization
 import org.json4s.native.JsonMethods._
 import org.junit.runner.RunWith
 import org.specs2.matcher.MatchResult
 import org.specs2.runner.JUnitRunner
+import org.specs2.specification.BeforeEach
+import slick.jdbc.PostgresProfile.api._
 
 
 @RunWith(classOf[JUnitRunner])
-class EmailStatusServletSpec extends ServletSpecification with ValintarekisteriDbTools {
+class EmailStatusServletSpec extends ServletSpecification with ValintarekisteriDbTools with BeforeEach {
   override implicit val formats = JsonFormats.jsonFormats
   "GET /vastaanottoposti" should {
     "Lista lähetettävistä sähköposteista" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakemusFixtures = List("00000441369"))
 
         verifyEmails { emails => {
-            val ilmoitukset = parse(emails).extract[List[Ilmoitus]]
+            val ilmoitukset = parse(emails).extract[PollResult].mailables
             ilmoitukset must_!= null
             ilmoitukset.isEmpty must_== false
           }
@@ -30,7 +32,7 @@ class EmailStatusServletSpec extends ServletSpecification with ValintarekisteriD
       useFixture("hyvaksytty-ehdollisesti-kesken-julkaistavissa.json", hakemusFixtures = List("00000441369"))
 
         verifyEmails { emails => {
-            val ilmoitukset = parse(emails).extract[List[Ilmoitus]]
+            val ilmoitukset = parse(emails).extract[PollResult].mailables
             ilmoitukset must_!= null
             ilmoitukset.isEmpty must_== false
           }
@@ -46,6 +48,8 @@ class EmailStatusServletSpec extends ServletSpecification with ValintarekisteriD
     "Ei lähetetä, jos email-osoite puuttuu" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakemusFixtures = List("00000441369-no-email"))
       verifyEmptyListOfEmails
+
+      before()
 
       // tarkistetaan, että lähetetään myöhemmin jos email on lisätty
       hakemusFixtureImporter.clear.importFixture("00000441369")
@@ -63,7 +67,7 @@ class EmailStatusServletSpec extends ServletSpecification with ValintarekisteriD
     "Merkitsee postitukset tehdyiksi" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakemusFixtures = List("00000441369"))
       get("vastaanottoposti") {
-        val mailsToSend = Serialization.read[List[Ilmoitus]](body)
+        val mailsToSend = Serialization.read[PollResult](body).mailables
         mailsToSend.isEmpty must_== false
         withFixedDateTime("12.10.2014 12:00") {
           val kuittaukset = mailsToSend.map { mail =>
@@ -79,11 +83,11 @@ class EmailStatusServletSpec extends ServletSpecification with ValintarekisteriD
   }
 
   def verifyEmptyListOfEmails = {
-    verifyEmails { emails => emails must_== "[]"}
+    verifyEmails { emails => parse(emails).extract[PollResult].mailables must beEmpty }
   }
 
   def verifyNonEmptyListOfEmails = {
-    verifyEmails { emails => emails must_!= "[]"}
+    verifyEmails { emails => parse(emails).extract[PollResult].mailables must not beEmpty }
   }
 
 
@@ -96,5 +100,9 @@ class EmailStatusServletSpec extends ServletSpecification with ValintarekisteriD
 
   def expectEmails(expected: String): MatchResult[Any] = {
     verifyEmails { emails => emails must_== expected }
+  }
+
+  override def before(): Unit = {
+    valintarekisteriDbWithPool.runBlockingTransactionally(sqlu"delete from viestinlahetys_tarkistettu")
   }
 }
