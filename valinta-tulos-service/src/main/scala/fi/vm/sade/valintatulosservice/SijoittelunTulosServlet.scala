@@ -100,6 +100,7 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
 
       logger.info("Jäädään odottamaan futureiden valmistumista. Aikaa kulunut nyt (ms): " + (System.currentTimeMillis() - start))
       val rtt = Await.result(resultJson, Duration(1, TimeUnit.MINUTES))
+      logger.info("Kaikki futuret valmiita ja tulokset koottu. Aikaa kulunut nyt (ms): " + (System.currentTimeMillis() - start))
       Ok(rtt)
     } catch {
       case e: NotFoundException =>
