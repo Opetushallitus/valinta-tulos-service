@@ -1,9 +1,13 @@
 package fi.vm.sade.valintatulosservice.config
 
+import java.util.concurrent.TimeUnit.HOURS
+
 import com.typesafe.config.Config
 import fi.vm.sade.utils.config.MongoConfig
 import fi.vm.sade.valintatulosservice.SecuritySettings
 import org.apache.commons.lang3.BooleanUtils
+
+import scala.concurrent.duration.Duration
 
 case class VtsApplicationSettings(config: Config) extends ApplicationSettings(config) {
   val omatsivutUrlEn = withConfig(_.getString("omatsivut.en"))
@@ -33,6 +37,8 @@ case class VtsApplicationSettings(config: Config) extends ApplicationSettings(co
     }
   }
   val mailPollerConcurrency: Int = withConfig(_.getInt("valinta-tulos-service.mail-poller.concurrency"))
+  val mailPollerResultlessHakukohdeRecheckInterval: Duration = Duration(withConfig(
+    _.getInt("valinta-tulos-service.mail-poller.resultless.hakukohde.hours")), HOURS)
 }
 
 object VtsApplicationSettingsParser extends fi.vm.sade.utils.config.ApplicationSettingsParser[VtsApplicationSettings] {
