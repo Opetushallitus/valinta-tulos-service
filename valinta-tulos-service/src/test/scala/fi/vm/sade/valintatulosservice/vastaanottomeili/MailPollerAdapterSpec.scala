@@ -319,6 +319,95 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
         service.pollForMailables(mailDecorator, 1, oneMinute).mailables mustEqual Nil
         there was one (mailPollerRepository).markAsToBeSent(Set.empty)
       }
+
+      "Ei uutta ilmoitusta samasta toiveesta, jos hakija on hyväksytty kahteen hakutoiveeseen ja toiseen on jo lähetetty viesti" in new Mocks {
+        hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
+        hakuService.getHaku(hakuOidA) returns Right(tarjontaHakuA)
+        hakuService.getHakukohde(hakukohdeOidA) returns Right(tarjontaHakukohdeA)
+        hakuService.getHakukohde(hakukohdeOidB) returns Right(tarjontaHakukohdeB)
+        hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA, hakukohdeOidB))
+        mailPollerRepository.candidates(hakukohdeOidA) returns Set((hakemusOidA, hakukohdeOidA, None, None))
+        mailPollerRepository.candidates(hakukohdeOidB) returns Set.empty
+        val hakemusAWithToiveBAdded: Hakemus = hakemusA.copy(toiveet = hakemusA.toiveet ++ List(Hakutoive(
+          oid = hakukohdeOidB,
+          tarjoajaOid = tarjoajaOidB,
+          nimi = hakukohdeNimetB("fi"),
+          tarjoajaNimi = tarjoajaNimetB("fi")
+        )))
+        hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusAWithToiveBAdded)
+        valintatulosService.hakemuksentulos(hakemusAWithToiveBAdded) returns Some(hakemuksentulosA.copy(hakutoiveet =
+          hakemuksentulosA.hakutoiveet ++ List(
+            Hakutoiveentulos(
+              hakukohdeOid = hakukohdeOidB,
+              hakukohdeNimi = hakukohdeNimetB("fi"),
+              tarjoajaOid = tarjoajaOidB,
+              tarjoajaNimi = tarjoajaNimetB("fi"),
+              valintatapajonoOidB,
+              valintatila = Valintatila.hyväksytty,
+              vastaanottotila = Vastaanottotila.kesken,
+              vastaanotonIlmoittaja = None,
+              ilmoittautumistila = HakutoiveenIlmoittautumistila(
+                ilmoittautumisaika = Ilmoittautumisaika(
+                  None,
+                  None
+                ),
+                ilmoittautumistapa = None,
+                ilmoittautumistila = EiTehty,
+                ilmoittauduttavissa = false
+              ),
+              ilmoittautumisenAikaleima = None,
+              vastaanotettavuustila = Vastaanotettavuustila.vastaanotettavissa_sitovasti,
+              vastaanottoDeadline = deadlineA,
+              viimeisinHakemuksenTilanMuutos = None,
+              viimeisinValintatuloksenMuutos = None,
+              jonosija = Some(1),
+              varasijojaKaytetaanAlkaen = None,
+              varasijojaTaytetaanAsti = None,
+              varasijanumero = Some(1),
+              julkaistavissa = true,
+              ehdollisestiHyvaksyttavissa = false,
+              ehdollisenHyvaksymisenEhtoKoodi = None,
+              ehdollisenHyvaksymisenEhtoFI = None,
+              ehdollisenHyvaksymisenEhtoSV = None,
+              ehdollisenHyvaksymisenEhtoEN = None,
+              tilanKuvaukset = Map.empty,
+              pisteet = Some(1),
+              virkailijanTilat = HakutoiveenSijoittelunTilaTieto(
+                valintatila = Valintatila.hyväksytty,
+                vastaanottotila = Vastaanottotila.ehdollisesti_vastaanottanut,
+                vastaanotonIlmoittaja = None,
+                vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa
+              ),
+              kelaURL = None
+            )
+          )))
+        service.pollForMailables(mailDecorator, 1, oneMinute).mailables mustEqual List(Ilmoitus(
+          hakemusOid = hakemusOidA,
+          hakijaOid = hakijaOidA,
+          secureLink = None,
+          asiointikieli = asiointikieliA,
+          etunimi = etunimiA,
+          email = emailA,
+          deadline = deadlineA,
+          hakukohteet = List(
+            Hakukohde(
+              oid = hakukohdeOidA,
+              lahetysSyy = LahetysSyy.vastaanottoilmoitusKk,
+              vastaanottotila = Vastaanottotila.kesken,
+              ehdollisestiHyvaksyttavissa = false,
+              hakukohteenNimet = hakukohdeNimetA,
+              tarjoajaNimet = tarjoajaNimetA
+            )
+          ),
+          haku = Haku(
+            oid = hakuOidA,
+            nimi = hakuNimetA,
+            toinenAste = false
+          )
+        ))
+        there was one (mailPollerRepository).markAsToBeSent(Set((hakemusOidA, hakukohdeOidA, Vastaanottoilmoitus)))
+        there was no (oppijanTunnistusService).luoSecureLink(any[String], any[HakemusOid], any[String], any[String])
+      }
     }
   }
 
