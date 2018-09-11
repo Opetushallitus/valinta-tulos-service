@@ -1,26 +1,34 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
+import java.sql.Timestamp
+import java.util.Date
+
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.jdbc.PostgresProfile.api._
 
+import scala.concurrent.duration.Duration
+
 
 trait MailPollerRepositoryImpl extends MailPollerRepository with ValintarekisteriRepository with Logging {
 
   override def candidates(hakukohdeOid: HakukohdeOid,
-                          recheckIntervalHours: Int = 24): Set[(HakemusOid, HakukohdeOid, Option[MailReason])] = {
+                          recheckIntervalHours: Int = 24): Set[(HakemusOid, HakukohdeOid, Option[MailReason], Option[Date])] = {
     timed(s"Fetching mailable candidates database call for hakukohde $hakukohdeOid", 100) {
       runBlocking(
         sql"""select vt.hakemus_oid,
                      vt.hakukohde_oid,
-                     v.syy
+                     v.syy,
+                     tark.tarkistettu
               from valinnantilat as vt
               left join viestit as v
               on vt.hakemus_oid = v.hakemus_oid and
                  vt.hakukohde_oid = v.hakukohde_oid
-              where vt.hakemus_oid in (
+              left join viestinlahetys_tarkistettu tark
+              on vt.hakukohde_oid = tark.hakukohde_oid
+              where vt.hakukohde_oid = $hakukohdeOid and vt.hakemus_oid in (
                 select vt.hakemus_oid
                 from valinnantilat as vt
                 join valinnantulokset as vnt
@@ -40,7 +48,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                   and (v.lahetetty is null or (v.syy is not distinct from 'EHDOLLISEN_PERIYTYMISEN_ILMOITUS' and
                                                nv.action is not distinct from 'VastaanotaSitovasti' and
                                                nv.ilmoittaja is not distinct from 'järjestelmä')))
-         """.as[(HakemusOid, HakukohdeOid, Option[MailReason])]).toSet
+         """.as[(HakemusOid, HakukohdeOid, Option[MailReason], Option[Timestamp])]).toSet
     }
   }
 
@@ -106,6 +114,25 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
     }
   }
 
+  def markAsCheckedForEmailing(hakukohdeOid: HakukohdeOid): Unit = {
+    timed(s"Marking hakukohde $hakukohdeOid as checked for emailing in db", 1000) {
+      runBlocking(
+        sqlu"""insert into viestinlahetys_tarkistettu
+          (hakukohde_oid)
+          values ($hakukohdeOid)
+          on conflict (hakukohde_oid) do
+          update set tarkistettu = now()""")
+    }
+  }
+
+  def findHakukohdeOidsCheckedRecently(emptyHakukohdeRecheckInterval: Duration): Set[HakukohdeOid] = {
+    runBlocking(
+      sql"""select hakukohde_oid from viestinlahetys_tarkistettu
+            where tarkistettu > now() -
+              make_interval(hours => ${emptyHakukohdeRecheckInterval.toHours.toInt})""".
+        as[String]).map(HakukohdeOid).toSet
+  }
+
   def getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid: HakukohdeOid): List[String] = {
     runBlocking(
       sql"""select distinct hakemus_oid from viestit
@@ -114,6 +141,15 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
   }
 
   def deleteHakemusMailEntries(hakemusOid: HakemusOid): Int = {
-    runBlocking[Int](sqlu"""delete from viestit where hakemus_oid = ${hakemusOid}""")
+    runBlockingTransactionally[Int](
+      sqlu"""
+            delete from viestinlahetys_tarkistettu where hakukohde_oid in
+              (select hakukohde_oid from valinnantilat where hakemus_oid = ${hakemusOid})""".
+        andThen(sqlu"""delete from viestit where hakemus_oid = ${hakemusOid}""")) match {
+      case Right(n) => n
+      case Left(e) =>
+        logger.error(s"Virhe poistettaessa hakemuksen $hakemusOid viestikirjanpitoa", e)
+        throw e
+    }
   }
 }

@@ -1,5 +1,8 @@
 package fi.vm.sade.valintatulosservice.vastaanottomeili
 
+import java.util.Date
+import java.util.concurrent.TimeUnit.DAYS
+
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.ValintatulosService
@@ -14,6 +17,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import scala.annotation.tailrec
 import scala.collection.parallel.ForkJoinTaskSupport
 import scala.collection.parallel.immutable.ParSeq
+import scala.concurrent.duration.Duration
 import scala.concurrent.forkjoin.ForkJoinPool
 
 class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
@@ -24,21 +28,22 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
                         vtsApplicationSettings: VtsApplicationSettings) extends Logging {
 
   private val pollConcurrency: Int = vtsApplicationSettings.mailPollerConcurrency
+  private val emptyHakukohdeRecheckInterval: Duration = vtsApplicationSettings.mailPollerResultlessHakukohdeRecheckInterval
 
-  def pollForMailables(mailDecorator: MailDecorator, limit: Int): List[Ilmoitus] = {
+  def pollForMailables(mailDecorator: MailDecorator, mailablesWanted: Int, timeLimit: Duration): PollResult = {
     //Tälle tarvitaan varmaan joku ovelampi ratkaisu, mutta hakukohteiden rinnakkainen
     //käsittely toimii aika kömpelösti kovin pienillä limiteillä.
-    val useLimit = Math.max(500, limit)
+    val useLimit = Math.max(500, mailablesWanted)
     val fetchHakusTaskLabel = "Looking for hakus with their hakukohdes to process"
     logger.info(s"Start: $fetchHakusTaskLabel")
     val hakukohdeOidsWithTheirHakuOids: ParSeq[(HakuOid, HakukohdeOid)] = timed(fetchHakusTaskLabel, 1000) { etsiHaut.par }
 
     hakukohdeOidsWithTheirHakuOids.tasksupport = new ForkJoinTaskSupport(new ForkJoinPool(pollConcurrency))
     val fetchMailablesTaskLabel = s"Fetching mailables for ${hakukohdeOidsWithTheirHakuOids.size} hakukohdes " +
-      s"with poll concurrency of $pollConcurrency and totalMailablesWanted of $useLimit"
+      s"with poll concurrency of $pollConcurrency, totalMailablesWanted of $useLimit and time limit of $timeLimit"
     logger.info(s"Start: $fetchMailablesTaskLabel")
     timed(fetchMailablesTaskLabel, 1000) {
-      processHakukohteesForMailables(mailDecorator, useLimit, hakukohdeOidsWithTheirHakuOids, List.empty)
+      processHakukohteesForMailables(mailDecorator, useLimit, timeLimit, hakukohdeOidsWithTheirHakuOids, PollResult())
     }
   }
 
@@ -46,6 +51,8 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
     mailPollerRepository.markAsSent(mailed.flatMap(m => m.hakukohteet.map((m.hakemusOid, _))).toSet)
 
   private def etsiHaut: List[(HakuOid, HakukohdeOid)] = {
+    val vastikaanTarkistetutHakukohteet: Set[HakukohdeOid] = mailPollerRepository.findHakukohdeOidsCheckedRecently(emptyHakukohdeRecheckInterval)
+
     val found = (hakuService.kaikkiJulkaistutHaut match {
       case Right(haut) => haut
       case Left(e) => throw e
@@ -85,15 +92,32 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
           true
       }
       .flatMap(t => t._2.right.get.map((t._1, _)))
+      .filter { oids =>
+        if (vastikaanTarkistetutHakukohteet.contains(oids._2)) {
+          logger.info(s"Pudotetaan hakukohde ${oids._2}, koska se on tarkistettu viimeisten $emptyHakukohdeRecheckInterval aikana")
+          false
+        } else {
+          true
+        }
+    }
 
     logger.info(s"haut ${found.map(_._1).distinct.mkString(", ")}")
     found
   }
 
   @tailrec
-  private def processHakukohteesForMailables(mailDecorator: MailDecorator, totalMailablesWanted: Int, hakukohdeOids: ParSeq[(HakuOid, HakukohdeOid)], acc: List[Ilmoitus]): List[Ilmoitus] = {
+  private def processHakukohteesForMailables(mailDecorator: MailDecorator,
+                                             totalMailablesWanted: Int,
+                                             timeLimit: Duration,
+                                             hakukohdeOids: ParSeq[(HakuOid, HakukohdeOid)],
+                                             acc: PollResult): PollResult = {
     if (hakukohdeOids.isEmpty || acc.size >= totalMailablesWanted) {
       logger.info(s"Returning ${acc.size} mailables for totalMailablesWanted of $totalMailablesWanted")
+      acc.copy(complete = true)
+    } else if (acc.exceeds(timeLimit)) {
+      logger.warn(s"Finding $totalMailablesWanted mailables has taken more than the time limit of $timeLimit . " +
+        s"Returning intermediate result of ${acc.size}, filtered from ${acc.candidatesProcessed} candidates. " +
+        s"valinta-tulos-emailer should make another request to process all candidates.")
       acc
     } else {
       val mailablesNeeded = totalMailablesWanted - acc.size
@@ -105,36 +129,42 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
       logger.debug(s"Prosessoidaan $hakukohteesToProcessOnThisIteration hakukohdetta. Näiden jälkeen jäljellä vielä ${rest.size}. " +
         s"Max. ${mailablesNeeded/toPoll.size} ilmoitusta per hakukohde (+ yhdelle jakojäännös ${mailablesNeeded % toPoll.size}). " +
         s"Halutaan: $totalMailablesWanted, löydetty tähän mennessä: ${acc.size}")
-      val (oidsWithCandidatesLeft, mailables) = toPoll.zip(mailablesNeededPerHakukohde)
+      val (oidsWithCandidatesLeft, checkedCandidates, mailables) = toPoll.zip(mailablesNeededPerHakukohde)
         .map {
           case ((hakuOid, hakukohdeOid), n) =>
-            val mailables = timed(s"Fetching mailables for hakukohde $hakukohdeOid in haku $hakuOid", 1000) {
+            val (checkedCandidates, mailables) = timed(s"Fetching mailables for hakukohde $hakukohdeOid in haku $hakuOid", 1000) {
               searchAndCreateMailablesForSingleHakukohde(mailDecorator, n, hakuOid, hakukohdeOid)
             }
             (
               if (mailables.size == n) { List((hakuOid, hakukohdeOid)) } else { List.empty },
+              checkedCandidates,
               mailables
             )
         }
-        .reduce[(List[(HakuOid, HakukohdeOid)], List[Ilmoitus])] { case (t, tt) => (t._1 ++ tt._1, t._2 ++ tt._2) }
-      processHakukohteesForMailables(mailDecorator, totalMailablesWanted, rest ++ oidsWithCandidatesLeft, acc ++ mailables)
+        .reduce[(List[(HakuOid, HakukohdeOid)], Set[HakemusOid], List[Ilmoitus])] { case (t, tt) => (t._1 ++ tt._1, t._2 ++ tt._2, t._3 ++ tt._3) }
+      processHakukohteesForMailables(mailDecorator,
+        totalMailablesWanted,
+        timeLimit,
+        rest ++ oidsWithCandidatesLeft,
+        acc.copy(candidatesProcessed = acc.candidatesProcessed + checkedCandidates.size, mailables = acc.mailables ++ mailables))
     }
   }
 
-  private def searchAndCreateMailablesForSingleHakukohde(mailDecorator: MailDecorator, limit: Int, hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): List[Ilmoitus] = {
+  private def searchAndCreateMailablesForSingleHakukohde(mailDecorator: MailDecorator, limit: Int, hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): (Set[HakemusOid], List[Ilmoitus]) = {
     val candidates = mailPollerRepository.candidates(hakukohdeOid)
+    val mailStatusCheckedForHakukohde: Option[Date] = candidates.headOption.flatMap(_._4)
     val hakemuksetByOid = if (candidates.isEmpty) {
       Map.empty[HakemusOid, Hakemus]
     } else {
       fetchHakemukset(hakuOid, hakukohdeOid).map(h => h.oid -> h).toMap
     }
-    val (checkedCandidates, mailableStatii, mailables) = candidates
+    val (checkedCandidates, mailableStatii, mailables) = candidates.map(x => (x._1, x._2, x._3))
       .groupBy(_._1)
       .foldLeft((Set.empty[HakemusOid], Set.empty[HakemusMailStatus], List.empty[Ilmoitus]))({
         case ((candidatesAcc, mailableStatiiAcc, mailablesAcc), (hakemusOid, mailReasons)) if mailablesAcc.size < limit =>
           (for {
             hakemus <- hakemuksetByOid.get(hakemusOid)
-            hakemuksentulos <- fetchHakemuksentulos(hakemus) //Todo: nämä voisi ehkä hakea valmiiksi yhtenä satsina koko hakukohteelle kuten hakemukset yllä
+            hakemuksentulos <- fetchHakemuksentulos(hakemus)
             status <- mailStatusFor(hakemus, hakemuksentulos, mailReasons.map(m => m._2 -> m._3).toMap)
             mailable <- mailDecorator.statusToMail(status)
           } yield {
@@ -153,7 +183,17 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
       logger.info(logMessage)
     }
     markAsToBeSent(mailableStatii)
-    mailables
+    if (mailables.isEmpty && isMoreThanOneDayAgoOrEmpty(mailStatusCheckedForHakukohde)) {
+      markAsCheckedForEmailing(hakukohdeOid)
+    }
+    (checkedCandidates, mailables)
+  }
+
+  private def isMoreThanOneDayAgoOrEmpty(mailStatusCheckedForHakukohde: Option[Date]): Boolean = {
+    mailStatusCheckedForHakukohde match {
+      case None => true
+      case Some(checkedDate) => checkedDate.before(new Date(System.currentTimeMillis() - Duration(1, DAYS).toMillis))
+    }
   }
 
   private def fetchHakemukset(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Vector[Hakemus] = {
@@ -177,7 +217,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
                             mailReasons: Map[HakukohdeOid, Option[MailReason]]): Option[HakemusMailStatus] = hakemus match {
     case Hakemus(_, _, _, asiointikieli, _, Henkilotiedot(Some(kutsumanimi), Some(email), hasHetu)) =>
       val mailables = hakemuksenTulos.hakutoiveet.map(hakutoive => {
-        hakukohdeMailStatusFor(hakutoive, mailReasons.getOrElse(hakutoive.hakukohdeOid, None))
+        hakukohdeMailStatusFor(hakutoive, mailReasons.getOrElse(hakutoive.hakukohdeOid, mailReasons.get(hakutoive.hakukohdeOid).flatten))
       })
       Some(HakemusMailStatus(
         hakemuksenTulos.hakijaOid,
@@ -230,6 +270,11 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
         .flatMap(s => s.hakukohteet.map(h => (s.hakemusOid, h.hakukohdeOid, h.reasonToMail)))
         .collect { case (hakemusOid, hakukohdeOid, Some(reason)) => (hakemusOid, hakukohdeOid, reason) }
     )
+  }
+
+  private def markAsCheckedForEmailing(hakukohdeOid: HakukohdeOid): Unit = {
+    logger.info(s"Marking hakukohde $hakukohdeOid as checked for emailing")
+    mailPollerRepository.markAsCheckedForEmailing(hakukohdeOid)
   }
 
   def getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid: HakukohdeOid): List[String] = {

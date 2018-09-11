@@ -70,6 +70,7 @@ valinta-tulos-service.scheduled-migration.end-hour=7
 
 # MailPoller
 valinta-tulos-service.mail-poller.concurrency={{valintatulosservice_mail_poller_concurrency | default('1') }}
+valinta-tulos-service.mail-poller.resultless.hakukohde.hours={{valintatulosservice_mail_poller_resultless_hakukohde_hours | default('48') }}
 
 # KELA
 valinta-tulos-service.kela.url=https://asiointi.kela.fi/go_app/EArtApplication?reitti=oph
