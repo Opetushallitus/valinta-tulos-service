@@ -165,7 +165,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
           (for {
             hakemus <- hakemuksetByOid.get(hakemusOid)
             hakemuksentulos <- fetchHakemuksentulos(hakemus)
-            status <- mailStatusFor(hakemus, hakemuksentulos, mailReasons.map(m => m._2 -> m._3).toMap)
+            status <- mailStatusFor(hakemus, hakukohdeOid, hakemuksentulos, mailReasons.map(m => m._2 -> m._3).toMap)
             mailable <- mailDecorator.statusToMail(status)
           } yield {
             (
@@ -213,10 +213,11 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
   }
 
   private def mailStatusFor(hakemus: Hakemus,
+                            hakukohdeOid: HakukohdeOid,
                             hakemuksenTulos: Hakemuksentulos,
                             mailReasons: Map[HakukohdeOid, Option[MailReason]]): Option[HakemusMailStatus] = hakemus match {
     case Hakemus(_, _, _, asiointikieli, _, Henkilotiedot(Some(kutsumanimi), Some(email), hasHetu)) =>
-      val mailables = hakemuksenTulos.hakutoiveet.map(hakutoive => {
+      val mailables = hakemuksenTulos.hakutoiveet.filter(_.hakukohdeOid == hakukohdeOid).map(hakutoive => {
         hakukohdeMailStatusFor(hakutoive, mailReasons.getOrElse(hakutoive.hakukohdeOid, mailReasons.get(hakutoive.hakukohdeOid).flatten))
       })
       Some(HakemusMailStatus(
