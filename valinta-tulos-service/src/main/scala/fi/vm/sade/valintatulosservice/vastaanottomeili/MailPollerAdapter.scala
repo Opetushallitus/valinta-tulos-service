@@ -94,7 +94,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
       .flatMap(t => t._2.right.get.map((t._1, _)))
       .filter { oids =>
         if (vastikaanTarkistetutHakukohteet.contains(oids._2)) {
-          logger.info(s"Pudotetaan hakukohde ${oids._2}, koska se on tarkistettu viimeisten $emptyHakukohdeRecheckInterval aikana")
+          logger.debug(s"Pudotetaan hakukohde ${oids._2}, koska se on tarkistettu viimeisten $emptyHakukohdeRecheckInterval aikana")
           false
         } else {
           true
