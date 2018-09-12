@@ -49,11 +49,14 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
           hyvaksyttyVarasijalta <- validateHyvaksyttyVarasijalta().right
           hyvaksyPeruuntunut <- validateHyvaksyPeruuntunut().right
           ilmoittautumistila <- validateIlmoittautumistila().right
+          //TODO: add new checks here!
+
         } yield ilmoittautumistila
       }
 
       def validateValinnantila() = uusi.valinnantila match {
         case vanha.valinnantila => Right()
+        //case (_._) => Left(ValinnantulosUpdateStatus(403, s"TESTATAAN SAA-TA-NA!", uusi.valintatapajonoOid, uusi.hakemusOid))
         case _ => Left(ValinnantulosUpdateStatus(403, s"Valinnantilan muutos ei ole sallittu", uusi.valintatapajonoOid, uusi.hakemusOid))
       }
 
