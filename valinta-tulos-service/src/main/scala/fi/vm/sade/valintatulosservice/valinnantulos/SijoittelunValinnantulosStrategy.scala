@@ -43,21 +43,27 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
       def validateMuutos(): Either[ValinnantulosUpdateStatus, Unit] = {
         for {
+          vastaanottotila <- validateVastaanottotila().right
           valinnantila <- validateValinnantila().right
           julkaistavissa <- validateJulkaistavissa().right
           _ <- validateEhdollisestiHyvaksytty.right
           hyvaksyttyVarasijalta <- validateHyvaksyttyVarasijalta().right
           hyvaksyPeruuntunut <- validateHyvaksyPeruuntunut().right
           ilmoittautumistila <- validateIlmoittautumistila().right
-          //TODO: add new checks here!
 
         } yield ilmoittautumistila
       }
 
       def validateValinnantila() = uusi.valinnantila match {
         case vanha.valinnantila => Right()
-        //case (_._) => Left(ValinnantulosUpdateStatus(403, s"TESTATAAN SAA-TA-NA!", uusi.valintatapajonoOid, uusi.hakemusOid))
         case _ => Left(ValinnantulosUpdateStatus(403, s"Valinnantilan muutos ei ole sallittu", uusi.valintatapajonoOid, uusi.hakemusOid))
+      }
+
+      def validateVastaanottotila() = uusi.vastaanottotila match {
+        case vanha.vastaanottotila => Right()
+        case ValintatuloksenTila.KESKEN if vanha.ilmoittautumistila == LasnaKokoLukuvuosi || vanha.ilmoittautumistila == LasnaSyksy || vanha.ilmoittautumistila == Lasna =>
+          Left(ValinnantulosUpdateStatus(409, s"Valinnantilan muutos tilaan kesken ei ole sallittu, koska läsnäolotieto on jo olemassa", uusi.valintatapajonoOid, uusi.hakemusOid))
+        case _ => Right()
       }
 
       def validateJulkaistavissa() = (uusi.julkaistavissa, uusi.vastaanottotila) match {
