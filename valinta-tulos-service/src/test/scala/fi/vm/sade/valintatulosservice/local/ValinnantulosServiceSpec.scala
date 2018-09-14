@@ -32,7 +32,7 @@ import slick.dbio.DBIO
 @RunWith(classOf[JUnitRunner])
 class ValinnantulosServiceSpec extends Specification with MockitoMatchers with MockitoStubs {
   "ValinnantulosService" in {
-    /*"exception is thrown, if no authorization" in new Mocks with Korkeakouluhaku {
+    "exception is thrown, if no authorization" in new Mocks with Korkeakouluhaku {
       authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]]) returns Left(new AuthorizationFailedException("error"))
       val valinnantulokset = List(valinnantulosA)
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(Instant.now()), auditInfo) must throwA[AuthorizationFailedException]
@@ -71,10 +71,17 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(varasijaltaHyvaksytty.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)), Some(lastModified), auditInfo) mustEqual List()
       there was one (valinnantulosRepository).storeAction(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, varasijaltaHyvaksytty.henkiloOid, varasijaltaHyvaksytty.hakemusOid, hakukohdeOid,
         VastaanotaSitovasti, session.personOid, "Virkailijan tallennus"))
-    }*/
+    }
     "different statuses for all failing valinnantulokset" in new Mocks with Authorized with Korkeakouluhaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
       val valinnantulokset1 = Set(
-        valinnantulosA, valinnantulosB, valinnantulosC.copy(julkaistavissa = Some(true)), valinnantulosD, valinnantulosE, valinnantulosF, valinnantulosG.copy(valinnantila = Hyvaksytty, julkaistavissa = Some(true), vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, ilmoittautumistila = LasnaKokoLukuvuosi)
+        valinnantulosA,
+        valinnantulosB,
+        valinnantulosC.copy(julkaistavissa = Some(true)),
+        valinnantulosD,
+        valinnantulosE,
+        valinnantulosF,
+        valinnantulosG.copy(valinnantila = Hyvaksytty, julkaistavissa = Some(true), vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, ilmoittautumistila = LasnaKokoLukuvuosi),
+        valinnantulosH.copy(valinnantila = Hyvaksytty, julkaistavissa = Some(true), vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, ilmoittautumistila = LasnaKokoLukuvuosi)
       )
       valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(valinnantulokset1)
       yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(valinnantulokset1)
@@ -85,7 +92,8 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
         valinnantulosD.copy(hyvaksyttyVarasijalta = Some(true)),
         valinnantulosE.copy(hyvaksyPeruuntunut = Some(true)),
         valinnantulosF.copy(ilmoittautumistila = Lasna),
-        valinnantulosG.copy(valinnantila = Hyvaksytty, julkaistavissa = Some(true), vastaanottotila = ValintatuloksenTila.KESKEN, ilmoittautumistila = EiTehty)
+        valinnantulosG.copy(valinnantila = Hyvaksytty, julkaistavissa = Some(true), vastaanottotila = ValintatuloksenTila.KESKEN, ilmoittautumistila = EiTehty),
+        valinnantulosH.copy(valinnantila = Hyvaksytty, julkaistavissa = Some(true), vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, ilmoittautumistila = EiTehty)
       )
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo) mustEqual List(
         ValinnantulosUpdateStatus(403, s"Valinnantilan muutos ei ole sallittu", valintatapajonoOid, valinnantulokset(0).hakemusOid),
@@ -94,11 +102,10 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
         ValinnantulosUpdateStatus(409, s"Ei voida hyväksyä varasijalta", valintatapajonoOid, valinnantulokset(3).hakemusOid),
         ValinnantulosUpdateStatus(409, s"Hyväksy peruuntunut -arvoa ei voida muuttaa valinnantulokselle", valintatapajonoOid, valinnantulokset(4).hakemusOid),
         ValinnantulosUpdateStatus(409, s"Ilmoittautumista ei voida muuttaa, koska vastaanotto ei ole sitova", valintatapajonoOid, valinnantulokset(5).hakemusOid),
-        ValinnantulosUpdateStatus(409, s"Valinnantilan muutos tilaan kesken ei ole sallittu, koska läsnäolotieto on jo olemassa", valintatapajonoOid, valinnantulokset(6).hakemusOid)
+        ValinnantulosUpdateStatus(409, s"Valinnantilan muutos tilaan kesken ei ole sallittu, koska läsnäolotieto on jo olemassa", valintatapajonoOid, valinnantulokset(6).hakemusOid),
+        ValinnantulosUpdateStatus(409, s"Ilmoittautumista ei voida poistaa, koska vastaanotto on sitova", valintatapajonoOid, valinnantulokset(7).hakemusOid)
       )
     }
-
-    /*
     "no authorization to change hyvaksyPeruuntunut" in new Mocks with Korkeakouluhaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
       authorizer.checkAccess(session, Set(tarjoajaOid), Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Right(())
       authorizer.checkAccess(session, Set(tarjoajaOid), Set(Role.SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH)) returns Left(new AuthorizationFailedException("error"))
@@ -150,10 +157,10 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo) mustEqual List()
       there was one (valinnantulosRepository).updateValinnantuloksenOhjaus(valinnantulokset(0).getValinnantuloksenOhjaus(session.personOid, "Virkailijan tallennus"), Some(lastModified))
       there was one (valinnantulosRepository).setHyvaksyttyJaJulkaistavissa(valinnantulosA.hakemusOid, valinnantulosA.valintatapajonoOid, session.personOid, "Virkailijan tallennus")
-    }*/
+    }
   }
 
-  /*"Erillishaku / ValinnantulosService" in {
+  "Erillishaku / ValinnantulosService" in {
     "exception is thrown, if no authorization" in new Mocks with Korkeakouluhaku {
       authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]]) returns Left(new AuthorizationFailedException("error"))
       val valinnantulokset = List(valinnantulosA)
@@ -247,7 +254,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       there was one (valinnantulosRepository).storeIlmoittautuminen(erillishaunValinnantulos.henkiloOid, Ilmoittautuminen(erillishaunValinnantulos.hakukohdeOid, erillishaunValinnantulos.ilmoittautumistila, session.personOid, "Erillishaun tallennus"), Some(lastModified))
       there was one (valinnantulosRepository).storeValinnantila(erillishaunValinnantulos.getValinnantilanTallennus(session.personOid), Some(lastModified))
     }
-  }*/
+  }
 
   trait Mocks extends Mockito with Scope with MustThrownExpectations with RunBlockingMock {
     trait Repository extends ValinnantulosRepository with HakijaVastaanottoRepository
