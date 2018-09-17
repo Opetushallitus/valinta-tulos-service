@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice
 
 import java.text.ParseException
+import java.util.ConcurrentModificationException
 
 import fi.vm.sade.security.{AuthenticationFailedException, AuthorizationFailedException}
 import fi.vm.sade.utils.slf4j.Logging
@@ -47,6 +48,9 @@ trait VtsServletBase extends ScalatraServlet with Logging with JacksonJsonSuppor
         case e: StreamingFailureException =>
           logger.error(errorDescription, e)
           InternalServerError(e.contentToInsertToBody)
+        case e: ConcurrentModificationException =>
+          logger.error(errorDescription, e)
+          Conflict("error" -> e.getMessage)
         case e =>
           logger.error(errorDescription, e)
           InternalServerError("error" -> "500 Internal Server Error")
