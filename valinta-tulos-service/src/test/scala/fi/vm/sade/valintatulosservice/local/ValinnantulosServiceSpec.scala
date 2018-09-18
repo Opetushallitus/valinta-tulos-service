@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice.local
 import java.net.InetAddress
 import java.time.{Instant, ZonedDateTime}
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.auditlog.Audit
 import fi.vm.sade.security.{AuthorizationFailedException, OrganizationHierarchyAuthorizer}
@@ -67,10 +68,10 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(Set(varasijaltaHyvaksytty))
       valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(any[HakemusOid], any[ValintatapajonoOid], any[String], any[String]) returns DBIO.successful(())
       valinnantulosRepository.storeAction(any[VastaanottoEvent]) returns DBIO.successful(())
-
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(varasijaltaHyvaksytty.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)), Some(lastModified), auditInfo) mustEqual List()
+//      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(varasijaltaHyvaksytty.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)), Some(Instant.now().minusSeconds(TimeUnit.MINUTES.toSeconds(5))), auditInfo) mustEqual List()
       there was one (valinnantulosRepository).storeAction(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, varasijaltaHyvaksytty.henkiloOid, varasijaltaHyvaksytty.hakemusOid, hakukohdeOid,
-        VastaanotaSitovasti, session.personOid, "Virkailijan tallennus"))
+        VastaanotaSitovasti, session.personOid, "Virkailijan tallennus"), Some(lastModified))
     }
     "different statuses for all failing valinnantulokset" in new Mocks with Authorized with Korkeakouluhaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
       val valinnantulokset1 = Set(
@@ -79,9 +80,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
         valinnantulosC.copy(julkaistavissa = Some(true)),
         valinnantulosD,
         valinnantulosE,
-        valinnantulosF,
-        valinnantulosG.copy(valinnantila = Hyvaksytty, julkaistavissa = Some(true), vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, ilmoittautumistila = LasnaKokoLukuvuosi),
-        valinnantulosH.copy(valinnantila = Hyvaksytty, julkaistavissa = Some(true), vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, ilmoittautumistila = LasnaKokoLukuvuosi)
+        valinnantulosF
       )
       valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(valinnantulokset1)
       yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(valinnantulokset1)
@@ -91,9 +90,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
         valinnantulosC.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, julkaistavissa = Some(false)),
         valinnantulosD.copy(hyvaksyttyVarasijalta = Some(true)),
         valinnantulosE.copy(hyvaksyPeruuntunut = Some(true)),
-        valinnantulosF.copy(ilmoittautumistila = Lasna),
-        valinnantulosG.copy(valinnantila = Hyvaksytty, julkaistavissa = Some(true), vastaanottotila = ValintatuloksenTila.KESKEN, ilmoittautumistila = EiTehty),
-        valinnantulosH.copy(valinnantila = Hyvaksytty, julkaistavissa = Some(true), vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, ilmoittautumistila = EiTehty)
+        valinnantulosF.copy(ilmoittautumistila = Lasna)
       )
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo) mustEqual List(
         ValinnantulosUpdateStatus(403, s"Valinnantilan muutos ei ole sallittu", valintatapajonoOid, valinnantulokset(0).hakemusOid),
@@ -101,9 +98,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
         ValinnantulosUpdateStatus(409, s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sen vastaanottotila on ${ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI}", valintatapajonoOid, valinnantulokset(2).hakemusOid),
         ValinnantulosUpdateStatus(409, s"Ei voida hyväksyä varasijalta", valintatapajonoOid, valinnantulokset(3).hakemusOid),
         ValinnantulosUpdateStatus(409, s"Hyväksy peruuntunut -arvoa ei voida muuttaa valinnantulokselle", valintatapajonoOid, valinnantulokset(4).hakemusOid),
-        ValinnantulosUpdateStatus(409, s"Ilmoittautumista ei voida muuttaa, koska vastaanotto ei ole sitova", valintatapajonoOid, valinnantulokset(5).hakemusOid),
-        ValinnantulosUpdateStatus(409, s"Valinnantilan muutos tilaan kesken ei ole sallittu, koska läsnäolotieto on jo olemassa", valintatapajonoOid, valinnantulokset(6).hakemusOid),
-        ValinnantulosUpdateStatus(409, s"Ilmoittautumista ei voida poistaa, koska vastaanotto on sitova", valintatapajonoOid, valinnantulokset(7).hakemusOid)
+        ValinnantulosUpdateStatus(409, s"Ilmoittautumista ei voida muuttaa, koska vastaanotto ei ole sitova", valintatapajonoOid, valinnantulokset(5).hakemusOid)
       )
     }
     "no authorization to change hyvaksyPeruuntunut" in new Mocks with Korkeakouluhaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
@@ -293,7 +288,6 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     val hakemusOidE = HakemusOid("1.2.246.562.11.00006169124")
     val hakemusOidF = HakemusOid("1.2.246.562.11.00006169125")
     val hakemusOidG = HakemusOid("1.2.246.562.11.00006169126")
-    val hakemusOidH = HakemusOid("1.2.246.562.11.00006169127")
     val henkiloOidA = "1.2.246.562.24.48294633106"
     val henkiloOidB = "1.2.246.562.24.48294633107"
     val henkiloOidC = "1.2.246.562.24.48294633108"
@@ -301,7 +295,6 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     val henkiloOidE = "1.2.246.562.24.48294633110"
     val henkiloOidF = "1.2.246.562.24.48294633111"
     val henkiloOidG = "1.2.246.562.24.48294633112"
-    val henkiloOidH = "1.2.246.562.24.48294633113"
     val valinnantulosA = Valinnantulos(
       hakukohdeOid = hakukohdeOid,
       valintatapajonoOid = valintatapajonoOid,
@@ -324,7 +317,6 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     val valinnantulosE = valinnantulosA.copy(hakemusOid = hakemusOidE, henkiloOid = henkiloOidE)
     val valinnantulosF = valinnantulosA.copy(hakemusOid = hakemusOidF, henkiloOid = henkiloOidF)
     val valinnantulosG = valinnantulosA.copy(hakemusOid = hakemusOidG, henkiloOid = henkiloOidG)
-    val valinnantulosH = valinnantulosA.copy(hakemusOid = hakemusOidH, henkiloOid = henkiloOidH)
 
     val service = new ValinnantulosService(
       valinnantulosRepository,

@@ -33,7 +33,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
   def hasChange(uusi:Valinnantulos, vanha:Valinnantulos) = (uusi.hasChanged(vanha) || uusi.hasOhjausChanged(vanha) || uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha))
 
-  def validate(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): DBIO[Either[ValinnantulosUpdateStatus, Unit]] = {
+  def validate(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos], ifUnmodifiedSince: Option[Instant]): DBIO[Either[ValinnantulosUpdateStatus, Unit]] = {
     if (vanhaOpt.isEmpty) {
       logger.warn(s"Hakemuksen ${uusi.hakemusOid} valinnan tulosta ei löydy " +
         s"valintatapajonosta ${uusi.valintatapajonoOid}.")
@@ -43,27 +43,18 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
       def validateMuutos(): Either[ValinnantulosUpdateStatus, Unit] = {
         for {
-          vastaanottotila <- validateVastaanottotila().right
           valinnantila <- validateValinnantila().right
           julkaistavissa <- validateJulkaistavissa().right
           _ <- validateEhdollisestiHyvaksytty.right
           hyvaksyttyVarasijalta <- validateHyvaksyttyVarasijalta().right
           hyvaksyPeruuntunut <- validateHyvaksyPeruuntunut().right
           ilmoittautumistila <- validateIlmoittautumistila().right
-
         } yield ilmoittautumistila
       }
 
       def validateValinnantila() = uusi.valinnantila match {
         case vanha.valinnantila => Right()
         case _ => Left(ValinnantulosUpdateStatus(403, s"Valinnantilan muutos ei ole sallittu", uusi.valintatapajonoOid, uusi.hakemusOid))
-      }
-
-      def validateVastaanottotila() = uusi.vastaanottotila match {
-        case vanha.vastaanottotila => Right()
-        case ValintatuloksenTila.KESKEN if vanha.ilmoittautumistila == LasnaKokoLukuvuosi || vanha.ilmoittautumistila == LasnaSyksy || vanha.ilmoittautumistila == Lasna =>
-          Left(ValinnantulosUpdateStatus(409, s"Valinnantilan muutos tilaan kesken ei ole sallittu, koska läsnäolotieto on jo olemassa", uusi.valintatapajonoOid, uusi.hakemusOid))
-        case _ => Right()
       }
 
       def validateJulkaistavissa() = (uusi.julkaistavissa, uusi.vastaanottotila) match {
@@ -119,8 +110,8 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
       def validateIlmoittautumistila() = (uusi.ilmoittautumistila, uusi.vastaanottotila) match {
         case (vanha.ilmoittautumistila, _) => Right()
-        case (EiTehty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI) =>
-          Left(ValinnantulosUpdateStatus(409, s"Ilmoittautumista ei voida poistaa, koska vastaanotto on sitova", uusi.valintatapajonoOid, uusi.hakemusOid))
+        //case (EiTehty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI) =>
+        //  Left(ValinnantulosUpdateStatus(409, s"Ilmoittautumista ei voida poistaa, koska vastaanotto on sitova", uusi.valintatapajonoOid, uusi.hakemusOid))
         case (EiTehty, _) => Right()
         case (_, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI) => Right()
         case (_, _) => Left(ValinnantulosUpdateStatus(409, s"Ilmoittautumista ei voida muuttaa, koska vastaanotto ei ole sitova", uusi.valintatapajonoOid, uusi.hakemusOid))
@@ -143,7 +134,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
   final val selite = "Virkailijan tallennus"
 
-  def save(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): DBIO[Unit] = {
+  def save(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos], ifUnModifiedSince: Option[Instant]): DBIO[Unit] = {
     val muokkaaja = session.personOid
     val vanha = vanhaOpt.getOrElse(throw new IllegalStateException(s"Vain valinnantuloksen muokkaus sallittu haussa ${haku.oid}"))
     val updateOhjaus = if (uusi.hasOhjausChanged(vanha)) {
@@ -163,7 +154,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
       !(uusi.vastaanottotila == ValintatuloksenTila.KESKEN && vanha.vastaanottotila == ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)) {
       valinnantulosRepository.storeAction(VirkailijanVastaanotto(haku.oid, uusi.valintatapajonoOid, uusi.henkiloOid, uusi.hakemusOid, hakukohdeOid,
         VirkailijanVastaanottoAction.getVirkailijanVastaanottoAction(Vastaanottotila.values.find(Vastaanottotila.matches(_, uusi.vastaanottotila))
-          .getOrElse(throw new IllegalArgumentException(s"Odottamaton vastaanottotila ${uusi.vastaanottotila}"))), muokkaaja, selite))
+          .getOrElse(throw new IllegalArgumentException(s"Odottamaton vastaanottotila ${uusi.vastaanottotila}"))), muokkaaja, selite), ifUnModifiedSince)
     } else {
       DBIO.successful(())
     }

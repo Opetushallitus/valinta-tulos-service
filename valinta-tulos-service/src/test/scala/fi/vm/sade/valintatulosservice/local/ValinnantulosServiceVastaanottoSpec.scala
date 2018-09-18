@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice.local
 import java.net.InetAddress
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.auditlog.Audit
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
@@ -149,7 +150,7 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
       valinnantulosBefore.vastaanotonViimeisinMuutos.isDefined must_== true
       tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
       val valinnantulosForSave = valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.PERUUTETTU)
-      tallenna(List(valinnantulosForSave))
+      tallennaCustomAikaleimalla(List(valinnantulosForSave), Some(Instant.now().minusSeconds(TimeUnit.MINUTES.toSeconds(5))))
       val valinnantulosAfterAfter = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
       valinnantulosAfterAfter.copy(vastaanotonViimeisinMuutos = None) must_== valinnantulosForSave.copy(vastaanotonViimeisinMuutos = None)
       valinnantulosAfterAfter.vastaanotonViimeisinMuutos.isDefined must_== true
@@ -172,7 +173,8 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
       tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
       tallenna(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.PERUUTETTU)))
       tila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
-      tallenna(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)))
+      tallennaCustomAikaleimalla(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)), Some(Instant.now().minusSeconds(TimeUnit.MINUTES.toSeconds(5))))
+      //tallenna(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)))
       tila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
     }
     "virkailija voi vastaanottaa varasijalta hyväksytyn hakutoiveen" in {
@@ -211,7 +213,7 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
       vastaanotaHakijana(hakemusOid, HakukohdeOid("1.2.246.562.5.72607738902"), Vastaanottotila.vastaanottanut)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
       tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
-      tallenna(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.KESKEN)))
+      tallennaCustomAikaleimalla(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.KESKEN)), Some(Instant.now().minusSeconds(TimeUnit.MINUTES.toSeconds(5))))
       val valinnantulosAfter = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
       tila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.KESKEN)
     }
@@ -288,6 +290,12 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
   def tila(valinnantulos:Valinnantulos, valinnantila:Valinnantila, vastaanotto:ValintatuloksenTila) = {
     valinnantulos.valinnantila must_== valinnantila
     valinnantulos.vastaanottotila must_== vastaanotto
+  }
+
+  def tallennaCustomAikaleimalla(valinnantulokset:List[Valinnantulos],ifUnmodifiedSince: Option[Instant]) = {
+    val status = valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
+      valinnantulokset.head.valintatapajonoOid, valinnantulokset, Some(Instant.now.minusSeconds( TimeUnit.MINUTES.toSeconds( 5 ) )), auditInfo)
+    status.size aka status.map(_.message).mkString(", ") must_== 0
   }
 
   def tallenna(valinnantulokset:List[Valinnantulos]) = {
