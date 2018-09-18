@@ -1,0 +1,48 @@
+language: scala
+
+jdk:
+- oraclejdk8
+
+services:
+- docker
+- postgresql
+
+addons:
+  postgresql: "9.5"
+
+cache:
+  directories:
+  - $HOME/.m2
+
+env:
+  global:
+  # AWS_ACCESS_KEY_ID
+  - secure: "LOZx5hQXd8ZVlMVGn9r91Mr/Yl6X9Ava26o7ueck4HcEkozac2VvwbXUDaGRkRu0eKjwQqxpqB8ec7zT1rWdB6DLUKAk1xZttIy0UdUZ3OONtLbvaH6Qnz1n8D13WHA3EmjfR0KsPtXc2TL50Rz7kKa8wdcSXmAdPY76onwyWPA="
+  # AWS_SECRET_ACCESS_KEY
+  - secure: "PgGT50O+Llf7Ft3KLnnWJrRoKYrcv07yM2mhCG6TgyrNbDIEtoQ9AeF848oO4RLLC5ZIpraKD0qpuyaMEvSXXVc4Xe0KZAJweAGKe3CGJ7+7ZLkbALtdM7A9NexzOknPNB4At9eaWVrDAvTKkEGUrJdoHoAc/ily2P6No9GKOi4="
+
+install:
+- git clone https://github.com/Opetushallitus/ci-tools.git
+- source ci-tools/common/setup-tools.sh
+
+#before_script:
+#- psql -c "create database valintarekisteri;" -U postgres
+#- psql -d valintarekisteri_test -f init_travis_potsgres.sql
+#- cp -v test.valintarekisteri.travis.edn test.valintarekisteri.edn
+
+script:
+- mvn clean package
+- mv valinta-tulos-service/target/valinta-tulos-service-*.war $DOCKER_BUILD_DIR/artifact/valinta-tulos-service.war
+#- mv valinta-tulos-henkiloviite-synchronizer/target/valinta-tulos-henkiloviite-synchronizer-*-jar-with-dependencies.jar $DOCKER_BUILD_DIR/artifact/valinta-tulos-henkiloviite-synchronizer.jar
+#- mv valinta-tulos-valintarekisteri-db/target/valinta-tulos-valintarekisteri-db-*.jar $DOCKER_BUILD_DIR/artifact/valinta-tulos-valintarekisteri-db.jar
+- cp -vr valinta-tulos-service/src/main/resources/oph-configuration $DOCKER_BUILD_DIR/config/
+
+- export BASE_IMAGE="base-legacy:0.1"
+- ./ci-tools/common/pull-image.sh
+- ./ci-tools/build/build-war.sh valinta-tulos-service
+
+deploy:
+  provider: script
+  script: ./ci-tools/build/upload-image.sh valinta-tulos-service
+  on:
+    all_branches: true
