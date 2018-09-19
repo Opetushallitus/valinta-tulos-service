@@ -1,0 +1,64 @@
+sudo: required
+language: scala
+
+jdk:
+- oraclejdk8
+
+services:
+- docker
+- postgresql
+
+addons:
+  postgresql: "9.5"
+
+cache:
+  directories:
+  - $HOME/.m2
+
+env:
+  global:
+  # ARTIFACTORY_USERNAME
+  - secure: "LwiHc/AFU+mVlh/iU2TvjLGOBX51uGP8Mjsjfw56Igc3ON+eAjAxxw05TNlVXzNo/LWu911S3UV4Nu1fyAsSNVyqy49DXJvIU6m4ddNGZTFjap/vxZvdPbRG4tZgaJiTf1UOaYWx3WglGXzezYMfYdwlIMrNKdImqagwVcH94GU="
+  # ARTIFACTORY_PASSWORD
+  - secure: "py3TMdAOOnfCWYPVTPBxUkVyfT3JeJBlkHXFEM9Dn+tdyTEdKXX4Mz/EK223MZsk3Kk/ktpccYeWBR+NX7xC0WOS2MQIw7e8Owuub6Nb6wBc93sqzGrWbqmg+y0iRVPuC78TQpS5yB5IFrYB1EJGlpNsw+Rkabp7Wi25tcHFuyk="
+  # AWS_ACCESS_KEY_ID
+  - secure: "LOZx5hQXd8ZVlMVGn9r91Mr/Yl6X9Ava26o7ueck4HcEkozac2VvwbXUDaGRkRu0eKjwQqxpqB8ec7zT1rWdB6DLUKAk1xZttIy0UdUZ3OONtLbvaH6Qnz1n8D13WHA3EmjfR0KsPtXc2TL50Rz7kKa8wdcSXmAdPY76onwyWPA="
+  # AWS_SECRET_ACCESS_KEY
+  - secure: "PgGT50O+Llf7Ft3KLnnWJrRoKYrcv07yM2mhCG6TgyrNbDIEtoQ9AeF848oO4RLLC5ZIpraKD0qpuyaMEvSXXVc4Xe0KZAJweAGKe3CGJ7+7ZLkbALtdM7A9NexzOknPNB4At9eaWVrDAvTKkEGUrJdoHoAc/ily2P6No9GKOi4="
+
+install:
+- export TZ=Europe/Helsinki
+- git clone https://github.com/Opetushallitus/ci-tools.git
+- source ci-tools/common/setup-tools.sh
+
+before_script:
+- DB_NAME=valintarekisteri
+- psql -c "create database $DB_NAME;" -U postgres
+- psql -d $DB_NAME -f valinta-tulos-valintarekisteri-db/postgresql/init_it_postgresql.sql
+
+script:
+- mvn -B -Dvalintatulos.it.postgres.port=5432 -Dvalintatulos.it.postgres.alreadyrunning=true clean package
+- export BASE_IMAGE="base-legacy:0.1"
+- ./ci-tools/common/pull-image.sh
+
+- mv valinta-tulos-service/target/valinta-tulos-service-*.war $DOCKER_BUILD_DIR/artifact/valinta-tulos-service.war
+- cp -vr valinta-tulos-service/src/main/resources/oph-configuration $DOCKER_BUILD_DIR/config/
+- ./ci-tools/build/build-war.sh valinta-tulos-service
+
+- ./ci-tools/common/clean-docker-build-dir.sh
+- mv valinta-tulos-henkiloviite-synchronizer/target/valinta-tulos-henkiloviite-synchronizer-*-jar-with-dependencies.jar $DOCKER_BUILD_DIR/artifact/valinta-tulos-henkiloviite-synchronizer.jar
+- cp -vr valinta-tulos-henkiloviite-synchronizer/target/classes/oph-configuration $DOCKER_BUILD_DIR/config/
+- ./ci-tools/build/build-fatjar.sh valinta-tulos-henkiloviite-synchronizer
+
+deploy:
+  - provider: script
+    script: mvn deploy -pl valinta-tulos-valintarekisteri-db -DskipTests --settings ci-tools/common/maven-settings.xml
+    skip_cleanup: true
+    on:
+      branch: master
+  - provider: script
+    script:
+      ./ci-tools/build/upload-image.sh valinta-tulos-service;
+      ./ci-tools/build/upload-image.sh valinta-tulos-henkiloviite-synchronizer
+    on:
+      all_branches: true
