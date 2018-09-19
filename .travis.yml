@@ -32,7 +32,7 @@ install:
 #- cp -v test.valintarekisteri.travis.edn test.valintarekisteri.edn
 
 script:
-- mvn -Dvalintatulos.it.postgres.port=5432 clean package
+- mvn -B -Dvalintatulos.it.postgres.port=5432 -Dvalintatulos.it.postgres.alreadyrunning=true clean package
 - mv valinta-tulos-service/target/valinta-tulos-service-*.war $DOCKER_BUILD_DIR/artifact/valinta-tulos-service.war
 #- mv valinta-tulos-henkiloviite-synchronizer/target/valinta-tulos-henkiloviite-synchronizer-*-jar-with-dependencies.jar $DOCKER_BUILD_DIR/artifact/valinta-tulos-henkiloviite-synchronizer.jar
 #- mv valinta-tulos-valintarekisteri-db/target/valinta-tulos-valintarekisteri-db-*.jar $DOCKER_BUILD_DIR/artifact/valinta-tulos-valintarekisteri-db.jar
