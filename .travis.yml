@@ -23,6 +23,7 @@ env:
   - secure: "PgGT50O+Llf7Ft3KLnnWJrRoKYrcv07yM2mhCG6TgyrNbDIEtoQ9AeF848oO4RLLC5ZIpraKD0qpuyaMEvSXXVc4Xe0KZAJweAGKe3CGJ7+7ZLkbALtdM7A9NexzOknPNB4At9eaWVrDAvTKkEGUrJdoHoAc/ily2P6No9GKOi4="
 
 install:
+- export TZ=Europe/Helsinki
 - git clone https://github.com/Opetushallitus/ci-tools.git
 - source ci-tools/common/setup-tools.sh
 
