@@ -76,7 +76,9 @@ class ITPostgres(portChooser: PortChooser) extends Logging {
             throw new RuntimeException(s"postgres not accepting connections in port $port after $startStopRetries attempts with $startStopRetryIntervalMillis ms intervals")
           }
 
-          initDb()
+          runBlocking(s"dropdb -p $port --if-exists $dbName")
+          runBlocking(s"createdb -p $port $dbName")
+          runBlocking(s"psql -h localhost -p $port -d $dbName -f postgresql/init_it_postgresql.sql")
 
           Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
             override def run() {
@@ -85,15 +87,7 @@ class ITPostgres(portChooser: PortChooser) extends Logging {
           }))
         }
       }
-    } else {
-      initDb()
     }
-  }
-
-  private def initDb() = {
-    runBlocking(s"dropdb -p $port --if-exists $dbName")
-    runBlocking(s"createdb -p $port $dbName")
-    runBlocking(s"psql -h localhost -p $port -d $dbName -f postgresql/init_it_postgresql.sql")
   }
 
   def stop() {

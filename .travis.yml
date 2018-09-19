@@ -26,10 +26,10 @@ install:
 - git clone https://github.com/Opetushallitus/ci-tools.git
 - source ci-tools/common/setup-tools.sh
 
-#before_script:
-#- psql -c "create database valintarekisteri;" -U postgres
-#- psql -d valintarekisteri_test -f init_travis_potsgres.sql
-#- cp -v test.valintarekisteri.travis.edn test.valintarekisteri.edn
+before_script:
+- DB_NAME=valintarekisteri
+- psql -c "create database $DB_NAME;" -U postgres
+- psql -d $DB_NAME -f valinta-tulos-valintarekisteri-db/postgresql/init_it_postgresql.sql
 
 script:
 - mvn -B -Dvalintatulos.it.postgres.port=5432 -Dvalintatulos.it.postgres.alreadyrunning=true clean package
