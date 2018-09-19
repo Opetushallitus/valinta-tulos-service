@@ -28,9 +28,6 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository 
                            yhdenPaikanSaannos: YhdenPaikanSaannos,
                            val appConfig: VtsAppConfig,
                            val audit: Audit) extends Logging {
-
-
-
   def getMuutoshistoriaForHakemusWithoutAuditInfo(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[Muutos] = {
     valinnantulosRepository.getMuutoshistoriaForHakemus(hakemusOid, valintatapajonoOid)
   }

@@ -3,7 +3,6 @@ package fi.vm.sade.valintatulosservice.local
 import java.net.InetAddress
 import java.time.{Instant, ZonedDateTime}
 import java.util.UUID
-import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.auditlog.Audit
 import fi.vm.sade.security.{AuthorizationFailedException, OrganizationHierarchyAuthorizer}
@@ -67,11 +66,13 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set(varasijaltaHyvaksytty))
       yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(Set(varasijaltaHyvaksytty))
       valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(any[HakemusOid], any[ValintatapajonoOid], any[String], any[String]) returns DBIO.successful(())
-      valinnantulosRepository.storeAction(any[VastaanottoEvent]) returns DBIO.successful(())
+      valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set())
+      valinnantulosRepository.storeAction(any[VastaanottoEvent], any[Option[Instant]]) returns DBIO.successful(())
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(varasijaltaHyvaksytty.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)), Some(lastModified), auditInfo) mustEqual List()
-//      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(varasijaltaHyvaksytty.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)), Some(Instant.now().minusSeconds(TimeUnit.MINUTES.toSeconds(5))), auditInfo) mustEqual List()
       there was one (valinnantulosRepository).storeAction(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, varasijaltaHyvaksytty.henkiloOid, varasijaltaHyvaksytty.hakemusOid, hakukohdeOid,
         VastaanotaSitovasti, session.personOid, "Virkailijan tallennus"), Some(lastModified))
+      //there was one (valinnantulosRepository).storeAction(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, varasijaltaHyvaksytty.henkiloOid, varasijaltaHyvaksytty.hakemusOid, hakukohdeOid,
+      //  VastaanotaSitovasti, session.personOid, "Virkailijan tallennus"))
     }
     "different statuses for all failing valinnantulokset" in new Mocks with Authorized with Korkeakouluhaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
       val valinnantulokset1 = Set(
