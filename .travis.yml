@@ -34,17 +34,25 @@ before_script:
 
 script:
 - mvn -B -Dvalintatulos.it.postgres.port=5432 -Dvalintatulos.it.postgres.alreadyrunning=true clean package
-- mv valinta-tulos-service/target/valinta-tulos-service-*.war $DOCKER_BUILD_DIR/artifact/valinta-tulos-service.war
-#- mv valinta-tulos-henkiloviite-synchronizer/target/valinta-tulos-henkiloviite-synchronizer-*-jar-with-dependencies.jar $DOCKER_BUILD_DIR/artifact/valinta-tulos-henkiloviite-synchronizer.jar
-#- mv valinta-tulos-valintarekisteri-db/target/valinta-tulos-valintarekisteri-db-*.jar $DOCKER_BUILD_DIR/artifact/valinta-tulos-valintarekisteri-db.jar
-- cp -vr valinta-tulos-service/src/main/resources/oph-configuration $DOCKER_BUILD_DIR/config/
-
 - export BASE_IMAGE="base-legacy:0.1"
 - ./ci-tools/common/pull-image.sh
+
+- mv valinta-tulos-service/target/valinta-tulos-service-*.war $DOCKER_BUILD_DIR/artifact/valinta-tulos-service.war
+- cp -vr valinta-tulos-service/src/main/resources/oph-configuration $DOCKER_BUILD_DIR/config/
 - ./ci-tools/build/build-war.sh valinta-tulos-service
+
+- ./ci-tools/common/clean-docker-build-dir.sh
+- mv valinta-tulos-henkiloviite-synchronizer/target/valinta-tulos-henkiloviite-synchronizer-*-jar-with-dependencies.jar $DOCKER_BUILD_DIR/artifact/valinta-tulos-henkiloviite-synchronizer.jar
+- cp -vr valinta-tulos-henkiloviite-synchronizer/src/main/resources/oph-configuration $DOCKER_BUILD_DIR/config/
+- ./ci-tools/build/build-fatjar.sh valinta-tulos-henkiloviite-synchronizer
+
+#- mv valinta-tulos-valintarekisteri-db/target/valinta-tulos-valintarekisteri-db-*.jar $DOCKER_BUILD_DIR/artifact/valinta-tulos-valintarekisteri-db.jar
+
 
 deploy:
   provider: script
-  script: ./ci-tools/build/upload-image.sh valinta-tulos-service
+  script:
+    ./ci-tools/build/upload-image.sh valinta-tulos-service;
+    ./ci-tools/build/upload-image.sh valinta-tulos-henkiloviite-synchronizer
   on:
     all_branches: true
