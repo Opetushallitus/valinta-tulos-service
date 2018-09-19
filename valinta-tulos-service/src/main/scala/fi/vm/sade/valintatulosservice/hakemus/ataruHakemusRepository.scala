@@ -72,7 +72,7 @@ class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats {
             .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing hakemukset for $query failed", t)) }
           case r => Task.fail(new RuntimeException(s"Failed to get hakemukset for $query: ${r.toString()}"))
         }
-      }).attemptRunFor(Duration(10, TimeUnit.SECONDS)).toEither
+      }).attemptRunFor(Duration(1, TimeUnit.MINUTES)).toEither
   }
 
   def getHakemusToHakijaOidMapping(hakuOid: HakuOid, hakukohdeOids: Option[List[HakukohdeOid]]): Either[Throwable, Map[HakemusOid, String]] = {
@@ -85,6 +85,6 @@ class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats {
             .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing hakemukset for $params failed", t)) }
           case r => Task.fail(new RuntimeException(s"Failed to get hakemukset for $params: ${r.toString()}"))
         }
-      }).attemptRunFor(Duration(10, TimeUnit.SECONDS)).toEither
+      }).attemptRunFor(Duration(1, TimeUnit.MINUTES)).toEither
   }
 }
