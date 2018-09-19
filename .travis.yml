@@ -47,7 +47,7 @@ script:
 
 - ./ci-tools/common/clean-docker-build-dir.sh
 - mv valinta-tulos-henkiloviite-synchronizer/target/valinta-tulos-henkiloviite-synchronizer-*-jar-with-dependencies.jar $DOCKER_BUILD_DIR/artifact/valinta-tulos-henkiloviite-synchronizer.jar
-- cp -vr valinta-tulos-henkiloviite-synchronizer/src/main/resources/oph-configuration $DOCKER_BUILD_DIR/config/
+- cp -vr valinta-tulos-henkiloviite-synchronizer/target/classes/oph-configuration $DOCKER_BUILD_DIR/config/
 - ./ci-tools/build/build-fatjar.sh valinta-tulos-henkiloviite-synchronizer
 
 deploy:
