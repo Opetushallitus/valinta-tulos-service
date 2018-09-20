@@ -50,7 +50,7 @@ trait VtsServletBase extends ScalatraServlet with Logging with JacksonJsonSuppor
           InternalServerError(e.contentToInsertToBody)
         case e: ConcurrentModificationException =>
           logger.error(errorDescription, e)
-          Conflict("error" -> e.getMessage)
+          Conflict("error" -> "Tietoihin on tehty samanaikaisia muutoksia, päivitä sivu ja yritä uudelleen (" + e.getMessage + ")")
         case e =>
           logger.error(errorDescription, e)
           InternalServerError("error" -> "500 Internal Server Error")
