@@ -4,7 +4,7 @@ import java.net.InetAddress
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.{Instant, ZoneId, ZonedDateTime}
-import java.util.UUID
+import java.util.{ConcurrentModificationException, UUID}
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.utils.ServletTest
@@ -191,6 +191,21 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       ) {
         status must_== 400
         body must_== "{\"error\":\"Otsake If-Unmodified-Since on pakollinen.\"}"
+      }
+    }
+
+    "palauttaa 409 jos tietoihin on tehty samanaikaisia muutoksia" in { t: (String, ValinnantulosService, SessionRepository) =>
+      t._3.get(sessionId) returns Some(crudSession)
+      t._2.storeValinnantuloksetAndIlmoittautumiset(
+        any[ValintatapajonoOid], any[List[Valinnantulos]], any[Option[Instant]], any[AuditInfo], any[Boolean]
+      ) throws new ConcurrentModificationException(s"Original exception text")
+      patch(
+        s"${t._1}/${valintatapajonoOid.toString}",
+        write(List(valinnantulos.copy(julkaistavissa = Some(true)))).getBytes("UTF-8"),
+        defaultPatchHeaders
+      ) {
+        status must_== 409
+        body must_== "{\"error\":\"Tietoihin on tehty samanaikaisia muutoksia, päivitä sivu ja yritä uudelleen (Original exception text)\"}"
       }
     }
 
