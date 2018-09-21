@@ -53,7 +53,7 @@ script:
 deploy:
   - provider: script
     script:
-      mvn deploy -pl valinta-tulos-valintarekisteri-db -DskipTests --settings ci-tools/common/maven-settings.xml
+      mvn deploy -pl valinta-tulos-valintarekisteri-db -DskipTests --settings ci-tools/common/maven-settings.xml &&
       mvn deploy -pl valinta-tulos-service -DskipTests --settings ci-tools/common/maven-settings.xml
     skip_cleanup: true
     on:
