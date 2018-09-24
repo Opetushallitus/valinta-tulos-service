@@ -268,7 +268,7 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
       val valinnantulosAfter = findOne(hakemuksenValinnantulokset, tila(Hyvaksytty))
       tila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)
     }
-    "hakijan vastaanoton poisto epäonnistuu jos ifUnmodifiedSince on aiempi kuin tallennus" in {
+    "vastaanoton poisto epäonnistuu jos ifUnmodifiedSince on aikaisempi kuin tallennus" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
       vastaanotaHakijana(hakemusOid, HakukohdeOid("1.2.246.562.5.72607738902"), Vastaanottotila.vastaanottanut)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
@@ -277,19 +277,37 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
       val valinnantulosAfter = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
       tila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
     }
+    "vastaanoton poisto onnistuu jos ifUnmodifiedSince on myöhäisempi kuin tallennus" in {
+      useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
+      vastaanotaHakijana(hakemusOid, HakukohdeOid("1.2.246.562.5.72607738902"), Vastaanottotila.vastaanottanut)
+      val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
+      tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+      tallennaCustomAikaleimalla(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.KESKEN)), Some(Instant.now().plusSeconds(TimeUnit.MINUTES.toSeconds(1))))
+      val valinnantulosAfter = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
+      tila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.KESKEN)
+    }
 
-  "hakijan vastaanotto epäonnistuu jos ifUnmodifiedSince on aiempi kuin tallennus" in {
-    useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
-    val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
-    tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
-    tallenna(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.PERUUTETTU)))
-    tila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
-    tallennaVirheellaCustomAikaleimalla(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)), Some("Valinnantuloksen tallennus epäonnistui"),500, Some(Instant.now().minusSeconds(TimeUnit.MINUTES.toSeconds(1))))
-    tila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
 
-  }
-    //TODO: 3. poisto onnistuu jos myöhempi
-    //TODO: 4. muutos onnistuu jos myöhempi
+    "vastaanotto epäonnistuu jos ifUnmodifiedSince on aikaisempi kuin tallennus" in {
+      useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
+      val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
+      tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
+      tallenna(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.PERUUTETTU)))
+      tila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
+      tallennaVirheellaCustomAikaleimalla(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)), Some("Valinnantuloksen tallennus epäonnistui"),500, Some(Instant.now().minusSeconds(TimeUnit.MINUTES.toSeconds(1))))
+      tila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
+
+    }
+    "vastaanotto onnistuu jos ifUnmodifiedSince on myöhäisempi kuin tallennus" in {
+      useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
+      val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
+      tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
+      tallenna(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.PERUUTETTU)))
+      tila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
+      tallennaCustomAikaleimalla(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)), Some(Instant.now().plusSeconds(TimeUnit.MINUTES.toSeconds(1))))
+      tila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+
+    }
   }
 
   def hakemuksenValinnantulokset:Set[Valinnantulos] = kaikkiTestinHakukohteet.map(oid =>
