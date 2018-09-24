@@ -203,7 +203,7 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
 
   override def store(vastaanottoEvent: VastaanottoEvent): Unit = {
     runAsSerialized(10, Duration(5, TimeUnit.MILLISECONDS), s"Storing $vastaanottoEvent",
-      storeAction(vastaanottoEvent, None)) match {
+      storeAction(vastaanottoEvent)) match {
       case Right(_) => ()
       case Left(e) => throw e
     }
