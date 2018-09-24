@@ -155,8 +155,6 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
       valinnantulosRepository.storeAction(VirkailijanVastaanotto(haku.oid, uusi.valintatapajonoOid, uusi.henkiloOid, uusi.hakemusOid, hakukohdeOid,
         VirkailijanVastaanottoAction.getVirkailijanVastaanottoAction(Vastaanottotila.values.find(Vastaanottotila.matches(_, uusi.vastaanottotila))
           .getOrElse(throw new IllegalArgumentException(s"Odottamaton vastaanottotila ${uusi.vastaanottotila}"))), muokkaaja, selite), ifUnModifiedSince)
-       // VirkailijanVastaanottoAction.getVirkailijanVastaanottoAction(Vastaanottotila.values.find(Vastaanottotila.matches(_, uusi.vastaanottotila))
-       //   .getOrElse(throw new IllegalArgumentException(s"Odottamaton vastaanottotila ${uusi.vastaanottotila}"))), muokkaaja, selite))
     } else {
       DBIO.successful(())
     }

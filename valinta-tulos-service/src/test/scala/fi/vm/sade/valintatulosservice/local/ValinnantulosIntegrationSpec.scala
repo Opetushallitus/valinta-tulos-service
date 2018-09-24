@@ -188,6 +188,7 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
     )
     hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session) must beSome
   }
+
   "palauttaa virheen päivitystä yritettäessä jos vastaanotto poistettu lukemisen jälkeen" in {
     val updateVastaanottanut = valinnantulos.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
     val updateKesken = valinnantulos.copy(vastaanottotila = ValintatuloksenTila.KESKEN)
@@ -199,17 +200,14 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
 
     val Some(lastModified) = hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
     paivita(updateVastaanottanut, false, session, lastModified) must beNone
-    //TODO: TSEKKAA MITÄ VALINTA-UI:N RESTIRAJAPINTA KÄYTTÄÄ!
     val Some(lastModifiedA) = hae(Some(updateVastaanottanut), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
-    paivita(updateKesken, false, session, lastModifiedA) must beSome(
-      ValinnantulosUpdateStatus(500, s"Valinnantuloksen tallennus epäonnistui", valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid)
-    )
-    hae(Some(updateVastaanottanut), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
+    paivita(updateKesken, false, session, lastModifiedA) must beNone
+    hae(Some(updateKesken), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
     val ifUnmodifiedSince = lastModified.minusSeconds(2)
     paivita(update, false, session, ifUnmodifiedSince) must beSome(
       ValinnantulosUpdateStatus(409, s"Hakemus on muuttunut lukemisen jälkeen", valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid)
     )
-    hae(Some(updateVastaanottanut), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session) must beSome
+    hae(Some(updateKesken), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session) must beSome
   }
 
   "auditlogittaa valinnantuloksen luvut ja muokkaukset" in {
