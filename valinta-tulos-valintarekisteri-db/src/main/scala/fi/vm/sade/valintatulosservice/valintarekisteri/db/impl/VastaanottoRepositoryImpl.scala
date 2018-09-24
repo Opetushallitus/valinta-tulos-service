@@ -201,16 +201,6 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
     }
   }
 
-  /*
-  override def store(vastaanottoEvent: VastaanottoEvent, ifUnmodifiedSince: Option[Instant]): Unit = {
-    runAsSerialized(10, Duration(5, TimeUnit.MILLISECONDS), s"Storing $vastaanottoEvent",
-      storeAction(vastaanottoEvent, None)) match {
-      case Right(_) => ()
-      case Left(e) => throw e
-    }
-  }
-*/
-
   override def store(vastaanottoEvent: VastaanottoEvent): Unit = {
     runAsSerialized(10, Duration(5, TimeUnit.MILLISECONDS), s"Storing $vastaanottoEvent",
       storeAction(vastaanottoEvent, None)) match {
@@ -232,16 +222,15 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
   private def tallennaVastaanottoTapahtumaAction(vastaanottoEvent: VastaanottoEvent, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
     val VastaanottoEvent(henkiloOid, _, hakukohdeOid, action, ilmoittaja, selite) = vastaanottoEvent
       val deleteVastaanotto = sqlu"""update vastaanotot set deleted = overriden_vastaanotto_deleted_id()
-                 where (henkilo = ${henkiloOid}
-                        or henkilo in (select linked_oid from henkiloviitteet where person_oid = ${henkiloOid}))
-                     and hakukohde = ${hakukohdeOid}
-                     and deleted is null
-                      and (${ifUnmodifiedSince}::timestamptz is null
-                         or vastaanotot.timestamp <= ${ifUnmodifiedSince})"""
+                                     where (henkilo = ${henkiloOid}
+                                     or henkilo in (select linked_oid from henkiloviitteet where person_oid = ${henkiloOid}))
+                                        and hakukohde = ${hakukohdeOid}
+                                        and deleted is null
+                                        and (${ifUnmodifiedSince}::timestamptz is null
+                                        or vastaanotot.timestamp <= ${ifUnmodifiedSince})"""
 
       val insertVastaanotto = sqlu"""insert into vastaanotot (hakukohde, henkilo, action, ilmoittaja, selite)
                            values ($hakukohdeOid, $henkiloOid, ${action.toString}::vastaanotto_action, $ilmoittaja, $selite)"""
-
       deleteVastaanotto.andThen(insertVastaanotto).flatMap {
         case 0 =>
           DBIO.failed(new ConcurrentModificationException(s"Vastaanottoa $vastaanottoEvent ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
@@ -251,97 +240,32 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
 
 
   }
-/*
-  override def store(vastaanottoEvent: VastaanottoEvent): Unit = {
-    runAsSerialized(10, Duration(5, TimeUnit.MILLISECONDS), s"Storing $vastaanottoEvent",
-      storeAction(vastaanottoEvent)) match {
-      case Right(_) => ()
-      case Left(e) => throw e
-    }
-  }
-
-  def storeAction(vastaanottoEvent: VastaanottoEvent): DBIO[Unit] = vastaanottoEvent.action match {
-    case Poista => kumoaVastaanottotapahtumatAction(vastaanottoEvent)
-    case _ => tallennaVastaanottoTapahtumaAction(vastaanottoEvent)
-  }
-
-  private def tallennaVastaanottoTapahtumaAction(vastaanottoEvent: VastaanottoEvent): DBIO[Unit] = {
-    val VastaanottoEvent(henkiloOid, _, hakukohdeOid, action, ilmoittaja, selite) = vastaanottoEvent
-    DBIO.seq(
-      sqlu"""update vastaanotot set deleted = overriden_vastaanotto_deleted_id()
-                 where (henkilo = ${henkiloOid}
-                        or henkilo in (select linked_oid from henkiloviitteet where person_oid = ${henkiloOid}))
-                     and hakukohde = ${hakukohdeOid}
-                     and deleted is null""",
-      sqlu"""insert into vastaanotot (hakukohde, henkilo, action, ilmoittaja, selite)
-             values ($hakukohdeOid, $henkiloOid, ${action.toString}::vastaanotto_action, $ilmoittaja, $selite)""")
-  }
-
-  private def kumoaVastaanottotapahtumatAction(vastaanottoEvent: VastaanottoEvent): DBIO[Unit] = {
-    val VastaanottoEvent(henkiloOid, _, hakukohdeOid, _, ilmoittaja, selite) = vastaanottoEvent
-    val insertDelete = sqlu"""insert into deleted_vastaanotot (poistaja, selite) values ($ilmoittaja, $selite)"""
-    val updateVastaanotto =
-      sqlu"""update vastaanotot set deleted = currval('deleted_vastaanotot_id')
-                                       where (vastaanotot.henkilo = $henkiloOid
-                                              or vastaanotot.henkilo in (select linked_oid from henkiloviitteet where person_oid = $henkiloOid))
-                                           and vastaanotot.hakukohde = $hakukohdeOid
-                                           and vastaanotot.deleted is null"""
-    insertDelete.andThen(updateVastaanotto).flatMap {
-      case 0 =>
-        DBIO.failed(new IllegalStateException(s"No vastaanotto events found for $henkiloOid to hakukohde $hakukohdeOid"))
-      case n =>
-        DBIO.successful(())
-    }
-  }*/
 
   private def kumoaVastaanottotapahtumatAction(vastaanottoEvent: VastaanottoEvent, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
     val VastaanottoEvent(henkiloOid, _, hakukohdeOid, _, ilmoittaja, selite) = vastaanottoEvent
-
-   // ifUnmodifiedSince match {
-   //   case Some (ifUnmodifiedSince) =>
-        val insertDelete =
-          sqlu"""insert into deleted_vastaanotot (poistaja, selite) select $ilmoittaja, $selite
-                where exists (
-                select id from vastaanotot
-                where (vastaanotot.henkilo = $henkiloOid
-                  or vastaanotot.henkilo in (select linked_oid from henkiloviitteet where person_oid = $henkiloOid))
-                  and vastaanotot.hakukohde = $hakukohdeOid
-                  and vastaanotot.deleted is null
-                  and (${ifUnmodifiedSince}::timestamptz is null
-                  or vastaanotot.timestamp <= ${ifUnmodifiedSince}))"""
-
-
-        val updateVastaanotto =
-          sqlu"""update vastaanotot set deleted = currval('deleted_vastaanotot_id')
-                                       where (vastaanotot.henkilo = $henkiloOid
-                                              or vastaanotot.henkilo in (select linked_oid from henkiloviitteet where person_oid = $henkiloOid))
-                                           and vastaanotot.hakukohde = $hakukohdeOid
-                                           and vastaanotot.deleted is null
-                                          and (${ifUnmodifiedSince}::timestamptz is null
-                                            or vastaanotot.timestamp <= ${ifUnmodifiedSince})"""
-      insertDelete.andThen(updateVastaanotto).flatMap {
-
+    val insertDelete =
+      sqlu"""insert into deleted_vastaanotot (poistaja, selite) select $ilmoittaja, $selite
+            where exists (
+            select id from vastaanotot
+            where (vastaanotot.henkilo = $henkiloOid
+            or vastaanotot.henkilo in (select linked_oid from henkiloviitteet where person_oid = $henkiloOid))
+              and vastaanotot.hakukohde = $hakukohdeOid
+              and vastaanotot.deleted is null
+              and (${ifUnmodifiedSince}::timestamptz is null
+              or vastaanotot.timestamp <= ${ifUnmodifiedSince}))"""
+    val updateVastaanotto =
+      sqlu"""update vastaanotot set deleted = currval('deleted_vastaanotot_id')
+             where (vastaanotot.henkilo = $henkiloOid
+             or vastaanotot.henkilo in (select linked_oid from henkiloviitteet where person_oid = $henkiloOid))
+                and vastaanotot.hakukohde = $hakukohdeOid
+                and vastaanotot.deleted is null
+                and (${ifUnmodifiedSince}::timestamptz is null
+                or vastaanotot.timestamp <= ${ifUnmodifiedSince})"""
+    insertDelete.andThen(updateVastaanotto).flatMap {
       case 0 =>
         DBIO.failed(new ConcurrentModificationException(s"Vastaanottoa $vastaanottoEvent ei voitu päivittää koska sitä ei ole tai joku oli muokannut sitä samanaikaisesti (${ifUnmodifiedSince})"))
       case n =>
         DBIO.successful (() )
-  //  }
-
-    /*case None =>
-      val insertDelete = sqlu"""insert into deleted_vastaanotot (poistaja, selite) values ($ilmoittaja, $selite)"""
-      val updateVastaanotto =
-        sqlu"""update vastaanotot set deleted = currval('deleted_vastaanotot_id')
-                                       where (vastaanotot.henkilo = $henkiloOid
-                                              or vastaanotot.henkilo in (select linked_oid from henkiloviitteet where person_oid = $henkiloOid))
-                                           and vastaanotot.hakukohde = $hakukohdeOid
-                                           and vastaanotot.deleted is null"""
-
-      insertDelete.andThen (updateVastaanotto).flatMap {
-      case 0 =>
-      DBIO.failed (new IllegalStateException (s"No vastaanotto events found for $henkiloOid to hakukohde $hakukohdeOid") )
-      case n =>
-      DBIO.successful (() )
-    }*/
     }
   }
 
