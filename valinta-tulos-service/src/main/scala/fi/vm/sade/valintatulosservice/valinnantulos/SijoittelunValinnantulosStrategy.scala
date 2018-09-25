@@ -110,8 +110,11 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
       def validateIlmoittautumistila() = (uusi.ilmoittautumistila, uusi.vastaanottotila) match {
         case (vanha.ilmoittautumistila, _) => Right()
+        //TODO: ilmoittautumista ei saa poistaa jos vastaanotto on sitova -> halutaanko todella toimivan näin?
         //case (EiTehty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI) =>
         //  Left(ValinnantulosUpdateStatus(409, s"Ilmoittautumista ei voida poistaa, koska vastaanotto on sitova", uusi.valintatapajonoOid, uusi.hakemusOid))
+        case (Lasna | LasnaSyksy | LasnaKokoLukuvuosi, _) if (uusi.vastaanottotila != ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI) =>
+          Left(ValinnantulosUpdateStatus(409, s"Ilmoittautumista ei voida tallentaa, koska vastaanotto ei ole sitova", uusi.valintatapajonoOid, uusi.hakemusOid))
         case (EiTehty, _) => Right()
         case (_, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI) => Right()
         case (_, _) => Left(ValinnantulosUpdateStatus(409, s"Ilmoittautumista ei voida muuttaa, koska vastaanotto ei ole sitova", uusi.valintatapajonoOid, uusi.hakemusOid))
