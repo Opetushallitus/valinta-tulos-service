@@ -227,7 +227,7 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
                                         and hakukohde = ${hakukohdeOid}
                                         and deleted is null
                                         and (${ifUnmodifiedSince}::timestamptz is null
-                                        or vastaanotot.timestamp <= ${ifUnmodifiedSince})"""
+                                        or vastaanotot.timestamp > ${ifUnmodifiedSince})"""
 
       val insertVastaanotto = sqlu"""insert into vastaanotot (hakukohde, henkilo, action, ilmoittaja, selite)
                            values ($hakukohdeOid, $henkiloOid, ${action.toString}::vastaanotto_action, $ilmoittaja, $selite)"""
@@ -252,7 +252,7 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
               and vastaanotot.hakukohde = $hakukohdeOid
               and vastaanotot.deleted is null
               and (${ifUnmodifiedSince}::timestamptz is null
-              or vastaanotot.timestamp <= ${ifUnmodifiedSince}))"""
+              or vastaanotot.timestamp > ${ifUnmodifiedSince}))"""
     val updateVastaanotto =
       sqlu"""update vastaanotot set deleted = currval('deleted_vastaanotot_id')
              where (vastaanotot.henkilo = $henkiloOid
@@ -260,7 +260,7 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
                 and vastaanotot.hakukohde = $hakukohdeOid
                 and vastaanotot.deleted is null
                 and (${ifUnmodifiedSince}::timestamptz is null
-                or vastaanotot.timestamp <= ${ifUnmodifiedSince})"""
+                or vastaanotot.timestamp > ${ifUnmodifiedSince})"""
     insertDelete.andThen(updateVastaanotto).flatMap {
       case 0 =>
         DBIO.failed(new ConcurrentModificationException(s"Vastaanottoa $vastaanottoEvent ei voitu päivittää koska sitä ei ole tai joku oli muokannut sitä samanaikaisesti (${ifUnmodifiedSince})"))
