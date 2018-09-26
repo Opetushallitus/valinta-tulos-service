@@ -201,7 +201,7 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
     val Some(lastModified) = hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
     paivita(updateVastaanottanut, false, session, lastModified) must beNone
     val Some(lastModifiedA) = hae(Some(updateVastaanottanut), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
-    paivita(updateKesken, false, session, lastModifiedA.minusSeconds(2)) must beNone
+    paivita(updateKesken, false, session, lastModifiedA.plusSeconds(2)) must beNone
     hae(Some(updateKesken), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
     val ifUnmodifiedSince = lastModified.minusSeconds(2)
     paivita(update, false, session, ifUnmodifiedSince) must beSome(
