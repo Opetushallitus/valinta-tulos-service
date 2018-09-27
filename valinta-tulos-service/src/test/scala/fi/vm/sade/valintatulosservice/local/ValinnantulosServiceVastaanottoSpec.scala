@@ -311,21 +311,16 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
     "BUG-1794 - vastaanotto ja ilmoittautuminen epäonnistuu ifUnmodifiedSincen ollessa välimaastossa" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)).copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
-
       tallenna(List(valinnantulosBefore))
       assertTila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
       valinnantulosBefore.ilmoittautumistila must_== EiTehty
-
       Thread.sleep(5000)
-
       val valinnantulosMid = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)).copy(ilmoittautumistila = LasnaKokoLukuvuosi)
       tallenna(List(valinnantulosMid.copy(ilmoittautumistila = LasnaKokoLukuvuosi)))
       assertTila(valinnantulosMid, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
       valinnantulosMid.ilmoittautumistila must_== LasnaKokoLukuvuosi
-
       var valinnantulosAfter = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)).copy(vastaanottotila = ValintatuloksenTila.KESKEN, ilmoittautumistila = EiTehty)
       tallennaVirheellaCustomAikaleimalla(List(valinnantulosAfter), Some("Hakemus on muuttunut lukemisen jälkeen"),409, Some(Instant.now().minusSeconds(3)))
-
       valinnantulosAfter = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
       assertTila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
       valinnantulosAfter.ilmoittautumistila must_== LasnaKokoLukuvuosi

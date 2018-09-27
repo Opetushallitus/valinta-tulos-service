@@ -54,7 +54,8 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
       }
 
       def validateVastaanottoTila(): Either[ValinnantulosUpdateStatus, Unit] = (uusi.vastaanottotila, uusi.ilmoittautumistila) match {
-        case  (_, Lasna | LasnaSyksy | LasnaKokoLukuvuosi) if (uusi.vastaanottotila != ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI) =>
+        case  (_, _) if uusi.vastaanottotila != ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI && !List(EiIlmoittautunut,EiTehty).contains(uusi.ilmoittautumistila) =>
+        //case  (_, Lasna | LasnaSyksy | LasnaKokoLukuvuosi) if (uusi.vastaanottotila != ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI) =>
           Left(ValinnantulosUpdateStatus(409, s"Vastaanottoa ei voi poistaa, koska ilmoittautuminen on tehty", uusi.valintatapajonoOid, uusi.hakemusOid))
         case (_, _) => Right()
       }
@@ -65,8 +66,8 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
       }
 
       def validateJulkaistavissa() = (uusi.julkaistavissa, uusi.vastaanottotila) match {
-        case (Some(false), vastaanotto) if (vastaanotto == ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI && uusi.vastaanottotila == LasnaKokoLukuvuosi || uusi.vastaanottotila == LasnaSyksy || uusi.vastaanottotila == Lasna) =>
-          Left(ValinnantulosUpdateStatus(409, s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sen ilmoittautumistila on " + uusi.ilmoittautumistila + ".", uusi.valintatapajonoOid, uusi.hakemusOid))
+        case (Some(false), vastaanotto) if vastaanotto == ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI && !List(EiIlmoittautunut,EiTehty).contains(uusi.ilmoittautumistila) =>
+          Left(ValinnantulosUpdateStatus(409, s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sen ilmoittautumistila on " + uusi.ilmoittautumistila, uusi.valintatapajonoOid, uusi.hakemusOid))
         case (vanha.julkaistavissa, _) => Right()
         case (Some(false), vastaanotto) if vastaanotto != ValintatuloksenTila.KESKEN =>
           Left(ValinnantulosUpdateStatus(409, s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sen vastaanottotila on $vastaanotto", uusi.valintatapajonoOid, uusi.hakemusOid))
