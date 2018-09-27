@@ -11,6 +11,7 @@ import org.postgresql.util.PSQLException
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.TransactionIsolation.Serializable
 
+import scala.compat.Platform.ConcurrentModificationException
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
@@ -117,7 +118,7 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
           Thread.sleep(wait.toMillis)
           runAsSerialized(retries - 1, wait + wait, description, action)
         } else {
-          Left(new RuntimeException(s"$description failed because of an concurrent action.", e))
+          Left(new ConcurrentModificationException(s"$description failed because of an concurrent action.", e))
         }
       case NonFatal(e) => Left(e)
     }
