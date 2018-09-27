@@ -44,6 +44,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
       def validateMuutos(): Either[ValinnantulosUpdateStatus, Unit] = {
         for {
           valinnantila <- validateValinnantila().right
+          vastaanottotila <- validateVastaanottoTila().right
           julkaistavissa <- validateJulkaistavissa().right
           _ <- validateEhdollisestiHyvaksytty.right
           hyvaksyttyVarasijalta <- validateHyvaksyttyVarasijalta().right
@@ -52,12 +53,20 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
         } yield ilmoittautumistila
       }
 
+      def validateVastaanottoTila(): Either[ValinnantulosUpdateStatus, Unit] = (uusi.vastaanottotila, uusi.ilmoittautumistila) match {
+        case  (_, Lasna | LasnaSyksy | LasnaKokoLukuvuosi) if (uusi.vastaanottotila != ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI) =>
+          Left(ValinnantulosUpdateStatus(409, s"Vastaanottoa ei voi poistaa, koska ilmoittautuminen on tehty", uusi.valintatapajonoOid, uusi.hakemusOid))
+        case (_, _) => Right()
+      }
+
       def validateValinnantila() = uusi.valinnantila match {
         case vanha.valinnantila => Right()
         case _ => Left(ValinnantulosUpdateStatus(403, s"Valinnantilan muutos ei ole sallittu", uusi.valintatapajonoOid, uusi.hakemusOid))
       }
 
       def validateJulkaistavissa() = (uusi.julkaistavissa, uusi.vastaanottotila) match {
+        case (Some(false), vastaanotto) if (vastaanotto == ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI && uusi.vastaanottotila == LasnaKokoLukuvuosi || uusi.vastaanottotila == LasnaSyksy || uusi.vastaanottotila == Lasna) =>
+          Left(ValinnantulosUpdateStatus(409, s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sen ilmoittautumistila on " + uusi.ilmoittautumistila + ".", uusi.valintatapajonoOid, uusi.hakemusOid))
         case (vanha.julkaistavissa, _) => Right()
         case (Some(false), vastaanotto) if vastaanotto != ValintatuloksenTila.KESKEN =>
           Left(ValinnantulosUpdateStatus(409, s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sen vastaanottotila on $vastaanotto", uusi.valintatapajonoOid, uusi.hakemusOid))
@@ -110,9 +119,6 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
       def validateIlmoittautumistila() = (uusi.ilmoittautumistila, uusi.vastaanottotila) match {
         case (vanha.ilmoittautumistila, _) => Right()
-        //TODO: ilmoittautumista ei saa poistaa jos vastaanotto on sitova -> halutaanko todella toimivan näin?
-        //case (EiTehty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI) =>
-        //  Left(ValinnantulosUpdateStatus(409, s"Ilmoittautumista ei voida poistaa, koska vastaanotto on sitova", uusi.valintatapajonoOid, uusi.hakemusOid))
         case (Lasna | LasnaSyksy | LasnaKokoLukuvuosi, _) if (uusi.vastaanottotila != ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI) =>
           Left(ValinnantulosUpdateStatus(409, s"Ilmoittautumista ei voida tallentaa, koska vastaanotto ei ole sitova", uusi.valintatapajonoOid, uusi.hakemusOid))
         case (EiTehty, _) => Right()
@@ -172,7 +178,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
     } else {
       DBIO.successful(())
     }
-    updateOhjaus.andThen(updateEhdollisenHyvaksynnanEhto).andThen(updateVastaanotto).andThen(updateIlmoittautuminen).andThen(updateHyvaksyttyJaJulkaistuDate)
+    updateIlmoittautuminen.andThen(updateVastaanotto).andThen(updateOhjaus).andThen(updateEhdollisenHyvaksynnanEhto).andThen(updateHyvaksyttyJaJulkaistuDate)
   }
 
   def audit(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): Unit = {

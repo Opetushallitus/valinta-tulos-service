@@ -63,11 +63,11 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
       useFixture("hyvaksytty-kesken.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, tila(Hyvaksytty))
       valinnantulosBefore.julkaistavissa must_== Some(false)
-      tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
+      assertTila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
       tallenna(List(valinnantulosBefore.copy(julkaistavissa = Some(true), vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)))
       val valinnantulosAfter = findOne(hakemuksenValinnantulokset, tila(Hyvaksytty))
       valinnantulosAfter.julkaistavissa must_== Some(true)
-      tila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+      assertTila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
       true must_== true
     }
     "vastaanota ehdollisesti yksi hakija" in {
@@ -86,15 +86,15 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
       useFixture("varalla-hyvaksytty-hyvaksytty.json", Nil, hakuFixture = HakuFixtures.korkeakouluYhteishaku, hakemusFixtures = List("00000441369-3"),
         yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
       val valinnantuloksetBefore = hakemuksenValinnantulokset
-      tila(findOne(valinnantuloksetBefore, hakukohde(HakukohdeOid("1.2.246.562.5.72607738902"))), Varalla, ValintatuloksenTila.KESKEN)
-      tila(findOne(valinnantuloksetBefore, hakukohde(HakukohdeOid("1.2.246.562.5.72607738903"))), Hyvaksytty, ValintatuloksenTila.KESKEN)
-      tila(findOne(valinnantuloksetBefore, hakukohde(HakukohdeOid("1.2.246.562.5.72607738904"))), Hyvaksytty, ValintatuloksenTila.KESKEN)
+      assertTila(findOne(valinnantuloksetBefore, hakukohde(HakukohdeOid("1.2.246.562.5.72607738902"))), Varalla, ValintatuloksenTila.KESKEN)
+      assertTila(findOne(valinnantuloksetBefore, hakukohde(HakukohdeOid("1.2.246.562.5.72607738903"))), Hyvaksytty, ValintatuloksenTila.KESKEN)
+      assertTila(findOne(valinnantuloksetBefore, hakukohde(HakukohdeOid("1.2.246.562.5.72607738904"))), Hyvaksytty, ValintatuloksenTila.KESKEN)
       tallenna(List(findOne(valinnantuloksetBefore, hakukohde(HakukohdeOid("1.2.246.562.5.72607738903")))
         .copy(vastaanottotila = ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT)))
       val valinnantuloksetAfter = valintarekisteriDb.runBlocking(valintarekisteriDb.getValinnantuloksetForHakemus(hakemusOid))
-      tila(findOne(valinnantuloksetAfter, hakukohde(HakukohdeOid("1.2.246.562.5.72607738902"))), Varalla, ValintatuloksenTila.KESKEN)
-      tila(findOne(valinnantuloksetAfter, hakukohde(HakukohdeOid("1.2.246.562.5.72607738903"))), Hyvaksytty, ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT)
-      tila(findOne(valinnantuloksetAfter, hakukohde(HakukohdeOid("1.2.246.562.5.72607738904"))), Hyvaksytty, ValintatuloksenTila.KESKEN)
+      assertTila(findOne(valinnantuloksetAfter, hakukohde(HakukohdeOid("1.2.246.562.5.72607738902"))), Varalla, ValintatuloksenTila.KESKEN)
+      assertTila(findOne(valinnantuloksetAfter, hakukohde(HakukohdeOid("1.2.246.562.5.72607738903"))), Hyvaksytty, ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT)
+      assertTila(findOne(valinnantuloksetAfter, hakukohde(HakukohdeOid("1.2.246.562.5.72607738904"))), Hyvaksytty, ValintatuloksenTila.KESKEN)
     }
     "varalla olevaa hakutoivetta ei voi ottaa vastaan" in {
       useFixture("varalla-hyvaksytty-hyvaksytty.json", Nil, hakuFixture = HakuFixtures.korkeakouluYhteishaku, hakemusFixtures = List("00000441369-3"),
@@ -102,124 +102,124 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
       val valinnantulos = findOne(hakemuksenValinnantulokset, tila(Varalla))
       tallennaVirheella(List(valinnantulos.copy(vastaanottotila = ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT)), Some("Hakutoivetta ei voi ottaa ehdollisesti vastaan"))
       tallennaVirheella(List(valinnantulos.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)), Some("Ei voi tallentaa vastaanottotietoa, koska hakijalle näytettävä tila on \"Varalla\""))
-      tila(findOne(hakemuksenValinnantulokset, tila(Varalla)), Varalla, ValintatuloksenTila.KESKEN)
+      assertTila(findOne(hakemuksenValinnantulokset, tila(Varalla)), Varalla, ValintatuloksenTila.KESKEN)
     }
     "ylimmän hyväksytyn hakutoiveen voi ottaa sitovasti vastaan, jos sen yläpuolella on hakutoive varalla" in {
       useFixture("varalla-hyvaksytty-hyvaksytty.json", Nil, hakuFixture = HakuFixtures.korkeakouluYhteishaku, hakemusFixtures = List("00000441369-3"),
         yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
       val valinnantuloksetBefore = hakemuksenValinnantulokset
-      tila(findOne(valinnantuloksetBefore, hakukohde(HakukohdeOid("1.2.246.562.5.72607738902"))), Varalla, ValintatuloksenTila.KESKEN)
-      tila(findOne(valinnantuloksetBefore, hakukohde(HakukohdeOid("1.2.246.562.5.72607738903"))), Hyvaksytty, ValintatuloksenTila.KESKEN)
-      tila(findOne(valinnantuloksetBefore, hakukohde(HakukohdeOid("1.2.246.562.5.72607738904"))), Hyvaksytty, ValintatuloksenTila.KESKEN)
+      assertTila(findOne(valinnantuloksetBefore, hakukohde(HakukohdeOid("1.2.246.562.5.72607738902"))), Varalla, ValintatuloksenTila.KESKEN)
+      assertTila(findOne(valinnantuloksetBefore, hakukohde(HakukohdeOid("1.2.246.562.5.72607738903"))), Hyvaksytty, ValintatuloksenTila.KESKEN)
+      assertTila(findOne(valinnantuloksetBefore, hakukohde(HakukohdeOid("1.2.246.562.5.72607738904"))), Hyvaksytty, ValintatuloksenTila.KESKEN)
       tallenna(List(findOne(valinnantuloksetBefore, hakukohde(HakukohdeOid("1.2.246.562.5.72607738903")))
         .copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)))
       val valinnantuloksetAfter = valintarekisteriDb.runBlocking(valintarekisteriDb.getValinnantuloksetForHakemus(hakemusOid))
-      tila(findOne(valinnantuloksetAfter, hakukohde(HakukohdeOid("1.2.246.562.5.72607738902"))), Varalla, ValintatuloksenTila.KESKEN)
-      tila(findOne(valinnantuloksetAfter, hakukohde(HakukohdeOid("1.2.246.562.5.72607738903"))), Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
-      tila(findOne(valinnantuloksetAfter, hakukohde(HakukohdeOid("1.2.246.562.5.72607738904"))), Hyvaksytty, ValintatuloksenTila.KESKEN)
+      assertTila(findOne(valinnantuloksetAfter, hakukohde(HakukohdeOid("1.2.246.562.5.72607738902"))), Varalla, ValintatuloksenTila.KESKEN)
+      assertTila(findOne(valinnantuloksetAfter, hakukohde(HakukohdeOid("1.2.246.562.5.72607738903"))), Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+      assertTila(findOne(valinnantuloksetAfter, hakukohde(HakukohdeOid("1.2.246.562.5.72607738904"))), Hyvaksytty, ValintatuloksenTila.KESKEN)
     }
     "kahdesta hyväksytystä hakutoiveesta alempaa ei voi ottaa ehdollisesti vastaan" in {
       useFixture("varalla-hyvaksytty-hyvaksytty.json", Nil, hakuFixture = HakuFixtures.korkeakouluYhteishaku, hakemusFixtures = List("00000441369-3"),
         yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
       val valinnantuloksetBefore = hakemuksenValinnantulokset
-      tila(findOne(valinnantuloksetBefore, hakukohde(HakukohdeOid("1.2.246.562.5.72607738902"))), Varalla, ValintatuloksenTila.KESKEN)
-      tila(findOne(valinnantuloksetBefore, hakukohde(HakukohdeOid("1.2.246.562.5.72607738903"))), Hyvaksytty, ValintatuloksenTila.KESKEN)
-      tila(findOne(valinnantuloksetBefore, hakukohde(HakukohdeOid("1.2.246.562.5.72607738904"))), Hyvaksytty, ValintatuloksenTila.KESKEN)
+      assertTila(findOne(valinnantuloksetBefore, hakukohde(HakukohdeOid("1.2.246.562.5.72607738902"))), Varalla, ValintatuloksenTila.KESKEN)
+      assertTila(findOne(valinnantuloksetBefore, hakukohde(HakukohdeOid("1.2.246.562.5.72607738903"))), Hyvaksytty, ValintatuloksenTila.KESKEN)
+      assertTila(findOne(valinnantuloksetBefore, hakukohde(HakukohdeOid("1.2.246.562.5.72607738904"))), Hyvaksytty, ValintatuloksenTila.KESKEN)
       tallennaVirheella(List(findOne(valinnantuloksetBefore, hakukohde(HakukohdeOid("1.2.246.562.5.72607738904")))
         .copy(vastaanottotila = ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT)), Some("Hakutoivetta ei voi ottaa ehdollisesti vastaan"))
       val valinnantuloksetAfter = valintarekisteriDb.runBlocking(valintarekisteriDb.getValinnantuloksetForHakemus(hakemusOid))
-      tila(findOne(valinnantuloksetAfter, hakukohde(HakukohdeOid("1.2.246.562.5.72607738902"))), Varalla, ValintatuloksenTila.KESKEN)
-      tila(findOne(valinnantuloksetAfter, hakukohde(HakukohdeOid("1.2.246.562.5.72607738903"))), Hyvaksytty, ValintatuloksenTila.KESKEN)
-      tila(findOne(valinnantuloksetAfter, hakukohde(HakukohdeOid("1.2.246.562.5.72607738904"))), Hyvaksytty, ValintatuloksenTila.KESKEN)
+      assertTila(findOne(valinnantuloksetAfter, hakukohde(HakukohdeOid("1.2.246.562.5.72607738902"))), Varalla, ValintatuloksenTila.KESKEN)
+      assertTila(findOne(valinnantuloksetAfter, hakukohde(HakukohdeOid("1.2.246.562.5.72607738903"))), Hyvaksytty, ValintatuloksenTila.KESKEN)
+      assertTila(findOne(valinnantuloksetAfter, hakukohde(HakukohdeOid("1.2.246.562.5.72607738904"))), Hyvaksytty, ValintatuloksenTila.KESKEN)
     }
     "peru yksi hakija" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
-      tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
+      assertTila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
       val valinnantulosForSave = valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.PERUNUT)
       tallenna(List(valinnantulosForSave))
       val valinnantulosAfter = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
       valinnantulosAfter.copy(vastaanotonViimeisinMuutos = None) must_== valinnantulosForSave
       valinnantulosAfter.vastaanotonViimeisinMuutos.isDefined must_== true
-      tila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.PERUNUT)
+      assertTila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.PERUNUT)
     }
     "peruuta yhden hakijan vastaanotto" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
       vastaanotaHakijana(hakemusOid, HakukohdeOid("1.2.246.562.5.72607738902"), Vastaanottotila.vastaanottanut)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
       valinnantulosBefore.vastaanotonViimeisinMuutos.isDefined must_== true
-      tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+      assertTila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
       val valinnantulosForSave = valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.PERUUTETTU)
       tallenna(List(valinnantulosForSave))
       val valinnantulosAfterAfter = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
       valinnantulosAfterAfter.copy(vastaanotonViimeisinMuutos = None) must_== valinnantulosForSave.copy(vastaanotonViimeisinMuutos = None)
       valinnantulosAfterAfter.vastaanotonViimeisinMuutos.isDefined must_== true
-      tila(valinnantulosAfterAfter, Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
+      assertTila(valinnantulosAfterAfter, Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
     }
     "hakija ei voi vastaanottaa peruutettua hakutoivetta" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
-      tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
+      assertTila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
       tallenna(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.PERUUTETTU)))
-      tila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
+      assertTila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
       expectFailure {
         vastaanotaHakijana(hakemusOid, HakukohdeOid("1.2.246.562.5.72607738902"), Vastaanottotila.vastaanottanut)
       }
-      tila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
+      assertTila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
     }
     "virkailija voi vastaanottaa peruutetun hakutoiveen" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
-      tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
+      assertTila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
       tallenna(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.PERUUTETTU)))
-      tila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
+      assertTila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
       tallenna(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)))
-      tila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+      assertTila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
     }
     "virkailija voi vastaanottaa varasijalta hyväksytyn hakutoiveen" in {
       useFixture("varasijalta_hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
-      tila(valinnantulosBefore, VarasijaltaHyvaksytty, ValintatuloksenTila.KESKEN)
+      assertTila(valinnantulosBefore, VarasijaltaHyvaksytty, ValintatuloksenTila.KESKEN)
       tallenna(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)))
-      tila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), VarasijaltaHyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+      assertTila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), VarasijaltaHyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
     }
     "vastaanota yksi hakija joka ottanut vastaan toisen kk paikan -> error" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", List("lisahaku-vastaanottanut.json"), hakuFixture = HakuFixtures.korkeakouluYhteishaku, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
-      tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)
+      assertTila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)
       tallennaVirheella(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)),
         Some("Hakija on vastaanottanut toisen paikan"))
       val valinnantulosAfter = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
-      tila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)
+      assertTila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)
     }
     "jos hakija on ottanut vastaan toisen paikan, kesken-tilan tallentaminen ei tuota virhettä" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", List("lisahaku-vastaanottanut.json"), hakuFixture = HakuFixtures.korkeakouluYhteishaku, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
-      tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)
+      assertTila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)
       tallenna(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.KESKEN)))
       val valinnantulosAfter = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
-      tila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)
+      assertTila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)
     }
     "peru yksi hakija jonka paikka ei vastaanotettavissa -> success" in {
       useFixture("hylatty-ei-valintatulosta.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
-      tila(valinnantulosBefore, Peruuntunut, ValintatuloksenTila.KESKEN)
+      assertTila(valinnantulosBefore, Peruuntunut, ValintatuloksenTila.KESKEN)
       tallenna(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.PERUNUT)))
-      tila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Peruuntunut, ValintatuloksenTila.PERUNUT)
+      assertTila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Peruuntunut, ValintatuloksenTila.PERUNUT)
     }
     "poista yhden hakijan vastaanotto" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
       vastaanotaHakijana(hakemusOid, HakukohdeOid("1.2.246.562.5.72607738902"), Vastaanottotila.vastaanottanut)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
-      tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+      assertTila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
       tallenna(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.KESKEN)))
       val valinnantulosAfter = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
-      tila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.KESKEN)
+      assertTila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.KESKEN)
     }
     "vastaanota sitovasti yksi hakija vaikka toinen vastaanotto ei onnistu" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
-      tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
+      assertTila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
       val failingValinnantulos = valinnantulosBefore.copy(hakukohdeOid = HakukohdeOid("1234"), henkiloOid = "1234",
         hakemusOid = HakemusOid("1234"), vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
       val statusList = valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(valinnantulosBefore.valintatapajonoOid,
@@ -227,7 +227,7 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
       statusList.size must_== 1
       statusList.head.status must_== 404
       val valinnantulosAfter = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
-      tila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+      assertTila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
     }
     "kaksi epäonnistunutta vastaanottoa" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
@@ -242,18 +242,18 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
     "hyväksytty, ylempi varalla, vastaanotto loppunut, virkailija asettaa ehdollisesti vastaanottanut" in {
       useFixture("hyvaksytty-ylempi-varalla.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku, ohjausparametritFixture = "vastaanotto-loppunut")
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, tila(Hyvaksytty))
-      tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
+      assertTila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
       val varallaBefore = hakemuksenValinnantulokset.filter(_.valinnantila == Varalla)
       varallaBefore.filter(_.valinnantila == Varalla).foreach(
-        tila(_, Varalla, ValintatuloksenTila.KESKEN)
+        assertTila(_, Varalla, ValintatuloksenTila.KESKEN)
       )
       varallaBefore.size must_== 2
       tallenna(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT)))
       val valinnantulosAfter = findOne(hakemuksenValinnantulokset, tila(Hyvaksytty))
-      tila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT)
+      assertTila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT)
       val varallaAfter = hakemuksenValinnantulokset.filter(_.valinnantila == Varalla)
       varallaAfter.filter(_.valinnantila == Varalla).foreach(
-        tila(_, Varalla, ValintatuloksenTila.KESKEN)
+        assertTila(_, Varalla, ValintatuloksenTila.KESKEN)
       )
       varallaAfter.size must_== 2
     }
@@ -262,52 +262,76 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
         hakuFixture = HakuFixtures.korkeakouluYhteishaku, ohjausparametritFixture = "vastaanotto-loppunut",
         yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, tila(Hyvaksytty))
-      tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)
+     assertTila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)
       tallennaVirheella(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)),
         Some("Hakija on vastaanottanut toisen paikan"))
       val valinnantulosAfter = findOne(hakemuksenValinnantulokset, tila(Hyvaksytty))
-      tila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)
+     assertTila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)
     }
     "vastaanoton poisto epäonnistuu jos ifUnmodifiedSince on aikaisempi kuin tallennus" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
       vastaanotaHakijana(hakemusOid, HakukohdeOid("1.2.246.562.5.72607738902"), Vastaanottotila.vastaanottanut)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
-      tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+      assertTila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
       tallennaVirheellaCustomAikaleimalla(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.KESKEN)), Some("Hakemus on muuttunut lukemisen jälkeen"),409, Some(Instant.now().minusSeconds(TimeUnit.MINUTES.toSeconds(1))))
       val valinnantulosAfter = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
-      tila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+      assertTila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
     }
     "vastaanoton poisto onnistuu jos ifUnmodifiedSince on myöhäisempi kuin tallennus" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
       vastaanotaHakijana(hakemusOid, HakukohdeOid("1.2.246.562.5.72607738902"), Vastaanottotila.vastaanottanut)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
-      tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+      assertTila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
       tallennaCustomAikaleimalla(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.KESKEN)), Some(Instant.now().plusSeconds(TimeUnit.MINUTES.toSeconds(1))))
       val valinnantulosAfter = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
-      tila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.KESKEN)
+      assertTila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.KESKEN)
     }
 
 
     "vastaanotto epäonnistuu jos ifUnmodifiedSince on aikaisempi kuin tallennus" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
-      tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
+      assertTila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
       tallenna(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.PERUUTETTU)))
-      tila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
+      assertTila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
       tallennaVirheellaCustomAikaleimalla(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)), Some("Valinnantuloksen tallennus epäonnistui"),500, Some(Instant.now().minusSeconds(TimeUnit.MINUTES.toSeconds(1))))
-      tila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
+      assertTila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
 
     }
     "vastaanotto onnistuu jos ifUnmodifiedSince on myöhäisempi kuin tallennus" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
       val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
-      tila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
+      assertTila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.KESKEN)
       tallenna(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.PERUUTETTU)))
-      tila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
+      assertTila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.PERUUTETTU)
       tallennaCustomAikaleimalla(List(valinnantulosBefore.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)), Some(Instant.now().plusSeconds(TimeUnit.MINUTES.toSeconds(1))))
-      tila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+      assertTila(findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)), Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
 
     }
+    "BUG-1794 - vastaanotto ja ilmoittautuminen epäonnistuu ifUnmodifiedSincen ollessa välimaastossa" in {
+      useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
+      val valinnantulosBefore = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)).copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+
+      tallenna(List(valinnantulosBefore))
+      assertTila(valinnantulosBefore, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+      valinnantulosBefore.ilmoittautumistila must_== EiTehty
+
+      Thread.sleep(5000)
+
+      val valinnantulosMid = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)).copy(ilmoittautumistila = LasnaKokoLukuvuosi)
+      tallenna(List(valinnantulosMid.copy(ilmoittautumistila = LasnaKokoLukuvuosi)))
+      assertTila(valinnantulosMid, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+      valinnantulosMid.ilmoittautumistila must_== LasnaKokoLukuvuosi
+
+      var valinnantulosAfter = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid)).copy(vastaanottotila = ValintatuloksenTila.KESKEN, ilmoittautumistila = EiTehty)
+      tallennaVirheellaCustomAikaleimalla(List(valinnantulosAfter), Some("Hakemus on muuttunut lukemisen jälkeen"),409, Some(Instant.now().minusSeconds(3)))
+
+      valinnantulosAfter = findOne(hakemuksenValinnantulokset, valintatapajono(valintatapajonoOid))
+      assertTila(valinnantulosAfter, Hyvaksytty, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+      valinnantulosAfter.ilmoittautumistila must_== LasnaKokoLukuvuosi
+    }
+
+
   }
 
   def hakemuksenValinnantulokset:Set[Valinnantulos] = kaikkiTestinHakukohteet.map(oid =>
@@ -326,7 +350,7 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
     valinnantulokset.find(filter).get
   }
 
-  def tila(valinnantulos:Valinnantulos, valinnantila:Valinnantila, vastaanotto:ValintatuloksenTila) = {
+  def assertTila(valinnantulos:Valinnantulos, valinnantila:Valinnantila, vastaanotto:ValintatuloksenTila) = {
     valinnantulos.valinnantila must_== valinnantila
     valinnantulos.vastaanottotila must_== vastaanotto
   }
