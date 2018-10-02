@@ -163,12 +163,12 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       from viestit_history where hakemus_oid = ${hakemusOid}
         and hakukohde_oid in (select distinct hakukohde_oid from valintatapajonot where oid = ${valintatapajonoOid}))
       order by ts asc
-      """.as[(Option[MailReason], OffsetDateTime, OffsetDateTime, OffsetDateTime, Long)]
+      """.as[(Option[MailReason], Option[OffsetDateTime], OffsetDateTime, OffsetDateTime, Long)]
       .map(_.flatMap {
         case (syy, lahetetty, lahettaminenAloitettu, ts, txid) =>
           List(
             (txid, ts, KentanMuutos(field = "syy", from = None, to = syy.getOrElse(""))),
-            (txid, ts, KentanMuutos(field = "lahetetty", from = None, to = lahetetty)),
+            (txid, ts, KentanMuutos(field = "lahetetty", from = None, to = lahetetty.getOrElse(""))),
             (txid, ts, KentanMuutos(field = "lahettaminenAloitettu", from = None, to = lahettaminenAloitettu))
           )
       }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten)

@@ -218,6 +218,10 @@ trait ValintarekisteriResultExtractors {
     parseOffsetDateTime(r).get
   })
 
+  protected implicit val getOffsetDateTimeOption: GetResult[Option[OffsetDateTime]] = GetResult(r => {
+    parseOffsetDateTime(r)
+  })
+
   protected implicit val getZonedDateTime: GetResult[ZonedDateTime] = GetResult(r => {
     val d = r.rs.getObject(r.currentPos + 1, classOf[OffsetDateTime])
     r.skip
