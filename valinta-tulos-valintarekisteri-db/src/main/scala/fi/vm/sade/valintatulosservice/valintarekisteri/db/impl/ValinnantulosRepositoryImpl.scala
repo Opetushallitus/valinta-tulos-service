@@ -167,7 +167,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       .map(_.flatMap {
         case (syy, lahetetty, lahettaminenAloitettu, ts, txid) =>
           List(
-            (txid, ts, KentanMuutos(field = "syy", from = None, to = syy.getOrElse(""))),
+            (txid, ts, KentanMuutos(field = "syy", from = None, to = syy.getOrElse(None).toString)),
             (txid, ts, KentanMuutos(field = "lahetetty", from = None, to = lahetetty.getOrElse(""))),
             (txid, ts, KentanMuutos(field = "lahettaminenAloitettu", from = None, to = lahettaminenAloitettu))
           )
