@@ -24,7 +24,8 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
         getValinnantilaMuutos(hakemusOid, valintatapajonoOid),
         getValinnantulosMuutos(hakemusOid, valintatapajonoOid),
         getVastaanottoMuutos(hakemusOid, valintatapajonoOid),
-        getIlmoittautumisMuutos(hakemusOid, valintatapajonoOid)
+        getIlmoittautumisMuutos(hakemusOid, valintatapajonoOid),
+        getViestitMuutos(hakemusOid, valintatapajonoOid)
       )
       runBlocking(DBIO.sequence(actions).map(r => r.flatten
         .groupBy(_._1)
@@ -153,7 +154,25 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       .map(r => formMuutoshistoria(r.map(t => (t._3, t._2, KentanMuutos(field = "ilmoittautumistila", from = None, to = t._1)))))
   }
 
-
+  private def getViestitMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {
+    sql"""(select syy, lahetetty, lahettaminen_aloitettu, lower(system_time) as ts, transaction_id
+      from viestit where hakemus_oid = ${hakemusOid}
+        and hakukohde_oid in (select distinct hakukohde_oid from valintatapajonot where oid = ${valintatapajonoOid})
+      union all
+      select syy, lahetetty, lahettaminen_aloitettu, lower(system_time) as ts, transaction_id
+      from viestit_history where hakemus_oid = ${hakemusOid}
+        and hakukohde_oid in (select distinct hakukohde_oid from valintatapajonot where oid = ${valintatapajonoOid}))
+      order by ts asc
+      """.as[(Option[MailReason], OffsetDateTime, OffsetDateTime, OffsetDateTime, Long)]
+      .map(_.flatMap {
+        case (syy, lahetetty, lahettaminenAloitettu, ts, txid) =>
+          List(
+            (txid, ts, KentanMuutos(field = "syy", from = None, to = syy.getOrElse(""))),
+            (txid, ts, KentanMuutos(field = "lahetetty", from = None, to = lahetetty)),
+            (txid, ts, KentanMuutos(field = "lahettaminenAloitettu", from = None, to = lahettaminenAloitettu))
+          )
+      }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten)
+  }
 
   override def getValinnantulostenHakukohdeOiditForHaku(hakuOid: HakuOid): DBIO[List[HakukohdeOid]] = {
     sql"""select hk.hakukohde_oid
