@@ -55,7 +55,6 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
       def validateVastaanottoTila(): Either[ValinnantulosUpdateStatus, Unit] = (uusi.vastaanottotila, uusi.ilmoittautumistila) match {
         case  (_, _) if uusi.vastaanottotila != ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI && !List(EiIlmoittautunut,EiTehty).contains(uusi.ilmoittautumistila) =>
-        //case  (_, Lasna | LasnaSyksy | LasnaKokoLukuvuosi) if (uusi.vastaanottotila != ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI) =>
           Left(ValinnantulosUpdateStatus(409, s"Vastaanottoa ei voi poistaa, koska ilmoittautuminen on tehty", uusi.valintatapajonoOid, uusi.hakemusOid))
         case (_, _) => Right()
       }
