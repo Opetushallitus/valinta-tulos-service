@@ -167,9 +167,9 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       .map(_.flatMap {
         case (syy, lahetetty, lahettaminenAloitettu, ts, txid) =>
           List(
-            (txid, ts, KentanMuutos(field = "syy", from = None, to = syy.getOrElse(None).toString)),
-            (txid, ts, KentanMuutos(field = "lahetetty", from = None, to = lahetetty.getOrElse(""))),
-            (txid, ts, KentanMuutos(field = "lahettaminenAloitettu", from = None, to = lahettaminenAloitettu))
+            (txid, ts, KentanMuutos(field = "Sähköpostilähetyksen syy", from = None, to = syy.getOrElse(None).toString)),
+            (txid, ts, KentanMuutos(field = "Sähköposti lähetetty", from = None, to = lahetetty.getOrElse(""))),
+            (txid, ts, KentanMuutos(field = "Sähköposti merkitty lähetettäväksi", from = None, to = lahettaminenAloitettu))
           )
       }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten)
   }
