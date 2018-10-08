@@ -157,11 +157,11 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   private def getViestitMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {
     sql"""(select syy, lahetetty, lahettaminen_aloitettu, lower(system_time) as ts, transaction_id
       from viestit where hakemus_oid = ${hakemusOid}
-        and hakukohde_oid in (select distinct hakukohde_oid from valintatapajonot where oid = ${valintatapajonoOid})
+        and hakukohde_oid in (select distinct hakukohde_oid from valinnantilat where valintatapajono_oid = ${valintatapajonoOid})
       union all
       select syy, lahetetty, lahettaminen_aloitettu, lower(system_time) as ts, transaction_id
       from viestit_history where hakemus_oid = ${hakemusOid}
-        and hakukohde_oid in (select distinct hakukohde_oid from valintatapajonot where oid = ${valintatapajonoOid}))
+        and hakukohde_oid in (select distinct hakukohde_oid from valinnantilat where valintatapajono_oid = ${valintatapajonoOid}))
       order by ts asc
       """.as[(Option[MailReason], Option[OffsetDateTime], OffsetDateTime, OffsetDateTime, Long)]
       .map(_.flatMap {

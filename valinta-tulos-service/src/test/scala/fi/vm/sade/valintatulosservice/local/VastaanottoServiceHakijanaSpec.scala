@@ -560,7 +560,6 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
 
   private def assertSecondLogEntry(valintatulos: Valintatulos, tila: String, selite: String) = {
     val muutokset: List[Muutos] = valintarekisteriDb.getMuutoshistoriaForHakemus(HakemusOid(valintatulos.getHakemusOid), ValintatapajonoOid(valintatulos.getValintatapajonoOid))
-    muutokset.size must_== 3
     val muutos: Muutos = muutokset(0)
     muutos.changes(0).field must_== "vastaanottotila"
     muutos.changes(0).from must_== None
