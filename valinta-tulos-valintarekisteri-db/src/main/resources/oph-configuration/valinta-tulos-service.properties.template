@@ -33,11 +33,6 @@ valinta-tulos-service.cas.service=https://{{host_virkailija}}/valinta-tulos-serv
 valinta-tulos-service.cas.username={{omatsivut_haku_app_username}}
 valinta-tulos-service.cas.password={{omatsivut_haku_app_password}}
 
-# LDAP
-ldap.server.host={{host_ldap}}
-ldap.user.dn={{ldap_manager_userdn}}
-ldap.user.password={{ldap_manager_password}}
-
 # VALINTAREKISTERI
 valinta-tulos-service.valintarekisteri.db.url=jdbc:postgresql://{{host_postgresql_valintarekisteri}}/valintarekisteri
 valinta-tulos-service.valintarekisteri.db.user={{host_postgresql_valintarekisteri_user}}

@@ -129,6 +129,7 @@ class ValintaTulosServletSpec extends ServletSpecification {
       }
     }
   }
+
   "GET /haku/:hakuOid" should {
     "palauttaa koko haun valintatulokset" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")

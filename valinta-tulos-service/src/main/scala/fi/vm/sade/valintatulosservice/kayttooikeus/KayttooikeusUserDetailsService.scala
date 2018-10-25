@@ -1,0 +1,52 @@
+package fi.vm.sade.valintatulosservice.kayttooikeus
+
+import fi.vm.sade.security.AuthenticationFailedException
+import fi.vm.sade.utils.http.DefaultHttpClient
+import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.config.AppConfig
+import org.json4s.jackson.JsonMethods.parse
+import scalaj.http.HttpOptions
+
+import scala.util.Try
+import scala.util.control.NonFatal
+
+class KayttooikeusUserDetailsService(appConfig:AppConfig) extends Logging {
+  import org.json4s._
+  implicit val formats = DefaultFormats
+
+  def getUserByUsername(username: String): Either[Throwable, KayttooikeusUserDetails] = {
+    val url = appConfig.ophUrlProperties.url("kayttooikeus-service.userDetails.byUsername", username)
+
+    fetch(url){ response =>
+      // username field contains actually oid because of historical ldap reasons
+      parse(response).transformField({
+        case ("username", x) => ("oid", x)
+      }).extract[KayttooikeusUserDetails]
+    }.left.map {
+      case e: IllegalArgumentException => new AuthenticationFailedException(s"User not found with username: $username", e)
+      case e: Exception => new RuntimeException(s"Failed to get username $username details", e)
+    }
+  }
+
+  private def fetch[T](url: String)(parse: (String => T)): Either[Throwable, T] = {
+    Try(DefaultHttpClient.httpGet(
+      url,
+      HttpOptions.connTimeout(5000),
+      HttpOptions.readTimeout(10000)
+    ).header("Caller-id", "valinta-tulos-service")
+      .responseWithHeaders match {
+      case (404, _, resultString) =>
+        Left(new IllegalArgumentException(s"User not found"))
+      case (200, _, resultString) =>
+        Try(Right(parse(resultString))).recover {
+          case NonFatal(e) => Left(new IllegalStateException(s"Parsing result $resultString of GET $url failed", e))
+        }.get
+      case (responseCode, _, resultString) =>
+        Left(new RuntimeException(s"GET $url failed with status $responseCode: $resultString"))
+    }).recover {
+      case NonFatal(e) => Left(new RuntimeException(s"GET $url failed", e))
+    }.get
+  }
+
+}
+

@@ -2,9 +2,9 @@ package fi.vm.sade.valintatulosservice.local
 
 import java.util.UUID
 
-import fi.vm.sade.security.ldap.{DirectoryClient, LdapUser}
-import fi.vm.sade.security.{AuthenticationFailedException, CasSessionService, LdapUserService}
+import fi.vm.sade.security.{AuthenticationFailedException, CasSessionService}
 import fi.vm.sade.utils.cas.CasClient
+import fi.vm.sade.valintatulosservice.kayttooikeus.{KayttooikeusUserDetails, KayttooikeusUserDetailsService}
 import fi.vm.sade.valintatulosservice.security.{CasSession, ServiceTicket}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import org.junit.runner.RunWith
@@ -14,7 +14,6 @@ import org.specs2.mock.mockito.MockitoStubs
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.Scope
-
 import scalaz.concurrent.Task
 
 @RunWith(classOf[JUnitRunner])
@@ -33,20 +32,20 @@ class CasSessionServiceSpec extends Specification with MockitoStubs {
       casClient.validateServiceTicket(service)(ticket) returns Task.fail(new RuntimeException("error"))
       cas.getSession(Some(ServiceTicket(ticket)), Some(id)) must beLeft.like { case t => t must beAnInstanceOf[AuthenticationFailedException] }
     }
-    "Authentication fails if session not found, ticket is valid and ldap user not found" in new CasSessionServiceWithMocks {
+    "Authentication fails if session not found, ticket is valid and KO user not found" in new CasSessionServiceWithMocks {
       sessionRepository.get(id) returns None
       casClient.validateServiceTicket(service)(ticket) returns Task.now(uid)
-      ldapClient.findUser(uid) returns None
-      cas.getSession(Some(ServiceTicket(ticket)), Some(id)) must beLeft.like { case t => t must beAnInstanceOf[AuthenticationFailedException] }
+      userDetailsService.getUserByUsername(uid) returns Left(new IllegalArgumentException(""))
+      cas.getSession(Some(ServiceTicket(ticket)), Some(id)) must beLeft.like { case t => t must beAnInstanceOf[IllegalArgumentException] }
     }
     "Authentication fails if ticket is invalid" in new CasSessionServiceWithMocks {
       casClient.validateServiceTicket(service)(ticket) returns Task.fail(new RuntimeException("error"))
       cas.getSession(Some(ServiceTicket(ticket)), None) must beLeft.like { case t => t must beAnInstanceOf[AuthenticationFailedException] }
     }
-    "Authentication fails if ticket is valid and ldap user not found" in new CasSessionServiceWithMocks {
+    "Authentication fails if ticket is valid and KO user not found" in new CasSessionServiceWithMocks {
       casClient.validateServiceTicket(service)(ticket) returns Task.now(uid)
-      ldapClient.findUser(uid) returns None
-      cas.getSession(Some(ServiceTicket(ticket)), None) must beLeft.like { case t => t must beAnInstanceOf[AuthenticationFailedException] }
+      userDetailsService.getUserByUsername(uid) returns Left(new IllegalArgumentException(""))
+      cas.getSession(Some(ServiceTicket(ticket)), None) must beLeft.like { case t => t must beAnInstanceOf[IllegalArgumentException] }
     }
     "Return session if found" in new CasSessionServiceWithMocks {
       sessionRepository.get(id) returns Some(session)
@@ -59,14 +58,14 @@ class CasSessionServiceSpec extends Specification with MockitoStubs {
     }
     "Return created session" in new CasSessionServiceWithMocks {
       casClient.validateServiceTicket(service)(ticket) returns Task.now(uid)
-      ldapClient.findUser(uid) returns Some(user)
+      userDetailsService.getUserByUsername(uid) returns Right(user)
       sessionRepository.store(session) returns newId
       cas.getSession(Some(ServiceTicket(ticket)), None) must beRight((newId, session))
     }
     "Return created session if session not found" in new CasSessionServiceWithMocks {
       sessionRepository.get(id) returns None
       casClient.validateServiceTicket(service)(ticket) returns Task.now(uid)
-      ldapClient.findUser(uid) returns Some(user)
+      userDetailsService.getUserByUsername(uid) returns Right(user)
       sessionRepository.store(session) returns newId
       cas.getSession(Some(ServiceTicket(ticket)), Some(id)) must beRight((newId, session))
     }
@@ -83,11 +82,12 @@ class CasSessionServiceSpec extends Specification with MockitoStubs {
     val ticket: String = "service-ticket"
     val uid: String = "uid"
     val service = "cas-service-identifier"
-    val user = LdapUser(List(), "sukunimi", "etunimet", "person-oid")
+    val user = KayttooikeusUserDetails(List(), "person-oid")
     val session = CasSession(ServiceTicket(ticket), "person-oid", Set())
     val casClient: CasClient = mock[CasClient]
-    val ldapClient: DirectoryClient = mock[DirectoryClient]
     val sessionRepository: SessionRepository = mock[SessionRepository]
-    val cas: CasSessionService = new CasSessionService(casClient, service, new LdapUserService(ldapClient), sessionRepository)
+    val userDetailsService: KayttooikeusUserDetailsService = mock[KayttooikeusUserDetailsService]
+
+    val cas: CasSessionService = new CasSessionService(casClient, service, userDetailsService, sessionRepository)
   }
 }

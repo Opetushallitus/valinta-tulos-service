@@ -1,6 +1,6 @@
 import java.util
-import javax.servlet.{DispatcherType, ServletContext}
 
+import javax.servlet.{DispatcherType, ServletContext}
 import fi.vm.sade.auditlog.{ApplicationType, Audit, Logger}
 import fi.vm.sade.oppijantunnistus.OppijanTunnistusService
 import fi.vm.sade.security._
@@ -10,6 +10,7 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.{Dev, IT, VtsAppConfig
 import fi.vm.sade.valintatulosservice.config.{OhjausparametritAppConfig, VtsAppConfig}
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusRepository, HakuAppRepository}
+import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetailsService
 import fi.vm.sade.valintatulosservice.kela.{KelaService, VtsKelaAuthenticationClient}
 import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
@@ -94,7 +95,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         appConfig,
         audit)
     lazy val valintalaskentakoostepalveluService = new ValintalaskentakoostepalveluService(appConfig)
-    lazy val ldapUserService = new LdapUserService(appConfig.securityContext.directoryClient)
+    lazy val userDetailsService = new KayttooikeusUserDetailsService(appConfig)
     lazy val hyvaksymiskirjeService = new HyvaksymiskirjeService(valintarekisteriDb, hakuService, audit, authorizer)
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
 
@@ -114,7 +115,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         new CasSessionService(
           appConfig.securityContext.casClient,
           appConfig.securityContext.casServiceIdentifier + "/auth/login",
-          ldapUserService,
+          userDetailsService,
           valintarekisteriDb
         )
       ), "/auth/login")
@@ -126,19 +127,19 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new EmailStatusServlet(mailPoller, new MailDecorator(hakuService, oppijanTunnistusService)), "/vastaanottoposti")
       context.mount(new EnsikertalaisuusServlet(valintarekisteriDb, appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus")
       context.mount(new HakijanVastaanottoServlet(vastaanottoService), "/vastaanotto")
-      context.mount(new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, ldapUserService), "/erillishaku/valinnan-tulos")
+      context.mount(new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, userDetailsService), "/erillishaku/valinnan-tulos")
       context.mount(new NoAuthSijoitteluServlet(sijoitteluService), "/sijoittelu")
 
       val casSessionService = new CasSessionService(
         appConfig.securityContext.casClient,
         appConfig.securityContext.casServiceIdentifier,
-        ldapUserService,
+        userDetailsService,
         valintarekisteriDb
       )
 
-      context.addFilter("cas", createCasLdapFilter(casSessionService, appConfig.securityContext.requiredLdapRoles))
+      context.addFilter("cas", createCasFilter(casSessionService, appConfig.securityContext.requiredRoles))
         .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/haku/*")
-      context.addFilter("kelaCas", createCasLdapFilter(casSessionService, Set.empty))
+      context.addFilter("kelaCas", createCasFilter(casSessionService, Set.empty))
         .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/kela/*")
         context.mount(new PublicValintatulosServlet(valintatulosService, vastaanottoService, ilmoittautumisService, valintarekisteriDb), "/cas/haku")
       context.mount(new KelaServlet(audit, new KelaService(HakijaResolver(appConfig), hakuService, organisaatioService, valintarekisteriDb), valintarekisteriDb), "/cas/kela")
@@ -158,8 +159,8 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     }
   }
 
-  def createCasLdapFilter(casSessionService: CasSessionService, roles: Set[Role]): CasLdapFilter =
-    new CasLdapFilter(casSessionService, roles)
+  def createCasFilter(casSessionService: CasSessionService, roles: Set[Role]): CasFilter =
+    new CasFilter(casSessionService, roles)
 
 
   override def destroy(context: ServletContext) = {

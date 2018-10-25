@@ -3,8 +3,6 @@ package fi.vm.sade.valintatulosservice.config
 import java.io.File
 import java.net.URL
 
-import fi.vm.sade.properties.OphProperties
-import fi.vm.sade.security.ldap.LdapUser
 import fi.vm.sade.security.mock.MockSecurityContext
 import fi.vm.sade.security.{ProductionSecurityContext, SecurityContext}
 import fi.vm.sade.utils.cas.CasClient
@@ -13,6 +11,7 @@ import fi.vm.sade.utils.mongo.EmbeddedMongo
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.utils.tcp.{PortChecker, PortFromSystemPropertyOrFindFree}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusFixtures
+import fi.vm.sade.valintatulosservice.kayttooikeus.{GrantedAuthority, KayttooikeusUserDetails}
 import fi.vm.sade.valintatulosservice.ohjausparametrit._
 import fi.vm.sade.valintatulosservice.security.Role
 
@@ -48,14 +47,14 @@ object VtsAppConfig extends Logging {
   /**
    * Default profile, uses ~/oph-configuration/valinta-tulos-service.properties
    */
-  class Default extends VtsAppConfig with ExternalProps with CasLdapSecurity {
+  class Default extends VtsAppConfig with ExternalProps with CasSecurity {
     override val ophUrlProperties = new ProdOphUrlProperties(propertiesFile)
   }
 
   /**
    * Templated profile, uses config template with vars file located by system property valintatulos.vars
    */
-  class LocalTestingWithTemplatedVars(val templateAttributesFile: String = System.getProperty("valintatulos.vars")) extends VtsAppConfig with TemplatedProps with CasLdapSecurity {
+  class LocalTestingWithTemplatedVars(val templateAttributesFile: String = System.getProperty("valintatulos.vars")) extends VtsAppConfig with TemplatedProps with CasSecurity {
     override val ophUrlProperties = new DevOphUrlProperties(propertiesFile)
     override def templateAttributesURL = new File(templateAttributesFile).toURI.toURL
   }
@@ -65,7 +64,7 @@ object VtsAppConfig extends Logging {
   /**
    * Dev profile, uses local mongo db
    */
-  class Dev extends VtsAppConfig with ExampleTemplatedProps with CasLdapSecurity with StubbedExternalDeps {
+  class Dev extends VtsAppConfig with ExampleTemplatedProps with CasSecurity with StubbedExternalDeps {
     override val ophUrlProperties: OphUrlProperties = {
       val ps = new DevOphUrlProperties(propertiesFile)
       ps.addOverride("ataru-service.applications", s"http://localhost:$vtsMockPort/valinta-tulos-service/util/ataru/applications")
@@ -92,6 +91,7 @@ object VtsAppConfig extends Logging {
       ps.addOverride("ataru-service.applications", s"http://localhost:$vtsMockPort/valinta-tulos-service/util/ataru/applications")
       ps.addOverride("ataru-service.persons", s"http://localhost:$vtsMockPort/valinta-tulos-service/util/ataru/persons")
       ps.addOverride("oppijanumerorekisteri-service.henkilotByOids", s"http://localhost:$vtsMockPort/valinta-tulos-service/util/oppijanumerorekisteri/henkilot")
+      ps.addOverride("kayttooikeus-service.userDetails.byUsername", "http://localhost:" + vtsMockPort + "/valinta-tulos-service/util/kayttooikeus/userdetails/$1")
       ps
     }
 
@@ -191,23 +191,21 @@ object VtsAppConfig extends Logging {
     lazy val securityContext: SecurityContext = {
       new MockSecurityContext(
         settings.securitySettings.casServiceIdentifier,
-        settings.securitySettings.requiredLdapRoles.map(Role(_)).toSet,
-        Map("testuser" -> LdapUser(settings.securitySettings.requiredLdapRoles, "Mock", "User", "mockoid"),
-            "sijoitteluUser" -> LdapUser(List("APP_VALINTATULOSSERVICE_CRUD", "APP_SIJOITTELU_CRUD", "APP_SIJOITTELU_CRUD_123.123.123.123"),
-              "Mock-Sijoittelu", "Sijoittelu-User", "1.2.840.113554.1.2.2")
+        settings.securitySettings.requiredRoles.map(Role(_)).toSet,
+        Map("testuser" -> KayttooikeusUserDetails(settings.securitySettings.requiredRoles.map(role => GrantedAuthority(role)).toList, "mockoid"),
+            "sijoitteluUser" -> KayttooikeusUserDetails(List("APP_VALINTATULOSSERVICE_CRUD", "APP_SIJOITTELU_CRUD", "APP_SIJOITTELU_CRUD_123.123.123.123").map(role => GrantedAuthority(role)).toList, "1.2.840.113554.1.2.2")
         )
       )
     }
   }
 
-  trait CasLdapSecurity extends VtsAppConfig {
+  trait CasSecurity extends VtsAppConfig {
     lazy val securityContext: SecurityContext = {
       val casClient = new CasClient(settings.securitySettings.casUrl, org.http4s.client.blaze.defaultClient)
       new ProductionSecurityContext(
-        settings.securitySettings.ldapConfig,
         casClient,
         settings.securitySettings.casServiceIdentifier,
-        settings.securitySettings.requiredLdapRoles.map(Role(_)).toSet
+        settings.securitySettings.requiredRoles.map(Role(_)).toSet
       )
     }
   }
