@@ -17,6 +17,8 @@ class KayttooikeusUserDetailsService(appConfig:AppConfig) extends Logging {
   def getUserByUsername(username: String): Either[Throwable, KayttooikeusUserDetails] = {
     val url = appConfig.ophUrlProperties.url("kayttooikeus-service.userDetails.byUsername", username)
 
+    logger.info("getting user details:" + username)
+
     fetch(url){ response =>
       // username field contains actually oid because of historical ldap reasons
       parse(response).transformField({

@@ -4,6 +4,7 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.utils.cas.CasClient
+import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.kayttooikeus.{KayttooikeusUserDetails, KayttooikeusUserDetailsService}
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
@@ -13,10 +14,11 @@ import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 import scalaz.concurrent.Task
 
-class CasSessionService(casClient: CasClient, val serviceIdentifier: String, userDetailsService: KayttooikeusUserDetailsService, sessionRepository: SessionRepository) {
+class CasSessionService(casClient: CasClient, val serviceIdentifier: String, userDetailsService: KayttooikeusUserDetailsService, sessionRepository: SessionRepository) extends Logging {
 
   private def validateServiceTicket(ticket: ServiceTicket): Either[Throwable, String] = {
     val ServiceTicket(s) = ticket
+    logger.info("validating service ticket:" + ticket)
     casClient.validateServiceTicket(serviceIdentifier)(s).handleWith {
       case NonFatal(t) => Task.fail(new AuthenticationFailedException(s"Failed to validate service ticket $s", t))
     }.attemptRunFor(Duration(1, TimeUnit.SECONDS)).toEither
@@ -25,6 +27,7 @@ class CasSessionService(casClient: CasClient, val serviceIdentifier: String, use
   private def storeSession(ticket: ServiceTicket, user: KayttooikeusUserDetails): Either[Throwable, (UUID, Session)] = {
 
     val session = CasSession(ticket, user.oid, user.authorities.map(auth => Role(auth.authority)).toSet)
+    logger.info("Storing to session:" + session.casTicket + " " + session.personOid + " " + session.roles)
     Try(sessionRepository.store(session)) match {
       case Success(id) => Right((id, session))
       case Failure(t) => Left(t)
