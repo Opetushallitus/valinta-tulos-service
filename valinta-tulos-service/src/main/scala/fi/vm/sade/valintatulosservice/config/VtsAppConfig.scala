@@ -192,8 +192,8 @@ object VtsAppConfig extends Logging {
       new MockSecurityContext(
         settings.securitySettings.casServiceIdentifier,
         settings.securitySettings.requiredRoles.map(Role(_)).toSet,
-        Map("testuser" -> KayttooikeusUserDetails(settings.securitySettings.requiredRoles.map(role => GrantedAuthority(role)).toList, "mockoid"),
-            "sijoitteluUser" -> KayttooikeusUserDetails(List("APP_VALINTATULOSSERVICE_CRUD", "APP_SIJOITTELU_CRUD", "APP_SIJOITTELU_CRUD_123.123.123.123").map(role => GrantedAuthority(role)).toList, "1.2.840.113554.1.2.2")
+        Map("testuser" -> KayttooikeusUserDetails(settings.securitySettings.requiredRoles.map(role => Role(role)).toSet, "mockoid"),
+            "sijoitteluUser" -> KayttooikeusUserDetails(List("APP_VALINTATULOSSERVICE_CRUD", "APP_SIJOITTELU_CRUD", "APP_SIJOITTELU_CRUD_123.123.123.123").map(role => Role(role)).toSet, "1.2.840.113554.1.2.2")
         )
       )
     }

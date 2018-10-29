@@ -4,6 +4,7 @@ import fi.vm.sade.security.AuthenticationFailedException
 import fi.vm.sade.utils.http.DefaultHttpClient
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.AppConfig
+import fi.vm.sade.valintatulosservice.security.Role
 import org.json4s.jackson.JsonMethods.parse
 import scalaj.http.HttpOptions
 
@@ -20,10 +21,9 @@ class KayttooikeusUserDetailsService(appConfig:AppConfig) extends Logging {
     logger.info("getting user details:" + username)
 
     fetch(url){ response =>
-      // username field contains actually oid because of historical ldap reasons
-      parse(response).transformField({
-        case ("username", x) => ("oid", x)
-      }).extract[KayttooikeusUserDetails]
+      // response username field contains actually oid because of historical ldap reasons
+      val koDto = parse(response).extract[KayttooikeusUserResp]
+      KayttooikeusUserDetails(koDto.authorities.map(x => Role(x.authority.replace("ROLE_",""))).toSet, koDto.username)
     }.left.map {
       case e: IllegalArgumentException => new AuthenticationFailedException(s"User not found with username: $username", e)
       case e: Exception => new RuntimeException(s"Failed to get username $username details", e)

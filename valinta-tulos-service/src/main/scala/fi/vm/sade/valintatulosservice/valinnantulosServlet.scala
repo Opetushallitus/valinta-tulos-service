@@ -160,7 +160,7 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymisk
       user <- userDetailsService.getUserByUsername(uid).right
     } yield {
       AuditInfo(
-        (UUID.randomUUID(), fi.vm.sade.valintatulosservice.security.AuditSession(user.oid, user.authorities.map(x => Role(x.authority)).toSet)),
+        (UUID.randomUUID(), fi.vm.sade.valintatulosservice.security.AuditSession(user.oid, user.roles)),
         InetAddress.getByName(inetAddress),
         userAgent
       )

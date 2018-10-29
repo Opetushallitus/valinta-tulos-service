@@ -73,7 +73,7 @@ class FixtureServlet(valintarekisteriDb: ValintarekisteriDb)(implicit val appCon
   get("/kayttooikeus/userdetails/:username") {
     logger.info(s"handling with fixture user: " + params("username"))
     contentType = formats("json")
-    "{\"username\": \"123.123.123.123\",\"authorities\": [{\"authority\": \"APP_VALINTATULOSSERVICE_CRUD\"}],\"accountNonExpired\": true,\"accountNonLocked\": true,\"credentialsNonExpired\": true,\"enabled\": true}"
+    "{\"username\": \"123.123.123.123\",\"authorities\": [{\"authority\": \"ROLE_APP_VALINTATULOSSERVICE_CRUD\"}],\"accountNonExpired\": true,\"accountNonLocked\": true,\"credentialsNonExpired\": true,\"enabled\": true}"
   }
 
 

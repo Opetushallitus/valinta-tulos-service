@@ -26,7 +26,7 @@ class CasSessionService(casClient: CasClient, val serviceIdentifier: String, use
 
   private def storeSession(ticket: ServiceTicket, user: KayttooikeusUserDetails): Either[Throwable, (UUID, Session)] = {
 
-    val session = CasSession(ticket, user.oid, user.authorities.map(auth => Role(auth.authority)).toSet)
+    val session = CasSession(ticket, user.oid, user.roles)
     logger.info("Storing to session:" + session.casTicket + " " + session.personOid + " " + session.roles)
     Try(sessionRepository.store(session)) match {
       case Success(id) => Right((id, session))

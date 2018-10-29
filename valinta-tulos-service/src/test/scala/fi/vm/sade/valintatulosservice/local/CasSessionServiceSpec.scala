@@ -82,7 +82,7 @@ class CasSessionServiceSpec extends Specification with MockitoStubs {
     val ticket: String = "service-ticket"
     val uid: String = "uid"
     val service = "cas-service-identifier"
-    val user = KayttooikeusUserDetails(List(), "person-oid")
+    val user = KayttooikeusUserDetails(Set(), "person-oid")
     val session = CasSession(ServiceTicket(ticket), "person-oid", Set())
     val casClient: CasClient = mock[CasClient]
     val sessionRepository: SessionRepository = mock[SessionRepository]
