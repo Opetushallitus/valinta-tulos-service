@@ -18,7 +18,6 @@ class CasSessionService(casClient: CasClient, val serviceIdentifier: String, use
 
   private def validateServiceTicket(ticket: ServiceTicket): Either[Throwable, String] = {
     val ServiceTicket(s) = ticket
-    logger.info("validating service ticket:" + ticket)
     casClient.validateServiceTicket(serviceIdentifier)(s).handleWith {
       case NonFatal(t) => Task.fail(new AuthenticationFailedException(s"Failed to validate service ticket $s", t))
     }.attemptRunFor(Duration(1, TimeUnit.SECONDS)).toEither
@@ -27,7 +26,7 @@ class CasSessionService(casClient: CasClient, val serviceIdentifier: String, use
   private def storeSession(ticket: ServiceTicket, user: KayttooikeusUserDetails): Either[Throwable, (UUID, Session)] = {
 
     val session = CasSession(ticket, user.oid, user.roles)
-    logger.info("Storing to session:" + session.casTicket + " " + session.personOid + " " + session.roles)
+    logger.debug("Storing to session:" + session.casTicket + " " + session.personOid + " " + session.roles)
     Try(sessionRepository.store(session)) match {
       case Success(id) => Right((id, session))
       case Failure(t) => Left(t)
