@@ -105,7 +105,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
     }
 
     "palauttaa 401, jos käyttäjä ei löydy KO:sta" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService) =>
-      t._4.getUserByUsername(uid) returns Left(new AuthenticationFailedException("error"))
+      t._4.getUserByUsername(uid) returns Left(new AuthenticationFailedException("error for testing"))
       get(
         s"${t._1}/${valintatapajonoOid.toString}",
         auditInfoParameters,
