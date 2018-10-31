@@ -9,6 +9,7 @@ host.oppija={{host_oppija}}
 host.haku={{host_haku}}
 host.haku.sv={{host_haku_sv}}
 host.haku.en={{host_haku_en}}
+host.alb={{host_alb}}
 
 valinta-tulos-service.ohjausparametrit.url=https\://{{host_virkailija}}/ohjausparametrit-service/api/v1/rest/parametri
 valinta-tulos-service.ilmoittautuminen.enabled={{valintatulosservice_ilmoittautuminen_enabled}}
@@ -37,11 +38,6 @@ root.organisaatio.oid=1.2.246.562.10.00000000001
 valinta-tulos-service.cas.kela.username={{cas_vts_kela_read_username}}
 valinta-tulos-service.cas.kela.password={{cas_vts_kela_read_password}}
 valinta-tulos-service.kela.vastaanotot.testihetu={{vts_kela_vastaanotot_testihetu}}
-
-# LDAP
-ldap.server.host={{host_ldap}}
-ldap.user.dn={{ldap_manager_userdn}}
-ldap.user.password={{ldap_manager_password}}
 
 # VALINTAREKISTERI
 valinta-tulos-service.valintarekisteri.db.url=jdbc:postgresql://{{host_postgresql_valintarekisteri}}/valintarekisteri

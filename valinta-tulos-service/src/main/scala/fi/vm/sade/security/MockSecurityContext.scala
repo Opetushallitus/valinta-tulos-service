@@ -1,15 +1,13 @@
 package fi.vm.sade.security.mock
 
 import fi.vm.sade.security.SecurityContext
-import fi.vm.sade.security.ldap.{LdapUser, MockDirectoryClient}
 import fi.vm.sade.utils.cas.CasClient._
 import fi.vm.sade.utils.cas._
+import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetails
 import fi.vm.sade.valintatulosservice.security.Role
-
 import scalaz.concurrent.Task
 
-class MockSecurityContext(val casServiceIdentifier: String, val requiredLdapRoles: Set[Role], users: Map[String, LdapUser]) extends SecurityContext {
-  val directoryClient = new MockDirectoryClient(users)
+class MockSecurityContext(val casServiceIdentifier: String, val requiredRoles: Set[Role], users: Map[String, KayttooikeusUserDetails]) extends SecurityContext {
 
   val casClient = new CasClient("", null) {
     override def validateServiceTicket(service : scala.Predef.String)(ticket : ServiceTicket): Task[Username] = {

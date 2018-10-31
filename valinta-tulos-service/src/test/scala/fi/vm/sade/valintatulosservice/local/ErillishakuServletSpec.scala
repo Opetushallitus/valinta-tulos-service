@@ -4,11 +4,11 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
 
-import fi.vm.sade.security.ldap.LdapUser
-import fi.vm.sade.security.{AuthenticationFailedException, LdapUserService}
+import fi.vm.sade.security.{AuthenticationFailedException}
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.utils.ServletTest
 import fi.vm.sade.valintatulosservice.json.JsonFormats
+import fi.vm.sade.valintatulosservice.kayttooikeus.{GrantedAuthority, KayttooikeusUserDetails, KayttooikeusUserDetailsService}
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{Hyvaksymiskirje, HyvaksymiskirjePatch}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiTehty, HakemusOid, HakukohdeOid, Hylatty, Valinnantulos, ValinnantulosUpdateStatus, ValintatapajonoOid}
@@ -25,17 +25,17 @@ import org.specs2.runner.JUnitRunner
 import org.specs2.specification.{BeforeAfterAll, ForEach}
 
 @RunWith(classOf[JUnitRunner])
-class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer with HttpComponentsClient with BeforeAfterAll with ForEach[(String, ValinnantulosService, HyvaksymiskirjeService, LdapUserService)] with Mockito {
+class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer with HttpComponentsClient with BeforeAfterAll with ForEach[(String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService)] with Mockito {
 
   override def beforeAll(): Unit = start()
   override def afterAll(): Unit = stop()
 
-  def foreach[R: AsResult](f: ((String, ValinnantulosService, HyvaksymiskirjeService, LdapUserService)) => R): org.specs2.execute.Result = {
+  def foreach[R: AsResult](f: ((String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService)) => R): org.specs2.execute.Result = {
     val valinnantulosService = mock[ValinnantulosService]
     val hyvaksymiskirjeService = mock[HyvaksymiskirjeService]
-    val ldapUserService = mock[LdapUserService]
-    val servlet = new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, ldapUserService)(mock[Swagger])
-    ServletTest.withServlet(this, servlet, (uri: String) => AsResult(f((uri, valinnantulosService, hyvaksymiskirjeService, ldapUserService))))
+    val userDetailsService = mock[KayttooikeusUserDetailsService]
+    val servlet = new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, userDetailsService)(mock[Swagger])
+    ServletTest.withServlet(this, servlet, (uri: String) => AsResult(f((uri, valinnantulosService, hyvaksymiskirjeService, userDetailsService))))
   }
 
   private implicit val formats = JsonFormats.jsonFormats
@@ -47,8 +47,8 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
   private val now = Instant.now.truncatedTo(ChronoUnit.SECONDS)
   private val ifUnmodifiedSince = DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant(now, ZoneId.of("GMT")))
   private val auditInfoParameters = Iterable("uid" -> uid, "inetAddress" -> inetAddress, "userAgent" -> userAgent)
-  private val unauthorizedUser = LdapUser(List(), "Kayttaja", "K", kayttajaOid)
-  private val readUser = LdapUser(List(Role.SIJOITTELU_READ.s), "Kayttaja", "K", kayttajaOid)
+  private val unauthorizedUser = KayttooikeusUserDetails(Set(), kayttajaOid)
+  private val readUser = KayttooikeusUserDetails(Set(Role.SIJOITTELU_READ), kayttajaOid)
   private val hakukohdeOid = HakukohdeOid("1.2.246.562.20.26643418986")
   private val valintatapajonoOid = ValintatapajonoOid("14538080612623056182813241345174")
   private val hakemusOid = HakemusOid("1.2.246.562.11.00006169123")
@@ -71,7 +71,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
   )
 
   "GET /erillishaku/valinnan-tulos" in {
-    "palauttaa 400, jos uid parametri puuttuu" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, LdapUserService) =>
+    "palauttaa 400, jos uid parametri puuttuu" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService) =>
       get(
         s"${t._1}/${valintatapajonoOid.toString}",
         Iterable("inetAddress" -> inetAddress, "userAgent" -> userAgent),
@@ -82,7 +82,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
       }
     }
 
-    "palauttaa 400, jos inetAddress parametri puuttuu" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, LdapUserService) =>
+    "palauttaa 400, jos inetAddress parametri puuttuu" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService) =>
       get(
         s"${t._1}/${valintatapajonoOid.toString}",
         Iterable("uid" -> uid, "userAgent" -> userAgent),
@@ -93,7 +93,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
       }
     }
 
-    "palauttaa 400, jos userAgent parametri puuttuu" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, LdapUserService) =>
+    "palauttaa 400, jos userAgent parametri puuttuu" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService) =>
       get(
         s"${t._1}/${valintatapajonoOid.toString}",
         Iterable("uid" -> uid, "inetAddress" -> inetAddress),
@@ -104,8 +104,8 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
       }
     }
 
-    "palauttaa 401, jos käyttäjä ei löydy LDAP:sta" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, LdapUserService) =>
-      t._4.getLdapUser(uid) returns Left(new AuthenticationFailedException("error"))
+    "palauttaa 401, jos käyttäjä ei löydy KO:sta" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService) =>
+      t._4.getUserByUsername(uid) returns Left(new AuthenticationFailedException("error for testing"))
       get(
         s"${t._1}/${valintatapajonoOid.toString}",
         auditInfoParameters,
@@ -116,8 +116,8 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
       }
     }
 
-    "palauttaa 403, jos käyttäjällä ei ole lukuoikeuksia" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, LdapUserService) =>
-      t._4.getLdapUser(uid) returns Right(unauthorizedUser)
+    "palauttaa 403, jos käyttäjällä ei ole lukuoikeuksia" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService) =>
+      t._4.getUserByUsername(uid) returns Right(unauthorizedUser)
       get(
         s"${t._1}/${valintatapajonoOid.toString}",
         auditInfoParameters,
@@ -128,8 +128,8 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
       }
     }
 
-    "palauttaa 200 ja tyhjän taulukon jos valinnan tuloksia ei löydy" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, LdapUserService) =>
-      t._4.getLdapUser(uid) returns Right(readUser)
+    "palauttaa 200 ja tyhjän taulukon jos valinnan tuloksia ei löydy" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService) =>
+      t._4.getUserByUsername(uid) returns Right(readUser)
       t._2.getValinnantuloksetForValintatapajono(any[ValintatapajonoOid], any[AuditInfo]) returns None
       get(
         s"${t._1}/1",
@@ -141,8 +141,8 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
       }
     }
 
-    "palauttaa 200 ja valintatapajonon valinnan tulokset valintatapajono-oidilla haettaessa" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, LdapUserService) =>
-      t._4.getLdapUser(uid) returns Right(readUser)
+    "palauttaa 200 ja valintatapajonon valinnan tulokset valintatapajono-oidilla haettaessa" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService) =>
+      t._4.getUserByUsername(uid) returns Right(readUser)
       t._2.getValinnantuloksetForValintatapajono(any[ValintatapajonoOid], any[AuditInfo]) returns Some((now, Set(valinnantulos)))
       get(
         s"${t._1}/${valintatapajonoOid.toString}",
@@ -154,9 +154,9 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
       }
     }
 
-    "palauttaa hyväksymiskirjeiden tiedot pyydettäessä" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, LdapUserService) =>
+    "palauttaa hyväksymiskirjeiden tiedot pyydettäessä" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService) =>
       val hyvaksymiskirjeLahetetty = OffsetDateTime.now
-      t._4.getLdapUser(uid) returns Right(readUser)
+      t._4.getUserByUsername(uid) returns Right(readUser)
       t._2.getValinnantuloksetForValintatapajono(any[ValintatapajonoOid], any[AuditInfo]) returns Some((now, Set(valinnantulos)))
       t._3.getHyvaksymiskirjeet(any[HakukohdeOid], any[AuditInfo]) returns Set(Hyvaksymiskirje(
         valinnantulos.henkiloOid,
@@ -173,9 +173,9 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
       }
     }
 
-    "palauttaa Last-Modified otsakkeen jossa viimeisintä muutoshetkeä seuraava tasasekuntti" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, LdapUserService) =>
+    "palauttaa Last-Modified otsakkeen jossa viimeisintä muutoshetkeä seuraava tasasekuntti" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService) =>
       val lastModified = DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant(now.plusSeconds(1), ZoneId.of("GMT")))
-      t._4.getLdapUser(uid) returns Right(readUser)
+      t._4.getUserByUsername(uid) returns Right(readUser)
       t._2.getValinnantuloksetForValintatapajono(any[ValintatapajonoOid], any[AuditInfo]) returns Some((now, Set(valinnantulos)))
       get(
         s"${t._1}/${valintatapajonoOid.toString}",
@@ -189,7 +189,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
   }
 
   "POST /erillishaku/valinnan-tulos" in {
-    "palauttaa 500, jos audit tietoa ei voitu jäsentää" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, LdapUserService) =>
+    "palauttaa 500, jos audit tietoa ei voitu jäsentää" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService) =>
       post(
         s"${t._1}/${valintatapajonoOid.toString}",
         write(ValinnantulosRequest(List(valinnantulos), null)).getBytes("UTF-8"),
@@ -200,7 +200,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
       }
     }
 
-    "palauttaa 403, jos käyttäjällä ei ole kirjoitusoikeuksi" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, LdapUserService) =>
+    "palauttaa 403, jos käyttäjällä ei ole kirjoitusoikeuksi" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService) =>
       post(
         s"${t._1}/${valintatapajonoOid.toString}",
         write(ValinnantulosRequest(List(valinnantulos), AuditSessionRequest(kayttajaOid, List(Role.SIJOITTELU_READ.s), userAgent, inetAddress))).getBytes("UTF-8"),
@@ -211,7 +211,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
       }
     }
 
-    "palauttaa 200 ja tyhjän taulukon jos päivitys onnistui" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, LdapUserService) =>
+    "palauttaa 200 ja tyhjän taulukon jos päivitys onnistui" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService) =>
       t._2.storeValinnantuloksetAndIlmoittautumiset(any[ValintatapajonoOid], any[List[Valinnantulos]], any[Option[Instant]], any[AuditInfo], any[Boolean]) returns List.empty
       post(
         s"${t._1}/${valintatapajonoOid.toString}",
@@ -223,7 +223,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
       }
     }
 
-    "palauttaa 200 ja virhetiedon taulukossa jos päivitys epäonnistui" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, LdapUserService) =>
+    "palauttaa 200 ja virhetiedon taulukossa jos päivitys epäonnistui" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService) =>
       val virhe = ValinnantulosUpdateStatus(
         400,
         "error",
@@ -241,7 +241,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
       }
     }
 
-    "palauttaa 200 jos hyväksymiskirjeiden tietojen päivitys epäonnistui" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, LdapUserService) =>
+    "palauttaa 200 jos hyväksymiskirjeiden tietojen päivitys epäonnistui" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService) =>
       t._2.storeValinnantuloksetAndIlmoittautumiset(any[ValintatapajonoOid], any[List[Valinnantulos]], any[Option[Instant]], any[AuditInfo], any[Boolean]) returns List.empty
       t._3.updateHyvaksymiskirjeet(any[Set[HyvaksymiskirjePatch]], any[AuditInfo]) throws new RuntimeException("error")
       post(

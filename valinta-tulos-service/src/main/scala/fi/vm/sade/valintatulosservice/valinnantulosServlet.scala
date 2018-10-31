@@ -4,8 +4,9 @@ import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.UUID
 
-import fi.vm.sade.security.{AuthorizationFailedException, LdapUserService}
+import fi.vm.sade.security.AuthorizationFailedException
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, IlmoittautumisTila, ValintatuloksenTila}
+import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetailsService
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HyvaksymiskirjePatch, SessionRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -142,7 +143,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
   }
 }
 
-class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymiskirjeService: HyvaksymiskirjeService, ldapUserService: LdapUserService)
+class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymiskirjeService: HyvaksymiskirjeService, userDetailsService: KayttooikeusUserDetailsService)
   (implicit val swagger: Swagger) extends ValinnantulosServletBase with AuditInfoParameter  {
 
   override val applicationName = Some("erillishaku/valinnan-tulos")
@@ -156,10 +157,10 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymisk
 
   protected def getAuditInfo(uid:String, inetAddress:String, userAgent:String) = {
     (for {
-      user <- ldapUserService.getLdapUser(uid).right
+      user <- userDetailsService.getUserByUsername(uid).right
     } yield {
       AuditInfo(
-        (UUID.randomUUID(), fi.vm.sade.valintatulosservice.security.AuditSession(user.oid, user.roles.map(Role(_)).toSet)),
+        (UUID.randomUUID(), fi.vm.sade.valintatulosservice.security.AuditSession(user.oid, user.roles)),
         InetAddress.getByName(inetAddress),
         userAgent
       )

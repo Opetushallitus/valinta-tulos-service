@@ -9,11 +9,11 @@ import org.scalatra.json._
 import org.scalatra.{CookieOptions, InternalServerError, ScalatraFilter, Unauthorized}
 
 /**
- * Filter that verifies CAS service ticket and checks user permissions from LDAP.
+ * Filter that verifies CAS service ticket and checks user permissions from Käyttöoikeuspalvelu.
  *
- * @param requiredRoles         Required roles. Roles are stored in LDAP user's "description" field.
+ * @param requiredRoles         Required roles.
  */
-class CasLdapFilter(cas: CasSessionService, requiredRoles: Set[Role]) extends ScalatraFilter with JacksonJsonSupport with LazyLogging {
+class CasFilter(cas: CasSessionService, requiredRoles: Set[Role]) extends ScalatraFilter with JacksonJsonSupport with LazyLogging {
 
   protected implicit val jsonFormats: Formats = DefaultFormats
 
