@@ -41,11 +41,13 @@ script:
 - export BASE_IMAGE="base-legacy:0.1"
 - ./ci-tools/common/pull-image.sh
 
+- export BASE_IMAGE="baseimage-war:master"
 - mv valinta-tulos-service/target/valinta-tulos-service-*.war $DOCKER_BUILD_DIR/artifact/valinta-tulos-service.war
 - cp -vr valinta-tulos-service/src/main/resources/oph-configuration $DOCKER_BUILD_DIR/config/
 - ./ci-tools/build/build-war.sh valinta-tulos-service
 
 - ./ci-tools/common/clean-docker-build-dir.sh
+- export BASE_IMAGE="baseimage-fatjar:master"
 - mv valinta-tulos-henkiloviite-synchronizer/target/valinta-tulos-henkiloviite-synchronizer-*-jar-with-dependencies.jar $DOCKER_BUILD_DIR/artifact/valinta-tulos-henkiloviite-synchronizer.jar
 - cp -vr valinta-tulos-henkiloviite-synchronizer/target/classes/oph-configuration $DOCKER_BUILD_DIR/config/
 - ./ci-tools/build/build-fatjar.sh valinta-tulos-henkiloviite-synchronizer
