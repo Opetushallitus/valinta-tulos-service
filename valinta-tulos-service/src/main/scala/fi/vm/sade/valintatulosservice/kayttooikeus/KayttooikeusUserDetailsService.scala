@@ -35,12 +35,12 @@ class KayttooikeusUserDetailsService(appConfig:AppConfig) extends Logging {
       HttpOptions.readTimeout(10000)
     ).header("Caller-id", "valinta-tulos-service")
       .responseWithHeaders match {
-      case (404, _, resultString) =>
-        Left(new IllegalArgumentException(s"User not found"))
       case (200, _, resultString) =>
         Try(Right(parse(resultString))).recover {
           case NonFatal(e) => Left(new IllegalStateException(s"Parsing result $resultString of GET $url failed", e))
         }.get
+      case (404, _, resultString) =>
+        Left(new IllegalArgumentException(s"User not found"))
       case (responseCode, _, resultString) =>
         Left(new RuntimeException(s"GET $url failed with status $responseCode: $resultString"))
     }).recover {

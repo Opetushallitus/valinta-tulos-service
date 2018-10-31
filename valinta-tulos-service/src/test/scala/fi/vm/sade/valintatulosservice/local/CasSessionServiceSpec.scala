@@ -42,11 +42,6 @@ class CasSessionServiceSpec extends Specification with MockitoStubs {
       casClient.validateServiceTicket(service)(ticket) returns Task.fail(new RuntimeException("error for testing"))
       cas.getSession(Some(ServiceTicket(ticket)), None) must beLeft.like { case t => t must beAnInstanceOf[AuthenticationFailedException] }
     }
-    "Authentication fails if ticket is valid and KO user not found" in new CasSessionServiceWithMocks {
-      casClient.validateServiceTicket(service)(ticket) returns Task.now(uid)
-      userDetailsService.getUserByUsername(uid) returns Left(new IllegalArgumentException(""))
-      cas.getSession(Some(ServiceTicket(ticket)), None) must beLeft.like { case t => t must beAnInstanceOf[IllegalArgumentException] }
-    }
     "Return session if found" in new CasSessionServiceWithMocks {
       sessionRepository.get(id) returns Some(session)
       cas.getSession(None, Some(id)) must beRight((id, session))
