@@ -67,7 +67,7 @@ class FixtureServlet(valintarekisteriDb: ValintarekisteriDb)(implicit val appCon
 
   post("/oppijanumerorekisteri/henkilot") {
     contentType = formats("json")
-    org.json4s.DefaultWriters.arrayWriter[Henkilo](Henkilo.henkiloWriter, manifest[Henkilo]).write(HenkilotFixture.fixture.toArray)
+    org.json4s.DefaultWriters.mapWriter[Henkilo](Henkilo.henkiloWriter).write(HenkilotFixture.fixture.map(h => h.oid.toString -> h).toMap)
   }
 
   get("/kayttooikeus/userdetails/:username") {
