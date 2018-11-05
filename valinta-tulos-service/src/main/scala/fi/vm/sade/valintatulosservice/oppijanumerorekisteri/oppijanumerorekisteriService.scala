@@ -55,17 +55,17 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) {
     "JSESSIONID"
   )
 
-  def henkilot(oids: Set[HakijaOid]): Either[Throwable, Set[Henkilo]] = {
+  def henkilot(oids: Set[HakijaOid]): Either[Throwable, Map[HakijaOid, Henkilo]] = {
     import org.json4s.DefaultWriters.{StringWriter, arrayWriter}
-    implicit val henkiloReader = Henkilo.henkiloReader
-    import org.json4s.DefaultReaders.arrayReader
+    import org.json4s.DefaultReaders.mapReader
+    implicit val hr: Reader[Henkilo] = Henkilo.henkiloReader
 
     Uri.fromString(appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.henkilotByOids"))
       .fold(Task.fail, uri => {
         val req = Request(method = POST, uri = uri)
           .withBody[Array[String]](oids.map(_.toString).toArray)(jsonEncoderOf[Array[String]])
         client.fetch(req) {
-          case r if r.status.code == 200 => r.as[Array[Henkilo]](jsonOf[Array[Henkilo]]).map(_.toSet)
+          case r if r.status.code == 200 => r.as[Map[String, Henkilo]](jsonOf[Map[String, Henkilo]]).map(_.map { case (oid, h) => HakijaOid(oid) -> h })
             .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing henkilöt $oids failed", t)) }
           case r => Task.fail(new RuntimeException(s"Failed to get henkilöt $oids: ${r.toString()}"))
         }

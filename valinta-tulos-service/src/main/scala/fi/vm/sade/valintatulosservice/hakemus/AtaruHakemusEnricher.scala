@@ -20,7 +20,7 @@ class AtaruHakemusEnricher(hakuService: HakuService,
     Hakemus(
       oid = hakemus.oid,
       hakuOid = hakemus.hakuOid,
-      henkiloOid = henkilo.oid.toString,
+      henkiloOid = hakemus.henkiloOid.toString,
       asiointikieli = hakemus.asiointikieli,
       toiveet = hakemus.hakutoiveet.map(s => hakutoiveet(HakukohdeOid(s.hakukohdeOid))),
       henkilotiedot = Henkilotiedot(
@@ -34,7 +34,6 @@ class AtaruHakemusEnricher(hakuService: HakuService,
   private def henkilot(hakemukset: List[AtaruHakemus]): Either[Throwable, Map[HakijaOid, Henkilo]] = {
     val personOids = uniquePersonOids(hakemukset)
     oppijanumerorekisteriService.henkilot(personOids)
-      .right.map(hs => hs.map(h => h.oid -> h).toMap)
       .right.flatMap(hs => {
       val missingOids = personOids.diff(hs.keySet)
       if (missingOids.isEmpty) {
