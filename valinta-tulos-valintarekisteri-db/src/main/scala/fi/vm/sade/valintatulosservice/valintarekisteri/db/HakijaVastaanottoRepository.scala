@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
-import java.time.OffsetDateTime
+import java.time.{Instant, OffsetDateTime}
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
@@ -18,6 +18,7 @@ trait HakijaVastaanottoRepository {
   def findYhdenPaikanSaannonPiirissaOlevatVastaanotot(henkiloOid: HenkiloOid, koulutuksenAlkamiskausi: Kausi): DBIO[Option[VastaanottoRecord]]
   def store(vastaanottoEvent: VastaanottoEvent): Unit
   def storeAction(vastaanottoEvent: VastaanottoEvent): DBIO[Unit]
+  def storeAction(vastaanottoEvent: VastaanottoEvent, ifUnmodifiedSince: Option[Instant]): DBIO[Unit]
   def store[T](vastaanottoEvents: List[VastaanottoEvent], postCondition: DBIO[T]): T
   def store(vastaanottoEvent: VastaanottoEvent, vastaanottoDate: Date): Unit
   def runAsSerialized[T](retries: Int, wait: Duration, description: String, action: DBIO[T]): Either[Throwable, T]

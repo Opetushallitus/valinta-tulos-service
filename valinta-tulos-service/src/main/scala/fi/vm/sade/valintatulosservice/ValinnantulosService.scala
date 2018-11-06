@@ -28,9 +28,6 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository 
                            yhdenPaikanSaannos: YhdenPaikanSaannos,
                            val appConfig: VtsAppConfig,
                            val audit: Audit) extends Logging {
-
-
-
   def getMuutoshistoriaForHakemusWithoutAuditInfo(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[Muutos] = {
     valinnantulosRepository.getMuutoshistoriaForHakemus(hakemusOid, valintatapajonoOid)
   }
@@ -123,7 +120,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository 
     }
 
     valinnantulosRepository.runBlockingTransactionally(vanhatValinnantuloksetYhdenPaikanSaannolla().flatMap(vanhatValinnantulokset => {
-      DBIO.sequence(valinnantulokset.map(uusi => validateAndSaveValinnantulos(uusi, vanhatValinnantulokset.find(_.hakemusOid == uusi.hakemusOid), s)))
+      DBIO.sequence(valinnantulokset.map(uusi => validateAndSaveValinnantulos(uusi, vanhatValinnantulokset.find(_.hakemusOid == uusi.hakemusOid), s, ifUnmodifiedSince)))
     })) match {
       case Left(t) => {
         logger.error(s"""Kaikkien valinnantulosten tallennus valintatapajonolle ${valintatapajonoOid} epäonnistui""", t)
@@ -133,16 +130,16 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository 
     }
   }
 
-  private def validateAndSaveValinnantulos(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos], s: ValinnantulosStrategy):DBIO[Either[ValinnantulosUpdateStatus, Unit]] = vanhaOpt match {
+  private def validateAndSaveValinnantulos(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos], s: ValinnantulosStrategy, ifUnmodifiedSince: Option[Instant]):DBIO[Either[ValinnantulosUpdateStatus, Unit]] = vanhaOpt match {
     case Some(vanha) if !s.hasChange(uusi, vanha) => DBIO.successful(Right())
-    case vanha => s.validate(uusi, vanha).flatMap(_ match {
+    case vanha => s.validate(uusi, vanha, ifUnmodifiedSince).flatMap(_ match {
       case x if x.isLeft => DBIO.successful(x)
-      case _ => saveValinnantulos(uusi, vanha, s)
+      case _ => saveValinnantulos(uusi, vanha, s, ifUnmodifiedSince)
     })
   }
 
-  private def saveValinnantulos(uusi: Valinnantulos, vanha: Option[Valinnantulos], s: ValinnantulosStrategy): DBIO[Either[ValinnantulosUpdateStatus, Unit]] = {
-    s.save(uusi, vanha).asTry.flatMap( _ match {
+  private def saveValinnantulos(uusi: Valinnantulos, vanha: Option[Valinnantulos], s: ValinnantulosStrategy, ifUnmodifiedSince: Option[Instant]): DBIO[Either[ValinnantulosUpdateStatus, Unit]] = {
+    s.save(uusi, vanha, ifUnmodifiedSince).asTry.flatMap( _ match {
       case Failure(t:ConcurrentModificationException) => {
         logger.warn(s"Valinnantuloksen $uusi tallennus epäonnistui", t)
         DBIO.successful(Left(ValinnantulosUpdateStatus(409, "Hakemus on muuttunut lukemisen jälkeen", uusi.valintatapajonoOid, uusi.hakemusOid)))
