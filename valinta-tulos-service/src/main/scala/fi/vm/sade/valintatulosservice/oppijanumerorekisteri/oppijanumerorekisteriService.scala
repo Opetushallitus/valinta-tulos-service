@@ -56,6 +56,12 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) {
   )
 
   def henkilot(oids: Set[HakijaOid]): Either[Throwable, Map[HakijaOid, Henkilo]] = {
+    oids.grouped(5000).foldLeft(Task(Map.empty[HakijaOid, Henkilo])) {
+      (f, chunk) => f.flatMap(m => henkilotChunk(chunk).map(m ++ _))
+    }.attemptRunFor(Duration(1, TimeUnit.MINUTES)).toEither
+  }
+
+  private def henkilotChunk(oids: Set[HakijaOid]): Task[Map[HakijaOid, Henkilo]] = {
     import org.json4s.DefaultWriters.{StringWriter, arrayWriter}
     import org.json4s.DefaultReaders.mapReader
     implicit val hr: Reader[Henkilo] = Henkilo.henkiloReader
@@ -69,6 +75,6 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) {
             .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing henkilöt $oids failed", t)) }
           case r => Task.fail(new RuntimeException(s"Failed to get henkilöt $oids: ${r.toString()}"))
         }
-      }).attemptRunFor(Duration(10, TimeUnit.SECONDS)).toEither
+      })
   }
 }
