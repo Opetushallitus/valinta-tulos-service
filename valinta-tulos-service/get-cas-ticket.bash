@@ -38,7 +38,7 @@ function print_if_verbose() {
 }
 
 print_if_verbose "Making the TGT request with:"
-TGT_REQUEST="http --pretty none --form --print h POST $VIRKAILIJA/cas/v1/tickets username=$USERNAME password=$PASSWORD"
+TGT_REQUEST="http --ignore-stdin --pretty none --form --print h POST $VIRKAILIJA/cas/v1/tickets username=$USERNAME password=$PASSWORD"
 
 print_if_verbose $TGT_REQUEST
 TGT_LOCATION_LINE=`$TGT_REQUEST | grep Location | cut -f 2 -d ' '`
@@ -47,5 +47,5 @@ TGT_LOCATION=`echo ${TGT_LOCATION_LINE} | awk '{gsub(/[[:cntrl:]]/,"")}1'`
 
 print_if_verbose "Making the service ticket request to \"$TGT_LOCATION\" "
 
-http --form --print b POST $TGT_LOCATION service=$SERVICE | egrep '^ST'
+http --ignore-stdin --form --print b POST $TGT_LOCATION service=$SERVICE | egrep '^ST'
 
