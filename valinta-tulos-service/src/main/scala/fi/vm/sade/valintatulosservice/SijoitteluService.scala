@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
+import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
 import fi.vm.sade.sijoittelu.tulos.dto.{HakukohdeDTO, SijoitteluajoDTO}
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
@@ -12,7 +13,8 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.{Sijoitteluajo
 
 class SijoitteluService(val sijoitteluRepository: SijoitteluRepository with HakijaRepository with ValinnantulosRepository,
                         authorizer:OrganizationHierarchyAuthorizer,
-                        hakuService: HakuService ) extends Logging {
+                        hakuService: HakuService,
+                        audit: Audit ) extends Logging {
 
   def getHakukohdeBySijoitteluajoWithoutAuthentication(hakuOid: HakuOid, sijoitteluajoId: String, hakukohdeOid: HakukohdeOid): HakukohdeDTO = {
     sijoitteluRepository.getLatestSijoitteluajoId(sijoitteluajoId, hakuOid).right
@@ -20,7 +22,14 @@ class SijoitteluService(val sijoitteluRepository: SijoitteluRepository with Haki
       .fold(throw _, x => x)
   }
 
-  def getHakukohdeBySijoitteluajo(hakuOid: HakuOid, sijoitteluajoId: String, hakukohdeOid: HakukohdeOid, session: Session): HakukohdeDTO = {
+  def getHakukohdeBySijoitteluajo(hakuOid: HakuOid, sijoitteluajoId: String, hakukohdeOid: HakukohdeOid, session: Session, auditInfo: AuditInfo): HakukohdeDTO = {
+    audit.log(auditInfo.user, SijoittelunHakukohteenLuku,
+      new Target.Builder()
+        .setField("hakuoid", hakuOid.toString)
+        .setField("sijoitteluajoid", sijoitteluajoId)
+        .build(),
+      new Changes.Builder().build()
+    )
     (for {
       tarjonta  <- hakuService.getHakukohde(hakukohdeOid).right
       _         <- authorizer.checkAccess(session, tarjonta.tarjoajaOids, Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).right
@@ -30,12 +39,28 @@ class SijoitteluService(val sijoitteluRepository: SijoitteluRepository with Haki
     }).fold( t => throw t, r => r)
   }
 
-  def getHakemusBySijoitteluajo(hakuOid: HakuOid, sijoitteluajoId: String, hakemusOid: HakemusOid): HakijaDTO = {
+  def getHakemusBySijoitteluajo(hakuOid: HakuOid, sijoitteluajoId: String, hakemusOid: HakemusOid, auditInfo: AuditInfo): HakijaDTO = {
+    audit.log(auditInfo.user, SijoittelunHakemuksenLuku,
+      new Target.Builder()
+        .setField("hakuoid", hakuOid.toString)
+        .setField("hakemusoid", hakemusOid.toString)
+        .setField("sijoitteluajoid", sijoitteluajoId)
+        .build(),
+      new Changes.Builder().build()
+    )
     SijoitteluajonHakija.dto(sijoitteluRepository, sijoitteluajoId, hakuOid, hakemusOid)
       .getOrElse(throw new NotFoundException(s"Hakijaa ei löytynyt hakemukselle $hakemusOid, sijoitteluajoid: $sijoitteluajoId"))
+
   }
 
-  def getSijoitteluajonPerustiedot(hakuOid: HakuOid, sijoitteluajoId: String): SijoitteluajoDTO = {
+  def getSijoitteluajonPerustiedot(hakuOid: HakuOid, sijoitteluajoId: String, auditInfo: AuditInfo): SijoitteluajoDTO = {
+    audit.log(auditInfo.user, SijoitteluAjonLuku,
+      new Target.Builder()
+        .setField("hakuoid", hakuOid.toString)
+        .setField("sijoitteluajoid", sijoitteluajoId)
+        .build(),
+      new Changes.Builder().build()
+    )
     val latestId = sijoitteluRepository.getLatestSijoitteluajoIdThrowFailure(sijoitteluajoId, hakuOid)
     sijoitteluRepository.getSijoitteluajo(latestId).map(sijoitteluajo => {
 
@@ -48,7 +73,14 @@ class SijoitteluService(val sijoitteluRepository: SijoitteluRepository with Haki
     }).getOrElse(throw new IllegalArgumentException(s"Sijoitteluajoa $sijoitteluajoId ei löytynyt haulle $hakuOid"))
   }
 
-  def getSijoitteluajo(hakuOid: HakuOid, sijoitteluajoId: String): SijoitteluajoDTO = {
+  def getSijoitteluajo(hakuOid: HakuOid, sijoitteluajoId: String, auditInfo: AuditInfo): SijoitteluajoDTO = {
+    audit.log(auditInfo.user, SijoitteluAjonLuku,
+      new Target.Builder()
+        .setField("hakuoid", hakuOid.toString)
+        .setField("sijoitteluajoid", sijoitteluajoId)
+        .build(),
+      new Changes.Builder().build()
+    )
     val latestId = sijoitteluRepository.getLatestSijoitteluajoIdThrowFailure(sijoitteluajoId, hakuOid)
     logger.info(s"Haetaan sijoitteluajoDTO $latestId")
 

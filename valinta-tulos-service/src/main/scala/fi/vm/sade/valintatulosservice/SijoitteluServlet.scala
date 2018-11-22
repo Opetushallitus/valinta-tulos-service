@@ -36,7 +36,7 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
 
     val hakuOid = HakuOid(params("hakuOid"))
     val sijoitteluajoId = params("sijoitteluajoId")
-    streamOk(sijoitteluService.getSijoitteluajo(hakuOid, sijoitteluajoId))
+    streamOk(sijoitteluService.getSijoitteluajo(hakuOid, sijoitteluajoId, auditInfo))
   }
 
   lazy val getSijoitteluajonPerustiedotSwagger: OperationBuilder = (apiOperation[Unit]("getSijoitteluajoSwagger")
@@ -49,7 +49,7 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
 
     val hakuOid = HakuOid(params("hakuOid"))
     val sijoitteluajoId = params("sijoitteluajoId")
-    Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getSijoitteluajonPerustiedot(hakuOid, sijoitteluajoId)))
+    Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getSijoitteluajonPerustiedot(hakuOid, sijoitteluajoId, auditInfo)))
   }
 
   lazy val getHakemusBySijoitteluajoSwagger: OperationBuilder = (apiOperation[Unit]("getHakemusBySijoitteluajoSwagger")
@@ -64,7 +64,7 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
     val sijoitteluajoId = params("sijoitteluajoId")
     val hakemusOid = HakemusOid(params("hakemusOid"))
     try {
-      Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakemusBySijoitteluajo(hakuOid, sijoitteluajoId, hakemusOid)))
+      Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakemusBySijoitteluajo(hakuOid, sijoitteluajoId, hakemusOid, auditInfo)))
     } catch {
       case e: NotFoundException =>
         NoContent(reason = e.getMessage)
@@ -85,7 +85,7 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
 
     try {
-      Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session)))
+      Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session, auditInfo)))
     } catch {
       case e: NotFoundException =>
         val message = e.getMessage

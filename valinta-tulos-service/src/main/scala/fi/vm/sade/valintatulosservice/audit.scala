@@ -57,3 +57,15 @@ case object ValintaesityksenHyvaksyminen extends Operation {
 case object ValintaesityksenLuku extends Operation {
   def name: String = "VALINTAESITYKSEN_LUKU"
 }
+
+case object SijoittelunHakukohteenLuku extends Operation {
+  def name: String = "SIJOITTELUN_HAKUKOHTEEN_LUKU"
+}
+
+case object SijoittelunHakemuksenLuku extends Operation {
+  def name: String = "SIJOITTELUN_HAKEMUKSEN_LUKU"
+}
+
+case object SijoitteluAjonLuku extends Operation {
+  def name: String = "SIJOITTELUAJON_LUKU"
+}

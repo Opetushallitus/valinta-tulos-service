@@ -1,12 +1,15 @@
 package fi.vm.sade.valintatulosservice.local
 
+import java.net.InetAddress
 import java.time.Instant
-import java.util.Date
+import java.util.{Date, UUID}
 
+import fi.vm.sade.auditlog._
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
+import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.valintatulosservice.json.JsonFormats
-import fi.vm.sade.valintatulosservice.SijoitteluService
-import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket}
+import fi.vm.sade.valintatulosservice._
+import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{PistetietoRecord, _}
@@ -17,20 +20,27 @@ import org.specs2.mock.mockito.{MockitoMatchers, MockitoStubs}
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.Scope
+import slick.dbio.DBIO
 
 @RunWith(classOf[JUnitRunner])
 class SijoitteluServiceSpec extends Specification with MockitoMatchers with MockitoStubs {
 
   val sijoitteluajoId = 123456l
   val hakuOid = HakuOid("1.2.3")
+  val hakemusOid = HakemusOid("1.2.3.4")
   val hakukohdeOid = HakukohdeOid("1.2.3.4.5")
   val tarjoajaOid = "1.2.3.4.5.6.7"
   val hakukohde = Hakukohde(hakukohdeOid, hakuOid, Set(tarjoajaOid), null, null, null, null, null, null, true, null, 2017)
   val session = CasSession(ServiceTicket("myFakeTicket"), "1.2.246.562.24.1", Set(Role.SIJOITTELU_CRUD))
+  val sessionId = UUID.randomUUID()
+  val auditInfo = AuditInfo((sessionId, session), InetAddress.getLocalHost, "user-agent")
+  trait Authorized { this: SijoitteluServiceMocks =>
+    authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]]) returns Right(())
+  }
 
   "SijoitteluService" in {
     "return correct sijoittelun tulos for hakukohde" in new SijoitteluServiceMocks {
-      val hakukohde = service.getHakukohdeBySijoitteluajo(hakuOid, "latest", hakukohdeOid, session)
+      val hakukohde = service.getHakukohdeBySijoitteluajo(hakuOid, "latest", hakukohdeOid, session, auditInfo)
 
       there was one (sijoitteluRepository).getLatestSijoitteluajoId("latest", hakuOid)
       there was one (sijoitteluRepository).getSijoitteluajonHakukohde(sijoitteluajoId, hakukohdeOid)
@@ -44,6 +54,10 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
       there was one (sijoitteluRepository).getValinnantilanKuvaukset(List(123))
 
       JsonFormats.javaObjectToJsonString(hakukohde) mustEqual JsonFormats.javaObjectToJsonString(createExpected)
+    }
+    "auditlogittaa sijoittelutietojen luvun" in new SijoitteluServiceMocks with Authorized {
+      val hakukohde = service.getHakukohdeBySijoitteluajo(hakuOid, "latest", hakukohdeOid, session, auditInfo)
+      there was one(audit).log(any[User], argThat[Operation, Operation](be_==(SijoittelunHakukohteenLuku)), any[Target], any[Changes])
     }
   }
 
@@ -81,6 +95,8 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
   }
 
   trait SijoitteluServiceMocks extends Mockito with Scope with MustThrownExpectations {
+    val audit = mock[Audit]
+
     val hakuService = mock[HakuService]
     hakuService.getHakukohde(hakukohdeOid) returns Right(Hakukohde(hakukohdeOid, hakuOid, Set(tarjoajaOid), null, null, null, null, null, null, true, null, 2015))
 
@@ -126,6 +142,12 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
     sijoitteluRepository.getValinnantilanKuvaukset(List(123)) returns
       Map(123 -> TilankuvausRecord(123, EiTilankuvauksenTarkennetta, Some("textFi"), Some("textSv"), Some("textEn")))
 
-    val service = new SijoitteluService(sijoitteluRepository, authorizer, hakuService)
+    sijoitteluRepository.getHakukohteenHakijaryhmat(sijoitteluajoId, hakukohdeOid) returns List(
+      HakijaryhmaRecord(1, "hakijaryhma1", "Hakijaryhma 1", Some(hakukohdeOid), 2, false, sijoitteluajoId, true, true, None, "uri/1/2/3")
+    )
+
+    val service = new SijoitteluService(sijoitteluRepository, authorizer, hakuService, audit)
+
+
   }
 }
