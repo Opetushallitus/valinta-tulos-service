@@ -12,6 +12,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, _}
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.SijoitteluajonHakijat
+import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.SijoitteluajonHakijat.ValinnantuloksetGrouped
 
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
@@ -74,7 +75,10 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
                           index: Option[Int]): HakijaPaginationObject = timed("RaportointiService.hakemukset", 1000) {
 
     val hakijat:List[HakijaDTO] = if(hakukohdeOids.isDefined && 0 != hakukohdeOids.get.size) {
-      hakukohdeOids.get.flatMap(SijoitteluajonHakijat.dto(repository, sijoitteluajoId, hakuOid, _))
+      val valinnantulokset: ValinnantuloksetGrouped = timed("Valinnantulokset haulle", 100) {
+        ValinnantuloksetGrouped.apply(repository.runBlocking(repository.getValinnantuloksetForHaku(hakuOid)))
+      }
+      hakukohdeOids.get.flatMap(SijoitteluajonHakijat.dto(repository, sijoitteluajoId, hakuOid, _, Some(valinnantulokset)))
     } else {
       SijoitteluajonHakijat.dto(repository, sijoitteluajoId, hakuOid)
     }
