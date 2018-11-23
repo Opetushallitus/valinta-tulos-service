@@ -4,18 +4,25 @@ import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.ValintatulosService
+import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.sijoittelu.{HakijaDTOSearchCriteria, ValintarekisteriHakijaDTOClient}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.VirkailijaVastaanottoRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
 import scala.collection.JavaConverters._
+import scala.collection.parallel.ForkJoinTaskSupport
+import scala.concurrent.forkjoin.ForkJoinPool
 
 private object HakemustenTulosHakuLock
 
 class StreamingValintatulosService(valintatulosService: ValintatulosService,
                                    virkailijaVastaanottoRepository: VirkailijaVastaanottoRepository,
-                                   hakijaDTOClient: ValintarekisteriHakijaDTOClient) extends Logging {
+                                   hakijaDTOClient: ValintarekisteriHakijaDTOClient)
+                                  (implicit appConfig: VtsAppConfig) extends Logging {
+  private val taskSupport: ForkJoinTaskSupport = new ForkJoinTaskSupport(new ForkJoinPool(appConfig.settings.hakukohdeStreamingConcurrency))
+
+  logger.info(s"Processing hakukohde results with parallelism of ${taskSupport.environment.getParallelism}")
 
   def streamSijoittelunTulokset(hakuOid: HakuOid,
                                 sijoitteluajoId: String,
@@ -25,7 +32,9 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
     val haunVastaanototByHakijaOid = timed("Fetch haun vastaanotot for haku: " + hakuOid, 1000) {
       virkailijaVastaanottoRepository.findHaunVastaanotot(hakuOid).groupBy(_.henkiloOid)
     }
-    val hakemustenTulokset: Option[Iterator[Hakemuksentulos]] = Some(hakukohdeOids.map { hakukohdeOid =>
+    val parallelHakukohdeOids = hakukohdeOids.par
+    parallelHakukohdeOids.tasksupport = taskSupport
+    val hakemustenTulokset: Option[Iterator[Hakemuksentulos]] = Some(parallelHakukohdeOids.map { hakukohdeOid =>
       valintatulosService.hakemustenTulosByHakukohde(hakuOid, hakukohdeOid, Some(haunVastaanototByHakijaOid)) match {
         case Right(it) => it
         case Left(e) => val msg = s"Could not retrieve results for hakukohde $hakukohdeOid of haku $hakuOid"

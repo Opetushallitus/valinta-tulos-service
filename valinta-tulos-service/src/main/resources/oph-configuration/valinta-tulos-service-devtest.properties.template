@@ -14,6 +14,8 @@ host.alb={{host_alb}}
 valinta-tulos-service.ohjausparametrit.url=https\://{{host_virkailija}}/ohjausparametrit-service/api/v1/rest/parametri
 valinta-tulos-service.ilmoittautuminen.enabled={{valintatulosservice_ilmoittautuminen_enabled}}
 
+valinta-tulos-service.streaming.hakukohde.concurrency={{valintatulosservice_streaming_hakukohde_concurrency | default('10') }}
+
 #SIJOITTELU-SERVICE
 sijoittelu-service.rest.url=https://{{host_virkailija}}/sijoittelu-service
 valinta-tulos-service.parseleniently.sijoitteluajontulos={{valintatulosservice_parseleniently_sijoitteluajontulos}}
