@@ -399,6 +399,36 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     })
   }
 
+  def streamSijoittelunTulokset(hakuOid: HakuOid,
+                                sijoitteluajoId: String,
+                                hakukohdeOids: Set[HakukohdeOid],
+                                writeResult: HakijaDTO => Unit,
+                                vainMerkitsevaJono : Boolean): Unit = {
+    val haunVastaanototByHakijaOid = timed("Fetch haun vastaanotot for haku: " + hakuOid, 1000) {
+      virkailijaVastaanottoRepository.findHaunVastaanotot(hakuOid).groupBy(_.henkiloOid)
+    }
+    val hakemustenTulokset: Option[Iterator[Hakemuksentulos]] = Some(hakukohdeOids.map { hakukohdeOid =>
+      hakemustenTulosByHakukohde(hakuOid, hakukohdeOid, Some(haunVastaanototByHakijaOid)) match {
+        case Right(it) => it
+        case Left(e) => val msg = s"Could not retrieve results for hakukohde $hakukohdeOid of haku $hakuOid"
+          logger.error(msg)
+          throw new RuntimeException(msg)
+      }
+    }.reduce((i1, i2) => i1 ++ i2))
+    val hakutoiveidenTuloksetByHakemusOid: Map[HakemusOid, (String, List[Hakutoiveentulos])] =
+      timed(s"Find hakutoiveiden tulokset for ${hakukohdeOids.size} hakukohdes of haku $hakuOid", 1000) {
+        hakemustenTulokset match {
+          case Some(hakemustenTulosIterator) => hakemustenTulosIterator.map(h => (h.hakemusOid, (h.hakijaOid, h.hakutoiveet))).toMap
+          case None => Map()
+        }
+      }
+    logger.info(s"Found ${hakutoiveidenTuloksetByHakemusOid.keySet.size} hakemus objects for sijoitteluajo $sijoitteluajoId " +
+      s"of ${hakukohdeOids.size} hakukohdes of haku $hakuOid")
+
+    streamSijoittelunTulokset(hakutoiveidenTuloksetByHakemusOid, hakuOid, sijoitteluajoId, writeResult, vainMerkitsevaJono)
+  }
+
+
   def streamSijoittelunTulokset(hakuOid: HakuOid, sijoitteluajoId: String, writeResult: HakijaDTO => Unit, vainMerkitsevaJono : Boolean): Unit = {
     val haunVastaanototByHakijaOid = timed("Fetch haun vastaanotot for haku: " + hakuOid, 1000) {
       virkailijaVastaanottoRepository.findHaunVastaanotot(hakuOid).groupBy(_.henkiloOid)
@@ -412,9 +442,17 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
     logger.info(s"Found ${hakutoiveidenTuloksetByHakemusOid.keySet.size} hakemus objects for sijoitteluajo $sijoitteluajoId of haku $hakuOid")
 
+    streamSijoittelunTulokset(hakutoiveidenTuloksetByHakemusOid, hakuOid, sijoitteluajoId, writeResult, vainMerkitsevaJono)
+  }
+
+  private def streamSijoittelunTulokset(tuloksetByHakemusOid: Map[HakemusOid, (String, List[Hakutoiveentulos])],
+                                        hakuOid: HakuOid,
+                                        sijoitteluajoId: String,
+                                        writeResult: HakijaDTO => Unit,
+                                        vainMerkitsevaJono: Boolean): Unit = {
     def processTulos(hakijaDto: HakijaDTO, hakijaOid: String, hakutoiveidenTulokset: List[Hakutoiveentulos]): Unit = {
       hakijaDto.setHakijaOid(hakijaOid)
-      if(vainMerkitsevaJono) {
+      if (vainMerkitsevaJono) {
         populateMerkitsevatJonot(hakijaDto, hakutoiveidenTulokset)
       } else {
         populateVastaanottotieto(hakijaDto, hakutoiveidenTulokset)
@@ -424,7 +462,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
 
     try {
       hakijaDTOClient.processSijoittelunTulokset(hakuOid, sijoitteluajoId, { hakijaDto: HakijaDTO =>
-        hakutoiveidenTuloksetByHakemusOid.get(HakemusOid(hakijaDto.getHakemusOid)) match {
+        tuloksetByHakemusOid.get(HakemusOid(hakijaDto.getHakemusOid)) match {
           case Some((hakijaOid, hakutoiveidenTulokset)) => processTulos(hakijaDto, hakijaOid, hakutoiveidenTulokset)
           case None => crashOrLog(s"Hakemus ${hakijaDto.getHakemusOid} not found in hakemusten tulokset for haku $hakuOid")
         }

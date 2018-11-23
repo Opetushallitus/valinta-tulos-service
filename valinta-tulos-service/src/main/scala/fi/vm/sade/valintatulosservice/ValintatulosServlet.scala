@@ -11,6 +11,7 @@ import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, Hakuaika, YhdenPaikanSaanto}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import javax.servlet.http.HttpServletResponse
 import org.joda.time.DateTime
 import org.json4s.Extraction
 import org.scalatra._
@@ -221,19 +222,47 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vas
     val sijoitteluajoId = params("sijoitteluajoId")
     val vainMerkitsevaJono = params.get("vainMerkitsevaJono").map(_.toBoolean).getOrElse(false)
 
+    writeSijoittelunTuloksetStreamingToResponse(
+      response, hakuOid, w => valintatulosService.streamSijoittelunTulokset(hakuOid, sijoitteluajoId, w, vainMerkitsevaJono))
+  }
+
+  lazy val postStreamingHaunSijoitteluajonHakukohteidenTuloksetSwagger: OperationBuilder = (apiOperation[Unit]("postStreamingHaunSijoitteluajonHakukohteidenTuloksetSwagger")
+    summary """Streamaava listaus annettujen hakukohteiden hakemuksien/hakijoiden listaukseen. Yksityiskohtainen listaus kaikista hakutoiveista ja niiden valintatapajonoista"""
+    parameter pathParam[String]("hakuOid").description("Haun oid").required
+    parameter pathParam[String]("sijoitteluajoId").description("""Sijoitteluajon id tai "latest"""").required
+    parameter queryParam[Boolean]("vainMerkitsevaJono").description("Jos true, palautetaan vain merkitsevän valintatapajonon tiedot").optional
+    parameter bodyParam[Seq[String]]("hakukohdeOidit").description("Hakukohteet, joiden tulokset halutaan").required)
+  post("/streaming/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakemukset", operation(postStreamingHaunSijoitteluajonHakukohteidenTuloksetSwagger)) {
+    val hakuOid = HakuOid(params("hakuOid"))
+    val sijoitteluajoId = params("sijoitteluajoId")
+    val vainMerkitsevaJono = params.get("vainMerkitsevaJono").exists(_.toBoolean)
+    val hakukohdeOids = parsedBody.extract[Seq[String]]
+    logger.info(s"Results of ${hakukohdeOids.size} hakukohde of haku $hakuOid were requested.")
+    if (hakukohdeOids.isEmpty) {
+      BadRequest(body = Map("error" -> "Anna kysyttävät hakukohdeoidit bodyssä."), reason = "Could not read hakukohde oids from request body.")
+    } else {
+      writeSijoittelunTuloksetStreamingToResponse(response, hakuOid, w => valintatulosService.streamSijoittelunTulokset(
+        hakuOid, sijoitteluajoId, hakukohdeOids.toSet.map(HakukohdeOid), w, vainMerkitsevaJono))
+    }
+  }
+
+
+  private def writeSijoittelunTuloksetStreamingToResponse(response: HttpServletResponse,
+                                                          hakuOid: HakuOid,
+                                                          writeWholeResultsToResponse: (HakijaDTO => Unit) => Unit): Unit = {
     val writer = response.writer
 
     writer.print("[")
     var index = 0
     try {
-      val writeResult: HakijaDTO => Unit = { hakijaDto =>
+      val writeSingleResult: HakijaDTO => Unit = { hakijaDto =>
         if (index > 0) {
           writer.print(",")
         }
         writer.print(JsonFormats.javaObjectToJsonString(hakijaDto))
         index = index + 1
       }
-      valintatulosService.streamSijoittelunTulokset(hakuOid, sijoitteluajoId, writeResult, vainMerkitsevaJono)
+      writeWholeResultsToResponse(writeSingleResult)
     } catch {
       case t: Throwable => throw new StreamingFailureException(t, s""", {"error": "${t.getMessage}"}] """)
     }
