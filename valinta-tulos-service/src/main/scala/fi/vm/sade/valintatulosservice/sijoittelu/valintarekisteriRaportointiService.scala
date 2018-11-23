@@ -74,7 +74,7 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
                           index: Option[Int]): HakijaPaginationObject = timed("RaportointiService.hakemukset", 1000) {
 
     val hakijat:List[HakijaDTO] = if(hakukohdeOids.isDefined && 0 != hakukohdeOids.get.size) {
-      hakukohdeOids.get.map(SijoitteluajonHakijat.dto(repository, sijoitteluajoId, hakuOid, _)).flatten
+      hakukohdeOids.get.flatMap(SijoitteluajonHakijat.dto(repository, sijoitteluajoId, hakuOid, _))
     } else {
       SijoitteluajonHakijat.dto(repository, sijoitteluajoId, hakuOid)
     }
