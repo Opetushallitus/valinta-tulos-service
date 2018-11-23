@@ -5,6 +5,7 @@ import java.time.ZonedDateTime
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit.MINUTES
 
+import fi.vm.sade.auditlog.Audit
 import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.hakemus.{HakemusRepository, HakuAppRepository}
@@ -47,7 +48,7 @@ case class HakutoiveTulosRekisterissa(hakemusOid: HakemusOid, hakutoiveOid: Haku
 
 case class TaustapaivityksenTila(kaynnistettiin: Boolean, kaynnistetty: Option[ZonedDateTime], valmistui: Option[ZonedDateTime], hakujenMaara: Option[Int])
 
-class PuuttuvatTuloksetService(valintarekisteriDb: ValintarekisteriDb, hakemusRepository: HakuAppRepository, virkailijaBaseUrl: String) extends Logging {
+class PuuttuvatTuloksetService(valintarekisteriDb: ValintarekisteriDb, hakemusRepository: HakuAppRepository, virkailijaBaseUrl: String, audit: Audit) extends Logging {
   private val hakukohdeLinkCreator = new SijoittelunTuloksetLinkCreator(virkailijaBaseUrl)
   private val dao = new PuuttuvatTuloksetDao(valintarekisteriDb, hakemusRepository, hakukohdeLinkCreator)
   private val puuttuvienTulostenKokoaja = new PuuttuvienTulostenKokoaja(valintarekisteriDb, hakemusRepository, hakukohdeLinkCreator)
