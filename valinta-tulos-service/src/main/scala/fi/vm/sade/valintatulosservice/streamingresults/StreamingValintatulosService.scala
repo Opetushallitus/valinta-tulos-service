@@ -5,9 +5,10 @@ import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.ValintatulosService
 import fi.vm.sade.valintatulosservice.domain._
-import fi.vm.sade.valintatulosservice.sijoittelu.ValintarekisteriHakijaDTOClient
+import fi.vm.sade.valintatulosservice.sijoittelu.{HakijaDTOSearchCriteria, ValintarekisteriHakijaDTOClient}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.VirkailijaVastaanottoRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+
 import scala.collection.JavaConverters._
 
 private object HakemustenTulosHakuLock
@@ -42,7 +43,11 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
     logger.info(s"Found ${hakutoiveidenTuloksetByHakemusOid.keySet.size} hakemus objects for sijoitteluajo $sijoitteluajoId " +
       s"of ${hakukohdeOids.size} hakukohdes of haku $hakuOid")
 
-    streamSijoittelunTulokset(hakutoiveidenTuloksetByHakemusOid, hakuOid, sijoitteluajoId, writeResult, vainMerkitsevaJono)
+    streamSijoittelunTulokset(
+      hakutoiveidenTuloksetByHakemusOid,
+      HakijaDTOSearchCriteria(hakuOid, sijoitteluajoId, Some(hakukohdeOids)),
+      writeResult,
+      vainMerkitsevaJono)
   }
 
 
@@ -59,14 +64,19 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
     }
     logger.info(s"Found ${hakutoiveidenTuloksetByHakemusOid.keySet.size} hakemus objects for sijoitteluajo $sijoitteluajoId of haku $hakuOid")
 
-    streamSijoittelunTulokset(hakutoiveidenTuloksetByHakemusOid, hakuOid, sijoitteluajoId, writeResult, vainMerkitsevaJono)
+    streamSijoittelunTulokset(
+      hakutoiveidenTuloksetByHakemusOid,
+      HakijaDTOSearchCriteria(hakuOid, sijoitteluajoId),
+      writeResult,
+      vainMerkitsevaJono)
   }
 
   private def streamSijoittelunTulokset(tuloksetByHakemusOid: Map[HakemusOid, (String, List[Hakutoiveentulos])],
-                                        hakuOid: HakuOid,
-                                        sijoitteluajoId: String,
+                                        hakijaDTOSearchCriteria: HakijaDTOSearchCriteria,
                                         writeResult: HakijaDTO => Unit,
                                         vainMerkitsevaJono: Boolean): Unit = {
+    val hakuOid = hakijaDTOSearchCriteria.hakuOid
+
     def processTulos(hakijaDto: HakijaDTO, hakijaOid: String, hakutoiveidenTulokset: List[Hakutoiveentulos]): Unit = {
       hakijaDto.setHakijaOid(hakijaOid)
       if (vainMerkitsevaJono) {
@@ -78,7 +88,7 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
     }
 
     try {
-      hakijaDTOClient.processSijoittelunTulokset(hakuOid, sijoitteluajoId, { hakijaDto: HakijaDTO =>
+      hakijaDTOClient.processSijoittelunTulokset(hakijaDTOSearchCriteria, { hakijaDto: HakijaDTO =>
         tuloksetByHakemusOid.get(HakemusOid(hakijaDto.getHakemusOid)) match {
           case Some((hakijaOid, hakutoiveidenTulokset)) => processTulos(hakijaDto, hakijaOid, hakutoiveidenTulokset)
           case None => valintatulosService.crashOrLog(s"Hakemus ${hakijaDto.getHakemusOid} not found in hakemusten tulokset for haku $hakuOid")
@@ -86,7 +96,7 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
       })
     } catch {
       case e: Exception =>
-        logger.error(s"Sijoitteluajon $sijoitteluajoId hakemuksia ei saatu palautettua haulle $hakuOid", e)
+        logger.error(s"Sijoitteluajon ${hakijaDTOSearchCriteria.sijoitteluajoId} hakemuksia ei saatu palautettua haulle $hakuOid", e)
         throw e
     }
   }

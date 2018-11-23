@@ -25,6 +25,8 @@ trait ValintarekisteriRaportointiService {
 
   def hakemukset(sijoitteluAjo: SijoitteluAjo):HakijaPaginationObject
 
+  def hakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOids: Set[HakukohdeOid]):HakijaPaginationObject
+
   //TODO sivutuksen (count/index) voi poistaa?
   def hakemukset(sijoitteluajoId: Option[Long],
                  hakuOid: HakuOid,
@@ -46,8 +48,19 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
     case Success(r) => r
   }
 
-  override def hakemukset(sijoitteluAjo: SijoitteluAjo) = {
+  override def hakemukset(sijoitteluAjo: SijoitteluAjo): HakijaPaginationObject = {
     hakemukset(SyntheticSijoitteluAjoForHakusWithoutSijoittelu.getSijoitteluajoId(sijoitteluAjo), HakuOid(sijoitteluAjo.getHakuOid), None, None, None, None, None, None)
+  }
+
+  override def hakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOids: Set[HakukohdeOid]): HakijaPaginationObject = {
+    hakemukset(SyntheticSijoitteluAjoForHakusWithoutSijoittelu.getSijoitteluajoId(sijoitteluAjo),
+      HakuOid(sijoitteluAjo.getHakuOid),
+      hyvaksytyt = None,
+      ilmanHyvaksyntaa = None,
+      vastaanottaneet = None,
+      hakukohdeOids = Some(hakukohdeOids.toList),
+      count = None,
+      index = None)
   }
 
   //TODO sivutuksen (count/index) voi poistaa?

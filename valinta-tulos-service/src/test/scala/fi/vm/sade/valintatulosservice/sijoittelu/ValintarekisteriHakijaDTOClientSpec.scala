@@ -1,14 +1,11 @@
 package fi.vm.sade.valintatulosservice.sijoittelu
 
-import java.util
-
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.valintatulosservice.ITSpecification
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid}
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 @RunWith(classOf[JUnitRunner])
@@ -30,7 +27,7 @@ class ValintarekisteriHakijaDTOClientSpec extends ITSpecification with Valintare
     def test(sijoitteluajoId:String, hakuOid:HakuOid, expectedSize:Int) = {
       val list = new ListBuffer[HakemusOid]
 
-      client.processSijoittelunTulokset(hakuOid, sijoitteluajoId, (hakija:HakijaDTO) => list += HakemusOid(hakija.getHakemusOid))
+      client.processSijoittelunTulokset(HakijaDTOSearchCriteria(hakuOid, sijoitteluajoId), (hakija:HakijaDTO) => list += HakemusOid(hakija.getHakemusOid))
 
       list.distinct.size must_== expectedSize
     }
