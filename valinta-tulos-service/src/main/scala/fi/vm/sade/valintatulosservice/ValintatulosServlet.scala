@@ -8,6 +8,7 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.json.{JsonFormats, JsonStreamWriter, StreamingFailureException}
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
+import fi.vm.sade.valintatulosservice.streamingresults.StreamingValintatulosService
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, Hakuaika, YhdenPaikanSaanto}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -21,6 +22,7 @@ import org.scalatra.swagger._
 import scala.util.Try
 
 abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
+                                   streamingValintatulosService: StreamingValintatulosService,
                                    vastaanottoService: VastaanottoService,
                                    ilmoittautumisService: IlmoittautumisService,
                                    valintarekisteriDb: ValintarekisteriDb)
@@ -228,7 +230,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     val vainMerkitsevaJono = params.get("vainMerkitsevaJono").map(_.toBoolean).getOrElse(false)
 
     writeSijoittelunTuloksetStreamingToResponse(
-      response, hakuOid, w => valintatulosService.streamSijoittelunTulokset(hakuOid, sijoitteluajoId, w, vainMerkitsevaJono))
+      response, hakuOid, w => streamingValintatulosService.streamSijoittelunTulokset(hakuOid, sijoitteluajoId, w, vainMerkitsevaJono))
   }
 
   lazy val postStreamingHaunSijoitteluajonHakukohteidenTuloksetSwagger: OperationBuilder = (apiOperation[Unit]("postStreamingHaunSijoitteluajonHakukohteidenTuloksetSwagger")
@@ -246,7 +248,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     if (hakukohdeOids.isEmpty) {
       BadRequest(body = Map("error" -> "Anna kysyttävät hakukohdeoidit bodyssä."), reason = "Could not read hakukohde oids from request body.")
     } else {
-      writeSijoittelunTuloksetStreamingToResponse(response, hakuOid, w => valintatulosService.streamSijoittelunTulokset(
+      writeSijoittelunTuloksetStreamingToResponse(response, hakuOid, w => streamingValintatulosService.streamSijoittelunTulokset(
         hakuOid, sijoitteluajoId, hakukohdeOids.toSet.map(HakukohdeOid), w, vainMerkitsevaJono))
     }
   }
