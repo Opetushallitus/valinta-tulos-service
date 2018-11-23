@@ -157,7 +157,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(handler = new MuutoshistoriaServlet(valinnantulosService, valintarekisteriDb), urlPattern = "/auth/muutoshistoria", name = "PublicMuutosHistoriaServlet")
       context.mount(new ValintaesitysServlet(valintaesitysService, valintarekisteriDb), "/auth/valintaesitys")
       context.mount(new PuuttuvienTulostenMetsastajaServlet(audit, valintarekisteriDb, hakuAppRepository, appConfig.properties("host.virkailija")), "/auth/puuttuvat")
-      context.mount(new PublicEmailStatusServlet(mailPoller, valintarekisteriDb), "/auth/vastaanottoposti")
+      context.mount(new PublicEmailStatusServlet(mailPoller, valintarekisteriDb, audit), "/auth/vastaanottoposti")
     }
   }
 

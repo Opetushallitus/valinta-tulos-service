@@ -73,3 +73,11 @@ case object SijoitteluAjonLuku extends Operation {
 case object PuuttuvienTulostenLuku extends Operation {
   def name: String = "PUUTTUVIEN_TULOSTEN_LUKU"
 }
+
+case object VastaanottoPostitietojenLuku extends Operation {
+  def name: String = "VASTAANOTTOSAHKOPOSTITIETOJEN_LUKU"
+}
+
+case object VastaanottoPostitietojenPoisto extends Operation {
+  def name: String = "VASTAANOTTOSAHKOPOSTITIETOJEN_POISTO"
+}
