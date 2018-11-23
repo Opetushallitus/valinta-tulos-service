@@ -20,7 +20,12 @@ import org.scalatra.swagger._
 
 import scala.util.Try
 
-abstract class ValintatulosServlet(valintatulosService: ValintatulosService, vastaanottoService: VastaanottoService, ilmoittautumisService: IlmoittautumisService, valintarekisteriDb: ValintarekisteriDb)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
+abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
+                                   vastaanottoService: VastaanottoService,
+                                   ilmoittautumisService: IlmoittautumisService,
+                                   valintarekisteriDb: ValintarekisteriDb)
+                                  (implicit val swagger: Swagger,
+                                   appConfig: VtsAppConfig) extends VtsServletBase {
   val ilmoittautumisenAikaleima: Option[Date] = Option(new Date())
   lazy val exampleHakemuksenTulos = Hakemuksentulos(
     HakuOid("2.2.2.2"),
