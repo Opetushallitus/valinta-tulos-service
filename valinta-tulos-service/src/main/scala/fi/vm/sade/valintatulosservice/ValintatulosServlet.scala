@@ -230,7 +230,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     val vainMerkitsevaJono = params.get("vainMerkitsevaJono").map(_.toBoolean).getOrElse(false)
 
     writeSijoittelunTuloksetStreamingToResponse(
-      response, hakuOid, w => streamingValintatulosService.streamSijoittelunTulokset(hakuOid, sijoitteluajoId, w, vainMerkitsevaJono))
+      response, hakuOid, w => streamingValintatulosService.streamSijoittelunTuloksetOfWholeHaku(hakuOid, sijoitteluajoId, w, vainMerkitsevaJono))
   }
 
   lazy val postStreamingHaunSijoitteluajonHakukohteidenTuloksetSwagger: OperationBuilder = (apiOperation[Unit]("postStreamingHaunSijoitteluajonHakukohteidenTuloksetSwagger")
@@ -248,7 +248,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     if (hakukohdeOids.isEmpty) {
       BadRequest(body = Map("error" -> "Anna kysyttävät hakukohdeoidit bodyssä."), reason = "Could not read hakukohde oids from request body.")
     } else {
-      writeSijoittelunTuloksetStreamingToResponse(response, hakuOid, w => streamingValintatulosService.streamSijoittelunTulokset(
+      writeSijoittelunTuloksetStreamingToResponse(response, hakuOid, w => streamingValintatulosService.streamSijoittelunTuloksetOfHakukohdes(
         hakuOid, sijoitteluajoId, hakukohdeOids.toSet.map(HakukohdeOid), w, vainMerkitsevaJono))
     }
   }
