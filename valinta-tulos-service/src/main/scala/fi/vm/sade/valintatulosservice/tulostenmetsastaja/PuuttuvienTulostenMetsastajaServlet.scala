@@ -57,7 +57,6 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
   val hakuListaSwagger: OperationBuilder = (apiOperation[Seq[HaunTiedotListalle]]("Yhteenveto kaikista hauista")
     summary "Listaa kaikki haut ja yhteenveto niiden puuttuvista tiedoista")
   get("/yhteenveto", operation(hakuListaSwagger)) {
-    tarkistaOikeudet()
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_CRUD_OPH)
     Ok(puuttuvatTuloksetService.findSummary())
@@ -80,7 +79,6 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
   val paivitaKaikkiSwagger : OperationBuilder = (apiOperation[TaustapaivityksenTila]("Käynnistetään puuttuvien tuloksien haku kaikille hauille")
       parameter bodyParam[Boolean]("paivitaMyosOlemassaolevat").description("Päivitetäänkö myös hauille, joilta löytyy jo tieto puuttuvista"))
   post("/paivitaKaikki", operation(paivitaKaikkiSwagger)) {
-    tarkistaOikeudet()
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_CRUD_OPH)
     var paivitaMyosOlemassaolevat = (parsedBody \ "paivitaMyosOlemassaolevat").extract[Boolean]
@@ -96,7 +94,6 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
 
   val taustapaivityksenTilaSwagger : OperationBuilder = apiOperation[TaustapaivityksenTila]("Lue taustapäivityksen tila")
   get("/taustapaivityksenTila", operation(taustapaivityksenTilaSwagger)) {
-    tarkistaOikeudet()
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_CRUD_OPH)
     Ok(puuttuvatTuloksetService.haeTaustapaivityksenTila)
@@ -107,21 +104,4 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
   private def parseHakuOid: HakuOid = HakuOid(params.getOrElse("hakuOid",
     throw new IllegalArgumentException("URL-parametri hakuOid on pakollinen.")))
 
-
-  private def tarkistaOikeudet(): Option[ActionResult] = {
-    implicit val authenticated: Authenticated = try {
-      authenticate
-    } catch {
-      case e: AuthorizationFailedException =>
-        return Some(Found(location = "/cas/login", reason = "Kirjaudu ensin sisään"))
-    }
-
-    try {
-      authorize(Role.SIJOITTELU_CRUD_OPH)
-    } catch {
-      case e: AuthorizationFailedException =>
-        return Some(Forbidden(reason = "Ei riittäviä oikeuksia"))
-    }
-    None
-  }
 }
