@@ -74,6 +74,18 @@ case object PuuttuvienTulostenLuku extends Operation {
   def name: String = "PUUTTUVIEN_TULOSTEN_LUKU"
 }
 
+case object PuuttuvienTulostenTaustapaivityksenTilanLuku extends Operation {
+  def name: String = "PUUTTUVIEN_TULOSTEN_TAUSTAPAIVITYKSEN_TILAN_LUKU"
+}
+
+case object PuuttuvienTulostenTaustapaivityksenPaivitys extends Operation {
+  def name: String = "PUUTTUVIEN_TULOSTEN_PAIVITYS"
+}
+
+case object PuuttuvienTulostenYhteenvedonLuku extends Operation {
+  def name: String = "PUUTTUVIEN_TULOSTEN_YHTEENVEDON_LUKU"
+}
+
 case object VastaanottoPostitietojenLuku extends Operation {
   def name: String = "VASTAANOTTOSAHKOPOSTITIETOJEN_LUKU"
 }

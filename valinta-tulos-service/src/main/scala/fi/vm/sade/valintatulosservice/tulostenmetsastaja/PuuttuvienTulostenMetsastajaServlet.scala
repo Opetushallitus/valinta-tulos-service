@@ -58,7 +58,11 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
     summary "Listaa kaikki haut ja yhteenveto niiden puuttuvista tiedoista")
   get("/yhteenveto", operation(hakuListaSwagger)) {
     tarkistaOikeudet()
+    implicit val authenticated = authenticate
+    authorize(Role.SIJOITTELU_CRUD_OPH)
     Ok(puuttuvatTuloksetService.findSummary())
+    val builder= new Target.Builder()
+    audit.log(auditInfo.user, PuuttuvienTulostenYhteenvedonLuku, builder.build(), new Changes.Builder().build())
   }
 
   val haunPuuttuvatSwagger: OperationBuilder = (apiOperation[Seq[TarjoajanPuuttuvat[HakukohteenPuuttuvatSummary]]]("Yksittäisen organisaation puuttuvat")
@@ -77,6 +81,8 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
       parameter bodyParam[Boolean]("paivitaMyosOlemassaolevat").description("Päivitetäänkö myös hauille, joilta löytyy jo tieto puuttuvista"))
   post("/paivitaKaikki", operation(paivitaKaikkiSwagger)) {
     tarkistaOikeudet()
+    implicit val authenticated = authenticate
+    authorize(Role.SIJOITTELU_CRUD_OPH)
     var paivitaMyosOlemassaolevat = (parsedBody \ "paivitaMyosOlemassaolevat").extract[Boolean]
     logger.info("Käynnistetään puuttuvien tulosten etsiminen " + (if (paivitaMyosOlemassaolevat) {
         "kaikille hauille."
@@ -84,12 +90,18 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
         "hauille, joilta ei löydy tietoa puuttuvista."
       }))
     Ok(puuttuvatTuloksetService.haeJaTallennaKaikki(paivitaMyosOlemassaolevat))
+    val builder= new Target.Builder()
+    audit.log(auditInfo.user, PuuttuvienTulostenTaustapaivityksenPaivitys, builder.build(), new Changes.Builder().build())
   }
 
   val taustapaivityksenTilaSwagger : OperationBuilder = apiOperation[TaustapaivityksenTila]("Lue taustapäivityksen tila")
   get("/taustapaivityksenTila", operation(taustapaivityksenTilaSwagger)) {
     tarkistaOikeudet()
+    implicit val authenticated = authenticate
+    authorize(Role.SIJOITTELU_CRUD_OPH)
     Ok(puuttuvatTuloksetService.haeTaustapaivityksenTila)
+    val builder= new Target.Builder()
+    audit.log(auditInfo.user, PuuttuvienTulostenTaustapaivityksenTilanLuku, builder.build(), new Changes.Builder().build())
   }
 
   private def parseHakuOid: HakuOid = HakuOid(params.getOrElse("hakuOid",
