@@ -60,7 +60,10 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
   }
 
 
-  def streamSijoittelunTuloksetOfWholeHaku(hakuOid: HakuOid, sijoitteluajoId: String, writeResult: HakijaDTO => Unit, vainMerkitsevaJono : Boolean): Unit = {
+  def streamSijoittelunTuloksetOfWholeHaku(hakuOid: HakuOid,
+                                           sijoitteluajoId: String,
+                                           writeResult: HakijaDTO => Unit,
+                                           vainMerkitsevaJono : Boolean): Unit = {
     val haunVastaanototByHakijaOid = timed("Fetch haun vastaanotot for haku: " + hakuOid, 1000) {
       virkailijaVastaanottoRepository.findHaunVastaanotot(hakuOid).groupBy(_.henkiloOid)
     }
