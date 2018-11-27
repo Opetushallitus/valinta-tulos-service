@@ -39,6 +39,7 @@ case class VtsApplicationSettings(config: Config) extends ApplicationSettings(co
   val mailPollerConcurrency: Int = withConfig(_.getInt("valinta-tulos-service.mail-poller.concurrency"))
   val mailPollerResultlessHakukohdeRecheckInterval: Duration = Duration(withConfig(
     _.getInt("valinta-tulos-service.mail-poller.resultless.hakukohde.hours")), HOURS)
+  val hakukohdeStreamingConcurrency: Int = withConfig(_.getInt("valinta-tulos-service.streaming.hakukohde.concurrency"))
 }
 
 object VtsApplicationSettingsParser extends fi.vm.sade.utils.config.ApplicationSettingsParser[VtsApplicationSettings] {

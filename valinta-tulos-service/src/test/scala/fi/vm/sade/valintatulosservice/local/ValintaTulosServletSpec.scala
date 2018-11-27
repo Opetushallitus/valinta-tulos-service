@@ -212,7 +212,6 @@ class ValintaTulosServletSpec extends ServletSpecification {
       vastaanota("VastaanotaSitovasti") {
         get("haku/streaming/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset") {
           val streamedJson = JsonMethods.parse(body)
-          println("BO DY: " + body)
           stringInJson(streamedJson, "hakijaOid") must_== "1.2.246.562.24.14229104472"
           stringInJson(streamedJson, "hakemusOid") must_== "1.2.246.562.11.00000441369"
           stringInJson(streamedJson, "vastaanottotieto") must_== "VASTAANOTTANUT_SITOVASTI"
@@ -235,7 +234,6 @@ class ValintaTulosServletSpec extends ServletSpecification {
       vastaanota("VastaanotaSitovasti") {
         get("haku/streaming/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset?vainMerkitsevaJono=true") {
           val streamedJson = JsonMethods.parse(body)
-          println("BO DY: " + body)
           stringInJson(streamedJson, "hakijaOid") must_== "1.2.246.562.24.14229104472"
           stringInJson(streamedJson, "hakemusOid") must_== "1.2.246.562.11.00000441369"
           stringInJson(streamedJson, "vastaanottotieto") must_== "VASTAANOTTANUT_SITOVASTI"
@@ -255,7 +253,6 @@ class ValintaTulosServletSpec extends ServletSpecification {
 
       get("haku/streaming/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset?vainMerkitsevaJono=true") {
         val streamedJson = JsonMethods.parse(body)
-        println("BO DY: " + body)
         stringInJson(streamedJson, "hakijaOid") must_== "1.2.246.562.24.14229104472"
         stringInJson(streamedJson, "hakemusOid") must_== "1.2.246.562.11.00000441369"
         stringInJson(streamedJson, "vastaanottotieto") must_== "KESKEN"
@@ -263,6 +260,29 @@ class ValintaTulosServletSpec extends ServletSpecification {
         (streamedJson \\ "hakutoiveenValintatapajonot").asInstanceOf[JArray].arr.size must_== 1
         stringInJson(streamedJson, "valintatapajonoOid") must_== "14090336922663576781797489829886"
         status must_== 200
+      }
+    }
+
+    "palauttaa haun hakukohteiden hakemusten tulokset vain merkitsevälle jonolle" in {
+
+      useFixture("hyvaksytty-kesken-julkaistavissa-korjattu.json")
+
+      checkData()
+
+      vastaanota("VastaanotaSitovasti") {
+        val hakukohdeOidsInPostBody = "[\"1.2.246.562.5.72607738902\"]".getBytes("UTF-8")
+        post("haku/streaming/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset?vainMerkitsevaJono=true",
+          hakukohdeOidsInPostBody,
+          headers = Map("Content-type" -> "application/json")) {
+            val streamedJson = JsonMethods.parse(body)
+            stringInJson(streamedJson, "hakijaOid") must_== "1.2.246.562.24.14229104472"
+            stringInJson(streamedJson, "hakemusOid") must_== "1.2.246.562.11.00000441369"
+            stringInJson(streamedJson, "vastaanottotieto") must_== "VASTAANOTTANUT_SITOVASTI"
+            (streamedJson \\ "hakutoiveet").asInstanceOf[JArray].arr.size must_== 1
+            (streamedJson \\ "hakutoiveenValintatapajonot").asInstanceOf[JArray].arr.size must_== 1
+            stringInJson(streamedJson, "valintatapajonoOid") must_== "14090336922663576781797489829886"
+            status must_== 200
+        }
       }
     }
   }

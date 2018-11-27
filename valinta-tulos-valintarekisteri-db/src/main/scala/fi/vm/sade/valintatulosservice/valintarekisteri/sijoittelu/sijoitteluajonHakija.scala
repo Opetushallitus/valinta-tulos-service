@@ -130,10 +130,13 @@ object SijoitteluajonHakijat {
   def dto(repository: HakijaRepository with SijoitteluRepository with ValinnantulosRepository,
           sijoitteluajoId:Option[Long],
           hakuOid:HakuOid,
-          hakukohdeOid: HakukohdeOid): List[HakijaDTO] = {
+          hakukohdeOid: HakukohdeOid,
+          haunValinnantulokset: Option[ValinnantuloksetGrouped] = None): List[HakijaDTO] = {
     val hakijat = repository.getHakukohteenHakijat(hakukohdeOid, sijoitteluajoId)
     val hakutoiveet = HakutoiveetGrouped.apply(sijoitteluajoId.map(repository.getHakukohteenHakemuksienHakutoiveetSijoittelussa(hakukohdeOid, _)).getOrElse(List()))
-    val valinnantulokset = timed("Valinnantulokset haulle", 100) { ValinnantuloksetGrouped.apply(repository.runBlocking(repository.getValinnantuloksetForHaku(hakuOid))) }
+    val valinnantulokset: ValinnantuloksetGrouped = haunValinnantulokset.getOrElse {
+      timed("Valinnantulokset haulle", 100) { ValinnantuloksetGrouped.apply(repository.runBlocking(repository.getValinnantuloksetForHaku(hakuOid))) }
+    }
     val valintatapajonot = ValintatapajonotGrouped.apply(sijoitteluajoId.map(repository.getHakukohteenHakemuksienValintatapajonotSijoittelussa(hakukohdeOid, _)).getOrElse(List()))
     val tilankuvauksetSijoittelussa = repository.getValinnantilanKuvaukset(valintatapajonot.tilankuvausHashit)
     val pistetiedotSijoittelussa = sijoitteluajoId.map(repository.getHakukohteenHakemuksienPistetiedotSijoittelussa(hakukohdeOid, _)).getOrElse(Map())

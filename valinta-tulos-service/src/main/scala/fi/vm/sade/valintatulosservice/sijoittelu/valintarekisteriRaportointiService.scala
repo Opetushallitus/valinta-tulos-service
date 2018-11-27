@@ -12,6 +12,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, _}
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.SijoitteluajonHakijat
+import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.SijoitteluajonHakijat.ValinnantuloksetGrouped
 
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
@@ -24,6 +25,8 @@ trait ValintarekisteriRaportointiService {
   def kevytHakemukset(sijoitteluAjo: SijoitteluAjo): List[KevytHakijaDTO]
 
   def hakemukset(sijoitteluAjo: SijoitteluAjo):HakijaPaginationObject
+
+  def hakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOids: Set[HakukohdeOid]):HakijaPaginationObject
 
   //TODO sivutuksen (count/index) voi poistaa?
   def hakemukset(sijoitteluajoId: Option[Long],
@@ -46,8 +49,19 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
     case Success(r) => r
   }
 
-  override def hakemukset(sijoitteluAjo: SijoitteluAjo) = {
+  override def hakemukset(sijoitteluAjo: SijoitteluAjo): HakijaPaginationObject = {
     hakemukset(SyntheticSijoitteluAjoForHakusWithoutSijoittelu.getSijoitteluajoId(sijoitteluAjo), HakuOid(sijoitteluAjo.getHakuOid), None, None, None, None, None, None)
+  }
+
+  override def hakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOids: Set[HakukohdeOid]): HakijaPaginationObject = {
+    hakemukset(SyntheticSijoitteluAjoForHakusWithoutSijoittelu.getSijoitteluajoId(sijoitteluAjo),
+      HakuOid(sijoitteluAjo.getHakuOid),
+      hyvaksytyt = None,
+      ilmanHyvaksyntaa = None,
+      vastaanottaneet = None,
+      hakukohdeOids = Some(hakukohdeOids.toList),
+      count = None,
+      index = None)
   }
 
   //TODO sivutuksen (count/index) voi poistaa?
@@ -61,7 +75,10 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
                           index: Option[Int]): HakijaPaginationObject = timed("RaportointiService.hakemukset", 1000) {
 
     val hakijat:List[HakijaDTO] = if(hakukohdeOids.isDefined && 0 != hakukohdeOids.get.size) {
-      hakukohdeOids.get.map(SijoitteluajonHakijat.dto(repository, sijoitteluajoId, hakuOid, _)).flatten
+      val valinnantulokset: ValinnantuloksetGrouped = timed("Valinnantulokset haulle", 100) {
+        ValinnantuloksetGrouped.apply(repository.runBlocking(repository.getValinnantuloksetForHaku(hakuOid)))
+      }
+      hakukohdeOids.get.flatMap(SijoitteluajonHakijat.dto(repository, sijoitteluajoId, hakuOid, _, Some(valinnantulokset)))
     } else {
       SijoitteluajonHakijat.dto(repository, sijoitteluajoId, hakuOid)
     }
