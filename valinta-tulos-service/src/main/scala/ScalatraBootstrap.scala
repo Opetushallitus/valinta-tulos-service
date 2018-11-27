@@ -143,7 +143,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/haku/*")
       context.addFilter("kelaCas", createCasFilter(casSessionService, Set.empty))
         .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/kela/*")
-        context.mount(new PublicValintatulosServlet(valintatulosService, streamingValintatulosService, vastaanottoService, ilmoittautumisService, valintarekisteriDb), "/cas/haku")
+        context.mount(new PublicValintatulosServlet(audit, valintatulosService, streamingValintatulosService, vastaanottoService, ilmoittautumisService, valintarekisteriDb, valintarekisteriDb), "/cas/haku")
       context.mount(new KelaServlet(audit, new KelaService(HakijaResolver(appConfig), hakuService, organisaatioService, valintarekisteriDb), valintarekisteriDb), "/cas/kela")
       context.mount(new KelaHealthCheckServlet(audit, valintarekisteriDb, appConfig, new VtsKelaAuthenticationClient(appConfig)), "/health-check/kela")
 

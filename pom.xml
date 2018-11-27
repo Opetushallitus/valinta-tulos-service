@@ -16,6 +16,7 @@
 
     <properties>
         <apache.httpclient.version>4.5.2</apache.httpclient.version>
+        <auditlogger.version>8.3.0-SNAPSHOT</auditlogger.version>
         <casbah_2.11.version>3.1.0</casbah_2.11.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.3.2</commons-lang3.version>

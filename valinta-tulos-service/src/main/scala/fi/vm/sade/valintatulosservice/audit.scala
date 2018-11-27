@@ -62,14 +62,13 @@ case object SijoittelunHakukohteenLuku extends Operation {
   def name: String = "SIJOITTELUN_HAKUKOHTEEN_LUKU"
 }
 
-case object SijoittelunHakemuksenLuku extends Operation {
-  def name: String = "SIJOITTELUN_HAKEMUKSEN_LUKU"
-}
-
 case object SijoitteluAjonLuku extends Operation {
   def name: String = "SIJOITTELUAJON_LUKU"
 }
 
+case object SijoitteluAjonTulostenLuku extends Operation {
+  def name: String = "SIJOITTELUAJON_TULOSTEN_LUKU"
+}
 case object PuuttuvienTulostenLuku extends Operation {
   def name: String = "PUUTTUVIEN_TULOSTEN_LUKU"
 }
@@ -92,4 +91,16 @@ case object VastaanottoPostitietojenLuku extends Operation {
 
 case object VastaanottoPostitietojenPoisto extends Operation {
   def name: String = "VASTAANOTTOSAHKOPOSTITIETOJEN_POISTO"
+}
+
+case object HakemuksenLuku extends Operation {
+  def name: String = "HAKEMUKSEN_LUKU"
+}
+
+case object IlmoittautumisTilanTallennus extends Operation {
+  def name: String = "ILMOITTAUTUMISTILAN_TALLENNUS"
+}
+
+case object HakutietojenLuku extends Operation {
+  def name: String = "HAKUTIETOJEN_LUKU"
 }

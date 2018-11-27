@@ -40,7 +40,7 @@ class SijoitteluService(val sijoitteluRepository: SijoitteluRepository with Haki
   }
 
   def getHakemusBySijoitteluajo(hakuOid: HakuOid, sijoitteluajoId: String, hakemusOid: HakemusOid, auditInfo: AuditInfo): HakijaDTO = {
-    audit.log(auditInfo.user, SijoittelunHakemuksenLuku,
+    audit.log(auditInfo.user, HakemuksenLuku,
       new Target.Builder()
         .setField("hakuoid", hakuOid.toString)
         .setField("hakemusoid", hakemusOid.toString)

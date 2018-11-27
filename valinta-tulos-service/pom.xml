@@ -342,7 +342,7 @@
         <dependency>
             <groupId>fi.vm.sade</groupId>
             <artifactId>auditlogger</artifactId>
-            <version>8.3.0-SNAPSHOT</version>
+            <version>${auditlogger.version}</version>
         </dependency>
         <dependency>
             <groupId>org.mock-server</groupId>

@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
+import fi.vm.sade.auditlog.Operation
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.streamingresults.StreamingValintatulosService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
@@ -18,4 +19,7 @@ class PrivateValintatulosServlet(valintatulosService: ValintatulosService,
 
   protected val applicationDescription = "Sisäinen valintatulosten REST API"
 
+  override def auditLog(auditParams: List[(String, String)], auditOperation: Operation): Unit ={
+    logger.info(s"Logging privateValintatulosServlet REST call: $auditOperation")
+  }
 }
