@@ -21,4 +21,22 @@ class PublicValintatulosServlet(audit: Audit, valintatulosService: ValintatulosS
     auditParams.foreach(p => builder.setField(p._1,p._2))
     audit.log(auditInfo.user, auditOperation, builder.build(), new Changes.Builder().build())
   }
+
+  override def auditLogChanged(auditParams: List[(String, String)], auditOperation: Operation, changedParams: List[(String, String)], changeOperation: String) {
+    implicit val authenticated = authenticate
+    val credentials: AuditInfo = auditInfo
+    val builder = new Target.Builder()
+    auditParams.foreach(p => builder.setField(p._1,p._2))
+    val changesBuilder = new Changes.Builder()
+
+    if (changeOperation.equals("added")) {
+      changedParams.foreach(p => changesBuilder.added(p._1, p._2))
+    } else if (changeOperation.equals("removed")) {
+      changedParams.foreach(p => changesBuilder.removed(p._1, p._2))
+    } else {
+      changedParams.foreach(p => changesBuilder.updated(p._1, None.toString, p._2))
+    }
+    changedParams.foreach(p => changesBuilder.added(p._1, p._2))
+    audit.log(auditInfo.user, auditOperation, builder.build(), changesBuilder.build())
+  }
 }

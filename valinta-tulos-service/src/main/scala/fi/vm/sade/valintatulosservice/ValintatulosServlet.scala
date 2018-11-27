@@ -139,8 +139,9 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     var auditParams: List[(String, String)] = List()
     auditParams = auditParams:+(("hakuOid", params("hakuOid").toString))
     auditParams = auditParams:+(("hakemusOid", hakemusOid.toString))
-    auditParams = auditParams:+(("ilmoittautumisTila",ilmoittautuminen.tila.toString))
-    auditLog(auditParams, IlmoittautumisTilanTallennus)
+    var addedParams: List[(String, String)] = List()
+    addedParams = auditParams:+(("ilmoittautumisTila",ilmoittautuminen.tila.toString))
+    auditLogChanged(auditParams, IlmoittautumisTilanTallennus, addedParams, "added")
     ilmoittautumisService.ilmoittaudu(hakemusOid, ilmoittautuminen)
   }
 
@@ -328,4 +329,5 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
   }
 
   def auditLog(auditParams: List[(String, String)], auditOperation: Operation)
+  def auditLogChanged(auditParams: List[(String, String)], auditOperation: Operation, auditParamsAdded: List[(String, String)], changeOperation: String)
 }
