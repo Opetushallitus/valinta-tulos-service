@@ -48,7 +48,7 @@ class MailDecorator(hakuService: HakuService,
       case Right(hakukohde) =>
         Hakukohde(hakukohdeMailStatus.hakukohdeOid,
           hakukohdeMailStatus.reasonToMail match {
-            case Some(Vastaanottoilmoitus) if hakukohde.kkTutkintoonJohtava => LahetysSyy.vastaanottoilmoitusKk
+            case Some(Vastaanottoilmoitus) if hakukohde.kkHakukohde => LahetysSyy.vastaanottoilmoitusKk
             case Some(Vastaanottoilmoitus) => LahetysSyy.vastaanottoilmoitus2aste
             case Some(EhdollisenPeriytymisenIlmoitus) => LahetysSyy.ehdollisen_periytymisen_ilmoitus
             case Some(SitovanVastaanotonIlmoitus) => LahetysSyy.sitovan_vastaanoton_ilmoitus

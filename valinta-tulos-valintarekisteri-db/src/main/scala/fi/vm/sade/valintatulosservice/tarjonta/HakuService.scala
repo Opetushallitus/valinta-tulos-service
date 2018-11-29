@@ -54,7 +54,8 @@ case class Hakukohde(oid: HakukohdeOid, hakuOid: HakuOid, tarjoajaOids: Set[Stri
                      koulutusAsteTyyppi: String, koulutusmoduuliTyyppi: String,
                      hakukohteenNimet: Map[String, String], tarjoajaNimet: Map[String, String], yhdenPaikanSaanto: YhdenPaikanSaanto,
                      tutkintoonJohtava:Boolean, koulutuksenAlkamiskausiUri:String, koulutuksenAlkamisvuosi:Int) {
-  def kkTutkintoonJohtava: Boolean = koulutusAsteTyyppi == "KORKEAKOULUTUS" && tutkintoonJohtava
+  def kkTutkintoonJohtava: Boolean = kkHakukohde && tutkintoonJohtava
+  def kkHakukohde: Boolean = koulutusAsteTyyppi == "KORKEAKOULUTUS"
 
   def koulutuksenAlkamiskausi: Either[Throwable, Kausi] = koulutuksenAlkamiskausiUri match {
     case uri if uri.matches("""kausi_k#\d+""") => Right(Kevat(koulutuksenAlkamisvuosi))
