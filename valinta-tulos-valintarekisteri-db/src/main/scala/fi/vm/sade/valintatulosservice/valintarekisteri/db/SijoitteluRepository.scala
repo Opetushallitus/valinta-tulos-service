@@ -68,4 +68,8 @@ trait SijoitteluRepository extends PerformanceLogger { this:Logging =>
   def getHakukohteenTilahistoriat(sijoitteluajoId: Long, hakukohdeOid: HakukohdeOid): List[TilaHistoriaRecord]
   def getHakukohteenHakemukset(sijoitteluajoId: Long, hakukohdeOid: HakukohdeOid): List[HakemusRecord]
   def isJonoSijoiteltuByOid(jonoOid: ValintatapajonoOid): Boolean
+
+  //Poistaa sijoittelun tuloksia yksittäiseltä hakemukselta yksittäisessä hakukohteessa.
+  //Tarkoitus käyttää tilanteessa, jossa ne eivät enää ole muuttuneiden hakutoiveiden tai passivoinnin seurauksena relevantteja.
+  def deleteSijoitteluResultsForHakemusInHakukohde(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Unit
 }

@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import slick.dbio.DBIO
 import slick.jdbc.PostgresProfile.api._
 
 import scala.collection.immutable
@@ -352,5 +353,35 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
        """.as[Boolean]).head
     }
     exists
+  }
+
+  override def deleteSijoitteluResultsForHakemusInHakukohde(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Unit = {
+
+    val deleteOperationsWithDescriptions: Seq[(String, DBIO[Any])] = Seq(
+      ("delete valinnantulokset", sqlu"delete from valinnantulokset where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}"),
+      ("delete valinnantilat", sqlu"delete from valinnantilat where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}"),
+      ("delete tilat_kuvaukset", sqlu"delete from tilat_kuvaukset where where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}"),
+      ("delete viestit", sqlu"delete from viestit where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}"),
+      ("delete ehdollisen hyväksynnän ehto", sqlu"delete from ehdollisen_hyvaksynnan_ehto where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}")
+    )
+
+    val (descriptions, sqls) = deleteOperationsWithDescriptions.unzip
+
+    logger.info(s"Poistetaan sijoittelun tuloksia hakemukselta $hakemusOid hakukohteesta $hakukohdeOid")
+    runBlockingTransactionally(DBIO.sequence(sqls), timeout = Duration(1, TimeUnit.MINUTES)) match {
+
+      case Right(rowCounts) =>
+        logger.info(s"Sijoittelun tulokset hakemukselta $hakemusOid hakukohteesta $hakukohdeOid onnistui. " +
+          s"Muuttuneita rivejä:\n\t${descriptions.zip(rowCounts).mkString("\n\t")}")
+      case Left(t) =>
+        logger.error(s"Sijoittelun tuloksien poistossa hakemukselta $hakemusOid hakukohteessa $hakukohdeOid tapahtui virhe", t)
+        throw t
+    }
+
+    /*
+    //todo hakijaryhman_hakemukset ; saattaa vaatia tietoa myös valintatapajonosta. Mietittävä.
+    select * from hakijaryhman_hakemukset where hakemus_oid = '1.2.246.562.11.00010788341'
+                                                and sijoitteluajo_id != (select max(id) from sijoitteluajot where haku_oid = '1.2.246.562.29.25191045126');
+     */
   }
 }
