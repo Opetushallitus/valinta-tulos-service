@@ -63,7 +63,7 @@ abstract class Valintarekisteri(sijoitteluRepository:SijoitteluRepository with S
     }
   }
 
-  def siivoile(hakemusOid: String, hakukohdeOid: String): Unit = {
+  def cleanRedundantSijoitteluTuloksesForHakemusInHakukohde(hakemusOid: String, hakukohdeOid: String): Unit = {
     sijoitteluRepository.deleteSijoitteluResultsForHakemusInHakukohde(HakemusOid(hakemusOid), HakukohdeOid(hakukohdeOid))
   }
 

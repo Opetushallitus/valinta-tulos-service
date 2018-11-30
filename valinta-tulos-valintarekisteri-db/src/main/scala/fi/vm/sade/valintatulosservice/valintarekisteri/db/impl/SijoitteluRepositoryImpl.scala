@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import org.slf4j.LoggerFactory
 import slick.dbio.DBIO
 import slick.jdbc.PostgresProfile.api._
 
@@ -14,6 +15,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
 trait SijoitteluRepositoryImpl extends SijoitteluRepository with ValintarekisteriRepository {
+
+  private val LOG = LoggerFactory.getLogger("SijoitteluRepositoryImpl")
 
   override def getLatestSijoitteluajoId(hakuOid: HakuOid): Option[Long] =
     timed(s"Haun $hakuOid latest sijoitteluajon haku", 100) {
@@ -367,14 +370,14 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
 
     val (descriptions, sqls) = deleteOperationsWithDescriptions.unzip
 
-    logger.info(s"Poistetaan sijoittelun tuloksia hakemukselta $hakemusOid hakukohteesta $hakukohdeOid")
+    LOG.info(s"Poistetaan sijoittelun tuloksia hakemukselta $hakemusOid hakukohteesta $hakukohdeOid")
     runBlockingTransactionally(DBIO.sequence(sqls), timeout = Duration(1, TimeUnit.MINUTES)) match {
 
       case Right(rowCounts) =>
-        logger.info(s"Sijoittelun tulokset hakemukselta $hakemusOid hakukohteesta $hakukohdeOid onnistui. " +
+        LOG.info(s"Sijoittelun tulokset hakemukselta $hakemusOid hakukohteesta $hakukohdeOid onnistui. " +
           s"Muuttuneita rivejä:\n\t${descriptions.zip(rowCounts).mkString("\n\t")}")
       case Left(t) =>
-        logger.error(s"Sijoittelun tuloksien poistossa hakemukselta $hakemusOid hakukohteessa $hakukohdeOid tapahtui virhe", t)
+        LOG.error(s"Sijoittelun tuloksien poistossa hakemukselta $hakemusOid hakukohteessa $hakukohdeOid tapahtui virhe", t)
         throw t
     }
 
