@@ -360,12 +360,16 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
 
   override def deleteSijoitteluResultsForHakemusInHakukohde(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Unit = {
 
+    //Puuttuu vielä: hakijaryhman_hakemukset, onko tarpeellinen? Sama jonosijojen kohdalla;
+    //niitä ollaan poistamassa uusimmalta sijoitteluajolta, joka kohta kuitenkin korvautuu uudella
+    //eikä uusin sijoitteluajo enää viittaa niihin.
     val deleteOperationsWithDescriptions: Seq[(String, DBIO[Any])] = Seq(
+      ("delete tilat_kuvaukset", sqlu"delete from tilat_kuvaukset where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}"),
+      ("delete ehdollisen hyväksynnän ehto", sqlu"delete from ehdollisen_hyvaksynnan_ehto where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}"),
       ("delete valinnantulokset", sqlu"delete from valinnantulokset where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}"),
       ("delete valinnantilat", sqlu"delete from valinnantilat where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}"),
-      ("delete tilat_kuvaukset", sqlu"delete from tilat_kuvaukset where where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}"),
-      ("delete viestit", sqlu"delete from viestit where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}"),
-      ("delete ehdollisen hyväksynnän ehto", sqlu"delete from ehdollisen_hyvaksynnan_ehto where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}")
+      //("delete jonosijat", sqlu"select * from jonosijat where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid} and sijoitteluajo_id = (select max(id) from sijoitteluajot where haku_oid = ${hakuOid}"),
+      ("delete viestit", sqlu"delete from viestit where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}")
     )
 
     val (descriptions, sqls) = deleteOperationsWithDescriptions.unzip
