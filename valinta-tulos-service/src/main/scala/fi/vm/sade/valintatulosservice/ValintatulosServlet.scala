@@ -313,8 +313,6 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     logger.info(s"Returned $index ${classOf[HakijaDTO].getSimpleName} objects for haku $hakuOid")
     var auditParams: List[(String, String)] = List()
     auditParams = auditParams:+(("hakuOid", hakuOid.toString))
-    auditParams = auditParams:+(("sijoitteluajoId", sijoitteluajoId.toString))
-    auditParams = auditParams:+(("vainMerkitsevaJono", vainMerkitsevaJono.toString))
     auditLog(auditParams, SijoitteluAjonTulostenLuku)
     writer.print("]")
   }
