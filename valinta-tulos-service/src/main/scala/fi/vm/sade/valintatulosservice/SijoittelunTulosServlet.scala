@@ -48,7 +48,7 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
     authorizer.checkAccess(ai.session._2, hakukohde.tarjoajaOids,
       Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).fold(throw _, x => x)
     try {
-      val futureSijoittelunTulokset: Future[HakukohdeDTO] = Future { sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session, auditInfo) }
+      val futureSijoittelunTulokset: Future[HakukohdeDTO] = Future { sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session, ai) }
       val futureLukuvuosimaksut: Future[Seq[Lukuvuosimaksu]] = Future { lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, ai) }
       val futureHyvaksymiskirjeet: Future[Set[Hyvaksymiskirje]] = Future { hyvaksymiskirjeService.getHyvaksymiskirjeet(hakukohdeOid, ai) }
       val futureValintaesitys: Future[Set[Valintaesitys]] = Future { valintaesitysService.get(hakukohdeOid, ai) }
