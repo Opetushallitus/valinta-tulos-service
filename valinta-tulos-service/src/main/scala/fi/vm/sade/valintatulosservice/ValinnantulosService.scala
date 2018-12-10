@@ -66,6 +66,15 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository 
     r
   }
 
+  def getValinnantuloksetForHakemus(hakemusOid: HakemusOid, auditInfo: AuditInfo): Set[Valinnantulos] = {
+    val r = valinnantulosRepository.runBlocking(valinnantulosRepository.getValinnantuloksetForHakemus(hakemusOid))
+    audit.log(auditInfo.user, ValinnantuloksenLuku,
+      new Target.Builder().setField("hakemus", hakemusOid.toString).build(),
+      new Changes.Builder().build()
+    )
+    r
+  }
+
   def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid: ValintatapajonoOid,
                                                valinnantulokset: List[Valinnantulos],
                                                ifUnmodifiedSince: Option[Instant],
