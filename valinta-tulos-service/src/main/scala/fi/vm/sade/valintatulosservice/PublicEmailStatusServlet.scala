@@ -26,11 +26,10 @@ class PublicEmailStatusServlet(mailPoller: MailPollerAdapter,
     contentType = formats("json")
     implicit val authenticated: Authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
-    mailPoller.getOidsOfApplicationsWithSentOrResolvedMailStatus(parseHakukohdeOid.fold(throw _, x => x))
     val builder= new Target.Builder()
       .setField("hakukohdeoid", parseHakukohdeOid.toString)
     audit.log(auditInfo.user, VastaanottoPostitietojenLuku, builder.build(), new Changes.Builder().build())
-
+    mailPoller.getOidsOfApplicationsWithSentOrResolvedMailStatus(parseHakukohdeOid.fold(throw _, x => x))
   }
 
   lazy val deleteVastaanottoposti: OperationBuilder = (apiOperation[Unit]("deleteMailEntry")
@@ -42,16 +41,15 @@ class PublicEmailStatusServlet(mailPoller: MailPollerAdapter,
     implicit val authenticated: Authenticated = authenticate
     authorize(Role.SIJOITTELU_CRUD)
     val hakemusOid: HakemusOid = parseHakemusOid.fold(throw _, x => x)
-    val deletedCount: Int = mailPoller.deleteMailEntries(hakemusOid)
-    logger.info(s"Removed $deletedCount mail bookkeeping entries for hakemus $hakemusOid to enable re-sending of emails.")
-
-      audit.log(auditInfo.user, VastaanottoPostitietojenPoisto,
+    audit.log(auditInfo.user, VastaanottoPostitietojenPoisto,
       new Target.Builder()
         .setField("hakemusoid", hakemusOid.toString)
         .build(),
       new Changes.Builder()
         .removed("viesti", hakemusOid.toString)
         .build())
+    val deletedCount: Int = mailPoller.deleteMailEntries(hakemusOid)
+    logger.info(s"Removed $deletedCount mail bookkeeping entries for hakemus $hakemusOid to enable re-sending of emails.")
   }
 
   protected def parseHakukohdeOid: Either[Throwable, HakukohdeOid] = {
