@@ -33,10 +33,10 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
   get("/", operation(puuttuvatTuloksetHaulleSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_CRUD_OPH)
-    Ok(puuttuvatTuloksetService.kokoaPuuttuvatTulokset(parseHakuOid))
     val builder= new Target.Builder()
       .setField("hakuoid", parseHakuOid.toString)
     audit.log(auditInfo.user, PuuttuvienTulostenLuku, builder.build(), new Changes.Builder().build())
+    Ok(puuttuvatTuloksetService.kokoaPuuttuvatTulokset(parseHakuOid))
   }
 
   val puuttuvatTuloksetHauilleTaustallaSwagger: OperationBuilder = (apiOperation[TaustapaivityksenTila]("puuttuvien tulosten haku taustalla")
@@ -47,11 +47,11 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
     authorize(Role.SIJOITTELU_CRUD_OPH)
     val hakuOids = parsedBody.extract[Seq[String]].map(HakuOid)
     logger.info(s"Haetaan hakuOideille $hakuOids")
-
-    Ok(puuttuvatTuloksetService.haeJaTallenna(hakuOids))
     val builder= new Target.Builder()
     builder.setField("hakuoids", hakuOids.toString)
     audit.log(auditInfo.user, PuuttuvienTulostenLuku, builder.build(), new Changes.Builder().build())
+    Ok(puuttuvatTuloksetService.haeJaTallenna(hakuOids))
+
   }
 
   val hakuListaSwagger: OperationBuilder = (apiOperation[Seq[HaunTiedotListalle]]("Yhteenveto kaikista hauista")
@@ -59,9 +59,9 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
   get("/yhteenveto", operation(hakuListaSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_CRUD_OPH)
-    Ok(puuttuvatTuloksetService.findSummary())
     val builder= new Target.Builder()
     audit.log(auditInfo.user, PuuttuvienTulostenYhteenvedonLuku, builder.build(), new Changes.Builder().build())
+    Ok(puuttuvatTuloksetService.findSummary())
   }
 
   val haunPuuttuvatSwagger: OperationBuilder = (apiOperation[Seq[TarjoajanPuuttuvat[HakukohteenPuuttuvatSummary]]]("Yksittäisen organisaation puuttuvat")
@@ -70,10 +70,10 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
   get("/haku/:hakuOid", operation(haunPuuttuvatSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_CRUD_OPH)
-    Ok(puuttuvatTuloksetService.findMissingResultsByOrganisation(HakuOid(params("hakuOid"))))
     val builder= new Target.Builder()
       .setField("hakuoid", parseHakuOid.toString)
     audit.log(auditInfo.user, PuuttuvienTulostenLuku, builder.build(), new Changes.Builder().build())
+    Ok(puuttuvatTuloksetService.findMissingResultsByOrganisation(HakuOid(params("hakuOid"))))
   }
 
   val paivitaKaikkiSwagger : OperationBuilder = (apiOperation[TaustapaivityksenTila]("Käynnistetään puuttuvien tuloksien haku kaikille hauille")
@@ -87,18 +87,18 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
       } else {
         "hauille, joilta ei löydy tietoa puuttuvista."
       }))
-    Ok(puuttuvatTuloksetService.haeJaTallennaKaikki(paivitaMyosOlemassaolevat))
     val builder= new Target.Builder()
     audit.log(auditInfo.user, PuuttuvienTulostenTaustapaivityksenPaivitys, builder.build(), new Changes.Builder().build())
+    Ok(puuttuvatTuloksetService.haeJaTallennaKaikki(paivitaMyosOlemassaolevat))
   }
 
   val taustapaivityksenTilaSwagger : OperationBuilder = apiOperation[TaustapaivityksenTila]("Lue taustapäivityksen tila")
   get("/taustapaivityksenTila", operation(taustapaivityksenTilaSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_CRUD_OPH)
-    Ok(puuttuvatTuloksetService.haeTaustapaivityksenTila)
     val builder= new Target.Builder()
     audit.log(auditInfo.user, PuuttuvienTulostenTaustapaivityksenTilanLuku, builder.build(), new Changes.Builder().build())
+    Ok(puuttuvatTuloksetService.haeTaustapaivityksenTila)
   }
 
   private def parseHakuOid: HakuOid = HakuOid(params.getOrElse("hakuOid",
