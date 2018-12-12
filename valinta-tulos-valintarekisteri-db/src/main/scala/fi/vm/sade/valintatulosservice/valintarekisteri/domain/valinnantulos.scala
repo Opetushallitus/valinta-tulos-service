@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.domain
 import java.time.{Instant, OffsetDateTime}
 import java.util.Date
 
-import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, ValintatuloksenTila, Valintatulos}
+import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, TilaHistoria, ValintatuloksenTila, Valintatulos}
 import org.joda.time.DateTime
 
 case class ValinnantulosUpdateStatus(status: Int, message: String, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid)
@@ -181,6 +181,8 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     valintatulos
   }
 }
+
+case class ValinnantulosWithTilahistoria(valinnantulos: Valinnantulos, tilaHistoria: List[TilaHistoria])
 
 case class ValinnantuloksenOhjaus(hakemusOid: HakemusOid,
                                   valintatapajonoOid: ValintatapajonoOid,

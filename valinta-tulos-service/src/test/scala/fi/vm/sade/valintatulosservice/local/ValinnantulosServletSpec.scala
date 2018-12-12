@@ -6,6 +6,7 @@ import java.time.temporal.ChronoUnit
 import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.{ConcurrentModificationException, UUID}
 
+import fi.vm.sade.security.{AuthorizationFailedException, OrganizationHierarchyAuthorizer}
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.utils.ServletTest
 import fi.vm.sade.valintatulosservice._
@@ -270,7 +271,6 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
 
 
   "GET /auth/valinnan-tulos/hakemus/" in {
-
     "palauttaa 401, jos sessiokeksi puuttuu" in { t: (String, ValinnantulosService, SessionRepository) =>
       get(t._1, Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders - "Cookie") {
         status must_== 401
@@ -303,7 +303,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       }
     }
 
-    "palauttaa 200 ja valintatapajonon valinnan tulokset valintatapajono-oidilla haettaessa" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa 200 ja hakemuksen tulokset hakemus-oidilla haettaessa" in { t: (String, ValinnantulosService, SessionRepository) =>
       t._3.get(sessionId) returns Some(readSession)
       t._2.getValinnantuloksetForHakemus(hakemusOid, auditInfo(readSession)) returns Set(valinnantulos)
       get(t._1+"/hakemus/", Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders) {
