@@ -119,7 +119,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
           Ok(List())
       })
   }
-//TODO: start
+
   val valinnantuloksetHakemukselleSwagger: OperationBuilder = (apiOperation[List[Valinnantulos]]("valinnantuloksetHakemukselle")
     summary "Valinnantulos yksittäiselle hakemukselle"
     parameter queryParam[String]("hakemusOid").description("Hakemuksen OID")
@@ -134,15 +134,8 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     contentType = formats("json")
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
-    //TODO: tähän tehdään tsekki siitä, onko käyttäjällä oikeuksia yhteenkään organisaatioon, jos on: näytetään kaikki, jos ei , ei näytetä mitään.
-    Ok(
-      parseHakemusOid.right.map(valinnantulosService.getValinnantuloksetForHakemus(_, auditInfo))
-    )
-
-
-
+    Ok(parseHakemusOid.right.map(valinnantulosService.getValinnantuloksetForHakemus(_, auditInfo)))
   }
-  //TODO: end
 
   val valinnantulosMuutosSwagger: OperationBuilder = (apiOperation[Unit]("muokkaaValinnantulosta")
     summary "Muokkaa valinnantulosta"

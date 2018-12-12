@@ -267,4 +267,49 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       }
     }
   }
+
+
+  "GET /auth/valinnan-tulos/hakemus/" in {
+
+    "palauttaa 401, jos sessiokeksi puuttuu" in { t: (String, ValinnantulosService, SessionRepository) =>
+      get(t._1, Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders - "Cookie") {
+        status must_== 401
+        body must_== "{\"error\":\"Unauthorized\"}"
+      }
+    }
+
+    "palauttaa 401, jos sessio ei ole voimassa" in { t: (String, ValinnantulosService, SessionRepository) =>
+      t._3.get(sessionId) returns None
+      get(t._1, Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders) {
+        status must_== 401
+        body must_== "{\"error\":\"Unauthorized\"}"
+      }
+    }
+
+    "palauttaa 403, jos käyttäjällä ei ole lukuoikeuksia" in { t: (String, ValinnantulosService, SessionRepository) =>
+      t._3.get(sessionId) returns Some(unauthorizedSession)
+      get(t._1, Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders) {
+        status must_== 403
+        body must_== "{\"error\":\"Forbidden\"}"
+      }
+    }
+
+    "palauttaa 200 ja tyhjän taulukon jos hakemuksen tuloksia ei löydy" in { t: (String, ValinnantulosService, SessionRepository) =>
+      t._3.get(sessionId) returns Some(readSession)
+      t._2.getValinnantuloksetForHakemus(HakemusOid("1"), auditInfo(readSession)) returns Set()
+      get(t._1+"/hakemus/", Iterable("hakemusOid" -> "1"), defaultHeaders) {
+        status must_== 200
+        body must_== "[]"
+      }
+    }
+
+    "palauttaa 200 ja valintatapajonon valinnan tulokset valintatapajono-oidilla haettaessa" in { t: (String, ValinnantulosService, SessionRepository) =>
+      t._3.get(sessionId) returns Some(readSession)
+      t._2.getValinnantuloksetForHakemus(hakemusOid, auditInfo(readSession)) returns Set(valinnantulos)
+      get(t._1+"/hakemus/", Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders) {
+        status must_== 200
+        parse(body).extract[List[Valinnantulos]] must_== List(valinnantulos)
+      }
+    }
+  }
 }

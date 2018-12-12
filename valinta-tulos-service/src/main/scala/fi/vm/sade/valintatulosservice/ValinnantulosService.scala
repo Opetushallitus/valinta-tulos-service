@@ -68,11 +68,28 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository 
 
   def getValinnantuloksetForHakemus(hakemusOid: HakemusOid, auditInfo: AuditInfo): Set[Valinnantulos] = {
     val r = valinnantulosRepository.runBlocking(valinnantulosRepository.getValinnantuloksetForHakemus(hakemusOid))
+    var showResults = false
+
     audit.log(auditInfo.user, ValinnantuloksenLuku,
       new Target.Builder().setField("hakemus", hakemusOid.toString).build(),
       new Changes.Builder().build()
     )
-    r
+    r.foreach(result => {
+      val hakukohde = hakuService.getHakukohde(result.hakukohdeOid).fold(throw _, h => h)
+      authorizer.checkAccess(auditInfo.session._2, hakukohde.tarjoajaOids, Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) match {
+        case Left(a) =>
+          logger.info(s"""Käyttäjällä ${auditInfo.session._2.personOid} ei ole oikeuksia hakukohteeseen ${hakukohde.oid} hakemuksella ${hakemusOid.toString}.""")
+        case Right(b) =>
+          showResults = true
+      }
+    })
+
+    if (!showResults) {
+      logger.info(s"""Käyttäjällä ${auditInfo.session._2.personOid} ei ole oikeuksia yhteenkään organisaatioon hakemuksella ${hakemusOid.toString}.""")
+      Set()
+    } else {
+      r
+    }
   }
 
   def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid: ValintatapajonoOid,
