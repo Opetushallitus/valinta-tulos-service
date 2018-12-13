@@ -17,6 +17,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import slick.dbio._
 
+import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
 class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository with HakijaVastaanottoRepository,
@@ -89,12 +90,12 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository 
       Set()
     } else {
       // Convert to valinnanTulosWithHistoria and return set
-      var tuloksetWithHistoria: Set[ValinnantulosWithTilahistoria] = Set()
+      var tuloksetWithHistoria: ListBuffer[ValinnantulosWithTilahistoria] = ListBuffer()
       r.foreach(result => {
-        tuloksetWithHistoria +
-        ValinnantulosWithTilahistoria(result, valinnantulosRepository.getHakemuksenTilahistoriat(result.hakemusOid, result.valintatapajonoOid))
+        tuloksetWithHistoria +=
+        new ValinnantulosWithTilahistoria(result, valinnantulosRepository.getHakemuksenTilahistoriat(result.hakemusOid, result.valintatapajonoOid))
       })
-      tuloksetWithHistoria
+      tuloksetWithHistoria.toSet
     }
   }
 

@@ -370,7 +370,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   override def getHakemuksenTilahistoriat(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[TilaHistoriaRecord] =
     timed(s"Getting hakemuksen $hakemusOid valinnantilan historia valintatapajonolle $valintatapajonoOid") {
       runBlocking(
-        sql"""select vth.tilan_viimeisin_muutos, vth.tila
+        sql"""select vth.valintatapajono_oid, vth.hakemus_oid, vth.tila, vth.tilan_viimeisin_muutos
               from valinnantilat_history vth
               where vth.hakemus_oid = ${hakemusOid}
               and vth.valintatapajono_oid = ${valintatapajonoOid}
