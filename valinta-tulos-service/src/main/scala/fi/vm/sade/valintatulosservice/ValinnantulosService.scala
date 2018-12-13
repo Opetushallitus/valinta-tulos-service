@@ -66,7 +66,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository 
     r
   }
 
-  def getValinnantuloksetForHakemus(hakemusOid: HakemusOid, auditInfo: AuditInfo): Set[Valinnantulos] = {
+  def getValinnantuloksetForHakemus(hakemusOid: HakemusOid, auditInfo: AuditInfo): Set[ValinnantulosWithTilahistoria] = {
     val r = valinnantulosRepository.runBlocking(valinnantulosRepository.getValinnantuloksetForHakemus(hakemusOid))
     var showResults = false
 
@@ -88,7 +88,13 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository 
       logger.info(s"""Käyttäjällä ${auditInfo.session._2.personOid} ei ole oikeuksia yhteenkään organisaatioon hakemuksella ${hakemusOid.toString}.""")
       Set()
     } else {
-      r
+      // Convert to valinnanTulosWithHistoria and return set
+      var tuloksetWithHistoria: Set[ValinnantulosWithTilahistoria] = Set()
+      r.foreach(result => {
+        tuloksetWithHistoria +
+        ValinnantulosWithTilahistoria(result, valinnantulosRepository.getHakemuksenTilahistoriat(result.hakemusOid, result.valintatapajonoOid))
+      })
+      tuloksetWithHistoria
     }
   }
 

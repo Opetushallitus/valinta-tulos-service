@@ -6,7 +6,7 @@ import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
 import java.util.ConcurrentModificationException
 import java.util.concurrent.TimeUnit
 
-import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
+import fi.vm.sade.sijoittelu.domain.{TilaHistoria, ValintatuloksenTila}
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -367,6 +367,15 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
         """.as[(HakukohdeOid, ValintatapajonoOid, HakemusOid, Valinnantila)]).toList
   }
 
+  override def getHakemuksenTilahistoriat(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[TilaHistoriaRecord] =
+    timed(s"Getting hakemuksen $hakemusOid valinnantilan historia valintatapajonolle $valintatapajonoOid") {
+      runBlocking(
+        sql"""select vth.tilan_viimeisin_muutos, vth.tila
+              from valinnantilat_history vth
+              where vth.hakemus_oid = ${hakemusOid}
+              and vth.valintatapajono_oid = ${valintatapajonoOid}
+        """.as[TilaHistoriaRecord]).toList
+  }
 
   override def getLastModifiedForHakukohde(hakukohdeOid: HakukohdeOid): DBIO[Option[Instant]] = {
     sql"""select greatest(

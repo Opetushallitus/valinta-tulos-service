@@ -6,7 +6,7 @@ import java.time.temporal.ChronoUnit
 import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.{ConcurrentModificationException, UUID}
 
-import fi.vm.sade.security.{AuthorizationFailedException, OrganizationHierarchyAuthorizer}
+
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.utils.ServletTest
 import fi.vm.sade.valintatulosservice._
@@ -14,6 +14,7 @@ import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import java.util.Date
 import org.json4s.jackson.Serialization._
 import org.json4s.native.JsonMethods._
 import org.junit.runner.RunWith
@@ -75,6 +76,9 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
     vastaanottotila = ValintatuloksenTila.KESKEN,
     ilmoittautumistila = EiTehty
   )
+
+  private val date = new Date()
+  private val valinnantulosWithHistoria = ValinnantulosWithTilahistoria(valinnantulos, List(TilaHistoriaRecord(valintatapajonoOid, hakemusOid, valinnantulos.valinnantila, date)))
 
   "GET /auth/valinnan-tulos" in {
     "palauttaa 401, jos sessiokeksi puuttuu" in { t: (String, ValinnantulosService, SessionRepository) =>
@@ -305,10 +309,10 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
 
     "palauttaa 200 ja hakemuksen tulokset hakemus-oidilla haettaessa" in { t: (String, ValinnantulosService, SessionRepository) =>
       t._3.get(sessionId) returns Some(readSession)
-      t._2.getValinnantuloksetForHakemus(hakemusOid, auditInfo(readSession)) returns Set(valinnantulos)
+      t._2.getValinnantuloksetForHakemus(hakemusOid, auditInfo(readSession)) returns Set(valinnantulosWithHistoria)
       get(t._1+"/hakemus/", Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders) {
         status must_== 200
-        parse(body).extract[List[Valinnantulos]] must_== List(valinnantulos)
+        parse(body).extract[List[ValinnantulosWithTilahistoria]].toString().trim().replace("\r","") must_== List(valinnantulosWithHistoria).toString().trim().replace("\r","")
       }
     }
   }
