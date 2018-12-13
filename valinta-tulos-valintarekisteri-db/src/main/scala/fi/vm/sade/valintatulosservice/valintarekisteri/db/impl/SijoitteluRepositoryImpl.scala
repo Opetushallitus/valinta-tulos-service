@@ -358,17 +358,14 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
     exists
   }
 
+  //Poistaa sijoittelun tuloksia yksittäiseltä hakemukselta yksittäisessä hakukohteessa.
+  //Tarkoitus käyttää tilanteessa, jossa kyseiset tulokset eivät enää ole muuttuneiden hakutoiveiden tai passivoinnin seurauksena relevantteja.
   override def deleteSijoitteluResultsForHakemusInHakukohde(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Unit = {
-
-    //Puuttuu vielä: hakijaryhman_hakemukset, onko tarpeellinen? Sama jonosijojen kohdalla;
-    //niitä ollaan poistamassa uusimmalta sijoitteluajolta, joka kohta kuitenkin korvautuu uudella
-    //eikä uusin sijoitteluajo enää viittaa niihin.
     val deleteOperationsWithDescriptions: Seq[(String, DBIO[Any])] = Seq(
       ("delete tilat_kuvaukset", sqlu"delete from tilat_kuvaukset where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}"),
       ("delete ehdollisen hyväksynnän ehto", sqlu"delete from ehdollisen_hyvaksynnan_ehto where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}"),
       ("delete valinnantulokset", sqlu"delete from valinnantulokset where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}"),
       ("delete valinnantilat", sqlu"delete from valinnantilat where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}"),
-      //("delete jonosijat", sqlu"select * from jonosijat where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid} and sijoitteluajo_id = (select max(id) from sijoitteluajot where haku_oid = ${hakuOid}"),
       ("delete viestit", sqlu"delete from viestit where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}")
     )
 
@@ -378,17 +375,11 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
     runBlockingTransactionally(DBIO.sequence(sqls), timeout = Duration(1, TimeUnit.MINUTES)) match {
 
       case Right(rowCounts) =>
-        LOG.info(s"Sijoittelun tulokset hakemukselta $hakemusOid hakukohteesta $hakukohdeOid onnistui. " +
+        LOG.info(s"Sijoittelun tulosten poisto hakemukselta $hakemusOid hakukohteesta $hakukohdeOid onnistui. " +
           s"Muuttuneita rivejä:\n\t${descriptions.zip(rowCounts).mkString("\n\t")}")
       case Left(t) =>
         LOG.error(s"Sijoittelun tuloksien poistossa hakemukselta $hakemusOid hakukohteessa $hakukohdeOid tapahtui virhe", t)
         throw t
     }
-
-    /*
-    //todo hakijaryhman_hakemukset ; saattaa vaatia tietoa myös valintatapajonosta. Mietittävä.
-    select * from hakijaryhman_hakemukset where hakemus_oid = '1.2.246.562.11.00010788341'
-                                                and sijoitteluajo_id != (select max(id) from sijoitteluajot where haku_oid = '1.2.246.562.29.25191045126');
-     */
   }
 }
