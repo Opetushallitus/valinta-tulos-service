@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 
+import fi.vm.sade.sijoittelu.domain.TilaHistoria
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.dbio.DBIO
@@ -39,6 +40,8 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
   def getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid: ValintatapajonoOid): DBIO[Set[Valinnantulos]]
 
   def getHaunValinnantilat(hakuOid: HakuOid): List[(HakukohdeOid, ValintatapajonoOid, HakemusOid, Valinnantila)]
+
+  def getHakemuksenTilahistoriat(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[TilaHistoriaRecord]
 
   def getValinnantulostenHakukohdeOiditForHaku(hakuOid: HakuOid): DBIO[List[HakukohdeOid]]
 

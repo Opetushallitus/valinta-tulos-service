@@ -17,6 +17,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import slick.dbio._
 
+import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
 class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository with HakijaVastaanottoRepository,
@@ -64,6 +65,38 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository 
       new Changes.Builder().build()
     )
     r
+  }
+
+  def getValinnantuloksetForHakemus(hakemusOid: HakemusOid, auditInfo: AuditInfo): Set[ValinnantulosWithTilahistoria] = {
+    val r = valinnantulosRepository.runBlocking(valinnantulosRepository.getValinnantuloksetForHakemus(hakemusOid))
+    var showResults = false
+
+    audit.log(auditInfo.user, ValinnantuloksenLuku,
+      new Target.Builder().setField("hakemus", hakemusOid.toString).build(),
+      new Changes.Builder().build()
+    )
+    r.foreach(result => {
+      val hakukohde = hakuService.getHakukohde(result.hakukohdeOid).fold(throw _, h => h)
+      authorizer.checkAccess(auditInfo.session._2, hakukohde.tarjoajaOids, Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) match {
+        case Left(a) =>
+          logger.info(s"""Käyttäjällä ${auditInfo.session._2.personOid} ei ole oikeuksia hakukohteeseen ${hakukohde.oid} hakemuksella ${hakemusOid.toString}.""")
+        case Right(b) =>
+          showResults = true
+      }
+    })
+
+    if (!showResults) {
+      logger.info(s"""Käyttäjällä ${auditInfo.session._2.personOid} ei ole oikeuksia yhteenkään organisaatioon hakemuksella ${hakemusOid.toString}.""")
+      Set()
+    } else {
+      // Convert to valinnanTulosWithHistoria and return set
+      var tuloksetWithHistoria: ListBuffer[ValinnantulosWithTilahistoria] = ListBuffer()
+      r.foreach(result => {
+        tuloksetWithHistoria +=
+        new ValinnantulosWithTilahistoria(result, valinnantulosRepository.getHakemuksenTilahistoriat(result.hakemusOid, result.valintatapajonoOid))
+      })
+      tuloksetWithHistoria.toSet
+    }
   }
 
   def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid: ValintatapajonoOid,

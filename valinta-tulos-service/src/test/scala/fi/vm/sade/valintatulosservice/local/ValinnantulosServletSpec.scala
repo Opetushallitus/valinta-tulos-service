@@ -6,6 +6,7 @@ import java.time.temporal.ChronoUnit
 import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.{ConcurrentModificationException, UUID}
 
+
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.utils.ServletTest
 import fi.vm.sade.valintatulosservice._
@@ -13,6 +14,7 @@ import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import java.util.Date
 import org.json4s.jackson.Serialization._
 import org.json4s.native.JsonMethods._
 import org.junit.runner.RunWith
@@ -74,6 +76,9 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
     vastaanottotila = ValintatuloksenTila.KESKEN,
     ilmoittautumistila = EiTehty
   )
+
+  private val date = new Date()
+  private val valinnantulosWithHistoria = ValinnantulosWithTilahistoria(valinnantulos, List(TilaHistoriaRecord(valintatapajonoOid, hakemusOid, valinnantulos.valinnantila, date)))
 
   "GET /auth/valinnan-tulos" in {
     "palauttaa 401, jos sessiokeksi puuttuu" in { t: (String, ValinnantulosService, SessionRepository) =>
@@ -264,6 +269,50 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       ) {
         status must_== 200
         parse(body).extract[List[ValinnantulosUpdateStatus]] must_== List.empty
+      }
+    }
+  }
+
+
+  "GET /auth/valinnan-tulos/hakemus/" in {
+    "palauttaa 401, jos sessiokeksi puuttuu" in { t: (String, ValinnantulosService, SessionRepository) =>
+      get(t._1, Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders - "Cookie") {
+        status must_== 401
+        body must_== "{\"error\":\"Unauthorized\"}"
+      }
+    }
+
+    "palauttaa 401, jos sessio ei ole voimassa" in { t: (String, ValinnantulosService, SessionRepository) =>
+      t._3.get(sessionId) returns None
+      get(t._1, Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders) {
+        status must_== 401
+        body must_== "{\"error\":\"Unauthorized\"}"
+      }
+    }
+
+    "palauttaa 403, jos käyttäjällä ei ole lukuoikeuksia" in { t: (String, ValinnantulosService, SessionRepository) =>
+      t._3.get(sessionId) returns Some(unauthorizedSession)
+      get(t._1, Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders) {
+        status must_== 403
+        body must_== "{\"error\":\"Forbidden\"}"
+      }
+    }
+
+    "palauttaa 200 ja tyhjän taulukon jos hakemuksen tuloksia ei löydy" in { t: (String, ValinnantulosService, SessionRepository) =>
+      t._3.get(sessionId) returns Some(readSession)
+      t._2.getValinnantuloksetForHakemus(HakemusOid("1"), auditInfo(readSession)) returns Set()
+      get(t._1+"/hakemus/", Iterable("hakemusOid" -> "1"), defaultHeaders) {
+        status must_== 200
+        body must_== "[]"
+      }
+    }
+
+    "palauttaa 200 ja hakemuksen tulokset hakemus-oidilla haettaessa" in { t: (String, ValinnantulosService, SessionRepository) =>
+      t._3.get(sessionId) returns Some(readSession)
+      t._2.getValinnantuloksetForHakemus(hakemusOid, auditInfo(readSession)) returns Set(valinnantulosWithHistoria)
+      get(t._1+"/hakemus/", Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders) {
+        status must_== 200
+        parse(body).extract[List[ValinnantulosWithTilahistoria]].toString().trim().replace("\r","") must_== List(valinnantulosWithHistoria).toString().trim().replace("\r","")
       }
     }
   }

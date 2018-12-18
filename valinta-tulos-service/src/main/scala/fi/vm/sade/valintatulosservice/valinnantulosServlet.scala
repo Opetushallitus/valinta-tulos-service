@@ -37,6 +37,10 @@ trait ValinnantulosServletBase extends VtsServletBase {
     params.get("hakukohdeOid").fold[Either[Throwable, HakukohdeOid]](Left(new IllegalArgumentException("URL parametri hakukohde OID on pakollinen.")))(s => Right(HakukohdeOid(s)))
   }
 
+  protected def parseHakemusOid: Either[Throwable, HakemusOid] = {
+    params.get("hakemusOid").fold[Either[Throwable, HakemusOid]](Left(new IllegalArgumentException("URL parametri hakemus OID on pakollinen.")))(s => Right(HakemusOid(s)))
+  }
+
   protected def parseMandatoryParam(paramName:String): String = {
     params.getOrElse(paramName, throw new IllegalArgumentException(s"Parametri ${paramName} on pakollinen."))
   }
@@ -114,6 +118,23 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
         case None =>
           Ok(List())
       })
+  }
+
+  val valinnantuloksetHakemukselleSwagger: OperationBuilder = (apiOperation[List[Valinnantulos]]("valinnantuloksetHakemukselle")
+    summary "Valinnantulos yksittäiselle hakemukselle"
+    parameter queryParam[String]("hakemusOid").description("Hakemuksen OID")
+    )
+  models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
+    case ("ilmoittautumistila", mp) => ("ilmoittautumistila", ilmoittautumistilaModelProperty(mp))
+    case ("valinnantila", mp) => ("valinnantila", valinnantilaModelProperty(mp))
+    case ("vastaanottotila", mp) => ("vastaanottotila", vastaanottotilaModelProperty(mp))
+    case p => p
+  }))
+  get("/hakemus/", operation(valinnantuloksetHakemukselleSwagger)) {
+    contentType = formats("json")
+    implicit val authenticated = authenticate
+    authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
+    Ok(parseHakemusOid.right.map(valinnantulosService.getValinnantuloksetForHakemus(_, auditInfo)))
   }
 
   val valinnantulosMuutosSwagger: OperationBuilder = (apiOperation[Unit]("muokkaaValinnantulosta")
