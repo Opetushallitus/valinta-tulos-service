@@ -8,7 +8,7 @@ import fi.vm.sade.valintatulosservice.config.ValintarekisteriAppConfig
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, StoreSijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, SijoitteluWrapper}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, SijoitteluWrapper}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 
 import scala.collection.JavaConverters._
@@ -61,6 +61,10 @@ abstract class Valintarekisteri(sijoitteluRepository:SijoitteluRepository with S
         logger.error(s"Sijoitteluajon tallennus haulle ${sijoitteluajo.getHakuOid} epäonnistui: ${e.getMessage}")
         throw new Exception(e)
     }
+  }
+
+  def cleanRedundantSijoitteluTuloksesForHakemusInHakukohde(hakemusOid: String, hakukohdeOid: String): Unit = {
+    sijoitteluRepository.deleteSijoitteluResultsForHakemusInHakukohde(HakemusOid(hakemusOid), HakukohdeOid(hakukohdeOid))
   }
 
   def getLatestSijoitteluajo(hakuOid: String): SijoitteluAjo = getSijoitteluajo(hakuOid, "latest")

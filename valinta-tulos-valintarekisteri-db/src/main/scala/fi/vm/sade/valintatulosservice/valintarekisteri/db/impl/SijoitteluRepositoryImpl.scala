@@ -6,6 +6,8 @@ import java.util.concurrent.TimeUnit
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import org.slf4j.LoggerFactory
+import slick.dbio.DBIO
 import slick.jdbc.PostgresProfile.api._
 
 import scala.collection.immutable
@@ -13,6 +15,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
 trait SijoitteluRepositoryImpl extends SijoitteluRepository with ValintarekisteriRepository {
+
+  private val LOG = LoggerFactory.getLogger(classOf[SijoitteluRepositoryImpl])
 
   override def getLatestSijoitteluajoId(hakuOid: HakuOid): Option[Long] =
     timed(s"Haun $hakuOid latest sijoitteluajon haku", 100) {
@@ -352,5 +356,30 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
        """.as[Boolean]).head
     }
     exists
+  }
+
+  /**Poistaa sijoittelun tuloksia yksittäiseltä hakemukselta yksittäisessä hakukohteessa.
+  Tarkoitus käyttää tilanteessa, jossa kyseiset tulokset eivät enää ole muuttuneiden hakutoiveiden tai passivoinnin seurauksena relevantteja.*/
+  override def deleteSijoitteluResultsForHakemusInHakukohde(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Unit = {
+    val deleteOperationsWithDescriptions: Seq[(String, DBIO[Any])] = Seq(
+      ("delete tilat_kuvaukset", sqlu"delete from tilat_kuvaukset where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}"),
+      ("delete ehdollisen hyväksynnän ehto", sqlu"delete from ehdollisen_hyvaksynnan_ehto where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}"),
+      ("delete valinnantulokset", sqlu"delete from valinnantulokset where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}"),
+      ("delete valinnantilat", sqlu"delete from valinnantilat where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}"),
+      ("delete viestit", sqlu"delete from viestit where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}")
+    )
+
+    val (descriptions, sqls) = deleteOperationsWithDescriptions.unzip
+
+    LOG.warn(s"Poistetaan sijoittelun tuloksia hakemukselta $hakemusOid hakukohteesta $hakukohdeOid")
+    runBlockingTransactionally(DBIO.sequence(sqls), timeout = Duration(1, TimeUnit.MINUTES)) match {
+
+      case Right(rowCounts) =>
+        LOG.info(s"Sijoittelun tulosten poisto hakemukselta $hakemusOid hakukohteesta $hakukohdeOid onnistui. " +
+          s"Muuttuneita rivejä:\n\t${descriptions.zip(rowCounts).mkString("\n\t")}")
+      case Left(t) =>
+        LOG.error(s"Sijoittelun tuloksien poistossa hakemukselta $hakemusOid hakukohteessa $hakukohdeOid tapahtui virhe", t)
+        throw t
+    }
   }
 }
