@@ -16,7 +16,7 @@ import scala.concurrent.duration.Duration
 
 trait SijoitteluRepositoryImpl extends SijoitteluRepository with ValintarekisteriRepository {
 
-  private val LOG = LoggerFactory.getLogger("SijoitteluRepositoryImpl")
+  private val LOG = LoggerFactory.getLogger(classOf[SijoitteluRepositoryImpl])
 
   override def getLatestSijoitteluajoId(hakuOid: HakuOid): Option[Long] =
     timed(s"Haun $hakuOid latest sijoitteluajon haku", 100) {
@@ -358,8 +358,8 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
     exists
   }
 
-  //Poistaa sijoittelun tuloksia yksittäiseltä hakemukselta yksittäisessä hakukohteessa.
-  //Tarkoitus käyttää tilanteessa, jossa kyseiset tulokset eivät enää ole muuttuneiden hakutoiveiden tai passivoinnin seurauksena relevantteja.
+  /**Poistaa sijoittelun tuloksia yksittäiseltä hakemukselta yksittäisessä hakukohteessa.
+  Tarkoitus käyttää tilanteessa, jossa kyseiset tulokset eivät enää ole muuttuneiden hakutoiveiden tai passivoinnin seurauksena relevantteja.*/
   override def deleteSijoitteluResultsForHakemusInHakukohde(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Unit = {
     val deleteOperationsWithDescriptions: Seq[(String, DBIO[Any])] = Seq(
       ("delete tilat_kuvaukset", sqlu"delete from tilat_kuvaukset where hakemus_oid = ${hakemusOid} and hakukohde_oid = ${hakukohdeOid}"),
@@ -371,7 +371,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
 
     val (descriptions, sqls) = deleteOperationsWithDescriptions.unzip
 
-    LOG.info(s"Poistetaan sijoittelun tuloksia hakemukselta $hakemusOid hakukohteesta $hakukohdeOid")
+    LOG.warn(s"Poistetaan sijoittelun tuloksia hakemukselta $hakemusOid hakukohteesta $hakukohdeOid")
     runBlockingTransactionally(DBIO.sequence(sqls), timeout = Duration(1, TimeUnit.MINUTES)) match {
 
       case Right(rowCounts) =>
