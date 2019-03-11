@@ -236,7 +236,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         fetchTulokset(
           haku,
           () => hakemukset.toIterator,
-          personOidFromHakemusResolver => sijoittelutulosService.hakemustenTulos(hakuOid, Some(hakukohdeOid), personOidFromHakemusResolver, hakukohteenVastaanotot),
+          personOidFromHakemusResolver => sijoittelutulosService.hakemustenTulos(hakuOid, Some(hakukohdeOid), personOidFromHakemusResolver, hakukohteenVastaanotot, vainHakukohde = true),
           Some(new PersonOidFromHakemusResolver {
             private lazy val hakijaOidByHakemusOid = timed("personOids from hakemus", 1000)(hakemusRepository.findPersonOids(hakuOid, hakukohdeOid))
             override def findBy(hakemusOid: HakemusOid): Option[String] = hakijaOidByHakemusOid.get(hakemusOid)
