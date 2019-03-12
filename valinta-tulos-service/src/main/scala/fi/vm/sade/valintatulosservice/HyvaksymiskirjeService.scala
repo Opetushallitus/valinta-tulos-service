@@ -39,7 +39,7 @@ class HyvaksymiskirjeService(hyvaksymiskirjeRepository: HyvaksymiskirjeRepositor
             .setField("henkilö", deleted.henkiloOid)
             .setField("hakukohde", deleted.hakukohdeOid.toString)
             .build(),
-          new Changes.Builder().removed("lähetetty", null).build())
+          new Changes.Builder().removed("lähetetty", None.toString).build())
 
       case updated@HyvaksymiskirjePatch(_, _, Some(lahetetty)) =>
         audit.log(auditInfo.user, HyvaksymiskirjeidenMuokkaus,

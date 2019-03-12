@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
+import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid}
@@ -8,7 +9,8 @@ import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 
 class PublicEmailStatusServlet(mailPoller: MailPollerAdapter,
-                               val sessionRepository: SessionRepository)
+                               val sessionRepository: SessionRepository,
+                               audit: Audit)
                               (implicit val swagger: Swagger)
   extends VtsServletBase
     with CasAuthenticatedServlet {
@@ -24,7 +26,11 @@ class PublicEmailStatusServlet(mailPoller: MailPollerAdapter,
     contentType = formats("json")
     implicit val authenticated: Authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
-    mailPoller.getOidsOfApplicationsWithSentOrResolvedMailStatus(parseHakukohdeOid.fold(throw _, x => x))
+    val hakukohdeOid: HakukohdeOid = parseHakukohdeOid.fold(throw _, x => x)
+    val builder= new Target.Builder()
+      .setField("hakukohdeoid", hakukohdeOid.toString)
+    audit.log(auditInfo.user, VastaanottoPostitietojenLuku, builder.build(), new Changes.Builder().build())
+    mailPoller.getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid)
   }
 
   lazy val deleteVastaanottoposti: OperationBuilder = (apiOperation[Unit]("deleteMailEntry")
@@ -36,6 +42,13 @@ class PublicEmailStatusServlet(mailPoller: MailPollerAdapter,
     implicit val authenticated: Authenticated = authenticate
     authorize(Role.SIJOITTELU_CRUD)
     val hakemusOid: HakemusOid = parseHakemusOid.fold(throw _, x => x)
+    audit.log(auditInfo.user, VastaanottoPostitietojenPoisto,
+      new Target.Builder()
+        .setField("hakemusoid", hakemusOid.toString)
+        .build(),
+      new Changes.Builder()
+        .removed("viesti", hakemusOid.toString)
+        .build())
     val deletedCount: Int = mailPoller.deleteMailEntries(hakemusOid)
     logger.info(s"Removed $deletedCount mail bookkeeping entries for hakemus $hakemusOid to enable re-sending of emails.")
   }

@@ -22,6 +22,11 @@
                 <artifactId>validation-api</artifactId>
                 <version>1.1.0.Final</version>
             </dependency>
+            <dependency>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>${gson.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -337,7 +342,7 @@
         <dependency>
             <groupId>fi.vm.sade</groupId>
             <artifactId>auditlogger</artifactId>
-            <version>7.0.0-rc1-SNAPSHOT</version>
+            <version>${auditlogger.version}</version>
         </dependency>
         <dependency>
             <groupId>org.mock-server</groupId>
