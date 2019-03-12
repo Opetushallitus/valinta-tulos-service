@@ -38,7 +38,7 @@ before_script:
 
 script:
 - mvn -B -Dvalintatulos.it.postgres.port=5432 -Dvalintatulos.it.postgres.alreadyrunning=true clean package
-- export BASE_IMAGE="base-legacy:0.1"
+- export BASE_IMAGE="baseimage-war:master"
 - ./ci-tools/common/pull-image.sh
 
 - export BASE_IMAGE="baseimage-war:master"
