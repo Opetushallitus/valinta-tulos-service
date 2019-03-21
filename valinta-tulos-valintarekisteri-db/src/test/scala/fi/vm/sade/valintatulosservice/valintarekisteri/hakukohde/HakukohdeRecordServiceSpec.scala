@@ -77,7 +77,8 @@ class HakukohdeRecordServiceSpec extends Specification with MockitoMatchers with
     val julkaistuKoulutus = Koulutus("1.2.246.562.17.42423443434", Kausi("2016S"), "JULKAISTU", true, Seq(), Seq(), None, None, None)
     val yhdenpaikansaanto = YhdenPaikanSaanto(voimassa = true, "Korkeakoulutus ilman kohdejoukon tarkennetta")
     val hakukohdeFromTarjonta = Hakukohde(hakukohdeOid, hakuOid, Set("123.123.123.123"), List(julkaistuKoulutus.oid), "KORKEAKOULUTUS", "TUTKINTO",
-      Map("kieli_fi" -> "Hakukohteen nimi"), Map("fi" -> "Tarjoajan nimi"), yhdenPaikanSaanto = yhdenpaikansaanto, true, "kausi_k#1", 2016)
+      Map("kieli_fi" -> "Hakukohteen nimi"), Map("fi" -> "Tarjoajan nimi"), yhdenPaikanSaanto = yhdenpaikansaanto, true, "kausi_k#1", 2016,
+      organisaatioRyhmaOids = Set())
 
     val hakuFromTarjonta: Haku = Haku(hakuOid, korkeakoulu = true, toinenAste = false, sallittuKohdejoukkoKelaLinkille = true, käyttääSijoittelua = true, varsinaisenHaunOid = None,
       sisältyvätHaut = Set(), hakuAjat = Nil, Some(Kausi("2016K")), yhdenpaikansaanto, Map("kieli_fi" -> "Haun nimi"))

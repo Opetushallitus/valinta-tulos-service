@@ -77,7 +77,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository 
     )
     r.foreach(result => {
       val hakukohde = hakuService.getHakukohde(result.hakukohdeOid).fold(throw _, h => h)
-      authorizer.checkAccess(auditInfo.session._2, hakukohde.tarjoajaOids, Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) match {
+      authorizer.checkAccess(auditInfo.session._2, hakukohde.organisaatioOiditAuktorisointiin, Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) match {
         case Left(a) =>
           logger.info(s"""Käyttäjällä ${auditInfo.session._2.personOid} ei ole oikeuksia hakukohteeseen ${hakukohde.oid} hakemuksella ${hakemusOid.toString}.""")
         case Right(b) =>
@@ -107,7 +107,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository 
     val hakukohdeOid = valinnantulokset.head.hakukohdeOid // FIXME käyttäjän syötettä, tarvittaisiin jono-hakukohde tieto valintaperusteista
     (for {
       hakukohde <- hakuService.getHakukohde(hakukohdeOid).right
-      _ <- authorizer.checkAccess(auditInfo.session._2, hakukohde.tarjoajaOids, Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).right
+      _ <- authorizer.checkAccess(auditInfo.session._2, hakukohde.organisaatioOiditAuktorisointiin, Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).right
       haku <- hakuService.getHaku(hakukohde.hakuOid).right
       ohjausparametrit <- ohjausparametritService.ohjausparametrit(hakukohde.hakuOid).right
     } yield {
@@ -125,7 +125,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository 
       } else {
         new SijoittelunValinnantulosStrategy(
           auditInfo,
-          hakukohde.tarjoajaOids,
+          hakukohde.organisaatioOiditAuktorisointiin,
           haku,
           hakukohdeOid,
           ohjausparametrit,

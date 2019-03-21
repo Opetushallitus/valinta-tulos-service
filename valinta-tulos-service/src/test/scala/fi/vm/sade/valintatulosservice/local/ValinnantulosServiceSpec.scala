@@ -358,7 +358,8 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       null,
       true,
       null,
-      2015
+      2015,
+      Set()
     ))
     hakuService.getHaku(hakuOid) returns Right(Haku(
       hakuOid,
@@ -388,7 +389,8 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       null,
       true,
       null,
-      2015
+      2015,
+      Set()
     ))
     hakuService.getHaku(hakuOid) returns Right(Haku(
       hakuOid,

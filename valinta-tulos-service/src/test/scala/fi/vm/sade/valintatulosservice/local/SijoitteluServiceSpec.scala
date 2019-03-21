@@ -30,7 +30,8 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
   val hakemusOid = HakemusOid("1.2.3.4")
   val hakukohdeOid = HakukohdeOid("1.2.3.4.5")
   val tarjoajaOid = "1.2.3.4.5.6.7"
-  val hakukohde = Hakukohde(hakukohdeOid, hakuOid, Set(tarjoajaOid), null, null, null, null, null, null, true, null, 2017)
+  val organisaatioRyhmaOid = "1.2.246.562.28.29795861441"
+  val hakukohde = Hakukohde(hakukohdeOid, hakuOid, Set(tarjoajaOid), null, null, null, null, null, null, true, null, 2017, organisaatioRyhmaOids = Set(organisaatioRyhmaOid))
   val session = CasSession(ServiceTicket("myFakeTicket"), "1.2.246.562.24.1", Set(Role.SIJOITTELU_CRUD))
   val sessionId = UUID.randomUUID()
   val auditInfo = AuditInfo((sessionId, session), InetAddress.getLocalHost, "user-agent")
@@ -98,10 +99,10 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
     val audit = mock[Audit]
 
     val hakuService = mock[HakuService]
-    hakuService.getHakukohde(hakukohdeOid) returns Right(Hakukohde(hakukohdeOid, hakuOid, Set(tarjoajaOid), null, null, null, null, null, null, true, null, 2015))
+    hakuService.getHakukohde(hakukohdeOid) returns Right(Hakukohde(hakukohdeOid, hakuOid, Set(tarjoajaOid), null, null, null, null, null, null, true, null, 2015, Set(organisaatioRyhmaOid)))
 
     val authorizer = mock[OrganizationHierarchyAuthorizer]
-    authorizer.checkAccess(session, Set(tarjoajaOid), Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Right(())
+    authorizer.checkAccess(session, Set(tarjoajaOid, organisaatioRyhmaOid), Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Right(())
 
     type repositoryType = SijoitteluRepository with HakijaRepository with ValinnantulosRepository
     val sijoitteluRepository = mock[repositoryType]
