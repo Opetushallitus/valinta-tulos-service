@@ -214,7 +214,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
       count = None,
       index = None)
 
-    auditLog(Map("hakuOid" -> hakuOidString, "hakukohdeOid" -> params("hakukohdeOid").toString), HakutietojenLuku)
+    auditLog(Map("hakuOid" -> hakuOidString), HakutietojenLuku)
     Ok(JsonFormats.javaObjectToJsonString(hakijaPaginationObject))
   }
 
