@@ -57,12 +57,9 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid, jonka tulokset halutaan")
   )
   get("/:hakuOid/hakemus/:hakemusOid", operation(getHakemusSwagger)) {
-    val hakemusOid = HakemusOid(params("hakemusOid"))
-    var auditParams: List[(String, String)] = List()
-    auditParams = auditParams:+(("hakuOid", params("hakuOid").toString))
-    auditParams = auditParams:+(("hakemusOid", hakemusOid.toString))
-    auditLog(auditParams, HakemuksenLuku)
-    valintatulosService.hakemuksentulos(hakemusOid) match {
+    val hakemusOidString = params("hakemusOid")
+    auditLog(Map("hakuOid" -> params("hakuOid"), "hakemusOid" -> hakemusOidString), HakemuksenLuku)
+    valintatulosService.hakemuksentulos(HakemusOid(hakemusOidString)) match {
       case Some(tulos) => tulos
       case _ => NotFound("error" -> "Not found")
     }
@@ -75,21 +72,16 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     parameter pathParam[String]("hakuOid").description("Haun oid")
   )
   get("/:hakuOid", operation(getHakemuksetSwagger)) {
-    val hakuOid = HakuOid(params("hakuOid"))
-    var auditParams: List[(String, String)] = List()
-    auditParams = auditParams:+(("hakuOid", hakuOid.toString))
-    auditLog(auditParams, HakemuksenLuku)
-    serveStreamingResults({ valintatulosService.hakemustenTulosByHaku(hakuOid, false) })
+    val hakuOidString = params("hakuOid")
+    auditLog(Map("hakuOid" -> hakuOidString), HakemuksenLuku)
+    serveStreamingResults({ valintatulosService.hakemustenTulosByHaku(HakuOid(hakuOidString), false) })
   }
 
   get("/:hakuOid/hakukohde/:hakukohdeOid", operation(getHakukohteenHakemuksetSwagger)) {
-    val hakuOid = HakuOid(params("hakuOid"))
-    val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
-    var auditParams: List[(String, String)] = List()
-    auditParams = auditParams:+(("hakuOid", hakuOid.toString))
-    auditParams = auditParams:+(("hakukohdeOid", hakukohdeOid.toString))
-    auditLog(auditParams, HakemuksenLuku)
-    serveStreamingResults({ valintatulosService.hakemustenTulosByHakukohde(hakuOid, hakukohdeOid).right.toOption })
+    val hakuOidString = params("hakuOid")
+    val hakukohdeOidString = params("hakukohdeOid")
+    auditLog(Map("hakuOid" -> hakuOidString, "hakukohdeOid" -> hakukohdeOidString), HakemuksenLuku)
+    serveStreamingResults({ valintatulosService.hakemustenTulosByHakukohde(HakuOid(hakuOidString), HakukohdeOid(hakukohdeOidString)).right.toOption })
   }
 
   lazy val getHakukohteenHakemuksetSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohteenHakemukset")
@@ -107,11 +99,10 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid")
     )
   get("/:hakuOid/hakemus/:hakemusOid/hakukohde/:hakukohdeOid/vastaanotettavuus", operation(getHakukohteenVastaanotettavuusSwagger)) {
-    var auditParams: List[(String, String)] = List()
-    auditParams = auditParams:+(("hakemusOid", params("hakemusOid").toString))
-    auditParams = auditParams:+(("hakukohdeOid", params("hakukohdeOid").toString))
-    auditLog(auditParams, HakemuksenLuku)
-    Try(vastaanottoService.tarkistaVastaanotettavuus(HakemusOid(params("hakemusOid")), HakukohdeOid(params("hakukohdeOid"))))
+    val hakemusOidString = params("hakemusOid")
+    val hakukohdeOidString = params("hakukohdeOid")
+    auditLog(Map("hakemusOid" -> hakemusOidString, "hakukohdeOid" -> hakukohdeOidString), HakemuksenLuku)
+    Try(vastaanottoService.tarkistaVastaanotettavuus(HakemusOid(hakemusOidString), HakukohdeOid(hakukohdeOidString)))
       .map((_) => Ok())
       .recover({ case pae:PriorAcceptanceException => Forbidden("error" -> pae.getMessage) })
       .get
@@ -134,15 +125,12 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid, jonka vastaanottotilaa ollaan muokkaamassa")
     )
   post("/:hakuOid/hakemus/:hakemusOid/ilmoittaudu", operation(postIlmoittautuminenSwagger)) {
-    val hakemusOid = HakemusOid(params("hakemusOid"))
+    val hakemusOidString = params("hakemusOid")
     val ilmoittautuminen = parsedBody.extract[Ilmoittautuminen]
-    var auditParams: List[(String, String)] = List()
-    auditParams = auditParams:+(("hakuOid", params("hakuOid").toString))
-    auditParams = auditParams:+(("hakemusOid", hakemusOid.toString))
-    var addedParams: List[(String, String)] = List()
-    addedParams = auditParams:+(("ilmoittautumisTila",ilmoittautuminen.tila.toString))
+    val auditParams: Map[String, String] = Map("hakuOid" -> params("hakuOid"), "hakemusOid" -> hakemusOidString)
+    val addedParams: Map[String, String] = Map("ilmoittautumisTila" -> ilmoittautuminen.tila.toString)
     auditLogChanged(auditParams, IlmoittautumisTilanTallennus, addedParams, "added")
-    ilmoittautumisService.ilmoittaudu(hakemusOid, ilmoittautuminen)
+    ilmoittautumisService.ilmoittaudu(HakemusOid(hakemusOidString), ilmoittautuminen)
   }
 
   @Deprecated //Ei käytetä mistään? Ei tarvita hyväksymis/jälkiohjauskirjeitäkään varten!
@@ -178,14 +166,17 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid").required
     )
   get("/:hakuOid/hakukohde/:hakukohdeOid/hakijat", operation(getHakukohteenKaikkiHakijatSwagger)) {
-
-    val hakuOid = HakuOid(params("hakuOid"))
-    val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
-    val hakijaPaginationObject = valintatulosService.sijoittelunTulokset(hakuOid, "latest", None, None, None, Some(List(hakukohdeOid)), None, None)
-    var auditParams: List[(String, String)] = List()
-    auditParams = auditParams:+(("hakuOid", hakuOid.toString))
-    auditParams = auditParams:+(("hakukohdeOid",params("hakukohdeOid").toString))
-    auditLog(auditParams, HakutietojenLuku)
+    val hakuOidString = params("hakuOid")
+    val hakukohdeOidString = params("hakukohdeOid")
+    val hakijaPaginationObject = valintatulosService.sijoittelunTulokset(HakuOid(hakuOidString),
+      "latest",
+      hyvaksytyt = None,
+      ilmanHyvaksyntaa = None,
+      vastaanottaneet = None,
+      hakukohdeOid = Some(List(HakukohdeOid(hakukohdeOidString))),
+      count = None,
+      index = None)
+    auditLog(Map("hakuOid" -> hakuOidString, "hakukohdeOid" -> hakukohdeOidString), HakutietojenLuku)
     Ok(JsonFormats.javaObjectToJsonString(hakijaPaginationObject))
   }
 
@@ -194,12 +185,16 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     )
   get("/:hakuOid/ilmanHyvaksyntaa", operation(getHaunIlmanHyvaksyntaaSwagger)) {
-
-    val hakuOid = HakuOid(params("hakuOid"))
-    val hakijaPaginationObject = valintatulosService.sijoittelunTulokset(hakuOid, "latest", None, ilmanHyvaksyntaa = Some(true), None, None, None, None)
-    var auditParams: List[(String, String)] = List()
-    auditParams = auditParams:+(("hakuOid", hakuOid.toString))
-    auditLog(auditParams, HakutietojenLuku)
+    val hakuOidString = params("hakuOid")
+    val hakijaPaginationObject = valintatulosService.sijoittelunTulokset(HakuOid(hakuOidString),
+      "latest",
+      hyvaksytyt = None,
+      ilmanHyvaksyntaa = Some(true),
+      vastaanottaneet = None,
+      hakukohdeOid = None,
+      count = None,
+      index = None)
+    auditLog(Map("hakuOid" -> hakuOidString), HakutietojenLuku)
     Ok(JsonFormats.javaObjectToJsonString(hakijaPaginationObject))
   }
 
@@ -209,13 +204,17 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid").required
     )
   get("/:hakuOid/hyvaksytyt", operation(getHaunHyvaksytytSwagger)) {
+    val hakuOidString = params("hakuOid")
+    val hakijaPaginationObject = valintatulosService.sijoittelunTulokset(HakuOid(hakuOidString),
+      "latest",
+      hyvaksytyt = Some(true),
+      ilmanHyvaksyntaa = None,
+      vastaanottaneet = None,
+      hakukohdeOid = None,
+      count = None,
+      index = None)
 
-    val hakuOid = HakuOid(params("hakuOid"))
-    val hakijaPaginationObject = valintatulosService.sijoittelunTulokset(hakuOid, "latest", hyvaksytyt = Some(true), None, None, None, None, None)
-    var auditParams: List[(String, String)] = List()
-    auditParams = auditParams:+(("hakuOid", hakuOid.toString))
-    auditParams = auditParams:+(("hakukohdeOid",params("hakukohdeOid").toString))
-    auditLog(auditParams, HakutietojenLuku)
+    auditLog(Map("hakuOid" -> hakuOidString, "hakukohdeOid" -> params("hakukohdeOid").toString), HakutietojenLuku)
     Ok(JsonFormats.javaObjectToJsonString(hakijaPaginationObject))
   }
 
@@ -225,14 +224,17 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid").required
     )
   get("/:hakuOid/hakukohde/:hakukohdeOid/hyvaksytyt", operation(getHakukohteenHyvaksytytSwagger)) {
-
-    val hakuOid = HakuOid(params("hakuOid"))
-    val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
-    val hakijaPaginationObject = valintatulosService.sijoittelunTulokset(hakuOid, "latest", hyvaksytyt = Some(true), None, None, Some(List(hakukohdeOid)), None, None)
-    var auditParams: List[(String, String)] = List()
-    auditParams = auditParams:+(("hakuOid", hakuOid.toString))
-    auditParams = auditParams:+(("hakukohdeOid", hakukohdeOid.toString))
-    auditLog(auditParams, HakutietojenLuku)
+    val hakuOidString = params("hakuOid")
+    val hakukohdeOidString = params("hakukohdeOid")
+    val hakijaPaginationObject = valintatulosService.sijoittelunTulokset(HakuOid(hakuOidString),
+      "latest",
+      hyvaksytyt = Some(true),
+      ilmanHyvaksyntaa = None,
+      vastaanottaneet = None,
+      hakukohdeOid = Some(List(HakukohdeOid(hakukohdeOidString))),
+      count = None,
+      index = None)
+    auditLog(Map("hakuOid" -> hakuOidString, "hakukohdeOid" -> hakukohdeOidString), HakutietojenLuku)
     Ok(JsonFormats.javaObjectToJsonString(hakijaPaginationObject))
   }
 
@@ -242,15 +244,11 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     parameter pathParam[String]("sijoitteluajoId").description("""Sijoitteluajon id tai "latest"""").required
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid").required)
   get("/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakemus/:hakemusOid", operation(getHakemuksenSijoitteluajonTulosSwagger)) {
-    val hakuOid = HakuOid(params("hakuOid"))
-    val sijoitteluajoId = params("sijoitteluajoId")
-    val hakemusOid = HakemusOid(params("hakemusOid"))
-    var auditParams: List[(String, String)] = List()
-    auditParams = auditParams:+(("hakuOid", hakuOid.toString))
-    auditParams = auditParams:+(("sijoitteluajoId", sijoitteluajoId.toString))
-    auditParams = auditParams:+(("hakemusOid", hakemusOid.toString))
-    auditLog(auditParams, HakemuksenLuku)
-    valintatulosService.sijoittelunTulosHakemukselle(hakuOid, sijoitteluajoId, hakemusOid) match {
+    val hakuOidString = params("hakuOid")
+    val sijoitteluajoIdString = params("sijoitteluajoId")
+    val hakemusOidString = params("hakemusOid")
+    auditLog(Map("hakuOid" -> hakuOidString, "sijoitteluajoId" -> sijoitteluajoIdString, "hakemusOid" -> hakemusOidString), HakemuksenLuku)
+    valintatulosService.sijoittelunTulosHakemukselle(HakuOid(hakuOidString), sijoitteluajoIdString, HakemusOid(hakemusOidString)) match {
       case Some(hakijaDto) => Ok(JsonFormats.javaObjectToJsonString(hakijaDto))
       case None => Ok(JsonFormats.javaObjectToJsonString(new HakijaDTO()))
     }
@@ -311,9 +309,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
       case t: Throwable => throw new StreamingFailureException(t, s""", {"error": "${t.getMessage}"}] """)
     }
     logger.info(s"Returned $index ${classOf[HakijaDTO].getSimpleName} objects for haku $hakuOid")
-    var auditParams: List[(String, String)] = List()
-    auditParams = auditParams:+(("hakuOid", hakuOid.toString))
-    auditLog(auditParams, SijoitteluAjonTulostenLuku)
+    auditLog(Map("hakuOid" -> hakuOid.s), SijoitteluAjonTulostenLuku)
     writer.print("]")
   }
 
@@ -326,6 +322,6 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     }
   }
 
-  def auditLog(auditParams: List[(String, String)], auditOperation: Operation)
-  def auditLogChanged(auditParams: List[(String, String)], auditOperation: Operation, auditParamsAdded: List[(String, String)], changeOperation: String)
+  def auditLog(auditParams: Map[String, String], auditOperation: Operation): Unit
+  def auditLogChanged(auditParams: Map[String, String], auditOperation: Operation, auditParamsAdded: Map[String, String], changeOperation: String): Unit
 }
