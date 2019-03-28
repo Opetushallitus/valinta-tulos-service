@@ -1,9 +1,11 @@
 package fi.vm.sade.valintatulosservice.streamingresults
 
-import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
+import java.util.concurrent.atomic.AtomicInteger
+
+import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO}
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.ValintatulosService
+import fi.vm.sade.valintatulosservice.{ValintatulosService, ValintatulosUtil}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.sijoittelu.{HakijaDTOSearchCriteria, ValintarekisteriHakijaDTOClient}
@@ -35,7 +37,7 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
     val parallelHakukohdeOids = hakukohdeOids.par
     parallelHakukohdeOids.tasksupport = taskSupport
     val hakemustenTulokset: Option[Iterator[Hakemuksentulos]] = Some(parallelHakukohdeOids.map { hakukohdeOid =>
-      valintatulosService.hakemustenTulosByHakukohde(hakuOid, hakukohdeOid, Some(haunVastaanototByHakijaOid)) match {
+      valintatulosService.hakemustenTulosByHakukohde(hakuOid, hakukohdeOid, Some(haunVastaanototByHakijaOid), vainHakukohteenTiedot = true) match {
         case Right(it) => it
         case Left(e) => val msg = s"Could not retrieve results for hakukohde $hakukohdeOid of haku $hakuOid"
           logger.error(msg, e)
@@ -45,18 +47,25 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
     val hakutoiveidenTuloksetByHakemusOid: Map[HakemusOid, (String, List[Hakutoiveentulos])] =
       timed(s"Find hakutoiveiden tulokset for ${hakukohdeOids.size} hakukohdes of haku $hakuOid", 1000) {
         hakemustenTulokset match {
-          case Some(hakemustenTulosIterator) => hakemustenTulosIterator.map(h => (h.hakemusOid, (h.hakijaOid, h.hakutoiveet))).toMap
+          case Some(hakemustenTulosIterator) =>
+            hakemustenTulosIterator.map(h => {
+              //Palautetaan vain sellaiset hakutoiveet, jotka kohdistuvat johonkin pyynnössä olleeseen hakukohdeoidiin.
+              val relevant = h.hakutoiveet.filter(ht => hakukohdeOids.contains(ht.hakukohdeOid))
+              (h.hakemusOid, (h.hakijaOid, relevant))}).toMap
           case None => Map()
         }
       }
+    var total = 0
+    hakutoiveidenTuloksetByHakemusOid foreach {t => total += t._2._2.size}
     logger.info(s"Found ${hakutoiveidenTuloksetByHakemusOid.keySet.size} hakemus objects for sijoitteluajo $sijoitteluajoId " +
-      s"of ${hakukohdeOids.size} hakukohdes of haku $hakuOid")
+      s"of ${hakukohdeOids.size} hakukohdes of haku $hakuOid. These have a total of $total relevant hakutoivees.")
 
     streamSijoittelunTulokset(
       hakutoiveidenTuloksetByHakemusOid,
       HakijaDTOSearchCriteria(hakuOid, sijoitteluajoId, Some(hakukohdeOids)),
       writeResult,
-      vainMerkitsevaJono)
+      vainMerkitsevaJono,
+      vainKysyttyihinHakukohteisiinKohdistuvatHakutoiveet = true)
   }
 
 
@@ -86,11 +95,17 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
   private def streamSijoittelunTulokset(tuloksetByHakemusOid: Map[HakemusOid, (String, List[Hakutoiveentulos])],
                                         hakijaDTOSearchCriteria: HakijaDTOSearchCriteria,
                                         writeResult: HakijaDTO => Unit,
-                                        vainMerkitsevaJono: Boolean): Unit = {
+                                        vainMerkitsevaJono: Boolean,
+                                        vainKysyttyihinHakukohteisiinKohdistuvatHakutoiveet: Boolean = false): Unit = {
     val hakuOid = hakijaDTOSearchCriteria.hakuOid
 
     def processTulos(hakijaDto: HakijaDTO, hakijaOid: String, hakutoiveidenTulokset: List[Hakutoiveentulos]): Unit = {
       hakijaDto.setHakijaOid(hakijaOid)
+      if (vainKysyttyihinHakukohteisiinKohdistuvatHakutoiveet) {
+        val kiinnostavatHakukohteet = hakijaDTOSearchCriteria.hakukohdeOids.getOrElse(Set())
+        val kiinnostavatHakutoiveet = hakijaDto.getHakutoiveet.asScala.filter(ht => kiinnostavatHakukohteet.contains(HakukohdeOid(ht.getHakukohdeOid))).toList
+        hakijaDto.setHakutoiveet(ValintatulosUtil.toSortedSet(kiinnostavatHakutoiveet))
+      }
       if (vainMerkitsevaJono) {
         populateMerkitsevatJonot(hakijaDto, hakutoiveidenTulokset)
       } else {

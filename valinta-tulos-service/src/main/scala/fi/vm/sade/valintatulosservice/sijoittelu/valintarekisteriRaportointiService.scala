@@ -9,6 +9,7 @@ import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, ValintatuloksenTila}
 import fi.vm.sade.sijoittelu.tulos.service.impl.comparators.HakijaDTOComparator
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.ValintatulosUtil
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, _}
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.SijoitteluajonHakijat
@@ -39,6 +40,8 @@ trait ValintarekisteriRaportointiService {
                  index: Option[Int]):HakijaPaginationObject
 
   def hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo: SijoitteluAjo, hakukohdeOid:HakukohdeOid): List[KevytHakijaDTO]
+
+  def hakemuksetVainHakukohteenTietojenKanssaIlmanMuitaHakutoiveita(sijoitteluAjo: SijoitteluAjo, hakukohdeOid:HakukohdeOid): List[KevytHakijaDTO]
 }
 
 class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with SijoitteluRepository with ValinnantulosRepository,
@@ -96,6 +99,16 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
 
   override def hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO] =
     tryOrThrow(SijoitteluajonHakijat.kevytDtoVainHakukohde(repository, sijoitteluAjo, hakukohdeOid))
+
+  override def hakemuksetVainHakukohteenTietojenKanssaIlmanMuitaHakutoiveita(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO] = {
+    val hakemukset = tryOrThrow(SijoitteluajonHakijat.kevytDtoVainHakukohde(repository, sijoitteluAjo, hakukohdeOid))
+    hakemukset foreach {
+      h =>
+        val talleHakukohteelle = h.getHakutoiveet.asScala.filter(ht => ht.getHakukohdeOid.equals(hakukohdeOid.toString)).toList
+        h.setHakutoiveet(ValintatulosUtil.toSortedSet(talleHakukohteelle))
+    }
+    hakemukset
+  }
 
   override def kevytHakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO] =
     tryOrThrow(SijoitteluajonHakijat.kevytDto(repository, sijoitteluAjo, hakukohdeOid))
