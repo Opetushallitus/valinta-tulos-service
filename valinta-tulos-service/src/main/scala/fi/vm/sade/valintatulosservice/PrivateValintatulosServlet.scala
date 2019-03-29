@@ -19,11 +19,11 @@ class PrivateValintatulosServlet(valintatulosService: ValintatulosService,
 
   protected val applicationDescription = "Sisäinen valintatulosten REST API"
 
-  override def auditLog(auditParams: List[(String, String)], auditOperation: Operation): Unit ={
+  override def auditLog(auditParams: Map[String, String], auditOperation: Operation): Unit = {
     logger.info(s"PrivateValintatulosServlet REST call: $auditOperation with parameters: $auditParams")
   }
 
-  override def auditLogChanged(auditParams: List[(String, String)], auditOperation: Operation, addedParams: List[(String, String)], changeOperation: String): Unit ={
+  override def auditLogChanged(auditParams: Map[String, String], auditOperation: Operation, addedParams: Map[String, String], changeOperation: String): Unit = {
     logger.info(s"PrivateValintatulosServlet REST call: $auditOperation with parameters: $auditParams $changeOperation parameters: $addedParams")
   }
 }

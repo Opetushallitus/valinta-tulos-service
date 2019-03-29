@@ -14,7 +14,7 @@ class PublicValintatulosServlet(audit: Audit, valintatulosService: ValintatulosS
 
   protected val applicationDescription = "Julkinen valintatulosten REST API"
 
-  override def auditLog(auditParams: List[(String, String)], auditOperation: Operation) {
+  override def auditLog(auditParams: Map[String, String], auditOperation: Operation): Unit = {
     implicit val authenticated = authenticate
     val credentials: AuditInfo = auditInfo
     val builder= new Target.Builder()
@@ -22,7 +22,7 @@ class PublicValintatulosServlet(audit: Audit, valintatulosService: ValintatulosS
     audit.log(auditInfo.user, auditOperation, builder.build(), new Changes.Builder().build())
   }
 
-  override def auditLogChanged(auditParams: List[(String, String)], auditOperation: Operation, changedParams: List[(String, String)], changeOperation: String) {
+  override def auditLogChanged(auditParams: Map[String, String], auditOperation: Operation, changedParams: Map[String, String], changeOperation: String): Unit = {
     implicit val authenticated = authenticate
     val credentials: AuditInfo = auditInfo
     val builder = new Target.Builder()

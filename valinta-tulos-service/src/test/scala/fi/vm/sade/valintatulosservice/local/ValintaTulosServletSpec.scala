@@ -412,6 +412,22 @@ class ValintaTulosServletSpec extends ServletSpecification {
     }
   }
 
+  "GET /haku/:hakuOid/hyvaksytyt" should {
+    "palauttaa hyvaksytyt hakemukset" in {
+      useFixture("hyvaksytty-kesken-julkaistavissa.json")
+      val hakuOid = "1.2.246.562.5.2013080813081926341928"
+      get(s"haku/$hakuOid/hyvaksytyt") {
+        status must_== 200
+        val responseJson = JsonMethods.parse(body)
+
+        (responseJson \ "results" \ "hakijaOid").extract[Seq[HakijaOid]] must have size greaterThan(0)
+        (responseJson \ "results" \\ "tila" \ "tila").extract[Seq[String]] must have size greaterThan(1)
+        (responseJson \ "results" \\ "tila" \ "tila").extract[Seq[String]] must contain("HYVAKSYTTY")
+      }
+    }
+  }
+
+
   def vastaanota[T](action: String, hakukohde: String = "1.2.246.562.5.72607738902", personOid: String = "1.2.246.562.24.14229104472", hakemusOid: String = "1.2.246.562.11.00000441369")(block: => T) = {
     postJSON(s"""vastaanotto/henkilo/$personOid/hakemus/$hakemusOid/hakukohde/$hakukohde""",
       s"""{"action":"$action"}""") {
