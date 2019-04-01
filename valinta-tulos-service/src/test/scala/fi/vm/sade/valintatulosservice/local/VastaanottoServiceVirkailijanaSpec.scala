@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.local
 
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
-import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusRepository, HakuAppRepository}
+import fi.vm.sade.valintatulosservice.hakemus._
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.sijoittelu._
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
@@ -217,7 +217,7 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
         VastaanottoEventDto(valintatapajonoOid, "1234", HakemusOid("1234"), HakukohdeOid("1234"), hakuOid, Vastaanottotila.vastaanottanut, muokkaaja, "testiselite")
       ))
       r.size must_== 2
-      r.head.result.message must_== Some(s"No hakemus 1234 found from Haku-app or Ataru")
+      r.head.result.message must_== Some("Hakemusta 1234 ei löytynyt")
       r.head.result.status must_== 400
       r.tail.head.result.status must_== 200
       hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
@@ -410,7 +410,10 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
   lazy val raportointiService = new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintatulosDao)
   lazy val hakijaDtoClient = new ValintarekisteriHakijaDTOClientImpl(raportointiService, sijoittelunTulosClient, valintarekisteriDb)
   lazy val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
-  lazy val hakemusRepository = new HakemusRepository(new HakuAppRepository(), new AtaruHakemusRepository(appConfig), new AtaruHakemusEnricher(hakuService, oppijanumerorekisteriService))
+  lazy val ataruHakemusRepository = new AtaruHakemusRepository(appConfig) {
+    override def getHakemukset(query: HakemuksetQuery): Either[Throwable, AtaruResponse] = Right(AtaruResponse(List.empty, None))
+  }
+  lazy val hakemusRepository = new HakemusRepository(new HakuAppRepository(), ataruHakemusRepository, new AtaruHakemusEnricher(hakuService, oppijanumerorekisteriService))
   lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, vastaanotettavuusService, sijoittelutulosService, hakemusRepository, valintarekisteriDb,
     hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, hakijaDtoClient)
   lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService,

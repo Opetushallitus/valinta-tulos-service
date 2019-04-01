@@ -15,17 +15,17 @@ class AtaruHakemusEnricher(hakuService: HakuService,
     } yield ataruHakemukset.map(hakemus => toHakemus(henkilot, hakutoiveet, hakemus))
   }
 
-  private def toHakemus(henkilot: Map[HakijaOid, Henkilo], hakutoiveet: Map[HakukohdeOid, Hakutoive], hakemus: AtaruHakemus): Hakemus = {
+  private def toHakemus(henkilot: Map[HakijaOid, Henkilo], hakutoiveet: Map[HakukohdeOid, String => Hakutoive], hakemus: AtaruHakemus): Hakemus = {
     val henkilo = henkilot(hakemus.henkiloOid)
     Hakemus(
       oid = hakemus.oid,
       hakuOid = hakemus.hakuOid,
       henkiloOid = hakemus.henkiloOid.toString,
       asiointikieli = hakemus.asiointikieli,
-      toiveet = hakemus.hakutoiveet.map(s => hakutoiveet(HakukohdeOid(s.hakukohdeOid))),
+      toiveet = hakemus.hakukohdeOids.map(oid => hakutoiveet(oid)(hakemus.asiointikieli)),
       henkilotiedot = Henkilotiedot(
         kutsumanimi = henkilo.kutsumanimi,
-        email = hakemus.email,
+        email = Some(hakemus.email),
         hasHetu = henkilo.hetu.isDefined
       )
     )
@@ -44,9 +44,9 @@ class AtaruHakemusEnricher(hakuService: HakuService,
     })
   }
 
-  private def hakutoiveet(hakemukset: List[AtaruHakemus]): Either[Throwable, Map[HakukohdeOid, Hakutoive]] = {
+  private def hakutoiveet(hakemukset: List[AtaruHakemus]): Either[Throwable, Map[HakukohdeOid, String => Hakutoive]] = {
     MonadHelper.sequence(uniqueHakukohdeOids(hakemukset).map(hakutoive))
-      .right.map(_.map(h => h.oid -> h).toMap)
+      .right.map(_.toMap)
   }
 
   private def uniquePersonOids(hakemukset: List[AtaruHakemus]): Set[HakijaOid] = {
@@ -54,17 +54,23 @@ class AtaruHakemusEnricher(hakuService: HakuService,
   }
 
   private def uniqueHakukohdeOids(hakemukset: List[AtaruHakemus]): Set[HakukohdeOid] = {
-    hakemukset.flatMap(_.hakutoiveet).map(_.hakukohdeOid).toSet.map(HakukohdeOid)
+    hakemukset.flatMap(_.hakukohdeOids).toSet
   }
 
-  private def hakutoive(oid: HakukohdeOid): Either[Throwable, Hakutoive] = {
+  private def getFirstNonBlank[K](m: Map[K, String], keys: List[K]): Option[String] = {
+    keys.collectFirst { case k if m.contains(k) && m(k).trim.nonEmpty => m(k) }
+  }
+
+  private def hakutoive(oid: HakukohdeOid): Either[Throwable, (HakukohdeOid, String => Hakutoive)] = {
     hakuService.getHakukohde(oid).right.map(h => {
-      Hakutoive(
+      (oid, lang => Hakutoive(
         oid = oid,
         tarjoajaOid = h.tarjoajaOids.head,
-        nimi = h.hakukohteenNimet.getOrElse("kieli_fi", ""), // FIXME use correct language
-        tarjoajaNimi = h.tarjoajaNimet.getOrElse("fi", "") // FIXME use correct language
-      )
+        nimi = getFirstNonBlank(h.hakukohteenNimet, List("kieli_" + lang, "kieli_fi", "kieli_sv", "kieli_en"))
+          .getOrElse(throw new IllegalStateException(s"Hakukohteella $oid ei ole nimeä")),
+        tarjoajaNimi = getFirstNonBlank(h.tarjoajaNimet, List(lang, "fi", "sv", "en"))
+          .getOrElse(throw new IllegalStateException(s"Hakukohteella $oid ei ole tarjoajan nimeä"))
+      ))
     })
   }
 }
