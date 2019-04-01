@@ -29,8 +29,6 @@ class ValintarekisteriHakijaDTOClientImpl(raportointiService: ValintarekisteriRa
         case HakijaDTOSearchCriteria(_, _, None) =>
           raportointiService.hakemukset(sijoitteluajo).getResults.asScala.foreach(processor)
         case HakijaDTOSearchCriteria(_, _, Some(hakukohdeOids)) =>
-          //todo fixme jos on kysytty usealla hakukohteella, palautuvat samat tiedot useaan kertaan jos hakija on hakenut useampaan kuin yhteen
-          //niistä hakukohteista, joiden tiedot pyydettiin. Ei varmaan käytännössä haitallista, mutta rumaa.
           raportointiService.hakemukset(sijoitteluajo, hakukohdeOids).getResults.asScala.foreach(processor)
       }
     }

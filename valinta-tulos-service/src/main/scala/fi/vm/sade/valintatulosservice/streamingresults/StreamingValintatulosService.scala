@@ -1,8 +1,6 @@
 package fi.vm.sade.valintatulosservice.streamingresults
 
-import java.util.concurrent.atomic.AtomicInteger
-
-import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO}
+import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.{ValintatulosService, ValintatulosUtil}
@@ -46,7 +44,6 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
     }.reduce((i1, i2) => i1 ++ i2))
 
     var tuloksetHakemuksittain = Map[HakemusOid, (String, List[Hakutoiveentulos])]()
-
     val hakutoiveidenTuloksetByHakemusOid: Map[HakemusOid, (String, List[Hakutoiveentulos])] =
       timed(s"Find hakutoiveiden tulokset for ${hakukohdeOids.size} hakukohdes of haku $hakuOid", 1000) {
         hakemustenTulokset match {
@@ -54,7 +51,7 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
             hakemustenTulosIterator.map(h => {
               h.hakutoiveet foreach {
                 toive =>
-                  if (hakukohdeOids.contains(toive.hakukohdeOid) && (toive.valintatapajonoOid != null && toive.valintatapajonoOid != ValintatapajonoOid(""))) {
+                  if (hakukohdeOids.contains(toive.hakukohdeOid) && (toive.valintatapajonoOid != ValintatapajonoOid(""))) {
                     if (!tuloksetHakemuksittain.contains(h.hakemusOid)) {
                       tuloksetHakemuksittain += (h.hakemusOid -> (h.hakijaOid, List(toive)))
                     } else {
@@ -68,9 +65,8 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
           case None => Map()
         }
       }
-    var total = 0
-    tuloksetHakemuksittain foreach {t => total += t._2._2.size}
-    logger.info(s"Found ${hakutoiveidenTuloksetByHakemusOid.keySet.size} hakemus objects for sijoitteluajo $sijoitteluajoId " +
+    val total = tuloksetHakemuksittain.map(t => t._2._2.size).sum
+    logger.info(s"Found ${tuloksetHakemuksittain.keySet.size} hakemus objects for sijoitteluajo $sijoitteluajoId " +
       s"of ${hakukohdeOids.size} hakukohdes of haku $hakuOid. These have a total of $total relevant hakutoivees.")
 
     streamSijoittelunTulokset(
@@ -109,10 +105,9 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
                                         hakijaDTOSearchCriteria: HakijaDTOSearchCriteria,
                                         writeResult: HakijaDTO => Unit,
                                         vainMerkitsevaJono: Boolean,
-                                        vainKysyttyihinHakukohteisiinKohdistuvatHakutoiveet: Boolean = false,
-                                        tulokset: Map[(HakemusOid, HakukohdeOid), Hakutoiveentulos] = Map()): Unit = {
+                                        vainKysyttyihinHakukohteisiinKohdistuvatHakutoiveet: Boolean = false): Unit = {
     val hakuOid = hakijaDTOSearchCriteria.hakuOid
-
+    var alreadyProcessed = Set[String]()
     def processTulos(hakijaDto: HakijaDTO, hakijaOid: String, hakutoiveidenTulokset: List[Hakutoiveentulos]): Unit = {
       hakijaDto.setHakijaOid(hakijaOid)
       if (vainKysyttyihinHakukohteisiinKohdistuvatHakutoiveet) {
@@ -132,7 +127,12 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
       hakijaDTOClient.processSijoittelunTulokset(hakijaDTOSearchCriteria, { hakijaDto: HakijaDTO =>
         tuloksetByHakemusOid.get(HakemusOid(hakijaDto.getHakemusOid)) match {
           case Some((hakijaOid, hakutoiveidenTulokset)) =>
-            processTulos(hakijaDto, hakijaOid, hakutoiveidenTulokset)
+            if (!alreadyProcessed.contains(hakijaDto.getHakijaOid+hakijaDto.getHakemusOid)) {
+              processTulos(hakijaDto, hakijaOid, hakutoiveidenTulokset)
+              alreadyProcessed += hakijaDto.getHakijaOid+hakijaDto.getHakemusOid
+            } else {
+              logger.info(s"Already processed! ${hakijaDto.getHakijaOid+hakijaDto.getHakemusOid}")
+            }
           case None => valintatulosService.crashOrLog(s"Hakemus ${hakijaDto.getHakemusOid} not found in hakemusten tulokset for haku $hakuOid")
         }
       })
