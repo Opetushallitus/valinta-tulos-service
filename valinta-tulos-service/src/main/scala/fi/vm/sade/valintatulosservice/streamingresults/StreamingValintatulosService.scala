@@ -44,24 +44,37 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
           throw new RuntimeException(msg)
       }
     }.reduce((i1, i2) => i1 ++ i2))
+
+    var tuloksetHakemuksittain = Map[HakemusOid, (String, List[Hakutoiveentulos])]()
+
     val hakutoiveidenTuloksetByHakemusOid: Map[HakemusOid, (String, List[Hakutoiveentulos])] =
       timed(s"Find hakutoiveiden tulokset for ${hakukohdeOids.size} hakukohdes of haku $hakuOid", 1000) {
         hakemustenTulokset match {
           case Some(hakemustenTulosIterator) =>
             hakemustenTulosIterator.map(h => {
-              //Palautetaan vain sellaiset hakutoiveet, jotka kohdistuvat johonkin pyynnössä olleeseen hakukohdeoidiin.
+              h.hakutoiveet foreach {
+                toive =>
+                  if (hakukohdeOids.contains(toive.hakukohdeOid) && (toive.valintatapajonoOid != null && toive.valintatapajonoOid != ValintatapajonoOid(""))) {
+                    if (!tuloksetHakemuksittain.contains(h.hakemusOid)) {
+                      tuloksetHakemuksittain += (h.hakemusOid -> (h.hakijaOid, List(toive)))
+                    } else {
+                      tuloksetHakemuksittain += (h.hakemusOid -> (h.hakijaOid, tuloksetHakemuksittain(h.hakemusOid)._2 ++ List(toive)))
+                    }
+                  }
+              }
               val relevant = h.hakutoiveet.filter(ht => hakukohdeOids.contains(ht.hakukohdeOid))
-              (h.hakemusOid, (h.hakijaOid, relevant))}).toMap
+              (h.hakemusOid, (h.hakijaOid, relevant))
+            }).toMap
           case None => Map()
         }
       }
     var total = 0
-    hakutoiveidenTuloksetByHakemusOid foreach {t => total += t._2._2.size}
+    tuloksetHakemuksittain foreach {t => total += t._2._2.size}
     logger.info(s"Found ${hakutoiveidenTuloksetByHakemusOid.keySet.size} hakemus objects for sijoitteluajo $sijoitteluajoId " +
       s"of ${hakukohdeOids.size} hakukohdes of haku $hakuOid. These have a total of $total relevant hakutoivees.")
 
     streamSijoittelunTulokset(
-      hakutoiveidenTuloksetByHakemusOid,
+      tuloksetHakemuksittain,
       HakijaDTOSearchCriteria(hakuOid, sijoitteluajoId, Some(hakukohdeOids)),
       writeResult,
       vainMerkitsevaJono,
@@ -96,7 +109,8 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
                                         hakijaDTOSearchCriteria: HakijaDTOSearchCriteria,
                                         writeResult: HakijaDTO => Unit,
                                         vainMerkitsevaJono: Boolean,
-                                        vainKysyttyihinHakukohteisiinKohdistuvatHakutoiveet: Boolean = false): Unit = {
+                                        vainKysyttyihinHakukohteisiinKohdistuvatHakutoiveet: Boolean = false,
+                                        tulokset: Map[(HakemusOid, HakukohdeOid), Hakutoiveentulos] = Map()): Unit = {
     val hakuOid = hakijaDTOSearchCriteria.hakuOid
 
     def processTulos(hakijaDto: HakijaDTO, hakijaOid: String, hakutoiveidenTulokset: List[Hakutoiveentulos]): Unit = {
@@ -117,7 +131,8 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
     try {
       hakijaDTOClient.processSijoittelunTulokset(hakijaDTOSearchCriteria, { hakijaDto: HakijaDTO =>
         tuloksetByHakemusOid.get(HakemusOid(hakijaDto.getHakemusOid)) match {
-          case Some((hakijaOid, hakutoiveidenTulokset)) => processTulos(hakijaDto, hakijaOid, hakutoiveidenTulokset)
+          case Some((hakijaOid, hakutoiveidenTulokset)) =>
+            processTulos(hakijaDto, hakijaOid, hakutoiveidenTulokset)
           case None => valintatulosService.crashOrLog(s"Hakemus ${hakijaDto.getHakemusOid} not found in hakemusten tulokset for haku $hakuOid")
         }
       })
