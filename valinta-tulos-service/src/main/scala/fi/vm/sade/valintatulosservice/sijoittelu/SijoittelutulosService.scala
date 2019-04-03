@@ -61,7 +61,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
       hakijaDtot <- hakukohdeOid match {
         case Some(hakukohde) =>
           if (vainHakukohde)
-            Option(Timer.timed("hakukohteen hakemukset", 1000)(raportointiService.hakemuksetVainHakukohteenTietojenKanssaIlmanMuitaHakutoiveita(sijoittelu, hakukohde)))
+            Option(Timer.timed("hakukohteen hakemukset", 1000)(raportointiService.hakemuksetVainHakukohteenTietojenKanssa(sijoittelu, hakukohde)))
           else
             Option(Timer.timed("hakukohteen hakemukset", 1000)(raportointiService.kevytHakemukset(sijoittelu, hakukohde)))
         case None => Option(Timer.timed("hakemukset", 1000)(raportointiService.kevytHakemukset(sijoittelu)))

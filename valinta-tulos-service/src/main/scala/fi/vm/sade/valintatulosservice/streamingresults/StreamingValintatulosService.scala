@@ -11,6 +11,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.VirkailijaVastaanottoR
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 import scala.collection.parallel.ForkJoinTaskSupport
 import scala.concurrent.forkjoin.ForkJoinPool
 
@@ -36,7 +37,14 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
     parallelHakukohdeOids.tasksupport = taskSupport
     val hakemustenTulokset: Option[Iterator[Hakemuksentulos]] = Some(parallelHakukohdeOids.map { hakukohdeOid =>
       valintatulosService.hakemustenTulosByHakukohde(hakuOid, hakukohdeOid, Some(haunVastaanototByHakijaOid), vainHakukohteenTiedot = true) match {
-        case Right(it) => it
+        case Right(it) =>
+          //Siivotaan hakemusten tuloksista muihin kuin tähän hakukohteeseen kohdistuneet hakutoiveet.
+          var filteredTulokses = ListBuffer[Hakemuksentulos]()
+          it foreach {
+            ht => filteredTulokses += ht.copy(hakutoiveet = ht.hakutoiveet.filter(ht => ht.hakukohdeOid.equals(hakukohdeOid)))
+          }
+          logger.info(s"Found ${filteredTulokses.size} Hakemuksentulokses for hakukohde $hakukohdeOid.")
+          filteredTulokses.iterator
         case Left(e) => val msg = s"Could not retrieve results for hakukohde $hakukohdeOid of haku $hakuOid"
           logger.error(msg, e)
           throw new RuntimeException(msg)
@@ -44,30 +52,18 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
     }.reduce((i1, i2) => i1 ++ i2))
 
     var tuloksetHakemuksittain = Map[HakemusOid, (String, List[Hakutoiveentulos])]()
-    val hakutoiveidenTuloksetByHakemusOid: Map[HakemusOid, (String, List[Hakutoiveentulos])] =
-      timed(s"Find hakutoiveiden tulokset for ${hakukohdeOids.size} hakukohdes of haku $hakuOid", 1000) {
-        hakemustenTulokset match {
-          case Some(hakemustenTulosIterator) =>
-            hakemustenTulosIterator.map(h => {
-              h.hakutoiveet foreach {
-                toive =>
-                  if (hakukohdeOids.contains(toive.hakukohdeOid) && (toive.valintatapajonoOid != ValintatapajonoOid(""))) {
-                    if (!tuloksetHakemuksittain.contains(h.hakemusOid)) {
-                      tuloksetHakemuksittain += (h.hakemusOid -> (h.hakijaOid, List(toive)))
-                    } else {
-                      tuloksetHakemuksittain += (h.hakemusOid -> (h.hakijaOid, tuloksetHakemuksittain(h.hakemusOid)._2 ++ List(toive)))
-                    }
-                  }
-              }
-              val relevant = h.hakutoiveet.filter(ht => hakukohdeOids.contains(ht.hakukohdeOid))
-              (h.hakemusOid, (h.hakijaOid, relevant))
-            }).toMap
-          case None => Map()
-        }
+    hakemustenTulokset.getOrElse(Iterator()) foreach {
+      hakemuksenTulos => {
+          hakemuksenTulos.hakutoiveet foreach {
+            toive =>
+              if (!tuloksetHakemuksittain.contains(hakemuksenTulos.hakemusOid)) tuloksetHakemuksittain += (hakemuksenTulos.hakemusOid -> (hakemuksenTulos.hakijaOid, List(toive)))
+              else tuloksetHakemuksittain += (hakemuksenTulos.hakemusOid -> (hakemuksenTulos.hakijaOid, tuloksetHakemuksittain(hakemuksenTulos.hakemusOid)._2 ++ List(toive)))
+          }
       }
-    val total = tuloksetHakemuksittain.map(t => t._2._2.size).sum
+    }
+
     logger.info(s"Found ${tuloksetHakemuksittain.keySet.size} hakemus objects for sijoitteluajo $sijoitteluajoId " +
-      s"of ${hakukohdeOids.size} hakukohdes of haku $hakuOid. These have a total of $total relevant hakutoivees.")
+      s"of ${hakukohdeOids.size} hakukohdes of haku $hakuOid. These have a total of ${tuloksetHakemuksittain.map(t => t._2._2.size).sum} relevant hakutoivees.")
 
     streamSijoittelunTulokset(
       tuloksetHakemuksittain,
@@ -131,7 +127,7 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
               processTulos(hakijaDto, hakijaOid, hakutoiveidenTulokset)
               alreadyProcessed += hakijaDto.getHakijaOid+hakijaDto.getHakemusOid
             } else {
-              logger.info(s"Already processed! ${hakijaDto.getHakijaOid+hakijaDto.getHakemusOid}")
+              logger.info(s"Already processed results for ${hakijaDto.getHakijaOid+hakijaDto.getHakemusOid}!.")
             }
           case None => valintatulosService.crashOrLog(s"Hakemus ${hakijaDto.getHakemusOid} not found in hakemusten tulokset for haku $hakuOid")
         }

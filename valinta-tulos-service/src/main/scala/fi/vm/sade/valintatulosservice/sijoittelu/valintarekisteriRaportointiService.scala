@@ -41,7 +41,6 @@ trait ValintarekisteriRaportointiService {
 
   def hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo: SijoitteluAjo, hakukohdeOid:HakukohdeOid): List[KevytHakijaDTO]
 
-  def hakemuksetVainHakukohteenTietojenKanssaIlmanMuitaHakutoiveita(sijoitteluAjo: SijoitteluAjo, hakukohdeOid:HakukohdeOid): List[KevytHakijaDTO]
 }
 
 class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with SijoitteluRepository with ValinnantulosRepository,
@@ -100,15 +99,6 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
   override def hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO] =
     tryOrThrow(SijoitteluajonHakijat.kevytDtoVainHakukohde(repository, sijoitteluAjo, hakukohdeOid))
 
-  override def hakemuksetVainHakukohteenTietojenKanssaIlmanMuitaHakutoiveita(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO] = {
-    val hakemukset = tryOrThrow(SijoitteluajonHakijat.kevytDtoVainHakukohde(repository, sijoitteluAjo, hakukohdeOid))
-    hakemukset foreach {
-      h =>
-        val talleHakukohteelle = h.getHakutoiveet.asScala.filter(ht => ht.getHakukohdeOid.equals(hakukohdeOid.toString)).toList
-        h.setHakutoiveet(ValintatulosUtil.toSortedSet(talleHakukohteelle))
-    }
-    hakemukset
-  }
 
   override def kevytHakemukset(sijoitteluAjo: SijoitteluAjo, hakukohdeOid: HakukohdeOid): List[KevytHakijaDTO] =
     tryOrThrow(SijoitteluajonHakijat.kevytDto(repository, sijoitteluAjo, hakukohdeOid))
