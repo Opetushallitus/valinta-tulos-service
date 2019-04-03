@@ -12,7 +12,7 @@ import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class SmokeTest extends Specification with HttpComponentsClient with Logging {
-  lazy val registry: Registry = Registry.fromString(Option(System.getProperty("valintatulos.profile")).getOrElse("localvt"), CommandLineArgs())
+  lazy val registry: Registry = Registry.fromString(Option(System.getProperty("valintatulos.profile")).getOrElse("localvt"))
 
   override def baseUrl: String = "http://localhost:" + ValintaTulosServiceWarRunner.valintatulosPort + "/valinta-tulos-service"
 

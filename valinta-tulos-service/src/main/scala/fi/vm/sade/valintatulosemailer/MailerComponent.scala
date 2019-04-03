@@ -78,27 +78,22 @@ trait MailerComponent {
     private def sendBatch(batch: List[Ilmoitus], language: String, lahetysSyy: LahetysSyy): Option[String] = {
       val recipients: List[Recipient] = batch.map(ryhmasahkoposti.VTRecipient(_, language))
 
-      if (!settings.testMode) {
-        logger.info(s"Starting to send batch. Language $language. LahetysSyy $lahetysSyy Batch size ${recipients.size}")
-        try {
-          groupEmailService.send(GroupEmail(recipients, EmailInfo("omattiedot", letterTemplateNameFor(lahetysSyy), language))) match {
-            case Some(id) =>
-              if (vastaanottopostiService.sendConfirmation(batch)) {
-                logger.info(s"Succesfully confirmed batch id: $id")
-              } else {
-                logger.error(s"Could not send confirmation! Batch was still sent, batch id: $id")
-              }
-              Some(id)
-            case _ => None
-          }
-        } catch {
-          case e: Exception =>
-            logger.error("Group email sending error " + e)
-            None
+      logger.info(s"Starting to send batch. Language $language. LahetysSyy $lahetysSyy Batch size ${recipients.size}")
+      try {
+        groupEmailService.send(GroupEmail(recipients, EmailInfo("omattiedot", letterTemplateNameFor(lahetysSyy), language))) match {
+          case Some(id) =>
+            if (vastaanottopostiService.sendConfirmation(batch)) {
+              logger.info(s"Succesfully confirmed batch id: $id")
+            } else {
+              logger.error(s"Could not send confirmation! Batch was still sent, batch id: $id")
+            }
+            Some(id)
+          case _ => None
         }
-      } else {
-        logger.info(s"Not actually sending anything, test mode was set. Batch size ${recipients.size}")
-        Some(s"${recipients.size}")
+      } catch {
+        case e: Exception =>
+          logger.error("Group email sending error " + e)
+          None
       }
     }
   }

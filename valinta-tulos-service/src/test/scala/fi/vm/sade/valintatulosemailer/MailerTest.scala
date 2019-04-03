@@ -8,7 +8,7 @@ import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class MailerTest extends Specification {
-  val registry: IT = Registry.fromString("it", CommandLineArgs()).asInstanceOf[IT]
+  val registry: IT = Registry.fromString("it").asInstanceOf[IT]
   registry.start()
 
   "Mailer divides batch correctly" should {
