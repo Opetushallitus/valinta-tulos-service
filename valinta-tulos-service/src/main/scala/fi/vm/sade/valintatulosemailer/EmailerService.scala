@@ -2,8 +2,8 @@ package fi.vm.sade.valintatulosemailer
 
 import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosemailer.config.{ApplicationSettingsParser, Registry}
-import fi.vm.sade.valintatulosemailer.config.Registry.Registry
+import fi.vm.sade.valintatulosemailer.config.EmailerConfigParser
+import fi.vm.sade.valintatulosemailer.config.EmailerRegistry.EmailerRegistry
 //import scopt.OptionParser
 
 import scala.util.Try
@@ -21,14 +21,11 @@ import scala.util.Try
 //  }
 //}
 
-class EmailerService() extends Logging {
-  val registry: Registry = Registry.fromString(Option(System.getProperty("vtemailer.profile")).getOrElse("default"))
-  registry.start()
-
+class EmailerService(registry: EmailerRegistry) extends Logging {
   def run(): Unit = {
     logger.info("***** VT-emailer started *****")
     logger.info(s"Using settings: " +
-      s"${registry.settings.withOverride("ryhmasahkoposti.cas.password", "***" )(ApplicationSettingsParser())}")
+      s"${registry.settings.withOverride("ryhmasahkoposti.cas.password", "***" )(EmailerConfigParser())}")
     Try(Timer.timed("Batch send") {
       val ids = registry.mailer.sendMail
       if (ids.nonEmpty) {
