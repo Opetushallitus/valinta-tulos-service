@@ -1,15 +1,14 @@
 package fi.vm.sade.valintatulosemailer
 
-import fi.vm.sade.valintatulosemailer.config.Registry
-import fi.vm.sade.valintatulosemailer.config.Registry.IT
+import fi.vm.sade.valintatulosemailer.config.EmailerRegistry
+import fi.vm.sade.valintatulosemailer.config.EmailerRegistry.IT
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class MailerTest extends Specification {
-  val registry: IT = Registry.fromString("it").asInstanceOf[IT]
-  registry.start()
+  val registry: IT = EmailerRegistry.fromString("it").asInstanceOf[IT]
 
   "Mailer divides batch correctly" should {
     "divides job into 4 batches and confirms all of them" in {

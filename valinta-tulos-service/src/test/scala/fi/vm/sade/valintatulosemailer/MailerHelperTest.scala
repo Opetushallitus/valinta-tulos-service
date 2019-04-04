@@ -1,7 +1,8 @@
 package fi.vm.sade.valintatulosemailer
 
-import fi.vm.sade.valintatulosemailer.valintatulos.LahetysSyy._
-import fi.vm.sade.valintatulosemailer.valintatulos.{Hakukohde, Ilmoitus}
+import fi.vm.sade.valintatulosservice.vastaanottomeili
+import fi.vm.sade.valintatulosservice.vastaanottomeili.{Hakukohde, Ilmoitus, LahetysSyy}
+import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy._
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
@@ -60,8 +61,8 @@ class MailerHelperTest extends Specification {
   }
 
   def getDummyIlmoitus(hakukohteidenLahetysSyyt: List[LahetysSyy]): Ilmoitus = {
-    Ilmoitus(null, null, None, FI, null, null, null,
-      hakukohteidenLahetysSyyt.map(Hakukohde(null, true, null, null, _)),
+    vastaanottomeili.Ilmoitus(null, null, None, FI, null, null, null,
+      hakukohteidenLahetysSyyt.map(Hakukohde(null, _, null, true, Map.empty, Map.empty)),
       null)
   }
 

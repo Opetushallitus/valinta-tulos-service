@@ -1,5 +1,7 @@
 package fi.vm.sade.valintatulosemailer.util
 
+import java.util.Date
+
 import org.joda.time.DateTime
 
 import scala.util.Random
@@ -24,8 +26,8 @@ object RandomDataGenerator {
     randomListItem(List("FI", "SV", "EN"))
   }
 
-  def randomDateAfterNow: DateTime = {
-    new DateTime().plusDays(Random.nextInt(30) + 1).plusMinutes(Random.nextInt(30)).plusHours(Random.nextInt(12))
+  def randomDateAfterNow: Date = {
+    new DateTime().plusDays(Random.nextInt(30) + 1).plusMinutes(Random.nextInt(30)).plusHours(Random.nextInt(12)).toDate
   }
 
   def randomListItem[A](l: List[A]): A = {

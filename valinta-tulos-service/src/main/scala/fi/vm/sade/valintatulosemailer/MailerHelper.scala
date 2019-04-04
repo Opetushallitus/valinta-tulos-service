@@ -1,7 +1,8 @@
 package fi.vm.sade.valintatulosemailer
 
-import fi.vm.sade.valintatulosemailer.valintatulos.Ilmoitus
-import fi.vm.sade.valintatulosemailer.valintatulos.LahetysSyy._
+import fi.vm.sade.valintatulosservice.vastaanottomeili.Ilmoitus
+import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy.LahetysSyy
+
 
 class MailerHelper {
 

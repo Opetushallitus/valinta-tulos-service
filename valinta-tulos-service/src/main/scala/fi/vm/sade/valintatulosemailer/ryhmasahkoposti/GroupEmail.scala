@@ -1,11 +1,11 @@
 package fi.vm.sade.valintatulosemailer.ryhmasahkoposti
 
 import fi.vm.sade.groupemailer.{Recipient, Replacement}
-import fi.vm.sade.valintatulosemailer.valintatulos
-import fi.vm.sade.valintatulosemailer.valintatulos.LahetysSyy._
 import fi.vm.sade.utils.slf4j.Logging
-import org.joda.time.{DateTime, DateTimeZone}
+import fi.vm.sade.valintatulosservice.vastaanottomeili.Ilmoitus
+import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy._
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
+import org.joda.time.{DateTime, DateTimeZone}
 
 case class Hakukohde(
                       oid: String,
@@ -36,17 +36,16 @@ object VTEmailerReplacement {
 }
 
 object VTRecipient extends Logging {
-  def apply(valintatulosRecipient: valintatulos.Ilmoitus, language: String): Recipient = {
+  def apply(valintatulosRecipient: Ilmoitus, language: String): Recipient = {
 
-    def getTranslation(rawTranslations: Map[String, Option[String]]) = {
+    def getTranslation(rawTranslations: Map[String, String]) = {
 
       def fixKey(key: String) = key.toLowerCase.replace("kieli_", "")
 
       val translations = rawTranslations
-        .filter { case (key, value) => value.isDefined && !value.get.isEmpty }
         .map { case (key, value) => (fixKey(key), value) }
 
-      translations.get(language.toLowerCase).orElse(translations.get("fi")).getOrElse(translations.head._2).get
+      translations.get(language.toLowerCase).orElse(translations.get("fi")).getOrElse(translations.head._2)
     }
 
     def getHakukohtees: Replacement = {
@@ -56,7 +55,7 @@ object VTRecipient extends Logging {
         VTEmailerReplacement.hakukohde(getTranslation(hakukohteet.head.hakukohteenNimet))
       } else if (lahetysSyy.equals(vastaanottoilmoitusKk) || lahetysSyy.equals(vastaanottoilmoitus2aste)) {
         VTEmailerReplacement.hakukohteet(hakukohteet.map(hakukohde =>
-          Hakukohde(hakukohde.oid, getTranslation(hakukohde.hakukohteenNimet),
+          Hakukohde(hakukohde.oid.s, getTranslation(hakukohde.hakukohteenNimet),
             getTranslation(hakukohde.tarjoajaNimet), hakukohde.ehdollisestiHyvaksyttavissa)
         ))
       } else {
@@ -65,7 +64,7 @@ object VTRecipient extends Logging {
       }
     }
 
-    val deadlineReplacement: Replacement = VTEmailerReplacement.deadline(valintatulosRecipient.deadline)
+    val deadlineReplacement: Replacement = VTEmailerReplacement.deadline(valintatulosRecipient.deadline.map(new DateTime(_)))
     logger.info(s"Deadline for hakemus '${valintatulosRecipient.hakemusOid}' was '${valintatulosRecipient.deadline}', which gave the deadlineText: '${deadlineReplacement.value}'.")
 
     val replacements = List(

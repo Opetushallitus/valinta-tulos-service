@@ -2,24 +2,25 @@ package fi.vm.sade.valintatulosemailer
 
 import fi.vm.sade.groupemailer.{EmailInfo, GroupEmail, GroupEmailComponent, Recipient}
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosemailer.config.ApplicationSettingsComponent
-import fi.vm.sade.valintatulosemailer.valintatulos.LahetysSyy._
-import fi.vm.sade.valintatulosemailer.valintatulos.{Ilmoitus, VastaanottopostiComponent, VtsPollResult}
+import fi.vm.sade.valintatulosemailer.config.EmailerConfigComponent
+import fi.vm.sade.valintatulosemailer.valintatulos.VastaanottopostiComponent
+import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy.LahetysSyy
+import fi.vm.sade.valintatulosservice.vastaanottomeili.{Ilmoitus, LahetysSyy, PollResult}
 
 import scala.collection.immutable.HashMap
 
 trait MailerComponent {
-  this: GroupEmailComponent with VastaanottopostiComponent with ApplicationSettingsComponent =>
+  this: GroupEmailComponent with VastaanottopostiComponent with EmailerConfigComponent =>
 
   val mailer: Mailer
 
   class MailerImpl extends Mailer with Logging {
     private val helper: MailerHelper = new MailerHelper
     private val letterTemplateNameFor = HashMap[LahetysSyy, String](
-      vastaanottoilmoitusKk -> "omattiedot_email",
-      vastaanottoilmoitus2aste -> "omattiedot_email_2aste",
-      ehdollisen_periytymisen_ilmoitus -> "ehdollisen_periytyminen_email",
-      sitovan_vastaanoton_ilmoitus -> "sitova_vastaanotto_email"
+      LahetysSyy.vastaanottoilmoitusKk -> "omattiedot_email",
+      LahetysSyy.vastaanottoilmoitus2aste -> "omattiedot_email_2aste",
+      LahetysSyy.ehdollisen_periytymisen_ilmoitus -> "ehdollisen_periytyminen_email",
+      LahetysSyy.sitovan_vastaanoton_ilmoitus -> "sitova_vastaanotto_email"
     )
 
     def sendMail: List[String] = {
@@ -37,7 +38,7 @@ trait MailerComponent {
       }
 
       logger.info("Fetching recipients from valinta-tulos-service")
-      val newPollResult: VtsPollResult = vastaanottopostiService.fetchRecipientBatch
+      val newPollResult: PollResult = vastaanottopostiService.fetchRecipientBatch
       val newBatch = newPollResult.mailables
       logger.info(s"Found ${newBatch.size} to send. " +
         s"complete == ${newPollResult.complete}, " +
