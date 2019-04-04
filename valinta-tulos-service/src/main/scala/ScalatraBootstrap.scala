@@ -4,6 +4,7 @@ import fi.vm.sade.auditlog.{ApplicationType, Audit, Logger}
 import fi.vm.sade.oppijantunnistus.OppijanTunnistusService
 import fi.vm.sade.security._
 import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosemailer.{EmailerService, EmailerServlet}
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.{Dev, IT, VtsAppConfig}
 import fi.vm.sade.valintatulosservice.config.{OhjausparametritAppConfig, VtsAppConfig}
@@ -174,6 +175,8 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new ValintaesitysServlet(valintaesitysService, valintarekisteriDb), "/auth/valintaesitys")
       context.mount(new PuuttuvienTulostenMetsastajaServlet(audit, valintarekisteriDb, hakuAppRepository, appConfig.properties("host.virkailija")), "/auth/puuttuvat")
       context.mount(new PublicEmailStatusServlet(mailPoller, valintarekisteriDb, audit), "/auth/vastaanottoposti")
+
+      context.mount(new EmailerServlet(new EmailerService()), "/emailer")
     }
   }
 

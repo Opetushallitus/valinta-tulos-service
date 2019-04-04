@@ -8,7 +8,7 @@ import fi.vm.sade.valintatulosemailer.config.Registry.Registry
 
 import scala.util.Try
 
-object Main extends App {
+//object EmailerService {
 //  def parseCommandLineArgs: CommandLineArgs = {
 //    val parser = new OptionParser[CommandLineArgs]("scopt") {
 //      head("valinta-tulos-emailer")
@@ -19,15 +19,13 @@ object Main extends App {
 //      case _ => throw new InstantiationError()
 //    }
 //  }
+//}
 
-  val registry: Registry = Registry.fromString(
-    Option(System.getProperty("vtemailer.profile")).getOrElse("default"))
+class EmailerService() extends Logging {
+  val registry: Registry = Registry.fromString(Option(System.getProperty("vtemailer.profile")).getOrElse("default"))
   registry.start()
-  new Main(registry).start()
-}
 
-class Main(registry: Registry) extends Logging {
-  def start(): Unit = {
+  def run(): Unit = {
     logger.info("***** VT-emailer started *****")
     logger.info(s"Using settings: " +
       s"${registry.settings.withOverride("ryhmasahkoposti.cas.password", "***" )(ApplicationSettingsParser())}")
