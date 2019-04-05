@@ -47,8 +47,14 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
     }
   }
 
-  def markAsSent(mailed: List[LahetysKuittaus]): Unit =
-    mailPollerRepository.markAsSent(mailed.flatMap(m => m.hakukohteet.map((m.hakemusOid, _))).toSet)
+//  def markAsSent(mailed: List[LahetysKuittaus]): Unit = {
+//    val set: Set[(HakemusOid, HakukohdeOid)] = mailed.flatMap(m => m.hakukohteet.map((m.hakemusOid, _))).toSet
+//    markAsSent(set)
+//  }
+
+  def markAsSent(set: Set[(HakemusOid, HakukohdeOid)]): Unit = {
+    mailPollerRepository.markAsSent(set)
+  }
 
   private def etsiHaut: List[(HakuOid, HakukohdeOid)] = {
     val vastikaanTarkistetutHakukohteet: Set[HakukohdeOid] = mailPollerRepository.findHakukohdeOidsCheckedRecently(emptyHakukohdeRecheckInterval)

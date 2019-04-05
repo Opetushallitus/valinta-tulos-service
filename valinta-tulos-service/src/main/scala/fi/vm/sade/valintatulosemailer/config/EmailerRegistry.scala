@@ -4,19 +4,20 @@ import java.io.FileInputStream
 import java.util.Properties
 
 import fi.vm.sade.utils.config.{ApplicationSettingsLoader, ConfigTemplateProcessor}
+import fi.vm.sade.valintatulosservice.vastaanottomeili.{MailDecorator, MailPollerAdapter}
 import org.apache.log4j.PropertyConfigurator
 
 object EmailerRegistry {
   def getProfileProperty = System.getProperty("vtemailer.profile", "default")
 
-  def fromString(profile: String): EmailerRegistry = {
+  def fromString(profile: String)(mailPoller: MailPollerAdapter, mailDecorator: MailDecorator): EmailerRegistry = {
     println("Using vtemailer.profile=" + profile)
     profile match {
-      case "default" => new Default()
-      case "templated" => new LocalTestingWithTemplatedVars()
-      case "dev" => new Dev()
-      case "it" => new IT()
-      case "localvt" => new LocalVT()
+      case "default" => new Default(mailPoller, mailDecorator)
+      case "templated" => new LocalTestingWithTemplatedVars(mailPoller, mailDecorator)
+      case "dev" => new Dev(mailPoller, mailDecorator)
+      case "it" => new IT(mailPoller, mailDecorator)
+      case "localvt" => new LocalVT(mailPoller, mailDecorator)
       case name => throw new IllegalArgumentException("Unknown value for vtemailer.profile: " + name)
     }
   }
@@ -24,23 +25,23 @@ object EmailerRegistry {
   /**
     * Default profile, uses ~/oph-configuration/valinta-tulos-emailer.properties
     */
-  class Default extends EmailerRegistry with ExternalProps
+  class Default(val mailPoller: MailPollerAdapter, val mailDecorator: MailDecorator) extends EmailerRegistry with ExternalProps
 
   /**
     * Templated profile, uses config template with vars file located by system property vtemailer.vars
     */
-  class LocalTestingWithTemplatedVars(val templateAttributesFile: String = System.getProperty("vtemailer.vars")) extends EmailerRegistry with TemplatedProps
+  class LocalTestingWithTemplatedVars(val mailPoller: MailPollerAdapter, val mailDecorator: MailDecorator, val templateAttributesFile: String = System.getProperty("vtemailer.vars")) extends EmailerRegistry with TemplatedProps
 
   /**
     * Dev profile
     */
-  class Dev extends EmailerRegistry with ExampleTemplatedProps {
+  class Dev(val mailPoller: MailPollerAdapter, val mailDecorator: MailDecorator) extends EmailerRegistry with ExampleTemplatedProps {
   }
 
   /**
     * IT (integration test) profiles.
     */
-  class IT extends EmailerRegistry with ExampleTemplatedProps with StubbedExternalDeps {
+  class IT(val mailPoller: MailPollerAdapter, val mailDecorator: MailDecorator) extends EmailerRegistry with ExampleTemplatedProps with StubbedExternalDeps {
     def lastEmailSize() = groupEmailService match {
       case x: FakeGroupEmailService => x.getLastEmailSize
       case _ => new IllegalAccessError("getLastEmailSize error")
@@ -58,7 +59,7 @@ object EmailerRegistry {
   /**
     * LocalVT (integration test) profile. Uses local valinta-tulos-service
     */
-  class LocalVT extends ExampleTemplatedProps with StubbedGroupEmail {
+  class LocalVT(val mailPoller: MailPollerAdapter, val mailDecorator: MailDecorator) extends ExampleTemplatedProps with StubbedGroupEmail {
 
     def lastEmailSize() = groupEmailService match {
       case x: FakeGroupEmailService => x.getLastEmailSize
@@ -101,5 +102,7 @@ object EmailerRegistry {
 
   trait EmailerRegistry extends Components {
     val settings: EmailerConfig
+    val mailPoller: MailPollerAdapter
+    val mailDecorator: MailDecorator
   }
 }
