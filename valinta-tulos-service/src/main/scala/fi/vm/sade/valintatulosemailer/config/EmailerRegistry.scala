@@ -67,9 +67,7 @@ object EmailerRegistry {
     }
 
     implicit val settingsParser = EmailerConfigParser()
-    override lazy val settings = ConfigTemplateProcessor.createSettings("valinta-tulos-emailer", templateAttributesFile)
-      .withOverride("valinta-tulos-service.vastaanottoposti.url",
-        "http://localhost:" + System.getProperty("ValintaTulosServiceWarRunner.port") + "/valinta-tulos-service/vastaanottoposti")
+    override lazy val settings = ConfigTemplateProcessor.createSettings("valinta-tulos-service", templateAttributesFile)
   }
 
   trait ExternalProps {
@@ -92,7 +90,7 @@ object EmailerRegistry {
     println("Using template variables from " + templateAttributesFile)
     lazy val settings = loadSettings
 
-    def loadSettings = ConfigTemplateProcessor.createSettings("valinta-tulos-emailer", templateAttributesFile)(EmailerConfigParser())
+    def loadSettings = ConfigTemplateProcessor.createSettings("valinta-tulos-service", templateAttributesFile)(EmailerConfigParser())
 
     def templateAttributesFile: String
   }

@@ -47,12 +47,8 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
     }
   }
 
-//  def markAsSent(mailed: List[LahetysKuittaus]): Unit = {
-//    val set: Set[(HakemusOid, HakukohdeOid)] = mailed.flatMap(m => m.hakukohteet.map((m.hakemusOid, _))).toSet
-//    markAsSent(set)
-//  }
-
-  def markAsSent(set: Set[(HakemusOid, HakukohdeOid)]): Unit = {
+  def markAsSent(ilmoituses: List[Ilmoitus]): Unit = {
+    val set: Set[(HakemusOid, HakukohdeOid)] = ilmoituses.flatMap { r => r.hakukohteet.map { h => (r.hakemusOid, h.oid) } }.toSet
     mailPollerRepository.markAsSent(set)
   }
 

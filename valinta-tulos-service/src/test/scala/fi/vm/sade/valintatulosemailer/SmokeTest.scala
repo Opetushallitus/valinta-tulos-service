@@ -1,29 +1,79 @@
 package fi.vm.sade.valintatulosemailer
 
+import fi.vm.sade.oppijantunnistus.OppijanTunnistusService
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosemailer.config.EmailerRegistry
-import fi.vm.sade.valintatulosemailer.config.EmailerRegistry.{LocalVT, EmailerRegistry}
+import fi.vm.sade.valintatulosemailer.config.EmailerRegistry.{EmailerRegistry, IT, LocalVT}
+import fi.vm.sade.valintatulosservice.ValintatulosService
+import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
+import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
+import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
+import fi.vm.sade.valintatulosservice.tarjonta.HakuService
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.vastaanottomeili._
 import org.apache.log4j._
 import org.apache.log4j.spi.LoggingEvent
 import org.junit.runner.RunWith
 import org.scalatra.test.HttpComponentsClient
+import org.specs2.mock.Mockito
 import org.specs2.mutable._
 import org.specs2.runner.JUnitRunner
 
+import scala.concurrent.duration.Duration
+
 @RunWith(classOf[JUnitRunner])
-class SmokeTest extends Specification with HttpComponentsClient with Logging {
-  lazy val registry: EmailerRegistry = EmailerRegistry.fromString(Option(System.getProperty("valintatulos.profile")).getOrElse("localvt"))(null, null)
+class SmokeTest extends Specification with HttpComponentsClient with Mockito with Logging {
+  val hakuService: HakuService = mock[HakuService]
+  val oppijanTunnistusService: OppijanTunnistusService = mock[OppijanTunnistusService]
+  val mailPollerRepository: MailPollerRepository = mock[MailPollerRepository]
+  val valintatulosService: ValintatulosService = mock[ValintatulosService]
+  val hakemusRepository: HakemusRepository = mock[HakemusRepository]
+  val ohjausparametritService: OhjausparametritService = mock[OhjausparametritService]
+  val vtsApplicationSettings: VtsApplicationSettings = mock[VtsApplicationSettings]
+
+  vtsApplicationSettings.mailPollerConcurrency returns 2
+
+  private val mailDecorator = new MailDecorator(
+    hakuService,
+    oppijanTunnistusService
+  )
+  private val mailPoller = mock[MailPollerAdapter]
+
+  mailPollerRepository.findHakukohdeOidsCheckedRecently(any[Duration]) returns Set.empty
+
+  private val hakukohde = Hakukohde(
+    HakukohdeOid("hakukohde_oid"),
+    LahetysSyy.vastaanottoilmoitus2aste,
+    Vastaanottotila.kesken,
+    ehdollisestiHyvaksyttavissa = false,
+    hakukohteenNimet = Map("fi" -> "hakukohteen_nimi"),
+    tarjoajaNimet = Map("fi" -> "tarjoajan_nimi")
+  )
+
+  private val ilmoitus = Ilmoitus(
+    hakemusOid = HakemusOid("hakemus_oid"),
+    hakijaOid = "hakija_oid",
+    secureLink = None,
+    asiointikieli = "fi",
+    etunimi = "Testi",
+    email = "a@a.a",
+    deadline = None,
+    hakukohteet = List(hakukohde),
+    haku = Haku(HakuOid("haku_oid"), nimi = Map("fi" -> "haun_nimi"), toinenAste = false)
+  )
+  mailPoller.pollForMailables(any, any, any).returns(PollResult(mailables = List(ilmoitus)))
+
+  lazy val registry: EmailerRegistry = EmailerRegistry.fromString(Option(System.getProperty("valintatulos.profile")).getOrElse("it"))(mailPoller, mailDecorator)
 
   override def baseUrl: String = "http://localhost:" + ValintaTulosServiceWarRunner.valintatulosPort + "/valinta-tulos-service"
 
   "Fetch, send and confirm batch" in {
-    put("util/fixtures/generate?hakemuksia=3&hakukohteita=2") {
-      val appender: TestAppender = new TestAppender
-      Logger.getRootLogger.addAppender(appender)
-      registry.mailer.sendMail
-      registry.asInstanceOf[LocalVT].lastEmailSize mustEqual 1
-      appender.errors mustEqual List()
-    }
+    val appender: TestAppender = new TestAppender
+    Logger.getRootLogger.addAppender(appender)
+    registry.mailer.sendMail
+    registry.asInstanceOf[IT].lastEmailSize mustEqual 1
+    appender.errors mustEqual List()
   }
 }
 

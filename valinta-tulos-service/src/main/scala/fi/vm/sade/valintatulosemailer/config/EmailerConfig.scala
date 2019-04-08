@@ -8,7 +8,6 @@ import fi.vm.sade.groupemailer.GroupEmailerSettings
 import scala.concurrent.duration.Duration
 
 case class EmailerConfig(config: Config) extends GroupEmailerSettings(config) {
-  val vastaanottopostiUrl: String = config.getString("valinta-tulos-service.vastaanottoposti.url")
   val recipientBatchSize: Int = config.getInt("valinta-tulos-service.batch.size")
   val recipientBatchLimitMinutes: Int = config.getInt("valinta-tulos-service.batch.limit.minutes")
   val sendConfirmationRetries: Int = config.getInt("valinta-tulos-service.http.retries")

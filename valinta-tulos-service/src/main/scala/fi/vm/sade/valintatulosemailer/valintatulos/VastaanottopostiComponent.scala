@@ -40,8 +40,7 @@ trait VastaanottopostiComponent {
         throw new IllegalArgumentException("got confirmation of 0 applications")
       }
       logger.info("got confirmation for " + recipients.size + " applications: " + recipients.map(_.hakemusOid).mkString(","))
-      val set = recipients.flatMap{r => r.hakukohteet.map{h => (r.hakemusOid, h.oid)}}.toSet
-      mailPoller.markAsSent(set)
+      mailPoller.markAsSent(recipients)
     }
   }
 
