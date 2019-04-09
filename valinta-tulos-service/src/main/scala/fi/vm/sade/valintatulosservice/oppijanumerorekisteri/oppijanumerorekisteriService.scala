@@ -48,11 +48,11 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) {
     appConfig.settings.securitySettings.casPassword
   )
   private val client = CasAuthenticatingClient(
-    appConfig.securityContext.casClient,
-    params,
-    org.http4s.client.blaze.defaultClient,
-    Some("valinta-tulos-service"),
-    "JSESSIONID"
+    casClient = appConfig.securityContext.casClient,
+    casParams = params,
+    serviceClient = org.http4s.client.blaze.defaultClient,
+    clientCallerId = appConfig.callerId,
+    sessionCookieName = "JSESSIONID"
   )
 
   def henkilot(oids: Set[HakijaOid]): Either[Throwable, Map[HakijaOid, Henkilo]] = {

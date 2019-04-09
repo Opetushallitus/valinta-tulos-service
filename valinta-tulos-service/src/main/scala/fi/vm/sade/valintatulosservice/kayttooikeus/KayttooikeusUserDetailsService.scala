@@ -33,7 +33,7 @@ class KayttooikeusUserDetailsService(appConfig:AppConfig) extends Logging {
       url,
       HttpOptions.connTimeout(5000),
       HttpOptions.readTimeout(10000)
-    ).header("Caller-id", "valinta-tulos-service")
+    )("valinta-tulos-service")
       .responseWithHeaders match {
       case (200, _, resultString) =>
         Try(Right(parse(resultString))).recover {

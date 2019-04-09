@@ -316,8 +316,7 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
       url,
       HttpOptions.connTimeout(30000),
       HttpOptions.readTimeout(120000)
-    ).header("clientSubSystemCode", "valinta-tulos-service")
-      .header("Caller-id", "valinta-tulos-service")
+    )("valinta-tulos-service")
       .responseWithHeaders match {
       case (200, _, resultString) if parseStatus(resultString).contains("NOT_FOUND") =>
         Left(new IllegalArgumentException(s"GET $url failed with status 200: NOT_FOUND"))

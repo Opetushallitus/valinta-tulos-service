@@ -178,6 +178,8 @@ object VtsAppConfig extends Logging {
       case _ => CachedRemoteOhjausparametritService(this)
     }
 
+    val callerId = "valinta-tulos-service"
+
     override def settings: VtsApplicationSettings
 
     def properties: Map[String, String] = settings.toProperties
