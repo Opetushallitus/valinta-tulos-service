@@ -16,13 +16,13 @@ class ProductionSmokeTest extends Specification {
 
   "tuotantoympäristön valintatuloksissa " should {
     "hakija hakemuksella " + hyväksytty + " on hyväksytty ylempään hakutoiveeseen ja alempi on peruuntunut" in {
-      val (responseCode, _, resultString) = DefaultHttpClient.httpGet(url + hyväksytty).responseWithHeaders
+      val (responseCode, _, resultString) = DefaultHttpClient.httpGet(url + hyväksytty)("valinta-tulos-service").responseWithHeaders
       responseCode must_== 200
       resultString must beMatching(""".*"valintatila":"HYVAKSYTTY".*"valintatila":"PERUUNTUNUT".*""")
     }
 
     "hakija hakemuksella " + perunut + " on perunut paikan kahdessa ylimmässä hakutoiveessa ja alin on peruuntunut" in {
-      val (responseCode, _, resultString) = DefaultHttpClient.httpGet(url + perunut).responseWithHeaders
+      val (responseCode, _, resultString) = DefaultHttpClient.httpGet(url + perunut)("valinta-tulos-service").responseWithHeaders
       responseCode must_== 200
       resultString must beMatching(""".*"valintatila":"PERUNUT".*"valintatila":"PERUNUT".*"valintatila":"PERUUNTUNUT".*""")
     }

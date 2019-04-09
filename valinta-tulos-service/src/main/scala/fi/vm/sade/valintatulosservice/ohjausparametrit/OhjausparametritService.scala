@@ -66,7 +66,7 @@ class RemoteOhjausparametritService(implicit appConfig: VtsAppConfig) extends Oh
   private def loadParametersFromService[T](target: String, parser: String => T) = {
     val url = appConfig.ophUrlProperties.url("ohjausparametrit-service.parametri", target)
     Try(DefaultHttpClient.httpGet(url)
-      .header("Caller-Id", "valinta-tulos-service")
+      ("valinta-tulos-service")
       .responseWithHeaders match {
       case (200, _, body) =>
         Try(Right(Some(parser(body)))).recover {

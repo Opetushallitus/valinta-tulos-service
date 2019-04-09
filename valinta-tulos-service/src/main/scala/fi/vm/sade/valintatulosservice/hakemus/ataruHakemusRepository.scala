@@ -62,7 +62,7 @@ class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats {
     casClient = config.securityContext.casClient,
     casParams = params,
     serviceClient = org.http4s.client.blaze.defaultClient,
-    clientCallerId = Some("valinta-tulos-service"),
+    clientCallerId = "valinta-tulos-service",
     sessionCookieName = "ring-session"
   )
 

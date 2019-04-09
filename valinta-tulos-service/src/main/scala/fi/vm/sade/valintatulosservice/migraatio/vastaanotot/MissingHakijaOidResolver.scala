@@ -126,7 +126,7 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
       casClient = appConfig.securityContext.casClient,
       casParams = params,
       serviceClient = org.http4s.client.blaze.defaultClient,
-      clientCallerId = Some("valinta-tulos-service"), // TODO move clientCallerId to constant
+      clientCallerId = "valinta-tulos-service", // TODO move clientCallerId to constant
       sessionCookieName = "JSESSIONID"
     )
   }

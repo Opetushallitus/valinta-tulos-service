@@ -36,7 +36,7 @@ trait RestTestHelper {
       casClient = new CasClient(casUrlOld, org.http4s.client.blaze.defaultClient),
       casParams = casParams,
       serviceClient = org.http4s.client.blaze.defaultClient,
-      clientCallerId = Some("RestTestHelper"),
+      clientCallerId = "RestTestHelper",
       sessionCookieName = "JSESSIONID"
     )
   }

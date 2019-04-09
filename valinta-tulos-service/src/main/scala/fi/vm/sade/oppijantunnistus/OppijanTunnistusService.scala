@@ -44,7 +44,7 @@ class RealOppijanTunnistusService(appConfig:VtsApplicationSettings) extends Oppi
       Some(write(body)),
       HttpOptions.connTimeout(30000),
       HttpOptions.readTimeout(120000)
-    ).header("Caller-Id", "valinta-tulos-service")
+    )("valinta-tulos-service")
       .header("Content-Type", "application/json")
       .responseWithHeaders match {
       case (404, _, resultString) =>

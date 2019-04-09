@@ -51,7 +51,7 @@ class RealOrganisaatioService(appConfig:AppConfig) extends OrganisaatioService{
       url,
       HttpOptions.connTimeout(30000),
       HttpOptions.readTimeout(120000)
-    ).header("Caller-Id", "valinta-tulos-service")
+    )("valinta-tulos-service")
       .responseWithHeaders match {
       case (200, _, resultString) if parseStatus(resultString).contains("NOT_FOUND") =>
         Left(new IllegalArgumentException(s"GET $url failed with status 200: NOT_FOUND"))
