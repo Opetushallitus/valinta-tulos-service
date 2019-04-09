@@ -61,7 +61,7 @@ class ValintalaskentakoostepalveluService(appConfig: VtsAppConfig) extends Loggi
       casClient = appConfig.securityContext.casClient,
       casParams = params,
       serviceClient = org.http4s.client.blaze.defaultClient,
-      clientSubSystemCode = Some("valinta-tulos-service"), // TODO read from constant
+      clientCallerId = Some("valinta-tulos-service"), // TODO read from constant
       sessionCookieName = "JSESSIONID"
     )
   }
