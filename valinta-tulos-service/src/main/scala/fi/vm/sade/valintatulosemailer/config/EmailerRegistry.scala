@@ -71,7 +71,7 @@ object EmailerRegistry {
   }
 
   trait ExternalProps {
-    def configFile = System.getProperty("user.home") + "/oph-configuration/valinta-tulos-emailer.properties"
+    def configFile = System.getProperty("user.home") + "/oph-configuration/valinta-tulos-service.properties"
 
     lazy val settings = ApplicationSettingsLoader.loadSettings(configFile)(EmailerConfigParser())
 
