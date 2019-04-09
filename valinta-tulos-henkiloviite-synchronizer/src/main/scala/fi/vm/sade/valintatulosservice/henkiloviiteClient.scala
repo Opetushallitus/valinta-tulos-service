@@ -42,11 +42,11 @@ class HenkiloviiteClient(configuration: AuthenticationConfiguration) {
   private def createCasClient(): Client = {
     val casParams = CasParams("/oppijanumerorekisteri-service", configuration.cas.user, configuration.cas.password)
     CasAuthenticatingClient(
-      new CasClient(configuration.cas.host, org.http4s.client.blaze.defaultClient),
-      casParams,
-      org.http4s.client.blaze.defaultClient,
-      None,
-      "JSESSIONID"
+      casClient = new CasClient(configuration.cas.host, org.http4s.client.blaze.defaultClient),
+      casParams = casParams,
+      serviceClient = org.http4s.client.blaze.defaultClient,
+      clientSubSystemCode = None,
+      sessionCookieName = "JSESSIONID"
     )
   }
 }

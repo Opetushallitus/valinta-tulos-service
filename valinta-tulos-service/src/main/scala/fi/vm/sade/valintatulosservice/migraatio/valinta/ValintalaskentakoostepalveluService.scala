@@ -58,11 +58,11 @@ class ValintalaskentakoostepalveluService(appConfig: VtsAppConfig) extends Loggi
   private def createCasClient(appConfig: VtsAppConfig, targetService: String): Client = {
     val params = CasParams(targetService, appConfig.settings.securitySettings.casUsername, appConfig.settings.securitySettings.casPassword)
     CasAuthenticatingClient(
-      appConfig.securityContext.casClient,
-      params,
-      org.http4s.client.blaze.defaultClient,
-      Some("valinta-tulos-service"), // TODO read from constant
-      "JSESSIONID"
+      casClient = appConfig.securityContext.casClient,
+      casParams = params,
+      serviceClient = org.http4s.client.blaze.defaultClient,
+      clientSubSystemCode = Some("valinta-tulos-service"), // TODO read from constant
+      sessionCookieName = "JSESSIONID"
     )
   }
 

@@ -59,11 +59,11 @@ class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats {
     config.settings.securitySettings.casPassword
   )
   private val client = CasAuthenticatingClient(
-    config.securityContext.casClient,
-    params,
-    org.http4s.client.blaze.defaultClient,
-    Some("valinta-tulos-service"),
-    "ring-session"
+    casClient = config.securityContext.casClient,
+    casParams = params,
+    serviceClient = org.http4s.client.blaze.defaultClient,
+    clientSubSystemCode = Some("valinta-tulos-service"),
+    sessionCookieName = "ring-session"
   )
 
   def getHakemukset(query: HakemuksetQuery): Either[Throwable, AtaruResponse] = {

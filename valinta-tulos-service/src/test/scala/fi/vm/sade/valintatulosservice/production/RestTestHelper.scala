@@ -33,11 +33,11 @@ trait RestTestHelper {
   protected def createCasClientForOldData(target:String): Client = {
     val casParams = CasParams(target, casUserOld, casPasswordOld)
     CasAuthenticatingClient(
-      new CasClient(casUrlOld, org.http4s.client.blaze.defaultClient),
-      casParams,
-      org.http4s.client.blaze.defaultClient,
-      Some("RestTestHelper"),
-      "JSESSIONID"
+      casClient = new CasClient(casUrlOld, org.http4s.client.blaze.defaultClient),
+      casParams = casParams,
+      serviceClient = org.http4s.client.blaze.defaultClient,
+      clientSubSystemCode = Some("RestTestHelper"),
+      sessionCookieName = "JSESSIONID"
     )
   }
 
