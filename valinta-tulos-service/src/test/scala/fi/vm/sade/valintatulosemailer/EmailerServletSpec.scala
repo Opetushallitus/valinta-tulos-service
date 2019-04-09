@@ -16,14 +16,13 @@ import slick.jdbc.PostgresProfile.api._
 
 @RunWith(classOf[JUnitRunner])
 class EmailerServletSpec extends ServletSpecification {
-  override implicit val formats = JsonFormats.jsonFormats
   private val httpHeaders: Map[String, String] = Map("Content-type" -> "application/json")
 
   "POST /emailer/run" should {
     "be OK" in {
       val uri = "emailer/run"
       println("calling POST")
-      post(uri) {
+      post(uri, headers = httpHeaders) {
         status must_== 200
       }
     }
