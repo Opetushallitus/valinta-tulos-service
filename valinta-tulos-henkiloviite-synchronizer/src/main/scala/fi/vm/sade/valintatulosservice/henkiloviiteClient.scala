@@ -23,6 +23,7 @@ case class Duplicates(tyyppi: String)
 class HenkiloviiteClient(configuration: AuthenticationConfiguration) {
   private val resourceUrl: Uri = configuration.url
   private val client = createCasClient()
+  private val callerId = "valinta-tulos-henkiloviite-synchronizer"
 
   def fetchHenkiloviitteet(): Try[List[Henkiloviite]] = {
     val request = Request(
@@ -45,7 +46,7 @@ class HenkiloviiteClient(configuration: AuthenticationConfiguration) {
       casClient = new CasClient(configuration.cas.host, org.http4s.client.blaze.defaultClient),
       casParams = casParams,
       serviceClient = org.http4s.client.blaze.defaultClient,
-      clientCallerId = "valinta-tulos-henkiloviite-synchronizer",
+      clientCallerId = callerId,
       sessionCookieName = "JSESSIONID"
     )
   }
