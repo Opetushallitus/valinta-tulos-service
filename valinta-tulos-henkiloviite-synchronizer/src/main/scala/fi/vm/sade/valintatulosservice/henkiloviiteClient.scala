@@ -45,7 +45,7 @@ class HenkiloviiteClient(configuration: AuthenticationConfiguration) {
       casClient = new CasClient(configuration.cas.host, org.http4s.client.blaze.defaultClient),
       casParams = casParams,
       serviceClient = org.http4s.client.blaze.defaultClient,
-      clientSubSystemCode = None,
+      clientSubSystemCode = Some("valinta-tulos-henkiloviite-synchronizer"),
       sessionCookieName = "JSESSIONID"
     )
   }
