@@ -365,6 +365,10 @@
             <groupId>fi.vm.sade</groupId>
             <artifactId>scala-group-emailer_2.11</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.github.kagkarlsson</groupId>
+            <artifactId>db-scheduler</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

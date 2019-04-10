@@ -23,6 +23,7 @@ trait ValintarekisteriRepository extends ValintarekisteriResultExtractors with L
   type TilanViimeisinMuutos = Timestamp
   private val logSqlOfSomeQueries = false // For debugging only. Do NOT enable in production.
 
+  val dataSource: javax.sql.DataSource
   val db: Database
   def runBlocking[R](operations: DBIO[R], timeout: Duration = Duration(10, TimeUnit.MINUTES)): R = {  // TODO put these 3–4 different default timeouts behind common, configurable value
     if (logSqlOfSomeQueries) {

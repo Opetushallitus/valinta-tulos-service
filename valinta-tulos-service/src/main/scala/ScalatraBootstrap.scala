@@ -181,7 +181,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new PublicEmailStatusServlet(mailPoller, valintarekisteriDb, audit), "/auth/vastaanottoposti")
 
       val registry: EmailerRegistry = EmailerRegistry.fromString(Option(System.getProperty("vtemailer.profile")).getOrElse(if (appConfig.isInstanceOf[IT]) "it" else "default"))(mailPoller, mailDecorator)
-      val emailerService = new EmailerService(registry)
+      val emailerService = new EmailerService(registry, valintarekisteriDb)
       context.mount(new EmailerServlet(emailerService), "/emailer")
     }
   }
