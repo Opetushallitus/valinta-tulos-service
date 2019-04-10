@@ -1,18 +1,22 @@
 package fi.vm.sade.valintatulosemailer
 
+import java.util.concurrent.TimeUnit.MINUTES
+
 import fi.vm.sade.groupemailer.{EmailInfo, GroupEmail, GroupEmailComponent, Recipient}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosemailer.config.EmailerConfigComponent
-import fi.vm.sade.valintatulosemailer.valintatulos.VastaanottopostiComponent
 import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy.LahetysSyy
-import fi.vm.sade.valintatulosservice.vastaanottomeili.{Ilmoitus, LahetysSyy, PollResult}
+import fi.vm.sade.valintatulosservice.vastaanottomeili._
 
 import scala.collection.immutable.HashMap
+import scala.concurrent.duration.Duration
 
 trait MailerComponent {
-  this: GroupEmailComponent with VastaanottopostiComponent with EmailerConfigComponent =>
+  this: GroupEmailComponent with EmailerConfigComponent =>
 
   val mailer: Mailer
+  val mailPoller: MailPollerAdapter
+  val mailDecorator: MailDecorator
 
   class MailerImpl extends Mailer with Logging {
     private val helper: MailerHelper = new MailerHelper
@@ -38,7 +42,7 @@ trait MailerComponent {
       }
 
       logger.info("Fetching recipients from valinta-tulos-service")
-      val newPollResult: PollResult = vastaanottopostiService.fetchRecipientBatch
+      val newPollResult: PollResult = fetchRecipientBatch
       val newBatch = newPollResult.mailables
       logger.info(s"Found ${newBatch.size} to send. " +
         s"complete == ${newPollResult.complete}, " +
@@ -83,7 +87,7 @@ trait MailerComponent {
       try {
         groupEmailService.send(GroupEmail(recipients, EmailInfo("omattiedot", letterTemplateNameFor(lahetysSyy), language))) match {
           case Some(id) =>
-            vastaanottopostiService.sendConfirmation(batch)
+            sendConfirmation(batch)
             logger.info(s"Succesfully confirmed batch id: $id")
             Some(id)
           case _ =>
@@ -95,8 +99,22 @@ trait MailerComponent {
           None
       }
     }
-  }
 
+    private def fetchRecipientBatch: PollResult = {
+      //contentType = formats("json")
+      val mailablesLimit: Int = settings.recipientBatchSize
+      val timeLimit = Duration(settings.recipientBatchLimitMinutes, MINUTES)
+      mailPoller.pollForMailables(mailDecorator, mailablesLimit, timeLimit)
+    }
+
+    private def sendConfirmation(recipients: List[Ilmoitus]): Unit = {
+      if (recipients.isEmpty) {
+        throw new IllegalArgumentException("got confirmation of 0 applications")
+      }
+      logger.info("got confirmation for " + recipients.size + " applications: " + recipients.map(_.hakemusOid).mkString(","))
+      mailPoller.markAsSent(recipients)
+    }
+  }
 }
 
 trait Mailer {

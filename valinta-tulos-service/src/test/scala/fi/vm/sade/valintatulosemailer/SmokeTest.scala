@@ -62,7 +62,7 @@ class SmokeTest extends Specification with HttpComponentsClient with Mockito wit
     hakukohteet = List(hakukohde),
     haku = Haku(HakuOid("haku_oid"), nimi = Map("fi" -> "haun_nimi"), toinenAste = false)
   )
-  mailPoller.pollForMailables(any, any, any).returns(PollResult(mailables = List(ilmoitus)))
+  mailPoller.pollForMailables(any, any, any).returns(PollResult(mailables = List(ilmoitus)), PollResult(complete = true, mailables = Nil))
 
   lazy val registry: EmailerRegistry = EmailerRegistry.fromString(Option(System.getProperty("valintatulos.profile")).getOrElse("it"))(mailPoller, mailDecorator)
 
