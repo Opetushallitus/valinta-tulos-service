@@ -8,7 +8,7 @@ import fi.vm.sade.valintatulosservice.vastaanottomeili.{MailDecorator, MailPolle
 import org.apache.log4j.PropertyConfigurator
 
 object EmailerRegistry {
-  def getProfileProperty = System.getProperty("vtemailer.profile", "default")
+  def getProfileProperty: String = System.getProperty("vtemailer.profile", "default")
 
   def fromString(profile: String)(mailPoller: MailPollerAdapter, mailDecorator: MailDecorator): EmailerRegistry = {
     println("Using vtemailer.profile=" + profile)
@@ -42,9 +42,9 @@ object EmailerRegistry {
     * IT (integration test) profiles.
     */
   class IT(val mailPoller: MailPollerAdapter, val mailDecorator: MailDecorator) extends EmailerRegistry with ExampleTemplatedProps with StubbedExternalDeps {
-    def lastEmailSize() = groupEmailService match {
+    def lastEmailSize(): Int = groupEmailService match {
       case x: FakeGroupEmailService => x.getLastEmailSize
-      case _ => new IllegalAccessError("getLastEmailSize error")
+      case _ => throw new IllegalAccessError("getLastEmailSize error")
     }
   }
 
@@ -53,21 +53,21 @@ object EmailerRegistry {
     */
   class LocalVT(val mailPoller: MailPollerAdapter, val mailDecorator: MailDecorator) extends ExampleTemplatedProps with StubbedGroupEmail {
 
-    def lastEmailSize() = groupEmailService match {
+    def lastEmailSize(): Int = groupEmailService match {
       case x: FakeGroupEmailService => x.getLastEmailSize
-      case _ => new IllegalAccessError("getLastEmailSize error")
+      case _ => throw new IllegalAccessError("getLastEmailSize error")
     }
 
-    implicit val settingsParser = EmailerConfigParser()
-    override lazy val settings = ConfigTemplateProcessor.createSettings("valinta-tulos-service", templateAttributesFile)
+    implicit val settingsParser: EmailerConfigParser = EmailerConfigParser()
+    override lazy val settings: EmailerConfig = ConfigTemplateProcessor.createSettings("valinta-tulos-service", templateAttributesFile)
   }
 
   trait ExternalProps {
-    def configFile = System.getProperty("user.home") + "/oph-configuration/valinta-tulos-service.properties"
+    def configFile: String = System.getProperty("user.home") + "/oph-configuration/valinta-tulos-service.properties"
 
-    lazy val settings = ApplicationSettingsLoader.loadSettings(configFile)(EmailerConfigParser())
+    lazy val settings: EmailerConfig = ApplicationSettingsLoader.loadSettings(configFile)(EmailerConfigParser())
 
-    def log4jconfigFile = System.getProperty("user.home") + "/oph-configuration/log4j.properties"
+    def log4jconfigFile: String = System.getProperty("user.home") + "/oph-configuration/log4j.properties"
 
     val log4jproperties = new Properties()
     log4jproperties.load(new FileInputStream(log4jconfigFile))
@@ -80,9 +80,9 @@ object EmailerRegistry {
 
   trait TemplatedProps {
     println("Using template variables from " + templateAttributesFile)
-    lazy val settings = loadSettings
+    lazy val settings: EmailerConfig = loadSettings
 
-    def loadSettings = ConfigTemplateProcessor.createSettings("valinta-tulos-service", templateAttributesFile)(EmailerConfigParser())
+    def loadSettings: EmailerConfig = ConfigTemplateProcessor.createSettings("valinta-tulos-service", templateAttributesFile)(EmailerConfigParser())
 
     def templateAttributesFile: String
   }

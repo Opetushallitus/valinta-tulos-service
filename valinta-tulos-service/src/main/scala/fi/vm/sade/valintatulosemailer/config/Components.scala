@@ -9,7 +9,7 @@ trait Components extends GroupEmailComponent with MailerComponent with EmailerCo
   val settings: EmailerConfig
 
   private def configureGroupEmailService: GroupEmailService = this match {
-    case x: StubbedGroupEmail => new FakeGroupEmailService
+    case _: StubbedGroupEmail => new FakeGroupEmailService
     case _ => new RemoteGroupEmailService(settings, "valinta-tulos-emailer")
   }
 

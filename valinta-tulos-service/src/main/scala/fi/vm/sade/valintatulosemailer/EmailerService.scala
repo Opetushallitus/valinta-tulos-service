@@ -6,28 +6,13 @@ import fi.vm.sade.valintatulosemailer.config.EmailerConfigParser
 import fi.vm.sade.valintatulosemailer.config.EmailerRegistry.EmailerRegistry
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 
-import scala.collection.JavaConverters.seqAsJavaListConverter
-//import scopt.OptionParser
-
 import com.github.kagkarlsson.scheduler.task.schedule.CronSchedule
 import com.github.kagkarlsson.scheduler.Scheduler
 import com.github.kagkarlsson.scheduler.task._
 import com.github.kagkarlsson.scheduler.task.helper.Tasks
 
 import scala.util.Try
-
-//object EmailerService {
-//  def parseCommandLineArgs: CommandLineArgs = {
-//    val parser = new OptionParser[CommandLineArgs]("scopt") {
-//      head("valinta-tulos-emailer")
-//      opt[Unit]("test") action { (_, c) => c.copy(test = true) } text "Use test mode, don't send any emails"
-//    }
-//    parser.parse(args, CommandLineArgs()) match {
-//      case Some(config) => config
-//      case _ => throw new InstantiationError()
-//    }
-//  }
-//}
+import scala.collection.JavaConverters.seqAsJavaListConverter
 
 class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb) extends Logging {
   logger.info("***** VT-emailer initializing *****")
