@@ -14,7 +14,7 @@ import com.github.kagkarlsson.scheduler.task.helper.Tasks
 import scala.util.Try
 import scala.collection.JavaConverters.seqAsJavaListConverter
 
-class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb) extends Logging {
+class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, emailerCronStrings: String) extends Logging {
   logger.info("***** VT-emailer initializing *****")
   logger.info(s"Using settings: " +
     s"${registry.settings.withOverride("ryhmasahkoposti.cas.password", "***" )(EmailerConfigParser())}")
@@ -28,14 +28,13 @@ class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb) extends 
     }
   }
 
-  private val cronString = "0 0,15,30,45 * ? * *;0 0 7,19 * * ?"
-  private val cronStrings: List[String] = cronString.split(";").toList
-  private val cronTasks = cronStrings.zipWithIndex.map{ case (s,i) =>
+  private val cronExpressions: List[String] = emailerCronStrings.split(";").toList
+  private val cronTasks = cronExpressions.zipWithIndex.map{ case (s,i) =>
     Tasks.recurring(s"cron-emailer-task-$i", new CronSchedule(s))
       .execute(executionHandler)
   }
 
-  logger.info("Scheduled emailer task for cron expressions:\n" + cronStrings.mkString("\n"))
+  logger.info("Scheduled emailer task for cron expressions:\n" + cronExpressions.mkString("\n"))
 
   private val numberOfThreads = 5
   private val scheduler: Scheduler = Scheduler.create(db.dataSource).startTasks(cronTasks.asJava).threads(numberOfThreads).build

@@ -90,6 +90,9 @@ omatsivut.oili.hetutonUrl={{oili_hetuton_url}}
 
 ## Valinta-tulos-emailer
 
+# AJASTUS
+valinta-tulos-service.emailer.cron.strings={{ emailer_cron_strings | default('0 0,15,30,45 * ? * *;0 05 7,19 * * ?') }}
+
 # CAS
 ryhmasahkoposti.cas.service=https://{{host_virkailija}}/ryhmasahkoposti-service/
 ryhmasahkoposti.cas.username={{ ryhmasahkoposti_app_username_to_vtemailer }}
