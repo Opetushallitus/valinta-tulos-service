@@ -276,7 +276,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
   }
 
   private def markAsCheckedForEmailing(hakukohdeOid: HakukohdeOid): Unit = {
-    logger.info(s"Marking hakukohde $hakukohdeOid as checked for emailing")
+    logger.debug(s"Marking hakukohde $hakukohdeOid as checked for emailing")
     mailPollerRepository.markAsCheckedForEmailing(hakukohdeOid)
   }
 
