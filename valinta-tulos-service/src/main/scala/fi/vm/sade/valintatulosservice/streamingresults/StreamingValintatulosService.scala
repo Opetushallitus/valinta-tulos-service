@@ -39,12 +39,7 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
       valintatulosService.hakemustenTulosByHakukohde(hakuOid, hakukohdeOid, Some(haunVastaanototByHakijaOid), vainHakukohteenTiedot = true) match {
         case Right(it) =>
           //Siivotaan hakemusten tuloksista muihin kuin tähän hakukohteeseen kohdistuneet hakutoiveet.
-          var filteredTulokses = ListBuffer[Hakemuksentulos]()
-          it foreach {
-            ht => filteredTulokses += ht.copy(hakutoiveet = ht.hakutoiveet.filter(ht => ht.hakukohdeOid.equals(hakukohdeOid)))
-          }
-          logger.info(s"Found ${filteredTulokses.size} Hakemuksentulokses for hakukohde $hakukohdeOid.")
-          filteredTulokses.iterator
+          it.map(ht => ht.copy(hakutoiveet = ht.hakutoiveet.filter(ht => ht.hakukohdeOid.equals(hakukohdeOid))))
         case Left(e) => val msg = s"Could not retrieve results for hakukohde $hakukohdeOid of haku $hakuOid"
           logger.error(msg, e)
           throw new RuntimeException(msg)
@@ -61,7 +56,6 @@ class StreamingValintatulosService(valintatulosService: ValintatulosService,
           }
       }
     }
-
     logger.info(s"Found ${tuloksetHakemuksittain.keySet.size} hakemus objects for sijoitteluajo $sijoitteluajoId " +
       s"of ${hakukohdeOids.size} hakukohdes of haku $hakuOid. These have a total of ${tuloksetHakemuksittain.map(t => t._2._2.size).sum} relevant hakutoivees.")
 
