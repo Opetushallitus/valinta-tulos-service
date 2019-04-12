@@ -2,12 +2,12 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
 import java.util
 
-import fi.vm.sade.sijoittelu.domain.{Hakukohde, HakukohdeItem, SijoitteluAjo, Valintatulos}
+import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatulos}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.ValintarekisteriAppConfig
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, StoreSijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, StoreSijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, SijoitteluWrapper}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 
@@ -20,7 +20,7 @@ class ValintarekisteriForSijoittelu(sijoitteluRepository:SijoitteluRepository wi
 
   private def this(appConfig: ValintarekisteriAppConfig.ValintarekisteriAppConfig, valintarekisteriDb: ValintarekisteriDb) = this(
     valintarekisteriDb,
-    new HakukohdeRecordService(HakuService(appConfig.hakuServiceConfig), valintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing),
+    new HakukohdeRecordService(HakuService(appConfig), valintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing),
     valintarekisteriDb
   )
 

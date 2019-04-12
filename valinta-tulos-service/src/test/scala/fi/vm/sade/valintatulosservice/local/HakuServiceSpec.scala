@@ -7,7 +7,7 @@ import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class HakuServiceSpec extends ITSpecification {
-  val service = HakuService(appConfig.hakuServiceConfig)
+  val service = HakuService(appConfig)
 
   "HakuService" should {
     "löytää kaikki haut, jotka on JULKAISTU" in {

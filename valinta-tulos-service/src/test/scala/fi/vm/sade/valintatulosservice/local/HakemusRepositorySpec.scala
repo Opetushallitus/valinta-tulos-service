@@ -12,7 +12,7 @@ import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class HakemusRepositorySpec extends ITSpecification with ValintarekisteriDbTools {
-  val hakuService = HakuService(appConfig.hakuServiceConfig)
+  val hakuService = HakuService(appConfig)
   val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
   val repo = new HakemusRepository(
     new HakuAppRepository(),

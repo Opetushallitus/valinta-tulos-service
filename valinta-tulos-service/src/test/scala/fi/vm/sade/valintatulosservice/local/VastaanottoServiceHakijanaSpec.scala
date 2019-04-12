@@ -506,7 +506,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
 
   private lazy val valintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
 
-  lazy val hakuService = HakuService(appConfig.hakuServiceConfig)
+  lazy val hakuService = HakuService(appConfig)
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, true)
   lazy val sijoittelutulosService = new SijoittelutulosService(new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintatulosDao),

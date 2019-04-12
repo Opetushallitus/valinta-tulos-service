@@ -46,7 +46,7 @@ object TTLCache {
    * @tparam K
    * @tparam V
    */
-  def apply[K, V](duration: Long, maxSize: Int) = {
+  def apply[K, V](duration: Long, maxSize: Long): Cache[K, V] = {
     val ttlCache: GuavaCache[K, V] =
       CacheBuilder
         .newBuilder()

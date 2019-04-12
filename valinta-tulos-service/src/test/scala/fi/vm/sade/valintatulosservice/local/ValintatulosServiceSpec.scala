@@ -71,7 +71,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
 
   step(valintarekisteriDb.db.shutdown)
 
-  lazy val hakuService = HakuService(appConfig.hakuServiceConfig)
+  lazy val hakuService = HakuService(appConfig)
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
   lazy val valintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
   lazy val sijoittelunTulosClient = new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb)

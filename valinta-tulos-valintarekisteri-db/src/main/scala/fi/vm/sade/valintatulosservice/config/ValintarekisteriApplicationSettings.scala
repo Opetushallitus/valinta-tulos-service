@@ -21,6 +21,7 @@ abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.conf
   )
   withConfig(_.getConfig("valinta-tulos-service.valintarekisteri.db"))
   val lenientTarjontaDataParsing: Boolean = BooleanUtils.isTrue(withConfig(_.getBoolean("valinta-tulos-service.parseleniently.tarjonta")))
+  val estimatedMaxActiveHakus: Long = 6000
   protected def withConfig[T](operation: Config => T): T = {
     try {
       operation(config)

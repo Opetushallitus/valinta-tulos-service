@@ -13,7 +13,10 @@ class AtaruHakemusEnricher(config: VtsAppConfig,
                            oppijanumerorekisteriService: OppijanumerorekisteriService) {
 
   private val hakukohdeCache: HakukohdeOid => Either[Throwable, Hakukohde] =
-    TTLOptionalMemoize.memoize(hakuService.getHakukohde, lifetimeSeconds = config.settings.ataruHakemusEnricherHakukohdeCacheTtl.toSeconds)
+    TTLOptionalMemoize.memoize(
+      hakuService.getHakukohde,
+      lifetimeSeconds = config.settings.ataruHakemusEnricherHakukohdeCacheTtl.toSeconds,
+      maxSize = config.settings.ataruHakemusEnricherHakukohdeCacheMaxSize)
 
   def apply(ataruHakemukset: List[AtaruHakemus]): Either[Throwable, List[Hakemus]] = {
     for {
