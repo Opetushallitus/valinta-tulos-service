@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit.DAYS
 
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.ValintatulosService
+import fi.vm.sade.valintatulosservice.{ValintatulosService, tarjonta}
 import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
@@ -30,13 +30,45 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
   private val pollConcurrency: Int = vtsApplicationSettings.mailPollerConcurrency
   private val emptyHakukohdeRecheckInterval: Duration = vtsApplicationSettings.mailPollerResultlessHakukohdeRecheckInterval
 
-  def pollForMailables(mailDecorator: MailDecorator, mailablesWanted: Int, timeLimit: Duration): PollResult = {
+  def pollForAllMailables(mailDecorator: MailDecorator, mailablesWanted: Int, timeLimit: Duration): PollResult = {
+    val fetchHakusTaskLabel = "Looking for hakus with their hakukohdes to process"
+    logger.info(s"Start: $fetchHakusTaskLabel")
+    val hakukohdeOidsWithTheirHakuOids: ParSeq[(HakuOid, HakukohdeOid)] = timed(fetchHakusTaskLabel, 1000) {
+      etsiHaut.par
+    }
+
+    pollForHakukohdes(hakukohdeOidsWithTheirHakuOids, mailDecorator, mailablesWanted, timeLimit)
+  }
+
+  def pollForMailablesForHaku(hakuOid: HakuOid, mailDecorator: MailDecorator, mailablesWanted: Int, timeLimit: Duration): PollResult = {
+    val fetchHakuOidsForHakukohdeOids = "Looking for hakukohdes for haku to process"
+    logger.info(s"Start: $fetchHakuOidsForHakukohdeOids")
+    val hakukohdeOidsWithTheirHakuOids: ParSeq[(HakuOid, HakukohdeOid)] = timed(fetchHakuOidsForHakukohdeOids, 1000) {
+      etsiHakukohteet(List(hakuOid)).par
+    }
+
+    pollForHakukohdes(hakukohdeOidsWithTheirHakuOids, mailDecorator, mailablesWanted, timeLimit)
+  }
+
+  def pollForMailablesForHakukohde(hakukohdeOid: HakukohdeOid, mailDecorator: MailDecorator, mailablesWanted: Int, timeLimit: Duration): PollResult = {
+    val fetchHakuOidsForHakukohdeOids = "Looking for haku oids for hakukohde to process"
+    logger.info(s"Start: $fetchHakuOidsForHakukohdeOids")
+    val hakukohdeOidsWithTheirHakuOids: ParSeq[(HakuOid, HakukohdeOid)] = timed(fetchHakuOidsForHakukohdeOids, 1000) {
+      List((hakuService.getHakukohde(hakukohdeOid).right.get.hakuOid, hakukohdeOid)).par
+    }
+
+    pollForHakukohdes(hakukohdeOidsWithTheirHakuOids, mailDecorator, mailablesWanted, timeLimit)
+  }
+
+  def markAsSent(ilmoituses: List[Ilmoitus]): Unit = {
+    val set: Set[(HakemusOid, HakukohdeOid)] = ilmoituses.flatMap { r => r.hakukohteet.map { h => (r.hakemusOid, h.oid) } }.toSet
+    mailPollerRepository.markAsSent(set)
+  }
+
+  private def pollForHakukohdes(hakukohdeOidsWithTheirHakuOids: ParSeq[(HakuOid, HakukohdeOid)], mailDecorator: MailDecorator, mailablesWanted: Int, timeLimit: Duration) = {
     //Tälle tarvitaan varmaan joku ovelampi ratkaisu, mutta hakukohteiden rinnakkainen
     //käsittely toimii aika kömpelösti kovin pienillä limiteillä.
     val useLimit = Math.max(500, mailablesWanted)
-    val fetchHakusTaskLabel = "Looking for hakus with their hakukohdes to process"
-    logger.info(s"Start: $fetchHakusTaskLabel")
-    val hakukohdeOidsWithTheirHakuOids: ParSeq[(HakuOid, HakukohdeOid)] = timed(fetchHakusTaskLabel, 1000) { etsiHaut.par }
 
     hakukohdeOidsWithTheirHakuOids.tasksupport = new ForkJoinTaskSupport(new ForkJoinPool(pollConcurrency))
     val fetchMailablesTaskLabel = s"Fetching mailables for ${hakukohdeOidsWithTheirHakuOids.size} hakukohdes " +
@@ -47,18 +79,12 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
     }
   }
 
-  def markAsSent(ilmoituses: List[Ilmoitus]): Unit = {
-    val set: Set[(HakemusOid, HakukohdeOid)] = ilmoituses.flatMap { r => r.hakukohteet.map { h => (r.hakemusOid, h.oid) } }.toSet
-    mailPollerRepository.markAsSent(set)
-  }
 
   private def etsiHaut: List[(HakuOid, HakukohdeOid)] = {
-    val vastikaanTarkistetutHakukohteet: Set[HakukohdeOid] = mailPollerRepository.findHakukohdeOidsCheckedRecently(emptyHakukohdeRecheckInterval)
-
-    val found = (hakuService.kaikkiJulkaistutHaut match {
+    val hakus: List[tarjonta.Haku] = (hakuService.kaikkiJulkaistutHaut match {
       case Right(haut) => haut
       case Left(e) => throw e
-    }).filter { haku => haku.toinenAste || haku.korkeakoulu}
+    }).filter { haku => haku.toinenAste || haku.korkeakoulu }
       .filter { haku =>
         val include = haku.hakuAjat.isEmpty || haku.hakuAjat.exists(hakuaika => hakuaika.hasStarted)
         if (!include) logger.info("Pudotetaan haku " + haku.oid + " koska hakuaika ei alkanut")
@@ -82,18 +108,33 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
             true
         }
       }
-      .map(h => (h.oid, hakuService.getHakukohdeOids(h.oid).right.map(_.toList)))
-      .filter {
-        case (hakuOid, Left(e)) =>
-          logger.error(s"Pudotetaan haku $hakuOid koska hakukohdeoidien haku epäonnistui", e)
-          false
+
+    val found = etsiHakukohteet(hakus.map(_.oid))
+    val filtered: List[(HakuOid, HakukohdeOid)] = filterHakukohdesRecentlyChecked(found) // TODO: Pitäisikö filtteröinti tehdä myös kun kutsutaan tiettyä hakua?
+
+    logger.info(s"haut ${found.map(_._1).distinct.mkString(", ")}")
+    found
+  }
+
+  private def etsiHakukohteet(hakuOids: List[HakuOid]): List[(HakuOid, HakukohdeOid)] = {
+   hakuOids.map(oid => {
+     (oid, hakuService.getHakukohdeOids(oid).right.map(_.toList))
+   }).filter {
+       case (hakuOid, Left(e)) =>
+         logger.error(s"Pudotetaan haku $hakuOid koska hakukohdeoidien haku epäonnistui", e)
+         false
         case (hakuOid, Right(Nil)) =>
           logger.warn(s"Pudotetaan haku $hakuOid koska siihen ei kuulu yhtään hakukohdetta")
           false
         case _ =>
           true
-      }
-      .flatMap(t => t._2.right.get.map((t._1, _)))
+     }.flatMap(t => t._2.right.get.map((t._1, _)))
+  }
+
+  private def filterHakukohdesRecentlyChecked(hakuHakukohdePairs: List[(HakuOid, HakukohdeOid)]): List[(HakuOid, HakukohdeOid)] = {
+    val vastikaanTarkistetutHakukohteet: Set[HakukohdeOid] = mailPollerRepository.findHakukohdeOidsCheckedRecently(emptyHakukohdeRecheckInterval)
+
+    hakuHakukohdePairs
       .filter { oids =>
         if (vastikaanTarkistetutHakukohteet.contains(oids._2)) {
           logger.debug(s"Pudotetaan hakukohde ${oids._2}, koska se on tarkistettu viimeisten $emptyHakukohdeRecheckInterval aikana")
@@ -101,10 +142,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
         } else {
           true
         }
-    }
-
-    logger.info(s"haut ${found.map(_._1).distinct.mkString(", ")}")
-    found
+      }
   }
 
   @tailrec

@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit.MINUTES
 import fi.vm.sade.groupemailer.{EmailInfo, GroupEmail, GroupEmailComponent, Recipient}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosemailer.config.EmailerConfigComponent
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid}
 import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy.LahetysSyy
 import fi.vm.sade.valintatulosservice.vastaanottomeili._
 
@@ -19,6 +20,9 @@ trait MailerComponent {
   val mailDecorator: MailDecorator
 
   class MailerImpl extends Mailer with Logging {
+    val mailablesLimit: Int = settings.recipientBatchSize
+    val timeLimit = Duration(settings.recipientBatchLimitMinutes, MINUTES)
+
     private val helper: MailerHelper = new MailerHelper
     private val letterTemplateNameFor = HashMap[LahetysSyy, String](
       LahetysSyy.vastaanottoilmoitusKk -> "omattiedot_email",
@@ -27,11 +31,20 @@ trait MailerComponent {
       LahetysSyy.sitovan_vastaanoton_ilmoitus -> "sitova_vastaanotto_email"
     )
 
-    def sendMail: List[String] = {
-      collectAndSend(0, List.empty, List.empty)
+
+    def sendMailForAll(): List[String] = {
+      collectAndSend(None, 0, List.empty, List.empty)
     }
 
-    private def collectAndSend(batchNr: Int, ids: List[String], batch: List[Ilmoitus]): List[String] = {
+    def sendMailForHaku(hakuOid: HakuOid): List[String] = {
+      collectAndSend(Some(Left(hakuOid)), 0, List.empty, List.empty)
+    }
+
+    def sendMailForHakukohde(hakukohdeOid: HakukohdeOid): List[String] = {
+      collectAndSend(Some(Right(hakukohdeOid)), 0, List.empty, List.empty)
+    }
+
+    private def collectAndSend(query: Option[Either[HakuOid,HakukohdeOid]], batchNr: Int, ids: List[String], batch: List[Ilmoitus]): List[String] = {
       def sendAndConfirm(currentBatch: List[Ilmoitus]): List[String] = {
         val groupedlmoituses = helper.splitAndGroupIlmoitus(currentBatch)
 
@@ -42,7 +55,7 @@ trait MailerComponent {
       }
 
       logger.info("Fetching recipients from valinta-tulos-service")
-      val newPollResult: PollResult = fetchRecipientBatch
+      val newPollResult: PollResult = fetchRecipientBatch(query)
       val newBatch = newPollResult.mailables
       logger.info(s"Found ${newBatch.size} to send. " +
         s"complete == ${newPollResult.complete}, " +
@@ -57,14 +70,14 @@ trait MailerComponent {
         if (currentBatchSize >= sendBatchSize) {
           logger.info(s"Email batch size exceeded. Sending batch nr. $batchNr")
           val batchIds: List[String] = sendAndConfirm(currentBatch)
-          collectAndSend(batchNr + 1, batchIds, List.empty)
+          collectAndSend(query, batchNr + 1, batchIds, List.empty)
         } else if (!newPollResult.complete) {
           logger.info(s"Time limit for single batch retrieval exceeded. Sending batch nr. $batchNr")
           val batchIds: List[String] = sendAndConfirm(currentBatch)
-          collectAndSend(batchNr + 1, batchIds, List.empty)
+          collectAndSend(query, batchNr + 1, batchIds, List.empty)
         } else {
           logger.info(s"Email batch size not exceeded. ($currentBatchSize < $sendBatchSize)")
-          collectAndSend(batchNr, ids, currentBatch)
+          collectAndSend(query, batchNr, ids, currentBatch)
         }
       } else {
         if (batch.nonEmpty && newPollResult.complete) {
@@ -75,7 +88,7 @@ trait MailerComponent {
           ids
         } else {
           logger.info("Continuing to poll")
-          collectAndSend(batchNr, ids, batch)
+          collectAndSend(query, batchNr, ids, batch)
         }
       }
     }
@@ -100,11 +113,15 @@ trait MailerComponent {
       }
     }
 
-    private def fetchRecipientBatch: PollResult = {
-      //contentType = formats("json")
-      val mailablesLimit: Int = settings.recipientBatchSize
-      val timeLimit = Duration(settings.recipientBatchLimitMinutes, MINUTES)
-      mailPoller.pollForMailables(mailDecorator, mailablesLimit, timeLimit)
+    private def fetchRecipientBatch(query: Option[Either[HakuOid,HakukohdeOid]]): PollResult = {
+      query match {
+        case None =>
+          mailPoller.pollForAllMailables(mailDecorator, mailablesLimit, timeLimit)
+        case Some(Left(hakuOid)) =>
+          mailPoller.pollForMailablesForHaku(hakuOid, mailDecorator, mailablesLimit, timeLimit)
+        case Some(Right(hakukohdeOid)) =>
+          mailPoller.pollForMailablesForHakukohde(hakukohdeOid, mailDecorator, mailablesLimit, timeLimit)
+      }
     }
 
     private def sendConfirmation(recipients: List[Ilmoitus]): Unit = {
@@ -118,5 +135,7 @@ trait MailerComponent {
 }
 
 trait Mailer {
-  def sendMail: List[String]
+  def sendMailForAll(): List[String]
+  def sendMailForHaku(hakuOid: HakuOid): List[String]
+  def sendMailForHakukohde(hakukohdeOid: HakukohdeOid): List[String]
 }
