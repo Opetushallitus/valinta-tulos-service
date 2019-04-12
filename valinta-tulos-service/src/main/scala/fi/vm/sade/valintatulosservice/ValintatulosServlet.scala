@@ -1,6 +1,8 @@
 package fi.vm.sade.valintatulosservice
 
 import java.util.Date
+import java.util.concurrent.{Semaphore, TimeUnit}
+import java.util.concurrent.locks.ReentrantLock
 
 import fi.vm.sade.auditlog.Operation
 import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
@@ -22,7 +24,11 @@ import org.scalatra.swagger._
 
 import scala.util.Try
 
-private object HakemustenTulosHakuLock
+private object HakemustenTulosHakuLock {
+  val queueLimit: Int = 2
+  val lockQueue: Semaphore = new Semaphore(queueLimit)
+  val loadingLock: ReentrantLock = new ReentrantLock(true)
+}
 
 abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
                                    streamingValintatulosService: StreamingValintatulosService,
@@ -316,11 +322,30 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
   }
 
   private def serveStreamingResults(fetchData: => Option[Iterator[Hakemuksentulos]]): Any = {
-    HakemustenTulosHakuLock.synchronized {
-      fetchData match {
-        case Some(tulos) => JsonStreamWriter.writeJsonStream(tulos, response.writer)
-        case _ => NotFound("error" -> "Not found")
+    if (HakemustenTulosHakuLock.lockQueue.tryAcquire()) {
+      try {
+        if (HakemustenTulosHakuLock.loadingLock.tryLock(appConfig.settings.hakuResultsLoadingLockSeconds, TimeUnit.SECONDS)) {
+          try {
+            fetchData match {
+              case Some(tulos) => JsonStreamWriter.writeJsonStream(tulos, response.writer)
+              case _ => NotFound("error" -> "Not found")
+            }
+          } finally {
+            HakemustenTulosHakuLock.loadingLock.unlock()
+          }
+        } else {
+          val message: String = s"Acquiring lock timed out after ${appConfig.settings.hakuResultsLoadingLockSeconds}" +
+            s" seconds: No available capacity for this request, please try again later"
+          logger.error(message)
+          ServiceUnavailable("error" -> message)
+        }
+      } finally {
+        HakemustenTulosHakuLock.lockQueue.release()
       }
+    } else {
+      val message: String = s"Results loading queue of size ${HakemustenTulosHakuLock.queueLimit} full: No available capacity for this request, please try again later"
+      logger.error(message)
+      ServiceUnavailable("error" -> message)
     }
   }
 
