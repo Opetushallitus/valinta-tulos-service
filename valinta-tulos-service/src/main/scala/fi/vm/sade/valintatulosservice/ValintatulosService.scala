@@ -25,8 +25,6 @@ import org.joda.time.DateTime
 
 import scala.collection.JavaConverters._
 
-private object HakemustenTulosHakuLock
-
 class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
                            vastaanotettavuusService: VastaanotettavuusService,
                           sijoittelutulosService: SijoittelutulosService,
