@@ -22,6 +22,8 @@ import org.scalatra.swagger._
 
 import scala.util.Try
 
+private object HakemustenTulosHakuLock
+
 abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
                                    streamingValintatulosService: StreamingValintatulosService,
                                    vastaanottoService: VastaanottoService,
