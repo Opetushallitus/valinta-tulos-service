@@ -1,5 +1,7 @@
 package fi.vm.sade.valintatulosservice.ohjausparametrit
 
+import java.util.concurrent.TimeUnit
+
 import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.http.DefaultHttpClient
 import fi.vm.sade.utils.slf4j.Logging
@@ -12,6 +14,7 @@ import org.joda.time.DateTime
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 
+import scala.concurrent.duration.Duration
 import scala.util.Try
 import scala.util.control.NonFatal
 
@@ -47,7 +50,7 @@ class StubbedOhjausparametritService extends OhjausparametritService {
 object CachedRemoteOhjausparametritService {
   def apply(implicit appConfig: VtsAppConfig): OhjausparametritService = {
     val service = new RemoteOhjausparametritService()
-    val ohjausparametritMemo = TTLOptionalMemoize.memoize[HakuOid, Option[Ohjausparametrit]](service.ohjausparametrit, 60 * 60)
+    val ohjausparametritMemo = TTLOptionalMemoize.memoize[HakuOid, Option[Ohjausparametrit]](service.ohjausparametrit, Duration(1, TimeUnit.HOURS).toSeconds, appConfig.settings.estimatedMaxActiveHakus)
 
     new OhjausparametritService() {
       override def ohjausparametrit(asId: HakuOid): Either[Throwable, Option[Ohjausparametrit]] = ohjausparametritMemo(asId)

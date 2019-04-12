@@ -16,6 +16,7 @@ valinta-tulos-service.ilmoittautuminen.enabled={{valintatulosservice_ilmoittautu
 
 valinta-tulos-service.streaming.hakukohde.concurrency={{valintatulosservice_streaming_hakukohde_concurrency | default('10') }}
 valinta-tulos-service.streaming.lock.timeout.seconds={{valintatulosservice_streaming_lock_timeout_seconds | default('240') }}
+valinta-tulos-service.ataru-hakemus-enricher-hakukohde-cache.ttl.seconds={{valintatulosservice_ataru_hakemus_enricher_hakukohde_cache_ttl_seconds | default('3600') }}
 
 #SIJOITTELU-SERVICE
 sijoittelu-service.rest.url=https://{{host_virkailija}}/sijoittelu-service

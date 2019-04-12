@@ -1,6 +1,5 @@
 import java.util
 
-import javax.servlet.{DispatcherType, ServletContext}
 import fi.vm.sade.auditlog.{ApplicationType, Audit, Logger}
 import fi.vm.sade.oppijantunnistus.OppijanTunnistusService
 import fi.vm.sade.security._
@@ -27,6 +26,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.vastaanottomeili._
+import javax.servlet.{DispatcherType, ServletContext}
 import org.scalatra._
 import org.slf4j.LoggerFactory
 
@@ -54,7 +54,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     }
     implicit lazy val dynamicAppConfig = new OhjausparametritAppConfig(appConfig.ohjausparametritService)
 
-    lazy val hakuService = HakuService(appConfig.hakuServiceConfig)
+    lazy val hakuService = HakuService(appConfig)
     lazy val oppijanTunnistusService = OppijanTunnistusService(appConfig.settings)
     lazy val organisaatioService = OrganisaatioService(appConfig)
     lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig, appConfig.isInstanceOf[IT])
@@ -75,7 +75,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val hakuAppRepository = new HakuAppRepository()
     lazy val ataruHakemusRepository = new AtaruHakemusRepository(appConfig)
     lazy val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
-    lazy val ataruHakemusTarjontaEnricher = new AtaruHakemusEnricher(hakuService, oppijanumerorekisteriService)
+    lazy val ataruHakemusTarjontaEnricher = new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService)
     lazy val hakemusRepository = new HakemusRepository(hakuAppRepository, ataruHakemusRepository, ataruHakemusTarjontaEnricher)
     lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, vastaanotettavuusService, sijoittelutulosService, hakemusRepository, valintarekisteriDb, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, hakijaDTOClient)(appConfig,dynamicAppConfig)
     lazy val streamingValintatulosService = new StreamingValintatulosService(valintatulosService, valintarekisteriDb, hakijaDTOClient)(appConfig)

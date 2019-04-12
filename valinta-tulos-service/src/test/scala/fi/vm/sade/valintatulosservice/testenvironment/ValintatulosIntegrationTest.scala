@@ -21,7 +21,7 @@ class ValintatulosIntegrationTest extends ITSpecification {
       if (new File(varsFile).exists()) {
         implicit val appConfig = new VtsAppConfig.LocalTestingWithTemplatedVars(varsFile)
         implicit val dynamicAppConfig: VtsDynamicAppConfig = VtsAppConfig.MockDynamicAppConfig()
-        val hakuService = HakuService(appConfig.hakuServiceConfig)
+        val hakuService = HakuService(appConfig)
         //lazy val sijoitteluContext = new SijoitteluSpringContext(appConfig, SijoitteluSpringContext.createApplicationContext(appConfig))
         /*val sijoittelutulosService = new SijoittelutulosService(sijoitteluContext.raportointiService, appConfig.ohjausparametritService, null,
           SijoittelunTulosRestClient(sijoitteluContext, appConfig))

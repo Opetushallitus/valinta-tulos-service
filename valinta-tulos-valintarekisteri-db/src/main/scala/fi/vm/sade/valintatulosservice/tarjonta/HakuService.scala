@@ -1,20 +1,24 @@
 package fi.vm.sade.valintatulosservice.tarjonta
 
+import java.util.concurrent.TimeUnit.HOURS
+
 import fi.vm.sade.properties.OphProperties
 import fi.vm.sade.utils.http.DefaultHttpClient
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.MonadHelper
+import fi.vm.sade.valintatulosservice.config.AppConfig
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOidSerializer, HakuOid, HakuOidSerializer, HakukohdeOid, HakukohdeOidSerializer, Kausi, Kevat, Syksy, ValintatapajonoOidSerializer}
 import org.joda.time.DateTime
 import org.json4s.JsonAST.{JInt, JObject, JString}
 import org.json4s.jackson.JsonMethods._
 import org.json4s.{CustomSerializer, Formats, JValue, MappingException}
+import scalaj.http.HttpOptions
 
 import scala.collection.JavaConverters._
+import scala.concurrent.duration.Duration
 import scala.util.Try
 import scala.util.control.NonFatal
-import scalaj.http.HttpOptions
 
 trait HakuService {
   def getHaku(oid: HakuOid): Either[Throwable, Haku]
@@ -32,10 +36,13 @@ trait HakuService {
 case class HakuServiceConfig(ophProperties: OphProperties, stubbedExternalDeps: Boolean)
 
 object HakuService {
-  def apply(config: HakuServiceConfig): HakuService = if (config.stubbedExternalDeps) {
-    HakuFixtures
-  } else {
-    new CachedHakuService(new TarjontaHakuService(config))
+  def apply(appConfig: AppConfig): HakuService = {
+    val config = appConfig.hakuServiceConfig
+    if (config.stubbedExternalDeps) {
+      HakuFixtures
+    } else {
+      new CachedHakuService(new TarjontaHakuService(config), appConfig)
+    }
   }
 }
 
@@ -174,9 +181,9 @@ protected trait JsonHakuService {
   }
 }
 
-class CachedHakuService(wrappedService: HakuService) extends HakuService {
-  private val byOid = TTLOptionalMemoize.memoize[HakuOid, Haku](oid => wrappedService.getHaku(oid), 4 * 60 * 60)
-  private val all = TTLOptionalMemoize.memoize[Unit, List[Haku]](_ => wrappedService.kaikkiJulkaistutHaut, 4 * 60 * 60)
+class CachedHakuService(wrappedService: HakuService, config: AppConfig) extends HakuService {
+  private val byOid = TTLOptionalMemoize.memoize[HakuOid, Haku](oid => wrappedService.getHaku(oid), Duration(4, HOURS).toSeconds, config.settings.estimatedMaxActiveHakus)
+  private val all = TTLOptionalMemoize.memoize[Unit, List[Haku]](_ => wrappedService.kaikkiJulkaistutHaut, Duration(4, HOURS).toSeconds, 1)
 
   override def getHaku(oid: HakuOid): Either[Throwable, Haku] = byOid(oid)
   override def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, HakukohdeKela] = wrappedService.getHakukohdeKela(oid)
