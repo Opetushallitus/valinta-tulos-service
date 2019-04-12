@@ -413,7 +413,7 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
   lazy val ataruHakemusRepository = new AtaruHakemusRepository(appConfig) {
     override def getHakemukset(query: HakemuksetQuery): Either[Throwable, AtaruResponse] = Right(AtaruResponse(List.empty, None))
   }
-  lazy val hakemusRepository = new HakemusRepository(new HakuAppRepository(), ataruHakemusRepository, new AtaruHakemusEnricher(hakuService, oppijanumerorekisteriService))
+  lazy val hakemusRepository = new HakemusRepository(new HakuAppRepository(), ataruHakemusRepository, new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService))
   lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, vastaanotettavuusService, sijoittelutulosService, hakemusRepository, valintarekisteriDb,
     hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, hakijaDtoClient)
   lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService,

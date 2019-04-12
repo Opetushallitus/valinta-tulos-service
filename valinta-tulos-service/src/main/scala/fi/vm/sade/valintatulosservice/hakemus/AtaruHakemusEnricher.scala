@@ -1,13 +1,20 @@
 package fi.vm.sade.valintatulosservice.hakemus
 
 import fi.vm.sade.valintatulosservice.MonadHelper
+import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain.{Hakemus, Hakutoive, Henkilotiedot}
+import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.{Henkilo, OppijanumerorekisteriService}
-import fi.vm.sade.valintatulosservice.tarjonta.HakuService
+import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakijaOid, HakukohdeOid}
 
-class AtaruHakemusEnricher(hakuService: HakuService,
+class AtaruHakemusEnricher(config: VtsAppConfig,
+                           hakuService: HakuService,
                            oppijanumerorekisteriService: OppijanumerorekisteriService) {
+
+  private val hakukohdeCache: HakukohdeOid => Either[Throwable, Hakukohde] =
+    TTLOptionalMemoize.memoize(hakuService.getHakukohde, lifetimeSeconds = config.settings.ataruHakemusEnricherHakukohdeCacheTtl.toSeconds)
+
   def apply(ataruHakemukset: List[AtaruHakemus]): Either[Throwable, List[Hakemus]] = {
     for {
       henkilot <- henkilot(ataruHakemukset).right
@@ -62,7 +69,7 @@ class AtaruHakemusEnricher(hakuService: HakuService,
   }
 
   private def hakutoive(oid: HakukohdeOid): Either[Throwable, (HakukohdeOid, String => Hakutoive)] = {
-    hakuService.getHakukohde(oid).right.map(h => {
+    hakukohdeCache(oid).right.map(h => {
       (oid, lang => Hakutoive(
         oid = oid,
         tarjoajaOid = h.tarjoajaOids.head,

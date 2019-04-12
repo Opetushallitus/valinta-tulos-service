@@ -75,7 +75,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val hakuAppRepository = new HakuAppRepository()
     lazy val ataruHakemusRepository = new AtaruHakemusRepository(appConfig)
     lazy val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
-    lazy val ataruHakemusTarjontaEnricher = new AtaruHakemusEnricher(hakuService, oppijanumerorekisteriService)
+    lazy val ataruHakemusTarjontaEnricher = new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService)
     lazy val hakemusRepository = new HakemusRepository(hakuAppRepository, ataruHakemusRepository, ataruHakemusTarjontaEnricher)
     lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, vastaanotettavuusService, sijoittelutulosService, hakemusRepository, valintarekisteriDb, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, hakijaDTOClient)(appConfig,dynamicAppConfig)
     lazy val streamingValintatulosService = new StreamingValintatulosService(valintatulosService, valintarekisteriDb, hakijaDTOClient)(appConfig)

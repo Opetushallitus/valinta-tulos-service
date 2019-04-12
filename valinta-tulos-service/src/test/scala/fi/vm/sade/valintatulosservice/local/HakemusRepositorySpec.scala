@@ -17,7 +17,7 @@ class HakemusRepositorySpec extends ITSpecification with ValintarekisteriDbTools
   val repo = new HakemusRepository(
     new HakuAppRepository(),
     new AtaruHakemusRepository(appConfig),
-    new AtaruHakemusEnricher(hakuService, oppijanumerorekisteriService)
+    new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService)
   )
 
   override def afterAll = deleteAll()
