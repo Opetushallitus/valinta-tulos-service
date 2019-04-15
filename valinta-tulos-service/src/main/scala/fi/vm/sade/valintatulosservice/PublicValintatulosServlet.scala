@@ -1,10 +1,10 @@
 package fi.vm.sade.valintatulosservice
 
 
-import fi.vm.sade.auditlog.{Audit, Changes, Target, Operation}
+import fi.vm.sade.auditlog.{Audit, Changes, Operation, Target}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.streamingresults.{HakemustenTulosHakuLock, StreamingValintatulosService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
-import fi.vm.sade.valintatulosservice.streamingresults.StreamingValintatulosService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import org.scalatra.swagger._
 

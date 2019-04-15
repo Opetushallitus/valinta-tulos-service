@@ -14,8 +14,6 @@ import scala.collection.JavaConverters._
 import scala.collection.parallel.ForkJoinTaskSupport
 import scala.concurrent.forkjoin.ForkJoinPool
 
-private object HakemustenTulosHakuLock
-
 class StreamingValintatulosService(valintatulosService: ValintatulosService,
                                    virkailijaVastaanottoRepository: VirkailijaVastaanottoRepository,
                                    hakijaDTOClient: ValintarekisteriHakijaDTOClient)
