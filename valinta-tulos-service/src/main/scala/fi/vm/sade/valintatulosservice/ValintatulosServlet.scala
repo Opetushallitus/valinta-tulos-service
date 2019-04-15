@@ -326,7 +326,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
       case Right(ok) => ok
       case Left(message) =>
         logger.error(message)
-        ServiceUnavailable("error" -> message)
+        TooManyRequests(body = "error" -> message, reason = message)
     }
   }
 
