@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice
 
 import java.time.Instant
+import java.util
 import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
@@ -214,7 +215,8 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
   def hakemustenTulosByHakukohde(hakuOid: HakuOid,
                                  hakukohdeOid: HakukohdeOid,
                                  hakukohteenVastaanotot: Option[Map[String,Set[VastaanottoRecord]]] = None,
-                                 checkJulkaisuAikaParametri: Boolean = true): Either[Throwable, Iterator[Hakemuksentulos]] = {
+                                 checkJulkaisuAikaParametri: Boolean = true,
+                                 vainHakukohteenTiedot: Boolean = false): Either[Throwable, Iterator[Hakemuksentulos]] = {
     val hakemukset: Seq[Hakemus] = hakemusRepository.findHakemuksetByHakukohde(hakuOid, hakukohdeOid).toVector //hakemus-mongo
     val uniqueHakukohdeOids: Seq[HakukohdeOid] = hakemukset.flatMap(_.toiveet.map(_.oid)).distinct
     timed("Fetch hakemusten tulos for haku: "+ hakuOid + " and hakukohde: " + hakukohdeOid, 1000) (
@@ -234,7 +236,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         fetchTulokset(
           haku,
           () => hakemukset.toIterator,
-          personOidFromHakemusResolver => sijoittelutulosService.hakemustenTulos(hakuOid, Some(hakukohdeOid), personOidFromHakemusResolver, hakukohteenVastaanotot),
+          personOidFromHakemusResolver => sijoittelutulosService.hakemustenTulos(hakuOid, Some(hakukohdeOid), personOidFromHakemusResolver, hakukohteenVastaanotot, vainHakukohde = vainHakukohteenTiedot),
           Some(new PersonOidFromHakemusResolver {
             private lazy val hakijaOidByHakemusOid = timed("personOids from hakemus", 1000)(hakemusRepository.findPersonOids(hakuOid, hakukohdeOid))
             override def findBy(hakemusOid: HakemusOid): Option[String] = hakijaOidByHakemusOid.get(hakemusOid)

@@ -272,7 +272,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
   }
 
   lazy val postStreamingHaunSijoitteluajonHakukohteidenTuloksetSwagger: OperationBuilder = (apiOperation[Unit]("postStreamingHaunSijoitteluajonHakukohteidenTuloksetSwagger")
-    summary """Streamaava listaus annettujen hakukohteiden hakemuksien/hakijoiden listaukseen. Yksityiskohtainen listaus kaikista hakutoiveista ja niiden valintatapajonoista"""
+    summary """Streamaava listaus annettujen hakukohteiden hakemuksien/hakijoiden listaukseen. Yksityiskohtainen listaus kaikista annettuihin hakukohdeoideihin kohdistuneista hakutoiveista ja niiden valintatapajonoista"""
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     parameter pathParam[String]("sijoitteluajoId").description("""Sijoitteluajon id tai "latest"""").required
     parameter queryParam[Boolean]("vainMerkitsevaJono").description("Jos true, palautetaan vain merkitsevän valintatapajonon tiedot").optional

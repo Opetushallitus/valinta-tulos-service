@@ -45,7 +45,8 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
   def hakemustenTulos(hakuOid: HakuOid,
                       hakukohdeOid: Option[HakukohdeOid],
                       personOidResolver: PersonOidFromHakemusResolver,
-                      haunVastaanotot: Option[Map[String, Set[VastaanottoRecord]]] = None): List[HakemuksenSijoitteluntulos] = {
+                      haunVastaanotot: Option[Map[String, Set[VastaanottoRecord]]] = None,
+                      vainHakukohde: Boolean = false): List[HakemuksenSijoitteluntulos] = {
     def fetchVastaanottos(hakemusOid: HakemusOid, hakijaOidFromSijoittelunTulos: Option[String]): Set[VastaanottoRecord] =
       (hakijaOidFromSijoittelunTulos.orElse(personOidResolver.findBy(hakemusOid)), haunVastaanotot) match {
         case (Some(hakijaOid), Some(vastaanotot)) => vastaanotot.getOrElse(hakijaOid, Set())
@@ -58,7 +59,11 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     (for (
       sijoittelu <- findLatestSijoitteluAjo(hakuOid, hakukohdeOid);
       hakijaDtot <- hakukohdeOid match {
-        case Some(hakukohde) => Option(Timer.timed("hakukohteen hakemukset", 1000)(raportointiService.kevytHakemukset(sijoittelu, hakukohde)))
+        case Some(hakukohde) =>
+          if (vainHakukohde)
+            Option(Timer.timed("hakukohteen hakemukset", 1000)(raportointiService.hakemuksetVainHakukohteenTietojenKanssa(sijoittelu, hakukohde)))
+          else
+            Option(Timer.timed("hakukohteen hakemukset", 1000)(raportointiService.kevytHakemukset(sijoittelu, hakukohde)))
         case None => Option(Timer.timed("hakemukset", 1000)(raportointiService.kevytHakemukset(sijoittelu)))
       };
       hakijat <- {
