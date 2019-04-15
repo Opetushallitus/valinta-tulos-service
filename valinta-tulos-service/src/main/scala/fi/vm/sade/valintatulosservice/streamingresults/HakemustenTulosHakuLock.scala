@@ -6,7 +6,7 @@ import java.util.concurrent.{Semaphore, TimeUnit}
 import fi.vm.sade.utils.slf4j.Logging
 
 class HakemustenTulosHakuLock(queueLimit: Int, lockDurationSeconds: Int) extends Logging {
-  private val lockQueue: Semaphore = new Semaphore(queueLimit)
+  private val lockQueue: Semaphore = new Semaphore(queueLimit + 1)
   private val loadingLock: ReentrantLock = new ReentrantLock(true)
 
   def execute[T](operation: () => T): Either[String, T] = {
