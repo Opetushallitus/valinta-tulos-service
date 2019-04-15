@@ -8,7 +8,18 @@ import fi.vm.sade.valintatulosservice.streamingresults.StreamingValintatulosServ
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import org.scalatra.swagger._
 
-class PublicValintatulosServlet(audit: Audit, valintatulosService: ValintatulosService, streamingValintatulosService: StreamingValintatulosService, vastaanottoService: VastaanottoService, ilmoittautumisService: IlmoittautumisService, valintarekisteriDb: ValintarekisteriDb, val sessionRepository: SessionRepository)(override implicit val swagger: Swagger, appConfig: VtsAppConfig) extends ValintatulosServlet(valintatulosService, streamingValintatulosService, vastaanottoService, ilmoittautumisService, valintarekisteriDb)(swagger, appConfig) with CasAuthenticatedServlet {
+class PublicValintatulosServlet(audit: Audit,
+                                valintatulosService: ValintatulosService,
+                                streamingValintatulosService: StreamingValintatulosService,
+                                vastaanottoService: VastaanottoService,
+                                ilmoittautumisService: IlmoittautumisService,
+                                valintarekisteriDb: ValintarekisteriDb,
+                                val sessionRepository: SessionRepository) (override implicit val swagger: Swagger, appConfig: VtsAppConfig)
+  extends ValintatulosServlet(valintatulosService,
+    streamingValintatulosService,
+    vastaanottoService,
+    ilmoittautumisService,
+    valintarekisteriDb)(swagger, appConfig) with CasAuthenticatedServlet {
 
   override val applicationName = Some("cas/haku")
 
