@@ -1,8 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
 import java.util.Date
-import java.util.concurrent.{Semaphore, TimeUnit}
-import java.util.concurrent.locks.ReentrantLock
 
 import fi.vm.sade.auditlog.Operation
 import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
@@ -11,7 +9,7 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.json.{JsonFormats, JsonStreamWriter, StreamingFailureException}
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
-import fi.vm.sade.valintatulosservice.streamingresults.StreamingValintatulosService
+import fi.vm.sade.valintatulosservice.streamingresults.{HakemustenTulosHakuLock, StreamingValintatulosService}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, Hakuaika, YhdenPaikanSaanto}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -24,17 +22,14 @@ import org.scalatra.swagger._
 
 import scala.util.Try
 
-private object HakemustenTulosHakuLock {
-  val queueLimit: Int = 2
-  val lockQueue: Semaphore = new Semaphore(queueLimit)
-  val loadingLock: ReentrantLock = new ReentrantLock(true)
-}
+
 
 abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
                                    streamingValintatulosService: StreamingValintatulosService,
                                    vastaanottoService: VastaanottoService,
                                    ilmoittautumisService: IlmoittautumisService,
-                                   valintarekisteriDb: ValintarekisteriDb)
+                                   valintarekisteriDb: ValintarekisteriDb,
+                                   hakemustenTulosHakuLock: HakemustenTulosHakuLock )
                                   (implicit val swagger: Swagger,
                                    appConfig: VtsAppConfig) extends VtsServletBase {
   val ilmoittautumisenAikaleima: Option[Date] = Option(new Date())
@@ -322,30 +317,16 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
   }
 
   private def serveStreamingResults(fetchData: => Option[Iterator[Hakemuksentulos]]): Any = {
-    if (HakemustenTulosHakuLock.lockQueue.tryAcquire()) {
-      try {
-        if (HakemustenTulosHakuLock.loadingLock.tryLock(appConfig.settings.hakuResultsLoadingLockSeconds, TimeUnit.SECONDS)) {
-          try {
-            fetchData match {
-              case Some(tulos) => JsonStreamWriter.writeJsonStream(tulos, response.writer)
-              case _ => NotFound("error" -> "Not found")
-            }
-          } finally {
-            HakemustenTulosHakuLock.loadingLock.unlock()
-          }
-        } else {
-          val message: String = s"Acquiring lock timed out after ${appConfig.settings.hakuResultsLoadingLockSeconds}" +
-            s" seconds: No available capacity for this request, please try again later"
-          logger.error(message)
-          ServiceUnavailable("error" -> message)
-        }
-      } finally {
-        HakemustenTulosHakuLock.lockQueue.release()
+    hakemustenTulosHakuLock.execute[Any](() => {
+      fetchData match {
+        case Some(tulos) => JsonStreamWriter.writeJsonStream(tulos, response.writer)
+        case _ => NotFound("error" -> "Not found")
       }
-    } else {
-      val message: String = s"Results loading queue of size ${HakemustenTulosHakuLock.queueLimit} full: No available capacity for this request, please try again later"
-      logger.error(message)
-      ServiceUnavailable("error" -> message)
+    }) match {
+      case Right(ok) => ok
+      case Left(message) =>
+        logger.error(message)
+        TooManyRequests(body = "error" -> message, reason = message)
     }
   }
 

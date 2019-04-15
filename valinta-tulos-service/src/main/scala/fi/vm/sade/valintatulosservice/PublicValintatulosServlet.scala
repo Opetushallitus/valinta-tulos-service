@@ -1,14 +1,27 @@
 package fi.vm.sade.valintatulosservice
 
 
-import fi.vm.sade.auditlog.{Audit, Changes, Target, Operation}
+import fi.vm.sade.auditlog.{Audit, Changes, Operation, Target}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.streamingresults.{HakemustenTulosHakuLock, StreamingValintatulosService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
-import fi.vm.sade.valintatulosservice.streamingresults.StreamingValintatulosService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import org.scalatra.swagger._
 
-class PublicValintatulosServlet(audit: Audit, valintatulosService: ValintatulosService, streamingValintatulosService: StreamingValintatulosService, vastaanottoService: VastaanottoService, ilmoittautumisService: IlmoittautumisService, valintarekisteriDb: ValintarekisteriDb, val sessionRepository: SessionRepository)(override implicit val swagger: Swagger, appConfig: VtsAppConfig) extends ValintatulosServlet(valintatulosService, streamingValintatulosService, vastaanottoService, ilmoittautumisService, valintarekisteriDb)(swagger, appConfig) with CasAuthenticatedServlet {
+class PublicValintatulosServlet(audit: Audit,
+                                valintatulosService: ValintatulosService,
+                                streamingValintatulosService: StreamingValintatulosService,
+                                vastaanottoService: VastaanottoService,
+                                ilmoittautumisService: IlmoittautumisService,
+                                valintarekisteriDb: ValintarekisteriDb,
+                                val sessionRepository: SessionRepository,
+                                hakemustenTulosHakuLock: HakemustenTulosHakuLock) (override implicit val swagger: Swagger, appConfig: VtsAppConfig)
+  extends ValintatulosServlet(valintatulosService,
+    streamingValintatulosService,
+    vastaanottoService,
+    ilmoittautumisService,
+    valintarekisteriDb,
+    hakemustenTulosHakuLock)(swagger, appConfig) with CasAuthenticatedServlet {
 
   override val applicationName = Some("cas/haku")
 
