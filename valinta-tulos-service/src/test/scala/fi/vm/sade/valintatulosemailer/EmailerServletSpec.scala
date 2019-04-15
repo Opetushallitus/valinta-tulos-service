@@ -20,7 +20,7 @@ class EmailerServletSpec extends ServletSpecification {
 
   "POST /emailer/run" should {
     "be OK" in {
-      val uri = "emailer/run"
+      val uri = "auth/emailer/run"
       println("calling POST")
       post(uri, headers = httpHeaders) {
         status must_== 200
