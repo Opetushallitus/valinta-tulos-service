@@ -15,7 +15,7 @@ valinta-tulos-service.ohjausparametrit.url=https\://{{host_virkailija}}/ohjauspa
 valinta-tulos-service.ilmoittautuminen.enabled={{valintatulosservice_ilmoittautuminen_enabled}}
 
 valinta-tulos-service.streaming.hakukohde.concurrency={{valintatulosservice_streaming_hakukohde_concurrency | default('10') }}
-valinta-tulos-service.streaming.lock.timeout.seconds={{valintatulosservice_streaming_lock_timeout_seconds | default('240') }}
+valinta-tulos-service.streaming.lock.timeout.seconds={{valintatulosservice_streaming_lock_timeout_seconds | default('600') }}
 valinta-tulos-service.streaming.lock.queue.limit={{valintatulosservice_streaming_lock_queue_limit | default('10')}}
 valinta-tulos-service.ataru-hakemus-enricher-hakukohde-cache.ttl.seconds={{valintatulosservice_ataru_hakemus_enricher_hakukohde_cache_ttl_seconds | default('3600') }}
 
