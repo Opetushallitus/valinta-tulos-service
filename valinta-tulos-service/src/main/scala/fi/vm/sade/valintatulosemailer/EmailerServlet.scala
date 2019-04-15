@@ -15,7 +15,6 @@ class EmailerServlet(emailerService: EmailerService, val sessionRepository: Sess
   extends VtsServletBase with CasAuthenticatedServlet with EmailerSwagger with Logging {
 
   post("/run", operation(postRunEmailerSwagger)) {
-    contentType = formats("json")
     logger.info("EmailerServlet POST /run called")
     emailerService.run() match {
       case Success(ids) =>
@@ -27,9 +26,8 @@ class EmailerServlet(emailerService: EmailerService, val sessionRepository: Sess
   }
 
   post("/run/haku/:hakuOid/", operation(postRunEmailerForHakuSwagger)) {
-    contentType = formats("json")
-    logger.info("EmailerServlet POST /run/haku/ called")
     val hakuOid = HakuOid(params("hakuOid"))
+    logger.info(s"EmailerServlet POST /run/haku/ called for haku $hakuOid")
     emailerService.runForHaku(hakuOid) match {
       case Success(ids) =>
         Ok(ids)
@@ -40,9 +38,8 @@ class EmailerServlet(emailerService: EmailerService, val sessionRepository: Sess
   }
 
   post("/run/hakukohde/:hakukohdeOid/", operation(postRunEmailerForHakukohdeSwagger)) {
-    contentType = formats("json")
-    logger.info("EmailerServlet POST /run/hakukohde/ called")
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
+    logger.info(s"EmailerServlet POST /run/hakukohde/ called for hakukohde $hakukohdeOid")
     emailerService.runForHakukohde(hakukohdeOid) match {
       case Success(ids) =>
         Ok(ids)
