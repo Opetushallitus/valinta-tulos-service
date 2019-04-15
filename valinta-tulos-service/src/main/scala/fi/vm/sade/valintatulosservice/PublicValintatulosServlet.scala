@@ -14,12 +14,14 @@ class PublicValintatulosServlet(audit: Audit,
                                 vastaanottoService: VastaanottoService,
                                 ilmoittautumisService: IlmoittautumisService,
                                 valintarekisteriDb: ValintarekisteriDb,
-                                val sessionRepository: SessionRepository) (override implicit val swagger: Swagger, appConfig: VtsAppConfig)
+                                val sessionRepository: SessionRepository,
+                                hakemustenTulosHakuLock: HakemustenTulosHakuLock) (override implicit val swagger: Swagger, appConfig: VtsAppConfig)
   extends ValintatulosServlet(valintatulosService,
     streamingValintatulosService,
     vastaanottoService,
     ilmoittautumisService,
-    valintarekisteriDb)(swagger, appConfig) with CasAuthenticatedServlet {
+    valintarekisteriDb,
+    hakemustenTulosHakuLock)(swagger, appConfig) with CasAuthenticatedServlet {
 
   override val applicationName = Some("cas/haku")
 

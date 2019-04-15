@@ -24,8 +24,7 @@ import org.scalatra.swagger._
 
 import scala.util.Try
 
-private object HakemustenTulosHakuLock {
-  val queueLimit: Int = 2
+class HakemustenTulosHakuLock(val queueLimit: Int) {
   val lockQueue: Semaphore = new Semaphore(queueLimit)
   val loadingLock: ReentrantLock = new ReentrantLock(true)
 }
@@ -34,7 +33,8 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
                                    streamingValintatulosService: StreamingValintatulosService,
                                    vastaanottoService: VastaanottoService,
                                    ilmoittautumisService: IlmoittautumisService,
-                                   valintarekisteriDb: ValintarekisteriDb)
+                                   valintarekisteriDb: ValintarekisteriDb,
+                                   hakemustenTulosHakuLock: HakemustenTulosHakuLock )
                                   (implicit val swagger: Swagger,
                                    appConfig: VtsAppConfig) extends VtsServletBase {
   val ilmoittautumisenAikaleima: Option[Date] = Option(new Date())
@@ -322,16 +322,16 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
   }
 
   private def serveStreamingResults(fetchData: => Option[Iterator[Hakemuksentulos]]): Any = {
-    if (HakemustenTulosHakuLock.lockQueue.tryAcquire()) {
+    if (hakemustenTulosHakuLock.lockQueue.tryAcquire()) {
       try {
-        if (HakemustenTulosHakuLock.loadingLock.tryLock(appConfig.settings.hakuResultsLoadingLockSeconds, TimeUnit.SECONDS)) {
+        if (hakemustenTulosHakuLock.loadingLock.tryLock(appConfig.settings.hakuResultsLoadingLockSeconds, TimeUnit.SECONDS)) {
           try {
             fetchData match {
               case Some(tulos) => JsonStreamWriter.writeJsonStream(tulos, response.writer)
               case _ => NotFound("error" -> "Not found")
             }
           } finally {
-            HakemustenTulosHakuLock.loadingLock.unlock()
+            hakemustenTulosHakuLock.loadingLock.unlock()
           }
         } else {
           val message: String = s"Acquiring lock timed out after ${appConfig.settings.hakuResultsLoadingLockSeconds}" +
@@ -340,10 +340,10 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
           ServiceUnavailable("error" -> message)
         }
       } finally {
-        HakemustenTulosHakuLock.lockQueue.release()
+        hakemustenTulosHakuLock.lockQueue.release()
       }
     } else {
-      val message: String = s"Results loading queue of size ${HakemustenTulosHakuLock.queueLimit} full: No available capacity for this request, please try again later"
+      val message: String = s"Results loading queue of size ${hakemustenTulosHakuLock.queueLimit} full: No available capacity for this request, please try again later"
       logger.error(message)
       ServiceUnavailable("error" -> message)
     }

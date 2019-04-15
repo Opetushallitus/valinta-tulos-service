@@ -10,14 +10,16 @@ class PrivateValintatulosServlet(valintatulosService: ValintatulosService,
                                  streamingValintatulosService: StreamingValintatulosService,
                                  vastaanottoService: VastaanottoService,
                                  ilmoittautumisService: IlmoittautumisService,
-                                 valintarekisteriDb: ValintarekisteriDb)
+                                 valintarekisteriDb: ValintarekisteriDb,
+                                 hakemustenTulosHakuLock: HakemustenTulosHakuLock )
                                 (override implicit val swagger: Swagger,
                                  appConfig: VtsAppConfig)
   extends ValintatulosServlet(valintatulosService,
     streamingValintatulosService,
     vastaanottoService,
     ilmoittautumisService,
-    valintarekisteriDb)(swagger, appConfig) {
+    valintarekisteriDb,
+    hakemustenTulosHakuLock)(swagger, appConfig) {
 
   override val applicationName = Some("haku")
 

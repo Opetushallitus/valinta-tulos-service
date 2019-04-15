@@ -100,6 +100,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val userDetailsService = new KayttooikeusUserDetailsService(appConfig)
     lazy val hyvaksymiskirjeService = new HyvaksymiskirjeService(valintarekisteriDb, hakuService, audit, authorizer)
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
+    lazy val hakemustenTulosHakuLock: HakemustenTulosHakuLock = new HakemustenTulosHakuLock(appConfig.settings.hakuResultsLoadingLockQueueLimit)
 
     val sijoitteluajoDeleteScheduler = new SijoitteluajoDeleteScheduler(valintarekisteriDb, appConfig)
     sijoitteluajoDeleteScheduler.startScheduler()
@@ -129,7 +130,8 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         streamingValintatulosService,
         vastaanottoService,
         ilmoittautumisService,
-        valintarekisteriDb),
+        valintarekisteriDb,
+        hakemustenTulosHakuLock),
         "/haku")
       context.mount(new EmailStatusServlet(mailPoller, new MailDecorator(hakuService, oppijanTunnistusService)), "/vastaanottoposti")
       context.mount(new EnsikertalaisuusServlet(valintarekisteriDb, appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus")
@@ -154,7 +156,9 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         vastaanottoService,
         ilmoittautumisService,
         valintarekisteriDb,
-        valintarekisteriDb),
+        valintarekisteriDb,
+        hakemustenTulosHakuLock
+      ),
         "/cas/haku")
       context.mount(new KelaServlet(audit, new KelaService(HakijaResolver(appConfig), hakuService, organisaatioService, valintarekisteriDb), valintarekisteriDb), "/cas/kela")
       context.mount(new KelaHealthCheckServlet(audit, valintarekisteriDb, appConfig, new VtsKelaAuthenticationClient(appConfig)), "/health-check/kela")
