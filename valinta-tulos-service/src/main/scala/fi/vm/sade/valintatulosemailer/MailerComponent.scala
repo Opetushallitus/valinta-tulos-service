@@ -31,24 +31,30 @@ trait MailerComponent {
       LahetysSyy.sitovan_vastaanoton_ilmoitus -> "sitova_vastaanotto_email"
     )
 
+    private sealed trait Query
+    private case object AllQuery extends Query
+    private case class HakuQuery(hakuOid: HakuOid) extends Query
+    private case class HakukohdeQuery(hakukohdeOid: HakukohdeOid) extends Query
+    private case class HakemusQuery(hakemusOid: HakemusOid) extends Query
 
     def sendMailForAll(): List[String] = {
-      collectAndSend(None, 0, List.empty, List.empty)
+      collectAndSend(AllQuery, 0, List.empty, List.empty)
     }
 
     def sendMailForHaku(hakuOid: HakuOid): List[String] = {
-      collectAndSend(Some(Left(hakuOid)), 0, List.empty, List.empty)
+      collectAndSend(HakuQuery(hakuOid), 0, List.empty, List.empty)
     }
 
     def sendMailForHakukohde(hakukohdeOid: HakukohdeOid): List[String] = {
-      collectAndSend(Some(Right(Left(hakukohdeOid))), 0, List.empty, List.empty)
+      collectAndSend(HakukohdeQuery(hakukohdeOid), 0, List.empty, List.empty)
     }
 
     def sendMailForHakemus(hakemusOid: HakemusOid): List[String] = {
-      collectAndSend(Some(Right(Right(hakemusOid))), 0, List.empty, List.empty)
+      collectAndSend(HakemusQuery(hakemusOid), 0, List.empty, List.empty)
     }
 
-    private def collectAndSend(query: Option[Either[HakuOid,Either[HakukohdeOid,HakemusOid]]], batchNr: Int, ids: List[String], batch: List[Ilmoitus]): List[String] = {
+
+    private def collectAndSend(query: Query, batchNr: Int, ids: List[String], batch: List[Ilmoitus]): List[String] = {
       def sendAndConfirm(currentBatch: List[Ilmoitus]): List[String] = {
         val groupedlmoituses = helper.splitAndGroupIlmoitus(currentBatch)
 
@@ -117,15 +123,15 @@ trait MailerComponent {
       }
     }
 
-    private def fetchRecipientBatch(query: Option[Either[HakuOid,Either[HakukohdeOid,HakemusOid]]]): PollResult = {
+    private def fetchRecipientBatch(query: Query): PollResult = {
       query match {
-        case None =>
+        case AllQuery =>
           mailPoller.pollForAllMailables(mailDecorator, mailablesLimit, timeLimit)
-        case Some(Left(hakuOid)) =>
+        case HakuQuery(hakuOid) =>
           mailPoller.pollForMailablesForHaku(hakuOid, mailDecorator, mailablesLimit, timeLimit)
-        case Some(Right(Left(hakukohdeOid))) =>
+        case HakukohdeQuery(hakukohdeOid) =>
           mailPoller.pollForMailablesForHakukohde(hakukohdeOid, mailDecorator, mailablesLimit, timeLimit)
-        case Some(Right(Right(hakemusOid))) =>
+        case HakemusQuery(hakemusOid) =>
           mailPoller.pollForMailablesForHakemus(hakemusOid, mailDecorator)
       }
     }
