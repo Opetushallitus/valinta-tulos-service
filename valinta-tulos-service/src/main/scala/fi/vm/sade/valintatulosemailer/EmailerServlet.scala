@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosemailer
 
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
 import fi.vm.sade.valintatulosservice.{CasAuthenticatedServlet, VtsServletBase, VtsSwaggerBase}
 import org.scalatra.{InternalServerError, Ok}
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
@@ -48,6 +48,18 @@ class EmailerServlet(emailerService: EmailerService, val sessionRepository: Sess
         InternalServerError(e)
     }
   }
+
+  post("/run/hakemus/:hakemusOid/", operation(postRunEmailerForHakemusSwagger)) {
+    val hakemusOid = HakemusOid(params("hakemusOid"))
+    logger.info(s"EmailerServlet POST /run/hakemus/ called for hakemus $hakemusOid")
+    emailerService.runForHakemus(hakemusOid) match {
+      case Success(ids) =>
+        Ok(ids)
+      case Failure(e) =>
+        logger.error(s"Failed to send email for hakemus $hakemusOid: ", e)
+        InternalServerError(e)
+    }
+  }
 }
 
 trait EmailerSwagger extends VtsSwaggerBase { this: SwaggerSupport =>
@@ -75,4 +87,13 @@ trait EmailerSwagger extends VtsSwaggerBase { this: SwaggerSupport =>
     .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
     .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
     .parameter(pathParam[String]("hakukohdeOid").description("Hakukohteen oid"))
+
+
+  val postRunEmailerForHakemusSwagger: OperationBuilder = apiOperation[Unit]("postRunEmailerForHakemus")
+    .summary("Aja sähköpostien lähetys hakemukselle")
+    .notes("Vastaanottosähköpostien manuaalinen lähetys yhdelle hakemukselle.")
+    .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
+    .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
+    .consumes("application/json")
+    .parameter(pathParam[String]("hakemusOid").description("Hakemuksen oid"))
 }

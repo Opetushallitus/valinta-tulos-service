@@ -51,6 +51,35 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
          """.as[(HakemusOid, HakukohdeOid, Option[MailReason], Option[Timestamp])]).toSet
     }
   }
+  override def candidates(hakemusOid: HakemusOid): Set[(HakemusOid, HakukohdeOid, Option[MailReason], Option[Date])] = {
+    timed(s"Fetching mailable candidates database call for hakemus $hakemusOid", 100) {
+      runBlocking(
+        sql"""select vt.hakemus_oid,
+                     vt.hakukohde_oid,
+                     v.syy,
+                     tark.tarkistettu
+              from valinnantilat as vt
+              left join viestit as v
+                on vt.hakemus_oid = v.hakemus_oid and
+                   vt.hakukohde_oid = v.hakukohde_oid
+              left join viestinlahetys_tarkistettu tark
+                on vt.hakukohde_oid = tark.hakukohde_oid
+              join valinnantulokset as vnt
+                on vt.valintatapajono_oid = vnt.valintatapajono_oid and
+                   vt.hakemus_oid = vnt.hakemus_oid and
+                   vt.hakukohde_oid = vnt.hakukohde_oid
+              left join newest_vastaanotot as nv
+                on vt.henkilo_oid = nv.henkilo and
+                   vt.hakukohde_oid = nv.hakukohde
+              where vt.hakemus_oid = $hakemusOid
+                and vnt.julkaistavissa is true
+                and (vt.tila = 'Hyvaksytty' or vt.tila = 'VarasijaltaHyvaksytty')
+                and (v.lahetetty is null or (v.syy is not distinct from 'EHDOLLISEN_PERIYTYMISEN_ILMOITUS' and
+                                             nv.action is not distinct from 'VastaanotaSitovasti' and
+                                             nv.ilmoittaja is not distinct from 'järjestelmä'))
+         """.as[(HakemusOid, HakukohdeOid, Option[MailReason], Option[Timestamp])]).toSet
+    }
+  }
 
   override def markAsToBeSent(toMark: Set[(HakemusOid, HakukohdeOid, MailReason)]): Unit = {
     if (toMark.nonEmpty) {

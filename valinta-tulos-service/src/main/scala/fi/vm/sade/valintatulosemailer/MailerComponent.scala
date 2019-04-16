@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit.MINUTES
 import fi.vm.sade.groupemailer.{EmailInfo, GroupEmail, GroupEmailComponent, Recipient}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosemailer.config.EmailerConfigComponent
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
 import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy.LahetysSyy
 import fi.vm.sade.valintatulosservice.vastaanottomeili._
 
@@ -41,10 +41,14 @@ trait MailerComponent {
     }
 
     def sendMailForHakukohde(hakukohdeOid: HakukohdeOid): List[String] = {
-      collectAndSend(Some(Right(hakukohdeOid)), 0, List.empty, List.empty)
+      collectAndSend(Some(Right(Left(hakukohdeOid))), 0, List.empty, List.empty)
     }
 
-    private def collectAndSend(query: Option[Either[HakuOid,HakukohdeOid]], batchNr: Int, ids: List[String], batch: List[Ilmoitus]): List[String] = {
+    def sendMailForHakemus(hakemusOid: HakemusOid): List[String] = {
+      collectAndSend(Some(Right(Right(hakemusOid))), 0, List.empty, List.empty)
+    }
+
+    private def collectAndSend(query: Option[Either[HakuOid,Either[HakukohdeOid,HakemusOid]]], batchNr: Int, ids: List[String], batch: List[Ilmoitus]): List[String] = {
       def sendAndConfirm(currentBatch: List[Ilmoitus]): List[String] = {
         val groupedlmoituses = helper.splitAndGroupIlmoitus(currentBatch)
 
@@ -113,14 +117,16 @@ trait MailerComponent {
       }
     }
 
-    private def fetchRecipientBatch(query: Option[Either[HakuOid,HakukohdeOid]]): PollResult = {
+    private def fetchRecipientBatch(query: Option[Either[HakuOid,Either[HakukohdeOid,HakemusOid]]]): PollResult = {
       query match {
         case None =>
           mailPoller.pollForAllMailables(mailDecorator, mailablesLimit, timeLimit)
         case Some(Left(hakuOid)) =>
           mailPoller.pollForMailablesForHaku(hakuOid, mailDecorator, mailablesLimit, timeLimit)
-        case Some(Right(hakukohdeOid)) =>
+        case Some(Right(Left(hakukohdeOid))) =>
           mailPoller.pollForMailablesForHakukohde(hakukohdeOid, mailDecorator, mailablesLimit, timeLimit)
+        case Some(Right(Right(hakemusOid))) =>
+          mailPoller.pollForMailablesForHakemus(hakemusOid, mailDecorator)
       }
     }
 
@@ -138,4 +144,5 @@ trait Mailer {
   def sendMailForAll(): List[String]
   def sendMailForHaku(hakuOid: HakuOid): List[String]
   def sendMailForHakukohde(hakukohdeOid: HakukohdeOid): List[String]
+  def sendMailForHakemus(hakemusOid: HakemusOid): List[String]
 }

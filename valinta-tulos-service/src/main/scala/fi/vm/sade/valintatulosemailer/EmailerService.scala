@@ -5,8 +5,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosemailer.config.EmailerConfigParser
 import fi.vm.sade.valintatulosemailer.config.EmailerRegistry.EmailerRegistry
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid}
-
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
 import com.github.kagkarlsson.scheduler.task.schedule.CronSchedule
 import com.github.kagkarlsson.scheduler.Scheduler
 import com.github.kagkarlsson.scheduler.task._
@@ -77,6 +76,18 @@ class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, emailerC
         logger.info(s"Job for hakukohde $hakukohdeOid sent succesfully, jobId: $ids")
       } else {
         logger.info(s"Nothing was sent for hakukohde $hakukohdeOid. More info in logs.")
+      }
+      ids
+    })
+  }
+
+  def runForHakemus(hakemusOid: HakemusOid): Try[List[String]]  = {
+    Try(Timer.timed(s"Batch send for hakemus $hakemusOid") {
+      val ids = registry.mailer.sendMailForHakemus(hakemusOid)
+      if (ids.nonEmpty) {
+        logger.info(s"Job for hakemus $hakemusOid sent succesfully, jobId: $ids")
+      } else {
+        logger.info(s"Nothing was sent for hakemus $hakemusOid. More info in logs.")
       }
       ids
     })
