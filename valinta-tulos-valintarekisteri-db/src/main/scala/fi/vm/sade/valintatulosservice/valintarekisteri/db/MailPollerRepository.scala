@@ -7,11 +7,11 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import scala.concurrent.duration.Duration
 
 trait MailPollerRepository {
-  def candidates(hakukohdeOid: HakukohdeOid, recheckIntervalHours: Int = 24 * 3): Set[(HakemusOid, HakukohdeOid, Option[MailReason])]
+  def candidates(hakukohdeOid: HakukohdeOid, ignoreEarlier: Boolean = false, recheckIntervalHours: Int = 24 * 3): Set[(HakemusOid, HakukohdeOid, Option[MailReason])]
 
   def lastChecked(hakukohdeOid: HakukohdeOid): Option[Date]
 
-  def candidates(hakemusOid: HakemusOid): Set[(HakemusOid, HakukohdeOid, Option[MailReason])]
+  def candidate(hakemusOid: HakemusOid): Set[(HakemusOid, HakukohdeOid, Option[MailReason])]
 
   def markAsToBeSent(toMark: Set[(HakemusOid, HakukohdeOid, MailReason)]): Unit
 

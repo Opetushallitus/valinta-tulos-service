@@ -15,6 +15,7 @@ import scala.concurrent.duration.Duration
 trait MailPollerRepositoryImpl extends MailPollerRepository with ValintarekisteriRepository with Logging {
 
   override def candidates(hakukohdeOid: HakukohdeOid,
+                          ignoreEarlier: Boolean = false,
                           recheckIntervalHours: Int = 24): Set[(HakemusOid, HakukohdeOid, Option[MailReason])] = {
     timed(s"Fetching mailable candidates database call for hakukohde $hakukohdeOid", 100) {
       runBlocking(
@@ -41,10 +42,11 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                 where vt.hakukohde_oid = $hakukohdeOid
                   and vnt.julkaistavissa is true
                   and (vt.tila = 'Hyvaksytty' or vt.tila = 'VarasijaltaHyvaksytty')
-                  and (v.lahettaminen_aloitettu is null or v.lahettaminen_aloitettu < now() - make_interval(hours => $recheckIntervalHours))
-                  and (v.lahetetty is null or (v.syy is not distinct from 'EHDOLLISEN_PERIYTYMISEN_ILMOITUS' and
+                  and ($ignoreEarlier or
+                    ((v.lahettaminen_aloitettu is null or v.lahettaminen_aloitettu < now() - make_interval(hours => $recheckIntervalHours))
+                    and  (v.lahetetty is null or (v.syy is not distinct from 'EHDOLLISEN_PERIYTYMISEN_ILMOITUS' and
                                                nv.action is not distinct from 'VastaanotaSitovasti' and
-                                               nv.ilmoittaja is not distinct from 'järjestelmä')))
+                                               nv.ilmoittaja is not distinct from 'järjestelmä')))))
          """.as[(HakemusOid, HakukohdeOid, Option[MailReason])]).toSet
        }
   }
@@ -57,7 +59,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
          """.as[Timestamp]).headOption
   }
 
-  override def candidates(hakemusOid: HakemusOid): Set[(HakemusOid, HakukohdeOid, Option[MailReason])] = {
+  override def candidate(hakemusOid: HakemusOid): Set[(HakemusOid, HakukohdeOid, Option[MailReason])] = {
     timed(s"Fetching mailable candidates database call for hakemus $hakemusOid", 100) {
       runBlocking(
         sql"""select vt.hakemus_oid,
@@ -77,9 +79,6 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
               where vt.hakemus_oid = $hakemusOid
                 and vnt.julkaistavissa is true
                 and (vt.tila = 'Hyvaksytty' or vt.tila = 'VarasijaltaHyvaksytty')
-                and (v.lahetetty is null or (v.syy is not distinct from 'EHDOLLISEN_PERIYTYMISEN_ILMOITUS' and
-                                             nv.action is not distinct from 'VastaanotaSitovasti' and
-                                             nv.ilmoittaja is not distinct from 'järjestelmä'))
          """.as[(HakemusOid, HakukohdeOid, Option[MailReason])]).toSet
     }
   }
