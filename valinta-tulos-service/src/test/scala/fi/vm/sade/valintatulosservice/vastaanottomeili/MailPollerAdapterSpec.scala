@@ -34,7 +34,8 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
         hakuService.getHaku(hakuOidA) returns Right(tarjontaHakuA)
         hakuService.getHakukohde(hakukohdeOidA) returns Right(tarjontaHakukohdeA)
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA))
-        mailPollerRepository.candidates(hakukohdeOidA) returns Set((hakemusOidA, hakukohdeOidA, None, None))
+        mailPollerRepository.candidates(hakukohdeOidA) returns Set((hakemusOidA, hakukohdeOidA, None))
+        mailPollerRepository.lastChecked(hakukohdeOidA) returns None
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusA)
         valintatulosService.hakemuksentulos(hakemusA) returns Some(hakemuksentulosA)
         service.pollForAllMailables(mailDecorator, 1, oneMinute).mailables mustEqual List(Ilmoitus(
@@ -69,7 +70,8 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
         hakuService.getHaku(hakuOidA) returns Right(tarjontaHakuA)
         hakuService.getHakukohde(hakukohdeOidA) returns Right(tarjontaHakukohdeA)
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA))
-        mailPollerRepository.candidates(hakukohdeOidA) returns Set((hakemusOidB, hakukohdeOidA, None, None))
+        mailPollerRepository.candidates(hakukohdeOidA) returns Set((hakemusOidB, hakukohdeOidA, None))
+        mailPollerRepository.lastChecked(hakukohdeOidA) returns None
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusB)
         valintatulosService.hakemuksentulos(hakemusB) returns Some(hakemuksentulosB)
         oppijanTunnistusService.luoSecureLink(hakijaOidB, hakemusOidB, emailB, asiointikieliA) returns Right(OppijanTunnistus(secureLinkA))
@@ -108,11 +110,14 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA, hakukohdeOidB, hakukohdeOidC))
         mailPollerRepository.candidates(hakukohdeOidA) returns Set.empty
         mailPollerRepository.candidates(hakukohdeOidB) returns Set(
-          (hakemusOidC, hakukohdeOidA, Some(Vastaanottoilmoitus), None),
-          (hakemusOidC, hakukohdeOidB, None, None),
-          (hakemusOidC, hakukohdeOidC, None, None)
+          (hakemusOidC, hakukohdeOidA, Some(Vastaanottoilmoitus)),
+          (hakemusOidC, hakukohdeOidB, None),
+          (hakemusOidC, hakukohdeOidC, None)
         )
         mailPollerRepository.candidates(hakukohdeOidC) returns Set.empty
+        mailPollerRepository.lastChecked(hakukohdeOidA) returns None
+        mailPollerRepository.lastChecked(hakukohdeOidB) returns None
+        mailPollerRepository.lastChecked(hakukohdeOidC) returns None
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusC)
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidB) returns Iterator(hakemusC)
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidC) returns Iterator(hakemusC)
@@ -153,10 +158,13 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
         mailPollerRepository.candidates(hakukohdeOidA) returns Set.empty
         mailPollerRepository.candidates(hakukohdeOidB) returns Set.empty
         mailPollerRepository.candidates(hakukohdeOidC) returns Set(
-          (hakemusOidC, hakukohdeOidA, Some(Vastaanottoilmoitus), None),
-          (hakemusOidC, hakukohdeOidB, Some(EhdollisenPeriytymisenIlmoitus), None),
-          (hakemusOidC, hakukohdeOidC, None, None)
+          (hakemusOidC, hakukohdeOidA, Some(Vastaanottoilmoitus)),
+          (hakemusOidC, hakukohdeOidB, Some(EhdollisenPeriytymisenIlmoitus)),
+          (hakemusOidC, hakukohdeOidC, None)
         )
+        mailPollerRepository.lastChecked(hakukohdeOidA) returns None
+        mailPollerRepository.lastChecked(hakukohdeOidB) returns None
+        mailPollerRepository.lastChecked(hakukohdeOidC) returns None
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusC)
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidB) returns Iterator(hakemusC)
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidC) returns Iterator(hakemusC)
@@ -196,10 +204,13 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA, hakukohdeOidB, hakukohdeOidC))
         mailPollerRepository.candidates(hakukohdeOidA) returns Set.empty
         mailPollerRepository.candidates(hakukohdeOidB) returns Set(
-          (hakemusOidC, hakukohdeOidA, Some(Vastaanottoilmoitus), None),
-          (hakemusOidC, hakukohdeOidB, Some(EhdollisenPeriytymisenIlmoitus), None),
-          (hakemusOidC, hakukohdeOidC, None, None)
+          (hakemusOidC, hakukohdeOidA, Some(Vastaanottoilmoitus)),
+          (hakemusOidC, hakukohdeOidB, Some(EhdollisenPeriytymisenIlmoitus)),
+          (hakemusOidC, hakukohdeOidC, None)
         )
+        mailPollerRepository.lastChecked(hakukohdeOidA) returns None
+        mailPollerRepository.lastChecked(hakukohdeOidB) returns None
+        mailPollerRepository.lastChecked(hakukohdeOidC) returns None
         mailPollerRepository.candidates(hakukohdeOidC) returns Set.empty
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusC)
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidB) returns Iterator(hakemusC)
@@ -236,7 +247,8 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
         hakuService.getHaku(hakuOidA) returns Right(tarjontaHakuA)
         hakuService.getHakukohde(hakukohdeOidA) returns Right(tarjontaHakukohdeA)
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA))
-        mailPollerRepository.candidates(hakukohdeOidA) returns Set((hakemusOidA, hakukohdeOidA, Some(Vastaanottoilmoitus), None))
+        mailPollerRepository.candidates(hakukohdeOidA) returns Set((hakemusOidA, hakukohdeOidA, Some(Vastaanottoilmoitus)))
+        mailPollerRepository.lastChecked(hakukohdeOidA) returns None
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusA)
         valintatulosService.hakemuksentulos(hakemusA) returns Some(hakemuksentulosA)
         service.pollForAllMailables(mailDecorator, 1, oneMinute).mailables mustEqual Nil
@@ -251,10 +263,13 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA, hakukohdeOidB, hakukohdeOidC))
         mailPollerRepository.candidates(hakukohdeOidA) returns Set.empty
         mailPollerRepository.candidates(hakukohdeOidB) returns Set(
-          (hakemusOidC, hakukohdeOidA, Some(Vastaanottoilmoitus), None),
-          (hakemusOidC, hakukohdeOidB, Some(EhdollisenPeriytymisenIlmoitus), None),
-          (hakemusOidC, hakukohdeOidC, None, None)
+          (hakemusOidC, hakukohdeOidA, Some(Vastaanottoilmoitus)),
+          (hakemusOidC, hakukohdeOidB, Some(EhdollisenPeriytymisenIlmoitus)),
+          (hakemusOidC, hakukohdeOidC, None)
         )
+        mailPollerRepository.lastChecked(hakukohdeOidA) returns None
+        mailPollerRepository.lastChecked(hakukohdeOidB) returns None
+        mailPollerRepository.lastChecked(hakukohdeOidC) returns None
         mailPollerRepository.candidates(hakukohdeOidC) returns Set.empty
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusC)
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidB) returns Iterator(hakemusC)
@@ -273,10 +288,13 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
         mailPollerRepository.candidates(hakukohdeOidA) returns Set.empty
         mailPollerRepository.candidates(hakukohdeOidB) returns Set.empty
         mailPollerRepository.candidates(hakukohdeOidC) returns Set(
-          (hakemusOidC, hakukohdeOidA, Some(Vastaanottoilmoitus), None),
-          (hakemusOidC, hakukohdeOidB, Some(EhdollisenPeriytymisenIlmoitus), None),
-          (hakemusOidC, hakukohdeOidC, Some(SitovanVastaanotonIlmoitus), None)
+          (hakemusOidC, hakukohdeOidA, Some(Vastaanottoilmoitus)),
+          (hakemusOidC, hakukohdeOidB, Some(EhdollisenPeriytymisenIlmoitus)),
+          (hakemusOidC, hakukohdeOidC, Some(SitovanVastaanotonIlmoitus))
         )
+        mailPollerRepository.lastChecked(hakukohdeOidA) returns None
+        mailPollerRepository.lastChecked(hakukohdeOidB) returns None
+        mailPollerRepository.lastChecked(hakukohdeOidC) returns None
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusC)
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidB) returns Iterator(hakemusC)
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidC) returns Iterator(hakemusC)
@@ -293,10 +311,13 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA, hakukohdeOidB, hakukohdeOidC))
         mailPollerRepository.candidates(hakukohdeOidA) returns Set.empty
         mailPollerRepository.candidates(hakukohdeOidB) returns Set(
-          (hakemusOidC, hakukohdeOidA, Some(Vastaanottoilmoitus), None),
-          (hakemusOidC, hakukohdeOidB, Some(SitovanVastaanotonIlmoitus), None),
-          (hakemusOidC, hakukohdeOidC, None, None)
+          (hakemusOidC, hakukohdeOidA, Some(Vastaanottoilmoitus)),
+          (hakemusOidC, hakukohdeOidB, Some(SitovanVastaanotonIlmoitus)),
+          (hakemusOidC, hakukohdeOidC, None)
         )
+        mailPollerRepository.lastChecked(hakukohdeOidA) returns None
+        mailPollerRepository.lastChecked(hakukohdeOidB) returns None
+        mailPollerRepository.lastChecked(hakukohdeOidC) returns None
         mailPollerRepository.candidates(hakukohdeOidC) returns Set.empty
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusC)
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidB) returns Iterator(hakemusC)
@@ -311,7 +332,8 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
         hakuService.getHaku(hakuOidA) returns Right(tarjontaHakuA)
         hakuService.getHakukohde(hakukohdeOidA) returns Right(tarjontaHakukohdeA)
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA))
-        mailPollerRepository.candidates(hakukohdeOidA) returns Set((hakemusOidA, hakukohdeOidA, None, None))
+        mailPollerRepository.candidates(hakukohdeOidA) returns Set((hakemusOidA, hakukohdeOidA, None))
+        mailPollerRepository.lastChecked(hakukohdeOidA) returns None
         val hakemusAWithoutKutsumanimi: Hakemus = hakemusA.copy(
           henkilotiedot = hakemusA.henkilotiedot.copy(kutsumanimi = None))
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusAWithoutKutsumanimi)
@@ -326,8 +348,10 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
         hakuService.getHakukohde(hakukohdeOidA) returns Right(tarjontaHakukohdeA)
         hakuService.getHakukohde(hakukohdeOidB) returns Right(tarjontaHakukohdeB)
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA, hakukohdeOidB))
-        mailPollerRepository.candidates(hakukohdeOidA) returns Set((hakemusOidA, hakukohdeOidA, None, None))
+        mailPollerRepository.candidates(hakukohdeOidA) returns Set((hakemusOidA, hakukohdeOidA, None))
         mailPollerRepository.candidates(hakukohdeOidB) returns Set.empty
+        mailPollerRepository.lastChecked(hakukohdeOidA) returns None
+        mailPollerRepository.lastChecked(hakukohdeOidB) returns None
         val hakemusAWithToiveBAdded: Hakemus = hakemusA.copy(toiveet = hakemusA.toiveet ++ List(Hakutoive(
           oid = hakukohdeOidB,
           tarjoajaOid = tarjoajaOidB,

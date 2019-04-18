@@ -63,13 +63,12 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
   def pollForMailablesForHakemus(hakemusOid: HakemusOid, mailDecorator: MailDecorator): PollResult = {
     val mailables: List[Ilmoitus] = {
       val candidates = mailPollerRepository.candidates(hakemusOid)
-      val mailStatusCheckedForHakukohde: Option[Date] = candidates.headOption.flatMap(_._4)
       val hakemus = hakemusRepository.findHakemus(hakemusOid).right.get
       val hakemuksetByOid = Map(hakemusOid -> hakemus)
-      val a: List[(Int, List[Ilmoitus])] = hakemus.toiveet.map { hakutoive =>
-        getMailablesForHakemuses(hakemuksetByOid, hakutoive.oid, candidates, mailStatusCheckedForHakukohde, 1, mailDecorator)
+      val hakutoiveCheckedCountsAndMailables: List[(Int, List[Ilmoitus])] = hakemus.toiveet.map { hakutoive =>
+        getMailablesForHakemuses(hakemuksetByOid, hakutoive.oid, candidates, 1, mailDecorator)
       }
-      val (checkedCandidatesCount: Int, mailables: List[Ilmoitus]) = (a.map(_._1).sum, a.flatMap(_._2))
+      val (checkedCandidatesCount: Int, mailables: List[Ilmoitus]) = (hakutoiveCheckedCountsAndMailables.map(_._1).sum, hakutoiveCheckedCountsAndMailables.flatMap(_._2))
       logger.info(s"${mailables.size} mailables from $checkedCandidatesCount candidates for hakemus $hakemusOid")
       mailables
     }
@@ -210,13 +209,13 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
 
   private def searchAndCreateMailablesForSingleHakukohde(mailDecorator: MailDecorator, limit: Int, hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): (Int, List[Ilmoitus]) = {
     val candidates = mailPollerRepository.candidates(hakukohdeOid)
-    val mailStatusCheckedForHakukohde: Option[Date] = candidates.headOption.flatMap(_._4)
+    val mailStatusCheckedForHakukohde = mailPollerRepository.lastChecked(hakukohdeOid)
     val hakemuksetByOid = if (candidates.isEmpty) {
       Map.empty[HakemusOid, Hakemus]
     } else {
       fetchHakemukset(hakuOid, hakukohdeOid).map(h => h.oid -> h).toMap
     }
-    val (checkedCandidatesCount, mailables) = getMailablesForHakemuses(hakemuksetByOid, hakukohdeOid, candidates, mailStatusCheckedForHakukohde, limit, mailDecorator)
+    val (checkedCandidatesCount, mailables) = getMailablesForHakemuses(hakemuksetByOid, hakukohdeOid, candidates, limit, mailDecorator)
     if (mailables.isEmpty && isMoreThanOneDayAgoOrEmpty(mailStatusCheckedForHakukohde)) {
       markAsCheckedForEmailing(hakukohdeOid)
     }
@@ -229,7 +228,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
     (checkedCandidatesCount, mailables)
   }
 
-  private def getMailablesForHakemuses(hakemuksetByOid: Map[HakemusOid, Hakemus], hakukohdeOid: HakukohdeOid, candidates: Set[(HakemusOid, HakukohdeOid, Option[MailReason], Option[Date])], mailStatusCheckedForHakukohde: Option[Date], limit: Int, mailDecorator: MailDecorator): (Int, List[Ilmoitus]) = {
+  private def getMailablesForHakemuses(hakemuksetByOid: Map[HakemusOid, Hakemus], hakukohdeOid: HakukohdeOid, candidates: Set[(HakemusOid, HakukohdeOid, Option[MailReason])], limit: Int, mailDecorator: MailDecorator): (Int, List[Ilmoitus]) = {
     val (checkedCandidates, mailableStatii, mailables) = candidates.map(x => (x._1, x._2, x._3))
       .groupBy(_._1)
       .foldLeft((Set.empty[HakemusOid], Set.empty[HakemusMailStatus], List.empty[Ilmoitus]))({

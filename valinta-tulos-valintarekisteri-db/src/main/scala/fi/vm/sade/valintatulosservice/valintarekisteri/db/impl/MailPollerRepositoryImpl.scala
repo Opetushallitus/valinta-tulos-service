@@ -15,19 +15,16 @@ import scala.concurrent.duration.Duration
 trait MailPollerRepositoryImpl extends MailPollerRepository with ValintarekisteriRepository with Logging {
 
   override def candidates(hakukohdeOid: HakukohdeOid,
-                          recheckIntervalHours: Int = 24): Set[(HakemusOid, HakukohdeOid, Option[MailReason], Option[Date])] = {
+                          recheckIntervalHours: Int = 24): Set[(HakemusOid, HakukohdeOid, Option[MailReason])] = {
     timed(s"Fetching mailable candidates database call for hakukohde $hakukohdeOid", 100) {
       runBlocking(
         sql"""select vt.hakemus_oid,
                      vt.hakukohde_oid,
-                     v.syy,
-                     tark.tarkistettu
+                     v.syy
               from valinnantilat as vt
               left join viestit as v
               on vt.hakemus_oid = v.hakemus_oid and
                  vt.hakukohde_oid = v.hakukohde_oid
-              left join viestinlahetys_tarkistettu tark
-              on vt.hakukohde_oid = tark.hakukohde_oid
               where vt.hakukohde_oid = $hakukohdeOid and vt.hakemus_oid in (
                 select vt.hakemus_oid
                 from valinnantilat as vt
@@ -48,22 +45,28 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                   and (v.lahetetty is null or (v.syy is not distinct from 'EHDOLLISEN_PERIYTYMISEN_ILMOITUS' and
                                                nv.action is not distinct from 'VastaanotaSitovasti' and
                                                nv.ilmoittaja is not distinct from 'järjestelmä')))
-         """.as[(HakemusOid, HakukohdeOid, Option[MailReason], Option[Timestamp])]).toSet
-    }
+         """.as[(HakemusOid, HakukohdeOid, Option[MailReason])]).toSet
+       }
   }
-  override def candidates(hakemusOid: HakemusOid): Set[(HakemusOid, HakukohdeOid, Option[MailReason], Option[Date])] = {
+
+  override def lastChecked(hakukohdeOid: HakukohdeOid): Option[Date] = {
+    runBlocking(
+      sql"""select tark.tarkistettu
+              from viestinlahetys_tarkistettu tark
+              where tark.hakukohde_oid = $hakukohdeOid
+         """.as[Timestamp]).headOption
+  }
+
+  override def candidates(hakemusOid: HakemusOid): Set[(HakemusOid, HakukohdeOid, Option[MailReason])] = {
     timed(s"Fetching mailable candidates database call for hakemus $hakemusOid", 100) {
       runBlocking(
         sql"""select vt.hakemus_oid,
                      vt.hakukohde_oid,
-                     v.syy,
-                     tark.tarkistettu
+                     v.syy
               from valinnantilat as vt
               left join viestit as v
                 on vt.hakemus_oid = v.hakemus_oid and
                    vt.hakukohde_oid = v.hakukohde_oid
-              left join viestinlahetys_tarkistettu tark
-                on vt.hakukohde_oid = tark.hakukohde_oid
               join valinnantulokset as vnt
                 on vt.valintatapajono_oid = vnt.valintatapajono_oid and
                    vt.hakemus_oid = vnt.hakemus_oid and
@@ -77,7 +80,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                 and (v.lahetetty is null or (v.syy is not distinct from 'EHDOLLISEN_PERIYTYMISEN_ILMOITUS' and
                                              nv.action is not distinct from 'VastaanotaSitovasti' and
                                              nv.ilmoittaja is not distinct from 'järjestelmä'))
-         """.as[(HakemusOid, HakukohdeOid, Option[MailReason], Option[Timestamp])]).toSet
+         """.as[(HakemusOid, HakukohdeOid, Option[MailReason])]).toSet
     }
   }
 
