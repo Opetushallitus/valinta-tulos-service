@@ -60,7 +60,8 @@ case class Hakuaika(hakuaikaId: String, alkuPvm: Option[Long], loppuPvm: Option[
 case class Hakukohde(oid: HakukohdeOid, hakuOid: HakuOid, tarjoajaOids: Set[String], hakukohdeKoulutusOids: List[String],
                      koulutusAsteTyyppi: String, koulutusmoduuliTyyppi: String,
                      hakukohteenNimet: Map[String, String], tarjoajaNimet: Map[String, String], yhdenPaikanSaanto: YhdenPaikanSaanto,
-                     tutkintoonJohtava:Boolean, koulutuksenAlkamiskausiUri:String, koulutuksenAlkamisvuosi:Int) {
+                     tutkintoonJohtava:Boolean, koulutuksenAlkamiskausiUri:String, koulutuksenAlkamisvuosi:Int,
+                     organisaatioRyhmaOids: Set[String]) {
   def kkTutkintoonJohtava: Boolean = kkHakukohde && tutkintoonJohtava
   def kkHakukohde: Boolean = koulutusAsteTyyppi == "KORKEAKOULUTUS"
 
@@ -69,6 +70,8 @@ case class Hakukohde(oid: HakukohdeOid, hakuOid: HakuOid, tarjoajaOids: Set[Stri
     case uri if uri.matches("""kausi_s#\d+""") => Right(Syksy(koulutuksenAlkamisvuosi))
     case _ => Left(new IllegalStateException(s"Could not deduce koulutuksen alkamiskausi for hakukohde $this"))
   }
+
+  def organisaatioOiditAuktorisointiin: Set[String] = tarjoajaOids ++ organisaatioRyhmaOids
 }
 
 case class Koodi(uri: String, arvo: String)

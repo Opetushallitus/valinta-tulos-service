@@ -11,16 +11,16 @@ class OrganizationHierarchyAuthorizer(appConfig: VtsAppConfig) extends fi.vm.sad
 
   import scala.collection.JavaConverters._
 
-  def checkAccess(session: Session, tarjoajaOids: Set[String], roles: Set[Role]): Either[Throwable, Unit] = {
-    if (tarjoajaOids.exists(oid => checkAccess(session, oid, roles).isRight)) {
+  def checkAccess(session: Session, organisationOids: Set[String], roles: Set[Role]): Either[Throwable, Unit] = {
+    if (organisationOids.exists(oid => checkAccess(session, oid, roles).isRight)) {
       Right(())
     } else {
-      Left(new AuthorizationFailedException(s"User ${session.personOid} has none of the roles $roles in none of the organizations $tarjoajaOids"))
+      Left(new AuthorizationFailedException(s"User ${session.personOid} has none of the roles $roles in none of the organizations $organisationOids"))
     }
   }
 
-  def checkAccess(session: Session, tarjoajaOid: String, roles: Set[Role]): Either[Throwable, Unit] = {
-    Try(super.checkAccessToTargetOrParentOrganization(session.roles.map(_.s).toList.asJava, tarjoajaOid, roles.map(_.s).toArray[String])) match {
+  def checkAccess(session: Session, organisationOid: String, roles: Set[Role]): Either[Throwable, Unit] = {
+    Try(super.checkAccessToTargetOrParentOrganization(session.roles.map(_.s).toList.asJava, organisationOid, roles.map(_.s).toArray[String])) match {
       case Success(_) => Right(())
       case Failure(e: NotAuthorizedException) => Left(new AuthorizationFailedException("Organization authentication failed", e))
       case Failure(e) => throw e

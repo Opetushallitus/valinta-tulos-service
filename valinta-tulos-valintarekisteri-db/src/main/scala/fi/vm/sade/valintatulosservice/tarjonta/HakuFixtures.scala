@@ -75,15 +75,18 @@ object HakuFixtures extends HakuService with JsonHakuService {
     // TODO: Saner / more working test data
     if (activeFixture == toinenAsteYhteishaku || activeFixture == toinenAsteErillishakuEiSijoittelua) {
       Right(Hakukohde(oid, hakuOid, Set("123.123.123.123"), List("koulu.tus.oid"), "AMMATILLINEN_PERUSKOULUTUS", "TUTKINTO_OHJELMA",
-        Map("kieli_fi" -> "Lukion ilmaisutaitolinja"), Map("fi" -> "Kallion lukio"), YhdenPaikanSaanto(false, "testihakukohde"), false, "kausi_k#1", 2016))
+        Map("kieli_fi" -> "Lukion ilmaisutaitolinja"), Map("fi" -> "Kallion lukio"), YhdenPaikanSaanto(false, "testihakukohde"), false, "kausi_k#1", 2016,
+        organisaatioRyhmaOids = Set()))
     } else if (activeFixture == ataruHaku) {
       Right(Hakukohde(oid, hakuOid, Set("1.2.246.562.10.72985435253"), List("1.2.246.562.17.12447198271"), "KORKEAKOULUTUS",
       "TUTKINTO", Map("kieli_fi" -> "Ataru testihakukohde"), Map("fi" -> "Aalto-yliopisto, Insinööritieteiden korkeakoulu"),
-        YhdenPaikanSaanto(true, "Haun kohdejoukon tarkenne on 'haunkohdejoukontarkenne_3#1'"), false, "kausi_s#1", 2017))
+        YhdenPaikanSaanto(true, "Haun kohdejoukon tarkenne on 'haunkohdejoukontarkenne_3#1'"), false, "kausi_s#1", 2017,
+        organisaatioRyhmaOids = Set()))
     } else {
       Right(Hakukohde(oid, hakuOid, Set("123.123.123.123"), List("koulu.tus.oid"), "KORKEAKOULUTUS", "TUTKINTO",
         Map("kieli_fi" -> "Lukion ilmaisutaitolinja"), Map("fi" -> "Kallion lukio"), YhdenPaikanSaanto(
-          activeFixture != korkeakouluErillishakuEiYhdenPaikanSaantoa, "testihakukohde"), true, "kausi_k#1", 2016))
+          activeFixture != korkeakouluErillishakuEiYhdenPaikanSaantoa, "testihakukohde"), true, "kausi_k#1", 2016,
+        organisaatioRyhmaOids = Set()))
     }
   }
 

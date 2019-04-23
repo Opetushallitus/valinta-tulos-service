@@ -15,7 +15,7 @@ class HyvaksymiskirjeService(hyvaksymiskirjeRepository: HyvaksymiskirjeRepositor
 
   def getHyvaksymiskirjeet(hakukohdeOid: HakukohdeOid, auditInfo: AuditInfo): Set[Hyvaksymiskirje] = {
     val hakukohde = hakuService.getHakukohde(hakukohdeOid).fold(throw _, h => h)
-    authorizer.checkAccess(auditInfo.session._2, hakukohde.tarjoajaOids,
+    authorizer.checkAccess(auditInfo.session._2, hakukohde.organisaatioOiditAuktorisointiin,
       Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).fold(throw _, x => x)
     val result = hyvaksymiskirjeRepository.getHyvaksymiskirjeet(hakukohdeOid)
     audit.log(auditInfo.user, HyvaksymiskirjeidenLuku,
@@ -28,7 +28,7 @@ class HyvaksymiskirjeService(hyvaksymiskirjeRepository: HyvaksymiskirjeRepositor
   def updateHyvaksymiskirjeet(hyvaksymiskirjeet: Set[HyvaksymiskirjePatch], auditInfo: AuditInfo): Unit = {
     hyvaksymiskirjeet.map(_.hakukohdeOid).foreach(hakukohdeOid => {
       val hakukohde = hakuService.getHakukohde(hakukohdeOid).fold(throw _, h => h)
-      authorizer.checkAccess(auditInfo.session._2, hakukohde.tarjoajaOids,
+      authorizer.checkAccess(auditInfo.session._2, hakukohde.organisaatioOiditAuktorisointiin,
         Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).fold(throw _, x => x)
     })
     hyvaksymiskirjeRepository.update(hyvaksymiskirjeet)
