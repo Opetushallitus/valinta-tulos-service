@@ -41,6 +41,7 @@ script:
 
 - export BASE_IMAGE="baseimage-war:master"
 - ./ci-tools/common/pull-image.sh
+
 - mv valinta-tulos-service/target/valinta-tulos-service-*.war $DOCKER_BUILD_DIR/artifact/valinta-tulos-service.war
 - cp -vr valinta-tulos-service/src/main/resources/oph-configuration $DOCKER_BUILD_DIR/config/
 - ./ci-tools/build/build-war.sh valinta-tulos-service
