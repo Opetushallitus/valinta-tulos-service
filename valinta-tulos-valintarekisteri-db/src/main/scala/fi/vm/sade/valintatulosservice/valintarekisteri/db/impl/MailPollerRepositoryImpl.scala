@@ -171,7 +171,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
             order by hakemus_oid""".as[String]).toList
   }
 
-  def deleteHakemusMailEntries(hakemusOid: HakemusOid): Int = {
+  def deleteHakemusMailEntriesForHakemusAndHakukohde(hakemusOid: HakemusOid): Int = {
     runBlockingTransactionally[Int](
       sqlu"""
             delete from viestinlahetys_tarkistettu where hakukohde_oid in
@@ -180,6 +180,18 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
       case Right(n) => n
       case Left(e) =>
         logger.error(s"Virhe poistettaessa hakemuksen $hakemusOid viestikirjanpitoa", e)
+        throw e
+    }
+  }
+
+  def deleteHakemusMailEntriesForHakukohde(hakukohdeOid: HakukohdeOid): Int = {
+    runBlockingTransactionally[Int](
+      sqlu"""
+            delete from viestinlahetys_tarkistettu where hakukohde_oid = ${hakukohdeOid}""".
+        andThen(sqlu"""delete from viestit where hakukohde_oid = ${hakukohdeOid}""")) match {
+      case Right(n) => n
+      case Left(e) =>
+        logger.error(s"Virhe poistettaessa hakukohteen $hakukohdeOid viestikirjanpitoa", e)
         throw e
     }
   }

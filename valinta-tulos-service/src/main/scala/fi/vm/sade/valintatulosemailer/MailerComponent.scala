@@ -46,10 +46,12 @@ trait MailerComponent {
     }
 
     def sendMailForHakukohde(hakukohdeOid: HakukohdeOid): List[String] = {
+      mailPoller.deleteMailEntries(hakukohdeOid)
       collectAndSend(HakukohdeQuery(hakukohdeOid), 0, List.empty, List.empty)
     }
 
     def sendMailForHakemus(hakemusOid: HakemusOid): List[String] = {
+      mailPoller.deleteMailEntries(hakemusOid)
       collectAndSend(HakemusQuery(hakemusOid), 0, List.empty, List.empty)
     }
 

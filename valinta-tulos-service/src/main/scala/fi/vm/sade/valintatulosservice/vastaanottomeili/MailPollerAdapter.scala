@@ -349,7 +349,11 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
   }
 
   def deleteMailEntries(hakemusOid: HakemusOid): Int = {
-    mailPollerRepository.deleteHakemusMailEntries(hakemusOid)
+    mailPollerRepository.deleteHakemusMailEntriesForHakemusAndHakukohde(hakemusOid)
+  }
+
+  def deleteMailEntries(hakukohdeOid: HakukohdeOid): Int = {
+    mailPollerRepository.deleteHakemusMailEntriesForHakukohde(hakukohdeOid)
   }
 }
 
