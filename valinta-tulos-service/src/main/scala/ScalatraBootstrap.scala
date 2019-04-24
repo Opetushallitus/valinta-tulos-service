@@ -4,9 +4,9 @@ import fi.vm.sade.auditlog.{ApplicationType, Audit, Logger}
 import fi.vm.sade.oppijantunnistus.OppijanTunnistusService
 import fi.vm.sade.security._
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosemailer.config.EmailerRegistry
-import fi.vm.sade.valintatulosemailer.config.EmailerRegistry.EmailerRegistry
-import fi.vm.sade.valintatulosemailer.{EmailerService, EmailerServlet}
+import fi.vm.sade.valintatulosservice.config.EmailerRegistry
+import fi.vm.sade.valintatulosservice.config.EmailerRegistry.EmailerRegistry
+import fi.vm.sade.valintatulosservice.vastaanottomeili.EmailerServlet
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.{Dev, IT, VtsAppConfig}
 import fi.vm.sade.valintatulosservice.config.{OhjausparametritAppConfig, VtsAppConfig}

@@ -1,4 +1,4 @@
-package fi.vm.sade.valintatulosemailer.util
+package fi.vm.sade.valintatulosservice.utils
 
 import java.util.Date
 

@@ -1,4 +1,4 @@
-package fi.vm.sade.valintatulosemailer
+package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import fi.vm.sade.utils.tcp.PortChecker
 import org.eclipse.jetty.server.Server

@@ -1,12 +1,12 @@
-package fi.vm.sade.valintatulosemailer
+package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
 import fi.vm.sade.valintatulosservice.{CasAuthenticatedServlet, VtsServletBase, VtsSwaggerBase}
-import org.scalatra.{InternalServerError, Ok}
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger.{SwaggerSupport, _}
+import org.scalatra.{InternalServerError, Ok}
 
 import scala.util.{Failure, Success}
 

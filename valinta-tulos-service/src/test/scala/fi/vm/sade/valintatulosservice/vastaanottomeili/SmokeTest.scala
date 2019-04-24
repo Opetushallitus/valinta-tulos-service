@@ -1,17 +1,15 @@
-package fi.vm.sade.valintatulosemailer
+package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import fi.vm.sade.oppijantunnistus.OppijanTunnistusService
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosemailer.config.EmailerRegistry
-import fi.vm.sade.valintatulosemailer.config.EmailerRegistry.{EmailerRegistry, IT, LocalVT}
 import fi.vm.sade.valintatulosservice.ValintatulosService
-import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
+import fi.vm.sade.valintatulosservice.config.EmailerRegistry.{EmailerRegistry, IT}
+import fi.vm.sade.valintatulosservice.config.{EmailerRegistry, VtsApplicationSettings}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, Vastaanottotila}
-import fi.vm.sade.valintatulosservice.vastaanottomeili._
 import org.apache.log4j._
 import org.apache.log4j.spi.LoggingEvent
 import org.junit.runner.RunWith

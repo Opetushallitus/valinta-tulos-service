@@ -1,4 +1,4 @@
-package fi.vm.sade.valintatulosemailer.config
+package fi.vm.sade.valintatulosservice.config
 
 import java.io.FileInputStream
 import java.util.Properties

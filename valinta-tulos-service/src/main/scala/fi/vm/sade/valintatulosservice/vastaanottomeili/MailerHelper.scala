@@ -1,6 +1,5 @@
-package fi.vm.sade.valintatulosemailer
+package fi.vm.sade.valintatulosservice.vastaanottomeili
 
-import fi.vm.sade.valintatulosservice.vastaanottomeili.Ilmoitus
 import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy.LahetysSyy
 
 

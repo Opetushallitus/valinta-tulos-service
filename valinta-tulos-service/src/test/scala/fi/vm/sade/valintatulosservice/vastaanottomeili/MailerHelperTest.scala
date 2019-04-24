@@ -1,7 +1,6 @@
-package fi.vm.sade.valintatulosemailer
+package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import fi.vm.sade.valintatulosservice.vastaanottomeili
-import fi.vm.sade.valintatulosservice.vastaanottomeili.{Hakukohde, Ilmoitus, LahetysSyy}
 import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy._
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification

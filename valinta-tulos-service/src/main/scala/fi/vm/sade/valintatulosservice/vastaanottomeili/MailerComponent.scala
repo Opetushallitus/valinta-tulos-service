@@ -1,13 +1,13 @@
-package fi.vm.sade.valintatulosemailer
+package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import java.util.concurrent.TimeUnit.MINUTES
 
 import fi.vm.sade.groupemailer.{EmailInfo, GroupEmail, GroupEmailComponent, Recipient}
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosemailer.config.EmailerConfigComponent
+import fi.vm.sade.valintatulosservice.config.EmailerConfigComponent
+import fi.vm.sade.valintatulosservice.ryhmasahkoposti.VTRecipient
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
 import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy.LahetysSyy
-import fi.vm.sade.valintatulosservice.vastaanottomeili._
 
 import scala.collection.immutable.HashMap
 import scala.concurrent.duration.Duration
@@ -106,7 +106,7 @@ trait MailerComponent {
     }
 
     private def sendBatch(batch: List[Ilmoitus], language: String, lahetysSyy: LahetysSyy): Option[String] = {
-      val recipients: List[Recipient] = batch.map(ryhmasahkoposti.VTRecipient(_, language))
+      val recipients: List[Recipient] = batch.map(VTRecipient(_, language))
 
       logger.info(s"Starting to send batch. Language $language. LahetysSyy $lahetysSyy Batch size ${recipients.size}")
       try {

@@ -1,8 +1,8 @@
-package fi.vm.sade.valintatulosemailer.config
+package fi.vm.sade.valintatulosservice.config
 
 import fi.vm.sade.groupemailer.{GroupEmailComponent, GroupEmailService}
-import fi.vm.sade.valintatulosemailer.config.EmailerRegistry.StubbedGroupEmail
-import fi.vm.sade.valintatulosemailer.{Mailer, MailerComponent}
+import fi.vm.sade.valintatulosservice.config.EmailerRegistry.StubbedGroupEmail
+import fi.vm.sade.valintatulosservice.vastaanottomeili.{Mailer, MailerComponent}
 
 
 trait Components extends GroupEmailComponent with MailerComponent with EmailerConfigComponent {

@@ -1,4 +1,4 @@
-package fi.vm.sade.valintatulosemailer.ryhmasahkoposti
+package fi.vm.sade.valintatulosservice.ryhmasahkoposti
 
 import fi.vm.sade.groupemailer.{Recipient, Replacement}
 import fi.vm.sade.utils.slf4j.Logging

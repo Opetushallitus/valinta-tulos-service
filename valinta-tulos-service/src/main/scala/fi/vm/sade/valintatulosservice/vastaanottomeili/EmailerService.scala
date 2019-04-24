@@ -1,18 +1,18 @@
-package fi.vm.sade.valintatulosemailer
+package fi.vm.sade.valintatulosservice.vastaanottomeili
 
-import fi.vm.sade.utils.Timer
-import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosemailer.config.EmailerConfigParser
-import fi.vm.sade.valintatulosemailer.config.EmailerRegistry.EmailerRegistry
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
-import com.github.kagkarlsson.scheduler.task.schedule.CronSchedule
 import com.github.kagkarlsson.scheduler.Scheduler
 import com.github.kagkarlsson.scheduler.task._
 import com.github.kagkarlsson.scheduler.task.helper.Tasks
+import com.github.kagkarlsson.scheduler.task.schedule.CronSchedule
+import fi.vm.sade.utils.Timer
+import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.config.EmailerConfigParser
+import fi.vm.sade.valintatulosservice.config.EmailerRegistry.EmailerRegistry
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
 
-import scala.util.Try
 import scala.collection.JavaConverters.seqAsJavaListConverter
+import scala.util.Try
 
 class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, emailerCronStrings: String) extends Logging {
   logger.info("***** VT-emailer initializing *****")
