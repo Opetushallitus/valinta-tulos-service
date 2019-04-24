@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 import fi.vm.sade.valintatulosservice.{CasAuthenticatedServlet, VtsServletBase, VtsSwaggerBase}
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger.{SwaggerSupport, _}
@@ -60,6 +60,19 @@ class EmailerServlet(emailerService: EmailerService, val sessionRepository: Sess
         InternalServerError(e)
     }
   }
+
+  post("/run/hakukohde/:hakukohdeOid/valintatapajono/:jonoOid/", operation(postRunEmailerForValintatapajonoSwagger)) {
+    val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
+    val jonoOid = ValintatapajonoOid(params("jonoOid"))
+    logger.info(s"EmailerServlet POST /run/valintatapajono/ called for valintatapajono $jonoOid")
+    emailerService.runForValintatapajono(hakukohdeOid, jonoOid) match {
+      case Success(ids) =>
+        Ok(ids)
+      case Failure(e) =>
+        logger.error(s"Failed to send email for valintatapajono $jonoOid: ", e)
+        InternalServerError(e)
+    }
+  }
 }
 
 trait EmailerSwagger extends VtsSwaggerBase { this: SwaggerSupport =>
@@ -96,4 +109,14 @@ trait EmailerSwagger extends VtsSwaggerBase { this: SwaggerSupport =>
     .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
     .consumes("application/json")
     .parameter(pathParam[String]("hakemusOid").description("Hakemuksen oid"))
+
+
+  val postRunEmailerForValintatapajonoSwagger: OperationBuilder = apiOperation[Unit]("postRunEmailerForValintatapajono")
+    .summary("Aja sähköpostien lähetys valintatapajonolle")
+    .notes("Vastaanottosähköpostien manuaalinen lähetys yhdelle valintatapajonolle.")
+    .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
+    .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
+    .consumes("application/json")
+    .parameter(pathParam[String]("hakukohdeOid").description("Hakukohteen oid"))
+    .parameter(pathParam[String]("jonoOid").description("Valintatapajonon oid"))
 }

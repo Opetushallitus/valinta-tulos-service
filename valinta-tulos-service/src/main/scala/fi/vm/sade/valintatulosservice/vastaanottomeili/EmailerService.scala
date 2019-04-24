@@ -9,7 +9,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.EmailerConfigParser
 import fi.vm.sade.valintatulosservice.config.EmailerRegistry.EmailerRegistry
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 
 import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.util.Try
@@ -88,6 +88,18 @@ class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, emailerC
         logger.info(s"Job for hakemus $hakemusOid sent succesfully, jobId: $ids")
       } else {
         logger.info(s"Nothing was sent for hakemus $hakemusOid. More info in logs.")
+      }
+      ids
+    })
+  }
+
+  def runForValintatapajono(hakukohdeOid: HakukohdeOid, jonoOid: ValintatapajonoOid): Try[List[String]]  = {
+    Try(Timer.timed(s"Batch send for valintatapajono $jonoOid") {
+      val ids = registry.mailer.sendMailForValintatapajono(hakukohdeOid, jonoOid)
+      if (ids.nonEmpty) {
+        logger.info(s"Job for valintatapajono $jonoOid sent succesfully, jobId: $ids")
+      } else {
+        logger.info(s"Nothing was sent for valintatapajono $jonoOid. More info in logs.")
       }
       ids
     })

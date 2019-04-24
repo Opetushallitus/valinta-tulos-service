@@ -6,7 +6,7 @@ import fi.vm.sade.groupemailer.{EmailInfo, GroupEmail, GroupEmailComponent, Reci
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.EmailerConfigComponent
 import fi.vm.sade.valintatulosservice.ryhmasahkoposti.VTRecipient
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy.LahetysSyy
 
 import scala.collection.immutable.HashMap
@@ -36,6 +36,7 @@ trait MailerComponent {
     private case class HakuQuery(hakuOid: HakuOid) extends Query
     private case class HakukohdeQuery(hakukohdeOid: HakukohdeOid) extends Query
     private case class HakemusQuery(hakemusOid: HakemusOid) extends Query
+    private case class ValintatapajonoQuery(hakukohdeOid: HakukohdeOid, jonoOid: ValintatapajonoOid) extends Query
 
     def sendMailForAll(): List[String] = {
       collectAndSend(AllQuery, 0, List.empty, List.empty)
@@ -55,6 +56,9 @@ trait MailerComponent {
       collectAndSend(HakemusQuery(hakemusOid), 0, List.empty, List.empty)
     }
 
+    def sendMailForValintatapajono(hakukohdeOid: HakukohdeOid, jonoOid: ValintatapajonoOid): List[String] = {
+      collectAndSend(ValintatapajonoQuery(hakukohdeOid, jonoOid), 0, List.empty, List.empty)
+    }
 
     private def collectAndSend(query: Query, batchNr: Int, ids: List[String], batch: List[Ilmoitus]): List[String] = {
       def sendAndConfirm(currentBatch: List[Ilmoitus]): List[String] = {
@@ -135,6 +139,8 @@ trait MailerComponent {
           mailPoller.pollForMailablesForHakukohde(hakukohdeOid, mailDecorator, mailablesLimit, timeLimit)
         case HakemusQuery(hakemusOid) =>
           mailPoller.pollForMailablesForHakemus(hakemusOid, mailDecorator)
+        case ValintatapajonoQuery(hakukohdeOid, jonoOid) =>
+          mailPoller.pollForMailablesForValintatapajono(hakukohdeOid, jonoOid, mailDecorator, mailablesLimit, timeLimit)
       }
     }
 
@@ -153,4 +159,5 @@ trait Mailer {
   def sendMailForHaku(hakuOid: HakuOid): List[String]
   def sendMailForHakukohde(hakukohdeOid: HakukohdeOid): List[String]
   def sendMailForHakemus(hakemusOid: HakemusOid): List[String]
+  def sendMailForValintatapajono(hakukohdeOid: HakukohdeOid, jonoOid: ValintatapajonoOid): List[String]
 }
