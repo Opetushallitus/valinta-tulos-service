@@ -33,26 +33,6 @@ class PublicEmailStatusServlet(mailPoller: MailPollerAdapter,
     mailPoller.getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid)
   }
 
-  lazy val deleteVastaanottoposti: OperationBuilder = (apiOperation[Unit]("deleteMailEntry")
-    summary "Poistaa hakemuksen mailin tilan uudelleenlähetystä varten"
-    parameter pathParam[String]("hakemusOid"))
-
-  delete("/:hakemusOid", operation(deleteVastaanottoposti)) {
-    contentType = formats("json")
-    implicit val authenticated: Authenticated = authenticate
-    authorize(Role.SIJOITTELU_CRUD)
-    val hakemusOid: HakemusOid = parseHakemusOid.fold(throw _, x => x)
-    audit.log(auditInfo.user, VastaanottoPostitietojenPoisto,
-      new Target.Builder()
-        .setField("hakemusoid", hakemusOid.toString)
-        .build(),
-      new Changes.Builder()
-        .removed("viesti", hakemusOid.toString)
-        .build())
-    val deletedCount: Int = mailPoller.deleteMailEntries(hakemusOid)
-    logger.info(s"Removed $deletedCount mail bookkeeping entries for hakemus $hakemusOid to enable re-sending of emails.")
-  }
-
   protected def parseHakukohdeOid: Either[Throwable, HakukohdeOid] = {
     params.get("hakukohdeOid").fold[Either[Throwable, HakukohdeOid]](Left(new IllegalArgumentException("Query parametri hakukohde OID on pakollinen.")))(s => Right(HakukohdeOid(s)))
   }
