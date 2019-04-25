@@ -125,6 +125,7 @@ trait MailerComponent {
       } catch {
         case e: Exception =>
           logger.error("Group email sending error " + e)
+          batch.foreach(i => mailPoller.deleteMailEntries(i.hakemusOid))
           None
       }
     }
