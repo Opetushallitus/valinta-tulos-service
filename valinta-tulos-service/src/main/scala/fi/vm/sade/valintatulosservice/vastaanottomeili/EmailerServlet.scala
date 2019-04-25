@@ -25,7 +25,7 @@ class EmailerServlet(emailerService: EmailerService, val sessionRepository: Sess
     }
   }
 
-  post("/run/haku/:hakuOid/", operation(postRunEmailerForHakuSwagger)) {
+  post("/run/haku/:hakuOid", operation(postRunEmailerForHakuSwagger)) {
     val hakuOid = HakuOid(params("hakuOid"))
     logger.info(s"EmailerServlet POST /run/haku/ called for haku $hakuOid")
     emailerService.runForHaku(hakuOid) match {
@@ -37,7 +37,7 @@ class EmailerServlet(emailerService: EmailerService, val sessionRepository: Sess
     }
   }
 
-  post("/run/hakukohde/:hakukohdeOid/", operation(postRunEmailerForHakukohdeSwagger)) {
+  post("/run/hakukohde/:hakukohdeOid", operation(postRunEmailerForHakukohdeSwagger)) {
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     logger.info(s"EmailerServlet POST /run/hakukohde/ called for hakukohde $hakukohdeOid")
     emailerService.runForHakukohde(hakukohdeOid) match {
@@ -49,7 +49,7 @@ class EmailerServlet(emailerService: EmailerService, val sessionRepository: Sess
     }
   }
 
-  post("/run/hakemus/:hakemusOid/", operation(postRunEmailerForHakemusSwagger)) {
+  post("/run/hakemus/:hakemusOid", operation(postRunEmailerForHakemusSwagger)) {
     val hakemusOid = HakemusOid(params("hakemusOid"))
     logger.info(s"EmailerServlet POST /run/hakemus/ called for hakemus $hakemusOid")
     emailerService.runForHakemus(hakemusOid) match {
@@ -61,7 +61,7 @@ class EmailerServlet(emailerService: EmailerService, val sessionRepository: Sess
     }
   }
 
-  post("/run/hakukohde/:hakukohdeOid/valintatapajono/:jonoOid/", operation(postRunEmailerForValintatapajonoSwagger)) {
+  post("/run/hakukohde/:hakukohdeOid/valintatapajono/:jonoOid", operation(postRunEmailerForValintatapajonoSwagger)) {
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     val jonoOid = ValintatapajonoOid(params("jonoOid"))
     logger.info(s"EmailerServlet POST /run/valintatapajono/ called for valintatapajono $jonoOid")
