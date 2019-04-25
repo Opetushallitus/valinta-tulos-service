@@ -44,7 +44,7 @@
         <scalatra_2.11.version>2.5.0</scalatra_2.11.version>
         <scalaz-stream_2.11.version>0.7a</scalaz-stream_2.11.version> <!-- required by specs2 3.5 -->
         <scalaz_2.11.version>7.1.11</scalaz_2.11.version> <!-- latest that works with http4s 0.15.8 -->
-        <sijoittelu.version>7.0-SNAPSHOT</sijoittelu.version>
+        <sijoittelu.version>7.1.0-SNAPSHOT</sijoittelu.version>
         <slf4j-api.version>1.7.25</slf4j-api.version>
         <slick_2.11.version>3.2.0</slick_2.11.version>
         <specs2_2.11.version>3.8.6-scalaz-7.1</specs2_2.11.version>
