@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice.vastaanottomeili
 import java.util.Date
 
 import fi.vm.sade.oppijantunnistus.{OppijanTunnistus, OppijanTunnistusService}
+import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.tarjonta
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
@@ -15,31 +16,35 @@ class HakuNotFoundException(message: String) extends RuntimeException(message)
 class MailDecorator(hakuService: HakuService,
                     oppijanTunnistusService: OppijanTunnistusService) extends Logging {
   def statusToMail(status: HakemusMailStatus): Option[Ilmoitus] = {
-    if (status.anyMailToBeSent) {
-      try {
-        val mailables = status.hakukohteet.filter(_.shouldMail)
-        val deadline: Option[Date] = mailables.flatMap(_.deadline).sorted.headOption
-        val tarjontaHaku = fetchHaku(status.hakuOid)
-        val ilmoitus = Ilmoitus(status.hakemusOid, status.hakijaOid, None, status.asiointikieli, status.kutsumanimi, status.email, deadline, mailables.map(toHakukohde), toHaku(tarjontaHaku))
-
-        if (status.hasHetu && !tarjontaHaku.toinenAste) {
-          Some(ilmoitus)
-        } else {
-          oppijanTunnistusService.luoSecureLink(status.hakijaOid, status.hakemusOid, status.email, status.asiointikieli) match {
-            case Right(OppijanTunnistus(securelink)) =>
-              Some(ilmoitus.copy(secureLink = Some(securelink)))
-            case Left(e) =>
-              logger.error("Hakemukselle ei lähetetty vastaanottomeiliä, koska securelinkkiä ei saatu! " + status.hakemusOid, e)
-              None
+    timed(s"Vastaanottopostien status muuntaminen mailiksi hakemukselle ${status.hakemusOid}", 50) {
+      if (status.anyMailToBeSent) {
+        try {
+          val mailables = status.hakukohteet.filter(_.shouldMail)
+          val deadline: Option[Date] = mailables.flatMap(_.deadline).sorted.headOption
+          val tarjontaHaku = timed(s"Tarjontahaun hakeminen hakuoidilla ${status.hakuOid}", 50) {
+            fetchHaku(status.hakuOid)
           }
+          val ilmoitus = Ilmoitus(status.hakemusOid, status.hakijaOid, None, status.asiointikieli, status.kutsumanimi, status.email, deadline, mailables.map(toHakukohde), toHaku(tarjontaHaku))
+
+          if (status.hasHetu && !tarjontaHaku.toinenAste) {
+            Some(ilmoitus)
+          } else {
+            oppijanTunnistusService.luoSecureLink(status.hakijaOid, status.hakemusOid, status.email, status.asiointikieli) match {
+              case Right(OppijanTunnistus(securelink)) =>
+                Some(ilmoitus.copy(secureLink = Some(securelink)))
+              case Left(e) =>
+                logger.error("Hakemukselle ei lähetetty vastaanottomeiliä, koska securelinkkiä ei saatu! " + status.hakemusOid, e)
+                None
+            }
+          }
+        } catch {
+          case e: Exception =>
+            logger.error(s"Creating ilmoitus for ${status.hakemusOid} failed", e)
+            None
         }
-      } catch {
-        case e: Exception =>
-          logger.error(s"Creating ilmoitus for ${status.hakemusOid} failed", e)
-          None
+      } else {
+        None
       }
-    } else {
-      None
     }
   }
 

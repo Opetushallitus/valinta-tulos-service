@@ -227,8 +227,12 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
   }
 
   private def searchAndCreateMailablesForSingleHakukohde(mailDecorator: MailDecorator, limit: Int, hakuOid: HakuOid, hakukohdeOid: HakukohdeOid, ignoreEarlier: Boolean, valintatapajonoFilter: Option[ValintatapajonoOid]): (Int, List[Ilmoitus]) = {
-    val candidates = mailPollerRepository.candidates(hakukohdeOid, ignoreEarlier = ignoreEarlier)
-    val mailStatusCheckedForHakukohde = mailPollerRepository.lastChecked(hakukohdeOid)
+    val candidates = timed(s"Vastaanottopostien lähetyksen kandidaattien haku hakukohteessa $hakukohdeOid haussa $hakuOid", 1000) {
+      mailPollerRepository.candidates(hakukohdeOid, ignoreEarlier = ignoreEarlier)
+    }
+    val mailStatusCheckedForHakukohde = timed(s"Edellisen tarkistusajankohdan haku hakukohteelle $hakukohdeOid haussa $hakuOid", 1000) {
+      mailPollerRepository.lastChecked(hakukohdeOid)
+    }
     val hakemuksetByOid = if (candidates.isEmpty) {
       Map.empty[HakemusOid, Hakemus]
     } else {
@@ -253,25 +257,30 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
                                        limit: Int,
                                        mailDecorator: MailDecorator,
                                        valintatapajonoFilter: Option[ValintatapajonoOid] = None): (Int, List[Ilmoitus]) = {
-    val (checkedCandidates, mailableStatii, mailables) = candidates.map(x => (x._1, x._2, x._3))
-      .groupBy(_._1)
-      .foldLeft((Set.empty[HakemusOid], Set.empty[HakemusMailStatus], List.empty[Ilmoitus]))({
-        case ((candidatesAcc, mailableStatiiAcc, mailablesAcc), (hakemusOid, mailReasons)) if mailablesAcc.size < limit =>
-          (for {
-            hakemus <- hakemuksetByOid.get(hakemusOid)
-            hakemuksentulos <- fetchHakemuksentulos(hakemus)
-            status <- mailStatusFor(hakemus, hakukohdeOid, hakemuksentulos, mailReasons.map(m => m._2 -> m._3).toMap, valintatapajonoFilter)
-            mailable <- mailDecorator.statusToMail(status)
-          } yield {
-            (
-              candidatesAcc + hakemusOid,
-              mailableStatiiAcc + status,
-              mailable :: mailablesAcc
-            )
-          }).getOrElse((candidatesAcc + hakemusOid, mailableStatiiAcc, mailablesAcc))
-        case (r, _) => r
-      })
-    markAsToBeSent(mailableStatii)
+    val (checkedCandidates, mailableStatii, mailables) =
+      timed(s"Vastaanottopostien statuksien hakeminen ${candidates.size} kandidaatille hakukohteessa $hakukohdeOid", 1000) {
+        candidates.map(x => (x._1, x._2, x._3))
+          .groupBy(_._1)
+          .foldLeft((Set.empty[HakemusOid], Set.empty[HakemusMailStatus], List.empty[Ilmoitus]))({
+            case ((candidatesAcc, mailableStatiiAcc, mailablesAcc), (hakemusOid, mailReasons)) if mailablesAcc.size < limit =>
+              (for {
+                hakemus <- hakemuksetByOid.get(hakemusOid)
+                hakemuksentulos <- fetchHakemuksentulos(hakemus)
+                status <- mailStatusFor(hakemus, hakukohdeOid, hakemuksentulos, mailReasons.map(m => m._2 -> m._3).toMap, valintatapajonoFilter)
+                mailable <- mailDecorator.statusToMail(status)
+              } yield {
+                (
+                  candidatesAcc + hakemusOid,
+                  mailableStatiiAcc + status,
+                  mailable :: mailablesAcc
+                )
+              }).getOrElse((candidatesAcc + hakemusOid, mailableStatiiAcc, mailablesAcc))
+            case (r, _) => r
+          })
+      }
+    timed(s"Lähetettäväksi merkitseminen ${mailableStatii.size} vastaanottopostin statukselle hakukohteessa $hakukohdeOid", 1000) {
+      markAsToBeSent(mailableStatii)
+    }
     (checkedCandidates.size, mailables)
   }
 
@@ -290,7 +299,9 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
 
   private def fetchHakemuksentulos(hakemus: Hakemus): Option[Hakemuksentulos] = {
     try {
-      valintatulosService.hakemuksentulos(hakemus)
+      timed(s"Hakemuksen tulos hakemukselle ${hakemus.oid}", 50) {
+        valintatulosService.hakemuksentulos(hakemus)
+      }
     } catch {
       case e: Exception =>
         logger.error(s"Fetching hakemuksentulos ${hakemus.oid} failed", e)
@@ -365,7 +376,9 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
 
   private def markAsCheckedForEmailing(hakukohdeOid: HakukohdeOid): Unit = {
     logger.debug(s"Marking hakukohde $hakukohdeOid as checked for emailing")
-    mailPollerRepository.markAsCheckedForEmailing(hakukohdeOid)
+    timed(s"Hakukohteen $hakukohdeOid sähköpostien tarkastetuksi merkitseminen", 1000) {
+      mailPollerRepository.markAsCheckedForEmailing(hakukohdeOid)
+    }
   }
 
   def getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid: HakukohdeOid): List[String] = {
