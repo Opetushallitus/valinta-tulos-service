@@ -27,21 +27,21 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
               on vt.hakemus_oid = v.hakemus_oid and
                  vt.hakukohde_oid = v.hakukohde_oid
               where vt.hakukohde_oid = $hakukohdeOid and vt.hakemus_oid in (
-                select vt.hakemus_oid
-                from valinnantilat as vt
+                select vt2.hakemus_oid
+                from valinnantilat as vt2
                 join valinnantulokset as vnt
-                on vt.valintatapajono_oid = vnt.valintatapajono_oid and
-                   vt.hakemus_oid = vnt.hakemus_oid and
-                   vt.hakukohde_oid = vnt.hakukohde_oid
+                on vt2.valintatapajono_oid = vnt.valintatapajono_oid and
+                   vt2.hakemus_oid = vnt.hakemus_oid and
+                   vt2.hakukohde_oid = vnt.hakukohde_oid
                 left join viestit as v
-                on vt.hakemus_oid = v.hakemus_oid and
-                   vt.hakukohde_oid = v.hakukohde_oid
+                on vt2.hakemus_oid = v.hakemus_oid and
+                   vt2.hakukohde_oid = v.hakukohde_oid
                 left join newest_vastaanotot as nv
-                on vt.henkilo_oid = nv.henkilo and
-                   vt.hakukohde_oid = nv.hakukohde
-                where vt.hakukohde_oid = $hakukohdeOid
+                on vt2.henkilo_oid = nv.henkilo and
+                   vt2.hakukohde_oid = nv.hakukohde
+                where vt2.hakukohde_oid = $hakukohdeOid
                   and vnt.julkaistavissa is true
-                  and (vt.tila = 'Hyvaksytty' or vt.tila = 'VarasijaltaHyvaksytty')
+                  and (vt2.tila = 'Hyvaksytty' or vt2.tila = 'VarasijaltaHyvaksytty')
                   and ($ignoreEarlier or
                     ((v.lahettaminen_aloitettu is null or v.lahettaminen_aloitettu < now() - make_interval(hours => $recheckIntervalHours))
                     and  (v.lahetetty is null or (v.syy is not distinct from 'EHDOLLISEN_PERIYTYMISEN_ILMOITUS' and
@@ -73,9 +73,6 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                 on vt.valintatapajono_oid = vnt.valintatapajono_oid and
                    vt.hakemus_oid = vnt.hakemus_oid and
                    vt.hakukohde_oid = vnt.hakukohde_oid
-              left join newest_vastaanotot as nv
-                on vt.henkilo_oid = nv.henkilo and
-                   vt.hakukohde_oid = nv.hakukohde
               where vt.hakemus_oid = $hakemusOid
                 and vnt.julkaistavissa is true
                 and (vt.tila = 'Hyvaksytty' or vt.tila = 'VarasijaltaHyvaksytty')
