@@ -14,7 +14,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuO
 import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.util.Try
 
-class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, emailerCronStrings: String) extends Logging {
+class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, cronExpression: String) extends Logging {
   logger.info("***** VT-emailer initializing *****")
   logger.info(s"Using settings: " +
     s"${registry.settings.withOverride("ryhmasahkoposti.cas.password", "***" )(EmailerConfigParser())}")
@@ -29,16 +29,11 @@ class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, emailerC
     }
   }
 
-  private val cronExpressions: List[String] = emailerCronStrings.split(";").toList
-  private val cronTasks = cronExpressions.zipWithIndex.map{ case (s,i) =>
-    Tasks.recurring(s"cron-emailer-task-$i", new CronSchedule(s))
-      .execute(executionHandler)
-  }
-
-  logger.info("Scheduled emailer task for cron expressions:\n" + cronExpressions.mkString("\n"))
+  private val cronTask = Tasks.recurring(s"cron-emailer-task", new CronSchedule(cronExpression)).execute(executionHandler)
+  logger.info("Scheduled emailer task for cron expression: " + cronExpression)
 
   private val numberOfThreads = 5
-  private val scheduler: Scheduler = Scheduler.create(db.dataSource).startTasks(cronTasks.asJava).threads(numberOfThreads).build
+  private val scheduler: Scheduler = Scheduler.create(db.dataSource).startTasks(cronTask).threads(numberOfThreads).build
 
   // hourlyTask is automatically scheduled on startup if not already started (i.e. exists in the db)
   scheduler.start()
