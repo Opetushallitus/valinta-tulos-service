@@ -43,6 +43,7 @@ class MailDecorator(hakuService: HakuService,
             None
         }
       } else {
+        logger.info(s"Ei hakutoiveita joilla syytä sähköpostin lähetykselle hakemuksella ${status.hakemusOid}")
         None
       }
     }

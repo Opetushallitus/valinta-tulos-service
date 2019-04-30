@@ -344,7 +344,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
 
   private def hakukohdeMailStatusFor(hakutoive: Hakutoiveentulos,
                                      mailReason: Option[MailReason]) = {
-    val reason =
+    val reasonToMail =
       if (Vastaanotettavuustila.isVastaanotettavissa(hakutoive.vastaanotettavuustila) && !mailReason.contains(Vastaanottoilmoitus)) {
         Some(Vastaanottoilmoitus)
       } else if (hakutoive.vastaanotonIlmoittaja.contains(Sijoittelu) && hakutoive.vastaanottotila == Vastaanottotila.vastaanottanut && !mailReason.contains(SitovanVastaanotonIlmoitus)) {
@@ -358,7 +358,7 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
     HakukohdeMailStatus(
       hakutoive.hakukohdeOid,
       hakutoive.valintatapajonoOid,
-      reason,
+      reasonToMail,
       hakutoive.vastaanottoDeadline,
       hakutoive.valintatila,
       hakutoive.vastaanottotila,
