@@ -65,6 +65,12 @@
           "hyvaksytty" : 0,
           "varalla" : 1,
           "alinHyvaksyttyPistemaara" : "",
+          "sivssnovSijoittelunVarasijataytonRajoitus": {
+            "jonosija": 1,
+            "tasasijaJonosija": 1,
+            "tila": "VARALLA",
+            "hakemusOidit": "[1.2.246.562.24.71711513035]"
+          },
           "hakemukset" : [
             {
               "hakijaOid" : "1.2.246.562.24.71711513035",

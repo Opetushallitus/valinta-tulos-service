@@ -31,6 +31,7 @@ trait DeleteSijoitteluRepositoryImpl extends DeleteSijoitteluRepository with Val
       ("delete hakijaryhmat", sqlu"delete from hakijaryhmat where sijoitteluajo_id = ${sijoitteluajoId}"),
       ("delete pistetiedot", sqlu"delete from pistetiedot where sijoitteluajo_id = ${sijoitteluajoId}"),
       ("delete jonosijat", sqlu"delete from jonosijat where sijoitteluajo_id = ${sijoitteluajoId}"),
+      ("delete sivssnov_sijoittelun_varasijatayton_rajoitus", sqlu"delete from sivssnov_sijoittelun_varasijatayton_rajoitus where sijoitteluajo_id = ${sijoitteluajoId}"),
       ("delete valintatapajonot", sqlu"delete from valintatapajonot where sijoitteluajo_id = ${sijoitteluajoId}"),
       ("delete sijoitteluajon_hakukohteet", sqlu"delete from sijoitteluajon_hakukohteet where sijoitteluajo_id = ${sijoitteluajoId}"),
       ("delete sijoitteluajo", sqlu"delete from sijoitteluajot where id = ${sijoitteluajoId}")

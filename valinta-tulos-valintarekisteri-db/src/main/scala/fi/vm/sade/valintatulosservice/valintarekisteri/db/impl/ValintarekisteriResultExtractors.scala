@@ -4,7 +4,8 @@ import java.sql.JDBCType
 import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
 import java.util.UUID
 
-import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
+import fi.vm.sade.sijoittelu.domain.Valintatapajono.JonosijaTieto
+import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, ValintatuloksenTila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoAction, VastaanottoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.jdbc.{GetResult, PositionedParameters, PositionedResult, SetParameter}
@@ -106,7 +107,10 @@ trait ValintarekisteriResultExtractors {
     varasijojaKaytetaanAsti = r.nextTimestampOption,
     tayttoJono = r.nextStringOption,
     sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa = r.nextBoolean(),
-    hakukohdeOid = HakukohdeOid(r.nextString)))
+    hakukohdeOid = HakukohdeOid(r.nextString),
+    sivssnovSijoittelunVarasijataytonRajoitus = r.nextIntOption().map { jonoSija =>
+      new JonosijaTieto(jonoSija, r.nextInt(), Valinnantila(r.nextString()).valinnantila, r.nextString())
+    }))
 
   protected implicit val getHakemuksetForValintatapajonosResult = GetResult(r => HakemusRecord(
     hakijaOid = r.nextStringOption,

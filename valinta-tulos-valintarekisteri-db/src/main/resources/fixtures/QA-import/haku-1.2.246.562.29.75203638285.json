@@ -73,6 +73,12 @@
           "varalla": 0,
           "alinHyvaksyttyPistemaara": "28",
           "sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa": true,
+          "sivssnovSijoittelunVarasijataytonRajoitus": {
+            "jonosija": 2,
+            "tasasijaJonosija": 1,
+            "tila": "HYVAKSYTTY",
+            "hakemusOidit": "[1.2.246.562.11.00006398091]"
+          },
           "hakemukset": [
             {
               "hakijaOid": "1.2.246.562.24.19795717550",

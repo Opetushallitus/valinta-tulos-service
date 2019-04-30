@@ -5,13 +5,16 @@ import java.math.{BigDecimal => javaBigDecimal}
 import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain.TilankuvauksenTarkenne._
+import fi.vm.sade.sijoittelu.domain.Valintatapajono.JonosijaTieto
 import fi.vm.sade.sijoittelu.domain.{Hakemus => SijoitteluHakemus, Tasasijasaanto => SijoitteluTasasijasaanto, _}
 import fi.vm.sade.valintatulosservice.json4sCustomFormats
 import org.apache.commons.lang3.{BooleanUtils, StringUtils}
+import org.json4s
 import org.json4s.JsonAST.{JArray, JValue}
 import org.json4s.{DefaultFormats, Formats}
 
 import scala.collection.JavaConverters._
+import scala.compat.java8.OptionConverters._
 
 case class SijoitteluWrapper(sijoitteluajo: SijoitteluAjo, hakukohteet: List[Hakukohde], valintatulokset: List[Valintatulos]) {
   lazy val groupedValintatulokset: Map[(HakukohdeOid, ValintatapajonoOid, HakemusOid), Valintatulos] = valintatulokset.map(vt =>
@@ -42,6 +45,16 @@ object SijoitteluWrapper extends json4sCustomFormats {
           val JArray(valintatapajonot) = (hakukohdeJson \ "valintatapajonot")
           valintatapajonot.map(valintatapajono => {
             val valintatapajonoExt = valintatapajono.extract[SijoitteluajonValintatapajonoWrapper].valintatapajono
+            val sivssnovRaja: json4s.JValue = valintatapajono \ "sivssnovSijoittelunVarasijataytonRajoitus"
+            val sivssnovRajattuVarasijaRaja: Option[JonosijaTieto] = {
+              (sivssnovRaja \ "jonosija").extractOpt[Int].map { jonosija =>
+                new JonosijaTieto(jonosija,
+                  (sivssnovRaja \ "tasasijaJonosija").extract[Int],
+                  HakemuksenTila.valueOf((sivssnovRaja \ "tila").extract[String]),
+                  (sivssnovRaja \ "hakemusOidit").extract[String])
+              }
+            }
+            valintatapajonoExt.setSivssnovSijoittelunVarasijataytonRajoitus(sivssnovRajattuVarasijaRaja.asJava)
             val JArray(hakemukset) = (valintatapajono \ "hakemukset")
             valintatapajonoExt.setHakemukset(hakemukset.map(hakemus => {
               val hakemusExt = hakemus.extract[SijoitteluajonHakemusWrapper].hakemus
@@ -175,7 +188,8 @@ case class SijoitteluajonValintatapajonoWrapper(
                                                  tayttojono: Option[String],
                                                  alinHyvaksyttyPistemaara: Option[BigDecimal],
                                                  valintaesitysHyvaksytty: Option[Boolean] = Some(false),
-                                                 sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa: Boolean = false) {
+                                                 sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa: Boolean = false,
+                                                 sivssnovSijoittelunVarasijataytonRajoitus: Option[JonosijaTieto] = None) {
 
   val valintatapajono: Valintatapajono = {
     val valintatapajono = new Valintatapajono
@@ -196,6 +210,7 @@ case class SijoitteluajonValintatapajonoWrapper(
     alinHyvaksyttyPistemaara.foreach(pm => valintatapajono.setAlinHyvaksyttyPistemaara(pm.bigDecimal))
     valintaesitysHyvaksytty.foreach(valintatapajono.setValintaesitysHyvaksytty(_))
     valintatapajono.setSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa(sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa)
+    valintatapajono.setSivssnovSijoittelunVarasijataytonRajoitus(sivssnovSijoittelunVarasijataytonRajoitus.asJava)
     valintatapajono
   }
 }
@@ -219,7 +234,8 @@ object SijoitteluajonValintatapajonoWrapper extends OptionConverter {
       convert[javaString, String](valintatapajono.getTayttojono, string),
       convert[javaBigDecimal, BigDecimal](valintatapajono.getAlinHyvaksyttyPistemaara(), bigDecimal),
       convert[javaBoolean, Boolean](valintatapajono.getValintaesitysHyvaksytty(), boolean),
-      valintatapajono.getSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa
+      valintatapajono.getSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa,
+      valintatapajono.getSivssnovSijoittelunVarasijataytonRajoitus.asScala
     )
   }
 }

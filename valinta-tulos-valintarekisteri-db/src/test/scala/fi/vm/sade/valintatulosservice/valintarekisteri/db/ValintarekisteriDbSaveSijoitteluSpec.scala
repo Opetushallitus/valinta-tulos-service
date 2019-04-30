@@ -4,7 +4,9 @@ import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import fi.vm.sade.sijoittelu.domain.HakemuksenTila
+import fi.vm.sade.sijoittelu.domain.HakemuksenTila.VARALLA
+import fi.vm.sade.sijoittelu.domain.Valintatapajono.JonosijaTieto
+import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, Valintatapajono}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -248,6 +250,15 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
   "store sijoiteltu ilman varasijasääntöjä niiden ollessa voimassa flag by valintatapajono" in {
     val wrapper = loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")
     wrapper.hakukohteet.head.getValintatapajonot.get(0).setSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa(true)
+    singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
+    assertSijoittelu(wrapper)
+  }
+  "store sivssnov-sijoittelu cutoff point in valintatapajono" in {
+    val wrapper = loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")
+    val jono: Valintatapajono = wrapper.hakukohteet.head.getValintatapajonot.get(0)
+    jono.setSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa(true)
+    val hakemusOidsString = jono.getHakemukset.get(0).getHakemusOid
+    jono.setSivssnovSijoittelunVarasijataytonRajoitus(java.util.Optional.of(new JonosijaTieto(79, 2, VARALLA, hakemusOidsString)))
     singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
     assertSijoittelu(wrapper)
   }

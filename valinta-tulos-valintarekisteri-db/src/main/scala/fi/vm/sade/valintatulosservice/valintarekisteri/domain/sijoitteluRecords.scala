@@ -3,11 +3,13 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.domain
 import java.util
 import java.util.Date
 
+import fi.vm.sade.sijoittelu.domain.Valintatapajono.JonosijaTieto
 import fi.vm.sade.sijoittelu.domain.{HakemuksenTila => _, IlmoittautumisTila => _, _}
 import fi.vm.sade.sijoittelu.tulos.dto.{ValintatuloksenTila, _}
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakutoiveDTO, HakutoiveenValintatapajonoDTO, KevytHakijaDTO, KevytHakutoiveDTO, KevytHakutoiveenValintatapajonoDTO, HakijaryhmaDTO => HakutoiveenHakijaryhmaDTO}
 
 import scala.collection.JavaConverters._
+import scala.compat.java8.OptionConverters._
 
 case class SijoitteluajoRecord(sijoitteluajoId:Long, hakuOid: HakuOid, startMils:Long, endMils:Long) {
   def dto(hakukohteet:List[HakukohdeDTO]): SijoitteluajoDTO = {
@@ -300,7 +302,8 @@ case class ValintatapajonoRecord(tasasijasaanto:String, oid: ValintatapajonoOid,
                                  varasijat:Option[Int], varasijanTayttoPaivat:Option[Int],
                                  varasijojaKaytetaanAlkaen:Option[Date], varasijojaKaytetaanAsti:Option[Date],
                                  tayttoJono:Option[String], sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa: Boolean,
-                                 hakukohdeOid: HakukohdeOid) {
+                                 hakukohdeOid: HakukohdeOid,
+                                 sivssnovSijoittelunVarasijataytonRajoitus: Option[JonosijaTieto] = None) {
 
   def bigDecimal(bigDecimal:BigDecimal): java.math.BigDecimal = bigDecimal match {
     case i: BigDecimal => i.bigDecimal
@@ -353,6 +356,7 @@ case class ValintatapajonoRecord(tasasijasaanto:String, oid: ValintatapajonoOid,
     tayttoJono.foreach(valintatapajono.setTayttojono)
     valintatapajono.setHakemukset(hakemukset.asJava)
     valintatapajono.setHakemustenMaara(hakemukset.size)
+    valintatapajono.setSivssnovSijoittelunVarasijataytonRajoitus(sivssnovSijoittelunVarasijataytonRajoitus.asJava)
     valintatapajono
   }
 }
