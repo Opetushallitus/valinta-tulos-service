@@ -320,6 +320,9 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
           hakukohdeMailStatusFor(hakutoive, mailReasons.getOrElse(hakutoive.hakukohdeOid, mailReasons.get(hakutoive.hakukohdeOid).flatten))
         })
         val filteredMailables = mailables.filter(m => valintatapajonoFilter.isEmpty || valintatapajonoFilter.contains(m.valintatapajonoOid))
+        if (filteredMailables.size != mailables.size) {
+          logger.info(s"Suodatettiin pois ${mailables.size-filteredMailables.size} hakukohdetta hakemuksen ${hakemus.oid} statuksesta valintatapajonosuodattimella ${valintatapajonoFilter}")
+        }
         Some(HakemusMailStatus(
           hakemuksenTulos.hakijaOid,
           hakemuksenTulos.hakemusOid,
