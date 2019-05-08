@@ -52,6 +52,7 @@ trait MailerComponent {
     }
 
     def sendMailForValintatapajono(hakukohdeOid: HakukohdeOid, jonoOid: ValintatapajonoOid): List[String] = {
+      mailPoller.deleteMailEntries(hakukohdeOid)
       collectAndSend(ValintatapajonoQuery(hakukohdeOid, jonoOid), 0, List.empty, List.empty)
     }
 
