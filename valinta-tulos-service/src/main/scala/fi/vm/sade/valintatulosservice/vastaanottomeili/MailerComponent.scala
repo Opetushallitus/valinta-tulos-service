@@ -51,13 +51,13 @@ trait MailerComponent {
       collectAndSend(HakukohdeQuery(hakukohdeOid), 0, List.empty, List.empty)
     }
 
+    def sendMailForValintatapajono(hakukohdeOid: HakukohdeOid, jonoOid: ValintatapajonoOid): List[String] = {
+      collectAndSend(ValintatapajonoQuery(hakukohdeOid, jonoOid), 0, List.empty, List.empty)
+    }
+
     def sendMailForHakemus(hakemusOid: HakemusOid): List[String] = {
       mailPoller.deleteMailEntries(hakemusOid)
       collectAndSend(HakemusQuery(hakemusOid), 0, List.empty, List.empty)
-    }
-
-    def sendMailForValintatapajono(hakukohdeOid: HakukohdeOid, jonoOid: ValintatapajonoOid): List[String] = {
-      collectAndSend(ValintatapajonoQuery(hakukohdeOid, jonoOid), 0, List.empty, List.empty)
     }
 
     private def collectAndSend(query: Query, batchNr: Int, ids: List[String], batch: List[Ilmoitus]): List[String] = {
@@ -138,10 +138,10 @@ trait MailerComponent {
           mailPoller.pollForMailablesForHaku(hakuOid, mailDecorator, mailablesLimit, timeLimit)
         case HakukohdeQuery(hakukohdeOid) =>
           mailPoller.pollForMailablesForHakukohde(hakukohdeOid, mailDecorator, mailablesLimit, timeLimit)
-        case HakemusQuery(hakemusOid) =>
-          mailPoller.pollForMailablesForHakemus(hakemusOid, mailDecorator)
         case ValintatapajonoQuery(hakukohdeOid, jonoOid) =>
           mailPoller.pollForMailablesForValintatapajono(hakukohdeOid, jonoOid, mailDecorator, mailablesLimit, timeLimit)
+        case HakemusQuery(hakemusOid) =>
+          mailPoller.pollForMailablesForHakemus(hakemusOid, mailDecorator)
       }
     }
 

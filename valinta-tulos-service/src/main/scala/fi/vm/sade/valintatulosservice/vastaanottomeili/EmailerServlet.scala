@@ -49,18 +49,6 @@ class EmailerServlet(emailerService: EmailerService, val sessionRepository: Sess
     }
   }
 
-  post("/run/hakemus/:hakemusOid", operation(postRunEmailerForHakemusSwagger)) {
-    val hakemusOid = HakemusOid(params("hakemusOid"))
-    logger.info(s"EmailerServlet POST /run/hakemus/ called for hakemus $hakemusOid")
-    emailerService.runForHakemus(hakemusOid) match {
-      case Success(ids) =>
-        Ok(ids)
-      case Failure(e) =>
-        logger.error(s"Failed to send email for hakemus $hakemusOid: ", e)
-        InternalServerError(e)
-    }
-  }
-
   post("/run/hakukohde/:hakukohdeOid/valintatapajono/:jonoOid", operation(postRunEmailerForValintatapajonoSwagger)) {
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     val jonoOid = ValintatapajonoOid(params("jonoOid"))
@@ -70,6 +58,18 @@ class EmailerServlet(emailerService: EmailerService, val sessionRepository: Sess
         Ok(ids)
       case Failure(e) =>
         logger.error(s"Failed to send email for valintatapajono $jonoOid: ", e)
+        InternalServerError(e)
+    }
+  }
+
+  post("/run/hakemus/:hakemusOid", operation(postRunEmailerForHakemusSwagger)) {
+    val hakemusOid = HakemusOid(params("hakemusOid"))
+    logger.info(s"EmailerServlet POST /run/hakemus/ called for hakemus $hakemusOid")
+    emailerService.runForHakemus(hakemusOid) match {
+      case Success(ids) =>
+        Ok(ids)
+      case Failure(e) =>
+        logger.error(s"Failed to send email for hakemus $hakemusOid: ", e)
         InternalServerError(e)
     }
   }

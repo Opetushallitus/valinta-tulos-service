@@ -51,13 +51,26 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
   }
 
   def pollForMailablesForHakukohde(hakukohdeOid: HakukohdeOid, mailDecorator: MailDecorator, mailablesWanted: Int, timeLimit: Duration): PollResult = {
-    val fetchHakuOidsForHakukohdeOids = "Looking for haku oids for hakukohde to process"
-    logger.info(s"Start: $fetchHakuOidsForHakukohdeOids")
-    val hakukohdeOidsWithTheirHakuOids: ParSeq[(HakuOid, HakukohdeOid)] = timed(fetchHakuOidsForHakukohdeOids, 1000) {
-      List((hakuService.getHakukohde(hakukohdeOid).right.get.hakuOid, hakukohdeOid)).par
-    }
+    val hakuOid = getHakuOidForHakukohdeOid(hakukohdeOid)
+    val hakukohdeOidsWithTheirHakuOids: ParSeq[(HakuOid, HakukohdeOid)] = List((hakuOid, hakukohdeOid)).par
 
     pollForHakukohdes(hakukohdeOidsWithTheirHakuOids, ignoreEarlier = true, mailDecorator, mailablesWanted, timeLimit)
+  }
+
+  def pollForMailablesForValintatapajono(hakukohdeOid: HakukohdeOid, jonoOid: ValintatapajonoOid, mailDecorator: MailDecorator, mailablesWanted: Int, timeLimit: Duration): PollResult = {
+    val hakuOid = getHakuOidForHakukohdeOid(hakukohdeOid)
+    val hakukohdeOidsWithTheirHakuOids: ParSeq[(HakuOid, HakukohdeOid)] = List((hakuOid, hakukohdeOid)).par
+
+    pollForHakukohdes(hakukohdeOidsWithTheirHakuOids, ignoreEarlier = true, mailDecorator, mailablesWanted, timeLimit, valintatapajonoFilter = Some(jonoOid))
+  }
+
+  private def getHakuOidForHakukohdeOid(hakukohdeOid: HakukohdeOid) = {
+    val msg = "Looking for haku oids for hakukohde to process"
+    logger.info(s"Start: $msg")
+    timed(msg, 1000) {
+      hakuService.getHakukohde(hakukohdeOid).right.get.hakuOid
+    }
+
   }
 
   def pollForMailablesForHakemus(hakemusOid: HakemusOid, mailDecorator: MailDecorator): PollResult = {
@@ -74,16 +87,6 @@ class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
     }
 
     PollResult(complete = true, candidatesProcessed = 1, mailables = mailables)
-  }
-
-  def pollForMailablesForValintatapajono(hakukohdeOid: HakukohdeOid, jonoOid: ValintatapajonoOid, mailDecorator: MailDecorator, mailablesWanted: Int, timeLimit: Duration): PollResult = {
-    val fetchHakuOidsForHakukohdeOids = "Looking for haku oids for hakukohde to process"
-    logger.info(s"Start: $fetchHakuOidsForHakukohdeOids")
-    val hakukohdeOidsWithTheirHakuOids: ParSeq[(HakuOid, HakukohdeOid)] = timed(fetchHakuOidsForHakukohdeOids, 1000) {
-      List((hakuService.getHakukohde(hakukohdeOid).right.get.hakuOid, hakukohdeOid)).par
-    }
-
-    pollForHakukohdes(hakukohdeOidsWithTheirHakuOids, ignoreEarlier = true, mailDecorator, mailablesWanted, timeLimit, valintatapajonoFilter = Some(jonoOid))
   }
 
   def markAsSent(ilmoituses: List[Ilmoitus]): Unit = {
