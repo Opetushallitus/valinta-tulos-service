@@ -33,7 +33,7 @@ case class Haku(
   toinenAste: Boolean
 )
 
-case class  LahetysKuittaus(
+case class LahetysKuittaus(
   hakemusOid: HakemusOid,
   hakukohteet: List[HakukohdeOid],
   mediat: List[String]

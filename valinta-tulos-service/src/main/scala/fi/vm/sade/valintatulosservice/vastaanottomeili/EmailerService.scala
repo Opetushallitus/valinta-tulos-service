@@ -35,7 +35,6 @@ class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, cronExpr
   private val numberOfThreads = 5
   private val scheduler: Scheduler = Scheduler.create(db.dataSource).startTasks(cronTask).threads(numberOfThreads).build
 
-  // hourlyTask is automatically scheduled on startup if not already started (i.e. exists in the db)
   scheduler.start()
 
   def run(): Try[List[String]] = {

@@ -15,9 +15,9 @@ import scala.concurrent.duration.Duration
 trait MailerComponent {
   this: GroupEmailComponent with EmailerConfigComponent =>
 
-  val mailer: Mailer
-  val mailPoller: MailPoller
-  val mailDecorator: MailDecorator
+  def mailer: Mailer
+  def mailPoller: MailPoller
+  def mailDecorator: MailDecorator
 
   class MailerImpl extends Mailer with Logging {
     val mailablesLimit: Int = settings.recipientBatchSize
