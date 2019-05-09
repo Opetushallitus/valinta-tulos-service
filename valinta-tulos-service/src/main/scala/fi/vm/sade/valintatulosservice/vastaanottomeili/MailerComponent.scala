@@ -16,7 +16,7 @@ trait MailerComponent {
   this: GroupEmailComponent with EmailerConfigComponent =>
 
   val mailer: Mailer
-  val mailPoller: MailPollerAdapter
+  val mailPoller: MailPoller
   val mailDecorator: MailDecorator
 
   class MailerImpl extends Mailer with Logging {

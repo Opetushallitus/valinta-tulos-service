@@ -24,10 +24,10 @@ import org.specs2.specification.Scope
 import scala.concurrent.duration.Duration
 
 @RunWith(classOf[JUnitRunner])
-class MailPollerAdapterSpec extends Specification with MockitoMatchers {
+class MailPollerSpec extends Specification with MockitoMatchers {
   private val oneMinute: Duration = Duration(1, TimeUnit.MINUTES)
 
-  "MailPollerAdapter" in {
+  "MailPoller" in {
     "pollForMailables" in {
       "Ilmoitus vastaanotettavasta paikasta" in new Mocks {
         hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
@@ -1169,7 +1169,7 @@ class MailPollerAdapterSpec extends Specification with MockitoMatchers {
       hakuService,
       oppijanTunnistusService
     )
-    val service = new MailPollerAdapter(
+    val service = new MailPoller(
       mailPollerRepository,
       valintatulosService,
       hakuService,

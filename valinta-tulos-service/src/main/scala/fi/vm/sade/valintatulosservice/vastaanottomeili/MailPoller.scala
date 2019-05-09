@@ -20,12 +20,12 @@ import scala.collection.parallel.immutable.ParSeq
 import scala.concurrent.duration.Duration
 import scala.concurrent.forkjoin.ForkJoinPool
 
-class MailPollerAdapter(mailPollerRepository: MailPollerRepository,
-                        valintatulosService: ValintatulosService,
-                        hakuService: HakuService,
-                        hakemusRepository: HakemusRepository,
-                        ohjausparameteritService: OhjausparametritService,
-                        vtsApplicationSettings: VtsApplicationSettings) extends Logging {
+class MailPoller(mailPollerRepository: MailPollerRepository,
+                 valintatulosService: ValintatulosService,
+                 hakuService: HakuService,
+                 hakemusRepository: HakemusRepository,
+                 ohjausparameteritService: OhjausparametritService,
+                 vtsApplicationSettings: VtsApplicationSettings) extends Logging {
 
   private val pollConcurrency: Int = vtsApplicationSettings.mailPollerConcurrency
   private val emptyHakukohdeRecheckInterval: Duration = vtsApplicationSettings.mailPollerResultlessHakukohdeRecheckInterval

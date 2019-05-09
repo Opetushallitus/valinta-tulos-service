@@ -4,11 +4,11 @@ import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid}
-import fi.vm.sade.valintatulosservice.vastaanottomeili.MailPollerAdapter
+import fi.vm.sade.valintatulosservice.vastaanottomeili.MailPoller
 import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 
-class PublicEmailStatusServlet(mailPoller: MailPollerAdapter,
+class PublicEmailStatusServlet(mailPoller: MailPoller,
                                val sessionRepository: SessionRepository,
                                audit: Audit)
                               (implicit val swagger: Swagger)

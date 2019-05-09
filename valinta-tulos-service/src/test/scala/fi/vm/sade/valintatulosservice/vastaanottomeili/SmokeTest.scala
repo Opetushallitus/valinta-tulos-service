@@ -36,7 +36,7 @@ class SmokeTest extends Specification with HttpComponentsClient with Mockito wit
     hakuService,
     oppijanTunnistusService
   )
-  private val mailPoller = mock[MailPollerAdapter]
+  private val mailPoller = mock[MailPoller]
 
   mailPollerRepository.findHakukohdeOidsCheckedRecently(any[Duration]) returns Set.empty
 
