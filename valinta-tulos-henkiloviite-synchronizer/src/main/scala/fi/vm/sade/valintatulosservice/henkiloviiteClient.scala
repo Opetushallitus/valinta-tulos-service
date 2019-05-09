@@ -23,7 +23,7 @@ case class Duplicates(tyyppi: String)
 class HenkiloviiteClient(configuration: AuthenticationConfiguration) {
   private val resourceUrl: Uri = configuration.url
   private val client = createCasClient()
-  private val callerId = "valinta-tulos-henkiloviite-synchronizer"
+  private val callerId = "1.2.246.562.10.00000000001.valinta-tulos-henkiloviite-synchronizer"
 
   def fetchHenkiloviitteet(): Try[List[Henkiloviite]] = {
     val request = Request(
