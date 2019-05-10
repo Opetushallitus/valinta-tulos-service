@@ -322,12 +322,12 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
                             valintatapajonoFilter: Option[ValintatapajonoOid]): Option[HakemusMailStatus] = {
     hakemus match {
       case Hakemus(_, _, _, asiointikieli, _, Henkilotiedot(Some(kutsumanimi), Some(email), hasHetu)) =>
-        val filteredHakutoiveet = hakemuksenTulos.hakutoiveet.filter(_.hakukohdeOid == hakukohdeOid)
-        val hakukohdeMailStatii = mailStatiiForHakutoiveet(hakemus.oid, filteredHakutoiveet, mailReasons)
-        val filteredhakukohdeMailStatii = hakukohdeMailStatii.filter(m => valintatapajonoFilter.isEmpty || valintatapajonoFilter.contains(m.valintatapajonoOid))
-        if (filteredhakukohdeMailStatii.size != hakukohdeMailStatii.size) {
-          logger.info(s"Suodatettiin pois ${hakukohdeMailStatii.size-filteredhakukohdeMailStatii.size} hakukohdetta hakemuksen ${hakemus.oid} statuksesta valintatapajonosuodattimella ${valintatapajonoFilter}")
+        val hakukohteenToiveet = hakemuksenTulos.hakutoiveet.filter(_.hakukohdeOid == hakukohdeOid)
+        val filteredHakutoiveet = hakukohteenToiveet.filter(toive => valintatapajonoFilter.isEmpty || valintatapajonoFilter.get.equals(toive.valintatapajonoOid))
+        if (filteredHakutoiveet.size != hakukohteenToiveet.size) {
+          logger.info(s"Suodatettiin pois ${hakukohteenToiveet.size-filteredHakutoiveet.size} hakutoivetta hakemuksen ${hakemus.oid} statuksesta valintatapajonosuodattimella $valintatapajonoFilter")
         }
+        val hakukohdeMailStatii = mailStatiiForHakutoiveet(hakemus.oid, filteredHakutoiveet, mailReasons)
         Some(HakemusMailStatus(
           hakijaOid = hakemuksenTulos.hakijaOid,
           hakemusOid = hakemuksenTulos.hakemusOid,
@@ -336,7 +336,7 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
           email = email,
           hasHetu = hasHetu,
           hakuOid = hakemuksenTulos.hakuOid,
-          hakukohteet = filteredhakukohdeMailStatii
+          hakukohteet = hakukohdeMailStatii
         ))
       case Hakemus(_, _, _, _, _, Henkilotiedot(None, None, _)) =>
         logger.error(s"Hakemus ${hakemus.oid} is missing hakemus.henkilotiedot.kutsumanimi and hakemus.henkilotiedot.email")
