@@ -30,7 +30,6 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
                  vtsApplicationSettings: VtsApplicationSettings) extends Logging {
 
   private val pollConcurrency: Int = vtsApplicationSettings.mailPollerConcurrency
-  private val emptyHakukohdeRecheckInterval: Duration = vtsApplicationSettings.mailPollerResultlessHakukohdeRecheckInterval
 
   def pollForAllMailables(mailDecorator: MailDecorator, mailablesWanted: Int, timeLimit: Duration): PollResult = {
     val fetchHakusTaskLabel = "Looking for hakus with their hakukohdes to process"
@@ -146,7 +145,6 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
       }
 
     val found = etsiHakukohteet(hakus.map(_.oid))
-    val filtered: List[(HakuOid, HakukohdeOid)] = filterHakukohdesRecentlyChecked(found) // TODO: Pitäisikö filtteröinti tehdä myös kun kutsutaan tiettyä hakua?
 
     logger.info(s"haut ${found.map(_._1).distinct.mkString(", ")}")
     found
@@ -165,20 +163,6 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
         case _ =>
           true
      }.flatMap(t => t._2.right.get.map((t._1, _)))
-  }
-
-  private def filterHakukohdesRecentlyChecked(hakuHakukohdePairs: List[(HakuOid, HakukohdeOid)]): List[(HakuOid, HakukohdeOid)] = {
-    val vastikaanTarkistetutHakukohteet: Set[HakukohdeOid] = mailPollerRepository.findHakukohdeOidsCheckedRecently(emptyHakukohdeRecheckInterval)
-
-    hakuHakukohdePairs
-      .filter { oids =>
-        if (vastikaanTarkistetutHakukohteet.contains(oids._2)) {
-          logger.debug(s"Pudotetaan hakukohde ${oids._2}, koska se on tarkistettu viimeisten $emptyHakukohdeRecheckInterval aikana")
-          false
-        } else {
-          true
-        }
-      }
   }
 
   @tailrec

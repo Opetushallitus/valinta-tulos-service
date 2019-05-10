@@ -153,14 +153,6 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
     }
   }
 
-  def findHakukohdeOidsCheckedRecently(emptyHakukohdeRecheckInterval: Duration): Set[HakukohdeOid] = {
-    runBlocking(
-      sql"""select hakukohde_oid from viestinlahetys_tarkistettu
-            where tarkistettu > now() -
-              make_interval(hours => ${emptyHakukohdeRecheckInterval.toHours.toInt})""".
-        as[String]).map(HakukohdeOid).toSet
-  }
-
   def getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid: HakukohdeOid): List[String] = {
     runBlocking(
       sql"""select distinct hakemus_oid from viestit

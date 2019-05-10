@@ -38,8 +38,6 @@ class SmokeTest extends Specification with HttpComponentsClient with Mockito wit
   )
   private val mailPoller = mock[MailPoller]
 
-  mailPollerRepository.findHakukohdeOidsCheckedRecently(any[Duration]) returns Set.empty
-
   private val hakukohde = Hakukohde(
     HakukohdeOid("hakukohde_oid"),
     LahetysSyy.vastaanottoilmoitus2aste,
