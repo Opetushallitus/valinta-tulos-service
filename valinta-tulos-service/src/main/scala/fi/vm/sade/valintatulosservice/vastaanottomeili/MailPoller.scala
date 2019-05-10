@@ -320,7 +320,7 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
     hakemus match {
       case Hakemus(_, _, _, asiointikieli, _, Henkilotiedot(Some(kutsumanimi), Some(email), hasHetu)) =>
         val mailables = hakemuksenTulos.hakutoiveet.filter(_.hakukohdeOid == hakukohdeOid).map(hakutoive => {
-          hakukohdeMailStatusFor(hakutoive, mailReasons.getOrElse(hakutoive.hakukohdeOid, mailReasons.get(hakutoive.hakukohdeOid).flatten))
+          hakukohdeMailStatusFor(hakutoive, mailReasons.get(hakutoive.hakukohdeOid).flatten)
         })
         val filteredMailables = mailables.filter(m => valintatapajonoFilter.isEmpty || valintatapajonoFilter.contains(m.valintatapajonoOid))
         if (filteredMailables.size != mailables.size) {
