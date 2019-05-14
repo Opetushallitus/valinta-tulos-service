@@ -36,7 +36,7 @@ class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, cronExpr
   private val cronTask = Tasks.recurring(s"cron-emailer-task", new CronSchedule(cronExpression)).execute(executionHandler)
   logger.info("Scheduled emailer task for cron expression: " + cronExpression)
 
-  private val numberOfThreads = 5
+  private val numberOfThreads: Int = 1
   private val scheduler: Scheduler = Scheduler.create(db.dataSource).startTasks(cronTask).threads(numberOfThreads).build
 
   scheduler.start()
