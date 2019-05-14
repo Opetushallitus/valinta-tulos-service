@@ -10,7 +10,6 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.EmailerConfigParser
 import fi.vm.sade.valintatulosservice.config.EmailerRegistry.EmailerRegistry
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 
 import scala.util.{Failure, Success, Try}
 
@@ -24,7 +23,7 @@ class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, cronExpr
 
     override def execute(taskInstance: TaskInstance[Void], executionContext: ExecutionContext): Unit = {
       logger.info("Scheduled VT-emailer run starting")
-      run() match {
+      runMailerQuery(AllQuery) match {
         case Success(ids) =>
           logger.info(s"Scheduled VT-emailer run was successful")
         case Failure(e) =>
@@ -42,48 +41,10 @@ class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, cronExpr
 
   scheduler.start()
 
-  def run(): Try[List[String]] = {
-    logger.info("***** VT-emailer run starting *****")
-    val targetName = "all hakus"
-    Try(Timer.timed(s"Batch send for $targetName") {
-      val ids = registry.mailer.sendMailForAll()
-      logResult(targetName, ids)
-      ids
-    })
-
-  }
-
-  def runForHaku(hakuOid: HakuOid): Try[List[String]] = {
-    val targetName = s"haku $hakuOid"
-    Try(Timer.timed(s"Batch send for $targetName") {
-      val ids = registry.mailer.sendMailForHaku(hakuOid)
-      logResult(targetName, ids)
-      ids
-    })
-  }
-
-  def runForHakukohde(hakukohdeOid: HakukohdeOid): Try[List[String]]  = {
-    val targetName = s"hakukohde $hakukohdeOid"
-    Try(Timer.timed(s"Batch send for $targetName") {
-      val ids = registry.mailer.sendMailForHakukohde(hakukohdeOid)
-      logResult(targetName, ids)
-      ids
-    })
-  }
-
-  def runForHakemus(hakemusOid: HakemusOid): Try[List[String]]  = {
-    val targetName = s"hakemus $hakemusOid"
-    Try(Timer.timed(s"Batch send for $targetName") {
-      val ids = registry.mailer.sendMailForHakemus(hakemusOid)
-      logResult(targetName, ids)
-      ids
-    })
-  }
-
-  def runForValintatapajono(hakukohdeOid: HakukohdeOid, jonoOid: ValintatapajonoOid): Try[List[String]]  = {
-    val targetName = s"valintatapajono $jonoOid"
-    Try(Timer.timed(s"Batch send for $targetName") {
-      val ids = registry.mailer.sendMailForValintatapajono(hakukohdeOid, jonoOid)
+  def runMailerQuery(query: MailerQuery): Try[List[String]] = {
+    val targetName = query.toString
+    Try(Timer.timed(s"Batch send for query $targetName") {
+      val ids = registry.mailer.sendMailFor(query)
       logResult(targetName, ids)
       ids
     })

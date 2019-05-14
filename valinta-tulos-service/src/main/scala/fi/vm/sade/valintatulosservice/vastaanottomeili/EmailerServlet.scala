@@ -4,9 +4,10 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 import fi.vm.sade.valintatulosservice.{CasAuthenticatedServlet, VtsServletBase, VtsSwaggerBase}
+
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger.{SwaggerSupport, _}
-import org.scalatra.{InternalServerError, Ok}
+import org.scalatra.{ActionResult, InternalServerError, Ok}
 
 import scala.util.{Failure, Success}
 
@@ -16,63 +17,52 @@ class EmailerServlet(emailerService: EmailerService, val sessionRepository: Sess
 
   post("/run", operation(postRunEmailerSwagger)) {
     logger.info("EmailerServlet POST /run called")
-    emailerService.run() match {
-      case Success(ids) =>
-        Ok(ids)
-      case Failure(e) =>
-        logger.error("Failed to send email: ", e)
-        InternalServerError(e)
-    }
+    val query: MailerQuery = AllQuery
+    runMailerAndCreateResponse(query)
   }
 
   post("/run/haku/:hakuOid", operation(postRunEmailerForHakuSwagger)) {
     val hakuOid = HakuOid(params("hakuOid"))
     logger.info(s"EmailerServlet POST /run/haku/ called for haku $hakuOid")
-    emailerService.runForHaku(hakuOid) match {
-      case Success(ids) =>
-        Ok(ids)
-      case Failure(e) =>
-        logger.error(s"Failed to send email for haku $hakuOid: ", e)
-        InternalServerError(e)
-    }
+
+    val query: MailerQuery = HakuQuery(hakuOid)
+    runMailerAndCreateResponse(query)
   }
 
   post("/run/hakukohde/:hakukohdeOid", operation(postRunEmailerForHakukohdeSwagger)) {
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     logger.info(s"EmailerServlet POST /run/hakukohde/ called for hakukohde $hakukohdeOid")
-    emailerService.runForHakukohde(hakukohdeOid) match {
-      case Success(ids) =>
-        Ok(ids)
-      case Failure(e) =>
-        logger.error(s"Failed to send email for hakukohde $hakukohdeOid: ", e)
-        InternalServerError(e)
-    }
+
+    val query: MailerQuery = HakukohdeQuery(hakukohdeOid)
+    runMailerAndCreateResponse(query)
   }
 
   post("/run/hakukohde/:hakukohdeOid/valintatapajono/:jonoOid", operation(postRunEmailerForValintatapajonoSwagger)) {
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     val jonoOid = ValintatapajonoOid(params("jonoOid"))
     logger.info(s"EmailerServlet POST /run/valintatapajono/ called for valintatapajono $jonoOid")
-    emailerService.runForValintatapajono(hakukohdeOid, jonoOid) match {
-      case Success(ids) =>
-        Ok(ids)
-      case Failure(e) =>
-        logger.error(s"Failed to send email for valintatapajono $jonoOid: ", e)
-        InternalServerError(e)
-    }
+
+    val query: MailerQuery = ValintatapajonoQuery(hakukohdeOid, jonoOid)
+    runMailerAndCreateResponse(query)
   }
 
   post("/run/hakemus/:hakemusOid", operation(postRunEmailerForHakemusSwagger)) {
     val hakemusOid = HakemusOid(params("hakemusOid"))
     logger.info(s"EmailerServlet POST /run/hakemus/ called for hakemus $hakemusOid")
-    emailerService.runForHakemus(hakemusOid) match {
+    val query: MailerQuery = HakemusQuery(hakemusOid)
+    runMailerAndCreateResponse(query)
+  }
+
+  private def runMailerAndCreateResponse(query: MailerQuery): ActionResult = {
+    emailerService.runMailerQuery(query) match {
       case Success(ids) =>
         Ok(ids)
       case Failure(e) =>
-        logger.error(s"Failed to send email for hakemus $hakemusOid: ", e)
+        logger.error(s"Failed to send email for query $query: ", e)
         InternalServerError(e)
     }
   }
+
 }
 
 trait EmailerSwagger extends VtsSwaggerBase { this: SwaggerSupport =>

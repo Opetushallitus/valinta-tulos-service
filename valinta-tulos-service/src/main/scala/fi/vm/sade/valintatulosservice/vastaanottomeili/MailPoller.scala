@@ -87,7 +87,7 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
       mailables
     }
 
-    PollResult(complete = true, candidatesProcessed = 1, mailables = mailables)
+    PollResult(isPollingComplete = true, candidatesProcessed = 1, mailables = mailables)
   }
 
   def markAsSent(ilmoituses: List[Ilmoitus]): Unit = {
@@ -175,7 +175,7 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
                                              valintatapajonoFilter: Option[ValintatapajonoOid]): PollResult = {
     if (hakukohdeOids.isEmpty || acc.size >= totalMailablesWanted) {
       logger.info(s"Returning ${acc.size} mailables for totalMailablesWanted of $totalMailablesWanted")
-      acc.copy(complete = true)
+      acc.copy(isPollingComplete = true)
     } else if (acc.exceeds(timeLimit)) {
       logger.warn(s"Finding $totalMailablesWanted mailables has taken more than the time limit of $timeLimit . " +
         s"Returning intermediate result of ${acc.size}, filtered from ${acc.candidatesProcessed} candidates. " +

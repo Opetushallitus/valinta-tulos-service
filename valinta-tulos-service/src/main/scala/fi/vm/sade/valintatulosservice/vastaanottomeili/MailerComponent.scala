@@ -31,37 +31,40 @@ trait MailerComponent {
       LahetysSyy.sitovan_vastaanoton_ilmoitus -> "sitova_vastaanotto_email"
     )
 
-    private sealed trait Query
-    private case object AllQuery extends Query
-    private case class HakuQuery(hakuOid: HakuOid) extends Query
-    private case class HakukohdeQuery(hakukohdeOid: HakukohdeOid) extends Query
-    private case class HakemusQuery(hakemusOid: HakemusOid) extends Query
-    private case class ValintatapajonoQuery(hakukohdeOid: HakukohdeOid, jonoOid: ValintatapajonoOid) extends Query
-
-    def sendMailForAll(): List[String] = {
-      collectAndSend(AllQuery, 0, List.empty, List.empty)
+    def sendMailFor(query: MailerQuery): List[String] = {
+      forceResendIfAppropriate(query)
+      collectAndSend(query, 0, List.empty, List.empty)
     }
 
-    def sendMailForHaku(hakuOid: HakuOid): List[String] = {
-      collectAndSend(HakuQuery(hakuOid), 0, List.empty, List.empty)
+    private def forceResendIfAppropriate(query: MailerQuery): Unit = {
+      query match {
+        case HakukohdeQuery(hakukohdeOid) =>
+          mailPoller.deleteMailEntries(hakukohdeOid)
+        case ValintatapajonoQuery(hakukohdeOid, jonoOid) =>
+          mailPoller.deleteMailEntries(hakukohdeOid)
+        case HakemusQuery(hakemusOid) =>
+          mailPoller.deleteMailEntries(hakemusOid)
+        case _ =>
+          ()
+      }
     }
 
-    def sendMailForHakukohde(hakukohdeOid: HakukohdeOid): List[String] = {
-      mailPoller.deleteMailEntries(hakukohdeOid)
-      collectAndSend(HakukohdeQuery(hakukohdeOid), 0, List.empty, List.empty)
-    }
+    private def collectAndSend(query: MailerQuery, batchNr: Int, ids: List[String], batch: List[Ilmoitus]): List[String] = {
+      def handleBatchAndContinue(currentBatch: List[Ilmoitus], isPollingComplete: Boolean): List[String] = {
+        if (currentBatch.size >= settings.emailBatchSize) {
+          logger.info(s"Email batch size exceeded. Sending batch nr. $batchNr")
+          val batchIds: List[String] = sendAndConfirm(currentBatch)
+          collectAndSend(query, batchNr + 1, batchIds, List.empty)
+        } else if (!isPollingComplete) {
+          logger.info(s"Time limit for single batch retrieval exceeded. Sending batch nr. $batchNr")
+          val batchIds: List[String] = sendAndConfirm(currentBatch)
+          collectAndSend(query, batchNr + 1, batchIds, List.empty)
+        } else {
+          logger.info(s"Email batch size not exceeded. (${currentBatch.size} < ${settings.emailBatchSize})")
+          collectAndSend(query, batchNr, ids, currentBatch)
+        }
+      }
 
-    def sendMailForValintatapajono(hakukohdeOid: HakukohdeOid, jonoOid: ValintatapajonoOid): List[String] = {
-      mailPoller.deleteMailEntries(hakukohdeOid)
-      collectAndSend(ValintatapajonoQuery(hakukohdeOid, jonoOid), 0, List.empty, List.empty)
-    }
-
-    def sendMailForHakemus(hakemusOid: HakemusOid): List[String] = {
-      mailPoller.deleteMailEntries(hakemusOid)
-      collectAndSend(HakemusQuery(hakemusOid), 0, List.empty, List.empty)
-    }
-
-    private def collectAndSend(query: Query, batchNr: Int, ids: List[String], batch: List[Ilmoitus]): List[String] = {
       def sendAndConfirm(currentBatch: List[Ilmoitus]): List[String] = {
         val groupedlmoituses = helper.splitAndGroupIlmoitus(currentBatch)
 
@@ -71,36 +74,22 @@ trait MailerComponent {
         ids ++ sentIds
       }
 
-      logger.info("Fetching recipients from valinta-tulos-service")
+      logger.info("Polling for recipients")
       val newPollResult: PollResult = fetchRecipientBatch(query)
       val newBatch = newPollResult.mailables
       logger.info(s"Found ${newBatch.size} to send. " +
-        s"complete == ${newPollResult.complete}, " +
+        s"isPollingComplete == ${newPollResult.isPollingComplete}, " +
         s"candidatesProcessed == ${newPollResult.candidatesProcessed}, " +
         s"last poll started == ${newPollResult.started}")
       newBatch.foreach(ilmoitus => logger.info("Found " + ilmoitus.toString))
 
       if (newBatch.nonEmpty) {
-        val currentBatch = batch ::: newBatch
-        val currentBatchSize: Int = currentBatch.size
-        val sendBatchSize: Int = settings.emailBatchSize
-        if (currentBatchSize >= sendBatchSize) {
-          logger.info(s"Email batch size exceeded. Sending batch nr. $batchNr")
-          val batchIds: List[String] = sendAndConfirm(currentBatch)
-          collectAndSend(query, batchNr + 1, batchIds, List.empty)
-        } else if (!newPollResult.complete) {
-          logger.info(s"Time limit for single batch retrieval exceeded. Sending batch nr. $batchNr")
-          val batchIds: List[String] = sendAndConfirm(currentBatch)
-          collectAndSend(query, batchNr + 1, batchIds, List.empty)
-        } else {
-          logger.info(s"Email batch size not exceeded. ($currentBatchSize < $sendBatchSize)")
-          collectAndSend(query, batchNr, ids, currentBatch)
-        }
+        handleBatchAndContinue(batch ::: newBatch, newPollResult.isPollingComplete)
       } else {
-        if (batch.nonEmpty && newPollResult.complete) {
+        if (batch.nonEmpty && newPollResult.isPollingComplete) {
           logger.info("Last batch fetched")
           sendAndConfirm(batch)
-        } else if (newPollResult.complete) {
+        } else if (newPollResult.isPollingComplete) {
           logger.info("Polling complete and all batches processed, stopping")
           ids
         } else {
@@ -131,7 +120,7 @@ trait MailerComponent {
       }
     }
 
-    private def fetchRecipientBatch(query: Query): PollResult = {
+    private def fetchRecipientBatch(query: MailerQuery): PollResult = {
       query match {
         case AllQuery =>
           mailPoller.pollForAllMailables(mailDecorator, mailablesLimit, timeLimit)
@@ -154,12 +143,16 @@ trait MailerComponent {
       mailPoller.markAsSent(recipients)
     }
   }
+
 }
 
 trait Mailer {
-  def sendMailForAll(): List[String]
-  def sendMailForHaku(hakuOid: HakuOid): List[String]
-  def sendMailForHakukohde(hakukohdeOid: HakukohdeOid): List[String]
-  def sendMailForHakemus(hakemusOid: HakemusOid): List[String]
-  def sendMailForValintatapajono(hakukohdeOid: HakukohdeOid, jonoOid: ValintatapajonoOid): List[String]
+  def sendMailFor(query: MailerQuery): List[String]
 }
+
+sealed trait MailerQuery
+case object AllQuery extends MailerQuery
+case class HakuQuery(hakuOid: HakuOid) extends MailerQuery
+case class HakukohdeQuery(hakukohdeOid: HakukohdeOid) extends MailerQuery
+case class HakemusQuery(hakemusOid: HakemusOid) extends MailerQuery
+case class ValintatapajonoQuery(hakukohdeOid: HakukohdeOid, jonoOid: ValintatapajonoOid) extends MailerQuery
