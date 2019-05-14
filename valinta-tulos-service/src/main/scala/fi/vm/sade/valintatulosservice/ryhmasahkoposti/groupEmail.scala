@@ -37,14 +37,10 @@ object VTEmailerReplacement {
 
 object VTRecipient extends Logging {
   def apply(valintatulosRecipient: Ilmoitus, language: String): Recipient = {
-
     def getTranslation(rawTranslations: Map[String, String]) = {
-
       def fixKey(key: String) = key.toLowerCase.replace("kieli_", "")
 
-      val translations = rawTranslations
-        .map { case (key, value) => (fixKey(key), value) }
-
+      val translations = rawTranslations.map { case (key, value) => (fixKey(key), value) }
       translations.get(language.toLowerCase).orElse(translations.get("fi")).getOrElse(translations.head._2)
     }
 

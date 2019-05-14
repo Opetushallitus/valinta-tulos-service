@@ -102,7 +102,3 @@ ryhmasahkoposti.service.email.url=https://{{host_virkailija}}/ryhmasahkoposti-se
 # Valintatulokset
 valinta-tulos-service.batch.size={{ vt_batch_size | default('5') }}
 valinta-tulos-service.batch.limit.minutes={{ valinta_tulos_email_batch_limit_minutes | default('5') }}
-
-# SÄHKÖPOSTIEN LÄHETYSKUITTAUS
-valinta-tulos-service.http.retries={{ valinta_tulos_emailer_http_retries_count | default('3') }}
-valinta-tulos-service.http.retry.sleep.seconds={{ valinta_tulos_email_http_retries_delay_seconds | default('10') }}

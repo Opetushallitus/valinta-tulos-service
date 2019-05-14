@@ -179,7 +179,7 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
     } else if (acc.exceeds(timeLimit)) {
       logger.warn(s"Finding $totalMailablesWanted mailables has taken more than the time limit of $timeLimit . " +
         s"Returning intermediate result of ${acc.size}, filtered from ${acc.candidatesProcessed} candidates. " +
-        s"valinta-tulos-emailer should make another request to process all candidates.")
+        s"Emailer should be run again to process all candidates.")
       acc
     } else {
       val mailablesNeeded = totalMailablesWanted - acc.size

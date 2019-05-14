@@ -12,9 +12,8 @@ class MailerHelper {
     */
   def splitAndGroupIlmoitus(batch: List[Ilmoitus]): Map[(String, LahetysSyy), List[Ilmoitus]] = {
     // If same ilmoitus has multiple LahetysSyy among its hakukohde, split it to multiple Ilmoitus
-    val splitedIlmoituses = batch.flatMap(splitIlmoitusByLahetysSyy)
-    val groupedlmoituses = splitedIlmoituses.groupBy(asiointikieliAndLahetysSyy)
-    groupedlmoituses
+    val splitIlmoituses = batch.flatMap(splitIlmoitusByLahetysSyy)
+    splitIlmoituses.groupBy(asiointikieliAndLahetysSyy)
   }
 
   private def asiointikieliAndLahetysSyy(x: Ilmoitus): (String, LahetysSyy) = (x.asiointikieli, x.hakukohteet.head.lahetysSyy)

@@ -1,17 +1,14 @@
 package fi.vm.sade.valintatulosservice.config
 
-import java.io.FileInputStream
-import java.util.Properties
-
 import fi.vm.sade.utils.config.{ApplicationSettingsLoader, ConfigTemplateProcessor}
+import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.vastaanottomeili.{MailDecorator, MailPoller}
-import org.apache.log4j.PropertyConfigurator
 
-object EmailerRegistry {
+object EmailerRegistry extends Logging {
   def getProfileProperty: String = System.getProperty("vtemailer.profile", "default")
 
   def fromString(profile: String)(mailPoller: MailPoller, mailDecorator: MailDecorator): EmailerRegistry = {
-    println("Using vtemailer.profile=" + profile)
+    logger.info("Using vtemailer.profile=" + profile)
     profile match {
       case "default" => new Default(mailPoller, mailDecorator)
       case "it" => new IT(mailPoller, mailDecorator)
@@ -26,19 +23,13 @@ object EmailerRegistry {
     def configFile: String = System.getProperty("user.home") + "/oph-configuration/valinta-tulos-service.properties"
 
     lazy val settings: EmailerConfig = ApplicationSettingsLoader.loadSettings(configFile)(EmailerConfigParser())
-
-    def log4jconfigFile: String = System.getProperty("user.home") + "/oph-configuration/log4j.properties"
-
-    val log4jproperties = new Properties()
-    log4jproperties.load(new FileInputStream(log4jconfigFile))
-    PropertyConfigurator.configure(log4jproperties)
   }
 
   /**
     * IT (integration test) profiles.
     */
   class IT(val mailPoller: MailPoller, val mailDecorator: MailDecorator) extends EmailerRegistry with StubbedGroupEmail {
-    println("Using template variables from " + templateAttributesFile)
+    logger.info("Using template variables from " + templateAttributesFile)
     lazy val settings: EmailerConfig = loadSettings
 
     def loadSettings: EmailerConfig = ConfigTemplateProcessor.createSettings("valinta-tulos-service", templateAttributesFile)(EmailerConfigParser())

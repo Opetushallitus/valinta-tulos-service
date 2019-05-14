@@ -16,7 +16,6 @@ class HakuNotFoundException(message: String) extends RuntimeException(message)
 class MailDecorator(hakuService: HakuService,
                     oppijanTunnistusService: OppijanTunnistusService) extends Logging {
   def statusToMail(status: HakemusMailStatus): Option[Ilmoitus] = {
-    timed(s"Vastaanottopostien status muuntaminen mailiksi hakemukselle ${status.hakemusOid}", 50) {
       if (status.anyMailToBeSent) {
         try {
           val mailables = status.hakukohteet.filter(_.shouldMail)
@@ -45,7 +44,6 @@ class MailDecorator(hakuService: HakuService,
       } else {
         None
       }
-    }
   }
 
   def toHakukohde(hakukohdeMailStatus: HakukohdeMailStatus): Hakukohde = {
