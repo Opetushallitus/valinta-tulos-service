@@ -8,6 +8,8 @@ import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatapajono, 
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.StoreSijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import org.json4s.JsonDSL._
+import org.json4s.native.JsonMethods._
 import slick.dbio.DBIOAction
 import slick.jdbc.PostgresProfile.api._
 
@@ -421,6 +423,7 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
              )"""
 
     val insertSivssnovJonosija: DBIOAction[AnyVal, NoStream, Effect] = sivssnovSijoittelunViimeistenVarallaolijoidenJonosija.map { jonosijaTieto: Valintatapajono.JonosijaTieto =>
+      val hakemusOidsJson: String = compact(render(jonosijaTieto.hakemusOidit.asScala))
       sqlu"""insert into sivssnov_sijoittelun_varasijatayton_rajoitus (
              valintatapajono_oid,
              sijoitteluajo_id,
@@ -436,7 +439,7 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
              ${jonosijaTieto.jonosija},
              ${jonosijaTieto.tasasijaJonosija},
              ${Valinnantila(jonosijaTieto.tila).toString}::valinnantila,
-             ${jonosijaTieto.hakemusOidit}
+             to_json(${hakemusOidsJson}::json)
          )"""
     }.getOrElse(DBIOAction.successful())
     ensureValintaesitys.andThen(insert).andThen(insertSivssnovJonosija)

@@ -18,6 +18,8 @@ import org.specs2.specification.BeforeAfterExample
 import slick.jdbc.GetResult
 import slick.jdbc.PostgresProfile.api.actionBasedSQLInterpolation
 
+import scala.collection.JavaConverters._
+
 @RunWith(classOf[JUnitRunner])
 class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterExample
   with Logging with PerformanceLogger {
@@ -257,8 +259,8 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
     val wrapper = loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")
     val jono: Valintatapajono = wrapper.hakukohteet.head.getValintatapajonot.get(0)
     jono.setSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa(true)
-    val hakemusOidsString = jono.getHakemukset.get(0).getHakemusOid
-    jono.setSivssnovSijoittelunVarasijataytonRajoitus(java.util.Optional.of(new JonosijaTieto(79, 2, HYVAKSYTTY, hakemusOidsString)))
+    val hakemusOids = jono.getHakemukset.asScala.map(_.getHakemusOid).asJava
+    jono.setSivssnovSijoittelunVarasijataytonRajoitus(java.util.Optional.of(new JonosijaTieto(79, 2, HYVAKSYTTY, hakemusOids)))
     singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
     assertSijoittelu(wrapper)
   }

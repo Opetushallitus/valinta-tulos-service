@@ -11,6 +11,7 @@ import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Tasasijasaanto, _}
 import org.json4s.DefaultFormats
+import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods._
 import org.specs2.matcher.MatchResult
 import org.specs2.mutable.Specification
@@ -365,8 +366,9 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
       sql"""select valintatapajono_oid, hakukohde_oid, jonosija, tasasijajonosija, tila, hakemusoidit
             from sivssnov_sijoittelun_varasijatayton_rajoitus where hakukohde_oid = ${hakukohdeOid}""".as[(String, String, Int, Int, String, String)])
     sivssnovSijoittelunAlimmatVarallaolijat.foreach { t =>
-      valintatapajonot.find(_.getOid == t._1).foreach {
-        _.setSivssnovSijoittelunVarasijataytonRajoitus(java.util.Optional.of(new JonosijaTieto(t._3, t._4, Valinnantila(t._5).valinnantila, t._6)))
+      valintatapajonot.find(_.getOid == t._1).foreach { jono =>
+        val hakemusOids: Seq[String] = JsonMethods.parse(t._6).extract[Seq[String]]
+        jono.setSivssnovSijoittelunVarasijataytonRajoitus(java.util.Optional.of(new JonosijaTieto(t._3, t._4, Valinnantila(t._5).valinnantila, hakemusOids.asJava)))
       }
     }
 

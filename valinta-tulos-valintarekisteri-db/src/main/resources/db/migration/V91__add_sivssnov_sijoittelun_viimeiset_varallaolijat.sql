@@ -6,7 +6,7 @@ create table sivssnov_sijoittelun_varasijatayton_rajoitus
   jonosija integer not null,
   tasasijajonosija integer not null,
   tila valinnantila not null,
-  hakemusoidit character varying
+  hakemusoidit jsonb
 );
 
 alter table sivssnov_sijoittelun_varasijatayton_rajoitus add primary key(valintatapajono_oid, sijoitteluajo_id, hakukohde_oid);

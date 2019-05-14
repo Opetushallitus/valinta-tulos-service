@@ -51,7 +51,7 @@ object SijoitteluWrapper extends json4sCustomFormats {
                 new JonosijaTieto(jonosija,
                   (sivssnovRaja \ "tasasijaJonosija").extract[Int],
                   HakemuksenTila.valueOf((sivssnovRaja \ "tila").extract[String]),
-                  (sivssnovRaja \ "hakemusOidit").extract[String])
+                  (sivssnovRaja \ "hakemusOidit").extract[Seq[String]].asJava)
               }
             }
             valintatapajonoExt.setSivssnovSijoittelunVarasijataytonRajoitus(sivssnovRajattuVarasijaRaja.asJava)
