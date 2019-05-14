@@ -57,7 +57,7 @@
           "eiVarasijatayttoa" : false,
           "kaikkiEhdonTayttavatHyvaksytaan" : false,
           "poissaOlevaTaytto" : true,
-          "varasijat" : 0,
+          "varasijat" : 9,
           "varasijaTayttoPaivat" : 0,
           "varasijojaTaytetaanAsti" : {
             "$date": "2016-08-15T12:00:00.000Z"

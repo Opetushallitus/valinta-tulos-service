@@ -61,7 +61,7 @@
           "prioriteetti": 0,
           "aloituspaikat": 10,
           "alkuperaisetAloituspaikat": 10,
-          "eiVarasijatayttoa": false,
+          "eiVarasijatayttoa": true,
           "kaikkiEhdonTayttavatHyvaksytaan": false,
           "poissaOlevaTaytto": true,
           "varasijat": 0,

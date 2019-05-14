@@ -4,7 +4,7 @@ import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import fi.vm.sade.sijoittelu.domain.HakemuksenTila.VARALLA
+import fi.vm.sade.sijoittelu.domain.HakemuksenTila.HYVAKSYTTY
 import fi.vm.sade.sijoittelu.domain.Valintatapajono.JonosijaTieto
 import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, Valintatapajono}
 import fi.vm.sade.utils.slf4j.Logging
@@ -154,7 +154,7 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       startNewSijoittelu(wrapper)
       wrapper.hakukohteet.head.getValintatapajonot.asScala.find(_.getOid.equals("14090336922663576781797489829887")
       ).get.getHakemukset.asScala.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(h => {
-        h.setTila(HakemuksenTila.HYVAKSYTTY)
+        h.setTila(HYVAKSYTTY)
       })
       wrapper.valintatulokset.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(vt => {
         vt.setJulkaistavissa(false, "", "")
@@ -258,7 +258,7 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
     val jono: Valintatapajono = wrapper.hakukohteet.head.getValintatapajonot.get(0)
     jono.setSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa(true)
     val hakemusOidsString = jono.getHakemukset.get(0).getHakemusOid
-    jono.setSivssnovSijoittelunVarasijataytonRajoitus(java.util.Optional.of(new JonosijaTieto(79, 2, VARALLA, hakemusOidsString)))
+    jono.setSivssnovSijoittelunVarasijataytonRajoitus(java.util.Optional.of(new JonosijaTieto(79, 2, HYVAKSYTTY, hakemusOidsString)))
     singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
     assertSijoittelu(wrapper)
   }
