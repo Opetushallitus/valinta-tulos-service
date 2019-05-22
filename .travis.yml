@@ -59,7 +59,7 @@ deploy:
       mvn deploy -pl fi.vm.sade:valinta-tulos-service-parent,valinta-tulos-valintarekisteri-db,valinta-tulos-service -DskipTests --settings ci-tools/common/maven-settings.xml
     skip_cleanup: true
     on:
-      branch: master
+      branch: VTKU-29
   - provider: script
     script:
       ./ci-tools/build/upload-image.sh valinta-tulos-service;

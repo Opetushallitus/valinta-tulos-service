@@ -13,12 +13,6 @@ class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, va
   lazy val kaikkiHakemukset = sijoitteluRepository.getHakukohteenHakemukset(sijoitteluajoId, hakukohde.oid)
   lazy val tilankuvausHashit = kaikkiHakemukset.map(_.tilankuvausHash).distinct
 
-  def getPistetiedotGroupedByValintatapajonoOidAndHakemusOid = {
-    sijoitteluRepository.getHakukohteenPistetiedot(sijoitteluajoId, hakukohde.oid)
-      .groupBy(_.valintatapajonoOid)
-      .map(t => (t._1, t._2.groupBy(_.hakemusOid)))
-  }
-
   def getTilahistoriatGroupedByValintatapajonoOidAndHakemusOid = {
     sijoitteluRepository.getHakukohteenTilahistoriat(sijoitteluajoId, hakukohde.oid)
       .groupBy(_.valintatapajonoOid)
@@ -26,7 +20,6 @@ class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, va
   }
 
   val valintatapajonot = sijoitteluRepository.getHakukohteenValintatapajonot(sijoitteluajoId, hakukohde.oid)
-  val pistetiedot = getPistetiedotGroupedByValintatapajonoOidAndHakemusOid
   val tilahistoriat = getTilahistoriatGroupedByValintatapajonoOidAndHakemusOid
   val hakijaryhmat = sijoitteluRepository.getHakukohteenHakijaryhmat(sijoitteluajoId, hakukohde.oid)
   val hakijaRyhmistaHyvaksytytHakemukset = sijoitteluRepository.getSijoitteluajonHakijaryhmistaHyvaksytytHakemukset(sijoitteluajoId, hakijaryhmat.map(_.oid))
@@ -45,8 +38,7 @@ class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, va
           h.dto(
             hakijaryhmatJoistaHakemuksetOnHyvaksytty.getOrElse(h.hakemusOid, Set()),
             tilankuvaukset.get(h.tilankuvausHash),
-            tilahistoriat.getOrElse(h.valintatapajonoOid, Map()).getOrElse(h.hakemusOid, List()).map(_.dto),
-            pistetiedot.getOrElse(h.valintatapajonoOid, Map()).getOrElse(h.hakemusOid, List()).map(_.dto)
+            tilahistoriat.getOrElse(h.valintatapajonoOid, Map()).getOrElse(h.hakemusOid, List()).map(_.dto)
           )
         )
       )),
@@ -61,8 +53,7 @@ class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, va
           h.entity(
             hakijaryhmatJoistaHakemuksetOnHyvaksytty(h.hakemusOid),
             tilankuvaukset.get(h.tilankuvausHash),
-            tilahistoriat.getOrElse(h.valintatapajonoOid, Map()).getOrElse(h.hakemusOid, List()).map(_.entity),
-            pistetiedot.getOrElse(h.valintatapajonoOid, Map()).getOrElse(h.hakemusOid, List()).map(_.entity)
+            tilahistoriat.getOrElse(h.valintatapajonoOid, Map()).getOrElse(h.hakemusOid, List()).map(_.entity)
           )
         )
       )),
@@ -78,7 +69,6 @@ class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository, 
   val tilankuvaukset = sijoitteluRepository.getValinnantilanKuvauksetForHakemukset(sijoitteluajonHakemukset)
   val hakijaryhmatJoistaHakemuksetOnHyvaksytty = sijoitteluRepository.getHakijaryhmatJoistaHakemuksetOnHyvaksytty(sijoitteluajoId)
   val tilahistoriat = sijoitteluRepository.getSijoitteluajonTilahistoriatGroupByHakemusValintatapajono(sijoitteluajoId)
-  val pistetiedot = sijoitteluRepository.getSijoitteluajonPistetiedotGroupByHakemusValintatapajono(sijoitteluajoId)
 
   val valintatapajonot = sijoitteluRepository.getSijoitteluajonValintatapajonotGroupedByHakukohde(sijoitteluajoId)
   val hakijaryhmat = sijoitteluRepository.getSijoitteluajonHakijaryhmat(sijoitteluajoId)
@@ -91,8 +81,7 @@ class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository, 
       (h.valintatapajonoOid, h.entity(
         hakijaryhmatJoistaHakemuksetOnHyvaksytty.getOrElse(h.hakemusOid, Set()),
         tilankuvaukset.get(h.tilankuvausHash),
-        tilahistoriat.getOrElse((h.hakemusOid, h.valintatapajonoOid), List()).map(_.entity).sortBy(_.getLuotu.getTime),
-        pistetiedot.getOrElse((h.hakemusOid, h.valintatapajonoOid), List()).map(_.entity)
+        tilahistoriat.getOrElse((h.hakemusOid, h.valintatapajonoOid), List()).map(_.entity).sortBy(_.getLuotu.getTime)
       ))
     ).groupBy(_._1).mapValues(_.map(_._2))
 
@@ -111,8 +100,7 @@ class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository, 
       h.dto(
         hakijaryhmatJoistaHakemuksetOnHyvaksytty.getOrElse(h.hakemusOid, Set()),
         tilankuvaukset.get(h.tilankuvausHash),
-        tilahistoriat.getOrElse((h.hakemusOid, h.valintatapajonoOid), List()).map(_.dto).sortBy(_.getLuotu.getTime),
-        pistetiedot.getOrElse((h.hakemusOid, h.valintatapajonoOid), List()).map(_.dto)
+        tilahistoriat.getOrElse((h.hakemusOid, h.valintatapajonoOid), List()).map(_.dto).sortBy(_.getLuotu.getTime)
       )
     ).groupBy(_.getValintatapajonoOid)
 

@@ -35,12 +35,6 @@ class ValintarekisteriDbReadSijoitteluSpec extends Specification with ITSetup wi
       res.head.hakutoive mustEqual Some(6)
     }
 
-    "get hakijan pistetiedot" in {
-      val res = singleConnectionValintarekisteriDb.getHakemuksenPistetiedotSijoittelussa(hakemusOid, 1476936450191L)
-      res.size mustEqual 1
-      res.head.tunniste mustEqual "85e2d263-d57d-46e3-3069-651c733c64d8"
-    }
-
     "get latest sijoitteluajoid for haku" in {
       singleConnectionValintarekisteriDb.getLatestSijoitteluajoId(HakuOid("1.2.246.562.29.75203638285")).get mustEqual 1476936450191L
     }
@@ -103,15 +97,6 @@ class ValintarekisteriDbReadSijoitteluSpec extends Specification with ITSetup wi
       valintatapajonot.head.oid mustEqual ValintatapajonoOid("14538080612623056182813241345174")
       valintatapajonot.head.nimi mustEqual "Marata YAMK yhteispisteet (yhteistyö)"
       valintatapajonot.head.sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa mustEqual true
-    }
-
-    "get hakukohteen pistetiedot" in {
-      val pistetiedot = singleConnectionValintarekisteriDb.getHakukohteenPistetiedot(1476936450191L, HakukohdeOid("1.2.246.562.20.26643418986"))
-      pistetiedot.size mustEqual 15
-      pistetiedot.map(_.valintatapajonoOid).distinct mustEqual List(ValintatapajonoOid("14538080612623056182813241345174"))
-      pistetiedot.filter(_.osallistuminen == "OSALLISTUI").size mustEqual 9
-      pistetiedot.filter(_.osallistuminen == "MERKITSEMATTA").size mustEqual 4
-      pistetiedot.filter(_.osallistuminen == "EI_OSALLISTUNUT").size mustEqual 2
     }
 
     "get hakukohteen hakemukset" in {

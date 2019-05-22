@@ -74,14 +74,6 @@ trait ValintarekisteriResultExtractors {
     hakijaryhmaTyyppikoodiUri = r.nextStringOption
   ))
 
-  protected implicit val getPistetiedotResult = GetResult(r => PistetietoRecord(
-    valintatapajonoOid = ValintatapajonoOid(r.nextString),
-    hakemusOid = HakemusOid(r.nextString),
-    tunniste = r.nextString,
-    arvo = r.nextString,
-    laskennallinenArvo = r.nextString,
-    osallistuminen = r.nextString))
-
   protected implicit val getSijoitteluajoResult = GetResult(r => SijoitteluajoRecord(
     sijoitteluajoId = r.nextLong,
     hakuOid = HakuOid(r.nextString),

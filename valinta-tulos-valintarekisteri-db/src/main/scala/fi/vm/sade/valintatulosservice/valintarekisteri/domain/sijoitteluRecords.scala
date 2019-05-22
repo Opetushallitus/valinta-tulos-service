@@ -64,11 +64,10 @@ case class HakijaRecord(hakemusOid: HakemusOid, hakijaOid: String) {
 
 case class HakutoiveRecord(hakemusOid: HakemusOid, hakutoive: Option[Int], hakukohdeOid: HakukohdeOid, kaikkiJonotsijoiteltu: Option[Boolean]) {
 
-  def dto(vastaanottotieto:fi.vm.sade.sijoittelu.domain.ValintatuloksenTila, valintatapajonot:List[HakutoiveenValintatapajonoDTO], pistetiedot:List[PistetietoDTO], hakijaryhmat:List[HakutoiveenHakijaryhmaDTO]): HakutoiveDTO = {
+  def dto(vastaanottotieto:fi.vm.sade.sijoittelu.domain.ValintatuloksenTila, valintatapajonot:List[HakutoiveenValintatapajonoDTO], hakijaryhmat:List[HakutoiveenHakijaryhmaDTO]): HakutoiveDTO = {
     val hakutoiveDTO = new HakutoiveDTO
     hakutoive.foreach(hakutoiveDTO.setHakutoive(_))
     hakutoiveDTO.setHakukohdeOid(hakukohdeOid.toString)
-    hakutoiveDTO.setPistetiedot(pistetiedot.asJava)
     hakutoiveDTO.setHakutoiveenValintatapajonot(valintatapajonot.asJava)
     hakutoiveDTO.setHakijaryhmat(hakijaryhmat.asJava)
     hakutoiveDTO.setVastaanottotieto(ValintatuloksenTila.valueOf(vastaanottotieto.toString))
@@ -217,44 +216,6 @@ case class HakutoiveenHakijaryhmaRecord(oid:String, nimi:String, hakukohdeOid: H
   }
 }
 
-case class PistetietoRecord(valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, tunniste:String,
-                            arvo:String, laskennallinenArvo:String, osallistuminen:String) {
-  def dto: PistetietoDTO = {
-    val pistetietoDTO = new PistetietoDTO
-    pistetietoDTO.setArvo(arvo)
-    pistetietoDTO.setLaskennallinenArvo(laskennallinenArvo)
-    pistetietoDTO.setOsallistuminen(osallistuminen)
-    pistetietoDTO.setTunniste(tunniste)
-    pistetietoDTO
-  }
-
-  def entity: Pistetieto = {
-    val pistetieto = new Pistetieto
-    pistetieto.setArvo(arvo)
-    pistetieto.setLaskennallinenArvo(laskennallinenArvo)
-    pistetieto.setOsallistuminen(osallistuminen)
-    pistetieto.setTunniste(tunniste)
-    pistetieto
-  }
-}
-
-case class HakutoiveenPistetietoRecord(tunniste:String, arvo:String, laskennallinenArvo:String, osallistuminen:String) {
-  def dto: PistetietoDTO = {
-    val pistetietoDTO = new PistetietoDTO
-    pistetietoDTO.setArvo(arvo)
-    pistetietoDTO.setLaskennallinenArvo(laskennallinenArvo)
-    pistetietoDTO.setOsallistuminen(osallistuminen)
-    pistetietoDTO.setTunniste(tunniste)
-    pistetietoDTO
-  }
-}
-
-object HakutoiveenPistetietoRecord {
-  def apply(pistetietoRecord: PistetietoRecord):HakutoiveenPistetietoRecord = HakutoiveenPistetietoRecord(
-    pistetietoRecord.tunniste, pistetietoRecord.arvo, pistetietoRecord.laskennallinenArvo, pistetietoRecord.osallistuminen
-  )
-}
-
 case class SijoittelunHakukohdeRecord(sijoitteluajoId: Long, oid: HakukohdeOid, kaikkiJonotsijoiteltu: Boolean) {
 
   def dto(valintatapajonot:List[ValintatapajonoDTO], hakijaryhmat:List[HakijaryhmaDTO]): HakukohdeDTO = {
@@ -374,8 +335,7 @@ case class HakemusRecord(hakijaOid:Option[String], hakemusOid: HakemusOid, piste
 
   def dto(hakijaryhmaOids:Set[String],
           tilankuvaus: Option[TilankuvausRecord],
-          tilahistoria:List[TilaHistoriaDTO],
-          pistetiedot:List[PistetietoDTO]): HakemusDTO = {
+          tilahistoria:List[TilaHistoriaDTO]): HakemusDTO = {
 
     val hakemusDTO = new HakemusDTO
     hakijaOid.foreach(hakemusDTO.setHakijaOid)
@@ -393,14 +353,12 @@ case class HakemusRecord(hakijaOid:Option[String], hakemusOid: HakemusOid, piste
     hakemusDTO.setSiirtynytToisestaValintatapajonosta(siirtynytToisestaValintatapaJonosta)
     hakemusDTO.setValintatapajonoOid(valintatapajonoOid.toString)
     hakemusDTO.setTilaHistoria(tilahistoria.asJava)
-    hakemusDTO.getPistetiedot.addAll(pistetiedot.asJava)
     hakemusDTO
   }
 
   def entity(hakijaryhmaOids:Set[String],
              tilankuvaus: Option[TilankuvausRecord],
-             tilahistoria:List[TilaHistoria],
-             pistetiedot:List[Pistetieto]): Hakemus = {
+             tilahistoria:List[TilaHistoria]): Hakemus = {
 
     val hakemus = new Hakemus
     hakijaOid.foreach(hakemus.setHakijaOid)
@@ -421,7 +379,6 @@ case class HakemusRecord(hakijaOid:Option[String], hakemusOid: HakemusOid, piste
     hakemus.setSiirtynytToisestaValintatapajonosta(siirtynytToisestaValintatapaJonosta)
     //hakemus.setValintatapajonoOid(valintatapajonoOid)
     hakemus.setTilaHistoria(tilahistoria.asJava)
-    hakemus.getPistetiedot.addAll(pistetiedot.asJava)
     hakemus
   }
 }

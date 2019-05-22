@@ -329,45 +329,6 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
               where hakijaryhma_oid = ${hakijaryhmaOid} and sijoitteluajo_id = ${sijoitteluajoId} and hyvaksytty_hakijaryhmasta = TRUE""".as[HakemusOid]).toList
     }
 
-  override def getSijoitteluajonPistetiedot(sijoitteluajoId:Long): List[PistetietoRecord] =
-    timed(s"Sijoitteluajon $sijoitteluajoId pistetietojen haku", 100) {
-      runBlocking(sql"""
-         select valintatapajono_oid, hakemus_oid, tunniste, arvo, laskennallinen_arvo, osallistuminen
-         from  pistetiedot
-         where sijoitteluajo_id = ${sijoitteluajoId}""".as[PistetietoRecord],
-        Duration(2, TimeUnit.MINUTES)
-      ).toList
-    }
-
-  override def getHakukohteenPistetiedot(sijoitteluajoId: Long, hakukohdeOid: HakukohdeOid): List[PistetietoRecord] =
-    timed(s"Sijoitteluajon $sijoitteluajoId pistetietojen haku hakukohteelle $hakukohdeOid", 100) {
-      runBlocking(sql"""
-         select p.valintatapajono_oid, p.hakemus_oid, p.tunniste, p.arvo, p.laskennallinen_arvo, p.osallistuminen
-         from valintatapajonot v
-         inner join pistetiedot p on v.oid = p.valintatapajono_oid and v.sijoitteluajo_id = p.sijoitteluajo_id
-         where v.sijoitteluajo_id = ${sijoitteluajoId} and v.hakukohde_oid = ${hakukohdeOid}""".as[PistetietoRecord],
-        Duration(1, TimeUnit.MINUTES)
-      ).toList
-    }
-
-  override def getSijoitteluajonPistetiedotInChunks(sijoitteluajoId:Long, chunkSize:Int = 200): List[PistetietoRecord] =
-    timed(s"Sijoitteluajon $sijoitteluajoId pistetietojen haku ($chunkSize kpl kerrallaan)", 100 ) {
-      def readPistetiedot(offset:Int = 0): List[PistetietoRecord] = {
-        runBlocking(sql"""
-                       with v as (
-                         select oid from valintatapajonot where sijoitteluajo_id = ${sijoitteluajoId}
-                         order by oid desc limit ${chunkSize} offset ${offset} )
-                         select p.valintatapajono_oid, p.hakemus_oid, p.tunniste, p.arvo, p.laskennallinen_arvo, p.osallistuminen
-                                  from  pistetiedot p
-                                  inner join v on p.valintatapajono_oid = v.oid
-                                  where p.sijoitteluajo_id = ${sijoitteluajoId}""".as[PistetietoRecord]).toList match {
-          case result if result.isEmpty => result
-          case result => result ++ readPistetiedot(offset + chunkSize)
-        }
-      }
-      readPistetiedot()
-    }
-
   override def isJonoSijoiteltuByOid(jonoOid: ValintatapajonoOid): Boolean = {
     val exists: Boolean = timed(s"getValintatapajonoByOidAndHaku", 100) {
       runBlocking(sql"""
