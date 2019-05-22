@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import fi.vm.sade.oppijantunnistus.OppijanTunnistusService
 import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.utils.tcp.PortChecker
 import fi.vm.sade.valintatulosservice.ValintatulosService
 import fi.vm.sade.valintatulosservice.config.EmailerRegistry.{EmailerRegistry, IT}
 import fi.vm.sade.valintatulosservice.config.{EmailerRegistry, VtsApplicationSettings}
@@ -10,6 +11,7 @@ import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, Vastaanottotila}
+
 import org.apache.log4j._
 import org.apache.log4j.spi.LoggingEvent
 import org.junit.runner.RunWith
@@ -17,8 +19,6 @@ import org.scalatra.test.HttpComponentsClient
 import org.specs2.mock.Mockito
 import org.specs2.mutable._
 import org.specs2.runner.JUnitRunner
-
-import scala.concurrent.duration.Duration
 
 @RunWith(classOf[JUnitRunner])
 class SmokeTest extends Specification with HttpComponentsClient with Mockito with Logging {
@@ -62,7 +62,8 @@ class SmokeTest extends Specification with HttpComponentsClient with Mockito wit
 
   lazy val registry: EmailerRegistry = EmailerRegistry.fromString(Option(System.getProperty("valintatulos.profile")).getOrElse("it"))(mailPoller, mailDecorator)
 
-  override def baseUrl: String = "http://localhost:" + ValintaTulosServiceWarRunner.valintatulosPort + "/valinta-tulos-service"
+  private val valintatulosPort: Int = sys.props.getOrElse("valintatulos.port", PortChecker.findFreeLocalPort.toString).toInt
+  override def baseUrl: String = "http://localhost:" + valintatulosPort + "/valinta-tulos-service"
 
   "Fetch, send and confirm batch" in {
     val appender: TestAppender = new TestAppender
