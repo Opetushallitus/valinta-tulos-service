@@ -88,7 +88,7 @@ omatsivut.oili.hetutonUrl={{oili_hetuton_url}}
 ## Valinta-tulos-emailer
 
 # AJASTUS
-valinta-tulos-service.emailer.cron.string={{ emailer_cron_string | default('0 05 7,19 * * ?') }}
+valinta-tulos-service.emailer.cron.string={{ valintatulosservice_emailer_cron_string | default('0 05 7,19 * * ?') }}
 
 # CAS
 ryhmasahkoposti.cas.service=https://{{host_virkailija}}/ryhmasahkoposti-service/
