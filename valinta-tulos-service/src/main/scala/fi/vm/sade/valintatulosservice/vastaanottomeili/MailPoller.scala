@@ -5,7 +5,6 @@ import java.util.concurrent.TimeUnit.DAYS
 
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.{ValintatulosService, tarjonta}
 import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila.Vastaanotettavuustila
 import fi.vm.sade.valintatulosservice.domain._
@@ -15,6 +14,7 @@ import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import fi.vm.sade.valintatulosservice.{ValintatulosService, tarjonta}
 
 import scala.annotation.tailrec
 import scala.collection.parallel.ForkJoinTaskSupport
@@ -185,6 +185,8 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
       val mailablesNeeded = totalMailablesWanted - acc.size
       var hakukohteesToProcessOnThisIteration = Math.min(Math.max(mailablesNeeded / 10, 1), hakukohdeOids.size)
       val (toPoll, rest) = hakukohdeOids.splitAt(hakukohteesToProcessOnThisIteration)
+      toPoll.tasksupport = hakukohdeOids.tasksupport
+      rest.tasksupport = hakukohdeOids.tasksupport
       val mailablesNeededPerHakukohde = (mailablesNeeded / toPoll.size) + (mailablesNeeded % toPoll.size) :: List.fill(toPoll.size - 1)(mailablesNeeded / toPoll.size)
       assert(mailablesNeededPerHakukohde.size == toPoll.size)
       assert(mailablesNeededPerHakukohde.sum == mailablesNeeded)
