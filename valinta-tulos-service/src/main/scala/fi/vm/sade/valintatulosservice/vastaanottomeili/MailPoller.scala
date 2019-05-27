@@ -30,6 +30,7 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
                  vtsApplicationSettings: VtsApplicationSettings) extends Logging {
 
   private val pollConcurrency: Int = vtsApplicationSettings.mailPollerConcurrency
+  private val pollerTaskSupport = new ForkJoinTaskSupport(new ForkJoinPool(pollConcurrency))
 
   def pollForAllMailables(mailDecorator: MailDecorator, mailablesWanted: Int, timeLimit: Duration): PollResult = {
     val fetchHakusTaskLabel = "Looking for hakus with their hakukohdes to process"
@@ -105,7 +106,7 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
     //käsittely toimii aika kömpelösti kovin pienillä limiteillä.
     val useLimit = Math.max(500, mailablesWanted)
 
-    hakukohdeOidsWithTheirHakuOids.tasksupport = new ForkJoinTaskSupport(new ForkJoinPool(pollConcurrency))
+    hakukohdeOidsWithTheirHakuOids.tasksupport = pollerTaskSupport
     val fetchMailablesTaskLabel = s"Fetching mailables for ${hakukohdeOidsWithTheirHakuOids.size} hakukohdes " +
       s"with poll concurrency of $pollConcurrency, totalMailablesWanted of $useLimit and time limit of $timeLimit"
     logger.info(s"Start: $fetchMailablesTaskLabel")
