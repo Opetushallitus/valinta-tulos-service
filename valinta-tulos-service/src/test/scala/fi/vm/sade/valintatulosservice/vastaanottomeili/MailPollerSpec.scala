@@ -1177,5 +1177,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       ohjausparametritService,
       vtsApplicationSettings
     )
+
+    mailPollerRepository.findHakukohdeOidsCheckedRecently(any[Duration]) returns Set.empty
   }
 }

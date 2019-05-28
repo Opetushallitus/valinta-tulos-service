@@ -19,6 +19,8 @@ trait MailPollerRepository {
 
   def markAsCheckedForEmailing(hakukohdeOid: HakukohdeOid): Unit
 
+  def findHakukohdeOidsCheckedRecently(emptyHakukohdeRecheckInterval: Duration): Set[HakukohdeOid]
+
   def getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid: HakukohdeOid): List[String]
 
   def deleteHakemusMailEntriesForHakemusAndHakukohde(hakemusOid: HakemusOid): Int

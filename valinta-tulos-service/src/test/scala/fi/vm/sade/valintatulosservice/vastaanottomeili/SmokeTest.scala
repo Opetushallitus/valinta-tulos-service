@@ -20,6 +20,8 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable._
 import org.specs2.runner.JUnitRunner
 
+import scala.concurrent.duration.Duration
+
 @RunWith(classOf[JUnitRunner])
 class SmokeTest extends Specification with HttpComponentsClient with Mockito with Logging {
   val hakuService: HakuService = mock[HakuService]
@@ -37,6 +39,8 @@ class SmokeTest extends Specification with HttpComponentsClient with Mockito wit
     oppijanTunnistusService
   )
   private val mailPoller = mock[MailPoller]
+
+  mailPollerRepository.findHakukohdeOidsCheckedRecently(any[Duration]) returns Set.empty
 
   private val hakukohde = Hakukohde(
     HakukohdeOid("hakukohde_oid"),

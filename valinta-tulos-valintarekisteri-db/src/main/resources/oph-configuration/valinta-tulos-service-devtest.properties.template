@@ -46,6 +46,7 @@ valinta-tulos-service.valintarekisteri.use-sijoittelu-mongo=true
 
 # MailPoller
 valinta-tulos-service.mail-poller.concurrency={{valintatulosservice_mail_poller_concurrency | default('1') }}
+valinta-tulos-service.mail-poller.resultless.hakukohde.hours={{valintatulosservice_mail_poller_resultless_hakukohde_hours | default('1') }}
 
 # Valintarekisteri flag
 valinta-tulos-service.read-from-valintarekisteri={{read_from_valintarekisteri | default('true') }}
