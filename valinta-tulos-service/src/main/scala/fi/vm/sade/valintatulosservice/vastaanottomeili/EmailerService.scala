@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import com.github.kagkarlsson.scheduler.Scheduler
+import com.github.kagkarlsson.scheduler.task.DeadExecutionHandler.CancelDeadExecution
 import com.github.kagkarlsson.scheduler.task._
 import com.github.kagkarlsson.scheduler.task.helper.Tasks
 import com.github.kagkarlsson.scheduler.task.schedule.CronSchedule
@@ -33,7 +34,10 @@ class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, cronExpr
     }
   }
 
-  private val cronTask = Tasks.recurring(s"cron-emailer-task", new CronSchedule(cronExpression)).execute(executionHandler)
+  private val deadExecutionHandler: CancelDeadExecution[Void] = new CancelDeadExecution()
+  private val cronTask = Tasks.recurring(s"cron-emailer-task", new CronSchedule(cronExpression))
+    .onDeadExecution(deadExecutionHandler)
+    .execute(executionHandler)
   logger.info("Scheduled emailer task for cron expression: " + cronExpression)
 
   private val numberOfThreads: Int = 1
