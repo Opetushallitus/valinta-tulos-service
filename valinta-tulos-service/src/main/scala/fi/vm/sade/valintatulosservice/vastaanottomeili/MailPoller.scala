@@ -147,10 +147,13 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
       }
 
     val found = etsiHakukohteet(hakus.map(_.oid))
-    val filtered: List[(HakuOid, HakukohdeOid)] = filterHakukohdesRecentlyChecked(found) // TODO: Pitäisikö filtteröinti tehdä myös kun kutsutaan tiettyä hakua?
+    val filtered: List[(HakuOid, HakukohdeOid)] = filterHakukohdesRecentlyChecked(found)
 
-    logger.info(s"haut ${found.map(_._1).distinct.mkString(", ")}")
-    found
+    if (filtered.size != found.size) {
+      logger.info(s"Pudotettiin ${found.size - filtered.size} hakukohdetta koska ne on tarkistettu viimeisten $emptyHakukohdeRecheckInterval aikana")
+    }
+    logger.info(s"haut ${filtered.map(_._1).distinct.mkString(", ")}")
+    filtered
   }
 
   private def etsiHakukohteet(hakuOids: List[HakuOid]): List[(HakuOid, HakukohdeOid)] = {
