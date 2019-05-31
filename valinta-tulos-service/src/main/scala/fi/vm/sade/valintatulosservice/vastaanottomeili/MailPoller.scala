@@ -253,8 +253,12 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
       fetchHakemukset(hakuOid, hakukohdeOid).map(h => h.oid -> h).toMap
     }
     val (checkedCandidatesCount, mailables) = getMailablesForHakemuses(hakemuksetByOid, hakukohdeOid, candidates, limit, mailDecorator,  valintatapajonoFilter)
-    if (mailables.isEmpty && isMoreThanOneDayAgoOrEmpty(mailStatusCheckedForHakukohde)) {
-      markAsCheckedForEmailing(hakukohdeOid)
+    if (mailables.isEmpty) {
+      if (isMoreThanOneDayAgoOrEmpty(mailStatusCheckedForHakukohde)) {
+        markAsCheckedForEmailing(hakukohdeOid)
+      } else {
+        logger.info(s"Not marking hakukohde $hakukohdeOid as checked for emailing because date $mailStatusCheckedForHakukohde was within one day")
+      }
     }
     val logMessage = s"${mailables.size} mailables from $checkedCandidatesCount candidates for hakukohde $hakukohdeOid in haku $hakuOid"
     if (mailables.isEmpty && checkedCandidatesCount == 0) {
