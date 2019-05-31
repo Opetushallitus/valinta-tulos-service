@@ -151,6 +151,8 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
 
     if (filtered.size != found.size) {
       logger.info(s"Pudotettiin ${found.size - filtered.size} hakukohdetta koska ne on tarkistettu viimeisten $emptyHakukohdeRecheckInterval aikana")
+    } else {
+      logger.info(s"Ei pudotettavia viimeisten $emptyHakukohdeRecheckInterval aikana tarkistettuja hakukohteita")
     }
     logger.info(s"haut ${filtered.map(_._1).distinct.mkString(", ")}")
     filtered
@@ -177,7 +179,7 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
     hakuHakukohdePairs
       .filter { oids =>
         if (vastikaanTarkistetutHakukohteet.contains(oids._2)) {
-          logger.debug(s"Pudotetaan hakukohde ${oids._2}, koska se on tarkistettu viimeisten $emptyHakukohdeRecheckInterval aikana")
+          logger.info(s"Pudotetaan hakukohde ${oids._2}, koska se on tarkistettu viimeisten $emptyHakukohdeRecheckInterval aikana")
           false
         } else {
           true
@@ -415,7 +417,7 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
   }
 
   private def markAsCheckedForEmailing(hakukohdeOid: HakukohdeOid): Unit = {
-    logger.debug(s"Marking hakukohde $hakukohdeOid as checked for emailing")
+    logger.info(s"Marking hakukohde $hakukohdeOid as checked for emailing")
     timed(s"Hakukohteen $hakukohdeOid sähköpostien tarkastetuksi merkitseminen", 1000) {
       mailPollerRepository.markAsCheckedForEmailing(hakukohdeOid)
     }
