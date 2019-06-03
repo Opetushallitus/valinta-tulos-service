@@ -34,7 +34,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         hakuService.getHaku(hakuOidA) returns Right(tarjontaHakuA)
         hakuService.getHakukohde(hakukohdeOidA) returns Right(tarjontaHakukohdeA)
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA))
-        mailPollerRepository.candidates(hakukohdeOidA) returns Set((hakemusOidA, hakukohdeOidA, None))
+        mailPollerRepository.candidates(hakukohdeOidA, recheckIntervalHours = 0) returns Set((hakemusOidA, hakukohdeOidA, None))
         mailPollerRepository.lastChecked(hakukohdeOidA) returns None
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusA)
         valintatulosService.hakemuksentulos(hakemusA) returns Some(hakemuksentulosA)
@@ -70,7 +70,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         hakuService.getHaku(hakuOidA) returns Right(tarjontaHakuA)
         hakuService.getHakukohde(hakukohdeOidA) returns Right(tarjontaHakukohdeA)
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA))
-        mailPollerRepository.candidates(hakukohdeOidA) returns Set((hakemusOidB, hakukohdeOidA, None))
+        mailPollerRepository.candidates(hakukohdeOidA, recheckIntervalHours = 0) returns Set((hakemusOidB, hakukohdeOidA, None))
         mailPollerRepository.lastChecked(hakukohdeOidA) returns None
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusB)
         valintatulosService.hakemuksentulos(hakemusB) returns Some(hakemuksentulosB)
@@ -108,13 +108,13 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         hakuService.getHakukohde(hakukohdeOidB) returns Right(tarjontaHakukohdeB)
         hakuService.getHakukohde(hakukohdeOidC) returns Right(tarjontaHakukohdeC)
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA, hakukohdeOidB, hakukohdeOidC))
-        mailPollerRepository.candidates(hakukohdeOidA) returns Set.empty
-        mailPollerRepository.candidates(hakukohdeOidB) returns Set(
+        mailPollerRepository.candidates(hakukohdeOidA, recheckIntervalHours = 0) returns Set.empty
+        mailPollerRepository.candidates(hakukohdeOidB, recheckIntervalHours = 0) returns Set(
           (hakemusOidC, hakukohdeOidA, Some(Vastaanottoilmoitus)),
           (hakemusOidC, hakukohdeOidB, None),
           (hakemusOidC, hakukohdeOidC, None)
         )
-        mailPollerRepository.candidates(hakukohdeOidC) returns Set.empty
+        mailPollerRepository.candidates(hakukohdeOidC, recheckIntervalHours = 0) returns Set.empty
         mailPollerRepository.lastChecked(hakukohdeOidA) returns None
         mailPollerRepository.lastChecked(hakukohdeOidB) returns None
         mailPollerRepository.lastChecked(hakukohdeOidC) returns None
@@ -155,9 +155,9 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         hakuService.getHakukohde(hakukohdeOidB) returns Right(tarjontaHakukohdeB)
         hakuService.getHakukohde(hakukohdeOidC) returns Right(tarjontaHakukohdeC)
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA, hakukohdeOidB, hakukohdeOidC))
-        mailPollerRepository.candidates(hakukohdeOidA) returns Set.empty
-        mailPollerRepository.candidates(hakukohdeOidB) returns Set.empty
-        mailPollerRepository.candidates(hakukohdeOidC) returns Set(
+        mailPollerRepository.candidates(hakukohdeOidA, recheckIntervalHours = 0) returns Set.empty
+        mailPollerRepository.candidates(hakukohdeOidB, recheckIntervalHours = 0) returns Set.empty
+        mailPollerRepository.candidates(hakukohdeOidC, recheckIntervalHours = 0) returns Set(
           (hakemusOidC, hakukohdeOidA, Some(Vastaanottoilmoitus)),
           (hakemusOidC, hakukohdeOidB, Some(EhdollisenPeriytymisenIlmoitus)),
           (hakemusOidC, hakukohdeOidC, None)
@@ -202,8 +202,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         hakuService.getHakukohde(hakukohdeOidB) returns Right(tarjontaHakukohdeB)
         hakuService.getHakukohde(hakukohdeOidC) returns Right(tarjontaHakukohdeC)
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA, hakukohdeOidB, hakukohdeOidC))
-        mailPollerRepository.candidates(hakukohdeOidA) returns Set.empty
-        mailPollerRepository.candidates(hakukohdeOidB) returns Set(
+        mailPollerRepository.candidates(hakukohdeOidA, recheckIntervalHours = 0) returns Set.empty
+        mailPollerRepository.candidates(hakukohdeOidB, recheckIntervalHours = 0) returns Set(
           (hakemusOidC, hakukohdeOidA, Some(Vastaanottoilmoitus)),
           (hakemusOidC, hakukohdeOidB, Some(EhdollisenPeriytymisenIlmoitus)),
           (hakemusOidC, hakukohdeOidC, None)
@@ -211,7 +211,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         mailPollerRepository.lastChecked(hakukohdeOidA) returns None
         mailPollerRepository.lastChecked(hakukohdeOidB) returns None
         mailPollerRepository.lastChecked(hakukohdeOidC) returns None
-        mailPollerRepository.candidates(hakukohdeOidC) returns Set.empty
+        mailPollerRepository.candidates(hakukohdeOidC, recheckIntervalHours = 0) returns Set.empty
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusC)
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidB) returns Iterator(hakemusC)
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidC) returns Iterator(hakemusC)
@@ -247,7 +247,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         hakuService.getHaku(hakuOidA) returns Right(tarjontaHakuA)
         hakuService.getHakukohde(hakukohdeOidA) returns Right(tarjontaHakukohdeA)
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA))
-        mailPollerRepository.candidates(hakukohdeOidA) returns Set((hakemusOidA, hakukohdeOidA, Some(Vastaanottoilmoitus)))
+        mailPollerRepository.candidates(hakukohdeOidA, recheckIntervalHours = 0) returns Set((hakemusOidA, hakukohdeOidA, Some(Vastaanottoilmoitus)))
         mailPollerRepository.lastChecked(hakukohdeOidA) returns None
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusA)
         valintatulosService.hakemuksentulos(hakemusA) returns Some(hakemuksentulosA)
@@ -261,8 +261,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         hakuService.getHakukohde(hakukohdeOidB) returns Right(tarjontaHakukohdeB)
         hakuService.getHakukohde(hakukohdeOidC) returns Right(tarjontaHakukohdeC)
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA, hakukohdeOidB, hakukohdeOidC))
-        mailPollerRepository.candidates(hakukohdeOidA) returns Set.empty
-        mailPollerRepository.candidates(hakukohdeOidB) returns Set(
+        mailPollerRepository.candidates(hakukohdeOidA, recheckIntervalHours = 0) returns Set.empty
+        mailPollerRepository.candidates(hakukohdeOidB, recheckIntervalHours = 0) returns Set(
           (hakemusOidC, hakukohdeOidA, Some(Vastaanottoilmoitus)),
           (hakemusOidC, hakukohdeOidB, Some(EhdollisenPeriytymisenIlmoitus)),
           (hakemusOidC, hakukohdeOidC, None)
@@ -270,7 +270,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         mailPollerRepository.lastChecked(hakukohdeOidA) returns None
         mailPollerRepository.lastChecked(hakukohdeOidB) returns None
         mailPollerRepository.lastChecked(hakukohdeOidC) returns None
-        mailPollerRepository.candidates(hakukohdeOidC) returns Set.empty
+        mailPollerRepository.candidates(hakukohdeOidC, recheckIntervalHours = 0) returns Set.empty
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusC)
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidB) returns Iterator(hakemusC)
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidC) returns Iterator(hakemusC)
@@ -285,9 +285,9 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         hakuService.getHakukohde(hakukohdeOidB) returns Right(tarjontaHakukohdeB)
         hakuService.getHakukohde(hakukohdeOidC) returns Right(tarjontaHakukohdeC)
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA, hakukohdeOidB, hakukohdeOidC))
-        mailPollerRepository.candidates(hakukohdeOidA) returns Set.empty
-        mailPollerRepository.candidates(hakukohdeOidB) returns Set.empty
-        mailPollerRepository.candidates(hakukohdeOidC) returns Set(
+        mailPollerRepository.candidates(hakukohdeOidA, recheckIntervalHours = 0) returns Set.empty
+        mailPollerRepository.candidates(hakukohdeOidB, recheckIntervalHours = 0) returns Set.empty
+        mailPollerRepository.candidates(hakukohdeOidC, recheckIntervalHours = 0) returns Set(
           (hakemusOidC, hakukohdeOidA, Some(Vastaanottoilmoitus)),
           (hakemusOidC, hakukohdeOidB, Some(EhdollisenPeriytymisenIlmoitus)),
           (hakemusOidC, hakukohdeOidC, Some(SitovanVastaanotonIlmoitus))
@@ -309,8 +309,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         hakuService.getHakukohde(hakukohdeOidB) returns Right(tarjontaHakukohdeB)
         hakuService.getHakukohde(hakukohdeOidC) returns Right(tarjontaHakukohdeC)
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA, hakukohdeOidB, hakukohdeOidC))
-        mailPollerRepository.candidates(hakukohdeOidA) returns Set.empty
-        mailPollerRepository.candidates(hakukohdeOidB) returns Set(
+        mailPollerRepository.candidates(hakukohdeOidA, recheckIntervalHours = 0) returns Set.empty
+        mailPollerRepository.candidates(hakukohdeOidB, recheckIntervalHours = 0) returns Set(
           (hakemusOidC, hakukohdeOidA, Some(Vastaanottoilmoitus)),
           (hakemusOidC, hakukohdeOidB, Some(SitovanVastaanotonIlmoitus)),
           (hakemusOidC, hakukohdeOidC, None)
@@ -318,7 +318,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         mailPollerRepository.lastChecked(hakukohdeOidA) returns None
         mailPollerRepository.lastChecked(hakukohdeOidB) returns None
         mailPollerRepository.lastChecked(hakukohdeOidC) returns None
-        mailPollerRepository.candidates(hakukohdeOidC) returns Set.empty
+        mailPollerRepository.candidates(hakukohdeOidC, recheckIntervalHours = 0) returns Set.empty
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusC)
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidB) returns Iterator(hakemusC)
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidC) returns Iterator(hakemusC)
@@ -332,7 +332,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         hakuService.getHaku(hakuOidA) returns Right(tarjontaHakuA)
         hakuService.getHakukohde(hakukohdeOidA) returns Right(tarjontaHakukohdeA)
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA))
-        mailPollerRepository.candidates(hakukohdeOidA) returns Set((hakemusOidA, hakukohdeOidA, None))
+        mailPollerRepository.candidates(hakukohdeOidA, recheckIntervalHours = 0) returns Set((hakemusOidA, hakukohdeOidA, None))
         mailPollerRepository.lastChecked(hakukohdeOidA) returns None
         val hakemusAWithoutKutsumanimi: Hakemus = hakemusA.copy(
           henkilotiedot = hakemusA.henkilotiedot.copy(kutsumanimi = None))
@@ -348,8 +348,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         hakuService.getHakukohde(hakukohdeOidA) returns Right(tarjontaHakukohdeA)
         hakuService.getHakukohde(hakukohdeOidB) returns Right(tarjontaHakukohdeB)
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA, hakukohdeOidB))
-        mailPollerRepository.candidates(hakukohdeOidA) returns Set((hakemusOidA, hakukohdeOidA, None))
-        mailPollerRepository.candidates(hakukohdeOidB) returns Set.empty
+        mailPollerRepository.candidates(hakukohdeOidA, recheckIntervalHours = 0) returns Set((hakemusOidA, hakukohdeOidA, None))
+        mailPollerRepository.candidates(hakukohdeOidB, recheckIntervalHours = 0) returns Set.empty
         mailPollerRepository.lastChecked(hakukohdeOidA) returns None
         mailPollerRepository.lastChecked(hakukohdeOidB) returns None
         val hakemusAWithToiveBAdded: Hakemus = hakemusA.copy(toiveet = hakemusA.toiveet ++ List(Hakutoive(

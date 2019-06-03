@@ -32,6 +32,7 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
   private val pollConcurrency: Int = vtsApplicationSettings.mailPollerConcurrency
   private val pollerTaskSupport = new ForkJoinTaskSupport(new ForkJoinPool(pollConcurrency))
   private val emptyHakukohdeRecheckInterval: Duration = vtsApplicationSettings.mailPollerResultlessHakukohdeRecheckInterval
+  private val hakemusRecheckIntervalHours: Int = vtsApplicationSettings.mailPollerHakemusRecheckInterval
 
   def pollForAllMailables(mailDecorator: MailDecorator, mailablesWanted: Int, timeLimit: Duration): PollResult = {
     val fetchHakusTaskLabel = "Looking for hakus with their hakukohdes to process"
@@ -242,7 +243,7 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
   private def searchAndCreateMailablesForSingleHakukohde(mailDecorator: MailDecorator, limit: Int, hakuOid: HakuOid, hakukohdeOid: HakukohdeOid, ignoreEarlier: Boolean, valintatapajonoFilter: Option[ValintatapajonoOid]): (Int, List[Ilmoitus]) = {
     val logMsg = s"Vastaanottopostien lähetyksen kandidaattien haku hakukohteessa $hakukohdeOid haussa $hakuOid"
     val candidates: Set[(HakemusOid, HakukohdeOid, Option[MailReason])] = timed(logMsg, 1000) {
-      mailPollerRepository.candidates(hakukohdeOid, ignoreEarlier = ignoreEarlier)
+      mailPollerRepository.candidates(hakukohdeOid, ignoreEarlier = ignoreEarlier, recheckIntervalHours = hakemusRecheckIntervalHours)
     }
     val mailStatusCheckedForHakukohde = timed(s"Edellisen tarkistusajankohdan haku hakukohteelle $hakukohdeOid haussa $hakuOid", 1000) {
       mailPollerRepository.lastChecked(hakukohdeOid)
