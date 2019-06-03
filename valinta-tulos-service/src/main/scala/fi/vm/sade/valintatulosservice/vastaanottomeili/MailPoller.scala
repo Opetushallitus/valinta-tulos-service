@@ -254,11 +254,7 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
     }
     val (checkedCandidatesCount, mailables) = getMailablesForHakemuses(hakemuksetByOid, hakukohdeOid, candidates, limit, mailDecorator,  valintatapajonoFilter)
     if (mailables.isEmpty) {
-      if (isMoreThanOneDayAgoOrEmpty(mailStatusCheckedForHakukohde)) {
-        markAsCheckedForEmailing(hakukohdeOid)
-      } else {
-        logger.info(s"Not marking hakukohde $hakukohdeOid as checked for emailing because date $mailStatusCheckedForHakukohde was within one day")
-      }
+      markAsCheckedForEmailing(hakukohdeOid)
     }
     val logMessage = s"${mailables.size} mailables from $checkedCandidatesCount candidates for hakukohde $hakukohdeOid in haku $hakuOid"
     if (mailables.isEmpty && checkedCandidatesCount == 0) {
@@ -302,12 +298,6 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
     (checkedCandidates.size, mailables)
   }
 
-  private def isMoreThanOneDayAgoOrEmpty(mailStatusCheckedForHakukohde: Option[Date]): Boolean = {
-    mailStatusCheckedForHakukohde match {
-      case None => true
-      case Some(checkedDate) => checkedDate.before(new Date(System.currentTimeMillis() - Duration(1, DAYS).toMillis))
-    }
-  }
 
   private def fetchHakemukset(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Vector[Hakemus] = {
     timed(s"Hakemusten haku hakukohteeseen $hakukohdeOid haussa $hakuOid", 1000) {
