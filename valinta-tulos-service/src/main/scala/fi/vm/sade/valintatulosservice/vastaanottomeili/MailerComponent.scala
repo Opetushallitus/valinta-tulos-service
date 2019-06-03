@@ -32,6 +32,7 @@ trait MailerComponent {
     )
 
     def sendMailFor(query: MailerQuery): List[String] = {
+      logger.info(s"Start mail sending for query $query")
       forceResendIfAppropriate(query)
       collectAndSend(query, 0, List.empty, List.empty)
     }
