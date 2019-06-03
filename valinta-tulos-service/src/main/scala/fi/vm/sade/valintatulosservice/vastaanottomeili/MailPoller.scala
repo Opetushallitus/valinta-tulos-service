@@ -147,20 +147,11 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
         }
       }
 
-    val found = etsiHakukohteet(hakus.map(_.oid))
-    val filtered: List[(HakuOid, HakukohdeOid)] = filterHakukohdesRecentlyChecked(found)
-
-    if (filtered.size != found.size) {
-      logger.info(s"Pudotettiin ${found.size - filtered.size} hakukohdetta koska ne on tarkistettu viimeisten $emptyHakukohdeRecheckInterval aikana")
-    } else {
-      logger.info(s"Ei pudotettavia viimeisten $emptyHakukohdeRecheckInterval aikana tarkistettuja hakukohteita")
-    }
-    logger.info(s"haut ${filtered.map(_._1).distinct.mkString(", ")}")
-    filtered
+    etsiHakukohteet(hakus.map(_.oid))
   }
 
   private def etsiHakukohteet(hakuOids: List[HakuOid]): List[(HakuOid, HakukohdeOid)] = {
-   hakuOids.map(oid => {
+   val found = hakuOids.map(oid => {
      (oid, hakuService.getHakukohdeOids(oid).right.map(_.toList))
    }).filter {
        case (hakuOid, Left(e)) =>
@@ -172,6 +163,15 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
         case _ =>
           true
      }.flatMap(t => t._2.right.get.map((t._1, _)))
+
+    val filtered: List[(HakuOid, HakukohdeOid)] = filterHakukohdesRecentlyChecked(found)
+    if (filtered.size != found.size) {
+      logger.info(s"Pudotettiin ${found.size - filtered.size} hakukohdetta koska ne on tarkistettu viimeisten $emptyHakukohdeRecheckInterval aikana")
+    } else {
+      logger.info(s"Ei pudotettavia viimeisten $emptyHakukohdeRecheckInterval aikana tarkistettuja hakukohteita")
+    }
+    logger.info(s"haut ${filtered.map(_._1).distinct.mkString(", ")}")
+    filtered
   }
 
   private def filterHakukohdesRecentlyChecked(hakuHakukohdePairs: List[(HakuOid, HakukohdeOid)]): List[(HakuOid, HakukohdeOid)] = {
