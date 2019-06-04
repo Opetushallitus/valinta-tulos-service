@@ -245,9 +245,6 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
     val candidates: Set[(HakemusOid, HakukohdeOid, Option[MailReason])] = timed(logMsg, 1000) {
       mailPollerRepository.candidates(hakukohdeOid, ignoreEarlier = ignoreEarlier, recheckIntervalHours = hakemusRecheckIntervalHours)
     }
-    val mailStatusCheckedForHakukohde = timed(s"Edellisen tarkistusajankohdan haku hakukohteelle $hakukohdeOid haussa $hakuOid", 1000) {
-      mailPollerRepository.lastChecked(hakukohdeOid)
-    }
     val hakemuksetByOid = if (candidates.isEmpty) {
       Map.empty[HakemusOid, Hakemus]
     } else {
