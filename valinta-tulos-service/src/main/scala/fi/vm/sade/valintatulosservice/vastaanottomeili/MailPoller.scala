@@ -420,7 +420,7 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
   }
 
   def deleteMailEntries(hakemusOid: HakemusOid): Int = {
-    mailPollerRepository.deleteHakemusMailEntriesForHakemusAndHakukohde(hakemusOid)
+    mailPollerRepository.deleteHakemusMailEntriesForHakemus(hakemusOid)
   }
 
   def deleteMailEntries(hakukohdeOid: HakukohdeOid): Int = {

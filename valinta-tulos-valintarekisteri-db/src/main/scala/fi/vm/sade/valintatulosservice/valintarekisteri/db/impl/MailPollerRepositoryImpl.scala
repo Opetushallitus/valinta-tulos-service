@@ -168,13 +168,10 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
             order by hakemus_oid""".as[String]).toList
   }
 
-  def deleteHakemusMailEntriesForHakemusAndHakukohde(hakemusOid: HakemusOid): Int = {
-    runBlockingTransactionally[Int](
-      sqlu"""
-            delete from viestinlahetys_tarkistettu where hakukohde_oid in
-              (select hakukohde_oid from valinnantilat where hakemus_oid = ${hakemusOid})""".
-        andThen(sqlu"""delete from viestit where hakemus_oid = ${hakemusOid}""")) match {
-      case Right(n) => n
+  def deleteHakemusMailEntriesForHakemus(hakemusOid: HakemusOid): Int = {
+    runBlockingTransactionally[Int](sqlu"""delete from viestit where hakemus_oid = ${hakemusOid}""") match {
+      case Right(n) =>
+        n
       case Left(e) =>
         logger.error(s"Virhe poistettaessa hakemuksen $hakemusOid viestikirjanpitoa", e)
         throw e
@@ -182,11 +179,9 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
   }
 
   def deleteHakemusMailEntriesForHakukohde(hakukohdeOid: HakukohdeOid): Int = {
-    runBlockingTransactionally[Int](
-      sqlu"""
-            delete from viestinlahetys_tarkistettu where hakukohde_oid = ${hakukohdeOid}""".
-        andThen(sqlu"""delete from viestit where hakukohde_oid = ${hakukohdeOid}""")) match {
-      case Right(n) => n
+    runBlockingTransactionally[Int](sqlu"""delete from viestit where hakukohde_oid = ${hakukohdeOid}""") match {
+      case Right(n) =>
+        n
       case Left(e) =>
         logger.error(s"Virhe poistettaessa hakukohteen $hakukohdeOid viestikirjanpitoa", e)
         throw e
