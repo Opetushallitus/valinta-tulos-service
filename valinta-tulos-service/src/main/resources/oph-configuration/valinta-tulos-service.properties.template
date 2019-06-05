@@ -62,7 +62,7 @@ valinta-tulos-service.valintarekisteri.use-sijoittelu-mongo=true
 
 # MailPoller
 valinta-tulos-service.mail-poller.concurrency={{valintatulosservice_mail_poller_concurrency | default('1') }}
-valinta-tulos-service.mail-poller.resultless.hakukohde.hours={{valintatulosservice_mail_poller_resultless_hakukohde_hours | default('6') }}
+valinta-tulos-service.mail-poller.resultless.hakukohde.hours={{valintatulosservice_mail_poller_resultless_hakukohde_hours | default('23') }}
 valinta-tulos-service.mail-poller.hakemus.recheck.hours={{valintatulosservice_mail_poller_hakemus_recheck_hours | default('24') }}
 
 # Valintarekisteri flag
