@@ -1,10 +1,11 @@
 package fi.vm.sade.valintatulosservice.vastaanottomeili
 
+import java.time.Instant
+
 import com.github.kagkarlsson.scheduler.Scheduler
-import com.github.kagkarlsson.scheduler.task.DeadExecutionHandler.CancelDeadExecution
 import com.github.kagkarlsson.scheduler.task._
 import com.github.kagkarlsson.scheduler.task.helper.Tasks
-import com.github.kagkarlsson.scheduler.task.schedule.CronSchedule
+import com.github.kagkarlsson.scheduler.task.schedule.{CronSchedule, Schedule}
 
 import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.slf4j.Logging
@@ -34,10 +35,24 @@ class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, cronExpr
     }
   }
 
-  private val deadExecutionHandler: CancelDeadExecution[Void] = new CancelDeadExecution()
-  private val cronTask = Tasks.recurring(s"cron-emailer-task", new CronSchedule(cronExpression))
-    .onDeadExecution(deadExecutionHandler)
+  class DeadExecutionRescheduler(schedule: Schedule) extends DeadExecutionHandler[Void] {
+    logger.info(s"Dead execution handler setup for schedule $schedule")
+    override def deadExecution(execution: Execution, executionOperations: ExecutionOperations[Void]): Unit = {
+      val now = Instant.now
+      val complete = ExecutionComplete.failure(execution, now, now, null)
+      val next: Instant = schedule.getNextExecutionTime(complete)
+      logger.warn("Rescheduling dead execution: " + execution + " to " + next)
+      executionOperations.reschedule(complete, next)
+    }
+  }
+
+  private val cronSchedule: Schedule = new CronSchedule(cronExpression)
+  private val deadExecutionRescheduler = new DeadExecutionRescheduler(cronSchedule)
+
+  private val cronTask = Tasks.recurring(s"cron-emailer-task", cronSchedule)
+    .onDeadExecution(deadExecutionRescheduler)
     .execute(executionHandler)
+
   logger.info("Scheduled emailer task for cron expression: " + cronExpression)
 
   private val numberOfThreads: Int = 1
