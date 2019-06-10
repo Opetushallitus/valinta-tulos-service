@@ -103,19 +103,23 @@ trait MailerComponent {
     private def sendBatch(batch: List[Ilmoitus], language: String, lahetysSyy: LahetysSyy): Option[String] = {
       val recipients: List[Recipient] = batch.map(VTRecipient(_, language))
 
-      logger.info(s"Starting to send batch. Language $language. LahetysSyy $lahetysSyy Batch size ${recipients.size}")
+      val batchLogString = s"(Language=$language LahetysSyy=$lahetysSyy BatchSize=${recipients.size})"
+
+      logger.info(s"Starting to send batch. $batchLogString")
       try {
         groupEmailService.send(GroupEmail(recipients, EmailInfo("omattiedot", letterTemplateNameFor(lahetysSyy), language))) match {
           case Some(id) =>
+            logger.info(s"Successful response from group email service for batch sending $batchLogString.")
             sendConfirmation(batch)
             logger.info(s"Succesfully confirmed batch id: $id")
             Some(id)
-          case _ =>
+          case None =>
+            logger.error(s"Empty response from group email service for batch sending $batchLogString.")
             None
         }
       } catch {
         case e: Exception =>
-          logger.error("Group email sending error " + e)
+          logger.error(s"Error response from group email service for batch sending $batchLogString, exception: " + e, e)
           batch.foreach(i => mailPoller.deleteMailEntries(i.hakemusOid))
           None
       }

@@ -64,16 +64,16 @@ class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, cronExpr
     val targetName = query.toString
     Try(Timer.timed(s"Batch send for query $targetName") {
       val ids = registry.mailer.sendMailFor(query)
-      logResult(targetName, ids)
+      if (ids.nonEmpty) {
+        logger.info(s"Job for $targetName sent succesfully, jobId: $ids")
+      } else {
+        logger.info(s"Nothing was sent for $targetName. More info in logs.")
+      }
       ids
-    })
-  }
-
-  private def logResult(targetName: String, ids: List[String]): Unit = {
-    if (ids.nonEmpty) {
-      logger.info(s"Job for $targetName sent succesfully, jobId: $ids")
-    } else {
-      logger.info(s"Nothing was sent for $targetName. More info in logs.")
+    }).recoverWith { case t =>
+      logger.error(s"Emailer query $query failed", t)
+      Failure(t)
     }
   }
-}
+
+  }
