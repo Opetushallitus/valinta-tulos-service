@@ -32,7 +32,7 @@ class MailDecorator(hakuService: HakuService,
               case Right(OppijanTunnistus(securelink)) =>
                 Some(ilmoitus.copy(secureLink = Some(securelink)))
               case Left(e) =>
-                logger.error("Hakemukselle ei lähetetty vastaanottomeiliä, koska securelinkkiä ei saatu! " + status.hakemusOid, e)
+                logger.error(s"Hakemukselle ei lähetetty vastaanottomeiliä, koska securelinkkiä ei saatu! ${status.hakemusOid}", e)
                 None
             }
           }
@@ -79,7 +79,7 @@ class MailDecorator(hakuService: HakuService,
       case Right(haku: tarjonta.Haku) =>
         haku
       case Left(e) =>
-        val msg = "Hakua ei löydy, oid: " + oid
+        val msg = s"Hakua ei löydy, oid: $oid"
         logger.error(msg, e)
         throw new HakuNotFoundException(msg)
     }

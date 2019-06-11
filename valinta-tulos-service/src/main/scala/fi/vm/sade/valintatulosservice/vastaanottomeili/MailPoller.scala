@@ -131,16 +131,16 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
       .filter { haku =>
         ohjausparameteritService.ohjausparametrit(haku.oid) match {
           case Right(Some(Ohjausparametrit(_, _, _, Some(hakukierrosPaattyy), _, _, _))) if hakukierrosPaattyy.isBeforeNow =>
-            logger.debug("Pudotetaan haku " + haku.oid + " koska hakukierros päättynyt " + hakukierrosPaattyy)
+            logger.debug(s"Pudotetaan haku ${haku.oid} koska hakukierros päättynyt $hakukierrosPaattyy")
             false
           case Right(Some(Ohjausparametrit(_, _, _, _, Some(tulostenJulkistusAlkaa), _, _))) if tulostenJulkistusAlkaa.isAfterNow =>
-            logger.info("Pudotetaan haku " + haku.oid + " koska tulosten julkistus alkaa " + tulostenJulkistusAlkaa)
+            logger.info(s"Pudotetaan haku ${haku.oid} koska tulosten julkistus alkaa $tulostenJulkistusAlkaa")
             false
           case Right(None) =>
-            logger.error("Pudotetaan haku " + haku.oid + " koska ei saatu haettua ohjausparametreja")
+            logger.warn(s"Pudotetaan haku ${haku.oid} koska ei asetettu ohjausparametreja")
             false
           case Left(e) =>
-            logger.error("Pudotetaan haku " + haku.oid + " koska ei saatu haettua ohjausparametreja", e)
+            logger.error(s"Pudotetaan haku ${haku.oid} koska ohjausparametrien haussa tapahtui virhe", e)
             false
           case _ =>
             true
@@ -345,7 +345,7 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
         logger.error(s"Hakemus ${hakemus.oid} is missing hakemus.henkilotiedot.kutsumanimi")
         None
       case Hakemus(_, _, _, _, _, Henkilotiedot(Some(kutsumanimi), None, _)) =>
-        logger.error(s"Hakemus ${hakemus.oid} is missing hakemus.henkilotiedot.email")
+        logger.warn(s"Hakemus ${hakemus.oid} is missing hakemus.henkilotiedot.email")
         None
     }
   }
