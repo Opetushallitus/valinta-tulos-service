@@ -55,6 +55,7 @@ case class Hakutoiveentulos(hakukohdeOid: HakukohdeOid,
   def toKesken = {
     copy(
         valintatila = Valintatila.kesken,
+        vastaanottotila = Vastaanottotila.kesken,
         vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa,
         vastaanottoDeadline = None,
         viimeisinValintatuloksenMuutos = None,

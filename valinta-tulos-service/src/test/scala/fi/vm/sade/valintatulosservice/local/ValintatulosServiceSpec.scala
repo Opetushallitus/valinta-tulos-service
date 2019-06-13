@@ -1,9 +1,8 @@
 package fi.vm.sade.valintatulosservice.local
 
-import java.time.OffsetDateTime
 import java.util.concurrent.TimeUnit
 
-import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, ValintatuloksenTila, Valintatulos}
+import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila.Vastaanotettavuustila
 import fi.vm.sade.valintatulosservice.domain._
@@ -145,6 +144,14 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
       checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.vastaanotettavissa_sitovasti, true)
       checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
       checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.vastaanotettavissa_sitovasti, true)
+    }
+
+    "Valintatuloksen tulee olla kesken, jos hyvaksytty muttei julkaistu, vaikka haun vastaanoton loppumisesta mennyt kauemmin kuin vastaanottoaika" in {
+      useFixture("hyvaksytty-kesken-ei-julkaistavissa.json", hakuFixture = hakuFixture, ohjausparametritFixture = "vastaanotto-loppunut")
+      checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
+      val valintatulos = getHakutoiveenValintatulos("1.2.246.562.5.72607738902")
+      valintatulos.getTila must_== ValintatuloksenTila.KESKEN
+      valintatulos.getTilaHakijalle must_== ValintatuloksenTila.KESKEN
     }
   }
 
