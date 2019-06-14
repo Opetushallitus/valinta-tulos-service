@@ -198,7 +198,7 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
       hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.ottanut_vastaan_toisen_paikan
     }
     "peru yksi hakija jonka paikka ei vastaanotettavissa -> success" in {
-      useFixture("hylatty-ei-valintatulosta.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
+      useFixture("hylatty-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
       val r = vastaanotaVirkailijana(valintatapajonoOid, personOid, hakemusOid, vastaanotettavissaHakuKohdeOid, hakuOid, Vastaanottotila.perunut, muokkaaja).head
       r.result.status must_== 200
       hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.perunut
@@ -310,7 +310,7 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
       hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.ottanut_vastaan_toisen_paikan
     }
     "peru yksi hakija jonka paikka ei vastaanotettavissa -> success" in {
-      useFixture("hylatty-ei-valintatulosta.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
+      useFixture("hylatty-julkaistavissa.json", hakuFixture = HakuFixtures.korkeakouluYhteishaku)
       vastaanotaVirkailijanaTransaktiossa(List(
         VastaanottoEventDto(valintatapajonoOid, personOid, hakemusOid, vastaanotettavissaHakuKohdeOid, hakuOid, Vastaanottotila.perunut, muokkaaja, "testiselite")
       )).isSuccess must beTrue
