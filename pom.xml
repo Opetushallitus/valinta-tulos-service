@@ -35,7 +35,7 @@
         <mongo-java-driver.version>3.4.2</mongo-java-driver.version>
         <morphia.version>1.2.1</morphia.version>
         <postgresql.version>42.1.4</postgresql.version>
-        <scala-cas_2.11.version>1.0.1-SNAPSHOT</scala-cas_2.11.version>
+        <scala-cas_2.11.version>1.0.2-SNAPSHOT</scala-cas_2.11.version>
         <scala.version>2.11.8</scala.version>
         <scala-logging_2.11.version>3.1.0</scala-logging_2.11.version>
         <scala-parser-combinators_2.11.version>1.0.4</scala-parser-combinators_2.11.version>
@@ -444,7 +444,7 @@
             <dependency>
                 <groupId>fi.vm.sade</groupId>
                 <artifactId>scala-group-emailer_2.11</artifactId>
-                <version>0.5.1-SNAPSHOT</version>
+                <version>0.7.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>com.github.kagkarlsson</groupId>
@@ -477,7 +477,7 @@
         </repository>
         <repository>
             <id>ext-snapshot-local-artifactory-snapshots</id>
-            <url>https://artifactory.opintopolku.fi/artifactory/ext-snapshot-local</url>
+            <url>https://artifactory.opintopolkuf.fi/artifactory/ext-snapshot-local</url>
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
