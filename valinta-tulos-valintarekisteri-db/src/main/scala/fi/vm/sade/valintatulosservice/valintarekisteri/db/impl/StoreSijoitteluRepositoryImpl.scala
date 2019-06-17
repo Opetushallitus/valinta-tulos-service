@@ -8,6 +8,9 @@ import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatapajono, 
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.StoreSijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import org.json4s.JsonDSL._
+import org.json4s.native.JsonMethods._
+import slick.dbio.DBIOAction
 import slick.jdbc.PostgresProfile.api._
 
 import scala.collection.JavaConverters._
@@ -361,13 +364,13 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
     val SijoitteluajonValintatapajonoWrapper(oid, nimi, prioriteetti, tasasijasaanto, aloituspaikat, alkuperaisetAloituspaikat,
     eiVarasijatayttoa, kaikkiEhdonTayttavatHyvaksytaan, poissaOlevaTaytto, varasijat, varasijaTayttoPaivat,
     varasijojaKaytetaanAlkaen, varasijojaTaytetaanAsti, tayttojono, alinHyvaksyttyPistemaara, _,
-    sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa)
+    sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa, sivssnovSijoittelunViimeistenVarallaolijoidenJonosija)
     = SijoitteluajonValintatapajonoWrapper(valintatapajono)
 
     val varasijojaKaytetaanAlkaenTs:Option[Timestamp] = varasijojaKaytetaanAlkaen.flatMap(d => Option(new Timestamp(d.getTime)))
     val varasijojaTaytetaanAstiTs:Option[Timestamp] = varasijojaTaytetaanAsti.flatMap(d => Option(new Timestamp(d.getTime)))
 
-    val ensureValintaesitys =
+    val ensureValintaesitys: DBIOAction[Int, NoStream, Effect] =
       sqlu"""insert into valintaesitykset (
                  hakukohde_oid,
                  valintatapajono_oid,
@@ -378,7 +381,7 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
                  null::timestamp with time zone
              ) on conflict on constraint valintaesitykset_pkey do nothing
         """
-    val insert =
+    val insert: DBIOAction[Int, NoStream, Effect] =
       sqlu"""insert into valintatapajonot (
                  oid,
                  sijoitteluajo_id,
@@ -418,7 +421,28 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
                  ${alinHyvaksyttyPistemaara},
                  ${sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa}
              )"""
-    ensureValintaesitys.andThen(insert)
+
+    val insertSivssnovJonosija: DBIOAction[AnyVal, NoStream, Effect] = sivssnovSijoittelunViimeistenVarallaolijoidenJonosija.map { jonosijaTieto: Valintatapajono.JonosijaTieto =>
+      val hakemusOidsJson: String = compact(render(jonosijaTieto.hakemusOidit.asScala))
+      sqlu"""insert into sivssnov_sijoittelun_varasijatayton_rajoitus (
+             valintatapajono_oid,
+             sijoitteluajo_id,
+             hakukohde_oid,
+             jonosija,
+             tasasijajonosija,
+             tila,
+             hakemusoidit
+           ) values (
+             ${oid},
+             ${sijoitteluajoId},
+             ${hakukohdeOid},
+             ${jonosijaTieto.jonosija},
+             ${jonosijaTieto.tasasijaJonosija},
+             ${Valinnantila(jonosijaTieto.tila).toString}::valinnantila,
+             to_json(${hakemusOidsJson}::json)
+         )"""
+    }.getOrElse(DBIOAction.successful())
+    ensureValintaesitys.andThen(insert).andThen(insertSivssnovJonosija)
   }
 
   private def insertHakijaryhma(sijoitteluajoId:Long, hakijaryhma:Hakijaryhma) = {

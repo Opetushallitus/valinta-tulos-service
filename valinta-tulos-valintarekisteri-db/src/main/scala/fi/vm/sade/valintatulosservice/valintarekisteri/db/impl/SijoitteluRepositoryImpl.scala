@@ -83,9 +83,17 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
                   v.varasijoja_taytetaan_asti,
                   v.tayttojono,
                   v.sijoiteltu_ilman_varasijasaantoja_niiden_ollessa_voimassa,
-                  v.hakukohde_oid
+                  v.hakukohde_oid,
+                  ssav.jonosija,
+                  ssav.tasasijajonosija,
+                  ssav.tila,
+                  ssav.hakemusoidit
               from valintatapajonot as v
               join valintaesitykset as ve on ve.valintatapajono_oid = v.oid
+              left join sivssnov_sijoittelun_varasijatayton_rajoitus as ssav on
+                ssav.valintatapajono_oid = v.oid and
+                ssav.sijoitteluajo_id = v.sijoitteluajo_id and
+                ssav.hakukohde_oid = v.hakukohde_oid
               where v.sijoitteluajo_id = ${sijoitteluajoId}""".as[ValintatapajonoRecord]).toList
     }
 
@@ -110,9 +118,17 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
                   v.varasijoja_taytetaan_asti,
                   v.tayttojono,
                   v.sijoiteltu_ilman_varasijasaantoja_niiden_ollessa_voimassa,
-                  v.hakukohde_oid
+                  v.hakukohde_oid,
+                  ssav.jonosija,
+                  ssav.tasasijajonosija,
+                  ssav.tila,
+                  ssav.hakemusoidit
               from valintatapajonot as v
               join valintaesitykset as ve on ve.valintatapajono_oid = v.oid
+              left join sivssnov_sijoittelun_varasijatayton_rajoitus as ssav on
+                ssav.valintatapajono_oid = v.oid and
+                ssav.sijoitteluajo_id = v.sijoitteluajo_id and
+                ssav.hakukohde_oid = v.hakukohde_oid
               where v.sijoitteluajo_id = ${sijoitteluajoId}
                   and v.hakukohde_oid = ${hakukohdeOid}
               order by v.prioriteetti""".as[ValintatapajonoRecord]).toList

@@ -4,12 +4,18 @@ import java.sql.JDBCType
 import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
 import java.util.UUID
 
+import fi.vm.sade.sijoittelu.domain.Valintatapajono.JonosijaTieto
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoAction, VastaanottoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import org.json4s.native.JsonMethods
+import org.json4s.{DefaultFormats, Formats}
 import slick.jdbc.{GetResult, PositionedParameters, PositionedResult, SetParameter}
 
+import scala.collection.JavaConverters._
+
 trait ValintarekisteriResultExtractors {
+  private implicit val jsonFormats: Formats = DefaultFormats
 
   protected implicit val getVastaanottoResult = GetResult(r => VastaanottoRecord(
     henkiloOid = r.nextString,
@@ -106,7 +112,10 @@ trait ValintarekisteriResultExtractors {
     varasijojaKaytetaanAsti = r.nextTimestampOption,
     tayttoJono = r.nextStringOption,
     sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa = r.nextBoolean(),
-    hakukohdeOid = HakukohdeOid(r.nextString)))
+    hakukohdeOid = HakukohdeOid(r.nextString),
+    sivssnovSijoittelunVarasijataytonRajoitus = r.nextIntOption().map { jonoSija =>
+      new JonosijaTieto(jonoSija, r.nextInt(), Valinnantila(r.nextString()).valinnantila, JsonMethods.parse(r.nextString()).extract[Seq[String]].asJava)
+    }))
 
   protected implicit val getHakemuksetForValintatapajonosResult = GetResult(r => HakemusRecord(
     hakijaOid = r.nextStringOption,

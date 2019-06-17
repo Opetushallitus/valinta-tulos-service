@@ -4,7 +4,9 @@ import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import fi.vm.sade.sijoittelu.domain.HakemuksenTila
+import fi.vm.sade.sijoittelu.domain.HakemuksenTila.HYVAKSYTTY
+import fi.vm.sade.sijoittelu.domain.Valintatapajono.JonosijaTieto
+import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, Valintatapajono}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -15,6 +17,8 @@ import org.specs2.runner.JUnitRunner
 import org.specs2.specification.BeforeAfterExample
 import slick.jdbc.GetResult
 import slick.jdbc.PostgresProfile.api.actionBasedSQLInterpolation
+
+import scala.collection.JavaConverters._
 
 @RunWith(classOf[JUnitRunner])
 class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterExample
@@ -152,7 +156,7 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       startNewSijoittelu(wrapper)
       wrapper.hakukohteet.head.getValintatapajonot.asScala.find(_.getOid.equals("14090336922663576781797489829887")
       ).get.getHakemukset.asScala.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(h => {
-        h.setTila(HakemuksenTila.HYVAKSYTTY)
+        h.setTila(HYVAKSYTTY)
       })
       wrapper.valintatulokset.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(vt => {
         vt.setJulkaistavissa(false, "", "")
@@ -248,6 +252,15 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
   "store sijoiteltu ilman varasijasääntöjä niiden ollessa voimassa flag by valintatapajono" in {
     val wrapper = loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")
     wrapper.hakukohteet.head.getValintatapajonot.get(0).setSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa(true)
+    singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
+    assertSijoittelu(wrapper)
+  }
+  "store sivssnov-sijoittelu cutoff point in valintatapajono" in {
+    val wrapper = loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")
+    val jono: Valintatapajono = wrapper.hakukohteet.head.getValintatapajonot.get(0)
+    jono.setSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa(true)
+    val hakemusOids = jono.getHakemukset.asScala.map(_.getHakemusOid).asJava
+    jono.setSivssnovSijoittelunVarasijataytonRajoitus(java.util.Optional.of(new JonosijaTieto(79, 2, HYVAKSYTTY, hakemusOids)))
     singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
     assertSijoittelu(wrapper)
   }

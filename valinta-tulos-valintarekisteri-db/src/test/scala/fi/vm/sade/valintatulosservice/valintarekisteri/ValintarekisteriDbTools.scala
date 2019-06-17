@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri
 import java.text.SimpleDateFormat
 import java.util.Date
 
+import fi.vm.sade.sijoittelu.domain.Valintatapajono.JonosijaTieto
 import fi.vm.sade.sijoittelu.domain._
 import fi.vm.sade.sijoittelu.tulos.dto.SijoitteluajoDTO
 import fi.vm.sade.valintatulosservice.json4sCustomFormats
@@ -10,6 +11,7 @@ import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Tasasijasaanto, _}
 import org.json4s.DefaultFormats
+import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods._
 import org.specs2.matcher.MatchResult
 import org.specs2.mutable.Specification
@@ -244,6 +246,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
         dvalintatapajono.getSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa mustEqual wvalintatapajono.getSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa
         format(dvalintatapajono.getVarasijojaKaytetaanAlkaen) mustEqual format(wvalintatapajono.getVarasijojaKaytetaanAlkaen)
         format(dvalintatapajono.getVarasijojaTaytetaanAsti) mustEqual format(wvalintatapajono.getVarasijojaTaytetaanAsti)
+        dvalintatapajono.getSivssnovSijoittelunVarasijataytonRajoitus mustEqual wvalintatapajono.getSivssnovSijoittelunVarasijataytonRajoitus
 
         dvalintatapajono.getHakemukset.size mustEqual wvalintatapajono.getHakemukset.size
         dvalintatapajono.getHakemukset.asScala.toList.foreach(dhakemus => {
@@ -352,13 +355,24 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
   })
 
   def findHakukohteenValintatapajonot(hakukohdeOid:String): Seq[Valintatapajono] = {
-    singleConnectionValintarekisteriDb.runBlocking(
+    val valintatapajonot = singleConnectionValintarekisteriDb.runBlocking(
       sql"""select oid, nimi, prioriteetti, tasasijasaanto, aloituspaikat, alkuperaiset_aloituspaikat, ei_varasijatayttoa,
             kaikki_ehdon_tayttavat_hyvaksytaan, poissaoleva_taytto,
             varasijat, varasijatayttopaivat, varasijoja_kaytetaan_alkaen, varasijoja_taytetaan_asti, tayttojono,
             alin_hyvaksytty_pistemaara, sijoiteltu_ilman_varasijasaantoja_niiden_ollessa_voimassa
             from valintatapajonot
             where hakukohde_oid = ${hakukohdeOid}""".as[Valintatapajono])
+    val sivssnovSijoittelunAlimmatVarallaolijat = singleConnectionValintarekisteriDb.runBlocking(
+      sql"""select valintatapajono_oid, hakukohde_oid, jonosija, tasasijajonosija, tila, hakemusoidit
+            from sivssnov_sijoittelun_varasijatayton_rajoitus where hakukohde_oid = ${hakukohdeOid}""".as[(String, String, Int, Int, String, String)])
+    sivssnovSijoittelunAlimmatVarallaolijat.foreach { t =>
+      valintatapajonot.find(_.getOid == t._1).foreach { jono =>
+        val hakemusOids: Seq[String] = JsonMethods.parse(t._6).extract[Seq[String]]
+        jono.setSivssnovSijoittelunVarasijataytonRajoitus(java.util.Optional.of(new JonosijaTieto(t._3, t._4, Valinnantila(t._5).valinnantila, hakemusOids.asJava)))
+      }
+    }
+
+    valintatapajonot
   }
 
   private implicit val getSijoitteluajonHakijaryhmaResult = GetResult(r => {

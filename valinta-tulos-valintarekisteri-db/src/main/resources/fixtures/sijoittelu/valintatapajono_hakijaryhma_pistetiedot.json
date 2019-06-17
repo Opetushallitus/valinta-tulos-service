@@ -57,7 +57,7 @@
           "eiVarasijatayttoa" : false,
           "kaikkiEhdonTayttavatHyvaksytaan" : false,
           "poissaOlevaTaytto" : true,
-          "varasijat" : 0,
+          "varasijat" : 9,
           "varasijaTayttoPaivat" : 0,
           "varasijojaTaytetaanAsti" : {
             "$date": "2016-08-15T12:00:00.000Z"
@@ -65,6 +65,12 @@
           "hyvaksytty" : 0,
           "varalla" : 1,
           "alinHyvaksyttyPistemaara" : "",
+          "sivssnovSijoittelunVarasijataytonRajoitus": {
+            "jonosija": 1,
+            "tasasijaJonosija": 1,
+            "tila": "VARALLA",
+            "hakemusOidit": ["1.2.246.562.24.71711513035"]
+          },
           "hakemukset" : [
             {
               "hakijaOid" : "1.2.246.562.24.71711513035",
