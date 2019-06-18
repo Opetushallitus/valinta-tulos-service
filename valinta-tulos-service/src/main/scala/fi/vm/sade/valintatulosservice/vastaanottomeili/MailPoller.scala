@@ -12,6 +12,7 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository.MailableCandidate
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.{ValintatulosService, tarjonta}
@@ -242,7 +243,7 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
 
   private def searchAndCreateMailablesForSingleHakukohde(mailDecorator: MailDecorator, limit: Int, hakuOid: HakuOid, hakukohdeOid: HakukohdeOid, ignoreEarlier: Boolean, valintatapajonoFilter: Option[ValintatapajonoOid]): (Int, List[Ilmoitus]) = {
     val logMsg = s"Vastaanottopostien lähetyksen kandidaattien haku hakukohteessa $hakukohdeOid haussa $hakuOid"
-    val candidates: Set[(HakemusOid, HakukohdeOid, Option[MailReason])] = timed(logMsg, 1000) {
+    val candidates: Set[MailableCandidate] = timed(logMsg, 1000) {
       mailPollerRepository.candidates(hakukohdeOid, ignoreEarlier = ignoreEarlier, recheckIntervalHours = hakemusRecheckIntervalHours)
     }
     val hakemuksetByOid = if (candidates.isEmpty) {
@@ -265,20 +266,20 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
 
   private def getMailablesForHakemuses(hakemuksetByOid: Map[HakemusOid, Hakemus],
                                        hakukohdeOid: HakukohdeOid,
-                                       candidates: Set[(HakemusOid, HakukohdeOid, Option[MailReason])],
+                                       candidates: Set[MailableCandidate],
                                        limit: Int,
                                        mailDecorator: MailDecorator,
                                        valintatapajonoFilter: Option[ValintatapajonoOid] = None): (Int, List[Ilmoitus]) = {
     val (checkedCandidates, mailableStatii, mailables) =
       timed(s"Vastaanottopostien statuksien hakeminen ${candidates.size} kandidaatille hakukohteessa $hakukohdeOid", 1000) {
-        candidates.map(x => (x._1, x._2, x._3))
+        candidates
           .groupBy(_._1)
           .foldLeft((Set.empty[HakemusOid], Set.empty[HakemusMailStatus], List.empty[Ilmoitus]))({
             case ((candidatesAcc, hakemusMailStatiiAcc, mailablesAcc), (hakemusOid, mailReasons)) if mailablesAcc.size < limit =>
               (for {
                 hakemus <- hakemuksetByOid.get(hakemusOid)
                 hakemuksentulos <- fetchHakemuksentulos(hakemus)
-                hakemusMailStatii <- mailStatusFor(hakemus, hakukohdeOid, hakemuksentulos, mailReasons.map(m => m._2 -> m._3).toMap, valintatapajonoFilter)
+                hakemusMailStatii <- mailStatusFor(hakemus, hakukohdeOid, hakemuksentulos, mailReasons.map(m => m._2 -> (m._3, m._4)).toMap, valintatapajonoFilter)
                 mailable <- mailDecorator.statusToMail(hakemusMailStatii)
               } yield {
                 (
@@ -318,7 +319,7 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
   private def mailStatusFor(hakemus: Hakemus,
                             hakukohdeOid: HakukohdeOid,
                             hakemuksenTulos: Hakemuksentulos,
-                            mailReasons: Map[HakukohdeOid, Option[MailReason]],
+                            mailReasons: Map[HakukohdeOid, (Option[MailReason],Boolean)],
                             valintatapajonoFilter: Option[ValintatapajonoOid]): Option[HakemusMailStatus] = {
     hakemus match {
       case Hakemus(_, _, _, asiointikieli, _, Henkilotiedot(Some(kutsumanimi), Some(email), hasHetu)) =>
@@ -352,15 +353,16 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
 
   private def mailStatiiForHakutoiveet(hakemusOid: HakemusOid,
                                        filteredHakutoiveet: List[Hakutoiveentulos],
-                                       mailReasons: Map[HakukohdeOid, Option[MailReason]]): List[HakukohdeMailStatus] = {
+                                       mailReasons: Map[HakukohdeOid, (Option[MailReason],Boolean)]): List[HakukohdeMailStatus] = {
     val reasonsToMail: List[HakukohdeMailStatus] = filteredHakutoiveet.map(hakutoive => {
       val reasonToMail: Option[MailReason] = getReasonToMail(
-        hakemusOid,
-        hakutoive.hakukohdeOid,
-        hakutoive.vastaanottotila,
-        hakutoive.vastaanotettavuustila,
-        hakutoive.vastaanotonIlmoittaja,
-        mailReasons.get(hakutoive.hakukohdeOid).flatten)
+        hakemusOid = hakemusOid,
+        hakukohdeOid = hakutoive.hakukohdeOid,
+        vastaanottotila = hakutoive.vastaanottotila,
+        vastaanotettavuustila = hakutoive.vastaanotettavuustila,
+        vastaanotonIlmoittaja = hakutoive.vastaanotonIlmoittaja,
+        mailReason = mailReasons.get(hakutoive.hakukohdeOid).flatMap(_._1),
+        hasPreviouslySent = mailReasons.get(hakutoive.hakukohdeOid).map(_._2).contains(true))
 
       HakukohdeMailStatus(
         hakukohdeOid = hakutoive.hakukohdeOid,
@@ -385,17 +387,18 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
                               vastaanottotila: Vastaanottotila,
                               vastaanotettavuustila: Vastaanotettavuustila,
                               vastaanotonIlmoittaja: Option[VastaanotonIlmoittaja],
-                              mailReason: Option[MailReason]): Option[MailReason] = {
+                              mailReason: Option[MailReason],
+                              hasPreviouslySent: Boolean): Option[MailReason] = {
 
-    if (Vastaanotettavuustila.isVastaanotettavissa(vastaanotettavuustila) && !mailReason.contains(Vastaanottoilmoitus)) {
+    if (Vastaanotettavuustila.isVastaanotettavissa(vastaanotettavuustila) && (!hasPreviouslySent || !mailReason.contains(Vastaanottoilmoitus))) {
       Some(Vastaanottoilmoitus)
-    } else if (vastaanotonIlmoittaja.contains(Sijoittelu) && vastaanottotila == Vastaanottotila.vastaanottanut && !mailReason.contains(SitovanVastaanotonIlmoitus)) {
+    } else if (vastaanotonIlmoittaja.contains(Sijoittelu) && vastaanottotila == Vastaanottotila.vastaanottanut && (!hasPreviouslySent || !mailReason.contains(SitovanVastaanotonIlmoitus))) {
       Some(SitovanVastaanotonIlmoitus)
-    } else if (vastaanotonIlmoittaja.contains(Sijoittelu) && vastaanottotila == Vastaanottotila.ehdollisesti_vastaanottanut && !mailReason.contains(EhdollisenPeriytymisenIlmoitus)) {
+    } else if (vastaanotonIlmoittaja.contains(Sijoittelu) && vastaanottotila == Vastaanottotila.ehdollisesti_vastaanottanut && (!hasPreviouslySent || !mailReason.contains(EhdollisenPeriytymisenIlmoitus))) {
       Some(EhdollisenPeriytymisenIlmoitus)
     } else {
       logger.info(s"Hakemuksella $hakemusOid ei syytä sähköpostin lähetykseelle hakutoiveella $hakukohdeOid. " +
-        s"vastaanottotila: $vastaanottotila, vastaanotettavuustila: $vastaanotettavuustila, vastaanotonIlmoittaja: $vastaanotonIlmoittaja, mailReason: $mailReason")
+        s"vastaanottotila: $vastaanottotila, vastaanotettavuustila: $vastaanotettavuustila, vastaanotonIlmoittaja: $vastaanotonIlmoittaja, mailReason: $mailReason, hasPreviouslySent: $hasPreviouslySent")
       None
     }
   }
