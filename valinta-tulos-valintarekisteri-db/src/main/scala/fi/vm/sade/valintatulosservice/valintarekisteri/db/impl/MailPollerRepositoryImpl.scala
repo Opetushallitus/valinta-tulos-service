@@ -190,4 +190,12 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
         throw e
     }
   }
+
+  def deleteIncompleteMailEntries(): Set[(HakemusOid, HakukohdeOid, Option[MailReason], Option[Timestamp], Timestamp)] = {
+    runBlocking(
+      sql"""delete from viestit where lahetetty is null
+            returning hakemus_oid, hakukohde_oid, syy, lahetetty, lahettaminen_aloitettu
+          """.as[(HakemusOid, HakukohdeOid, Option[MailReason], Option[Timestamp], Timestamp)]
+    ).toSet
+  }
 }

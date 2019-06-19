@@ -147,12 +147,16 @@ trait MailerComponent {
       logger.info("got confirmation for " + recipients.size + " applications: " + recipients.map(_.hakemusOid).mkString(","))
       mailPoller.markAsSent(recipients)
     }
-  }
 
+    def cleanup(): Unit = {
+      mailPoller.deleteIncompleteMailEntries()
+    }
+  }
 }
 
 trait Mailer {
   def sendMailFor(query: MailerQuery): List[String]
+  def cleanup(): Unit
 }
 
 sealed trait MailerQuery

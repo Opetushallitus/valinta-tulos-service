@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
+import java.sql.Timestamp
 import java.util.Date
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository.MailableCandidate
@@ -27,6 +28,8 @@ trait MailPollerRepository {
   def deleteHakemusMailEntriesForHakemus(hakemusOid: HakemusOid): Int
 
   def deleteHakemusMailEntriesForHakukohde(hakukohdeOid: HakukohdeOid): Int
+
+  def deleteIncompleteMailEntries(): Set[(HakemusOid, HakukohdeOid, Option[MailReason], Option[Timestamp], Timestamp)]
 }
 
 object MailPollerRepository {

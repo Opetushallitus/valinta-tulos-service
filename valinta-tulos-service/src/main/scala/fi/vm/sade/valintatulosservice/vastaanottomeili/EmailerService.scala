@@ -31,6 +31,8 @@ class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, cronExpr
         case Failure(e) =>
           logger.error(s"Scheduled VT-emailer run failed: " , e)
       }
+      logger.info("Scheduled VT-emailer post-run cleanup")
+      cleanup()
       logger.info("Scheduled VT-emailer run finished")
     }
   }
@@ -76,4 +78,15 @@ class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, cronExpr
     }
   }
 
+
+  private def cleanup(): Unit = {
+    try {
+      registry.mailer.cleanup()
+      logger.info("Cleanup successfully completed")
+    } catch {
+      case e: Exception =>
+        logger.error("Error during cleanup", e)
+    }
   }
+
+}

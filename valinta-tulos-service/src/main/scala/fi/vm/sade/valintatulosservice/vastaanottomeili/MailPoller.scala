@@ -428,12 +428,24 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
   }
 
   def deleteMailEntries(hakemusOid: HakemusOid): Int = {
+    logger.info(s"Deleting mail entries for hakemus $hakemusOid")
     mailPollerRepository.deleteHakemusMailEntriesForHakemus(hakemusOid)
   }
 
   def deleteMailEntries(hakukohdeOid: HakukohdeOid): Int = {
+    logger.info(s"Deleting mail entries for hakukohde $hakukohdeOid")
     mailPollerRepository.deleteHakemusMailEntriesForHakukohde(hakukohdeOid)
   }
+
+  def deleteIncompleteMailEntries(): Unit = {
+    val deletedSet = mailPollerRepository.deleteIncompleteMailEntries()
+    if (deletedSet.isEmpty) {
+      logger.info(s"Found no incomplete mail entries to clean up.")
+    } else {
+      logger.warn(s"Cleaned up ${deletedSet.size} incomplete mail entries: ${deletedSet.mkString(", ")}")
+    }
+  }
+
 }
 
 
