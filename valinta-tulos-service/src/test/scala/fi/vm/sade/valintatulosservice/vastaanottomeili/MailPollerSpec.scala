@@ -254,6 +254,41 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         service.pollForAllMailables(mailDecorator, 1, oneMinute).mailables mustEqual Nil
         there was one (mailPollerRepository).markAsToBeSent(Set.empty)
       }
+      "Uusi ilmoitus vastaanotettavasta paikasta jos viesti.lahetetty false" in new Mocks {
+        hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
+        hakuService.getHaku(hakuOidA) returns Right(tarjontaHakuA)
+        hakuService.getHakukohde(hakukohdeOidA) returns Right(tarjontaHakukohdeA)
+        hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA))
+        mailPollerRepository.candidates(hakukohdeOidA, recheckIntervalHours = 0) returns Set((hakemusOidA, hakukohdeOidA, Some(Vastaanottoilmoitus), false))
+        mailPollerRepository.lastChecked(hakukohdeOidA) returns None
+        hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusA)
+        valintatulosService.hakemuksentulos(hakemusA) returns Some(hakemuksentulosA)
+        service.pollForAllMailables(mailDecorator, 1, oneMinute).mailables mustEqual  List(Ilmoitus(
+          hakemusOid = hakemusOidA,
+          hakijaOid = hakijaOidA,
+          secureLink = None,
+          asiointikieli = asiointikieliA,
+          etunimi = etunimiA,
+          email = emailA,
+          deadline = deadlineA,
+          hakukohteet = List(
+            Hakukohde(
+              oid = hakukohdeOidA,
+              lahetysSyy = LahetysSyy.vastaanottoilmoitusKk,
+              vastaanottotila = Vastaanottotila.kesken,
+              ehdollisestiHyvaksyttavissa = false,
+              hakukohteenNimet = hakukohdeNimetA,
+              tarjoajaNimet = tarjoajaNimetA
+            )
+          ),
+          haku = Haku(
+            oid = hakuOidA,
+            nimi = hakuNimetA,
+            toinenAste = false
+          )
+        ))
+        there was one (mailPollerRepository).markAsToBeSent(Set((hakemusOidA, hakukohdeOidA, Vastaanottoilmoitus)))
+      }
       "Ei uutta ilmoitusta ehdollisen vastaanoton siirtymisestä ylempään hakutoiveeseen" in new Mocks {
         hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
         hakuService.getHaku(hakuOidA) returns Right(tarjontaHakuA)
