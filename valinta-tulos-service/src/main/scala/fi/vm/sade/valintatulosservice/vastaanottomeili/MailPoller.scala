@@ -389,6 +389,11 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
                               vastaanotonIlmoittaja: Option[VastaanotonIlmoittaja],
                               mailReason: Option[MailReason],
                               hasPreviouslySent: Boolean): Option[MailReason] = {
+    if (!hasPreviouslySent && mailReason.nonEmpty) {
+      logger.warn(s"Hakemuksella $hakemusOid hakutoiveella $hakukohdeOid oli aiempi syy viestin lähetykselle mutta ei" +
+        s" merkintää viestin lähetysajankohdasta (mailReason = $mailReason, hasPreviouslySent = $hasPreviouslySent)." +
+        s" Pyritään kiertämään ongelma, mutta juurisyy tulee selvittää. Onko viesti jäänyt lähtemättä? Pudottaako emailer lähetettäviä lattialle?")
+    }
 
     if (Vastaanotettavuustila.isVastaanotettavissa(vastaanotettavuustila) && (!hasPreviouslySent || !mailReason.contains(Vastaanottoilmoitus))) {
       Some(Vastaanottoilmoitus)
