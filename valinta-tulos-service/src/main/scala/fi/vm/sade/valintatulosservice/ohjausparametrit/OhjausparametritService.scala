@@ -66,7 +66,7 @@ class RemoteOhjausparametritService(implicit appConfig: VtsAppConfig) extends Oh
     Timer.timed(s"Find parameters for target $target", 500) { loadParametersFromService(target, parser) }
   }
 
-  private def loadParametersFromService[T](target: String, parser: String => T) = {
+  private def loadParametersFromService[T](target: String, parser: String => T): Either[RuntimeException, Option[T]] = {
     val url = appConfig.ophUrlProperties.url("ohjausparametrit-service.parametri", target)
     Try(DefaultHttpClient.httpGet(url)
       ("valinta-tulos-service")

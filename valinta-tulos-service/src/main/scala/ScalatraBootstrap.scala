@@ -4,6 +4,9 @@ import fi.vm.sade.auditlog.{ApplicationType, Audit, Logger}
 import fi.vm.sade.oppijantunnistus.OppijanTunnistusService
 import fi.vm.sade.security._
 import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.config.EmailerRegistry
+import fi.vm.sade.valintatulosservice.config.EmailerRegistry.EmailerRegistry
+import fi.vm.sade.valintatulosservice.vastaanottomeili.EmailerServlet
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.{Dev, IT, VtsAppConfig}
 import fi.vm.sade.valintatulosservice.config.{OhjausparametritAppConfig, VtsAppConfig}
@@ -11,7 +14,6 @@ import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusRepository, HakuAppRepository}
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetailsService
 import fi.vm.sade.valintatulosservice.kela.{KelaService, VtsKelaAuthenticationClient}
-import fi.vm.sade.valintatulosservice.migraatio.valinta.ValintalaskentakoostepalveluService
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
@@ -26,6 +28,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.vastaanottomeili._
+
 import javax.servlet.{DispatcherType, ServletContext}
 import org.scalatra._
 import org.slf4j.LoggerFactory
@@ -81,8 +84,6 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val streamingValintatulosService = new StreamingValintatulosService(valintatulosService, valintarekisteriDb, hakijaDTOClient)(appConfig)
     lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService, valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, hakemusRepository, valintarekisteriDb)
     lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService, valintarekisteriDb, valintarekisteriDb)
-    lazy val mailPollerRepository: MailPollerRepository = valintarekisteriDb
-    lazy val mailPoller: MailPollerAdapter = new MailPollerAdapter(mailPollerRepository, valintatulosService, hakuService, hakemusRepository, appConfig.ohjausparametritService, appConfig.settings)
 
     lazy val authorizer = new OrganizationHierarchyAuthorizer(appConfig)
     lazy val yhdenPaikanSaannos = new YhdenPaikanSaannos(hakuService, valintarekisteriDb)
@@ -96,7 +97,6 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         yhdenPaikanSaannos,
         appConfig,
         audit)
-    lazy val valintalaskentakoostepalveluService = new ValintalaskentakoostepalveluService(appConfig)
     lazy val userDetailsService = new KayttooikeusUserDetailsService(appConfig)
     lazy val hyvaksymiskirjeService = new HyvaksymiskirjeService(valintarekisteriDb, hakuService, audit, authorizer)
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
@@ -133,7 +133,6 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         valintarekisteriDb,
         hakemustenTulosHakuLock),
         "/haku")
-      context.mount(new EmailStatusServlet(mailPoller, new MailDecorator(hakuService, oppijanTunnistusService)), "/vastaanottoposti")
       context.mount(new EnsikertalaisuusServlet(valintarekisteriDb, appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus")
       context.mount(new HakijanVastaanottoServlet(vastaanottoService), "/vastaanotto")
       context.mount(new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, userDetailsService), "/erillishaku/valinnan-tulos")
@@ -173,7 +172,15 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(handler = new MuutoshistoriaServlet(valinnantulosService, valintarekisteriDb), urlPattern = "/auth/muutoshistoria", name = "PublicMuutosHistoriaServlet")
       context.mount(new ValintaesitysServlet(valintaesitysService, valintarekisteriDb), "/auth/valintaesitys")
       context.mount(new PuuttuvienTulostenMetsastajaServlet(audit, valintarekisteriDb, hakuAppRepository, appConfig.properties("host.virkailija")), "/auth/puuttuvat")
+
+      lazy val mailPollerRepository: MailPollerRepository = valintarekisteriDb
+      lazy val mailPoller: MailPoller = new MailPoller(mailPollerRepository, valintatulosService, hakuService, hakemusRepository, appConfig.ohjausparametritService, appConfig.settings)
+      lazy val mailDecorator: MailDecorator = new MailDecorator(hakuService, oppijanTunnistusService)
       context.mount(new PublicEmailStatusServlet(mailPoller, valintarekisteriDb, audit), "/auth/vastaanottoposti")
+
+      val registry: EmailerRegistry = EmailerRegistry.fromString(Option(System.getProperty("vtemailer.profile")).getOrElse(if (appConfig.isInstanceOf[IT]) "it" else "default"))(mailPoller, mailDecorator)
+      val emailerService = new EmailerService(registry, valintarekisteriDb, appConfig.settings.emailerCronString)
+      context.mount(new EmailerServlet(emailerService, valintarekisteriDb), "/auth/emailer")
     }
   }
 

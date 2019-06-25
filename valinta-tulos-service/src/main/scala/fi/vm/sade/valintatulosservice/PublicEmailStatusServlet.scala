@@ -4,11 +4,11 @@ import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid}
-import fi.vm.sade.valintatulosservice.vastaanottomeili.MailPollerAdapter
+import fi.vm.sade.valintatulosservice.vastaanottomeili.MailPoller
 import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 
-class PublicEmailStatusServlet(mailPoller: MailPollerAdapter,
+class PublicEmailStatusServlet(mailPoller: MailPoller,
                                val sessionRepository: SessionRepository,
                                audit: Audit)
                               (implicit val swagger: Swagger)
@@ -31,26 +31,6 @@ class PublicEmailStatusServlet(mailPoller: MailPollerAdapter,
       .setField("hakukohdeoid", hakukohdeOid.toString)
     audit.log(auditInfo.user, VastaanottoPostitietojenLuku, builder.build(), new Changes.Builder().build())
     mailPoller.getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid)
-  }
-
-  lazy val deleteVastaanottoposti: OperationBuilder = (apiOperation[Unit]("deleteMailEntry")
-    summary "Poistaa hakemuksen mailin tilan uudelleenlähetystä varten"
-    parameter pathParam[String]("hakemusOid"))
-
-  delete("/:hakemusOid", operation(deleteVastaanottoposti)) {
-    contentType = formats("json")
-    implicit val authenticated: Authenticated = authenticate
-    authorize(Role.SIJOITTELU_CRUD)
-    val hakemusOid: HakemusOid = parseHakemusOid.fold(throw _, x => x)
-    audit.log(auditInfo.user, VastaanottoPostitietojenPoisto,
-      new Target.Builder()
-        .setField("hakemusoid", hakemusOid.toString)
-        .build(),
-      new Changes.Builder()
-        .removed("viesti", hakemusOid.toString)
-        .build())
-    val deletedCount: Int = mailPoller.deleteMailEntries(hakemusOid)
-    logger.info(s"Removed $deletedCount mail bookkeeping entries for hakemus $hakemusOid to enable re-sending of emails.")
   }
 
   protected def parseHakukohdeOid: Either[Throwable, HakukohdeOid] = {

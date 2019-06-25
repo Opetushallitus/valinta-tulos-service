@@ -6,6 +6,7 @@ import java.util.Date
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository.MailableCandidate
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.jdbc.PostgresProfile.api._
 
@@ -15,40 +16,70 @@ import scala.concurrent.duration.Duration
 trait MailPollerRepositoryImpl extends MailPollerRepository with ValintarekisteriRepository with Logging {
 
   override def candidates(hakukohdeOid: HakukohdeOid,
-                          recheckIntervalHours: Int = 24): Set[(HakemusOid, HakukohdeOid, Option[MailReason], Option[Date])] = {
+                          ignoreEarlier: Boolean = false,
+                          recheckIntervalHours: Int): Set[MailableCandidate] = {
     timed(s"Fetching mailable candidates database call for hakukohde $hakukohdeOid", 100) {
       runBlocking(
         sql"""select vt.hakemus_oid,
                      vt.hakukohde_oid,
                      v.syy,
-                     tark.tarkistettu
+                     (v.lahetetty is not null)
               from valinnantilat as vt
               left join viestit as v
               on vt.hakemus_oid = v.hakemus_oid and
                  vt.hakukohde_oid = v.hakukohde_oid
-              left join viestinlahetys_tarkistettu tark
-              on vt.hakukohde_oid = tark.hakukohde_oid
               where vt.hakukohde_oid = $hakukohdeOid and vt.hakemus_oid in (
-                select vt.hakemus_oid
-                from valinnantilat as vt
+                select vt2.hakemus_oid
+                from valinnantilat as vt2
                 join valinnantulokset as vnt
+                on vt2.valintatapajono_oid = vnt.valintatapajono_oid and
+                   vt2.hakemus_oid = vnt.hakemus_oid and
+                   vt2.hakukohde_oid = vnt.hakukohde_oid
+                left join viestit as v
+                on vt2.hakemus_oid = v.hakemus_oid and
+                   vt2.hakukohde_oid = v.hakukohde_oid
+                left join newest_vastaanotot as nv
+                on vt2.henkilo_oid = nv.henkilo and
+                   vt2.hakukohde_oid = nv.hakukohde
+                where vt2.hakukohde_oid = $hakukohdeOid
+                  and vnt.julkaistavissa is true
+                  and (vt2.tila = 'Hyvaksytty' or vt2.tila = 'VarasijaltaHyvaksytty')
+                  and ($ignoreEarlier or
+                    ((v.lahettaminen_aloitettu is null or v.lahettaminen_aloitettu < now() - make_interval(hours => $recheckIntervalHours))
+                    and  (v.lahetetty is null or (v.syy is not distinct from 'EHDOLLISEN_PERIYTYMISEN_ILMOITUS' and
+                                               nv.action is not distinct from 'VastaanotaSitovasti' and
+                                               nv.ilmoittaja is not distinct from 'järjestelmä')))))
+         """.as[MailableCandidate]).toSet
+       }
+  }
+
+  override def lastChecked(hakukohdeOid: HakukohdeOid): Option[Date] = {
+    runBlocking(
+      sql"""select tark.tarkistettu
+              from viestinlahetys_tarkistettu tark
+              where tark.hakukohde_oid = $hakukohdeOid
+         """.as[Timestamp]).headOption
+  }
+
+  override def candidate(hakemusOid: HakemusOid): Set[MailableCandidate] = {
+    timed(s"Fetching mailable candidates database call for hakemus $hakemusOid", 100) {
+      runBlocking(
+        sql"""select vt.hakemus_oid,
+                     vt.hakukohde_oid,
+                     v.syy,
+                     (v.lahetetty is not null)
+              from valinnantilat as vt
+              left join viestit as v
+                on vt.hakemus_oid = v.hakemus_oid and
+                   vt.hakukohde_oid = v.hakukohde_oid
+              join valinnantulokset as vnt
                 on vt.valintatapajono_oid = vnt.valintatapajono_oid and
                    vt.hakemus_oid = vnt.hakemus_oid and
                    vt.hakukohde_oid = vnt.hakukohde_oid
-                left join viestit as v
-                on vt.hakemus_oid = v.hakemus_oid and
-                   vt.hakukohde_oid = v.hakukohde_oid
-                left join newest_vastaanotot as nv
-                on vt.henkilo_oid = nv.henkilo and
-                   vt.hakukohde_oid = nv.hakukohde
-                where vt.hakukohde_oid = $hakukohdeOid
-                  and vnt.julkaistavissa is true
-                  and (vt.tila = 'Hyvaksytty' or vt.tila = 'VarasijaltaHyvaksytty')
-                  and (v.lahettaminen_aloitettu is null or v.lahettaminen_aloitettu < now() - make_interval(hours => $recheckIntervalHours))
-                  and (v.lahetetty is null or (v.syy is not distinct from 'EHDOLLISEN_PERIYTYMISEN_ILMOITUS' and
-                                               nv.action is not distinct from 'VastaanotaSitovasti' and
-                                               nv.ilmoittaja is not distinct from 'järjestelmä')))
-         """.as[(HakemusOid, HakukohdeOid, Option[MailReason], Option[Timestamp])]).toSet
+              where vt.hakemus_oid = $hakemusOid
+                and vnt.julkaistavissa is true
+                and (vt.tila = 'Hyvaksytty' or vt.tila = 'VarasijaltaHyvaksytty')
+         """.as[MailableCandidate]).toSet
     }
   }
 
@@ -140,16 +171,31 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
             order by hakemus_oid""".as[String]).toList
   }
 
-  def deleteHakemusMailEntries(hakemusOid: HakemusOid): Int = {
-    runBlockingTransactionally[Int](
-      sqlu"""
-            delete from viestinlahetys_tarkistettu where hakukohde_oid in
-              (select hakukohde_oid from valinnantilat where hakemus_oid = ${hakemusOid})""".
-        andThen(sqlu"""delete from viestit where hakemus_oid = ${hakemusOid}""")) match {
-      case Right(n) => n
+  def deleteHakemusMailEntriesForHakemus(hakemusOid: HakemusOid): Int = {
+    runBlockingTransactionally[Int](sqlu"""delete from viestit where hakemus_oid = ${hakemusOid}""") match {
+      case Right(n) =>
+        n
       case Left(e) =>
         logger.error(s"Virhe poistettaessa hakemuksen $hakemusOid viestikirjanpitoa", e)
         throw e
     }
+  }
+
+  def deleteHakemusMailEntriesForHakukohde(hakukohdeOid: HakukohdeOid): Int = {
+    runBlockingTransactionally[Int](sqlu"""delete from viestit where hakukohde_oid = ${hakukohdeOid}""") match {
+      case Right(n) =>
+        n
+      case Left(e) =>
+        logger.error(s"Virhe poistettaessa hakukohteen $hakukohdeOid viestikirjanpitoa", e)
+        throw e
+    }
+  }
+
+  def deleteIncompleteMailEntries(): Set[(HakemusOid, HakukohdeOid, Option[MailReason], Option[Timestamp], Timestamp)] = {
+    runBlocking(
+      sql"""delete from viestit where lahetetty is null
+            returning hakemus_oid, hakukohde_oid, syy, lahetetty, lahettaminen_aloitettu
+          """.as[(HakemusOid, HakukohdeOid, Option[MailReason], Option[Timestamp], Timestamp)]
+    ).toSet
   }
 }

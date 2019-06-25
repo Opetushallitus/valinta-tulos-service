@@ -13,7 +13,9 @@ case class HakemusMailStatus(hakijaOid: String,
                              hasHetu: Boolean,
                              hakuOid: HakuOid,
                              hakukohteet: List[HakukohdeMailStatus]) {
-  def anyMailToBeSent: Boolean = hakukohteet.exists(_.shouldMail)
+  def anyMailToBeSent: Boolean = {
+    hakukohteet.exists(_.shouldMail)
+  }
 }
 
 case class HakukohdeMailStatus(hakukohdeOid: HakukohdeOid,
@@ -23,7 +25,9 @@ case class HakukohdeMailStatus(hakukohdeOid: HakukohdeOid,
                                valintatila: Valintatila,
                                vastaanottotila: Vastaanottotila,
                                ehdollisestiHyvaksyttavissa: Boolean) {
-  def shouldMail: Boolean = reasonToMail.isDefined
+  def shouldMail: Boolean = {
+    reasonToMail.isDefined
+  }
 }
 
 sealed trait MailReason

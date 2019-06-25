@@ -267,7 +267,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
           dhakemus.getVarasijanNumero mustEqual whakemus.getVarasijanNumero
           //dhakemus.getValintatapajonoOid mustEqual wvalintatapajono.getOid
           dhakemus.isOnkoMuuttunutViimeSijoittelussa mustEqual whakemus.isOnkoMuuttunutViimeSijoittelussa
-          dhakemus.getHyvaksyttyHakijaryhmista.asScala.diff(whakemus.getHyvaksyttyHakijaryhmista.asScala) mustEqual List()
+          dhakemus.getHyvaksyttyHakijaryhmista.asScala.diff(whakemus.getHyvaksyttyHakijaryhmista.asScala) mustEqual Set()
           dhakemus.getSiirtynytToisestaValintatapajonosta mustEqual whakemus.getSiirtynytToisestaValintatapajonosta
           //TODO: ?? dhakemus.getTodellinenJonosija mustEqual whakemus.getJonosija
 

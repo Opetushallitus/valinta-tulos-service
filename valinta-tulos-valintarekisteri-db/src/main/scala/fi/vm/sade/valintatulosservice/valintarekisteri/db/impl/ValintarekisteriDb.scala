@@ -35,8 +35,10 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
   logger.info(s"Database configuration: ${config.copy(password = Some("***"))}")
   val flyway = new Flyway()
   flyway.setDataSource(config.url, config.user.orNull, config.password.orNull)
+  flyway.setOutOfOrder(true)
   Timer.timed("Flyway migration") { flyway.migrate() }
-  override val db = {
+
+  val hikariConfig: HikariConfig = {
     val c = new HikariConfig()
     c.setJdbcUrl(config.url)
     config.user.foreach(c.setUsername)
@@ -46,11 +48,18 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
     config.registerMbeans.foreach(c.setRegisterMbeans)
     config.initializationFailTimeout.foreach(c.setInitializationFailTimeout)
     c.setLeakDetectionThreshold(config.leakDetectionThresholdMillis.getOrElse(c.getMaxLifetime))
+    c
+  }
+  override val dataSource: javax.sql.DataSource = {
+    new HikariDataSource(hikariConfig)
+  }
+
+  override val db = {
     val maxConnections = config.numThreads.getOrElse(20)
     val executor = AsyncExecutor("valintarekisteri", maxConnections, config.queueSize.getOrElse(1000))
-    logger.info(s"Configured Hikari with ${classOf[HikariConfig].getSimpleName} ${ToStringBuilder.reflectionToString(c).replaceAll("password=.*?,", "password=<HIDDEN>,")}" +
-         s" and executor ${ToStringBuilder.reflectionToString(executor)}")
-    Database.forDataSource(new HikariDataSource(c), maxConnections = Some(maxConnections), executor)
+    logger.info(s"Configured Hikari with ${classOf[HikariConfig].getSimpleName} ${ToStringBuilder.reflectionToString(hikariConfig).replaceAll("password=.*?,", "password=<HIDDEN>,")}" +
+      s" and executor ${ToStringBuilder.reflectionToString(executor)}")
+    Database.forDataSource(dataSource, maxConnections = Some(maxConnections), executor)
   }
   if(isItProfile) {
     logger.warn("alter table public.schema_version owner to oph")
