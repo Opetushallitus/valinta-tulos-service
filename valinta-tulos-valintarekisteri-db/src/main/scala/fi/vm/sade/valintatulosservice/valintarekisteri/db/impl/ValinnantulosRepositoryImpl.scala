@@ -70,10 +70,10 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
         and vth.tila = 'Hyvaksytty'
         and vt.julkaistavissa = 'true'
         and vth.transaction_id = (
-          select max(transaction_id)
-          from valinnantilat_history
-          where vth.hakemus_oid = ${hakemusOid}
-            and vth.hakukohde_oid = ${hakukohdeOid}
+          select max(vths.transaction_id)
+          from valinnantilat_history as vths
+          where vths.hakemus_oid = ${hakemusOid}
+            and vths.hakukohde_oid = ${hakukohdeOid}
       )""".as[Int].head)
   }
 
