@@ -754,18 +754,22 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     var firstChanged = false
 
     tulokset.zipWithIndex.map {
-      case (tulos, index) if firstJulkaisematon >= 0 && index > firstJulkaisematon && tulos.valintatila == Valintatila.peruuntunut =>
-        if (valinnantulosRepository.getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuCountHistoriasta(hakemusOid, tulos.hakukohdeOid) > 0 && !firstChanged) {
-          logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä valintatila > hyväksytty {}", index)
-          firstChanged = true
-          tulos.copy(valintatila = Valintatila.hyväksytty, tilanKuvaukset = Map.empty)
+      case (tulos, index) =>
+        val higherJulkaisematon = firstJulkaisematon >= 0 && index > firstJulkaisematon
+        if (higherJulkaisematon && tulos.valintatila == Valintatila.peruuntunut) {
+          val wasHyvaksyttyJulkaistu = valinnantulosRepository.getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuCountHistoriasta(hakemusOid, tulos.hakukohdeOid) > 0
+          if (wasHyvaksyttyJulkaistu && !firstChanged) {
+            logger.info("Merkitään aiemmin hyväksyttynä ollut peruuntunut hyväksytyksi koska ylemmän hakutoiveen tuloksia ei ole vielä julkaistu. Index {}, tulos {}", index, tulos)
+            firstChanged = true
+            tulos.copy(valintatila = Valintatila.hyväksytty, tilanKuvaukset = Map.empty)
+          } else {
+            logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä {}", tulos.valintatila)
+            tulos
+          }
         } else {
           logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä {}", tulos.valintatila)
           tulos
         }
-      case (tulos, _) =>
-        logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä {}", tulos.valintatila)
-        tulos
     }
   }
 
