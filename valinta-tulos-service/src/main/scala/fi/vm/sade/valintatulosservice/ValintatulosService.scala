@@ -517,7 +517,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
 
     val lopullisetTulokset = Välitulos(sijoitteluTulos.hakemusOid, tulokset, haku, ohjausparametrit)
-      .map(näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä)
+      .map(näytäHyväksyttyäJulkaisematontaAlemmistaKorkeinHyvaksyttyOdottamassaYlempiä)
       .map(näytäJulkaisematontaAlemmatPeruutetutKeskeneräisinä)
       .map(peruValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua)
       .map(näytäVarasijaltaHyväksytytHyväksyttyinäJosVarasijasäännötEiVoimassa)
@@ -749,25 +749,27 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
-  private def näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) = {
+  private def näytäHyväksyttyäJulkaisematontaAlemmistaKorkeinHyvaksyttyOdottamassaYlempiä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) = {
     val firstJulkaisematon: Int = tulokset.indexWhere (!_.julkaistavissa)
     var firstChanged = false
+    val tuloksetWithIndex = tulokset.zipWithIndex
 
-    tulokset.zipWithIndex.map {
+    tuloksetWithIndex.map {
       case (tulos, index) =>
         val higherJulkaisematon = firstJulkaisematon >= 0 && index > firstJulkaisematon
         if (higherJulkaisematon && tulos.valintatila == Valintatila.peruuntunut) {
           val wasHyvaksyttyJulkaistu = valinnantulosRepository.getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuCountHistoriasta(hakemusOid, tulos.hakukohdeOid) > 0
-          if (wasHyvaksyttyJulkaistu && !firstChanged) {
+          val existsHigherHyvaksyttyJulkaistu = tuloksetWithIndex.exists(twi => twi._2 < index && twi._1.valintatila.equals(Valintatila.hyväksytty) && twi._1.julkaistavissa)
+          if (wasHyvaksyttyJulkaistu && !existsHigherHyvaksyttyJulkaistu && !firstChanged) {
             logger.info("Merkitään aiemmin hyväksyttynä ollut peruuntunut hyväksytyksi koska ylemmän hakutoiveen tuloksia ei ole vielä julkaistu. Index {}, tulos {}", index, tulos)
             firstChanged = true
             tulos.copy(valintatila = Valintatila.hyväksytty, tilanKuvaukset = Map.empty)
           } else {
-            logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä {}", tulos.valintatila)
+            logger.debug("näytäHyväksyttyäJulkaisematontaAlemmistaKorkeinHyvaksyttyOdottamassaYlempiä {}", tulos.valintatila)
             tulos
           }
         } else {
-          logger.debug("näytäHyväksyttyäJulkaisematontaAlemmatHyväksytytOdottamassaYlempiä {}", tulos.valintatila)
+          logger.debug("näytäHyväksyttyäJulkaisematontaAlemmistaKorkeinHyvaksyttyOdottamassaYlempiä {}", tulos.valintatila)
           tulos
         }
     }
