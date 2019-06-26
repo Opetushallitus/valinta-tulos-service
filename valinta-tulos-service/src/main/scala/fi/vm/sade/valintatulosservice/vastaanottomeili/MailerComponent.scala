@@ -84,19 +84,11 @@ trait MailerComponent {
         s"last poll started == ${newPollResult.started}")
       newBatch.foreach(ilmoitus => logger.info("Found " + ilmoitus.toString))
 
-      if (newBatch.nonEmpty && !newPollResult.isPollingComplete) {
+      if (!newPollResult.isPollingComplete || newBatch.nonEmpty) {
         handleBatchAndContinue(batch ::: newBatch, newPollResult.isPollingComplete)
       } else {
-        if ((batch.nonEmpty || newBatch.nonEmpty) && newPollResult.isPollingComplete) {
-          logger.info("Last batch fetched, sending and stopping")
-          sendAndConfirm(batch ::: newBatch)
-        } else if (newPollResult.isPollingComplete) {
-          logger.info("Polling complete and all batches processed, stopping")
-          ids
-        } else {
-          logger.info("Continuing to poll")
-          collectAndSend(query, batchNr, ids, batch)
-        }
+        logger.info("Last batch fetched, sending and stopping")
+        sendAndConfirm(batch)
       }
     }
 
