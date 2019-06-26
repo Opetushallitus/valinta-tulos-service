@@ -9,6 +9,7 @@ import fi.vm.sade.valintatulosservice.ryhmasahkoposti.VTRecipient
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy.LahetysSyy
 
+import scala.annotation.tailrec
 import scala.collection.immutable.HashMap
 import scala.concurrent.duration.Duration
 
@@ -34,7 +35,7 @@ trait MailerComponent {
     def sendMailFor(query: MailerQuery): List[String] = {
       logger.info(s"Start mail sending for query $query")
       forceResendIfAppropriate(query)
-      collectAndSend(query, 0, List.empty, List.empty)
+      collectAndSend(query, 0, List.empty)
     }
 
     private def forceResendIfAppropriate(query: MailerQuery): Unit = {
@@ -50,32 +51,15 @@ trait MailerComponent {
       }
     }
 
-    private def collectAndSend(query: MailerQuery, batchNr: Int, ids: List[String], batch: List[Ilmoitus]): List[String] = {
-      def handleBatchAndContinue(currentBatch: List[Ilmoitus], isPollingComplete: Boolean): List[String] = {
-        if (currentBatch.size >= settings.emailBatchSize) {
-          logger.info(s"Email batch size exceeded. Sending batch nr. $batchNr")
-          val batchIds: List[String] = sendAndConfirm(currentBatch)
-          collectAndSend(query, batchNr + 1, batchIds, List.empty)
-        } else if (!isPollingComplete) {
-          logger.info(s"Time limit for single batch retrieval exceeded. Sending batch nr. $batchNr")
-          val batchIds: List[String] = sendAndConfirm(currentBatch)
-          collectAndSend(query, batchNr + 1, batchIds, List.empty)
-        } else {
-          logger.info(s"Email batch size not exceeded. (${currentBatch.size} < ${settings.emailBatchSize})")
-          collectAndSend(query, batchNr, ids, currentBatch)
-        }
-      }
-
+    @tailrec
+    private def collectAndSend(query: MailerQuery, batchNr: Int, ids: List[String]): List[String] = {
       def sendAndConfirm(currentBatch: List[Ilmoitus]): List[String] = {
-        val groupedlmoituses = helper.splitAndGroupIlmoitus(currentBatch)
-
-        val sentIds: List[String] = groupedlmoituses.flatMap { case ((language, syy), ilmoitukset) =>
+        helper.splitAndGroupIlmoitus(currentBatch).flatMap { case ((language, syy), ilmoitukset) =>
           sendBatch(ilmoitukset, language, syy)
         }.toList
-        ids ++ sentIds
       }
 
-      logger.info("Polling for recipients")
+      logger.info(s"Polling for recipients for batch number $batchNr")
       val newPollResult: PollResult = fetchRecipientBatch(query)
       val newBatch = newPollResult.mailables
       logger.info(s"Found ${newBatch.size} to send. " +
@@ -84,19 +68,20 @@ trait MailerComponent {
         s"last poll started == ${newPollResult.started}")
       newBatch.foreach(ilmoitus => logger.info("Found " + ilmoitus.toString))
 
-      if (newBatch.nonEmpty && !newPollResult.isPollingComplete) {
-        handleBatchAndContinue(batch ::: newBatch, newPollResult.isPollingComplete)
+      if (newPollResult.isPollingComplete && newBatch.isEmpty) {
+        logger.info("Last batch fetched, stopping")
+        ids
       } else {
-        if ((batch.nonEmpty || newBatch.nonEmpty) && newPollResult.isPollingComplete) {
-          logger.info("Last batch fetched, sending and stopping")
-          sendAndConfirm(batch ::: newBatch)
-        } else if (newPollResult.isPollingComplete) {
-          logger.info("Polling complete and all batches processed, stopping")
+        val idsToReturn = if (newBatch.isEmpty) {
+          logger.warn("Time limit for single batch retrieval exceeded and not found anything to send. Finding more mailables.")
           ids
         } else {
-          logger.info("Continuing to poll")
-          collectAndSend(query, batchNr, ids, batch)
+          if (!newPollResult.isPollingComplete) {
+            logger.warn("Time limit for single batch retrieval exceeded. Sending mails and finding more mailables.")
+          }
+          ids ::: sendAndConfirm(newBatch)
         }
+        collectAndSend(query, batchNr + 1, idsToReturn)
       }
     }
 
