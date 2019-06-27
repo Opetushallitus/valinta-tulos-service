@@ -25,7 +25,7 @@ object HenkiloviiteSynchronizerApp {
     val server = new Server()
     val http = new ServerConnector(server)
     http.setPort(config.port)
-    http.setIdleTimeout(4000000)
+    http.setIdleTimeout(config.idleTimeoutSeconds * 1000)
     server.addConnector(http)
 
     val servletContext = new ServletContextHandler()
