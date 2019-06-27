@@ -15,6 +15,7 @@ case class CasConfiguration(user: String, password: String, host: String)
 case class SchedulerConfiguration(startHour: Option[Long], intervalHours: Option[Long])
 case class Buildversion(version: String, branch: String, commit: String, timestamp: String)
 case class Configuration(port: Int,
+                         idleTimeoutSeconds: Long,
                          accessLogConfigPath: String,
                          buildversion: Buildversion,
                          db: DbConfiguration,
@@ -35,6 +36,7 @@ object Configuration {
     }
     Configuration(
       getInt(properties, "henkiloviite.port"),
+      getLong(properties, "henkiloviite.idle_timeout_seconds"),
       getString(properties, "logback.access"),
       readBuildversion(properties),
       readDb(properties),
