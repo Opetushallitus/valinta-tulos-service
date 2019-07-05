@@ -165,8 +165,50 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       //Päivitetään täppä
       singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
       List(false, false).diff(readJulkaistavissa()) mustEqual List()
+
+      startNewSijoittelu(wrapper)
+      singleConnectionValintarekisteriDb.runBlocking(
+        sqlu"""update valinnantulokset
+               set hyvaksy_peruuntunut = true
+               where hakemus_oid = '1.2.246.562.11.00000441369' and
+                     valintatapajono_oid = '14090336922663576781797489829887'""")
+      wrapper.hakukohteet.head.getValintatapajonot.asScala.find(_.getOid.equals("14090336922663576781797489829887")
+      ).get.getHakemukset.asScala.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(h => {
+        h.setTila(HYVAKSYTTY)
+      })
+      wrapper.valintatulokset.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(vt => {
+        vt.setJulkaistavissa(false, "", "")
+        vt.setHyvaksyPeruuntunut(true, "", "")
+        vt.setRead(new Date())
+      })
+      singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
+      // Päivitä hyväksy peruuntunut täppä aina false:ksi
+      singleConnectionValintarekisteriDb.runBlocking(
+        sql"""select hyvaksy_peruuntunut from valinnantulokset where hakemus_oid = '1.2.246.562.11.00000441369'""".as[Boolean]
+      ).toList mustEqual List(false, false)
+
+      startNewSijoittelu(wrapper)
+      singleConnectionValintarekisteriDb.runBlocking(
+        sqlu"""update valinnantulokset
+               set hyvaksytty_varasijalta = true
+               where hakemus_oid = '1.2.246.562.11.00000441369' and
+                     valintatapajono_oid = '14090336922663576781797489829887'""")
+      wrapper.hakukohteet.head.getValintatapajonot.asScala.find(_.getOid.equals("14090336922663576781797489829887")
+      ).get.getHakemukset.asScala.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(h => {
+        h.setTila(HYVAKSYTTY)
+      })
+      wrapper.valintatulokset.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(vt => {
+        vt.setJulkaistavissa(false, "", "")
+        vt.setHyvaksyttyVarasijalta(true, "", "")
+        vt.setRead(new Date())
+      })
+      singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
+      // Päivitä hyväksytty varasijalta täppä aina false:ksi
+      singleConnectionValintarekisteriDb.runBlocking(
+        sql"""select hyvaksytty_varasijalta from valinnantulokset where hakemus_oid = '1.2.246.562.11.00000441369'""".as[Boolean]
+      ).toList mustEqual List(false, false)
     }
-    "not update existing valinnantulos if valintatulos not updated in sijoitteluajo" in {
+    "not update existing julkaistavissa if valintatulos not updated in sijoitteluajo" in {
       val wrapper = loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")
       singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
 
@@ -187,9 +229,9 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
         sql"""select julkaistavissa, hyvaksytty_varasijalta
               from valinnantulokset where hakemus_oid = ${hakemusOid}""".as[(Boolean, Boolean)])
       flagsFromDb must haveSize(1)
-      flagsFromDb.head mustEqual (true, true)
+      flagsFromDb.head mustEqual (true, false)
 
-      readTable("valinnantulokset_history").size mustEqual 1
+      readTable("valinnantulokset_history").size mustEqual 2
       readTable("valinnantulokset").size mustEqual 1
 
       incrementSijoitteluajoId(newSijoitteluajoWrapper)
@@ -199,8 +241,8 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
               from valinnantulokset where hakemus_oid = ${hakemusOid}""".as[(Boolean, Boolean)])
 
       flagsFromDbAfterSecondSave must haveSize(1)
-      flagsFromDbAfterSecondSave.head mustEqual (true, true)
-      readTable("valinnantulokset_history").size mustEqual 1
+      flagsFromDbAfterSecondSave.head mustEqual (true, false)
+      readTable("valinnantulokset_history").size mustEqual 2
       readTable("valinnantulokset").size mustEqual 1
     }
     "handle hyväksytty ja julkaistu -dates correctly" in {
