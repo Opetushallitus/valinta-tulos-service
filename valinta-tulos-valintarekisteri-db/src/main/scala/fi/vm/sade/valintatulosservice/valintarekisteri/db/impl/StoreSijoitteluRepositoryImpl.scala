@@ -31,6 +31,7 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
       .andThen(DBIO.sequence(
         sijoittelu.hakukohteet.flatMap(hakukohde =>
           hakukohde.getValintatapajonot.asScala.map(insertValintatapajono(sijoitteluajoId, HakukohdeOid(hakukohde.getOid), _)))))
+      .andThen(setFalseHyvaksyttyVarasijaltaAndHyvaksyPeruuntunut(sijoitteluajoId))
       .andThen(SimpleDBIO { session =>
         var jonosijaStatement:Option[PreparedStatement] = None
         var pistetietoStatement:Option[PreparedStatement] = None
@@ -140,6 +141,37 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
     }
   }
 
+  private def setFalseHyvaksyttyVarasijaltaAndHyvaksyPeruuntunut(sijoitteluajoId: Long): DBIO[Unit] = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    sql"""update valinnantulokset
+          set hyvaksytty_varasijalta = false,
+              ilmoittaja = ${sijoitteluajoId},
+              selite = 'Sijoittelun tallennus'
+          where valintatapajono_oid in (select oid from valintatapajonot where sijoitteluajo_id = ${sijoitteluajoId}) and
+                hyvaksytty_varasijalta
+          returning hakukohde_oid, valintatapajono_oid, hakemus_oid
+        """.as[(HakukohdeOid, ValintatapajonoOid, HakemusOid)].map(t => {
+      if (t.nonEmpty) {
+        logger.info("Asetettiin Hyväksytty varasijalta pois: " + t.map(tt => s"hakukohde ${tt._1}, valintatapajono ${tt._2}, hakemus ${tt._3}").mkString("; "))
+      }
+      ()
+    }).andThen(
+      sql"""update valinnantulokset
+            set hyvaksy_peruuntunut = false,
+                ilmoittaja = ${sijoitteluajoId},
+                selite = 'Sijoittelun tallennus'
+            where valintatapajono_oid in (select oid from valintatapajonot where sijoitteluajo_id = ${sijoitteluajoId}) and
+                  hyvaksy_peruuntunut
+            returning hakukohde_oid, valintatapajono_oid, hakemus_oid
+        """.as[(HakukohdeOid, ValintatapajonoOid, HakemusOid)].map(t => {
+        if (t.nonEmpty) {
+          logger.info("Asetettiin Hyväksy peruuntunut pois: " + t.map(tt => s"hakukohde ${tt._1}, valintatapajono ${tt._2}, hakemus ${tt._3}").mkString("; "))
+        }
+        ()
+      })
+    )
+  }
+
   private def storeValintatapajononHakemus(hakemus: SijoitteluHakemus,
                                            valintatulosOption: Option[Valintatulos],
                                            sijoitteluajoId:Long,
@@ -236,15 +268,12 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
              hakemus_oid,
              hakukohde_oid,
              julkaistavissa,
-             hyvaksytty_varasijalta,
              ilmoittaja,
              selite
-           ) values (?, ?, ?, ?, ?, ?::text, 'Sijoittelun tallennus')
+           ) values (?, ?, ?, ?, ?::text, 'Sijoittelun tallennus')
            on conflict on constraint valinnantulokset_pkey do update set
-             julkaistavissa = excluded.julkaistavissa,
-             hyvaksytty_varasijalta = excluded.hyvaksytty_varasijalta
-           where ( valinnantulokset.julkaistavissa <> excluded.julkaistavissa
-             or valinnantulokset.hyvaksytty_varasijalta <> excluded.hyvaksytty_varasijalta )
+             julkaistavissa = excluded.julkaistavissa
+           where valinnantulokset.julkaistavissa <> excluded.julkaistavissa
              and valinnantulokset.system_time @> ?::timestamp with time zone
              and ?::valinnantila <> 'Peruuntunut'::valinnantila""")
 
@@ -261,10 +290,9 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
     valinnantulosStatement.setString(2, hakemus.getHakemusOid)
     valinnantulosStatement.setString(3, hakukohdeOid.toString)
     valinnantulosStatement.setBoolean(4, valintatulos.getJulkaistavissa)
-    valinnantulosStatement.setBoolean(5, valintatulos.getHyvaksyttyVarasijalta)
-    valinnantulosStatement.setLong(6, sijoitteluajoId)
-    valinnantulosStatement.setTimestamp(7, new java.sql.Timestamp(read))
-    valinnantulosStatement.setString(8, Valinnantila(hakemus.getTila).toString)
+    valinnantulosStatement.setLong(5, sijoitteluajoId)
+    valinnantulosStatement.setTimestamp(6, new java.sql.Timestamp(read))
+    valinnantulosStatement.setString(7, Valinnantila(hakemus.getTila).toString)
     valinnantulosStatement.addBatch()
   }
 
