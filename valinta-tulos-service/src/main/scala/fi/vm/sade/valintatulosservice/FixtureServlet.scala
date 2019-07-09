@@ -35,7 +35,7 @@ class FixtureServlet(valintarekisteriDb: ValintarekisteriDb)(implicit val appCon
     response.addHeader("Access-Control-Allow-Origin", "*")
     val fixturename = params("fixturename")
     SijoitteluFixtures(valintarekisteriDb).importFixture(fixturename + ".json", true)
-    val ohjausparametrit = paramOption("ohjausparametrit").getOrElse(OhjausparametritFixtures.vastaanottoLoppuu2100)
+    val ohjausparametrit = paramOption("ohjausparametrit").getOrElse(OhjausparametritFixtures.vastaanottoLoppuu2030)
     OhjausparametritFixtures.activeFixture = ohjausparametrit
     val haku = paramOption("haku").map(HakuOid).getOrElse(HakuFixtures.korkeakouluYhteishaku)
     val useHakuAsHakuOid = paramOption("useHakuAsHakuOid").getOrElse("false")
