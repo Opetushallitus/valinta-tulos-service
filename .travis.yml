@@ -62,12 +62,6 @@ deploy:
       branch: master
   - provider: script
     script:
-      mvn deploy -pl fi.vm.sade:valinta-tulos-service-parent,valinta-tulos-valintarekisteri-db,valinta-tulos-service -DskipTests --settings ci-tools/common/maven-settings.xml
-    skip_cleanup: true
-    on:
-      branch: omatsivut-tests-fix
-  - provider: script
-    script:
       ./ci-tools/build/upload-image.sh valinta-tulos-service;
       ./ci-tools/build/upload-image.sh valinta-tulos-henkiloviite-synchronizer
     on:
