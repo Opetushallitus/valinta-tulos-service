@@ -556,7 +556,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
             withFixedDateTime("26.11.2014 12:00") {
               // HYVÄKSYTTY, PERUUNTUNUT KESKEN true
               useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = hakuFixture)
-              getHakutoive("1.2.246.562.5.72607738902").vastaanottoDeadline must_== Some(parseDate("10.1.2100 12:00"))
+              getHakutoive("1.2.246.562.5.72607738902").vastaanottoDeadline must_== Some(parseDate("10.1.2030 12:00"))
             }
           }
 

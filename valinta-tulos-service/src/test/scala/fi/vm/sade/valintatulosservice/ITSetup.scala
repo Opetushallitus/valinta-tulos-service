@@ -25,7 +25,7 @@ trait ITSetup {
 
   def useFixture(fixtureName: String,
                  extraFixtureNames: List[String] = List(),
-                 ohjausparametritFixture: String = OhjausparametritFixtures.vastaanottoLoppuu2100,
+                 ohjausparametritFixture: String = OhjausparametritFixtures.vastaanottoLoppuu2030,
                  hakemusFixtures: List[String] = HakemusFixtures.defaultFixtures,
                  hakuFixture: HakuOid = HakuFixtures.korkeakouluYhteishaku,
                  yhdenPaikanSaantoVoimassa: Boolean = false,
