@@ -276,7 +276,9 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
              selite
            ) values (?, ?, ?, ?, ?::text, 'Sijoittelun tallennus')
            on conflict on constraint valinnantulokset_pkey do update set
-             julkaistavissa = excluded.julkaistavissa
+             julkaistavissa = excluded.julkaistavissa,
+             ilmoittaja = excluded.ilmoittaja,
+             selite = excluded.selite
            where valinnantulokset.julkaistavissa <> excluded.julkaistavissa
              and valinnantulokset.system_time @> ?::timestamp with time zone
              and ?::valinnantila <> 'Peruuntunut'::valinnantila""")
