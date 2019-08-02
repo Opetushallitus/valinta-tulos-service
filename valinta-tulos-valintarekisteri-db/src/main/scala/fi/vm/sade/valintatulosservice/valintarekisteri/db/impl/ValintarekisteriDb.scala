@@ -36,6 +36,7 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
   val flyway = new Flyway()
   flyway.setDataSource(config.url, config.user.orNull, config.password.orNull)
   flyway.setOutOfOrder(true)
+  flyway.setLocations("db/migration-vts")
   Timer.timed("Flyway migration") { flyway.migrate() }
 
   val hikariConfig: HikariConfig = {
