@@ -477,7 +477,7 @@
         </repository>
         <repository>
             <id>ext-snapshot-local-artifactory-snapshots</id>
-            <url>https://artifactory.opintopolkuf.fi/artifactory/ext-snapshot-local</url>
+            <url>https://artifactory.opintopolku.fi/artifactory/ext-snapshot-local</url>
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
