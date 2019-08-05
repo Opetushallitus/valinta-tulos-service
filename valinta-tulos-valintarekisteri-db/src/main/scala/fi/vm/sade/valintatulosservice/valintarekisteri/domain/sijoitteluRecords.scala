@@ -410,7 +410,10 @@ case class HakemusRecord(hakijaOid:Option[String], hakemusOid: HakemusOid, piste
     hakemus.setJonosija(jonosija)
     hakemus.setTasasijaJonosija(tasasijaJonosija)
     hakemus.setTila(fi.vm.sade.sijoittelu.domain.HakemuksenTila.valueOf(tila.valinnantila.name))
-    hakemus.setTilanKuvaukset(tilankuvaus.map(_.tilankuvaukset(tarkenteenLisatieto)).getOrElse(TilanKuvaukset.tyhja))
+    hakemus.setTilankuvauksenTarkenne(
+      tilankuvaus.map(_.tilankuvauksenTarkenne.tilankuvauksenTarkenne).getOrElse(TilankuvauksenTarkenne.EI_TILANKUVAUKSEN_TARKENNETTA),
+      tilankuvaus.map(_.tilankuvaukset(tarkenteenLisatieto)).getOrElse(TilanKuvaukset.tyhja)
+    )
     hakemus.setHyvaksyttyHarkinnanvaraisesti(hyvaksyttyHarkinnanvaraisesti)
     varasijaNumero.foreach(hakemus.setVarasijanNumero(_))
     hakemus.setOnkoMuuttunutViimeSijoittelussa(onkoMuuttunutviimesijoittelusta)

@@ -477,7 +477,6 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
         tila = h.tila,
         tilanKuvaukset = Some(tilankuvaukset(h.tilankuvausHash).tilankuvaukset(None).asScala.toMap),
         tilankuvauksenTarkenne = tilankuvaukset(h.tilankuvausHash).tilankuvauksenTarkenne,
-        tarkenteenLisatieto = h.tarkenteenLisatieto,
         hyvaksyttyHakijaryhmista = hakijaryhmaoidit.getOrElse(h.hakemusOid, Set()),
         tilaHistoria = List()
       ).hakemus
@@ -545,7 +544,6 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
           val jonosijanTilankuvaukset = findJonosijanTilaAndtilankuvaukset(hakemus.getHakemusOid, wrapper.sijoitteluajo.getSijoitteluajoId, valintatapajono.getOid)
           hakemusWrapper.tila mustEqual jonosijanTilankuvaukset.tila
           hakemus.getTilanKuvaukset.hashCode() mustEqual jonosijanTilankuvaukset.tilankuvausHash
-          hakemusWrapper.tarkenteenLisatieto mustEqual jonosijanTilankuvaukset.tarkenteenLisatieto
 
           val storedPistetiedot = findHakemuksenPistetiedot(hakemus.getHakemusOid)
           hakemus.getPistetiedot.size mustEqual storedPistetiedot.size
@@ -590,7 +588,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
             val hakemusOid = HakemusOid(valintatapajonoOid.toString + "." + j)
             val hakemus = SijoitteluajonHakemusWrapper(hakemusOid, Some(hakemusOid.toString),
               j, j, None, false, Some(j), j, false, false, Hylatty, Some(Map("FI" -> ("fi" + j), "SV" -> ("sv" + j), "EN" -> ("en" + j))),
-              EiTilankuvauksenTarkennetta, None, Set(""), List()).hakemus
+              EiTilankuvauksenTarkennetta, Set(""), List()).hakemus
             hakemus.setPistetiedot(List(SijoitteluajonPistetietoWrapper("moi", Some("123"), Some("123"), Some("Osallistui")).pistetieto).asJava)
             valinnantulokset = valinnantulokset ++ IndexedSeq(SijoitteluajonValinnantulosWrapper(valintatapajonoOid, hakemusOid, hakukohdeOid,
               false, false, false, false, None, None, MailStatusWrapper(None, None, None, None).status))

@@ -416,7 +416,6 @@ case class SijoitteluajonHakemusWrapper(
                                          tila: Valinnantila,
                                          tilanKuvaukset: Option[Map[String, String]],
                                          tilankuvauksenTarkenne: ValinnantilanTarkenne,
-                                         tarkenteenLisatieto: Option[String],
                                          hyvaksyttyHakijaryhmista: Set[String],
                                          tilaHistoria: List[TilahistoriaWrapper]) {
   import scala.collection.JavaConverters._
@@ -434,9 +433,10 @@ case class SijoitteluajonHakemusWrapper(
     hakemus.setHyvaksyttyHarkinnanvaraisesti(hyvaksyttyHarkinnanvaraisesti)
     hakemus.setSiirtynytToisestaValintatapajonosta(siirtynytToisestaValintatapajonosta)
     hakemus.setTila(tila.valinnantila)
-    hakemus.setTilankuvauksenTarkenne(tilankuvauksenTarkenne.tilankuvauksenTarkenne)
-    SijoitteluajonHakemusWrapper.ensureTilankuvauksetFromLegacyTestDataWithoutTilankuvauksenTarkenne(hakemus, tilanKuvaukset)
-    tarkenteenLisatieto.foreach(hakemus.setTarkenteenLisatieto)
+    hakemus.setTilankuvauksenTarkenne(
+      tilankuvauksenTarkenne.tilankuvauksenTarkenne,
+      tilanKuvaukset.map(_.asJava).getOrElse(TilanKuvaukset.tyhja)
+    )
     hakemus.setHyvaksyttyHakijaryhmista(hyvaksyttyHakijaryhmista.asJava)
     hakemus.setTilaHistoria(tilaHistoria.map(_.tilahistoria).asJava)
     hakemus
@@ -460,18 +460,11 @@ object SijoitteluajonHakemusWrapper extends OptionConverter {
       hakemus.isHyvaksyttyHarkinnanvaraisesti,
       hakemus.getSiirtynytToisestaValintatapajonosta,
       Valinnantila(hakemus.getTila),
-      Option(hakemus.getTilanKuvaukset.asScala.toMap),
+      Some(hakemus.getTilanKuvaukset.asScala.toMap),
       ValinnantilanTarkenne.getValinnantilanTarkenne(hakemus.getTilankuvauksenTarkenne),
-      convert[javaString, String](hakemus.getTarkenteenLisatieto, string),
       hakemus.getHyvaksyttyHakijaryhmista.asScala.toSet,
       hakemus.getTilaHistoria.asScala.map(TilahistoriaWrapper(_)).toList
     )
-  }
-
-  private def ensureTilankuvauksetFromLegacyTestDataWithoutTilankuvauksenTarkenne(h: SijoitteluHakemus, tk: Option[Map[String, String]]): Unit = {
-    if (h.getTilanKuvaukset == null || StringUtils.isBlank(h.getTilanKuvaukset.get("FI"))) {
-      h.setTilanKuvaukset(tk.getOrElse(Map()).asJava)
-    }
   }
 }
 
