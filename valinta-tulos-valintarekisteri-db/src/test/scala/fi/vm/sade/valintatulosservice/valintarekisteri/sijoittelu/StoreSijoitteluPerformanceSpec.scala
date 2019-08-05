@@ -39,7 +39,7 @@ class StoreSijoitteluPerformanceSpec extends Specification with ITSetup with Val
 
     case Failure(t) => throw t
     case Success(db) => try {
-      val latest = db.getLatestSijoitteluajoId(hakuOid).get
+      val latest: Long = db.getLatestSijoitteluajoId(hakuOid).get
 
       val valintarekisteriQa = new Valintarekisteri(db, null, db) {}
 
