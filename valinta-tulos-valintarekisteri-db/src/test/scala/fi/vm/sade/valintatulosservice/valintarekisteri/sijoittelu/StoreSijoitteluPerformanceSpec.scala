@@ -81,11 +81,11 @@ class StoreSijoitteluPerformanceSpec extends Specification with ITSetup with Val
     true must_== true
   }
 
-  "Read and store sijoittelu multiple times" in {
+  "Read sijoittelu multiple times" in {
     skipped("Aja ainoastaan käsin!")
     1.to(10).foreach { n => {
       logger.info(s"*** Ajo $n ****")
-      testStoreSijoittelu(readSijoitteluFromDb)
+      readSijoitteluFromDb.hakukohteet.length must be_>(10)
     }}
 
     true must_== true
