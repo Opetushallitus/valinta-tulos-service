@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
+import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{DbConfig, ValintarekisteriDb}
@@ -43,10 +44,11 @@ class StoreSijoitteluPerformanceSpec extends Specification with ITSetup with Val
 
       val valintarekisteriQa = new Valintarekisteri(db, null, db) {}
 
-      SijoitteluWrapper(valintarekisteriQa.getSijoitteluajo(hakuOid.s, s"$latest"),
-        valintarekisteriQa.getSijoitteluajonHakukohteet(latest),
-        valintarekisteriQa.getValintatulokset(hakuOid.s))
-
+      Timer.timed("Read sijoittelu from db", 0) {
+        SijoitteluWrapper(valintarekisteriQa.getSijoitteluajo(hakuOid.s, s"$latest"),
+                valintarekisteriQa.getSijoitteluajonHakukohteet(latest),
+                valintarekisteriQa.getValintatulokset(hakuOid.s))
+      }
     } finally {
       db.db.close()
     }
