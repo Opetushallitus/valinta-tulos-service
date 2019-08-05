@@ -30,11 +30,11 @@ class StoreSijoitteluPerformanceSpec extends Specification with ITSetup with Val
 
   val hakuOid = HakuOid("1.2.246.562.29.59856749474") //HakuOid("1.2.246.562.29.57263577488") // HakuOid("1.2.246.562.29.10108985853")
 
-  val dbUrl = "jdbc:postgresql://" + System.getProperty("db_url") + "/valintarekisteri"
-  val dbUser = System.getProperty("db_user")
-  val dbPasswd = System.getProperty("db_passwd")
+  val dbUrl: String = "jdbc:postgresql://" + System.getProperty("db_url") + "/valintarekisteri"
+  val dbUser: String = System.getProperty("db_user")
+  val dbPasswd: String = System.getProperty("db_passwd")
 
-  def readSijoitteluFromDb = Try(new ValintarekisteriDb(DbConfig(
+  def readSijoitteluFromDb: SijoitteluWrapper = Try(new ValintarekisteriDb(DbConfig(
     dbUrl, Some(dbUser), Some(dbPasswd), Some(1), Some(1), Some(1), None, None, None, None), false)) match {
 
     case Failure(t) => throw t
@@ -43,7 +43,7 @@ class StoreSijoitteluPerformanceSpec extends Specification with ITSetup with Val
 
       val valintarekisteriQa = new Valintarekisteri(db, null, db) {}
 
-      SijoitteluWrapper(valintarekisteriQa.getSijoitteluajo(hakuOid.s, s"${latest}"),
+      SijoitteluWrapper(valintarekisteriQa.getSijoitteluajo(hakuOid.s, s"$latest"),
         valintarekisteriQa.getSijoitteluajonHakukohteet(latest),
         valintarekisteriQa.getValintatulokset(hakuOid.s))
 
@@ -52,18 +52,18 @@ class StoreSijoitteluPerformanceSpec extends Specification with ITSetup with Val
     }
   }
 
-  def storeSijoittelu(sijoitteluWrapper:SijoitteluWrapper, stopWatch: StopWatch, times:Int = 1) = {
+  def storeSijoittelu(sijoitteluWrapper:SijoitteluWrapper, stopWatch: StopWatch, times:Int = 1): Unit = {
     (1 to times).foreach(i => {
-      stopWatch.start(s"store sijoittelu ${i}")
+      stopWatch.start(s"store sijoittelu $i")
       singleConnectionValintarekisteriDb.storeSijoittelu(sijoitteluWrapper)
       stopWatch.stop()
       if(i < times) startNewSijoittelu(sijoitteluWrapper)
     })
   }
 
-  def testStoreSijoittelu(sijoitteluWrapper:SijoitteluWrapper, times:Int = 1) = {
+  def testStoreSijoittelu(sijoitteluWrapper:SijoitteluWrapper, times:Int = 1): Unit = {
     sijoitteluWrapper.hakukohteet.foreach(h =>
-      singleConnectionValintarekisteriDb.storeHakukohde(HakukohdeRecord(HakukohdeOid(h.getOid), hakuOid, true, true, Kevat(2017)))
+      singleConnectionValintarekisteriDb.storeHakukohde(HakukohdeRecord(HakukohdeOid(h.getOid), hakuOid, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true, Kevat(2017)))
     )
     val stopWatch = new StopWatch()
     storeSijoittelu(sijoitteluWrapper, stopWatch, times)
@@ -77,7 +77,7 @@ class StoreSijoitteluPerformanceSpec extends Specification with ITSetup with Val
   }
 
 
-  def startNewSijoittelu(wrapper:SijoitteluWrapper) = {
+  def startNewSijoittelu(wrapper:SijoitteluWrapper): Unit = {
     val sijoitteluajoId = System.currentTimeMillis
     wrapper.sijoitteluajo.setStartMils(System.currentTimeMillis)
     wrapper.sijoitteluajo.setSijoitteluajoId(sijoitteluajoId)
