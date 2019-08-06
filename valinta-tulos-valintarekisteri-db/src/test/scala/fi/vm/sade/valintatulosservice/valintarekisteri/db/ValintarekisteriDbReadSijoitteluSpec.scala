@@ -65,8 +65,18 @@ class ValintarekisteriDbReadSijoitteluSpec extends Specification with ITSetup wi
     }
 
     "get hakijaryhman hakemukset" in {
-      val hakijaryhmaOid = singleConnectionValintarekisteriDb.getSijoitteluajonHakijaryhmat(1476936450191L).last.oid
+      val hakijaryhmat = singleConnectionValintarekisteriDb.getSijoitteluajonHakijaryhmat(1476936450191L)
+      val hakijaryhmaOid = hakijaryhmat.last.oid
+      val allRyhmaOids = hakijaryhmat.map(_.oid)
       singleConnectionValintarekisteriDb.getSijoitteluajonHakijaryhmanHakemukset(1476936450191L, hakijaryhmaOid).size mustEqual 14
+      singleConnectionValintarekisteriDb.getSijoitteluajonHakijaryhmienHakemukset(1476936450191L, allRyhmaOids).size mustEqual 5
+      singleConnectionValintarekisteriDb.getSijoitteluajonHakijaryhmienHakemukset(1476936450191L, allRyhmaOids)(hakijaryhmaOid).size mustEqual 14
+
+      singleConnectionValintarekisteriDb.getSijoitteluajonHakijaryhmanHakemukset(1476936450191L, hakijaryhmaOid).toSet mustEqual
+        singleConnectionValintarekisteriDb.getSijoitteluajonHakijaryhmienHakemukset(1476936450191L, allRyhmaOids)(hakijaryhmaOid).toSet
+
+      singleConnectionValintarekisteriDb.getSijoitteluajonHakijaryhmanHakemukset(1476936450191L, "inexistent").size mustEqual 0
+      singleConnectionValintarekisteriDb.getSijoitteluajonHakijaryhmienHakemukset(1476936450191L, List("inexistent"))("inexistent").size mustEqual 0
     }
 
     "get hakemuksen ilmoittaja, selite and viimeksiMuokattu" in {
