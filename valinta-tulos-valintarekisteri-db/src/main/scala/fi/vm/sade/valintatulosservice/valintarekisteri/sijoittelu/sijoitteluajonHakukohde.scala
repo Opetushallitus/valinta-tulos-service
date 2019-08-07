@@ -44,7 +44,7 @@ class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, va
         hakemukset.getOrElse(v.oid, List()).map(h =>
           h.dto(
             hakijaryhmatJoistaHakemuksetOnHyvaksytty.getOrElse(h.hakemusOid, Set()),
-            h.tilankuvaukset(tilankuvaukset.get(h.tilankuvausHash)),
+            tilankuvaukset.get(h.tilankuvausHash),
             tilahistoriat.getOrElse(h.valintatapajonoOid, Map()).getOrElse(h.hakemusOid, List()).map(_.dto),
             pistetiedot.getOrElse(h.valintatapajonoOid, Map()).getOrElse(h.hakemusOid, List()).map(_.dto)
           )
@@ -60,7 +60,7 @@ class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, va
         hakemukset.getOrElse(v.oid, List()).map(h =>
           h.entity(
             hakijaryhmatJoistaHakemuksetOnHyvaksytty(h.hakemusOid),
-            h.tilankuvaukset(tilankuvaukset.get(h.tilankuvausHash)),
+            tilankuvaukset.get(h.tilankuvausHash),
             tilahistoriat.getOrElse(h.valintatapajonoOid, Map()).getOrElse(h.hakemusOid, List()).map(_.entity),
             pistetiedot.getOrElse(h.valintatapajonoOid, Map()).getOrElse(h.hakemusOid, List()).map(_.entity)
           )
@@ -90,7 +90,7 @@ class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository, 
     val hakemukset = sijoitteluajonHakemukset.map(h =>
       (h.valintatapajonoOid, h.entity(
         hakijaryhmatJoistaHakemuksetOnHyvaksytty.getOrElse(h.hakemusOid, Set()),
-        h.tilankuvaukset(tilankuvaukset.get(h.tilankuvausHash)),
+        tilankuvaukset.get(h.tilankuvausHash),
         tilahistoriat.getOrElse((h.hakemusOid, h.valintatapajonoOid), List()).map(_.entity).sortBy(_.getLuotu.getTime),
         pistetiedot.getOrElse((h.hakemusOid, h.valintatapajonoOid), List()).map(_.entity)
       ))
@@ -110,7 +110,7 @@ class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository, 
     val hakemukset = sijoitteluajonHakemukset.map(h =>
       h.dto(
         hakijaryhmatJoistaHakemuksetOnHyvaksytty.getOrElse(h.hakemusOid, Set()),
-        h.tilankuvaukset(tilankuvaukset.get(h.tilankuvausHash)),
+        tilankuvaukset.get(h.tilankuvausHash),
         tilahistoriat.getOrElse((h.hakemusOid, h.valintatapajonoOid), List()).map(_.dto).sortBy(_.getLuotu.getTime),
         pistetiedot.getOrElse((h.hakemusOid, h.valintatapajonoOid), List()).map(_.dto)
       )

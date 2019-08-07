@@ -314,13 +314,11 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
   private def createTilaKuvausMappingStatement = createStatement(
     """insert into tilat_kuvaukset (
           tilankuvaus_hash,
-          tarkenteen_lisatieto,
           hakukohde_oid,
           valintatapajono_oid,
-          hakemus_oid) values (?, ?, ?, ?, ?)
+          hakemus_oid) values (?, ?, ?, ?)
        on conflict on constraint tilat_kuvaukset_pkey do update set
-           tilankuvaus_hash = excluded.tilankuvaus_hash,
-           tarkenteen_lisatieto = excluded.tarkenteen_lisatieto
+           tilankuvaus_hash = excluded.tilankuvaus_hash
        where tilat_kuvaukset.tilankuvaus_hash <> excluded.tilankuvaus_hash
     """)
 
@@ -329,10 +327,9 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
                                                valintatapajonoOid: ValintatapajonoOid,
                                                statement: PreparedStatement) = {
     statement.setInt(1, hakemusWrapper.tilankuvauksenHash)
-    statement.setString(2, hakemusWrapper.tarkenteenLisatieto.orNull)
-    statement.setString(3, hakukohdeOid.toString)
-    statement.setString(4, valintatapajonoOid.toString)
-    statement.setString(5, hakemusWrapper.hakemusOid.toString)
+    statement.setString(2, hakukohdeOid.toString)
+    statement.setString(3, valintatapajonoOid.toString)
+    statement.setString(4, hakemusWrapper.hakemusOid.toString)
     statement.addBatch()
   }
 

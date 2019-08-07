@@ -71,21 +71,21 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
         ValintatapajonoRecord("arvonta", ValintatapajonoOid("valintatapajono1"), "valintatapajono1", 1, Some(10), Some(10), 1, true, true, true, None, 0, None, None, None, None, None, false, hakukohdeOid).dto(List(
           Some(HakemusRecord(Some("123.1"), HakemusOid("1234.1"), None, 1, 1, 1, Hyvaksytty, 123, None, false, None, false, false, ValintatapajonoOid("valintatapajono1"))).map(h => h.dto(
             Set("hakijaryhma1"),
-            h.tilankuvaukset(Some(TilankuvausRecord(123, EiTilankuvauksenTarkennetta, Some("textFi"), Some("textSv"), Some("textEn")))),
+            Some(TilankuvausRecord(123, EiTilankuvauksenTarkennetta, Some("textFi"), Some("textSv"), Some("textEn"))),
             List(TilaHistoriaRecord(ValintatapajonoOid("valintatapajono1"), HakemusOid("1234.1"), Hyvaksytty, new Date(now.minus(2, ChronoUnit.DAYS).toEpochMilli)).dto,
                  TilaHistoriaRecord(ValintatapajonoOid("valintatapajono1"), HakemusOid("1234.1"), Hylatty, new Date(now.minus(4, ChronoUnit.DAYS).toEpochMilli)).dto),
             List(PistetietoRecord(ValintatapajonoOid("valintatapajono1"), HakemusOid("1234.1"), "tunniste1", "1", "1", "osallistui").dto,
                  PistetietoRecord(ValintatapajonoOid("valintatapajono1"), HakemusOid("1234.1"), "tunniste2", "2", "2", "osallistui").dto))).get,
           Some(HakemusRecord(Some("123.3"), HakemusOid("1234.3"), None, 1, 1, 1, Hyvaksytty, 123, None, false, None, false, false, ValintatapajonoOid("valintatapajono1"))).map(h => h.dto(
             Set(),
-            h.tilankuvaukset(Some(TilankuvausRecord(123, EiTilankuvauksenTarkennetta, Some("textFi"), Some("textSv"), Some("textEn")))),
+            Some(TilankuvausRecord(123, EiTilankuvauksenTarkennetta, Some("textFi"), Some("textSv"), Some("textEn"))),
             List(TilaHistoriaRecord(ValintatapajonoOid("valintatapajono1"), HakemusOid("1234.3"), Hyvaksytty, new Date(now.minus(2, ChronoUnit.DAYS).toEpochMilli)).dto),
             List())).get
         )),
         ValintatapajonoRecord("arvonta", ValintatapajonoOid("valintatapajono2"), "valintatapajono2", 1, Some(10), Some(10), 1, true, true, true, None, 0, None, None, None, None, None, false, hakukohdeOid).dto(List(
           Some(HakemusRecord(Some("123.2"), HakemusOid("1234.2"), None, 1, 1, 1, Hyvaksytty, 123, None, false, None, false, false, ValintatapajonoOid("valintatapajono2"))).map(h => h.dto(
             Set(),
-            h.tilankuvaukset(Some(TilankuvausRecord(123, EiTilankuvauksenTarkennetta, Some("textFi"), Some("textSv"), Some("textEn")))),
+            Some(TilankuvausRecord(123, EiTilankuvauksenTarkennetta, Some("textFi"), Some("textSv"), Some("textEn"))),
             List(TilaHistoriaRecord(ValintatapajonoOid("valintatapajono2"), HakemusOid("1234.2"), Hyvaksytty, new Date(now.minus(2, ChronoUnit.DAYS).toEpochMilli)).dto,
                  TilaHistoriaRecord(ValintatapajonoOid("valintatapajono2"), HakemusOid("1234.2"), Hylatty, new Date(now.minus(4, ChronoUnit.DAYS).toEpochMilli)).dto),
             List(PistetietoRecord(ValintatapajonoOid("valintatapajono2"), HakemusOid("1234.2"), "tunniste3", "2", "2", "osallistui").dto))

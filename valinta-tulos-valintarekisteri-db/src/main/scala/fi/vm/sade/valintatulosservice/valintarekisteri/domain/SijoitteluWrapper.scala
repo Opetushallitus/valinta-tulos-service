@@ -419,9 +419,7 @@ case class SijoitteluajonHakemusWrapper(
                                          tarkenteenLisatieto: Option[String],
                                          hyvaksyttyHakijaryhmista: Set[String],
                                          tilaHistoria: List[TilahistoriaWrapper]) {
-  val tilankuvauksetWithTarkenne =
-    tilanKuvaukset.getOrElse(Map()).mapValues(v => tarkenteenLisatieto.map(v.replace(_, "<lisatieto>")).getOrElse(v)) +
-      ("tilankuvauksenTarkenne" -> tilankuvauksenTarkenne.toString)
+  val tilankuvauksetWithTarkenne = tilanKuvaukset.getOrElse(Map()) + ("tilankuvauksenTarkenne" -> tilankuvauksenTarkenne.toString)
 
   val tilankuvauksenHash = tilankuvauksetWithTarkenne.hashCode
 

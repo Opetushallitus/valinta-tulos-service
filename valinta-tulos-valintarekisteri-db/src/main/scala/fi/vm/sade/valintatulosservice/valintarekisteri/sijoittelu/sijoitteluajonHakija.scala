@@ -53,7 +53,7 @@ object SijoitteluajonHakija {
       val valintatapajonoDtot = valintatapajonot.map{ j =>
         j.dto(
           valinnantulokset.find(_.valintatapajonoOid.equals(j.valintatapajonoOid)),
-          j.tilankuvaukset(tilankuvauksetSijoittelussa.get(j.tilankuvausHash)),
+          tilankuvauksetSijoittelussa.get(j.tilankuvausHash),
           hakutoiveidenHakeneetSijoittelussa.getOrElse((hakukohdeOid, j.valintatapajonoOid), 0),
           hakutoiveidenHyvaksytyt.getOrElse((hakukohdeOid, j.valintatapajonoOid), 0)
         )
@@ -298,7 +298,7 @@ object SijoitteluajonHakijat {
           val jononHyvaksytytJaHakeneet = hakutoiveenHyvaksytytJaHakeneet.getOrElse(jono.valintatapajonoOid, HyvaksytytJaHakeneet(0,0))
           jono.dto(
             hakemuksenValinnantuloksetHakutoiveella.find(_.valintatapajonoOid.equals(jono.valintatapajonoOid)),
-            jono.tilankuvaukset(tilankuvaukset.get(jono.tilankuvausHash)),
+            tilankuvaukset.get(jono.tilankuvausHash),
             jononHyvaksytytJaHakeneet.hakeneet,
             jononHyvaksytytJaHakeneet.hyvaksytyt)}
         ),
@@ -349,7 +349,7 @@ object SijoitteluajonHakijat {
       hakukohde.kevytDto(
         hakemuksenValintatapajonot.getOrElse(hakukohde.hakukohdeOid, List()).map(jono => jono.kevytDto(
           hakemuksenValinnantuloksetHakutoiveella.find(_.valintatapajonoOid.equals(jono.valintatapajonoOid)),
-          jono.tilankuvaukset(tilankuvaukset.get(jono.tilankuvausHash))))
+          tilankuvaukset.get(jono.tilankuvausHash)))
       )}
     )
   }
