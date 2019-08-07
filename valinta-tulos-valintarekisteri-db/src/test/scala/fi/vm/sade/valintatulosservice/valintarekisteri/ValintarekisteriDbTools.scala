@@ -475,7 +475,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
         hyvaksyttyHarkinnanvaraisesti = h.hyvaksyttyHarkinnanvaraisesti,
         siirtynytToisestaValintatapajonosta = h.siirtynytToisestaValintatapaJonosta,
         tila = h.tila,
-        tilanKuvaukset = Some(h.tilankuvaukset(tilankuvaukset.get(h.tilankuvausHash))),
+        tilanKuvaukset = Some(tilankuvaukset(h.tilankuvausHash).tilankuvaukset(None).asScala.toMap),
         tilankuvauksenTarkenne = tilankuvaukset(h.tilankuvausHash).tilankuvauksenTarkenne,
         tarkenteenLisatieto = h.tarkenteenLisatieto,
         hyvaksyttyHakijaryhmista = hakijaryhmaoidit.getOrElse(h.hakemusOid, Set()),
