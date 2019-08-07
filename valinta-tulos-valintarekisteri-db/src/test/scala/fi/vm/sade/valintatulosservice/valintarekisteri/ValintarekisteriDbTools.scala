@@ -544,7 +544,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
 
           val jonosijanTilankuvaukset = findJonosijanTilaAndtilankuvaukset(hakemus.getHakemusOid, wrapper.sijoitteluajo.getSijoitteluajoId, valintatapajono.getOid)
           hakemusWrapper.tila mustEqual jonosijanTilankuvaukset.tila
-          hakemusWrapper.tilankuvauksenHash mustEqual jonosijanTilankuvaukset.tilankuvausHash
+          hakemus.getTilanKuvaukset.hashCode() mustEqual jonosijanTilankuvaukset.tilankuvausHash
           hakemusWrapper.tarkenteenLisatieto mustEqual jonosijanTilankuvaukset.tarkenteenLisatieto
 
           val storedPistetiedot = findHakemuksenPistetiedot(hakemus.getHakemusOid)
