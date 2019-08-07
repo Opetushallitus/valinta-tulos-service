@@ -155,13 +155,13 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
     val hakemusWrapper = SijoitteluajonHakemusWrapper(hakemus)
     createJonosijaInsertRow(sijoitteluajoId, hakukohdeOid, valintatapajonoOid, hakemusWrapper, jonosijaStatement)
     hakemus.getPistetiedot.asScala.foreach(createPistetietoInsertRow(sijoitteluajoId, valintatapajonoOid, HakemusOid(hakemus.getHakemusOid), _, pistetietoStatement))
-    createValinnantilanKuvausInsertRow(hakemusWrapper, tilankuvausStatement)
+    createValinnantilanKuvausInsertRow(hakemus, tilankuvausStatement)
     createValinnantilaInsertRow(hakukohdeOid, valintatapajonoOid, sijoitteluajoId, hakemusWrapper, valinnantilaStatement)
     valintatulosOption match {
       case None => createValinnantulosInsertRow(hakemusWrapper, sijoitteluajoId, hakukohdeOid, valintatapajonoOid, insertValinnantulosStatement)
       case Some(valintatulos) => createValinnantulosUpdateRow(hakemusWrapper, valintatulos, sijoitteluajoId, hakukohdeOid, valintatapajonoOid, updateValinnantulosStatement)
     }
-    createTilaKuvausMappingInsertRow(hakemusWrapper, hakukohdeOid, valintatapajonoOid, tilaKuvausMappingStatement)
+    createTilaKuvausMappingInsertRow(hakemus, hakukohdeOid, valintatapajonoOid, tilaKuvausMappingStatement)
   }
 
   private def createStatement(sql:String) = (connection:java.sql.Connection) => connection.prepareStatement(sql)
@@ -322,26 +322,26 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
        where tilat_kuvaukset.tilankuvaus_hash <> excluded.tilankuvaus_hash
     """)
 
-  private def createTilaKuvausMappingInsertRow(hakemusWrapper: SijoitteluajonHakemusWrapper,
+  private def createTilaKuvausMappingInsertRow(hakemus: SijoitteluHakemus,
                                                hakukohdeOid: HakukohdeOid,
                                                valintatapajonoOid: ValintatapajonoOid,
                                                statement: PreparedStatement) = {
-    statement.setInt(1, hakemusWrapper.tilankuvauksenHash)
+    statement.setInt(1, hakemus.getTilanKuvaukset.hashCode())
     statement.setString(2, hakukohdeOid.toString)
     statement.setString(3, valintatapajonoOid.toString)
-    statement.setString(4, hakemusWrapper.hakemusOid.toString)
+    statement.setString(4, hakemus.getHakemusOid)
     statement.addBatch()
   }
 
   private def createTilankuvausStatement = createStatement("""insert into valinnantilan_kuvaukset (hash, tilan_tarkenne, text_fi, text_sv, text_en)
       values (?, ?::valinnantilanTarkenne, ?, ?, ?) on conflict do nothing""")
 
-  private def createValinnantilanKuvausInsertRow(h: SijoitteluajonHakemusWrapper, s: PreparedStatement) = {
-    s.setInt(1, h.tilankuvauksenHash)
-    s.setString(2, h.tilankuvauksetWithTarkenne("tilankuvauksenTarkenne"))
-    s.setString(3, h.tilankuvauksetWithTarkenne.getOrElse("FI", null))
-    s.setString(4, h.tilankuvauksetWithTarkenne.getOrElse("SV", null))
-    s.setString(5, h.tilankuvauksetWithTarkenne.getOrElse("EN", null))
+  private def createValinnantilanKuvausInsertRow(h: SijoitteluHakemus, s: PreparedStatement) = {
+    s.setInt(1, h.getTilanKuvaukset.hashCode())
+    s.setString(2, ValinnantilanTarkenne.getValinnantilanTarkenne(h.getTilankuvauksenTarkenne).toString)
+    s.setString(3, h.getTilanKuvaukset.get("FI"))
+    s.setString(4, h.getTilanKuvaukset.get("SV"))
+    s.setString(5, h.getTilanKuvaukset.get("EN"))
     s.addBatch()
   }
 

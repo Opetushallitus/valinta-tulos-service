@@ -419,10 +419,6 @@ case class SijoitteluajonHakemusWrapper(
                                          tarkenteenLisatieto: Option[String],
                                          hyvaksyttyHakijaryhmista: Set[String],
                                          tilaHistoria: List[TilahistoriaWrapper]) {
-  val tilankuvauksetWithTarkenne = tilanKuvaukset.getOrElse(Map()) + ("tilankuvauksenTarkenne" -> tilankuvauksenTarkenne.toString)
-
-  val tilankuvauksenHash = tilankuvauksetWithTarkenne.hashCode
-
   import scala.collection.JavaConverters._
 
   val hakemus: SijoitteluHakemus = {
