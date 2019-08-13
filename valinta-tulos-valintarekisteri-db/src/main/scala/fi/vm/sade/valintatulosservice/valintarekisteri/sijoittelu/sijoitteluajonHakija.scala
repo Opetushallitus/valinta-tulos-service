@@ -246,7 +246,7 @@ object SijoitteluajonHakijat {
                   tilankuvaukset: Map[Int, TilankuvausRecord],
                   pistetiedot: Map[HakukohdeOid, List[PistetietoRecord]],
                   hakijaryhmat: Map[HakemusOid, List[HakutoiveenHakijaryhmaRecord]]): List[HakijaDTO] = timed("HakijaDTOiden luonti " + hakijat.size + " hakijalle", 10) {
-    hakijat.map(hakija => {
+    hakijat.par.map(hakija => {
       val hakijanHakutoiveetEiSijoittelua: Set[HakukohdeOid] = filterHakijanHakutoiveetEiSijoittelua(hakija.hakemusOid, valinnantulokset, hakutoiveet)
       timed("HakijaDTOn luonti", 100)(hakija.dto(
         hakutoiveDTOtSijoittelu(
