@@ -57,7 +57,11 @@ case class Haku(oid: HakuOid,
                 hakuAjat: List[Hakuaika],
                 koulutuksenAlkamiskausi: Option[Kausi],
                 yhdenPaikanSaanto: YhdenPaikanSaanto,
-                nimi: Map[String, String])
+                nimi: Map[String, String]) {
+
+  val sijoitteluJaPriorisointi = käyttääSijoittelua && käyttääHakutoiveidenPriorisointia
+}
+
 case class Hakuaika(hakuaikaId: String, alkuPvm: Option[Long], loppuPvm: Option[Long]) {
   def hasStarted: Boolean = alkuPvm match {
     case Some(alku) => new DateTime().isAfter(new DateTime(alku))

@@ -50,7 +50,7 @@ class SijoittelunVastaanottoValidator(val haku: Haku,
 
 
       val ehdollinenVastaanotettavuus = findHakutoiveenValinnantulos(toive => toive.valintatapajonoOid == uusi.valintatapajonoOid).exists(vastaanotettavaHakutoive => {
-        val sovellaKorkeakouluSääntöjä = haku.korkeakoulu && haku.käyttääSijoittelua
+        val sovellaKorkeakouluSääntöjä = haku.korkeakoulu && haku.sijoitteluJaPriorisointi
         val ehdollinenVastaanottoSallittu = ehdollinenVastaanottoMahdollista(ohjausparametrit)
         val hakutoiveOnEhdollisestiVastaanotettavissa = ehdollisestiVastaanotettavaHakutoive.exists(_ == vastaanotettavaHakutoive.hakutoive)
 
