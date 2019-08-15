@@ -548,17 +548,13 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       toinenAste = false,
       sallittuKohdejoukkoKelaLinkille = true,
       käyttääSijoittelua = true,
+      käyttääHakutoiveidenPriorisointia = true,
       varsinaisenHaunOid = None,
       sisältyvätHaut = Set.empty,
-      hakuAjat = List(tarjonta.Hakuaika(
-        hakuaikaId = hakuaikaIdA,
-        alkuPvm = hakuaikaAlkuA,
-        loppuPvm = hakuaikaLoppuA
-      )),
+      hakuAjat = List(tarjonta.Hakuaika(hakuaikaId = hakuaikaIdA, alkuPvm = hakuaikaAlkuA, loppuPvm = hakuaikaLoppuA)),
       koulutuksenAlkamiskausi = Some(Kevat(2018)),
       yhdenPaikanSaanto = yhdenPaikanSaantoA,
-      nimi = hakuNimetA
-    )
+      nimi = hakuNimetA)
     val tarjontaHakukohdeA = tarjonta.Hakukohde(
       oid = hakukohdeOidA,
       hakuOid = hakuOidA,

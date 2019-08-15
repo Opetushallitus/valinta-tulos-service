@@ -46,9 +46,17 @@ object HakuService {
   }
 }
 
-case class Haku(oid: HakuOid, korkeakoulu: Boolean, toinenAste: Boolean, sallittuKohdejoukkoKelaLinkille: Boolean,
-                käyttääSijoittelua: Boolean, varsinaisenHaunOid: Option[String], sisältyvätHaut: Set[String],
-                hakuAjat: List[Hakuaika], koulutuksenAlkamiskausi: Option[Kausi], yhdenPaikanSaanto: YhdenPaikanSaanto,
+case class Haku(oid: HakuOid,
+                korkeakoulu: Boolean,
+                toinenAste: Boolean,
+                sallittuKohdejoukkoKelaLinkille: Boolean,
+                käyttääSijoittelua: Boolean,
+                käyttääHakutoiveidenPriorisointia: Boolean,
+                varsinaisenHaunOid: Option[String],
+                sisältyvätHaut: Set[String],
+                hakuAjat: List[Hakuaika],
+                koulutuksenAlkamiskausi: Option[Kausi],
+                yhdenPaikanSaanto: YhdenPaikanSaanto,
                 nimi: Map[String, String])
 case class Hakuaika(hakuaikaId: String, alkuPvm: Option[Long], loppuPvm: Option[Long]) {
   def hasStarted: Boolean = alkuPvm match {
@@ -180,6 +188,7 @@ protected trait JsonHakuService {
       toinenAste = toinenAste,
       sallittuKohdejoukkoKelaLinkille = sallittuKohdejoukkoKelaLinkille,
       käyttääSijoittelua = haku.sijoittelu,
+      käyttääHakutoiveidenPriorisointia = haku.usePriority,
       varsinaisenHaunOid = haku.parentHakuOid,
       sisältyvätHaut = haku.sisaltyvatHaut,
       hakuAjat = haku.hakuaikas,
@@ -214,6 +223,7 @@ private case class HakuTarjonnassa(oid: HakuOid,
                                    koulutuksenAlkamisVuosi: Option[Int],
                                    koulutuksenAlkamiskausiUri: Option[String],
                                    sijoittelu: Boolean,
+                                   usePriority: Boolean,
                                    parentHakuOid: Option[String],
                                    sisaltyvatHaut: Set[String],
                                    tila: String,
