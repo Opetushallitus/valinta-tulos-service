@@ -109,7 +109,7 @@ class HakukohdeKelaSerializer extends CustomSerializer[HakukohdeKela]((formats: 
         oppilaitoskoodi = oppilaitoskoodi,
         koulutuslaajuusarvot = children
       )
-  }, { case o => ??? })
+  }, { case _ => ??? })
 })
 class KoulutusSerializer extends CustomSerializer[Koulutus]((formats: Formats) => {
   implicit val f = formats
@@ -124,9 +124,7 @@ class KoulutusSerializer extends CustomSerializer[Koulutus]((formats: Formats) =
         case JString("kausi_s") => Syksy(vuosi.toInt)
         case x => throw new MappingException(s"Unrecognized kausi URI $x")
       }
-      val koulutusUriOpt = (o \ "koulutuskoodi" \ "uri").extractOpt[String]
-      val koulutusVersioOpt = (o \ "koulutuskoodi" \ "versio").extractOpt[Int]
-      val vads: JValue = (o \ "koulutuskoodi")
+
       def extractKoodi(j: JValue) = Try(Koodi((j \ "uri").extract[String], (j \ "arvo").extract[String])).toOption
       val children = (o \ "children").extractOpt[Seq[String]].getOrElse(Seq())
       val sisaltyvatKoulutuskoodiUris = (o \ "sisaltyvatKoulutuskoodit" \ "uris").extractOpt[Map[String,String]].getOrElse(Map.empty)
@@ -137,7 +135,7 @@ class KoulutusSerializer extends CustomSerializer[Koulutus]((formats: Formats) =
         koulutuskoodi = extractKoodi((o \ "koulutuskoodi")),
           koulutusaste = extractKoodi((o \ "koulutusaste")),
           opintojenLaajuusarvo = extractKoodi((o \ "opintojenLaajuusarvo")))
-  }, { case o => ??? })
+  }, { case _ => ??? })
 })
 class KomoSerializer extends CustomSerializer[Komo]((formats: Formats) => {
   implicit val f = formats
@@ -148,7 +146,7 @@ class KomoSerializer extends CustomSerializer[Komo]((formats: Formats) => {
       Komo(oid,
         koulutuskoodi = extractKoodi((o \ "koulutuskoodi")),
         opintojenLaajuusarvo = extractKoodi((o \ "opintojenLaajuusarvo")))
-  }, { case o => ??? })
+  }, { case _ => ??? })
 })
 protected trait JsonHakuService {
   import org.json4s._
@@ -166,9 +164,6 @@ protected trait JsonHakuService {
     val korkeakoulu: Boolean = haku.kohdejoukkoUri.startsWith("haunkohdejoukko_12#")
     val amkopeTarkenteet = Set("haunkohdejoukontarkenne_2#", "haunkohdejoukontarkenne_4#", "haunkohdejoukontarkenne_5#", "haunkohdejoukontarkenne_6#")
     val sallittuKohdejoukkoKelaLinkille: Boolean = !(haku.kohdejoukonTarkenne.exists(tarkenne => amkopeTarkenteet.exists(tarkenne.startsWith)))
-    val yhteishaku: Boolean = haku.hakutapaUri.startsWith("hakutapa_01#")
-    val varsinainenhaku: Boolean = haku.hakutyyppiUri.startsWith("hakutyyppi_01#1")
-    val lisähaku: Boolean = haku.hakutyyppiUri.startsWith("hakutyyppi_03#1")
     val toinenAste: Boolean = Option(haku.kohdejoukkoUri).exists(k => k.contains("_11") || k.contains("_17") || k.contains("_20"))
     val koulutuksenAlkamisvuosi = haku.koulutuksenAlkamisVuosi
     val kausi = if (haku.koulutuksenAlkamiskausiUri.isDefined && haku.koulutuksenAlkamisVuosi.isDefined) {
