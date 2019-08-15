@@ -81,10 +81,10 @@ case class Koulutus(oid: String, koulutuksenAlkamiskausi: Kausi, tila: String, j
                     koulutuskoodi: Option[Koodi],
                     koulutusaste: Option[Koodi],
                     opintojenLaajuusarvo: Option[Koodi])
-case class HakukohdeKela(val koulutuksenAlkamiskausi: Option[Kausi],
-                         val hakukohdeOid: String,
-                         val tarjoajaOid: String,
-                         val oppilaitoskoodi: String,
+case class HakukohdeKela(koulutuksenAlkamiskausi: Option[Kausi],
+                         hakukohdeOid: String,
+                         tarjoajaOid: String,
+                         oppilaitoskoodi: String,
                          koulutuslaajuusarvot: Seq[KoulutusLaajuusarvo])
 
 class HakukohdeKelaSerializer extends CustomSerializer[HakukohdeKela]((formats: Formats) => {
@@ -96,7 +96,7 @@ class HakukohdeKelaSerializer extends CustomSerializer[HakukohdeKela]((formats: 
       val JString(oppilaitoskoodi) = o \ "oppilaitosKoodi"
       val JInt(vuosi) = o \ "koulutuksenAlkamisVuosi"
 
-      val kausi: Option[Kausi] = Try((o \ "koulutuksenAlkamiskausiUri") match {
+      val kausi: Option[Kausi] = Try(o \ "koulutuksenAlkamiskausiUri" match {
         case JString(kevät) if kevät.contains("kausi_k") => Kevat(vuosi.toInt)
         case JString(syksy) if syksy.contains("kausi_s") => Syksy(vuosi.toInt)
         case x => throw new MappingException(s"Unrecognized kausi URI $x")
@@ -132,9 +132,9 @@ class KoulutusSerializer extends CustomSerializer[Koulutus]((formats: Formats) =
       Koulutus(oid, kausi, tila, johtaaTutkintoon,
         children,
         sisaltyvatKoulutuskoodit = sisaltyvatKoulutuskoodiUris.keys.map(k => k.replace("koulutus_", "")).toSeq,
-        koulutuskoodi = extractKoodi((o \ "koulutuskoodi")),
-          koulutusaste = extractKoodi((o \ "koulutusaste")),
-          opintojenLaajuusarvo = extractKoodi((o \ "opintojenLaajuusarvo")))
+        koulutuskoodi = extractKoodi(o \ "koulutuskoodi"),
+          koulutusaste = extractKoodi(o \ "koulutusaste"),
+          opintojenLaajuusarvo = extractKoodi(o \ "opintojenLaajuusarvo"))
   }, { case _ => ??? })
 })
 class KomoSerializer extends CustomSerializer[Komo]((formats: Formats) => {
@@ -144,8 +144,8 @@ class KomoSerializer extends CustomSerializer[Komo]((formats: Formats) => {
       val JString(oid) = o \ "oid"
       def extractKoodi(j: JValue) = Try(Koodi((j \ "uri").extract[String], (j \ "arvo").extract[String])).toOption
       Komo(oid,
-        koulutuskoodi = extractKoodi((o \ "koulutuskoodi")),
-        opintojenLaajuusarvo = extractKoodi((o \ "opintojenLaajuusarvo")))
+        koulutuskoodi = extractKoodi(o \ "koulutuskoodi"),
+        opintojenLaajuusarvo = extractKoodi(o \ "opintojenLaajuusarvo"))
   }, { case _ => ??? })
 })
 protected trait JsonHakuService {
@@ -163,7 +163,7 @@ protected trait JsonHakuService {
   protected def toHaku(haku: HakuTarjonnassa): Haku = {
     val korkeakoulu: Boolean = haku.kohdejoukkoUri.startsWith("haunkohdejoukko_12#")
     val amkopeTarkenteet = Set("haunkohdejoukontarkenne_2#", "haunkohdejoukontarkenne_4#", "haunkohdejoukontarkenne_5#", "haunkohdejoukontarkenne_6#")
-    val sallittuKohdejoukkoKelaLinkille: Boolean = !(haku.kohdejoukonTarkenne.exists(tarkenne => amkopeTarkenteet.exists(tarkenne.startsWith)))
+    val sallittuKohdejoukkoKelaLinkille: Boolean = !haku.kohdejoukonTarkenne.exists(tarkenne => amkopeTarkenteet.exists(tarkenne.startsWith))
     val toinenAste: Boolean = Option(haku.kohdejoukkoUri).exists(k => k.contains("_11") || k.contains("_17") || k.contains("_20"))
     val koulutuksenAlkamisvuosi = haku.koulutuksenAlkamisVuosi
     val kausi = if (haku.koulutuksenAlkamiskausiUri.isDefined && haku.koulutuksenAlkamisVuosi.isDefined) {
@@ -293,7 +293,7 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
     val url = config.ophProperties.url("tarjonta-service.find", Map("addHakuKohdes" -> false).asJava)
     fetch(url) { response =>
       val haut = (parse(response) \ "result").extract[List[HakuTarjonnassa]]
-      haut.filter(_.julkaistu).map(toHaku(_))
+      haut.filter(_.julkaistu).map(toHaku)
     }
   }
 
@@ -316,7 +316,7 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
       (parse(response) \ "result").extract[Komo]
     }
   }
-  private def fetch[T](url: String)(parse: (String => T)): Either[Throwable, T] = {
+  private def fetch[T](url: String)(parse: String => T): Either[Throwable, T] = {
     Try(DefaultHttpClient.httpGet(
       url,
       HttpOptions.connTimeout(30000),
