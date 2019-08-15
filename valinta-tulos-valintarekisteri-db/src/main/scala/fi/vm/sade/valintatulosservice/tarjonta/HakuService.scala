@@ -51,7 +51,7 @@ case class Haku(oid: HakuOid, korkeakoulu: Boolean, toinenAste: Boolean, sallitt
                 hakuAjat: List[Hakuaika], koulutuksenAlkamiskausi: Option[Kausi], yhdenPaikanSaanto: YhdenPaikanSaanto,
                 nimi: Map[String, String])
 case class Hakuaika(hakuaikaId: String, alkuPvm: Option[Long], loppuPvm: Option[Long]) {
-  def hasStarted = alkuPvm match {
+  def hasStarted: Boolean = alkuPvm match {
     case Some(alku) => new DateTime().isAfter(new DateTime(alku))
     case _ => true
   }
@@ -88,7 +88,7 @@ case class HakukohdeKela(koulutuksenAlkamiskausi: Option[Kausi],
                          koulutuslaajuusarvot: Seq[KoulutusLaajuusarvo])
 
 class HakukohdeKelaSerializer extends CustomSerializer[HakukohdeKela]((formats: Formats) => {
-  implicit val f = formats
+  implicit val f: Formats = formats
   ( {
     case o: JObject =>
       val JString(hakukohdeOid) = o \ "hakukohdeOid"
@@ -112,7 +112,7 @@ class HakukohdeKelaSerializer extends CustomSerializer[HakukohdeKela]((formats: 
   }, { case _ => ??? })
 })
 class KoulutusSerializer extends CustomSerializer[Koulutus]((formats: Formats) => {
-  implicit val f = formats
+  implicit val f: Formats = formats
   ( {
     case o: JObject =>
       val JString(oid) = o \ "oid"
@@ -138,7 +138,7 @@ class KoulutusSerializer extends CustomSerializer[Koulutus]((formats: Formats) =
   }, { case _ => ??? })
 })
 class KomoSerializer extends CustomSerializer[Komo]((formats: Formats) => {
-  implicit val f = formats
+  implicit val f: Formats = formats
   ( {
     case o: JObject =>
       val JString(oid) = o \ "oid"
@@ -212,7 +212,7 @@ private case class HakuTarjonnassa(oid: HakuOid,
                                    nimi: Map[String, String],
                                    organisaatioOids: Seq[String],
                                    tarjoajaOids: Seq[String]) {
-  def julkaistu = {
+  def julkaistu: Boolean = {
     tila == "JULKAISTU"
   }
 }
