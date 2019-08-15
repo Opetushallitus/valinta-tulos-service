@@ -385,18 +385,18 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       Set()
     ))
     hakuService.getHaku(hakuOid) returns Right(Haku(
-      hakuOid,
-      true,
-      false,
-      true,
-      true,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ))
+      oid = hakuOid,
+      korkeakoulu = true,
+      toinenAste = false,
+      sallittuKohdejoukkoKelaLinkille = true,
+      käyttääSijoittelua = true,
+      käyttääHakutoiveidenPriorisointia = true,
+      varsinaisenHaunOid = null,
+      sisältyvätHaut = null,
+      hakuAjat = null,
+      koulutuksenAlkamiskausi = null,
+      yhdenPaikanSaanto = null,
+      nimi = null))
   }
 
   trait ToisenAsteenHaku { this: Mocks =>
@@ -416,18 +416,18 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       Set()
     ))
     hakuService.getHaku(hakuOid) returns Right(Haku(
-      hakuOid,
-      false,
-      true,
-      true,
-      true,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ))
+      oid = hakuOid,
+      korkeakoulu = false,
+      toinenAste = true,
+      sallittuKohdejoukkoKelaLinkille = true,
+      käyttääSijoittelua = true,
+      käyttääHakutoiveidenPriorisointia = true,
+      varsinaisenHaunOid = null,
+      sisältyvätHaut = null,
+      hakuAjat = null,
+      koulutuksenAlkamiskausi = null,
+      yhdenPaikanSaanto = null,
+      nimi = null))
   }
 
   trait ValintaesitysEiHyvaksyttavissa { this: Mocks =>
