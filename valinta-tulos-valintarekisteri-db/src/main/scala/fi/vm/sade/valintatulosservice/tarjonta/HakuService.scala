@@ -174,8 +174,18 @@ protected trait JsonHakuService {
           } else throw new MappingException(s"Haku ${haku.oid} has unrecognized kausi URI '${haku.koulutuksenAlkamiskausiUri.get}' . Full data of haku: $haku")
     } else None
 
-    Haku(haku.oid, korkeakoulu, toinenAste, sallittuKohdejoukkoKelaLinkille, haku.sijoittelu, haku.parentHakuOid,
-      haku.sisaltyvatHaut, haku.hakuaikas, kausi, haku.yhdenPaikanSaanto, haku.nimi)
+    Haku(
+      oid = haku.oid,
+      korkeakoulu = korkeakoulu,
+      toinenAste = toinenAste,
+      sallittuKohdejoukkoKelaLinkille = sallittuKohdejoukkoKelaLinkille,
+      käyttääSijoittelua = haku.sijoittelu,
+      varsinaisenHaunOid = haku.parentHakuOid,
+      sisältyvätHaut = haku.sisaltyvatHaut,
+      hakuAjat = haku.hakuaikas,
+      koulutuksenAlkamiskausi = kausi,
+      yhdenPaikanSaanto = haku.yhdenPaikanSaanto,
+      nimi = haku.nimi)
   }
 }
 
