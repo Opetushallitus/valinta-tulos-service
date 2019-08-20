@@ -13,7 +13,6 @@ class MuutoshistoriaServlet(valinnantulosService: ValinnantulosService,
                            (implicit val swagger: Swagger)
   extends VtsServletBase with CasAuthenticatedServlet {
 
-  override val applicationName = Some("auth/muutoshistoria")
   override val applicationDescription = "Valinnantuloksen muutoshistorian REST API"
 
   private def parseValintatapajonoOid: Either[Throwable, ValintatapajonoOid] = {

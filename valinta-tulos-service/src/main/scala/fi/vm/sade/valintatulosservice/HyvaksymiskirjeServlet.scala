@@ -12,7 +12,6 @@ class HyvaksymiskirjeServlet(hyvaksymiskirjeService: HyvaksymiskirjeService,
                             (implicit val swagger: Swagger)
   extends VtsServletBase with CasAuthenticatedServlet {
 
-  override val applicationName = Some("auth/hyvaksymiskirje")
   override val applicationDescription = "Hyväksymiskirjeiden REST API"
 
   private def parseHakukohdeOid: HakukohdeOid = HakukohdeOid(params.getOrElse("hakukohdeOid", throw new IllegalArgumentException("URL parametri hakukohdeOid on pakollinen.")))

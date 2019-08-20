@@ -12,7 +12,6 @@ class ValintaesitysServlet(valintaesitysService: ValintaesitysService,
                           )(implicit val swagger: Swagger)
   extends VtsServletBase with CasAuthenticatedServlet {
 
-  override val applicationName = Some("auth/valintaesitys")
   override val applicationDescription = "Valintaesityksen REST API"
 
   private def parseValintatapajonoOid: ValintatapajonoOid = ValintatapajonoOid(params.getOrElse(

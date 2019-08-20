@@ -24,8 +24,6 @@ class LukuvuosimaksuServletWithCAS(lukuvuosimaksuService: LukuvuosimaksuService,
 
   implicit val defaultFormats = DefaultFormats + new EnumNameSerializer(Maksuntila)
 
-  override val applicationName = Some("auth/lukuvuosimaksut")
-
   override protected def applicationDescription: String = "Lukuvuosimaksut authenticated REST API"
 
   protected def authenticatedPersonOid: String = {

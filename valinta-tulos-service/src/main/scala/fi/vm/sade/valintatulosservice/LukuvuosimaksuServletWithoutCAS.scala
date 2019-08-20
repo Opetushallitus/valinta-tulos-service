@@ -20,8 +20,6 @@ class LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService: LukuvuosimaksuServi
 
   implicit val vtsJsonFormats = JsonFormats.jsonFormats + new EnumNameSerializer(Maksuntila)
 
-  override val applicationName = Some("lukuvuosimaksut")
-
   override protected def applicationDescription: String = "Lukuvuosimaksut unauthenticated REST API"
 
   /**

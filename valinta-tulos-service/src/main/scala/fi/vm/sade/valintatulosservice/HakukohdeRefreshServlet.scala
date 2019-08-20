@@ -24,7 +24,6 @@ case class Status(started: Date)
 class HakukohdeRefreshServlet(hakukohdeRepository: HakukohdeRepository,
                               hakukohdeRecordService: HakukohdeRecordService)
                              (implicit val swagger: Swagger) extends ScalatraServlet with Logging with JacksonJsonSupport with JsonFormats with SwaggerSupport with UrlGeneratorSupport {
-  override val applicationName = Some("virkistys")
 
   override protected def applicationDescription: String = "Hakukohdetietojen virkistys API"
 

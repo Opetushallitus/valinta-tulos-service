@@ -17,8 +17,6 @@ import scala.util.{Success, Try}
 
 class KelaServlet(audit: Audit, kelaService: KelaService, val sessionRepository: SessionRepository)(override implicit val swagger: Swagger)  extends VtsServletBase with CasAuthenticatedServlet {
 
-  override val applicationName = Some("cas/kela")
-
   protected val applicationDescription = "Julkinen Kela REST API"
 
   override protected def checkJsonContentType() {

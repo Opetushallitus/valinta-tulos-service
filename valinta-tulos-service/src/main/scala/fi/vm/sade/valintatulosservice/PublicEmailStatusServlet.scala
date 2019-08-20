@@ -15,7 +15,6 @@ class PublicEmailStatusServlet(mailPoller: MailPoller,
   extends VtsServletBase
     with CasAuthenticatedServlet {
 
-  override def applicationName = Some("auth/vastaanottoposti")
   protected val applicationDescription = "Julkinen vastaanottosähköpostin REST API"
 
   lazy val getVastaanottopostiSentForHakemus: OperationBuilder = (apiOperation[Unit]("getSentAt")

@@ -84,7 +84,6 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
                           (implicit val swagger: Swagger)
   extends ValinnantulosServletBase with CasAuthenticatedServlet with DeadlineDecorator {
 
-  override val applicationName = Some("auth/valinnan-tulos")
   override val applicationDescription = "Valinnantuloksen REST API"
 
   val valinnantulosSwagger: OperationBuilder = (apiOperation[List[Valinnantulos]]("valinnantulos")
@@ -167,7 +166,6 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
 class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymiskirjeService: HyvaksymiskirjeService, userDetailsService: KayttooikeusUserDetailsService)
   (implicit val swagger: Swagger) extends ValinnantulosServletBase with AuditInfoParameter  {
 
-  override val applicationName = Some("erillishaku/valinnan-tulos")
   override val applicationDescription = "Erillishaun valinnantuloksen REST API"
 
   private def getSession(auditSession: AuditSessionRequest): (UUID, Session) = (UUID.randomUUID(), getAuditSession(auditSession))

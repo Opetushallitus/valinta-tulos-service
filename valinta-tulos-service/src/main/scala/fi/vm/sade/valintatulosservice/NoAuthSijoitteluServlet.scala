@@ -10,8 +10,6 @@ class NoAuthSijoitteluServlet(sijoitteluService: SijoitteluService)
                              (implicit val swagger: Swagger)
   extends VtsServletBase {
 
-  override val applicationName = Some("sijoittelu")
-
   override protected def applicationDescription: String = "Sijoittelun REST API ilman autentikaatiota"
 
   lazy val getHakukohdeBySijoitteluajoSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohdeBySijoitteluajoSwagger")
@@ -28,8 +26,7 @@ class NoAuthSijoitteluServlet(sijoitteluService: SijoitteluService)
       Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakukohdeBySijoitteluajoWithoutAuthentication(hakuOid, sijoitteluajoId, hakukohdeOid)))
     } catch {
       case e: NotFoundException =>
-        val message = e.getMessage
-        NotFound(body = Map("error" -> message), reason = message)
+        NotFound(e.getMessage)
     }
   }
 

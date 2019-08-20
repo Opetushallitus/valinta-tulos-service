@@ -14,8 +14,6 @@ import scala.collection.JavaConverters._
 
 class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, vastaanottoService: VastaanottoService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
 
-  override val applicationName = Some("virkailija")
-
   override protected def applicationDescription: String = "Virkailijan vastaanottotietojen käsittely REST API"
 
   val getVastaanottoTilatByHakukohdeSwagger: OperationBuilder = (apiOperation[Unit]("getVastaanottoTilatByHakukohde")

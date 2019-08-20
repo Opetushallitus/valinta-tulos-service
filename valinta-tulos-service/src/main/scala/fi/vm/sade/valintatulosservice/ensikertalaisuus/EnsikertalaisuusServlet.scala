@@ -43,7 +43,7 @@ object EnsikertalaisuusServlet {
 }
 
 trait EnsikertalaisuusSwagger extends VtsSwaggerBase { this: SwaggerSupport =>
-  override val applicationName = Some("ensikertalaisuus")
+
   override protected def applicationDescription: String = "Ensikertalaisuus-tiedon vastaanotto-osuus"
 
   registerModel(Model("Ensikertalaisuus", "Ensikertalaisuus", None, None,

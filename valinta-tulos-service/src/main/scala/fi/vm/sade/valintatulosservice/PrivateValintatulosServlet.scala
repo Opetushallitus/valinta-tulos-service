@@ -21,8 +21,6 @@ class PrivateValintatulosServlet(valintatulosService: ValintatulosService,
     valintarekisteriDb,
     hakemustenTulosHakuLock)(swagger, appConfig) {
 
-  override val applicationName = Some("haku")
-
   protected val applicationDescription = "Sisäinen valintatulosten REST API"
 
   override def auditLog(auditParams: Map[String, String], auditOperation: Operation): Unit = {

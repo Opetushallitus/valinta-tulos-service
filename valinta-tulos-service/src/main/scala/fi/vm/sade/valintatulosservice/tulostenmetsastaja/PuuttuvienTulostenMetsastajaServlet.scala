@@ -20,7 +20,7 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
                                           virkailijaBaseUrl: String)
                                          (implicit val swagger: Swagger) extends VtsServletBase with CasAuthenticatedServlet {
   override implicit val jsonFormats: Formats = JsonFormats.jsonFormats ++ Oids.getSerializers() ++ Seq(new UrlSerializer)
-  override val applicationName = Some("auth/puuttuvat")
+
   override val applicationDescription = "REST API puuttuvien tuloksien etsimiseen"
   override val sessionRepository: SessionRepository = valintarekisteriDb
 

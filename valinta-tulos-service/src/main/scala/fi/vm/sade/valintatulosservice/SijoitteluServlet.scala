@@ -14,8 +14,6 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
                        (implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase
                        with CasAuthenticatedServlet {
 
-  override val applicationName = Some("auth/sijoittelu")
-
   override protected def applicationDescription: String = "Sijoittelun REST API"
 
   /*lazy val postSijoitteluajoSwagger: OperationBuilder = (apiOperation[Unit]("postSijoitteluajoSwagger")
@@ -67,7 +65,7 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
       Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakemusBySijoitteluajo(hakuOid, sijoitteluajoId, hakemusOid, auditInfo)))
     } catch {
       case e: NotFoundException =>
-        NoContent(reason = e.getMessage)
+        NotFound(e.getMessage)
     }
   }
 
@@ -88,8 +86,7 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
       Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session, auditInfo)))
     } catch {
       case e: NotFoundException =>
-        val message = e.getMessage
-        NotFound(body = Map("error" -> message), reason = message)
+        NotFound(e.getMessage)
     }
   }
 

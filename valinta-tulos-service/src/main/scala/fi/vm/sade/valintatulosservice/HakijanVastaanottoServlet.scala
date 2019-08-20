@@ -12,8 +12,6 @@ import scala.util.Try
 
 class HakijanVastaanottoServlet(vastaanottoService: VastaanottoService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
 
-  override val applicationName = Some("vastaanotto")
-
   override protected def applicationDescription: String = "Opiskelupaikan vastaanoton REST API"
 
   private implicit val jsonFormatsForHakija: Formats = jsonFormats ++ List(new HakijanVastaanottoActionSerializer)

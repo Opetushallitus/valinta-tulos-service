@@ -66,7 +66,7 @@ class EmailerServlet(emailerService: EmailerService, val sessionRepository: Sess
 }
 
 trait EmailerSwagger extends VtsSwaggerBase { this: SwaggerSupport =>
-  override val applicationName = Some("emailer")
+
   override protected def applicationDescription: String = "Sähköpostien lähetys"
 
   val postRunEmailerSwagger: OperationBuilder = apiOperation[Unit]("postRunEmailer")

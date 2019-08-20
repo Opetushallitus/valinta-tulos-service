@@ -284,7 +284,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     val hakukohdeOids = parsedBody.extract[Seq[String]]
     logger.info(s"Results of ${hakukohdeOids.size} hakukohde of haku $hakuOid were requested.")
     if (hakukohdeOids.isEmpty) {
-      BadRequest(body = Map("error" -> "Anna kysyttävät hakukohdeoidit bodyssä."), reason = "Could not read hakukohde oids from request body.")
+      BadRequest("Anna kysyttävät hakukohdeoidit bodyssä.")
     } else {
       writeSijoittelunTuloksetStreamingToResponse(response, hakuOid, w => streamingValintatulosService.streamSijoittelunTuloksetOfHakukohdes(
         hakuOid, sijoitteluajoId, hakukohdeOids.toSet.map(HakukohdeOid), w, vainMerkitsevaJono))
@@ -326,7 +326,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
       case Right(ok) => ok
       case Left(message) =>
         logger.error(message)
-        TooManyRequests(body = "error" -> message, reason = message)
+        TooManyRequests(message)
     }
   }
 
