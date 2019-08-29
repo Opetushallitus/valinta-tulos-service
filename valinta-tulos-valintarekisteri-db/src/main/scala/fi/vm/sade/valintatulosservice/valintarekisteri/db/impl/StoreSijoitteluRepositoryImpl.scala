@@ -152,16 +152,15 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
                                            valinnantilaStatement: PreparedStatement,
                                            tilankuvausStatement: PreparedStatement,
                                            tilaKuvausMappingStatement: PreparedStatement) = {
-    val hakemusWrapper = SijoitteluajonHakemusWrapper(hakemus)
-    createJonosijaInsertRow(sijoitteluajoId, hakukohdeOid, valintatapajonoOid, hakemusWrapper, jonosijaStatement)
+    createJonosijaInsertRow(sijoitteluajoId, hakukohdeOid, valintatapajonoOid, hakemus, jonosijaStatement)
     hakemus.getPistetiedot.asScala.foreach(createPistetietoInsertRow(sijoitteluajoId, valintatapajonoOid, HakemusOid(hakemus.getHakemusOid), _, pistetietoStatement))
-    createValinnantilanKuvausInsertRow(hakemusWrapper, tilankuvausStatement)
-    createValinnantilaInsertRow(hakukohdeOid, valintatapajonoOid, sijoitteluajoId, hakemusWrapper, valinnantilaStatement)
+    createValinnantilanKuvausInsertRow(hakemus, tilankuvausStatement)
+    createValinnantilaInsertRow(hakukohdeOid, valintatapajonoOid, sijoitteluajoId, hakemus, valinnantilaStatement)
     valintatulosOption match {
-      case None => createValinnantulosInsertRow(hakemusWrapper, sijoitteluajoId, hakukohdeOid, valintatapajonoOid, insertValinnantulosStatement)
-      case Some(valintatulos) => createValinnantulosUpdateRow(hakemusWrapper, valintatulos, sijoitteluajoId, hakukohdeOid, valintatapajonoOid, updateValinnantulosStatement)
+      case None => createValinnantulosInsertRow(hakemus, sijoitteluajoId, hakukohdeOid, valintatapajonoOid, insertValinnantulosStatement)
+      case Some(valintatulos) => createValinnantulosUpdateRow(hakemus, valintatulos, sijoitteluajoId, hakukohdeOid, valintatapajonoOid, updateValinnantulosStatement)
     }
-    createTilaKuvausMappingInsertRow(hakemusWrapper, hakukohdeOid, valintatapajonoOid, tilaKuvausMappingStatement)
+    createTilaKuvausMappingInsertRow(hakemus, hakukohdeOid, valintatapajonoOid, tilaKuvausMappingStatement)
   }
 
   private def createStatement(sql:String) = (connection:java.sql.Connection) => connection.prepareStatement(sql)
@@ -170,27 +169,24 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
           jonosija, varasijan_numero, onko_muuttunut_viime_sijoittelussa, pisteet, tasasijajonosija, hyvaksytty_harkinnanvaraisesti,
           siirtynyt_toisesta_valintatapajonosta, tila) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::valinnantila)""")
 
-  private def createJonosijaInsertRow(sijoitteluajoId: Long, hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemus: SijoitteluajonHakemusWrapper, statement: PreparedStatement) = {
-    val SijoitteluajonHakemusWrapper(hakemusOid, _, prioriteetti, jonosija, varasijanNumero,
-    onkoMuuttunutViimeSijoittelussa, pisteet, tasasijaJonosija, hyvaksyttyHarkinnanvaraisesti, siirtynytToisestaValintatapajonosta,
-    valinnantila, tilanKuvaukset, tilankuvauksenTarkenne, tarkenteenLisatieto, hyvaksyttyHakijaryhmista, _) = hakemus
-
+  private def createJonosijaInsertRow(sijoitteluajoId: Long, hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemus: SijoitteluHakemus, statement: PreparedStatement) = {
     statement.setString(1, valintatapajonoOid.toString)
     statement.setLong(2, sijoitteluajoId)
     statement.setString(3, hakukohdeOid.toString)
-    statement.setString(4, hakemusOid.toString)
-    statement.setInt(5, prioriteetti)
-    statement.setInt(6, jonosija)
-    varasijanNumero match {
-      case Some(x) => statement.setInt(7, x)
-      case _ => statement.setNull(7, Types.INTEGER)
+    statement.setString(4, hakemus.getHakemusOid)
+    statement.setInt(5, hakemus.getPrioriteetti)
+    statement.setInt(6, hakemus.getJonosija)
+    if (hakemus.getVarasijanNumero == null) {
+      statement.setNull(7, Types.INTEGER)
+    } else {
+      statement.setInt(7, hakemus.getVarasijanNumero)
     }
-    statement.setBoolean(8, onkoMuuttunutViimeSijoittelussa)
-    statement.setBigDecimal(9, pisteet.map(_.bigDecimal).orNull)
-    statement.setInt(10, tasasijaJonosija)
-    statement.setBoolean(11, hyvaksyttyHarkinnanvaraisesti)
-    statement.setBoolean(12, siirtynytToisestaValintatapajonosta)
-    statement.setString(13, valinnantila.toString)
+    statement.setBoolean(8, if (hakemus.isOnkoMuuttunutViimeSijoittelussa == null) false else hakemus.isOnkoMuuttunutViimeSijoittelussa)
+    statement.setBigDecimal(9, hakemus.getPisteet)
+    statement.setInt(10, hakemus.getTasasijaJonosija)
+    statement.setBoolean(11, hakemus.isHyvaksyttyHarkinnanvaraisesti)
+    statement.setBoolean(12, hakemus.getSiirtynytToisestaValintatapajonosta)
+    statement.setString(13, Valinnantila(hakemus.getTila).toString)
     statement.addBatch()
   }
 
@@ -221,13 +217,13 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
            ) values (?, ?, ?, ?::text, 'Sijoittelun tallennus')
            on conflict on constraint valinnantulokset_pkey do nothing""")
 
-  private def createValinnantulosInsertRow(hakemus:SijoitteluajonHakemusWrapper,
+  private def createValinnantulosInsertRow(hakemus:SijoitteluHakemus,
                                            sijoitteluajoId:Long,
                                            hakukohdeOid: HakukohdeOid,
                                            valintatapajonoOid: ValintatapajonoOid,
                                            valinnantulosStatement:PreparedStatement) = {
     valinnantulosStatement.setString(1, valintatapajonoOid.toString)
-    valinnantulosStatement.setString(2, hakemus.hakemusOid.toString)
+    valinnantulosStatement.setString(2, hakemus.getHakemusOid)
     valinnantulosStatement.setString(3, hakukohdeOid.toString)
     valinnantulosStatement.setLong(4, sijoitteluajoId)
     valinnantulosStatement.addBatch()
@@ -252,7 +248,7 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
              and valinnantulokset.system_time @> ?::timestamp with time zone
              and ?::valinnantila <> 'Peruuntunut'::valinnantila""")
 
-  private def createValinnantulosUpdateRow(hakemus:SijoitteluajonHakemusWrapper,
+  private def createValinnantulosUpdateRow(hakemus:SijoitteluHakemus,
                                            valintatulos: Valintatulos,
                                            sijoitteluajoId:Long,
                                            hakukohdeOid: HakukohdeOid,
@@ -262,13 +258,13 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
     val read = valintatulos.getRead.getTime
 
     valinnantulosStatement.setString(1, valintatapajonoOid.toString)
-    valinnantulosStatement.setString(2, hakemus.hakemusOid.toString)
+    valinnantulosStatement.setString(2, hakemus.getHakemusOid)
     valinnantulosStatement.setString(3, hakukohdeOid.toString)
     valinnantulosStatement.setBoolean(4, valintatulos.getJulkaistavissa)
     valinnantulosStatement.setBoolean(5, valintatulos.getHyvaksyttyVarasijalta)
     valinnantulosStatement.setLong(6, sijoitteluajoId)
     valinnantulosStatement.setTimestamp(7, new java.sql.Timestamp(read))
-    valinnantulosStatement.setString(8, hakemus.tila.toString)
+    valinnantulosStatement.setString(8, Valinnantila(hakemus.getTila).toString)
     valinnantulosStatement.addBatch()
   }
 
@@ -292,21 +288,21 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
   private def createValinnantilaInsertRow(hakukohdeOid: HakukohdeOid,
                                           valintatapajonoOid: ValintatapajonoOid,
                                           sijoitteluajoId: Long,
-                                          hakemus: SijoitteluajonHakemusWrapper,
+                                          hakemus: SijoitteluHakemus,
                                           statement: PreparedStatement) = {
-    val tilanViimeisinMuutos = hakemus.tilaHistoria
-      .filter(_.tila.equals(hakemus.tila))
-      .map(_.luotu)
+    val tilanViimeisinMuutos = hakemus.getTilaHistoria.asScala
+      .filter(_.getTila.equals(hakemus.getTila))
+      .map(_.getLuotu)
       .sortWith(_.after(_))
       .headOption.getOrElse(new Date())
 
     statement.setString(1, hakukohdeOid.toString)
     statement.setString(2, valintatapajonoOid.toString)
-    statement.setString(3, hakemus.hakemusOid.toString)
-    statement.setString(4, hakemus.tila.toString)
+    statement.setString(3, hakemus.getHakemusOid)
+    statement.setString(4, Valinnantila(hakemus.getTila).toString)
     statement.setTimestamp(5, new Timestamp(tilanViimeisinMuutos.getTime))
     statement.setLong(6, sijoitteluajoId)
-    statement.setString(7, hakemus.hakijaOid.orNull)
+    statement.setString(7, hakemus.getHakijaOid)
 
     statement.addBatch()
   }
@@ -314,37 +310,34 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
   private def createTilaKuvausMappingStatement = createStatement(
     """insert into tilat_kuvaukset (
           tilankuvaus_hash,
-          tarkenteen_lisatieto,
           hakukohde_oid,
           valintatapajono_oid,
-          hakemus_oid) values (?, ?, ?, ?, ?)
+          hakemus_oid) values (?, ?, ?, ?)
        on conflict on constraint tilat_kuvaukset_pkey do update set
-           tilankuvaus_hash = excluded.tilankuvaus_hash,
-           tarkenteen_lisatieto = excluded.tarkenteen_lisatieto
+           tilankuvaus_hash = excluded.tilankuvaus_hash
        where tilat_kuvaukset.tilankuvaus_hash <> excluded.tilankuvaus_hash
     """)
 
-  private def createTilaKuvausMappingInsertRow(hakemusWrapper: SijoitteluajonHakemusWrapper,
+  private def createTilaKuvausMappingInsertRow(hakemus: SijoitteluHakemus,
                                                hakukohdeOid: HakukohdeOid,
                                                valintatapajonoOid: ValintatapajonoOid,
                                                statement: PreparedStatement) = {
-    statement.setInt(1, hakemusWrapper.tilankuvauksenHash)
-    statement.setString(2, hakemusWrapper.tarkenteenLisatieto.orNull)
-    statement.setString(3, hakukohdeOid.toString)
-    statement.setString(4, valintatapajonoOid.toString)
-    statement.setString(5, hakemusWrapper.hakemusOid.toString)
+    statement.setInt(1, hakemus.getTilanKuvaukset.hashCode())
+    statement.setString(2, hakukohdeOid.toString)
+    statement.setString(3, valintatapajonoOid.toString)
+    statement.setString(4, hakemus.getHakemusOid)
     statement.addBatch()
   }
 
   private def createTilankuvausStatement = createStatement("""insert into valinnantilan_kuvaukset (hash, tilan_tarkenne, text_fi, text_sv, text_en)
       values (?, ?::valinnantilanTarkenne, ?, ?, ?) on conflict do nothing""")
 
-  private def createValinnantilanKuvausInsertRow(h: SijoitteluajonHakemusWrapper, s: PreparedStatement) = {
-    s.setInt(1, h.tilankuvauksenHash)
-    s.setString(2, h.tilankuvauksetWithTarkenne("tilankuvauksenTarkenne"))
-    s.setString(3, h.tilankuvauksetWithTarkenne.getOrElse("FI", null))
-    s.setString(4, h.tilankuvauksetWithTarkenne.getOrElse("SV", null))
-    s.setString(5, h.tilankuvauksetWithTarkenne.getOrElse("EN", null))
+  private def createValinnantilanKuvausInsertRow(h: SijoitteluHakemus, s: PreparedStatement) = {
+    s.setInt(1, h.getTilanKuvaukset.hashCode())
+    s.setString(2, ValinnantilanTarkenne.getValinnantilanTarkenne(h.getTilankuvauksenTarkenne).toString)
+    s.setString(3, h.getTilanKuvaukset.get("FI"))
+    s.setString(4, h.getTilanKuvaukset.get("SV"))
+    s.setString(5, h.getTilanKuvaukset.get("EN"))
     s.addBatch()
   }
 
