@@ -9,6 +9,7 @@ import org.eclipse.jetty.server.{RequestLog, Server}
 import org.eclipse.jetty.servlet.{ServletContextHandler, ServletHolder}
 import org.eclipse.jetty.util.resource.Resource
 import org.slf4j.LoggerFactory
+import org.eclipse.jetty.server.ServerConnector
 
 object HenkiloviiteSynchronizerApp {
   val logger = LoggerFactory.getLogger(HenkiloviiteSynchronizerApp.getClass)
@@ -21,7 +22,11 @@ object HenkiloviiteSynchronizerApp {
     val servlet = new HenkiloviiteSynchronizerServlet(synchronizer, config.scheduler.intervalHours)
     val buildversionServlet = new BuildversionServlet(config.buildversion)
 
-    val server = new Server(config.port)
+    val server = new Server()
+    val http = new ServerConnector(server)
+    http.setPort(config.port)
+    http.setIdleTimeout(config.idleTimeoutSeconds * 1000)
+    server.addConnector(http)
 
     val servletContext = new ServletContextHandler()
     servletContext.setContextPath("/valinta-tulos-henkiloviite-synchronizer")
