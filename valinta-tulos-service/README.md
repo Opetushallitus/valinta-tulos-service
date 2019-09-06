@@ -38,13 +38,19 @@ Aja vain paikalliset testit (ei tuotantoa tai testiympäristöä vasten):
 
 `mvn package`
 
-### Käynnistä IDEAsta/Eclipsestä
+### Käynnistä IntelliJ IDEA:sta
 
-Aja JettyLauncher-luokka. IDEA:ssa saattaa joutua asettamaan run configurationsista working directoryksi: `$MODULE_DIR$`
+Tuo projekti IDEA:aan ja varmista, että siinä käytetään Java 8 JDK:ta.
 
-IT-profiililla, eli embedded mongo-kannalla: `-Dvalintatulos.profile=it`
+Aja JettyLauncher-luokka.
 
-externalHakemus-profiililla omatsivut-mocha-testien ajamista varten: `-Dvalintatulos.profile=it-externalHakemus`
+Korjaa Run configurations:sta working directoryksi: `$MODULE_DIR$` (tämän README-tiedoston sijainti).
+
+Laita VM options-kohtaan seuraavista sopivat kohdat
+
+- IT-profiililla, eli lokaalilla Postgresql-ja embedded mongo-kannalla: `-Dvalintatulos.profile=it`
+- externalHakemus-profiililla omatsivut-mocha-testien ajamista varten: `-Dvalintatulos.profile=it-externalHakemus`
+
 
 ### Käynnistä komentoriviltä
 
