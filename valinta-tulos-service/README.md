@@ -56,7 +56,9 @@ Laita VM options-kohtaan seuraavista sopivat kohdat
 
 IT-profiililla, eli embedded mongo-kannalla
 
-`mvn exec:java -Dvalintatulos.profile=it`
+`mvn exec:java@local_jetty -Dvalintatulos.profile=it`
+
+Tämä vaatii, että testit on käännetty.
 
 ### Avaa selaimessa
 
