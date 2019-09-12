@@ -110,7 +110,7 @@
             <dependency>
                 <groupId>fi.vm.sade</groupId>
                 <artifactId>scala-logging_2.11</artifactId>
-                <version>1.2.0-SNAPSHOT</version>
+                <version>1.3.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>fi.vm.sade</groupId>
