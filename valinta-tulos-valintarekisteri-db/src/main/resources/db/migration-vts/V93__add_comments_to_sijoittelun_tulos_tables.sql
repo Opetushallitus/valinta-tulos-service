@@ -46,7 +46,7 @@ comment on column jonosijat.prioriteetti is 'Kuinka mones hakutoive tämä hakuk
 comment on column jonosijat.jonosija is 'Valintalaskennan tuloksissa hakemuksen sijaluku valintatapajonossa';
 comment on column jonosijat.varasijan_numero is 'Hakemuksen varasijan sijaluku';
 comment on column jonosijat.onko_muuttunut_viime_sijoittelussa is 'Onko hakemuksen tila muuttunut tässä sijoitteluajossa edelliseen sijoitteluajoon verrattuna';
-comment on column jonosijat.pisteet is 'Hakemuksen pisteet valintatapajonossa';
+comment on column jonosijat.pisteet is 'Hakemuksen ylimmän aktiivisen järjestyskriteerin pisteet valintatapajonossa';
 comment on column jonosijat.tasasijajonosija is 'Hakemuksen sijaluku tasasijalla olevien hakemusten joukossa. Tämä on käytössä valintatapajonoissa, joissa on tasasijasääntönä arvonta.';
 comment on column jonosijat.hyvaksytty_harkinnanvaraisesti is 'Onko hakemus hyväksytty harkinnanvaraisesti';
 comment on column jonosijat.siirtynyt_toisesta_valintatapajonosta is 'Onko hakemus siirretty toisesta valintatapajonosta, jossa hakemus on ollut hyväksyttynä';
