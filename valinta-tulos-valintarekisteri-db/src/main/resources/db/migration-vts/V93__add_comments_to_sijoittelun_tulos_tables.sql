@@ -71,7 +71,7 @@ comment on column hakijaryhmat.kayta_kaikki is 'Ainoastaan hakijaryhmään kuulu
 comment on column hakijaryhmat.tarkka_kiintio is 'Hakijaryhmään kuuluvia hakijoita ei voi tulla hyväksytyksi hakijaryhmän kokoa enempää';
 comment on column hakijaryhmat.kaytetaan_ryhmaan_kuuluvia is 'Otetaanko hakijaryhmään kaavan hyväksymät vai hylkäämät hakijat';
 comment on column hakijaryhmat.hakukohde_oid is 'Hakukohde, johon hakijaryhmä liittyy';
-comment on column hakijaryhmat.valintatapajono_oid is 'Valintatapajono, johon hakijaryhmä liittyy. Viite puuttuu, jos hakijaryhmä liittyy hakukohteeseen';
+comment on column hakijaryhmat.valintatapajono_oid is 'Valintatapajono, johon hakijaryhmä liittyy. Viite puuttuu, jos hakijaryhmä toimii koko hakukohteen laajuisena.';
 comment on column hakijaryhmat.hakijaryhmatyyppikoodi_uri is 'Hakijaryhmiä luokitteleva rakenteinen tieto, joka viittaa koodistoon';
 
 comment on table hakijaryhman_hakemukset is 'Hakijaryhmään kuuluvat hakemukset, jotka on sijoiteltu sijoitteluajossa';
