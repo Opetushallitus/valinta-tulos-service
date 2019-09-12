@@ -56,7 +56,7 @@ comment on table sivssnov_sijoittelun_varasijatayton_rajoitus is 'SIVSSNOV-sijoi
 comment on column sivssnov_sijoittelun_varasijatayton_rajoitus.sijoitteluajo_id is 'Sijoitteluajo';
 comment on column sivssnov_sijoittelun_varasijatayton_rajoitus.valintatapajono_oid is 'Valintatapajono';
 comment on column sivssnov_sijoittelun_varasijatayton_rajoitus.hakukohde_oid is 'Hakukohde';
-comment on column sivssnov_sijoittelun_varasijatayton_rajoitus.jonosija is 'Viimeisen varallaolevan hakemuksen jonosija, jos käytetään rajattua varasijatäyttöä. Viimeisen hyväksytyn hakemuksen jonosija, jos ei käytetä rajattua varasijatäyttöä.';
+comment on column sivssnov_sijoittelun_varasijatayton_rajoitus.jonosija is 'Viimeisen varallaolevan hakemuksen jonosija, jos käytetään rajattua varasijatäyttöä. Viimeisen hyväksytyn hakemuksen jonosija, jos jonossa ei ole lainkaan varasijatäyttöä.';
 comment on column sivssnov_sijoittelun_varasijatayton_rajoitus.tasasijajonosija is 'Tasasijajonossa viimeinen sija (tasasijalla olevien hakemusten lukumäärä)';
 comment on column sivssnov_sijoittelun_varasijatayton_rajoitus.tila is 'Jonosijan hakemuksen sijoittelun tuloksen tila. Tila on hyväksytty, jos jonossa ei ole ollenkaan varasijatäyttöä. Muuten käytetään Tila on varalla -> rajatun varasijatäyttö käytössä';
 comment on column sivssnov_sijoittelun_varasijatayton_rajoitus.hakemusoidit is 'Rajoituksessa viitattujen hakemusten tunnisteet (tiedoksi vikaselvittelyihin)';
