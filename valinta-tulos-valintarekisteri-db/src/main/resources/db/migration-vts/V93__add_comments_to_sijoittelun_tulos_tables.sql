@@ -1,7 +1,7 @@
--- Sijoittelun tulos
+-- Sijoittelun tuloksen tallentavat taulut
 
 comment on table sijoitteluajot is 'Haulle ajetun sijoitteluajon tiedot';
-comment on column sijoitteluajot.id is 'Sijoitteluajon tunniste';
+comment on column sijoitteluajot.id is 'Sijoitteluajon yksilöivä, järjestelmän sisäinen tunniste. Järjestelmän generoima.';
 comment on column sijoitteluajot.haku_oid is 'Sijoittelun kohteena olevan haun tunniste';
 comment on column sijoitteluajot.start is 'Sijoitteluajon alkuaika';
 comment on column sijoitteluajot.end is 'Sijoitteluajon loppuaika';
@@ -18,7 +18,7 @@ comment on column sijoitteluajon_hakukohteet.haku_oid is 'Sijoiteltava haku';
 comment on column sijoitteluajon_hakukohteet.kaikki_jonot_sijoiteltu is 'Sijoiteltiinko sijoitteluajossa kaikki hakukohteen valinnanvaiheiden valintatapajonot';
 
 comment on table valintatapajonot is 'Valintaperusteissa määritellyt hakukohteiden valintatapajonot, jotka on sijoiteltu sijoitteluajossa';
-comment on column valintatapajonot.oid is 'Valintatapajonon tunniste';
+comment on column valintatapajonot.oid is 'Valintatapajonon julkinen tunniste valintaperusteissa';
 comment on column valintatapajonot.sijoitteluajo_id is 'Sijoitteluajo';
 comment on column valintatapajonot.hakukohde_oid is 'Hakukohteen tunniste';
 comment on column valintatapajonot.nimi is 'Valintatapajonon nimi';
@@ -38,7 +38,7 @@ comment on column valintatapajonot.alin_hyvaksytty_pistemaara is 'Alin pistemä�
 comment on column valintatapajonot.sijoiteltu_ilman_varasijasaantoja_niiden_ollessa_voimassa is 'Onko sijoittelu tehty tälle valintatapajonolle ilman varasijasääntöjä niiden ollessa voimassa';
 
 comment on table jonosijat is 'Hakemuksen sijoittelun tulos hakukohteen valintatapajonossa. Sijoitteluajo tuottaa tämän perusteella valinnan tuloksen.';
-comment on column jonosijat.valintatapajono_oid is 'Valintatapajonon tunniste';
+comment on column jonosijat.valintatapajono_oid is 'Valintatapajono';
 comment on column jonosijat.hakemus_oid is 'Sijoiteltu hakemus';
 comment on column jonosijat.sijoitteluajo_id is 'Sijoitteluajo';
 comment on column jonosijat.hakukohde_oid is 'Hakukohde';
@@ -62,7 +62,7 @@ comment on column sivssnov_sijoittelun_varasijatayton_rajoitus.tila is 'Jonosija
 comment on column sivssnov_sijoittelun_varasijatayton_rajoitus.hakemusoidit is 'Rajoituksessa viitattujen hakemusten tunnisteet (tiedoksi vikaselvittelyihin)';
 
 comment on table hakijaryhmat is 'Valintaperusteissa hakukohteeseen tai valintatapajonoon liittyvä hakijaryhmä, joka on sijoiteltu sijoitteluajossa';
-comment on column hakijaryhmat.oid is 'Hakijaryhmän tunniste';
+comment on column hakijaryhmat.oid is 'Hakijaryhmän julkinen tunniste valintaperusteissa';
 comment on column hakijaryhmat.sijoitteluajo_id is 'Sijoitteluajo';
 comment on column hakijaryhmat.nimi is 'Hakijaryhmän nimi';
 comment on column hakijaryhmat.prioriteetti is 'Hakijaryhmän prioriteetti';
