@@ -8,8 +8,6 @@ comment on column sijoitteluajot.end is 'Sijoitteluajon loppuaika';
 comment on column sijoitteluajot.erillissijoittelu is '(Ei käytössä)';
 comment on column sijoitteluajot.valisijoittelu is '(Ei käytössä)';
 comment on column sijoitteluajot.poistonesto is 'Onko sijoitteluajon poistaminen estetty';
-comment on column sijoitteluajot.transaction_id is 'Transaktio, jossa viimeksi muokattiin sijoittelun tulokseen liittyviä tauluja';
-comment on column sijoitteluajot.system_time is 'Muokkauksen tehneen transaktion ajoaika';
 
 comment on table sijoitteluajon_hakukohteet is 'Tarjonnassa määritellyt hakukohteet, jotka on sijoiteltu sijoitteluajossa';
 comment on column sijoitteluajon_hakukohteet.sijoitteluajo_id is 'Sijoitteluajo';
