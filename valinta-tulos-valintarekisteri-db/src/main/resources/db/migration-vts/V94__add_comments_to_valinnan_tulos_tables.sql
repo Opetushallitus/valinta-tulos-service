@@ -48,7 +48,10 @@ comment on column valinnantilan_kuvaukset.text_sv is 'Hakijalle näytettävä va
 comment on column valinnantilan_kuvaukset.text_en is 'Hakijalle näytettävä vapaamuotoinen kuvaus (englanniksi)';
 
 comment on table ehdollisen_hyvaksynnan_ehto is 'Ehdollisesti hyväksytyn valinnan tilan ehto';
-comment on column ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_koodi is 'Ehdollisen hyväksymisen ehdon koodi';
+comment on column ehdollisen_hyvaksynnan_ehto.hakukohde_oid is 'Hakukohde';
+comment on column ehdollisen_hyvaksynnan_ehto.valintatapajono_oid is 'Valintatapajono';
+comment on column ehdollisen_hyvaksynnan_ehto.hakemus_oid is 'Hakemus';
+comment on column ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_koodi is 'Ehdollisen hyväksymisen ehdon koodi koodistosta "hyvaksynnanehdot". Koodiarvolla "muu" ehto kuvataan tällä rivillä.';
 comment on column ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_fi is 'Ehdollisen hyväksymisen ehdon kuvaus (suomeksi)';
 comment on column ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_sv is 'Ehdollisen hyväksymisen ehdon kuvaus (ruotsiksi)';
 comment on column ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_en is 'Ehdollisen hyväksymisen ehdon kuvaus (englanniksi)';
