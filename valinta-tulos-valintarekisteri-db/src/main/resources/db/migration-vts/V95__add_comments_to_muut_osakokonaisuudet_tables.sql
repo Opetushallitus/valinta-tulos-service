@@ -1,7 +1,7 @@
 -- Hakutoiveiden hyväksyntä ja julkaisu
 
 comment on table hyvaksytyt_ja_julkaistut_hakutoiveet is 'Hakijan hakukohteen hakutoiveen hyväksyntä ja julkaisu';
-comment on column hyvaksytyt_ja_julkaistut_hakutoiveet.henkilo is 'Hakija';
+comment on column hyvaksytyt_ja_julkaistut_hakutoiveet.henkilo is 'Hakijan oppijanumero';
 comment on column hyvaksytyt_ja_julkaistut_hakutoiveet.hakukohde is 'Hakukohde';
 comment on column hyvaksytyt_ja_julkaistut_hakutoiveet.hyvaksytty_ja_julkaistu is 'Onko hakutoive hyväksytty ja julkaistu';
 comment on column hyvaksytyt_ja_julkaistut_hakutoiveet.ilmoittaja is 'Hyväksynnän ja julkaisun kirjannut virkailija';
