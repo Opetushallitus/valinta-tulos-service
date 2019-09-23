@@ -15,7 +15,7 @@ comment on table vastaanotot is 'Hakijan hakukohteen vastaanoton tilaan kohdistu
 comment on column vastaanotot.id is 'Toimenpiteen yksilöivä, järjestelmän sisäinen tunniste. Järjestelmän generoima.';
 comment on column vastaanotot.henkilo is 'Hakija';
 comment on column vastaanotot.hakukohde is 'Hakukohde';
-comment on column vastaanotot.ilmoittaja is 'Toimenpiteen kirjannut virkailija';
+comment on column vastaanotot.ilmoittaja is 'Toimenpiteen kirjanneen oppijan tai virkailijan oppijanumero';
 comment on column vastaanotot.timestamp is 'Toimenpiteen ajanhetki';
 comment on column vastaanotot.action is 'Toimenpide (esim vastaanottanut sitovasti tai perunut)';
 comment on column vastaanotot.selite is 'Selite';
