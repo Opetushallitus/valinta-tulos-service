@@ -39,7 +39,7 @@ comment on column vanhat_vastaanotot.timestamp is 'Opiskelupaikan vastaanoton aj
 -- Ilmoittautumisen tila
 
 comment on table ilmoittautumiset is 'Hakijan hakukohteen ilmoittautumisen tila';
-comment on column ilmoittautumiset.henkilo is 'Hakija';
+comment on column ilmoittautumiset.henkilo is 'Hakijan oppijanumero';
 comment on column ilmoittautumiset.hakukohde is 'Hakukohde';
 comment on column ilmoittautumiset.tila is 'Ilmoittautumisen tila';
 comment on column ilmoittautumiset.ilmoittaja is 'Ilmoittautumisen kirjannut virkailija';
