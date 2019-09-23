@@ -18,7 +18,7 @@ comment on column vastaanotot.hakukohde is 'Hakukohde';
 comment on column vastaanotot.ilmoittaja is 'Toimenpiteen kirjanneen oppijan tai virkailijan oppijanumero';
 comment on column vastaanotot.timestamp is 'Toimenpiteen ajanhetki';
 comment on column vastaanotot.action is 'Toimenpide (esim vastaanottanut sitovasti tai perunut)';
-comment on column vastaanotot.selite is 'Selite';
+comment on column vastaanotot.selite is 'Selite, esim onko tehty OHP:ssa tai erillishaun tuonti -välilehdellä';
 comment on column vastaanotot.deleted is 'Viite deleted_vastaanotot-tauluun, jos tämä toimenpide on poistettu';
 
 comment on table deleted_vastaanotot is 'Vastaanoton tilaan kohdistuvien toimenpiteiden poistot';
