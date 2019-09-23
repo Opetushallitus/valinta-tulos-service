@@ -42,7 +42,7 @@ comment on table ilmoittautumiset is 'Hakijan hakukohteen ilmoittautumisen tila'
 comment on column ilmoittautumiset.henkilo is 'Hakijan oppijanumero';
 comment on column ilmoittautumiset.hakukohde is 'Hakukohde';
 comment on column ilmoittautumiset.tila is 'Ilmoittautumisen tila';
-comment on column ilmoittautumiset.ilmoittaja is 'Ilmoittautumisen kirjannut virkailija';
+comment on column ilmoittautumiset.ilmoittaja is 'Ilmoittautumisen kirjanneen oppijan tai virkailijan oppijanumero';
 comment on column ilmoittautumiset.selite is 'Selite, esim onko hakijan oma vastaanotto vai virkailijakäyttöliittymästä tehty';
 
 comment on table ilmoittautumiset_history is 'ilmoittautumiset-taulun muokatut tai poistetut rivit';
