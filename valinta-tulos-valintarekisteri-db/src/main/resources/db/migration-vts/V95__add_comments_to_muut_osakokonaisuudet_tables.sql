@@ -17,7 +17,7 @@ comment on column vastaanotot.henkilo is 'Hakija';
 comment on column vastaanotot.hakukohde is 'Hakukohde';
 comment on column vastaanotot.ilmoittaja is 'Toimenpiteen kirjannut virkailija';
 comment on column vastaanotot.timestamp is 'Toimenpiteen ajanhetki';
-comment on column vastaanotot.action is 'Toimenpide';
+comment on column vastaanotot.action is 'Toimenpide (esim vastaanottanut sitovasti tai perunut)';
 comment on column vastaanotot.selite is 'Selite';
 comment on column vastaanotot.deleted is 'Viite deleted_vastaanotot-tauluun, jos tämä toimenpide on poistettu';
 
