@@ -5,7 +5,7 @@ comment on column hyvaksytyt_ja_julkaistut_hakutoiveet.henkilo is 'Hakijan oppij
 comment on column hyvaksytyt_ja_julkaistut_hakutoiveet.hakukohde is 'Hakukohde';
 comment on column hyvaksytyt_ja_julkaistut_hakutoiveet.hyvaksytty_ja_julkaistu is 'Onko hakutoive hyväksytty ja julkaistu';
 comment on column hyvaksytyt_ja_julkaistut_hakutoiveet.ilmoittaja is 'Hyväksynnän ja julkaisun kirjannut virkailija';
-comment on column hyvaksytyt_ja_julkaistut_hakutoiveet.selite is 'Selite';
+comment on column hyvaksytyt_ja_julkaistut_hakutoiveet.selite is 'Selite, esim onko valintaesityksen hyväksyntä vai yksittäinen tallennus';
 
 comment on table hyvaksytyt_ja_julkaistut_hakutoiveet_history is 'hyvaksytyt_ja_julkaistut_hakutoiveet-taulun muokatut tai poistetut rivit';
 
