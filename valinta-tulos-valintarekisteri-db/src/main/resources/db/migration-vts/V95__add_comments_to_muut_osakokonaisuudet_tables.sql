@@ -32,7 +32,7 @@ comment on column vanhat_vastaanotot.henkilo is 'Hakija';
 comment on column vanhat_vastaanotot.hakukohde is 'Hakukohde';
 comment on column vanhat_vastaanotot.tarjoaja is 'Hakukohteen koulutuksen tarjoaja';
 comment on column vanhat_vastaanotot.koulutuksen_alkamiskausi is 'Koulutuksen alkamislukukausi';
-comment on column vanhat_vastaanotot.kk_tutkintoon_johtava is 'Johtaako hakukohde korkeakoulututkintoon';
+comment on column vanhat_vastaanotot.kk_tutkintoon_johtava is 'Johtaako hakukohteen koulutus korkeakoulututkintoon';
 comment on column vanhat_vastaanotot.ilmoittaja is 'Virkailija';
 comment on column vanhat_vastaanotot.timestamp is 'Opiskelupaikan vastaanoton ajanhetki';
 
