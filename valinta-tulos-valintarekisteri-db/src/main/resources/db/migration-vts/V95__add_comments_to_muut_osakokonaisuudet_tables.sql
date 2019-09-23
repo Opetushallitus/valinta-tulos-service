@@ -13,7 +13,7 @@ comment on table hyvaksytyt_ja_julkaistut_hakutoiveet_history is 'hyvaksytyt_ja_
 
 comment on table vastaanotot is 'Hakijan hakukohteen vastaanoton tilaan kohdistuvat toimenpiteet';
 comment on column vastaanotot.id is 'Toimenpiteen yksilöivä, järjestelmän sisäinen tunniste. Järjestelmän generoima.';
-comment on column vastaanotot.henkilo is 'Hakija';
+comment on column vastaanotot.henkilo is 'Hakijan oppijanumero';
 comment on column vastaanotot.hakukohde is 'Hakukohde';
 comment on column vastaanotot.ilmoittaja is 'Toimenpiteen kirjanneen oppijan tai virkailijan oppijanumero';
 comment on column vastaanotot.timestamp is 'Toimenpiteen ajanhetki';
