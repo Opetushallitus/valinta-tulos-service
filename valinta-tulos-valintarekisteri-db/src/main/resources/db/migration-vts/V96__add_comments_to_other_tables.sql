@@ -1,7 +1,5 @@
 -- Muut taulut
 
-comment on table hakijas_koulus is '(Ei käytössä)'
-
 comment on table henkiloviitteet is 'Oppijanumerorekisteristä tuotu tieto tunnisteista, jotka viittaavat samaan, ilman henkilötunnusta hakemuksia tehneeseen henkilöön.';
 comment on column henkiloviitteet.person_oid is 'Henkilön tunniste';
 comment on column henkiloviitteet.linked_oid is 'Toinen samaan henkilöön viittaava tunniste';
@@ -20,7 +18,7 @@ comment on column lukuvuosimaksut.maksuntila is 'Lukuvuosimaksun tila';
 comment on column lukuvuosimaksut.muokkaaja is 'Kirjannut virkailija';
 comment on column lukuvuosimaksut.luotu is 'Kirjauksen ajanhetki';
 
-comment on column lukuvuosimaksut_history is 'lukuvuosimaksut-taulussa muokatut tai poistetut rivit';
+comment on table lukuvuosimaksut_history is 'lukuvuosimaksut-taulussa muokatut tai poistetut rivit';
 
 comment on table puuttuvat_tulokset_haku is '(Toteutus kesken.)';
 comment on table puuttuvat_tulokset_hakukohde is '(Toteutus kesken.)';
@@ -49,6 +47,8 @@ comment on column viestit.hakemus_oid is 'Hakemus';
 comment on column viestit.lahettaminen_aloitettu is 'Ajanhetki, jolloin viestin lähettäminen on aloitettu';
 comment on column viestit.lahetetty is 'Ajanhetki, jolloin viesti on onnistuneesti lähetetty';
 comment on column viestit.syy is 'Viestin lähetyksen syy';
+
+comment on table viestit_history is 'viestit-taulussa muokatut tai poistetut rivit';
 
 comment on table viestin_syy is 'Opiskelupaikka vastaanotettavissa-viestien lähetyksen syyt';
 comment on column viestin_syy.syy is 'Lähetyksen syy';
