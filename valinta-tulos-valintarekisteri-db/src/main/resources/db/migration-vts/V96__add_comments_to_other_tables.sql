@@ -1,17 +1,17 @@
 -- Muut taulut
 
-comment on table henkiloviitteet is 'Oppijanumerorekisteristä tuotu tieto tunnisteista, jotka viittaavat samaan, ilman henkilötunnusta hakemuksia tehneeseen henkilöön.';
+comment on table henkiloviitteet is 'Oppijanumerorekisteristä tuotu tieto tunnisteista, jotka viittaavat samaan henkilöön';
 comment on column henkiloviitteet.person_oid is 'Henkilön tunniste';
 comment on column henkiloviitteet.linked_oid is 'Toinen samaan henkilöön viittaava tunniste';
 
-comment on table hyvaksymiskirjeet is 'Hyväksymiskirjeiden lähetys hakijoille';
+comment on table hyvaksymiskirjeet is 'Hyväksymiskirjeiden lähetys hakijoille (tietoja ylläpitää virkailija käsin)';
 comment on column hyvaksymiskirjeet.henkilo_oid is 'Hakija';
 comment on column hyvaksymiskirjeet.hakukohde_oid is 'Hakukohde';
 comment on column hyvaksymiskirjeet.lahetetty is 'Ajanhetki, jolloin hakijalle on lähetetty hyväksymiskirje';
 
 comment on table hyvaksymiskirjeet_history is 'hyvaksymiskirjeet-taulussa muokatut tai poistetut rivit';
 
-comment on table lukuvuosimaksut is 'Lukuvuosimaksut';
+comment on table lukuvuosimaksut is 'Lukuvuosimaksut (tietoja ylläpitää virkailija käsin)';
 comment on column lukuvuosimaksut.personoid is 'Hakija';
 comment on column lukuvuosimaksut.hakukohdeoid is 'Hakukohde';
 comment on column lukuvuosimaksut.maksuntila is 'Lukuvuosimaksun tila';
