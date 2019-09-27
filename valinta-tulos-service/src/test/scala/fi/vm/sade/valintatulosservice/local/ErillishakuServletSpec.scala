@@ -4,15 +4,17 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
 
-import fi.vm.sade.security.{AuthenticationFailedException}
+import fi.vm.sade.security.AuthenticationFailedException
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.utils.ServletTest
+import fi.vm.sade.valintatulosservice.config.VtsAppConfig
+import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.kayttooikeus.{GrantedAuthority, KayttooikeusUserDetails, KayttooikeusUserDetailsService}
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{Hyvaksymiskirje, HyvaksymiskirjePatch}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiTehty, HakemusOid, HakukohdeOid, Hylatty, Valinnantulos, ValinnantulosUpdateStatus, ValintatapajonoOid}
-import fi.vm.sade.valintatulosservice.{AuditInfo, AuditSessionRequest, ErillishakuServlet, HyvaksymiskirjeService, ValinnantulosRequest, ValinnantulosService}
+import fi.vm.sade.valintatulosservice.{AuditInfo, AuditSessionRequest, ErillishakuServlet, HyvaksymiskirjeService, ITSetup, ServletSpecification, ValinnantulosRequest, ValinnantulosService}
 import org.json4s.jackson.Serialization.write
 import org.json4s.native.JsonMethods.parse
 import org.junit.runner.RunWith
@@ -25,7 +27,7 @@ import org.specs2.runner.JUnitRunner
 import org.specs2.specification.{BeforeAfterAll, ForEach}
 
 @RunWith(classOf[JUnitRunner])
-class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer with HttpComponentsClient with BeforeAfterAll with ForEach[(String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService)] with Mockito {
+class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer with HttpComponentsClient with BeforeAfterAll with ForEach[(String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService)] with ITSetup with Mockito {
 
   override def beforeAll(): Unit = start()
   override def afterAll(): Unit = stop()
@@ -34,7 +36,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
     val valinnantulosService = mock[ValinnantulosService]
     val hyvaksymiskirjeService = mock[HyvaksymiskirjeService]
     val userDetailsService = mock[KayttooikeusUserDetailsService]
-    val servlet = new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, userDetailsService)(mock[Swagger])
+    val servlet = new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, userDetailsService, mock[VtsAppConfig])(mock[Swagger])
     ServletTest.withServlet(this, servlet, (uri: String) => AsResult(f((uri, valinnantulosService, hyvaksymiskirjeService, userDetailsService))))
   }
 
@@ -52,6 +54,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
   private val hakukohdeOid = HakukohdeOid("1.2.246.562.20.26643418986")
   private val valintatapajonoOid = ValintatapajonoOid("14538080612623056182813241345174")
   private val hakemusOid = HakemusOid("1.2.246.562.11.00006169123")
+  private val HeaderUnmodifiedSince = VtsAppConfig
   private val valinnantulos = Valinnantulos(
     hakukohdeOid = hakukohdeOid,
     valintatapajonoOid = valintatapajonoOid,
@@ -219,7 +222,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
       post(
         s"${t._1}/${valintatapajonoOid.toString}",
         write(ValinnantulosRequest(List(valinnantulos), AuditSessionRequest(kayttajaOid, List(Role.SIJOITTELU_CRUD.s), userAgent, inetAddress))).getBytes("UTF-8"),
-        Map("Content-Type" -> "application/json", "If-Unmodified-Since" -> ifUnmodifiedSince)
+        Map("Content-Type" -> "application/json", appConfig.settings.headerIfUnmodifiedSince -> ifUnmodifiedSince)
       ) {
         status must_== 200
         body must_== "[]"
@@ -237,7 +240,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
       post(
         s"${t._1}/${valintatapajonoOid.toString}",
         write(ValinnantulosRequest(List(valinnantulos), AuditSessionRequest(kayttajaOid, List(Role.SIJOITTELU_CRUD.s), userAgent, inetAddress))).getBytes("UTF-8"),
-        Map("Content-Type" -> "application/json", "If-Unmodified-Since" -> ifUnmodifiedSince)
+        Map("Content-Type" -> "application/json", appConfig.settings.headerIfUnmodifiedSince -> ifUnmodifiedSince)
       ) {
         status must_== 200
         parse(body).extract[List[ValinnantulosUpdateStatus]] must_== List(virhe)
@@ -250,7 +253,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
       post(
         s"${t._1}/${valintatapajonoOid.toString}",
         write(ValinnantulosRequest(List(valinnantulos), AuditSessionRequest(kayttajaOid, List(Role.SIJOITTELU_CRUD.s), userAgent, inetAddress))).getBytes("UTF-8"),
-        Map("Content-Type" -> "application/json", "If-Unmodified-Since" -> ifUnmodifiedSince)
+        Map("Content-Type" -> "application/json", appConfig.settings.headerIfUnmodifiedSince -> ifUnmodifiedSince)
       ) {
         status must_== 200
         parse(body).extract[List[ValinnantulosUpdateStatus]] must_== List.empty

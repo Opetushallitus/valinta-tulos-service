@@ -6,6 +6,7 @@ import java.util.UUID
 
 import fi.vm.sade.security.AuthorizationFailedException
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, IlmoittautumisTila, ValintatuloksenTila}
+import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetailsService
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HyvaksymiskirjePatch, SessionRepository}
@@ -53,7 +54,7 @@ trait ValinnantulosServletBase extends VtsServletBase {
   protected def createLastModifiedHeader(instant: Instant): String = {
     //- system_time range in database is of form ["2017-02-28 13:40:02.442277+02",)
     //- RFC-1123 date-time format used in headers has no millis
-    //- if Last-Modified/If-Unmodified-Since header is set to 2017-02-28 13:40:02, it will never be inside system_time range
+    //- if X-Last-Modified/X-If-Unmodified-Since header is set to 2017-02-28 13:40:02, it will never be inside system_time range
     //-> this is why we wan't to set it to 2017-02-28 13:40:03 instead
     renderHttpDate(instant.truncatedTo(java.time.temporal.ChronoUnit.SECONDS).plusSeconds(1))
   }
@@ -63,24 +64,25 @@ trait ValinnantulosServletBase extends VtsServletBase {
   }
 
   val sample = renderHttpDate(Instant.EPOCH)
-  protected def parseIfUnmodifiedSince: Option[Instant] = request.headers.get("If-Unmodified-Since") match {
+  protected def parseIfUnmodifiedSince(appConfig: VtsAppConfig): Option[Instant] = request.headers.get(appConfig.settings.headerIfUnmodifiedSince) match {
     case Some(s) =>
       Try(Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(s))) match {
         case x if x.isSuccess => Some(x.get)
-        case Failure(e) => throw new IllegalArgumentException(s"Ei voitu jäsentää otsaketta If-Unmodified-Since muodossa $sample.", e)
+        case Failure(e) => throw new IllegalArgumentException(s"Ei voitu jäsentää otsaketta "+ appConfig.settings.headerIfUnmodifiedSince + " muodossa $sample.", e)
       }
     case None => None
   }
 
-  protected def getIfUnmodifiedSince: Instant = parseIfUnmodifiedSince match {
+  protected def getIfUnmodifiedSince(appConfig: VtsAppConfig): Instant = parseIfUnmodifiedSince(appConfig: VtsAppConfig) match {
     case Some(s) => s
-    case None => throw new IllegalArgumentException("Otsake If-Unmodified-Since on pakollinen.")
+    case None => throw new IllegalArgumentException("Otsake " + appConfig.settings.headerIfUnmodifiedSince + " on pakollinen.")
   }
 }
 
 class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
                            val valintatulosService: ValintatulosService,
-                           val sessionRepository: SessionRepository)
+                           val sessionRepository: SessionRepository,
+                           appConfig: VtsAppConfig)
                           (implicit val swagger: Swagger)
   extends ValinnantulosServletBase with CasAuthenticatedServlet with DeadlineDecorator {
 
@@ -139,7 +141,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
   val valinnantulosMuutosSwagger: OperationBuilder = (apiOperation[Unit]("muokkaaValinnantulosta")
     summary "Muokkaa valinnantulosta"
     parameter pathParam[String]("valintatapajonoOid").description("Valintatapajonon OID")
-    parameter headerParam[String]("If-Unmodified-Since").description(s"Aikaleima RFC 1123 määrittelemässä muodossa $sample").required
+    parameter headerParam[String](appConfig.settings.headerIfUnmodifiedSince).description(s"Aikaleima RFC 1123 määrittelemässä muodossa $sample").required
     parameter bodyParam[List[Valinnantulos]].description("Muutokset valinnan tulokseen").required
     tags "valinnan-tulos")
   models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
@@ -154,7 +156,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     authorize(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
     val erillishaku = parseErillishaku
     val valintatapajonoOid = parseValintatapajonoOid.fold(throw _, x => x)
-    val ifUnmodifiedSince: Instant = getIfUnmodifiedSince
+    val ifUnmodifiedSince: Instant = getIfUnmodifiedSince(appConfig)
     val valinnantulokset = parsedBody.extract[List[Valinnantulos]]
     Ok(
       valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
@@ -163,7 +165,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
   }
 }
 
-class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymiskirjeService: HyvaksymiskirjeService, userDetailsService: KayttooikeusUserDetailsService)
+class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymiskirjeService: HyvaksymiskirjeService, userDetailsService: KayttooikeusUserDetailsService, appConfig: VtsAppConfig)
   (implicit val swagger: Swagger) extends ValinnantulosServletBase with AuditInfoParameter  {
 
   override val applicationDescription = "Erillishaun valinnantuloksen REST API"
@@ -192,7 +194,7 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymisk
   val erillishaunValinnantulosMuutosSwagger: OperationBuilder = (apiOperation[Unit]("muokkaaValinnantulosta")
     summary "Muokkaa erillishaun valinnantulosta"
     parameter pathParam[String]("valintatapajonoOid").description("Valintatapajonon OID")
-    parameter headerParam[String]("If-Unmodified-Since").description(s"Aikaleima RFC 1123 määrittelemässä muodossa $sample").required
+    parameter headerParam[String](appConfig.settings.headerIfUnmodifiedSince).description(s"Aikaleima RFC 1123 määrittelemässä muodossa $sample").required
     parameter bodyParam[List[ValinnantulosRequest]].description("Muutokset valinnan tulokseen ja kirjautumistieto").required
     tags "erillishaku-valinnan-tulos")
   models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
@@ -209,7 +211,7 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymisk
       throw new AuthorizationFailedException()
     }
     val valintatapajonoOid = parseValintatapajonoOid.fold(throw _, x => x)
-    val ifUnmodifiedSince: Option[Instant] = parseIfUnmodifiedSince
+    val ifUnmodifiedSince: Option[Instant] = parseIfUnmodifiedSince(appConfig)
     val valinnantulokset = parsedBody.extract[ValinnantulosRequest].valinnantulokset
     val storeValinnantulosResult = valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
       valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, auditInfo, true)

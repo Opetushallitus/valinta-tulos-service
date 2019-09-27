@@ -134,7 +134,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
           authorizer,
           appConfig,
           valinnantulosRepository,
-          ifUnmodifiedSince.getOrElse(throw new IllegalArgumentException("If-Unmodified-Since on pakollinen otsake valinnantulosten tallennukselle")),
+          ifUnmodifiedSince.getOrElse(throw new IllegalArgumentException(appConfig.settings.headerIfUnmodifiedSince + " on pakollinen otsake valinnantulosten tallennukselle")),
           audit
         )
       }
