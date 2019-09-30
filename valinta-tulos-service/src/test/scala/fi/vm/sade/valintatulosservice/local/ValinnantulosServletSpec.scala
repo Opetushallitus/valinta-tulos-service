@@ -37,7 +37,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
     val valinnantulosService = mock[ValinnantulosService]
     val valintatulosService = mock[ValintatulosService]
     val sessionRepository = mock[SessionRepository]
-    val servlet = new ValinnantulosServlet(valinnantulosService, valintatulosService, sessionRepository, mock[VtsAppConfig])(mock[Swagger])
+    val servlet = new ValinnantulosServlet(valinnantulosService, valintatulosService, sessionRepository, appConfig)(mock[Swagger])
     ServletTest.withServlet(this, servlet, (uri: String) => AsResult(f((uri, valinnantulosService, sessionRepository))))
   }
 

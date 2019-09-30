@@ -14,7 +14,7 @@ import fi.vm.sade.valintatulosservice.kayttooikeus.{GrantedAuthority, Kayttooike
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{Hyvaksymiskirje, HyvaksymiskirjePatch}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiTehty, HakemusOid, HakukohdeOid, Hylatty, Valinnantulos, ValinnantulosUpdateStatus, ValintatapajonoOid}
-import fi.vm.sade.valintatulosservice.{AuditInfo, AuditSessionRequest, ErillishakuServlet, HyvaksymiskirjeService, ITSetup, ServletSpecification, ValinnantulosRequest, ValinnantulosService}
+import fi.vm.sade.valintatulosservice.{AuditInfo, AuditSessionRequest, ErillishakuServlet, HyvaksymiskirjeService, ITSetup, ValinnantulosRequest, ValinnantulosService}
 import org.json4s.jackson.Serialization.write
 import org.json4s.native.JsonMethods.parse
 import org.junit.runner.RunWith
@@ -36,7 +36,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
     val valinnantulosService = mock[ValinnantulosService]
     val hyvaksymiskirjeService = mock[HyvaksymiskirjeService]
     val userDetailsService = mock[KayttooikeusUserDetailsService]
-    val servlet = new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, userDetailsService, mock[VtsAppConfig])(mock[Swagger])
+    val servlet = new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, userDetailsService, appConfig)(mock[Swagger])
     ServletTest.withServlet(this, servlet, (uri: String) => AsResult(f((uri, valinnantulosService, hyvaksymiskirjeService, userDetailsService))))
   }
 
@@ -54,7 +54,6 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
   private val hakukohdeOid = HakukohdeOid("1.2.246.562.20.26643418986")
   private val valintatapajonoOid = ValintatapajonoOid("14538080612623056182813241345174")
   private val hakemusOid = HakemusOid("1.2.246.562.11.00006169123")
-  private val HeaderUnmodifiedSince = VtsAppConfig
   private val valinnantulos = Valinnantulos(
     hakukohdeOid = hakukohdeOid,
     valintatapajonoOid = valintatapajonoOid,
