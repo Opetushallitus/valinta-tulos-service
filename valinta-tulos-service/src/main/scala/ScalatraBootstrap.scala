@@ -108,10 +108,10 @@ class ScalatraBootstrap extends LifeCycle with Logging {
 
     context.mount(new HakukohdeRefreshServlet(valintarekisteriDb, hakukohdeRecordService), "/virkistys")
 
-    context.mount(new SwaggerServlet, "/swagger/*")
+    context.mount(new SwaggerServlet, "/swagger/*", "swagger")
 
     def mountBasicVts(): Unit = {
-      context.mount(new BuildInfoServlet, "/")
+      context.mount(new BuildInfoServlet, "/", "buildinfoservlet")
       context.mount(new CasLogin(
         appConfig.settings.securitySettings.casUrl,
         new CasSessionService(
@@ -120,22 +120,22 @@ class ScalatraBootstrap extends LifeCycle with Logging {
           userDetailsService,
           valintarekisteriDb
         )
-      ), "/auth/login")
+      ), "/auth/login", "auth/login")
 
-      context.mount(new VirkailijanVastaanottoServlet(valintatulosService, vastaanottoService), "/virkailija")
-      context.mount(new LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService), "/lukuvuosimaksu")
-      context.mount(handler = new MuutoshistoriaServlet(valinnantulosService, valintarekisteriDb, skipAuditForServiceCall = true), urlPattern = "/muutoshistoria", name = "PrivateMuutosHistoriaServlet")
+      context.mount(new VirkailijanVastaanottoServlet(valintatulosService, vastaanottoService), "/virkailija", "virkailija")
+      context.mount(new LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService), "/lukuvuosimaksu", "lukuvuosimaksu")
+      context.mount(handler = new MuutoshistoriaServlet(valinnantulosService, valintarekisteriDb, skipAuditForServiceCall = true), urlPattern = "/muutoshistoria", name = "muutoshistoria")
       context.mount(new PrivateValintatulosServlet(valintatulosService,
         streamingValintatulosService,
         vastaanottoService,
         ilmoittautumisService,
         valintarekisteriDb,
         hakemustenTulosHakuLock),
-        "/haku")
-      context.mount(new EnsikertalaisuusServlet(valintarekisteriDb, appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus")
-      context.mount(new HakijanVastaanottoServlet(vastaanottoService), "/vastaanotto")
-      context.mount(new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, userDetailsService), "/erillishaku/valinnan-tulos")
-      context.mount(new NoAuthSijoitteluServlet(sijoitteluService), "/sijoittelu")
+        "/haku", "haku")
+      context.mount(new EnsikertalaisuusServlet(valintarekisteriDb, appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus", "ensikertalaisuus")
+      context.mount(new HakijanVastaanottoServlet(vastaanottoService), "/vastaanotto", "vastaanotto")
+      context.mount(new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, userDetailsService), "/erillishaku/valinnan-tulos", "erillishaku/valinnan-tulos")
+      context.mount(new NoAuthSijoitteluServlet(sijoitteluService), "/sijoittelu", "sijoittelu")
 
       val casSessionService = new CasSessionService(
         appConfig.securityContext.casClient,
@@ -157,29 +157,29 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         valintarekisteriDb,
         hakemustenTulosHakuLock
       ),
-        "/cas/haku")
-      context.mount(new KelaServlet(audit, new KelaService(HakijaResolver(appConfig), hakuService, organisaatioService, valintarekisteriDb), valintarekisteriDb), "/cas/kela")
-      context.mount(new KelaHealthCheckServlet(audit, valintarekisteriDb, appConfig, new VtsKelaAuthenticationClient(appConfig)), "/health-check/kela")
+        "/cas/haku", "cas/haku")
+      context.mount(new KelaServlet(audit, new KelaService(HakijaResolver(appConfig), hakuService, organisaatioService, valintarekisteriDb), valintarekisteriDb), "/cas/kela", "cas/kela")
+      context.mount(new KelaHealthCheckServlet(audit, valintarekisteriDb, appConfig, new VtsKelaAuthenticationClient(appConfig)), "/health-check/kela", "health-check/kela")
 
       val valintaesitysService = new ValintaesitysService(hakuService, authorizer, valintarekisteriDb, valintarekisteriDb, audit)
 
-      context.mount(new ValinnantulosServlet(valinnantulosService, valintatulosService, valintarekisteriDb), "/auth/valinnan-tulos")
-      context.mount(new SijoitteluServlet(sijoitteluService, valintarekisteriDb), "/auth/sijoittelu")
-      context.mount(new SijoittelunTulosServlet(valintatulosService, valintaesitysService, valinnantulosService, hyvaksymiskirjeService, lukuvuosimaksuService, hakuService, authorizer, sijoitteluService, valintarekisteriDb), "/auth/sijoitteluntulos")
-      context.mount(new HyvaksymiskirjeServlet(hyvaksymiskirjeService, valintarekisteriDb), "/auth/hyvaksymiskirje")
-      context.mount(new LukuvuosimaksuServletWithCAS(lukuvuosimaksuService, valintarekisteriDb, hakuService, authorizer), "/auth/lukuvuosimaksu")
-      context.mount(handler = new MuutoshistoriaServlet(valinnantulosService, valintarekisteriDb), urlPattern = "/auth/muutoshistoria", name = "PublicMuutosHistoriaServlet")
-      context.mount(new ValintaesitysServlet(valintaesitysService, valintarekisteriDb), "/auth/valintaesitys")
-      context.mount(new PuuttuvienTulostenMetsastajaServlet(audit, valintarekisteriDb, hakuAppRepository, appConfig.properties("host.virkailija")), "/auth/puuttuvat")
+      context.mount(new ValinnantulosServlet(valinnantulosService, valintatulosService, valintarekisteriDb), "/auth/valinnan-tulos", "auth/valinnan-tulos")
+      context.mount(new SijoitteluServlet(sijoitteluService, valintarekisteriDb), "/auth/sijoittelu", "auth/sijoittelu")
+      context.mount(new SijoittelunTulosServlet(valintatulosService, valintaesitysService, valinnantulosService, hyvaksymiskirjeService, lukuvuosimaksuService, hakuService, authorizer, sijoitteluService, valintarekisteriDb), "/auth/sijoitteluntulos", "auth/sijoitteluntulos")
+      context.mount(new HyvaksymiskirjeServlet(hyvaksymiskirjeService, valintarekisteriDb), "/auth/hyvaksymiskirje", "auth/hyvaksymiskirje")
+      context.mount(new LukuvuosimaksuServletWithCAS(lukuvuosimaksuService, valintarekisteriDb, hakuService, authorizer), "/auth/lukuvuosimaksu", "auth/lukuvuosimaksu")
+      context.mount(handler = new MuutoshistoriaServlet(valinnantulosService, valintarekisteriDb), urlPattern = "/auth/muutoshistoria", name = "auth/muutoshistoria")
+      context.mount(new ValintaesitysServlet(valintaesitysService, valintarekisteriDb), "/auth/valintaesitys", "auth/valintaesitys")
+      context.mount(new PuuttuvienTulostenMetsastajaServlet(audit, valintarekisteriDb, hakuAppRepository, appConfig.properties("host.virkailija")), "/auth/puuttuvat", "auth/puuttuvat")
 
       lazy val mailPollerRepository: MailPollerRepository = valintarekisteriDb
       lazy val mailPoller: MailPoller = new MailPoller(mailPollerRepository, valintatulosService, hakuService, hakemusRepository, appConfig.ohjausparametritService, appConfig.settings)
       lazy val mailDecorator: MailDecorator = new MailDecorator(hakuService, oppijanTunnistusService)
-      context.mount(new PublicEmailStatusServlet(mailPoller, valintarekisteriDb, audit), "/auth/vastaanottoposti")
+      context.mount(new PublicEmailStatusServlet(mailPoller, valintarekisteriDb, audit), "/auth/vastaanottoposti", "auth/vastaanottoposti")
 
       val registry: EmailerRegistry = EmailerRegistry.fromString(Option(System.getProperty("vtemailer.profile")).getOrElse(if (appConfig.isInstanceOf[IT]) "it" else "default"))(mailPoller, mailDecorator)
       val emailerService = new EmailerService(registry, valintarekisteriDb, appConfig.settings.emailerCronString)
-      context.mount(new EmailerServlet(emailerService, valintarekisteriDb), "/auth/emailer")
+      context.mount(new EmailerServlet(emailerService, valintarekisteriDb), "/auth/emailer", "auth/emailer")
     }
   }
 
