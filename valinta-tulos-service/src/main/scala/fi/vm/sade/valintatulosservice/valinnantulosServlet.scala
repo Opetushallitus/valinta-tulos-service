@@ -115,7 +115,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
             } else {
               valinnantulokset
             }
-          Ok(body = tulokset, headers = Map("Last-Modified" -> createLastModifiedHeader(lastModified)))
+          Ok(body = tulokset, headers = Map(appConfig.settings.headerLastModified -> createLastModifiedHeader(lastModified)))
         case None =>
           Ok(List())
       })
@@ -261,7 +261,7 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymisk
         val isHyvaksymiskirjeet = !valinnantulokset.isEmpty && parseHyvaksymiskirjeet
         val response = if (isHyvaksymiskirjeet) mergeTuloksetJaKirjeet else valinnantulokset
 
-        Ok(body = response, headers = Map("Last-Modified" -> createLastModifiedHeader(lastModified)))
+        Ok(body = response, headers = Map(appConfig.settings.headerLastModified -> createLastModifiedHeader(lastModified)))
       }
     }
   }

@@ -116,7 +116,7 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
         valinnantilanViimeisinMuutos = None,
         vastaanotonViimeisinMuutos = None)
       ) must_== valinnantulos
-      httpComponentsClient.header.get("Last-Modified").map(s => Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(s)))
+      httpComponentsClient.header.get(appConfig.settings.headerLastModified).map(s => Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(s)))
     }
   }
 

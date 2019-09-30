@@ -144,13 +144,13 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       }
     }
 
-    "palauttaa Last-Modified otsakkeen jossa viimeisintä muutoshetkeä seuraava tasasekuntti" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa " + appConfig.settings.headerLastModified + " otsakkeen jossa viimeisintä muutoshetkeä seuraava tasasekuntti" in { t: (String, ValinnantulosService, SessionRepository) =>
       val lastModified = DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant(now.plusSeconds(1), ZoneId.of("GMT")))
       t._3.get(sessionId) returns Some(readSession)
       t._2.getValinnantuloksetForValintatapajono(valintatapajonoOid, auditInfo(readSession)) returns Some((now, Set(valinnantulos)))
       get(t._1, Iterable("valintatapajonoOid" -> valintatapajonoOid.toString), defaultHeaders) {
         status must_== 200
-        header.get("Last-Modified") must beSome(lastModified)
+        header.get(appConfig.settings.headerLastModified) must beSome(lastModified)
       }
     }
   }

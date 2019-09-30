@@ -178,7 +178,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
       }
     }
 
-    "palauttaa Last-Modified otsakkeen jossa viimeisintä muutoshetkeä seuraava tasasekuntti" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService) =>
+    "palauttaa " + appConfig.settings.headerLastModified + " otsakkeen jossa viimeisintä muutoshetkeä seuraava tasasekuntti" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService) =>
       val lastModified = DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant(now.plusSeconds(1), ZoneId.of("GMT")))
       t._4.getUserByUsername(uid) returns Right(readUser)
       t._2.getValinnantuloksetForValintatapajono(any[ValintatapajonoOid], any[AuditInfo]) returns Some((now, Set(valinnantulos)))
@@ -188,7 +188,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
         Map.empty
       ) {
         status must_== 200
-        header.get("Last-Modified") must beSome(lastModified)
+        header.get(appConfig.settings.headerLastModified) must beSome(lastModified)
       }
     }
   }
