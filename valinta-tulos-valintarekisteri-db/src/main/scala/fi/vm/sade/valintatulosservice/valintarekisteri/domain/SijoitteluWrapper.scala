@@ -58,10 +58,6 @@ object SijoitteluWrapper extends json4sCustomFormats {
             val JArray(hakemukset) = (valintatapajono \ "hakemukset")
             valintatapajonoExt.setHakemukset(hakemukset.map(hakemus => {
               val hakemusExt = hakemus.extract[SijoitteluajonHakemusWrapper].hakemus
-              (hakemus \ "pistetiedot") match {
-                case JArray(pistetiedot) => hakemusExt.setPistetiedot(pistetiedot.map(pistetieto => pistetieto.extract[SijoitteluajonPistetietoWrapper].pistetieto).asJava)
-                case _ =>
-              }
               hakemusExt
             }).asJava)
             valintatapajonoExt
@@ -632,31 +628,6 @@ object MailStatusWrapper extends OptionConverter {
     Option(status.done),
     Option(status.message)
   )
-}
-
-case class SijoitteluajonPistetietoWrapper(tunniste: String,
-                                           arvo: Option[String],
-                                           laskennallinenArvo: Option[String],
-                                           osallistuminen: Option[String]) {
-  val pistetieto: Pistetieto = {
-    val pistetieto = new Pistetieto()
-    pistetieto.setTunniste(tunniste)
-    arvo.foreach(pistetieto.setArvo(_))
-    laskennallinenArvo.foreach(pistetieto.setLaskennallinenArvo(_))
-    osallistuminen.foreach(pistetieto.setOsallistuminen(_))
-    pistetieto
-  }
-}
-
-object SijoitteluajonPistetietoWrapper extends OptionConverter {
-  def apply(pistetieto: Pistetieto): SijoitteluajonPistetietoWrapper = {
-    SijoitteluajonPistetietoWrapper(
-      pistetieto.getTunniste,
-      convert[javaString, String](pistetieto.getArvo, string),
-      convert[javaString, String](pistetieto.getLaskennallinenArvo, string),
-      convert[javaString, String](pistetieto.getOsallistuminen, string)
-    )
-  }
 }
 
 case class SijoitteluajonHakijaryhmaWrapper(

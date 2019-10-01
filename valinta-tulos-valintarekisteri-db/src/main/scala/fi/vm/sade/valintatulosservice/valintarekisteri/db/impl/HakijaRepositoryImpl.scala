@@ -139,36 +139,6 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
               where j.sijoitteluajo_id = ${sijoitteluajoId}""".as[HakutoiveRecord]).toList
     }
 
-  override def getHakukohteenHakemuksienPistetiedotSijoittelussa(hakukohdeOid: HakukohdeOid, sijoitteluajoId:Long): Map[HakukohdeOid, List[PistetietoRecord]] =
-    timed(s"Sijoitteluajon $sijoitteluajoId hakukohteen $hakukohdeOid hakemusten pistetietojen haku", 100) {
-      runBlocking(
-        sql"""with hakemukset as (
-                select j.hakemus_oid
-                from jonosijat j
-                where j.sijoitteluajo_id = ${sijoitteluajoId} and j.hakukohde_oid = ${hakukohdeOid}
-                union select v.hakemus_oid
-                from valinnantilat v
-                where v.hakukohde_oid = ${hakukohdeOid})
-            select j.hakukohde_oid, p.valintatapajono_oid, p.hakemus_oid, p.tunniste, p.arvo, p.laskennallinen_arvo, p.osallistuminen
-            from pistetiedot p
-            inner join hakemukset h on p.hakemus_oid = h.hakemus_oid
-            inner join valintatapajonot j on p.valintatapajono_oid = j.oid and j.sijoitteluajo_id = ${sijoitteluajoId}
-            where p.sijoitteluajo_id = ${sijoitteluajoId}""".as[(HakukohdeOid, PistetietoRecord)]
-
-      ).groupBy(_._1).map { case (k,v) => (k,v.map(_._2).toList) }
-    }
-
-  override def getHaunHakemuksienPistetiedotSijoittelussa(hakuOid: HakuOid, sijoitteluajoId: Long): Map[HakukohdeOid, List[PistetietoRecord]] =
-    timed(s"Sijoitteluajon $sijoitteluajoId haun $hakuOid hakemusten pistetietojen haku", 100) {
-      runBlocking(
-        sql"""select j.hakukohde_oid, p.valintatapajono_oid, p.hakemus_oid, p.tunniste, p.arvo, p.laskennallinen_arvo, p.osallistuminen
-              from pistetiedot p
-                inner join valintatapajonot j on p.valintatapajono_oid = j.oid and j.sijoitteluajo_id = ${sijoitteluajoId}
-                inner join hakukohteet h on h.hakukohde_oid = j.hakukohde_oid
-              where p.sijoitteluajo_id = ${sijoitteluajoId}""".as[(HakukohdeOid, PistetietoRecord)]
-      ).groupBy(_._1).map { case (k,v) => (k,v.map(_._2).toList) }
-    }
-
   override def getHakukohteenHakemuksienHakijaryhmatSijoittelussa(hakukohdeOid: HakukohdeOid, sijoitteluajoId:Long): Map[HakemusOid, List[HakutoiveenHakijaryhmaRecord]] =
     timed(s"Sijoitteluajon $sijoitteluajoId hakukohteen $hakukohdeOid hakemusten hakijaryhmien haku", 100) {
       runBlocking(
@@ -290,15 +260,6 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
                 from hakijaryhman_hakemukset hh
                 inner join hakijaryhmat h on hh.hakijaryhma_oid = h.oid and hh.sijoitteluajo_id = h.sijoitteluajo_id
                 where hh.hakemus_oid = ${hakemusOid} and hh.sijoitteluajo_id = ${sijoitteluajoId}""".as[HakutoiveenHakijaryhmaRecord]).toList
-    }
-
-  override def getHakemuksenPistetiedotSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId: Long): List[PistetietoRecord] =
-    timed(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid pistetietojen haku", 100) {
-      runBlocking(
-        sql"""
-           select valintatapajono_oid, hakemus_oid, tunniste, arvo, laskennallinen_arvo, osallistuminen
-           from pistetiedot
-           where sijoitteluajo_id = ${sijoitteluajoId} and hakemus_oid = ${hakemusOid}""".as[PistetietoRecord]).toList
     }
 
   override def getHakijanHakutoiveidenHakijatSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId:Long):Map[(HakukohdeOid,ValintatapajonoOid),Int] =

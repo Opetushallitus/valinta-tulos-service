@@ -173,7 +173,6 @@ case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends js
       sqlu"truncate table hakijaryhmat cascade",
       sqlu"truncate table ilmoittautumiset cascade",
       sqlu"truncate table ilmoittautumiset_history cascade",
-      sqlu"truncate table pistetiedot cascade",
       sqlu"truncate table valinnantulokset cascade",
       sqlu"truncate table valinnantulokset_history cascade",
       sqlu"truncate table valinnantilat cascade",

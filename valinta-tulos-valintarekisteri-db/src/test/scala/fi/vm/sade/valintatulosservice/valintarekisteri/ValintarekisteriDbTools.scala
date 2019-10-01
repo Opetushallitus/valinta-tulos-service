@@ -62,7 +62,6 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
       sqlu"truncate table hakijaryhmat cascade",
       sqlu"truncate table ilmoittautumiset cascade",
       sqlu"truncate table ilmoittautumiset_history cascade",
-      sqlu"truncate table pistetiedot cascade",
       sqlu"truncate table valinnantulokset cascade",
       sqlu"truncate table valinnantulokset_history cascade",
       sqlu"truncate table valinnantilat cascade",
@@ -169,16 +168,6 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
           dhakemus.getHyvaksyttyHakijaryhmista.asScala.diff(whakemus.getHyvaksyttyHakijaryhmista.asScala) mustEqual Set()
           dhakemus.getSiirtynytToisestaValintatapajonosta mustEqual whakemus.getSiirtynytToisestaValintatapajonosta
           //TODO: ?? dhakemus.getTodellinenJonosija mustEqual whakemus.getJonosija
-
-          dhakemus.getPistetiedot.size mustEqual whakemus.getPistetiedot.size
-          dhakemus.getPistetiedot.asScala.toList.foreach(dpistetieto => {
-            val wpistetieto = whakemus.getPistetiedot.asScala.toList.find(_.getTunniste.equals(dpistetieto.getTunniste)).head
-            dpistetieto.getArvo mustEqual wpistetieto.getArvo
-            dpistetieto.getLaskennallinenArvo mustEqual wpistetieto.getLaskennallinenArvo
-            dpistetieto.getOsallistuminen mustEqual wpistetieto.getOsallistuminen
-            dpistetieto.getTyypinKoodiUri mustEqual null
-            dpistetieto.isTilastoidaan mustEqual null
-          })
         })
       })
     })
@@ -270,16 +259,6 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
           dhakemus.getHyvaksyttyHakijaryhmista.asScala.diff(whakemus.getHyvaksyttyHakijaryhmista.asScala) mustEqual Set()
           dhakemus.getSiirtynytToisestaValintatapajonosta mustEqual whakemus.getSiirtynytToisestaValintatapajonosta
           //TODO: ?? dhakemus.getTodellinenJonosija mustEqual whakemus.getJonosija
-
-          dhakemus.getPistetiedot.size mustEqual whakemus.getPistetiedot.size
-          dhakemus.getPistetiedot.asScala.toList.foreach(dpistetieto => {
-            val wpistetieto = whakemus.getPistetiedot.asScala.toList.find(_.getTunniste.equals(dpistetieto.getTunniste)).head
-            dpistetieto.getArvo mustEqual wpistetieto.getArvo
-            dpistetieto.getLaskennallinenArvo mustEqual wpistetieto.getLaskennallinenArvo
-            dpistetieto.getOsallistuminen mustEqual wpistetieto.getOsallistuminen
-            dpistetieto.getTyypinKoodiUri mustEqual null
-            dpistetieto.isTilastoidaan mustEqual false
-          })
         })
       })
     })
@@ -498,19 +477,6 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
          """.as[JonosijanTilankuvauksetResult]).head
   }
 
-  private implicit val getSijoitteluajonPistetietoResult: GetResult[Pistetieto] = GetResult(r => {
-    SijoitteluajonPistetietoWrapper(r.nextString, r.nextStringOption, r.nextStringOption, r.nextStringOption).pistetieto
-  })
-
-  def findHakemuksenPistetiedot(hakemusOid:String): Seq[Pistetieto] = {
-    singleConnectionValintarekisteriDb.runBlocking(
-      sql"""select p.tunniste, p.arvo, p.laskennallinen_arvo, p.osallistuminen
-            from pistetiedot p
-            inner join jonosijat j on j.sijoitteluajo_id = p.sijoitteluajo_id and
-             j.valintatapajono_oid = p.valintatapajono_oid and j.hakemus_oid = p.hakemus_oid
-            where j.hakemus_oid = ${hakemusOid}""".as[Pistetieto])
-  }
-
   def findTilanViimeisinMuutos(hakemusOid:String):Seq[java.sql.Timestamp] = {
     singleConnectionValintarekisteriDb.runBlocking(
       sql"""select tilan_viimeisin_muutos from valinnantilat where hakemus_oid = ${hakemusOid}""".as[java.sql.Timestamp]
@@ -544,14 +510,6 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
           val jonosijanTilankuvaukset = findJonosijanTilaAndtilankuvaukset(hakemus.getHakemusOid, wrapper.sijoitteluajo.getSijoitteluajoId, valintatapajono.getOid)
           hakemusWrapper.tila mustEqual jonosijanTilankuvaukset.tila
           hakemus.getTilanKuvaukset.hashCode() mustEqual jonosijanTilankuvaukset.tilankuvausHash
-
-          val storedPistetiedot = findHakemuksenPistetiedot(hakemus.getHakemusOid)
-          hakemus.getPistetiedot.size mustEqual storedPistetiedot.size
-          hakemus.getPistetiedot.asScala.foreach(pistetieto => {
-            val storedPistetieto = storedPistetiedot.find(_.getTunniste.equals(pistetieto.getTunniste))
-            storedPistetieto.isDefined must beTrue
-            SijoitteluajonPistetietoWrapper(pistetieto) mustEqual SijoitteluajonPistetietoWrapper(storedPistetieto.get)
-          })
         })
       })
       val storedHakijaryhmat = findHakukohteenHakijaryhmat(hakukohde.getOid)
@@ -589,7 +547,6 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
             val hakemus = SijoitteluajonHakemusWrapper(hakemusOid, Some(hakemusOid.toString),
               j, j, None, false, Some(j), j, false, false, Hylatty, Some(Map("FI" -> ("fi" + j), "SV" -> ("sv" + j), "EN" -> ("en" + j))),
               EiTilankuvauksenTarkennetta, Set(""), List()).hakemus
-            hakemus.setPistetiedot(List(SijoitteluajonPistetietoWrapper("moi", Some("123"), Some("123"), Some("Osallistui")).pistetieto).asJava)
             valinnantulokset = valinnantulokset ++ IndexedSeq(SijoitteluajonValinnantulosWrapper(valintatapajonoOid, hakemusOid, hakukohdeOid,
               false, false, false, false, None, None, MailStatusWrapper(None, None, None, None).status))
             hakemus

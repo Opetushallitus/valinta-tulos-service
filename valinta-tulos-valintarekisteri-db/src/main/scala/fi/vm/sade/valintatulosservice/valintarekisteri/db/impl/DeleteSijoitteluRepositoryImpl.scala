@@ -29,7 +29,6 @@ trait DeleteSijoitteluRepositoryImpl extends DeleteSijoitteluRepository with Val
     val deleteOperationsWithDescriptions: Seq[(String, DBIO[Any])] = Seq(
       ("delete hakijaryhman_hakemukset", sqlu"delete from hakijaryhman_hakemukset where sijoitteluajo_id = ${sijoitteluajoId}"),
       ("delete hakijaryhmat", sqlu"delete from hakijaryhmat where sijoitteluajo_id = ${sijoitteluajoId}"),
-      ("delete pistetiedot", sqlu"delete from pistetiedot where sijoitteluajo_id = ${sijoitteluajoId}"),
       ("delete jonosijat", sqlu"delete from jonosijat where sijoitteluajo_id = ${sijoitteluajoId}"),
       ("delete sivssnov_sijoittelun_varasijatayton_rajoitus", sqlu"delete from sivssnov_sijoittelun_varasijatayton_rajoitus where sijoitteluajo_id = ${sijoitteluajoId}"),
       ("delete valintatapajonot", sqlu"delete from valintatapajonot where sijoitteluajo_id = ${sijoitteluajoId}"),

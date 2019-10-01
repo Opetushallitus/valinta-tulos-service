@@ -34,7 +34,6 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
       .andThen(setFalseHyvaksyttyVarasijaltaAndHyvaksyPeruuntunut(sijoitteluajoId))
       .andThen(SimpleDBIO { session =>
         var jonosijaStatement:Option[PreparedStatement] = None
-        var pistetietoStatement:Option[PreparedStatement] = None
         var insertValinnantulosStatement:Option[PreparedStatement] = None
         var updateValinnantulosStatement:Option[PreparedStatement] = None
         var valinnantilaStatement:Option[PreparedStatement] = None
@@ -44,7 +43,6 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
         var insertHyvaksyttyJulkaistuStatement:Option[PreparedStatement] = None
         try {
           jonosijaStatement = Some(createJonosijaStatement(session.connection))
-          pistetietoStatement = Some(createPistetietoStatement(session.connection))
           insertValinnantulosStatement = Some(createInsertValinnantulosStatement(session.connection))
           updateValinnantulosStatement = Some(createUpdateValinnantulosStatement(session.connection))
           valinnantilaStatement = Some(createValinnantilaStatement(session.connection))
@@ -65,7 +63,6 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
                   hakukohdeOid,
                   valintatapajonoOid,
                   jonosijaStatement.get,
-                  pistetietoStatement.get,
                   insertValinnantulosStatement.get,
                   updateValinnantulosStatement.get,
                   valinnantilaStatement.get,
@@ -79,7 +76,6 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
           })
           timed(s"Haun $hakuOid tilankuvauksien tallennus", 100) { tilankuvausStatement.get.executeBatch() }
           timed(s"Haun $hakuOid jonosijojen tallennus", 100) { jonosijaStatement.get.executeBatch }
-          timed(s"Haun $hakuOid pistetietojen tallennus", 100) { pistetietoStatement.get.executeBatch }
           timed(s"Haun $hakuOid valinnantilojen tallennus", 100) { valinnantilaStatement.get.executeBatch }
           timed(s"Haun $hakuOid uusien valinnantulosten tallennus", 100) { insertValinnantulosStatement.get.executeBatch }
           timed(s"Haun $hakuOid päivittyneiden valinnantulosten tallennus", 100) { updateValinnantulosStatement.get.executeBatch }
@@ -89,7 +85,6 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
         } finally {
           Try(tilankuvausStatement.foreach(_.close))
           Try(jonosijaStatement.foreach(_.close))
-          Try(pistetietoStatement.foreach(_.close))
           Try(valinnantilaStatement.foreach(_.close))
           Try(insertValinnantulosStatement.foreach(_.close))
           Try(updateValinnantulosStatement.foreach(_.close))
@@ -129,9 +124,7 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
     if(sijoittelu.hakukohteet.length > ANALYZE_AFTER_INSERT_THRESHOLD) {
       try {
         timed(s"Haun $hakuOid sijoittelun tallennuksen jälkeinen analyze", 100) {
-          runBlocking(DBIO.seq(
-            sqlu"""analyze pistetiedot""",
-            sqlu"""analyze jonosijat"""),
+          runBlocking(DBIO.seq(sqlu"""analyze jonosijat"""),
             Duration(20, TimeUnit.MINUTES))
         }
       } catch {
@@ -178,14 +171,12 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
                                            hakukohdeOid: HakukohdeOid,
                                            valintatapajonoOid: ValintatapajonoOid,
                                            jonosijaStatement: PreparedStatement,
-                                           pistetietoStatement: PreparedStatement,
                                            insertValinnantulosStatement: PreparedStatement,
                                            updateValinnantulosStatement: PreparedStatement,
                                            valinnantilaStatement: PreparedStatement,
                                            tilankuvausStatement: PreparedStatement,
                                            tilaKuvausMappingStatement: PreparedStatement) = {
     createJonosijaInsertRow(sijoitteluajoId, hakukohdeOid, valintatapajonoOid, hakemus, jonosijaStatement)
-    hakemus.getPistetiedot.asScala.foreach(createPistetietoInsertRow(sijoitteluajoId, valintatapajonoOid, HakemusOid(hakemus.getHakemusOid), _, pistetietoStatement))
     createValinnantilanKuvausInsertRow(hakemus, tilankuvausStatement)
     createValinnantilaInsertRow(hakukohdeOid, valintatapajonoOid, sijoitteluajoId, hakemus, valinnantilaStatement)
     valintatulosOption match {
@@ -219,23 +210,6 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
     statement.setBoolean(11, hakemus.isHyvaksyttyHarkinnanvaraisesti)
     statement.setBoolean(12, hakemus.getSiirtynytToisestaValintatapajonosta)
     statement.setString(13, Valinnantila(hakemus.getTila).toString)
-    statement.addBatch()
-  }
-
-  private def createPistetietoStatement = createStatement("""insert into pistetiedot (sijoitteluajo_id, hakemus_oid, valintatapajono_oid,
-    tunniste, arvo, laskennallinen_arvo, osallistuminen) values (?, ?, ?, ?, ?, ?, ?)""")
-
-  private def createPistetietoInsertRow(sijoitteluajoId: Long, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, pistetieto: Pistetieto, statement: PreparedStatement) = {
-    val SijoitteluajonPistetietoWrapper(tunniste, arvo, laskennallinenArvo, osallistuminen)
-    = SijoitteluajonPistetietoWrapper(pistetieto)
-
-    statement.setLong(1, sijoitteluajoId)
-    statement.setString(2, hakemusOid.toString)
-    statement.setString(3, valintatapajonoOid.toString)
-    statement.setString(4, tunniste)
-    statement.setString(5, arvo.orNull)
-    statement.setString(6, laskennallinenArvo.orNull)
-    statement.setString(7, osallistuminen.orNull)
     statement.addBatch()
   }
 
