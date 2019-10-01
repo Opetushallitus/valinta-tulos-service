@@ -26,7 +26,8 @@ class HakijanVastaanottoServlet(vastaanottoService: VastaanottoService)(implicit
     parameter pathParam[String]("henkiloOid").description("Hakijan henkilönumero")
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid")
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid")
-    parameter bodyParam(hakijanVastaanottoActionModel))
+    parameter bodyParam(hakijanVastaanottoActionModel)
+    tags "vastaanotto")
   post("/henkilo/:henkiloOid/hakemus/:hakemusOid/hakukohde/:hakukohdeOid", operation(deprecatedPostVastaanottoSwagger)) {
 
     val hakemusOid = HakemusOid(params("hakemusOid"))
@@ -41,7 +42,8 @@ class HakijanVastaanottoServlet(vastaanottoService: VastaanottoService)(implicit
     summary "Tallenna hakukohteelle uusi vastaanottotila"
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid")
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid")
-    parameter bodyParam(hakijanVastaanottoActionModel))
+    parameter bodyParam(hakijanVastaanottoActionModel)
+    tags "vastaanotto")
   post("/hakemus/:hakemusOid/hakukohde/:hakukohdeOid", operation(postVastaanottoSwagger)) {
 
     val hakemusOid = HakemusOid(params("hakemusOid"))

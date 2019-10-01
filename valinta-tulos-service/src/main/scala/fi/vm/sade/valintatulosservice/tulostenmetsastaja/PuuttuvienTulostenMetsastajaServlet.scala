@@ -29,7 +29,7 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
   val puuttuvatTuloksetHaulleSwagger: OperationBuilder = (apiOperation[HaunPuuttuvat[HakukohteenPuuttuvat]]("puuttuvien tulosten haku")
     summary "Etsi sellaiset hakemuksilta löytyvät hakutoiveet, joille ei löydy tulosta valintarekisteristä"
     parameter queryParam[String]("hakuOid").description("haun OID")
-    )
+    tags "puuttuvat-tulokset")
   get("/", operation(puuttuvatTuloksetHaulleSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_CRUD_OPH)
@@ -41,7 +41,8 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
 
   val puuttuvatTuloksetHauilleTaustallaSwagger: OperationBuilder = (apiOperation[TaustapaivityksenTila]("puuttuvien tulosten haku taustalla")
     summary "Etsi sellaiset hakemuksilta löytyvät hakutoiveet, joille ei löydy tulosta valintarekisteristä, ja tallenna tulos kirjanpitoon"
-    parameter bodyParam[Seq[String]]("hakuOids").description("Hakujen OIDit"))
+    parameter bodyParam[Seq[String]]("hakuOids").description("Hakujen OIDit")
+    tags "puuttuvat-tulokset")
   post("/", operation(puuttuvatTuloksetHauilleTaustallaSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_CRUD_OPH)
@@ -55,7 +56,8 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
   }
 
   val hakuListaSwagger: OperationBuilder = (apiOperation[Seq[HaunTiedotListalle]]("Yhteenveto kaikista hauista")
-    summary "Listaa kaikki haut ja yhteenveto niiden puuttuvista tiedoista")
+    summary "Listaa kaikki haut ja yhteenveto niiden puuttuvista tiedoista"
+    tags "puuttuvat-tulokset")
   get("/yhteenveto", operation(hakuListaSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_CRUD_OPH)
@@ -66,7 +68,8 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
 
   val haunPuuttuvatSwagger: OperationBuilder = (apiOperation[Seq[TarjoajanPuuttuvat[HakukohteenPuuttuvatSummary]]]("Yksittäisen organisaation puuttuvat")
     summary "Organisaation puuttuvien tulosten määrät hakukohteittain"
-    parameter pathParam[String]("hakuOid").description("Haun OID"))
+    parameter pathParam[String]("hakuOid").description("Haun OID")
+    tags "puuttuvat-tulokset")
   get("/haku/:hakuOid", operation(haunPuuttuvatSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_CRUD_OPH)
@@ -77,7 +80,8 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
   }
 
   val paivitaKaikkiSwagger : OperationBuilder = (apiOperation[TaustapaivityksenTila]("Käynnistetään puuttuvien tuloksien haku kaikille hauille")
-      parameter bodyParam[Boolean]("paivitaMyosOlemassaolevat").description("Päivitetäänkö myös hauille, joilta löytyy jo tieto puuttuvista"))
+      parameter bodyParam[Boolean]("paivitaMyosOlemassaolevat").description("Päivitetäänkö myös hauille, joilta löytyy jo tieto puuttuvista")
+      tags "puuttuvat-tulokset")
   post("/paivitaKaikki", operation(paivitaKaikkiSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_CRUD_OPH)
@@ -92,7 +96,8 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
     Ok(puuttuvatTuloksetService.haeJaTallennaKaikki(paivitaMyosOlemassaolevat))
   }
 
-  val taustapaivityksenTilaSwagger : OperationBuilder = apiOperation[TaustapaivityksenTila]("Lue taustapäivityksen tila")
+  val taustapaivityksenTilaSwagger : OperationBuilder = (apiOperation[TaustapaivityksenTila]("Lue taustapäivityksen tila")
+    tags "puuttuvat-tulokset")
   get("/taustapaivityksenTila", operation(taustapaivityksenTilaSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_CRUD_OPH)

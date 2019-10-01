@@ -19,7 +19,8 @@ class PublicEmailStatusServlet(mailPoller: MailPoller,
 
   lazy val getVastaanottopostiSentForHakemus: OperationBuilder = (apiOperation[Unit]("getSentAt")
     summary "Palauttaa niiden hakemuksien oidit joille on lähetetty tai yritetty lähettää vastaanottomaili"
-    parameter queryParam[String]("hakukohdeOid"))
+    parameter queryParam[String]("hakukohdeOid")
+    tags "vastaanottoposti")
 
   get("/", operation(getVastaanottopostiSentForHakemus)) {
     contentType = formats("json")

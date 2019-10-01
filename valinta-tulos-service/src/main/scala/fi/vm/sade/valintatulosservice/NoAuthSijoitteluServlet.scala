@@ -16,7 +16,8 @@ class NoAuthSijoitteluServlet(sijoitteluService: SijoitteluService)
     summary "Hakee hakukohteen tiedot tietyssa sijoitteluajossa."
     parameter pathParam[String]("hakuOid").description("Haun yksilöllinen tunniste")
     parameter pathParam[String]("sijoitteluajoId").description("Sijoitteluajon yksilöllinen tunniste, tai 'latest' avainsana.")
-    parameter pathParam[String]("hakukohdeOid").description("Hakukohteen yksilöllinen tunniste"))
+    parameter pathParam[String]("hakukohdeOid").description("Hakukohteen yksilöllinen tunniste")
+    tags "sijoittelu-noauth")
   get("/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakukohde/:hakukohdeOid", operation(getHakukohdeBySijoitteluajoSwagger)) {
     val hakuOid = HakuOid(params("hakuOid"))
     val sijoitteluajoId = params("sijoitteluajoId")
@@ -32,7 +33,8 @@ class NoAuthSijoitteluServlet(sijoitteluService: SijoitteluService)
 
   lazy val sijoitteluajoExistsForHakuJonoSwaggerWithoutCas: OperationBuilder = (apiOperation[Unit]("sijoitteluajoExistsForHakuJonoSwaggerWithoutCas")
     summary "Kertoo onko valintatapajonolle suoritettu sijoittelua"
-    parameter pathParam[String]("jonoOid").description("Valintatapajonon yksilöllinen tunniste"))
+    parameter pathParam[String]("jonoOid").description("Valintatapajonon yksilöllinen tunniste")
+    tags "sijoittelu-noauth")
   get("/jono/:jonoOid", operation(sijoitteluajoExistsForHakuJonoSwaggerWithoutCas)) {
 
     import org.json4s.native.Json

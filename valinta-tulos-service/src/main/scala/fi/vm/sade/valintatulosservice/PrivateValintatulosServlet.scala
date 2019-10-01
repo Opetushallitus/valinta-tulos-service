@@ -19,7 +19,8 @@ class PrivateValintatulosServlet(valintatulosService: ValintatulosService,
     vastaanottoService,
     ilmoittautumisService,
     valintarekisteriDb,
-    hakemustenTulosHakuLock)(swagger, appConfig) {
+    hakemustenTulosHakuLock,
+    "valintatulos-private")(swagger, appConfig) {
 
   protected val applicationDescription = "Sisäinen valintatulosten REST API"
 
@@ -30,4 +31,5 @@ class PrivateValintatulosServlet(valintatulosService: ValintatulosService,
   override def auditLogChanged(auditParams: Map[String, String], auditOperation: Operation, addedParams: Map[String, String], changeOperation: String): Unit = {
     logger.info(s"PrivateValintatulosServlet REST call: $auditOperation with parameters: $auditParams $changeOperation parameters: $addedParams")
   }
+
 }

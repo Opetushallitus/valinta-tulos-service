@@ -27,7 +27,8 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
   lazy val getSijoitteluajoSwagger: OperationBuilder = (apiOperation[Unit]("getSijoitteluajoSwagger")
     summary "Hakee koko sijoitteluajon tiedot."
     parameter pathParam[String]("hakuOid").description("Haun yksilöllinen tunniste") //TODO tarpeeton?
-    parameter pathParam[String]("sijoitteluajoId").description("Sijoitteluajon yksilöllinen tunniste, tai 'latest' avainsana."))
+    parameter pathParam[String]("sijoitteluajoId").description("Sijoitteluajon yksilöllinen tunniste, tai 'latest' avainsana.")
+    tags "sijoittelu")
   get("/:hakuOid/sijoitteluajo/:sijoitteluajoId", operation(getSijoitteluajoSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
@@ -40,7 +41,8 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
   lazy val getSijoitteluajonPerustiedotSwagger: OperationBuilder = (apiOperation[Unit]("getSijoitteluajoSwagger")
     summary "Hakee sijoitteluajon perustiedot ja hakukohteiden oidit."
     parameter pathParam[String]("hakuOid").description("Haun yksilöllinen tunniste") //TODO tarpeeton?
-    parameter pathParam[String]("sijoitteluajoId").description("Sijoitteluajon yksilöllinen tunniste, tai 'latest' avainsana."))
+    parameter pathParam[String]("sijoitteluajoId").description("Sijoitteluajon yksilöllinen tunniste, tai 'latest' avainsana.")
+    tags "sijoittelu")
   get("/:hakuOid/sijoitteluajo/:sijoitteluajoId/perustiedot", operation(getSijoitteluajoSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
@@ -54,7 +56,8 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
     summary "Nayttaa yksittaisen hakemuksen kaikki hakutoiveet ja tiedot kaikista valintatapajonoista."
     parameter pathParam[String]("hakuOid").description("Haun yksilöllinen tunniste")
     parameter pathParam[String]("sijoitteluajoId").description("Sijoitteluajon yksilöllinen tunniste, tai 'latest' avainsana.")
-    parameter pathParam[String]("hakemusOid").description("Hakemuksen yksilöllinen tunniste"))
+    parameter pathParam[String]("hakemusOid").description("Hakemuksen yksilöllinen tunniste")
+    tags "sijoittelu")
   get("/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakemus/:hakemusOid", operation(getHakemusBySijoitteluajoSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD) //TODO: organization hierarchy check?!?!
@@ -73,7 +76,8 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
     summary "Hakee hakukohteen tiedot tietyssa sijoitteluajossa."
     parameter pathParam[String]("hakuOid").description("Haun yksilöllinen tunniste")
     parameter pathParam[String]("sijoitteluajoId").description("Sijoitteluajon yksilöllinen tunniste, tai 'latest' avainsana.")
-    parameter pathParam[String]("hakukohdeOid").description("Hakukohteen yksilöllinen tunniste"))
+    parameter pathParam[String]("hakukohdeOid").description("Hakukohteen yksilöllinen tunniste")
+    tags "sijoittelu")
   get("/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakukohde/:hakukohdeOid", operation(getHakukohdeBySijoitteluajoSwagger)) {
     val hakuOid = HakuOid(params("hakuOid"))
     val sijoitteluajoId = params("sijoitteluajoId")
@@ -92,7 +96,8 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
 
   lazy val sijoitteluajoExistsForHakuJonoSwagger: OperationBuilder = (apiOperation[Unit]("sijoitteluajoExistsForHakuJonoSwagger")
     summary "Kertoo onko valintatapajonolle suoritettu sijoittelua"
-    parameter pathParam[String]("jonoOid").description("Valintatapajonon yksilöllinen tunniste"))
+    parameter pathParam[String]("jonoOid").description("Valintatapajonon yksilöllinen tunniste")
+    tags "sijoittelu")
   get("/jono/:jonoOid", operation(sijoitteluajoExistsForHakuJonoSwagger)) {
 
     import org.json4s.native.Json

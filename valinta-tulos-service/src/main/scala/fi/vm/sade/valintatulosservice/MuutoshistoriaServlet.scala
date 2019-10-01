@@ -27,7 +27,7 @@ class MuutoshistoriaServlet(valinnantulosService: ValinnantulosService,
     summary "Muutoshistoria"
     parameter queryParam[String]("valintatapajonoOid").description("Valintatapajonon OID").required
     parameter queryParam[String]("hakemusOid").description("Hakemuksen OID").required
-    )
+    tags "muutoshistoria")
   get("/", operation(muutoshistoriaSwagger)) {
     contentType = formats("json")
     if (skipAuditForServiceCall) {
