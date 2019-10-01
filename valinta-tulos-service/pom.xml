@@ -27,6 +27,11 @@
                 <artifactId>gson</artifactId>
                 <version>${gson.version}</version>
             </dependency>
+            <dependency>
+                <groupId>fi.vm.sade</groupId>
+                <artifactId>scala-cas_2.11</artifactId>
+                <version>${scala-cas_2.11.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -155,7 +160,6 @@
         <dependency>
             <groupId>fi.vm.sade</groupId>
             <artifactId>scala-cas_2.11</artifactId>
-            <version>${scala-cas_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.slick</groupId>
