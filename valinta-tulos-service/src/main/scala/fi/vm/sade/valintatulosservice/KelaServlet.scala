@@ -31,7 +31,7 @@ class KelaServlet(audit: Audit, kelaService: KelaService, val sessionRepository:
     }
   }
 
-  val kelaVastaanottoSwagger: OperationBuilder = apiOperation[Henkilo]("getEnsikertalaisuus")
+  val kelaVastaanottoSwagger: OperationBuilder = apiOperation[Henkilo]("getKelaVastaanotot")
     .summary ("Kelan vastaanottotietojen rajapinta")
     .parameter(bodyParam[String]("henkilotunnus").description("Henkilötunnus").required)
     .parameter(queryParam[String]("alkuaika").description("Henkilön vastaanottotietojen alkuaika").optional)
