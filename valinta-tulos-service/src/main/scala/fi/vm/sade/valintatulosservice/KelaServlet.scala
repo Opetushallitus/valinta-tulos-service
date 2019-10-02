@@ -34,11 +34,8 @@ class KelaServlet(audit: Audit, kelaService: KelaService, val sessionRepository:
   val kelaVastaanottoSwagger: OperationBuilder = apiOperation[Henkilo]("getEnsikertalaisuus")
     .summary ("Kelan vastaanottotietojen rajapinta")
     .parameter(bodyParam[String]("henkilotunnus").description("Henkilötunnus").required)
-    .parameter(queryParam[String]("alkuaika").description("Henkilön vastaanottotietojen alkuaika"))
+    .parameter(queryParam[String]("alkuaika").description("Henkilön vastaanottotietojen alkuaika").optional)
     .tags("kela")
-    .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
-    .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
-
     post("/vastaanotot/henkilo", operation(kelaVastaanottoSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.KELA_READ)
