@@ -4,18 +4,17 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.concurrent.TimeoutException
 
-import fi.vm.sade.auditlog.Target.Builder
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
-import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.kela.{Henkilo, KelaService, Vastaanotto}
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
+import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.{InternalServerError, NoContent, Ok}
 import org.scalatra.swagger.{Swagger, SwaggerEngine}
 
 import scala.util.{Success, Try}
 
-class KelaServlet(audit: Audit, kelaService: KelaService, val sessionRepository: SessionRepository)(override implicit val swagger: Swagger)  extends VtsServletBase with CasAuthenticatedServlet {
+class KelaServlet(audit: Audit, kelaService: KelaService, val sessionRepository: SessionRepository)(implicit val swagger: Swagger)  extends VtsServletBase with VtsSwaggerBase with CasAuthenticatedServlet {
 
   protected val applicationDescription = "Julkinen Kela REST API"
 
@@ -32,7 +31,15 @@ class KelaServlet(audit: Audit, kelaService: KelaService, val sessionRepository:
     }
   }
 
-  post("/vastaanotot/henkilo") {
+  val kelaVastaanottoSwagger: OperationBuilder = apiOperation[Henkilo]("getEnsikertalaisuus")
+    .summary ("Kelan vastaanottotietojen rajapinta")
+    .parameter(bodyParam[String]("henkilotunnus").description("Henkilötunnus").required)
+    .parameter(queryParam[String]("alkuaika").description("Henkilön vastaanottotietojen alkuaika"))
+    .tags("kela")
+    .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
+    .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
+
+    post("/vastaanotot/henkilo", operation(kelaVastaanottoSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.KELA_READ)
     val credentials: AuditInfo = auditInfo
