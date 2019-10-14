@@ -41,8 +41,8 @@ valinta-tulos-service.cas.password={{omatsivut_haku_app_password}}
 
 # VALINTAREKISTERI
 valinta-tulos-service.valintarekisteri.db.url=jdbc:postgresql://{{host_postgresql_valintarekisteri}}/valintarekisteri
-valinta-tulos-service.valintarekisteri.db.user={{host_postgresql_valintarekisteri_user}}
-valinta-tulos-service.valintarekisteri.db.password={{host_postgresql_valintarekisteri_password}}
+valinta-tulos-service.valintarekisteri.db.user={{postgres_app_user}}
+valinta-tulos-service.valintarekisteri.db.password={{host_postgresql_valintarekisteri_app_password}}
 valinta-tulos-service.valintarekisteri.db.connectionPool=HikariCP
 valinta-tulos-service.valintarekisteri.db.numThreads=10
 valinta-tulos-service.valintarekisteri.db.maxConnections=50
