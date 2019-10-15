@@ -33,7 +33,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
   val valinnantuloksenOhjaus = ValinnantuloksenOhjaus(
     hakemusOid, valintatapajonoOid, hakukohdeOid, false, false, false, false, muokkaaja, selite)
   val valinnantulos = Valinnantulos(hakukohdeOid, valintatapajonoOid, hakemusOid, henkiloOid,
-    Hyvaksytty, Some(false), None, None, None, None, Some(false), Some(false), Some(false), ValintatuloksenTila.KESKEN, EiTehty, None)
+    Hyvaksytty, Some(false), None, None, None, None, None, None, None, Some(false), Some(false), Some(false), ValintatuloksenTila.KESKEN, EiTehty, None)
   val ilmoittautuminen = Ilmoittautuminen(hakukohdeOid, Lasna, "muokkaaja", "selite")
   val ehdollisenHyvaksynnanEhto = EhdollisenHyvaksynnanEhto(hakemusOid, valintatapajonoOid, hakukohdeOid, "muu", "muu", "andra", "other")
   val ancient = new java.util.Date(0)

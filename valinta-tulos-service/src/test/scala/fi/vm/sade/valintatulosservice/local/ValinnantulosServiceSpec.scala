@@ -243,12 +243,32 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(any[EhdollisenHyvaksynnanEhto], any[Option[Instant]]) returns DBIO.successful(())
       valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(any[HakemusOid], any[ValintatapajonoOid], any[String], any[String]) returns DBIO.successful(())
       valinnantulosRepository.storeAction(any[VastaanottoEvent]) returns DBIO.successful(())
+      valinnantulosRepository.storeTilanKuvaus(
+        any[TilanKuvausHashCode],
+        any[HakukohdeOid],
+        any[ValintatapajonoOid],
+        any[HakemusOid],
+        any[ValinnantilanTarkenne],
+        any[Option[String]],
+        any[Option[String]],
+        any[Option[String]]
+      ) returns DBIO.successful(())
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo, true) mustEqual List()
       there was no (valinnantulosRepository).updateValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
       there was one (valinnantulosRepository).storeAction(any[VastaanottoEvent])
       there was one (valinnantulosRepository).storeValinnantuloksenOhjaus(erillishaunValinnantulos.getValinnantuloksenOhjaus(session.personOid, "Erillishaun tallennus"), Some(lastModified))
       there was one (valinnantulosRepository).storeIlmoittautuminen(erillishaunValinnantulos.henkiloOid, Ilmoittautuminen(erillishaunValinnantulos.hakukohdeOid, erillishaunValinnantulos.ilmoittautumistila, session.personOid, "Erillishaun tallennus"), Some(lastModified))
       there was one (valinnantulosRepository).storeValinnantila(erillishaunValinnantulos.getValinnantilanTallennus(session.personOid), Some(lastModified))
+      there was one (valinnantulosRepository).storeTilanKuvaus(
+        any[TilanKuvausHashCode],
+        argThat[HakukohdeOid, HakukohdeOid](be_==(erillishaunValinnantulos.hakukohdeOid)),
+        argThat[ValintatapajonoOid, ValintatapajonoOid](be_==(valintatapajonoOid)),
+        any[HakemusOid],
+        argThat[ValinnantilanTarkenne, ValinnantilanTarkenne](be_==(EiTilankuvauksenTarkennetta)),
+        any[Option[String]],
+        any[Option[String]],
+        any[Option[String]]
+      )
     }
   }
 
@@ -307,6 +327,9 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       ehdollisenHyvaksymisenEhtoFI = None,
       ehdollisenHyvaksymisenEhtoSV = None,
       ehdollisenHyvaksymisenEhtoEN = None,
+      ehdollisenHyvaksymisenEhtoTekstiFI = None,
+      ehdollisenHyvaksymisenEhtoTekstiSV = None,
+      ehdollisenHyvaksymisenEhtoTekstiEN = None,
       julkaistavissa = None,
       hyvaksyttyVarasijalta = None,
       hyvaksyPeruuntunut = None,
