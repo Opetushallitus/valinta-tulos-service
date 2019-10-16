@@ -705,6 +705,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               ${ifUnmodifiedSince}::timestamptz is null or
               ehdollisen_hyvaksynnan_ehto.system_time @> ${ifUnmodifiedSince})""".flatMap {
       case 1 => DBIO.successful(())
+      case 0 => DBIO.successful(())
       case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ehdollisen hyväksynnän ehtoa $ehto ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
     }
   }
