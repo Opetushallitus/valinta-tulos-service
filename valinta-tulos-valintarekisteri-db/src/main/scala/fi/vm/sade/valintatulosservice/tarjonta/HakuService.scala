@@ -24,10 +24,7 @@ trait HakuService {
   def getHaku(oid: HakuOid): Either[Throwable, Haku]
   def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, HakukohdeKela]
   def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde]
-  def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]]
-  def getKomos(komoOids: Seq[String]): Either[Throwable, Seq[Komo]]
   def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[Hakukohde]]
-  def getHakukohdesForHaku(hakuOid: HakuOid): Either[Throwable, Seq[Hakukohde]]
   def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]]
   def getArbitraryPublishedHakukohdeOid(oid: HakuOid): Either[Throwable, HakukohdeOid]
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]]
@@ -209,11 +206,8 @@ class CachedHakuService(wrappedService: HakuService, config: AppConfig) extends 
   override def getHaku(oid: HakuOid): Either[Throwable, Haku] = byOid(oid)
   override def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, HakukohdeKela] = wrappedService.getHakukohdeKela(oid)
   override def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde] = wrappedService.getHakukohde(oid)
-  override def getKomos(kOids: Seq[String]): Either[Throwable, Seq[Komo]] = wrappedService.getKomos(kOids)
-  override def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]] = wrappedService.getKoulutuses(koulutusOids)
   override def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[Hakukohde]] = wrappedService.getHakukohdes(oids)
   override def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]] = wrappedService.getHakukohdeOids(hakuOid)
-  override def getHakukohdesForHaku(hakuOid: HakuOid): Either[Throwable, Seq[Hakukohde]] = wrappedService.getHakukohdesForHaku(hakuOid)
   override def getArbitraryPublishedHakukohdeOid(oid: HakuOid): Either[Throwable, HakukohdeOid] = wrappedService.getArbitraryPublishedHakukohdeOid(oid)
 
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = all()
@@ -309,10 +303,6 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
     }
   }
 
-  def getHakukohdesForHaku(hakuOid: HakuOid): Either[Throwable, Seq[Hakukohde]] = {
-    getHakukohdeOids(hakuOid).right.flatMap(getHakukohdes)
-  }
-
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = {
     val url = config.ophProperties.url("tarjonta-service.find", Map("addHakuKohdes" -> false).asJava)
     fetch(url) { response =>
@@ -321,25 +311,6 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
     }
   }
 
-  def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]] = {
-    MonadHelper.sequence(koulutusOids.map(getKoulutus))
-  }
-  def getKomos(komoOids: Seq[String]): Either[Throwable, Seq[Komo]] = {
-    MonadHelper.sequence(komoOids.map(getKomo))
-  }
-
-  private def getKoulutus(koulutusOid: String): Either[Throwable, Koulutus] = {
-    val koulutusUrl = config.ophProperties.url("tarjonta-service.koulutus", koulutusOid)
-    fetch(koulutusUrl) { response =>
-      (parse(response) \ "result").extract[Koulutus]
-    }
-  }
-  private def getKomo(komoOid: String): Either[Throwable, Komo] = {
-    val komoUrl = config.ophProperties.url("tarjonta-service.komo", komoOid)
-    fetch(komoUrl) { response =>
-      (parse(response) \ "result").extract[Komo]
-    }
-  }
   private def fetch[T](url: String)(parse: String => T): Either[Throwable, T] = {
     Try(DefaultHttpClient.httpGet(
       url,

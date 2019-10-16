@@ -24,9 +24,7 @@ object HakuFixtures extends HakuService with JsonHakuService {
     this.hakuOids = hakuOids
     this.activeFixture = fixtureName
   }
-  override def getHakukohdesForHaku(hakuOid: HakuOid): Either[Throwable, Seq[Hakukohde]] = {
-    getHakukohdeOids(hakuOid).right.flatMap(getHakukohdes)
-  }
+
   override def getHaku(oid: HakuOid): Either[Throwable, Haku] = {
     getHakuFixture(oid).map(toHaku(_).copy(oid = oid)).toRight(new IllegalArgumentException(s"No haku $oid found"))
   }
@@ -48,12 +46,7 @@ object HakuFixtures extends HakuService with JsonHakuService {
       getFixtureAsStream(activeFixture)
     }
   }
-  def getKomos(kOids: Seq[String]): Either[Throwable, Seq[Komo]] = {
-    Left(new RuntimeException("Not implemented!"))
-  }
-  def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]] = {
-    Left(new RuntimeException("Not implemented!"))
-  }
+
   private def getFixtureAsStream(hakuOid: HakuOid) = {
     Option(getClass.getResourceAsStream("/fixtures/tarjonta/haku/" + hakuOid.toString + ".json"))
   }
