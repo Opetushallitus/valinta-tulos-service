@@ -5,13 +5,13 @@ import slick.dbio.DBIO
 
 trait ValinnanTilanKuvausRepository {
   def storeValinnanTilanKuvaus(
-                        valinnanTilanKuvausHashCode: ValinnanTilanKuvausHashCode,
-                        hakukohdeOid: HakukohdeOid,
-                        valintatapajonoOid: ValintatapajonoOid,
-                        hakemusOid: HakemusOid,
-                        valinnantilanTarkenne: ValinnantilanTarkenne,
-                        ehdollisenHyvaksymisenEhtoTekstiFI: Option[String],
-                        ehdollisenHyvaksymisenEhtoTekstiSV: Option[String],
-                        ehdollisenHyvaksymisenEhtoTekstiEN: Option[String]
+                                valinnanTilanKuvausHashCode: ValinnanTilanKuvausHashCode,
+                                hakukohdeOid: HakukohdeOid,
+                                valintatapajonoOid: ValintatapajonoOid,
+                                hakemusOid: HakemusOid,
+                                valinnantilanTarkenne: ValinnantilanTarkenne,
+                                valinnantilanKuvauksenTekstiFI: Option[String],
+                                valinnantilanKuvauksenTekstiSV: Option[String],
+                                valinnantilanKuvauksenTekstiEN: Option[String]
                       ): DBIO[Unit]
 }

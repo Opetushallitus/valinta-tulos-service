@@ -143,9 +143,9 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
   def calculateValinnanTilanKuvausHashCode(valinnanTulos: Valinnantulos): ValinnanTilanKuvausHashCode = {
     ValinnanTilanKuvausHashCode(
       Map(
-        "textFi" -> valinnanTulos.ehdollisenHyvaksymisenEhtoTekstiFI.orNull,
-        "textSv" -> valinnanTulos.ehdollisenHyvaksymisenEhtoTekstiSV.orNull,
-        "textEn" -> valinnanTulos.ehdollisenHyvaksymisenEhtoTekstiEN.orNull
+        "textFi" -> valinnanTulos.valinnantilanKuvauksenTekstiFI.orNull,
+        "textSv" -> valinnanTulos.valinnantilanKuvauksenTekstiSV.orNull,
+        "textEn" -> valinnanTulos.valinnantilanKuvauksenTekstiEN.orNull
       )
         .hashCode()
     )
@@ -168,9 +168,9 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
           uusi.valintatapajonoOid,
           uusi.hakemusOid,
           EiTilankuvauksenTarkennetta,
-          uusi.ehdollisenHyvaksymisenEhtoTekstiFI,
-          uusi.ehdollisenHyvaksymisenEhtoTekstiSV,
-          uusi.ehdollisenHyvaksymisenEhtoTekstiEN
+          uusi.valinnantilanKuvauksenTekstiFI,
+          uusi.valinnantilanKuvauksenTekstiSV,
+          uusi.valinnantilanKuvauksenTekstiEN
         )),
         Some(valinnantulosRepository.storeValinnantuloksenOhjaus(uusi.getValinnantuloksenOhjaus(muokkaaja, selite), ifUnmodifiedSince)),
         Some(valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(uusi.getEhdollisenHyvaksynnanEhto(), ifUnmodifiedSince)),
@@ -214,9 +214,9 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
           case true => valinnantulosRepository.storeAction(vastaanottoAction())
         },
         Option(
-          uusi.ehdollisenHyvaksymisenEhtoTekstiFI != vanha.ehdollisenHyvaksymisenEhtoTekstiFI ||
-          uusi.ehdollisenHyvaksymisenEhtoTekstiSV != vanha.ehdollisenHyvaksymisenEhtoTekstiSV ||
-          uusi.ehdollisenHyvaksymisenEhtoTekstiEN != vanha.ehdollisenHyvaksymisenEhtoTekstiEN
+          uusi.valinnantilanKuvauksenTekstiFI != vanha.valinnantilanKuvauksenTekstiFI ||
+          uusi.valinnantilanKuvauksenTekstiSV != vanha.valinnantilanKuvauksenTekstiSV ||
+          uusi.valinnantilanKuvauksenTekstiEN != vanha.valinnantilanKuvauksenTekstiEN
         ).collect {
           case true =>
             valinnantulosRepository.storeValinnanTilanKuvaus(
@@ -225,9 +225,9 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
               uusi.valintatapajonoOid,
               uusi.hakemusOid,
               EiTilankuvauksenTarkennetta,
-              uusi.ehdollisenHyvaksymisenEhtoTekstiFI,
-              uusi.ehdollisenHyvaksymisenEhtoTekstiSV,
-              uusi.ehdollisenHyvaksymisenEhtoTekstiEN
+              uusi.valinnantilanKuvauksenTekstiFI,
+              uusi.valinnantilanKuvauksenTekstiSV,
+              uusi.valinnantilanKuvauksenTekstiEN
             )
         }
       ).flatten

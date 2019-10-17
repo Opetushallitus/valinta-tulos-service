@@ -16,9 +16,9 @@ trait ValinnanTilanKuvausRepositoryImpl extends ValinnanTilanKuvausRepository wi
                                          valintatapajonoOid: ValintatapajonoOid,
                                          hakemusOid: HakemusOid,
                                          valinnantilanTarkenne: ValinnantilanTarkenne,
-                                         ehdollisenHyvaksymisenEhtoTekstiFI: Option[String],
-                                         ehdollisenHyvaksymisenEhtoTekstiSV: Option[String],
-                                         ehdollisenHyvaksymisenEhtoTekstiEN: Option[String]
+                                         valinnantilanKuvauksenTekstiFI: Option[String],
+                                         valinnantilanKuvauksenTekstiSV: Option[String],
+                                         valinnantilanKuvauksenTekstiEN: Option[String]
                                ): DBIO[Unit] = {
     sqlu"""insert into tilat_kuvaukset (
              tilankuvaus_hash,
@@ -48,9 +48,9 @@ trait ValinnanTilanKuvausRepositoryImpl extends ValinnanTilanKuvausRepository wi
              ) values (
                ${valinnanTilanKuvausHashCode},
                ${valinnantilanTarkenne}::valinnantilantarkenne,
-               ${ehdollisenHyvaksymisenEhtoTekstiFI},
-               ${ehdollisenHyvaksymisenEhtoTekstiSV},
-               ${ehdollisenHyvaksymisenEhtoTekstiEN}
+               ${valinnantilanKuvauksenTekstiFI},
+               ${valinnantilanKuvauksenTekstiSV},
+               ${valinnantilanKuvauksenTekstiEN}
              ) on conflict on constraint valinnantilan_kuvaukset_pkey
                do update set
                  tilan_tarkenne = excluded.tilan_tarkenne,
