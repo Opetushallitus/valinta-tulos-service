@@ -6,11 +6,11 @@ import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
-import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantuloksenLisays, ValinnantuloksenMuokkaus, ValinnantuloksenPoisto}
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, TilanKuvausRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
+import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantuloksenLisays, ValinnantuloksenMuokkaus, ValinnantuloksenPoisto}
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -19,7 +19,9 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
                                        haku: Haku,
                                        hakukohdeOid: HakukohdeOid,
                                        ohjausparametrit: Option[Ohjausparametrit],
-                                       valinnantulosRepository: ValinnantulosRepository with HakijaVastaanottoRepository,
+                                       valinnantulosRepository: ValinnantulosRepository
+                                         with HakijaVastaanottoRepository
+                                         with TilanKuvausRepository,
                                        hakukohdeRecordService: HakukohdeRecordService,
                                        ifUnmodifiedSince: Option[Instant],
                                        audit: Audit) extends ValinnantulosStrategy with Logging {
@@ -138,6 +140,17 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
     )
   }
 
+  def calculateTilanKuvausHashCode(valinnanTulos: Valinnantulos): TilanKuvausHashCode = {
+    TilanKuvausHashCode(
+      Map(
+        "textFi" -> valinnanTulos.ehdollisenHyvaksymisenEhtoTekstiFI.orNull,
+        "textSv" -> valinnanTulos.ehdollisenHyvaksymisenEhtoTekstiSV.orNull,
+        "textEn" -> valinnanTulos.ehdollisenHyvaksymisenEhtoTekstiEN.orNull
+      )
+        .hashCode()
+    )
+  }
+
   def save(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos], ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
     val muokkaaja = session.personOid
     val selite = "Erillishaun tallennus"
@@ -149,6 +162,16 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
     def createInsertOperations = {
       List(
         Some(valinnantulosRepository.storeValinnantila(uusi.getValinnantilanTallennus(muokkaaja), ifUnmodifiedSince)),
+        Some(valinnantulosRepository.storeTilanKuvaus(
+          calculateTilanKuvausHashCode(uusi),
+          hakukohdeOid,
+          uusi.valintatapajonoOid,
+          uusi.hakemusOid,
+          EiTilankuvauksenTarkennetta,
+          uusi.ehdollisenHyvaksymisenEhtoTekstiFI,
+          uusi.ehdollisenHyvaksymisenEhtoTekstiSV,
+          uusi.ehdollisenHyvaksymisenEhtoTekstiEN
+        )),
         Some(valinnantulosRepository.storeValinnantuloksenOhjaus(uusi.getValinnantuloksenOhjaus(muokkaaja, selite), ifUnmodifiedSince)),
         Some(valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(uusi.getEhdollisenHyvaksynnanEhto(), ifUnmodifiedSince)),
         Option(uusi.ilmoittautumistila != EiTehty).collect { case true => valinnantulosRepository.storeIlmoittautuminen(
@@ -171,8 +194,10 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         Option(uusi.hasOhjausChanged(vanha)).collect { case true => valinnantulosRepository.storeValinnantuloksenOhjaus(
           uusi.getValinnantuloksenOhjauksenMuutos(vanha, muokkaaja, selite), ifUnmodifiedSince)
         },
-        Option(uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha)).collect { case true => valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(
-          uusi.getEhdollisenHyvaksynnanEhtoMuutos(vanha), ifUnmodifiedSince)
+        Option(uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha)).collect { case true =>
+          valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(
+            uusi.getEhdollisenHyvaksynnanEhtoMuutos(vanha), ifUnmodifiedSince
+          )
         },
         Option(uusi.ilmoittautumistila != vanha.ilmoittautumistila && !uusi.ohitaIlmoittautuminen.getOrElse(false)).collect {
           case true => valinnantulosRepository.storeIlmoittautuminen(
@@ -187,6 +212,23 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         Option(uusi.vastaanottotila != vanha.vastaanottotila &&
           !(uusi.vastaanottotila == ValintatuloksenTila.KESKEN && vanha.vastaanottotila == ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)).collect{
           case true => valinnantulosRepository.storeAction(vastaanottoAction())
+        },
+        Option(
+          uusi.ehdollisenHyvaksymisenEhtoTekstiFI != vanha.ehdollisenHyvaksymisenEhtoTekstiFI ||
+          uusi.ehdollisenHyvaksymisenEhtoTekstiSV != vanha.ehdollisenHyvaksymisenEhtoTekstiSV ||
+          uusi.ehdollisenHyvaksymisenEhtoTekstiEN != vanha.ehdollisenHyvaksymisenEhtoTekstiEN
+        ).collect {
+          case true =>
+            valinnantulosRepository.storeTilanKuvaus(
+              calculateTilanKuvausHashCode(uusi),
+              hakukohdeOid,
+              uusi.valintatapajonoOid,
+              uusi.hakemusOid,
+              EiTilankuvauksenTarkennetta,
+              uusi.ehdollisenHyvaksymisenEhtoTekstiFI,
+              uusi.ehdollisenHyvaksymisenEhtoTekstiSV,
+              uusi.ehdollisenHyvaksymisenEhtoTekstiEN
+            )
         }
       ).flatten
     }

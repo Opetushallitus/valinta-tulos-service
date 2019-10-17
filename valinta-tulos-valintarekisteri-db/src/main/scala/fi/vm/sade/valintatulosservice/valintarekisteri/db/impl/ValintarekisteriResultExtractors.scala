@@ -265,6 +265,18 @@ trait ValintarekisteriResultExtractors {
     }
   }
 
+  implicit object SetTilanKuvausHashCode extends SetParameter[TilanKuvausHashCode] {
+    override def apply(tilanKuvausHashCode: TilanKuvausHashCode, pp: PositionedParameters): Unit = {
+      pp.setInt(tilanKuvausHashCode.tilanKuvausHashCode)
+    }
+  }
+
+  implicit object SetValinnantilanTarkenne extends SetParameter[ValinnantilanTarkenne] {
+    override def apply(valinnantilanTarkenne: ValinnantilanTarkenne, pp: PositionedParameters): Unit = {
+      pp.setString(valinnantilanTarkenne.toString)
+    }
+  }
+
   implicit object SetOptionHakukohdeOid extends SetParameter[Option[HakukohdeOid]] {
     def apply(o: Option[HakukohdeOid], pp: PositionedParameters): Unit = o match {
       case Some(oo) => SetHakukohdeOid(oo, pp)
