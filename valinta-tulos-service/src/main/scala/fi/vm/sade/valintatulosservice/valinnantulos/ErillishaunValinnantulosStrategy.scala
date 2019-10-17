@@ -7,7 +7,7 @@ import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, TilanKuvausRepository, ValinnantulosRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnanTilanKuvausRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantuloksenLisays, ValinnantuloksenMuokkaus, ValinnantuloksenPoisto}
@@ -21,7 +21,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
                                        ohjausparametrit: Option[Ohjausparametrit],
                                        valinnantulosRepository: ValinnantulosRepository
                                          with HakijaVastaanottoRepository
-                                         with TilanKuvausRepository,
+                                         with ValinnanTilanKuvausRepository,
                                        hakukohdeRecordService: HakukohdeRecordService,
                                        ifUnmodifiedSince: Option[Instant],
                                        audit: Audit) extends ValinnantulosStrategy with Logging {
@@ -140,8 +140,8 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
     )
   }
 
-  def calculateTilanKuvausHashCode(valinnanTulos: Valinnantulos): TilanKuvausHashCode = {
-    TilanKuvausHashCode(
+  def calculateValinnanTilanKuvausHashCode(valinnanTulos: Valinnantulos): ValinnanTilanKuvausHashCode = {
+    ValinnanTilanKuvausHashCode(
       Map(
         "textFi" -> valinnanTulos.ehdollisenHyvaksymisenEhtoTekstiFI.orNull,
         "textSv" -> valinnanTulos.ehdollisenHyvaksymisenEhtoTekstiSV.orNull,
@@ -162,8 +162,8 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
     def createInsertOperations = {
       List(
         Some(valinnantulosRepository.storeValinnantila(uusi.getValinnantilanTallennus(muokkaaja), ifUnmodifiedSince)),
-        Some(valinnantulosRepository.storeTilanKuvaus(
-          calculateTilanKuvausHashCode(uusi),
+        Some(valinnantulosRepository.storeValinnanTilanKuvaus(
+          calculateValinnanTilanKuvausHashCode(uusi),
           hakukohdeOid,
           uusi.valintatapajonoOid,
           uusi.hakemusOid,
@@ -219,8 +219,8 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
           uusi.ehdollisenHyvaksymisenEhtoTekstiEN != vanha.ehdollisenHyvaksymisenEhtoTekstiEN
         ).collect {
           case true =>
-            valinnantulosRepository.storeTilanKuvaus(
-              calculateTilanKuvausHashCode(uusi),
+            valinnantulosRepository.storeValinnanTilanKuvaus(
+              calculateValinnanTilanKuvausHashCode(uusi),
               hakukohdeOid,
               uusi.valintatapajonoOid,
               uusi.hakemusOid,

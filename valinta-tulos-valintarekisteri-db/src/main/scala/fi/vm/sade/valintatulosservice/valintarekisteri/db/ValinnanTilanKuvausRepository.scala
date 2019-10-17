@@ -1,11 +1,11 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, TilanKuvausHashCode, ValinnantilanTarkenne, ValintatapajonoOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, ValinnanTilanKuvausHashCode, ValinnantilanTarkenne, ValintatapajonoOid}
 import slick.dbio.DBIO
 
-trait TilanKuvausRepository {
-  def storeTilanKuvaus(
-                        tilanKuvausHashCode: TilanKuvausHashCode,
+trait ValinnanTilanKuvausRepository {
+  def storeValinnanTilanKuvaus(
+                        valinnanTilanKuvausHashCode: ValinnanTilanKuvausHashCode,
                         hakukohdeOid: HakukohdeOid,
                         valintatapajonoOid: ValintatapajonoOid,
                         hakemusOid: HakemusOid,

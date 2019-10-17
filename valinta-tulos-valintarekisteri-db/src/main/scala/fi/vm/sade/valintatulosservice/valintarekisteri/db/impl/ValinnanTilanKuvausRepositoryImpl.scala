@@ -2,23 +2,23 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import java.util.ConcurrentModificationException
 
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.TilanKuvausRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, TilanKuvausHashCode, ValinnantilanTarkenne, ValintatapajonoOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnanTilanKuvausRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, ValinnanTilanKuvausHashCode, ValinnantilanTarkenne, ValintatapajonoOid}
 import slick.dbio.DBIO
 import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-trait TilanKuvausRepositoryImpl extends TilanKuvausRepository with ValintarekisteriRepository {
-  override def storeTilanKuvaus(
-                                 tilanKuvausHashCode: TilanKuvausHashCode,
-                                 hakukohdeOid: HakukohdeOid,
-                                 valintatapajonoOid: ValintatapajonoOid,
-                                 hakemusOid: HakemusOid,
-                                 valinnantilanTarkenne: ValinnantilanTarkenne,
-                                 ehdollisenHyvaksymisenEhtoTekstiFI: Option[String],
-                                 ehdollisenHyvaksymisenEhtoTekstiSV: Option[String],
-                                 ehdollisenHyvaksymisenEhtoTekstiEN: Option[String]
+trait ValinnanTilanKuvausRepositoryImpl extends ValinnanTilanKuvausRepository with ValintarekisteriRepository {
+  override def storeValinnanTilanKuvaus(
+                                         valinnanTilanKuvausHashCode: ValinnanTilanKuvausHashCode,
+                                         hakukohdeOid: HakukohdeOid,
+                                         valintatapajonoOid: ValintatapajonoOid,
+                                         hakemusOid: HakemusOid,
+                                         valinnantilanTarkenne: ValinnantilanTarkenne,
+                                         ehdollisenHyvaksymisenEhtoTekstiFI: Option[String],
+                                         ehdollisenHyvaksymisenEhtoTekstiSV: Option[String],
+                                         ehdollisenHyvaksymisenEhtoTekstiEN: Option[String]
                                ): DBIO[Unit] = {
     sqlu"""insert into tilat_kuvaukset (
              tilankuvaus_hash,
@@ -26,7 +26,7 @@ trait TilanKuvausRepositoryImpl extends TilanKuvausRepository with Valintarekist
              valintatapajono_oid,
              hakemus_oid
            ) values (
-             ${tilanKuvausHashCode},
+             ${valinnanTilanKuvausHashCode},
              ${hakukohdeOid},
              ${valintatapajonoOid},
              ${hakemusOid}
@@ -37,7 +37,7 @@ trait TilanKuvausRepositoryImpl extends TilanKuvausRepository with Valintarekist
         """.flatMap {
       case 1 => DBIO.successful(())
       case 0 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Ei voitu lisätä tilat_kuvaukset -riviä hash-koodilla ${tilanKuvausHashCode} hakukohteelle ${hakukohdeOid}, valintatapajonolle ${valintatapajonoOid} ja hakemukselle ${hakemusOid}"))
+      case _ => DBIO.failed(new ConcurrentModificationException(s"Ei voitu lisätä tilat_kuvaukset -riviä hash-koodilla ${valinnanTilanKuvausHashCode} hakukohteelle ${hakukohdeOid}, valintatapajonolle ${valintatapajonoOid} ja hakemukselle ${hakemusOid}"))
     }.andThen(
       sqlu"""insert into valinnantilan_kuvaukset (
                hash,
@@ -46,7 +46,7 @@ trait TilanKuvausRepositoryImpl extends TilanKuvausRepository with Valintarekist
                text_sv,
                text_en
              ) values (
-               ${tilanKuvausHashCode},
+               ${valinnanTilanKuvausHashCode},
                ${valinnantilanTarkenne}::valinnantilantarkenne,
                ${ehdollisenHyvaksymisenEhtoTekstiFI},
                ${ehdollisenHyvaksymisenEhtoTekstiSV},
