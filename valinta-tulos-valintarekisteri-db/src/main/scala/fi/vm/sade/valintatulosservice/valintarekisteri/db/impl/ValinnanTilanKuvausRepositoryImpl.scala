@@ -19,8 +19,17 @@ trait ValinnanTilanKuvausRepositoryImpl extends ValinnanTilanKuvausRepository wi
                                          valinnantilanKuvauksenTekstiFI: Option[String],
                                          valinnantilanKuvauksenTekstiSV: Option[String],
                                          valinnantilanKuvauksenTekstiEN: Option[String]
-                               ): DBIO[Unit] = {
-    sqlu"""insert into tilat_kuvaukset (
+                                       ): DBIO[Unit] = {
+    sqlu"""delete from valinnantilan_kuvaukset vk
+             where exists(select 1 from tilat_kuvaukset tk
+                          where tk.tilankuvaus_hash = vk.hash
+                            and tk.hakukohde_oid = ${hakukohdeOid}
+                            and tk.valintatapajono_oid = ${valintatapajonoOid}
+                            and tk.hakemus_oid = ${hakemusOid})
+      """.flatMap(
+      _ => DBIO.successful(())
+    ).andThen(
+      sqlu"""insert into tilat_kuvaukset (
              tilankuvaus_hash,
              hakukohde_oid,
              valintatapajono_oid,
@@ -35,11 +44,11 @@ trait ValinnanTilanKuvausRepositoryImpl extends ValinnanTilanKuvausRepository wi
              tilankuvaus_hash = excluded.tilankuvaus_hash
            where tilat_kuvaukset.tilankuvaus_hash <> excluded.tilankuvaus_hash
         """.flatMap {
-      case 1 => DBIO.successful(())
-      case 0 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Ei voitu lisätä tilat_kuvaukset -riviä hash-koodilla ${valinnanTilanKuvausHashCode} hakukohteelle ${hakukohdeOid}, valintatapajonolle ${valintatapajonoOid} ja hakemukselle ${hakemusOid}"))
-    }.andThen(
-      sqlu"""insert into valinnantilan_kuvaukset (
+        case 1 => DBIO.successful(())
+        case 0 => DBIO.successful(())
+        case _ => DBIO.failed(new ConcurrentModificationException(s"Ei voitu lisätä tilat_kuvaukset -riviä hash-koodilla ${valinnanTilanKuvausHashCode} hakukohteelle ${hakukohdeOid}, valintatapajonolle ${valintatapajonoOid} ja hakemukselle ${hakemusOid}"))
+      }.andThen(
+        sqlu"""insert into valinnantilan_kuvaukset (
                hash,
                tilan_tarkenne,
                text_fi,
@@ -57,7 +66,10 @@ trait ValinnanTilanKuvausRepositoryImpl extends ValinnanTilanKuvausRepository wi
                  text_fi = excluded.text_fi,
                  text_sv = excluded.text_sv,
                  text_en = excluded.text_en
-        """.flatMap(_ => DBIO.successful(()))
+        """.flatMap(
+          _ => DBIO.successful(())
+        )
+      )
     )
   }
 }
