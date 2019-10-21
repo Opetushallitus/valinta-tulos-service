@@ -73,8 +73,12 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
 
   def findHakemus(hakemusOid: HakemusOid): Either[Throwable, Hakemus] = {
     hakuAppRepository.findHakemus(hakemusOid) match {
-      case Right(hakemus) => Right(hakemus)
+      case Right(hakemus) => {
+        println(s"petar u right grani sam $hakemus")
+        Right(hakemus)
+      }
       case Left(e) => Try {
+        println(s"petar u left grani sam")
         val i = hakemuksetFromAtaru(WithHakemusOids(List(hakemusOid), None))
         if (i.hasNext) i.next() else throw new IllegalArgumentException(s"Hakemusta $hakemusOid ei löytynyt", e)
       } match {
