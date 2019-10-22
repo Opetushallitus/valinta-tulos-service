@@ -70,9 +70,14 @@ trait ValinnanTilanKuvausRepositoryImpl extends ValinnanTilanKuvausRepository wi
                  text_fi = excluded.text_fi,
                  text_sv = excluded.text_sv,
                  text_en = excluded.text_en
-        """.flatMap(
-          _ => DBIO.successful(())
-        )
+               where valinnantilan_kuvaukset.text_fi is not distinct from excluded.text_fi and
+                     valinnantilan_kuvaukset.text_sv is not distinct from excluded.text_sv and
+                     valinnantilan_kuvaukset.text_en is not distinct from excluded.text_en
+        """.flatMap {
+          case 1 => DBIO.successful(())
+          case 0 => DBIO.failed(new RuntimeException(s"Hash-koodi törmäys tallennettaessa tilan kuvauksia $valinnantilanKuvauksenTekstiFI, $valinnantilanKuvauksenTekstiSV, $valinnantilanKuvauksenTekstiEN, hash-koodilla $valinnanTilanKuvausHashCode"))
+          case n => DBIO.failed(new RuntimeException(s"Odottamaton päivitysten määrä $n tallennettaessa tilan kuvauksia $valinnantilanKuvauksenTekstiFI, $valinnantilanKuvauksenTekstiSV, $valinnantilanKuvauksenTekstiEN, hash-koodilla $valinnanTilanKuvausHashCode"))
+        }
       )
     )
   }
