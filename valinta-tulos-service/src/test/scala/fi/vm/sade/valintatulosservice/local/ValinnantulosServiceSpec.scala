@@ -244,7 +244,6 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(any[HakemusOid], any[ValintatapajonoOid], any[String], any[String]) returns DBIO.successful(())
       valinnantulosRepository.storeAction(any[VastaanottoEvent]) returns DBIO.successful(())
       valinnantulosRepository.storeValinnanTilanKuvaus(
-        any[ValinnanTilanKuvausHashCode],
         any[HakukohdeOid],
         any[ValintatapajonoOid],
         any[HakemusOid],
@@ -260,7 +259,6 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       there was one (valinnantulosRepository).storeIlmoittautuminen(erillishaunValinnantulos.henkiloOid, Ilmoittautuminen(erillishaunValinnantulos.hakukohdeOid, erillishaunValinnantulos.ilmoittautumistila, session.personOid, "Erillishaun tallennus"), Some(lastModified))
       there was one (valinnantulosRepository).storeValinnantila(erillishaunValinnantulos.getValinnantilanTallennus(session.personOid), Some(lastModified))
       there was one (valinnantulosRepository).storeValinnanTilanKuvaus(
-        any[ValinnanTilanKuvausHashCode],
         argThat[HakukohdeOid, HakukohdeOid](be_==(erillishaunValinnantulos.hakukohdeOid)),
         argThat[ValintatapajonoOid, ValintatapajonoOid](be_==(valintatapajonoOid)),
         any[HakemusOid],

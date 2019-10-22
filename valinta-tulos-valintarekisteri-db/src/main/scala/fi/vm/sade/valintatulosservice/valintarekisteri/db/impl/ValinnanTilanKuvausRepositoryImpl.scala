@@ -1,9 +1,10 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
+import java.util
 import java.util.ConcurrentModificationException
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnanTilanKuvausRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, ValinnanTilanKuvausHashCode, ValinnantilanTarkenne, ValintatapajonoOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, ValinnantilanTarkenne, ValintatapajonoOid}
 import slick.dbio.DBIO
 import slick.jdbc.PostgresProfile.api._
 
@@ -11,7 +12,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 trait ValinnanTilanKuvausRepositoryImpl extends ValinnanTilanKuvausRepository with ValintarekisteriRepository {
   override def storeValinnanTilanKuvaus(
-                                         valinnanTilanKuvausHashCode: ValinnanTilanKuvausHashCode,
                                          hakukohdeOid: HakukohdeOid,
                                          valintatapajonoOid: ValintatapajonoOid,
                                          hakemusOid: HakemusOid,
@@ -20,6 +20,10 @@ trait ValinnanTilanKuvausRepositoryImpl extends ValinnanTilanKuvausRepository wi
                                          valinnantilanKuvauksenTekstiSV: Option[String],
                                          valinnantilanKuvauksenTekstiEN: Option[String]
                                        ): DBIO[Unit] = {
+    val valinnanTilanKuvausHashCode = tilanKuvauksetHashCode(
+      valinnantilanKuvauksenTekstiFI,
+      valinnantilanKuvauksenTekstiSV,
+      valinnantilanKuvauksenTekstiEN)
     sqlu"""delete from valinnantilan_kuvaukset vk
              where exists(select 1 from tilat_kuvaukset tk
                           where tk.tilankuvaus_hash = vk.hash
@@ -71,5 +75,15 @@ trait ValinnanTilanKuvausRepositoryImpl extends ValinnanTilanKuvausRepository wi
         )
       )
     )
+  }
+
+  private def tilanKuvauksetHashCode(valinnantilanKuvauksenTekstiFI: Option[String],
+                                     valinnantilanKuvauksenTekstiSV: Option[String],
+                                     valinnantilanKuvauksenTekstiEN: Option[String]): Int = {
+    val m = new util.HashMap[String, String]()
+    valinnantilanKuvauksenTekstiFI.foreach(m.put("FI", _))
+    valinnantilanKuvauksenTekstiSV.foreach(m.put("SV", _))
+    valinnantilanKuvauksenTekstiEN.foreach(m.put("EN", _))
+    m.hashCode()
   }
 }

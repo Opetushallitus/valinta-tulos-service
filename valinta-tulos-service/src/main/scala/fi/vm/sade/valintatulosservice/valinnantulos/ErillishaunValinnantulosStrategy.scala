@@ -140,17 +140,6 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
     )
   }
 
-  def calculateValinnanTilanKuvausHashCode(valinnanTulos: Valinnantulos): ValinnanTilanKuvausHashCode = {
-    ValinnanTilanKuvausHashCode(
-      Map(
-        "textFi" -> valinnanTulos.valinnantilanKuvauksenTekstiFI.orNull,
-        "textSv" -> valinnanTulos.valinnantilanKuvauksenTekstiSV.orNull,
-        "textEn" -> valinnanTulos.valinnantilanKuvauksenTekstiEN.orNull
-      )
-        .hashCode()
-    )
-  }
-
   def save(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos], ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
     val muokkaaja = session.personOid
     val selite = "Erillishaun tallennus"
@@ -163,7 +152,6 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
       List(
         Some(valinnantulosRepository.storeValinnantila(uusi.getValinnantilanTallennus(muokkaaja), ifUnmodifiedSince)),
         Some(valinnantulosRepository.storeValinnanTilanKuvaus(
-          calculateValinnanTilanKuvausHashCode(uusi),
           hakukohdeOid,
           uusi.valintatapajonoOid,
           uusi.hakemusOid,
@@ -220,7 +208,6 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         ).collect {
           case true =>
             valinnantulosRepository.storeValinnanTilanKuvaus(
-              calculateValinnanTilanKuvausHashCode(uusi),
               hakukohdeOid,
               uusi.valintatapajonoOid,
               uusi.hakemusOid,
