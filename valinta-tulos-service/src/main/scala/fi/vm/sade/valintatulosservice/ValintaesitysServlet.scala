@@ -12,7 +12,6 @@ class ValintaesitysServlet(valintaesitysService: ValintaesitysService,
                           )(implicit val swagger: Swagger)
   extends VtsServletBase with CasAuthenticatedServlet {
 
-  override val applicationName = Some("auth/valintaesitys")
   override val applicationDescription = "Valintaesityksen REST API"
 
   private def parseValintatapajonoOid: ValintatapajonoOid = ValintatapajonoOid(params.getOrElse(
@@ -28,7 +27,7 @@ class ValintaesitysServlet(valintaesitysService: ValintaesitysService,
   val valintaesitysSwagger: OperationBuilder = (apiOperation[List[Valintaesitys]]("valintaesityksien haku")
     summary "Hae valintaesityksiä"
     parameter queryParam[String]("hakukohdeOid").description("Hakukohde OID")
-    )
+    tags "valintaesitys")
   get("/", operation(valintaesitysSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
@@ -38,7 +37,7 @@ class ValintaesitysServlet(valintaesitysService: ValintaesitysService,
   val valintaesityksenHyvaksyntaSwagger: OperationBuilder = (apiOperation[Valintaesitys]("valintaesityksen hyväksyntä")
     summary "Hyväksy valintaesitys"
     parameter pathParam[String]("valintatapajonoOid").description("Valintatapajonon OID").required
-    )
+    tags "valintaesitys")
   post("/:valintatapajonoOid/hyvaksytty", operation(valintaesityksenHyvaksyntaSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)

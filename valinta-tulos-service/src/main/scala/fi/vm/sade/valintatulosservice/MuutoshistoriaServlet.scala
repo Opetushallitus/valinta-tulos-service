@@ -13,7 +13,6 @@ class MuutoshistoriaServlet(valinnantulosService: ValinnantulosService,
                            (implicit val swagger: Swagger)
   extends VtsServletBase with CasAuthenticatedServlet {
 
-  override val applicationName = Some("auth/muutoshistoria")
   override val applicationDescription = "Valinnantuloksen muutoshistorian REST API"
 
   private def parseValintatapajonoOid: Either[Throwable, ValintatapajonoOid] = {
@@ -28,7 +27,7 @@ class MuutoshistoriaServlet(valinnantulosService: ValinnantulosService,
     summary "Muutoshistoria"
     parameter queryParam[String]("valintatapajonoOid").description("Valintatapajonon OID").required
     parameter queryParam[String]("hakemusOid").description("Hakemuksen OID").required
-    )
+    tags "muutoshistoria")
   get("/", operation(muutoshistoriaSwagger)) {
     contentType = formats("json")
     if (skipAuditForServiceCall) {

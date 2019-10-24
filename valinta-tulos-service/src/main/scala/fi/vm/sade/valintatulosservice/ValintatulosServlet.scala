@@ -29,7 +29,8 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
                                    vastaanottoService: VastaanottoService,
                                    ilmoittautumisService: IlmoittautumisService,
                                    valintarekisteriDb: ValintarekisteriDb,
-                                   hakemustenTulosHakuLock: HakemustenTulosHakuLock )
+                                   hakemustenTulosHakuLock: HakemustenTulosHakuLock,
+                                   swaggerGroupTag: String)
                                   (implicit val swagger: Swagger,
                                    appConfig: VtsAppConfig) extends VtsServletBase {
   val ilmoittautumisenAikaleima: Option[Date] = Option(new Date())
@@ -58,7 +59,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
       pretty(Extraction.decompose(exampleHakemuksenTulos))
     parameter pathParam[String]("hakuOid").description("Haun oid")
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid, jonka tulokset halutaan")
-  )
+    tags swaggerGroupTag)
   get("/:hakuOid/hakemus/:hakemusOid", operation(getHakemusSwagger)) {
     val hakemusOidString = params("hakemusOid")
     auditLog(Map("hakuOid" -> params("hakuOid"), "hakemusOid" -> hakemusOidString), HakemuksenLuku)
@@ -73,7 +74,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     notes "Palauttaa tyyppiä Seq[Hakemuksentulos]. Esim:\n" +
       pretty(Extraction.decompose(Seq(exampleHakemuksenTulos)))
     parameter pathParam[String]("hakuOid").description("Haun oid")
-  )
+    tags swaggerGroupTag)
   get("/:hakuOid", operation(getHakemuksetSwagger)) {
     val hakuOidString = params("hakuOid")
     auditLog(Map("hakuOid" -> hakuOidString), HakemuksenLuku)
@@ -93,14 +94,14 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     pretty(Extraction.decompose(Seq(exampleHakemuksenTulos)))
     parameter pathParam[String]("hakuOid").description("Haun oid")
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid")
-  )
+    tags swaggerGroupTag)
 
   lazy val getHakukohteenVastaanotettavuusSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohteenHakemukset")
     summary "Palauttaa 200 jos hakutoive vastaanotettavissa, 403 ja virheviestin jos henkilöllä estävä aikaisempi vastaanotto"
     parameter pathParam[String]("hakuOid").description("Haun oid")
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid")
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid")
-    )
+    tags swaggerGroupTag)
   get("/:hakuOid/hakemus/:hakemusOid/hakukohde/:hakukohdeOid/vastaanotettavuus", operation(getHakukohteenVastaanotettavuusSwagger)) {
     val hakemusOidString = params("hakemusOid")
     val hakukohdeOidString = params("hakukohdeOid")
@@ -126,7 +127,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
 
     parameter pathParam[String]("hakuOid").description("Haun oid")
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid, jonka vastaanottotilaa ollaan muokkaamassa")
-    )
+    tags swaggerGroupTag)
   post("/:hakuOid/hakemus/:hakemusOid/ilmoittaudu", operation(postIlmoittautuminenSwagger)) {
     val hakemusOidString = params("hakemusOid")
     val ilmoittautuminen = parsedBody.extract[Ilmoittautuminen]
@@ -146,7 +147,8 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     parameter queryParam[Boolean]("vastaanottaneet").description("Listaa henkilot jotka ovat ottaneet paikan vastaan").optional
     parameter queryParam[List[String]]("hakukohdeOid").description("Rajoita hakua niin etta naytetaan hakijat jotka ovat jollain toiveella hakeneet naihin kohteisiin").optional
     parameter queryParam[Int]("count").description("Nayta n kappaletta tuloksia. Kayta sivutuksessa").optional
-    parameter queryParam[Int]("index").description("Aloita nayttaminen kohdasta n. Kayta sivutuksessa.").optional)
+    parameter queryParam[Int]("index").description("Aloita nayttaminen kohdasta n. Kayta sivutuksessa.").optional
+    tags swaggerGroupTag)
   get("/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakemukset", operation(getHaunSijoitteluajonTuloksetSwagger)) {
     def booleanParam(n: String): Option[Boolean] = params.get(n).map(_.toBoolean)
     def intParam(n: String): Option[Int] = params.get(n).map(_.toInt)
@@ -167,7 +169,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     summary """Listaus haun hakukohteen kaikista hakijoista"""
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid").required
-    )
+    tags swaggerGroupTag)
   get("/:hakuOid/hakukohde/:hakukohdeOid/hakijat", operation(getHakukohteenKaikkiHakijatSwagger)) {
     val hakuOidString = params("hakuOid")
     val hakukohdeOidString = params("hakukohdeOid")
@@ -186,7 +188,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
   lazy val getHaunIlmanHyvaksyntaaSwagger: OperationBuilder = (apiOperation[Unit]("getHaunIlmanHyvaksyntaaSwagger")
     summary """Listaus haun hakijoista, joilla ei ole koulutuspaikkaa (ilman hyväksyntää)"""
     parameter pathParam[String]("hakuOid").description("Haun oid").required
-    )
+    tags swaggerGroupTag)
   get("/:hakuOid/ilmanHyvaksyntaa", operation(getHaunIlmanHyvaksyntaaSwagger)) {
     val hakuOidString = params("hakuOid")
     val hakijaPaginationObject = valintatulosService.sijoittelunTulokset(HakuOid(hakuOidString),
@@ -205,7 +207,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     summary """Listaus haun hyväksytyistä hakijoista"""
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid").required
-    )
+    tags swaggerGroupTag)
   get("/:hakuOid/hyvaksytyt", operation(getHaunHyvaksytytSwagger)) {
     val hakuOidString = params("hakuOid")
     val hakijaPaginationObject = valintatulosService.sijoittelunTulokset(HakuOid(hakuOidString),
@@ -225,7 +227,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     summary """Listaus haun hakukohteen hyväksytyistä hakijoista"""
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid").required
-    )
+    tags swaggerGroupTag)
   get("/:hakuOid/hakukohde/:hakukohdeOid/hyvaksytyt", operation(getHakukohteenHyvaksytytSwagger)) {
     val hakuOidString = params("hakuOid")
     val hakukohdeOidString = params("hakukohdeOid")
@@ -245,7 +247,8 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     summary """Näyttää yksittäisen hakemuksen kaikki hakutoiveet ja tiedot kaikista valintatapajonoista"""
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     parameter pathParam[String]("sijoitteluajoId").description("""Sijoitteluajon id tai "latest"""").required
-    parameter pathParam[String]("hakemusOid").description("Hakemuksen oid").required)
+    parameter pathParam[String]("hakemusOid").description("Hakemuksen oid").required
+    tags swaggerGroupTag)
   get("/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakemus/:hakemusOid", operation(getHakemuksenSijoitteluajonTulosSwagger)) {
     val hakuOidString = params("hakuOid")
     val sijoitteluajoIdString = params("sijoitteluajoId")
@@ -261,7 +264,8 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     summary """Streamaava listaus hakemuksien/hakijoiden listaukseen. Yksityiskohtainen listaus kaikista hakutoiveista ja niiden valintatapajonoista"""
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     parameter pathParam[String]("sijoitteluajoId").description("""Sijoitteluajon id tai "latest"""").required
-    parameter queryParam[Boolean]("vainMerkitsevaJono").description("Jos true, palautetaan vain merkitsevän valintatapajonon tiedot").optional)
+    parameter queryParam[Boolean]("vainMerkitsevaJono").description("Jos true, palautetaan vain merkitsevän valintatapajonon tiedot").optional
+    tags swaggerGroupTag)
   get("/streaming/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakemukset", operation(getStreamingHaunSijoitteluajonTuloksetSwagger)) {
     val hakuOid = HakuOid(params("hakuOid"))
     val sijoitteluajoId = params("sijoitteluajoId")
@@ -276,7 +280,8 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     parameter pathParam[String]("sijoitteluajoId").description("""Sijoitteluajon id tai "latest"""").required
     parameter queryParam[Boolean]("vainMerkitsevaJono").description("Jos true, palautetaan vain merkitsevän valintatapajonon tiedot").optional
-    parameter bodyParam[Seq[String]]("hakukohdeOidit").description("Hakukohteet, joiden tulokset halutaan").required)
+    parameter bodyParam[Seq[String]]("hakukohdeOidit").description("Hakukohteet, joiden tulokset halutaan").required
+    tags swaggerGroupTag)
   post("/streaming/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakemukset", operation(postStreamingHaunSijoitteluajonHakukohteidenTuloksetSwagger)) {
     val hakuOid = HakuOid(params("hakuOid"))
     val sijoitteluajoId = params("sijoitteluajoId")
@@ -284,7 +289,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     val hakukohdeOids = parsedBody.extract[Seq[String]]
     logger.info(s"Results of ${hakukohdeOids.size} hakukohde of haku $hakuOid were requested.")
     if (hakukohdeOids.isEmpty) {
-      BadRequest(body = Map("error" -> "Anna kysyttävät hakukohdeoidit bodyssä."), reason = "Could not read hakukohde oids from request body.")
+      BadRequest("Anna kysyttävät hakukohdeoidit bodyssä.")
     } else {
       writeSijoittelunTuloksetStreamingToResponse(response, hakuOid, w => streamingValintatulosService.streamSijoittelunTuloksetOfHakukohdes(
         hakuOid, sijoitteluajoId, hakukohdeOids.toSet.map(HakukohdeOid), w, vainMerkitsevaJono))
@@ -326,7 +331,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
       case Right(ok) => ok
       case Left(message) =>
         logger.error(message)
-        TooManyRequests(body = "error" -> message, reason = message)
+        TooManyRequests(message)
     }
   }
 

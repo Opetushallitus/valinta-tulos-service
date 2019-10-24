@@ -43,7 +43,7 @@ object EnsikertalaisuusServlet {
 }
 
 trait EnsikertalaisuusSwagger extends VtsSwaggerBase { this: SwaggerSupport =>
-  override val applicationName = Some("ensikertalaisuus")
+
   override protected def applicationDescription: String = "Ensikertalaisuus-tiedon vastaanotto-osuus"
 
   registerModel(Model("Ensikertalaisuus", "Ensikertalaisuus", None, None,
@@ -58,6 +58,7 @@ trait EnsikertalaisuusSwagger extends VtsSwaggerBase { this: SwaggerSupport =>
     .parameter(pathParam[String]("henkiloOid").description("Henkilön oid").required)
     .parameter(queryParam[String]("koulutuksenAlkamiskausi")
       .description("Koulutuksen alkamiskausi, josta lähtien alkavat koulutukset kyselyssä otetaan huomioon (esim. 2016S").required)
+    .tags("ensikertalaisuus")
     .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
     .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
 
@@ -65,6 +66,7 @@ trait EnsikertalaisuusSwagger extends VtsSwaggerBase { this: SwaggerSupport =>
     .summary("Hae henkilön kk vastaanotto historia")
     .notes("Palauttaa vain korkeakoulupaikkojen vastaanotot.")
     .parameter(pathParam[String]("henkiloOid").description("Henkilön oid").required)
+    .tags("ensikertalaisuus")
     .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
     .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
 
@@ -75,6 +77,7 @@ trait EnsikertalaisuusSwagger extends VtsSwaggerBase { this: SwaggerSupport =>
       .description("Henkilöiden oidit json-sekvenssinä, enintään 10000 oidia yhdessä pyynnössä").required)
     .parameter(queryParam[String]("koulutuksenAlkamiskausi")
       .description("Koulutuksen alkamiskausi, josta lähtien alkavat koulutukset kyselyssä otetaan huomioon (esim. 2016S").required)
+    .tags("ensikertalaisuus")
     .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
     .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
 }

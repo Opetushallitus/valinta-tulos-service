@@ -12,7 +12,6 @@ class HyvaksymiskirjeServlet(hyvaksymiskirjeService: HyvaksymiskirjeService,
                             (implicit val swagger: Swagger)
   extends VtsServletBase with CasAuthenticatedServlet {
 
-  override val applicationName = Some("auth/hyvaksymiskirje")
   override val applicationDescription = "Hyväksymiskirjeiden REST API"
 
   private def parseHakukohdeOid: HakukohdeOid = HakukohdeOid(params.getOrElse("hakukohdeOid", throw new IllegalArgumentException("URL parametri hakukohdeOid on pakollinen.")))
@@ -20,7 +19,7 @@ class HyvaksymiskirjeServlet(hyvaksymiskirjeService: HyvaksymiskirjeService,
   val hyvaksymiskirjeSwagger: OperationBuilder = (apiOperation[List[Hyvaksymiskirje]]("hyväksymiskirjeet")
     summary "Hyväksymiskirjeet"
     parameter queryParam[String]("hakukohdeOid").description("Hakukohteen OID")
-    )
+    tags "hyvaksymiskirjeet")
   get("/", operation(hyvaksymiskirjeSwagger)) {
     contentType = formats("json")
     implicit val authenticated = authenticate
@@ -32,7 +31,7 @@ class HyvaksymiskirjeServlet(hyvaksymiskirjeService: HyvaksymiskirjeService,
   val hyvaksymiskirjeMuokkausSwagger: OperationBuilder = (apiOperation[Unit]("hyväksymiskirjeiden muokkaus")
     summary "Muokkaa hyväksymiskirjeitä"
     parameter bodyParam[List[HyvaksymiskirjePatch]].description("Muutokset hyväksymiskirjeisiin").required
-    )
+    tags "hyvaksymiskirjeet")
   post("/", operation(hyvaksymiskirjeMuokkausSwagger)) {
     contentType = formats("json")
     implicit val authenticated = authenticate

@@ -29,8 +29,6 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
                              (implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase
   with CasAuthenticatedServlet with DeadlineDecorator {
 
-  override val applicationName = Some("auth/sijoitteluntulos")
-
   override protected def applicationDescription: String = "Sijoittelun Tulos REST API"
 
   private implicit val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(8))
@@ -76,8 +74,7 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
       Ok(rtt)
     } catch {
       case e: NotFoundException =>
-        val message = e.getMessage
-        NotFound(body = Map("error" -> message), reason = message)
+        NotFound(e.getMessage)
     }
   }
 

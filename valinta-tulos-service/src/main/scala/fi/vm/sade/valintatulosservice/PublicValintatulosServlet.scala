@@ -21,9 +21,8 @@ class PublicValintatulosServlet(audit: Audit,
     vastaanottoService,
     ilmoittautumisService,
     valintarekisteriDb,
-    hakemustenTulosHakuLock)(swagger, appConfig) with CasAuthenticatedServlet {
-
-  override val applicationName = Some("cas/haku")
+    hakemustenTulosHakuLock,
+  "valintatulos-public")(swagger, appConfig) with CasAuthenticatedServlet {
 
   protected val applicationDescription = "Julkinen valintatulosten REST API"
 

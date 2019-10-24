@@ -16,7 +16,7 @@ import scalaj.http.{Http, HttpOptions}
 
 class KelaHealthCheckServlet(val audit: Audit, val sessionRepository: SessionRepository, val appConfig: VtsAppConfig, val vtsKelaSessionCookie: VtsKelaSessionCookie)
                             (override implicit val swagger: Swagger) extends VtsServletBase with Logging {
-  override val applicationName = Some("health-check/kela")
+
   protected val applicationDescription = "Valvonnan Kelan paikanvastaanottorajapinnan health check REST API"
 
   get("/") {

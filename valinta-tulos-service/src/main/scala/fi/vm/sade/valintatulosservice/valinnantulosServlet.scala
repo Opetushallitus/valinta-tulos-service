@@ -84,14 +84,13 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
                           (implicit val swagger: Swagger)
   extends ValinnantulosServletBase with CasAuthenticatedServlet with DeadlineDecorator {
 
-  override val applicationName = Some("auth/valinnan-tulos")
   override val applicationDescription = "Valinnantuloksen REST API"
 
   val valinnantulosSwagger: OperationBuilder = (apiOperation[List[Valinnantulos]]("valinnantulos")
     summary "Valinnantulos"
     parameter queryParam[String]("valintatapajonoOid").description("Valintatapajonon OID")
     parameter queryParam[String]("hakukohdeOid").description("Hakukohteen OID")
-    )
+    tags "valinnan-tulos")
   models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
     case ("ilmoittautumistila", mp) => ("ilmoittautumistila", ilmoittautumistilaModelProperty(mp))
     case ("valinnantila", mp) => ("valinnantila", valinnantilaModelProperty(mp))
@@ -123,7 +122,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
   val valinnantuloksetHakemukselleSwagger: OperationBuilder = (apiOperation[List[Valinnantulos]]("valinnantuloksetHakemukselle")
     summary "Valinnantulos yksittäiselle hakemukselle"
     parameter queryParam[String]("hakemusOid").description("Hakemuksen OID")
-    )
+    tags "valinnan-tulos")
   models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
     case ("ilmoittautumistila", mp) => ("ilmoittautumistila", ilmoittautumistilaModelProperty(mp))
     case ("valinnantila", mp) => ("valinnantila", valinnantilaModelProperty(mp))
@@ -142,7 +141,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     parameter pathParam[String]("valintatapajonoOid").description("Valintatapajonon OID")
     parameter headerParam[String]("If-Unmodified-Since").description(s"Aikaleima RFC 1123 määrittelemässä muodossa $sample").required
     parameter bodyParam[List[Valinnantulos]].description("Muutokset valinnan tulokseen").required
-    )
+    tags "valinnan-tulos")
   models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
     case ("ilmoittautumistila", mp) => ("ilmoittautumistila", ilmoittautumistilaModelProperty(mp))
     case ("valinnantila", mp) => ("valinnantila", valinnantilaModelProperty(mp))
@@ -167,7 +166,6 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
 class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymiskirjeService: HyvaksymiskirjeService, userDetailsService: KayttooikeusUserDetailsService)
   (implicit val swagger: Swagger) extends ValinnantulosServletBase with AuditInfoParameter  {
 
-  override val applicationName = Some("erillishaku/valinnan-tulos")
   override val applicationDescription = "Erillishaun valinnantuloksen REST API"
 
   private def getSession(auditSession: AuditSessionRequest): (UUID, Session) = (UUID.randomUUID(), getAuditSession(auditSession))
@@ -196,7 +194,7 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymisk
     parameter pathParam[String]("valintatapajonoOid").description("Valintatapajonon OID")
     parameter headerParam[String]("If-Unmodified-Since").description(s"Aikaleima RFC 1123 määrittelemässä muodossa $sample").required
     parameter bodyParam[List[ValinnantulosRequest]].description("Muutokset valinnan tulokseen ja kirjautumistieto").required
-  )
+    tags "erillishaku-valinnan-tulos")
   models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
     case ("ilmoittautumistila", mp) => ("ilmoittautumistila", ilmoittautumistilaModelProperty(mp))
     case ("valinnantila", mp) => ("valinnantila", valinnantilaModelProperty(mp))
@@ -230,7 +228,7 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymisk
     parameter queryParam[String]("inetAddress").description("Audit-käyttäjän inetAddress")
     parameter queryParam[String]("userAgent").description("Audit-käyttäjän userAgent")
     parameter queryParam[Boolean]("hyvaksymiskirjeet").description("Palauta hyväksymiskirjeiden lähetyspäivämäärät")
-  )
+    tags "erillishaku-valinnan-tulos")
   models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
     case ("ilmoittautumistila", mp) => ("ilmoittautumistila", ilmoittautumistilaModelProperty(mp))
     case ("valinnantila", mp) => ("valinnantila", valinnantilaModelProperty(mp))

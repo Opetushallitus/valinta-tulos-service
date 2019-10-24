@@ -24,7 +24,6 @@ case class Status(started: Date)
 class HakukohdeRefreshServlet(hakukohdeRepository: HakukohdeRepository,
                               hakukohdeRecordService: HakukohdeRecordService)
                              (implicit val swagger: Swagger) extends ScalatraServlet with Logging with JacksonJsonSupport with JsonFormats with SwaggerSupport with UrlGeneratorSupport {
-  override val applicationName = Some("virkistys")
 
   override protected def applicationDescription: String = "Hakukohdetietojen virkistys API"
 
@@ -33,7 +32,8 @@ class HakukohdeRefreshServlet(hakukohdeRepository: HakukohdeRepository,
 
 
   val statusSwagger = (apiOperation[Status]("virkistysStatus")
-    summary "Virkistyksen tila")
+    summary "Virkistyksen tila"
+    tags "virkistys")
   val statusController = get("/", operation(statusSwagger)) {
     running.get() match {
       case Some(started) => Ok(Status(started))
@@ -44,7 +44,8 @@ class HakukohdeRefreshServlet(hakukohdeRepository: HakukohdeRepository,
   val virkistaSwagger = (apiOperation[Unit]("virkistaHakukohteet")
     summary "Virkistä hakukohteiden tiedot"
     parameter queryParam[Boolean]("dryrun").defaultValue(true).description("Dry run logittaa muuttuneet hakukohteet, mutta ei päivitä kantaa.")
-    parameter bodyParam[Set[String]]("hakukohdeOids").description("Virkistettävien hakukohteiden oidit. Huom, tyhjä lista virkistää kaikki!"))
+    parameter bodyParam[Set[String]]("hakukohdeOids").description("Virkistettävien hakukohteiden oidit. Huom, tyhjä lista virkistää kaikki!")
+    tags "virkistys")
   post("/", operation(virkistaSwagger)) {
     val dryRun = params.getOrElse("dryrun", "true").toBoolean
     val dryRunMsg = if (dryRun) "DRYRUN " else ""

@@ -82,7 +82,7 @@ class SijoitteluServletSpec extends ServletSpecification with ValintarekisteriDb
     "Palauttaa 404 Not Found" in {
       get("auth/sijoittelu/1.2.246.562.29.1111111111/sijoitteluajo/latest/hakukohde/1.2.246.562.20.26643418986", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
         status must_== 404
-        (JsonMethods.parse(body) \ "error").extract[String] mustEqual "Yhtään sijoitteluajoa ei löytynyt haulle 1.2.246.562.29.1111111111"
+        body mustEqual "Yhtään sijoitteluajoa ei löytynyt haulle 1.2.246.562.29.1111111111"
       }
     }
   }
@@ -91,7 +91,7 @@ class SijoitteluServletSpec extends ServletSpecification with ValintarekisteriDb
     "Palauttaa 404 Not Found" in {
       get("auth/sijoittelu/1.2.246.562.29.75203638285/sijoitteluajo/latest/hakukohde/1.2.246.562.20.1111", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
         status must_== 404
-        (JsonMethods.parse(body) \ "error").extract[String] mustEqual "Sijoitteluajolle 1476936450191 ei löydy hakukohdetta 1.2.246.562.20.1111"
+        body mustEqual "Sijoitteluajolle 1476936450191 ei löydy hakukohdetta 1.2.246.562.20.1111"
       }
     }
   }
