@@ -62,19 +62,31 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   override def getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuCountHistoriasta(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Int = {
     runBlocking(sql"""select count(*)
       from valinnantilat_history vth
-      join valinnantulokset as vt on vt.hakemus_oid = vth.hakemus_oid
-        and vt.hakukohde_oid = vth.hakukohde_oid
-        and vt.valintatapajono_oid = vth.valintatapajono_oid
       where vth.hakemus_oid = ${hakemusOid}
         and vth.hakukohde_oid = ${hakukohdeOid}
         and vth.tila = 'Hyvaksytty'
-        and vt.julkaistavissa = 'true'
         and vth.transaction_id = (
-          select max(vths.transaction_id)
-          from valinnantilat_history as vths
-          where vths.hakemus_oid = ${hakemusOid}
-            and vths.hakukohde_oid = ${hakukohdeOid}
-      )""".as[Int].head)
+                select max(vths.transaction_id)
+                from valinnantilat_history as vths
+                where vths.hakemus_oid = ${hakemusOid}
+                  and vths.hakukohde_oid = ${hakukohdeOid}
+        )
+        and ((
+                select true
+                from valinnantulokset as t
+                where t.hakemus_oid = ${hakemusOid}
+                  and t.hakukohde_oid = ${hakukohdeOid}
+                  and t.valintatapajono_oid = vth.valintatapajono_oid
+                  and t.julkaistavissa = 'true'
+                  and lower(t.system_time) <@ vth.system_time)
+            or (
+                select true
+                from valinnantulokset_history as th
+                where th.hakemus_oid = ${hakemusOid}
+                  and th.hakukohde_oid = ${hakukohdeOid}
+                  and th.valintatapajono_oid = vth.valintatapajono_oid
+                  and th.julkaistavissa = 'true'
+                  and th.system_time && vth.system_time))""".as[Int].head)
   }
 
   private def getValinnantulosMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {

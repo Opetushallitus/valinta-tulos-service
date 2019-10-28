@@ -99,39 +99,6 @@
       "valintatapajonot": [
         {
           "tasasijasaanto": "YLITAYTTO",
-          "oid": "14090336922663576781797489829885",
-          "nimi": "Varsinainen jono",
-          "prioriteetti": 0,
-          "aloituspaikat": 3,
-          "eiVarasijatayttoa": false,
-          "kaikkiEhdonTayttavatHyvaksytaan": false,
-          "poissaOlevaTaytto": false,
-          "hakemukset": [
-            {
-              "hakijaOid": "1.2.246.562.24.14229104472",
-              "hakemusOid": "1.2.246.562.11.00000441369",
-              "etunimi": "Teppo",
-              "sukunimi": "Testaaja",
-              "prioriteetti": 1,
-              "jonosija": 1,
-              "pisteet": 4,
-              "tasasijaJonosija": 1,
-              "tila": "VARALLA",
-              "tilaHistoria": [
-                {
-                  "luotu": {
-                    "$date": "2018-06-11T15:12:40.623Z"
-                  },
-                  "tila": "VARALLA"
-                }
-              ],
-              "hyvaksyttyHarkinnanvaraisesti": false,
-              "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
-            }
-          ]
-        },
-        {
-          "tasasijasaanto": "YLITAYTTO",
           "oid": "14090336922663576781797489829886",
           "nimi": "Varsinainen jono",
           "prioriteetti": 1,
@@ -156,39 +123,6 @@
                     "$date": "2018-06-11T15:12:40.623Z"
                   },
                   "tila": "HYVAKSYTTY"
-                }
-              ],
-              "hyvaksyttyHarkinnanvaraisesti": false,
-              "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
-            }
-          ]
-        },
-        {
-          "tasasijasaanto": "YLITAYTTO",
-          "oid": "14090336922663576781797489829887",
-          "nimi": "Varsinainen jono",
-          "prioriteetti": 2,
-          "aloituspaikat": 3,
-          "eiVarasijatayttoa": false,
-          "kaikkiEhdonTayttavatHyvaksytaan": false,
-          "poissaOlevaTaytto": false,
-          "hakemukset": [
-            {
-              "hakijaOid": "1.2.246.562.24.14229104472",
-              "hakemusOid": "1.2.246.562.11.00000441369",
-              "etunimi": "Teppo",
-              "sukunimi": "Testaaja",
-              "prioriteetti": 3,
-              "jonosija": 100,
-              "pisteet": 0,
-              "tasasijaJonosija": 1,
-              "tila": "PERUUNTUNUT",
-              "tilaHistoria": [
-                {
-                  "luotu": {
-                    "$date": "2018-06-11T15:12:40.623Z"
-                  },
-                  "tila": "PERUUNTUNUT"
                 }
               ],
               "hyvaksyttyHarkinnanvaraisesti": false,
@@ -230,57 +164,7 @@
         "$oid": "53fc8613e4b0b03110900766"
       },
       "className": "fi.vm.sade.sijoittelu.domain.Valintatulos",
-      "valintatapajonoOid": "14090336922663576781797489829885",
-      "hakemusOid": "1.2.246.562.11.00000441369",
-      "hakukohdeOid": "1.2.246.562.5.72607738903",
-      "hakijaOid": "1.2.246.562.24.14229104472",
-      "hakuOid": "1.2.246.562.5.2013080813081926341928",
-      "hakutoive": 2,
-      "tila": "KESKEN",
-      "ilmoittautumisTila": "EI_TEHTY",
-      "julkaistavissa": false,
-      "logEntries": [
-        {
-          "luotu": {
-            "$date": "2018-06-11T16:05:23.943Z"
-          },
-          "muokkaaja": "1.2.246.562.24.00000000001",
-          "muutos": "KESKEN",
-          "selite": "Massamuokkaus"
-        }
-      ]
-    },
-    {
-      "_id": {
-        "$oid": "53fc8613e4b0b03110900766"
-      },
-      "className": "fi.vm.sade.sijoittelu.domain.Valintatulos",
       "valintatapajonoOid": "14090336922663576781797489829886",
-      "hakemusOid": "1.2.246.562.11.00000441369",
-      "hakukohdeOid": "1.2.246.562.5.72607738903",
-      "hakijaOid": "1.2.246.562.24.14229104472",
-      "hakuOid": "1.2.246.562.5.2013080813081926341928",
-      "hakutoive": 2,
-      "tila": "KESKEN",
-      "ilmoittautumisTila": "EI_TEHTY",
-      "julkaistavissa": false,
-      "logEntries": [
-        {
-          "luotu": {
-            "$date": "2018-06-11T16:05:23.943Z"
-          },
-          "muokkaaja": "1.2.246.562.24.00000000001",
-          "muutos": "KESKEN",
-          "selite": "Massamuokkaus"
-        }
-      ]
-    },
-    {
-      "_id": {
-        "$oid": "53fc8613e4b0b03110900766"
-      },
-      "className": "fi.vm.sade.sijoittelu.domain.Valintatulos",
-      "valintatapajonoOid": "14090336922663576781797489829887",
       "hakemusOid": "1.2.246.562.11.00000441369",
       "hakukohdeOid": "1.2.246.562.5.72607738903",
       "hakijaOid": "1.2.246.562.24.14229104472",
