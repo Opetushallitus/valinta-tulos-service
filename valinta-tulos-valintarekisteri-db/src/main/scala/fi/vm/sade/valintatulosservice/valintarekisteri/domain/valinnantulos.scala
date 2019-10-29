@@ -22,6 +22,9 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
                          ehdollisenHyvaksymisenEhtoFI: Option[String],
                          ehdollisenHyvaksymisenEhtoSV: Option[String],
                          ehdollisenHyvaksymisenEhtoEN: Option[String],
+                         valinnantilanKuvauksenTekstiFI: Option[String],
+                         valinnantilanKuvauksenTekstiSV: Option[String],
+                         valinnantilanKuvauksenTekstiEN: Option[String],
                          julkaistavissa: Option[Boolean],
                          hyvaksyttyVarasijalta: Option[Boolean],
                          hyvaksyPeruuntunut: Option[Boolean],
@@ -62,7 +65,10 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
       stringChanged(ehdollisenHyvaksymisenEhtoKoodi, other.ehdollisenHyvaksymisenEhtoKoodi) ||
       stringChanged(ehdollisenHyvaksymisenEhtoFI, other.ehdollisenHyvaksymisenEhtoFI) ||
       stringChanged(ehdollisenHyvaksymisenEhtoSV, other.ehdollisenHyvaksymisenEhtoSV) ||
-      stringChanged(ehdollisenHyvaksymisenEhtoEN, other.ehdollisenHyvaksymisenEhtoEN)
+      stringChanged(ehdollisenHyvaksymisenEhtoEN, other.ehdollisenHyvaksymisenEhtoEN) ||
+      stringChanged(valinnantilanKuvauksenTekstiFI, other.valinnantilanKuvauksenTekstiFI) ||
+      stringChanged(valinnantilanKuvauksenTekstiSV, other.valinnantilanKuvauksenTekstiSV) ||
+      stringChanged(valinnantilanKuvauksenTekstiEN, other.valinnantilanKuvauksenTekstiEN)
 
   private def booleanOptionChanged(thisParam: Option[Boolean], otherParam: Option[Boolean]) = thisParam.isDefined && thisParam != otherParam
 

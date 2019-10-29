@@ -12,7 +12,7 @@ import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valinnantulos._
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnanTilanKuvausRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import slick.dbio._
@@ -20,7 +20,9 @@ import slick.dbio._
 import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
-class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository with HakijaVastaanottoRepository,
+class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
+                             with HakijaVastaanottoRepository
+                             with ValinnanTilanKuvausRepository,
                            val authorizer:OrganizationHierarchyAuthorizer,
                            val hakuService: HakuService,
                            val ohjausparametritService: OhjausparametritService,

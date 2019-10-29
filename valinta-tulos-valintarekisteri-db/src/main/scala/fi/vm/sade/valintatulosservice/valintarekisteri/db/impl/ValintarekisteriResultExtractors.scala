@@ -163,6 +163,9 @@ trait ValintarekisteriResultExtractors {
     ehdollisenHyvaksymisenEhtoFI = r.nextStringOption(),
     ehdollisenHyvaksymisenEhtoSV = r.nextStringOption(),
     ehdollisenHyvaksymisenEhtoEN = r.nextStringOption(),
+    valinnantilanKuvauksenTekstiFI = r.nextStringOption(),
+    valinnantilanKuvauksenTekstiSV = r.nextStringOption(),
+    valinnantilanKuvauksenTekstiEN = r.nextStringOption(),
     julkaistavissa = r.nextBooleanOption,
     hyvaksyttyVarasijalta = r.nextBooleanOption,
     hyvaksyPeruuntunut = r.nextBooleanOption,
@@ -259,6 +262,12 @@ trait ValintarekisteriResultExtractors {
   implicit object SetHakukohdeOid extends SetParameter[HakukohdeOid] {
     def apply(o: HakukohdeOid, pp: PositionedParameters) {
       pp.setString(o.toString)
+    }
+  }
+
+  implicit object SetValinnantilanTarkenne extends SetParameter[ValinnantilanTarkenne] {
+    override def apply(valinnantilanTarkenne: ValinnantilanTarkenne, pp: PositionedParameters): Unit = {
+      pp.setString(valinnantilanTarkenne.toString)
     }
   }
 

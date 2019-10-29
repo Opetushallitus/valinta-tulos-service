@@ -195,6 +195,9 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               eh.ehdollisen_hyvaksymisen_ehto_fi,
               eh.ehdollisen_hyvaksymisen_ehto_sv,
               eh.ehdollisen_hyvaksymisen_ehto_en,
+              vk.text_fi,
+              vk.text_sv,
+              vk.text_en,
               tu.julkaistavissa,
               tu.hyvaksytty_varasijalta,
               tu.hyvaksy_peruuntunut,
@@ -211,6 +214,12 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               and v.henkilo = ti.henkilo_oid and v.deleted is null
           left join ilmoittautumiset as i on i.hakukohde = ti.hakukohde_oid
               and i.henkilo = ti.henkilo_oid
+          left join tilat_kuvaukset tk
+            on ti.valintatapajono_oid = tk.valintatapajono_oid
+              and ti.hakemus_oid = tk.hakemus_oid
+              and ti.hakukohde_oid = tk.hakukohde_oid
+          left join valinnantilan_kuvaukset vk
+            on tk.tilankuvaus_hash = vk.hash
           where ti.hakemus_oid = ${hakemusOid}
       """.as[Valinnantulos].map(_.toSet)
   }
@@ -226,6 +235,9 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               eh.ehdollisen_hyvaksymisen_ehto_fi,
               eh.ehdollisen_hyvaksymisen_ehto_sv,
               eh.ehdollisen_hyvaksymisen_ehto_en,
+              vk.text_fi,
+              vk.text_sv,
+              vk.text_en,
               tu.julkaistavissa,
               tu.hyvaksytty_varasijalta,
               tu.hyvaksy_peruuntunut,
@@ -242,6 +254,12 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               and v.henkilo = ti.henkilo_oid and v.deleted is null
           left join ilmoittautumiset as i on i.hakukohde = ti.hakukohde_oid
               and i.henkilo = ti.henkilo_oid
+          left join tilat_kuvaukset tk
+            on ti.valintatapajono_oid = tk.valintatapajono_oid
+              and ti.hakemus_oid = tk.hakemus_oid
+              and ti.hakukohde_oid = tk.hakukohde_oid
+          left join valinnantilan_kuvaukset vk
+            on tk.tilankuvaus_hash = vk.hash
           where ti.hakukohde_oid = ${hakukohdeOid}
       """.as[Valinnantulos].map(_.toSet)
   }
@@ -260,6 +278,9 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               eh.ehdollisen_hyvaksymisen_ehto_fi,
               eh.ehdollisen_hyvaksymisen_ehto_sv,
               eh.ehdollisen_hyvaksymisen_ehto_en,
+              vk.text_fi,
+              vk.text_sv,
+              vk.text_en,
               tu.julkaistavissa,
               tu.hyvaksytty_varasijalta,
               tu.hyvaksy_peruuntunut,
@@ -277,6 +298,12 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               and v.deleted is null
           left join ilmoittautumiset as i on i.hakukohde = (select * from jonon_hakukohde)
               and i.henkilo = ti.henkilo_oid
+          left join tilat_kuvaukset tk
+            on ti.valintatapajono_oid = tk.valintatapajono_oid
+              and ti.hakemus_oid = tk.hakemus_oid
+              and ti.hakukohde_oid = tk.hakukohde_oid
+          left join valinnantilan_kuvaukset vk
+            on tk.tilankuvaus_hash = vk.hash
           where ti.valintatapajono_oid = ${valintatapajonoOid}
        """.as[Valinnantulos].map(_.toSet)
   }
@@ -313,6 +340,9 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                  eh.ehdollisen_hyvaksymisen_ehto_fi,
                  eh.ehdollisen_hyvaksymisen_ehto_sv,
                  eh.ehdollisen_hyvaksymisen_ehto_en,
+                 vk.text_fi,
+                 vk.text_sv,
+                 vk.text_en,
                  tu.julkaistavissa,
                  tu.hyvaksytty_varasijalta,
                  tu.hyvaksy_peruuntunut,
@@ -327,7 +357,14 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             left join vastaanotot as v on v.hakukohde = hk.hakukohde_oid and v.henkilo = ti.henkilo_oid and v.deleted is null
               and v.hakukohde in (select hakukohde_oid from haun_hakukohteet)
             left join ehdollisen_hyvaksynnan_ehto as eh on eh.valintatapajono_oid = ti.valintatapajono_oid and eh.hakemus_oid = ti.hakemus_oid
-            left join ilmoittautumiset as i on i.henkilo = ti.henkilo_oid and i.hakukohde = ti.hakukohde_oid""".as[Valinnantulos].map(_.toSet)
+            left join ilmoittautumiset as i on i.henkilo = ti.henkilo_oid and i.hakukohde = ti.hakukohde_oid
+            left join tilat_kuvaukset tk
+              on ti.valintatapajono_oid = tk.valintatapajono_oid
+                and ti.hakemus_oid = tk.hakemus_oid
+                and ti.hakukohde_oid = tk.hakukohde_oid
+            left join valinnantilan_kuvaukset vk
+              on tk.tilankuvaus_hash = vk.hash
+      """.as[Valinnantulos].map(_.toSet)
     }
 
   override def getHakutoiveidenValinnantuloksetForHakemusDBIO(hakuOid:HakuOid, hakemusOid:HakemusOid): DBIO[List[HakutoiveenValinnantulos]] = {
@@ -668,6 +705,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               ${ifUnmodifiedSince}::timestamptz is null or
               ehdollisen_hyvaksynnan_ehto.system_time @> ${ifUnmodifiedSince})""".flatMap {
       case 1 => DBIO.successful(())
+      case 0 => DBIO.successful(())
       case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ehdollisen hyväksynnän ehtoa $ehto ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
     }
   }

@@ -176,6 +176,7 @@ object HakutoiveenValintatapajonoRecord {
     valinnantulos.ehdollisenHyvaksymisenEhtoFI.foreach(hakutoiveenValintatapajonoDto.setEhdollisenHyvaksymisenEhtoFI)
     valinnantulos.ehdollisenHyvaksymisenEhtoSV.foreach(hakutoiveenValintatapajonoDto.setEhdollisenHyvaksymisenEhtoSV)
     valinnantulos.ehdollisenHyvaksymisenEhtoEN.foreach(hakutoiveenValintatapajonoDto.setEhdollisenHyvaksymisenEhtoEN)
+    setTilankuvaukset(valinnantulos, hakutoiveenValintatapajonoDto)
     valinnantulos.hyvaksyttyVarasijalta.foreach(hakutoiveenValintatapajonoDto.setHyvaksyttyVarasijalta)
     valinnantulos.valinnantilanViimeisinMuutos.foreach(odt => hakutoiveenValintatapajonoDto.setHakemuksenTilanViimeisinMuutos(Date.from(odt.toInstant)))
     valinnantulos.vastaanotonViimeisinMuutos.foreach(odt => hakutoiveenValintatapajonoDto.setValintatuloksenViimeisinMuutos(Date.from(odt.toInstant)))
@@ -195,10 +196,27 @@ object HakutoiveenValintatapajonoRecord {
     valinnantulos.ehdollisenHyvaksymisenEhtoFI.foreach(hakutoiveenValintatapajonoDto.setEhdollisenHyvaksymisenEhtoFI)
     valinnantulos.ehdollisenHyvaksymisenEhtoSV.foreach(hakutoiveenValintatapajonoDto.setEhdollisenHyvaksymisenEhtoSV)
     valinnantulos.ehdollisenHyvaksymisenEhtoEN.foreach(hakutoiveenValintatapajonoDto.setEhdollisenHyvaksymisenEhtoEN)
+    setTilankuvaukset(valinnantulos, hakutoiveenValintatapajonoDto)
     valinnantulos.hyvaksyttyVarasijalta.foreach(hakutoiveenValintatapajonoDto.setHyvaksyttyVarasijalta)
     valinnantulos.valinnantilanViimeisinMuutos.foreach(odt => hakutoiveenValintatapajonoDto.setHakemuksenTilanViimeisinMuutos(Date.from(odt.toInstant)))
     valinnantulos.vastaanotonViimeisinMuutos.foreach(odt => hakutoiveenValintatapajonoDto.setValintatuloksenViimeisinMuutos(Date.from(odt.toInstant)))
     hakutoiveenValintatapajonoDto
+  }
+
+  private def setTilankuvaukset(valinnantulos: Valinnantulos, hakutoiveenValintatapajonoDto: HakutoiveenValintatapajonoDTO): Unit = {
+    val tilankuvaukset = new java.util.HashMap[String, String]
+    valinnantulos.valinnantilanKuvauksenTekstiFI.foreach(tilankuvaukset.put("FI", _))
+    valinnantulos.valinnantilanKuvauksenTekstiSV.foreach(tilankuvaukset.put("SV", _))
+    valinnantulos.valinnantilanKuvauksenTekstiEN.foreach(tilankuvaukset.put("EN", _))
+    hakutoiveenValintatapajonoDto.setTilanKuvaukset(tilankuvaukset)
+  }
+
+  private def setTilankuvaukset(valinnantulos: Valinnantulos, hakutoiveenValintatapajonoDto: KevytHakutoiveenValintatapajonoDTO): Unit = {
+    val tilankuvaukset = new java.util.HashMap[String, String]
+    valinnantulos.valinnantilanKuvauksenTekstiFI.foreach(tilankuvaukset.put("FI", _))
+    valinnantulos.valinnantilanKuvauksenTekstiSV.foreach(tilankuvaukset.put("SV", _))
+    valinnantulos.valinnantilanKuvauksenTekstiEN.foreach(tilankuvaukset.put("EN", _))
+    hakutoiveenValintatapajonoDto.setTilanKuvaukset(tilankuvaukset)
   }
 }
 
