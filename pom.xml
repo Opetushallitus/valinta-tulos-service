@@ -42,7 +42,7 @@
         <scala-xml_2.11.version>1.0.5</scala-xml_2.11.version>
         <scalaj-http_2.11.version>1.1.0</scalaj-http_2.11.version>
         <scalatra_2.11.version>2.6.3</scalatra_2.11.version>
-        <scalaz-stream_2.11.version>0.7a</scalaz-stream_2.11.version> <!-- required by specs2 3.5 -->
+        <scalaz-stream_2.11.version>0.8.6a</scalaz-stream_2.11.version> <!-- required by specs2 3.5 -->
         <scalaz_2.11.version>7.2.17</scalaz_2.11.version>
         <sijoittelu.version>7.5.0-SNAPSHOT</sijoittelu.version>
         <slf4j-api.version>1.7.25</slf4j-api.version>
@@ -336,7 +336,7 @@
             <dependency>
                 <groupId>org.scodec</groupId>
                 <artifactId>scodec-bits_2.11</artifactId>
-                <version>1.1.0</version>
+                <version>1.1.2</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
