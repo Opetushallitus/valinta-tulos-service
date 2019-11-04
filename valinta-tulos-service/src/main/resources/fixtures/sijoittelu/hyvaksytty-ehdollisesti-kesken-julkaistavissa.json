@@ -108,6 +108,10 @@
       "ilmoittautumisTila": "EI_TEHTY",
       "julkaistavissa": true,
       "ehdollisestiHyvaksyttavissa": true,
+      "ehdollisenHyvaksymisenEhtoKoodi": "muu",
+      "ehdollisenHyvaksymisenEhtoFI": "muu",
+      "ehdollisenHyvaksymisenEhtoSV": "andra",
+      "ehdollisenHyvaksymisenEhtoEN": "other",
       "logEntries": [
         {
           "luotu": {

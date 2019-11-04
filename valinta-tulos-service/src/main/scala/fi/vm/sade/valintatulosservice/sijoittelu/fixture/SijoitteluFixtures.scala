@@ -76,7 +76,6 @@ case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends js
           HakemusOid(tulos.getHakemusOid),
           ValintatapajonoOid(tulos.getValintatapajonoOid),
           HakukohdeOid(tulos.getHakukohdeOid),
-          tulos.getEhdollisestiHyvaksyttavissa,
           tulos.getJulkaistavissa,
           tulos.getHyvaksyttyVarasijalta,
           tulos.getHyvaksyPeruuntunut,
@@ -97,7 +96,6 @@ case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends js
               false,
               false,
               false,
-              false,
               sijoitteluAjoId.toString,
               "Sijoittelun tallennus")
           ))
@@ -110,22 +108,17 @@ case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends js
     val JArray(valintatulokset) = (json \ "Valintatulos")
 
     for (valintatulos <- valintatulokset) {
-      val ehdollisenHyvaksynnanEhtoOption = (valintatulos \ "ehdollisestiHyvaksyttavissa").extractOpt[Boolean]
-      ehdollisenHyvaksynnanEhtoOption match {
-        case None =>
-        case Some(ehdollisenHyvaksynnanEhto) =>
-          if (ehdollisenHyvaksynnanEhto) {
-            val ehto = EhdollisenHyvaksynnanEhto(
-              (valintatulos \ "hakemusOid").extract[HakemusOid],
-              (valintatulos \ "valintatapajonoOid").extract[ValintatapajonoOid],
-              (valintatulos \ "hakukohdeOid").extract[HakukohdeOid],
-              (valintatulos \ "ehdollisenHyvaksymisenEhtoKoodi").extractOpt[String].orNull,
-              (valintatulos \ "ehdollisenHyvaksymisenEhtoFI").extractOpt[String].orNull,
-              (valintatulos \ "ehdollisenHyvaksymisenEhtoSV").extractOpt[String].orNull,
-              (valintatulos \ "ehdollisenHyvaksymisenEhtoEN").extractOpt[String].orNull
-            )
-            valintarekisteriDb.runBlocking(valintarekisteriDb.storeEhdollisenHyvaksynnanEhto(ehto))
-          }
+      if ((valintatulos \ "ehdollisestiHyvaksyttavissa").extractOpt[Boolean].contains(true)) {
+        val ehto = EhdollisenHyvaksynnanEhto(
+          (valintatulos \ "hakemusOid").extract[HakemusOid],
+          (valintatulos \ "valintatapajonoOid").extract[ValintatapajonoOid],
+          (valintatulos \ "hakukohdeOid").extract[HakukohdeOid],
+          (valintatulos \ "ehdollisenHyvaksymisenEhtoKoodi").extractOpt[String].getOrElse(""),
+          (valintatulos \ "ehdollisenHyvaksymisenEhtoFI").extractOpt[String].getOrElse(""),
+          (valintatulos \ "ehdollisenHyvaksymisenEhtoSV").extractOpt[String].getOrElse(""),
+          (valintatulos \ "ehdollisenHyvaksymisenEhtoEN").extractOpt[String].getOrElse("")
+        )
+        valintarekisteriDb.runBlocking(valintarekisteriDb.storeEhdollisenHyvaksynnanEhto(ehto))
       }
     }
   }
