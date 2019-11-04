@@ -152,12 +152,18 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
     } else {
       DBIO.successful()
     }
-    val updateEhdollisenHyvaksynnanEhto = if (uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha)) {
-      valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(
-        uusi.getEhdollisenHyvaksynnanEhtoMuutos(vanha), Some(ifUnmodifiedSince)
-      )
-    } else {
-      DBIO.successful(())
+    val updateEhdollisenHyvaksynnanEhto = (
+      uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha),
+      uusi.getEhdollisenHyvaksynnanEhto
+    ) match {
+      case (true, None) =>
+        valinnantulosRepository.deleteEhdollisenHyvaksynnanEhto(
+          uusi.hakukohdeOid, uusi.valintatapajonoOid, uusi.hakemusOid, ifUnModifiedSince
+        )
+      case (true, Some(ehto)) =>
+        valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(ehto, ifUnModifiedSince)
+      case _ =>
+        DBIO.successful(())
     }
     val updateVastaanotto = if (uusi.vastaanottotila != vanha.vastaanottotila &&
       !(uusi.vastaanottotila == ValintatuloksenTila.KESKEN && vanha.vastaanottotila == ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)) {

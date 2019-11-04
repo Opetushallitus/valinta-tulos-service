@@ -31,7 +31,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
   val valinnantilanTallennus = ValinnantilanTallennus(
     hakemusOid, valintatapajonoOid, hakukohdeOid, henkiloOid, Hyvaksytty, muokkaaja)
   val valinnantuloksenOhjaus = ValinnantuloksenOhjaus(
-    hakemusOid, valintatapajonoOid, hakukohdeOid, false, false, false, false, muokkaaja, selite)
+    hakemusOid, valintatapajonoOid, hakukohdeOid, false, false, false, muokkaaja, selite)
   val valinnantulos = Valinnantulos(hakukohdeOid, valintatapajonoOid, hakemusOid, henkiloOid,
     Hyvaksytty, Some(false), None, None, None, None, None, None, None, Some(false), Some(false), Some(false), ValintatuloksenTila.KESKEN, EiTehty, None)
   val ilmoittautuminen = Ilmoittautuminen(hakukohdeOid, Lasna, "muokkaaja", "selite")
@@ -69,13 +69,13 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
     "update valinnantuloksen ohjaustiedot" in {
       storeValinnantilaAndValinnantulos
       singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
-        .head.ehdollisestiHyvaksyttavissa mustEqual Some(false)
+        .head.julkaistavissa must beSome(false)
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.updateValinnantuloksenOhjaus(ValinnantuloksenOhjaus(hakemusOid,
-          valintatapajonoOid, hakukohdeOid, true, false, false, false, "virkailija", "Virkailijan tallennus"))
+          valintatapajonoOid, hakukohdeOid, true, false, false, "virkailija", "Virkailijan tallennus"))
       )
       singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
-        .head.ehdollisestiHyvaksyttavissa mustEqual Some(true)
+        .head.julkaistavissa must beSome(true)
     }
     "not update valinnantuloksen ohjaustiedot if modified" in {
       val notModifiedSince = ZonedDateTime.now.minusDays(1).toInstant
@@ -83,7 +83,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
 
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.updateValinnantuloksenOhjaus(ValinnantuloksenOhjaus(hakemusOid,
-          valintatapajonoOid, hakukohdeOid, true, false, false, false, "virkailija", "Virkailijan tallennus"), Some(notModifiedSince))
+          valintatapajonoOid, hakukohdeOid, true, false, false, "virkailija", "Virkailijan tallennus"), Some(notModifiedSince))
       ) must throwA[ConcurrentModificationException]
     }
     "store valinnantila" in {
@@ -116,7 +116,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       )
       val result = singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid)
       result.size mustEqual 1
-      (result.head.julkaistavissa, result.head.ehdollisestiHyvaksyttavissa, result.head.hyvaksyPeruuntunut, result.head.hyvaksyttyVarasijalta) mustEqual (None, None, None, None)
+      (result.head.julkaistavissa, result.head.ehdollisestiHyvaksyttavissa, result.head.hyvaksyPeruuntunut, result.head.hyvaksyttyVarasijalta) mustEqual (None, Some(false), None, None)
 
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.storeValinnantuloksenOhjaus(valinnantuloksenOhjaus.copy(julkaistavissa = true))
@@ -165,20 +165,31 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
     "generate muutoshistoria from updates" in {
       storeValinnantilaAndValinnantulos()
       singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.deleteEhdollisenHyvaksynnanEhto(hakukohdeOid, valintatapajonoOid, hakemusOid)
+      )
+      singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.storeValinnantuloksenOhjaus(valinnantuloksenOhjaus.copy(julkaistavissa = true))
       )
       val result = singleConnectionValintarekisteriDb.getMuutoshistoriaForHakemus(hakemusOid, valintatapajonoOid)
-      result.size must_== 2
-      val update = result.head
-      val origin = result.tail.head
-      update.changes.size must_== 1
-      update.changes.head must_== KentanMuutos(field = "julkaistavissa", from = Some(false), to = true)
+      result.size must_== 3
+      val julkaistavissaUpdate = result.head
+      julkaistavissaUpdate.changes.head must_== KentanMuutos(field = "julkaistavissa", from = Some(false), to = true)
+      julkaistavissaUpdate.changes.size must_== 1
+      val ehdollisestiHyvaksyttavissaUpdate = result.tail.head
+      ehdollisestiHyvaksyttavissaUpdate.changes.head must_== KentanMuutos(field = "ehdollisestiHyvaksyttavissa", from = Some(true), to = false)
+      ehdollisestiHyvaksyttavissaUpdate.changes.size must_== 1
+      val origin = result.tail.tail.head
       origin.changes must contain(KentanMuutos(field = "valinnantila", from = None, to = Hyvaksytty))
       origin.changes must contain(KentanMuutos(field = "valinnantilanViimeisinMuutos", from = None, to = muutos))
       origin.changes must contain(KentanMuutos(field = "julkaistavissa", from = None, to = false))
-      origin.changes must contain(KentanMuutos(field = "ehdollisestiHyvaksyttavissa", from = None, to = false))
+      origin.changes must contain(KentanMuutos(field = "ehdollisestiHyvaksyttavissa", from = None, to = true))
+      origin.changes must contain(KentanMuutos(field = "ehdollisenHyvaksymisenEhtoKoodi", from = None, to = "muu"))
+      origin.changes must contain(KentanMuutos(field = "ehdollisenHyvaksymisenEhtoFI", from = None, to = "muu"))
+      origin.changes must contain(KentanMuutos(field = "ehdollisenHyvaksymisenEhtoSV", from = None, to = "andra"))
+      origin.changes must contain(KentanMuutos(field = "ehdollisenHyvaksymisenEhtoEN", from = None, to = "other"))
       origin.changes must contain(KentanMuutos(field = "hyvaksyttyVarasijalta", from = None, to = false))
       origin.changes must contain(KentanMuutos(field = "hyvaksyPeruuntunut", from = None, to = false))
+      result.size must_== 3
     }
 
     "vastaanotto -> delete -> vastaanotto should be correct in muutoshistoria" in {
@@ -210,7 +221,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
       result(4).changes must contain(KentanMuutos(field = "valinnantila", from = None, to = Hyvaksytty))
       result(4).changes must contain(KentanMuutos(field = "valinnantilanViimeisinMuutos", from = None, to = muutos))
       result(4).changes must contain(KentanMuutos(field = "julkaistavissa", from = None, to = false))
-      result(4).changes must contain(KentanMuutos(field = "ehdollisestiHyvaksyttavissa", from = None, to = false))
+      result(4).changes must contain(KentanMuutos(field = "ehdollisestiHyvaksyttavissa", from = None, to = true))
       result(4).changes must contain(KentanMuutos(field = "hyvaksyttyVarasijalta", from = None, to = false))
       result(4).changes must contain(KentanMuutos(field = "hyvaksyPeruuntunut", from = None, to = false))
     }
@@ -380,15 +391,22 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
 
   def assertValinnantuloksenOhjausHistory(count: Int, valinnantuloksenOhjaus: ValinnantuloksenOhjaus) = {
     val result = singleConnectionValintarekisteriDb.runBlocking(
-      sql"""select julkaistavissa, ehdollisesti_hyvaksyttavissa, hyvaksytty_varasijalta, hyvaksy_peruuntunut
+      sql"""select julkaistavissa,
+                   hyvaksytty_varasijalta,
+                   hyvaksy_peruuntunut
             from valinnantulokset_history
-            where hakukohde_oid = ${hakukohdeOid} and valintatapajono_oid = ${valintatapajonoOid} and hakemus_oid = ${hakemusOid}
-        """.as[(Boolean, Boolean, Boolean, Boolean)]
+            where hakukohde_oid = ${hakukohdeOid} and
+                  valintatapajono_oid = ${valintatapajonoOid} and
+                  hakemus_oid = ${hakemusOid}
+        """.as[(Boolean, Boolean, Boolean)]
     )
 
     result.size mustEqual count
-    result.head must_== (valinnantuloksenOhjaus.julkaistavissa, valinnantuloksenOhjaus.ehdollisestiHyvaksyttavissa,
-      valinnantuloksenOhjaus.hyvaksyttyVarasijalta, valinnantuloksenOhjaus.hyvaksyPeruuntunut)
+    result.head must_== (
+      valinnantuloksenOhjaus.julkaistavissa,
+      valinnantuloksenOhjaus.hyvaksyttyVarasijalta,
+      valinnantuloksenOhjaus.hyvaksyPeruuntunut
+    )
   }
 
   def assertIlmoittautuminen(ilmoittautuminen: Ilmoittautuminen) = {
@@ -495,7 +513,6 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
                  hakemus_oid,
                  hakukohde_oid,
                  julkaistavissa,
-                 ehdollisesti_hyvaksyttavissa,
                  hyvaksytty_varasijalta,
                  hyvaksy_peruuntunut,
                  ilmoittaja,
@@ -503,7 +520,6 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
              ) VALUES (${valintatapajonoOid},
                  ${hakemusOid},
                  ${hakukohdeOid},
-                 FALSE,
                  FALSE,
                  FALSE,
                  FALSE,

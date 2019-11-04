@@ -161,7 +161,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
           uusi.valinnantilanKuvauksenTekstiEN
         )),
         Some(valinnantulosRepository.storeValinnantuloksenOhjaus(uusi.getValinnantuloksenOhjaus(muokkaaja, selite), ifUnmodifiedSince)),
-        Some(valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(uusi.getEhdollisenHyvaksynnanEhto(), ifUnmodifiedSince)),
+        uusi.getEhdollisenHyvaksynnanEhto.map(valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(_, ifUnmodifiedSince)),
         Option(uusi.ilmoittautumistila != EiTehty).collect { case true => valinnantulosRepository.storeIlmoittautuminen(
           uusi.henkiloOid, Ilmoittautuminen(uusi.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), ifUnmodifiedSince)
         },
@@ -182,10 +182,16 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         Option(uusi.hasOhjausChanged(vanha)).collect { case true => valinnantulosRepository.storeValinnantuloksenOhjaus(
           uusi.getValinnantuloksenOhjauksenMuutos(vanha, muokkaaja, selite), ifUnmodifiedSince)
         },
-        Option(uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha)).collect { case true =>
-          valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(
-            uusi.getEhdollisenHyvaksynnanEhtoMuutos(vanha), ifUnmodifiedSince
-          )
+        Option((
+          uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha),
+          uusi.getEhdollisenHyvaksynnanEhto
+        )).collect {
+          case (true, None) =>
+            valinnantulosRepository.deleteEhdollisenHyvaksynnanEhto(
+              uusi.hakukohdeOid, uusi.valintatapajonoOid, uusi.hakemusOid, ifUnmodifiedSince
+            )
+          case (true, Some(ehto)) =>
+            valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(ehto, ifUnmodifiedSince)
         },
         Option(uusi.ilmoittautumistila != vanha.ilmoittautumistila && !uusi.ohitaIlmoittautuminen.getOrElse(false)).collect {
           case true => valinnantulosRepository.storeIlmoittautuminen(
@@ -201,11 +207,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
           !(uusi.vastaanottotila == ValintatuloksenTila.KESKEN && vanha.vastaanottotila == ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)).collect{
           case true => valinnantulosRepository.storeAction(vastaanottoAction())
         },
-        Option(
-          uusi.valinnantilanKuvauksenTekstiFI != vanha.valinnantilanKuvauksenTekstiFI ||
-          uusi.valinnantilanKuvauksenTekstiSV != vanha.valinnantilanKuvauksenTekstiSV ||
-          uusi.valinnantilanKuvauksenTekstiEN != vanha.valinnantilanKuvauksenTekstiEN
-        ).collect {
+        Option(uusi.hasValinnantilanKuvauksenTekstiChanged(vanha)).collect {
           case true =>
             valinnantulosRepository.storeValinnanTilanKuvaus(
               hakukohdeOid,
