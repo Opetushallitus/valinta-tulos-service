@@ -347,6 +347,42 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.peruuntunut, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
       }
 
+      "peruuntunutta ei merkitä väliaikaisesti hyväksytyksi jos se ei ole ollut samaan aikaan sekä hyväksytty että julkaistu" in {
+        // BUG-2026 reproduction step 1
+        // VARALLA KESKEN false
+        // HYVAKSYTTY KESKEN false
+        useFixture("hyvaksytty-ylempi-ei-julkaistu-alempi-peruun-hist-ei-julkaistu.json", hakuFixture = hakuFixture, hakemusFixtures = List("00000441369-2"))
+
+        // BUG-2026 reproduction step 2
+        // HYVAKSYTTY KESKEN false
+        // PERUUNTUNUT KESKEN false
+        val hakemuksen1tilaHyvaksytty = ValinnantilanTallennus(HakemusOid("1.2.246.562.11.00000441369"),
+          ValintatapajonoOid("14090336922663576781797489829884"),
+          HakukohdeOid("1.2.246.562.5.72607738902"),
+          "1.2.246.562.24.14229104472",
+          Valinnantila("Hyvaksytty"),
+          "testi")
+        val hakemuksen2tilaPeruuntunut = ValinnantilanTallennus(HakemusOid("1.2.246.562.11.00000441369"),
+          ValintatapajonoOid("14090336922663576781797489829886"),
+          HakukohdeOid("1.2.246.562.5.72607738903"),
+          "1.2.246.562.24.14229104472",
+          Valinnantila("Peruuntunut"),
+          "testi2")
+
+        valintarekisteriDb.runBlocking(valintarekisteriDb.storeValinnantila(hakemuksen1tilaHyvaksytty, None)
+            .andThen(valintarekisteriDb.storeValinnantila(hakemuksen2tilaPeruuntunut, None))
+            .transactionally,
+          Duration(10, TimeUnit.MINUTES))
+
+        // BUG-2026 reproduction step 3
+        // HYVAKSYTTY KESKEN false
+        // KESKEN KESKEN true
+        valintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = 'true' where hakukohde_oid = '1.2.246.562.5.72607738903' and valintatapajono_oid = '14090336922663576781797489829886' and hakemus_oid = '1.2.246.562.11.00000441369'")
+
+        checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
+        checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
+      }
+
       "hakutoiveista 1. hyväksytty, ei julkaistu 2. ei tehty 3. hyväksytty, odottaa ylempiä toiveita" in {
         // VARALLA KESKEN true
         // VARALLA KESKEN true

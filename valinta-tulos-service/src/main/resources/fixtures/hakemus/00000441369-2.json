@@ -1,0 +1,377 @@
+{
+    "application": [
+        {
+            "_id": {
+                "$oid": "53fc2422e4b083a7bd2aa2bb"
+            },
+            "type": "Application",
+            "applicationSystemId": "1.2.246.562.5.2013080813081926341928",
+            "answers": {
+                "henkilotiedot": {
+                    "kansalaisuus": "FIN",
+                    "asuinmaa": "FIN",
+                    "matkapuhelinnumero1": "",
+                    "Sukunimi": "Testaaja",
+                    "Henkilotunnus": "san/h82v1a3YA4HVY6Sts4IT5PpP2UoSUHP0ST2uIiA=",
+                    "Henkilotunnus_digest": "3b72b7de0f5c46f984919ebd2712661b1fa37a0a23ecc0f04ba44d4e04790fb3",
+                    "Postinumero": "00010",
+                    "lahiosoite": "Osoite 1",
+                    "sukupuoli": "1",
+                    "turvakielto": "false",
+                    "Sähköposti": "",
+                    "Kutsumanimi": "Teppo",
+                    "Etunimet": "Teppo",
+                    "kotikunta": "091",
+                    "onkoSinullaSuomalainenHetu": "true",
+                    "aidinkieli": "FI",
+                    "syntymaaika": "01.01.1901"
+                },
+                "hakutoiveet": {
+                    "preference1-Opetuspiste": "Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta",
+                    "preference2-Koulutus-id-attachmentgroups": "",
+                    "preference2-Koulutus-id-aoIdentifier": "",
+                    "preference1-Koulutus-educationDegree": "koulutusasteoph2002_71",
+                    "preference2-Koulutus-id-sora": "",
+                    "preference1-Opetuspiste-id": "1.2.246.562.10.591352080610",
+                    "preference2-Koulutus-educationDegree": "",
+                    "preference1-Koulutus-id-sora": "false",
+                    "preference1-Koulutus-id-aoIdentifier": "",
+                    "preference1-Koulutus-id-educationcode": "koulutus_781901",
+                    "preference2-Koulutus-id": "1.2.246.562.5.72607738903",
+                    "preference1-Koulutus-id-vocational": "false",
+                    "preference1-Koulutus-id-athlete": "false",
+                    "preference2-Opetuspiste": "",
+                    "preference2-Koulutus-id-athlete": "",
+                    "preference2-Koulutus-id-kaksoistutkinto": "",
+                    "preference1-Koulutus-id-attachmentgroups": "",
+                    "preference1-amkLiite": "true",
+                    "preference2-Opetuspiste-id": "1.2.246.562.10.455978782510",
+                    "preference2-Koulutus-id-vocational": "",
+                    "preference1-Koulutus-id": "1.2.246.562.5.72607738902",
+                    "preference2-Koulutus-id-lang": "",
+                    "preference1-Koulutus": "stevari amk hakukohde",
+                    "preference1-Koulutus-id-kaksoistutkinto": "false",
+                    "preference1-Koulutus-id-lang": "FI",
+                    "preference2-Koulutus-id-educationcode": "",
+                },
+                "osaaminen": {},
+                "lisatiedot": {
+                    "asiointikieli": "suomi"
+                },
+                "koulutustausta": {
+                    "pohjakoulutus_yo_tutkinto": "fi",
+                    "pohjakoulutus_yo_vuosi": "2014",
+                    "pohjakoulutus_yo": "true",
+                    "suoritusoikeus": "false",
+                    "aiempitutkinto": "false"
+                }
+            },
+            "oid": "1.2.246.562.11.00000441369",
+            "state": "INCOMPLETE",
+            "phaseId": "koulutustausta",
+            "personOid": "1.2.246.562.24.14229104472",
+            "lastAutomatedProcessingTime": {
+                "$numberLong": "1409033958141"
+            },
+            "received": {
+                "$numberLong": "1409033250746"
+            },
+            "updated": {
+                "$numberLong": "1409034320193"
+            },
+            "redoPostProcess": "DONE",
+            "fullName": "testaaja teppo",
+            "searchNames": [ "teppo", "testaaja" ],
+            "meta": {
+                "grades_transferred_pk": "false",
+                "grades_transferred_lk": "false"
+            },
+            "authorizationMeta": {
+                "type": "AuthorizationMeta",
+                "opoAllowed": false,
+                "aoOrganizations": {
+                    "1": [ "1.2.246.562.10.39804091914", "1.2.246.562.10.83122281013", "1.2.246.562.10.00000000001", "1.2.246.562.10.16758825075" ]
+                },
+                "allAoOrganizations": [ "1.2.246.562.10.39804091914", "1.2.246.562.10.83122281013", "1.2.246.562.10.00000000001", "1.2.246.562.10.16758825075" ],
+                "applicationPreferences" : [
+                    {
+                        "ordinal" : 1,
+                        "preferenceData" : {
+                            "Opetuspiste-id" : "1.2.246.562.10.591352080610",
+                            "Koulutus-id" : "1.2.246.562.5.72607738902"
+                        }
+                    },
+                    {
+                        "ordinal" : 2,
+                        "preferenceData" : {
+                            "Opetuspiste-id" : "1.2.246.562.10.455978782510",
+                            "Koulutus-id" : "1.2.246.562.5.72607738903"
+                        }
+                    }
+                ]
+
+            },
+            "overriddenAnswers": {
+                "sukupuoli": "1",
+                "turvakielto": "(null)",
+                "Kutsumanimi": "Teppo",
+                "Etunimet": "Teppo",
+                "Sukunimi": "Testaaja",
+                "onkoSinullaSuomalainenHetu": "(null)",
+                "Henkilotunnus": "010101-123N",
+                "syntymaaika": "01.01.1901"
+            },
+            "notes": [
+                {
+                    "type": "ApplicationNote",
+                    "noteText": "Päivitetty vaihetta 'koulutustausta'",
+                    "added": {
+                        "$numberLong": "1409034320131"
+                    },
+                    "user": "1.2.246.562.24.00000000001"
+                },
+                {
+                    "type": "ApplicationNote",
+                    "noteText": "Päivitetty vaihetta 'osaaminen'",
+                    "added": {
+                        "$numberLong": "1409033504804"
+                    },
+                    "user": "1.2.246.562.24.00000000001"
+                },
+                {
+                    "type": "ApplicationNote",
+                    "noteText": "Päivitetty vaihetta 'hakutoiveet'",
+                    "added": {
+                        "$numberLong": "1409033489214"
+                    },
+                    "user": "1.2.246.562.24.00000000001"
+                },
+                {
+                    "type": "ApplicationNote",
+                    "noteText": "Päivitetty vaihetta 'henkilotiedot'",
+                    "added": {
+                        "$numberLong": "1409033458391"
+                    },
+                    "user": "1.2.246.562.24.00000000001"
+                },
+                {
+                    "type": "ApplicationNote",
+                    "noteText": "Hakemus vastaanotettu",
+                    "added": {
+                        "$numberLong": "1409033250746"
+                    },
+                    "user": "1.2.246.562.24.00000000001"
+                }
+            ],
+            "history": [
+                {
+                    "type": "Change",
+                    "modified": {
+                        "$numberLong": "1409034320193"
+                    },
+                    "modifier": "1.2.246.562.24.00000000001",
+                    "reason": "update",
+                    "changes": [
+                        {
+                            "field": "pohjakoulutus_yo",
+                            "new value": "true"
+                        },
+                        {
+                            "field": "pohjakoulutus_yo_vuosi",
+                            "new value": "2014"
+                        },
+                        {
+                            "field": "pohjakoulutus_yo_tutkinto",
+                            "new value": "fi"
+                        },
+                        {
+                            "field": "suoritusoikeus",
+                            "new value": "false"
+                        },
+                        {
+                            "field": "aiempitutkinto",
+                            "new value": "false"
+                        }
+                    ]
+                },
+                {
+                    "type": "Change",
+                    "modified": {
+                        "$numberLong": "1409033489274"
+                    },
+                    "modifier": "1.2.246.562.24.00000000001",
+                    "reason": "update",
+                    "changes": [
+                        {
+                            "field": "preference1-Opetuspiste",
+                            "new value": "Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta"
+                        },
+                        {
+                            "field": "preference2-Koulutus-id-attachmentgroups",
+                            "new value": ""
+                        },
+                        {
+                            "field": "preference2-Koulutus-id-aoIdentifier",
+                            "new value": ""
+                        },
+                        {
+                            "field": "preference1-Koulutus-educationDegree",
+                            "new value": "koulutusasteoph2002_71"
+                        },
+                        {
+                            "field": "preference2-Koulutus-id-sora",
+                            "new value": ""
+                        },
+                        {
+                            "field": "preference1-Opetuspiste-id",
+                            "new value": "1.2.246.562.10.83122281013"
+                        },
+                        {
+                            "field": "preference2-Koulutus-educationDegree",
+                            "new value": ""
+                        },
+                        {
+                            "field": "preference1-Koulutus-id-sora",
+                            "new value": "false"
+                        },
+                        {
+                            "field": "preference1-Koulutus-id-aoIdentifier",
+                            "new value": ""
+                        },
+                        {
+                            "field": "preference1-Koulutus-id-educationcode",
+                            "new value": "koulutus_781901"
+                        },
+                        {
+                            "field": "preference2-Koulutus-id",
+                            "new value": ""
+                        },
+                        {
+                            "field": "preference1-Koulutus-id-vocational",
+                            "new value": "false"
+                        },
+                        {
+                            "field": "preference1-Koulutus-id-athlete",
+                            "new value": "false"
+                        },
+                        {
+                            "field": "preference2-Opetuspiste",
+                            "new value": ""
+                        },
+                        {
+                            "field": "preference2-Koulutus-id-athlete",
+                            "new value": ""
+                        },
+                        {
+                            "field": "preference2-Koulutus-id-kaksoistutkinto",
+                            "new value": ""
+                        },
+                        {
+                            "field": "preference1-Koulutus-id-attachmentgroups",
+                            "new value": ""
+                        },
+                        {
+                            "field": "preference1-amkLiite",
+                            "new value": "true"
+                        },
+                        {
+                            "field": "preference2-Opetuspiste-id",
+                            "new value": ""
+                        },
+                        {
+                            "field": "preference2-Koulutus-id-vocational",
+                            "new value": ""
+                        },
+                        {
+                            "field": "preference1-Koulutus-id",
+                            "new value": "1.2.246.562.20.83060182827"
+                        },
+                        {
+                            "field": "preference2-Koulutus-id-lang",
+                            "new value": ""
+                        },
+                        {
+                            "field": "preference1-Koulutus",
+                            "new value": "stevari amk hakukohde"
+                        },
+                        {
+                            "field": "preference1-Koulutus-id-kaksoistutkinto",
+                            "new value": "false"
+                        },
+                        {
+                            "field": "preference1-Koulutus-id-lang",
+                            "new value": "FI"
+                        },
+                        {
+                            "field": "preference2-Koulutus-id-educationcode",
+                            "new value": ""
+                        }
+                    ]
+                },
+                {
+                    "type": "Change",
+                    "modified": {
+                        "$numberLong": "1409033458395"
+                    },
+                    "modifier": "1.2.246.562.24.00000000001",
+                    "reason": "update",
+                    "changes": [
+                        {
+                            "field": "kansalaisuus",
+                            "new value": "FIN"
+                        },
+                        {
+                            "field": "asuinmaa",
+                            "new value": "FIN"
+                        },
+                        {
+                            "field": "matkapuhelinnumero1",
+                            "new value": ""
+                        },
+                        {
+                            "field": "Sukunimi",
+                            "new value": "Testaaja"
+                        },
+                        {
+                            "field": "Henkilotunnus",
+                            "new value": "010101-123N"
+                        },
+                        {
+                            "field": "Postinumero",
+                            "new value": "00010"
+                        },
+                        {
+                            "field": "lahiosoite",
+                            "new value": "Osoite 1"
+                        },
+                        {
+                            "field": "sukupuoli",
+                            "new value": "1"
+                        },
+                        {
+                            "field": "Sähköposti",
+                            "new value": ""
+                        },
+                        {
+                            "field": "Kutsumanimi",
+                            "new value": "Teppo"
+                        },
+                        {
+                            "field": "Etunimet",
+                            "new value": "Teppo"
+                        },
+                        {
+                            "field": "kotikunta",
+                            "new value": "091"
+                        },
+                        {
+                            "field": "aidinkieli",
+                            "new value": "FI"
+                        }
+                    ]
+                }
+            ],
+            "version": 3
+        }
+    ]
+}
