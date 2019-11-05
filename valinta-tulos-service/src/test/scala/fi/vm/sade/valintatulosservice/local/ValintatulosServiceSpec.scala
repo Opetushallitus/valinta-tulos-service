@@ -347,7 +347,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.peruuntunut, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
       }
 
-      "hakutoiveista 1. hyväksytty, ei julkaistu 2. kesken " in {
+      "peruuntunutta ei merkitä väliaikaisesti hyväksytyksi jos se ei ole ollut samaan aikaan sekä hyväksytty että julkaistu" in {
         // BUG-2026 reproduction step 1
         // VARALLA KESKEN false
         // HYVAKSYTTY KESKEN false
