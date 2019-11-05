@@ -50,6 +50,8 @@ class ScalatraBootstrap extends LifeCycle with Logging {
 
     def isTrue(string:String) = null != string && "true".equalsIgnoreCase(string)
 
+    context.setInitParameter(org.scalatra.EnvironmentKey, "production")
+    context.setInitParameter(org.scalatra.CorsSupport.EnableKey, "false")
     if (appConfig.isInstanceOf[IT] || appConfig.isInstanceOf[Dev]) {
       context.mount(new FixtureServlet(valintarekisteriDb), "/util")
       SijoitteluFixtures(valintarekisteriDb).importFixture("hyvaksytty-kesken-julkaistavissa.json")
