@@ -1,0 +1,170 @@
+package fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa
+
+import java.time.Instant
+import java.util.ConcurrentModificationException
+
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, ValintatapajonoOid}
+import slick.dbio.DBIO
+import slick.jdbc.PostgresProfile.api._
+
+import scala.concurrent.ExecutionContext.Implicits.global
+
+trait HyvaksynnanEhtoRepositoryImpl extends HyvaksynnanEhtoRepository {
+  def hyvaksynnanEhtoHakukohteessa(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): DBIO[Option[(HyvaksynnanEhto, Instant)]] = {
+    sql"""(select koodi,
+                  fi,
+                  sv,
+                  en,
+                  lower(system_time)
+           from hyvaksynnan_ehto_hakukohteessa
+           where hakemus_oid = $hakemusOid and
+                 hakukohde_oid = $hakukohdeOid and
+                 not exists (select 1
+                             from valinnantilat
+                             where hakemus_oid = $hakemusOid and
+                                   hakukohde_oid = $hakukohdeOid))
+          union
+          (select '', '', '', '', null
+           from valinnantilat
+           where hakemus_oid = $hakemusOid and
+                 hakukohde_oid = $hakukohdeOid
+           limit 1)
+      """.as[(String, String, String, String, Option[Instant])].headOption.map {
+      case Some((koodi, fi, sv, en, Some(lastModified))) =>
+        Some((HyvaksynnanEhto(koodi, fi, sv, en), lastModified))
+      case Some((_, _, _, _, None)) =>
+        throw new GoneException(s"Hakemuksen $hakemusOid hyväksynnän ehtoa hakukohteessa $hakukohdeOid ei ole koska valinnan tulos on jo olemassa")
+      case None =>
+        None
+    }
+  }
+
+  def hyvaksynnanEhdotValintatapajonoissa(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): DBIO[List[(ValintatapajonoOid, HyvaksynnanEhto, Instant)]] = {
+    sql"""select valintatapajono_oid,
+                 ehdollisen_hyvaksymisen_ehto_koodi,
+                 ehdollisen_hyvaksymisen_ehto_fi,
+                 ehdollisen_hyvaksymisen_ehto_sv,
+                 ehdollisen_hyvaksymisen_ehto_en,
+                 lower(system_time)
+          from ehdollisen_hyvaksynnan_ehto
+          where hakemus_oid = $hakemusOid and
+                hakukohde_oid = $hakukohdeOid
+       """.as[(ValintatapajonoOid, String, String, String, String, Instant)].map(_.map {
+      case (valintatapajonoOid, koodi, fi, sv, en, lastModified) =>
+        (valintatapajonoOid, HyvaksynnanEhto(koodi, fi, sv, en), lastModified)
+    }.toList)
+  }
+
+  def insertHyvaksynnanEhtoHakukohteessa(hakemusOid: HakemusOid,
+                                         hakukohdeOid: HakukohdeOid,
+                                         ehto: HyvaksynnanEhto,
+                                         ilmoittaja: String): DBIO[(HyvaksynnanEhto, Instant)] = {
+    sql"""insert into hyvaksynnan_ehto_hakukohteessa (
+            hakemus_oid,
+            hakukohde_oid,
+            koodi,
+            fi,
+            sv,
+            en,
+            ilmoittaja
+          ) values (
+            $hakemusOid,
+            $hakukohdeOid,
+            ${ehto.koodi},
+            ${ehto.fi},
+            ${ehto.sv},
+            ${ehto.en},
+            $ilmoittaja
+          )
+          on conflict (hakemus_oid, hakukohde_oid) do nothing
+          returning koodi,
+                    fi,
+                    sv,
+                    en,
+                    case (select true
+                          from valinnantilat
+                          where hakemus_oid = $hakemusOid and
+                                hakukohde_oid = $hakukohdeOid
+                          limit 1)
+                      when true then null
+                      else lower(system_time)
+                    end
+      """.as[(String, String, String, String, Option[Instant])].headOption.map {
+      case Some((koodi, fi, sv, en, Some(lastModified))) =>
+        (HyvaksynnanEhto(koodi, fi, sv, en), lastModified)
+      case Some((_, _, _, _, None)) =>
+        throw new GoneException(s"Hakemukselle $hakemusOid hyväksynnän ehtoa hakukohteessa $hakukohdeOid ei voi tallentaa koska valinnan tulos on jo olemassa")
+      case None =>
+        throw new ConcurrentModificationException(s"Hakemuksen $hakemusOid hyväksynnän ehtoa hakukohteessa $hakukohdeOid oli päivitetty samanaikaisesti")
+    }.transactionally
+  }
+
+  def updateHyvaksynnanEhtoHakukohteessa(hakemusOid: HakemusOid,
+                                         hakukohdeOid: HakukohdeOid,
+                                         ehto: HyvaksynnanEhto,
+                                         ilmoittaja: String,
+                                         ifUnmodifiedSince: Instant): DBIO[(HyvaksynnanEhto, Instant)] = {
+    sql"""update hyvaksynnan_ehto_hakukohteessa
+          set koodi = ${ehto.koodi},
+              fi = ${ehto.fi},
+              sv = ${ehto.sv},
+              en = ${ehto.en},
+              ilmoittaja = $ilmoittaja
+          where hakemus_oid = $hakemusOid and
+                hakukohde_oid = $hakukohdeOid and
+                (koodi <> ${ehto.koodi} or
+                 fi <> ${ehto.fi} or
+                 sv <> ${ehto.sv} or
+                 en <> ${ehto.en}) and
+                system_time @> $ifUnmodifiedSince
+          returning koodi,
+                    fi,
+                    sv,
+                    en,
+                    case (select true
+                          from valinnantilat
+                          where hakemus_oid = $hakemusOid and
+                                hakukohde_oid = $hakukohdeOid
+                          limit 1)
+                      when true then null
+                      else lower(system_time)
+                    end
+      """.as[(String, String, String, String, Option[Instant])].headOption.map {
+      case Some((koodi, fi, sv, en, Some(lastModified))) =>
+        (HyvaksynnanEhto(koodi, fi, sv, en), lastModified)
+      case Some((_, _, _, _, None)) =>
+        throw new GoneException(s"Hakemuksen $hakemusOid hyväksynnän ehtoa hakukohteessa $hakukohdeOid ei voi muokata koska valinnan tulos on jo olemassa")
+      case None =>
+        throw new ConcurrentModificationException(s"Hakemuksen $hakemusOid hyväksynnän ehtoa hakukohteessa $hakukohdeOid oli päivitetty samanaikaisesti")
+    }.transactionally
+  }
+
+  def deleteHyvaksynnanEhtoHakukohteessa(hakemusOid: HakemusOid,
+                                         hakukohdeOid: HakukohdeOid,
+                                         ifUnmodifiedSince: Instant): DBIO[HyvaksynnanEhto] = {
+    sql"""delete from hyvaksynnan_ehto_hakukohteessa
+          where hakemus_oid = $hakemusOid and
+                hakukohde_oid = $hakukohdeOid and
+                system_time @> $ifUnmodifiedSince
+          returning koodi,
+                    fi,
+                    sv,
+                    en,
+                    case (select true
+                          from valinnantilat
+                          where hakemus_oid = $hakemusOid and
+                                hakukohde_oid = $hakukohdeOid
+                          limit 1)
+                      when true then null
+                      else lower(system_time)
+                    end
+      """.as[(String, String, String, String, Option[Instant])].headOption.map {
+      case Some((koodi, fi, sv, en, Some(_))) =>
+        HyvaksynnanEhto(koodi, fi, sv, en)
+      case Some((_, _, _, _, None)) =>
+        throw new GoneException(s"Hakemuksen $hakemusOid hyväksynnän ehtoa hakukohteessa $hakukohdeOid ei voi poistaa koska valinnan tulos on jo olemassa")
+      case None =>
+        throw new ConcurrentModificationException(s"Hakemuksen $hakemusOid hyväksynnän ehtoa hakukohteessa $hakukohdeOid oli päivitetty samanaikaisesti")
+    }.transactionally
+  }
+}

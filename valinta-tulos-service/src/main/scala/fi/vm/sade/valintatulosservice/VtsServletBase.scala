@@ -1,16 +1,21 @@
 package fi.vm.sade.valintatulosservice
 
 import java.text.ParseException
+import java.time.{Instant, ZoneId, ZonedDateTime}
+import java.time.format.DateTimeFormatter
 import java.util.ConcurrentModificationException
 
 import fi.vm.sade.security.{AuthenticationFailedException, AuthorizationFailedException}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.json.JsonFormats.writeJavaObjectToOutputStream
 import fi.vm.sade.valintatulosservice.json.{JsonFormats, StreamingFailureException}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, ValintatapajonoOid}
 import org.json4s.MappingException
 import org.scalatra._
 import org.scalatra.json.JacksonJsonSupport
 import org.scalatra.swagger.SwaggerSupport
+
+import scala.util.{Failure, Success, Try}
 
 trait VtsServletBase extends ScalatraServlet with Logging with JacksonJsonSupport with JsonFormats with SwaggerSupport {
   private val maxBodyLengthToLog = 500000
@@ -18,6 +23,12 @@ trait VtsServletBase extends ScalatraServlet with Logging with JacksonJsonSuppor
   before() {
     contentType = formats("json")
     checkJsonContentType()
+  }
+
+  after() {
+    if (!response.headers.contains("Cache-Control")) {
+      response.headers += ("Cache-Control" -> "no-store")
+    }
   }
 
   notFound {
@@ -94,5 +105,43 @@ trait VtsServletBase extends ScalatraServlet with Logging with JacksonJsonSuppor
     response.setStatus(200)
     response.setContentType("application/json;charset=UTF-8")
     writeJavaObjectToOutputStream(x, response.getOutputStream)
+  }
+
+  protected def parseHakemusOid: Either[Throwable, HakemusOid] = {
+    params.get("hakemusOid").fold[Either[Throwable, HakemusOid]](Left(new NoSuchElementException("URL parametri hakemusOid on pakollinen.")))(s => Right(HakemusOid(s)))
+  }
+
+  protected def parseHakukohdeOid: Either[Throwable, HakukohdeOid] = {
+    params.get("hakukohdeOid").fold[Either[Throwable, HakukohdeOid]](Left(new NoSuchElementException("URL parametri hakukohdeOid on pakollinen.")))(s => Right(HakukohdeOid(s)))
+  }
+
+  protected def parseValintatapajonoOid: Either[Throwable, ValintatapajonoOid] = {
+    params.get("valintatapajonoOid").fold[Either[Throwable, ValintatapajonoOid]](Left(new NoSuchElementException("URL parametri valintatapajonoOid on pakollinen.")))(s => Right(ValintatapajonoOid(s)))
+  }
+
+  protected def createLastModifiedHeader(instant: Instant): String = {
+    //- system_time range in database is of form ["2017-02-28 13:40:02.442277+02",)
+    //- RFC-1123 date-time format used in headers has no millis
+    //- if Last-Modified/If-Unmodified-Since header is set to 2017-02-28 13:40:02, it will never be inside system_time range
+    //-> this is why we wan't to set it to 2017-02-28 13:40:03 instead
+    renderHttpDate(instant.truncatedTo(java.time.temporal.ChronoUnit.SECONDS).plusSeconds(1))
+  }
+
+  protected def renderHttpDate(instant: Instant): String = {
+    DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant(instant, ZoneId.of("GMT")))
+  }
+
+  protected val RFC1123sample: String = renderHttpDate(Instant.EPOCH)
+  protected def parseIfUnmodifiedSince: Either[Throwable, Instant] = request.headers.get("If-Unmodified-Since") match {
+    case Some(s) =>
+      Try(Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(s))) match {
+        case Success(i) => Right(i)
+        case Failure(e) => Left(new IllegalArgumentException(s"Ei voitu jäsentää otsaketta If-Unmodified-Since muodossa $RFC1123sample.", e))
+      }
+    case None => Left(new NoSuchElementException("Otsake If-Unmodified-Since on pakollinen."))
+  }
+
+  protected def parseIfNoneMatch: Either[Throwable, String] = {
+    request.headers.get("If-None-Match").fold[Either[Throwable, String]](Left(new NoSuchElementException("Otsake If-None-Match on pakollinen.")))(Right(_))
   }
 }

@@ -30,18 +30,6 @@ trait ValinnantulosServletBase extends VtsServletBase {
     ModelProperty(DataType.String, mp.position, required = true, allowableValues = AllowableValues(ValintatuloksenTila.values().toList.map(_.toString)))
   }
 
-  protected def parseValintatapajonoOid: Either[Throwable, ValintatapajonoOid] = {
-    params.get("valintatapajonoOid").fold[Either[Throwable, ValintatapajonoOid]](Left(new IllegalArgumentException("URL parametri valintatapajono OID on pakollinen.")))(s => Right(ValintatapajonoOid(s)))
-  }
-
-  protected def parseHakukohdeOid: Either[Throwable, HakukohdeOid] = {
-    params.get("hakukohdeOid").fold[Either[Throwable, HakukohdeOid]](Left(new IllegalArgumentException("URL parametri hakukohde OID on pakollinen.")))(s => Right(HakukohdeOid(s)))
-  }
-
-  protected def parseHakemusOid: Either[Throwable, HakemusOid] = {
-    params.get("hakemusOid").fold[Either[Throwable, HakemusOid]](Left(new IllegalArgumentException("URL parametri hakemus OID on pakollinen.")))(s => Right(HakemusOid(s)))
-  }
-
   protected def parseMandatoryParam(paramName:String): String = {
     params.getOrElse(paramName, throw new IllegalArgumentException(s"Parametri ${paramName} on pakollinen."))
   }
@@ -51,24 +39,11 @@ trait ValinnantulosServletBase extends VtsServletBase {
     case Failure(e) => throw new IllegalArgumentException("Parametri erillishaku pitää olla true tai false", e)
   }
 
-  protected def createLastModifiedHeader(instant: Instant): String = {
-    //- system_time range in database is of form ["2017-02-28 13:40:02.442277+02",)
-    //- RFC-1123 date-time format used in headers has no millis
-    //- if X-Last-Modified/X-If-Unmodified-Since header is set to 2017-02-28 13:40:02, it will never be inside system_time range
-    //-> this is why we wan't to set it to 2017-02-28 13:40:03 instead
-    renderHttpDate(instant.truncatedTo(java.time.temporal.ChronoUnit.SECONDS).plusSeconds(1))
-  }
-
-  protected def renderHttpDate(instant: Instant): String = {
-    DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant(instant, ZoneId.of("GMT")))
-  }
-
-  val sample = renderHttpDate(Instant.EPOCH)
   protected def parseIfUnmodifiedSince(appConfig: VtsAppConfig): Option[Instant] = request.headers.get(appConfig.settings.headerIfUnmodifiedSince) match {
     case Some(s) =>
       Try(Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(s))) match {
         case x if x.isSuccess => Some(x.get)
-        case Failure(e) => throw new IllegalArgumentException(s"Ei voitu jäsentää otsaketta ${appConfig.settings.headerIfUnmodifiedSince} muodossa $sample.", e)
+        case Failure(e) => throw new IllegalArgumentException(s"Ei voitu jäsentää otsaketta ${appConfig.settings.headerIfUnmodifiedSince} muodossa $RFC1123sample.", e)
       }
     case None => None
   }
@@ -141,7 +116,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
   val valinnantulosMuutosSwagger: OperationBuilder = (apiOperation[Unit]("muokkaaValinnantulosta")
     summary "Muokkaa valinnantulosta"
     parameter pathParam[String]("valintatapajonoOid").description("Valintatapajonon OID")
-    parameter headerParam[String](appConfig.settings.headerIfUnmodifiedSince).description(s"Aikaleima RFC 1123 määrittelemässä muodossa $sample").required
+    parameter headerParam[String](appConfig.settings.headerIfUnmodifiedSince).description(s"Aikaleima RFC 1123 määrittelemässä muodossa $RFC1123sample").required
     parameter bodyParam[List[Valinnantulos]].description("Muutokset valinnan tulokseen").required
     tags "valinnan-tulos")
   models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
@@ -194,7 +169,7 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymisk
   val erillishaunValinnantulosMuutosSwagger: OperationBuilder = (apiOperation[Unit]("muokkaaValinnantulosta")
     summary "Muokkaa erillishaun valinnantulosta"
     parameter pathParam[String]("valintatapajonoOid").description("Valintatapajonon OID")
-    parameter headerParam[String](appConfig.settings.headerIfUnmodifiedSince).description(s"Aikaleima RFC 1123 määrittelemässä muodossa $sample").required
+    parameter headerParam[String](appConfig.settings.headerIfUnmodifiedSince).description(s"Aikaleima RFC 1123 määrittelemässä muodossa $RFC1123sample").required
     parameter bodyParam[List[ValinnantulosRequest]].description("Muutokset valinnan tulokseen ja kirjautumistieto").required
     tags "erillishaku-valinnan-tulos")
   models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {

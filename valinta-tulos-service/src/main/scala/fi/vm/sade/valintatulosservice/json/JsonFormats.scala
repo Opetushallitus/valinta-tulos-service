@@ -31,7 +31,8 @@ object JsonFormats {
   val jsonFormats: Formats = (GenericJsonFormats.genericFormats ++ customSerializers)
     .addKeySerializers(List(
       new HakemusOidKeySerializer,
-      new LanguageKeySerializer))
+      new LanguageKeySerializer,
+      new ValintatapajonoOidKeySerializer))
 
   def formatJson(found: AnyRef): String = {
     org.json4s.jackson.Serialization.write(found)(jsonFormats)

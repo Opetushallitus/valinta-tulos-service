@@ -249,6 +249,10 @@ trait ValintarekisteriResultExtractors {
     ValintatapajonoOid(r.nextString())
   })
 
+  implicit val getOptionValintatapajonoOid: GetResult[Option[ValintatapajonoOid]] = GetResult(r => {
+    r.nextStringOption().map(ValintatapajonoOid)
+  })
+
   implicit val getHakemusOid: GetResult[HakemusOid] = GetResult(r => {
     HakemusOid(r.nextString())
   })
