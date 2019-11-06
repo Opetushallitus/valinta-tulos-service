@@ -34,7 +34,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
 
   def hasChange(uusi:Valinnantulos, vanha:Valinnantulos) = uusi.hasChanged(vanha) || uusi.poistettava.getOrElse(false)
 
-  def validate(uusi: Valinnantulos, vanha: Option[Valinnantulos], ifUnmodifiedSince: Option[Instant]) = {
+  def validate(uusi: Valinnantulos, vanha: Option[Valinnantulos]) = {
 
     def validateValinnantila() = (uusi.valinnantila, uusi.vastaanottotila) match {
       case (Hylatty, ValintatuloksenTila.KESKEN) |
@@ -142,7 +142,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
     )
   }
 
-  def save(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos], ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
+  def save(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): DBIO[Unit] = {
     val muokkaaja = session.personOid
     val selite = "Erillishaun tallennus"
 
