@@ -15,14 +15,6 @@ class MuutoshistoriaServlet(valinnantulosService: ValinnantulosService,
 
   override val applicationDescription = "Valinnantuloksen muutoshistorian REST API"
 
-  private def parseValintatapajonoOid: Either[Throwable, ValintatapajonoOid] = {
-    params.get("valintatapajonoOid").fold[Either[Throwable, ValintatapajonoOid]](Left(new IllegalArgumentException("URL parametri valintatapajonoOid on pakollinen.")))(s => Right(ValintatapajonoOid(s)))
-  }
-
-  private def parseHakemusOid: Either[Throwable, HakemusOid] = {
-    params.get("hakemusOid").fold[Either[Throwable, HakemusOid]](Left(new IllegalArgumentException("URL parametri hakemusOid on pakollinen.")))(s => Right(HakemusOid(s)))
-  }
-
   val muutoshistoriaSwagger: OperationBuilder = (apiOperation[List[Muutos]]("muutoshistoria")
     summary "Muutoshistoria"
     parameter queryParam[String]("valintatapajonoOid").description("Valintatapajonon OID").required
@@ -30,15 +22,13 @@ class MuutoshistoriaServlet(valinnantulosService: ValinnantulosService,
     tags "muutoshistoria")
   get("/", operation(muutoshistoriaSwagger)) {
     contentType = formats("json")
+    val hakemusOid = parseHakemusOid.fold(throw _, o => o)
+    val valintatapajonoOid = parseValintatapajonoOid.fold(throw _, o => o)
     if (skipAuditForServiceCall) {
-      val valintatapajonoOid = parseValintatapajonoOid.fold(throw _, o => o)
-      val hakemusOid = parseHakemusOid.fold(throw _, o => o)
       Ok(valinnantulosService.getMuutoshistoriaForHakemusWithoutAuditInfo(hakemusOid, valintatapajonoOid))
     } else {
       implicit val authenticated = authenticate
       authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
-      val valintatapajonoOid = parseValintatapajonoOid.fold(throw _, o => o)
-      val hakemusOid = parseHakemusOid.fold(throw _, o => o)
       Ok(valinnantulosService.getMuutoshistoriaForHakemus(hakemusOid, valintatapajonoOid, auditInfo))
     }
   }

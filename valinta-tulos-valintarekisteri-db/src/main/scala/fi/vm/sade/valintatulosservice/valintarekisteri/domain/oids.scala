@@ -52,6 +52,14 @@ class ValintatapajonoOidSerializer extends CustomSerializer[ValintatapajonoOid](
   })
 })
 
+class ValintatapajonoOidKeySerializer extends CustomKeySerializer[ValintatapajonoOid]((_: Formats) => {
+  ({
+    case json: String => ValintatapajonoOid(json)
+  }, {
+    case valintatapajonoOid: ValintatapajonoOid => valintatapajonoOid.toString
+  })
+})
+
 class HakemusOidSerializer extends CustomSerializer[HakemusOid]((_: Formats) => {
   ({
     case json: JString => HakemusOid(json.s)

@@ -105,6 +105,21 @@ case object HakutietojenLuku extends Operation {
   def name: String = "HAKUTIETOJEN_LUKU"
 }
 
+case object HyvaksynnanEhtoLuku extends Operation {
+  def name: String = "EHDOLLISESTI_HYVAKSYTTAVISSA_LUKU"
+}
+
+case object HyvaksynnanEhtoTallennus extends Operation {
+  def name: String = "EHDOLLISESTI_HYVAKSYTTAVISSA_HAKUKOHTEESSA_TALLENNUS"
+}
+
+case object HyvaksynnanEhtoPaivitys extends Operation {
+  def name: String = "EHDOLLISESTI_HYVAKSYTTAVISSA_HAKUKOHTEESSA_PAIVITYS"
+}
+
+case object HyvaksynnanEhtoPoisto extends Operation {
+  def name: String = "EHDOLLISESTI_HYVAKSYTTAVISSA_HAKUKOHTEESSA_POISTO"
+}
 case object VastaanottosahkopostienLähetys extends Operation {
   def name: String = "VASTAANOTTOSÄHKÖPOSTIEN_LAHETYS"
 }

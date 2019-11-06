@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import fi.vm.sade.utils.Timer
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhtoRepositoryImpl
 import org.apache.commons.lang3.builder.ToStringBuilder
 import org.flywaydb.core.Flyway
 import slick.jdbc.PostgresProfile.api._
@@ -31,7 +32,8 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
   with ValintaesitysRepositoryImpl
   with HakijaRepositoryImpl
   with DeleteSijoitteluRepositoryImpl
-  with ValinnanTilanKuvausRepositoryImpl {
+  with ValinnanTilanKuvausRepositoryImpl
+  with HyvaksynnanEhtoRepositoryImpl {
 
   logger.info(s"Database configuration: ${config.copy(password = Some("***"))}")
   val flyway = new Flyway()

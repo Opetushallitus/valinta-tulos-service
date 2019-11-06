@@ -32,12 +32,4 @@ class PublicEmailStatusServlet(mailPoller: MailPoller,
     audit.log(auditInfo.user, VastaanottoPostitietojenLuku, builder.build(), new Changes.Builder().build())
     mailPoller.getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid)
   }
-
-  protected def parseHakukohdeOid: Either[Throwable, HakukohdeOid] = {
-    params.get("hakukohdeOid").fold[Either[Throwable, HakukohdeOid]](Left(new IllegalArgumentException("Query parametri hakukohde OID on pakollinen.")))(s => Right(HakukohdeOid(s)))
-  }
-
-  protected def parseHakemusOid: Either[Throwable, HakemusOid] = {
-    params.get("hakemusOid").fold[Either[Throwable, HakemusOid]](Left(new IllegalArgumentException("URL parametri hakemus OID on pakollinen.")))(s => Right(HakemusOid(s)))
-  }
 }
