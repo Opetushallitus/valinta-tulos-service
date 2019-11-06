@@ -7,6 +7,7 @@ import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.{HyvaksynnanEhtoRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnanTilanKuvausRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
@@ -21,7 +22,8 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
                                        ohjausparametrit: Option[Ohjausparametrit],
                                        valinnantulosRepository: ValinnantulosRepository
                                          with HakijaVastaanottoRepository
-                                         with ValinnanTilanKuvausRepository,
+                                         with ValinnanTilanKuvausRepository
+                                         with HyvaksynnanEhtoRepository,
                                        hakukohdeRecordService: HakukohdeRecordService,
                                        ifUnmodifiedSince: Option[Instant],
                                        audit: Audit) extends ValinnantulosStrategy with Logging {
@@ -161,7 +163,11 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
           uusi.valinnantilanKuvauksenTekstiEN
         )),
         Some(valinnantulosRepository.storeValinnantuloksenOhjaus(uusi.getValinnantuloksenOhjaus(muokkaaja, selite), ifUnmodifiedSince)),
-        uusi.getEhdollisenHyvaksynnanEhto.map(valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(_, ifUnmodifiedSince)),
+        uusi.getEhdollisenHyvaksynnanEhto.map(valinnantulosRepository.insertHyvaksynnanEhtoValintatapajonossa(
+          uusi.hakemusOid,
+          uusi.valintatapajonoOid,
+          uusi.hakukohdeOid,
+          _)),
         Option(uusi.ilmoittautumistila != EiTehty).collect { case true => valinnantulosRepository.storeIlmoittautuminen(
           uusi.henkiloOid, Ilmoittautuminen(uusi.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), ifUnmodifiedSince)
         },
@@ -184,14 +190,18 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         },
         Option((
           uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha),
-          uusi.getEhdollisenHyvaksynnanEhto
+          uusi.getEhdollisenHyvaksynnanEhto,
+          vanha.getEhdollisenHyvaksynnanEhto.isDefined
         )).collect {
-          case (true, None) =>
-            valinnantulosRepository.deleteEhdollisenHyvaksynnanEhto(
-              uusi.hakukohdeOid, uusi.valintatapajonoOid, uusi.hakemusOid, ifUnmodifiedSince
-            )
-          case (true, Some(ehto)) =>
-            valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(ehto, ifUnmodifiedSince)
+          case (true, None, _) =>
+            valinnantulosRepository.deleteHyvaksynnanEhtoValintatapajonossa(
+              uusi.hakemusOid, uusi.valintatapajonoOid, uusi.hakukohdeOid, ifUnmodifiedSince.get)
+          case (true, Some(ehto), false) =>
+            valinnantulosRepository.insertHyvaksynnanEhtoValintatapajonossa(
+              uusi.hakemusOid, uusi.valintatapajonoOid, uusi.hakukohdeOid, ehto)
+          case (true, Some(ehto), true) =>
+            valinnantulosRepository.updateHyvaksynnanEhtoValintatapajonossa(
+              uusi.hakemusOid, uusi.valintatapajonoOid, uusi.hakukohdeOid, ehto, ifUnmodifiedSince.get)
         },
         Option(uusi.ilmoittautumistila != vanha.ilmoittautumistila && !uusi.ohitaIlmoittautuminen.getOrElse(false)).collect {
           case true => valinnantulosRepository.storeIlmoittautuminen(
@@ -224,6 +234,10 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
 
     def createDeleteOperations(vanha:Valinnantulos) = {
       List(
+        Option(vanha.ehdollisestiHyvaksyttavissa.contains(true)).collect {
+          case true => valinnantulosRepository.deleteHyvaksynnanEhtoValintatapajonossa(
+            uusi.hakemusOid, uusi.valintatapajonoOid, uusi.hakukohdeOid, ifUnmodifiedSince.get)
+        },
         Some(valinnantulosRepository.deleteValinnantulos(muokkaaja, uusi, ifUnmodifiedSince)),
         Option(vanha.ilmoittautumistila != EiTehty).collect { case true => valinnantulosRepository.deleteIlmoittautuminen(
           uusi.henkiloOid, Ilmoittautuminen(uusi.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), ifUnmodifiedSince

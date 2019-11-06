@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice.sijoittelu.fixture
 
 import fi.vm.sade.sijoittelu.domain.{Hakemus, Hakukohde, Valintatulos}
 import fi.vm.sade.valintatulosservice.json4sCustomFormats
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhto
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.JsonAST.JArray
@@ -109,16 +110,17 @@ case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends js
 
     for (valintatulos <- valintatulokset) {
       if ((valintatulos \ "ehdollisestiHyvaksyttavissa").extractOpt[Boolean].contains(true)) {
-        val ehto = EhdollisenHyvaksynnanEhto(
-          (valintatulos \ "hakemusOid").extract[HakemusOid],
-          (valintatulos \ "valintatapajonoOid").extract[ValintatapajonoOid],
-          (valintatulos \ "hakukohdeOid").extract[HakukohdeOid],
+        val hakemusOid = (valintatulos \ "hakemusOid").extract[HakemusOid]
+        val valintatapajonoOid = (valintatulos \ "valintatapajonoOid").extract[ValintatapajonoOid]
+        val hakukohdeOid = (valintatulos \ "hakukohdeOid").extract[HakukohdeOid]
+        val ehto = HyvaksynnanEhto(
           (valintatulos \ "ehdollisenHyvaksymisenEhtoKoodi").extractOpt[String].getOrElse(""),
           (valintatulos \ "ehdollisenHyvaksymisenEhtoFI").extractOpt[String].getOrElse(""),
           (valintatulos \ "ehdollisenHyvaksymisenEhtoSV").extractOpt[String].getOrElse(""),
           (valintatulos \ "ehdollisenHyvaksymisenEhtoEN").extractOpt[String].getOrElse("")
         )
-        valintarekisteriDb.runBlocking(valintarekisteriDb.storeEhdollisenHyvaksynnanEhto(ehto))
+        valintarekisteriDb.runBlocking(valintarekisteriDb.insertHyvaksynnanEhtoValintatapajonossa(
+          hakemusOid, valintatapajonoOid, hakukohdeOid, ehto))
       }
     }
   }
