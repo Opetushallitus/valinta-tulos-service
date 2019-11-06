@@ -543,26 +543,6 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     }
   }
 
-  override def updateEhdollisenHyvaksynnanEhto(ehto: EhdollisenHyvaksynnanEhto, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
-    sqlu"""update ehdollisen_hyvaksynnan_ehto
-           set ehdollisen_hyvaksymisen_ehto_koodi = ${ehto.ehdollisenHyvaksymisenEhtoKoodi},
-              ehdollisen_hyvaksymisen_ehto_fi = ${ehto.ehdollisenHyvaksymisenEhtoFI},
-              ehdollisen_hyvaksymisen_ehto_sv = ${ehto.ehdollisenHyvaksymisenEhtoSV},
-              ehdollisen_hyvaksymisen_ehto_en = ${ehto.ehdollisenHyvaksymisenEhtoEN}
-           where valintatapajono_oid = ${ehto.valintatapajonoOid} and hakemus_oid = ${ehto.hakemusOid} and (
-              ehdollisen_hyvaksymisen_ehto_koodi <> ${ehto.ehdollisenHyvaksymisenEhtoKoodi} or
-              ehdollisen_hyvaksymisen_ehto_fi <> ${ehto.ehdollisenHyvaksymisenEhtoFI} or
-              ehdollisen_hyvaksymisen_ehto_sv <> ${ehto.ehdollisenHyvaksymisenEhtoSV} or
-              ehdollisen_hyvaksymisen_ehto_en <> ${ehto.ehdollisenHyvaksymisenEhtoEN}
-           ) and (
-              ${ifUnmodifiedSince}::timestamptz is null or
-              system_time @> ${ifUnmodifiedSince}
-           )""".flatMap {
-      case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ehdollisen hyväksynnän ehtoa $ehto ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
-    }
-  }
-
   override def storeValinnantila(tila:ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
     ensureValintaesitys(tila.hakukohdeOid, tila.valintatapajonoOid)
       .andThen(storeValinnantilaOverridingTimestamp(tila, ifUnmodifiedSince, new Timestamp(System.currentTimeMillis)))
@@ -718,39 +698,6 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
 }
 }
 
-  override def storeEhdollisenHyvaksynnanEhto(ehto:EhdollisenHyvaksynnanEhto, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
-    sqlu"""insert into ehdollisen_hyvaksynnan_ehto (
-             valintatapajono_oid,
-             hakemus_oid,
-             hakukohde_oid,
-             ehdollisen_hyvaksymisen_ehto_koodi,
-             ehdollisen_hyvaksymisen_ehto_fi,
-             ehdollisen_hyvaksymisen_ehto_sv,
-             ehdollisen_hyvaksymisen_ehto_en
-           ) values (${ehto.valintatapajonoOid},
-              ${ehto.hakemusOid},
-              ${ehto.hakukohdeOid},
-              ${ehto.ehdollisenHyvaksymisenEhtoKoodi},
-              ${ehto.ehdollisenHyvaksymisenEhtoFI},
-              ${ehto.ehdollisenHyvaksymisenEhtoSV},
-              ${ehto.ehdollisenHyvaksymisenEhtoEN})
-           on conflict on constraint ehdollisen_hyvaksynnan_ehto_pkey do update set
-             ehdollisen_hyvaksymisen_ehto_koodi = excluded.ehdollisen_hyvaksymisen_ehto_koodi,
-             ehdollisen_hyvaksymisen_ehto_fi = excluded.ehdollisen_hyvaksymisen_ehto_fi,
-             ehdollisen_hyvaksymisen_ehto_sv = excluded.ehdollisen_hyvaksymisen_ehto_sv,
-             ehdollisen_hyvaksymisen_ehto_en = excluded.ehdollisen_hyvaksymisen_ehto_en
-           where ( ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_koodi is distinct from excluded.ehdollisen_hyvaksymisen_ehto_koodi
-             or ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_fi is distinct from excluded.ehdollisen_hyvaksymisen_ehto_fi
-             or ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_sv is distinct from excluded.ehdollisen_hyvaksymisen_ehto_sv
-             or ehdollisen_hyvaksynnan_ehto.ehdollisen_hyvaksymisen_ehto_en is distinct from excluded.ehdollisen_hyvaksymisen_ehto_en )
-             and (
-              ${ifUnmodifiedSince}::timestamptz is null or
-              ehdollisen_hyvaksynnan_ehto.system_time @> ${ifUnmodifiedSince})""".flatMap {
-      case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ehdollisen hyväksynnän ehtoa $ehto ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
-    }
-  }
-
   override def getIlmoittautumisenAikaleimat(henkiloOid: String): DBIO[Iterable[(HakukohdeOid, Instant)]] = {
     sql"""select hakukohde, lower(system_time)
           from ilmoittautumiset
@@ -789,7 +736,6 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
 
   override def deleteValinnantulos(muokkaaja:String, valinnantulos: Valinnantulos, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
     deleteViestit(valinnantulos.hakukohdeOid, valinnantulos.hakemusOid)
-      .andThen(deleteEhdollisenHyvaksynnanEhtoIfExists(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince))
       .andThen(deleteValinnantuloksenOhjaus(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince))
       .andThen(deleteValinnantila(valinnantulos.getValinnantilanTallennus(muokkaaja), ifUnmodifiedSince))
       .transactionally
@@ -815,29 +761,6 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
            where hakukohde_oid = $hakukohdeOid and
                  hakemus_oid = $hakemusOid
       """.map(_ => ())
-  }
-
-  private def deleteEhdollisenHyvaksynnanEhtoIfExists(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
-    sql"""select count(*) from ehdollisen_hyvaksynnan_ehto
-          where hakukohde_oid = ${hakukohdeOid}
-          and hakemus_oid = ${hakemusOid}
-          and valintatapajono_oid = ${valintatapajonoOid}
-       """.as[Int].head.flatMap {
-      case x if x > 0 => deleteEhdollisenHyvaksynnanEhto(hakukohdeOid, valintatapajonoOid, hakemusOid, ifUnmodifiedSince)
-      case x => DBIO.successful()
-    }
-  }
-
-  def deleteEhdollisenHyvaksynnanEhto(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
-    sqlu"""delete from ehdollisen_hyvaksynnan_ehto
-           where hakukohde_oid = ${hakukohdeOid}
-           and hakemus_oid = ${hakemusOid}
-           and valintatapajono_oid = ${valintatapajonoOid}
-           and (${ifUnmodifiedSince}::timestamptz is null or
-              system_time @> ${ifUnmodifiedSince})""".flatMap {
-      case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ehdollisen hyväksynnän ehtoa ($hakukohdeOid, $valintatapajonoOid, $hakemusOid) ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
-    }
   }
 
   private def deleteValinnantuloksenOhjaus(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {

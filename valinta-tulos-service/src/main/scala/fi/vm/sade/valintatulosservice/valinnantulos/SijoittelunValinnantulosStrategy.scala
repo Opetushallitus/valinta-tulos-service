@@ -10,6 +10,7 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.{HyvaksynnanEhtoRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantuloksenMuokkaus}
@@ -24,7 +25,9 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
                                        ohjausparametrit: Option[Ohjausparametrit],
                                        authorizer: OrganizationHierarchyAuthorizer,
                                        appConfig: VtsAppConfig,
-                                       valinnantulosRepository: ValinnantulosRepository with HakijaVastaanottoRepository,
+                                       valinnantulosRepository: ValinnantulosRepository
+                                         with HakijaVastaanottoRepository
+                                         with HyvaksynnanEhtoRepository,
                                        ifUnmodifiedSince: Instant,
                                        audit: Audit) extends ValinnantulosStrategy with Logging {
   private val session = auditInfo.session._2
@@ -154,14 +157,18 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
     }
     val updateEhdollisenHyvaksynnanEhto = (
       uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha),
-      uusi.getEhdollisenHyvaksynnanEhto
+      uusi.getEhdollisenHyvaksynnanEhto,
+      vanha.getEhdollisenHyvaksynnanEhto.isDefined
     ) match {
-      case (true, None) =>
-        valinnantulosRepository.deleteEhdollisenHyvaksynnanEhto(
-          uusi.hakukohdeOid, uusi.valintatapajonoOid, uusi.hakemusOid, ifUnModifiedSince
-        )
-      case (true, Some(ehto)) =>
-        valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(ehto, ifUnModifiedSince)
+      case (true, None, _) =>
+        valinnantulosRepository.deleteHyvaksynnanEhtoValintatapajonossa(
+          uusi.hakemusOid, uusi.valintatapajonoOid, uusi.hakukohdeOid, ifUnModifiedSince.get)
+      case (true, Some(ehto), false) =>
+        valinnantulosRepository.insertHyvaksynnanEhtoValintatapajonossa(
+          uusi.hakemusOid, uusi.valintatapajonoOid, uusi.hakukohdeOid, ehto)
+      case (true, Some(ehto), true) =>
+        valinnantulosRepository.updateHyvaksynnanEhtoValintatapajonossa(
+          uusi.hakemusOid, uusi.valintatapajonoOid, uusi.hakukohdeOid, ehto, ifUnModifiedSince.get)
       case _ =>
         DBIO.successful(())
     }

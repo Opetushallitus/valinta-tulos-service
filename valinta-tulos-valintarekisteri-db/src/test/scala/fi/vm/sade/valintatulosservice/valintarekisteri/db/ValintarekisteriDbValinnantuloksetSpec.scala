@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
 import java.sql.{JDBCType, Timestamp}
-import java.time.{OffsetDateTime, ZoneId, ZonedDateTime}
+import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
 import java.util.ConcurrentModificationException
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
@@ -35,7 +35,6 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
   val valinnantulos = Valinnantulos(hakukohdeOid, valintatapajonoOid, hakemusOid, henkiloOid,
     Hyvaksytty, Some(false), None, None, None, None, None, None, None, Some(false), Some(false), Some(false), ValintatuloksenTila.KESKEN, EiTehty, None)
   val ilmoittautuminen = Ilmoittautuminen(hakukohdeOid, Lasna, "muokkaaja", "selite")
-  val ehdollisenHyvaksynnanEhto = EhdollisenHyvaksynnanEhto(hakemusOid, valintatapajonoOid, hakukohdeOid, "muu", "muu", "andra", "other")
   val ancient = new java.util.Date(0)
   val hyvaksymisKirje = Kirje(henkiloOid, hakukohdeOid, ancient)
 
@@ -150,6 +149,8 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
     "delete valinnantulos" in {
       storeValinnantilaAndValinnantulos
       singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid).size mustEqual 1
+      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.deleteHyvaksynnanEhtoValintatapajonossa(
+        hakemusOid, valintatapajonoOid, hakukohdeOid, Instant.now()))
       singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.deleteValinnantulos(muokkaaja, valinnantulos.copy(poistettava = Some(true))))
       singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid) mustEqual Set()
     }
@@ -165,7 +166,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
     "generate muutoshistoria from updates" in {
       storeValinnantilaAndValinnantulos()
       singleConnectionValintarekisteriDb.runBlocking(
-        singleConnectionValintarekisteriDb.deleteEhdollisenHyvaksynnanEhto(hakukohdeOid, valintatapajonoOid, hakemusOid)
+        singleConnectionValintarekisteriDb.deleteHyvaksynnanEhtoValintatapajonossa(hakemusOid, valintatapajonoOid, hakukohdeOid, Instant.now())
       )
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.storeValinnantuloksenOhjaus(valinnantuloksenOhjaus.copy(julkaistavissa = true))
@@ -433,30 +434,6 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
     result.size must_== count
     result.last must_== (henkiloOid, ilmoittautuminen.hakukohdeOid, ilmoittautuminen.tila.toString,
       ilmoittautuminen.muokkaaja, ilmoittautuminen.selite)
-  }
-
-  def assertEhdollisenHyvaksynnanEhto(ehto: EhdollisenHyvaksynnanEhto) = {
-    val result = singleConnectionValintarekisteriDb.runBlocking(
-      sql"""select ehdollisen_hyvaksymisen_ehto_koodi, ehdollisen_hyvaksymisen_ehto_fi, ehdollisen_hyvaksymisen_ehto_sv, ehdollisen_hyvaksymisen_ehto_en
-            from ehdollisen_hyvaksynnan_ehto
-            where hakemus_oid = ${hakemusOid} and valintatapajono_oid = ${valintatapajonoOid}
-        """.as[(String,String,String,String)]
-    )
-
-    result.size must_== 1
-    result.head must_== (ehto.ehdollisenHyvaksymisenEhtoKoodi, ehto.ehdollisenHyvaksymisenEhtoFI, ehto.ehdollisenHyvaksymisenEhtoSV, ehto.ehdollisenHyvaksymisenEhtoEN)
-  }
-
-  def assertEhdollisenHyvaksynnanEhtoHistory(count: Int, ehto: EhdollisenHyvaksynnanEhto) = {
-    val result = singleConnectionValintarekisteriDb.runBlocking(
-      sql"""select ehdollisen_hyvaksymisen_ehto_koodi, ehdollisen_hyvaksymisen_ehto_fi, ehdollisen_hyvaksymisen_ehto_sv, ehdollisen_hyvaksymisen_ehto_en
-            from ehdollisen_hyvaksynnan_ehto_history
-            where hakemus_oid = ${hakemusOid} and valintatapajono_oid = ${valintatapajonoOid}
-        """.as[(String,String,String,String)]
-    )
-
-    result.size must_== count
-    result.head must_== (ehto.ehdollisenHyvaksymisenEhtoKoodi, ehto.ehdollisenHyvaksymisenEhtoFI, ehto.ehdollisenHyvaksymisenEhtoSV, ehto.ehdollisenHyvaksymisenEhtoEN)
   }
 
   def assertHyvaksymiskirjeet(lahetetty: java.util.Date) = {

@@ -4,6 +4,7 @@ import java.time.{Instant, OffsetDateTime}
 import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhto
 import org.joda.time.DateTime
 
 case class ValinnantulosUpdateStatus(status: Int, message: String, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid)
@@ -107,12 +108,9 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     selite
   )
 
-  def getEhdollisenHyvaksynnanEhto: Option[EhdollisenHyvaksynnanEhto] =
+  def getEhdollisenHyvaksynnanEhto: Option[HyvaksynnanEhto] =
     if (ehdollisestiHyvaksyttavissa.contains(true)) {
-      Some(EhdollisenHyvaksynnanEhto(
-        this.hakemusOid,
-        this.valintatapajonoOid,
-        this.hakukohdeOid,
+      Some(HyvaksynnanEhto(
         this.ehdollisenHyvaksymisenEhtoKoodi.getOrElse(""),
         this.ehdollisenHyvaksymisenEhtoFI.getOrElse(""),
         this.ehdollisenHyvaksymisenEhtoSV.getOrElse(""),
@@ -179,14 +177,6 @@ case class ValinnantilanTallennus(hakemusOid: HakemusOid,
                                   henkiloOid: String,
                                   valinnantila: Valinnantila,
                                   muokkaaja: String)
-
-case class EhdollisenHyvaksynnanEhto(hakemusOid: HakemusOid,
-                                     valintatapajonoOid: ValintatapajonoOid,
-                                     hakukohdeOid: HakukohdeOid,
-                                     ehdollisenHyvaksymisenEhtoKoodi: String,
-                                     ehdollisenHyvaksymisenEhtoFI: String,
-                                     ehdollisenHyvaksymisenEhtoSV: String,
-                                     ehdollisenHyvaksymisenEhtoEN: String)
 
 case class Hyvaksymiskirje(henkiloOid: String,
                            hakukohdeOid: HakukohdeOid,
