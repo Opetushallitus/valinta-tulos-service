@@ -68,14 +68,14 @@ trait ValinnantulosServletBase extends VtsServletBase {
     case Some(s) =>
       Try(Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(s))) match {
         case x if x.isSuccess => Some(x.get)
-        case Failure(e) => throw new IllegalArgumentException(s"Ei voitu jäsentää otsaketta "+ appConfig.settings.headerIfUnmodifiedSince + " muodossa $sample.", e)
+        case Failure(e) => throw new IllegalArgumentException(s"Ei voitu jäsentää otsaketta ${appConfig.settings.headerIfUnmodifiedSince} muodossa $sample.", e)
       }
     case None => None
   }
 
   protected def getIfUnmodifiedSince(appConfig: VtsAppConfig): Instant = parseIfUnmodifiedSince(appConfig: VtsAppConfig) match {
     case Some(s) => s
-    case None => throw new IllegalArgumentException("Otsake " + appConfig.settings.headerIfUnmodifiedSince + " on pakollinen.")
+    case None => throw new IllegalArgumentException(s"Otsake ${appConfig.settings.headerIfUnmodifiedSince} on pakollinen.")
   }
 }
 
