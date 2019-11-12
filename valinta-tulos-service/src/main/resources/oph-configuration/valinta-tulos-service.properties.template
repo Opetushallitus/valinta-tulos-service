@@ -106,3 +106,7 @@ ryhmasahkoposti.service.email.url=https://{{host_virkailija}}/ryhmasahkoposti-se
 # Valintatulokset
 valinta-tulos-service.batch.size={{ vt_batch_size | default('5') }}
 valinta-tulos-service.batch.limit.minutes={{ valinta_tulos_email_batch_limit_minutes | default('5') }}
+
+# HTTP-Headerit
+valinta-tulos-service.header.last.modified={{ valintatulosservice_header_last_modified | default('X-Last-Modified') }}
+valinta-tulos-service.header.if.unmodified.since={{ valintatulosservice_if_unmodified_since | default('X-If-Unmodified-Since') }}

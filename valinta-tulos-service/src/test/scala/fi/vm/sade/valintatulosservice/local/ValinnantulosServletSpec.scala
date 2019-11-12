@@ -6,7 +6,6 @@ import java.time.temporal.ChronoUnit
 import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.{ConcurrentModificationException, UUID}
 
-
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.utils.ServletTest
 import fi.vm.sade.valintatulosservice._
@@ -15,6 +14,8 @@ import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket,
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import java.util.Date
+
+import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import org.json4s.jackson.Serialization._
 import org.json4s.native.JsonMethods._
 import org.junit.runner.RunWith
@@ -27,7 +28,7 @@ import org.specs2.runner.JUnitRunner
 import org.specs2.specification.{BeforeAfterAll, ForEach}
 
 @RunWith(classOf[JUnitRunner])
-class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer with HttpComponentsClient with BeforeAfterAll with ForEach[(String, ValinnantulosService, SessionRepository)] with Mockito {
+class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer with HttpComponentsClient with BeforeAfterAll with ForEach[(String, ValinnantulosService, SessionRepository)] with ITSetup with Mockito {
 
   override def beforeAll(): Unit = start()
   override def afterAll(): Unit = stop()
@@ -36,7 +37,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
     val valinnantulosService = mock[ValinnantulosService]
     val valintatulosService = mock[ValintatulosService]
     val sessionRepository = mock[SessionRepository]
-    val servlet = new ValinnantulosServlet(valinnantulosService, valintatulosService, sessionRepository)(mock[Swagger])
+    val servlet = new ValinnantulosServlet(valinnantulosService, valintatulosService, sessionRepository, appConfig)(mock[Swagger])
     ServletTest.withServlet(this, servlet, (uri: String) => AsResult(f((uri, valinnantulosService, sessionRepository))))
   }
 
@@ -54,7 +55,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
     "User-Agent" -> userAgent)
   private val defaultPatchHeaders = defaultHeaders ++ Map(
     "Content-Type" -> "application/json",
-    "If-Unmodified-Since" -> ifUnmodifiedSince
+    appConfig.settings.headerIfUnmodifiedSince -> ifUnmodifiedSince
   )
   private val hakukohdeOid = HakukohdeOid("1.2.246.562.20.26643418986")
   private val valintatapajonoOid = ValintatapajonoOid("14538080612623056182813241345174")
@@ -143,13 +144,13 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       }
     }
 
-    "palauttaa Last-Modified otsakkeen jossa viimeisintä muutoshetkeä seuraava tasasekuntti" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa " + appConfig.settings.headerLastModified + " otsakkeen jossa viimeisintä muutoshetkeä seuraava tasasekuntti" in { t: (String, ValinnantulosService, SessionRepository) =>
       val lastModified = DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant(now.plusSeconds(1), ZoneId.of("GMT")))
       t._3.get(sessionId) returns Some(readSession)
       t._2.getValinnantuloksetForValintatapajono(valintatapajonoOid, auditInfo(readSession)) returns Some((now, Set(valinnantulos)))
       get(t._1, Iterable("valintatapajonoOid" -> valintatapajonoOid.toString), defaultHeaders) {
         status must_== 200
-        header.get("Last-Modified") must beSome(lastModified)
+        header.get(appConfig.settings.headerLastModified) must beSome(lastModified)
       }
     }
   }
@@ -190,15 +191,15 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       }
     }
 
-    "palauttaa 400 jos If-Unmodified-Since otsake puuttuu" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa 400 jos " + appConfig.settings.headerIfUnmodifiedSince + " otsake puuttuu" in { t: (String, ValinnantulosService, SessionRepository) =>
       t._3.get(sessionId) returns Some(crudSession)
       patch(
         s"${t._1}/${valintatapajonoOid.toString}",
         write(List(valinnantulos.copy(julkaistavissa = Some(true)))).getBytes("UTF-8"),
-        defaultPatchHeaders - "If-Unmodified-Since"
+        defaultPatchHeaders - appConfig.settings.headerIfUnmodifiedSince
       ) {
         status must_== 400
-        body must_== "{\"error\":\"Otsake If-Unmodified-Since on pakollinen.\"}"
+        body must_== "{\"error\":\"Otsake " + appConfig.settings.headerIfUnmodifiedSince + " on pakollinen.\"}"
       }
     }
 

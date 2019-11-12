@@ -18,6 +18,8 @@ case class VtsApplicationSettings(config: Config) extends ApplicationSettings(co
   val hakemusMongoConfig: MongoConfig = getMongoConfig(config.getConfig("hakemus.mongodb"))
   val securitySettings = new SecuritySettings(config)
   val valintaRekisteriEnsikertalaisuusMaxPersonOids = withConfig(_.getInt("valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids"))
+  val headerLastModified: String = withConfig(_.getString("valinta-tulos-service.header.last.modified"))
+  val headerIfUnmodifiedSince: String = withConfig(_.getString("valinta-tulos-service.header.if.unmodified.since"))
   val lenientSijoitteluntuloksetParsing: Boolean = BooleanUtils.isTrue(withConfig(_.getBoolean("valinta-tulos-service.parseleniently.sijoitteluajontulos")))
   val kelaURL = withConfig(_.getString("valinta-tulos-service.kela.url"))
   val organisaatioServiceUrl = withConfig(_.getString("cas.service.organisaatio-service"))

@@ -116,13 +116,13 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
         valinnantilanViimeisinMuutos = None,
         vastaanotonViimeisinMuutos = None)
       ) must_== valinnantulos
-      httpComponentsClient.header.get("Last-Modified").map(s => Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(s)))
+      httpComponentsClient.header.get(appConfig.settings.headerLastModified).map(s => Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(s)))
     }
   }
 
   private def paivita(valinnantulos: Valinnantulos, erillishaku: Boolean, session: String, ifUnmodifiedSince: Instant) = {
     patchJSON(s"auth/valinnan-tulos/${valinnantulos.valintatapajonoOid}?erillishaku=$erillishaku", write(List(valinnantulos)),
-      Map("Cookie" -> s"session=$session", "If-Unmodified-Since" -> renderRFC1123DateTime(ifUnmodifiedSince))) {
+      Map("Cookie" -> s"session=$session", appConfig.settings.headerIfUnmodifiedSince -> renderRFC1123DateTime(ifUnmodifiedSince))) {
       status must_== 200
       parse(body).extract[List[ValinnantulosUpdateStatus]].find(_.hakemusOid == valinnantulos.hakemusOid)
     }
