@@ -104,3 +104,7 @@ case object IlmoittautumisTilanTallennus extends Operation {
 case object HakutietojenLuku extends Operation {
   def name: String = "HAKUTIETOJEN_LUKU"
 }
+
+case object VastaanottosahkopostienLähetys extends Operation {
+  def name: String = "VASTAANOTTOSÄHKÖPOSTIEN_LAHETYS"
+}

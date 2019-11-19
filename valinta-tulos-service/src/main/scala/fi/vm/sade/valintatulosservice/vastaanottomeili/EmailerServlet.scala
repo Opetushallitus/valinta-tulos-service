@@ -1,10 +1,10 @@
 package fi.vm.sade.valintatulosservice.vastaanottomeili
 
+import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
-import fi.vm.sade.valintatulosservice.{CasAuthenticatedServlet, VtsServletBase, VtsSwaggerBase}
-
+import fi.vm.sade.valintatulosservice.{CasAuthenticatedServlet, VtsServletBase, VtsSwaggerBase, Authenticated, VastaanottosahkopostienLähetys}
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger.{SwaggerSupport, _}
 import org.scalatra.{ActionResult, InternalServerError, Ok}
@@ -12,11 +12,17 @@ import org.scalatra.{ActionResult, InternalServerError, Ok}
 import scala.util.{Failure, Success}
 
 
-class EmailerServlet(emailerService: EmailerService, val sessionRepository: SessionRepository)(implicit val swagger: Swagger)
+class EmailerServlet(emailerService: EmailerService,
+                     val sessionRepository: SessionRepository,
+                     audit: Audit)(implicit val swagger: Swagger)
   extends VtsServletBase with CasAuthenticatedServlet with EmailerSwagger with Logging {
 
   post("/run", operation(postRunEmailerSwagger)) {
     logger.info("EmailerServlet POST /run called")
+    implicit val authenticated: Authenticated = authenticate
+    val target = new Target.Builder().build()
+    audit.log(auditInfo.user, VastaanottosahkopostienLähetys, target, new Changes.Builder().build())
+
     val query: MailerQuery = AllQuery
     runMailerAndCreateResponse(query)
   }
@@ -24,6 +30,9 @@ class EmailerServlet(emailerService: EmailerService, val sessionRepository: Sess
   post("/run/haku/:hakuOid", operation(postRunEmailerForHakuSwagger)) {
     val hakuOid = HakuOid(params("hakuOid"))
     logger.info(s"EmailerServlet POST /run/haku/ called for haku $hakuOid")
+    implicit val authenticated: Authenticated = authenticate
+    val target = new Target.Builder().setField("hakuOid", hakuOid.s).build()
+    audit.log(auditInfo.user, VastaanottosahkopostienLähetys, target, new Changes.Builder().build())
 
     val query: MailerQuery = HakuQuery(hakuOid)
     runMailerAndCreateResponse(query)
@@ -32,6 +41,9 @@ class EmailerServlet(emailerService: EmailerService, val sessionRepository: Sess
   post("/run/hakukohde/:hakukohdeOid", operation(postRunEmailerForHakukohdeSwagger)) {
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     logger.info(s"EmailerServlet POST /run/hakukohde/ called for hakukohde $hakukohdeOid")
+    implicit val authenticated: Authenticated = authenticate
+    val target = new Target.Builder().setField("hakukohdeOid", hakukohdeOid.s).build()
+    audit.log(auditInfo.user, VastaanottosahkopostienLähetys, target, new Changes.Builder().build())
 
     val query: MailerQuery = HakukohdeQuery(hakukohdeOid)
     runMailerAndCreateResponse(query)
@@ -41,6 +53,9 @@ class EmailerServlet(emailerService: EmailerService, val sessionRepository: Sess
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     val jonoOid = ValintatapajonoOid(params("jonoOid"))
     logger.info(s"EmailerServlet POST /run/valintatapajono/ called for valintatapajono $jonoOid")
+    implicit val authenticated: Authenticated = authenticate
+    val target = new Target.Builder().setField("hakukohdeOid", hakukohdeOid.s).setField("jonoOid", jonoOid.s).build()
+    audit.log(auditInfo.user, VastaanottosahkopostienLähetys, target, new Changes.Builder().build())
 
     val query: MailerQuery = ValintatapajonoQuery(hakukohdeOid, jonoOid)
     runMailerAndCreateResponse(query)
@@ -49,6 +64,9 @@ class EmailerServlet(emailerService: EmailerService, val sessionRepository: Sess
   post("/run/hakemus/:hakemusOid", operation(postRunEmailerForHakemusSwagger)) {
     val hakemusOid = HakemusOid(params("hakemusOid"))
     logger.info(s"EmailerServlet POST /run/hakemus/ called for hakemus $hakemusOid")
+    implicit val authenticated: Authenticated = authenticate
+    val target = new Target.Builder().setField("hakemusOid", hakemusOid.s).build()
+    audit.log(auditInfo.user, VastaanottosahkopostienLähetys, target, new Changes.Builder().build())
     val query: MailerQuery = HakemusQuery(hakemusOid)
     runMailerAndCreateResponse(query)
   }
