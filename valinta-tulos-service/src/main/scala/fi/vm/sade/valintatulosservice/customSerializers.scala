@@ -6,9 +6,10 @@ import java.time.{OffsetDateTime, ZoneId, ZonedDateTime}
 
 import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, ValintatuloksenTila}
 import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
+import fi.vm.sade.valintatulosservice.domain.{En, Fi, Language, Sv}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.JsonAST.{JString, JValue}
-import org.json4s.{CustomSerializer, Formats}
+import org.json4s.{CustomKeySerializer, CustomSerializer, Formats}
 
 class VirkailijanVastaanottoActionSerializer extends CustomSerializer[VirkailijanVastaanottoAction]((formats: Formats) => {
   ( {
@@ -79,5 +80,17 @@ class UrlSerializer extends CustomSerializer[URL]((_: Formats) => {
     case json: JString => new URL(json.s)
   }, {
     case url: URL => JString(url.toString)
+  })
+})
+
+class LanguageKeySerializer extends CustomKeySerializer[Language]((_: Formats) => {
+  ({
+    case "fi" => Fi
+    case "sv" => Sv
+    case "en" => En
+  }, {
+    case Fi => "fi"
+    case Sv => "sv"
+    case En => "en"
   })
 })
