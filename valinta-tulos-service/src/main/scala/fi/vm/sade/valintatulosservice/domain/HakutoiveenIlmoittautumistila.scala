@@ -1,7 +1,6 @@
 package fi.vm.sade.valintatulosservice.domain
 
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.domain.LanguageMap.LanguageMap
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiTehty, SijoitteluajonIlmoittautumistila, Vastaanottotila}
@@ -24,12 +23,12 @@ case class Ilmoittautumisaika(alku: Option[DateTime], loppu: Option[DateTime]) {
 
 sealed trait Ilmoittautumistapa {}
 
-case class UlkoinenJärjestelmä(nimi: LanguageMap, url: String) extends Ilmoittautumistapa
+case class UlkoinenJärjestelmä(nimi: Map[Language, String], url: String) extends Ilmoittautumistapa
 
 object HakutoiveenIlmoittautumistila {
 
-  val oiliHetullinen = UlkoinenJärjestelmä(Map(Language.fi -> "Oili", Language.sv -> "Oili", Language.en -> "Oili"), "/oili/")
-  def oiliHetuton(appConfig: VtsAppConfig) = UlkoinenJärjestelmä(Map(Language.fi -> "Oili", Language.sv -> "Oili", Language.en -> "Oili"), appConfig.settings.oiliHetutonUrl)
+  val oiliHetullinen = UlkoinenJärjestelmä(Map(Fi -> "Oili", Sv -> "Oili", En -> "Oili"), "/oili/")
+  def oiliHetuton(appConfig: VtsAppConfig) = UlkoinenJärjestelmä(Map(Fi -> "Oili", Sv -> "Oili", En -> "Oili"), appConfig.settings.oiliHetutonUrl)
 
   def getIlmoittautumistila(sijoitteluTila: HakutoiveenSijoitteluntulos,
                             haku: Haku,
