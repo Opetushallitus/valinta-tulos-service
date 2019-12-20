@@ -134,7 +134,13 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
   get("/hakemus/", operation(valinnantuloksetHakemukselleSwagger)) {
     contentType = formats("json")
     implicit val authenticated = authenticate
-    authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
+    authorize(
+      Role.SIJOITTELU_READ,
+      Role.SIJOITTELU_READ_UPDATE,
+      Role.SIJOITTELU_CRUD,
+      Role.ATARU_KEVYT_VALINTA_READ,
+      Role.ATARU_KEVYT_VALINTA_CRUD
+    )
     Ok(parseHakemusOid.right.map(valinnantulosService.getValinnantuloksetForHakemus(_, auditInfo)))
   }
 
@@ -154,7 +160,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
   patch("/:valintatapajonoOid", operation(valinnantulosMuutosSwagger)) {
     contentType = formats("json")
     implicit val authenticated = authenticate
-    authorize(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
+    authorize(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD, Role.ATARU_KEVYT_VALINTA_CRUD)
     val erillishaku = parseErillishaku
     val valintatapajonoOid = parseValintatapajonoOid.fold(throw _, x => x)
     val ifUnmodifiedSince: Instant = getIfUnmodifiedSince(appConfig)
