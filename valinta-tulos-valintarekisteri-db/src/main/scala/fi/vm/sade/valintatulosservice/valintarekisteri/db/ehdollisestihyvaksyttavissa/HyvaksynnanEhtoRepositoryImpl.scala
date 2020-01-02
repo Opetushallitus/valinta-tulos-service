@@ -168,6 +168,47 @@ trait HyvaksynnanEhtoRepositoryImpl extends HyvaksynnanEhtoRepository {
     }.transactionally
   }
 
+  def hyvaksynnanEhtoHakukohteessaMuutoshistoria(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): DBIO[List[Versio[HyvaksynnanEhto]]] = {
+    sql"""((select koodi,
+                   fi,
+                   sv,
+                   en,
+                   lower(system_time) as lower_st,
+                   null,
+                   ilmoittaja
+            from hyvaksynnan_ehto_hakukohteessa
+            where hakemus_oid = $hakemusOid and
+                  hakukohde_oid = $hakukohdeOid)
+           union all
+           (select koodi,
+                   fi,
+                   sv,
+                   en,
+                   lower(system_time) as lower_st,
+                   upper(system_time),
+                   ilmoittaja
+            from hyvaksynnan_ehto_hakukohteessa_history
+            where hakemus_oid = $hakemusOid and
+                  hakukohde_oid = $hakukohdeOid)
+           order by lower_st asc)
+      """.as[(String, String, String, String, Instant, Option[Instant], String)].map(_.toList.map {
+      case (koodi, fi, sv, en, alku, None, ilmoittaja) =>
+        Nykyinen(HyvaksynnanEhto(koodi, fi, sv, en), alku, ilmoittaja)
+      case (koodi, fi, sv, en, alku, Some(loppu), ilmoittaja) =>
+        Edellinen(HyvaksynnanEhto(koodi, fi, sv, en), alku, loppu, ilmoittaja)
+    } match {
+      case Nil => Nil
+      case h :: hs =>
+        hs.foldLeft(List(h)) {
+          case (hs@Versio((_, Some(loppu))) :: _, h@Versio((alku, _))) if loppu != alku => h :: EdellinenPoistettu(loppu, alku) :: hs
+          case (hs, h) => h :: hs
+        } match {
+          case hs@Versio((_, Some(loppu))) :: _ => NykyinenPoistettu(loppu) :: hs
+          case hs => hs
+        }
+    })
+  }
+
   def insertHyvaksynnanEhtoValintatapajonossa(hakemusOid: HakemusOid,
                                               valintatapajonoOid: ValintatapajonoOid,
                                               hakukohdeOid: HakukohdeOid,
