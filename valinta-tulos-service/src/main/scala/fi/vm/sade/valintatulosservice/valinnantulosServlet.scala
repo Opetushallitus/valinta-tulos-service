@@ -109,7 +109,13 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
   get("/hakemus/", operation(valinnantuloksetHakemukselleSwagger)) {
     contentType = formats("json")
     implicit val authenticated = authenticate
-    authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
+    authorize(
+      Role.SIJOITTELU_READ,
+      Role.SIJOITTELU_READ_UPDATE,
+      Role.SIJOITTELU_CRUD,
+      Role.ATARU_KEVYT_VALINTA_READ,
+      Role.ATARU_KEVYT_VALINTA_CRUD
+    )
     Ok(parseHakemusOid.right.map(valinnantulosService.getValinnantuloksetForHakemus(_, auditInfo)))
   }
 
@@ -117,6 +123,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     summary "Muokkaa valinnantulosta"
     parameter pathParam[String]("valintatapajonoOid").description("Valintatapajonon OID")
     parameter headerParam[String](appConfig.settings.headerIfUnmodifiedSince).description(s"Aikaleima RFC 1123 määrittelemässä muodossa $RFC1123sample").required
+    parameter queryParam[Boolean](name = "erillishaku").description("Onko kyseessä erillishaku").optional
     parameter bodyParam[List[Valinnantulos]].description("Muutokset valinnan tulokseen").required
     tags "valinnan-tulos")
   models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
@@ -128,7 +135,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
   patch("/:valintatapajonoOid", operation(valinnantulosMuutosSwagger)) {
     contentType = formats("json")
     implicit val authenticated = authenticate
-    authorize(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
+    authorize(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD, Role.ATARU_KEVYT_VALINTA_CRUD)
     val erillishaku = parseErillishaku
     val valintatapajonoOid = parseValintatapajonoOid.fold(throw _, x => x)
     val ifUnmodifiedSince: Instant = getIfUnmodifiedSince(appConfig)
