@@ -2,13 +2,15 @@ package fi.vm.sade.valintatulosservice
 
 import java.net.URL
 import java.time.format.DateTimeFormatter
-import java.time.{OffsetDateTime, ZoneId, ZonedDateTime}
+import java.time.temporal.ChronoUnit
+import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
 
 import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, ValintatuloksenTila}
 import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
+import fi.vm.sade.valintatulosservice.domain.{En, Fi, Language, Sv}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.JsonAST.{JString, JValue}
-import org.json4s.{CustomSerializer, Formats}
+import org.json4s.{CustomKeySerializer, CustomSerializer, Formats}
 
 class VirkailijanVastaanottoActionSerializer extends CustomSerializer[VirkailijanVastaanottoAction]((formats: Formats) => {
   ( {
@@ -66,6 +68,14 @@ class ZonedDateTimeSerializer extends CustomSerializer[ZonedDateTime]((_: Format
   })
 })
 
+class InstantSerializer extends CustomSerializer[Instant]((_: Formats) => {
+  ({
+    case json: JString => Instant.from(DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(json.s))
+  }, {
+    case i: Instant => JString(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(i.truncatedTo(ChronoUnit.SECONDS).atZone(ZoneId.of("Europe/Helsinki"))))
+  })
+})
+
 class KausiSerializer extends CustomSerializer[Kausi]((_: Formats) => {
   ({
     case json: JString => Kausi(json.s)
@@ -79,5 +89,17 @@ class UrlSerializer extends CustomSerializer[URL]((_: Formats) => {
     case json: JString => new URL(json.s)
   }, {
     case url: URL => JString(url.toString)
+  })
+})
+
+class LanguageKeySerializer extends CustomKeySerializer[Language]((_: Formats) => {
+  ({
+    case "fi" => Fi
+    case "sv" => Sv
+    case "en" => En
+  }, {
+    case Fi => "fi"
+    case Sv => "sv"
+    case En => "en"
   })
 })

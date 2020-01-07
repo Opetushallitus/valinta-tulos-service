@@ -4,6 +4,7 @@ import java.time.{Instant, OffsetDateTime}
 import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhto
 import org.joda.time.DateTime
 
 case class ValinnantulosUpdateStatus(status: Int, message: String, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid)
@@ -46,7 +47,8 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
       other.vastaanottotila != vastaanottotila ||
       other.ilmoittautumistila != ilmoittautumistila ||
       hasOhjausChanged(other) ||
-      hasEhdollisenHyvaksynnanEhtoChanged(other)
+      hasEhdollisenHyvaksynnanEhtoChanged(other) ||
+      hasValinnantilanKuvauksenTekstiChanged(other)
 
   def isSameValinnantulos(other: Valinnantulos) =
     other.hakukohdeOid == hakukohdeOid &&
@@ -55,7 +57,6 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
       other.henkiloOid == henkiloOid
 
   def hasOhjausChanged(other: Valinnantulos) =
-    booleanOptionChanged(ehdollisestiHyvaksyttavissa, other.ehdollisestiHyvaksyttavissa) ||
       booleanOptionChanged(julkaistavissa, other.julkaistavissa) ||
       booleanOptionChanged(hyvaksyttyVarasijalta, other.hyvaksyttyVarasijalta) ||
       booleanOptionChanged(hyvaksyPeruuntunut, other.hyvaksyPeruuntunut)
@@ -65,8 +66,10 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
       stringChanged(ehdollisenHyvaksymisenEhtoKoodi, other.ehdollisenHyvaksymisenEhtoKoodi) ||
       stringChanged(ehdollisenHyvaksymisenEhtoFI, other.ehdollisenHyvaksymisenEhtoFI) ||
       stringChanged(ehdollisenHyvaksymisenEhtoSV, other.ehdollisenHyvaksymisenEhtoSV) ||
-      stringChanged(ehdollisenHyvaksymisenEhtoEN, other.ehdollisenHyvaksymisenEhtoEN) ||
-      stringChanged(valinnantilanKuvauksenTekstiFI, other.valinnantilanKuvauksenTekstiFI) ||
+      stringChanged(ehdollisenHyvaksymisenEhtoEN, other.ehdollisenHyvaksymisenEhtoEN)
+
+  def hasValinnantilanKuvauksenTekstiChanged(other: Valinnantulos) =
+    stringChanged(valinnantilanKuvauksenTekstiFI, other.valinnantilanKuvauksenTekstiFI) ||
       stringChanged(valinnantilanKuvauksenTekstiSV, other.valinnantilanKuvauksenTekstiSV) ||
       stringChanged(valinnantilanKuvauksenTekstiEN, other.valinnantilanKuvauksenTekstiEN)
 
@@ -81,19 +84,11 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
 
   private def stringChanged(thisParam: Option[String], otherParam: Option[String]) = thisParam.isDefined && thisParam != otherParam
 
-  private def getStringChange(thisParam: Option[String], otherParam: Option[String]) =
-    if (stringChanged(thisParam, otherParam)) {
-      thisParam.getOrElse("")
-    } else {
-      otherParam.getOrElse("")
-    }
-
   def getValinnantuloksenOhjauksenMuutos(vanha: Valinnantulos, muokkaaja: String, selite: String) = {
     ValinnantuloksenOhjaus(
       this.hakemusOid,
       this.valintatapajonoOid,
       this.hakukohdeOid,
-      getBooleanOptionChange(this.ehdollisestiHyvaksyttavissa, vanha.ehdollisestiHyvaksyttavissa),
       getBooleanOptionChange(this.julkaistavissa, vanha.julkaistavissa),
       getBooleanOptionChange(this.hyvaksyttyVarasijalta, vanha.hyvaksyttyVarasijalta),
       getBooleanOptionChange(this.hyvaksyPeruuntunut, vanha.hyvaksyPeruuntunut),
@@ -106,7 +101,6 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     this.hakemusOid,
     this.valintatapajonoOid,
     this.hakukohdeOid,
-    this.ehdollisestiHyvaksyttavissa.getOrElse(false),
     this.julkaistavissa.getOrElse(false),
     this.hyvaksyttyVarasijalta.getOrElse(false),
     this.hyvaksyPeruuntunut.getOrElse(false),
@@ -114,39 +108,17 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     selite
   )
 
-  def getEhdollisenHyvaksynnanEhtoMuutos(vanha: Valinnantulos) = {
+  def getEhdollisenHyvaksynnanEhto: Option[HyvaksynnanEhto] =
     if (ehdollisestiHyvaksyttavissa.contains(true)) {
-      EhdollisenHyvaksynnanEhto(
-        this.hakemusOid,
-        this.valintatapajonoOid,
-        this.hakukohdeOid,
-        getStringChange(this.ehdollisenHyvaksymisenEhtoKoodi, vanha.ehdollisenHyvaksymisenEhtoKoodi),
-        getStringChange(this.ehdollisenHyvaksymisenEhtoFI, vanha.ehdollisenHyvaksymisenEhtoFI),
-        getStringChange(this.ehdollisenHyvaksymisenEhtoSV, vanha.ehdollisenHyvaksymisenEhtoSV),
-        getStringChange(this.ehdollisenHyvaksymisenEhtoEN, vanha.ehdollisenHyvaksymisenEhtoEN)
-      )
+      Some(HyvaksynnanEhto(
+        this.ehdollisenHyvaksymisenEhtoKoodi.getOrElse(""),
+        this.ehdollisenHyvaksymisenEhtoFI.getOrElse(""),
+        this.ehdollisenHyvaksymisenEhtoSV.getOrElse(""),
+        this.ehdollisenHyvaksymisenEhtoEN.getOrElse("")
+      ))
     } else {
-      EhdollisenHyvaksynnanEhto(
-        this.hakemusOid,
-        this.valintatapajonoOid,
-        this.hakukohdeOid,
-        "",
-        "",
-        "",
-        ""
-      )
+      None
     }
-  }
-
-  def getEhdollisenHyvaksynnanEhto() = EhdollisenHyvaksynnanEhto(
-    this.hakemusOid,
-    this.valintatapajonoOid,
-    this.hakukohdeOid,
-    this.ehdollisenHyvaksymisenEhtoKoodi.getOrElse(""),
-    this.ehdollisenHyvaksymisenEhtoFI.getOrElse(""),
-    this.ehdollisenHyvaksymisenEhtoSV.getOrElse(""),
-    this.ehdollisenHyvaksymisenEhtoEN.getOrElse("")
-  )
 
   def getValinnantilanTallennus(muokkaaja: String) = ValinnantilanTallennus(
     this.hakemusOid,
@@ -193,7 +165,6 @@ case class ValinnantulosWithTilahistoria(valinnantulos: Valinnantulos, tilaHisto
 case class ValinnantuloksenOhjaus(hakemusOid: HakemusOid,
                                   valintatapajonoOid: ValintatapajonoOid,
                                   hakukohdeOid: HakukohdeOid,
-                                  ehdollisestiHyvaksyttavissa: Boolean,
                                   julkaistavissa: Boolean,
                                   hyvaksyttyVarasijalta: Boolean,
                                   hyvaksyPeruuntunut: Boolean,
@@ -206,14 +177,6 @@ case class ValinnantilanTallennus(hakemusOid: HakemusOid,
                                   henkiloOid: String,
                                   valinnantila: Valinnantila,
                                   muokkaaja: String)
-
-case class EhdollisenHyvaksynnanEhto(hakemusOid: HakemusOid,
-                                     valintatapajonoOid: ValintatapajonoOid,
-                                     hakukohdeOid: HakukohdeOid,
-                                     ehdollisenHyvaksymisenEhtoKoodi: String,
-                                     ehdollisenHyvaksymisenEhtoFI: String,
-                                     ehdollisenHyvaksymisenEhtoSV: String,
-                                     ehdollisenHyvaksymisenEhtoEN: String)
 
 case class Hyvaksymiskirje(henkiloOid: String,
                            hakukohdeOid: HakukohdeOid,

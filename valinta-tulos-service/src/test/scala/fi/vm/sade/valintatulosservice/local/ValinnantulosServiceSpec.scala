@@ -15,10 +15,11 @@ import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket,
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnanTilanKuvausRepository, ValinnantulosRepository, VastaanottoEvent}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{ValinnantulosUpdateStatus, _}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.mock.RunBlockingMock
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhtoRepository
 import org.joda.time.DateTime
 import org.junit.runner.RunWith
 import org.specs2.matcher.MustThrownExpectations
@@ -216,6 +217,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       there was one (valinnantulosRepository).deleteIlmoittautuminen(validiValinnantulos.henkiloOid, Ilmoittautuminen(validiValinnantulos.hakukohdeOid, validiValinnantulos.ilmoittautumistila,
         session.personOid, "Erillishaun tallennus"), Some(lastModified))
       there was one (valinnantulosRepository).deleteHyvaksyttyJaJulkaistavissaIfExists(validiValinnantulos.henkiloOid, validiValinnantulos.hakukohdeOid, Some(lastModified))
+      there was no (valinnantulosRepository).deleteHyvaksynnanEhtoValintatapajonossa(any[HakemusOid], any[ValintatapajonoOid], any[HakukohdeOid], any[Instant])
       there was no (valinnantulosRepository).updateValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
       there was no (valinnantulosRepository).storeValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
       there was no (valinnantulosRepository).storeIlmoittautuminen(any[String], any[Ilmoittautuminen], any[Option[Instant]])
@@ -240,7 +242,6 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       valinnantulosRepository.storeValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]]) returns DBIO.successful(())
       valinnantulosRepository.storeIlmoittautuminen(any[String], any[Ilmoittautuminen], any[Option[Instant]]) returns DBIO.successful(())
       valinnantulosRepository.storeValinnantila(any[ValinnantilanTallennus], any[Option[Instant]]) returns DBIO.successful(())
-      valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(any[EhdollisenHyvaksynnanEhto], any[Option[Instant]]) returns DBIO.successful(())
       valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(any[HakemusOid], any[ValintatapajonoOid], any[String], any[String]) returns DBIO.successful(())
       valinnantulosRepository.storeAction(any[VastaanottoEvent]) returns DBIO.successful(())
       valinnantulosRepository.storeValinnanTilanKuvaus(
@@ -274,6 +275,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     trait Repository extends ValinnantulosRepository
       with HakijaVastaanottoRepository
       with ValinnanTilanKuvausRepository
+      with HyvaksynnanEhtoRepository
 
     val valinnantulosRepository = mock[Repository]
     mockRunBlocking(valinnantulosRepository)

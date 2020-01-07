@@ -14,8 +14,6 @@ class HyvaksymiskirjeServlet(hyvaksymiskirjeService: HyvaksymiskirjeService,
 
   override val applicationDescription = "Hyväksymiskirjeiden REST API"
 
-  private def parseHakukohdeOid: HakukohdeOid = HakukohdeOid(params.getOrElse("hakukohdeOid", throw new IllegalArgumentException("URL parametri hakukohdeOid on pakollinen.")))
-
   val hyvaksymiskirjeSwagger: OperationBuilder = (apiOperation[List[Hyvaksymiskirje]]("hyväksymiskirjeet")
     summary "Hyväksymiskirjeet"
     parameter queryParam[String]("hakukohdeOid").description("Hakukohteen OID")
@@ -24,7 +22,7 @@ class HyvaksymiskirjeServlet(hyvaksymiskirjeService: HyvaksymiskirjeService,
     contentType = formats("json")
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
-    val hakukohdeOid = parseHakukohdeOid
+    val hakukohdeOid = parseHakukohdeOid.fold(throw _, x => x)
     Ok(hyvaksymiskirjeService.getHyvaksymiskirjeet(hakukohdeOid, auditInfo))
   }
 

@@ -9,6 +9,7 @@ import fi.vm.sade.sijoittelu.domain.Valintatapajono.JonosijaTieto
 import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, Valintatapajono}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhto
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
 import org.junit.runner.RunWith
@@ -289,6 +290,78 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
         case x => throw new AssertionError(s"Tuntematon henkilö oid ${x}")
       })
       hyvaksyttyJaJulkaistu.map(_("henkilo")).distinct.size must_== 2
+    }
+    "set ehdollisesti hyväksyttävissä" in {
+      val hakemusOid = HakemusOid("1.2.246.562.11.00000441369")
+      val valintatapajonoOid = ValintatapajonoOid("14090336922663576781797489829887")
+      val hakukohdeOid = HakukohdeOid("1.2.246.562.5.72607738902")
+      val wrapper = loadSijoitteluFromFixture("hyvaksytty-korkeakoulu-erillishaku")
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.insertHyvaksynnanEhtoHakukohteessa(
+          hakemusOid,
+          hakukohdeOid,
+          HyvaksynnanEhto("muu", "muu", "andra", "other"),
+          "1.2.246.562.24.00000000002"))
+      singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
+      val valinnantulos = singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.getValinnantuloksetForHakemus(hakemusOid))
+        .find(v => v.hakukohdeOid == hakukohdeOid && v.valintatapajonoOid == valintatapajonoOid)
+      valinnantulos.flatMap(_.ehdollisestiHyvaksyttavissa) must beSome(true)
+      valinnantulos.flatMap(_.ehdollisenHyvaksymisenEhtoKoodi) must beSome("muu")
+      valinnantulos.flatMap(_.ehdollisenHyvaksymisenEhtoFI) must beSome("muu")
+      valinnantulos.flatMap(_.ehdollisenHyvaksymisenEhtoSV) must beSome("andra")
+      valinnantulos.flatMap(_.ehdollisenHyvaksymisenEhtoEN) must beSome("other")
+    }
+    "not set ehdollisesti hyväksyttävissä if valinnantulos present" in {
+      val hakemusOid = HakemusOid("1.2.246.562.11.00000441369")
+      val valintatapajonoOid = ValintatapajonoOid("14090336922663576781797489829887")
+      val hakukohdeOid = HakukohdeOid("1.2.246.562.5.72607738902")
+      val wrapper = loadSijoitteluFromFixture("hyvaksytty-korkeakoulu-erillishaku")
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.insertHyvaksynnanEhtoHakukohteessa(
+          hakemusOid,
+          hakukohdeOid,
+          HyvaksynnanEhto("muu", "muu", "andra", "other"),
+          "1.2.246.562.24.00000000002"))
+      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeValinnantila(
+        ValinnantilanTallennus(
+          hakemusOid,
+          valintatapajonoOid,
+          hakukohdeOid,
+          "1.2.246.562.24.14229104472",
+          Hylatty,
+          "muokkaaja"),
+        None))
+      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeValinnantuloksenOhjaus(
+        ValinnantuloksenOhjaus(
+          hakemusOid,
+          valintatapajonoOid,
+          hakukohdeOid,
+          false,
+          false,
+          false,
+          "muokkaaja",
+          "selite"),
+        None))
+      singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
+      val valinnantulokset = singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.getValinnantuloksetForHakemus(hakemusOid))
+
+      val eiEhdollisestiHyvaksyttavissa = valinnantulokset
+        .find(v => v.hakukohdeOid == hakukohdeOid && v.valintatapajonoOid == valintatapajonoOid)
+      eiEhdollisestiHyvaksyttavissa.flatMap(_.ehdollisestiHyvaksyttavissa) must beSome(false)
+      eiEhdollisestiHyvaksyttavissa.flatMap(_.ehdollisenHyvaksymisenEhtoKoodi) must beNone
+      eiEhdollisestiHyvaksyttavissa.flatMap(_.ehdollisenHyvaksymisenEhtoFI) must beNone
+      eiEhdollisestiHyvaksyttavissa.flatMap(_.ehdollisenHyvaksymisenEhtoSV) must beNone
+      eiEhdollisestiHyvaksyttavissa.flatMap(_.ehdollisenHyvaksymisenEhtoEN) must beNone
+
+      val ehdollisestiHyvaksyttavissa = valinnantulokset
+        .find(v => v.hakukohdeOid == hakukohdeOid && v.valintatapajonoOid == ValintatapajonoOid("14090336922663576781797489829886"))
+      ehdollisestiHyvaksyttavissa.flatMap(_.ehdollisestiHyvaksyttavissa) must beSome(true)
+      ehdollisestiHyvaksyttavissa.flatMap(_.ehdollisenHyvaksymisenEhtoKoodi) must beSome("muu")
+      ehdollisestiHyvaksyttavissa.flatMap(_.ehdollisenHyvaksymisenEhtoFI) must beSome("muu")
+      ehdollisestiHyvaksyttavissa.flatMap(_.ehdollisenHyvaksymisenEhtoSV) must beSome("andra")
+      ehdollisestiHyvaksyttavissa.flatMap(_.ehdollisenHyvaksymisenEhtoEN) must beSome("other")
     }
   }
   "store sijoiteltu ilman varasijasääntöjä niiden ollessa voimassa flag by valintatapajono" in {

@@ -77,8 +77,4 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
         NotFound(e.getMessage)
     }
   }
-
-  protected def createLastModifiedHeader(instant: Instant): String = {
-    DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant((instant.truncatedTo(java.time.temporal.ChronoUnit.SECONDS).plusSeconds(1)), ZoneId.of("GMT")))
-  }
 }

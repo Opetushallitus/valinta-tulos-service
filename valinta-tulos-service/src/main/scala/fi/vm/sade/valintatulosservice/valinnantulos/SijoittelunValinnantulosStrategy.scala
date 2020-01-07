@@ -10,6 +10,7 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.{HyvaksynnanEhtoRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantuloksenMuokkaus}
@@ -24,7 +25,9 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
                                        ohjausparametrit: Option[Ohjausparametrit],
                                        authorizer: OrganizationHierarchyAuthorizer,
                                        appConfig: VtsAppConfig,
-                                       valinnantulosRepository: ValinnantulosRepository with HakijaVastaanottoRepository,
+                                       valinnantulosRepository: ValinnantulosRepository
+                                         with HakijaVastaanottoRepository
+                                         with HyvaksynnanEhtoRepository,
                                        ifUnmodifiedSince: Instant,
                                        audit: Audit) extends ValinnantulosStrategy with Logging {
   private val session = auditInfo.session._2
@@ -33,7 +36,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
   def hasChange(uusi:Valinnantulos, vanha:Valinnantulos) = (uusi.hasChanged(vanha) || uusi.hasOhjausChanged(vanha) || uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha))
 
-  def validate(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos], ifUnmodifiedSince: Option[Instant]): DBIO[Either[ValinnantulosUpdateStatus, Unit]] = {
+  def validate(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): DBIO[Either[ValinnantulosUpdateStatus, Unit]] = {
     if (vanhaOpt.isEmpty) {
       logger.warn(s"Hakemuksen ${uusi.hakemusOid} valinnan tulosta ei löydy " +
         s"valintatapajonosta ${uusi.valintatapajonoOid}.")
@@ -143,7 +146,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
   final val selite = "Virkailijan tallennus"
 
-  def save(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos], ifUnModifiedSince: Option[Instant]): DBIO[Unit] = {
+  def save(uusi: Valinnantulos, vanhaOpt: Option[Valinnantulos]): DBIO[Unit] = {
     val muokkaaja = session.personOid
     val vanha = vanhaOpt.getOrElse(throw new IllegalStateException(s"Vain valinnantuloksen muokkaus sallittu haussa ${haku.oid}"))
     val updateOhjaus = if (uusi.hasOhjausChanged(vanha)) {
@@ -152,18 +155,28 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
     } else {
       DBIO.successful()
     }
-    val updateEhdollisenHyvaksynnanEhto = if (uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha)) {
-      valinnantulosRepository.storeEhdollisenHyvaksynnanEhto(
-        uusi.getEhdollisenHyvaksynnanEhtoMuutos(vanha), Some(ifUnmodifiedSince)
-      )
-    } else {
-      DBIO.successful(())
+    val updateEhdollisenHyvaksynnanEhto = (
+      uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha),
+      uusi.getEhdollisenHyvaksynnanEhto,
+      vanha.getEhdollisenHyvaksynnanEhto.isDefined
+    ) match {
+      case (true, None, _) =>
+        valinnantulosRepository.deleteHyvaksynnanEhtoValintatapajonossa(
+          uusi.hakemusOid, uusi.valintatapajonoOid, uusi.hakukohdeOid, ifUnmodifiedSince)
+      case (true, Some(ehto), false) =>
+        valinnantulosRepository.insertHyvaksynnanEhtoValintatapajonossa(
+          uusi.hakemusOid, uusi.valintatapajonoOid, uusi.hakukohdeOid, ehto)
+      case (true, Some(ehto), true) =>
+        valinnantulosRepository.updateHyvaksynnanEhtoValintatapajonossa(
+          uusi.hakemusOid, uusi.valintatapajonoOid, uusi.hakukohdeOid, ehto, ifUnmodifiedSince)
+      case _ =>
+        DBIO.successful(())
     }
     val updateVastaanotto = if (uusi.vastaanottotila != vanha.vastaanottotila &&
       !(uusi.vastaanottotila == ValintatuloksenTila.KESKEN && vanha.vastaanottotila == ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)) {
       valinnantulosRepository.storeAction(VirkailijanVastaanotto(haku.oid, uusi.valintatapajonoOid, uusi.henkiloOid, uusi.hakemusOid, hakukohdeOid,
         VirkailijanVastaanottoAction.getVirkailijanVastaanottoAction(Vastaanottotila.values.find(Vastaanottotila.matches(_, uusi.vastaanottotila))
-          .getOrElse(throw new IllegalArgumentException(s"Odottamaton vastaanottotila ${uusi.vastaanottotila}"))), muokkaaja, selite), ifUnModifiedSince)
+          .getOrElse(throw new IllegalArgumentException(s"Odottamaton vastaanottotila ${uusi.vastaanottotila}"))), muokkaaja, selite), Some(ifUnmodifiedSince))
     } else {
       DBIO.successful(())
     }

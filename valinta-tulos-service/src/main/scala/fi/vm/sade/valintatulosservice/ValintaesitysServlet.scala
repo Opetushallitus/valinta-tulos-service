@@ -14,16 +14,6 @@ class ValintaesitysServlet(valintaesitysService: ValintaesitysService,
 
   override val applicationDescription = "Valintaesityksen REST API"
 
-  private def parseValintatapajonoOid: ValintatapajonoOid = ValintatapajonoOid(params.getOrElse(
-    "valintatapajonoOid",
-    throw new IllegalArgumentException("URL parametri valintatapajonoOid on pakollinen.")
-  ))
-
-  private def parseHakukohdeOid: HakukohdeOid = HakukohdeOid(params.getOrElse(
-    "hakukohdeOid",
-    throw new IllegalArgumentException("URL parametri hakukohdeOid on pakollinen.")
-  ))
-
   val valintaesitysSwagger: OperationBuilder = (apiOperation[List[Valintaesitys]]("valintaesityksien haku")
     summary "Hae valintaesityksiä"
     parameter queryParam[String]("hakukohdeOid").description("Hakukohde OID")
@@ -31,7 +21,7 @@ class ValintaesitysServlet(valintaesitysService: ValintaesitysService,
   get("/", operation(valintaesitysSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
-    Ok(valintaesitysService.get(parseHakukohdeOid, auditInfo))
+    Ok(valintaesitysService.get(parseHakukohdeOid.fold(throw _, x => x), auditInfo))
   }
 
   val valintaesityksenHyvaksyntaSwagger: OperationBuilder = (apiOperation[Valintaesitys]("valintaesityksen hyväksyntä")
@@ -41,6 +31,6 @@ class ValintaesitysServlet(valintaesitysService: ValintaesitysService,
   post("/:valintatapajonoOid/hyvaksytty", operation(valintaesityksenHyvaksyntaSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
-    Ok(valintaesitysService.hyvaksyValintaesitys(parseValintatapajonoOid, auditInfo))
+    Ok(valintaesitysService.hyvaksyValintaesitys(parseValintatapajonoOid.fold(throw _, x => x), auditInfo))
   }
 }
