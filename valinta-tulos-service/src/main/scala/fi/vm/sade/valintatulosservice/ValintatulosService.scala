@@ -646,7 +646,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
   }
 
   private def sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) = {
-    if (haku.korkeakoulu && haku.käyttääSijoittelua) {
+    if (haku.korkeakoulu && haku.sijoitteluJaPriorisointi) {
       val indexedTulokset = tulokset.zipWithIndex
       val firstVaralla = tulokset.indexWhere(_.valintatila == Valintatila.varalla)
       val firstPeruttuAfterFirstVaralla = if (firstVaralla >= 0) {
@@ -707,7 +707,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
   }
 
   private def peruValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) = {
-    if (haku.käyttääSijoittelua) {
+    if (haku.sijoitteluJaPriorisointi) {
       val firstFinished = tulokset.indexWhere { t =>
         isHyväksytty(t.valintatila) || t.valintatila == Valintatila.perunut
       }

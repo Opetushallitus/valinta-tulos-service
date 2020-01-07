@@ -24,10 +24,7 @@ trait HakuService {
   def getHaku(oid: HakuOid): Either[Throwable, Haku]
   def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, HakukohdeKela]
   def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde]
-  def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]]
-  def getKomos(komoOids: Seq[String]): Either[Throwable, Seq[Komo]]
   def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[Hakukohde]]
-  def getHakukohdesForHaku(hakuOid: HakuOid): Either[Throwable, Seq[Hakukohde]]
   def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]]
   def getArbitraryPublishedHakukohdeOid(oid: HakuOid): Either[Throwable, HakukohdeOid]
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]]
@@ -46,12 +43,24 @@ object HakuService {
   }
 }
 
-case class Haku(oid: HakuOid, korkeakoulu: Boolean, toinenAste: Boolean, sallittuKohdejoukkoKelaLinkille: Boolean,
-                käyttääSijoittelua: Boolean, varsinaisenHaunOid: Option[String], sisältyvätHaut: Set[String],
-                hakuAjat: List[Hakuaika], koulutuksenAlkamiskausi: Option[Kausi], yhdenPaikanSaanto: YhdenPaikanSaanto,
-                nimi: Map[String, String])
+case class Haku(oid: HakuOid,
+                korkeakoulu: Boolean,
+                toinenAste: Boolean,
+                sallittuKohdejoukkoKelaLinkille: Boolean,
+                käyttääSijoittelua: Boolean,
+                käyttääHakutoiveidenPriorisointia: Boolean,
+                varsinaisenHaunOid: Option[String],
+                sisältyvätHaut: Set[String],
+                hakuAjat: List[Hakuaika],
+                koulutuksenAlkamiskausi: Option[Kausi],
+                yhdenPaikanSaanto: YhdenPaikanSaanto,
+                nimi: Map[String, String]) {
+
+  val sijoitteluJaPriorisointi = käyttääSijoittelua && käyttääHakutoiveidenPriorisointia
+}
+
 case class Hakuaika(hakuaikaId: String, alkuPvm: Option[Long], loppuPvm: Option[Long]) {
-  def hasStarted = alkuPvm match {
+  def hasStarted: Boolean = alkuPvm match {
     case Some(alku) => new DateTime().isAfter(new DateTime(alku))
     case _ => true
   }
@@ -81,14 +90,14 @@ case class Koulutus(oid: String, koulutuksenAlkamiskausi: Kausi, tila: String, j
                     koulutuskoodi: Option[Koodi],
                     koulutusaste: Option[Koodi],
                     opintojenLaajuusarvo: Option[Koodi])
-case class HakukohdeKela(val koulutuksenAlkamiskausi: Option[Kausi],
-                         val hakukohdeOid: String,
-                         val tarjoajaOid: String,
-                         val oppilaitoskoodi: String,
+case class HakukohdeKela(koulutuksenAlkamiskausi: Option[Kausi],
+                         hakukohdeOid: String,
+                         tarjoajaOid: String,
+                         oppilaitoskoodi: String,
                          koulutuslaajuusarvot: Seq[KoulutusLaajuusarvo])
 
 class HakukohdeKelaSerializer extends CustomSerializer[HakukohdeKela]((formats: Formats) => {
-  implicit val f = formats
+  implicit val f: Formats = formats
   ( {
     case o: JObject =>
       val JString(hakukohdeOid) = o \ "hakukohdeOid"
@@ -96,7 +105,7 @@ class HakukohdeKelaSerializer extends CustomSerializer[HakukohdeKela]((formats: 
       val JString(oppilaitoskoodi) = o \ "oppilaitosKoodi"
       val JInt(vuosi) = o \ "koulutuksenAlkamisVuosi"
 
-      val kausi: Option[Kausi] = Try((o \ "koulutuksenAlkamiskausiUri") match {
+      val kausi: Option[Kausi] = Try(o \ "koulutuksenAlkamiskausiUri" match {
         case JString(kevät) if kevät.contains("kausi_k") => Kevat(vuosi.toInt)
         case JString(syksy) if syksy.contains("kausi_s") => Syksy(vuosi.toInt)
         case x => throw new MappingException(s"Unrecognized kausi URI $x")
@@ -109,10 +118,10 @@ class HakukohdeKelaSerializer extends CustomSerializer[HakukohdeKela]((formats: 
         oppilaitoskoodi = oppilaitoskoodi,
         koulutuslaajuusarvot = children
       )
-  }, { case o => ??? })
+  }, { case _ => ??? })
 })
 class KoulutusSerializer extends CustomSerializer[Koulutus]((formats: Formats) => {
-  implicit val f = formats
+  implicit val f: Formats = formats
   ( {
     case o: JObject =>
       val JString(oid) = o \ "oid"
@@ -124,9 +133,7 @@ class KoulutusSerializer extends CustomSerializer[Koulutus]((formats: Formats) =
         case JString("kausi_s") => Syksy(vuosi.toInt)
         case x => throw new MappingException(s"Unrecognized kausi URI $x")
       }
-      val koulutusUriOpt = (o \ "koulutuskoodi" \ "uri").extractOpt[String]
-      val koulutusVersioOpt = (o \ "koulutuskoodi" \ "versio").extractOpt[Int]
-      val vads: JValue = (o \ "koulutuskoodi")
+
       def extractKoodi(j: JValue) = Try(Koodi((j \ "uri").extract[String], (j \ "arvo").extract[String])).toOption
       val children = (o \ "children").extractOpt[Seq[String]].getOrElse(Seq())
       val sisaltyvatKoulutuskoodiUris = (o \ "sisaltyvatKoulutuskoodit" \ "uris").extractOpt[Map[String,String]].getOrElse(Map.empty)
@@ -134,21 +141,21 @@ class KoulutusSerializer extends CustomSerializer[Koulutus]((formats: Formats) =
       Koulutus(oid, kausi, tila, johtaaTutkintoon,
         children,
         sisaltyvatKoulutuskoodit = sisaltyvatKoulutuskoodiUris.keys.map(k => k.replace("koulutus_", "")).toSeq,
-        koulutuskoodi = extractKoodi((o \ "koulutuskoodi")),
-          koulutusaste = extractKoodi((o \ "koulutusaste")),
-          opintojenLaajuusarvo = extractKoodi((o \ "opintojenLaajuusarvo")))
-  }, { case o => ??? })
+        koulutuskoodi = extractKoodi(o \ "koulutuskoodi"),
+          koulutusaste = extractKoodi(o \ "koulutusaste"),
+          opintojenLaajuusarvo = extractKoodi(o \ "opintojenLaajuusarvo"))
+  }, { case _ => ??? })
 })
 class KomoSerializer extends CustomSerializer[Komo]((formats: Formats) => {
-  implicit val f = formats
+  implicit val f: Formats = formats
   ( {
     case o: JObject =>
       val JString(oid) = o \ "oid"
       def extractKoodi(j: JValue) = Try(Koodi((j \ "uri").extract[String], (j \ "arvo").extract[String])).toOption
       Komo(oid,
-        koulutuskoodi = extractKoodi((o \ "koulutuskoodi")),
-        opintojenLaajuusarvo = extractKoodi((o \ "opintojenLaajuusarvo")))
-  }, { case o => ??? })
+        koulutuskoodi = extractKoodi(o \ "koulutuskoodi"),
+        opintojenLaajuusarvo = extractKoodi(o \ "opintojenLaajuusarvo"))
+  }, { case _ => ??? })
 })
 protected trait JsonHakuService {
   import org.json4s._
@@ -165,10 +172,7 @@ protected trait JsonHakuService {
   protected def toHaku(haku: HakuTarjonnassa): Haku = {
     val korkeakoulu: Boolean = haku.kohdejoukkoUri.startsWith("haunkohdejoukko_12#")
     val amkopeTarkenteet = Set("haunkohdejoukontarkenne_2#", "haunkohdejoukontarkenne_4#", "haunkohdejoukontarkenne_5#", "haunkohdejoukontarkenne_6#")
-    val sallittuKohdejoukkoKelaLinkille: Boolean = !(haku.kohdejoukonTarkenne.exists(tarkenne => amkopeTarkenteet.exists(tarkenne.startsWith)))
-    val yhteishaku: Boolean = haku.hakutapaUri.startsWith("hakutapa_01#")
-    val varsinainenhaku: Boolean = haku.hakutyyppiUri.startsWith("hakutyyppi_01#1")
-    val lisähaku: Boolean = haku.hakutyyppiUri.startsWith("hakutyyppi_03#1")
+    val sallittuKohdejoukkoKelaLinkille: Boolean = !haku.kohdejoukonTarkenne.exists(tarkenne => amkopeTarkenteet.exists(tarkenne.startsWith))
     val toinenAste: Boolean = Option(haku.kohdejoukkoUri).exists(k => k.contains("_11") || k.contains("_17") || k.contains("_20"))
     val koulutuksenAlkamisvuosi = haku.koulutuksenAlkamisVuosi
     val kausi = if (haku.koulutuksenAlkamiskausiUri.isDefined && haku.koulutuksenAlkamisVuosi.isDefined) {
@@ -179,8 +183,19 @@ protected trait JsonHakuService {
           } else throw new MappingException(s"Haku ${haku.oid} has unrecognized kausi URI '${haku.koulutuksenAlkamiskausiUri.get}' . Full data of haku: $haku")
     } else None
 
-    Haku(haku.oid, korkeakoulu, toinenAste, sallittuKohdejoukkoKelaLinkille, haku.sijoittelu, haku.parentHakuOid,
-      haku.sisaltyvatHaut, haku.hakuaikas, kausi, haku.yhdenPaikanSaanto, haku.nimi)
+    Haku(
+      oid = haku.oid,
+      korkeakoulu = korkeakoulu,
+      toinenAste = toinenAste,
+      sallittuKohdejoukkoKelaLinkille = sallittuKohdejoukkoKelaLinkille,
+      käyttääSijoittelua = haku.sijoittelu,
+      käyttääHakutoiveidenPriorisointia = haku.usePriority,
+      varsinaisenHaunOid = haku.parentHakuOid,
+      sisältyvätHaut = haku.sisaltyvatHaut,
+      hakuAjat = haku.hakuaikas,
+      koulutuksenAlkamiskausi = kausi,
+      yhdenPaikanSaanto = haku.yhdenPaikanSaanto,
+      nimi = haku.nimi)
   }
 }
 
@@ -191,11 +206,8 @@ class CachedHakuService(wrappedService: HakuService, config: AppConfig) extends 
   override def getHaku(oid: HakuOid): Either[Throwable, Haku] = byOid(oid)
   override def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, HakukohdeKela] = wrappedService.getHakukohdeKela(oid)
   override def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde] = wrappedService.getHakukohde(oid)
-  override def getKomos(kOids: Seq[String]): Either[Throwable, Seq[Komo]] = wrappedService.getKomos(kOids)
-  override def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]] = wrappedService.getKoulutuses(koulutusOids)
   override def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[Hakukohde]] = wrappedService.getHakukohdes(oids)
   override def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]] = wrappedService.getHakukohdeOids(hakuOid)
-  override def getHakukohdesForHaku(hakuOid: HakuOid): Either[Throwable, Seq[Hakukohde]] = wrappedService.getHakukohdesForHaku(hakuOid)
   override def getArbitraryPublishedHakukohdeOid(oid: HakuOid): Either[Throwable, HakukohdeOid] = wrappedService.getArbitraryPublishedHakukohdeOid(oid)
 
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = all()
@@ -209,6 +221,7 @@ private case class HakuTarjonnassa(oid: HakuOid,
                                    koulutuksenAlkamisVuosi: Option[Int],
                                    koulutuksenAlkamiskausiUri: Option[String],
                                    sijoittelu: Boolean,
+                                   usePriority: Boolean,
                                    parentHakuOid: Option[String],
                                    sisaltyvatHaut: Set[String],
                                    tila: String,
@@ -217,7 +230,7 @@ private case class HakuTarjonnassa(oid: HakuOid,
                                    nimi: Map[String, String],
                                    organisaatioOids: Seq[String],
                                    tarjoajaOids: Seq[String]) {
-  def julkaistu = {
+  def julkaistu: Boolean = {
     tila == "JULKAISTU"
   }
 }
@@ -290,38 +303,15 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
     }
   }
 
-  def getHakukohdesForHaku(hakuOid: HakuOid): Either[Throwable, Seq[Hakukohde]] = {
-    getHakukohdeOids(hakuOid).right.flatMap(getHakukohdes)
-  }
-
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = {
     val url = config.ophProperties.url("tarjonta-service.find", Map("addHakuKohdes" -> false).asJava)
     fetch(url) { response =>
       val haut = (parse(response) \ "result").extract[List[HakuTarjonnassa]]
-      haut.filter(_.julkaistu).map(toHaku(_))
+      haut.filter(_.julkaistu).map(toHaku)
     }
   }
 
-  def getKoulutuses(koulutusOids: Seq[String]): Either[Throwable, Seq[Koulutus]] = {
-    MonadHelper.sequence(koulutusOids.map(getKoulutus))
-  }
-  def getKomos(komoOids: Seq[String]): Either[Throwable, Seq[Komo]] = {
-    MonadHelper.sequence(komoOids.map(getKomo))
-  }
-
-  private def getKoulutus(koulutusOid: String): Either[Throwable, Koulutus] = {
-    val koulutusUrl = config.ophProperties.url("tarjonta-service.koulutus", koulutusOid)
-    fetch(koulutusUrl) { response =>
-      (parse(response) \ "result").extract[Koulutus]
-    }
-  }
-  private def getKomo(komoOid: String): Either[Throwable, Komo] = {
-    val komoUrl = config.ophProperties.url("tarjonta-service.komo", komoOid)
-    fetch(komoUrl) { response =>
-      (parse(response) \ "result").extract[Komo]
-    }
-  }
-  private def fetch[T](url: String)(parse: (String => T)): Either[Throwable, T] = {
+  private def fetch[T](url: String)(parse: String => T): Either[Throwable, T] = {
     Try(DefaultHttpClient.httpGet(
       url,
       HttpOptions.connTimeout(30000),
