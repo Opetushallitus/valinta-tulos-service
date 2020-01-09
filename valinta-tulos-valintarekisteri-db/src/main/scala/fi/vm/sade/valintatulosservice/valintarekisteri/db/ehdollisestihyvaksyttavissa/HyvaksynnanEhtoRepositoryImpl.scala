@@ -10,6 +10,25 @@ import slick.jdbc.PostgresProfile.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait HyvaksynnanEhtoRepositoryImpl extends HyvaksynnanEhtoRepository {
+  def hyvaksynnanEhtoHakukohteessa(hakukohdeOid: HakukohdeOid): DBIO[List[(HakemusOid, HyvaksynnanEhto, Instant)]] = {
+    sql"""select hakemus_oid,
+                 koodi,
+                 fi,
+                 sv,
+                 en,
+                 lower(system_time)
+          from hyvaksynnan_ehto_hakukohteessa
+          where hakukohde_oid = $hakukohdeOid and
+                not exists (select 1
+                            from valinnantilat
+                            where hakemus_oid = hyvaksynnan_ehto_hakukohteessa.hakemus_oid and
+                                  hakukohde_oid = hyvaksynnan_ehto_hakukohteessa.hakukohde_oid)
+      """.as[(HakemusOid, String, String, String, String, Option[Instant])].map(_.map {
+      case (hakemusOid, koodi, fi, sv, en, Some(lastModified)) =>
+        (hakemusOid, HyvaksynnanEhto(koodi, fi, sv, en), lastModified)
+    }.toList)
+  }
+
   def hyvaksynnanEhtoHakukohteessa(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): DBIO[Option[(HyvaksynnanEhto, Instant)]] = {
     sql"""(select koodi,
                   fi,
@@ -37,6 +56,22 @@ trait HyvaksynnanEhtoRepositoryImpl extends HyvaksynnanEhtoRepository {
       case None =>
         None
     }
+  }
+
+  def hyvaksynnanEhdotValintatapajonoissa(hakukohdeOid: HakukohdeOid): DBIO[List[(HakemusOid, ValintatapajonoOid, HyvaksynnanEhto, Instant)]] = {
+    sql"""select hakemus_oid,
+                 valintatapajono_oid,
+                 ehdollisen_hyvaksymisen_ehto_koodi,
+                 ehdollisen_hyvaksymisen_ehto_fi,
+                 ehdollisen_hyvaksymisen_ehto_sv,
+                 ehdollisen_hyvaksymisen_ehto_en,
+                 lower(system_time)
+          from ehdollisen_hyvaksynnan_ehto
+          where hakukohde_oid = $hakukohdeOid
+       """.as[(HakemusOid, ValintatapajonoOid, String, String, String, String, Instant)].map(_.map {
+      case (hakemusOid, valintatapajonoOid, koodi, fi, sv, en, lastModified) =>
+        (hakemusOid, valintatapajonoOid, HyvaksynnanEhto(koodi, fi, sv, en), lastModified)
+    }.toList)
   }
 
   def hyvaksynnanEhdotValintatapajonoissa(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): DBIO[List[(ValintatapajonoOid, HyvaksynnanEhto, Instant)]] = {

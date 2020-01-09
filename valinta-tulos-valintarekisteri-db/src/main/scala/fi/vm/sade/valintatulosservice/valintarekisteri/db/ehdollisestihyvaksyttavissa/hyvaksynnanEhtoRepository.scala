@@ -7,11 +7,13 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, Hakuk
 import slick.dbio.DBIO
 
 trait HyvaksynnanEhtoRepository extends ValintarekisteriRepository {
+  def hyvaksynnanEhtoHakukohteessa(hakukohdeOid: HakukohdeOid): DBIO[List[(HakemusOid, HyvaksynnanEhto, Instant)]]
   def hyvaksynnanEhtoHakukohteessa(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): DBIO[Option[(HyvaksynnanEhto, Instant)]]
   def insertHyvaksynnanEhtoHakukohteessa(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, ehto: HyvaksynnanEhto, ilmoittaja: String): DBIO[(HyvaksynnanEhto, Instant)]
   def updateHyvaksynnanEhtoHakukohteessa(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, ehto: HyvaksynnanEhto, ilmoittaja: String, ifUnmodifiedSince: Instant): DBIO[(HyvaksynnanEhto, Instant)]
   def deleteHyvaksynnanEhtoHakukohteessa(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, ifUnmodifiedSince: Instant): DBIO[HyvaksynnanEhto]
   def hyvaksynnanEhtoHakukohteessaMuutoshistoria(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): DBIO[List[Versio[HyvaksynnanEhto]]]
+  def hyvaksynnanEhdotValintatapajonoissa(hakukohdeOid: HakukohdeOid): DBIO[List[(HakemusOid, ValintatapajonoOid, HyvaksynnanEhto, Instant)]]
   def hyvaksynnanEhdotValintatapajonoissa(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): DBIO[List[(ValintatapajonoOid, HyvaksynnanEhto, Instant)]]
   def insertHyvaksynnanEhtoValintatapajonossa(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid, hakukohdeOid: HakukohdeOid, ehto: HyvaksynnanEhto): DBIO[Unit]
   def updateHyvaksynnanEhtoValintatapajonossa(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid, hakukohdeOid: HakukohdeOid, ehto: HyvaksynnanEhto, ifUnmodifiedSince: Instant): DBIO[Unit]
