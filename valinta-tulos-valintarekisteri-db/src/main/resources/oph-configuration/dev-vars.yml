@@ -6,3 +6,5 @@ host_virkailija: "itest-virkailija.oph.ware.fi"
 valintatulosservice_ilmoittautuminen_enabled: true
 valintatulosservice_parseleniently_tarjonta: false
 valintatulosservice_parseleniently_sijoitteluajontulos: false
+omatsivut_haku_app_username: "username"
+omatsivut_haku_app_password: "password"

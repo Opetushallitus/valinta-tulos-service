@@ -58,9 +58,9 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     }
     implicit lazy val dynamicAppConfig = new OhjausparametritAppConfig(appConfig.ohjausparametritService)
 
-    lazy val hakuService = HakuService(appConfig)
-    lazy val oppijanTunnistusService = OppijanTunnistusService(appConfig.settings)
     lazy val organisaatioService = OrganisaatioService(appConfig)
+    lazy val hakuService = HakuService(appConfig, appConfig.securityContext.casClient, organisaatioService)
+    lazy val oppijanTunnistusService = OppijanTunnistusService(appConfig.settings)
     lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig, appConfig.isInstanceOf[IT])
     lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing)
     lazy val sijoitteluService = new SijoitteluService(valintarekisteriDb, authorizer, hakuService, audit)
