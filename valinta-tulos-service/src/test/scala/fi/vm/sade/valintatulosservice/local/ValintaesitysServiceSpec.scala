@@ -114,8 +114,6 @@ class ValintaesitysServiceSpec extends Specification with MockitoMatchers with M
       null,
       null,
       null,
-      null,
-      null,
       true,
       null,
       2015,

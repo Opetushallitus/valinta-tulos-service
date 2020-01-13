@@ -8,11 +8,11 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.MonadHelper
 import fi.vm.sade.valintatulosservice.config.AppConfig
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOidSerializer, HakuOid, HakuOidSerializer, HakukohdeOid, HakukohdeOidSerializer, Kausi, Kevat, Syksy, ValintatapajonoOidSerializer}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.joda.time.DateTime
 import org.json4s.JsonAST.{JInt, JObject, JString}
 import org.json4s.jackson.JsonMethods._
-import org.json4s.{CustomSerializer, Formats, JValue, MappingException}
+import org.json4s.{CustomSerializer, Formats, MappingException}
 import scalaj.http.HttpOptions
 
 import scala.collection.JavaConverters._
@@ -66,10 +66,16 @@ case class Hakuaika(hakuaikaId: String, alkuPvm: Option[Long], loppuPvm: Option[
   }
 }
 
-case class Hakukohde(oid: HakukohdeOid, hakuOid: HakuOid, tarjoajaOids: Set[String], hakukohdeKoulutusOids: List[String],
-                     koulutusAsteTyyppi: String, koulutusmoduuliTyyppi: String,
-                     hakukohteenNimet: Map[String, String], tarjoajaNimet: Map[String, String], yhdenPaikanSaanto: YhdenPaikanSaanto,
-                     tutkintoonJohtava:Boolean, koulutuksenAlkamiskausiUri:String, koulutuksenAlkamisvuosi:Int,
+case class Hakukohde(oid: HakukohdeOid,
+                     hakuOid: HakuOid,
+                     tarjoajaOids: Set[String],
+                     koulutusAsteTyyppi: String,
+                     hakukohteenNimet: Map[String, String],
+                     tarjoajaNimet: Map[String, String],
+                     yhdenPaikanSaanto: YhdenPaikanSaanto,
+                     tutkintoonJohtava:Boolean,
+                     koulutuksenAlkamiskausiUri:String,
+                     koulutuksenAlkamisvuosi:Int,
                      organisaatioRyhmaOids: Set[String]) {
   def kkTutkintoonJohtava: Boolean = kkHakukohde && tutkintoonJohtava
   def kkHakukohde: Boolean = koulutusAsteTyyppi == "KORKEAKOULUTUS"
@@ -83,13 +89,6 @@ case class Hakukohde(oid: HakukohdeOid, hakuOid: HakuOid, tarjoajaOids: Set[Stri
   def organisaatioOiditAuktorisointiin: Set[String] = tarjoajaOids ++ organisaatioRyhmaOids
 }
 
-case class Koodi(uri: String, arvo: String)
-case class Komo(oid: String, koulutuskoodi: Option[Koodi], opintojenLaajuusarvo: Option[Koodi])
-case class Koulutus(oid: String, koulutuksenAlkamiskausi: Kausi, tila: String, johtaaTutkintoon: Boolean, children: Seq[String],
-                    sisaltyvatKoulutuskoodit: Seq[String],
-                    koulutuskoodi: Option[Koodi],
-                    koulutusaste: Option[Koodi],
-                    opintojenLaajuusarvo: Option[Koodi])
 case class HakukohdeKela(koulutuksenAlkamiskausi: Option[Kausi],
                          hakukohdeOid: String,
                          tarjoajaOid: String,
@@ -120,49 +119,10 @@ class HakukohdeKelaSerializer extends CustomSerializer[HakukohdeKela]((formats: 
       )
   }, { case _ => ??? })
 })
-class KoulutusSerializer extends CustomSerializer[Koulutus]((formats: Formats) => {
-  implicit val f: Formats = formats
-  ( {
-    case o: JObject =>
-      val JString(oid) = o \ "oid"
-      val JString(tila) = o \ "tila"
-      val JInt(vuosi) = o \ "koulutuksenAlkamisvuosi"
-      val johtaaTutkintoon = (o \ "johtaaTutkintoon").extractOrElse[Boolean](false)
-      val kausi = o \ "koulutuksenAlkamiskausi" \ "uri" match {
-        case JString("kausi_k") => Kevat(vuosi.toInt)
-        case JString("kausi_s") => Syksy(vuosi.toInt)
-        case x => throw new MappingException(s"Unrecognized kausi URI $x")
-      }
-
-      def extractKoodi(j: JValue) = Try(Koodi((j \ "uri").extract[String], (j \ "arvo").extract[String])).toOption
-      val children = (o \ "children").extractOpt[Seq[String]].getOrElse(Seq())
-      val sisaltyvatKoulutuskoodiUris = (o \ "sisaltyvatKoulutuskoodit" \ "uris").extractOpt[Map[String,String]].getOrElse(Map.empty)
-
-      Koulutus(oid, kausi, tila, johtaaTutkintoon,
-        children,
-        sisaltyvatKoulutuskoodit = sisaltyvatKoulutuskoodiUris.keys.map(k => k.replace("koulutus_", "")).toSeq,
-        koulutuskoodi = extractKoodi(o \ "koulutuskoodi"),
-          koulutusaste = extractKoodi(o \ "koulutusaste"),
-          opintojenLaajuusarvo = extractKoodi(o \ "opintojenLaajuusarvo"))
-  }, { case _ => ??? })
-})
-class KomoSerializer extends CustomSerializer[Komo]((formats: Formats) => {
-  implicit val f: Formats = formats
-  ( {
-    case o: JObject =>
-      val JString(oid) = o \ "oid"
-      def extractKoodi(j: JValue) = Try(Koodi((j \ "uri").extract[String], (j \ "arvo").extract[String])).toOption
-      Komo(oid,
-        koulutuskoodi = extractKoodi(o \ "koulutuskoodi"),
-        opintojenLaajuusarvo = extractKoodi(o \ "opintojenLaajuusarvo"))
-  }, { case _ => ??? })
-})
 protected trait JsonHakuService {
   import org.json4s._
   implicit val formats: Formats = DefaultFormats ++ List(
     new HakukohdeKelaSerializer,
-    new KoulutusSerializer,
-    new KomoSerializer,
     new HakuOidSerializer,
     new HakukohdeOidSerializer,
     new ValintatapajonoOidSerializer,
