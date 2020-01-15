@@ -11,8 +11,9 @@ import fi.vm.sade.utils.http.DefaultHttpClient
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.MonadHelper
 import fi.vm.sade.valintatulosservice.config.AppConfig
+import fi.vm.sade.valintatulosservice.koodisto.{Koodi, KoodistoService}
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
-import fi.vm.sade.valintatulosservice.organisaatio.{Organisaatio, OrganisaatioService}
+import fi.vm.sade.valintatulosservice.organisaatio.{Organisaatio, OrganisaatioService, Organisaatiot}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.http4s.json4s.native.jsonExtract
 import org.http4s.Method.GET
@@ -42,12 +43,12 @@ trait HakuService {
 case class HakuServiceConfig(ophProperties: OphProperties, stubbedExternalDeps: Boolean)
 
 object HakuService {
-  def apply(appConfig: AppConfig, casClient: CasClient, organisaatioService: OrganisaatioService): HakuService = {
+  def apply(appConfig: AppConfig, casClient: CasClient, organisaatioService: OrganisaatioService, koodistoService: KoodistoService): HakuService = {
     val config = appConfig.hakuServiceConfig
     if (config.stubbedExternalDeps) {
       HakuFixtures
     } else {
-      new CachedHakuService(new TarjontaHakuService(config), new KoutaHakuService(appConfig, casClient, organisaatioService), appConfig)
+      new CachedHakuService(new TarjontaHakuService(config), new KoutaHakuService(appConfig, casClient, organisaatioService, koodistoService), appConfig)
     }
   }
 }
@@ -371,9 +372,13 @@ case class KoutaHaku(oid: String,
   }
 }
 
+case class KoutaKoulutusMetadata(opintojenLaajuusKoodiUri: Option[String])
+
 case class KoutaKoulutus(oid: String,
                          johtaaTutkintoon: Boolean,
-                         koulutustyyppi: Option[String])
+                         koulutusKoodiUri: Option[String],
+                         koulutustyyppi: Option[String],
+                         metadata: Option[KoutaKoulutusMetadata])
 
 case class KoutaToteutus(oid: String,
                          koulutusOid: String,
@@ -421,9 +426,44 @@ case class KoutaHakukohde(oid: String,
       organisaatioRyhmaOids = Set.empty // FIXME
     )
   }
+
+  def toHakukohdeKela(haku: Option[KoutaHaku],
+                      toteutus: KoutaToteutus,
+                      koulutus: KoutaKoulutus,
+                      koulutuskoodi: Option[Koodi],
+                      opintojenLaajuusKoodi: Option[Koodi],
+                      tarjoajaorganisaatiohierarkiat: List[Organisaatiot]): Either[Throwable, HakukohdeKela] = {
+    val koulutuksenAlkamiskausiUri = if (kaytetaanHaunAlkamiskautta) { haku.get.alkamiskausiKoodiUri } else { alkamiskausiKoodiUri }
+    val koulutuksenAlkamisvuosi = if (kaytetaanHaunAlkamiskautta) { haku.get.alkamisvuosi } else { alkamisvuosi }
+    for {
+      oppilaitos <- tarjoajaorganisaatiohierarkiat.toStream.map(_.find(_.organisaatiotyypit.contains("OPPILAITOS"))).collectFirst {
+        case Some(oppilaitos) => oppilaitos
+      }.toRight(new IllegalStateException(s"Could not find oppilaitos for hakukohde $oid")).right
+      oppilaitoskoodi <- oppilaitos.oppilaitosKoodi
+        .toRight(new IllegalStateException(s"Could not find oppilaitoskoodi for oppilaitos ${oppilaitos.oid}")).right
+      koulutuksenAlkamiskausi <- ((koulutuksenAlkamiskausiUri, koulutuksenAlkamisvuosi.map(s => (s, Try(s.toInt)))) match {
+        case (Some(uri), Some((_, Success(vuosi)))) if uri.startsWith("kausi_k#") => Right(Some(Kevat(vuosi)))
+        case (Some(uri), Some((_, Success(vuosi)))) if uri.startsWith("kausi_s#") => Right(Some(Syksy(vuosi)))
+        case (Some(uri), Some((_, Success(_)))) => Left(new IllegalStateException(s"Unrecognized koulutuksen alkamiskausi URI $uri"))
+        case (Some(_), Some((s, Failure(t)))) => Left(new IllegalStateException(s"Unrecognized koulutuksen alkamisvuosi $s", t))
+        case _ => Right(None)
+      }).right
+    } yield HakukohdeKela(
+      koulutuksenAlkamiskausi = koulutuksenAlkamiskausi,
+      hakukohdeOid = oid,
+      tarjoajaOid = oppilaitos.oid,
+      oppilaitoskoodi = oppilaitoskoodi,
+      koulutuslaajuusarvot = Seq(KoulutusLaajuusarvo(
+        oid = Some(koulutus.oid),
+        koulutuskoodi = koulutuskoodi.map(_.arvo),
+        koulutustyyppi = koulutuskoodi.flatMap(_.findSisaltyvaKoodi("koulutustyyppi")).map(_.arvo),
+        opintojenLaajuusarvo = opintojenLaajuusKoodi.map(_.arvo)
+      ))
+    )
+  }
 }
 
-class KoutaHakuService(config: AppConfig, casClient: CasClient, organisaatioService: OrganisaatioService) extends HakuService with Logging {
+class KoutaHakuService(config: AppConfig, casClient: CasClient, organisaatioService: OrganisaatioService, koodistoService: KoodistoService) extends HakuService with Logging {
   private implicit val jsonFormats: Formats = DefaultFormats
   private val client = CasAuthenticatingClient(
     casClient = casClient,
@@ -443,7 +483,16 @@ class KoutaHakuService(config: AppConfig, casClient: CasClient, organisaatioServ
   }
 
   def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, HakukohdeKela] = {
-    throw new UnsupportedOperationException("Ei KELA tukea Kouta hakukohteille") // FIXME
+    for {
+      koutaHakukohde <- getKoutaHakukohde(oid).right
+      koutaHaku <- (if (koutaHakukohde.kaytetaanHaunAlkamiskautta) { getKoutaHaku(HakuOid(koutaHakukohde.hakuOid)).right.map(Some(_)) } else { Right(None) }).right
+      koutaToteutus <- getKoutaToteutus(koutaHakukohde.toteutusOid).right
+      koutaKoulutus <- getKoutaKoulutus(koutaToteutus.koulutusOid).right
+      koulutuskoodi <- koutaKoulutus.koulutusKoodiUri.fold[Either[Throwable, Option[Koodi]]](Right(None))(koodistoService.getKoodi(_).right.map(Some(_))).right
+      opintojenlaajuuskoodi <- koutaKoulutus.metadata.flatMap(_.opintojenLaajuusKoodiUri).fold[Either[Throwable, Option[Koodi]]](Right(None))(koodistoService.getKoodi(_).right.map(Some(_))).right
+      tarjoajaorganisaatiohierarkiat <- MonadHelper.sequence(koutaHakukohde.tarjoajat(koutaToteutus).map(organisaatioService.hae)).right
+      hakukohde <- koutaHakukohde.toHakukohdeKela(koutaHaku, koutaToteutus, koutaKoulutus, koulutuskoodi, opintojenlaajuuskoodi, tarjoajaorganisaatiohierarkiat).right
+    } yield hakukohde
   }
 
   def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde] = {

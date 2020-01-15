@@ -13,4 +13,4 @@ case class Organisaatiot(organisaatiot: Seq[Organisaatio]) {
   }
 }
 
-case class Organisaatio(oid: String, nimi: Map[String, String], oppilaitosKoodi: Option[String], children: Seq[Organisaatio])
+case class Organisaatio(oid: String, nimi: Map[String, String], oppilaitosKoodi: Option[String], organisaatiotyypit: List[String], children: Seq[Organisaatio])

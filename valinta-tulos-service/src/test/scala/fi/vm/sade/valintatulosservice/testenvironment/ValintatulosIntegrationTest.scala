@@ -5,6 +5,7 @@ import java.io.File
 import fi.vm.sade.utils.cas.CasClient
 import fi.vm.sade.valintatulosservice.config.{VtsAppConfig, VtsDynamicAppConfig}
 import fi.vm.sade.valintatulosservice.domain.Hakemuksentulos
+import fi.vm.sade.valintatulosservice.koodisto.KoodistoService
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelutulosService
 //import fi.vm.sade.valintatulosservice.sijoittelu.legacymongo.{SijoitteluSpringContext, SijoittelunTulosRestClient, StreamingHakijaDtoClient}
@@ -24,7 +25,7 @@ class ValintatulosIntegrationTest extends ITSpecification {
         implicit val appConfig = new VtsAppConfig.LocalTestingWithTemplatedVars(varsFile)
         implicit val dynamicAppConfig: VtsDynamicAppConfig = VtsAppConfig.MockDynamicAppConfig()
         val casClient = new CasClient(appConfig.ophUrlProperties.url(""), org.http4s.client.blaze.defaultClient)
-        val hakuService = HakuService(appConfig, casClient, OrganisaatioService(appConfig))
+        val hakuService = HakuService(appConfig, casClient, OrganisaatioService(appConfig), new KoodistoService(appConfig))
         //lazy val sijoitteluContext = new SijoitteluSpringContext(appConfig, SijoitteluSpringContext.createApplicationContext(appConfig))
         /*val sijoittelutulosService = new SijoittelutulosService(sijoitteluContext.raportointiService, appConfig.ohjausparametritService, null,
           SijoittelunTulosRestClient(sijoitteluContext, appConfig))
