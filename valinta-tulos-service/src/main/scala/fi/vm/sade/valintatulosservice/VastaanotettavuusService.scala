@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, VastaanottoRecord}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, HakukohdeRecord}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, HakukohdeRecord, YPSHakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import slick.dbio.{DBIO, DBIOAction}
 
@@ -22,11 +22,11 @@ class VastaanotettavuusService(hakukohdeRecordService: HakukohdeRecordService,
   }
 
   private def haeAiemmatVastaanotot(hakukohdeRecord: HakukohdeRecord, hakijaOid: String): DBIO[Option[VastaanottoRecord]] = {
-    val HakukohdeRecord(hakukohdeOid, _, yhdenPaikanSaantoVoimassa, _, koulutuksenAlkamiskausi) = hakukohdeRecord
-    if (yhdenPaikanSaantoVoimassa) {
-      hakijaVastaanottoRepository.findYhdenPaikanSaannonPiirissaOlevatVastaanotot(hakijaOid, koulutuksenAlkamiskausi)
-    } else {
-      hakijaVastaanottoRepository.findHenkilonVastaanottoHakukohteeseen(hakijaOid, hakukohdeOid)
+    hakukohdeRecord match {
+      case YPSHakukohde(_, _, koulutuksenAlkamiskausi) =>
+        hakijaVastaanottoRepository.findYhdenPaikanSaannonPiirissaOlevatVastaanotot(hakijaOid, koulutuksenAlkamiskausi)
+      case _ =>
+        hakijaVastaanottoRepository.findHenkilonVastaanottoHakukohteeseen(hakijaOid, hakukohdeRecord.oid)
     }
   }
 }

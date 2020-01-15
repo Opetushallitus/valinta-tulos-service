@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakukohdeRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, HakukohdeRecord}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiKktutkintoonJohtavaHakukohde, EiYPSHakukohde, HakuOid, HakukohdeOid, HakukohdeRecord, YPSHakukohde}
 import org.postgresql.util.PSQLException
 import slick.jdbc.PostgresProfile.api._
 
@@ -51,11 +51,36 @@ trait HakukohdeRepositoryImpl extends HakukohdeRepository with ValintarekisteriR
 
   override def storeHakukohde(hakukohdeRecord: HakukohdeRecord): Unit = {
     val UNIQUE_VIOLATION = "23505"
+    val koulutuksenAlkamiskausi = hakukohdeRecord match {
+      case h: EiKktutkintoonJohtavaHakukohde => h.koulutuksenAlkamiskausi
+      case h: EiYPSHakukohde => Some(h.koulutuksenAlkamiskausi)
+      case h: YPSHakukohde => Some(h.koulutuksenAlkamiskausi)
+    }
     try {
-      runBlocking(
+      runBlocking(DBIO.seq(
         sqlu"""insert into hakukohteet (hakukohde_oid, haku_oid, yhden_paikan_saanto_voimassa, kk_tutkintoon_johtava, koulutuksen_alkamiskausi)
-                 values (${hakukohdeRecord.oid}, ${hakukohdeRecord.hakuOid}, ${hakukohdeRecord.yhdenPaikanSaantoVoimassa},
-                         ${hakukohdeRecord.kktutkintoonJohtava}, ${hakukohdeRecord.koulutuksenAlkamiskausi.toKausiSpec})""")
+               values (${hakukohdeRecord.oid},
+                       ${hakukohdeRecord.hakuOid},
+                       ${hakukohdeRecord.yhdenPaikanSaantoVoimassa},
+                       ${hakukohdeRecord.kktutkintoonJohtava},
+                       ${koulutuksenAlkamiskausi.map(_.toKausiSpec)})""",
+
+        DBIO.sequenceOption(koulutuksenAlkamiskausi.map(alkamiskausi =>
+          sqlu"""insert into koulutuksen_alkamiskausi (hakukohde_oid, koulutuksen_alkamiskausi)
+                 values (${hakukohdeRecord.oid}, ${alkamiskausi.toKausiSpec})
+                 on conflict (hakukohde_oid) do nothing""")),
+
+        if (hakukohdeRecord.kktutkintoonJohtava) {
+          sqlu"""insert into kk_tutkintoon_johtava (hakukohde_oid)
+                 values (${hakukohdeRecord.oid})
+                 on conflict (hakukohde_oid) do nothing"""
+        } else { DBIO.successful(0) },
+
+        if (hakukohdeRecord.yhdenPaikanSaantoVoimassa) {
+          sqlu"""insert into yhden_paikan_saanto_voimassa (hakukohde_oid)
+                 values (${hakukohdeRecord.oid})
+                 on conflict (hakukohde_oid) do nothing"""
+        } else { DBIO.successful(0) }))
     } catch {
       case e: PSQLException if e.getSQLState == UNIQUE_VIOLATION =>
         logger.debug(s"Ignored unique violation when inserting hakukohde record $hakukohdeRecord")
@@ -63,15 +88,51 @@ trait HakukohdeRepositoryImpl extends HakukohdeRepository with ValintarekisteriR
   }
 
   override def updateHakukohde(hakukohdeRecord: HakukohdeRecord): Boolean = {
+    val koulutuksenAlkamiskausi = hakukohdeRecord match {
+      case h: EiKktutkintoonJohtavaHakukohde => h.koulutuksenAlkamiskausi
+      case h: EiYPSHakukohde => Some(h.koulutuksenAlkamiskausi)
+      case h: YPSHakukohde => Some(h.koulutuksenAlkamiskausi)
+    }
     runBlocking(
-      sqlu"""update hakukohteet set (yhden_paikan_saanto_voimassa, kk_tutkintoon_johtava, koulutuksen_alkamiskausi)
-             = (${hakukohdeRecord.yhdenPaikanSaantoVoimassa},
-                ${hakukohdeRecord.kktutkintoonJohtava},
-                ${hakukohdeRecord.koulutuksenAlkamiskausi.toKausiSpec})
-             where hakukohde_oid = ${hakukohdeRecord.oid}
-                 and (yhden_paikan_saanto_voimassa <> ${hakukohdeRecord.yhdenPaikanSaantoVoimassa}
-                   or kk_tutkintoon_johtava <> ${hakukohdeRecord.kktutkintoonJohtava}
-                   or koulutuksen_alkamiskausi <> ${hakukohdeRecord.koulutuksenAlkamiskausi.toKausiSpec})"""
+      DBIO.seq(
+        DBIO.sequenceOption(koulutuksenAlkamiskausi.map(alkamiskausi =>
+          sqlu"""insert into koulutuksen_alkamiskausi (hakukohde_oid, koulutuksen_alkamiskausi)
+                 values (${hakukohdeRecord.oid}, ${alkamiskausi.toKausiSpec})
+                 on conflict (hakukohde_oid) do nothing""")),
+
+        if (hakukohdeRecord.kktutkintoonJohtava) {
+          sqlu"""insert into kk_tutkintoon_johtava (hakukohde_oid)
+                 values (${hakukohdeRecord.oid})
+                 on conflict (hakukohde_oid) do nothing"""
+        } else { DBIO.successful(0) },
+
+        if (hakukohdeRecord.yhdenPaikanSaantoVoimassa) {
+          sqlu"""insert into yhden_paikan_saanto_voimassa (hakukohde_oid)
+                 values (${hakukohdeRecord.oid})
+                 on conflict (hakukohde_oid) do nothing"""
+        } else {
+          sqlu"""delete from yhden_paikan_saanto_voimassa
+                 where hakukohde_oid = ${hakukohdeRecord.oid}"""
+        },
+
+        if (!hakukohdeRecord.kktutkintoonJohtava) {
+          sqlu"""delete from kk_tutkintoon_johtava
+                 where hakukohde_oid = ${hakukohdeRecord.oid}"""
+        } else { DBIO.successful(0) },
+
+        if (koulutuksenAlkamiskausi.isEmpty) {
+          sqlu"""delete from koulutuksen_alkamiskausi
+                 where hakukohde_oid = ${hakukohdeRecord.oid}"""
+        } else { DBIO.successful(0) })
+        .andThen(
+          sqlu"""update hakukohteet set (yhden_paikan_saanto_voimassa, kk_tutkintoon_johtava, koulutuksen_alkamiskausi)
+                   = (${hakukohdeRecord.yhdenPaikanSaantoVoimassa},
+                      ${hakukohdeRecord.kktutkintoonJohtava},
+                      ${koulutuksenAlkamiskausi.map(_.toKausiSpec)})
+                 where hakukohde_oid = ${hakukohdeRecord.oid} and
+                       (yhden_paikan_saanto_voimassa <> ${hakukohdeRecord.yhdenPaikanSaantoVoimassa} or
+                        kk_tutkintoon_johtava <> ${hakukohdeRecord.kktutkintoonJohtava} or
+                        koulutuksen_alkamiskausi is distinct from ${koulutuksenAlkamiskausi.map(_.toKausiSpec)})""")
     ) == 1
   }
 

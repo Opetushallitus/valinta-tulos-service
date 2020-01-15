@@ -33,8 +33,8 @@ class YhdenPaikanSaannosSpec extends Specification {
     tarjoajaNimet = Map(),
     yhdenPaikanSaanto = YhdenPaikanSaanto(voimassa = true, syy = "yhden paikan säännös voimassa"),
     tutkintoonJohtava = true,
-    koulutuksenAlkamiskausiUri = "kausi_k#1",
-    koulutuksenAlkamisvuosi = 2000
+    koulutuksenAlkamiskausiUri = Some("kausi_k#1"),
+    koulutuksenAlkamisvuosi = Some(2000)
   )
   private val nonYpsHakukohde = Hakukohde(
     oid = hakukohdeOid,
@@ -46,8 +46,8 @@ class YhdenPaikanSaannosSpec extends Specification {
     tarjoajaNimet = Map(),
     yhdenPaikanSaanto = YhdenPaikanSaanto(voimassa = false, syy = "ei tutkintoonjohtava"),
     tutkintoonJohtava = false,
-    koulutuksenAlkamiskausiUri = "kausi_k#1",
-    koulutuksenAlkamisvuosi = 2000
+    koulutuksenAlkamiskausiUri = Some("kausi_k#1"),
+    koulutuksenAlkamisvuosi = Some(2000)
   )
   private val valinnantulos = Valinnantulos(
     hakukohdeOid = hakukohdeOid,
@@ -69,11 +69,9 @@ class YhdenPaikanSaannosSpec extends Specification {
     vastaanottotila = ValintatuloksenTila.KESKEN,
     ilmoittautumistila = EiTehty
   )
-  private val vastaanotonHakukohde = HakukohdeRecord(
+  private val vastaanotonHakukohde = YPSHakukohde(
     oid = otherHakukohdeOid,
     hakuOid = otherHakuOid,
-    yhdenPaikanSaantoVoimassa = true,
-    kktutkintoonJohtava = true,
     koulutuksenAlkamiskausi = kausi
   )
   private val sitovaVastaanotto = VastaanottoRecord(

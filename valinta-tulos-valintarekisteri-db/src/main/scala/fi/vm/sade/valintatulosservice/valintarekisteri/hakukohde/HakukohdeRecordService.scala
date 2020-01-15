@@ -4,7 +4,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.MonadHelper
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakukohdeRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, HakukohdeRecord, Kausi}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiKktutkintoonJohtavaHakukohde, EiYPSHakukohde, HakuOid, HakukohdeOid, HakukohdeRecord, Kausi, YPSHakukohde}
 
 import scala.util.{Failure, Success, Try}
 
@@ -76,18 +76,24 @@ class HakukohdeRecordService(hakuService: HakuService, hakukohdeRepository: Haku
     for {
       hakukohde <- hakuService.getHakukohde(oid).right
       haku <- hakuService.getHaku(hakukohde.hakuOid).right
-      alkamiskausi <- resolveKoulutuksenAlkamiskausi(hakukohde, haku).right
-    } yield HakukohdeRecord(hakukohde.oid, haku.oid, hakukohde.yhdenPaikanSaanto.voimassa, hakukohde.kkTutkintoonJohtava, alkamiskausi)
+      hakukohdeRecord <- ((hakukohde.yhdenPaikanSaanto.voimassa, hakukohde.kkTutkintoonJohtava, resolveKoulutuksenAlkamiskausi(hakukohde, haku)) match {
+        case (true, true, Some(kausi)) => Right(YPSHakukohde(oid, haku.oid, kausi))
+        case (false, true, Some(kausi)) => Right(EiYPSHakukohde(oid, haku.oid, kausi))
+        case (false, false, kausi) => Right(EiKktutkintoonJohtavaHakukohde(oid, haku.oid, kausi))
+        case (true, false, _) => Left(new IllegalStateException(s"YPS hakukohde $oid ei ole kktutkintoon johtava"))
+        case (true, _, None) => Left(new IllegalStateException(s"YPS hakukohteella $oid ei ole koulutuksen alkamiskautta"))
+        case (_, true, None) => Left(new IllegalStateException(s"Kktutkintoon johtavalla hakukohteella $oid ei ole koulutuksen alkamiskautta"))
+      }).right
+    } yield hakukohdeRecord
   }
 
-  private def resolveKoulutuksenAlkamiskausi(hakukohde: Hakukohde, haku: Haku): Either[Throwable, Kausi] = {
-    hakukohde.koulutuksenAlkamiskausi.left.flatMap(t => {
-      if (parseLeniently) {
+  private def resolveKoulutuksenAlkamiskausi(hakukohde: Hakukohde, haku: Haku): Option[Kausi] = {
+    (hakukohde.koulutuksenAlkamiskausi, parseLeniently) match {
+      case (None, true) =>
         logger.warn(s"No alkamiskausi for hakukohde ${hakukohde.oid}. Falling back to koulutuksen alkamiskausi from haku: ${haku.koulutuksenAlkamiskausi}")
-        haku.koulutuksenAlkamiskausi.toRight(new IllegalStateException(s"No koulutuksen alkamiskausi on haku $haku"))
-      } else {
-        Left(t)
-      }
-    })
+        haku.koulutuksenAlkamiskausi
+      case (alkamiskausi, _) =>
+        alkamiskausi
+    }
   }
 }

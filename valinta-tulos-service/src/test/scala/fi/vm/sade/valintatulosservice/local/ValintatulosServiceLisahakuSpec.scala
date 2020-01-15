@@ -45,7 +45,7 @@ class ValintatulosServiceLisahakuSpec extends ITSpecification with TimeWarp {
         checkHakutoiveState(getHakutoive("1.2.246.562.14.2014022408541751568934"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.vastaanotettavissa_sitovasti, true)
       }
       "toinen vastaanotettu, ensimmäistä ei voi vastaanottaa" in {
-        useFixture("lisahaku-vastaanottanut.json", hakuFixture = hakuFixture, hakemusFixtures = hakemusFixtures, yhdenPaikanSaantoVoimassa = true)
+        useFixture("lisahaku-vastaanottanut.json", hakuFixture = hakuFixture, hakemusFixtures = hakemusFixtures, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
         checkHakutoiveState(getHakutoive("1.2.246.562.14.2013120515524070995659"), Valintatila.peruuntunut, Vastaanottotila.ottanut_vastaan_toisen_paikan, Vastaanotettavuustila.ei_vastaanotettavissa, true)
         checkHakutoiveState(getHakutoive("1.2.246.562.14.2014022408541751568934"), Valintatila.hyväksytty, Vastaanottotila.vastaanottanut, Vastaanotettavuustila.ei_vastaanotettavissa, true)
       }

@@ -372,17 +372,17 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
 
   trait Korkeakouluhaku { this: Mocks =>
     hakuService.getHakukohde(hakukohdeOid) returns Right(Hakukohde(
-      hakukohdeOid,
-      hakuOid,
-      Set(tarjoajaOid),
-      null,
-      null,
-      null,
-      null,
-      true,
-      null,
-      2015,
-      Set()
+      oid = hakukohdeOid,
+      hakuOid = hakuOid,
+      tarjoajaOids = Set(tarjoajaOid),
+      koulutusAsteTyyppi = null,
+      hakukohteenNimet = null,
+      tarjoajaNimet = null,
+      yhdenPaikanSaanto = null,
+      tutkintoonJohtava = true,
+      koulutuksenAlkamiskausiUri = Some("kausi_k#1"),
+      koulutuksenAlkamisvuosi = Some(2015),
+      organisaatioRyhmaOids = Set()
     ))
     hakuService.getHaku(hakuOid) returns Right(Haku(
       oid = hakuOid,
@@ -401,17 +401,17 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
 
   trait ToisenAsteenHaku { this: Mocks =>
     hakuService.getHakukohde(hakukohdeOid) returns Right(Hakukohde(
-      hakukohdeOid,
-      hakuOid,
-      Set(tarjoajaOid),
-      null,
-      null,
-      null,
-      null,
-      true,
-      null,
-      2015,
-      Set()
+      oid = hakukohdeOid,
+      hakuOid = hakuOid,
+      tarjoajaOids = Set(tarjoajaOid),
+      koulutusAsteTyyppi = null,
+      hakukohteenNimet = null,
+      tarjoajaNimet = null,
+      yhdenPaikanSaanto = null,
+      tutkintoonJohtava = true,
+      koulutuksenAlkamiskausiUri = Some("kausi_k#1"),
+      koulutuksenAlkamisvuosi = Some(2015),
+      organisaatioRyhmaOids = Set()
     ))
     hakuService.getHaku(hakuOid) returns Right(Haku(
       oid = hakuOid,

@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.local
 import fi.vm.sade.valintatulosservice.ServletSpecification
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiEnsikertalainen, Ensikertalainen, Ensikertalaisuus}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiEnsikertalainen, EiKktutkintoonJohtavaHakukohde, Ensikertalainen, Ensikertalaisuus, HakuOid, HakukohdeOid, Kevat, YPSHakukohde}
 import org.joda.time.{DateTime, DateTimeZone}
 import org.json4s.jackson.Serialization._
 import org.junit.runner.RunWith
@@ -29,11 +29,9 @@ class EnsikertalaisuusServletSpec extends ServletSpecification with Valintarekis
 
   step(deleteAll())
   step({
+    singleConnectionValintarekisteriDb.storeHakukohde(YPSHakukohde(HakukohdeOid(hakukohdekk), HakuOid(haku), Kevat(2015)))
+    singleConnectionValintarekisteriDb.storeHakukohde(EiKktutkintoonJohtavaHakukohde(HakukohdeOid(hakukohde2aste), HakuOid(haku), Some(Kevat(2015))))
     singleConnectionValintarekisteriDb.runBlocking(DBIOAction.seq(
-          sqlu"""insert into hakukohteet (hakukohde_oid, haku_oid, kk_tutkintoon_johtava, yhden_paikan_saanto_voimassa, koulutuksen_alkamiskausi)
-                 values ($hakukohdekk, $haku, true, true, '2015K')""",
-          sqlu"""insert into hakukohteet (hakukohde_oid, haku_oid, kk_tutkintoon_johtava, yhden_paikan_saanto_voimassa, koulutuksen_alkamiskausi)
-                 values ($hakukohde2aste, $haku, false, false, '2015K')""",
           sqlu"""insert into vastaanotot
                  (henkilo, hakukohde, action, ilmoittaja, "timestamp", selite)
                  values ($henkilo, $hakukohdekk, 'VastaanotaSitovasti'::vastaanotto_action, 'ilmoittaja', ${new java.sql.Timestamp(timestamp.getMillis)}, 'testiselite')""",

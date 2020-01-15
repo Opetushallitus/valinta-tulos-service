@@ -53,7 +53,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     (for {
       hakukohdeOids <- hakuService.getHakukohdeOids(hakuOid).right
       hakukohteet <- hakukohdeRecordService.getHakukohdeRecords(hakuOid, hakukohdeOids.toSet).right
-    } yield hakukohteet.collect({ case h if h.yhdenPaikanSaantoVoimassa => (h.oid, h.koulutuksenAlkamiskausi) }).groupBy(_._2).toList match {
+    } yield hakukohteet.collect({ case YPSHakukohde(oid, _, koulutuksenAlkamiskausi) => (oid, koulutuksenAlkamiskausi) }).groupBy(_._2).toList match {
       case Nil => Set.empty[VastaanottoRecord]
       case (kausi, _) :: Nil => virkailijaVastaanottoRepository.findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(kausi)
       case kaudet => throw new IllegalStateException(s"Haussa $hakuOid on YPS piirissä olevia hakukohteita joilla on eri koulutuksen alkamiskausi ${kaudet.map(_._2.map(_._1).mkString(", ")).mkString("; ")}")
@@ -76,12 +76,12 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       hakukohdeRecords <- hakukohdeRecordService.getHakukohdeRecords(h.toiveet.map(_.oid)).right.toOption
       vastaanototKausilla <- Some({
         val vastaanototByKausi = hakukohdeRecords
-          .collect({ case h if h.yhdenPaikanSaantoVoimassa => h.koulutuksenAlkamiskausi })
+          .collect({ case YPSHakukohde(_, _, koulutuksenAlkamiskausi) => koulutuksenAlkamiskausi })
           .distinct
           .map(kausi => kausi -> hakijaVastaanottoRepository.runBlocking(hakijaVastaanottoRepository.findYhdenPaikanSaannonPiirissaOlevatVastaanotot(h.henkiloOid, kausi)))
           .toMap
         hakukohdeRecords.collect({
-          case h if h.yhdenPaikanSaantoVoimassa => h.oid -> (h.koulutuksenAlkamiskausi, vastaanototByKausi(h.koulutuksenAlkamiskausi).map(_.henkiloOid).toSet)
+          case YPSHakukohde(oid, _, koulutuksenAlkamiskausi) => oid -> (koulutuksenAlkamiskausi, vastaanototByKausi(koulutuksenAlkamiskausi).map(_.henkiloOid).toSet)
         }).toMap
       })
       hakemus <- fetchTulokset(
@@ -112,10 +112,10 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       case (Right(haku), Right(hakukohdes)) =>
         val vastaanototByKausi = timed("kaudenVastaanotot", 1000)({
           virkailijaVastaanottoRepository.findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(
-            hakukohdes.filter(_.yhdenPaikanSaantoVoimassa).map(_.koulutuksenAlkamiskausi).toSet)
+            hakukohdes.collect({ case YPSHakukohde(_, _, koulutuksenAlkamiskausi) => koulutuksenAlkamiskausi }).toSet)
         })
         val vastaanototKausilla = hakukohdes.collect({
-          case h if h.yhdenPaikanSaantoVoimassa => h.oid -> (h.koulutuksenAlkamiskausi, vastaanototByKausi(h.koulutuksenAlkamiskausi).map(_.henkiloOid))
+          case YPSHakukohde(oid, _, koulutuksenAlkamiskausi) => oid -> (koulutuksenAlkamiskausi, vastaanototByKausi(koulutuksenAlkamiskausi).map(_.henkiloOid))
         }).toMap
         val ilmoittautumisenAikaleimat = timed(s"Ilmoittautumisten aikaleimojen haku haulle $hakuOid", 1000) {
           valinnantulosRepository.runBlocking(valinnantulosRepository.getIlmoittautumisenAikaleimat(hakuOid))
@@ -160,10 +160,10 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         hakukohteet <- hakukohdeRecordService.getHakukohdeRecords(hakuOid, hakukohdeOids.toSet).right.toOption
         vastaanototByKausi = timed(s"kausien vastaanotot", 1000)({
           virkailijaVastaanottoRepository.findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(
-            hakukohteet.filter(_.yhdenPaikanSaantoVoimassa).map(_.koulutuksenAlkamiskausi).toSet)
+            hakukohteet.collect({ case YPSHakukohde(_, _, koulutuksenAlkamiskausi) => koulutuksenAlkamiskausi }).toSet)
         })
         vastaanototKausilla = hakukohteet.collect({
-          case h if h.yhdenPaikanSaantoVoimassa => h.oid -> (h.koulutuksenAlkamiskausi, vastaanototByKausi(h.koulutuksenAlkamiskausi).map(_.henkiloOid))
+          case YPSHakukohde(oid, _, koulutuksenAlkamiskausi) => oid -> (koulutuksenAlkamiskausi, vastaanototByKausi(koulutuksenAlkamiskausi).map(_.henkiloOid))
         }).toMap
         ilmoittautumisenAikaleimat = timed(s"Ilmoittautumisten aikaleimojen haku haulle $hakuOid", 1000) {
           valinnantulosRepository.runBlocking(valinnantulosRepository.getIlmoittautumisenAikaleimat(hakuOid))
@@ -200,10 +200,10 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       } yield {
         val vastaanototByKausi = timed(s"kausien vastaanotot", 1000)({
           virkailijaVastaanottoRepository.findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(
-            hakukohteet.filter(_.yhdenPaikanSaantoVoimassa).map(_.koulutuksenAlkamiskausi).toSet)
+            hakukohteet.collect({ case YPSHakukohde(_, _, koulutuksenAlkamiskausi) => koulutuksenAlkamiskausi }).toSet)
         })
         val vastaanototKausilla = hakukohteet.collect({
-          case h if h.yhdenPaikanSaantoVoimassa => h.oid -> (h.koulutuksenAlkamiskausi, vastaanototByKausi(h.koulutuksenAlkamiskausi).map(_.henkiloOid))
+          case YPSHakukohde(oid, _, koulutuksenAlkamiskausi) => oid -> (koulutuksenAlkamiskausi, vastaanototByKausi(koulutuksenAlkamiskausi).map(_.henkiloOid))
         }).toMap
         val ilmoittautumisenAikaleimat = timed(s"Ilmoittautumisten aikaleimojen haku haulle $hakuOid", 1000) {
           valinnantulosRepository.runBlocking(valinnantulosRepository.getIlmoittautumisenAikaleimat(hakuOid))
@@ -266,11 +266,11 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       case Left(t) => throw t
     }
     val kaudenVastaanotot = timed(s"Fetch YPS related kauden vastaanotot for hakukohde $hakukohdeOid", 1000) {
-      if (hakukohde.yhdenPaikanSaantoVoimassa) {
-        val kausi = hakukohde.koulutuksenAlkamiskausi
-        virkailijaVastaanottoRepository.findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(kausi)
-      } else {
-        Set.empty[VastaanottoRecord]
+      hakukohde match {
+        case YPSHakukohde(_, _, koulutuksenAlkamiskausi) =>
+          virkailijaVastaanottoRepository.findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(koulutuksenAlkamiskausi)
+        case _ =>
+          Set.empty[VastaanottoRecord]
       }
     }
 

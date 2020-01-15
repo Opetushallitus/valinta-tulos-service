@@ -76,8 +76,8 @@ object HakuFixtures extends HakuService with JsonHakuService {
         Map("fi" -> "Kallion lukio"),
         YhdenPaikanSaanto(false, "testihakukohde"),
         false,
-        "kausi_k#1",
-        2016,
+        Some("kausi_k#1"),
+        Some(2016),
         organisaatioRyhmaOids = Set()))
     } else if (activeFixture == ataruHaku) {
       Right(Hakukohde(
@@ -88,9 +88,9 @@ object HakuFixtures extends HakuService with JsonHakuService {
         Map("kieli_fi" -> "Ataru testihakukohde"),
         Map("fi" -> "Aalto-yliopisto, Insinööritieteiden korkeakoulu"),
         YhdenPaikanSaanto(true, "Haun kohdejoukon tarkenne on 'haunkohdejoukontarkenne_3#1'"),
-        false,
-        "kausi_s#1",
-        2017,
+        true,
+        Some("kausi_s#1"),
+        Some(2017),
         organisaatioRyhmaOids = Set()))
     } else {
       Right(Hakukohde(
@@ -102,8 +102,8 @@ object HakuFixtures extends HakuService with JsonHakuService {
         Map("fi" -> "Kallion lukio"),
         YhdenPaikanSaanto(activeFixture != korkeakouluErillishakuEiYhdenPaikanSaantoa, "testihakukohde"),
         true,
-        "kausi_k#1",
-        2016,
+        Some("kausi_k#1"),
+        Some(2016),
         organisaatioRyhmaOids = Set()))
     }
   }

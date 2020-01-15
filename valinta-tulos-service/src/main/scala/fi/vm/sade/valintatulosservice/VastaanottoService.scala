@@ -191,13 +191,13 @@ class VastaanottoService(hakuService: HakuService,
                                  henkiloOid: String): DBIO[Map[HakukohdeOid, (Kausi, Option[VastaanottoRecord])]] = {
     DBIO.sequence(
       hakukohteet
-        .collect({ case h if h.yhdenPaikanSaantoVoimassa => h.koulutuksenAlkamiskausi })
+        .collect({ case YPSHakukohde(_, _, koulutuksenAlkamiskausi) => koulutuksenAlkamiskausi })
         .distinct
         .map(kausi => hakijaVastaanottoRepository.findYhdenPaikanSaannonPiirissaOlevatVastaanotot(henkiloOid, kausi).map(kausi -> _)))
       .map(_.toMap)
       .map(vastaanototByKausi =>
         hakukohteet.collect({
-          case h if h.yhdenPaikanSaantoVoimassa => h.oid -> (h.koulutuksenAlkamiskausi, vastaanototByKausi(h.koulutuksenAlkamiskausi))
+          case YPSHakukohde(oid, _, koulutuksenAlkamiskausi) => oid -> (koulutuksenAlkamiskausi, vastaanototByKausi(koulutuksenAlkamiskausi))
         }).toMap)
   }
 

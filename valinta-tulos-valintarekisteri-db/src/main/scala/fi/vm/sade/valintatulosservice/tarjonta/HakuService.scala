@@ -83,16 +83,16 @@ case class Hakukohde(oid: HakukohdeOid,
                      tarjoajaNimet: Map[String, String],
                      yhdenPaikanSaanto: YhdenPaikanSaanto,
                      tutkintoonJohtava:Boolean,
-                     koulutuksenAlkamiskausiUri:String,
-                     koulutuksenAlkamisvuosi:Int,
+                     koulutuksenAlkamiskausiUri: Option[String],
+                     koulutuksenAlkamisvuosi: Option[Int],
                      organisaatioRyhmaOids: Set[String]) {
   def kkTutkintoonJohtava: Boolean = kkHakukohde && tutkintoonJohtava
   def kkHakukohde: Boolean = koulutusAsteTyyppi == "KORKEAKOULUTUS"
 
-  def koulutuksenAlkamiskausi: Either[Throwable, Kausi] = koulutuksenAlkamiskausiUri match {
-    case uri if uri.matches("""kausi_k#\d+""") => Right(Kevat(koulutuksenAlkamisvuosi))
-    case uri if uri.matches("""kausi_s#\d+""") => Right(Syksy(koulutuksenAlkamisvuosi))
-    case _ => Left(new IllegalStateException(s"Could not deduce koulutuksen alkamiskausi for hakukohde $this"))
+  def koulutuksenAlkamiskausi: Option[Kausi] = (koulutuksenAlkamiskausiUri, koulutuksenAlkamisvuosi) match {
+    case (Some(uri), Some(alkamisvuosi)) if uri.matches("""kausi_k#\d+""") => Some(Kevat(alkamisvuosi))
+    case (Some(uri), Some(alkamisvuosi)) if uri.matches("""kausi_s#\d+""") => Some(Syksy(alkamisvuosi))
+    case _ => None
   }
 
   def organisaatioOiditAuktorisointiin: Set[String] = tarjoajaOids ++ organisaatioRyhmaOids
@@ -388,12 +388,10 @@ case class KoutaHakukohde(oid: String,
     for {
       tarjoaja <- tarjoajaorganisaatiot.headOption
         .toRight(new IllegalStateException(s"Could not find tarjoaja for hakukohde $oid")).right
-      koulutuksenAlkamiskausiUri <- (if (kaytetaanHaunAlkamiskautta) { haku.get.alkamiskausiKoodiUri } else { alkamiskausiKoodiUri })
-        .toRight(new IllegalStateException(s"Could not find koulutuksen alkamiskausi for hakukohde $oid")).right
       koulutuksenAlkamisvuosi <- ((if (kaytetaanHaunAlkamiskautta) { haku.get.alkamisvuosi } else { alkamisvuosi }).map(s => (s, Try(s.toInt))) match {
-        case Some((_, Success(vuosi))) => Right(vuosi)
+        case Some((_, Success(vuosi))) => Right(Some(vuosi))
         case Some((s, Failure(t))) => Left(new IllegalStateException(s"Unrecognized koulutuksen alkamisvuosi $s", t))
-        case None => Left(new IllegalStateException(s"Could not find koulutuksen alkamisvuosi for hakukohde $oid"))
+        case None => Right(None)
       }).right
     } yield Hakukohde(
       oid = HakukohdeOid(oid),
@@ -404,7 +402,7 @@ case class KoutaHakukohde(oid: String,
       tarjoajaNimet = tarjoaja.nimi,
       yhdenPaikanSaanto = yhdenPaikanSaanto,
       tutkintoonJohtava = koulutus.johtaaTutkintoon,
-      koulutuksenAlkamiskausiUri = koulutuksenAlkamiskausiUri,
+      koulutuksenAlkamiskausiUri = if (kaytetaanHaunAlkamiskautta) { haku.get.alkamiskausiKoodiUri } else { alkamiskausiKoodiUri },
       koulutuksenAlkamisvuosi = koulutuksenAlkamisvuosi,
       organisaatioRyhmaOids = Set.empty // FIXME
     )

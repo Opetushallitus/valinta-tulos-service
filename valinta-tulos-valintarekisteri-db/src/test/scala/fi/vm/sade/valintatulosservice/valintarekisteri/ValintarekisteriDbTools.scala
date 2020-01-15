@@ -71,6 +71,9 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
       sqlu"truncate table jonosijat cascade",
       sqlu"truncate table valintatapajonot cascade",
       sqlu"truncate table sijoitteluajon_hakukohteet cascade",
+      sqlu"truncate table yhden_paikan_saanto_voimassa cascade",
+      sqlu"truncate table kk_tutkintoon_johtava cascade",
+      sqlu"truncate table koulutuksen_alkamiskausi cascade",
       sqlu"truncate table hakukohteet cascade",
       sqlu"truncate table sijoitteluajot cascade",
       sqlu"truncate table lukuvuosimaksut cascade",
@@ -268,9 +271,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
   }
 
   def insertHakukohde(hakukohdeOid: HakukohdeOid, hakuOid: HakuOid) = {
-    singleConnectionValintarekisteriDb.runBlocking(DBIOAction.seq(
-      sqlu"""insert into hakukohteet (hakukohde_oid, haku_oid, kk_tutkintoon_johtava, yhden_paikan_saanto_voimassa, koulutuksen_alkamiskausi)
-           values (${hakukohdeOid.toString}, ${hakuOid.toString}, true, true, '2015K')"""))
+    singleConnectionValintarekisteriDb.storeHakukohde(YPSHakukohde(hakukohdeOid, hakuOid, Kevat(2015)))
   }
 
   def loadSijoitteluFromFixture(fixture: String, path: String = "sijoittelu/", tallennaHakukohteet: Boolean = true):SijoitteluWrapper = {

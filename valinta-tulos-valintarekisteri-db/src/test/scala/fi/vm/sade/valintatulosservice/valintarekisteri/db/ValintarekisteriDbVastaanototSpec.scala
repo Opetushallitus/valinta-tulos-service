@@ -35,18 +35,16 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
 
   step(appConfig.start)
   step(deleteAll())
-  step(singleConnectionValintarekisteriDb.runBlocking(DBIOAction.seq(
-    sqlu"""insert into hakukohteet (hakukohde_oid, haku_oid, kk_tutkintoon_johtava, yhden_paikan_saanto_voimassa, koulutuksen_alkamiskausi)
-           values ($hakukohdeOid, $hakuOid, true, true, '2015K')""",
-    sqlu"""insert into hakukohteet (hakukohde_oid, haku_oid, kk_tutkintoon_johtava, yhden_paikan_saanto_voimassa, koulutuksen_alkamiskausi)
-               values ($otherHakukohdeOid, $otherHakuOid, true, true, '2015S')""",
-    sqlu"""insert into hakukohteet (hakukohde_oid, haku_oid, kk_tutkintoon_johtava, yhden_paikan_saanto_voimassa, koulutuksen_alkamiskausi)
-               values ($otherHakukohdeOidForHakuOid, $hakuOid, true, true, '2015K')""")))
+  step({
+    singleConnectionValintarekisteriDb.storeHakukohde(YPSHakukohde(hakukohdeOid, hakuOid, Kevat(2015)))
+    singleConnectionValintarekisteriDb.storeHakukohde(YPSHakukohde(otherHakukohdeOid, otherHakuOid, Syksy(2015)))
+    singleConnectionValintarekisteriDb.storeHakukohde(YPSHakukohde(otherHakukohdeOidForHakuOid, hakuOid, Kevat(2015)))
+  })
 
   "ValintarekisteriDb" should {
     "update hakukohde record" in {
-      val old = HakukohdeRecord(refreshedHakukohdeOid, hakuOid, true, true, Kevat(2015))
-      val fresh = HakukohdeRecord(refreshedHakukohdeOid, hakuOid, false, false, Syksy(2014))
+      val old = YPSHakukohde(refreshedHakukohdeOid, hakuOid, Kevat(2015))
+      val fresh = EiKktutkintoonJohtavaHakukohde(refreshedHakukohdeOid, hakuOid, Some(Syksy(2014)))
       singleConnectionValintarekisteriDb.storeHakukohde(old)
       singleConnectionValintarekisteriDb.updateHakukohde(fresh) must beTrue
       val stored = singleConnectionValintarekisteriDb.findHakukohde(refreshedHakukohdeOid)
@@ -54,8 +52,8 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
     }
 
     "don't update hakukohde record if no changes" in {
-      val old = HakukohdeRecord(refreshedHakukohdeOid, hakuOid, true, true, Kevat(2015))
-      val fresh = HakukohdeRecord(refreshedHakukohdeOid, hakuOid, true, true, Kevat(2015))
+      val old = YPSHakukohde(refreshedHakukohdeOid, hakuOid, Kevat(2015))
+      val fresh = YPSHakukohde(refreshedHakukohdeOid, hakuOid, Kevat(2015))
       singleConnectionValintarekisteriDb.storeHakukohde(old)
       singleConnectionValintarekisteriDb.updateHakukohde(fresh) must beFalse
       val stored = singleConnectionValintarekisteriDb.findHakukohde(refreshedHakukohdeOid)
@@ -63,7 +61,7 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
     }
 
     "hakukohteet can be found by oids" in {
-      val kohde = HakukohdeRecord(refreshedHakukohdeOid, hakuOid, true, true, Kevat(2015))
+      val kohde = YPSHakukohde(refreshedHakukohdeOid, hakuOid, Kevat(2015))
       singleConnectionValintarekisteriDb.storeHakukohde(kohde)
       val stored: Option[HakukohdeRecord] = singleConnectionValintarekisteriDb.findHakukohteet(Set(HakukohdeOid("1.2.3"), refreshedHakukohdeOid)).headOption
       stored must beSome[HakukohdeRecord](kohde)
@@ -134,8 +132,7 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
       singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid, VastaanotaEhdollisesti, henkiloOid, "testiselite"))
       singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid, VastaanotaSitovasti, henkiloOid, "testiselite"))
       singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid + "2", hakemusOid, hakukohdeOid, VastaanotaSitovasti, henkiloOid, "testiselite"))
-      singleConnectionValintarekisteriDb.runBlocking(sqlu"""insert into hakukohteet (hakukohde_oid, haku_oid, kk_tutkintoon_johtava, yhden_paikan_saanto_voimassa, koulutuksen_alkamiskausi)
-                       values (${hakukohdeOid + "1"}, ${hakuOid + "1"}, false, false, '2015K')""")
+      singleConnectionValintarekisteriDb.storeHakukohde(EiKktutkintoonJohtavaHakukohde(HakukohdeOid(hakukohdeOid.s + "1"), HakuOid(hakuOid.s + "1"), Some(Kevat(2015))))
       singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, HakukohdeOid(hakukohdeOid.toString + "1"), VastaanotaSitovasti, henkiloOid, "testiselite"))
       val recordsFromDb = singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.findYhdenPaikanSaannonPiirissaOlevatVastaanotot(henkiloOid, Kausi("2015K")))
       recordsFromDb must beSome[VastaanottoRecord]
@@ -280,7 +277,7 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
 
     "store hakukohde multiple times" in {
       Await.result(Future.sequence((1 to 10).map(i => Future {
-        singleConnectionValintarekisteriDb.storeHakukohde(HakukohdeRecord(HakukohdeOid("1.2.3"), HakuOid("2.3.4"), true, true, Syksy(2016)))
+        singleConnectionValintarekisteriDb.storeHakukohde(YPSHakukohde(HakukohdeOid("1.2.3"), HakuOid("2.3.4"), Syksy(2016)))
       })), Duration(60, TimeUnit.SECONDS)) must not(throwAn[Exception])
     }
 
@@ -341,11 +338,19 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
 
   override protected def before: Unit = {
     deleteVastaanotot()
-    singleConnectionValintarekisteriDb.runBlocking(sqlu"""delete from hakukohteet where hakukohde_oid = $refreshedHakukohdeOid""")
+    singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+      sqlu"delete from yhden_paikan_saanto_voimassa where hakukohde_oid = $refreshedHakukohdeOid",
+      sqlu"delete from kk_tutkintoon_johtava where hakukohde_oid = $refreshedHakukohdeOid",
+      sqlu"delete from koulutuksen_alkamiskausi where hakukohde_oid = $refreshedHakukohdeOid",
+      sqlu"""delete from hakukohteet where hakukohde_oid = $refreshedHakukohdeOid"""))
   }
   override protected def after: Unit = {
     deleteVastaanotot()
-    singleConnectionValintarekisteriDb.runBlocking(sqlu"""delete from hakukohteet where hakukohde_oid = $refreshedHakukohdeOid""")
+    singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
+      sqlu"delete from yhden_paikan_saanto_voimassa where hakukohde_oid = $refreshedHakukohdeOid",
+      sqlu"delete from kk_tutkintoon_johtava where hakukohde_oid = $refreshedHakukohdeOid",
+      sqlu"delete from koulutuksen_alkamiskausi where hakukohde_oid = $refreshedHakukohdeOid",
+      sqlu"""delete from hakukohteet where hakukohde_oid = $refreshedHakukohdeOid"""))
   }
 
   private def storeHenkiloviitteet() = {

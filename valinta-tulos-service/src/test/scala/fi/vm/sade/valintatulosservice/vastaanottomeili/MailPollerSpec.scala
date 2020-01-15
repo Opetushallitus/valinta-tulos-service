@@ -562,8 +562,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       tarjoajaNimet = tarjoajaNimetA,
       yhdenPaikanSaanto = yhdenPaikanSaantoA,
       tutkintoonJohtava = true,
-      koulutuksenAlkamiskausiUri = "kausi_k#1",
-      koulutuksenAlkamisvuosi = 2018
+      koulutuksenAlkamiskausiUri = Some("kausi_k#1"),
+      koulutuksenAlkamisvuosi = Some(2018)
     )
     val tarjontaHakukohdeB = tarjonta.Hakukohde(
       oid = hakukohdeOidB,
@@ -575,8 +575,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       tarjoajaNimet = tarjoajaNimetB,
       yhdenPaikanSaanto = yhdenPaikanSaantoA,
       tutkintoonJohtava = true,
-      koulutuksenAlkamiskausiUri = "kausi_k#1",
-      koulutuksenAlkamisvuosi = 2018
+      koulutuksenAlkamiskausiUri = Some("kausi_k#1"),
+      koulutuksenAlkamisvuosi = Some(2018)
     )
     val tarjontaHakukohdeC = tarjonta.Hakukohde(
       oid = hakukohdeOidC,
@@ -588,8 +588,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       tarjoajaNimet = tarjoajaNimetC,
       yhdenPaikanSaanto = yhdenPaikanSaantoA,
       tutkintoonJohtava = true,
-      koulutuksenAlkamiskausiUri = "kausi_k#1",
-      koulutuksenAlkamisvuosi = 2018
+      koulutuksenAlkamiskausiUri = Some("kausi_k#1"),
+      koulutuksenAlkamisvuosi = Some(2018)
     )
     val hakemusA = Hakemus(
       oid = hakemusOidA,
