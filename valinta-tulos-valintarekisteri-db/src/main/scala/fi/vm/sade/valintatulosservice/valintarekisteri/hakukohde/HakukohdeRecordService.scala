@@ -10,32 +10,18 @@ import scala.util.{Failure, Success, Try}
 
 class HakukohdeRecordService(hakuService: HakuService, hakukohdeRepository: HakukohdeRepository, parseLeniently: Boolean) extends Logging {
 
-  def getHakukohteidenKoulutuksenAlkamiskausi(hakuOid: HakuOid, oids: Seq[HakukohdeOid]): Either[Throwable, Seq[(HakukohdeOid, Option[Kausi])]] = {
-    getHakukohdeRecords(hakuOid, oids.toSet).right.map(_.map(hakukohde =>
-      (hakukohde.oid, if (hakukohde.yhdenPaikanSaantoVoimassa) Some(hakukohde.koulutuksenAlkamiskausi) else None)))
-  }
-
-  def getHaunKoulutuksenAlkamiskausi(oid: HakuOid): Either[Throwable, Kausi] = {
-    Try(hakukohdeRepository.findHaunArbitraryHakukohde(oid)) match {
-      case Success(Some(hakukohde)) => Right(hakukohde.koulutuksenAlkamiskausi)
-      case Success(None) => hakuService.getArbitraryPublishedHakukohdeOid(oid)
-        .right.flatMap(fetchAndStoreHakukohdeDetails).right.map(_.koulutuksenAlkamiskausi)
-      case Failure(e) => Left(e)
-    }
-  }
-
   def getHakukohdeRecords(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[HakukohdeRecord]] = {
     MonadHelper.sequence(for {oid <- oids.toStream} yield getHakukohdeRecord(oid))
   }
 
-  private def getHakukohdeRecords(hakuOid: HakuOid, oids: Set[HakukohdeOid]): Either[Throwable, Seq[HakukohdeRecord]] = {
+  def getHakukohdeRecords(hakuOid: HakuOid, oids: Set[HakukohdeOid]): Either[Throwable, List[HakukohdeRecord]] = {
     for {
       hakukohteet <- (Try(hakukohdeRepository.findHaunHakukohteet(hakuOid).filter(h => oids.contains(h.oid))) match {
         case Success(hs) => Right(hs)
         case Failure(t) => Left(t)
       }).right
       missingHakukohteet <- MonadHelper.sequence(for { oid <- oids.diff(hakukohteet.map(_.oid)) } yield fetchAndStoreHakukohdeDetails(oid)).right
-    } yield (hakukohteet ++ missingHakukohteet).toSeq
+    } yield (hakukohteet ++ missingHakukohteet).toList
   }
 
   def getHakukohdeRecord(oid: HakukohdeOid): Either[Throwable, HakukohdeRecord] = {

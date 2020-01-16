@@ -36,7 +36,6 @@ trait HakuService {
   def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde]
   def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[Hakukohde]]
   def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]]
-  def getArbitraryPublishedHakukohdeOid(oid: HakuOid): Either[Throwable, HakukohdeOid]
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]]
 }
 
@@ -198,10 +197,6 @@ class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, 
     tarjonta.getHakukohdeOids(hakuOid).left.flatMap(_ => kouta.getHakukohdeOids(hakuOid))
   }
 
-  override def getArbitraryPublishedHakukohdeOid(oid: HakuOid): Either[Throwable, HakukohdeOid] = {
-    tarjonta.getArbitraryPublishedHakukohdeOid(oid).left.flatMap(_ => kouta.getArbitraryPublishedHakukohdeOid(oid))
-  }
-
   override def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = kaikkiJulkaistutHautCache(())
 }
 
@@ -256,18 +251,6 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
     }
   }
 
-  override def getArbitraryPublishedHakukohdeOid(hakuOid: HakuOid): Either[Throwable, HakukohdeOid] = {
-    val url = config.ophProperties.url("tarjonta-service.hakukohde.search", Map(
-          "tila" -> "VALMIS",
-          "tila" -> "JULKAISTU",
-          "hakuOid" -> hakuOid,
-          "offset" -> 0,
-          "limit" -> 1
-        ).asJava)
-    fetch(url) { response =>
-      (parse(response) \ "result" \ "tulokset" \ "tulokset" \ "oid" ).extractOpt[HakukohdeOid]
-    }.right.flatMap(_.toRight(new IllegalArgumentException(s"No hakukohde found for haku $hakuOid")))
-  }
   def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, List[Hakukohde]] = {
     MonadHelper.sequence(for {oid <- oids.toStream} yield getHakukohde(oid))
   }
@@ -512,13 +495,6 @@ class KoutaHakuService(config: AppConfig, casClient: CasClient, organisaatioServ
 
   def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]] = {
     getKoutaHaunHakukohteet(hakuOid).right.map(_.map(h => HakukohdeOid(h.oid)))
-  }
-
-  def getArbitraryPublishedHakukohdeOid(oid: HakuOid): Either[Throwable, HakukohdeOid] = {
-    getHakukohdeOids(oid).right.flatMap(hakukohdeOids => {
-      hakukohdeOids.find(getKoutaHakukohde(_).right.exists(_.tila == "julkaistu"))
-        .toRight(new IllegalStateException(s"No hakukohde found for haku $oid"))
-    })
   }
 
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = {

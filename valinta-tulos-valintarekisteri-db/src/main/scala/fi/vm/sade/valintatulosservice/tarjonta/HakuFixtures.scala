@@ -119,7 +119,4 @@ object HakuFixtures extends HakuService with JsonHakuService {
     "1.2.246.562.5.72607738903",
     "1.2.246.562.5.72607738904"
   ).map(HakukohdeOid))
-
-  override def getArbitraryPublishedHakukohdeOid(hakuOid: HakuOid): Either[Throwable, HakukohdeOid] =
-    getHakukohdeOids(hakuOid).right.map(_.head)
 }

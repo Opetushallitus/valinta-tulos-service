@@ -1,7 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
 import java.time.Instant
-import java.util
 import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
@@ -21,6 +20,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepo
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.vastaanottanut
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
+import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.ehdollinenVastaanottoMahdollista
 import org.apache.commons.lang3.StringUtils
 import org.joda.time.DateTime
 
@@ -50,23 +50,16 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     this(valinnantulosRepository, vastaanotettavuusService, sijoittelutulosService, appConfig.ohjausparametritService, hakemusRepository, virkailijaVastaanottoRepository, hakuService, hakijaVastaanottoRepository, hakukohdeRecordService, valintatulosDao, hakijaDTOClient)
 
   def haunKoulutuksenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid: HakuOid) : Set[VastaanottoRecord] = {
-    hakuJaSenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid)._2
-  }
-
-  import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.ehdollinenVastaanottoMahdollista
-
-  private def hakuJaSenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid: HakuOid): (Haku, Set[VastaanottoRecord]) = {
-    val haku: Haku = hakuService.getHaku(hakuOid) match {
-      case Right(h) => h
-      case Left(e) => throw e
-    }
-    if (haku.yhdenPaikanSaanto.voimassa) {
-      hakukohdeRecordService.getHaunKoulutuksenAlkamiskausi(hakuOid) match {
-        case Right(kausi) => (haku, virkailijaVastaanottoRepository.findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(kausi))
-        case Left(e) => throw new IllegalStateException(s"No koulutuksen alkamiskausi for haku $hakuOid", e)
-      }
-    } else {
-      (haku, Set())
+    (for {
+      hakukohdeOids <- hakuService.getHakukohdeOids(hakuOid).right
+      hakukohteet <- hakukohdeRecordService.getHakukohdeRecords(hakuOid, hakukohdeOids.toSet).right
+    } yield hakukohteet.collect({ case h if h.yhdenPaikanSaantoVoimassa => (h.oid, h.koulutuksenAlkamiskausi) }).groupBy(_._2).toList match {
+      case Nil => Set.empty[VastaanottoRecord]
+      case (kausi, _) :: Nil => virkailijaVastaanottoRepository.findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(kausi)
+      case kaudet => throw new IllegalStateException(s"Haussa $hakuOid on YPS piirissä olevia hakukohteita joilla on eri koulutuksen alkamiskausi ${kaudet.map(_._2.map(_._1).mkString(", ")).mkString("; ")}")
+    }) match {
+      case Right(vs) => vs
+      case Left(t) => throw t
     }
   }
 
@@ -173,8 +166,9 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         haku <- hakuService.getHaku(hakuOid).right.toOption
         hakukohdeOids <- hakuService.getHakukohdeOids(hakuOid).right.toOption
         koulutuksenAlkamisKaudet <- timed(s"haun $hakuOid hakukohteiden koulutuksen alkamiskaudet", 1000)(
-          hakukohdeRecordService.getHakukohteidenKoulutuksenAlkamiskausi(hakuOid, hakukohdeOids)
-            .right.map(_.toMap).right.toOption
+          hakukohdeRecordService.getHakukohdeRecords(hakuOid, hakukohdeOids.toSet).right
+            .map(_.map(h => h.oid -> (if (h.yhdenPaikanSaantoVoimassa) { Some(h.koulutuksenAlkamiskausi) } else { None })).toMap).right
+            .toOption
         )
         vastaanototByKausi = timed(s"kausien ${koulutuksenAlkamisKaudet.values.flatten.toSet} vastaanotot", 1000)({
           virkailijaVastaanottoRepository.findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(koulutuksenAlkamisKaudet.values.flatten.toSet)
