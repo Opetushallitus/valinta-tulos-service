@@ -74,10 +74,16 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         Map(h.henkiloOid -> valinnantulosRepository.runBlocking(valinnantulosRepository.getIlmoittautumisenAikaleimat(h.henkiloOid)))
       }
       hakukohdeRecords <- hakukohdeRecordService.getHakukohdeRecords(h.toiveet.map(_.oid)).right.toOption
-      uniqueKaudet <- Right(hakukohdeRecords.filter(_.yhdenPaikanSaantoVoimassa)
-        .map(_.koulutuksenAlkamiskausi).distinct).right.toOption
-      vastaanototByKausi <- Some(uniqueKaudet.map(kausi => kausi ->
-        hakijaVastaanottoRepository.runBlocking(hakijaVastaanottoRepository.findYhdenPaikanSaannonPiirissaOlevatVastaanotot(h.henkiloOid, kausi))).toMap)
+      vastaanototKausilla <- Some({
+        val vastaanototByKausi = hakukohdeRecords
+          .collect({ case h if h.yhdenPaikanSaantoVoimassa => h.koulutuksenAlkamiskausi })
+          .distinct
+          .map(kausi => kausi -> hakijaVastaanottoRepository.runBlocking(hakijaVastaanottoRepository.findYhdenPaikanSaannonPiirissaOlevatVastaanotot(h.henkiloOid, kausi)))
+          .toMap
+        hakukohdeRecords.collect({
+          case h if h.yhdenPaikanSaantoVoimassa => h.oid -> (h.koulutuksenAlkamiskausi, vastaanototByKausi(h.koulutuksenAlkamiskausi).map(_.henkiloOid).toSet)
+        }).toMap
+      })
       hakemus <- fetchTulokset(
         haku,
         () => List(h).iterator,
@@ -86,15 +92,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
           hakijaOidsByHakemusOids.findBy(h.oid),
           sijoittelutulosService.findOhjausparametritFromOhjausparametritService(h.hakuOid),
           latestSijoitteluajoId).toSeq,
-        vastaanottoKaudella = hakukohdeOid => {
-          hakukohdeRecords.find(_.oid == hakukohdeOid) match {
-            case Some(hakukohde) if hakukohde.yhdenPaikanSaantoVoimassa =>
-              val vastaanotto = vastaanototByKausi.get(hakukohde.koulutuksenAlkamiskausi).flatten
-              Some(hakukohde.koulutuksenAlkamiskausi, vastaanotto.map(_.henkiloOid).toSet)
-            case Some(_) => None
-            case None => throw new RuntimeException(s"Hakukohde $hakukohdeOid not found!")
-          }
-        },
+        vastaanottoKaudella = vastaanototKausilla.get,
         ilmoittautumisenAikaleimat = ilmoittautumisenAikaleimat
       ).toSeq.headOption
     } yield hakemus
@@ -116,6 +114,9 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
           virkailijaVastaanottoRepository.findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(
             hakukohdes.filter(_.yhdenPaikanSaantoVoimassa).map(_.koulutuksenAlkamiskausi).toSet)
         })
+        val vastaanototKausilla = hakukohdes.collect({
+          case h if h.yhdenPaikanSaantoVoimassa => h.oid -> (h.koulutuksenAlkamiskausi, vastaanototByKausi(h.koulutuksenAlkamiskausi).map(_.henkiloOid))
+        }).toMap
         val ilmoittautumisenAikaleimat = timed(s"Ilmoittautumisten aikaleimojen haku haulle $hakuOid", 1000) {
           valinnantulosRepository.runBlocking(valinnantulosRepository.getIlmoittautumisenAikaleimat(hakuOid))
             .groupBy(_._1).mapValues(i => i.map(t => (t._2, t._3)))
@@ -126,16 +127,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
           haku,
           () => hakemukset.toIterator,
           personOidFromHakemusResolver => hakemusOids.flatMap(hakemusOid => sijoittelutulosService.hakemuksenTulos(haku, hakemusOid, personOidFromHakemusResolver.findBy(hakemusOid), vastaanottoaikataulu, latestSijoitteluajoId)).toSeq,
-          vastaanottoKaudella = hakukohdeOid => {
-            hakukohdes.find(_.oid == hakukohdeOid) match {
-              case Some(hakukohde) if hakukohde.yhdenPaikanSaantoVoimassa =>
-                val vastaanottaneet: Set[String] = vastaanototByKausi.get(hakukohde.koulutuksenAlkamiskausi).map(_.map(_.henkiloOid)).getOrElse(
-                  throw new RuntimeException(s"Missing vastaanotot for kausi ${hakukohde.koulutuksenAlkamiskausi} and hakukohde ${hakukohde.oid}"))
-                Some(hakukohde.koulutuksenAlkamiskausi, vastaanottaneet)
-              case Some(_) => None
-              case None => throw new RuntimeException(s"Hakukohde $hakukohdeOid is missing")
-            }
-          },
+          vastaanottoKaudella = vastaanototKausilla.get,
           ilmoittautumisenAikaleimat = ilmoittautumisenAikaleimat
         )
         hakemustenTulokset.flatMap { hakemuksenTulos =>
@@ -165,15 +157,14 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       for {
         haku <- hakuService.getHaku(hakuOid).right.toOption
         hakukohdeOids <- hakuService.getHakukohdeOids(hakuOid).right.toOption
-        koulutuksenAlkamisKaudet <- timed(s"haun $hakuOid hakukohteiden koulutuksen alkamiskaudet", 1000)(
-          hakukohdeRecordService.getHakukohdeRecords(hakuOid, hakukohdeOids.toSet).right
-            .map(_.map(h => h.oid -> (if (h.yhdenPaikanSaantoVoimassa) { Some(h.koulutuksenAlkamiskausi) } else { None })).toMap).right
-            .toOption
-        )
-        vastaanototByKausi = timed(s"kausien ${koulutuksenAlkamisKaudet.values.flatten.toSet} vastaanotot", 1000)({
-          virkailijaVastaanottoRepository.findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(koulutuksenAlkamisKaudet.values.flatten.toSet)
-            .map { case (kausi, vastaanotot) => kausi -> vastaanotot.map(_.henkiloOid) }
+        hakukohteet <- hakukohdeRecordService.getHakukohdeRecords(hakuOid, hakukohdeOids.toSet).right.toOption
+        vastaanototByKausi = timed(s"kausien vastaanotot", 1000)({
+          virkailijaVastaanottoRepository.findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(
+            hakukohteet.filter(_.yhdenPaikanSaantoVoimassa).map(_.koulutuksenAlkamiskausi).toSet)
         })
+        vastaanototKausilla = hakukohteet.collect({
+          case h if h.yhdenPaikanSaantoVoimassa => h.oid -> (h.koulutuksenAlkamiskausi, vastaanototByKausi(h.koulutuksenAlkamiskausi).map(_.henkiloOid))
+        }).toMap
         ilmoittautumisenAikaleimat = timed(s"Ilmoittautumisten aikaleimojen haku haulle $hakuOid", 1000) {
           valinnantulosRepository.runBlocking(valinnantulosRepository.getIlmoittautumisenAikaleimat(hakuOid))
             .groupBy(_._1).mapValues(i => i.map(t => (t._2, t._3)))
@@ -188,18 +179,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
             override def findBy(hakemusOid: HakemusOid): Option[String] = hakijaOidByHakemusOid.get(hakemusOid)
           }),
           checkJulkaisuAikaParametri,
-          vastaanottoKaudella = hakukohdeOid => {
-            val hk: Option[Option[Kausi]] = koulutuksenAlkamisKaudet.get(hakukohdeOid)
-            val result: Option[(Kausi, Set[String])] = hk match {
-              case Some(Some(kausi)) =>
-                Some(kausi, vastaanototByKausi.getOrElse(kausi, throw new RuntimeException(s"Missing vastaanotot for kausi $kausi and hakukohde $hakukohdeOid")))
-              case Some(None) => None
-              case None =>
-                logger.error(s"Hakukohde $hakukohdeOid is missing while getting hakemusten tulos by haku $hakuOid")
-                None // throwing exception here would be better. overhaul needed for test fixtures if exception is thrown here
-            }
-            result
-          },
+          vastaanottoKaudella = vastaanototKausilla.get,
           ilmoittautumisenAikaleimat
         )
       }
@@ -216,13 +196,15 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     timed("Fetch hakemusten tulos for haku: "+ hakuOid + " and hakukohde: " + hakukohdeOid, 1000) (
       for {
         haku <- hakuService.getHaku(hakuOid).right //tarjonta
-        hakukohdes <- hakukohdeRecordService.getHakukohdeRecords(uniqueHakukohdeOids).right //valintarekisteri/hakukohde
+        hakukohteet <- hakukohdeRecordService.getHakukohdeRecords(uniqueHakukohdeOids).right //valintarekisteri/hakukohde
       } yield {
-        val vastaanototByKausi = timed("kaudenVastaanotot", 1000)({
+        val vastaanototByKausi = timed(s"kausien vastaanotot", 1000)({
           virkailijaVastaanottoRepository.findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissa(
-            hakukohdes.filter(_.yhdenPaikanSaantoVoimassa).map(_.koulutuksenAlkamiskausi).toSet)
-            .map { case (kausi, vastaanotot) => kausi -> vastaanotot.map(_.henkiloOid) }
+            hakukohteet.filter(_.yhdenPaikanSaantoVoimassa).map(_.koulutuksenAlkamiskausi).toSet)
         })
+        val vastaanototKausilla = hakukohteet.collect({
+          case h if h.yhdenPaikanSaantoVoimassa => h.oid -> (h.koulutuksenAlkamiskausi, vastaanototByKausi(h.koulutuksenAlkamiskausi).map(_.henkiloOid))
+        }).toMap
         val ilmoittautumisenAikaleimat = timed(s"Ilmoittautumisten aikaleimojen haku haulle $hakuOid", 1000) {
           valinnantulosRepository.runBlocking(valinnantulosRepository.getIlmoittautumisenAikaleimat(hakuOid))
             .groupBy(_._1).mapValues(i => i.map(t => (t._2, t._3)))
@@ -236,17 +218,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
             override def findBy(hakemusOid: HakemusOid): Option[String] = hakijaOidByHakemusOid.get(hakemusOid)
           }),
           checkJulkaisuAikaParametri,
-          vastaanottoKaudella = hakukohdeOid => {
-            val result: Option[(Kausi, Set[String])] = hakukohdes.find(_.oid == hakukohdeOid) match {
-              case Some(hakukohde) if hakukohde.yhdenPaikanSaantoVoimassa =>
-                Some(hakukohde.koulutuksenAlkamiskausi, vastaanototByKausi.getOrElse(hakukohde.koulutuksenAlkamiskausi,
-                  throw new RuntimeException(s"Missing vastaanotot for kausi ${hakukohde.koulutuksenAlkamiskausi} and hakukohde ${hakukohde.oid}")
-                ))
-              case Some(_) => None
-              case None => throw new RuntimeException(s"Missing hakukohde $hakukohdeOid")
-            }
-            result
-          },
+          vastaanottoKaudella = vastaanototKausilla.get,
           ilmoittautumisenAikaleimat
         )
       }
