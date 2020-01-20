@@ -436,7 +436,8 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       None,
       None,
       None,
-      Some(DateTime.now().plusDays(2))
+      Some(DateTime.now().plusDays(2)),
+      true
     )))
   }
 
@@ -448,7 +449,8 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       None,
       None,
       None,
-      Some(DateTime.now().minusDays(2))
+      Some(DateTime.now().minusDays(2)),
+      true
     )))
   }
 
@@ -460,7 +462,8 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       None,
       None,
       None,
-      None
+      None,
+      true
     )))
   }
 }

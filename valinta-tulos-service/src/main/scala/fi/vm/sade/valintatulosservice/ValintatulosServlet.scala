@@ -56,7 +56,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
           koulutuksenAlkamiskausi = Some(Kausi("2016S")),
           yhdenPaikanSaanto = YhdenPaikanSaanto(voimassa = false, ""),
           nimi = Map("kieli_fi" -> "Haun nimi")),
-        Some(Ohjausparametrit(Vastaanottoaikataulu(None, None), Some(DateTime.now().plusDays(10)), Some(DateTime.now().plusDays(30)), Some(DateTime.now().plusDays(60)), None, None, None)),
+        Some(Ohjausparametrit(Vastaanottoaikataulu(None, None), Some(DateTime.now().plusDays(10)), Some(DateTime.now().plusDays(30)), Some(DateTime.now().plusDays(60)), None, None, None, true)),
         hasHetu = true)
     )
   )

@@ -59,8 +59,6 @@ object VtsAppConfig extends Logging {
     override def templateAttributesURL = new File(templateAttributesFile).toURI.toURL
   }
 
-  case class MockDynamicAppConfig(näytetäänSiirryKelaanURL: Boolean = true) extends VtsDynamicAppConfig
-
   /**
    * Dev profile, uses local mongo db
    */
@@ -175,7 +173,7 @@ object VtsAppConfig extends Logging {
 
     lazy val ohjausparametritService = this match {
       case _ : StubbedExternalDeps => new StubbedOhjausparametritService()
-      case _ => CachedRemoteOhjausparametritService(this)
+      case _ => new CachedRemoteOhjausparametritService(this)
     }
 
     override def settings: VtsApplicationSettings

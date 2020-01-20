@@ -131,10 +131,10 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
       }
       .filter { haku =>
         ohjausparameteritService.ohjausparametrit(haku.oid) match {
-          case Right(Some(Ohjausparametrit(_, _, _, Some(hakukierrosPaattyy), _, _, _))) if hakukierrosPaattyy.isBeforeNow =>
+          case Right(Some(Ohjausparametrit(_, _, _, Some(hakukierrosPaattyy), _, _, _, _))) if hakukierrosPaattyy.isBeforeNow =>
             logger.debug(s"Pudotetaan haku ${haku.oid} koska hakukierros päättynyt $hakukierrosPaattyy")
             false
-          case Right(Some(Ohjausparametrit(_, _, _, _, Some(tulostenJulkistusAlkaa), _, _))) if tulostenJulkistusAlkaa.isAfterNow =>
+          case Right(Some(Ohjausparametrit(_, _, _, _, Some(tulostenJulkistusAlkaa), _, _, _))) if tulostenJulkistusAlkaa.isAfterNow =>
             logger.info(s"Pudotetaan haku ${haku.oid} koska tulosten julkistus alkaa $tulostenJulkistusAlkaa")
             false
           case Right(None) =>

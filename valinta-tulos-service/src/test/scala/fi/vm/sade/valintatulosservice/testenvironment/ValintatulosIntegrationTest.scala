@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.testenvironment
 import java.io.File
 
 import fi.vm.sade.utils.cas.CasClient
-import fi.vm.sade.valintatulosservice.config.{VtsAppConfig, VtsDynamicAppConfig}
+import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain.Hakemuksentulos
 import fi.vm.sade.valintatulosservice.koodisto.KoodistoService
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
@@ -23,7 +23,6 @@ class ValintatulosIntegrationTest extends ITSpecification {
       val varsFile = "ENVIRONMENT OPHITEST PATH HERE/deploy/ophitest_vars.yml"
       if (new File(varsFile).exists()) {
         implicit val appConfig = new VtsAppConfig.LocalTestingWithTemplatedVars(varsFile)
-        implicit val dynamicAppConfig: VtsDynamicAppConfig = VtsAppConfig.MockDynamicAppConfig()
         val casClient = new CasClient(appConfig.ophUrlProperties.url(""), org.http4s.client.blaze.defaultClient)
         val hakuService = HakuService(appConfig, casClient, OrganisaatioService(appConfig), new KoodistoService(appConfig))
         //lazy val sijoitteluContext = new SijoitteluSpringContext(appConfig, SijoitteluSpringContext.createApplicationContext(appConfig))

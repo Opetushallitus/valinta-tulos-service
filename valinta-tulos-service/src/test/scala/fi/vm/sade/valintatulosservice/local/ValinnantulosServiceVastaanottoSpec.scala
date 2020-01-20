@@ -403,7 +403,8 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
     None,
     None,
     None,
-    Some(DateTime.now().plusDays(2))
+    Some(DateTime.now().plusDays(2)),
+    true
   )))
 
   val audit = mock[Audit]
@@ -421,7 +422,7 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
   lazy val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
   lazy val hakemusRepository = new HakemusRepository(new HakuAppRepository(), new AtaruHakemusRepository(appConfig), new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService))
   lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, vastaanotettavuusService, sijoittelutulosService, hakemusRepository, valintarekisteriDb,
-    hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, hakijaDtoClient)(appConfig, dynamicAppConfig)
+    hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, hakijaDtoClient)(appConfig)
   lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService,
     valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, hakemusRepository, valintarekisteriDb)
   lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService,

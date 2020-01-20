@@ -9,7 +9,6 @@ import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationO
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.config.VtsDynamicAppConfig
 import fi.vm.sade.valintatulosservice.domain.Valintatila.isHyväksytty
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
@@ -36,7 +35,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
                           hakijaVastaanottoRepository: HakijaVastaanottoRepository,
                           hakukohdeRecordService: HakukohdeRecordService,
                           valintatulosDao: ValintarekisteriValintatulosDao,
-                          hakijaDTOClient: ValintarekisteriHakijaDTOClient)(implicit appConfig: VtsAppConfig, dynamicAppConfig: VtsDynamicAppConfig) extends Logging {
+                          hakijaDTOClient: ValintarekisteriHakijaDTOClient)(implicit appConfig: VtsAppConfig) extends Logging {
   def this(valinnantulosRepository: ValinnantulosRepository,
             vastaanotettavuusService: VastaanotettavuusService,
            sijoittelutulosService: SijoittelutulosService,
@@ -46,7 +45,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
            hakijaVastaanottoRepository: HakijaVastaanottoRepository,
            hakukohdeRecordService: HakukohdeRecordService,
            valintatulosDao: ValintarekisteriValintatulosDao,
-           hakijaDTOClient: ValintarekisteriHakijaDTOClient )(implicit appConfig: VtsAppConfig, dynamicAppConfig: VtsDynamicAppConfig) =
+           hakijaDTOClient: ValintarekisteriHakijaDTOClient )(implicit appConfig: VtsAppConfig) =
     this(valinnantulosRepository, vastaanotettavuusService, sijoittelutulosService, appConfig.ohjausparametritService, hakemusRepository, virkailijaVastaanottoRepository, hakuService, hakijaVastaanottoRepository, hakukohdeRecordService, valintatulosDao, hakijaDTOClient)
 
   def haunKoulutuksenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid: HakuOid) : Set[VastaanottoRecord] = {
@@ -507,7 +506,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
   }
   private def asetaKelaURL(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]): List[Hakutoiveentulos] = {
     val hakukierrosEiOlePäättynyt = !ohjausparametrit.flatMap(_.hakukierrosPaattyy).exists(_.isBefore(DateTime.now()))
-    val näytetäänSiirryKelaanURL = dynamicAppConfig.näytetäänSiirryKelaanURL
+    val näytetäänSiirryKelaanURL = ohjausparametrit.forall(_.naytetaankoSiirryKelaanURL)
     val näytetäänKelaURL = if (hakukierrosEiOlePäättynyt && näytetäänSiirryKelaanURL && haku.sallittuKohdejoukkoKelaLinkille) Some(appConfig.settings.kelaURL) else None
 
     tulokset.map {

@@ -18,19 +18,17 @@ import scala.concurrent.duration.Duration
 import scala.util.Try
 import scala.util.control.NonFatal
 
-case class ValintaTulosServiceOhjausparametrit(näytetäänköSiirryKelaanURL: Boolean)
-case class Ohjausparametrit(
-  vastaanottoaikataulu: Vastaanottoaikataulu,
-  varasijaSaannotAstuvatVoimaan: Option[DateTime],
-  ilmoittautuminenPaattyy: Option[DateTime],
-  hakukierrosPaattyy: Option[DateTime],
-  tulostenJulkistusAlkaa: Option[DateTime],
-  kaikkiJonotSijoittelussa: Option[DateTime],
-  valintaesitysHyvaksyttavissa: Option[DateTime])
+case class Ohjausparametrit(vastaanottoaikataulu: Vastaanottoaikataulu,
+                            varasijaSaannotAstuvatVoimaan: Option[DateTime],
+                            ilmoittautuminenPaattyy: Option[DateTime],
+                            hakukierrosPaattyy: Option[DateTime],
+                            tulostenJulkistusAlkaa: Option[DateTime],
+                            kaikkiJonotSijoittelussa: Option[DateTime],
+                            valintaesitysHyvaksyttavissa: Option[DateTime],
+                            naytetaankoSiirryKelaanURL: Boolean)
 
 trait OhjausparametritService {
   def ohjausparametrit(asId: HakuOid): Either[Throwable, Option[Ohjausparametrit]]
-  def valintaTulosServiceOhjausparametrit(): Either[Throwable, Option[ValintaTulosServiceOhjausparametrit]]
 }
 
 class StubbedOhjausparametritService extends OhjausparametritService {
@@ -41,25 +39,22 @@ class StubbedOhjausparametritService extends OhjausparametritService {
       .map(parse(_).asInstanceOf[JObject])
       .map(OhjausparametritParser.parseOhjausparametrit))
   }
+}
 
-  def valintaTulosServiceOhjausparametrit(): Either[Throwable, Option[ValintaTulosServiceOhjausparametrit]] = {
-    Right(Some(ValintaTulosServiceOhjausparametrit(true)))
+class CachedRemoteOhjausparametritService(appConfig: VtsAppConfig) extends OhjausparametritService {
+  val service = new RemoteOhjausparametritService(appConfig)
+  val ohjausparametritMemo = TTLOptionalMemoize.memoize[HakuOid, Option[Ohjausparametrit]](service.ohjausparametrit, Duration(1, TimeUnit.HOURS).toSeconds, appConfig.settings.estimatedMaxActiveHakus)
+  val naytetaankoSiirryKelaanURLMemo = TTLOptionalMemoize.memoize[Unit, Boolean](_ => service.naytetaankoSiirryKelaanURL, Duration(30, TimeUnit.SECONDS).toSeconds, 1)
+
+  override def ohjausparametrit(asId: HakuOid): Either[Throwable, Option[Ohjausparametrit]] = {
+    for {
+      naytetaankoSiirryKelaanURL <- naytetaankoSiirryKelaanURLMemo().right
+      ohjausparametrit <- ohjausparametritMemo(asId).right
+    } yield ohjausparametrit.map(_.copy(naytetaankoSiirryKelaanURL = naytetaankoSiirryKelaanURL))
   }
 }
 
-object CachedRemoteOhjausparametritService {
-  def apply(implicit appConfig: VtsAppConfig): OhjausparametritService = {
-    val service = new RemoteOhjausparametritService()
-    val ohjausparametritMemo = TTLOptionalMemoize.memoize[HakuOid, Option[Ohjausparametrit]](service.ohjausparametrit, Duration(1, TimeUnit.HOURS).toSeconds, appConfig.settings.estimatedMaxActiveHakus)
-
-    new OhjausparametritService() {
-      override def ohjausparametrit(asId: HakuOid): Either[Throwable, Option[Ohjausparametrit]] = ohjausparametritMemo(asId)
-      override def valintaTulosServiceOhjausparametrit(): Either[Throwable, Option[ValintaTulosServiceOhjausparametrit]] = service.valintaTulosServiceOhjausparametrit()
-    }
-  }
-}
-
-class RemoteOhjausparametritService(implicit appConfig: VtsAppConfig) extends OhjausparametritService with JsonFormats with Logging {
+class RemoteOhjausparametritService(appConfig: VtsAppConfig) extends OhjausparametritService with JsonFormats with Logging {
   import org.json4s.jackson.JsonMethods._
 
   def parametrit[T](target: String)(parser: String => T): Either[Throwable, Option[T]] = {
@@ -82,24 +77,20 @@ class RemoteOhjausparametritService(implicit appConfig: VtsAppConfig) extends Oh
     }.get
   }
 
-  override def valintaTulosServiceOhjausparametrit(): Either[Throwable, Option[ValintaTulosServiceOhjausparametrit]] = {
-    parametrit("valintatulosservice")(body => OhjausparametritParser.parseValintaTulosServiceOhjausparametrit(parse(body)))
+  def naytetaankoSiirryKelaanURL: Either[Throwable, Boolean] = {
+    parametrit("valintatulosservice")(body => (parse(body) \ "nayta_siirry_kelaan_url").extractOrElse[Boolean](true)).right.map(_.getOrElse(false))
   }
 
-  override def ohjausparametrit(asId: HakuOid): Either[Throwable, Option[Ohjausparametrit]] =
-    parametrit(asId.toString)(body => OhjausparametritParser.parseOhjausparametrit(parse(body)))
+  override def ohjausparametrit(asId: HakuOid): Either[Throwable, Option[Ohjausparametrit]] = {
+    for {
+      naytetaankoSiirryKelaanURL <- naytetaankoSiirryKelaanURL.right
+      ohjausparametrit <- parametrit(asId.toString)(body => OhjausparametritParser.parseOhjausparametrit(parse(body), naytetaankoSiirryKelaanURL)).right
+    } yield ohjausparametrit
+  }
 }
 
 private object OhjausparametritParser extends JsonFormats {
-
-  def parseValintaTulosServiceOhjausparametrit(json: JValue): ValintaTulosServiceOhjausparametrit = {
-    val näytetäänköSiirryKelaanURL = (json \ "nayta_siirry_kelaan_url").extractOpt[Boolean]
-
-    ValintaTulosServiceOhjausparametrit(
-      näytetäänköSiirryKelaanURL = näytetäänköSiirryKelaanURL.getOrElse(true))
-  }
-
-  def parseOhjausparametrit(json: JValue): Ohjausparametrit = {
+  def parseOhjausparametrit(json: JValue, naytetaankoSiirryKelaanURL: Boolean): Ohjausparametrit = {
     Ohjausparametrit(
       parseVastaanottoaikataulu(json),
       parseVarasijaSaannotAstuvatVoimaan(json),
@@ -107,7 +98,8 @@ private object OhjausparametritParser extends JsonFormats {
       parseHakukierrosPaattyy(json),
       parseTulostenJulkistus(json),
       parseKaikkiJonotSijoittelussa(json),
-      parseValintaesitysHyvaksyttavissa(json))
+      parseValintaesitysHyvaksyttavissa(json),
+      naytetaankoSiirryKelaanURL)
   }
 
   private def parseDateTime(json: JValue, key: String): Option[DateTime] = {
