@@ -33,7 +33,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
   def hakemuksenTulos(haku: Haku,
                       hakemusOid: HakemusOid,
                       hakijaOidIfFound: Option[String],
-                      ohjausparametrit: Option[Ohjausparametrit],
+                      ohjausparametrit: Ohjausparametrit,
                       latestSijoitteluajoId: Option[Long]): Option[HakemuksenSijoitteluntulos] = {
     for (
       hakijaOid <- hakijaOidIfFound;
@@ -77,7 +77,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     }).getOrElse(Nil)
   }
 
-  def findOhjausparametritFromOhjausparametritService(hakuOid: HakuOid): Option[Ohjausparametrit] = {
+  def findOhjausparametritFromOhjausparametritService(hakuOid: HakuOid): Ohjausparametrit = {
     Timer.timed("findAikatauluFromOhjausparametritService -> ohjausparametritService.ohjausparametrit", 100) {
       ohjausparametritService.ohjausparametrit(hakuOid) match {
         case Right(o) => o
@@ -118,7 +118,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
   }
 
   private def latestSijoittelunTulos(hakuOid: HakuOid, henkiloOid: String, hakemusOid: HakemusOid,
-                                     ohjausparametrit: Option[Ohjausparametrit], virkailijana:Boolean): DBIO[HakemuksenSijoitteluntulos] = {
+                                     ohjausparametrit: Ohjausparametrit, virkailijana:Boolean): DBIO[HakemuksenSijoitteluntulos] = {
     findHakemus(hakemusOid, findLatestSijoitteluajoId(hakuOid), hakuOid).map(hakija => {
       hakijaVastaanottoRepository.findHenkilonVastaanototHaussa(henkiloOid, hakuOid).map(vastaanotot => {
         val hyvaksyttyJaJulkaistuDates = hakijaVastaanottoRepository.findHyvaksyttyJulkaistuDatesForHenkilo(henkiloOid)
@@ -128,12 +128,12 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
   }
 
   def latestSijoittelunTulos(hakuOid: HakuOid, henkiloOid: String, hakemusOid: HakemusOid,
-                             ohjausparametrit: Option[Ohjausparametrit]): DBIO[HakemuksenSijoitteluntulos] =
+                             ohjausparametrit: Ohjausparametrit): DBIO[HakemuksenSijoitteluntulos] =
     latestSijoittelunTulos(hakuOid, henkiloOid, hakemusOid, ohjausparametrit, false)
 
 
   def latestSijoittelunTulosVirkailijana(hakuOid: HakuOid, henkiloOid: String, hakemusOid: HakemusOid,
-                                         ohjausparametrit: Option[Ohjausparametrit]): DBIO[HakemuksenSijoitteluntulos] =
+                                         ohjausparametrit: Ohjausparametrit): DBIO[HakemuksenSijoitteluntulos] =
     latestSijoittelunTulos(hakuOid, henkiloOid, hakemusOid, ohjausparametrit, true)
 
   def sijoittelunTulosForAjoWithoutVastaanottoTieto(sijoitteluajoId: Option[Long], hakuOid: HakuOid, hakemusOid: HakemusOid): Option[HakijaDTO] =
@@ -159,7 +159,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
   }
 
   def hakemuksenYhteenveto(hakija: HakijaDTO,
-                           ohjausparametrit: Option[Ohjausparametrit],
+                           ohjausparametrit: Ohjausparametrit,
                            hyvaksyttyJulkaistuDates: Map[HakukohdeOid, OffsetDateTime],
                            vastaanottoRecords: Set[VastaanottoRecord],
                            vastaanotettavuusVirkailijana: Boolean): HakemuksenSijoitteluntulos = {
@@ -207,7 +207,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
   }
 
   private def hakemuksenKevytYhteenveto(hakija: KevytHakijaDTO,
-                                        ohjausparametrit: Option[Ohjausparametrit],
+                                        ohjausparametrit: Ohjausparametrit,
                                         hyvaksyttyJulkaistuDates: Map[HakukohdeOid, OffsetDateTime],
                                         vastaanottoRecord: Set[VastaanottoRecord]): HakemuksenSijoitteluntulos = {
     val hakutoiveidenYhteenvedot = hakija.getHakutoiveet.toList.map { hakutoive: KevytHakutoiveDTO =>
@@ -258,7 +258,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
 
   private def tilatietoJaVastaanottoDeadline(valintatila: Valintatila,
                                              vastaanotto: Option[VastaanottoRecord],
-                                             ohjausparametrit: Option[Ohjausparametrit],
+                                             ohjausparametrit: Ohjausparametrit,
                                              hakutoiveenHyvaksyttyJaJulkaistuDate: Option[OffsetDateTime],
                                              vastaanotettavuusVirkailijana: Boolean):(HakutoiveenSijoittelunTilaTieto, Option[DateTime]) = {
     val ( vastaanottotila, vastaanottoDeadline ) = laskeVastaanottotila(valintatila, vastaanotto, ohjausparametrit, hakutoiveenHyvaksyttyJaJulkaistuDate, vastaanotettavuusVirkailijana)
@@ -320,7 +320,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
 
   private def laskeVastaanottotila(valintatila: Valintatila,
                                    vastaanotto: Option[VastaanottoRecord],
-                                   ohjausparametrit: Option[Ohjausparametrit],
+                                   ohjausparametrit: Ohjausparametrit,
                                    hakutoiveenHyvaksyttyJaJulkaistuDate: Option[OffsetDateTime],
                                    vastaanotettavuusVirkailijana: Boolean = false): ( Vastaanottotila, Option[DateTime] ) = {
     val deadline = laskeVastaanottoDeadline(ohjausparametrit, hakutoiveenHyvaksyttyJaJulkaistuDate)

@@ -429,7 +429,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
   }
 
   trait ValintaesitysEiHyvaksyttavissa { this: Mocks =>
-    ohjausparametritService.ohjausparametrit(hakuOid) returns Right(Some(Ohjausparametrit(
+    ohjausparametritService.ohjausparametrit(hakuOid) returns Right(Ohjausparametrit(
       Vastaanottoaikataulu(None, None),
       None,
       None,
@@ -438,11 +438,11 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       None,
       Some(DateTime.now().plusDays(2)),
       true
-    )))
+    ))
   }
 
   trait ValintaesitysHyvaksyttavissa { this: Mocks =>
-    ohjausparametritService.ohjausparametrit(hakuOid) returns Right(Some(Ohjausparametrit(
+    ohjausparametritService.ohjausparametrit(hakuOid) returns Right(Ohjausparametrit(
       Vastaanottoaikataulu(None, None),
       None,
       None,
@@ -451,11 +451,11 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       None,
       Some(DateTime.now().minusDays(2)),
       true
-    )))
+    ))
   }
 
   trait TyhjatOhjausparametrit { this: Mocks =>
-    ohjausparametritService.ohjausparametrit(hakuOid) returns Right(Some(Ohjausparametrit(
+    ohjausparametritService.ohjausparametrit(hakuOid) returns Right(Ohjausparametrit(
       Vastaanottoaikataulu(None, None),
       None,
       None,
@@ -464,6 +464,6 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       None,
       None,
       true
-    )))
+    ))
   }
 }

@@ -659,10 +659,10 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakuOid = hakuOidA,
       hakemusOid = hakemusOidA,
       hakijaOid = hakijaOidA,
-      aikataulu = Some(Vastaanottoaikataulu(
+      aikataulu = Vastaanottoaikataulu(
         deadlineA.map(new DateTime(_)),
         vastaanottoBufferA
-      )),
+      ),
       hakutoiveet = List(Hakutoiveentulos(
         hakukohdeOid = hakukohdeOidA,
         hakukohdeNimi = hakukohdeNimetA("fi"),
@@ -711,10 +711,10 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakuOid = hakuOidA,
       hakemusOid = hakemusOidB,
       hakijaOid = hakijaOidB,
-      aikataulu = Some(Vastaanottoaikataulu(
+      aikataulu = Vastaanottoaikataulu(
         deadlineA.map(new DateTime(_)),
         vastaanottoBufferA
-      )),
+      ),
       hakutoiveet = List(Hakutoiveentulos(
         hakukohdeOid = hakukohdeOidA,
         hakukohdeNimi = hakukohdeNimetA("fi"),
@@ -763,10 +763,10 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakuOid = hakuOidA,
       hakemusOid = hakemusOidC,
       hakijaOid = hakijaOidC,
-      aikataulu = Some(Vastaanottoaikataulu(
+      aikataulu = Vastaanottoaikataulu(
         deadlineA.map(new DateTime(_)),
         vastaanottoBufferA
-      )),
+      ),
       hakutoiveet = List(
         Hakutoiveentulos(
           hakukohdeOid = hakukohdeOidC,
@@ -902,10 +902,10 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakuOid = hakuOidA,
       hakemusOid = hakemusOidC,
       hakijaOid = hakijaOidC,
-      aikataulu = Some(Vastaanottoaikataulu(
+      aikataulu = Vastaanottoaikataulu(
         deadlineA.map(new DateTime(_)),
         vastaanottoBufferA
-      )),
+      ),
       hakutoiveet = List(
         Hakutoiveentulos(
           hakukohdeOid = hakukohdeOidC,
@@ -1041,10 +1041,10 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakuOid = hakuOidA,
       hakemusOid = hakemusOidC,
       hakijaOid = hakijaOidC,
-      aikataulu = Some(Vastaanottoaikataulu(
+      aikataulu = Vastaanottoaikataulu(
         deadlineA.map(new DateTime(_)),
         vastaanottoBufferA
-      )),
+      ),
       hakutoiveet = List(
         Hakutoiveentulos(
           hakukohdeOid = hakukohdeOidC,

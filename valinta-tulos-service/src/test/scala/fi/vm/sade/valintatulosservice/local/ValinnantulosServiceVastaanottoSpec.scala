@@ -396,7 +396,7 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
 
   val ohjausparametritService = mock[OhjausparametritService]
 
-  ohjausparametritService.ohjausparametrit(hakuOid) returns Right(Some(Ohjausparametrit(
+  ohjausparametritService.ohjausparametrit(hakuOid) returns Right(Ohjausparametrit(
     Vastaanottoaikataulu(None, None),
     None,
     None,
@@ -405,7 +405,7 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
     None,
     Some(DateTime.now().plusDays(2)),
     true
-  )))
+  ))
 
   val audit = mock[Audit]
 

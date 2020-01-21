@@ -27,30 +27,43 @@ case class Ohjausparametrit(vastaanottoaikataulu: Vastaanottoaikataulu,
                             valintaesitysHyvaksyttavissa: Option[DateTime],
                             naytetaankoSiirryKelaanURL: Boolean)
 
+object Ohjausparametrit {
+  val empty = Ohjausparametrit(
+    vastaanottoaikataulu = Vastaanottoaikataulu(
+      vastaanottoEnd = None,
+      vastaanottoBufferDays = None),
+    varasijaSaannotAstuvatVoimaan = None,
+    ilmoittautuminenPaattyy = None,
+    hakukierrosPaattyy = None,
+    tulostenJulkistusAlkaa = None,
+    kaikkiJonotSijoittelussa = None,
+    valintaesitysHyvaksyttavissa = None,
+    naytetaankoSiirryKelaanURL = true)
+}
+
 trait OhjausparametritService {
-  def ohjausparametrit(hakuOid: HakuOid): Either[Throwable, Option[Ohjausparametrit]]
+  def ohjausparametrit(hakuOid: HakuOid): Either[Throwable, Ohjausparametrit]
 }
 
 class StubbedOhjausparametritService extends OhjausparametritService {
-  def ohjausparametrit(hakuOid: HakuOid): Either[Throwable, Option[Ohjausparametrit]] = {
+  def ohjausparametrit(hakuOid: HakuOid): Either[Throwable, Ohjausparametrit] = {
     val fileName = "/fixtures/ohjausparametrit/" + OhjausparametritFixtures.activeFixture + ".json"
-    Right(Option(getClass.getResourceAsStream(fileName))
-      .map(scala.io.Source.fromInputStream(_).mkString)
-      .map(parse(_).asInstanceOf[JObject])
-      .map(OhjausparametritParser.parseOhjausparametrit(_, true)))
+    Right(OhjausparametritParser.parseOhjausparametrit(
+      parse(scala.io.Source.fromInputStream(getClass.getResourceAsStream(fileName)).mkString),
+      naytetaankoSiirryKelaanURL = true))
   }
 }
 
 class CachedRemoteOhjausparametritService(appConfig: VtsAppConfig) extends OhjausparametritService {
   val service = new RemoteOhjausparametritService(appConfig)
-  val ohjausparametritMemo = TTLOptionalMemoize.memoize[HakuOid, Option[Ohjausparametrit]](service.ohjausparametrit, Duration(1, TimeUnit.HOURS).toSeconds, appConfig.settings.estimatedMaxActiveHakus)
+  val ohjausparametritMemo = TTLOptionalMemoize.memoize[HakuOid, Ohjausparametrit](service.ohjausparametrit, Duration(1, TimeUnit.HOURS).toSeconds, appConfig.settings.estimatedMaxActiveHakus)
   val naytetaankoSiirryKelaanURLMemo = TTLOptionalMemoize.memoize[Unit, Boolean](_ => service.naytetaankoSiirryKelaanURL, Duration(30, TimeUnit.SECONDS).toSeconds, 1)
 
-  override def ohjausparametrit(hakuOid: HakuOid): Either[Throwable, Option[Ohjausparametrit]] = {
+  override def ohjausparametrit(hakuOid: HakuOid): Either[Throwable, Ohjausparametrit] = {
     for {
       naytetaankoSiirryKelaanURL <- naytetaankoSiirryKelaanURLMemo().right
       ohjausparametrit <- ohjausparametritMemo(hakuOid).right
-    } yield ohjausparametrit.map(_.copy(naytetaankoSiirryKelaanURL = naytetaankoSiirryKelaanURL))
+    } yield ohjausparametrit.copy(naytetaankoSiirryKelaanURL = naytetaankoSiirryKelaanURL)
   }
 }
 
@@ -76,12 +89,12 @@ class RemoteOhjausparametritService(appConfig: VtsAppConfig) extends Ohjausparam
     fetch(url, body => (parse(body) \ "nayta_siirry_kelaan_url").extractOrElse[Boolean](true)).right.map(_.getOrElse(false))
   }
 
-  override def ohjausparametrit(hakuOid: HakuOid): Either[Throwable, Option[Ohjausparametrit]] = {
+  override def ohjausparametrit(hakuOid: HakuOid): Either[Throwable, Ohjausparametrit] = {
     val url = appConfig.ophUrlProperties.url("ohjausparametrit-service.parametri", hakuOid.toString)
     for {
       naytetaankoSiirryKelaanURL <- naytetaankoSiirryKelaanURL.right
       ohjausparametrit <- fetch(url, body => OhjausparametritParser.parseOhjausparametrit(parse(body), naytetaankoSiirryKelaanURL)).right
-    } yield ohjausparametrit
+    } yield ohjausparametrit.getOrElse(Ohjausparametrit.empty)
   }
 }
 
