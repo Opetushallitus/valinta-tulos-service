@@ -131,6 +131,9 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
       }
       .filter { haku =>
         ohjausparameteritService.ohjausparametrit(haku.oid) match {
+          case Right(ohjausparametrit) if ohjausparametrit.hakukierrosPaattyy.isEmpty =>
+            logger.warn(s"Pudotetaan haku ${haku.oid} koska hakukierros päättyy ei asetettu")
+            false
           case Right(Ohjausparametrit(_, _, _, Some(hakukierrosPaattyy), _, _, _, _)) if hakukierrosPaattyy.isBeforeNow =>
             logger.debug(s"Pudotetaan haku ${haku.oid} koska hakukierros päättynyt $hakukierrosPaattyy")
             false
