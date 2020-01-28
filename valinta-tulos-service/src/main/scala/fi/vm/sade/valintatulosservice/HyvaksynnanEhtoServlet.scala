@@ -62,9 +62,7 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     val hakukohdeOid = parseHakukohdeOid.fold(throw _, x => x)
 
     implicit val authenticated: Authenticated = authenticate
-    authorize(hakukohdeOid, Set(Role.ATARU_HAKEMUS_READ, Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
-
-    checkIsHakutoive(hakemusOid, hakukohdeOid)
+    authorize(hakemusOid, hakukohdeOid, Set(Role.ATARU_HAKEMUS_READ, Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
 
     val response = hyvaksynnanEhtoRepository.runBlocking(
       hyvaksynnanEhtoRepository.hyvaksynnanEhtoHakukohteessa(hakemusOid, hakukohdeOid))
@@ -92,8 +90,6 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
 
     implicit val authenticated: Authenticated = authenticate
     authorize(hakukohdeOid, Set(Role.ATARU_HAKEMUS_READ, Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
-
-    checkIsHakutoive(hakemusOid, hakukohdeOid)
 
     val response = hyvaksynnanEhtoRepository.runBlocking(
       hyvaksynnanEhtoRepository.hyvaksynnanEhtoHakukohteessa(hakemusOid, hakukohdeOid))
@@ -145,9 +141,7 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     val hakemusOid = parseHakemusOid.fold(throw _, x => x)
 
     implicit val authenticated: Authenticated = authenticate
-    authorize(hakukohdeOid, Set(Role.ATARU_HAKEMUS_READ, Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
-
-    checkIsHakutoive(hakemusOid, hakukohdeOid)
+    authorize(hakemusOid, hakukohdeOid, Set(Role.ATARU_HAKEMUS_READ, Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
 
     val response = hyvaksynnanEhtoRepository.runBlocking(
       hyvaksynnanEhtoRepository.hyvaksynnanEhdotValintatapajonoissa(hakemusOid, hakukohdeOid))
@@ -173,8 +167,6 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
 
     implicit val authenticated: Authenticated = authenticate
     authorize(hakukohdeOid, Set(Role.ATARU_HAKEMUS_READ, Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
-
-    checkIsHakutoive(hakemusOid, hakukohdeOid)
 
     val response = hyvaksynnanEhtoRepository.runBlocking(
       hyvaksynnanEhtoRepository.hyvaksynnanEhdotValintatapajonoissa(hakemusOid, hakukohdeOid))
@@ -219,9 +211,7 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     }
 
     implicit val authenticated: Authenticated = authenticate
-    authorize(hakukohdeOid, Set(Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
-
-    checkIsHakutoive(hakemusOid, hakukohdeOid)
+    authorize(hakemusOid, hakukohdeOid, Set(Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
 
     val ilmoittaja = auditInfo.session._2.personOid
     val response = hyvaksynnanEhtoRepository.runBlocking(
@@ -276,8 +266,6 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     implicit val authenticated: Authenticated = authenticate
     authorize(hakukohdeOid, Set(Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
 
-    checkIsHakutoive(hakemusOid, hakukohdeOid)
-
     val ilmoittaja = auditInfo.session._2.personOid
     val response = hyvaksynnanEhtoRepository.runBlocking(
       ifUnmodifiedSince match {
@@ -310,10 +298,8 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     val hakemusOid = parseHakemusOid.fold(throw _, x => x)
     val ifUnmodifiedSince = parseIfUnmodifiedSince.fold(throw _, x => x)
 
-    checkIsHakutoive(hakemusOid, hakukohdeOid)
-
     implicit val authenticated: Authenticated = authenticate
-    authorize(hakukohdeOid, Set(Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
+    authorize(hakemusOid, hakukohdeOid, Set(Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
 
     val ehto = hyvaksynnanEhtoRepository.runBlocking(
       hyvaksynnanEhtoRepository.deleteHyvaksynnanEhtoHakukohteessa(hakemusOid, hakukohdeOid, ifUnmodifiedSince))
@@ -336,10 +322,8 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     val hakukohdeOid = parseHakukohdeOid.fold(throw _, x => x)
     val ifUnmodifiedSince = parseIfUnmodifiedSince.fold(throw _, x => x)
 
-    checkIsHakutoive(hakemusOid, hakukohdeOid)
-
     implicit val authenticated: Authenticated = authenticate
-    authorize(hakukohdeOid, Set(Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
+    authorize(hakemusOid, hakukohdeOid, Set(Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
 
     val ehto = hyvaksynnanEhtoRepository.runBlocking(
       hyvaksynnanEhtoRepository.deleteHyvaksynnanEhtoHakukohteessa(hakemusOid, hakukohdeOid, ifUnmodifiedSince))
@@ -355,11 +339,18 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     authorizer.checkAccess(authenticated.session, hakukohde.organisaatioOiditAuktorisointiin, roles).fold(throw _, x => x)
   }
 
-  private def checkIsHakutoive(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Unit = {
-    val hakemus = hakemusRepository.findHakemus(hakemusOid).fold(throw _, x => x)
-    if (!hakemus.toiveet.exists(_.oid == hakukohdeOid)) {
-      throw new IllegalArgumentException(s"Hakukohde $hakukohdeOid ei ole hakemuksen $hakemusOid hakutoive")
-    }
+  private def authorize(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, roles: Set[Role])(implicit authenticated: Authenticated): Unit = {
+    authorize(roles.toSeq: _*)
+    (for {
+      hakemus <- hakemusRepository.findHakemus(hakemusOid).right
+      hakutoiveCheck <- (if (hakemus.toiveet.exists(_.oid == hakukohdeOid)) {
+        Right(hakemus)
+      } else {
+        Left(new IllegalArgumentException(s"Hakukohde $hakukohdeOid ei ole hakemuksen $hakemusOid hakutoive"))
+      }).right
+      hakukohteet <- MonadHelper.sequence(hakemus.toiveet.map(h => hakuService.getHakukohde(h.oid))).right
+      authorized <- authorizer.checkAccess(authenticated.session, hakukohteet.flatMap(_.organisaatioOiditAuktorisointiin).toSet, roles).right
+    } yield authorized).fold(throw _, x => x)
   }
 
   private def auditLogRead(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid)(implicit authenticated: Authenticated): Unit = {
