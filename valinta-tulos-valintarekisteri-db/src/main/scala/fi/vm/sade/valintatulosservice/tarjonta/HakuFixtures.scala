@@ -57,7 +57,7 @@ object HakuFixtures extends HakuService with JsonHakuService {
     })
   }
 
-  override def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, HakukohdeKela] = {
+  override def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]] = {
     Left(new UnsupportedOperationException("Not implemented"))
   }
   override def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[Hakukohde]] ={

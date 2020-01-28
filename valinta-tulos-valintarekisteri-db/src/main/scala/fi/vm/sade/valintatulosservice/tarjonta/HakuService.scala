@@ -32,7 +32,7 @@ import scala.util.control.NonFatal
 
 trait HakuService {
   def getHaku(oid: HakuOid): Either[Throwable, Haku]
-  def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, HakukohdeKela]
+  def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]]
   def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde]
   def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[Hakukohde]]
   def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]]
@@ -181,7 +181,7 @@ class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, 
 
   override def getHaku(oid: HakuOid): Either[Throwable, Haku] = hakuCache(oid)
 
-  override def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, HakukohdeKela] = {
+  override def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]] = {
     tarjonta.getHakukohdeKela(oid).left.flatMap(_ => kouta.getHakukohdeKela(oid))
   }
 
@@ -254,16 +254,24 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
   def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, List[Hakukohde]] = {
     MonadHelper.sequence(for {oid <- oids.toStream} yield getHakukohde(oid))
   }
-  def getHakukohdeKela(hakukohdeOid: HakukohdeOid): Either[Throwable, HakukohdeKela] = {
-    val hakukohdeUrl = config.ophProperties.url(
-      "tarjonta-service.hakukohdekela", hakukohdeOid)
-    fetch(hakukohdeUrl) { response =>
-      parse(response).extract[HakukohdeKela]
-    }.left.map {
-      case e: IllegalArgumentException => new IllegalArgumentException(s"No hakukohde $hakukohdeOid ($hakukohdeUrl) found", e)
-      case e: IllegalStateException => new IllegalStateException(s"Parsing hakukohde $hakukohdeOid ($hakukohdeUrl) failed", e)
-      case e: Exception => new RuntimeException(s"Failed to get hakukohde $hakukohdeOid ($hakukohdeUrl)", e)
-    }
+  def getHakukohdeKela(hakukohdeOid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]] = {
+    for {
+      hakukohde <- getHakukohde(hakukohdeOid).right
+      haku <- getHaku(hakukohde.hakuOid).right
+      kelaHakukohde <- (if (haku.sallittuKohdejoukkoKelaLinkille) {
+        val hakukohdeUrl = config.ophProperties.url(
+          "tarjonta-service.hakukohdekela", hakukohdeOid)
+        fetch(hakukohdeUrl) { response =>
+          Some(parse(response).extract[HakukohdeKela])
+        }.left.map {
+          case e: IllegalArgumentException => new IllegalArgumentException(s"No hakukohde $hakukohdeOid ($hakukohdeUrl) found", e)
+          case e: IllegalStateException => new IllegalStateException(s"Parsing hakukohde $hakukohdeOid ($hakukohdeUrl) failed", e)
+          case e: Exception => new RuntimeException(s"Failed to get hakukohde $hakukohdeOid ($hakukohdeUrl)", e)
+        }
+      } else {
+        Right(None)
+      }).right
+    } yield kelaHakukohde
   }
 
   def getHakukohde(hakukohdeOid: HakukohdeOid): Either[Throwable, Hakukohde] = {
@@ -463,17 +471,24 @@ class KoutaHakuService(config: AppConfig, casClient: CasClient, organisaatioServ
     getKoutaHaku(oid).right.flatMap(_.toHaku)
   }
 
-  def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, HakukohdeKela] = {
-    for {
-      koutaHakukohde <- getKoutaHakukohde(oid).right
-      koutaHaku <- (if (koutaHakukohde.kaytetaanHaunAlkamiskautta) { getKoutaHaku(HakuOid(koutaHakukohde.hakuOid)).right.map(Some(_)) } else { Right(None) }).right
-      koutaToteutus <- getKoutaToteutus(koutaHakukohde.toteutusOid).right
-      koutaKoulutus <- getKoutaKoulutus(koutaToteutus.koulutusOid).right
-      koulutuskoodi <- koutaKoulutus.koulutusKoodiUri.fold[Either[Throwable, Option[Koodi]]](Right(None))(koodistoService.getKoodi(_).right.map(Some(_))).right
-      opintojenlaajuuskoodi <- koutaKoulutus.metadata.flatMap(_.opintojenLaajuusKoodiUri).fold[Either[Throwable, Option[Koodi]]](Right(None))(koodistoService.getKoodi(_).right.map(Some(_))).right
-      tarjoajaorganisaatiohierarkiat <- MonadHelper.sequence(koutaHakukohde.tarjoajat(koutaToteutus).map(organisaatioService.hae)).right
-      hakukohde <- koutaHakukohde.toHakukohdeKela(koutaHaku, koutaToteutus, koutaKoulutus, koulutuskoodi, opintojenlaajuuskoodi, tarjoajaorganisaatiohierarkiat).right
-    } yield hakukohde
+  def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]] = {
+    if (false) {
+      for {
+        koutaHakukohde <- getKoutaHakukohde(oid).right
+        koutaHaku <- (if (koutaHakukohde.kaytetaanHaunAlkamiskautta) {
+          getKoutaHaku(HakuOid(koutaHakukohde.hakuOid)).right.map(Some(_))
+        } else {
+          Right(None)
+        }).right
+        koutaToteutus <- getKoutaToteutus(koutaHakukohde.toteutusOid).right
+        koutaKoulutus <- getKoutaKoulutus(koutaToteutus.koulutusOid).right
+        koulutuskoodi <- koutaKoulutus.koulutusKoodiUri.fold[Either[Throwable, Option[Koodi]]](Right(None))(koodistoService.getKoodi(_).right.map(Some(_))).right
+        opintojenlaajuuskoodi <- koutaKoulutus.metadata.flatMap(_.opintojenLaajuusKoodiUri).fold[Either[Throwable, Option[Koodi]]](Right(None))(koodistoService.getKoodi(_).right.map(Some(_))).right
+        tarjoajaorganisaatiohierarkiat <- MonadHelper.sequence(koutaHakukohde.tarjoajat(koutaToteutus).map(organisaatioService.hae)).right
+        hakukohde <- koutaHakukohde.toHakukohdeKela(koutaHaku, koutaToteutus, koutaKoulutus, koulutuskoodi, opintojenlaajuuskoodi, tarjoajaorganisaatiohierarkiat).right
+      } yield hakukohde
+    }
+    getKoutaHakukohde(oid).right.map(_ => None)
   }
 
   def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde] = {
