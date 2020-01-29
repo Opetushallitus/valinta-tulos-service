@@ -272,6 +272,50 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       """.as[Valinnantulos].map(_.toSet)
   }
 
+  override def getValinnantuloksetAndLastModifiedDateForHakemus(hakemusOid: HakemusOid): Option[(Instant, Set[Valinnantulos])] = {
+    runBlockingTransactionally(
+      sql"""select greatest(max(lower(ti.system_time)),
+                            max(lower(tu.system_time)),
+                            max(lower(ehto.system_time)),
+                            max(upper(ehto_h.system_time)),
+                            max(lower(il.system_time)),
+                            max(upper(il_h.system_time)),
+                            max(va.timestamp),
+                            max(va_h.timestamp),
+                            max(lower(hjj.system_time)))
+            from valinnantilat ti
+            left join valinnantulokset tu
+              on ti.valintatapajono_oid = tu.valintatapajono_oid and
+                 ti.hakemus_oid = tu.hakemus_oid
+            left join ehdollisen_hyvaksynnan_ehto ehto
+              on ti.valintatapajono_oid = ehto.valintatapajono_oid and
+                 ti.hakemus_oid = ehto.hakemus_oid
+            left join ehdollisen_hyvaksynnan_ehto_history ehto_h
+              on ti.valintatapajono_oid = ehto_h.valintatapajono_oid and
+                 ti.hakemus_oid = ehto_h.hakemus_oid
+            left join ilmoittautumiset il
+              on ti.henkilo_oid = il.henkilo and
+                 ti.hakukohde_oid = il.hakukohde
+            left join ilmoittautumiset_history il_h
+              on ti.henkilo_oid = il_h.henkilo and
+                 ti.hakukohde_oid = il_h.hakukohde
+            left join vastaanotot va
+              on ti.henkilo_oid = va.henkilo and
+                 ti.hakukohde_oid = va.hakukohde
+            left join deleted_vastaanotot va_h
+              on va.deleted = va_h.id and
+                 va_h.id >= 0
+            left join hyvaksytyt_ja_julkaistut_hakutoiveet as hjj
+              on hjj.henkilo = ti.henkilo_oid and
+                 hjj.hakukohde = ti.hakukohde_oid
+            where ti.hakemus_oid = $hakemusOid""".as[Option[Instant]].flatMap(_.head match {
+        case Some(lastModified) =>
+          getValinnantuloksetForHakemus(hakemusOid).map(tulokset => Some((lastModified, tulokset)))
+        case None =>
+          DBIO.successful(None)
+      })).fold(throw _, x => x)
+  }
+
   override def getValinnantuloksetForHakukohde(hakukohdeOid: HakukohdeOid): DBIO[Set[Valinnantulos]] = {
     sql"""select ti.hakukohde_oid,
               ti.valintatapajono_oid,

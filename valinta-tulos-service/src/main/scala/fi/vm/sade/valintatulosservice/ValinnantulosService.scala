@@ -71,36 +71,30 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
     r
   }
 
-  def getValinnantuloksetForHakemus(hakemusOid: HakemusOid, auditInfo: AuditInfo): Set[ValinnantulosWithTilahistoria] = {
-    val r = valinnantulosRepository.runBlocking(valinnantulosRepository.getValinnantuloksetForHakemus(hakemusOid))
-    var showResults = false
-
+  def getValinnantuloksetForHakemus(hakemusOid: HakemusOid, auditInfo: AuditInfo): Option[(Instant, Set[ValinnantulosWithTilahistoria])] = {
+    val r = valinnantulosRepository.getValinnantuloksetAndLastModifiedDateForHakemus(hakemusOid).map(t => {
+      (t._1, yhdenPaikanSaannos(t._2).fold(throw _, x => x))
+    })
+    r.foreach(t => {
+      val oids = hakuService.getHakukohdes(t._2.map(_.hakukohdeOid).toSeq)
+        .fold(throw _, x => x)
+        .flatMap(_.organisaatioOiditAuktorisointiin)
+        .toSet
+      val roles = Set(
+        Role.SIJOITTELU_READ,
+        Role.SIJOITTELU_READ_UPDATE,
+        Role.SIJOITTELU_CRUD,
+        Role.ATARU_KEVYT_VALINTA_READ,
+        Role.ATARU_KEVYT_VALINTA_CRUD)
+      authorizer.checkAccess(auditInfo.session._2, oids, roles).fold(throw _, x => x)
+    })
     audit.log(auditInfo.user, ValinnantuloksenLuku,
       new Target.Builder().setField("hakemus", hakemusOid.toString).build(),
       new Changes.Builder().build()
     )
-    r.foreach(result => {
-      val hakukohde = hakuService.getHakukohde(result.hakukohdeOid).fold(throw _, h => h)
-      authorizer.checkAccess(auditInfo.session._2, hakukohde.organisaatioOiditAuktorisointiin, Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) match {
-        case Left(a) =>
-          logger.info(s"""Käyttäjällä ${auditInfo.session._2.personOid} ei ole oikeuksia hakukohteeseen ${hakukohde.oid} hakemuksella ${hakemusOid.toString}.""")
-        case Right(b) =>
-          showResults = true
-      }
+    r.map(t => {
+      (t._1, t._2.map(tulos => ValinnantulosWithTilahistoria(tulos, valinnantulosRepository.getHakemuksenTilahistoriat(tulos.hakemusOid, tulos.valintatapajonoOid))))
     })
-
-    if (!showResults) {
-      logger.info(s"""Käyttäjällä ${auditInfo.session._2.personOid} ei ole oikeuksia yhteenkään organisaatioon hakemuksella ${hakemusOid.toString}.""")
-      Set()
-    } else {
-      // Convert to valinnanTulosWithHistoria and return set
-      var tuloksetWithHistoria: ListBuffer[ValinnantulosWithTilahistoria] = ListBuffer()
-      r.foreach(result => {
-        tuloksetWithHistoria +=
-        new ValinnantulosWithTilahistoria(result, valinnantulosRepository.getHakemuksenTilahistoriat(result.hakemusOid, result.valintatapajonoOid))
-      })
-      tuloksetWithHistoria.toSet
-    }
   }
 
   def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid: ValintatapajonoOid,

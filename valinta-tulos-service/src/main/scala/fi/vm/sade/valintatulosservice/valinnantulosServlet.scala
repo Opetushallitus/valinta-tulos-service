@@ -96,7 +96,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
       })
   }
 
-  val valinnantuloksetHakemukselleSwagger: OperationBuilder = (apiOperation[List[Valinnantulos]]("valinnantuloksetHakemukselle")
+  val valinnantuloksetHakemukselleSwagger: OperationBuilder = (apiOperation[List[ValinnantulosWithTilahistoria]]("valinnantuloksetHakemukselle")
     summary "Valinnantulos yksittäiselle hakemukselle"
     parameter queryParam[String]("hakemusOid").description("Hakemuksen OID")
     tags "valinnan-tulos")
@@ -109,14 +109,13 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
   get("/hakemus/", operation(valinnantuloksetHakemukselleSwagger)) {
     contentType = formats("json")
     implicit val authenticated = authenticate
-    authorize(
-      Role.SIJOITTELU_READ,
-      Role.SIJOITTELU_READ_UPDATE,
-      Role.SIJOITTELU_CRUD,
-      Role.ATARU_KEVYT_VALINTA_READ,
-      Role.ATARU_KEVYT_VALINTA_CRUD
-    )
-    Ok(parseHakemusOid.right.map(valinnantulosService.getValinnantuloksetForHakemus(_, auditInfo)))
+    val hakemusOid = parseHakemusOid.fold(throw _, x => x)
+    valinnantulosService.getValinnantuloksetForHakemus(hakemusOid, auditInfo) match {
+      case Some((lastModified, valinnantulokset)) =>
+        Ok(body = valinnantulokset, headers = Map(appConfig.settings.headerLastModified -> createLastModifiedHeader(lastModified)))
+      case None =>
+        Ok(body = List.empty)
+    }
   }
 
   val valinnantulosMuutosSwagger: OperationBuilder = (apiOperation[Unit]("muokkaaValinnantulosta")

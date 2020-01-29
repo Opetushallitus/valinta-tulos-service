@@ -304,7 +304,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
 
     "palauttaa 200 ja tyhjän taulukon jos hakemuksen tuloksia ei löydy" in { t: (String, ValinnantulosService, SessionRepository) =>
       t._3.get(sessionId) returns Some(readSession)
-      t._2.getValinnantuloksetForHakemus(HakemusOid("1"), auditInfo(readSession)) returns Set()
+      t._2.getValinnantuloksetForHakemus(HakemusOid("1"), auditInfo(readSession)) returns None
       get(t._1+"/hakemus/", Iterable("hakemusOid" -> "1"), defaultHeaders) {
         status must_== 200
         body must_== "[]"
@@ -313,7 +313,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
 
     "palauttaa 200 ja hakemuksen tulokset hakemus-oidilla haettaessa" in { t: (String, ValinnantulosService, SessionRepository) =>
       t._3.get(sessionId) returns Some(readSession)
-      t._2.getValinnantuloksetForHakemus(hakemusOid, auditInfo(readSession)) returns Set(valinnantulosWithHistoria)
+      t._2.getValinnantuloksetForHakemus(hakemusOid, auditInfo(readSession)) returns Some((Instant.now(), Set(valinnantulosWithHistoria)))
       get(t._1+"/hakemus/", Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders) {
         status must_== 200
         parse(body).extract[List[ValinnantulosWithTilahistoria]].toString().trim().replace("\r","") must_== List(valinnantulosWithHistoria).toString().trim().replace("\r","")
