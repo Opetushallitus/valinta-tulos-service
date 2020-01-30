@@ -68,10 +68,15 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
       }
     }
 
-    def validateJulkaistavissa() = (uusi.julkaistavissa, uusi.vastaanottotila) match {
-      case (None, ValintatuloksenTila.KESKEN) | (Some(false), ValintatuloksenTila.KESKEN) => Right()
-      case (None, _) | (Some(false), _) => Left(ValinnantulosUpdateStatus(409, s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sillä on vastaanotto", uusi.valintatapajonoOid, uusi.hakemusOid))
-      case (Some(true), _) => Right()
+    def validateJulkaistavissa() = {
+      (vanha.flatMap(_.julkaistavissa), uusi.julkaistavissa) match {
+        case (Some(true), None) | (Some(true), Some(false)) if uusi.ilmoittautumistila != EiTehty =>
+          Left(ValinnantulosUpdateStatus(409, s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sen ilmoittautumistila on ${uusi.ilmoittautumistila}", uusi.valintatapajonoOid, uusi.hakemusOid))
+        case (Some(true), None) | (Some(true), Some(false)) if uusi.vastaanottotila != ValintatuloksenTila.KESKEN =>
+          Left(ValinnantulosUpdateStatus(409, s"Valinnantulosta ei voida merkitä ei-julkaistavaksi, koska sen vastaanottotila on ${uusi.vastaanottotila}", uusi.valintatapajonoOid, uusi.hakemusOid))
+        case _ =>
+          Right()
+      }
     }
 
     def validateIlmoittautuminen() = (uusi.ilmoittautumistila, uusi.vastaanottotila, uusi.julkaistavissa) match {
