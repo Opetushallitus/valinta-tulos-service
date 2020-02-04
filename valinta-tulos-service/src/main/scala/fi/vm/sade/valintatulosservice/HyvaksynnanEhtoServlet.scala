@@ -27,21 +27,69 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
       Gone(body = Map("error" -> e.getMessage))
   })
 
+  val hyvaksynnanEhdotHakukohteessaSwagger: OperationBuilder =
+    (apiOperation[Map[HakemusOid, HyvaksynnanEhto]]("hyvaksynnanEhdotHakukohteessa")
+      summary "Hyväksynnän ehdot hakukohteessa"
+      parameter pathParam[String]("hakukohdeOid").description("Hakukohteen OID").required
+      tags "hyvaksynnan-ehto")
+  get("/hakukohteessa/:hakukohdeOid", operation(hyvaksynnanEhdotHakukohteessaSwagger)) {
+    contentType = formats("json")
+    val hakukohdeOid = parseHakukohdeOid.fold(throw _, x => x)
+
+    implicit val authenticated: Authenticated = authenticate
+    authorize(hakukohdeOid, Set(Role.ATARU_HAKEMUS_READ, Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
+
+    val response = hyvaksynnanEhtoRepository.runBlocking(
+      hyvaksynnanEhtoRepository.hyvaksynnanEhtoHakukohteessa(hakukohdeOid))
+
+    response.foreach(r => auditLogRead(r._1, hakukohdeOid))
+
+    response match {
+      case Nil => Ok(body = Map.empty)
+      case ehdot => Ok(body = ehdot.map(t => t._1 -> t._2).toMap, headers = Map("Last-Modified" -> createLastModifiedHeader(ehdot.map(_._3).max)))
+    }
+  }
+
   val hyvaksynnanEhtoHakukohteessaSwagger: OperationBuilder =
     (apiOperation[HyvaksynnanEhto]("hyvaksynnanEhtoHakukohteessa")
-      summary "Hyväksynnän ehto hakukohteessa"
+      summary "Hakemuksen hyväksynnän ehto hakukohteessa"
       parameter pathParam[String]("hakemusOid").description("Hakemuksen OID").required
       parameter pathParam[String]("hakukohdeOid").description("Hakukohteen OID").required
       tags "hyvaksynnan-ehto")
-  get("/:hakemusOid/hakukohteet/:hakukohdeOid", operation(hyvaksynnanEhtoHakukohteessaSwagger)) {
+  get("/hakukohteessa/:hakukohdeOid/hakemus/:hakemusOid", operation(hyvaksynnanEhtoHakukohteessaSwagger)) {
+    contentType = formats("json")
+    val hakemusOid = parseHakemusOid.fold(throw _, x => x)
+    val hakukohdeOid = parseHakukohdeOid.fold(throw _, x => x)
+
+    implicit val authenticated: Authenticated = authenticate
+    authorize(hakemusOid, hakukohdeOid, Set(Role.ATARU_HAKEMUS_READ, Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
+
+    val response = hyvaksynnanEhtoRepository.runBlocking(
+      hyvaksynnanEhtoRepository.hyvaksynnanEhtoHakukohteessa(hakemusOid, hakukohdeOid))
+
+    auditLogRead(hakemusOid, hakukohdeOid)
+
+    response match {
+      case Some((ehto, lastModified)) =>
+        Ok(body = ehto, headers = Map("Last-Modified" -> createLastModifiedHeader(lastModified)))
+      case None =>
+        NotFound(body = Map("error" -> "Not Found"))
+    }
+  }
+
+  val hyvaksynnanEhtoHakukohteessaDeprecatedSwagger: OperationBuilder =
+    (apiOperation[HyvaksynnanEhto]("hyvaksynnanEhtoHakukohteessaDeprecated")
+      summary "Hyväksynnän ehto hakukohteessa DEPRECATED"
+      parameter pathParam[String]("hakemusOid").description("Hakemuksen OID").required
+      parameter pathParam[String]("hakukohdeOid").description("Hakukohteen OID").required
+      tags "hyvaksynnan-ehto")
+  get("/:hakemusOid/hakukohteet/:hakukohdeOid", operation(hyvaksynnanEhtoHakukohteessaDeprecatedSwagger)) {
     contentType = formats("json")
     val hakemusOid = parseHakemusOid.fold(throw _, x => x)
     val hakukohdeOid = parseHakukohdeOid.fold(throw _, x => x)
 
     implicit val authenticated: Authenticated = authenticate
     authorize(hakukohdeOid, Set(Role.ATARU_HAKEMUS_READ, Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
-
-    checkIsHakutoive(hakemusOid, hakukohdeOid)
 
     val response = hyvaksynnanEhtoRepository.runBlocking(
       hyvaksynnanEhtoRepository.hyvaksynnanEhtoHakukohteessa(hakemusOid, hakukohdeOid))
@@ -57,20 +105,68 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
   }
 
   val hyvaksynnanEhdotValintatapajonoissaSwagger: OperationBuilder =
-    (apiOperation[Map[ValintatapajonoOid, HyvaksynnanEhto]]("hyvaksynnanEhdotValintatapajonoissa")
+    (apiOperation[Map[ValintatapajonoOid, Map[HakemusOid, HyvaksynnanEhto]]]("hyvaksynnanEhdotValintatapajonoissa")
       summary "Hyväksynnän ehdot hakukohteen valintatapajonoissa"
+      parameter pathParam[String]("hakukohdeOid").description("Hakukohteen OID").required
+      tags "hyvaksynnan-ehto")
+  get("/valintatapajonoissa/:hakukohdeOid", operation(hyvaksynnanEhdotValintatapajonoissaSwagger)) {
+    contentType = formats("json")
+    val hakukohdeOid = parseHakukohdeOid.fold(throw _, x => x)
+
+    implicit val authenticated: Authenticated = authenticate
+    authorize(hakukohdeOid, Set(Role.ATARU_HAKEMUS_READ, Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
+
+    val response = hyvaksynnanEhtoRepository.runBlocking(
+      hyvaksynnanEhtoRepository.hyvaksynnanEhdotValintatapajonoissa(hakukohdeOid))
+
+    response.foreach(r => auditLogRead(r._1, hakukohdeOid))
+
+    response match {
+      case Nil => Ok(body = Map.empty)
+      case ehdot => Ok(
+        body = ehdot.groupBy(_._2).mapValues(_.map(t => t._1 -> t._3).toMap),
+        headers = Map("Last-Modified" -> createLastModifiedHeader(ehdot.map(_._4).max)))
+    }
+  }
+
+  val hakemuksenHyvaksynnanEhdotValintatapajonoissaSwagger: OperationBuilder =
+    (apiOperation[Map[ValintatapajonoOid, HyvaksynnanEhto]]("hakemuksenHyvaksynnanEhdotValintatapajonoissa")
+      summary "Hakemuksen hyväksynnän ehdot hakukohteen valintatapajonoissa"
+      parameter pathParam[String]("hakukohdeOid").description("Hakukohteen OID").required
+      parameter pathParam[String]("hakemusOid").description("Hakemuksen OID").required
+      tags "hyvaksynnan-ehto")
+  get("/valintatapajonoissa/:hakukohdeOid/hakemus/:hakemusOid", operation(hakemuksenHyvaksynnanEhdotValintatapajonoissaSwagger)) {
+    contentType = formats("json")
+    val hakukohdeOid = parseHakukohdeOid.fold(throw _, x => x)
+    val hakemusOid = parseHakemusOid.fold(throw _, x => x)
+
+    implicit val authenticated: Authenticated = authenticate
+    authorize(hakemusOid, hakukohdeOid, Set(Role.ATARU_HAKEMUS_READ, Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
+
+    val response = hyvaksynnanEhtoRepository.runBlocking(
+      hyvaksynnanEhtoRepository.hyvaksynnanEhdotValintatapajonoissa(hakemusOid, hakukohdeOid))
+
+    auditLogRead(hakemusOid, hakukohdeOid)
+
+    response match {
+      case Nil => Ok(body = Map.empty)
+      case ehdot => Ok(body = ehdot.map(t => t._1 -> t._2).toMap, headers = Map("Last-Modified" -> createLastModifiedHeader(ehdot.map(_._3).max)))
+    }
+  }
+
+  val hakemuksenHyvaksynnanEhdotValintatapajonoissaDeprecatedSwagger: OperationBuilder =
+    (apiOperation[Map[ValintatapajonoOid, HyvaksynnanEhto]]("hakemuksenHyvaksynnanEhdotValintatapajonoissaDeprecated")
+      summary "Hakemuksen hyväksynnän ehdot hakukohteen valintatapajonoissa DEPRECATED"
       parameter pathParam[String]("hakemusOid").description("Hakemuksen OID").required
       parameter pathParam[String]("hakukohdeOid").description("Hakukohteen OID").required
       tags "hyvaksynnan-ehto")
-  get("/:hakemusOid/hakukohteet/:hakukohdeOid/valintatapajonot", operation(hyvaksynnanEhdotValintatapajonoissaSwagger)) {
+  get("/:hakemusOid/hakukohteet/:hakukohdeOid/valintatapajonot", operation(hakemuksenHyvaksynnanEhdotValintatapajonoissaDeprecatedSwagger)) {
     contentType = formats("json")
     val hakemusOid = parseHakemusOid.fold(throw _, x => x)
     val hakukohdeOid = parseHakukohdeOid.fold(throw _, x => x)
 
     implicit val authenticated: Authenticated = authenticate
     authorize(hakukohdeOid, Set(Role.ATARU_HAKEMUS_READ, Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
-
-    checkIsHakutoive(hakemusOid, hakukohdeOid)
 
     val response = hyvaksynnanEhtoRepository.runBlocking(
       hyvaksynnanEhtoRepository.hyvaksynnanEhdotValintatapajonoissa(hakemusOid, hakukohdeOid))
@@ -86,13 +182,66 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
   val putHyvaksynnanEhtoHakukohteessaSwagger: OperationBuilder = (
     apiOperation[HyvaksynnanEhto]("muokkaaHyvaksynnanEhtoaHakukohteessa")
       summary "Muokkaa hyväksynnän ehtoa hakukohteessa"
+      parameter pathParam[String]("hakukohdeOid").description("Hakukohteen OID").required
+      parameter pathParam[String]("hakemusOid").description("Hakemuksen OID").required
+      parameter headerParam[String]("If-Unmodified-Since").description(s"Aikaleima RFC 1123 määrittelemässä muodossa $RFC1123sample").optional
+      parameter headerParam[String]("If-None-Match").description(s"'*' mikäli uuden tietueen tallennus").optional
+      parameter bodyParam[HyvaksynnanEhto].description("Ehdollisen hyväksynnän ehto").required
+      tags "hyvaksynnan-ehto")
+  put("/hakukohteessa/:hakukohdeOid/hakemus/:hakemusOid", operation(putHyvaksynnanEhtoHakukohteessaSwagger)) {
+    contentType = formats("json")
+    val hakukohdeOid = parseHakukohdeOid.fold(throw _, x => x)
+    val hakemusOid = parseHakemusOid.fold(throw _, x => x)
+    val ehto = parsedBody.extract[HyvaksynnanEhto]
+    val ifUnmodifiedSince = parseIfUnmodifiedSince match {
+      case Right(ifUnmodifiedSince) => Some(ifUnmodifiedSince)
+      case Left(_: NoSuchElementException) =>
+        parseIfNoneMatch match {
+          case Right("*") =>
+            None
+          case Right(s) =>
+            throw new IllegalArgumentException(s"Odottamaton otsakkeen If-None-Match arvo '$s'.")
+          case Left(_: NoSuchElementException) =>
+            throw new IllegalArgumentException("Otsake If-Unmodified-Since tai If-None-Match on pakollinen.")
+          case Left(tt) =>
+            throw tt
+        }
+      case Left(t) =>
+        throw t
+    }
+
+    implicit val authenticated: Authenticated = authenticate
+    authorize(hakemusOid, hakukohdeOid, Set(Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
+
+    val ilmoittaja = auditInfo.session._2.personOid
+    val response = hyvaksynnanEhtoRepository.runBlocking(
+      ifUnmodifiedSince match {
+        case Some(ius) =>
+          hyvaksynnanEhtoRepository.updateHyvaksynnanEhtoHakukohteessa(hakemusOid, hakukohdeOid, ehto, ilmoittaja, ius)
+        case None =>
+          hyvaksynnanEhtoRepository.insertHyvaksynnanEhtoHakukohteessa(hakemusOid, hakukohdeOid, ehto, ilmoittaja)
+      })
+    val isUpdate = ifUnmodifiedSince.isDefined
+
+    auditLogPut(hakemusOid, hakukohdeOid, ehto, isUpdate)
+
+    if (isUpdate) {
+      Ok(body = response._1, headers = Map("Last-Modified" -> createLastModifiedHeader(response._2)))
+    } else {
+      Created(body = response._1, headers = Map("Last-Modified" -> createLastModifiedHeader(response._2)))
+    }
+  }
+
+  val putHyvaksynnanEhtoHakukohteessaDeprecatedSwagger: OperationBuilder = (
+    apiOperation[HyvaksynnanEhto]("muokkaaHyvaksynnanEhtoaHakukohteessaDeprecated")
+      summary "Muokkaa hyväksynnän ehtoa hakukohteessa DEPRECATED"
       parameter pathParam[String]("hakemusOid").description("Hakemuksen OID").required
       parameter pathParam[String]("hakukohdeOid").description("Hakukohteen OID").required
       parameter headerParam[String]("If-Unmodified-Since").description(s"Aikaleima RFC 1123 määrittelemässä muodossa $RFC1123sample").optional
       parameter headerParam[String]("If-None-Match").description(s"'*' mikäli uuden tietueen tallennus").optional
       parameter bodyParam[HyvaksynnanEhto].description("Ehdollisen hyväksynnän ehto").required
       tags "hyvaksynnan-ehto")
-  put("/:hakemusOid/hakukohteet/:hakukohdeOid", operation(putHyvaksynnanEhtoHakukohteessaSwagger)) {
+  put("/:hakemusOid/hakukohteet/:hakukohdeOid", operation(putHyvaksynnanEhtoHakukohteessaDeprecatedSwagger)) {
     contentType = formats("json")
     val hakemusOid = parseHakemusOid.fold(throw _, x => x)
     val hakukohdeOid = parseHakukohdeOid.fold(throw _, x => x)
@@ -117,8 +266,6 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     implicit val authenticated: Authenticated = authenticate
     authorize(hakukohdeOid, Set(Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
 
-    checkIsHakutoive(hakemusOid, hakukohdeOid)
-
     val ilmoittaja = auditInfo.session._2.personOid
     val response = hyvaksynnanEhtoRepository.runBlocking(
       ifUnmodifiedSince match {
@@ -141,20 +288,42 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
   val deleteHyvaksynnanEhtoHakukohteessaSwagger: OperationBuilder = (
     apiOperation[Unit]("poistaHyvaksynnanEhtoHakukohteessa")
       summary "Poista hyväksynnän ehto hakukohteessa"
+      parameter pathParam[String]("hakukohdeOid").description("Hakukohteen OID").required
+      parameter pathParam[String]("hakemusOid").description("Hakemuksen OID").required
+      parameter headerParam[String]("If-Unmodified-Since").description(s"Aikaleima RFC 1123 määrittelemässä muodossa $RFC1123sample").required
+      tags "hyvaksynnan-ehto")
+  delete("/hakukohteessa/:hakukohdeOid/hakemus/:hakemusOid", operation(deleteHyvaksynnanEhtoHakukohteessaSwagger)) {
+    contentType = formats("json")
+    val hakukohdeOid = parseHakukohdeOid.fold(throw _, x => x)
+    val hakemusOid = parseHakemusOid.fold(throw _, x => x)
+    val ifUnmodifiedSince = parseIfUnmodifiedSince.fold(throw _, x => x)
+
+    implicit val authenticated: Authenticated = authenticate
+    authorize(hakemusOid, hakukohdeOid, Set(Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
+
+    val ehto = hyvaksynnanEhtoRepository.runBlocking(
+      hyvaksynnanEhtoRepository.deleteHyvaksynnanEhtoHakukohteessa(hakemusOid, hakukohdeOid, ifUnmodifiedSince))
+
+    auditLogDelete(hakemusOid, hakukohdeOid, ehto)
+
+    NoContent()
+  }
+
+  val deleteHyvaksynnanEhtoHakukohteessaDeprecatedSwagger: OperationBuilder = (
+    apiOperation[Unit]("poistaHyvaksynnanEhtoHakukohteessaDeprecated")
+      summary "Poista hyväksynnän ehto hakukohteessa DEPRECATED"
       parameter pathParam[String]("hakemusOid").description("Hakemuksen OID").required
       parameter pathParam[String]("hakukohdeOid").description("Hakukohteen OID").required
       parameter headerParam[String]("If-Unmodified-Since").description(s"Aikaleima RFC 1123 määrittelemässä muodossa $RFC1123sample").required
       tags "hyvaksynnan-ehto")
-  delete("/:hakemusOid/hakukohteet/:hakukohdeOid", operation(deleteHyvaksynnanEhtoHakukohteessaSwagger)) {
+  delete("/:hakemusOid/hakukohteet/:hakukohdeOid", operation(deleteHyvaksynnanEhtoHakukohteessaDeprecatedSwagger)) {
     contentType = formats("json")
     val hakemusOid = parseHakemusOid.fold(throw _, x => x)
     val hakukohdeOid = parseHakukohdeOid.fold(throw _, x => x)
     val ifUnmodifiedSince = parseIfUnmodifiedSince.fold(throw _, x => x)
 
-    checkIsHakutoive(hakemusOid, hakukohdeOid)
-
     implicit val authenticated: Authenticated = authenticate
-    authorize(hakukohdeOid, Set(Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
+    authorize(hakemusOid, hakukohdeOid, Set(Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
 
     val ehto = hyvaksynnanEhtoRepository.runBlocking(
       hyvaksynnanEhtoRepository.deleteHyvaksynnanEhtoHakukohteessa(hakemusOid, hakukohdeOid, ifUnmodifiedSince))
@@ -170,11 +339,18 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     authorizer.checkAccess(authenticated.session, hakukohde.organisaatioOiditAuktorisointiin, roles).fold(throw _, x => x)
   }
 
-  private def checkIsHakutoive(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Unit = {
-    val hakemus = hakemusRepository.findHakemus(hakemusOid).fold(throw _, x => x)
-    if (!hakemus.toiveet.exists(_.oid == hakukohdeOid)) {
-      throw new IllegalArgumentException(s"Hakukohde $hakukohdeOid ei ole hakemuksen $hakemusOid hakutoive")
-    }
+  private def authorize(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, roles: Set[Role])(implicit authenticated: Authenticated): Unit = {
+    authorize(roles.toSeq: _*)
+    (for {
+      hakemus <- hakemusRepository.findHakemus(hakemusOid).right
+      hakutoiveCheck <- (if (hakemus.toiveet.exists(_.oid == hakukohdeOid)) {
+        Right(hakemus)
+      } else {
+        Left(new IllegalArgumentException(s"Hakukohde $hakukohdeOid ei ole hakemuksen $hakemusOid hakutoive"))
+      }).right
+      hakukohteet <- MonadHelper.sequence(hakemus.toiveet.map(h => hakuService.getHakukohde(h.oid))).right
+      authorized <- authorizer.checkAccess(authenticated.session, hakukohteet.flatMap(_.organisaatioOiditAuktorisointiin).toSet, roles).right
+    } yield authorized).fold(throw _, x => x)
   }
 
   private def auditLogRead(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid)(implicit authenticated: Authenticated): Unit = {
