@@ -16,6 +16,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.{PersonOidFromHakemusResolver, VastaanottoAikarajaMennyt}
 import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.builder.ToStringBuilder
 import org.joda.time.DateTime
 import slick.dbio.DBIO
 
@@ -211,7 +212,10 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
                                         vastaanottoRecord: Set[VastaanottoRecord]): HakemuksenSijoitteluntulos = {
     val hakutoiveidenYhteenvedot = hakija.getHakutoiveet.toList.map { hakutoive: KevytHakutoiveDTO =>
       val vastaanotto = vastaanottoRecord.find(v => v.hakukohdeOid.toString == hakutoive.getHakukohdeOid)
-      val jono = JonoFinder.merkitseväJono(hakutoive).get
+      val jono = JonoFinder.merkitseväJono(hakutoive).getOrElse {
+        throw new IllegalStateException(s"Ei löydy merkitsevää jonoa hakemuksen ${hakija.getHakemusOid} hakutoiveelle ${hakutoive.getHakukohdeOid} . " +
+          s"Kaikki jonot (${hakutoive.getHakutoiveenValintatapajonot.size} kpl): ${hakutoive.getHakutoiveenValintatapajonot.map(ToStringBuilder.reflectionToString)}")
+      }
       val valintatila = jononValintatila(jono, hakutoive)
 
       val hakutoiveenHyvaksyttyJaJulkaistuDate = hyvaksyttyJulkaistuDates.get(HakukohdeOid(hakutoive.getHakukohdeOid))
