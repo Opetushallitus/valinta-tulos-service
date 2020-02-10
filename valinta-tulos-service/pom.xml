@@ -411,6 +411,7 @@
                         <arg>-Xmax-classfile-name</arg>
                         <arg>140</arg>
                     </args>
+                    <recompileMode>incremental</recompileMode>
                 </configuration>
             </plugin>
             <plugin>
