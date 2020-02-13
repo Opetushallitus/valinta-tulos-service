@@ -6,7 +6,7 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.{GoneException, HyvaksynnanEhto, HyvaksynnanEhtoRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.{GoneException, HyvaksynnanEhto, HyvaksynnanEhtoRepository, Versio}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, ValintatapajonoOid}
 import org.scalatra._
 import org.scalatra.swagger.Swagger
@@ -202,6 +202,28 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     auditLogDelete(hakemusOid, hakukohdeOid, ehto)
 
     NoContent()
+  }
+
+  val hyvaksynnanEhtoHakukohteessaMuutoshistoriaSwagger: OperationBuilder =
+    (apiOperation[List[Versio[HyvaksynnanEhto]]]("hyvaksynnanEhtoHakukohteessaMuutoshistoria")
+      summary "Hakemuksen hyväksynnän ehto hakukohteessa -muutoshistoria"
+      parameter pathParam[String]("hakukohdeOid").description("Hakukohteen OID").required
+      parameter pathParam[String]("hakemusOid").description("Hakemuksen OID").required
+      tags "hyvaksynnan-ehto")
+  get("/muutoshistoria/hakukohteessa/:hakukohdeOid/hakemus/:hakemusOid", operation(hyvaksynnanEhtoHakukohteessaMuutoshistoriaSwagger)) {
+    contentType = formats("json")
+    val hakemusOid = parseHakemusOid.fold(throw _, x => x)
+    val hakukohdeOid = parseHakukohdeOid.fold(throw _, x => x)
+
+    implicit val authenticated: Authenticated = authenticate
+    authorize(hakemusOid, hakukohdeOid, Set(Role.ATARU_HAKEMUS_READ, Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
+
+    val response = hyvaksynnanEhtoRepository.runBlocking(
+      hyvaksynnanEhtoRepository.hyvaksynnanEhtoHakukohteessaMuutoshistoria(hakemusOid, hakukohdeOid))
+
+    auditLogRead(hakemusOid, hakukohdeOid)
+
+    Ok(response)
   }
 
   private def authorize(hakukohdeOid: HakukohdeOid, roles: Set[Role])(implicit authenticated: Authenticated): Unit = {
