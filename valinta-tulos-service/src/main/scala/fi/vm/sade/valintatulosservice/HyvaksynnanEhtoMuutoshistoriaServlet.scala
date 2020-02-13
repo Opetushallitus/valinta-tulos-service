@@ -23,7 +23,7 @@ class HyvaksynnanEhtoMuutoshistoriaServlet(hyvaksynnanEhtoRepository: Hyvaksynna
 
   val hyvaksynnanEhtoHakukohteessaMuutoshistoriaSwagger: OperationBuilder =
     (apiOperation[List[Versio[HyvaksynnanEhto]]]("hyvaksynnanEhtoHakukohteessaMuutoshistoria")
-      summary "Hyväksynnän ehto hakukohteessa muutoshistoria"
+      summary "Hyväksynnän ehto hakukohteessa muutoshistoria DEPRECATED"
       parameter pathParam[String]("hakemusOid").description("Hakemuksen OID").required
       parameter pathParam[String]("hakukohdeOid").description("Hakukohteen OID").required
       tags "hyvaksynnan-ehto")
