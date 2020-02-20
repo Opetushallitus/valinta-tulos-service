@@ -199,7 +199,20 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
         ehdollisenHyvaksymisenEhtoSV = Option(jono.getEhdollisenHyvaksymisenEhtoSV),
         ehdollisenHyvaksymisenEhtoEN = Option(jono.getEhdollisenHyvaksymisenEhtoEN),
         jono.getTilanKuvaukset.toMap,
-        pisteet
+        pisteet,
+        jonokohtaisetTulostiedot = hakutoive
+          .getHakutoiveenValintatapajonot
+          .map(valintatapajono => {
+            JonokohtainenTulostieto(
+              nimi = valintatapajono.getValintatapajonoNimi,
+              pisteet = Option(valintatapajono.getPisteet).map((p: java.math.BigDecimal) => new BigDecimal(p)),
+              alinHyvaksyttyPistemaara = Option(valintatapajono.getAlinHyvaksyttyPistemaara).map((p: java.math.BigDecimal) => new BigDecimal(p)),
+              valintatila = hakemuksenTilastaJononValintatilaksi(valintatapajono),
+              julkaistavissa = valintatapajono.isJulkaistavissa,
+              valintatapajonoPrioriteetti = Option(valintatapajono.getValintatapajonoPrioriteetti).map {_.toInt}
+            )
+          })
+          .toList
       )
     }
 
@@ -249,7 +262,8 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
         ehdollisenHyvaksymisenEhtoSV = Option(jono.getEhdollisenHyvaksymisenEhtoSV),
         ehdollisenHyvaksymisenEhtoEN = Option(jono.getEhdollisenHyvaksymisenEhtoEN),
         jono.getTilanKuvaukset.toMap,
-        pisteet
+        pisteet,
+        jonokohtaisetTulostiedot = List()
       )
     }
 
@@ -283,16 +297,21 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     }
   }
 
-  private def jononValintatila(jono: HakutoiveenValintatapajonoDTO, hakutoive: HakutoiveDTO) = {
-    val valintatila: Valintatila = ifNull(fromHakemuksenTila(jono.getTila), Valintatila.kesken)
+  private def hakemuksenTilastaJononValintatilaksi(jono: HakutoiveenValintatapajonoDTO): Valintatila = {
     if (jono.getTila.isHyvaksytty && jono.isHyvaksyttyHarkinnanvaraisesti) {
       Valintatila.harkinnanvaraisesti_hyväksytty
-    } else if (!jono.getTila.isHyvaksytty && !hakutoive.isKaikkiJonotSijoiteltu) {
-      Valintatila.kesken
-    } else if (valintatila == Valintatila.varalla && jono.isEiVarasijatayttoa) {
+    } else if (jono.getTila == HakemuksenTila.VARALLA && jono.isEiVarasijatayttoa) {
       Valintatila.kesken
     } else {
-      valintatila
+      ifNull(fromHakemuksenTila(jono.getTila), Valintatila.kesken)
+    }
+  }
+
+  private def jononValintatila(jono: HakutoiveenValintatapajonoDTO, hakutoive: HakutoiveDTO) = {
+    if (!jono.getTila.isHyvaksytty && !hakutoive.isKaikkiJonotSijoiteltu) {
+      Valintatila.kesken
+    }  else {
+      hakemuksenTilastaJononValintatilaksi(jono)
     }
   }
 

@@ -6,7 +6,7 @@ import java.util.Date
 import fi.vm.sade.valintatulosservice.domain.Valintatila.Valintatila
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila.Vastaanotettavuustila
 import fi.vm.sade.valintatulosservice.domain.{HakutoiveenIlmoittautumistila, HakutoiveenSijoittelunTilaTieto, Hakutoiveentulos, Ilmoittautumisaika}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, ValintatapajonoOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, JonokohtainenTulostieto, ValintatapajonoOid}
 import org.json4s.Extraction._
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
@@ -46,7 +46,9 @@ class HakutoiveentulosSerializer extends CustomSerializer[Hakutoiveentulos]((for
       ehdollisenHyvaksymisenEhtoEN = (x \ "ehdollisenHyvaksymisenEhtoEN").extractOpt[String],
       tilanKuvaukset = (x \ "tilanKuvaukset").extract[Map[String, String]],
       pisteet = (x \ "pisteet").extractOpt[BigDecimal],
-      virkailijanTilat = HakutoiveenSijoittelunTilaTieto(valintatila, vastaanottotila, None, vastaanotettavuustila))
+      virkailijanTilat = HakutoiveenSijoittelunTilaTieto(valintatila, vastaanottotila, None, vastaanotettavuustila),
+      jonokohtaisetTulostiedot = (x \ "jonokohtaisetTulostiedot").extract[List[JonokohtainenTulostieto]]
+    )
   }, {
   case tulos: Hakutoiveentulos =>
     implicit val f = formats
@@ -73,7 +75,8 @@ class HakutoiveentulosSerializer extends CustomSerializer[Hakutoiveentulos]((for
       ("ehdollisenHyvaksymisenEhtoEN" -> tulos.ehdollisenHyvaksymisenEhtoEN) ~
       ("tilanKuvaukset" -> tulos.tilanKuvaukset) ~
       ("kelaURL" -> tulos.kelaURL) ~
-      ("pisteet" -> tulos.pisteet)
+      ("pisteet" -> tulos.pisteet) ~
+      ("jonokohtaisetTulostiedot" -> decompose(tulos.jonokohtaisetTulostiedot))
 }
   )
 )
