@@ -9,7 +9,8 @@ case class JonokohtainenTulostieto(
                                   alinHyvaksyttyPistemaara: Option[BigDecimal],
                                   valintatila: Valintatila,
                                   julkaistavissa: Boolean,
-                                  valintatapajonoPrioriteetti: Option[Int]
+                                  valintatapajonoPrioriteetti: Option[Int],
+                                  tilanKuvaukset: Option[Map[String, String]]
                                   ) {
   def toKesken: JonokohtainenTulostieto = {
     copy(

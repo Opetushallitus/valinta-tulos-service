@@ -209,7 +209,8 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
               alinHyvaksyttyPistemaara = Option(valintatapajono.getAlinHyvaksyttyPistemaara).map((p: java.math.BigDecimal) => new BigDecimal(p)),
               valintatila = hakemuksenTilastaJononValintatilaksi(valintatapajono),
               julkaistavissa = valintatapajono.isJulkaistavissa,
-              valintatapajonoPrioriteetti = Option(valintatapajono.getValintatapajonoPrioriteetti).map {_.toInt}
+              valintatapajonoPrioriteetti = Option(valintatapajono.getValintatapajonoPrioriteetti).map {_.toInt},
+              tilanKuvaukset = Option(valintatapajono.getTilanKuvaukset).map {_.toMap}
             )
           })
           .toList
