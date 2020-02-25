@@ -9,7 +9,8 @@ import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, ValintatuloksenTila}
 import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
 import fi.vm.sade.valintatulosservice.domain.{En, Fi, Language, Sv}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import org.json4s.JsonAST.{JString, JValue}
+import org.json4s.JsonAST.{JObject, JString, JValue}
+import org.json4s.JsonDSL._
 import org.json4s.{CustomKeySerializer, CustomSerializer, Formats}
 
 class VirkailijanVastaanottoActionSerializer extends CustomSerializer[VirkailijanVastaanottoAction]((formats: Formats) => {
@@ -89,6 +90,23 @@ class UrlSerializer extends CustomSerializer[URL]((_: Formats) => {
     case json: JString => new URL(json.s)
   }, {
     case url: URL => JString(url.toString)
+  })
+})
+
+class EhdollisenHyvaksymisenEhtoSerializer extends CustomSerializer[EhdollisenHyvaksymisenEhto]((formats: Formats) => {
+  ( {
+    case json: JObject =>
+      implicit val f = formats
+      EhdollisenHyvaksymisenEhto(
+        FI = (json \ "FI").extractOpt[String],
+        SV = (json \ "SV").extractOpt[String],
+        EN = (json \ "EN").extractOpt[String]
+      )
+  }, {
+    case ehdollisenHyvaksymisenEhto: EhdollisenHyvaksymisenEhto =>
+      ("FI" -> ehdollisenHyvaksymisenEhto.FI) ~
+        ("SV" -> ehdollisenHyvaksymisenEhto.SV) ~
+        ("EN" -> ehdollisenHyvaksymisenEhto.EN)
   })
 })
 

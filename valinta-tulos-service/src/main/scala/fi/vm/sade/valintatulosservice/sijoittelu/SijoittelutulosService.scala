@@ -210,7 +210,12 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
               valintatila = hakemuksenTilastaJononValintatilaksi(valintatapajono),
               julkaistavissa = valintatapajono.isJulkaistavissa,
               valintatapajonoPrioriteetti = Option(valintatapajono.getValintatapajonoPrioriteetti).map {_.toInt},
-              tilanKuvaukset = Option(valintatapajono.getTilanKuvaukset).map {_.toMap}
+              tilanKuvaukset = Option(valintatapajono.getTilanKuvaukset).map {_.toMap},
+              ehdollisenHyvaksymisenEhto = EhdollisenHyvaksymisenEhto(
+                FI = Option(valintatapajono.getEhdollisenHyvaksymisenEhtoFI),
+                SV = Option(valintatapajono.getEhdollisenHyvaksymisenEhtoSV),
+                EN = Option(valintatapajono.getEhdollisenHyvaksymisenEhtoEN)
+              )
             )
           })
           .toList

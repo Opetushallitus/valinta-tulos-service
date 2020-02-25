@@ -10,7 +10,8 @@ case class JonokohtainenTulostieto(
                                   valintatila: Valintatila,
                                   julkaistavissa: Boolean,
                                   valintatapajonoPrioriteetti: Option[Int],
-                                  tilanKuvaukset: Option[Map[String, String]]
+                                  tilanKuvaukset: Option[Map[String, String]],
+                                  ehdollisenHyvaksymisenEhto: EhdollisenHyvaksymisenEhto
                                   ) {
   def toKesken: JonokohtainenTulostieto = {
     copy(
