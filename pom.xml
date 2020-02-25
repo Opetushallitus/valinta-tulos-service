@@ -569,6 +569,19 @@
                                 <skip>true</skip>
                             </configuration>
                         </plugin>
+                        <plugin>
+                            <groupId>net.alchim31.maven</groupId>
+                            <artifactId>scala-maven-plugin</artifactId>
+                            <version>${plugin.scala-maven-plugin.version}</version>
+                            <configuration>
+                                <args>
+                                    <arg>-Xmax-classfile-name</arg>
+                                    <arg>140</arg>
+                                </args>
+                                <recompileMode>incremental</recompileMode>
+                            </configuration>
+                        </plugin>
+
                     </plugins>
                 </pluginManagement>
             </build>
