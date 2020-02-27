@@ -27,7 +27,7 @@ class NoAuthSijoitteluServlet(sijoitteluService: SijoitteluService)
       Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakukohdeBySijoitteluajoWithoutAuthentication(hakuOid, sijoitteluajoId, hakukohdeOid)))
     } catch {
       case e: NotFoundException =>
-        NotFound(e.getMessage)
+        NotFound(Map("error" -> e.getMessage))
     }
   }
 

@@ -68,7 +68,7 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
       Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakemusBySijoitteluajo(hakuOid, sijoitteluajoId, hakemusOid, auditInfo)))
     } catch {
       case e: NotFoundException =>
-        NotFound(e.getMessage)
+        NotFound(Map("error" -> e.getMessage))
     }
   }
 
@@ -90,7 +90,7 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
       Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session, auditInfo)))
     } catch {
       case e: NotFoundException =>
-        NotFound(e.getMessage)
+        NotFound(Map("error" -> e.getMessage))
     }
   }
 
