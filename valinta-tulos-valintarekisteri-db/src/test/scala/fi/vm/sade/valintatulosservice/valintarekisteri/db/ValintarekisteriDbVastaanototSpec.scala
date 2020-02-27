@@ -204,14 +204,14 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
 
     "rollback failing transaction" in {
       singleConnectionValintarekisteriDb.store( List(
-        VirkailijanVastaanotto(hakuOid, valintatapajonoOid, "123!", HakemusOid("2222323"), HakukohdeOid("134134134.123"), VastaanotaSitovasti, "123!", "testiselite")), DBIOAction.successful()) must throwA[Exception]
+        VirkailijanVastaanotto(hakuOid, valintatapajonoOid, "123!", HakemusOid("2222323"), HakukohdeOid("134134134.123"), VastaanotaSitovasti, "123!", "testiselite")), DBIOAction.successful()) must beLeft[Throwable]
       singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.findHenkilonVastaanottoHakukohteeseen(henkiloOid, hakukohdeOid)) must beNone
     }
 
     "store vastaanotot in transaction" in {
       singleConnectionValintarekisteriDb.store( List(
         VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid, VastaanotaSitovasti, henkiloOid, "testiselite"),
-        VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, otherHakukohdeOid, VastaanotaSitovasti, henkiloOid, "testiselite")), DBIOAction.successful()) must beEqualTo(())
+        VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, otherHakukohdeOid, VastaanotaSitovasti, henkiloOid, "testiselite")), DBIOAction.successful()) must beRight[Unit]
       val henkiloOidsAndActionsFromDb = singleConnectionValintarekisteriDb.runBlocking(
         sql"""select henkilo, action, hakukohde from vastaanotot
               where henkilo = $henkiloOid order by hakukohde""".as[(String, String, HakukohdeOid)])

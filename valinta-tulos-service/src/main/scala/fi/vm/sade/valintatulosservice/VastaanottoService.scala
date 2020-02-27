@@ -15,15 +15,14 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepo
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
-import slick.dbio.{DBIO, SuccessAction}
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 class VastaanottoService(hakuService: HakuService,
                          hakukohdeRecordService: HakukohdeRecordService,
-                         vastaanotettavuusService: VastaanotettavuusService,
                          valintatulosService: ValintatulosService,
                          hakijaVastaanottoRepository: HakijaVastaanottoRepository,
                          ohjausparametritService: OhjausparametritService,
@@ -46,20 +45,22 @@ class VastaanottoService(hakuService: HakuService,
   def vastaanotaVirkailijanaInTransaction(vastaanotot: List[VastaanottoEventDto]): Try[Unit] = {
     val tallennettavatVastaanotot = generateTallennettavatVastaanototList(vastaanotot)
     logger.info(s"Tallennettavat vastaanotot (${tallennettavatVastaanotot.size} kpl): " + tallennettavatVastaanotot)
-    val vastaanottosToCheckInPostCondition = tallennettavatVastaanotot.filter(v => v.action == VastaanotaEhdollisesti || v.action == VastaanotaSitovasti)
-    val postCondition = DBIO.sequence(vastaanottosToCheckInPostCondition.
-      map(v => vastaanotettavuusService.tarkistaAiemmatVastaanotot(v.henkiloOid, v.hakukohdeOid, aiempiVastaanotto => SuccessAction())))
-
-    tallennettavatVastaanotot.toStream.map(vastaanotto => findHakutoive(vastaanotto.hakemusOid, vastaanotto.hakukohdeOid)).find(_.isFailure) match {
-      case Some(failure) => failure.map(_ => ())
-      case None => Try {
-        tallennettavatVastaanotot.foreach(v => hakukohdeRecordService.getHakukohdeRecord(v.hakukohdeOid) match {
-          case Right(h) => h
-          case Left(e) => throw e
-        })
+    (for {
+      _ <- MonadHelper.sequence(tallennettavatVastaanotot.map(v => findHakutoive(v.hakemusOid, v.hakukohdeOid))).right
+      hakukohdeRecords <- hakukohdeRecordService.getHakukohdeRecords(tallennettavatVastaanotot.map(_.hakukohdeOid).distinct).right
+      _ <- {
+        val hakukohdeRecordsByOid = hakukohdeRecords.map(h => h.oid -> h).toMap
+        val postCondition = DBIO.sequence(tallennettavatVastaanotot
+          .filter(v => v.action == VastaanotaEhdollisesti || v.action == VastaanotaSitovasti)
+          .map(v => hakukohdeRecordsByOid(v.hakukohdeOid) match {
+            case YPSHakukohde(_, _, koulutuksenAlkamiskausi) =>
+              hakijaVastaanottoRepository.findYhdenPaikanSaannonPiirissaOlevatVastaanotot(v.henkiloOid, koulutuksenAlkamiskausi)
+            case _ =>
+              hakijaVastaanottoRepository.findHenkilonVastaanottoHakukohteeseen(v.henkiloOid, v.hakukohdeOid)
+          }))
         hakijaVastaanottoRepository.store(tallennettavatVastaanotot, postCondition)
-      }
-    }
+      }.right
+    } yield ()).fold(Failure(_), Success(_))
   }
 
   private def generateTallennettavatVastaanototList(vastaanotot: List[VastaanottoEventDto]): List[VirkailijanVastaanotto] = {
@@ -149,7 +150,7 @@ class VastaanottoService(hakuService: HakuService,
 
   @Deprecated
   def tarkistaVastaanotettavuus(vastaanotettavaHakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Unit = {
-    findHakutoive(vastaanotettavaHakemusOid, hakukohdeOid).get
+    findHakutoive(vastaanotettavaHakemusOid, hakukohdeOid).fold(throw _, x => x)
   }
 
   def vastaanotaHakijana(vastaanottoDto: HakijanVastaanottoDto): Either[Throwable, Unit] = {
@@ -180,11 +181,11 @@ class VastaanottoService(hakuService: HakuService,
     } yield ()
   }
 
-  private def findHakutoive(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Try[(Hakutoiveentulos, Int)] = {
-    Try {
-      val hakemuksenTulos = valintatulosService.hakemuksentulos(hakemusOid).getOrElse(throw new IllegalArgumentException("Hakemusta ei löydy"))
-      hakemuksenTulos.findHakutoive(hakukohdeOid).getOrElse(throw new IllegalArgumentException("Hakutoivetta ei löydy"))
-    }
+  private def findHakutoive(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Either[Throwable, Unit] = {
+    for {
+      hakemus <- valintatulosService.hakemuksentulos(hakemusOid).toRight(new IllegalArgumentException(s"Hakemusta $hakemusOid ei löydy")).right
+      _ <- hakemus.findHakutoive(hakukohdeOid).toRight(new IllegalArgumentException(s"Hakutoivetta $hakukohdeOid ei löydy hakemukselta $hakemusOid")).right
+    } yield ()
   }
 
   private def aiemmatVastaanotot(hakukohteet: Seq[HakukohdeRecord],

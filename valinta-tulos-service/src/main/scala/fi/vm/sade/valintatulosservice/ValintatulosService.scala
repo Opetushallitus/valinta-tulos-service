@@ -25,7 +25,6 @@ import org.apache.commons.lang3.StringUtils
 import scala.collection.JavaConverters._
 
 class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
-                           vastaanotettavuusService: VastaanotettavuusService,
                           sijoittelutulosService: SijoittelutulosService,
                           ohjausparametritService: OhjausparametritService,
                           hakemusRepository: HakemusRepository,
@@ -36,7 +35,6 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
                           valintatulosDao: ValintarekisteriValintatulosDao,
                           hakijaDTOClient: ValintarekisteriHakijaDTOClient)(implicit appConfig: VtsAppConfig) extends Logging {
   def this(valinnantulosRepository: ValinnantulosRepository,
-            vastaanotettavuusService: VastaanotettavuusService,
            sijoittelutulosService: SijoittelutulosService,
            hakemusRepository: HakemusRepository,
            virkailijaVastaanottoRepository: VirkailijaVastaanottoRepository,
@@ -45,7 +43,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
            hakukohdeRecordService: HakukohdeRecordService,
            valintatulosDao: ValintarekisteriValintatulosDao,
            hakijaDTOClient: ValintarekisteriHakijaDTOClient )(implicit appConfig: VtsAppConfig) =
-    this(valinnantulosRepository, vastaanotettavuusService, sijoittelutulosService, appConfig.ohjausparametritService, hakemusRepository, virkailijaVastaanottoRepository, hakuService, hakijaVastaanottoRepository, hakukohdeRecordService, valintatulosDao, hakijaDTOClient)
+    this(valinnantulosRepository, sijoittelutulosService, appConfig.ohjausparametritService, hakemusRepository, virkailijaVastaanottoRepository, hakuService, hakijaVastaanottoRepository, hakukohdeRecordService, valintatulosDao, hakijaDTOClient)
 
   def haunKoulutuksenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid: HakuOid) : Set[VastaanottoRecord] = {
     (for {
