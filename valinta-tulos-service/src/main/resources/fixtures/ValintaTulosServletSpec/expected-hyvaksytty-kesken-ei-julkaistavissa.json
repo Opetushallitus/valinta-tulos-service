@@ -41,18 +41,14 @@
           "valintatila": "KESKEN",
           "julkaistavissa": false,
           "valintatapajonoPrioriteetti": 0,
-          "tilanKuvaukset": {},
-          "ehdollisestiHyvaksyttavissa": false,
-          "ehdollisenHyvaksymisenEhto": {}
+          "ehdollisestiHyvaksyttavissa": false
         },
         {
           "nimi": "Varsinainen jono",
           "valintatila": "KESKEN",
           "julkaistavissa": false,
           "valintatapajonoPrioriteetti": 0,
-          "tilanKuvaukset": {},
-          "ehdollisestiHyvaksyttavissa": false,
-          "ehdollisenHyvaksymisenEhto": {}
+          "ehdollisestiHyvaksyttavissa": false
         }
       ]
     },

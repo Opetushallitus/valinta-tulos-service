@@ -47,17 +47,7 @@
           "valintatila": "KESKEN",
           "julkaistavissa": false,
           "valintatapajonoPrioriteetti": 0,
-          "tilanKuvaukset": {
-            "FI": "Hyväksytty varasijalta",
-            "SV": "Hyväksytty varasijalta",
-            "EN": "Hyväksytty varasijalta"
-          },
-          "ehdollisestiHyvaksyttavissa": true,
-          "ehdollisenHyvaksymisenEhto": {
-            "FI": "muu",
-            "SV": "andra",
-            "EN": "other"
-          }
+          "ehdollisestiHyvaksyttavissa": false
         }
       ]
     },

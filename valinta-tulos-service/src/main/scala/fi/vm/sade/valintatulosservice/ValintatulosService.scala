@@ -526,9 +526,28 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       .map(piilotaKuvauksetKeskeneräisiltä)
       .map(asetaVastaanotettavuusValintarekisterinPerusteella(vastaanottoKaudella))
       .map(asetaKelaURL)
+      .map(piilotaKuvauksetEiJulkaistuiltaValintatapajonoilta)
       .tulokset
 
     Hakemuksentulos(haku.oid, h.oid, sijoitteluTulos.hakijaOid.getOrElse(h.henkiloOid), ohjausparametrit.map(_.vastaanottoaikataulu), lopullisetTulokset)
+  }
+
+  private def piilotaKuvauksetEiJulkaistuiltaValintatapajonoilta(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]): List[Hakutoiveentulos] = {
+    tulokset.map {
+      tulos =>
+        tulos.copy(
+          jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map {
+            case jonokohtainenTulostieto if !jonokohtainenTulostieto.julkaistavissa =>
+              jonokohtainenTulostieto.copy(
+                tilanKuvaukset = None,
+                ehdollisenHyvaksymisenEhto = None,
+                ehdollisestiHyvaksyttavissa = false
+              )
+            case jonokohtainenTulostieto =>
+              jonokohtainenTulostieto
+          }
+        )
+    }
   }
 
   private def asetaKelaURL(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]): List[Hakutoiveentulos] = {

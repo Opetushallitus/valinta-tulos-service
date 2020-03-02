@@ -212,11 +212,11 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
               valintatapajonoPrioriteetti = Option(valintatapajono.getValintatapajonoPrioriteetti).map {_.toInt},
               tilanKuvaukset = Option(valintatapajono.getTilanKuvaukset).map {_.toMap},
               ehdollisestiHyvaksyttavissa = Option(valintatapajono.isEhdollisestiHyvaksyttavissa).fold(false)(b => b),
-              ehdollisenHyvaksymisenEhto = EhdollisenHyvaksymisenEhto(
+              ehdollisenHyvaksymisenEhto = Some(EhdollisenHyvaksymisenEhto(
                 FI = Option(valintatapajono.getEhdollisenHyvaksymisenEhtoFI),
                 SV = Option(valintatapajono.getEhdollisenHyvaksymisenEhtoSV),
                 EN = Option(valintatapajono.getEhdollisenHyvaksymisenEhtoEN)
-              )
+              ))
             )
           })
           .toList
