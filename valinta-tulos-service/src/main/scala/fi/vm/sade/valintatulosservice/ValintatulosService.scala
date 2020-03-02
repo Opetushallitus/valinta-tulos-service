@@ -517,7 +517,6 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
 
     val lopullisetTulokset = Välitulos(sijoitteluTulos.hakemusOid, tulokset, haku, ohjausparametrit)
-      .map(poistaPisteetValintatapajonoiltaMikaliValintatilaKesken)
       .map(näytäHyväksyttyäJulkaisematontaAlemmistaKorkeinHyvaksyttyOdottamassaYlempiä)
       .map(näytäJulkaisematontaAlemmatPeruutetutKeskeneräisinä)
       .map(peruValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua)
@@ -530,18 +529,6 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       .tulokset
 
     Hakemuksentulos(haku.oid, h.oid, sijoitteluTulos.hakijaOid.getOrElse(h.henkiloOid), ohjausparametrit.map(_.vastaanottoaikataulu), lopullisetTulokset)
-  }
-
-  private def poistaPisteetValintatapajonoiltaMikaliValintatilaKesken(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]) = {
-    tulokset.map {
-      tulos => tulos.copy(
-        jonokohtaisetTulostiedot = if (tulos.valintatila == Valintatila.kesken) {
-          tulos.jonokohtaisetTulostiedot.map(_.toKesken)
-        } else {
-          tulos.jonokohtaisetTulostiedot
-        }
-      )
-    }
   }
 
   private def asetaKelaURL(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]): List[Hakutoiveentulos] = {
