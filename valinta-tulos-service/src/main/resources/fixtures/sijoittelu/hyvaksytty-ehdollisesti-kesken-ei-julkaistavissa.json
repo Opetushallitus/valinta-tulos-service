@@ -1,0 +1,132 @@
+{
+  "Sijoittelu": [
+    {
+      "_id": {
+        "$oid": "547f0c17e4b0755315d44e0a"
+      },
+      "className": "fi.vm.sade.sijoittelu.domain.Sijoittelu",
+      "hakuOid": "1.2.246.562.5.2013080813081926341928",
+      "sijoitteluId": {
+        "$numberLong": "1496148928073"
+      },
+      "created": {
+        "$date": "2014-12-03T13:11:51.186Z"
+      },
+      "sijoittele": true,
+      "sijoitteluajot": [
+        {
+          "sijoitteluajoId": {
+            "$numberLong": "1496148928073"
+          },
+          "hakuOid": "1.2.246.562.5.2013080813081926341928",
+          "hakukohteet": [
+            {
+              "oid": "1.2.246.562.5.72607738902"
+            }
+          ],
+          "startMils": {
+            "$numberLong": "14961489280731"
+          },
+          "endMils": {
+            "$numberLong": "14961499280731"
+          }
+        }
+      ]
+    }
+  ],
+  "Hakukohde": [
+    {
+      "_id": {
+        "$oid": "53fc79b8e4b0b0b110900764"
+      },
+      "className": "fi.vm.sade.sijoittelu.domain.Hakukohde",
+      "sijoitteluajoId": {
+        "$numberLong": "1496148928073"
+      },
+      "oid": "1.2.246.562.5.72607738902",
+      "tarjoajaOid": "1.2.246.562.10.591352080610",
+      "valintatapajonot": [
+        {
+          "tasasijasaanto": "YLITAYTTO",
+          "oid": "14090336922663576781797489829886",
+          "nimi": "Varsinainen jono",
+          "prioriteetti": 0,
+          "aloituspaikat": 3,
+          "eiVarasijatayttoa": false,
+          "kaikkiEhdonTayttavatHyvaksytaan": false,
+          "poissaOlevaTaytto": false,
+          "hyvaksytty": 1,
+          "varalla": 0,
+          "alinHyvaksyttyPistemaara": 4,
+          "varasijojaKaytetaanAlkaen": {
+            "$date": "2014-08-26T16:05:23.943Z"
+          },
+          "varasijojaTaytetaanAsti": {
+            "$date": "2014-08-26T16:05:23.943Z"
+          },
+          "hakemukset": [
+            {
+              "hakijaOid": "1.2.246.562.24.14229104472",
+              "hakemusOid": "1.2.246.562.11.00000441369",
+              "etunimi": "Teppo",
+              "sukunimi": "Testaaja",
+              "prioriteetti": 1,
+              "jonosija": 1,
+              "pisteet": 4,
+              "tasasijaJonosija": 1,
+              "tila": "HYVAKSYTTY",
+              "tilaHistoria": [
+                {
+                  "luotu": {
+                    "$date": "2014-08-26T15:12:40.623Z"
+                  },
+                  "tila": "HYVAKSYTTY"
+                }
+              ],
+              "hyvaksyttyHarkinnanvaraisesti": false,
+              "tilanKuvaukset": {
+                "FI": "Hyväksytty varasijalta",
+                "SV": "Hyväksytty varasijalta",
+                "EN": "Hyväksytty varasijalta"
+              },
+              "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
+            }
+          ]
+        }
+      ],
+      "kaikkiJonotSijoiteltu": true
+    }
+  ],
+  "Valintatulos": [
+    {
+      "_id": {
+        "$oid": "53fc8613e4b0b0b110900766"
+      },
+      "className": "fi.vm.sade.sijoittelu.domain.Valintatulos",
+      "valintatapajonoOid": "14090336922663576781797489829886",
+      "hakemusOid": "1.2.246.562.11.00000441369",
+      "hakukohdeOid": "1.2.246.562.5.72607738902",
+      "hakijaOid": "1.2.246.562.24.14229104472",
+      "hakuOid": "1.2.246.562.5.2013080813081926341928",
+      "hakutoive": 1,
+      "tila": "KESKEN",
+      "ilmoittautumisTila": "EI_TEHTY",
+      "julkaistavissa": false,
+      "ehdollisestiHyvaksyttavissa": true,
+      "ehdollisenHyvaksymisenEhtoKoodi": "muu",
+      "ehdollisenHyvaksymisenEhtoFI": "muu",
+      "ehdollisenHyvaksymisenEhtoSV": "andra",
+      "ehdollisenHyvaksymisenEhtoEN": "other",
+      "logEntries": [
+        {
+          "luotu": {
+            "$date": "2014-08-26T16:05:23.943Z"
+          },
+          "muokkaaja": "1.2.246.562.24.00000000001",
+          "muutos": "KESKEN",
+          "selite": "Massamuokkaus"
+        }
+      ]
+    }
+  ]
+}

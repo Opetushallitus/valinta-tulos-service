@@ -41,6 +41,17 @@ class ValintaTulosServletSpec extends ServletSpecification {
   }
 
   "GET /haku/:hakuId/hakemus/:hakemusId" should {
+    "palauttaa ehdollisesti hyväksytyn ei-julkaistun hakukohteen valintatulokset" in {
+      useFixture("hyvaksytty-ehdollisesti-kesken-ei-julkaistavissa.json")
+      get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
+        status must_== 200
+        assertJson(
+          jsonFromClasspath("expected-hyvaksytty-ehdollisesti-kesken-ei-julkaistavissa.json"),
+          body
+        )
+      }
+    }
+
     "palauttaa Ataru-hakemusten tiedot" in {
       val ataruHakemukset = List(ataruHakemus1, ataruHakemus2)
       val ataruHenkilot = List(ataruHenkilo1, ataruHenkilo2)
