@@ -211,6 +211,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
               julkaistavissa = valintatapajono.isJulkaistavissa,
               valintatapajonoPrioriteetti = Option(valintatapajono.getValintatapajonoPrioriteetti).map {_.toInt},
               tilanKuvaukset = Option(valintatapajono.getTilanKuvaukset).map {_.toMap},
+              ehdollisestiHyvaksyttavissa = Option(valintatapajono.isEhdollisestiHyvaksyttavissa).fold(false)(b => b),
               ehdollisenHyvaksymisenEhto = EhdollisenHyvaksymisenEhto(
                 FI = Option(valintatapajono.getEhdollisenHyvaksymisenEhtoFI),
                 SV = Option(valintatapajono.getEhdollisenHyvaksymisenEhtoSV),

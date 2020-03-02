@@ -11,6 +11,7 @@ case class JonokohtainenTulostieto(
                                   julkaistavissa: Boolean,
                                   valintatapajonoPrioriteetti: Option[Int],
                                   tilanKuvaukset: Option[Map[String, String]],
+                                  ehdollisestiHyvaksyttavissa: Boolean,
                                   ehdollisenHyvaksymisenEhto: EhdollisenHyvaksymisenEhto
                                   ) {
   def toKesken: JonokohtainenTulostieto = {
