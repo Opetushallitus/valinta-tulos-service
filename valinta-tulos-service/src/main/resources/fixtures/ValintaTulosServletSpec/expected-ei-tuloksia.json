@@ -1,0 +1,40 @@
+{
+  "hakuOid": "1.2.246.562.29.37061034627",
+  "hakemusOid": "1.2.246.562.11.00000000000000000005",
+  "hakijaOid": "ataru-tyyppi",
+  "aikataulu": {
+    "vastaanottoEnd": "2030-01-10T10:00:00Z",
+    "vastaanottoBufferDays": 14
+  },
+  "hakutoiveet": [
+    {
+      "hakukohdeOid": "1.2.246.562.20.14875157126",
+      "hakukohdeNimi": "Ataru testihakukohde",
+      "tarjoajaOid": "1.2.246.562.10.72985435253",
+      "tarjoajaNimi": "Aalto-yliopisto, Insinööritieteiden korkeakoulu",
+      "valintatapajonoOid": "",
+      "valintatila": "KESKEN",
+      "vastaanottotila": "KESKEN",
+      "ilmoittautumistila": {
+        "ilmoittautumisaika": {
+          "loppu": "2030-01-10T21:59:59Z"
+        },
+        "ilmoittautumistapa": {
+          "nimi": {
+            "fi": "Oili",
+            "sv": "Oili",
+            "en": "Oili"
+          },
+          "url": "/oiliHetuton/"
+        },
+        "ilmoittautumistila": "EI_TEHTY",
+        "ilmoittauduttavissa": false
+      },
+      "vastaanotettavuustila": "EI_VASTAANOTETTAVISSA",
+      "julkaistavissa": false,
+      "ehdollisestiHyvaksyttavissa": false,
+      "tilanKuvaukset": {},
+      "jonokohtaisetTulostiedot": []
+    }
+  ]
+}
