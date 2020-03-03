@@ -600,7 +600,18 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
             "sijoittelu ei ole ehtinyt muuttamaan tulosta" in {
               // HYVÄKSYTTY EI_VASTAANOTETTU_MAARA_AIKANA true
               useFixture("hyvaksytty-valintatulos-ei-vastaanottanut-maaraaikana.json", hakuFixture = hakuFixture, ohjausparametritFixture = "vastaanotto-loppunut")
-              checkHakutoiveState(getHakutoive("1.2.246.562.5.16303028779"), Valintatila.hyväksytty, Vastaanottotila.ei_vastaanotettu_määräaikana, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+              val hakutoiveentulos = getHakutoive("1.2.246.562.5.16303028779")
+              checkHakutoiveState(hakutoiveentulos, Valintatila.hyväksytty, Vastaanottotila.ei_vastaanotettu_määräaikana, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+              hakutoiveentulos.jonokohtaisetTulostiedot.size must beEqualTo(1)
+              val jonokohtainenTulostieto = hakutoiveentulos.jonokohtaisetTulostiedot.head
+              jonokohtainenTulostieto.pisteet must beSome(4)
+              jonokohtainenTulostieto.alinHyvaksyttyPistemaara must beNone
+              jonokohtainenTulostieto.valintatila must beEqualTo(Valintatila.hyväksytty)
+              jonokohtainenTulostieto.julkaistavissa must beTrue
+              jonokohtainenTulostieto.valintatapajonoPrioriteetti must beSome(0)
+              jonokohtainenTulostieto.tilanKuvaukset must beSome(Map())
+              jonokohtainenTulostieto.ehdollisestiHyvaksyttavissa must beFalse
+              jonokohtainenTulostieto.ehdollisenHyvaksymisenEhto must beSome(EhdollisenHyvaksymisenEhto(FI = None, SV = None, EN = None))
             }
             "sijoittelu on muuttanut tuloksen" in {
               // PERUNUT EI_VASTAANOTETTU_MAARA_AIKANA true
@@ -608,6 +619,20 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
               val hakutoive = getHakutoive("1.2.246.562.5.72607738902")
               checkHakutoiveState(hakutoive, Valintatila.perunut, Vastaanottotila.ei_vastaanotettu_määräaikana, Vastaanotettavuustila.ei_vastaanotettavissa, true)
               hakutoive.tilanKuvaukset("FI") must_== "Peruuntunut, ei vastaanottanut määräaikana"
+              hakutoive.jonokohtaisetTulostiedot.size must beEqualTo(2)
+              hakutoive.jonokohtaisetTulostiedot.forall {
+                jonokohtainenTulostieto => {
+                  jonokohtainenTulostieto.valintatila == Valintatila.perunut &&
+                  jonokohtainenTulostieto.tilanKuvaukset.contains(
+                    Map(
+                      "FI" -> "Peruuntunut, ei vastaanottanut määräaikana",
+                      "SV" -> "Annullerad, har inte tagit emot platsen inom utsatt tid",
+                      "EN" -> "Cancelled, has not confirmed the study place within the deadline"
+                    )
+                  ) &&
+                  jonokohtainenTulostieto.julkaistavissa
+                }
+              } must beTrue
             }
           }
 
