@@ -569,7 +569,8 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     def ottanutVastaanToisenPaikan(tulos: Hakutoiveentulos): Hakutoiveentulos =
       tulos.copy(
         vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa,
-        vastaanottotila = Vastaanottotila.ottanut_vastaan_toisen_paikan
+        vastaanottotila = Vastaanottotila.ottanut_vastaan_toisen_paikan,
+        jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map(_.copy(valintatila = Valintatila.peruuntunut))
       )
 
     def peruuntunutOttanutVastaanToisenPaikan(tulos: Hakutoiveentulos): Hakutoiveentulos =

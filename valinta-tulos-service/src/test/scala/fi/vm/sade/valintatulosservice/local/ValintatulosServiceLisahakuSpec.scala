@@ -9,7 +9,7 @@ import fi.vm.sade.valintatulosservice.sijoittelu._
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, JonokohtainenTulostieto, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.{ITSpecification, TimeWarp, ValintatulosService, VastaanotettavuusService}
 import org.junit.runner.RunWith
@@ -45,8 +45,18 @@ class ValintatulosServiceLisahakuSpec extends ITSpecification with TimeWarp {
       }
       "toinen vastaanotettu, ensimmäistä ei voi vastaanottaa" in {
         useFixture("lisahaku-vastaanottanut.json", hakuFixture = hakuFixture, hakemusFixtures = hakemusFixtures, yhdenPaikanSaantoVoimassa = true)
-        checkHakutoiveState(getHakutoive("1.2.246.562.14.2013120515524070995659"), Valintatila.peruuntunut, Vastaanottotila.ottanut_vastaan_toisen_paikan, Vastaanotettavuustila.ei_vastaanotettavissa, true)
-        checkHakutoiveState(getHakutoive("1.2.246.562.14.2014022408541751568934"), Valintatila.hyväksytty, Vastaanottotila.vastaanottanut, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+        val hakutoiveOttanutVastaanToisenPaikan = getHakutoive("1.2.246.562.14.2013120515524070995659")
+        checkHakutoiveState(hakutoiveOttanutVastaanToisenPaikan, Valintatila.peruuntunut, Vastaanottotila.ottanut_vastaan_toisen_paikan, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+        hakutoiveOttanutVastaanToisenPaikan.jonokohtaisetTulostiedot.forall(
+          jonokohtainenTulostieto =>
+            jonokohtainenTulostieto.valintatila == Valintatila.peruuntunut
+        ) must beTrue
+        val hakutoiveHyväksytty = getHakutoive("1.2.246.562.14.2014022408541751568934")
+        checkHakutoiveState(hakutoiveHyväksytty, Valintatila.hyväksytty, Vastaanottotila.vastaanottanut, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+        hakutoiveHyväksytty.jonokohtaisetTulostiedot.forall(
+          jonokohtainenTulostieto =>
+            jonokohtainenTulostieto.valintatila == Valintatila.hyväksytty
+        ) must beTrue
       }
     }
   }
