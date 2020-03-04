@@ -12,13 +12,15 @@ case class JonokohtainenTulostieto(
                                   valintatapajonoPrioriteetti: Option[Int],
                                   tilanKuvaukset: Option[Map[String, String]],
                                   ehdollisestiHyvaksyttavissa: Boolean,
-                                  ehdollisenHyvaksymisenEhto: Option[EhdollisenHyvaksymisenEhto]
+                                  ehdollisenHyvaksymisenEhto: Option[EhdollisenHyvaksymisenEhto],
+                                  varasijanumero: Option[Int]
                                   ) {
   def toKesken: JonokohtainenTulostieto = {
     copy(
       valintatila = Valintatila.kesken,
       pisteet = None,
-      alinHyvaksyttyPistemaara = None
+      alinHyvaksyttyPistemaara = None,
+      varasijanumero = None
     )
   }
 }

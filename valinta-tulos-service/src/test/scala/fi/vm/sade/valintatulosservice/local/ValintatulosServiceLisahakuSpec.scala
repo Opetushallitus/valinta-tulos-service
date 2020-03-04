@@ -30,8 +30,15 @@ class ValintatulosServiceLisahakuSpec extends ITSpecification with TimeWarp {
       }
       "molemmat vastaanotettavissa" in {
         useFixture("lisahaku-vastaanotettavissa.json", hakuFixture = hakuFixture, hakemusFixtures = hakemusFixtures)
-        checkHakutoiveState(getHakutoive("1.2.246.562.14.2013120515524070995659"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.vastaanotettavissa_sitovasti, true)
-        checkHakutoiveState(getHakutoive("1.2.246.562.14.2014022408541751568934"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.vastaanotettavissa_sitovasti, true)
+        val hakutoiveentulos1 = getHakutoive("1.2.246.562.14.2013120515524070995659")
+        checkHakutoiveState(hakutoiveentulos1, Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.vastaanotettavissa_sitovasti, true)
+        hakutoiveentulos1.jonokohtaisetTulostiedot.size must beEqualTo(1)
+        hakutoiveentulos1.jonokohtaisetTulostiedot.head.valintatila must beEqualTo(Valintatila.hyväksytty)
+        hakutoiveentulos1.jonokohtaisetTulostiedot.head.varasijanumero must beNone
+        val hakutoiveentulos2 = getHakutoive("1.2.246.562.14.2014022408541751568934")
+        checkHakutoiveState(hakutoiveentulos2, Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.vastaanotettavissa_sitovasti, true)
+        hakutoiveentulos2.jonokohtaisetTulostiedot.head.valintatila must beEqualTo(Valintatila.hyväksytty)
+        hakutoiveentulos2.jonokohtaisetTulostiedot.head.varasijanumero must beNone
       }
       "ensimmäinen vastaanotettavissa, toinen ei hyväksytty" in {
         useFixture("lisahaku-vastaanotettavissa-2-ensimmainen.json", hakuFixture = hakuFixture, hakemusFixtures = hakemusFixtures)

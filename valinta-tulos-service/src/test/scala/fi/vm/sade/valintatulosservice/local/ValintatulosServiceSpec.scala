@@ -579,7 +579,13 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           "hyvaksytty Valintatulos perunut" in {
             // HYVÄKSYTTY PERUNUT true
             useFixture("hyvaksytty-valintatulos-perunut-2.json", hakuFixture = hakuFixture)
-            checkHakutoiveState(getHakutoive("1.2.246.562.5.16303028779"), Valintatila.perunut, Vastaanottotila.perunut, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+            val hakutoiveentulos = getHakutoive("1.2.246.562.5.16303028779")
+            checkHakutoiveState(hakutoiveentulos, Valintatila.perunut, Vastaanottotila.perunut, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+            hakutoiveentulos.jonokohtaisetTulostiedot.size must beEqualTo(2)
+            hakutoiveentulos.jonokohtaisetTulostiedot(0).valintatila must beEqualTo(Valintatila.perunut)
+            hakutoiveentulos.jonokohtaisetTulostiedot(0).pisteet must beSome(6)
+            hakutoiveentulos.jonokohtaisetTulostiedot(1).valintatila must beEqualTo(Valintatila.perunut)
+            hakutoiveentulos.jonokohtaisetTulostiedot(1).pisteet must beSome(4)
           }
 
           "hyvaksytty, toisessa jonossa hylatty" in {
@@ -659,7 +665,11 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           "käytetään parasta varasijaa, jos useammassa jonossa varalla" in {
             // VARALLA(1), VARALLA(2), VARALLA(3) KESKEN true
             useFixture("hyvaksytty-ylempi-varalla.json", hakuFixture = hakuFixture)
-            getHakutoive("1.2.246.562.5.72607738902").varasijanumero must_== Some(2)
+            val hakutoiveentulos = getHakutoive("1.2.246.562.5.72607738902")
+            hakutoiveentulos.varasijanumero must_== Some(2)
+            hakutoiveentulos.jonokohtaisetTulostiedot(0).varasijanumero must beSome(3)
+            hakutoiveentulos.jonokohtaisetTulostiedot(1).varasijanumero must beSome(2)
+            hakutoiveentulos.jonokohtaisetTulostiedot.forall(_.valintatila == Valintatila.varalla) must beTrue
           }
 
           "varasijojen käsittelypäivämäärät näytetään" in {

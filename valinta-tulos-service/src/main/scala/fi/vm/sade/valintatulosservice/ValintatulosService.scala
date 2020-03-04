@@ -527,9 +527,28 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       .map(asetaVastaanotettavuusValintarekisterinPerusteella(vastaanottoKaudella))
       .map(asetaKelaURL)
       .map(piilotaKuvauksetEiJulkaistuiltaValintatapajonoilta)
+      .map(piilotaVarasijanumeroJonoiltaJosValintatilaEiVaralla)
       .tulokset
 
     Hakemuksentulos(haku.oid, h.oid, sijoitteluTulos.hakijaOid.getOrElse(h.henkiloOid), ohjausparametrit.map(_.vastaanottoaikataulu), lopullisetTulokset)
+  }
+
+  private def piilotaVarasijanumeroJonoiltaJosValintatilaEiVaralla(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]): List[Hakutoiveentulos] = {
+    tulokset.map {
+      tulos =>
+        tulos.copy(
+          jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map {
+            jonokohtainenTulostieto =>
+              jonokohtainenTulostieto.copy(
+                varasijanumero = if (jonokohtainenTulostieto.valintatila == Valintatila.varalla) {
+                  jonokohtainenTulostieto.varasijanumero
+                } else {
+                  None
+                }
+              )
+          }
+        )
+    }
   }
 
   private def piilotaKuvauksetEiJulkaistuiltaValintatapajonoilta(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]): List[Hakutoiveentulos] = {

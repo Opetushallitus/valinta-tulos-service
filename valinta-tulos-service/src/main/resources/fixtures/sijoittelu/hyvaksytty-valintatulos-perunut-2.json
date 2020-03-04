@@ -79,6 +79,39 @@
               "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
             }
           ]
+        },
+        {
+          "tasasijasaanto": "YLITAYTTO",
+          "oid": "14090336922663576781797489829123",
+          "nimi": "Varsinainen jono",
+          "prioriteetti": 0,
+          "aloituspaikat": 3,
+          "eiVarasijatayttoa": false,
+          "kaikkiEhdonTayttavatHyvaksytaan": false,
+          "poissaOlevaTaytto": false,
+          "hakemukset": [
+            {
+              "hakijaOid": "1.2.246.562.24.14229104472",
+              "hakemusOid": "1.2.246.562.11.00000441369",
+              "etunimi": "Teppo",
+              "sukunimi": "Testaaja",
+              "prioriteetti": 3,
+              "jonosija": 3,
+              "pisteet": 6,
+              "tasasijaJonosija": 1,
+              "tila": "HYVAKSYTTY",
+              "tilaHistoria": [
+                {
+                  "luotu": {
+                    "$date": "2014-08-26T15:12:40.623Z"
+                  },
+                  "tila": "HYVAKSYTTY"
+                }
+              ],
+              "hyvaksyttyHarkinnanvaraisesti": false,
+              "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
+            }
+          ]
         }
       ]
     }
@@ -108,6 +141,32 @@
           "selite": "Massamuokkaus"
         }
       ]
+    },
+    {
+      "_id": {
+        "$oid": "53fc8613e4b0b0b110900766"
+      },
+      "className": "fi.vm.sade.sijoittelu.domain.Valintatulos",
+      "valintatapajonoOid": "14090336922663576781797489829123",
+      "hakemusOid": "1.2.246.562.11.00000441369",
+      "hakukohdeOid": "1.2.246.562.5.16303028779",
+      "hakijaOid": "1.2.246.562.24.14229104472",
+      "hakuOid": "1.2.246.562.5.2013080813081926341928",
+      "hakutoive": 2,
+      "tila": "PERUNUT",
+      "julkaistavissa": true,
+      "ilmoittautumisTila": "EI_TEHTY",
+      "logEntries": [
+        {
+          "luotu": {
+            "$date": "2014-08-26T16:05:23.943Z"
+          },
+          "muokkaaja": "1.2.246.562.24.00000000001",
+          "muutos": "KESKEN",
+          "selite": "Massamuokkaus"
+        }
+      ]
     }
+
   ]
 }

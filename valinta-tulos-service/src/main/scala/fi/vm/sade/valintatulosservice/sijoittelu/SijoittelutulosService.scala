@@ -207,7 +207,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
               nimi = valintatapajono.getValintatapajonoNimi,
               pisteet = Option(valintatapajono.getPisteet).map((p: java.math.BigDecimal) => new BigDecimal(p)),
               alinHyvaksyttyPistemaara = Option(valintatapajono.getAlinHyvaksyttyPistemaara).map((p: java.math.BigDecimal) => new BigDecimal(p)),
-              valintatila = hakemuksenTilastaJononValintatilaksi(valintatapajono),
+              valintatila = vastaanottotilanVaikutusValintatilaan(hakemuksenTilastaJononValintatilaksi(valintatapajono), hakijanTilat.vastaanottotila),
               julkaistavissa = valintatapajono.isJulkaistavissa,
               valintatapajonoPrioriteetti = Option(valintatapajono.getValintatapajonoPrioriteetti).map {_.toInt},
               tilanKuvaukset = Option(valintatapajono.getTilanKuvaukset).map {_.toMap},
@@ -216,7 +216,8 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
                 FI = Option(valintatapajono.getEhdollisenHyvaksymisenEhtoFI),
                 SV = Option(valintatapajono.getEhdollisenHyvaksymisenEhtoSV),
                 EN = Option(valintatapajono.getEhdollisenHyvaksymisenEhtoEN)
-              ))
+              )),
+              varasijanumero = Option(valintatapajono.getVarasijanNumero).map {_.toInt}
             )
           })
           .toList
