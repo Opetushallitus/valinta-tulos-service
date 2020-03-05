@@ -74,7 +74,7 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
       Ok(rtt)
     } catch {
       case e: NotFoundException =>
-        NotFound(e.getMessage)
+        NotFound(Map("error" -> e.getMessage))
     }
   }
 }
