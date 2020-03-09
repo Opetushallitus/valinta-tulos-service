@@ -735,7 +735,20 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         case (tulos, index) if firstVastaanotettu >= 0 && index != firstVastaanotettu && List(Valintatila.varalla, Valintatila.kesken).contains(tulos.valintatila) =>
           // Peru muut varalla/kesken toiveet, jos jokin muu vastaanotettu
           logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja valintatila > peruuntunut, ei vastaanotettavissa {}", index)
-          tulos.copy(valintatila = Valintatila.peruuntunut, vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa)
+          tulos.copy(
+            valintatila = Valintatila.peruuntunut,
+            vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa,
+            jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map {
+              jonokohtainenTulostieto =>
+                jonokohtainenTulostieto.copy(
+                  valintatila = if (List(Valintatila.varalla, Valintatila.kesken).contains(jonokohtainenTulostieto.valintatila)) {
+                    Valintatila.peruuntunut
+                  } else {
+                    jonokohtainenTulostieto.valintatila
+                  }
+                )
+            }
+          )
         case (tulos, index) =>
           logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja ei muutosta {}", index)
           tulos
