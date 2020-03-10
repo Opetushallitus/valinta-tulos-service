@@ -529,9 +529,29 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       .map(piilotaKuvauksetEiJulkaistuiltaValintatapajonoilta)
       .map(piilotaVarasijanumeroJonoiltaJosValintatilaEiVaralla)
       .map(merkitseValintatapajonotPeruuntuneeksiKunEiVastaanottanutMääräaikaanMennessä)
+      .map(piilotaEhdollisenHyväksymisenEhdotJonoiltaKunEiEhdollisestiHyväksytty)
       .tulokset
 
     Hakemuksentulos(haku.oid, h.oid, sijoitteluTulos.hakijaOid.getOrElse(h.henkiloOid), ohjausparametrit.map(_.vastaanottoaikataulu), lopullisetTulokset)
+  }
+
+  private def piilotaEhdollisenHyväksymisenEhdotJonoiltaKunEiEhdollisestiHyväksytty(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]): List[Hakutoiveentulos] = {
+    tulokset.map {
+      tulos =>
+        tulos.copy(
+          jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map {
+            jonokohtainenTulostieto =>
+              if (jonokohtainenTulostieto.julkaistavissa && Valintatila.isHyväksytty(jonokohtainenTulostieto.valintatila)) {
+                jonokohtainenTulostieto
+              } else {
+                jonokohtainenTulostieto.copy(
+                  ehdollisenHyvaksymisenEhto = None,
+                  ehdollisestiHyvaksyttavissa = false
+                )
+              }
+          }
+        )
+    }
   }
 
   private def merkitseValintatapajonotPeruuntuneeksiKunEiVastaanottanutMääräaikaanMennessä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]): List[Hakutoiveentulos] = {

@@ -621,7 +621,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
                 "EN" -> "Cancelled, has not confirmed the study place within the deadline"
               ))
               jonokohtainenTulostieto.ehdollisestiHyvaksyttavissa must beFalse
-              jonokohtainenTulostieto.ehdollisenHyvaksymisenEhto must beSome(EhdollisenHyvaksymisenEhto(FI = None, SV = None, EN = None))
+              jonokohtainenTulostieto.ehdollisenHyvaksymisenEhto must beNone
             }
             "sijoittelu on muuttanut tuloksen" in {
               // PERUNUT EI_VASTAANOTETTU_MAARA_AIKANA true
