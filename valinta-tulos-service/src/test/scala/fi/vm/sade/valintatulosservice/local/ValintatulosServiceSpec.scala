@@ -610,12 +610,16 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
               checkHakutoiveState(hakutoiveentulos, Valintatila.hyväksytty, Vastaanottotila.ei_vastaanotettu_määräaikana, Vastaanotettavuustila.ei_vastaanotettavissa, true)
               hakutoiveentulos.jonokohtaisetTulostiedot.size must beEqualTo(1)
               val jonokohtainenTulostieto = hakutoiveentulos.jonokohtaisetTulostiedot.head
-              jonokohtainenTulostieto.pisteet must beSome(4)
+              jonokohtainenTulostieto.pisteet must beNone
               jonokohtainenTulostieto.alinHyvaksyttyPistemaara must beNone
-              jonokohtainenTulostieto.valintatila must beEqualTo(Valintatila.hyväksytty)
+              jonokohtainenTulostieto.valintatila must beEqualTo(Valintatila.perunut)
               jonokohtainenTulostieto.julkaistavissa must beTrue
               jonokohtainenTulostieto.valintatapajonoPrioriteetti must beSome(0)
-              jonokohtainenTulostieto.tilanKuvaukset must beSome(Map())
+              jonokohtainenTulostieto.tilanKuvaukset must beSome(Map(
+                "FI" -> "Peruuntunut, ei vastaanottanut määräaikana",
+                "SV" -> "Annullerad, har inte tagit emot platsen inom utsatt tid",
+                "EN" -> "Cancelled, has not confirmed the study place within the deadline"
+              ))
               jonokohtainenTulostieto.ehdollisestiHyvaksyttavissa must beFalse
               jonokohtainenTulostieto.ehdollisenHyvaksymisenEhto must beSome(EhdollisenHyvaksymisenEhto(FI = None, SV = None, EN = None))
             }

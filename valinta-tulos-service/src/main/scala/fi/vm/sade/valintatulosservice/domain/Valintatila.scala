@@ -28,4 +28,8 @@ object Valintatila extends Enumeration {
   def isFinal(tila: Valintatila) = {
     tila != kesken && tila != varalla
   }
+
+  def voiTullaHyväksytyksi(valintatila: Valintatila): Boolean = {
+    isHyväksytty(valintatila) || valintatila == kesken || valintatila == varalla
+  }
 }

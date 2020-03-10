@@ -528,9 +528,39 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       .map(asetaKelaURL)
       .map(piilotaKuvauksetEiJulkaistuiltaValintatapajonoilta)
       .map(piilotaVarasijanumeroJonoiltaJosValintatilaEiVaralla)
+      .map(merkitseValintatapajonotPeruuntuneeksiKunEiVastaanottanutMääräaikaanMennessä)
       .tulokset
 
     Hakemuksentulos(haku.oid, h.oid, sijoitteluTulos.hakijaOid.getOrElse(h.henkiloOid), ohjausparametrit.map(_.vastaanottoaikataulu), lopullisetTulokset)
+  }
+
+  private def merkitseValintatapajonotPeruuntuneeksiKunEiVastaanottanutMääräaikaanMennessä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]): List[Hakutoiveentulos] = {
+    tulokset.map {
+      tulos =>
+        if (tulos.vastaanottotila == Vastaanottotila.ei_vastaanotettu_määräaikana && Valintatila.isHyväksytty(tulos.valintatila)) {
+          tulos.copy(
+            jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map {
+              jonokohtainenTulostieto =>
+                if (Valintatila.voiTullaHyväksytyksi(jonokohtainenTulostieto.valintatila)) {
+                  jonokohtainenTulostieto.copy(
+                    valintatila = Valintatila.perunut,
+                    pisteet = None,
+                    alinHyvaksyttyPistemaara = None,
+                    tilanKuvaukset = Some(Map(
+                      "FI" -> "Peruuntunut, ei vastaanottanut määräaikana",
+                      "SV" -> "Annullerad, har inte tagit emot platsen inom utsatt tid",
+                      "EN" -> "Cancelled, has not confirmed the study place within the deadline"
+                    ))
+                  )
+                } else {
+                  jonokohtainenTulostieto
+                }
+            }
+          )
+        } else {
+          tulos
+        }
+    }
   }
 
   private def piilotaVarasijanumeroJonoiltaJosValintatilaEiVaralla(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Option[Ohjausparametrit]): List[Hakutoiveentulos] = {
