@@ -639,7 +639,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       tulos.copy(
         vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa,
         vastaanottotila = Vastaanottotila.ottanut_vastaan_toisen_paikan,
-        jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map(_.copy(valintatila = Valintatila.peruuntunut))
+        jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map(merkitseJonokohtainenTulostietoPerutuksiJosVoiTullaHyväksytyksi)
       )
 
     def merkitseJonokohtainenTulostietoPerutuksiJosVoiTullaHyväksytyksi(jonokohtainenTulostieto: JonokohtainenTulostieto) = {
@@ -668,10 +668,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
             "FI" -> "Peruuntunut, vastaanottanut toisen korkeakoulupaikan",
             "SV" -> "Annullerad, tagit emot en annan högskoleplats",
             "EN" -> "Cancelled, accepted another higher education study place"
-          ),
-          jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map {
-            merkitseJonokohtainenTulostietoPerutuksiJosVoiTullaHyväksytyksi
-          }
+          )
         )
       } else {
         tulos
