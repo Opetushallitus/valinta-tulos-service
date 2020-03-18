@@ -71,6 +71,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                 from valinnantilat_history as vths
                 where vths.hakemus_oid = ${hakemusOid}
                   and vths.hakukohde_oid = ${hakukohdeOid}
+                limit 1
         )
         and ((
                 select true
@@ -79,7 +80,8 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                   and t.hakukohde_oid = ${hakukohdeOid}
                   and t.valintatapajono_oid = vth.valintatapajono_oid
                   and t.julkaistavissa = 'true'
-                  and lower(t.system_time) <@ vth.system_time)
+                  and lower(t.system_time) <@ vth.system_time
+                limit 1)
             or (
                 select true
                 from valinnantulokset_history as th
@@ -87,7 +89,8 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                   and th.hakukohde_oid = ${hakukohdeOid}
                   and th.valintatapajono_oid = vth.valintatapajono_oid
                   and th.julkaistavissa = 'true'
-                  and th.system_time && vth.system_time))""".as[Int].head)
+                  and th.system_time && vth.system_time
+                  limit 1))""".as[Int].head)
   }
 
   private def getValinnantulosMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {
