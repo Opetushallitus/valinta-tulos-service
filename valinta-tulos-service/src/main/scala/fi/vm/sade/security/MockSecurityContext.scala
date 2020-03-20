@@ -22,6 +22,8 @@ class MockSecurityContext(val casServiceIdentifier: String, val requiredRoles: S
     override def fetchCasSession(params: CasParams, sessionCookieName: String): Task[SessionCookie] =
       Task.now("jsessionidFromMockSecurityContext")
   }
+
+  val validateServiceTicketTimeout = 1
 }
 
 object MockSecurityContext {
