@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.local
 
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.security.{AuthenticationFailedException, CasSessionService, ProductionSecurityContext}
 import fi.vm.sade.utils.cas.CasClient
@@ -15,6 +16,8 @@ import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.Scope
 import scalaz.concurrent.Task
+
+import scala.concurrent.duration.Duration
 
 @RunWith(classOf[JUnitRunner])
 class CasSessionServiceSpec extends Specification with MockitoStubs {
@@ -82,7 +85,7 @@ class CasSessionServiceSpec extends Specification with MockitoStubs {
     val casClient: CasClient = mock[CasClient]
     val sessionRepository: SessionRepository = mock[SessionRepository]
     val userDetailsService: KayttooikeusUserDetailsService = mock[KayttooikeusUserDetailsService]
-    val securityContext = new ProductionSecurityContext(casClient, service, Set())
+    val securityContext = new ProductionSecurityContext(casClient, service, Set(), Duration(1, TimeUnit.SECONDS))
 
     val cas: CasSessionService = new CasSessionService(securityContext, service, userDetailsService, sessionRepository)
   }

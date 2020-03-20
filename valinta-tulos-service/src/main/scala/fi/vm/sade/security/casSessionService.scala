@@ -1,7 +1,6 @@
 package fi.vm.sade.security
 
 import java.util.UUID
-import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.kayttooikeus.{KayttooikeusUserDetails, KayttooikeusUserDetailsService}
@@ -9,17 +8,17 @@ import fi.vm.sade.valintatulosservice.security.{CasSession, ServiceTicket, Sessi
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import scalaz.concurrent.Task
 
-import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 
 class CasSessionService(securityContext: SecurityContext, val serviceIdentifier: String, userDetailsService: KayttooikeusUserDetailsService, sessionRepository: SessionRepository) extends Logging {
 
   private def validateServiceTicket(ticket: ServiceTicket): Either[Throwable, String] = {
+    logger.info("validateServiceTicket: using timeout value: " + securityContext.validateServiceTicketTimeout)
     val ServiceTicket(s) = ticket
     securityContext.casClient.validateServiceTicket(serviceIdentifier)(s).handleWith {
       case NonFatal(t) => Task.fail(new AuthenticationFailedException(s"Failed to validate service ticket $s", t))
-    }.attemptRunFor(Duration(securityContext.validateServiceTicketTimeout, TimeUnit.SECONDS)).toEither
+    }.attemptRunFor(securityContext.validateServiceTicketTimeout).toEither
   }
 
   private def storeSession(ticket: ServiceTicket, user: KayttooikeusUserDetails): Either[Throwable, (UUID, Session)] = {

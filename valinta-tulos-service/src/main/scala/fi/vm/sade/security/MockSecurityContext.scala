@@ -1,11 +1,15 @@
 package fi.vm.sade.security.mock
 
+import java.util.concurrent.TimeUnit
+
 import fi.vm.sade.security.SecurityContext
-import fi.vm.sade.utils.cas.CasClient._
 import fi.vm.sade.utils.cas._
+import fi.vm.sade.utils.cas.CasClient._
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetails
 import fi.vm.sade.valintatulosservice.security.Role
 import scalaz.concurrent.Task
+
+import scala.concurrent.duration.Duration
 
 class MockSecurityContext(val casServiceIdentifier: String, val requiredRoles: Set[Role], users: Map[String, KayttooikeusUserDetails]) extends SecurityContext {
 
@@ -23,7 +27,7 @@ class MockSecurityContext(val casServiceIdentifier: String, val requiredRoles: S
       Task.now("jsessionidFromMockSecurityContext")
   }
 
-  val validateServiceTicketTimeout = 1
+  val validateServiceTicketTimeout = Duration(1, TimeUnit.SECONDS)
 }
 
 object MockSecurityContext {
