@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.local
 
 import java.util.UUID
 
-import fi.vm.sade.security.{AuthenticationFailedException, CasSessionService}
+import fi.vm.sade.security.{AuthenticationFailedException, CasSessionService, ProductionSecurityContext}
 import fi.vm.sade.utils.cas.CasClient
 import fi.vm.sade.valintatulosservice.kayttooikeus.{KayttooikeusUserDetails, KayttooikeusUserDetailsService}
 import fi.vm.sade.valintatulosservice.security.{CasSession, ServiceTicket}
@@ -82,7 +82,8 @@ class CasSessionServiceSpec extends Specification with MockitoStubs {
     val casClient: CasClient = mock[CasClient]
     val sessionRepository: SessionRepository = mock[SessionRepository]
     val userDetailsService: KayttooikeusUserDetailsService = mock[KayttooikeusUserDetailsService]
+    val securityContext = new ProductionSecurityContext(casClient, service, Set())
 
-    val cas: CasSessionService = new CasSessionService(casClient, service, userDetailsService, sessionRepository)
+    val cas: CasSessionService = new CasSessionService(securityContext, service, userDetailsService, sessionRepository)
   }
 }
