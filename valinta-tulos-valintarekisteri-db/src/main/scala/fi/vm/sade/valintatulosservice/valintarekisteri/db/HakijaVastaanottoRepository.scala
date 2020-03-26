@@ -19,7 +19,7 @@ trait HakijaVastaanottoRepository {
   def store(vastaanottoEvent: VastaanottoEvent): Unit
   def storeAction(vastaanottoEvent: VastaanottoEvent): DBIO[Unit]
   def storeAction(vastaanottoEvent: VastaanottoEvent, ifUnmodifiedSince: Option[Instant]): DBIO[Unit]
-  def store[T](vastaanottoEvents: List[VastaanottoEvent], postCondition: DBIO[T]): T
+  def store(vastaanottoEvents: List[VastaanottoEvent], postCondition: DBIO[_]): Either[Throwable, Unit]
   def store(vastaanottoEvent: VastaanottoEvent, vastaanottoDate: Date): Unit
   def runAsSerialized[T](retries: Int, wait: Duration, description: String, action: DBIO[T]): Either[Throwable, T]
 

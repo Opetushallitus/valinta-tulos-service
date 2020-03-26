@@ -193,12 +193,9 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
               values ($hakukohdeOid, $henkiloOid, ${action.toString}::vastaanotto_action, $ilmoittaja, $selite, ${new java.sql.Timestamp(vastaanottoDate.getTime)})""")
   }
 
-  override def store[T](vastaanottoEvents: List[VastaanottoEvent], postCondition: DBIO[T]): T = {
+  override def store(vastaanottoEvents: List[VastaanottoEvent], postCondition: DBIO[_]): Either[Throwable, Unit] = {
     runAsSerialized(10, Duration(5, TimeUnit.MILLISECONDS), s"Storing $vastaanottoEvents",
-    DBIO.sequence(vastaanottoEvents.map(storeAction)).andThen(postCondition)) match {
-      case Right(x) => x
-      case Left(e) => throw e
-    }
+      DBIO.sequence(vastaanottoEvents.map(storeAction)).andThen(postCondition).andThen(DBIO.successful(())))
   }
 
   override def store(vastaanottoEvent: VastaanottoEvent): Unit = {

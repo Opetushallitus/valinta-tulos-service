@@ -51,7 +51,7 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) {
     casClient = appConfig.securityContext.casClient,
     casParams = params,
     serviceClient = org.http4s.client.blaze.defaultClient,
-    clientCallerId = appConfig.callerId,
+    clientCallerId = appConfig.settings.callerId,
     sessionCookieName = "JSESSIONID"
   )
 

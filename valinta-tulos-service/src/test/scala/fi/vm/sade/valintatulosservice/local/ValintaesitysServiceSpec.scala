@@ -107,19 +107,17 @@ class ValintaesitysServiceSpec extends Specification with MockitoMatchers with M
 
   trait Hakukohde { this: Mocks =>
     hakuService.getHakukohde(hakukohdeOid) returns Right(Hakukohde(
-      hakukohdeOid,
-      null,
-      Set(tarjoajaOid),
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      true,
-      null,
-      2015,
-      Set()
+      oid = hakukohdeOid,
+      hakuOid = null,
+      tarjoajaOids = Set(tarjoajaOid),
+      koulutusAsteTyyppi = null,
+      hakukohteenNimet = null,
+      tarjoajaNimet = null,
+      yhdenPaikanSaanto = null,
+      tutkintoonJohtava = true,
+      koulutuksenAlkamiskausiUri = Some("kausi_k#1"),
+      koulutuksenAlkamisvuosi = Some(2015),
+      organisaatioRyhmaOids = Set()
     ))
   }
 

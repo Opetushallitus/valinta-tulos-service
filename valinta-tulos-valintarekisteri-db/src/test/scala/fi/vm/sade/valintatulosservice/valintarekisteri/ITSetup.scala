@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri
 
 import com.typesafe.config.ConfigValueFactory
 import fi.vm.sade.valintatulosservice.config.ValintarekisteriAppConfig
+import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
@@ -17,7 +18,7 @@ trait ITSetup {
 
   lazy val valintarekisteriDbWithPool = new ValintarekisteriDb(dbConfig, true)
 
-  lazy private val hakuService = HakuService(appConfig)
+  lazy private val hakuService = HakuService(appConfig, null, OrganisaatioService(appConfig), null)
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, singleConnectionValintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing)
 
   implicit val getHakukohdeOid: GetResult[HakukohdeOid] = GetResult(r => {

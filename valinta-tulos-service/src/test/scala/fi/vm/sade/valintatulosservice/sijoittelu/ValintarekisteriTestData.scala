@@ -46,9 +46,9 @@ trait ValintarekisteriTestData extends ValintarekisteriDbTools {
   }
 
   def createHakujen1Ja2ValinnantuloksetIlmanSijoittelua() = {
-    singleConnectionValintarekisteriDb.storeHakukohde(new HakukohdeRecord(oidHaku1hakukohde1, hakuOid1, false, false, Kevat(2017)))
-    singleConnectionValintarekisteriDb.storeHakukohde(new HakukohdeRecord(oidHaku1hakukohde2, hakuOid1, false, false, Kevat(2017)))
-    singleConnectionValintarekisteriDb.storeHakukohde(new HakukohdeRecord(oidHaku2hakukohde1, hakuOid2, false, false, Kevat(2017)))
+    singleConnectionValintarekisteriDb.storeHakukohde(EiKktutkintoonJohtavaHakukohde(oidHaku1hakukohde1, hakuOid1, Some(Kevat(2017))))
+    singleConnectionValintarekisteriDb.storeHakukohde(EiKktutkintoonJohtavaHakukohde(oidHaku1hakukohde2, hakuOid1, Some(Kevat(2017))))
+    singleConnectionValintarekisteriDb.storeHakukohde(EiKktutkintoonJohtavaHakukohde(oidHaku2hakukohde1, hakuOid2, Some(Kevat(2017))))
     insertValinnantulos(hakuOid1, valinnantulos(oidHaku1hakukohde1, oidHaku1hakukohde1jono1, hakemusOid1))
     insertValinnantulos(hakuOid1, valinnantulos(oidHaku1hakukohde1, oidHaku1hakukohde1jono1, hakemusOid2))
     insertValinnantulos(hakuOid1, valinnantulos(oidHaku1hakukohde2, oidHaku1hakukohde2jono1, hakemusOid3))

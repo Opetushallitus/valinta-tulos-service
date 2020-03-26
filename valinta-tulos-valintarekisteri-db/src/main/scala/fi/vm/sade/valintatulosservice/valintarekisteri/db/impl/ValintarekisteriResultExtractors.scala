@@ -25,12 +25,17 @@ trait ValintarekisteriResultExtractors {
     ilmoittaja = r.nextString,
     timestamp = r.nextTimestamp))
 
-  protected implicit val getHakukohdeResult = GetResult(r => HakukohdeRecord(
-    oid = HakukohdeOid(r.nextString),
-    hakuOid = HakuOid(r.nextString),
-    yhdenPaikanSaantoVoimassa = r.nextBoolean,
-    kktutkintoonJohtava = r.nextBoolean,
-    koulutuksenAlkamiskausi = Kausi(r.nextString)))
+  protected implicit val getHakukohdeResult = GetResult(r => {
+    val oid = HakukohdeOid(r.nextString)
+    val hakuOid = HakuOid(r.nextString)
+    val yhdenPaikanSaantoVoimassa = r.nextBoolean
+    val kktutkintoonJohtava = r.nextBoolean
+    (yhdenPaikanSaantoVoimassa, kktutkintoonJohtava) match {
+      case (true, true) => YPSHakukohde(oid, hakuOid, Kausi(r.nextString()))
+      case (false, true) => EiYPSHakukohde(oid, hakuOid, Kausi(r.nextString()))
+      case (false, false) => EiKktutkintoonJohtavaHakukohde(oid, hakuOid, r.nextStringOption().map(Kausi(_)))
+    }
+  })
 
   protected implicit val getHakijaResult = GetResult(r => HakijaRecord(
     hakemusOid = HakemusOid(r.nextString),

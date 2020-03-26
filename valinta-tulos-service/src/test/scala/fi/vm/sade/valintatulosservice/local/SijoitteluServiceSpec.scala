@@ -30,7 +30,6 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
   val hakukohdeOid = HakukohdeOid("1.2.3.4.5")
   val tarjoajaOid = "1.2.3.4.5.6.7"
   val organisaatioRyhmaOid = "1.2.246.562.28.29795861441"
-  val hakukohde = Hakukohde(hakukohdeOid, hakuOid, Set(tarjoajaOid), null, null, null, null, null, null, true, null, 2017, organisaatioRyhmaOids = Set(organisaatioRyhmaOid))
   val session = CasSession(ServiceTicket("myFakeTicket"), "1.2.246.562.24.1", Set(Role.SIJOITTELU_CRUD))
   val sessionId = UUID.randomUUID()
   val auditInfo = AuditInfo((sessionId, session), InetAddress.getLocalHost, "user-agent")
@@ -95,7 +94,18 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
     val audit = mock[Audit]
 
     val hakuService = mock[HakuService]
-    hakuService.getHakukohde(hakukohdeOid) returns Right(Hakukohde(hakukohdeOid, hakuOid, Set(tarjoajaOid), null, null, null, null, null, null, true, null, 2015, Set(organisaatioRyhmaOid)))
+    hakuService.getHakukohde(hakukohdeOid) returns Right(Hakukohde(
+      oid = hakukohdeOid,
+      hakuOid = hakuOid,
+      tarjoajaOids = Set(tarjoajaOid),
+      koulutusAsteTyyppi = null,
+      hakukohteenNimet = null,
+      tarjoajaNimet = null,
+      yhdenPaikanSaanto = null,
+      tutkintoonJohtava = true,
+      koulutuksenAlkamiskausiUri = Some("kausi_k#1"),
+      koulutuksenAlkamisvuosi = Some(2015),
+      organisaatioRyhmaOids = Set(organisaatioRyhmaOid)))
 
     val authorizer = mock[OrganizationHierarchyAuthorizer]
     authorizer.checkAccess(session, Set(tarjoajaOid, organisaatioRyhmaOid), Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Right(())

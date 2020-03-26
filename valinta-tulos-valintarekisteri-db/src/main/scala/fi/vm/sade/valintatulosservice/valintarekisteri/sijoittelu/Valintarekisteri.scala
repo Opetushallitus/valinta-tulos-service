@@ -3,8 +3,11 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 import java.util
 
 import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatulos}
+import fi.vm.sade.utils.cas.CasClient
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.ValintarekisteriAppConfig
+import fi.vm.sade.valintatulosservice.koodisto.KoodistoService
+import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, StoreSijoitteluRepository, ValinnantulosRepository}
@@ -18,9 +21,12 @@ class ValintarekisteriForSijoittelu(sijoitteluRepository:SijoitteluRepository wi
                                     valinnantulosRepository: ValinnantulosRepository)
   extends Valintarekisteri(sijoitteluRepository, hakukohdeRecordService, valinnantulosRepository) {
 
-  private def this(appConfig: ValintarekisteriAppConfig.ValintarekisteriAppConfig, valintarekisteriDb: ValintarekisteriDb) = this(
+  private def this(appConfig: ValintarekisteriAppConfig.ValintarekisteriAppConfig, valintarekisteriDb: ValintarekisteriDb) = this (
     valintarekisteriDb,
-    new HakukohdeRecordService(HakuService(appConfig), valintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing),
+    new HakukohdeRecordService(
+      HakuService(appConfig, new CasClient(appConfig.ophUrlProperties.url("cas.service"), org.http4s.client.blaze.defaultClient), OrganisaatioService(appConfig), new KoodistoService(appConfig)),
+      valintarekisteriDb,
+      appConfig.settings.lenientTarjontaDataParsing),
     valintarekisteriDb
   )
 

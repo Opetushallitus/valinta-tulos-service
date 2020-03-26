@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.local
 
-import fi.vm.sade.valintatulosservice.tarjonta.{KelaKoulutus, Koodi, Koulutus, KoulutusLaajuusarvo}
+import fi.vm.sade.valintatulosservice.tarjonta.{KelaKoulutus, KoulutusLaajuusarvo}
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner

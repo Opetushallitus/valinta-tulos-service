@@ -18,7 +18,7 @@ trait VastaanottoValidator {
   val haku: Haku
   val hakukohdeOid: HakukohdeOid
   val valinnantulosRepository: ValinnantulosRepository with HakijaVastaanottoRepository
-  val ohjausparametrit: Option[Ohjausparametrit]
+  val ohjausparametrit: Ohjausparametrit
 
   val sitovaTaiEhdollinenVastaanotto: Seq[ValintatuloksenTila] = List(ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
   val keskenTaiVastaanottanutToisenPaikan: Seq[ValintatuloksenTila] = List(ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN, ValintatuloksenTila.KESKEN)
@@ -29,7 +29,7 @@ trait VastaanottoValidator {
   def right = DBIO.successful(Right(()))
   def julkaistavissa(valinnantulos: Valinnantulos):Boolean = valinnantulos.julkaistavissa.exists(_ == true) && tuloksetJulkaistavissa
 
-  lazy val tuloksetJulkaistavissa = ohjausparametrit.flatMap(_.tulostenJulkistusAlkaa).map(_.isBeforeNow()).getOrElse(ohjausparametrit.isDefined)
+  lazy val tuloksetJulkaistavissa = ohjausparametrit.tulostenJulkistusAlkaa.forall(_.isBeforeNow())
 
   def onkoEhdollisestiVastaanotettavissa(valinnantulos: Valinnantulos): DBIO[Boolean]
 

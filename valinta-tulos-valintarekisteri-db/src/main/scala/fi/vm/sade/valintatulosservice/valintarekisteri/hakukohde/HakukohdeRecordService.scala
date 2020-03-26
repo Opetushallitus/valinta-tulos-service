@@ -1,67 +1,27 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde
 
-import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.MonadHelper
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakukohdeRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, HakukohdeRecord, Kausi}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiKktutkintoonJohtavaHakukohde, EiYPSHakukohde, HakuOid, HakukohdeOid, HakukohdeRecord, Kausi, YPSHakukohde}
 
 import scala.util.{Failure, Success, Try}
 
 class HakukohdeRecordService(hakuService: HakuService, hakukohdeRepository: HakukohdeRepository, parseLeniently: Boolean) extends Logging {
 
-  def getHaunHakukohdeRecords(oid: HakuOid): Either[Throwable, Seq[HakukohdeRecord]] = {
-    hakuService.getHakukohdeOids(oid).right.flatMap(getHakukohdeRecords)
-  }
-
-  def getHakukohteidenKoulutuksenAlkamiskausi(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[(HakukohdeOid, Option[Kausi])]] = {
-    getHakukohdeRecords(oids).right.map(_.map(hakukohde =>
-      (hakukohde.oid, if (hakukohde.yhdenPaikanSaantoVoimassa) Some(hakukohde.koulutuksenAlkamiskausi) else None)))
-  }
-
-  def getHakukohteidenKoulutuksenAlkamiskausi(hakuOid: HakuOid, oids: Seq[HakukohdeOid]): Either[Throwable, Seq[(HakukohdeOid, Option[Kausi])]] = {
-    getHakukohdeRecords(hakuOid, oids.toSet).right.map(_.map(hakukohde =>
-      (hakukohde.oid, if (hakukohde.yhdenPaikanSaantoVoimassa) Some(hakukohde.koulutuksenAlkamiskausi) else None)))
-  }
-
-  def getHaunKoulutuksenAlkamiskausi(oid: HakuOid): Either[Throwable, Kausi] = {
-    Try(hakukohdeRepository.findHaunArbitraryHakukohde(oid)) match {
-      case Success(Some(hakukohde)) => Right(hakukohde.koulutuksenAlkamiskausi)
-      case Success(None) => hakuService.getArbitraryPublishedHakukohdeOid(oid)
-        .right.flatMap(fetchAndStoreHakukohdeDetails).right.map(_.koulutuksenAlkamiskausi)
-      case Failure(e) => Left(e)
-    }
-  }
-
   def getHakukohdeRecords(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[HakukohdeRecord]] = {
     MonadHelper.sequence(for {oid <- oids.toStream} yield getHakukohdeRecord(oid))
   }
 
-  def getHakukohdeRecords(hakuOid: HakuOid, oids: Set[HakukohdeOid]): Either[Throwable, Seq[HakukohdeRecord]] = {
-    try {
-      val hakukohteet: Seq[HakukohdeRecord] = hakukohdeRepository.findHaunHakukohteet(hakuOid).filter(h => oids.contains(h.oid)).toSeq
-      val missingHakukohteet: Set[HakukohdeOid] = oids.diff(hakukohteet.map(_.oid).toSet)
-      val missingHakukohdeRecords: Seq[HakukohdeRecord] = getMissingHakukohdeRecords(hakuOid, missingHakukohteet)
-      Right(hakukohteet ++ missingHakukohdeRecords)
-    } catch {
-      case e: Exception => Left(e)
-    }
-  }
-
-  private def getMissingHakukohdeRecords(hakuOid: HakuOid, missingHakukohteet: Set[HakukohdeOid]) = {
-    if (missingHakukohteet.nonEmpty) {
-      timed(s"Fetch and store new hakukohdes for haku $hakuOid") {
-        MonadHelper.sequence(for {oid <- missingHakukohteet.toStream} yield fetchAndStoreHakukohde(oid)) match {
-          case Right(hakukohdeRecords) =>
-            logger.info(s"Created ${hakukohdeRecords.size} hakukohdes for $hakuOid. HakukohdeOids: ${hakukohdeRecords.map(_.oid)}")
-            hakukohdeRecords
-          case Left(e) => throw e
-        }
-      }
-    } else {
-      List()
-    }
+  def getHakukohdeRecords(hakuOid: HakuOid, oids: Set[HakukohdeOid]): Either[Throwable, List[HakukohdeRecord]] = {
+    for {
+      hakukohteet <- (Try(hakukohdeRepository.findHaunHakukohteet(hakuOid).filter(h => oids.contains(h.oid))) match {
+        case Success(hs) => Right(hs)
+        case Failure(t) => Left(t)
+      }).right
+      missingHakukohteet <- MonadHelper.sequence(for { oid <- oids.diff(hakukohteet.map(_.oid)) } yield fetchAndStoreHakukohdeDetails(oid)).right
+    } yield (hakukohteet ++ missingHakukohteet).toList
   }
 
   def getHakukohdeRecord(oid: HakukohdeOid): Either[Throwable, HakukohdeRecord] = {
@@ -69,13 +29,6 @@ class HakukohdeRecordService(hakuService: HakuService, hakukohdeRepository: Haku
     Try(hakukohdeRepository.findHakukohde(oid)) match {
       case Success(Some(hakukohde)) => Right(hakukohde)
       case Success(None) => fetchAndStoreHakukohdeDetails(oid)
-      case Failure(e) => Left(e)
-    }
-  }
-
-  def fetchAndStoreHakukohde(oid: HakukohdeOid): Either[Throwable, HakukohdeRecord] = {
-    Try(fetchAndStoreHakukohdeDetails(oid)) match {
-      case Success(hakukohde) => hakukohde
       case Failure(e) => Left(e)
     }
   }
@@ -123,18 +76,24 @@ class HakukohdeRecordService(hakuService: HakuService, hakukohdeRepository: Haku
     for {
       hakukohde <- hakuService.getHakukohde(oid).right
       haku <- hakuService.getHaku(hakukohde.hakuOid).right
-      alkamiskausi <- resolveKoulutuksenAlkamiskausi(hakukohde, haku).right
-    } yield HakukohdeRecord(hakukohde.oid, haku.oid, hakukohde.yhdenPaikanSaanto.voimassa, hakukohde.kkTutkintoonJohtava, alkamiskausi)
+      hakukohdeRecord <- ((hakukohde.yhdenPaikanSaanto.voimassa, hakukohde.kkTutkintoonJohtava, resolveKoulutuksenAlkamiskausi(hakukohde, haku)) match {
+        case (true, true, Some(kausi)) => Right(YPSHakukohde(oid, haku.oid, kausi))
+        case (false, true, Some(kausi)) => Right(EiYPSHakukohde(oid, haku.oid, kausi))
+        case (false, false, kausi) => Right(EiKktutkintoonJohtavaHakukohde(oid, haku.oid, kausi))
+        case (true, false, _) => Left(new IllegalStateException(s"YPS hakukohde $oid ei ole kktutkintoon johtava"))
+        case (true, _, None) => Left(new IllegalStateException(s"YPS hakukohteella $oid ei ole koulutuksen alkamiskautta"))
+        case (_, true, None) => Left(new IllegalStateException(s"Kktutkintoon johtavalla hakukohteella $oid ei ole koulutuksen alkamiskautta"))
+      }).right
+    } yield hakukohdeRecord
   }
 
-  private def resolveKoulutuksenAlkamiskausi(hakukohde: Hakukohde, haku: Haku): Either[Throwable, Kausi] = {
-    hakukohde.koulutuksenAlkamiskausi.left.flatMap(t => {
-      if (parseLeniently) {
+  private def resolveKoulutuksenAlkamiskausi(hakukohde: Hakukohde, haku: Haku): Option[Kausi] = {
+    (hakukohde.koulutuksenAlkamiskausi, parseLeniently) match {
+      case (None, true) =>
         logger.warn(s"No alkamiskausi for hakukohde ${hakukohde.oid}. Falling back to koulutuksen alkamiskausi from haku: ${haku.koulutuksenAlkamiskausi}")
-        haku.koulutuksenAlkamiskausi.toRight(new IllegalStateException(s"No koulutuksen alkamiskausi on haku $haku"))
-      } else {
-        Left(t)
-      }
-    })
+        haku.koulutuksenAlkamiskausi
+      case (alkamiskausi, _) =>
+        alkamiskausi
+    }
   }
 }

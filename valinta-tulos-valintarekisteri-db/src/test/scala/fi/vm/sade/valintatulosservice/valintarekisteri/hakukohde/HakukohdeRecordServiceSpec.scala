@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde
 
 import fi.vm.sade.valintatulosservice.tarjonta._
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakukohdeRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, HakukohdeRecord, Kausi}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, HakukohdeRecord, Kausi, YPSHakukohde}
 import org.junit.runner.RunWith
 import org.specs2.matcher.MustThrownExpectations
 import org.specs2.mock.Mockito
@@ -36,7 +36,7 @@ class HakukohdeRecordServiceSpec extends Specification with MockitoMatchers with
     "throws an exception when neither haku has koulutuksen alkamiskausi" in new HakukohdeRecordServiceWithMocks {
       val hakukohdeRecordService = new HakukohdeRecordService(hakuService, hakukohdeRepository, false)
       hakukohdeRepository.findHakukohde(hakukohdeOid) returns None
-      hakuService.getHakukohde(hakukohdeOid) returns Right(hakukohdeFromTarjonta.copy(koulutuksenAlkamiskausiUri = ""))
+      hakuService.getHakukohde(hakukohdeOid) returns Right(hakukohdeFromTarjonta.copy(koulutuksenAlkamiskausiUri = Some("")))
       hakuService.getHaku(hakuOid) returns Right(hakuFromTarjonta)
       hakukohdeRecordService.getHakukohdeRecord(hakukohdeOid) must beLeft[Throwable]
       there was no(hakukohdeRepository).storeHakukohde(hakukohdeRecord)
@@ -49,7 +49,7 @@ class HakukohdeRecordServiceSpec extends Specification with MockitoMatchers with
       val hakukohdeRecordWithKausiFromHaku: HakukohdeRecord = hakukohdeRecord.copy(koulutuksenAlkamiskausi = hakuFromTarjonta.koulutuksenAlkamiskausi.get)
 
       hakukohdeRepository.findHakukohde(hakukohdeOid) returns None
-      hakuService.getHakukohde(hakukohdeOid) returns Right(hakukohdeFromTarjonta.copy(koulutuksenAlkamiskausiUri = ""))
+      hakuService.getHakukohde(hakukohdeOid) returns Right(hakukohdeFromTarjonta.copy(koulutuksenAlkamiskausiUri = Some("")))
       hakuService.getHaku(hakuOid) returns Right(hakuFromTarjonta)
       hakukohdeRecordService.getHakukohdeRecord(hakukohdeOid) must_== Right(hakukohdeRecordWithKausiFromHaku)
       one(hakukohdeRepository).storeHakukohde(hakukohdeRecordWithKausiFromHaku)
@@ -59,7 +59,7 @@ class HakukohdeRecordServiceSpec extends Specification with MockitoMatchers with
       val hakukohdeRecordService = new HakukohdeRecordService(hakuService, hakukohdeRepository, true)
 
       hakukohdeRepository.findHakukohde(hakukohdeOid) returns None
-      hakuService.getHakukohde(hakukohdeOid) returns Right(hakukohdeFromTarjonta.copy(koulutuksenAlkamiskausiUri = ""))
+      hakuService.getHakukohde(hakukohdeOid) returns Right(hakukohdeFromTarjonta.copy(koulutuksenAlkamiskausiUri = Some("")))
       hakuService.getHaku(hakuOid) returns Right(hakuFromTarjonta.copy(koulutuksenAlkamiskausi = None))
       hakukohdeRecordService.getHakukohdeRecord(hakukohdeOid) must beLeft[Throwable]
       there was no(hakukohdeRepository).storeHakukohde(hakukohdeRecord)
@@ -71,13 +71,20 @@ class HakukohdeRecordServiceSpec extends Specification with MockitoMatchers with
     val hakukohdeRepository = mock[HakukohdeRepository]
     val hakuOid = HakuOid("1.2.246.562.5.73892938273982732")
     val hakukohdeOid = HakukohdeOid("1.2.246.562.5.4890340398")
-    val hakukohdeRecord = HakukohdeRecord(hakukohdeOid, hakuOid = hakuOid,
-      yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true, Kausi("2016K"))
+    val hakukohdeRecord = YPSHakukohde(hakukohdeOid, hakuOid, Kausi("2016K"))
 
-    val julkaistuKoulutus = Koulutus("1.2.246.562.17.42423443434", Kausi("2016S"), "JULKAISTU", true, Seq(), Seq(), None, None, None)
     val yhdenpaikansaanto = YhdenPaikanSaanto(voimassa = true, "Korkeakoulutus ilman kohdejoukon tarkennetta")
-    val hakukohdeFromTarjonta = Hakukohde(hakukohdeOid, hakuOid, Set("123.123.123.123"), List(julkaistuKoulutus.oid), "KORKEAKOULUTUS", "TUTKINTO",
-      Map("kieli_fi" -> "Hakukohteen nimi"), Map("fi" -> "Tarjoajan nimi"), yhdenPaikanSaanto = yhdenpaikansaanto, true, "kausi_k#1", 2016,
+    val hakukohdeFromTarjonta = Hakukohde(
+      oid = hakukohdeOid,
+      hakuOid = hakuOid,
+      tarjoajaOids = Set("123.123.123.123"),
+      koulutusAsteTyyppi = "KORKEAKOULUTUS",
+      hakukohteenNimet = Map("kieli_fi" -> "Hakukohteen nimi"),
+      tarjoajaNimet = Map("fi" -> "Tarjoajan nimi"),
+      yhdenPaikanSaanto = yhdenpaikansaanto,
+      tutkintoonJohtava = true,
+      koulutuksenAlkamiskausiUri = Some("kausi_k#1"),
+      koulutuksenAlkamisvuosi = Some(2016),
       organisaatioRyhmaOids = Set())
 
     val hakuFromTarjonta: Haku = Haku(

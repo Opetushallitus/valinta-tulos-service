@@ -22,9 +22,7 @@ class NewestVastaanottoEventsViewSpec extends Specification with ITSetup with Va
   sequential
   step(appConfig.start)
   step(deleteAll())
-  step(singleConnectionValintarekisteriDb.runBlocking(
-    sqlu"""insert into hakukohteet (hakukohde_oid, haku_oid, kk_tutkintoon_johtava, yhden_paikan_saanto_voimassa, koulutuksen_alkamiskausi)
-           values ($hakukohdeOid, $hakuOid, true, true, '2015K')"""))
+  step(singleConnectionValintarekisteriDb.storeHakukohde(YPSHakukohde(hakukohdeOid, hakuOid, Kevat(2015))))
 
   "View" should {
     "have vastaanotto for A without linked persons" in {

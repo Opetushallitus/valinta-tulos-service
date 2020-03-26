@@ -23,9 +23,7 @@ object VastaanottoStoreTester extends App with Logging {
   private val hakukohdeOid = HakukohdeOid("1.2.246.561.20.00000000001")
   private val hakuOid = HakuOid("1.2.246.561.29.00000000001")
 
-  valintarekisteriDb.runBlocking(
-    sqlu"""insert into hakukohteet (hakukohde_oid, haku_oid, kk_tutkintoon_johtava, yhden_paikan_saanto_voimassa, koulutuksen_alkamiskausi)
-           values (${hakukohdeOid.toString}, ${hakuOid.toString}, true, true, '2015K')""")
+  valintarekisteriDb.storeHakukohde(YPSHakukohde(hakukohdeOid, hakuOid, Kevat(2015)))
 
   val r = Random
   val concurrency = 60

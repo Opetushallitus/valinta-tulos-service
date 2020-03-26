@@ -4,7 +4,7 @@ import java.time.Instant
 import java.util.ConcurrentModificationException
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.{GoneException, HyvaksynnanEhto}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, HakukohdeRecord, Hyvaksytty, Kausi, ValinnantilanTallennus, ValintatapajonoOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiKktutkintoonJohtavaHakukohde, HakemusOid, HakuOid, HakukohdeOid, HakukohdeRecord, Hyvaksytty, Kausi, ValinnantilanTallennus, ValintatapajonoOid}
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
@@ -32,7 +32,7 @@ class ValintarekisteriDbHyvaksynnanEhtoSpec extends Specification with ITSetup w
   val hakukohdeOid = HakukohdeOid("1.2.246.562.20.00000000001")
   val ehto = HyvaksynnanEhto("muu", "muu", "andra", "other")
   val ilmoittaja = "1.2.246.562.24.00000000002"
-  val hakukohdeRecord = HakukohdeRecord(hakukohdeOid, HakuOid(""), false, false, Kausi("2000S"))
+  val hakukohdeRecord = EiKktutkintoonJohtavaHakukohde(hakukohdeOid, HakuOid(""), Some(Kausi("2000S")))
   val valinnantilanTallennus = ValinnantilanTallennus(
     hakemusOid,
     ValintatapajonoOid("valintatapajonoOid"),

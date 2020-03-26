@@ -151,7 +151,12 @@ case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends js
   }
 
   private def storeHakukohde(hakukohdeOid: String, hakuOid: String, sijoitteluajoId: Long, kaikkiJonotSijoiteltu: Boolean, yhdenPaikanSaantoVoimassa: Boolean, kktutkintoonJohtava: Boolean) = {
-    valintarekisteriDb.storeHakukohde(HakukohdeRecord(HakukohdeOid(hakukohdeOid), HakuOid(hakuOid), yhdenPaikanSaantoVoimassa, kktutkintoonJohtava, Kevat(2016)))
+    valintarekisteriDb.storeHakukohde((yhdenPaikanSaantoVoimassa, kktutkintoonJohtava) match {
+      case (true, true) => YPSHakukohde(HakukohdeOid(hakukohdeOid), HakuOid(hakuOid), Kevat(2016))
+      case (false, true) => EiYPSHakukohde(HakukohdeOid(hakukohdeOid), HakuOid(hakuOid), Kevat(2016))
+      case (false, false) => EiKktutkintoonJohtavaHakukohde(HakukohdeOid(hakukohdeOid), HakuOid(hakuOid), Some(Kevat(2016)))
+      case (true, false) => throw new RuntimeException("")
+    })
   }
 
   private val deleteFromVastaanotot = DBIO.seq(
@@ -177,6 +182,9 @@ case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends js
       sqlu"truncate table jonosijat cascade",
       sqlu"truncate table valintatapajonot cascade",
       sqlu"truncate table sijoitteluajon_hakukohteet cascade",
+      sqlu"truncate table yhden_paikan_saanto_voimassa cascade",
+      sqlu"truncate table kk_tutkintoon_johtava cascade",
+      sqlu"truncate table koulutuksen_alkamiskausi cascade",
       sqlu"truncate table hakukohteet cascade",
       sqlu"truncate table sijoitteluajot cascade",
       sqlu"truncate table lukuvuosimaksut cascade",

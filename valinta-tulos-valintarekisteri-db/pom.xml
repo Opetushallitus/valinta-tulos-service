@@ -36,6 +36,23 @@
         </dependency>
         <dependency>
             <groupId>fi.vm.sade</groupId>
+            <artifactId>scala-cas_2.11</artifactId>
+            <version>${scala-cas_2.11.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.http4s</groupId>
+            <artifactId>http4s-blaze-client_2.11</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.http4s</groupId>
+            <artifactId>blaze-http_2.11</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.http4s</groupId>
+            <artifactId>http4s-json4s-native_2.11</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>fi.vm.sade</groupId>
             <artifactId>scala-json_2.11</artifactId>
         </dependency>
         <dependency>
