@@ -781,7 +781,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   override def deleteValinnantulos(muokkaaja:String, valinnantulos: Valinnantulos, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
     deleteViestit(valinnantulos.hakukohdeOid, valinnantulos.hakemusOid)
       .andThen(deleteValinnantuloksenOhjaus(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince))
-      .andThen(deleteTilatKuvaukset(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince))
+      .andThen(deleteTilatKuvaukset(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid))
       .andThen(deleteValinnantila(valinnantulos.getValinnantilanTallennus(muokkaaja), ifUnmodifiedSince))
       .transactionally
   }
