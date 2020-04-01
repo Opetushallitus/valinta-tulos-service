@@ -786,16 +786,11 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       .transactionally
   }
 
-  private def deleteTilatKuvaukset(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
+  private def deleteTilatKuvaukset(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid): DBIO[Unit] = {
     sqlu"""delete from tilat_kuvaukset
           where hakukohde_oid = $hakukohdeOid
                and hakemus_oid = $hakemusOid
-               and valintatapajono_oid = $valintatapajonoOid
-               and ($ifUnmodifiedSince::timestamptz is null
-                   or system_time @> $ifUnmodifiedSince)""".flatMap {
-      case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Tilat kuvaukset ($hakukohdeOid, $valintatapajonoOid, $hakemusOid) ei voitu poistaa, koska joku oli muokannut sitä ${format(ifUnmodifiedSince)} jälkeen"))
-    }
+               and valintatapajono_oid = $valintatapajonoOid""".map(_ => ())
   }
 
   private def deleteValinnantila(tila: ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
