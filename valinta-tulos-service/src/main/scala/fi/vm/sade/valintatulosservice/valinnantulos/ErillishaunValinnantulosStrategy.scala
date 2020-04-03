@@ -188,6 +188,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
     def createUpdateOperations(vanha: Valinnantulos) = {
       logger.info("VANHA.henkiloOid: " + vanha.henkiloOid)
       logger.info(s"UUSI.getEhdollisenHyvaksynnanEhto: " + uusi.getEhdollisenHyvaksynnanEhto)
+      logger.info(s"VANHA.getEhdollisenHyvaksynnanEhto.isDefined: " + vanha.getEhdollisenHyvaksynnanEhto.isDefined)
       List(
         Option(uusi.valinnantila != vanha.valinnantila).collect { case true =>
           valinnantulosRepository.storeValinnantila(uusi.getValinnantilanTallennus(muokkaaja), ifUnmodifiedSince)
