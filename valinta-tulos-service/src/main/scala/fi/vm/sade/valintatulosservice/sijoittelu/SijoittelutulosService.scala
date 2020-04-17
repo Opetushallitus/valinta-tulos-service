@@ -166,7 +166,8 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
 
     val hakutoiveidenYhteenvedot = hakija.getHakutoiveet.toList.map { hakutoive: HakutoiveDTO =>
       val vastaanotto = vastaanottoRecords.find(v => v.hakukohdeOid.toString == hakutoive.getHakukohdeOid)
-      val jono = JonoFinder.merkitseväJono(hakutoive).get
+      val jonot = JonoFinder.järjestäJonotPrioriteetinMukaan(hakutoive)
+      val jono = jonot.headOption.get
       val valintatila = jononValintatila(jono, hakutoive)
 
       val hakutoiveenHyvaksyttyJaJulkaistuDate = hyvaksyttyJulkaistuDates.get(HakukohdeOid(hakutoive.getHakukohdeOid))
@@ -198,7 +199,11 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
         ehdollisenHyvaksymisenEhtoFI = Option(jono.getEhdollisenHyvaksymisenEhtoFI),
         ehdollisenHyvaksymisenEhtoSV = Option(jono.getEhdollisenHyvaksymisenEhtoSV),
         ehdollisenHyvaksymisenEhtoEN = Option(jono.getEhdollisenHyvaksymisenEhtoEN),
-        jono.getTilanKuvaukset.toMap,
+        (if (fromHakemuksenTila(jono.getTila) == Valintatila.hylätty) {
+          jonot.last.getTilanKuvaukset
+        } else {
+          jono.getTilanKuvaukset
+        }).toMap,
         pisteet,
         jonokohtaisetTulostiedot = hakutoive
           .getHakutoiveenValintatapajonot
