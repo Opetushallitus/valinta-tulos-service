@@ -9,16 +9,16 @@ import org.joda.time.{DateTime, DateTimeZone}
 
 object VastaanottoUtils {
 
-  def ehdollinenVastaanottoMahdollista(ohjausparametrit: Option[Ohjausparametrit]): Boolean = {
+  def ehdollinenVastaanottoMahdollista(ohjausparametrit: Ohjausparametrit): Boolean = {
     val now: DateTime = new DateTime()
-    val varasijaSaannotVoimassa = ohjausparametrit.flatMap(_.varasijaSaannotAstuvatVoimaan).fold(true)(_.isBefore(now))
-    val kaikkiJonotSijoittelussa = ohjausparametrit.flatMap(_.kaikkiJonotSijoittelussa).fold(true)(_.isBefore(now))
+    val varasijaSaannotVoimassa = ohjausparametrit.varasijaSaannotAstuvatVoimaan.forall(_.isBefore(now))
+    val kaikkiJonotSijoittelussa = ohjausparametrit.kaikkiJonotSijoittelussa.forall(_.isBefore(now))
     varasijaSaannotVoimassa && kaikkiJonotSijoittelussa
   }
 
-  def laskeVastaanottoDeadline(ohjausparametrit: Option[Ohjausparametrit], hakutoiveenHyvaksyttyJaJulkaistuDate: Option[OffsetDateTime]): Option[DateTime] = {
-    ohjausparametrit.map(_.vastaanottoaikataulu) match {
-      case Some(Vastaanottoaikataulu(Some(deadlineFromHaku), buffer)) =>
+  def laskeVastaanottoDeadline(ohjausparametrit: Ohjausparametrit, hakutoiveenHyvaksyttyJaJulkaistuDate: Option[OffsetDateTime]): Option[DateTime] = {
+    ohjausparametrit.vastaanottoaikataulu match {
+      case Vastaanottoaikataulu(Some(deadlineFromHaku), buffer) =>
         val deadlineFromHakemuksenTilanMuutos = getDeadlineWithBuffer(ohjausparametrit, hakutoiveenHyvaksyttyJaJulkaistuDate, buffer, deadlineFromHaku)
         val deadlines = Some(deadlineFromHaku) ++ deadlineFromHakemuksenTilanMuutos
         Some(deadlines.maxBy((a: DateTime) => a.getMillis))
@@ -26,13 +26,13 @@ object VastaanottoUtils {
     }
   }
 
-  private def getDeadlineWithBuffer(ohjausparametrit: Option[Ohjausparametrit], hakutoiveenHyvaksyttyJaJulkaistuOption: Option[OffsetDateTime], bufferOption: Option[Int], deadline: DateTime): Option[DateTime] = {
+  private def getDeadlineWithBuffer(ohjausparametrit: Ohjausparametrit, hakutoiveenHyvaksyttyJaJulkaistuOption: Option[OffsetDateTime], bufferOption: Option[Int], deadline: DateTime): Option[DateTime] = {
     for {
       viimeisinMuutos <- hakutoiveenHyvaksyttyJaJulkaistuOption.map(d => new DateTime(
         d.toInstant.toEpochMilli,
         DateTimeZone.forOffsetMillis(Math.toIntExact(TimeUnit.SECONDS.toMillis(d.getOffset.getTotalSeconds)))
       ))
-      haunValintaesitysHyvaksyttavissa: DateTime <- ohjausparametrit.map(_.valintaesitysHyvaksyttavissa.getOrElse(new DateTime(0)))
+      haunValintaesitysHyvaksyttavissa = ohjausparametrit.valintaesitysHyvaksyttavissa.getOrElse(new DateTime(0))
       buffer <- bufferOption
     } yield max(viimeisinMuutos, haunValintaesitysHyvaksyttavissa).plusDays(buffer).withZone(DateTimeZone.forID("Europe/Helsinki")).withTime(deadline.getHourOfDay, deadline.getMinuteOfHour, deadline.getSecondOfMinute, deadline.getMillisOfSecond)
   }

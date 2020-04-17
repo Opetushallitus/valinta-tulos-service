@@ -32,7 +32,7 @@ object HakutoiveenIlmoittautumistila {
 
   def getIlmoittautumistila(sijoitteluTila: HakutoiveenSijoitteluntulos,
                             haku: Haku,
-                            ohjausparametrit: Option[Ohjausparametrit],
+                            ohjausparametrit: Ohjausparametrit,
                             hasHetu: Boolean)(implicit appConfig: VtsAppConfig): HakutoiveenIlmoittautumistila = {
     val ilmoittautumistapa = if(haku.korkeakoulu) {
       if (hasHetu) {
@@ -44,7 +44,7 @@ object HakutoiveenIlmoittautumistila {
     else {
       None
     }
-    val ilmottautumisaika = Ilmoittautumisaika(None, ohjausparametrit.flatMap(_.ilmoittautuminenPaattyy.map(new DateTime(_).withTime(23,59,59,999))))
+    val ilmottautumisaika = Ilmoittautumisaika(None, ohjausparametrit.ilmoittautuminenPaattyy.map(new DateTime(_).withTime(23,59,59,999)))
     val ilmottauduttavissa = appConfig.settings.ilmoittautuminenEnabled && sijoitteluTila.vastaanottotila == Vastaanottotila.vastaanottanut && ilmottautumisaika.aktiivinen && sijoitteluTila.ilmoittautumistila == EiTehty
     HakutoiveenIlmoittautumistila(ilmottautumisaika, ilmoittautumistapa, sijoitteluTila.ilmoittautumistila, ilmottauduttavissa)
   }

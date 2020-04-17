@@ -8,7 +8,7 @@ import fi.vm.sade.valintatulosservice.SharedJetty
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Ensikertalaisuus
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Ensikertalaisuus, HakuOid, HakukohdeOid, Kevat, YPSHakukohde}
 import org.json4s.jackson.Serialization
 import slick.jdbc.PostgresProfile.api._
 
@@ -21,16 +21,12 @@ object EnsikertalaisuusBatchAPITester extends App with Logging {
   implicit val formats = EnsikertalaisuusServlet.ensikertalaisuusJsonFormats
   implicit val appConfig = new VtsAppConfig.IT
   private val dbConfig = appConfig.settings.valintaRekisteriDbConfig
-  lazy val valintarekisteriDb = new ValintarekisteriDb(
-    dbConfig.copy(maxConnections = Some(1), minConnections = Some(1))).db
+  val valintarekisteriDb = new ValintarekisteriDb(dbConfig.copy(maxConnections = Some(1), minConnections = Some(1)))
   SharedJetty.start
   private val testDataSize = appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids
   val oids = 1.to(testDataSize).map(i => s"1.2.246.562.24.$i")
 
-  Await.ready(valintarekisteriDb.run(
-    sqlu"""insert into hakukohteet (hakukohde_oid, haku_oid, kk_tutkintoon_johtava, koulutuksen_alkamiskausi, yhden_paikan_saanto_voimassa)
-             values ('1.2.246.561.20.00000000001', '1.2.246.561.29.00000000001', true, '2015K', true)"""
-  ), Duration(1, TimeUnit.SECONDS))
+  valintarekisteriDb.storeHakukohde(YPSHakukohde(HakukohdeOid("1.2.246.561.20.00000000001"), HakuOid("1.2.246.561.29.00000000001"), Kevat(2015)))
   val henkilot = insertHenkilos()
   insertHenkiloviitteet(henkilot)
 
@@ -53,7 +49,7 @@ object EnsikertalaisuusBatchAPITester extends App with Logging {
 
   private def insertHenkilos(): (List[String], List[String]) = {
     println(s"***** Inserting $testDataSize rows of test data. This might take a while...")
-    Await.result(valintarekisteriDb.run(SimpleDBIO[(List[String], List[String])](jdbcActionContext => {
+    Await.result(valintarekisteriDb.db.run(SimpleDBIO[(List[String], List[String])](jdbcActionContext => {
       val insertStatement = jdbcActionContext.connection.prepareStatement(
         """insert into vastaanotot (henkilo, hakukohde, ilmoittaja, action, selite)
          values (?, '1.2.246.561.20.00000000001', 'ilmoittaja', ?::vastaanotto_action, 'testiselite')""")
@@ -88,7 +84,7 @@ object EnsikertalaisuusBatchAPITester extends App with Logging {
         val n = Random.nextInt(4) + 1
         groupHenkilot(rest, eiVastaanottaneet.drop(n), Random.shuffle(oid +: eiVastaanottaneet.take(n)) +: groups)
     }
-    Await.ready(valintarekisteriDb.run(SimpleDBIO[Unit](jdbcActionContext => {
+    Await.ready(valintarekisteriDb.db.run(SimpleDBIO[Unit](jdbcActionContext => {
       val insert = jdbcActionContext.connection.prepareStatement(
         "insert into henkiloviitteet (person_oid, linked_oid) values (?, ?)")
       try {

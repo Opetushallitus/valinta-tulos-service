@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
-import fi.vm.sade.valintatulosservice.config.{VtsAppConfig, VtsDynamicAppConfig}
+import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemus, HakemusFixtures}
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.Henkilo
@@ -11,7 +11,6 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 
 trait ITSetup {
   implicit val appConfig = new VtsAppConfig.IT
-  implicit val dynamicAppConfig: VtsDynamicAppConfig = VtsAppConfig.MockDynamicAppConfig(näytetäänSiirryKelaanURL= true)
   val dbConfig = appConfig.settings.valintaRekisteriDbConfig
 
   lazy val singleConnectionValintarekisteriDb = new ValintarekisteriDb(

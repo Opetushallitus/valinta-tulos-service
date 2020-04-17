@@ -29,4 +29,4 @@ class OrganizationHierarchyAuthorizer(appConfig: VtsAppConfig) extends fi.vm.sad
 }
 
 class OrganizationOidProvider(appConfig: VtsAppConfig) extends fi.vm.sade.authorization.OrganizationOidProvider(
-  appConfig.settings.rootOrganisaatioOid, appConfig.settings.organisaatioServiceUrl, appConfig.callerId)
+  appConfig.settings.rootOrganisaatioOid, appConfig.settings.organisaatioServiceUrl, appConfig.settings.callerId)

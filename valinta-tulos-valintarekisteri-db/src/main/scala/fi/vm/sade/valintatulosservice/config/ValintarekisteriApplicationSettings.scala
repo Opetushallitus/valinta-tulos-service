@@ -6,6 +6,7 @@ import org.apache.commons.lang3.BooleanUtils
 
 abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.config.ApplicationSettings(config) {
 
+  val callerId = "1.2.246.562.10.00000000001.valinta-tulos-service"
   val tarjontaUrl = withConfig(_.getString("tarjonta-service.url"))
   val valintaRekisteriDbConfig = DbConfig(
     url = config.getString("valinta-tulos-service.valintarekisteri.db.url"),
@@ -19,6 +20,8 @@ abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.conf
     initializationFailTimeout = getLong(config, "valinta-tulos-service.valintarekisteri.db.initializationFailFast"),
     leakDetectionThresholdMillis = getLong(config, "valinta-tulos-service.valintarekisteri.db.leakDetectionThresholdMillis")
   )
+  val koutaUsername = config.getString("valinta-tulos-service.cas.username")
+  val koutaPassword = config.getString("valinta-tulos-service.cas.password")
   withConfig(_.getConfig("valinta-tulos-service.valintarekisteri.db"))
   val lenientTarjontaDataParsing: Boolean = BooleanUtils.isTrue(withConfig(_.getBoolean("valinta-tulos-service.parseleniently.tarjonta")))
   val estimatedMaxActiveHakus: Long = 6000

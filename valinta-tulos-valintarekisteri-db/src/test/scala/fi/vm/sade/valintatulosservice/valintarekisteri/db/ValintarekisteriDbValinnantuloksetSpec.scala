@@ -41,9 +41,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
     step(appConfig.start)
   override def before: Any = {
     deleteAll()
-    singleConnectionValintarekisteriDb.runBlocking(
-      sqlu"""insert into hakukohteet (hakukohde_oid, haku_oid, kk_tutkintoon_johtava, yhden_paikan_saanto_voimassa, koulutuksen_alkamiskausi)
-           values (${hakukohdeOid}, ${hakuOid}, true, true, '2015K')""")
+    singleConnectionValintarekisteriDb.storeHakukohde(YPSHakukohde(hakukohdeOid, hakuOid, Kevat(2015)))
   }
 
   "ValintarekisteriDb" should {

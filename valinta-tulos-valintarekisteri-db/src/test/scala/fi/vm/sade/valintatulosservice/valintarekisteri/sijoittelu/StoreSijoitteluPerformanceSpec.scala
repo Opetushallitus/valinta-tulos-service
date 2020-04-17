@@ -68,7 +68,7 @@ class StoreSijoitteluPerformanceSpec extends Specification with ITSetup with Val
 
   def testStoreSijoittelu(sijoitteluWrapper:SijoitteluWrapper, times:Int = 1): Unit = {
     sijoitteluWrapper.hakukohteet.foreach(h =>
-      singleConnectionValintarekisteriDb.storeHakukohde(HakukohdeRecord(HakukohdeOid(h.getOid), hakuOid, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true, Kevat(2017)))
+      singleConnectionValintarekisteriDb.storeHakukohde(YPSHakukohde(HakukohdeOid(h.getOid), hakuOid, Kevat(2017)))
     )
     val stopWatch = new StopWatch()
     storeSijoittelu(sijoitteluWrapper, stopWatch, times)

@@ -9,11 +9,12 @@ import fi.vm.sade.valintatulosservice.config.EmailerRegistry.EmailerRegistry
 import fi.vm.sade.valintatulosservice.vastaanottomeili.EmailerServlet
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.{Dev, IT, VtsAppConfig}
-import fi.vm.sade.valintatulosservice.config.{OhjausparametritAppConfig, VtsAppConfig}
+import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusRepository, HakuAppRepository}
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetailsService
 import fi.vm.sade.valintatulosservice.kela.{KelaService, VtsKelaAuthenticationClient}
+import fi.vm.sade.valintatulosservice.koodisto.KoodistoService
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
@@ -56,11 +57,11 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new FixtureServlet(valintarekisteriDb), "/util")
       SijoitteluFixtures(valintarekisteriDb).importFixture("hyvaksytty-kesken-julkaistavissa.json")
     }
-    implicit lazy val dynamicAppConfig = new OhjausparametritAppConfig(appConfig.ohjausparametritService)
 
-    lazy val hakuService = HakuService(appConfig)
-    lazy val oppijanTunnistusService = OppijanTunnistusService(appConfig.settings)
     lazy val organisaatioService = OrganisaatioService(appConfig)
+    lazy val koodistoService = new KoodistoService(appConfig)
+    lazy val hakuService = HakuService(appConfig, appConfig.securityContext.casClient, organisaatioService, koodistoService)
+    lazy val oppijanTunnistusService = OppijanTunnistusService(appConfig.settings)
     lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig, appConfig.isInstanceOf[IT])
     lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing)
     lazy val sijoitteluService = new SijoitteluService(valintarekisteriDb, authorizer, hakuService, audit)
@@ -75,15 +76,14 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         new ValintarekisteriHakijaDTOClientImpl(valintarekisteriRaportointiService, valintarekisteriSijoittelunTulosClient, valintarekisteriDb))
     lazy val sijoittelutulosService = new SijoittelutulosService(raportointiService,
         appConfig.ohjausparametritService, valintarekisteriDb, sijoittelunTulosClient)
-    lazy val vastaanotettavuusService = new VastaanotettavuusService(hakukohdeRecordService, valintarekisteriDb)
     lazy val hakuAppRepository = new HakuAppRepository()
     lazy val ataruHakemusRepository = new AtaruHakemusRepository(appConfig)
     lazy val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
     lazy val ataruHakemusTarjontaEnricher = new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService)
     lazy val hakemusRepository = new HakemusRepository(hakuAppRepository, ataruHakemusRepository, ataruHakemusTarjontaEnricher)
-    lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, vastaanotettavuusService, sijoittelutulosService, hakemusRepository, valintarekisteriDb, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, hakijaDTOClient)(appConfig,dynamicAppConfig)
+    lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, hakemusRepository, valintarekisteriDb, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, hakijaDTOClient)(appConfig)
     lazy val streamingValintatulosService = new StreamingValintatulosService(valintatulosService, valintarekisteriDb, hakijaDTOClient)(appConfig)
-    lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, vastaanotettavuusService, valintatulosService, valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, hakemusRepository, valintarekisteriDb)
+    lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, valintatulosService, valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, hakemusRepository, valintarekisteriDb)
     lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService, valintarekisteriDb, valintarekisteriDb)
 
     lazy val authorizer = new OrganizationHierarchyAuthorizer(appConfig)
@@ -117,7 +117,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new CasLogin(
         appConfig.settings.securitySettings.casUrl,
         new CasSessionService(
-          appConfig.securityContext.casClient,
+          appConfig.securityContext,
           appConfig.securityContext.casServiceIdentifier + "/auth/login",
           userDetailsService,
           valintarekisteriDb
@@ -140,7 +140,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new NoAuthSijoitteluServlet(sijoitteluService), "/sijoittelu", "sijoittelu")
 
       val casSessionService = new CasSessionService(
-        appConfig.securityContext.casClient,
+        appConfig.securityContext,
         appConfig.securityContext.casServiceIdentifier,
         userDetailsService,
         valintarekisteriDb
@@ -160,7 +160,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         hakemustenTulosHakuLock
       ),
         "/cas/haku", "cas/haku")
-      context.mount(new KelaServlet(audit, new KelaService(HakijaResolver(appConfig), hakuService, organisaatioService, valintarekisteriDb), valintarekisteriDb), "/cas/kela", "cas/kela")
+      context.mount(new KelaServlet(audit, new KelaService(HakijaResolver(appConfig), hakuService, valintarekisteriDb), valintarekisteriDb), "/cas/kela", "cas/kela")
       context.mount(new KelaHealthCheckServlet(audit, valintarekisteriDb, appConfig, new VtsKelaAuthenticationClient(appConfig)), "/health-check/kela", "health-check/kela")
 
       val valintaesitysService = new ValintaesitysService(hakuService, authorizer, valintarekisteriDb, valintarekisteriDb, audit)

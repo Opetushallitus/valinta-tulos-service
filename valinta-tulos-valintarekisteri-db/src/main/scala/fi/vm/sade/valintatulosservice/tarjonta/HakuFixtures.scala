@@ -57,7 +57,7 @@ object HakuFixtures extends HakuService with JsonHakuService {
     })
   }
 
-  override def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, HakukohdeKela] = {
+  override def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]] = {
     Left(new UnsupportedOperationException("Not implemented"))
   }
   override def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[Hakukohde]] ={
@@ -67,18 +67,43 @@ object HakuFixtures extends HakuService with JsonHakuService {
     val hakuOid = hakuOids.head
     // TODO: Saner / more working test data
     if (activeFixture == toinenAsteYhteishaku || activeFixture == toinenAsteErillishakuEiSijoittelua) {
-      Right(Hakukohde(oid, hakuOid, Set("123.123.123.123"), List("koulu.tus.oid"), "AMMATILLINEN_PERUSKOULUTUS", "TUTKINTO_OHJELMA",
-        Map("kieli_fi" -> "Lukion ilmaisutaitolinja"), Map("fi" -> "Kallion lukio"), YhdenPaikanSaanto(false, "testihakukohde"), false, "kausi_k#1", 2016,
+      Right(Hakukohde(
+        oid,
+        hakuOid,
+        Set("123.123.123.123"),
+        "AMMATILLINEN_PERUSKOULUTUS",
+        Map("kieli_fi" -> "Lukion ilmaisutaitolinja"),
+        Map("fi" -> "Kallion lukio"),
+        YhdenPaikanSaanto(false, "testihakukohde"),
+        false,
+        Some("kausi_k#1"),
+        Some(2016),
         organisaatioRyhmaOids = Set()))
     } else if (activeFixture == ataruHaku) {
-      Right(Hakukohde(oid, hakuOid, Set("1.2.246.562.10.72985435253"), List("1.2.246.562.17.12447198271"), "KORKEAKOULUTUS",
-      "TUTKINTO", Map("kieli_fi" -> "Ataru testihakukohde"), Map("fi" -> "Aalto-yliopisto, Insinööritieteiden korkeakoulu"),
-        YhdenPaikanSaanto(true, "Haun kohdejoukon tarkenne on 'haunkohdejoukontarkenne_3#1'"), false, "kausi_s#1", 2017,
+      Right(Hakukohde(
+        oid,
+        hakuOid,
+        Set("1.2.246.562.10.72985435253"),
+        "KORKEAKOULUTUS",
+        Map("kieli_fi" -> "Ataru testihakukohde"),
+        Map("fi" -> "Aalto-yliopisto, Insinööritieteiden korkeakoulu"),
+        YhdenPaikanSaanto(true, "Haun kohdejoukon tarkenne on 'haunkohdejoukontarkenne_3#1'"),
+        true,
+        Some("kausi_s#1"),
+        Some(2017),
         organisaatioRyhmaOids = Set()))
     } else {
-      Right(Hakukohde(oid, hakuOid, Set("123.123.123.123"), List("koulu.tus.oid"), "KORKEAKOULUTUS", "TUTKINTO",
-        Map("kieli_fi" -> "Lukion ilmaisutaitolinja"), Map("fi" -> "Kallion lukio"), YhdenPaikanSaanto(
-          activeFixture != korkeakouluErillishakuEiYhdenPaikanSaantoa, "testihakukohde"), true, "kausi_k#1", 2016,
+      Right(Hakukohde(
+        oid,
+        hakuOid,
+        Set("123.123.123.123"),
+        "KORKEAKOULUTUS",
+        Map("kieli_fi" -> "Lukion ilmaisutaitolinja"),
+        Map("fi" -> "Kallion lukio"),
+        YhdenPaikanSaanto(activeFixture != korkeakouluErillishakuEiYhdenPaikanSaantoa, "testihakukohde"),
+        true,
+        Some("kausi_k#1"),
+        Some(2016),
         organisaatioRyhmaOids = Set()))
     }
   }
@@ -94,13 +119,4 @@ object HakuFixtures extends HakuService with JsonHakuService {
     "1.2.246.562.5.72607738903",
     "1.2.246.562.5.72607738904"
   ).map(HakukohdeOid))
-
-  override def getArbitraryPublishedHakukohdeOid(hakuOid: HakuOid): Either[Throwable, HakukohdeOid] =
-    getHakukohdeOids(hakuOid).right.map(_.head)
-
-  private def sequence[A, B](xs: Stream[Either[B, A]]): Either[B, List[A]] = xs match {
-    case Stream.Empty => Right(Nil)
-    case Left(e)#::_ => Left(e)
-    case Right(x)#::rest => sequence(rest).right.map(x +: _)
-  }
 }

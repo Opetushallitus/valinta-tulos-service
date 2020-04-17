@@ -533,9 +533,6 @@ class MailPollerSpec extends Specification with MockitoMatchers {
     val hakuaikaIdA = "hakuaika_a_id"
     val hakuaikaAlkuA = Some(1l)
     val hakuaikaLoppuA = Some(2l)
-    val koulutusOidA = "1.2.246.562.17.00000000001"
-    val koulutusOidB = "1.2.246.562.17.00000000002"
-    val koulutusOidC = "1.2.246.562.17.00000000003"
     val valintatapajonoOidA = ValintatapajonoOid("14538080612623056182813241345174")
     val valintatapajonoOidB = ValintatapajonoOid("14538080612623056182813241345175")
     val valintatapajonoOidC = ValintatapajonoOid("14538080612623056182813241345176")
@@ -561,45 +558,39 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakuOid = hakuOidA,
       tarjoajaOids = Set(tarjoajaOidA),
       organisaatioRyhmaOids = Set(),
-      hakukohdeKoulutusOids = List(koulutusOidA),
       koulutusAsteTyyppi = "KORKEAKOULUTUS",
-      koulutusmoduuliTyyppi = "",
       hakukohteenNimet = hakukohdeNimetA,
       tarjoajaNimet = tarjoajaNimetA,
       yhdenPaikanSaanto = yhdenPaikanSaantoA,
       tutkintoonJohtava = true,
-      koulutuksenAlkamiskausiUri = "kausi_k#1",
-      koulutuksenAlkamisvuosi = 2018
+      koulutuksenAlkamiskausiUri = Some("kausi_k#1"),
+      koulutuksenAlkamisvuosi = Some(2018)
     )
     val tarjontaHakukohdeB = tarjonta.Hakukohde(
       oid = hakukohdeOidB,
       hakuOid = hakuOidA,
       tarjoajaOids = Set(tarjoajaOidB),
       organisaatioRyhmaOids = Set(),
-      hakukohdeKoulutusOids = List(koulutusOidB),
       koulutusAsteTyyppi = "KORKEAKOULUTUS",
-      koulutusmoduuliTyyppi = "",
       hakukohteenNimet = hakukohdeNimetB,
       tarjoajaNimet = tarjoajaNimetB,
       yhdenPaikanSaanto = yhdenPaikanSaantoA,
       tutkintoonJohtava = true,
-      koulutuksenAlkamiskausiUri = "kausi_k#1",
-      koulutuksenAlkamisvuosi = 2018
+      koulutuksenAlkamiskausiUri = Some("kausi_k#1"),
+      koulutuksenAlkamisvuosi = Some(2018)
     )
     val tarjontaHakukohdeC = tarjonta.Hakukohde(
       oid = hakukohdeOidC,
       hakuOid = hakuOidA,
       tarjoajaOids = Set(tarjoajaOidC),
       organisaatioRyhmaOids = Set(),
-      hakukohdeKoulutusOids = List(koulutusOidC),
       koulutusAsteTyyppi = "KORKEAKOULUTUS",
-      koulutusmoduuliTyyppi = "",
       hakukohteenNimet = hakukohdeNimetC,
       tarjoajaNimet = tarjoajaNimetC,
       yhdenPaikanSaanto = yhdenPaikanSaantoA,
       tutkintoonJohtava = true,
-      koulutuksenAlkamiskausiUri = "kausi_k#1",
-      koulutuksenAlkamisvuosi = 2018
+      koulutuksenAlkamiskausiUri = Some("kausi_k#1"),
+      koulutuksenAlkamisvuosi = Some(2018)
     )
     val hakemusA = Hakemus(
       oid = hakemusOidA,
@@ -669,10 +660,10 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakuOid = hakuOidA,
       hakemusOid = hakemusOidA,
       hakijaOid = hakijaOidA,
-      aikataulu = Some(Vastaanottoaikataulu(
+      aikataulu = Vastaanottoaikataulu(
         deadlineA.map(new DateTime(_)),
         vastaanottoBufferA
-      )),
+      ),
       hakutoiveet = List(Hakutoiveentulos(
         hakukohdeOid = hakukohdeOidA,
         hakukohdeNimi = hakukohdeNimetA("fi"),
@@ -722,10 +713,10 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakuOid = hakuOidA,
       hakemusOid = hakemusOidB,
       hakijaOid = hakijaOidB,
-      aikataulu = Some(Vastaanottoaikataulu(
+      aikataulu = Vastaanottoaikataulu(
         deadlineA.map(new DateTime(_)),
         vastaanottoBufferA
-      )),
+      ),
       hakutoiveet = List(Hakutoiveentulos(
         hakukohdeOid = hakukohdeOidA,
         hakukohdeNimi = hakukohdeNimetA("fi"),
@@ -775,10 +766,10 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakuOid = hakuOidA,
       hakemusOid = hakemusOidC,
       hakijaOid = hakijaOidC,
-      aikataulu = Some(Vastaanottoaikataulu(
+      aikataulu = Vastaanottoaikataulu(
         deadlineA.map(new DateTime(_)),
         vastaanottoBufferA
-      )),
+      ),
       hakutoiveet = List(
         Hakutoiveentulos(
           hakukohdeOid = hakukohdeOidC,
@@ -917,10 +908,10 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakuOid = hakuOidA,
       hakemusOid = hakemusOidC,
       hakijaOid = hakijaOidC,
-      aikataulu = Some(Vastaanottoaikataulu(
+      aikataulu = Vastaanottoaikataulu(
         deadlineA.map(new DateTime(_)),
         vastaanottoBufferA
-      )),
+      ),
       hakutoiveet = List(
         Hakutoiveentulos(
           hakukohdeOid = hakukohdeOidC,
@@ -1059,10 +1050,10 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakuOid = hakuOidA,
       hakemusOid = hakemusOidC,
       hakijaOid = hakijaOidC,
-      aikataulu = Some(Vastaanottoaikataulu(
+      aikataulu = Vastaanottoaikataulu(
         deadlineA.map(new DateTime(_)),
         vastaanottoBufferA
-      )),
+      ),
       hakutoiveet = List(
         Hakutoiveentulos(
           hakukohdeOid = hakukohdeOidC,

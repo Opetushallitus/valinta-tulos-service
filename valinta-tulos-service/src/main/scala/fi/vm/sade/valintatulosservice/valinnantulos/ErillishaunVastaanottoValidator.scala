@@ -9,7 +9,7 @@ import slick.dbio.DBIO
 
 class ErillishaunVastaanottoValidator(val haku: Haku,
                                       val hakukohdeOid: HakukohdeOid,
-                                      val ohjausparametrit: Option[Ohjausparametrit],
+                                      val ohjausparametrit: Ohjausparametrit,
                                       val valinnantulosRepository: ValinnantulosRepository with HakijaVastaanottoRepository)
   extends VastaanottoValidator with Logging {
 

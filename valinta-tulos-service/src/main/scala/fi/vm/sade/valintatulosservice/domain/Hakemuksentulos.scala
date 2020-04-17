@@ -10,7 +10,7 @@ import fi.vm.sade.valintatulosservice.tarjonta.Haku
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 
-case class Hakemuksentulos(hakuOid: HakuOid, hakemusOid: HakemusOid, hakijaOid: String, aikataulu: Option[Vastaanottoaikataulu], hakutoiveet: List[Hakutoiveentulos]) {
+case class Hakemuksentulos(hakuOid: HakuOid, hakemusOid: HakemusOid, hakijaOid: String, aikataulu: Vastaanottoaikataulu, hakutoiveet: List[Hakutoiveentulos]) {
   def findHakutoive(hakukohdeOid: HakukohdeOid): Option[(Hakutoiveentulos, Int)] =
     (for {
       (toive, indeksi) <- hakutoiveet.zipWithIndex
@@ -100,10 +100,10 @@ object Hakutoiveentulos {
                                              tulos: HakutoiveenSijoitteluntulos,
                                              hakutoive: Hakutoive,
                                              haku: Haku,
-                                             ohjausparametrit: Option[Ohjausparametrit],
+                                             ohjausparametrit: Ohjausparametrit,
                                              checkJulkaisuAikaParametri: Boolean = true,
                                              hasHetu: Boolean)(implicit appConfig: VtsAppConfig): Hakutoiveentulos = {
-    val saaJulkaista: Boolean = !checkJulkaisuAikaParametri || ohjausparametrit.flatMap(_.tulostenJulkistusAlkaa).map(_.isBeforeNow()).getOrElse(ohjausparametrit.isDefined)
+    val saaJulkaista: Boolean = !checkJulkaisuAikaParametri || ohjausparametrit.tulostenJulkistusAlkaa.forall(_.isBeforeNow())
     val tarjoajaOid = if (tulos.tarjoajaOid != null) tulos.tarjoajaOid else hakutoive.tarjoajaOid
     Hakutoiveentulos(
       tulos.hakukohdeOid,

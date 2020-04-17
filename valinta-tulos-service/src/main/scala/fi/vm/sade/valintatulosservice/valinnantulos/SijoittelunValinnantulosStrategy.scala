@@ -22,7 +22,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
                                        tarjoajaOids: Set[String],
                                        haku: Haku,
                                        hakukohdeOid: HakukohdeOid,
-                                       ohjausparametrit: Option[Ohjausparametrit],
+                                       ohjausparametrit: Ohjausparametrit,
                                        authorizer: OrganizationHierarchyAuthorizer,
                                        appConfig: VtsAppConfig,
                                        valinnantulosRepository: ValinnantulosRepository
@@ -79,8 +79,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
       def allowJulkaistavissaUpdate(): Either[ValinnantulosUpdateStatus, Unit] = {
         (haku, ohjausparametrit) match {
           case (h, _) if h.korkeakoulu => Right()
-          case (_, None) => Right()
-          case (_, Some(o)) if o.valintaesitysHyvaksyttavissa.exists(_.isBeforeNow) => Right()
+          case (_, o) if o.valintaesitysHyvaksyttavissa.exists(_.isBeforeNow) => Right()
           case (_, _) => authorizer.checkAccess(session, appConfig.settings.rootOrganisaatioOid, Set(Role.SIJOITTELU_CRUD)).left.map(_ =>
             ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia julkaista valinnantulosta", uusi.valintatapajonoOid, uusi.hakemusOid)
           )

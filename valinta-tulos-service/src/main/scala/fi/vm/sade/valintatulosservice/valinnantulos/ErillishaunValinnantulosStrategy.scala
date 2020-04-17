@@ -19,7 +19,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
                                        haku: Haku,
                                        hakukohdeOid: HakukohdeOid,
-                                       ohjausparametrit: Option[Ohjausparametrit],
+                                       ohjausparametrit: Ohjausparametrit,
                                        valinnantulosRepository: ValinnantulosRepository
                                          with HakijaVastaanottoRepository
                                          with ValinnanTilanKuvausRepository

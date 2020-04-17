@@ -3,15 +3,15 @@ package fi.vm.sade.valintatulosservice.config
 import java.io.File
 import java.net.URL
 
-import fi.vm.sade.security.mock.MockSecurityContext
 import fi.vm.sade.security.{ProductionSecurityContext, SecurityContext}
+import fi.vm.sade.security.mock.MockSecurityContext
 import fi.vm.sade.utils.cas.CasClient
 import fi.vm.sade.utils.config.{ApplicationSettingsLoader, ConfigTemplateProcessor}
 import fi.vm.sade.utils.mongo.EmbeddedMongo
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.utils.tcp.{PortChecker, PortFromSystemPropertyOrFindFree}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusFixtures
-import fi.vm.sade.valintatulosservice.kayttooikeus.{GrantedAuthority, KayttooikeusUserDetails}
+import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetails
 import fi.vm.sade.valintatulosservice.ohjausparametrit._
 import fi.vm.sade.valintatulosservice.security.Role
 
@@ -58,8 +58,6 @@ object VtsAppConfig extends Logging {
     override val ophUrlProperties = new DevOphUrlProperties(propertiesFile)
     override def templateAttributesURL = new File(templateAttributesFile).toURI.toURL
   }
-
-  case class MockDynamicAppConfig(näytetäänSiirryKelaanURL: Boolean = true) extends VtsDynamicAppConfig
 
   /**
    * Dev profile, uses local mongo db
@@ -175,10 +173,8 @@ object VtsAppConfig extends Logging {
 
     lazy val ohjausparametritService = this match {
       case _ : StubbedExternalDeps => new StubbedOhjausparametritService()
-      case _ => CachedRemoteOhjausparametritService(this)
+      case _ => new CachedRemoteOhjausparametritService(this)
     }
-
-    val callerId = "1.2.246.562.10.00000000001.valinta-tulos-service"
 
     override def settings: VtsApplicationSettings
 
@@ -205,7 +201,8 @@ object VtsAppConfig extends Logging {
       new ProductionSecurityContext(
         casClient,
         settings.securitySettings.casServiceIdentifier,
-        settings.securitySettings.requiredRoles.map(Role(_)).toSet
+        settings.securitySettings.requiredRoles.map(Role(_)).toSet,
+        settings.securitySettings.casValidateServiceTicketTimeout
       )
     }
   }

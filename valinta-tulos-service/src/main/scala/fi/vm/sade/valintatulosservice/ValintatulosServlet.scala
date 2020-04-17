@@ -38,7 +38,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     HakuOid("2.2.2.2"),
     HakemusOid("4.3.2.1"),
     "1.3.3.1",
-    Some(Vastaanottoaikataulu(Some(new DateTime()), Some(14))),
+    Vastaanottoaikataulu(Some(new DateTime()), Some(14)),
     List(
       Hakutoiveentulos.julkaistavaVersioSijoittelunTuloksesta(ilmoittautumisenAikaleima,
         HakutoiveenSijoitteluntulos.kesken(HakukohdeOid("1.2.3.4"), "4.4.4.4"),
@@ -56,7 +56,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
           koulutuksenAlkamiskausi = Some(Kausi("2016S")),
           yhdenPaikanSaanto = YhdenPaikanSaanto(voimassa = false, ""),
           nimi = Map("kieli_fi" -> "Haun nimi")),
-        Some(Ohjausparametrit(Vastaanottoaikataulu(None, None), Some(DateTime.now().plusDays(10)), Some(DateTime.now().plusDays(30)), Some(DateTime.now().plusDays(60)), None, None, None)),
+        Ohjausparametrit(Vastaanottoaikataulu(None, None), Some(DateTime.now().plusDays(10)), Some(DateTime.now().plusDays(30)), Some(DateTime.now().plusDays(60)), None, None, None, true),
         hasHetu = true
       )
     )
