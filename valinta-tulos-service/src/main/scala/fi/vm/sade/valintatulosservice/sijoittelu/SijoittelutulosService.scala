@@ -212,7 +212,12 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
               nimi = valintatapajono.getValintatapajonoNimi,
               pisteet = Option(valintatapajono.getPisteet).map((p: java.math.BigDecimal) => new BigDecimal(p)),
               alinHyvaksyttyPistemaara = Option(valintatapajono.getAlinHyvaksyttyPistemaara).map((p: java.math.BigDecimal) => new BigDecimal(p)),
-              valintatila = vastaanottotilanVaikutusValintatilaan(hakemuksenTilastaJononValintatilaksi(valintatapajono), hakijanTilat.vastaanottotila),
+              valintatila = vastaanottotilanVaikutusValintatilaan(
+                hakemuksenTilastaJononValintatilaksi(valintatapajono),
+                hakijanTilat.vastaanottotila,
+                Some(jono),
+                Some(valintatapajono)
+              ),
               julkaistavissa = valintatapajono.isJulkaistavissa,
               valintatapajonoPrioriteetti = Option(valintatapajono.getValintatapajonoPrioriteetti).map {_.toInt},
               tilanKuvaukset = Option(valintatapajono.getTilanKuvaukset).map {_.toMap},
@@ -289,7 +294,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
                                              hakutoiveenHyvaksyttyJaJulkaistuDate: Option[OffsetDateTime],
                                              vastaanotettavuusVirkailijana: Boolean):(HakutoiveenSijoittelunTilaTieto, Option[DateTime]) = {
     val ( vastaanottotila, vastaanottoDeadline ) = laskeVastaanottotila(valintatila, vastaanotto, ohjausparametrit, hakutoiveenHyvaksyttyJaJulkaistuDate, vastaanotettavuusVirkailijana)
-    val uusiValintatila = vastaanottotilanVaikutusValintatilaan(valintatila, vastaanottotila)
+    val uusiValintatila = vastaanottotilanVaikutusValintatilaan(valintatila, vastaanottotila, None, None)
     val vastaanotettavuustila: Vastaanotettavuustila.Value = laskeVastaanotettavuustila(valintatila, vastaanottotila)
     (
       HakutoiveenSijoittelunTilaTieto(
@@ -394,8 +399,9 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     }
   }
 
-  private def vastaanottotilanVaikutusValintatilaan(valintatila: Valintatila, vastaanottotila : Vastaanottotila): Valintatila = {
-    if (List(Vastaanottotila.ehdollisesti_vastaanottanut, Vastaanottotila.vastaanottanut).contains(vastaanottotila)) {
+  private def vastaanottotilanVaikutusValintatilaan(valintatila: Valintatila, vastaanottotila : Vastaanottotila, merkitseväjono: Option[HakutoiveenValintatapajonoDTO], valintatapajono: Option[HakutoiveenValintatapajonoDTO]): Valintatila = {
+    if (List(Vastaanottotila.ehdollisesti_vastaanottanut, Vastaanottotila.vastaanottanut).contains(vastaanottotila)
+      && (merkitseväjono.isEmpty || valintatapajono.isEmpty || merkitseväjono.get.getValintatapajonoOid.equals(valintatapajono.get.getValintatapajonoOid))) {
       if (Valintatila.isHyväksytty(valintatila)) {
         valintatila
       } else {
