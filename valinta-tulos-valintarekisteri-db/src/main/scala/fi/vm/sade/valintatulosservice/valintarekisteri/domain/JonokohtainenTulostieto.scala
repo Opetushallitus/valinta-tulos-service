@@ -14,7 +14,8 @@ case class JonokohtainenTulostieto(
                                   ehdollisestiHyvaksyttavissa: Boolean,
                                   ehdollisenHyvaksymisenEhto: Option[EhdollisenHyvaksymisenEhto],
                                   varasijanumero: Option[Int],
-                                  eiVarasijatayttoa: Boolean
+                                  eiVarasijatayttoa: Boolean,
+                                  varasijat: Option[Int]
                                   ) {
   def toKesken: JonokohtainenTulostieto = {
     copy(

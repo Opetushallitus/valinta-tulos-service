@@ -228,7 +228,8 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
                 EN = Option(valintatapajono.getEhdollisenHyvaksymisenEhtoEN)
               )),
               varasijanumero = Option(valintatapajono.getVarasijanNumero).map {_.toInt},
-              eiVarasijatayttoa = jono.isEiVarasijatayttoa
+              eiVarasijatayttoa = jono.isEiVarasijatayttoa,
+              varasijat = Option(jono.getVarasijat).map(_.toInt).filter(_ != 0)
             )
           })
           .toList
