@@ -13,7 +13,8 @@ case class JonokohtainenTulostieto(
                                   tilanKuvaukset: Option[Map[String, String]],
                                   ehdollisestiHyvaksyttavissa: Boolean,
                                   ehdollisenHyvaksymisenEhto: Option[EhdollisenHyvaksymisenEhto],
-                                  varasijanumero: Option[Int]
+                                  varasijanumero: Option[Int],
+                                  eiVarasijatayttoa: Boolean
                                   ) {
   def toKesken: JonokohtainenTulostieto = {
     copy(

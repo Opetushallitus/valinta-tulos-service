@@ -58,7 +58,8 @@
             "FI": "ehto suomi",
             "SV": "ehto ruotsi",
             "EN": "ehto englanti"
-          }
+          },
+          "eiVarasijatayttoa": false
         }
       ]
     },

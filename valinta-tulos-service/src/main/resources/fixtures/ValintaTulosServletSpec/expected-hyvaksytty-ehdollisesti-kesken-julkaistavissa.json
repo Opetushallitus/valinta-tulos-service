@@ -58,7 +58,8 @@
             "FI": "muu",
             "SV": "andra",
             "EN": "other"
-          }
+          },
+          "eiVarasijatayttoa": false
         }
       ]
     },
