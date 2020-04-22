@@ -130,7 +130,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
       "varalla oleva hakutoive näytetään tilassa KESKEN jos valintatapajonossa ei käytetä sijoittelua" in {
         // VARALLA KESKEN true (eiVarasijatayttoa true)
         useFixture("varalla-ei-varasijatayttoa.json", hakuFixture = hakuFixture)
-        checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+        checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.varalla, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
 
       }
     }

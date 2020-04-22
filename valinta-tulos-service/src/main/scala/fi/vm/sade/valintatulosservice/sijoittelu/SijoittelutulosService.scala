@@ -320,8 +320,6 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
   private def hakemuksenTilastaJononValintatilaksi(jono: HakutoiveenValintatapajonoDTO): Valintatila = {
     if (jono.getTila.isHyvaksytty && jono.isHyvaksyttyHarkinnanvaraisesti) {
       Valintatila.harkinnanvaraisesti_hyväksytty
-    } else if (jono.getTila == HakemuksenTila.VARALLA && jono.isEiVarasijatayttoa) {
-      Valintatila.kesken
     } else {
       ifNull(fromHakemuksenTila(jono.getTila), Valintatila.kesken)
     }
