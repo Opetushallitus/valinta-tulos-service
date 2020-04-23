@@ -227,7 +227,9 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
                 SV = Option(valintatapajono.getEhdollisenHyvaksymisenEhtoSV),
                 EN = Option(valintatapajono.getEhdollisenHyvaksymisenEhtoEN)
               )),
-              varasijanumero = Option(valintatapajono.getVarasijanNumero).map {_.toInt}
+              varasijanumero = Option(valintatapajono.getVarasijanNumero).map {_.toInt},
+              eiVarasijatayttoa = jono.isEiVarasijatayttoa,
+              varasijat = Option(jono.getVarasijat).map(_.toInt).filter(_ != 0)
             )
           })
           .toList
@@ -318,8 +320,6 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
   private def hakemuksenTilastaJononValintatilaksi(jono: HakutoiveenValintatapajonoDTO): Valintatila = {
     if (jono.getTila.isHyvaksytty && jono.isHyvaksyttyHarkinnanvaraisesti) {
       Valintatila.harkinnanvaraisesti_hyväksytty
-    } else if (jono.getTila == HakemuksenTila.VARALLA && jono.isEiVarasijatayttoa) {
-      Valintatila.kesken
     } else {
       ifNull(fromHakemuksenTila(jono.getTila), Valintatila.kesken)
     }

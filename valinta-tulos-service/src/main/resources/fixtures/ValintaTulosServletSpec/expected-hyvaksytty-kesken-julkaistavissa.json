@@ -50,14 +50,16 @@
           "valintatapajonoPrioriteetti": 0,
           "tilanKuvaukset": {},
           "ehdollisestiHyvaksyttavissa": false,
-          "ehdollisenHyvaksymisenEhto": {}
+          "ehdollisenHyvaksymisenEhto": {},
+          "eiVarasijatayttoa": false
         },
         {
           "nimi": "Varsinainen jono",
           "valintatila": "KESKEN",
           "julkaistavissa": false,
           "valintatapajonoPrioriteetti": 0,
-          "ehdollisestiHyvaksyttavissa": false
+          "ehdollisestiHyvaksyttavissa": false,
+          "eiVarasijatayttoa": false
         }
       ]
     },
