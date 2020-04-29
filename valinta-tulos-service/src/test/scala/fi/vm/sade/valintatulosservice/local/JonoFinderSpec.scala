@@ -16,13 +16,13 @@ class JonoFinderSpec extends Specification {
   "JonoFinder" should {
 
     "handle case no 'jonos'" in {
-      JonoFinder.merkitseväJono(new HakutoiveDTO()) must_== None
+      JonoFinder.järjestäJonotPrioriteetinMukaan(new HakutoiveDTO()).headOption must_== None
     }
     "handle case one 'jono'" in {
       val hakutoive = new HakutoiveDTO()
       val jono1 = jonoWithTila(HakemuksenTila.HARKINNANVARAISESTI_HYVAKSYTTY, None)
       hakutoive.setHakutoiveenValintatapajonot(List(jono1))
-      JonoFinder.merkitseväJono(hakutoive) must_== Some(jono1)
+      JonoFinder.järjestäJonotPrioriteetinMukaan(hakutoive).headOption must_== Some(jono1)
     }
     "head 'jono' should be last possible 'jono' with same priority" in {
 
@@ -35,9 +35,9 @@ class JonoFinderSpec extends Specification {
 
       hakutoive.setHakutoiveenValintatapajonot(List(jono1, jono2))
 
-      val outJono = JonoFinder.merkitseväJono(hakutoive)
+      val outJono = JonoFinder.järjestäJonotPrioriteetinMukaan(hakutoive).headOption
 
-      outJono.get.getTilanKuvaukset.get("FI") must_== "TOKA"
+      outJono.get.getTilanKuvaukset.get("FI") must_== "EKA"
 
     }
 
@@ -50,7 +50,10 @@ class JonoFinderSpec extends Specification {
 
       hakutoive.setHakutoiveenValintatapajonot(List(jono1, jono2, jono3))
 
-      JonoFinder.merkitseväJono(hakutoive) must_== Some(jono2)
+      val actual = JonoFinder.järjestäJonotPrioriteetinMukaan(hakutoive)
+      actual.head must_== jono2
+      actual.get(1) must_== jono3
+      actual.get(2) must_== jono1
 
     }
   }

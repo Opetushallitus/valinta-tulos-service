@@ -48,7 +48,7 @@ object JonoFinder {
     })
   }
 
-  def merkitseväJono(hakutoive: HakutoiveDTO): Option[HakutoiveenValintatapajonoDTO] = {
+  def järjestäJonotPrioriteetinMukaan(hakutoive: HakutoiveDTO): List[HakutoiveenValintatapajonoDTO] = {
     val ordering = Ordering.fromLessThan { (jonoWind1: HakutoiveenValintatapajonoDTO, jonoWind2: HakutoiveenValintatapajonoDTO) =>
       val jono1 = jonoWind1
       val jono2 = jonoWind2
@@ -65,14 +65,7 @@ object JonoFinder {
         }
       }
     }
-
-    val orderedJonot: List[HakutoiveenValintatapajonoDTO] = hakutoive.getHakutoiveenValintatapajonot.toList.sorted(ordering)
-    val headOption: Option[HakutoiveenValintatapajonoDTO] = orderedJonot.headOption
-    headOption.map(jono => {
-      val tila: Valintatila = fromHakemuksenTila(jono.getTila)
-      if (tila.equals(Valintatila.hylätty)) jono.setTilanKuvaukset(orderedJonot.last.getTilanKuvaukset)
-      jono
-    })
+    hakutoive.getHakutoiveenValintatapajonot.toList.sorted(ordering)
   }
 
   def merkitseväJono(valinnantulokset: List[HakijanHakutoive]): Option[HakijanHakutoive] = {

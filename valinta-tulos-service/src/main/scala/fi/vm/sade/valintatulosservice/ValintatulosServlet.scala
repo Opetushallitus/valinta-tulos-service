@@ -57,7 +57,8 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
           yhdenPaikanSaanto = YhdenPaikanSaanto(voimassa = false, ""),
           nimi = Map("kieli_fi" -> "Haun nimi")),
         Ohjausparametrit(Vastaanottoaikataulu(None, None), Some(DateTime.now().plusDays(10)), Some(DateTime.now().plusDays(30)), Some(DateTime.now().plusDays(60)), None, None, None, true),
-        hasHetu = true)
+        hasHetu = true
+      )
     )
   )
 

@@ -437,7 +437,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
                 vastaanotonIlmoittaja = None,
                 vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa
               ),
-              kelaURL = None
+              kelaURL = None,
+              jonokohtaisetTulostiedot = List()
             )
           )))
         service.pollForAllMailables(mailDecorator, 1, oneMinute).mailables mustEqual List(Ilmoitus(
@@ -704,7 +705,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
           vastaanotonIlmoittaja = None,
           vastaanotettavuustila = Vastaanotettavuustila.vastaanotettavissa_sitovasti
         ),
-        kelaURL = None
+        kelaURL = None,
+        jonokohtaisetTulostiedot = List()
       ))
     )
     val hakemuksentulosB = Hakemuksentulos(
@@ -756,7 +758,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
           vastaanotonIlmoittaja = None,
           vastaanotettavuustila = Vastaanotettavuustila.vastaanotettavissa_sitovasti
         ),
-        kelaURL = None
+        kelaURL = None,
+        jonokohtaisetTulostiedot = List()
       ))
     )
     val hakemuksentulosC = Hakemuksentulos(
@@ -809,7 +812,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
             vastaanotonIlmoittaja = None,
             vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa
           ),
-          kelaURL = None
+          kelaURL = None,
+          jonokohtaisetTulostiedot = List()
         ),
         Hakutoiveentulos(
           hakukohdeOid = hakukohdeOidB,
@@ -852,7 +856,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
             vastaanotonIlmoittaja = None,
             vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa
           ),
-          kelaURL = None
+          kelaURL = None,
+          jonokohtaisetTulostiedot = List()
         ),
         Hakutoiveentulos(
           hakukohdeOid = hakukohdeOidA,
@@ -895,7 +900,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
             vastaanotonIlmoittaja = None,
             vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa
           ),
-          kelaURL = None
+          kelaURL = None,
+          jonokohtaisetTulostiedot = List()
         ))
     )
     val hakemuksentulosD = Hakemuksentulos(
@@ -948,7 +954,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
             vastaanotonIlmoittaja = None,
             vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa
           ),
-          kelaURL = None
+          kelaURL = None,
+          jonokohtaisetTulostiedot = List()
         ),
         Hakutoiveentulos(
           hakukohdeOid = hakukohdeOidB,
@@ -991,7 +998,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
             vastaanotonIlmoittaja = None,
             vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa
           ),
-          kelaURL = None
+          kelaURL = None,
+          jonokohtaisetTulostiedot = List()
         ),
         Hakutoiveentulos(
           hakukohdeOid = hakukohdeOidA,
@@ -1034,7 +1042,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
             vastaanotonIlmoittaja = None,
             vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa
           ),
-          kelaURL = None
+          kelaURL = None,
+          jonokohtaisetTulostiedot = List()
         ))
     )
     val hakemuksentulosE = Hakemuksentulos(
@@ -1087,7 +1096,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
             vastaanotonIlmoittaja = None,
             vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa
           ),
-          kelaURL = None
+          kelaURL = None,
+          jonokohtaisetTulostiedot = List()
         ),
         Hakutoiveentulos(
           hakukohdeOid = hakukohdeOidB,
@@ -1130,7 +1140,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
             vastaanotonIlmoittaja = None,
             vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa
           ),
-          kelaURL = None
+          kelaURL = None,
+          jonokohtaisetTulostiedot = List()
         ),
         Hakutoiveentulos(
           hakukohdeOid = hakukohdeOidA,
@@ -1173,7 +1184,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
             vastaanotonIlmoittaja = None,
             vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa
           ),
-          kelaURL = None
+          kelaURL = None,
+          jonokohtaisetTulostiedot = List()
         ))
     )
 

@@ -10,7 +10,7 @@ import fi.vm.sade.valintatulosservice.sijoittelu._
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, JonokohtainenTulostieto, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.{ITSpecification, TimeWarp, ValintatulosService}
 import org.junit.runner.RunWith
@@ -31,8 +31,15 @@ class ValintatulosServiceLisahakuSpec extends ITSpecification with TimeWarp {
       }
       "molemmat vastaanotettavissa" in {
         useFixture("lisahaku-vastaanotettavissa.json", hakuFixture = hakuFixture, hakemusFixtures = hakemusFixtures)
-        checkHakutoiveState(getHakutoive("1.2.246.562.14.2013120515524070995659"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.vastaanotettavissa_sitovasti, true)
-        checkHakutoiveState(getHakutoive("1.2.246.562.14.2014022408541751568934"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.vastaanotettavissa_sitovasti, true)
+        val hakutoiveentulos1 = getHakutoive("1.2.246.562.14.2013120515524070995659")
+        checkHakutoiveState(hakutoiveentulos1, Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.vastaanotettavissa_sitovasti, true)
+        hakutoiveentulos1.jonokohtaisetTulostiedot.size must beEqualTo(1)
+        hakutoiveentulos1.jonokohtaisetTulostiedot.head.valintatila must beEqualTo(Valintatila.hyväksytty)
+        hakutoiveentulos1.jonokohtaisetTulostiedot.head.varasijanumero must beNone
+        val hakutoiveentulos2 = getHakutoive("1.2.246.562.14.2014022408541751568934")
+        checkHakutoiveState(hakutoiveentulos2, Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.vastaanotettavissa_sitovasti, true)
+        hakutoiveentulos2.jonokohtaisetTulostiedot.head.valintatila must beEqualTo(Valintatila.hyväksytty)
+        hakutoiveentulos2.jonokohtaisetTulostiedot.head.varasijanumero must beNone
       }
       "ensimmäinen vastaanotettavissa, toinen ei hyväksytty" in {
         useFixture("lisahaku-vastaanotettavissa-2-ensimmainen.json", hakuFixture = hakuFixture, hakemusFixtures = hakemusFixtures)
@@ -46,8 +53,18 @@ class ValintatulosServiceLisahakuSpec extends ITSpecification with TimeWarp {
       }
       "toinen vastaanotettu, ensimmäistä ei voi vastaanottaa" in {
         useFixture("lisahaku-vastaanottanut.json", hakuFixture = hakuFixture, hakemusFixtures = hakemusFixtures, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-        checkHakutoiveState(getHakutoive("1.2.246.562.14.2013120515524070995659"), Valintatila.peruuntunut, Vastaanottotila.ottanut_vastaan_toisen_paikan, Vastaanotettavuustila.ei_vastaanotettavissa, true)
-        checkHakutoiveState(getHakutoive("1.2.246.562.14.2014022408541751568934"), Valintatila.hyväksytty, Vastaanottotila.vastaanottanut, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+        val hakutoiveOttanutVastaanToisenPaikan = getHakutoive("1.2.246.562.14.2013120515524070995659")
+        checkHakutoiveState(hakutoiveOttanutVastaanToisenPaikan, Valintatila.peruuntunut, Vastaanottotila.ottanut_vastaan_toisen_paikan, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+        hakutoiveOttanutVastaanToisenPaikan.jonokohtaisetTulostiedot.forall(
+          jonokohtainenTulostieto =>
+            jonokohtainenTulostieto.valintatila == Valintatila.peruuntunut
+        ) must beTrue
+        val hakutoiveHyväksytty = getHakutoive("1.2.246.562.14.2014022408541751568934")
+        checkHakutoiveState(hakutoiveHyväksytty, Valintatila.hyväksytty, Vastaanottotila.vastaanottanut, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+        hakutoiveHyväksytty.jonokohtaisetTulostiedot.forall(
+          jonokohtainenTulostieto =>
+            jonokohtainenTulostieto.valintatila == Valintatila.hyväksytty
+        ) must beTrue
       }
     }
   }

@@ -49,7 +49,8 @@ case class Hakutoiveentulos(hakukohdeOid: HakukohdeOid,
                             tilanKuvaukset: Map[String, String],
                             pisteet: Option[BigDecimal],
                             virkailijanTilat: HakutoiveenSijoittelunTilaTieto,
-                            kelaURL: Option[String] = None
+                            kelaURL: Option[String] = None,
+                            jonokohtaisetTulostiedot: List[JonokohtainenTulostieto]
                             ) {
 
   def toKesken = {
@@ -131,7 +132,15 @@ object Hakutoiveentulos {
       tulos.ehdollisenHyvaksymisenEhtoEN,
       tulos.tilanKuvaukset,
       tulos.pisteet,
-      virkailijanTilat = tulos.virkailijanTilat
+      virkailijanTilat = tulos.virkailijanTilat,
+      kelaURL = None,
+      jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map(jonotulos => {
+        if (jonotulos.julkaistavissa && saaJulkaista) {
+          jonotulos
+        } else {
+          jonotulos.toKesken
+        }
+      })
     ).julkaistavaVersio
   }
 }

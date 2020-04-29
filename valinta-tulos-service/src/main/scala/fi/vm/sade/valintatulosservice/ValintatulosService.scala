@@ -497,10 +497,99 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       .map(piilotaKuvauksetKeskeneräisiltä)
       .map(asetaVastaanotettavuusValintarekisterinPerusteella(vastaanottoKaudella))
       .map(asetaKelaURL)
+      .map(piilotaKuvauksetEiJulkaistuiltaValintatapajonoilta)
+      .map(piilotaVarasijanumeroJonoiltaJosValintatilaEiVaralla)
+      .map(merkitseValintatapajonotPeruuntuneeksiKunEiVastaanottanutMääräaikaanMennessä)
+      .map(piilotaEhdollisenHyväksymisenEhdotJonoiltaKunEiEhdollisestiHyväksytty)
       .tulokset
 
     Hakemuksentulos(haku.oid, h.oid, sijoitteluTulos.hakijaOid.getOrElse(h.henkiloOid), ohjausparametrit.vastaanottoaikataulu, lopullisetTulokset)
   }
+
+  private def piilotaEhdollisenHyväksymisenEhdotJonoiltaKunEiEhdollisestiHyväksytty(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
+    tulokset.map {
+      tulos =>
+        tulos.copy(
+          jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map {
+            jonokohtainenTulostieto =>
+              if (jonokohtainenTulostieto.julkaistavissa && Valintatila.isHyväksytty(jonokohtainenTulostieto.valintatila)) {
+                jonokohtainenTulostieto
+              } else {
+                jonokohtainenTulostieto.copy(
+                  ehdollisenHyvaksymisenEhto = None,
+                  ehdollisestiHyvaksyttavissa = false
+                )
+              }
+          }
+        )
+    }
+  }
+
+  private def merkitseValintatapajonotPeruuntuneeksiKunEiVastaanottanutMääräaikaanMennessä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
+    tulokset.map {
+      tulos =>
+        if (tulos.vastaanottotila == Vastaanottotila.ei_vastaanotettu_määräaikana && Valintatila.isHyväksytty(tulos.valintatila)) {
+          tulos.copy(
+            jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map {
+              jonokohtainenTulostieto =>
+                if (Valintatila.voiTullaHyväksytyksi(jonokohtainenTulostieto.valintatila)) {
+                  jonokohtainenTulostieto.copy(
+                    valintatila = Valintatila.perunut,
+                    pisteet = None,
+                    alinHyvaksyttyPistemaara = None,
+                    tilanKuvaukset = Some(Map(
+                      "FI" -> "Peruuntunut, ei vastaanottanut määräaikana",
+                      "SV" -> "Annullerad, har inte tagit emot platsen inom utsatt tid",
+                      "EN" -> "Cancelled, has not confirmed the study place within the deadline"
+                    ))
+                  )
+                } else {
+                  jonokohtainenTulostieto
+                }
+            }
+          )
+        } else {
+          tulos
+        }
+    }
+  }
+
+  private def piilotaVarasijanumeroJonoiltaJosValintatilaEiVaralla(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
+    tulokset.map {
+      tulos =>
+        tulos.copy(
+          jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map {
+            jonokohtainenTulostieto =>
+              jonokohtainenTulostieto.copy(
+                varasijanumero = if (jonokohtainenTulostieto.valintatila == Valintatila.varalla) {
+                  jonokohtainenTulostieto.varasijanumero
+                } else {
+                  None
+                }
+              )
+          }
+        )
+    }
+  }
+
+  private def piilotaKuvauksetEiJulkaistuiltaValintatapajonoilta(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
+    tulokset.map {
+      tulos =>
+        tulos.copy(
+          jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map {
+            case jonokohtainenTulostieto if !jonokohtainenTulostieto.julkaistavissa =>
+              jonokohtainenTulostieto.copy(
+                tilanKuvaukset = None,
+                ehdollisenHyvaksymisenEhto = None,
+                ehdollisestiHyvaksyttavissa = false
+              )
+            case jonokohtainenTulostieto =>
+              jonokohtainenTulostieto
+          }
+        )
+    }
+  }
+
   private def asetaKelaURL(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
     val hakukierrosEiOlePäättynyt = !ohjausparametrit.hakukierrosPaattyy.exists(_.isBeforeNow())
     val näytetäänSiirryKelaanURL = ohjausparametrit.naytetaankoSiirryKelaanURL
@@ -519,11 +608,30 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     def ottanutVastaanToisenPaikan(tulos: Hakutoiveentulos): Hakutoiveentulos =
       tulos.copy(
         vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa,
-        vastaanottotila = Vastaanottotila.ottanut_vastaan_toisen_paikan
+        vastaanottotila = Vastaanottotila.ottanut_vastaan_toisen_paikan,
+        jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map(merkitseJonokohtainenTulostietoPerutuksiJosVoiTullaHyväksytyksi)
       )
+
+    def merkitseJonokohtainenTulostietoPerutuksiJosVoiTullaHyväksytyksi(jonokohtainenTulostieto: JonokohtainenTulostieto) = {
+      if (Valintatila.voiTullaHyväksytyksi(jonokohtainenTulostieto.valintatila) && jonokohtainenTulostieto.julkaistavissa) {
+        jonokohtainenTulostieto.copy(
+          valintatila = Valintatila.peruuntunut,
+          pisteet = None,
+          alinHyvaksyttyPistemaara = None,
+          tilanKuvaukset = Some(Map(
+            "FI" -> "Peruuntunut, vastaanottanut toisen korkeakoulupaikan",
+            "SV" -> "Annullerad, tagit emot en annan högskoleplats",
+            "EN" -> "Cancelled, accepted another higher education study place"
+          ))
+        )
+      } else {
+        jonokohtainenTulostieto
+      }
+    }
 
     def peruuntunutOttanutVastaanToisenPaikan(tulos: Hakutoiveentulos): Hakutoiveentulos =
       ottanutVastaanToisenPaikan(if (tulos.julkaistavissa) {
+
         tulos.copy(
           valintatila = Valintatila.peruuntunut,
           tilanKuvaukset = Map(
@@ -669,7 +777,20 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         case (tulos, index) if firstVastaanotettu >= 0 && index != firstVastaanotettu && List(Valintatila.varalla, Valintatila.kesken).contains(tulos.valintatila) =>
           // Peru muut varalla/kesken toiveet, jos jokin muu vastaanotettu
           logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja valintatila > peruuntunut, ei vastaanotettavissa {}", index)
-          tulos.copy(valintatila = Valintatila.peruuntunut, vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa)
+          tulos.copy(
+            valintatila = Valintatila.peruuntunut,
+            vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa,
+            jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map {
+              jonokohtainenTulostieto =>
+                jonokohtainenTulostieto.copy(
+                  valintatila = if (List(Valintatila.varalla, Valintatila.kesken).contains(jonokohtainenTulostieto.valintatila)) {
+                    Valintatila.peruuntunut
+                  } else {
+                    jonokohtainenTulostieto.valintatila
+                  }
+                )
+            }
+          )
         case (tulos, index) =>
           logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja ei muutosta {}", index)
           tulos

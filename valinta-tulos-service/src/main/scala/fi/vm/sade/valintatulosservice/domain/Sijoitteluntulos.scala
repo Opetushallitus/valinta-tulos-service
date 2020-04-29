@@ -4,7 +4,7 @@ import java.util.Date
 
 import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila._
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiTehty, HakemusOid, HakukohdeOid, ValintatapajonoOid, SijoitteluajonIlmoittautumistila, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiTehty, HakemusOid, HakukohdeOid, JonokohtainenTulostieto, SijoitteluajonIlmoittautumistila, ValintatapajonoOid, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
 
 case class HakemuksenSijoitteluntulos (
@@ -33,7 +33,8 @@ case class HakutoiveenSijoitteluntulos(
   ehdollisenHyvaksymisenEhtoSV: Option[String],
   ehdollisenHyvaksymisenEhtoEN: Option[String],
   tilanKuvaukset: Map[String, String],
-  pisteet: Option[BigDecimal]
+  pisteet: Option[BigDecimal],
+  jonokohtaisetTulostiedot: List[JonokohtainenTulostieto]
 ) {
   def valintatila: Valintatila = hakijanTilat.valintatila
   def vastaanottotila: Vastaanottotila = hakijanTilat.vastaanottotila
@@ -70,7 +71,8 @@ object HakutoiveenSijoitteluntulos {
       ehdollisenHyvaksymisenEhtoSV = None,
       ehdollisenHyvaksymisenEhtoEN = None,
       tilanKuvaukset = Map(),
-      pisteet = None
+      pisteet = None,
+      jonokohtaisetTulostiedot = List()
     )
   }
 }

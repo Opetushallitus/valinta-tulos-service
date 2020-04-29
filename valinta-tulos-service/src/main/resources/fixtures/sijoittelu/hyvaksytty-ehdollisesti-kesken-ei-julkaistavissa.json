@@ -84,6 +84,11 @@
                 }
               ],
               "hyvaksyttyHarkinnanvaraisesti": false,
+              "tilanKuvaukset": {
+                "FI": "Hyväksytty varasijalta",
+                "SV": "Hyväksytty varasijalta",
+                "EN": "Hyväksytty varasijalta"
+              },
               "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
             }
           ]
@@ -106,7 +111,7 @@
       "hakutoive": 1,
       "tila": "KESKEN",
       "ilmoittautumisTila": "EI_TEHTY",
-      "julkaistavissa": true,
+      "julkaistavissa": false,
       "ehdollisestiHyvaksyttavissa": true,
       "ehdollisenHyvaksymisenEhtoKoodi": "muu",
       "ehdollisenHyvaksymisenEhtoFI": "muu",

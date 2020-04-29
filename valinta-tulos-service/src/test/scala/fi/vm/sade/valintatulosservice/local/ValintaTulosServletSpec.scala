@@ -16,6 +16,8 @@ import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.{compact, render}
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
+import org.springframework.core.io.ClassPathResource
+import org.tsers.zeison.Zeison
 
 @RunWith(classOf[JUnitRunner])
 class ValintaTulosServletSpec extends ServletSpecification {
@@ -26,20 +28,27 @@ class ValintaTulosServletSpec extends ServletSpecification {
   val ataruHenkilo1 = Henkilo(HakijaOid("ataru-tyyppi"), None, Some("Ataru"))
   val ataruHenkilo2 = Henkilo(HakijaOid("ataru-tyyppi2"), None, Some("Ataru2"))
 
-  "GET /haku/:hakuOid/hakukohde/:hakukohdeOid" should {
-    "palauttaa julkaistun yksittäisen hakukohteen valintatulokset" in {
-      useFixture("hyvaksytty-kesken-julkaistavissa.json")
-      get("haku/1.2.246.562.5.2013080813081926341928/hakukohde/1.2.246.562.5.72607738902") {
-        status must_== 200
-        body must_== """[{"hakuOid":"1.2.246.562.5.2013080813081926341928","hakemusOid":"1.2.246.562.11.00000441369","hakijaOid":"1.2.246.562.24.14229104472","aikataulu":{"vastaanottoEnd":"2030-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.5.72607738902","hakukohdeNimi":"stevari amk hakukohde","tarjoajaOid":"1.2.246.562.10.591352080610","tarjoajaNimi":"Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta","valintatapajonoOid":"14090336922663576781797489829886","valintatila":"HYVAKSYTTY","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"VASTAANOTETTAVISSA_SITOVASTI","vastaanottoDeadline":"2030-01-10T10:00:00Z","viimeisinHakemuksenTilanMuutos":"2014-08-26T15:12:40Z","jonosija":1,"varasijojaKaytetaanAlkaen":"2014-08-26T16:05:23Z","varasijojaTaytetaanAsti":"2014-08-26T16:05:23Z","julkaistavissa":true,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{},"pisteet":4.0},{"hakukohdeOid":"1.2.246.562.5.16303028779","hakukohdeNimi":"","tarjoajaOid":"1.2.246.562.10.455978782510","tarjoajaNimi":"","valintatapajonoOid":"","valintatila":"PERUUNTUNUT","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]},{"hakuOid":"1.2.246.562.5.2013080813081926341928","hakemusOid":"1.2.246.562.11.00000441370","hakijaOid":"1.2.246.562.24.14229104472","aikataulu":{"vastaanottoEnd":"2030-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.5.72607738902","hakukohdeNimi":"stevari amk hakukohde","tarjoajaOid":"1.2.246.562.10.591352080610","tarjoajaNimi":"Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}},{"hakukohdeOid":"1.2.246.562.20.83060182827","hakukohdeNimi":"","tarjoajaOid":"1.2.246.562.10.83122281013","tarjoajaNimi":"","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]},{"hakuOid":"1.2.246.562.5.2013080813081926341928","hakemusOid":"1.2.246.562.11.00000441371","hakijaOid":"1.2.246.562.24.14229104472","aikataulu":{"vastaanottoEnd":"2030-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.5.72607738902","hakukohdeNimi":"stevari amk hakukohde","tarjoajaOid":"1.2.246.562.10.591352080610","tarjoajaNimi":"Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}},{"hakukohdeOid":"1.2.246.562.20.83060182827","hakukohdeNimi":"","tarjoajaOid":"1.2.246.562.10.83122281013","tarjoajaNimi":"","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]}]"""
-      }
-    }
+  private def prettify(json: String) = {
+    Zeison.renderPretty(Zeison.parse(json))
+  }
 
-    "palauttaa ehdollisesti hyväksytyn hakukohteen valintatulokset" in {
-      useFixture("hyvaksytty-ehdollisesti-kesken-julkaistavissa.json")
-      get("haku/1.2.246.562.5.2013080813081926341928/hakukohde/1.2.246.562.5.72607738902") {
+  private def assertJson(expected: String, actual: String) = {
+    prettify(actual) must_== prettify(expected)
+  }
+
+  private def jsonFromClasspath(filename: String): String = {
+    scala.io.Source.fromInputStream(new ClassPathResource("fixtures/ValintaTulosServletSpec/" + filename).getInputStream).mkString
+  }
+
+  "GET /haku/:hakuId/hakemus/:hakemusId" should {
+    "palauttaa ehdollisesti hyväksytyn ei-julkaistun hakukohteen valintatulokset" in {
+      useFixture("hyvaksytty-ehdollisesti-kesken-ei-julkaistavissa.json")
+      get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
         status must_== 200
-        body must_== """[{"hakuOid":"1.2.246.562.5.2013080813081926341928","hakemusOid":"1.2.246.562.11.00000441369","hakijaOid":"1.2.246.562.24.14229104472","aikataulu":{"vastaanottoEnd":"2030-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.5.72607738902","hakukohdeNimi":"stevari amk hakukohde","tarjoajaOid":"1.2.246.562.10.591352080610","tarjoajaNimi":"Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta","valintatapajonoOid":"14090336922663576781797489829886","valintatila":"HYVAKSYTTY","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"VASTAANOTETTAVISSA_SITOVASTI","vastaanottoDeadline":"2030-01-10T10:00:00Z","viimeisinHakemuksenTilanMuutos":"2014-08-26T15:12:40Z","jonosija":1,"varasijojaKaytetaanAlkaen":"2014-08-26T16:05:23Z","varasijojaTaytetaanAsti":"2014-08-26T16:05:23Z","julkaistavissa":true,"ehdollisestiHyvaksyttavissa":true,"ehdollisenHyvaksymisenEhtoKoodi":"muu","ehdollisenHyvaksymisenEhtoFI":"muu","ehdollisenHyvaksymisenEhtoSV":"andra","ehdollisenHyvaksymisenEhtoEN":"other","tilanKuvaukset":{},"pisteet":4.0},{"hakukohdeOid":"1.2.246.562.5.16303028779","hakukohdeNimi":"","tarjoajaOid":"1.2.246.562.10.455978782510","tarjoajaNimi":"","valintatapajonoOid":"","valintatila":"PERUUNTUNUT","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]},{"hakuOid":"1.2.246.562.5.2013080813081926341928","hakemusOid":"1.2.246.562.11.00000441370","hakijaOid":"1.2.246.562.24.14229104472","aikataulu":{"vastaanottoEnd":"2030-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.5.72607738902","hakukohdeNimi":"stevari amk hakukohde","tarjoajaOid":"1.2.246.562.10.591352080610","tarjoajaNimi":"Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}},{"hakukohdeOid":"1.2.246.562.20.83060182827","hakukohdeNimi":"","tarjoajaOid":"1.2.246.562.10.83122281013","tarjoajaNimi":"","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]},{"hakuOid":"1.2.246.562.5.2013080813081926341928","hakemusOid":"1.2.246.562.11.00000441371","hakijaOid":"1.2.246.562.24.14229104472","aikataulu":{"vastaanottoEnd":"2030-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.5.72607738902","hakukohdeNimi":"stevari amk hakukohde","tarjoajaOid":"1.2.246.562.10.591352080610","tarjoajaNimi":"Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}},{"hakukohdeOid":"1.2.246.562.20.83060182827","hakukohdeNimi":"","tarjoajaOid":"1.2.246.562.10.83122281013","tarjoajaNimi":"","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]}]"""
+        assertJson(
+          jsonFromClasspath("expected-hyvaksytty-ehdollisesti-kesken-ei-julkaistavissa.json"),
+          body
+        )
       }
     }
 
@@ -48,30 +57,19 @@ class ValintaTulosServletSpec extends ServletSpecification {
       val ataruHenkilot = List(ataruHenkilo1, ataruHenkilo2)
       useFixture("ei-tuloksia.json", hakemusFixtures = List.empty, hakuFixture = HakuOid("ataru-haku"),
         ataruHakemusFixture = ataruHakemukset, ataruHenkiloFixture = ataruHenkilot)
-      get("haku/1.2.246.562.29.37061034627/hakukohde/1.2.246.562.20.14875157126") {
+      get("haku/1.2.246.562.29.37061034627/hakemus/1.2.246.562.11.00000000000000000005") {
         status must_== 200
-        body must_== """[{"hakuOid":"1.2.246.562.29.37061034627","hakemusOid":"1.2.246.562.11.00000000000000000005","hakijaOid":"ataru-tyyppi","aikataulu":{"vastaanottoEnd":"2030-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.20.14875157126","hakukohdeNimi":"Ataru testihakukohde","tarjoajaOid":"1.2.246.562.10.72985435253","tarjoajaNimi":"Aalto-yliopisto, Insinööritieteiden korkeakoulu","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oiliHetuton/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]},{"hakuOid":"1.2.246.562.29.37061034627","hakemusOid":"1.2.246.562.11.00000000000000000006","hakijaOid":"ataru-tyyppi2","aikataulu":{"vastaanottoEnd":"2030-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.20.14875157126","hakukohdeNimi":"Ataru testihakukohde","tarjoajaOid":"1.2.246.562.10.72985435253","tarjoajaNimi":"Aalto-yliopisto, Insinööritieteiden korkeakoulu","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oiliHetuton/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}},{"hakukohdeOid":"1.2.246.562.20.27958725015","hakukohdeNimi":"Ataru testihakukohde","tarjoajaOid":"1.2.246.562.10.72985435253","tarjoajaNimi":"Aalto-yliopisto, Insinööritieteiden korkeakoulu","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oiliHetuton/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]}]"""
       }
     }
 
-    "kun hakukohdetta ei löydy" in {
-      "404" in {
-        HakuFixtures.useFixture(HakuOid("notfound"))
-        get("haku/1.2.246.562.5.2013080813081926341928/hakukohde/1.2.246.562.5.foo") {
-          status must_== 404
-          body must_== """{"error":"Not found"}"""
-        }
-      }
-    }
-  }
-
-  "GET /haku/:hakuId/hakemus/:hakemusId" should {
     "palauttaa julkaistun valintatuloksen" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")
       get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
         status must_== 200
-        body must_==
-          """{"hakuOid":"1.2.246.562.5.2013080813081926341928","hakemusOid":"1.2.246.562.11.00000441369","hakijaOid":"1.2.246.562.24.14229104472","aikataulu":{"vastaanottoEnd":"2030-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.5.72607738902","hakukohdeNimi":"stevari amk hakukohde","tarjoajaOid":"1.2.246.562.10.591352080610","tarjoajaNimi":"Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta","valintatapajonoOid":"14090336922663576781797489829886","valintatila":"HYVAKSYTTY","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"VASTAANOTETTAVISSA_SITOVASTI","vastaanottoDeadline":"2030-01-10T10:00:00Z","viimeisinHakemuksenTilanMuutos":"2014-08-26T15:12:40Z","jonosija":1,"varasijojaKaytetaanAlkaen":"2014-08-26T16:05:23Z","varasijojaTaytetaanAsti":"2014-08-26T16:05:23Z","julkaistavissa":true,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{},"pisteet":4.0},{"hakukohdeOid":"1.2.246.562.5.16303028779","hakukohdeNimi":"","tarjoajaOid":"1.2.246.562.10.455978782510","tarjoajaNimi":"","valintatapajonoOid":"","valintatila":"PERUUNTUNUT","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]}"""
+        assertJson(
+          jsonFromClasspath("expected-hyvaksytty-kesken-julkaistavissa.json"),
+          body
+        )
       }
     }
 
@@ -80,8 +78,10 @@ class ValintaTulosServletSpec extends ServletSpecification {
 
       get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
         status must_== 200
-        body must_==
-          """{"hakuOid":"1.2.246.562.5.2013080813081926341928","hakemusOid":"1.2.246.562.11.00000441369","hakijaOid":"1.2.246.562.24.14229104472","aikataulu":{"vastaanottoEnd":"2014-09-01T09:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.5.72607738902","hakukohdeNimi":"stevari amk hakukohde","tarjoajaOid":"1.2.246.562.10.591352080610","tarjoajaNimi":"Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta","valintatapajonoOid":"14090336922663576781797489829886","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","viimeisinHakemuksenTilanMuutos":"2013-08-26T15:12:40Z","varasijojaKaytetaanAlkaen":"2014-08-26T16:05:23Z","varasijojaTaytetaanAsti":"2014-08-26T16:05:23Z","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}},{"hakukohdeOid":"1.2.246.562.5.16303028779","hakukohdeNimi":"","tarjoajaOid":"1.2.246.562.10.455978782510","tarjoajaNimi":"","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]}"""
+        assertJson(
+          jsonFromClasspath("expected-hyvaksytty-kesken-ei-julkaistavissa.json"),
+          body
+        )
       }
 
     }
@@ -90,8 +90,10 @@ class ValintaTulosServletSpec extends ServletSpecification {
       useFixture("hyvaksytty-ehdollisesti-kesken-julkaistavissa.json")
       get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
         status must_== 200
-        body must_==
-          """{"hakuOid":"1.2.246.562.5.2013080813081926341928","hakemusOid":"1.2.246.562.11.00000441369","hakijaOid":"1.2.246.562.24.14229104472","aikataulu":{"vastaanottoEnd":"2030-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.5.72607738902","hakukohdeNimi":"stevari amk hakukohde","tarjoajaOid":"1.2.246.562.10.591352080610","tarjoajaNimi":"Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta","valintatapajonoOid":"14090336922663576781797489829886","valintatila":"HYVAKSYTTY","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"VASTAANOTETTAVISSA_SITOVASTI","vastaanottoDeadline":"2030-01-10T10:00:00Z","viimeisinHakemuksenTilanMuutos":"2014-08-26T15:12:40Z","jonosija":1,"varasijojaKaytetaanAlkaen":"2014-08-26T16:05:23Z","varasijojaTaytetaanAsti":"2014-08-26T16:05:23Z","julkaistavissa":true,"ehdollisestiHyvaksyttavissa":true,"ehdollisenHyvaksymisenEhtoKoodi":"muu","ehdollisenHyvaksymisenEhtoFI":"muu","ehdollisenHyvaksymisenEhtoSV":"andra","ehdollisenHyvaksymisenEhtoEN":"other","tilanKuvaukset":{},"pisteet":4.0},{"hakukohdeOid":"1.2.246.562.5.16303028779","hakukohdeNimi":"","tarjoajaOid":"1.2.246.562.10.455978782510","tarjoajaNimi":"","valintatapajonoOid":"","valintatila":"PERUUNTUNUT","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]}"""
+        assertJson(
+          jsonFromClasspath("expected-hyvaksytty-ehdollisesti-kesken-julkaistavissa.json"),
+          body
+        )
       }
     }
 
@@ -99,8 +101,10 @@ class ValintaTulosServletSpec extends ServletSpecification {
       useFixture("hyvaksytty-ehdollisesti-syy-kesken-julkaistavissa.json")
       get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
         status must_== 200
-        body must_==
-          """{"hakuOid":"1.2.246.562.5.2013080813081926341928","hakemusOid":"1.2.246.562.11.00000441369","hakijaOid":"1.2.246.562.24.14229104472","aikataulu":{"vastaanottoEnd":"2030-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.5.72607738902","hakukohdeNimi":"stevari amk hakukohde","tarjoajaOid":"1.2.246.562.10.591352080610","tarjoajaNimi":"Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta","valintatapajonoOid":"14090336922663576781797489829886","valintatila":"HYVAKSYTTY","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"VASTAANOTETTAVISSA_SITOVASTI","vastaanottoDeadline":"2030-01-10T10:00:00Z","viimeisinHakemuksenTilanMuutos":"2014-08-26T15:12:40Z","jonosija":1,"varasijojaKaytetaanAlkaen":"2014-08-26T16:05:23Z","varasijojaTaytetaanAsti":"2014-08-26T16:05:23Z","julkaistavissa":true,"ehdollisestiHyvaksyttavissa":true,"ehdollisenHyvaksymisenEhtoKoodi":"hyvaksynnanehdot_muu","ehdollisenHyvaksymisenEhtoFI":"ehto suomi","ehdollisenHyvaksymisenEhtoSV":"ehto ruotsi","ehdollisenHyvaksymisenEhtoEN":"ehto englanti","tilanKuvaukset":{},"pisteet":4.0},{"hakukohdeOid":"1.2.246.562.5.16303028779","hakukohdeNimi":"","tarjoajaOid":"1.2.246.562.10.455978782510","tarjoajaNimi":"","valintatapajonoOid":"","valintatila":"PERUUNTUNUT","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]}"""
+        assertJson(
+          jsonFromClasspath("expected-hyvaksytty-ehdollisesti-syy-kesken-julkaistavissa.json"),
+          body
+        )
       }
     }
 
@@ -119,8 +123,10 @@ class ValintaTulosServletSpec extends ServletSpecification {
         ataruHakemusFixture = List(ataruHakemus1), ataruHenkiloFixture = List(ataruHenkilo1))
       get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000000000000000005") {
         status must_== 200
-        body must_==
-          """{"hakuOid":"1.2.246.562.29.37061034627","hakemusOid":"1.2.246.562.11.00000000000000000005","hakijaOid":"ataru-tyyppi","aikataulu":{"vastaanottoEnd":"2030-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.20.14875157126","hakukohdeNimi":"Ataru testihakukohde","tarjoajaOid":"1.2.246.562.10.72985435253","tarjoajaNimi":"Aalto-yliopisto, Insinööritieteiden korkeakoulu","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oiliHetuton/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]}"""
+        assertJson(
+          jsonFromClasspath("expected-ei-tuloksia.json"),
+          body
+        )
       }
     }
   }
@@ -143,7 +149,10 @@ class ValintaTulosServletSpec extends ServletSpecification {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")
       get("haku/1.2.246.562.5.2013080813081926341928") {
         status must_== 200
-        body must_== """[{"hakuOid":"1.2.246.562.5.2013080813081926341928","hakemusOid":"1.2.246.562.11.00000441369","hakijaOid":"1.2.246.562.24.14229104472","aikataulu":{"vastaanottoEnd":"2030-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.5.72607738902","hakukohdeNimi":"stevari amk hakukohde","tarjoajaOid":"1.2.246.562.10.591352080610","tarjoajaNimi":"Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta","valintatapajonoOid":"14090336922663576781797489829886","valintatila":"HYVAKSYTTY","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"VASTAANOTETTAVISSA_SITOVASTI","vastaanottoDeadline":"2030-01-10T10:00:00Z","viimeisinHakemuksenTilanMuutos":"2014-08-26T15:12:40Z","jonosija":1,"varasijojaKaytetaanAlkaen":"2014-08-26T16:05:23Z","varasijojaTaytetaanAsti":"2014-08-26T16:05:23Z","julkaistavissa":true,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{},"pisteet":4.0},{"hakukohdeOid":"1.2.246.562.5.16303028779","hakukohdeNimi":"","tarjoajaOid":"1.2.246.562.10.455978782510","tarjoajaNimi":"","valintatapajonoOid":"","valintatila":"PERUUNTUNUT","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]},{"hakuOid":"1.2.246.562.5.2013080813081926341928","hakemusOid":"1.2.246.562.11.00000441370","hakijaOid":"1.2.246.562.24.14229104472","aikataulu":{"vastaanottoEnd":"2030-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.5.72607738902","hakukohdeNimi":"stevari amk hakukohde","tarjoajaOid":"1.2.246.562.10.591352080610","tarjoajaNimi":"Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}},{"hakukohdeOid":"1.2.246.562.20.83060182827","hakukohdeNimi":"","tarjoajaOid":"1.2.246.562.10.83122281013","tarjoajaNimi":"","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]},{"hakuOid":"1.2.246.562.5.2013080813081926341928","hakemusOid":"1.2.246.562.11.00000441371","hakijaOid":"1.2.246.562.24.14229104472","aikataulu":{"vastaanottoEnd":"2030-01-10T10:00:00Z","vastaanottoBufferDays":14},"hakutoiveet":[{"hakukohdeOid":"1.2.246.562.5.72607738902","hakukohdeNimi":"stevari amk hakukohde","tarjoajaOid":"1.2.246.562.10.591352080610","tarjoajaNimi":"Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}},{"hakukohdeOid":"1.2.246.562.20.83060182827","hakukohdeNimi":"","tarjoajaOid":"1.2.246.562.10.83122281013","tarjoajaNimi":"","valintatapajonoOid":"","valintatila":"KESKEN","vastaanottotila":"KESKEN","ilmoittautumistila":{"ilmoittautumisaika":{"loppu":"2030-01-10T21:59:59Z"},"ilmoittautumistapa":{"nimi":{"fi":"Oili","sv":"Oili","en":"Oili"},"url":"/oili/"},"ilmoittautumistila":"EI_TEHTY","ilmoittauduttavissa":false},"vastaanotettavuustila":"EI_VASTAANOTETTAVISSA","julkaistavissa":false,"ehdollisestiHyvaksyttavissa":false,"tilanKuvaukset":{}}]}]"""
+        assertJson(
+          jsonFromClasspath("expected-hyvaksytty-kesken-julkaistavissa-koko-haulle.json"),
+          body
+        )
       }
     }
 
@@ -316,7 +325,10 @@ class ValintaTulosServletSpec extends ServletSpecification {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")
 
       ilmoittaudu("LASNA_KOKO_LUKUVUOSI") {
-        body must_== """{"error":"Hakutoive 1.2.246.562.5.72607738902 ei ole ilmoittauduttavissa: ilmoittautumisaika: {\"loppu\":\"2030-01-10T21:59:59Z\"}, ilmoittautumistila: EI_TEHTY, valintatila: HYVAKSYTTY, vastaanottotila: KESKEN"}"""
+        assertJson(
+          jsonFromClasspath("expected-hyvaksytty-kesken-julkaistavissa-ilmoittautumisen-merkitsemiselle.json"),
+          body
+        )
         status must_== 400
       }
     }

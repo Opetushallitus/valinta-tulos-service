@@ -382,6 +382,10 @@
             <groupId>com.github.kagkarlsson</groupId>
             <artifactId>db-scheduler</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.tsers.zeison</groupId>
+            <artifactId>zeison_2.11</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

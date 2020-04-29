@@ -27,7 +27,8 @@ object JsonFormats {
     new ValintatapajonoOidSerializer,
     new HakemusOidSerializer,
     new KausiSerializer,
-    new HakijaOidSerializer
+    new HakijaOidSerializer,
+    new EhdollisenHyvaksymisenEhtoSerializer
   )
   val jsonFormats: Formats = (GenericJsonFormats.genericFormats ++ customSerializers)
     .addKeySerializers(List(

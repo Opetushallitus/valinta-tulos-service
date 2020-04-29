@@ -1,0 +1,85 @@
+{
+  "hakuOid": "1.2.246.562.5.2013080813081926341928",
+  "hakemusOid": "1.2.246.562.11.00000441369",
+  "hakijaOid": "1.2.246.562.24.14229104472",
+  "aikataulu": {
+    "vastaanottoEnd": "2014-09-01T09:00:00Z",
+    "vastaanottoBufferDays": 14
+  },
+  "hakutoiveet": [
+    {
+      "hakukohdeOid": "1.2.246.562.5.72607738902",
+      "hakukohdeNimi": "stevari amk hakukohde",
+      "tarjoajaOid": "1.2.246.562.10.591352080610",
+      "tarjoajaNimi": "Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta",
+      "valintatapajonoOid": "14090336922663576781797489829886",
+      "valintatila": "KESKEN",
+      "vastaanottotila": "KESKEN",
+      "ilmoittautumistila": {
+        "ilmoittautumisaika": {},
+        "ilmoittautumistapa": {
+          "nimi": {
+            "fi": "Oili",
+            "sv": "Oili",
+            "en": "Oili"
+          },
+          "url": "/oili/"
+        },
+        "ilmoittautumistila": "EI_TEHTY",
+        "ilmoittauduttavissa": false
+      },
+      "vastaanotettavuustila": "EI_VASTAANOTETTAVISSA",
+      "viimeisinHakemuksenTilanMuutos": "2013-08-26T15:12:40Z",
+      "varasijojaKaytetaanAlkaen": "2014-08-26T16:05:23Z",
+      "varasijojaTaytetaanAsti": "2014-08-26T16:05:23Z",
+      "julkaistavissa": false,
+      "ehdollisestiHyvaksyttavissa": false,
+      "tilanKuvaukset": {},
+      "jonokohtaisetTulostiedot": [
+        {
+          "nimi": "Varsinainen jono",
+          "valintatila": "KESKEN",
+          "julkaistavissa": false,
+          "valintatapajonoPrioriteetti": 0,
+          "ehdollisestiHyvaksyttavissa": false,
+          "eiVarasijatayttoa": false
+        },
+        {
+          "nimi": "Varsinainen jono",
+          "valintatila": "KESKEN",
+          "julkaistavissa": false,
+          "valintatapajonoPrioriteetti": 0,
+          "ehdollisestiHyvaksyttavissa": false,
+          "eiVarasijatayttoa": false
+        }
+      ]
+    },
+    {
+      "hakukohdeOid": "1.2.246.562.5.16303028779",
+      "hakukohdeNimi": "",
+      "tarjoajaOid": "1.2.246.562.10.455978782510",
+      "tarjoajaNimi": "",
+      "valintatapajonoOid": "",
+      "valintatila": "KESKEN",
+      "vastaanottotila": "KESKEN",
+      "ilmoittautumistila": {
+        "ilmoittautumisaika": {},
+        "ilmoittautumistapa": {
+          "nimi": {
+            "fi": "Oili",
+            "sv": "Oili",
+            "en": "Oili"
+          },
+          "url": "/oili/"
+        },
+        "ilmoittautumistila": "EI_TEHTY",
+        "ilmoittauduttavissa": false
+      },
+      "vastaanotettavuustila": "EI_VASTAANOTETTAVISSA",
+      "julkaistavissa": false,
+      "ehdollisestiHyvaksyttavissa": false,
+      "tilanKuvaukset": {},
+      "jonokohtaisetTulostiedot": []
+    }
+  ]
+}
