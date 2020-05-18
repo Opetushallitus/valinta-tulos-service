@@ -198,7 +198,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
           uusi.getEhdollisenHyvaksynnanEhto,
           vanha.getEhdollisenHyvaksynnanEhto.isDefined
         )).collect {
-          case (true, None, _) =>
+          case (true, None, true) =>
             valinnantulosRepository.deleteHyvaksynnanEhtoValintatapajonossa(
               uusi.hakemusOid, uusi.valintatapajonoOid, uusi.hakukohdeOid, ifUnmodifiedSince.get)
           case (true, Some(ehto), false) =>
