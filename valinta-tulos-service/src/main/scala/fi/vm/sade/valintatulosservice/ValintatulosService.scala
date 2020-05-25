@@ -853,12 +853,24 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       case (tulos, index) =>
         val higherJulkaisematon = firstJulkaisematon >= 0 && index > firstJulkaisematon
         if (higherJulkaisematon && tulos.valintatila == Valintatila.peruuntunut) {
-          val wasHyvaksyttyJulkaistu = valinnantulosRepository.getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuCountHistoriasta(hakemusOid, tulos.hakukohdeOid) > 0
+          val jonoJostaOliHyvaksyttyJulkaistu: Option[ValintatapajonoOid] = valinnantulosRepository.getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuJonoOidHistoriasta(hakemusOid, tulos.hakukohdeOid)
+          val wasHyvaksyttyJulkaistu = jonoJostaOliHyvaksyttyJulkaistu.nonEmpty
           val existsHigherHyvaksyttyJulkaistu = tuloksetWithIndex.exists(twi => twi._2 < index && twi._1.valintatila.equals(Valintatila.hyväksytty) && twi._1.julkaistavissa)
           if (wasHyvaksyttyJulkaistu && !existsHigherHyvaksyttyJulkaistu && !firstChanged) {
             logger.info("Merkitään aiemmin hyväksyttynä ollut peruuntunut hyväksytyksi koska ylemmän hakutoiveen tuloksia ei ole vielä julkaistu. Index {}, tulos {}", index, tulos)
             firstChanged = true
-            tulos.copy(valintatila = Valintatila.hyväksytty, tilanKuvaukset = Map.empty)
+            tulos.copy(
+              valintatila = Valintatila.hyväksytty,
+              tilanKuvaukset = Map.empty,
+              jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map {
+                jonokohtainenTulostieto =>
+                  if (jonoJostaOliHyvaksyttyJulkaistu.contains(jonokohtainenTulostieto.oid) && jonokohtainenTulostieto.valintatila == Valintatila.peruuntunut) {
+                    jonokohtainenTulostieto.copy(valintatila = Valintatila.hyväksytty)
+                  } else {
+                    jonokohtainenTulostieto
+                  }
+              }
+            )
           } else {
             logger.debug("näytäHyväksyttyäJulkaisematontaAlemmistaKorkeinHyvaksyttyOdottamassaYlempiä {}", tulos.valintatila)
             tulos

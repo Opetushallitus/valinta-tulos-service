@@ -4,6 +4,7 @@ import fi.vm.sade.valintatulosservice.domain.Valintatila
 import fi.vm.sade.valintatulosservice.domain.Valintatila.Valintatila
 
 case class JonokohtainenTulostieto(
+                                  oid: ValintatapajonoOid,
                                   nimi: String,
                                   pisteet: Option[BigDecimal],
                                   alinHyvaksyttyPistemaara: Option[BigDecimal],

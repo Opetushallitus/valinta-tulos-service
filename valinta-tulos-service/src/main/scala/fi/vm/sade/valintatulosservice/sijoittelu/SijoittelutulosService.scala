@@ -209,6 +209,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
           .getHakutoiveenValintatapajonot
           .map(valintatapajono => {
             JonokohtainenTulostieto(
+              oid = ValintatapajonoOid(valintatapajono.getValintatapajonoOid),
               nimi = valintatapajono.getValintatapajonoNimi,
               pisteet = Option(valintatapajono.getPisteet).map((p: java.math.BigDecimal) => new BigDecimal(p)),
               alinHyvaksyttyPistemaara = Option(valintatapajono.getAlinHyvaksyttyPistemaara).map((p: java.math.BigDecimal) => new BigDecimal(p)),

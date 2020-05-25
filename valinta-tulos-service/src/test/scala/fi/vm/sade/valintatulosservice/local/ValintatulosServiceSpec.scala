@@ -268,7 +268,12 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
 
 
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
-        checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+        val alempiPeruuntunutTulosJokaOnKaannettyHyvaksytyksi = getHakutoive("1.2.246.562.5.72607738903")
+        checkHakutoiveState(alempiPeruuntunutTulosJokaOnKaannettyHyvaksytyksi, Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+        val jonokohtaisetTulostiedotAlemmaltaHyvaksytyksiKaannetylta: Seq[JonokohtainenTulostieto] = alempiPeruuntunutTulosJokaOnKaannettyHyvaksytyksi.jonokohtaisetTulostiedot.sortBy(_.valintatapajonoPrioriteetti)
+        jonokohtaisetTulostiedotAlemmaltaHyvaksytyksiKaannetylta(0).valintatila must_== Valintatila.peruuntunut
+        jonokohtaisetTulostiedotAlemmaltaHyvaksytyksiKaannetylta(1).valintatila must_== Valintatila.hyväksytty
+        jonokohtaisetTulostiedotAlemmaltaHyvaksytyksiKaannetylta(2).valintatila must_== Valintatila.peruuntunut
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
 
         // Julkaistaan tulos:
