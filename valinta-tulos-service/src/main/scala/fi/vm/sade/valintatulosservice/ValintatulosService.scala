@@ -489,11 +489,11 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
 
     val lopullisetTulokset = Välitulos(sijoitteluTulos.hakemusOid, tulokset, haku, ohjausparametrit)
       .map(näytäHyväksyttyäJulkaisematontaAlemmistaKorkeinHyvaksyttyOdottamassaYlempiä)
-      .map(näytäJulkaisematontaAlemmatPeruutetutKeskeneräisinä)
-      .map(peruValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua)
+      .map(näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä)
+      .map(peruunnutaValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua)
       .map(näytäVarasijaltaHyväksytytHyväksyttyinäJosVarasijasäännötEiVoimassa)
       .map(sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja)
-      .map(näytäAlemmatPeruutuneetKeskeneräisinäJosYlemmätKeskeneräisiä)
+      .map(näytäAlemmatPeruuntuneetKeskeneräisinäJosYlemmätKeskeneräisiä)
       .map(piilotaKuvauksetKeskeneräisiltä)
       .map(asetaVastaanotettavuusValintarekisterinPerusteella(vastaanottoKaudella))
       .map(asetaKelaURL)
@@ -801,30 +801,30 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
-  private def peruValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
+  private def peruunnutaValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
     if (haku.sijoitteluJaPriorisointi) {
       val firstFinished = tulokset.indexWhere { t =>
         isHyväksytty(t.valintatila) || t.valintatila == Valintatila.perunut
       }
       tulokset.zipWithIndex.map {
         case (tulos, index) if firstFinished > -1 && index > firstFinished && tulos.valintatila == Valintatila.kesken =>
-          logger.debug("peruValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua valintatila > peruuntunut {}", index)
+          logger.debug("peruunnutaValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua valintatila > peruuntunut {}", index)
           tulos.copy(valintatila = Valintatila.peruuntunut)
         case (tulos, _) =>
           tulos
       }
     } else {
-      logger.debug("peruValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua ei käytä sijoittelua")
+      logger.debug("peruunnutaValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua ei käytä sijoittelua")
       tulokset
     }
   }
 
 
-  private def näytäAlemmatPeruutuneetKeskeneräisinäJosYlemmätKeskeneräisiä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
+  private def näytäAlemmatPeruuntuneetKeskeneräisinäJosYlemmätKeskeneräisiä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
     val firstKeskeneräinen: Int = tulokset.indexWhere (_.valintatila == Valintatila.kesken)
     tulokset.zipWithIndex.map {
       case (tulos, index) if firstKeskeneräinen >= 0 && index > firstKeskeneräinen && tulos.valintatila == Valintatila.peruuntunut =>
-        logger.debug("näytäAlemmatPeruutuneetKeskeneräisinäJosYlemmätKeskeneräisiä toKesken {}", index)
+        logger.debug("näytäAlemmatPeruuntuneetKeskeneräisinäJosYlemmätKeskeneräisiä toKesken {}", index)
         tulos.toKesken
       case (tulos, _) =>
         logger.debug("tulos.valintatila "+tulos.valintatila)
@@ -832,14 +832,14 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
-  private def näytäJulkaisematontaAlemmatPeruutetutKeskeneräisinä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
+  private def näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
     val firstJulkaisematon: Int = tulokset.indexWhere (!_.julkaistavissa)
     tulokset.zipWithIndex.map {
       case (tulos, index) if firstJulkaisematon >= 0 && index > firstJulkaisematon && tulos.valintatila == Valintatila.peruuntunut =>
-        logger.debug("näytäJulkaisematontaAlemmatPeruutetutKeskeneräisinä toKesken {}", index)
+        logger.debug("näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä toKesken {}", index)
         tulos.toKesken
       case (tulos, _) =>
-        logger.debug("näytäJulkaisematontaAlemmatPeruutetutKeskeneräisinä {}", tulos.valintatila)
+        logger.debug("näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä {}", tulos.valintatila)
         tulos
     }
   }
