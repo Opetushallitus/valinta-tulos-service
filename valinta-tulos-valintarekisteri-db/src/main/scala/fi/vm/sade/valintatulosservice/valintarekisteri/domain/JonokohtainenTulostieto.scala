@@ -23,7 +23,11 @@ case class JonokohtainenTulostieto(
       valintatila = Valintatila.kesken,
       pisteet = None,
       alinHyvaksyttyPistemaara = None,
-      varasijanumero = None
+      varasijanumero = None,
+      julkaistavissa = false,
+      tilanKuvaukset = None,
+      ehdollisestiHyvaksyttavissa = false,
+      ehdollisenHyvaksymisenEhto = None
     )
   }
 }
