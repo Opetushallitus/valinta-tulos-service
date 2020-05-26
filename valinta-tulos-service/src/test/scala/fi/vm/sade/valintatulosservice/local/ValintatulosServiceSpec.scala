@@ -1,7 +1,5 @@
 package fi.vm.sade.valintatulosservice.local
 
-import java.util.concurrent.TimeUnit
-
 import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila.Vastaanotettavuustila
@@ -21,8 +19,6 @@ import org.joda.time.DateTime
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 import slick.jdbc.PostgresProfile.api._
-
-import scala.concurrent.duration.Duration
 
 @RunWith(classOf[JUnitRunner])
 class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
@@ -263,8 +259,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           .andThen(valintarekisteriDb.storeValinnantila(hakemuksen21tila, None))
           .andThen(valintarekisteriDb.storeValinnantila(hakemuksen22tila, None))
           .andThen(valintarekisteriDb.storeValinnantila(hakemuksen1tila, None))
-        .transactionally,
-        Duration(60, TimeUnit.MINUTES))
+        .transactionally)
 
 
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
@@ -336,8 +331,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           .andThen(valintarekisteriDb.storeValinnantila(hakemuksen22tila, None))
           .andThen(valintarekisteriDb.storeValinnantila(hakemuksen23tila, None))
           .andThen(valintarekisteriDb.storeValinnantila(hakemuksen1tila, None))
-        .transactionally,
-        Duration(60, TimeUnit.MINUTES))
+        .transactionally)
 
 
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
@@ -376,8 +370,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
 
         valintarekisteriDb.runBlocking(valintarekisteriDb.storeValinnantila(hakemuksen1tilaHyvaksytty, None)
             .andThen(valintarekisteriDb.storeValinnantila(hakemuksen2tilaPeruuntunut, None))
-            .transactionally,
-          Duration(10, TimeUnit.MINUTES))
+            .transactionally)
 
         // BUG-2026 reproduction step 3
         // HYVAKSYTTY KESKEN false
@@ -400,40 +393,31 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
 
         //Poistetaan kannasta 2. hakutoiveen valintatilan tiedot:
         valintarekisteriDb.runBlocking(sqlu"delete from jonosijat where valintatapajono_oid = '14090336922663576781797489829885' and hakukohde_oid = '1.2.246.562.5.72607738903'"
-          .transactionally,
-          Duration(60, TimeUnit.MINUTES))
+          .transactionally)
 
         valintarekisteriDb.runBlocking(sqlu"delete from valintatapajonot where oid = '14090336922663576781797489829885'"
-          .transactionally,
-          Duration(60, TimeUnit.MINUTES))
+          .transactionally)
 
         valintarekisteriDb.runBlocking(sqlu"delete from tilat_kuvaukset where hakukohde_oid = '1.2.246.562.5.72607738903' and hakemus_oid = '1.2.246.562.11.00000441369' and valintatapajono_oid = '14090336922663576781797489829885'"
-          .transactionally,
-          Duration(60, TimeUnit.MINUTES))
+          .transactionally)
 
         valintarekisteriDb.runBlocking(sqlu"delete from tilat_kuvaukset_history where hakukohde_oid = '1.2.246.562.5.72607738903' and hakemus_oid = '1.2.246.562.11.00000441369' and valintatapajono_oid = '14090336922663576781797489829885'"
-          .transactionally,
-          Duration(60, TimeUnit.MINUTES))
+          .transactionally)
 
         valintarekisteriDb.runBlocking(sqlu"delete from valinnantulokset where hakukohde_oid = '1.2.246.562.5.72607738903' and hakemus_oid = '1.2.246.562.11.00000441369'"
-          .transactionally,
-          Duration(60, TimeUnit.MINUTES))
+          .transactionally)
 
         valintarekisteriDb.runBlocking(sqlu"delete from valinnantulokset_history where hakukohde_oid = '1.2.246.562.5.72607738903' and hakemus_oid = '1.2.246.562.11.00000441369'"
-          .transactionally,
-          Duration(60, TimeUnit.MINUTES))
+          .transactionally)
 
         valintarekisteriDb.runBlocking(sqlu"delete from valinnantilat where hakukohde_oid = '1.2.246.562.5.72607738903' and hakemus_oid = '1.2.246.562.11.00000441369'"
-          .transactionally,
-          Duration(60, TimeUnit.MINUTES))
+          .transactionally)
 
         valintarekisteriDb.runBlocking(sqlu"delete from valinnantilat_history where hakukohde_oid = '1.2.246.562.5.72607738903' and hakemus_oid = '1.2.246.562.11.00000441369'"
-          .transactionally,
-          Duration(60, TimeUnit.MINUTES))
+          .transactionally)
 
         valintarekisteriDb.runBlocking(sqlu"delete from sijoitteluajon_hakukohteet where hakukohde_oid = '1.2.246.562.5.72607738903'"
-          .transactionally,
-          Duration(60, TimeUnit.MINUTES))
+          .transactionally)
 
         val hakemuksen1tila = ValinnantilanTallennus(HakemusOid("1.2.246.562.11.00000441369"),
           ValintatapajonoOid("14090336922663576781797489829884"),
@@ -453,8 +437,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
         valintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = 'false' where hakukohde_oid = '1.2.246.562.5.72607738902' and valintatapajono_oid = '14090336922663576781797489829884' and hakemus_oid = '1.2.246.562.11.00000441369'"
           .andThen(valintarekisteriDb.storeValinnantila(hakemuksen3tila, None))
           .andThen(valintarekisteriDb.storeValinnantila(hakemuksen1tila, None))
-          .transactionally,
-          Duration(60, TimeUnit.MINUTES))
+          .transactionally)
 
 
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
