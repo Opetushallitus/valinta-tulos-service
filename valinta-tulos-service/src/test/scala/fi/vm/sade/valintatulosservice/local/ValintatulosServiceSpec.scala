@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.local
 
-import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
+import fi.vm.sade.sijoittelu.domain.TilankuvauksenTarkenne.PERUUNTUNUT_HYVAKSYTTY_YLEMMALLE_HAKUTOIVEELLE
+import fi.vm.sade.sijoittelu.domain.{TilankuvauksenTarkenne, ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila.Vastaanotettavuustila
 import fi.vm.sade.valintatulosservice.domain._
@@ -18,7 +19,10 @@ import fi.vm.sade.valintatulosservice.{ITSpecification, TimeWarp, ValintatulosSe
 import org.joda.time.DateTime
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
+import slick.dbio
 import slick.jdbc.PostgresProfile.api._
+
+import scala.compat.java8.OptionConverters._
 
 @RunWith(classOf[JUnitRunner])
 class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
@@ -347,6 +351,13 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
       }
 
       "peruuntunutta ei merkitä väliaikaisesti hyväksytyksi jos se ei ole ollut samaan aikaan sekä hyväksytty että julkaistu" in {
+        val hakemusOid = HakemusOid("1.2.246.562.11.00000441369")
+        val ylempiHakukohdeOid = HakukohdeOid("1.2.246.562.5.72607738902")
+        val ylemmanKohteenJonoOid = ValintatapajonoOid("14090336922663576781797489829884")
+        val alempiHakukohdeOid = HakukohdeOid("1.2.246.562.5.72607738903")
+        val alemmanKohteenJonoOid = ValintatapajonoOid("14090336922663576781797489829886")
+        val oppijanumero = "1.2.246.562.24.14229104472"
+
         // BUG-2026 reproduction step 1
         // VARALLA KESKEN false
         // HYVAKSYTTY KESKEN false
@@ -355,30 +366,49 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
         // BUG-2026 reproduction step 2
         // HYVAKSYTTY KESKEN false
         // PERUUNTUNUT KESKEN false
-        val hakemuksen1tilaHyvaksytty = ValinnantilanTallennus(HakemusOid("1.2.246.562.11.00000441369"),
-          ValintatapajonoOid("14090336922663576781797489829884"),
-          HakukohdeOid("1.2.246.562.5.72607738902"),
-          "1.2.246.562.24.14229104472",
+        val hakemuksen1tilaHyvaksytty = ValinnantilanTallennus(hakemusOid,
+          ylemmanKohteenJonoOid,
+          ylempiHakukohdeOid,
+          oppijanumero,
           Valinnantila("Hyvaksytty"),
           "testi")
-        val hakemuksen2tilaPeruuntunut = ValinnantilanTallennus(HakemusOid("1.2.246.562.11.00000441369"),
-          ValintatapajonoOid("14090336922663576781797489829886"),
-          HakukohdeOid("1.2.246.562.5.72607738903"),
-          "1.2.246.562.24.14229104472",
+        val hakemuksen2tilaPeruuntunut = ValinnantilanTallennus(hakemusOid,
+          alemmanKohteenJonoOid,
+          alempiHakukohdeOid,
+          oppijanumero,
           Valinnantila("Peruuntunut"),
           "testi2")
 
+        val peruuntumisenSyynTallennus: dbio.DBIO[Unit] = valintarekisteriDb.storeValinnanTilanKuvaus(
+          alempiHakukohdeOid,
+          alemmanKohteenJonoOid,
+          hakemusOid,
+          ValinnantilanTarkenne.getValinnantilanTarkenne(PERUUNTUNUT_HYVAKSYTTY_YLEMMALLE_HAKUTOIVEELLE),
+          syyTeksti(PERUUNTUNUT_HYVAKSYTTY_YLEMMALLE_HAKUTOIVEELLE, "FI"),
+          syyTeksti(PERUUNTUNUT_HYVAKSYTTY_YLEMMALLE_HAKUTOIVEELLE, "SV"),
+          syyTeksti(PERUUNTUNUT_HYVAKSYTTY_YLEMMALLE_HAKUTOIVEELLE, "EN"))
+
         valintarekisteriDb.runBlocking(valintarekisteriDb.storeValinnantila(hakemuksen1tilaHyvaksytty, None)
-            .andThen(valintarekisteriDb.storeValinnantila(hakemuksen2tilaPeruuntunut, None))
+            .andThen(valintarekisteriDb.storeValinnantila(hakemuksen2tilaPeruuntunut, None)
+            .andThen(peruuntumisenSyynTallennus))
             .transactionally)
 
         // BUG-2026 reproduction step 3
         // HYVAKSYTTY KESKEN false
         // KESKEN KESKEN true
-        valintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = 'true' where hakukohde_oid = '1.2.246.562.5.72607738903' and valintatapajono_oid = '14090336922663576781797489829886' and hakemus_oid = '1.2.246.562.11.00000441369'")
+        valintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = 'true' where hakukohde_oid = ${alempiHakukohdeOid.s} and valintatapajono_oid = ${alemmanKohteenJonoOid.s} and hakemus_oid = ${hakemusOid.s}")
 
-        checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
-        checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
+        val ylemmanHyvaksytynToiveenTulos: Hakutoiveentulos = getHakutoive(ylempiHakukohdeOid)
+        checkHakutoiveState(ylemmanHyvaksytynToiveenTulos, Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
+        ylemmanHyvaksytynToiveenTulos.jonokohtaisetTulostiedot.size must_== 1
+        ylemmanHyvaksytynToiveenTulos.jonokohtaisetTulostiedot.head.valintatila must_== Valintatila.kesken
+        ylemmanHyvaksytynToiveenTulos.jonokohtaisetTulostiedot.head.tilanKuvaukset must beNone
+
+        val alemmanPeruuntuneenToiveenTulos = getHakutoive(alempiHakukohdeOid)
+        checkHakutoiveState(alemmanPeruuntuneenToiveenTulos, Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
+        alemmanPeruuntuneenToiveenTulos.jonokohtaisetTulostiedot.size must_== 1
+        alemmanPeruuntuneenToiveenTulos.jonokohtaisetTulostiedot.head.valintatila must_== Valintatila.kesken
+        alemmanPeruuntuneenToiveenTulos.jonokohtaisetTulostiedot.head.tilanKuvaukset must beNone
       }
 
       "hakutoiveista 1. hyväksytty, ei julkaistu 2. ei tehty 3. hyväksytty, odottaa ylempiä toiveita" in {
@@ -792,6 +822,8 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
 
   def getHakutoive(idSuffix: String) = hakemuksenTulos.hakutoiveet.find{_.hakukohdeOid.toString.endsWith(idSuffix)}.get
 
+  def getHakutoive(oid: HakukohdeOid) = hakemuksenTulos.hakutoiveet.find{_.hakukohdeOid == oid}.get
+
   def hakemuksenTulos = {
     valintatulosService.hakemuksentulos(hakemusOid).get
   }
@@ -814,5 +846,9 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
     hakuToive.vastaanottotila must_== vastaanottoTila
     hakuToive.vastaanotettavuustila must_== vastaanotettavuustila
     hakuToive.julkaistavissa must_== julkaistavissa
+  }
+
+  private def syyTeksti(tarkenne: TilankuvauksenTarkenne, kielikoodi: String): Some[String] = {
+    Some(tarkenne.vakioTilanKuvaus().asScala.map(_.getOrDefault(kielikoodi, "")).getOrElse(""))
   }
 }

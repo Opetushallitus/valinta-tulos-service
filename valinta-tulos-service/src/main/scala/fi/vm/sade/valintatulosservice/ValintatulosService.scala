@@ -837,7 +837,15 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     tulokset.zipWithIndex.map {
       case (tulos, index) if firstJulkaisematon >= 0 && index > firstJulkaisematon && tulos.valintatila == Valintatila.peruuntunut =>
         logger.debug("näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä toKesken {}", index)
-        tulos.toKesken
+        tulos.
+          toKesken.
+          copy(jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map { t =>
+            if (t.valintatila == Valintatila.peruuntunut || Valintatila.isHyväksytty(t.valintatila)) {
+              t.toKesken
+            } else {
+              t
+            }
+        })
       case (tulos, _) =>
         logger.debug("näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä {}", tulos.valintatila)
         tulos
