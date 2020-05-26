@@ -50,7 +50,7 @@
         {
           "tasasijasaanto": "YLITAYTTO",
           "oid": "14090336922663576781797489829886",
-          "nimi": "Varsinainen jono",
+          "nimi": "Varsinainen ylempi jono",
           "prioriteetti": 0,
           "aloituspaikat": 3,
           "eiVarasijatayttoa": false,
@@ -92,8 +92,8 @@
         {
           "tasasijasaanto": "YLITAYTTO",
           "oid": "14090336922663576781797489829887",
-          "nimi": "Varsinainen jono",
-          "prioriteetti": 0,
+          "nimi": "Varsinainen alempi jono",
+          "prioriteetti": 1,
           "aloituspaikat": 3,
           "eiVarasijatayttoa": false,
           "kaikkiEhdonTayttavatHyvaksytaan": false,

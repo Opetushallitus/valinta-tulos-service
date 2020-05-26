@@ -578,7 +578,16 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           "Valintatulos julkaistavissa, mutta haun valintatulosten julkaisu paivamaara tulevaisuudessa" in {
             // HYVAKSYTTY, PERUUNTUNUT KESKEN true
             useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = hakuFixture, ohjausparametritFixture = OhjausparametritFixtures.tuloksiaEiVielaSaaJulkaista)
-            checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
+            val hakutoiveentulos = getHakutoive("1.2.246.562.5.72607738902")
+            checkHakutoiveState(hakutoiveentulos, Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
+
+            hakutoiveentulos.jonokohtaisetTulostiedot.size must_== 2
+            val ylemmanJononTulos = hakutoiveentulos.jonokohtaisetTulostiedot.find(_.oid == ValintatapajonoOid("14090336922663576781797489829886"))
+            val alemmanJononTulos = hakutoiveentulos.jonokohtaisetTulostiedot.find(_.oid == ValintatapajonoOid("14090336922663576781797489829887"))
+            ylemmanJononTulos.get.valintatila must_== Valintatila.kesken
+            ylemmanJononTulos.get.julkaistavissa must_== false
+            alemmanJononTulos.get.valintatila must_== Valintatila.kesken
+            alemmanJononTulos.get.julkaistavissa must_== false
           }
 
           "Valintatulos julkaistavissa ja haun julkaisu paivamaara mennyt" in {
