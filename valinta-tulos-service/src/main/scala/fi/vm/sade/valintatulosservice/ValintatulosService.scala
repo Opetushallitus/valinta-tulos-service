@@ -3,7 +3,8 @@ package fi.vm.sade.valintatulosservice
 import java.time.Instant
 import java.util.Date
 
-import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
+import fi.vm.sade.sijoittelu.domain.TilankuvauksenTarkenne.{PERUUNTUNUT_EI_VASTAANOTTANUT_MAARAAIKANA, PERUUNTUNUT_VASTAANOTTANUT_TOISEN_PAIKAN_YHDEN_SAANNON_PAIKAN_PIIRISSA}
+import fi.vm.sade.sijoittelu.domain.{TilankuvauksenTarkenne, ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.sijoittelu.tulos.dto
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationObject, HakutoiveDTO}
 import fi.vm.sade.utils.Timer.timed
@@ -23,6 +24,7 @@ import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.ehdollinenVas
 import org.apache.commons.lang3.StringUtils
 
 import scala.collection.JavaConverters._
+import scala.compat.java8.OptionConverters._
 
 class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
                           sijoittelutulosService: SijoittelutulosService,
@@ -538,11 +540,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
                     valintatila = Valintatila.perunut,
                     pisteet = None,
                     alinHyvaksyttyPistemaara = None,
-                    tilanKuvaukset = Some(Map(
-                      "FI" -> "Peruuntunut, ei vastaanottanut määräaikana",
-                      "SV" -> "Annullerad, har inte tagit emot platsen inom utsatt tid",
-                      "EN" -> "Cancelled, has not confirmed the study place within the deadline"
-                    ))
+                    tilanKuvaukset = tilankuvaukset(PERUUNTUNUT_EI_VASTAANOTTANUT_MAARAAIKANA)
                   )
                 } else {
                   jonokohtainenTulostieto
@@ -619,11 +617,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
           valintatila = Valintatila.peruuntunut,
           pisteet = None,
           alinHyvaksyttyPistemaara = None,
-          tilanKuvaukset = Some(Map(
-            "FI" -> "Peruuntunut, vastaanottanut toisen korkeakoulupaikan",
-            "SV" -> "Annullerad, tagit emot en annan högskoleplats",
-            "EN" -> "Cancelled, accepted another higher education study place"
-          ))
+          tilanKuvaukset = tilankuvaukset(PERUUNTUNUT_VASTAANOTTANUT_TOISEN_PAIKAN_YHDEN_SAANNON_PAIKAN_PIIRISSA)
         )
       } else {
         jonokohtainenTulostieto
@@ -635,11 +629,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
 
         tulos.copy(
           valintatila = Valintatila.peruuntunut,
-          tilanKuvaukset = Map(
-            "FI" -> "Peruuntunut, vastaanottanut toisen korkeakoulupaikan",
-            "SV" -> "Annullerad, tagit emot en annan högskoleplats",
-            "EN" -> "Cancelled, accepted another higher education study place"
-          )
+          tilanKuvaukset = tilankuvaukset(PERUUNTUNUT_VASTAANOTTANUT_TOISEN_PAIKAN_YHDEN_SAANNON_PAIKAN_PIIRISSA).get
         )
       } else {
         tulos
@@ -946,6 +936,10 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     } else {
       throw new IllegalStateException(msg)
     }
+  }
+
+  private def tilankuvaukset(tarkenne: TilankuvauksenTarkenne): Option[Map[String, String]] = {
+    tarkenne.vakioTilanKuvaus().asScala.map(_.asScala.toMap)
   }
 }
 
