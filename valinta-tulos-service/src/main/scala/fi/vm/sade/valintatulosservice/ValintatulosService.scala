@@ -23,7 +23,6 @@ import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.ehdollinenVas
 import org.apache.commons.lang3.StringUtils
 
 import scala.collection.JavaConverters._
-import scala.collection.immutable
 
 class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
                           sijoittelutulosService: SijoittelutulosService,
@@ -894,7 +893,9 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
               jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map {
                 jonokohtainenTulostieto =>
                   if (jonoJostaOliHyvaksyttyJulkaistu.contains(jonokohtainenTulostieto.oid) && jonokohtainenTulostieto.valintatila == Valintatila.peruuntunut) {
-                    jonokohtainenTulostieto.copy(valintatila = Valintatila.hyväksytty)
+                    jonokohtainenTulostieto.copy(
+                      valintatila = Valintatila.hyväksytty,
+                      tilanKuvaukset = None)
                   } else {
                     jonokohtainenTulostieto
                   }

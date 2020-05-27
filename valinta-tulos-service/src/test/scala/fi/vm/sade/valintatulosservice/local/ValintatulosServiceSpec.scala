@@ -21,6 +21,7 @@ import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 import slick.jdbc.PostgresProfile.api._
 
+import scala.collection.JavaConverters._
 import scala.compat.java8.OptionConverters._
 
 @RunWith(classOf[JUnitRunner])
@@ -335,6 +336,11 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           Valinnantila("Peruuntunut"),
           "testi")
 
+        val tallennaHakemuksen3Tarkenne = tallennaTilankuvauksenTarkenne(HakukohdeOid("1.2.246.562.5.72607738904"),
+          ValintatapajonoOid("14090336922663576781797489829888"),
+          HakemusOid("1.2.246.562.11.00000441369"),
+          PERUUNTUNUT_HYVAKSYTTY_YLEMMALLE_HAKUTOIVEELLE)
+
         // Ajetaan uudet valintatilat:
         valintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = 'false' where hakukohde_oid = '1.2.246.562.5.72607738902' and valintatapajono_oid = '14090336922663576781797489829884' and hakemus_oid = '1.2.246.562.11.00000441369'"
           .andThen(valintarekisteriDb.storeValinnantila(hakemuksen3tila, None))
@@ -342,19 +348,28 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           .andThen(valintarekisteriDb.storeValinnantila(hakemuksen22tila, None))
           .andThen(valintarekisteriDb.storeValinnantila(hakemuksen23tila, None))
           .andThen(valintarekisteriDb.storeValinnantila(hakemuksen1tila, None))
+          .andThen(tallennaHakemuksen3Tarkenne)
         .transactionally)
 
 
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.hylätty, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
-        checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+        val alimmanPeruuntuneenToiveenTulosKunYlinOnJulkaisematonHyvaksytty = getHakutoive("1.2.246.562.5.72607738904")
+        checkHakutoiveState(alimmanPeruuntuneenToiveenTulosKunYlinOnJulkaisematonHyvaksytty, Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+        alimmanPeruuntuneenToiveenTulosKunYlinOnJulkaisematonHyvaksytty.jonokohtaisetTulostiedot must have size 1
+        alimmanPeruuntuneenToiveenTulosKunYlinOnJulkaisematonHyvaksytty.jonokohtaisetTulostiedot.head.valintatila must_== Valintatila.hyväksytty
+        alimmanPeruuntuneenToiveenTulosKunYlinOnJulkaisematonHyvaksytty.jonokohtaisetTulostiedot.head.tilanKuvaukset must beNone
 
         // Julkaistaan tulos:
         valintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = 'true' where hakukohde_oid = '1.2.246.562.5.72607738902' and valintatapajono_oid = '14090336922663576781797489829884' and hakemus_oid = '1.2.246.562.11.00000441369'")
 
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.vastaanotettavissa_sitovasti, true)
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.hylätty, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
-        checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.peruuntunut, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+        val alimmanPeruuntuneenToiveenTulosKunYlinHyvaksyttyOnJulkaistu = getHakutoive("1.2.246.562.5.72607738904")
+        checkHakutoiveState(alimmanPeruuntuneenToiveenTulosKunYlinHyvaksyttyOnJulkaistu, Valintatila.peruuntunut, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+        alimmanPeruuntuneenToiveenTulosKunYlinHyvaksyttyOnJulkaistu.jonokohtaisetTulostiedot.head.valintatila must_== Valintatila.peruuntunut
+        alimmanPeruuntuneenToiveenTulosKunYlinHyvaksyttyOnJulkaistu.jonokohtaisetTulostiedot.head.tilanKuvaukset must
+          beSome(tilankuvauksetKielikoodeittain(PERUUNTUNUT_HYVAKSYTTY_YLEMMALLE_HAKUTOIVEELLE))
       }
 
       "peruuntunutta ei merkitä väliaikaisesti hyväksytyksi jos se ei ole ollut samaan aikaan sekä hyväksytty että julkaistu" in {
@@ -896,5 +911,9 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
 
   private def syyTeksti(tarkenne: TilankuvauksenTarkenne, kielikoodi: String): Some[String] = {
     Some(tarkenne.vakioTilanKuvaus().asScala.map(_.getOrDefault(kielikoodi, "")).getOrElse(""))
+  }
+
+  private def tilankuvauksetKielikoodeittain(tarkenne: TilankuvauksenTarkenne): Map[String, String] = {
+    tarkenne.vakioTilanKuvaus().get().asScala.toMap
   }
 }
