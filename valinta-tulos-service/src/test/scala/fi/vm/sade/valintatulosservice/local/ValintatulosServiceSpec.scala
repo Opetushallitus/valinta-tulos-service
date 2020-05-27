@@ -288,8 +288,16 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
         // HYVÄKSYTTY KESKEN true
         // Ajetaan ensin historiadata
         useFixture("hyvaksytty-ylempi-ei-julkaistu-alempi-peruuntunut-historia.json", hakuFixture = hakuFixture, hakemusFixtures = List("00000441369-3"))
+
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila. ei_vastaanotettavissa, true)
+        getHakutoive("1.2.246.562.5.72607738902").jonokohtaisetTulostiedot.head.valintatila must_== Valintatila.varalla
+
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
+        getHakutoive("1.2.246.562.5.72607738903").jonokohtaisetTulostiedot.size must_== 3
+        getHakutoive("1.2.246.562.5.72607738903").jonokohtaisetTulostiedot.head.valintatila must_== Valintatila.varalla
+        getHakutoive("1.2.246.562.5.72607738903").jonokohtaisetTulostiedot(1).valintatila must_== Valintatila.hyväksytty
+        getHakutoive("1.2.246.562.5.72607738903").jonokohtaisetTulostiedot(2).valintatila must_== Valintatila.peruuntunut
+
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
 
         val hakemuksen1tila = ValinnantilanTallennus(HakemusOid("1.2.246.562.11.00000441369"),
