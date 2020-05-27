@@ -951,6 +951,20 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
             hakutoiveentulos.jonokohtaisetTulostiedot.forall(_.valintatila == Valintatila.varalla) must beTrue
           }
 
+          "varasijojen määrä näytetään" in {
+            useFixture("hyvaksytty-ylempi-varalla.json", hakuFixture = hakuFixture)
+            val jonokohtaisetTulostiedot = getHakutoive("1.2.246.562.5.72607738902").jonokohtaisetTulostiedot
+            jonokohtaisetTulostiedot(0).varasijat must beSome(5)
+            jonokohtaisetTulostiedot(1).varasijat must beNone
+          }
+
+          "ei varasijatäyttöä näytetään" in {
+            useFixture("hyvaksytty-ylempi-varalla.json", hakuFixture = hakuFixture)
+            val jonokohtaisetTulostiedot = getHakutoive("1.2.246.562.5.72607738902").jonokohtaisetTulostiedot
+            jonokohtaisetTulostiedot(0).eiVarasijatayttoa must beFalse
+            jonokohtaisetTulostiedot(1).eiVarasijatayttoa must beTrue
+          }
+
           "varasijojen käsittelypäivämäärät näytetään" in {
             // HYVÄKSYTTY KESKEN true
             useFixture("hyvaksytty-ylempi-varalla.json", hakuFixture = hakuFixture)
