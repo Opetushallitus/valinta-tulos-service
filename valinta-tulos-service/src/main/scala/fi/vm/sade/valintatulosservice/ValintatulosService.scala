@@ -23,6 +23,7 @@ import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.ehdollinenVas
 import org.apache.commons.lang3.StringUtils
 
 import scala.collection.JavaConverters._
+import scala.collection.immutable
 
 class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
                           sijoittelutulosService: SijoittelutulosService,
@@ -493,7 +494,8 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       .map(peruunnutaValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua)
       .map(näytäVarasijaltaHyväksytytHyväksyttyinäJosVarasijasäännötEiVoimassa)
       .map(sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja)
-      .map(näytäAlemmatPeruuntuneetKeskeneräisinäJosYlemmätKeskeneräisiä)
+      .map(näytäAlemmatPeruuntuneetHakukohteetKeskeneräisinäJosYlemmätKeskeneräisiä)
+      .map(näytäAlemmatPeruuntuneetJonotKeskeneräisinäJosYlemmätKeskeneräisiä)
       .map(piilotaKuvauksetKeskeneräisiltä)
       .map(asetaVastaanotettavuusValintarekisterinPerusteella(vastaanottoKaudella))
       .map(asetaKelaURL)
@@ -820,15 +822,34 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
   }
 
 
-  private def näytäAlemmatPeruuntuneetKeskeneräisinäJosYlemmätKeskeneräisiä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
+  private def näytäAlemmatPeruuntuneetHakukohteetKeskeneräisinäJosYlemmätKeskeneräisiä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
     val firstKeskeneräinen: Int = tulokset.indexWhere (_.valintatila == Valintatila.kesken)
     tulokset.zipWithIndex.map {
       case (tulos, index) if firstKeskeneräinen >= 0 && index > firstKeskeneräinen && tulos.valintatila == Valintatila.peruuntunut =>
-        logger.debug("näytäAlemmatPeruuntuneetKeskeneräisinäJosYlemmätKeskeneräisiä toKesken {}", index)
+        logger.debug("näytäAlemmatPeruuntuneetHakukohteetKeskeneräisinäJosYlemmätKeskeneräisiä toKesken {}", index)
         tulos.toKesken
       case (tulos, _) =>
         logger.debug("tulos.valintatila "+tulos.valintatila)
         tulos
+    }
+  }
+
+  private def näytäAlemmatPeruuntuneetJonotKeskeneräisinäJosYlemmätKeskeneräisiä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
+    tulokset.map { hakutoiveenTulos =>
+      hakutoiveenTulos.copy(jonokohtaisetTulostiedot = näytäToiveenAlemmatPeruuntuneetJonotKeskeneräisinäJosYlemmätKeskeneräisiä(hakutoiveenTulos))
+    }
+  }
+
+  private def näytäToiveenAlemmatPeruuntuneetJonotKeskeneräisinäJosYlemmätKeskeneräisiä(hakutoiveenTulos: Hakutoiveentulos): List[JonokohtainenTulostieto] = {
+    val jonojenTulokset = hakutoiveenTulos.jonokohtaisetTulostiedotPrioriteettiJarjestyksessa
+    val firstKeskeneräinen: Int = jonojenTulokset.indexWhere(_.valintatila == Valintatila.kesken)
+    jonojenTulokset.zipWithIndex.map {
+      case (jononTulos, index) if firstKeskeneräinen >= 0 && index > firstKeskeneräinen && jononTulos.valintatila == Valintatila.peruuntunut =>
+        logger.debug("näytäToiveenAlemmatPeruuntuneetJonotKeskeneräisinäJosYlemmätKeskeneräisiä toKesken {}", index)
+        jononTulos.toKesken
+      case (jononTulos, _) =>
+        logger.debug("tulos.valintatila " + jononTulos.valintatila)
+        jononTulos
     }
   }
 

@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.local
 
-import fi.vm.sade.sijoittelu.domain.TilankuvauksenTarkenne.PERUUNTUNUT_HYVAKSYTTY_YLEMMALLE_HAKUTOIVEELLE
+import fi.vm.sade.sijoittelu.domain.TilankuvauksenTarkenne.{PERUUNTUNUT_HYVAKSYTTY_TOISESSA_JONOSSA, PERUUNTUNUT_HYVAKSYTTY_YLEMMALLE_HAKUTOIVEELLE}
 import fi.vm.sade.sijoittelu.domain.{TilankuvauksenTarkenne, ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila.Vastaanotettavuustila
@@ -19,7 +19,6 @@ import fi.vm.sade.valintatulosservice.{ITSpecification, TimeWarp, ValintatulosSe
 import org.joda.time.DateTime
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
-import slick.dbio
 import slick.jdbc.PostgresProfile.api._
 
 import scala.compat.java8.OptionConverters._
@@ -379,18 +378,12 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           Valinnantila("Peruuntunut"),
           "testi2")
 
-        val peruuntumisenSyynTallennus: dbio.DBIO[Unit] = valintarekisteriDb.storeValinnanTilanKuvaus(
-          alempiHakukohdeOid,
-          alemmanKohteenJonoOid,
-          hakemusOid,
-          ValinnantilanTarkenne.getValinnantilanTarkenne(PERUUNTUNUT_HYVAKSYTTY_YLEMMALLE_HAKUTOIVEELLE),
-          syyTeksti(PERUUNTUNUT_HYVAKSYTTY_YLEMMALLE_HAKUTOIVEELLE, "FI"),
-          syyTeksti(PERUUNTUNUT_HYVAKSYTTY_YLEMMALLE_HAKUTOIVEELLE, "SV"),
-          syyTeksti(PERUUNTUNUT_HYVAKSYTTY_YLEMMALLE_HAKUTOIVEELLE, "EN"))
-
         valintarekisteriDb.runBlocking(valintarekisteriDb.storeValinnantila(hakemuksen1tilaHyvaksytty, None)
             .andThen(valintarekisteriDb.storeValinnantila(hakemuksen2tilaPeruuntunut, None)
-            .andThen(peruuntumisenSyynTallennus))
+            .andThen(tallennaTilankuvauksenTarkenne(alempiHakukohdeOid,
+              alemmanKohteenJonoOid,
+              hakemusOid,
+              PERUUNTUNUT_HYVAKSYTTY_YLEMMALLE_HAKUTOIVEELLE)))
             .transactionally)
 
         // BUG-2026 reproduction step 3
@@ -513,6 +506,31 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.vastaanotettavissa_ehdollisesti, true)
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.peruuntunut, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
       }
+    }
+
+    "peruuntunut toisessa jonossa hyväksymisen takia näytetään kesken, jos hyväksytty-jonoa ei ole julkaistu" in {
+      useFixture("samassa-kohteessa-julkaisematon-hyvaksytty-ja-julkaistu-peruuntunut.json", hakuFixture = hakuFixture, hakemusFixtures = List("00000441369-3"))
+      val hakukohdeOid = HakukohdeOid("1.2.246.562.5.72607738902")
+      val alemmanJononOid = ValintatapajonoOid("14090336922663576781797489829887")
+      valintarekisteriDb.runBlocking(tallennaTilankuvauksenTarkenne(
+        hakukohdeOid,
+        alemmanJononOid,
+        hakemusOid,
+        PERUUNTUNUT_HYVAKSYTTY_TOISESSA_JONOSSA))
+
+      val hakutoiveentulos = getHakutoive("1.2.246.562.5.72607738902")
+      checkHakutoiveState(hakutoiveentulos, Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila. ei_vastaanotettavissa, false)
+
+      hakutoiveentulos.jonokohtaisetTulostiedot must have size 2
+
+      val ylemmanJulkaisemattomanHyvaksytynJononTulos = hakutoiveentulos.jonokohtaisetTulostiedot.head
+      ylemmanJulkaisemattomanHyvaksytynJononTulos.julkaistavissa must_== false
+      ylemmanJulkaisemattomanHyvaksytynJononTulos.valintatila must_== Valintatila.kesken
+
+      val alemmanJulkaistunPeruuntuneenJononTulos = hakutoiveentulos.jonokohtaisetTulostiedot(1)
+      alemmanJulkaistunPeruuntuneenJononTulos.tilanKuvaukset must beNone
+      alemmanJulkaistunPeruuntuneenJononTulos.valintatila must_== Valintatila.kesken
+      alemmanJulkaistunPeruuntuneenJononTulos.julkaistavissa must_== false
     }
   }
 
@@ -855,6 +873,17 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
     hakuToive.vastaanottotila must_== vastaanottoTila
     hakuToive.vastaanotettavuustila must_== vastaanotettavuustila
     hakuToive.julkaistavissa must_== julkaistavissa
+  }
+
+  private def tallennaTilankuvauksenTarkenne(hakukohdeOid: HakukohdeOid, jonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, tarkenne: TilankuvauksenTarkenne) = {
+    valintarekisteriDb.storeValinnanTilanKuvaus(
+      hakukohdeOid,
+      jonoOid,
+      hakemusOid,
+      ValinnantilanTarkenne.getValinnantilanTarkenne(tarkenne),
+      syyTeksti(tarkenne, "FI"),
+      syyTeksti(tarkenne, "SV"),
+      syyTeksti(tarkenne, "EN"))
   }
 
   private def syyTeksti(tarkenne: TilankuvauksenTarkenne, kielikoodi: String): Some[String] = {
