@@ -42,7 +42,8 @@
       "pisteet": 4.0,
       "jonokohtaisetTulostiedot": [
         {
-          "nimi": "Varsinainen jono",
+          "oid": "14090336922663576781797489829886",
+          "nimi": "Varsinainen ylempi jono",
           "pisteet": 4.0,
           "alinHyvaksyttyPistemaara": 4.0,
           "valintatila": "HYVAKSYTTY",
@@ -54,10 +55,11 @@
           "eiVarasijatayttoa": false
         },
         {
-          "nimi": "Varsinainen jono",
+          "oid": "14090336922663576781797489829887",
+          "nimi": "Varsinainen alempi jono",
           "valintatila": "KESKEN",
           "julkaistavissa": false,
-          "valintatapajonoPrioriteetti": 0,
+          "valintatapajonoPrioriteetti": 1,
           "ehdollisestiHyvaksyttavissa": false,
           "eiVarasijatayttoa": false
         }

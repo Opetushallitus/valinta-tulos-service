@@ -4,6 +4,7 @@ import fi.vm.sade.valintatulosservice.domain.Valintatila
 import fi.vm.sade.valintatulosservice.domain.Valintatila.Valintatila
 
 case class JonokohtainenTulostieto(
+                                  oid: ValintatapajonoOid,
                                   nimi: String,
                                   pisteet: Option[BigDecimal],
                                   alinHyvaksyttyPistemaara: Option[BigDecimal],
@@ -22,7 +23,11 @@ case class JonokohtainenTulostieto(
       valintatila = Valintatila.kesken,
       pisteet = None,
       alinHyvaksyttyPistemaara = None,
-      varasijanumero = None
+      varasijanumero = None,
+      julkaistavissa = false,
+      tilanKuvaukset = None,
+      ehdollisestiHyvaksyttavissa = false,
+      ehdollisenHyvaksymisenEhto = None
     )
   }
 }

@@ -3,7 +3,8 @@ package fi.vm.sade.valintatulosservice
 import java.time.Instant
 import java.util.Date
 
-import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
+import fi.vm.sade.sijoittelu.domain.TilankuvauksenTarkenne.{PERUUNTUNUT_EI_VASTAANOTTANUT_MAARAAIKANA, PERUUNTUNUT_VASTAANOTTANUT_TOISEN_PAIKAN_YHDEN_SAANNON_PAIKAN_PIIRISSA}
+import fi.vm.sade.sijoittelu.domain.{TilankuvauksenTarkenne, ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.sijoittelu.tulos.dto
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationObject, HakutoiveDTO}
 import fi.vm.sade.utils.Timer.timed
@@ -23,6 +24,7 @@ import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.ehdollinenVas
 import org.apache.commons.lang3.StringUtils
 
 import scala.collection.JavaConverters._
+import scala.compat.java8.OptionConverters._
 
 class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
                           sijoittelutulosService: SijoittelutulosService,
@@ -489,11 +491,12 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
 
     val lopullisetTulokset = Välitulos(sijoitteluTulos.hakemusOid, tulokset, haku, ohjausparametrit)
       .map(näytäHyväksyttyäJulkaisematontaAlemmistaKorkeinHyvaksyttyOdottamassaYlempiä)
-      .map(näytäJulkaisematontaAlemmatPeruutetutKeskeneräisinä)
-      .map(peruValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua)
+      .map(näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä)
+      .map(peruunnutaValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua)
       .map(näytäVarasijaltaHyväksytytHyväksyttyinäJosVarasijasäännötEiVoimassa)
       .map(sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja)
-      .map(näytäAlemmatPeruutuneetKeskeneräisinäJosYlemmätKeskeneräisiä)
+      .map(näytäAlemmatPeruuntuneetHakukohteetKeskeneräisinäJosYlemmätKeskeneräisiä)
+      .map(näytäAlemmatPeruuntuneetJonotKeskeneräisinäJosYlemmätKeskeneräisiä)
       .map(piilotaKuvauksetKeskeneräisiltä)
       .map(asetaVastaanotettavuusValintarekisterinPerusteella(vastaanottoKaudella))
       .map(asetaKelaURL)
@@ -537,11 +540,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
                     valintatila = Valintatila.perunut,
                     pisteet = None,
                     alinHyvaksyttyPistemaara = None,
-                    tilanKuvaukset = Some(Map(
-                      "FI" -> "Peruuntunut, ei vastaanottanut määräaikana",
-                      "SV" -> "Annullerad, har inte tagit emot platsen inom utsatt tid",
-                      "EN" -> "Cancelled, has not confirmed the study place within the deadline"
-                    ))
+                    tilanKuvaukset = tilankuvaukset(PERUUNTUNUT_EI_VASTAANOTTANUT_MAARAAIKANA)
                   )
                 } else {
                   jonokohtainenTulostieto
@@ -618,11 +617,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
           valintatila = Valintatila.peruuntunut,
           pisteet = None,
           alinHyvaksyttyPistemaara = None,
-          tilanKuvaukset = Some(Map(
-            "FI" -> "Peruuntunut, vastaanottanut toisen korkeakoulupaikan",
-            "SV" -> "Annullerad, tagit emot en annan högskoleplats",
-            "EN" -> "Cancelled, accepted another higher education study place"
-          ))
+          tilanKuvaukset = tilankuvaukset(PERUUNTUNUT_VASTAANOTTANUT_TOISEN_PAIKAN_YHDEN_SAANNON_PAIKAN_PIIRISSA)
         )
       } else {
         jonokohtainenTulostieto
@@ -634,11 +629,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
 
         tulos.copy(
           valintatila = Valintatila.peruuntunut,
-          tilanKuvaukset = Map(
-            "FI" -> "Peruuntunut, vastaanottanut toisen korkeakoulupaikan",
-            "SV" -> "Annullerad, tagit emot en annan högskoleplats",
-            "EN" -> "Cancelled, accepted another higher education study place"
-          )
+          tilanKuvaukset = tilankuvaukset(PERUUNTUNUT_VASTAANOTTANUT_TOISEN_PAIKAN_YHDEN_SAANNON_PAIKAN_PIIRISSA).get
         )
       } else {
         tulos
@@ -801,30 +792,30 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
-  private def peruValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
+  private def peruunnutaValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
     if (haku.sijoitteluJaPriorisointi) {
       val firstFinished = tulokset.indexWhere { t =>
         isHyväksytty(t.valintatila) || t.valintatila == Valintatila.perunut
       }
       tulokset.zipWithIndex.map {
         case (tulos, index) if firstFinished > -1 && index > firstFinished && tulos.valintatila == Valintatila.kesken =>
-          logger.debug("peruValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua valintatila > peruuntunut {}", index)
+          logger.debug("peruunnutaValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua valintatila > peruuntunut {}", index)
           tulos.copy(valintatila = Valintatila.peruuntunut)
         case (tulos, _) =>
           tulos
       }
     } else {
-      logger.debug("peruValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua ei käytä sijoittelua")
+      logger.debug("peruunnutaValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua ei käytä sijoittelua")
       tulokset
     }
   }
 
 
-  private def näytäAlemmatPeruutuneetKeskeneräisinäJosYlemmätKeskeneräisiä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
+  private def näytäAlemmatPeruuntuneetHakukohteetKeskeneräisinäJosYlemmätKeskeneräisiä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
     val firstKeskeneräinen: Int = tulokset.indexWhere (_.valintatila == Valintatila.kesken)
     tulokset.zipWithIndex.map {
       case (tulos, index) if firstKeskeneräinen >= 0 && index > firstKeskeneräinen && tulos.valintatila == Valintatila.peruuntunut =>
-        logger.debug("näytäAlemmatPeruutuneetKeskeneräisinäJosYlemmätKeskeneräisiä toKesken {}", index)
+        logger.debug("näytäAlemmatPeruuntuneetHakukohteetKeskeneräisinäJosYlemmätKeskeneräisiä toKesken {}", index)
         tulos.toKesken
       case (tulos, _) =>
         logger.debug("tulos.valintatila "+tulos.valintatila)
@@ -832,14 +823,41 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
-  private def näytäJulkaisematontaAlemmatPeruutetutKeskeneräisinä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
+  private def näytäAlemmatPeruuntuneetJonotKeskeneräisinäJosYlemmätKeskeneräisiä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
+    tulokset.map { hakutoiveenTulos =>
+      hakutoiveenTulos.copy(jonokohtaisetTulostiedot = näytäToiveenAlemmatPeruuntuneetJonotKeskeneräisinäJosYlemmätKeskeneräisiä(hakutoiveenTulos))
+    }
+  }
+
+  private def näytäToiveenAlemmatPeruuntuneetJonotKeskeneräisinäJosYlemmätKeskeneräisiä(hakutoiveenTulos: Hakutoiveentulos): List[JonokohtainenTulostieto] = {
+    val jonojenTulokset = hakutoiveenTulos.jonokohtaisetTulostiedotPrioriteettiJarjestyksessa
+    val firstKeskeneräinen: Int = jonojenTulokset.indexWhere(_.valintatila == Valintatila.kesken)
+    jonojenTulokset.zipWithIndex.map {
+      case (jononTulos, index) if firstKeskeneräinen >= 0 && index > firstKeskeneräinen && jononTulos.valintatila == Valintatila.peruuntunut =>
+        logger.debug("näytäToiveenAlemmatPeruuntuneetJonotKeskeneräisinäJosYlemmätKeskeneräisiä toKesken {}", index)
+        jononTulos.toKesken
+      case (jononTulos, _) =>
+        logger.debug("tulos.valintatila " + jononTulos.valintatila)
+        jononTulos
+    }
+  }
+
+  private def näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
     val firstJulkaisematon: Int = tulokset.indexWhere (!_.julkaistavissa)
     tulokset.zipWithIndex.map {
       case (tulos, index) if firstJulkaisematon >= 0 && index > firstJulkaisematon && tulos.valintatila == Valintatila.peruuntunut =>
-        logger.debug("näytäJulkaisematontaAlemmatPeruutetutKeskeneräisinä toKesken {}", index)
-        tulos.toKesken
+        logger.debug("näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä toKesken {}", index)
+        tulos.
+          toKesken.
+          copy(jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map { t =>
+            if (t.valintatila == Valintatila.peruuntunut || Valintatila.isHyväksytty(t.valintatila)) {
+              t.toKesken
+            } else {
+              t
+            }
+        })
       case (tulos, _) =>
-        logger.debug("näytäJulkaisematontaAlemmatPeruutetutKeskeneräisinä {}", tulos.valintatila)
+        logger.debug("näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä {}", tulos.valintatila)
         tulos
     }
   }
@@ -853,12 +871,26 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       case (tulos, index) =>
         val higherJulkaisematon = firstJulkaisematon >= 0 && index > firstJulkaisematon
         if (higherJulkaisematon && tulos.valintatila == Valintatila.peruuntunut) {
-          val wasHyvaksyttyJulkaistu = valinnantulosRepository.getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuCountHistoriasta(hakemusOid, tulos.hakukohdeOid) > 0
+          val jonoJostaOliHyvaksyttyJulkaistu: Option[ValintatapajonoOid] = valinnantulosRepository.getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuJonoOidHistoriasta(hakemusOid, tulos.hakukohdeOid)
+          val wasHyvaksyttyJulkaistu = jonoJostaOliHyvaksyttyJulkaistu.nonEmpty
           val existsHigherHyvaksyttyJulkaistu = tuloksetWithIndex.exists(twi => twi._2 < index && twi._1.valintatila.equals(Valintatila.hyväksytty) && twi._1.julkaistavissa)
           if (wasHyvaksyttyJulkaistu && !existsHigherHyvaksyttyJulkaistu && !firstChanged) {
             logger.info("Merkitään aiemmin hyväksyttynä ollut peruuntunut hyväksytyksi koska ylemmän hakutoiveen tuloksia ei ole vielä julkaistu. Index {}, tulos {}", index, tulos)
             firstChanged = true
-            tulos.copy(valintatila = Valintatila.hyväksytty, tilanKuvaukset = Map.empty)
+            tulos.copy(
+              valintatila = Valintatila.hyväksytty,
+              tilanKuvaukset = Map.empty,
+              jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map {
+                jonokohtainenTulostieto =>
+                  if (jonoJostaOliHyvaksyttyJulkaistu.get == jonokohtainenTulostieto.oid && jonokohtainenTulostieto.valintatila == Valintatila.peruuntunut) {
+                    jonokohtainenTulostieto.copy(
+                      valintatila = Valintatila.hyväksytty,
+                      tilanKuvaukset = None)
+                  } else {
+                    jonokohtainenTulostieto
+                  }
+              }
+            )
           } else {
             logger.debug("näytäHyväksyttyäJulkaisematontaAlemmistaKorkeinHyvaksyttyOdottamassaYlempiä {}", tulos.valintatila)
             tulos
@@ -904,6 +936,10 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     } else {
       throw new IllegalStateException(msg)
     }
+  }
+
+  private def tilankuvaukset(tarkenne: TilankuvauksenTarkenne): Option[Map[String, String]] = {
+    tarkenne.vakioTilanKuvaus().asScala.map(_.asScala.toMap)
   }
 }
 

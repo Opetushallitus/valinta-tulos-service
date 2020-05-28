@@ -60,8 +60,8 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten)
   }
 
-  override def getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuCountHistoriasta(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Int = {
-    runBlocking(sql"""select count(*)
+  override def getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuJonoOidHistoriasta(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Option[ValintatapajonoOid] = {
+    runBlocking(sql"""select vth.valintatapajono_oid
       from valinnantilat_history vth
       where vth.hakemus_oid = ${hakemusOid}
         and vth.hakukohde_oid = ${hakukohdeOid}
@@ -90,7 +90,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                   and th.valintatapajono_oid = vth.valintatapajono_oid
                   and th.julkaistavissa = 'true'
                   and th.system_time && vth.system_time
-                  limit 1))""".as[Int].head)
+                  limit 1))""".as[String].headOption).map(ValintatapajonoOid)
   }
 
   private def getValinnantulosMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {

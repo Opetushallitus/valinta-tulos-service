@@ -49,56 +49,14 @@
       "valintatapajonot": [
         {
           "tasasijasaanto": "YLITAYTTO",
-          "oid": "14090336922663576781797489829886",
-          "nimi": "Varsinainen ylempi jono",
-          "prioriteetti": 0,
-          "aloituspaikat": 3,
-          "eiVarasijatayttoa": false,
-          "kaikkiEhdonTayttavatHyvaksytaan": false,
-          "poissaOlevaTaytto": false,
-          "hyvaksytty": 1,
-          "varalla": 0,
-          "alinHyvaksyttyPistemaara": 4,
-          "varasijojaKaytetaanAlkaen": {
-            "$date": "2014-08-26T16:05:23.943Z"
-          },
-          "varasijojaTaytetaanAsti": {
-            "$date": "2014-08-26T16:05:23.943Z"
-          },
-          "hakemukset": [
-            {
-              "hakijaOid": "1.2.246.562.24.14229104472",
-              "hakemusOid": "1.2.246.562.11.00000441369",
-              "etunimi": "Teppo",
-              "sukunimi": "Testaaja",
-              "prioriteetti": 1,
-              "jonosija": 1,
-              "pisteet": 4,
-              "tasasijaJonosija": 1,
-              "tila": "HYVAKSYTTY",
-              "tilaHistoria": [
-                {
-                  "luotu": {
-                    "$date": "2014-08-26T15:12:40.623Z"
-                  },
-                  "tila": "HYVAKSYTTY"
-                }
-              ],
-              "hyvaksyttyHarkinnanvaraisesti": false,
-              "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
-            }
-          ]
-        },
-        {
-          "tasasijasaanto": "YLITAYTTO",
           "oid": "14090336922663576781797489829887",
-          "nimi": "Varsinainen alempi jono",
+          "nimi": "Alemman prioriteetin jono",
           "prioriteetti": 1,
           "aloituspaikat": 3,
           "eiVarasijatayttoa": false,
           "kaikkiEhdonTayttavatHyvaksytaan": false,
           "poissaOlevaTaytto": false,
-          "hyvaksytty": 1,
+          "hyvaksytty": 0,
           "varalla": 0,
           "alinHyvaksyttyPistemaara": 4,
           "varasijojaKaytetaanAlkaen": {
@@ -127,6 +85,48 @@
                 }
               ],
               "hyvaksyttyHarkinnanvaraisesti": false,
+              "tilankuvauksenTarkenne": "PERUUNTUNUT_HYVAKSYTTY_TOISESSA_JONOSSA"
+            }
+          ]
+        },
+        {
+          "tasasijasaanto": "YLITAYTTO",
+          "oid": "14090336922663576781797489829886",
+          "nimi": "Ylemmän prioriteetin jono",
+          "prioriteetti": 0,
+          "aloituspaikat": 3,
+          "eiVarasijatayttoa": false,
+          "kaikkiEhdonTayttavatHyvaksytaan": false,
+          "poissaOlevaTaytto": false,
+          "hyvaksytty": 1,
+          "varalla": 0,
+          "alinHyvaksyttyPistemaara": 4,
+          "varasijojaKaytetaanAlkaen": {
+            "$date": "2014-08-26T16:05:23.943Z"
+          },
+          "varasijojaTaytetaanAsti": {
+            "$date": "2014-08-26T16:05:23.943Z"
+          },
+          "hakemukset": [
+            {
+              "hakijaOid": "1.2.246.562.24.14229104472",
+              "hakemusOid": "1.2.246.562.11.00000441369",
+              "etunimi": "Teppo",
+              "sukunimi": "Testaaja",
+              "prioriteetti": 1,
+              "jonosija": 1,
+              "pisteet": 4,
+              "tasasijaJonosija": 1,
+              "tila": "HYVAKSYTTY",
+              "tilaHistoria": [
+                {
+                  "luotu": {
+                    "$date": "2013-08-26T15:12:40.623Z"
+                  },
+                  "tila": "HYVAKSYTTY"
+                }
+              ],
+              "hyvaksyttyHarkinnanvaraisesti": false,
               "tilankuvauksenTarkenne": "EI_TILANKUVAUKSEN_TARKENNETTA"
             }
           ]
@@ -148,17 +148,24 @@
       "hakutoive": 1,
       "tila": "KESKEN",
       "ilmoittautumisTila": "EI_TEHTY",
+      "julkaistavissa": false,
+      "logEntries": []
+    },
+    {
+      "_id": {
+        "$oid": "53fc8613e4b0b0b110900767"
+      },
+      "className": "fi.vm.sade.sijoittelu.domain.Valintatulos",
+      "valintatapajonoOid": "14090336922663576781797489829887",
+      "hakemusOid": "1.2.246.562.11.00000441369",
+      "hakukohdeOid": "1.2.246.562.5.72607738902",
+      "hakijaOid": "1.2.246.562.24.14229104472",
+      "hakuOid": "1.2.246.562.5.2013080813081926341928",
+      "hakutoive": 1,
+      "tila": "KESKEN",
+      "ilmoittautumisTila": "EI_TEHTY",
       "julkaistavissa": true,
-      "logEntries": [
-        {
-          "luotu": {
-            "$date": "2014-08-26T16:05:23.943Z"
-          },
-          "muokkaaja": "1.2.246.562.24.00000000001",
-          "muutos": "KESKEN",
-          "selite": "Massamuokkaus"
-        }
-      ]
+      "logEntries": []
     }
   ]
 }
