@@ -267,22 +267,19 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
     }
   }
 
-  override def findHyvaksyttyJulkaistuDatesForHenkilo(henkiloOid: HenkiloOid): Map[HakukohdeOid, OffsetDateTime] =
-    timed(s"Hyväksytty ja julkaistu -pvm henkilölle $henkiloOid", 100) {
-      runBlocking(
-        sql"""select
-                hyvaksytyt_ja_julkaistut_hakutoiveet.hakukohde,
-                hyvaksytyt_ja_julkaistut_hakutoiveet.hyvaksytty_ja_julkaistu
-              from hyvaksytyt_ja_julkaistut_hakutoiveet
-              where hyvaksytyt_ja_julkaistut_hakutoiveet.henkilo = ${henkiloOid}
-              union
-              select
-                hyvaksytyt_ja_julkaistut_hakutoiveet.hakukohde,
-                hyvaksytyt_ja_julkaistut_hakutoiveet.hyvaksytty_ja_julkaistu
-              from hyvaksytyt_ja_julkaistut_hakutoiveet
-              join henkiloviitteet on hyvaksytyt_ja_julkaistut_hakutoiveet.henkilo = henkiloviitteet.person_oid
-              where henkiloviitteet.linked_oid = ${henkiloOid}""".as[(HakukohdeOid, OffsetDateTime)]).toMap
-    }
+  override def findHyvaksyttyJulkaistuDatesForHenkilo(henkiloOid: HenkiloOid): DBIO[Map[HakukohdeOid, OffsetDateTime]] =
+    sql"""select
+            hyvaksytyt_ja_julkaistut_hakutoiveet.hakukohde,
+            hyvaksytyt_ja_julkaistut_hakutoiveet.hyvaksytty_ja_julkaistu
+          from hyvaksytyt_ja_julkaistut_hakutoiveet
+          where hyvaksytyt_ja_julkaistut_hakutoiveet.henkilo = ${henkiloOid}
+          union
+          select
+            hyvaksytyt_ja_julkaistut_hakutoiveet.hakukohde,
+            hyvaksytyt_ja_julkaistut_hakutoiveet.hyvaksytty_ja_julkaistu
+          from hyvaksytyt_ja_julkaistut_hakutoiveet
+          join henkiloviitteet on hyvaksytyt_ja_julkaistut_hakutoiveet.henkilo = henkiloviitteet.person_oid
+          where henkiloviitteet.linked_oid = ${henkiloOid}""".as[(HakukohdeOid, OffsetDateTime)].map(_.toMap)
 
   override def findHyvaksyttyJulkaistuDatesForHaku(hakuOid: HakuOid): Map[HenkiloOid, Map[HakukohdeOid, OffsetDateTime]] =
     timed(s"Hyväksytty ja julkaistu -pvm haulle $hakuOid", 100) {

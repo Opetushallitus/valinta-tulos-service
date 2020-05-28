@@ -35,13 +35,39 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
                       hakijaOid: String,
                       ohjausparametrit: Ohjausparametrit,
                       latestSijoitteluajoId: Option[Long]): Option[HakemuksenSijoitteluntulos] = {
-    findHakemus(hakemusOid, latestSijoitteluajoId, haku.oid).map(hakija => hakemuksenYhteenveto(
+    hakijaVastaanottoRepository.runBlocking(
+      latestSijoittelunTulos(haku.oid, hakijaOid, hakemusOid, ohjausparametrit, latestSijoitteluajoId, virkailijana = false)
+    )
+  }
+
+  def latestSijoittelunTulos(hakuOid: HakuOid, henkiloOid: String, hakemusOid: HakemusOid,
+                             ohjausparametrit: Ohjausparametrit): DBIO[HakemuksenSijoitteluntulos] = {
+    latestSijoittelunTulos(hakuOid, henkiloOid, hakemusOid, ohjausparametrit, findLatestSijoitteluajoId(hakuOid), virkailijana = false)
+      .map(_.getOrElse(HakemuksenSijoitteluntulos(hakemusOid, None, Nil)))
+  }
+
+  def latestSijoittelunTulosVirkailijana(hakuOid: HakuOid, henkiloOid: String, hakemusOid: HakemusOid,
+                                         ohjausparametrit: Ohjausparametrit): DBIO[HakemuksenSijoitteluntulos] = {
+    latestSijoittelunTulos(hakuOid, henkiloOid, hakemusOid, ohjausparametrit, findLatestSijoitteluajoId(hakuOid), virkailijana = true)
+      .map(_.getOrElse(HakemuksenSijoitteluntulos(hakemusOid, None, Nil)))
+  }
+
+  private def latestSijoittelunTulos(hakuOid: HakuOid,
+                                     henkiloOid: String,
+                                     hakemusOid: HakemusOid,
+                                     ohjausparametrit: Ohjausparametrit,
+                                     latestSijoitteluajoId: Option[Long],
+                                     virkailijana: Boolean): DBIO[Option[HakemuksenSijoitteluntulos]] = {
+    findHakemus(hakemusOid, latestSijoitteluajoId, hakuOid).map(hakija => for {
+      hyvaksyttyJulkaistuDates <- hakijaVastaanottoRepository.findHyvaksyttyJulkaistuDatesForHenkilo(henkiloOid)
+      vastaanotto <- hakijaVastaanottoRepository.findHenkilonVastaanototHaussa(henkiloOid, hakuOid)
+    } yield Some(hakemuksenYhteenveto(
       hakija,
       ohjausparametrit,
-      hakijaVastaanottoRepository.findHyvaksyttyJulkaistuDatesForHenkilo(hakijaOid),
-      fetchVastaanotto(hakijaOid, haku.oid),
-      vastaanotettavuusVirkailijana = false
-    ))
+      hyvaksyttyJulkaistuDates,
+      vastaanotto,
+      virkailijana
+    ))).getOrElse(DBIO.successful(None))
   }
 
   def hakemustenTulos(hakuOid: HakuOid,
@@ -117,25 +143,6 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     val id: Option[Long] = findSijoitteluAjo(hakuOid, sijoitteluajoId)
     raportointiService.hakemukset(id, hakuOid, hyvaksytyt, ilmanHyvaksyntaa, vastaanottaneet, hakukohdeOid, count, index)
   }
-
-  private def latestSijoittelunTulos(hakuOid: HakuOid, henkiloOid: String, hakemusOid: HakemusOid,
-                                     ohjausparametrit: Ohjausparametrit, virkailijana:Boolean): DBIO[HakemuksenSijoitteluntulos] = {
-    findHakemus(hakemusOid, findLatestSijoitteluajoId(hakuOid), hakuOid).map(hakija => {
-      hakijaVastaanottoRepository.findHenkilonVastaanototHaussa(henkiloOid, hakuOid).map(vastaanotot => {
-        val hyvaksyttyJaJulkaistuDates = hakijaVastaanottoRepository.findHyvaksyttyJulkaistuDatesForHenkilo(henkiloOid)
-        hakemuksenYhteenveto(hakija, ohjausparametrit, hyvaksyttyJaJulkaistuDates, vastaanotot, virkailijana)
-      })
-    }).getOrElse(DBIO.successful(HakemuksenSijoitteluntulos(hakemusOid, None, Nil)))
-  }
-
-  def latestSijoittelunTulos(hakuOid: HakuOid, henkiloOid: String, hakemusOid: HakemusOid,
-                             ohjausparametrit: Ohjausparametrit): DBIO[HakemuksenSijoitteluntulos] =
-    latestSijoittelunTulos(hakuOid, henkiloOid, hakemusOid, ohjausparametrit, false)
-
-
-  def latestSijoittelunTulosVirkailijana(hakuOid: HakuOid, henkiloOid: String, hakemusOid: HakemusOid,
-                                         ohjausparametrit: Ohjausparametrit): DBIO[HakemuksenSijoitteluntulos] =
-    latestSijoittelunTulos(hakuOid, henkiloOid, hakemusOid, ohjausparametrit, true)
 
   def sijoittelunTulosForAjoWithoutVastaanottoTieto(sijoitteluajoId: Option[Long], hakuOid: HakuOid, hakemusOid: HakemusOid): Option[HakijaDTO] =
     findHakemus(hakemusOid, sijoitteluajoId, hakuOid)

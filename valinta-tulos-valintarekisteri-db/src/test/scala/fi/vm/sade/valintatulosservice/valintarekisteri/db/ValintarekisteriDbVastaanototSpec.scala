@@ -331,7 +331,7 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
       val hakukohteenPvmt = singleConnectionValintarekisteriDb.findHyvaksyttyJulkaistuDatesForHakukohde(otherHakukohdeOidForHakuOid)
       hakukohteenPvmt.keySet.diff(Set(henkiloOidA, henkiloOidC)) must_== Set()
 
-      val henkilonPvmt = singleConnectionValintarekisteriDb.findHyvaksyttyJulkaistuDatesForHenkilo(henkiloOidA)
+      val henkilonPvmt = singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.findHyvaksyttyJulkaistuDatesForHenkilo(henkiloOidA))
       henkilonPvmt.keySet.diff(Set(hakukohdeOid, otherHakukohdeOidForHakuOid, otherHakukohdeOid)) must_== Set()
     }
   }
