@@ -85,9 +85,9 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       hakemus <- fetchTulokset(
         haku,
         () => List(h).iterator,
-        hakijaOidsByHakemusOids => sijoittelutulosService.hakemuksenTulos(haku,
+        _ => sijoittelutulosService.hakemuksenTulos(haku,
           h.oid,
-          hakijaOidsByHakemusOids.findBy(h.oid),
+          h.henkiloOid,
           sijoittelutulosService.findOhjausparametritFromOhjausparametritService(h.hakuOid),
           latestSijoitteluajoId).toSeq,
         vastaanottoKaudella = vastaanototKausilla.get,
@@ -105,6 +105,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
 
   def haeTilatHakijoille(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOids: Set[HakemusOid]): Set[TilaHakijalle] = {
     val hakemukset: Seq[Hakemus] = hakemusRepository.findHakemuksetByOids(hakemusOids).toSeq
+    val hakijaOidByHakemusOid = hakemukset.map(h => h.oid -> h.henkiloOid).toMap
     val uniqueHakukohdeOids: Seq[HakukohdeOid] = hakemukset.flatMap(_.toiveet.map(_.oid)).distinct
     (hakuService.getHaku(hakuOid), hakukohdeRecordService.getHakukohdeRecords(uniqueHakukohdeOids))  match {
       case (Right(haku), Right(hakukohdes)) =>
@@ -124,7 +125,14 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         val hakemustenTulokset = fetchTulokset(
           haku,
           () => hakemukset.toIterator,
-          personOidFromHakemusResolver => hakemusOids.flatMap(hakemusOid => sijoittelutulosService.hakemuksenTulos(haku, hakemusOid, personOidFromHakemusResolver.findBy(hakemusOid), vastaanottoaikataulu, latestSijoitteluajoId)).toSeq,
+          _ => hakemusOids
+            .flatMap(hakemusOid => sijoittelutulosService.hakemuksenTulos(
+              haku,
+              hakemusOid,
+              hakijaOidByHakemusOid(hakemusOid),
+              vastaanottoaikataulu,
+              latestSijoitteluajoId
+            )).toSeq,
           vastaanottoKaudella = vastaanototKausilla.get,
           ilmoittautumisenAikaleimat = ilmoittautumisenAikaleimat
         )

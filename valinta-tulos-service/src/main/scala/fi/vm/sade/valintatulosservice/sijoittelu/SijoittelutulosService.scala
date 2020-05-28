@@ -32,15 +32,16 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
 
   def hakemuksenTulos(haku: Haku,
                       hakemusOid: HakemusOid,
-                      hakijaOidIfFound: Option[String],
+                      hakijaOid: String,
                       ohjausparametrit: Ohjausparametrit,
                       latestSijoitteluajoId: Option[Long]): Option[HakemuksenSijoitteluntulos] = {
-    for (
-      hakijaOid <- hakijaOidIfFound;
-      hakija: HakijaDTO <- findHakemus(hakemusOid, latestSijoitteluajoId, haku.oid)
-    ) yield hakemuksenYhteenveto(hakija, ohjausparametrit,
+    findHakemus(hakemusOid, latestSijoitteluajoId, haku.oid).map(hakija => hakemuksenYhteenveto(
+      hakija,
+      ohjausparametrit,
       hakijaVastaanottoRepository.findHyvaksyttyJulkaistuDatesForHenkilo(hakijaOid),
-      fetchVastaanotto(hakijaOid, haku.oid), vastaanotettavuusVirkailijana = false)
+      fetchVastaanotto(hakijaOid, haku.oid),
+      vastaanotettavuusVirkailijana = false
+    ))
   }
 
   def hakemustenTulos(hakuOid: HakuOid,
