@@ -882,7 +882,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
               tilanKuvaukset = Map.empty,
               jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map {
                 jonokohtainenTulostieto =>
-                  if (jonoJostaOliHyvaksyttyJulkaistu.contains(jonokohtainenTulostieto.oid) && jonokohtainenTulostieto.valintatila == Valintatila.peruuntunut) {
+                  if (jonoJostaOliHyvaksyttyJulkaistu.get == jonokohtainenTulostieto.oid && jonokohtainenTulostieto.valintatila == Valintatila.peruuntunut) {
                     jonokohtainenTulostieto.copy(
                       valintatila = Valintatila.hyväksytty,
                       tilanKuvaukset = None)
