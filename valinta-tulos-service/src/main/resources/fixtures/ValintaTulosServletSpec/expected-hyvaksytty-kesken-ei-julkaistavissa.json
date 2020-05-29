@@ -50,7 +50,7 @@
           "nimi": "Varsinainen jono",
           "valintatila": "KESKEN",
           "julkaistavissa": false,
-          "valintatapajonoPrioriteetti": 0,
+          "valintatapajonoPrioriteetti": 1,
           "ehdollisestiHyvaksyttavissa": false,
           "eiVarasijatayttoa": false
         }
