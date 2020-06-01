@@ -13,6 +13,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriD
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, StoreSijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, SijoitteluWrapper}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
+import org.http4s.client.blaze.SimpleHttp1Client
 
 import scala.collection.JavaConverters._
 
@@ -24,7 +25,15 @@ class ValintarekisteriForSijoittelu(sijoitteluRepository:SijoitteluRepository wi
   private def this(appConfig: ValintarekisteriAppConfig.ValintarekisteriAppConfig, valintarekisteriDb: ValintarekisteriDb) = this (
     valintarekisteriDb,
     new HakukohdeRecordService(
-      HakuService(appConfig, new CasClient(appConfig.ophUrlProperties.url("cas.service"), org.http4s.client.blaze.defaultClient), OrganisaatioService(appConfig), new KoodistoService(appConfig)),
+      HakuService(
+        appConfig,
+        new CasClient(
+          appConfig.ophUrlProperties.url("cas.service"),
+          SimpleHttp1Client(appConfig.blazeDefaultConfig)
+        ),
+        OrganisaatioService(appConfig),
+        new KoodistoService(appConfig)
+      ),
       valintarekisteriDb,
       appConfig.settings.lenientTarjontaDataParsing),
     valintarekisteriDb
