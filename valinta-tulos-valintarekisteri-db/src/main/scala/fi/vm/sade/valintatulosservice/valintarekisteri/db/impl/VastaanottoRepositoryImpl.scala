@@ -60,7 +60,7 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
                 and vt.hakukohde_oid = vastaanotot.hakukohde
             where deleted is null
                 and action in ('VastaanotaSitovasti', 'VastaanotaEhdollisesti')
-            union
+            union all
             select
               henkiloviitteet.linked_oid as henkilo,
               hakukohde,
