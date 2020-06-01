@@ -159,7 +159,8 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
                     )),
                     varasijanumero = valintatapajono.flatMap(_.varasijanNumero),
                     eiVarasijatayttoa = valintatapajono.exists(_.eiVarasijatayttoa),
-                    varasijat = valintatapajono.flatMap(_.varasijat).filter(_ != 0)
+                    varasijat = valintatapajono.flatMap(_.varasijat).filter(_ != 0),
+                    varasijasaannotKaytossa = valintatapajono.exists(_.sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa)
                   )
                 })
               )

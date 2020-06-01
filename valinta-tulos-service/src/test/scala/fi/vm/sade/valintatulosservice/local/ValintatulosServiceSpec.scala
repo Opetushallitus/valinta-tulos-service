@@ -965,6 +965,13 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
             jonokohtaisetTulostiedot(1).eiVarasijatayttoa must beTrue
           }
 
+          "sijoiteltu varasijasääntöjen ollessa voimassa näytetään" in {
+            useFixture("hyvaksytty-ylempi-varalla.json", hakuFixture = hakuFixture)
+            val jonokohtaisetTulostiedot = getHakutoive("1.2.246.562.5.72607738902").jonokohtaisetTulostiedot
+            jonokohtaisetTulostiedot(0).varasijasaannotKaytossa must beTrue
+            jonokohtaisetTulostiedot(1).varasijasaannotKaytossa must beFalse
+          }
+
           "varasijojen käsittelypäivämäärät näytetään" in {
             // HYVÄKSYTTY KESKEN true
             useFixture("hyvaksytty-ylempi-varalla.json", hakuFixture = hakuFixture)

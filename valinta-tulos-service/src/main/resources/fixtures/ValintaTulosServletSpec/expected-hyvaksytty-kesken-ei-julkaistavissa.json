@@ -43,7 +43,8 @@
           "julkaistavissa": false,
           "valintatapajonoPrioriteetti": 0,
           "ehdollisestiHyvaksyttavissa": false,
-          "eiVarasijatayttoa": false
+          "eiVarasijatayttoa": false,
+          "varasijasaannotKaytossa": false
         },
         {
           "oid": "14090336922663576781797489829887",
@@ -52,7 +53,8 @@
           "julkaistavissa": false,
           "valintatapajonoPrioriteetti": 1,
           "ehdollisestiHyvaksyttavissa": false,
-          "eiVarasijatayttoa": false
+          "eiVarasijatayttoa": false,
+          "varasijasaannotKaytossa": false
         }
       ]
     },
