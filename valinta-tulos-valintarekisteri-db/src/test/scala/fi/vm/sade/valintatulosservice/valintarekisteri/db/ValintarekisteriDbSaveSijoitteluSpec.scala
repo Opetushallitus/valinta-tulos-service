@@ -15,14 +15,14 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, Valintarekister
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
-import org.specs2.specification.BeforeAfterExample
+import org.specs2.specification.BeforeAfterEach
 import slick.jdbc.GetResult
 import slick.jdbc.PostgresProfile.api.actionBasedSQLInterpolation
 
 import scala.collection.JavaConverters._
 
 @RunWith(classOf[JUnitRunner])
-class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterExample
+class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterEach
   with Logging with PerformanceLogger {
   sequential
   private val hakuOid = "1.2.246.561.29.00000000001"

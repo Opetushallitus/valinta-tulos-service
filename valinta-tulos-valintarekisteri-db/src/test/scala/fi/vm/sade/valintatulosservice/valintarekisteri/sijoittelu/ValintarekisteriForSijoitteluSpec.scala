@@ -9,14 +9,14 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, Valintarekister
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
-import org.specs2.specification.BeforeAfterExample
+import org.specs2.specification.BeforeAfterEach
 
 import scala.collection.JavaConverters._
 import scala.util.Try
 
 
 @RunWith(classOf[JUnitRunner])
-class ValintarekisteriForSijoitteluSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterExample with Logging with PerformanceLogger {
+class ValintarekisteriForSijoitteluSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterEach with Logging with PerformanceLogger {
   sequential
   step(appConfig.start)
   step(deleteAll())

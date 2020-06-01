@@ -8,11 +8,11 @@ import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 import org.junit.Ignore
 import org.specs2.mutable.Specification
-import org.specs2.specification.BeforeAfterExample
+import org.specs2.specification.BeforeAfterEach
 
 @RunWith(classOf[JUnitRunner])
 @Ignore
-class SijoitteluPerformanceSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterExample with Logging with PerformanceLogger {
+class SijoitteluPerformanceSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterEach with Logging with PerformanceLogger {
   sequential
   step(appConfig.start)
   step(deleteAll())

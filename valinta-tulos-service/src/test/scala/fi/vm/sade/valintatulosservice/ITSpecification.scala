@@ -1,16 +1,15 @@
 package fi.vm.sade.valintatulosservice
 import org.specs2.mutable.Specification
-import org.specs2.specification.{AfterAll, Step}
-import org.specs2.specification.core.Fragments
+import org.specs2.specification.BeforeAfterAll
 
-trait ITSpecification extends Specification with ITSetup with AfterAll {
+trait ITSpecification extends Specification with ITSetup with BeforeAfterAll {
   sequential
 
-  override def map(fs: => Fragments): Fragments = {
-    Step(appConfig.start) ^ super.map(fs)
+  override def beforeAll: Unit = {
+    appConfig.start
   }
 
-  override def afterAll() = {
+  override def afterAll: Unit = {
     singleConnectionValintarekisteriDb.db.shutdown
   }
 }

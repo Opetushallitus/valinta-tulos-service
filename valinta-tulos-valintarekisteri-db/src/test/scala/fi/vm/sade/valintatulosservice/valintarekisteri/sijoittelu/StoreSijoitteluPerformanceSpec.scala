@@ -10,15 +10,15 @@ import org.junit.Ignore
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
-import org.specs2.specification.BeforeAfterExample
 
 import scala.util.{Failure, Success, Try}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.SijoitteluWrapper
+import org.specs2.specification.BeforeAfterEach
 import org.springframework.util.StopWatch
 
 @RunWith(classOf[JUnitRunner])
 @Ignore
-class StoreSijoitteluPerformanceSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterExample with Logging with PerformanceLogger {
+class StoreSijoitteluPerformanceSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterEach with Logging with PerformanceLogger {
   sequential
   step(appConfig.start)
   step(deleteAll())

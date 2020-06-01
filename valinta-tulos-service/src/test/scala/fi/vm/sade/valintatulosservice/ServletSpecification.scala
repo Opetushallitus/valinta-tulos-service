@@ -4,10 +4,9 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusFixtures
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import org.scalatra.test.HttpComponentsClient
 import org.specs2.mutable.Specification
-import org.specs2.specification.AfterAll
-import org.specs2.specification.core.Fragments
+import org.specs2.specification.BeforeAll
 
-trait ServletSpecification extends Specification with ITSetup with TimeWarp with AfterAll {
+trait ServletSpecification extends Specification with ITSetup with TimeWarp with BeforeAll {
   sequential
 
   def baseUrl = "http://localhost:" + SharedJetty.port + "/valinta-tulos-service"
@@ -18,12 +17,8 @@ trait ServletSpecification extends Specification with ITSetup with TimeWarp with
     override def baseUrl: String = ServletSpecification.this.baseUrl
   }
 
-  override def map(fs: => Fragments): Fragments = {
-    step(SharedJetty.start) ^ super.map(fs)
-  }
-
-  override def afterAll() = {
-    singleConnectionValintarekisteriDb.db.shutdown
+  override def beforeAll(): Unit = {
+    SharedJetty.start
   }
 
   def postJSON[T](path: String, body: String, headers: Map[String, String] = Map.empty)(block: => T): T = {

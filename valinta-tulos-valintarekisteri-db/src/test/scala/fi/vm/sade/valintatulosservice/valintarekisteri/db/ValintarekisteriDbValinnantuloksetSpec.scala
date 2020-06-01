@@ -12,13 +12,13 @@ import org.junit.runner.RunWith
 import org.postgresql.util.PSQLException
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
-import org.specs2.specification.BeforeExample
+import org.specs2.specification.BeforeEach
 import slick.dbio.DBIO
 import slick.jdbc.PostgresProfile.api.{actionBasedSQLInterpolation, jdbcActionExtensionMethods}
 import slick.jdbc.{PositionedParameters, SetParameter}
 
 @RunWith(classOf[JUnitRunner])
-class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeExample {
+class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeEach {
   sequential
   val henkiloOid = "henkiloOid"
   val hakukohdeOid = HakukohdeOid("hakukohdeOid")
