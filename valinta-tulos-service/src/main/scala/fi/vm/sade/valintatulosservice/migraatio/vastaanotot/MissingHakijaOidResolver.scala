@@ -10,6 +10,7 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import org.http4s._
 import org.http4s.client.Client
+import org.http4s.client.blaze.SimpleHttp1Client
 import org.http4s.client.middleware.{Retry, RetryPolicy}
 import org.json4s.JsonAST.JValue
 import org.json4s._
@@ -126,7 +127,7 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
     CasAuthenticatingClient(
       casClient = appConfig.securityContext.casClient,
       casParams = params,
-      serviceClient = org.http4s.client.blaze.defaultClient,
+      serviceClient = SimpleHttp1Client(appConfig.blazeDefaultConfig),
       clientCallerId = appConfig.settings.callerId,
       sessionCookieName = "JSESSIONID"
     )

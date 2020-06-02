@@ -17,6 +17,7 @@ import fi.vm.sade.valintatulosservice.organisaatio.{Organisaatio, OrganisaatioSe
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.http4s.json4s.native.jsonExtract
 import org.http4s.Method.GET
+import org.http4s.client.blaze.SimpleHttp1Client
 import org.http4s.{Request, Uri}
 import org.joda.time.DateTime
 import org.json4s.JsonAST.{JInt, JObject, JString}
@@ -462,7 +463,7 @@ class KoutaHakuService(config: AppConfig, casClient: CasClient, organisaatioServ
       config.settings.koutaUsername,
       config.settings.koutaPassword
     ),
-    serviceClient = org.http4s.client.blaze.defaultClient,
+    serviceClient = SimpleHttp1Client(config.blazeDefaultConfig),
     clientCallerId = config.settings.callerId,
     sessionCookieName = "session"
   )

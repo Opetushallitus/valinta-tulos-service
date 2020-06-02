@@ -5,6 +5,7 @@ import java.nio.file.Paths
 import fi.vm.sade.properties.OphProperties
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.tarjonta.HakuServiceConfig
+import org.http4s.client.blaze.BlazeClientConfig
 
 trait AppConfig {
   def settings: ApplicationSettings
@@ -12,6 +13,7 @@ trait AppConfig {
   def hakuServiceConfig: HakuServiceConfig = {
     HakuServiceConfig(ophUrlProperties, this.isInstanceOf[StubbedExternalDeps])
   }
+  def blazeDefaultConfig: BlazeClientConfig
 }
 
 protected[config] class DevOphUrlProperties(propertiesFile:String) extends OphUrlProperties(propertiesFile, false, Some("localhost"))

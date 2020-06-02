@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice.production
 import fi.vm.sade.security.VtsAuthenticatingClient
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
+import org.http4s.client.blaze.BlazeClientConfig
 import org.junit.Ignore
 import org.junit.runner.RunWith
 import org.specs2.matcher.MatcherMacros
@@ -21,7 +22,7 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
   //val cas_password = System.getProperty("cas_password")
   override val casUrlOld = casHost + "/cas"
 
-  val vtsClient = new VtsAuthenticatingClient(casHost, vtsHost + "/valinta-tulos-service", "auth/login", casUserNew, casPasswordNew)
+  val vtsClient = new VtsAuthenticatingClient(casHost, vtsHost + "/valinta-tulos-service", "auth/login", casUserNew, casPasswordNew, BlazeClientConfig.defaultConfig)
   val vtsSessionCookie = vtsClient.getVtsSession(casHost)
 
   val hakuOid = "1.2.246.562.29.75203638285"

@@ -7,6 +7,7 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.http4s.Method.POST
+import org.http4s.client.blaze.SimpleHttp1Client
 import org.http4s.json4s.native.{jsonEncoder, jsonExtract}
 import org.http4s.{Request, Uri}
 import org.json4s.Formats
@@ -61,7 +62,7 @@ class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats {
   private val client = CasAuthenticatingClient(
     casClient = config.securityContext.casClient,
     casParams = params,
-    serviceClient = org.http4s.client.blaze.defaultClient,
+    serviceClient = SimpleHttp1Client(config.blazeDefaultConfig),
     clientCallerId = config.settings.callerId,
     sessionCookieName = "ring-session"
   )

@@ -6,6 +6,7 @@ import fi.vm.sade.security.VtsAuthenticatingClient
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import org.apache.commons.io.FileUtils
+import org.http4s.client.blaze.BlazeClientConfig
 import org.junit.Ignore
 import org.junit.runner.RunWith
 import org.specs2.matcher.MatcherMacros
@@ -43,7 +44,7 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
   "New sijoittelu (valintarekisteri) and old sijoittelu (sijoitteluDb)" should {
     "contain same information" in {
 
-      val vtsClient = new VtsAuthenticatingClient(casHost, newHost + "/valinta-tulos-service", "auth/login", casUserNew, casPasswordNew)
+      val vtsClient = new VtsAuthenticatingClient(casHost, newHost + "/valinta-tulos-service", "auth/login", casUserNew, casPasswordNew, BlazeClientConfig.defaultConfig)
       val vtsSessionCookie = vtsClient.getVtsSession(newHost)
 
       hakuOidsToTest.foreach { oid =>

@@ -6,6 +6,7 @@ import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasParams}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakijaOid
 import org.http4s.Method.POST
+import org.http4s.client.blaze.SimpleHttp1Client
 import org.http4s.json4s.native.{jsonEncoderOf, jsonOf}
 import org.http4s.{Request, Uri}
 import org.json4s.DefaultReaders.StringReader
@@ -50,7 +51,7 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) {
   private val client = CasAuthenticatingClient(
     casClient = appConfig.securityContext.casClient,
     casParams = params,
-    serviceClient = org.http4s.client.blaze.defaultClient,
+    serviceClient = SimpleHttp1Client(appConfig.blazeDefaultConfig),
     clientCallerId = appConfig.settings.callerId,
     sessionCookieName = "JSESSIONID"
   )

@@ -3,6 +3,7 @@ package fi.vm.sade.security
 import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.utils.cas.{CasClient, CasParams, Logging}
+import org.http4s.client.blaze.{BlazeClientConfig, SimpleHttp1Client}
 
 import scala.concurrent.duration.Duration
 import scalaz.{-\/, \/-}
@@ -11,8 +12,9 @@ class VtsAuthenticatingClient(virkailijaBaseUrlForCas: String,
                               serviceUrl: String,
                               securityUri: String,
                               casUser: String,
-                              casPassword: String) extends Logging {
-  private val client = org.http4s.client.blaze.defaultClient
+                              casPassword: String,
+                              blazeDefaultConfig: BlazeClientConfig) extends Logging {
+  private val client = SimpleHttp1Client(blazeDefaultConfig)
   private val casAuthenticatingClient = new CasClient(virkailijaBaseUrlForCas, client)
   private val params = CasParams(serviceUrl, securityUri, casUser, casPassword)
 
