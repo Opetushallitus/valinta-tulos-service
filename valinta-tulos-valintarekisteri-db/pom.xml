@@ -133,25 +133,6 @@
             <artifactId>scala-java8-compat_2.11</artifactId>
         </dependency>
     </dependencies>
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.json4s</groupId>
-                <artifactId>json4s-jackson_2.11</artifactId>
-                <version>3.5.3</version>
-            </dependency>
-            <dependency>
-                <groupId>org.spire-math</groupId>
-                <artifactId>jawn-parser_2.11</artifactId>
-                <version>0.10.4</version>
-            </dependency>
-            <dependency>
-                <groupId>org.scalaz</groupId>
-                <artifactId>scalaz-core_2.11</artifactId>
-                <version>7.2.17</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
     <build>
         <plugins>
             <plugin>
