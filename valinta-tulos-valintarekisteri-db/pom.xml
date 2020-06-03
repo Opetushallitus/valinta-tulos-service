@@ -131,12 +131,10 @@
         <dependency>
             <groupId>org.json4s</groupId>
             <artifactId>json4s-jackson_2.11</artifactId>
-            <version>${json4s_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>org.json4s</groupId>
             <artifactId>json4s-native_2.11</artifactId>
-            <version>${json4s_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.slick</groupId>
