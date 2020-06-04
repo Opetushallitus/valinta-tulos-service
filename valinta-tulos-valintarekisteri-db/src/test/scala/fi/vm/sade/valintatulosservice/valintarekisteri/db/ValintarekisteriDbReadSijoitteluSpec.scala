@@ -30,7 +30,7 @@ class ValintarekisteriDbReadSijoitteluSpec extends Specification with ITSetup wi
     }
 
     "get hakijan hakutoiveet" in {
-      val res = singleConnectionValintarekisteriDb.getHakemuksenHakutoiveetSijoittelussa(hakemusOid, 1476936450191L)
+      val res = singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.getHakemuksenHakutoiveetSijoittelussa(hakemusOid, 1476936450191L))
       res.size mustEqual 1
       res.head.hakutoive mustEqual Some(6)
     }

@@ -63,12 +63,12 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
       valinnantulokset <- valintarekisteriDb.getValinnantuloksetForHakemus(hakemusOid)
       hyvaksyttyJulkaistuDates <- valintarekisteriDb.findHyvaksyttyJulkaistuDatesForHenkilo(henkiloOid)
       vastaanottoRecords <- valintarekisteriDb.findHenkilonVastaanototHaussa(henkiloOid, hakuOid)
+      hakutoiveetSijoittelussa <- latestSijoitteluajoId.fold(DBIO.successful(List.empty[HakutoiveRecord]))(valintarekisteriDb.getHakemuksenHakutoiveetSijoittelussa(hakemusOid, _))
+      valintatapajonotSijoittelussa <- latestSijoitteluajoId.fold(DBIO.successful(List.empty[HakutoiveenValintatapajonoRecord]))(valintarekisteriDb.getHakemuksenHakutoiveidenValintatapajonotSijoittelussa(hakemusOid, _))
     } yield {
       if (valinnantulokset.isEmpty) {
         None
       } else {
-        val hakutoiveetSijoittelussa = latestSijoitteluajoId.fold(List.empty[HakutoiveRecord])(valintarekisteriDb.getHakemuksenHakutoiveetSijoittelussa(hakemusOid, _))
-        val valintatapajonotSijoittelussa = latestSijoitteluajoId.fold(List.empty[HakutoiveenValintatapajonoRecord])(valintarekisteriDb.getHakemuksenHakutoiveidenValintatapajonotSijoittelussa(hakemusOid, _))
         Some(HakemuksenSijoitteluntulos(
           hakemusOid,
           Some(henkiloOid),

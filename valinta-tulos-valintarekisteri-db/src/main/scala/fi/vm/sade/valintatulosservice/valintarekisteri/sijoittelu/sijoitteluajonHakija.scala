@@ -18,7 +18,7 @@ object SijoitteluajonHakija {
         timed(s"Getting valinnantulokset for hakemus $hakemusOid", 100) {
           repository.runBlocking(repository.getValinnantuloksetForHakemus(hakemusOid)).groupBy(_.hakukohdeOid)
         },
-        sijoitteluajoId.map(repository.getHakemuksenHakutoiveetSijoittelussa(hakemusOid, _).map(h => h.hakukohdeOid -> h).toMap).getOrElse(Map()))
+        sijoitteluajoId.map(id => repository.runBlocking(repository.getHakemuksenHakutoiveetSijoittelussa(hakemusOid, id)).map(h => h.hakukohdeOid -> h).toMap).getOrElse(Map()))
       case None => (Map[HakukohdeOid, Set[Valinnantulos]](), Map[HakukohdeOid, HakutoiveRecord]())
     }
 
@@ -80,7 +80,7 @@ object SijoitteluajonHakija {
     if (hakutoiveetSijoittelussa.isEmpty) {
       hakija.map(_.dto(hakemuksenValinnantulokset.keySet.map(hakukohdeDtoEiSijoittelua).toList))
     } else {
-      val valintatapajonotSijoittelussa = sijoitteluajoId.map(repository.getHakemuksenHakutoiveidenValintatapajonotSijoittelussa(hakemusOid, _).groupBy(_.hakukohdeOid)).getOrElse(Map())
+      val valintatapajonotSijoittelussa = sijoitteluajoId.map(id => repository.runBlocking(repository.getHakemuksenHakutoiveidenValintatapajonotSijoittelussa(hakemusOid, id)).groupBy(_.hakukohdeOid)).getOrElse(Map())
       val hakijaryhmatSijoittelussa = sijoitteluajoId.map(repository.getHakemuksenHakutoiveidenHakijaryhmatSijoittelussa(hakemusOid, _).groupBy(_.hakukohdeOid)).getOrElse(Map())
       val tilankuvauksetSijoittelussa = repository.getValinnantilanKuvaukset(
         valintatapajonotSijoittelussa.values.flatten.map(_.tilankuvausHash).toList.distinct
