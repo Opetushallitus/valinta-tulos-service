@@ -247,7 +247,7 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
              ilmoittaja,
              selite
            ) values (?, ?, ?, ?::text, 'Sijoittelun tallennus')
-           on conflict on constraint valinnantulokset_pkey do nothing""")
+           on conflict on constraint valinnantulokset_pkey_hakemus_oid_ensin do nothing""")
 
   private def createValinnantulosInsertRow(hakemus:SijoitteluHakemus,
                                            sijoitteluajoId:Long,
@@ -271,7 +271,7 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
              ilmoittaja,
              selite
            ) values (?, ?, ?, ?, ?::text, 'Sijoittelun tallennus')
-           on conflict on constraint valinnantulokset_pkey do update set
+           on conflict on constraint valinnantulokset_pkey_hakemus_oid_ensin do update set
              julkaistavissa = excluded.julkaistavissa,
              ilmoittaja = excluded.ilmoittaja,
              selite = excluded.selite
