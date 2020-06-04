@@ -85,11 +85,11 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       hakemus <- fetchTulokset(
         haku,
         () => List(h).iterator,
-        _ => sijoittelutulosService.hakemuksenTulos(haku,
+        _ => Seq(sijoittelutulosService.hakemuksenTulos(haku,
           h.oid,
           h.henkiloOid,
           sijoittelutulosService.findOhjausparametritFromOhjausparametritService(h.hakuOid),
-          latestSijoitteluajoId).toSeq,
+          latestSijoitteluajoId)),
         vastaanottoKaudella = vastaanototKausilla.get,
         ilmoittautumisenAikaleimat = ilmoittautumisenAikaleimat
       ).toSeq.headOption
@@ -126,7 +126,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
           haku,
           () => hakemukset.toIterator,
           _ => hakemusOids
-            .flatMap(hakemusOid => sijoittelutulosService.hakemuksenTulos(
+            .map(hakemusOid => sijoittelutulosService.hakemuksenTulos(
               haku,
               hakemusOid,
               hakijaOidByHakemusOid(hakemusOid),
