@@ -11,11 +11,10 @@ import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.sijoittelu.JonoFinder.kaikkiJonotJulkaistu
-import fi.vm.sade.valintatulosservice.tarjonta.Haku
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, HakijaVastaanottoRepository, SijoitteluRepository, ValinnantulosRepository, VastaanottoRecord}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import fi.vm.sade.valintatulosservice.{PersonOidFromHakemusResolver, VastaanottoAikarajaMennyt, domain}
+import fi.vm.sade.valintatulosservice.{PersonOidFromHakemusResolver, VastaanottoAikarajaMennyt}
 import org.apache.commons.lang.StringUtils
 import org.apache.commons.lang3.builder.ToStringBuilder
 import org.joda.time.DateTime
@@ -27,34 +26,29 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
                              ohjausparametritService: OhjausparametritService,
                              valintarekisteriDb: HakijaRepository with HakijaVastaanottoRepository with SijoitteluRepository with ValinnantulosRepository,
                              sijoittelunTulosClient: ValintarekisteriSijoittelunTulosClient) {
-  import scala.collection.JavaConversions._
-
   import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.laskeVastaanottoDeadline
 
-  def hakemuksenTulos(haku: Haku,
-                      hakemusOid: HakemusOid,
-                      hakijaOid: String,
-                      ohjausparametrit: Ohjausparametrit): HakemuksenSijoitteluntulos = {
-    valintarekisteriDb.runBlocking(
-      latestSijoittelunTulos(haku.oid, hakijaOid, hakemusOid, ohjausparametrit, vastaanotettavuusVirkailijana = false)
-    )
+  import scala.collection.JavaConversions._
+
+  def tulosHakijana(hakuOid: HakuOid,
+                    hakemusOid: HakemusOid,
+                    henkiloOid: String,
+                    ohjausparametrit: Ohjausparametrit): DBIO[HakemuksenSijoitteluntulos] = {
+    tulos(hakuOid, hakemusOid, henkiloOid, ohjausparametrit, vastaanotettavuusVirkailijana = false)
   }
 
-  def latestSijoittelunTulos(hakuOid: HakuOid, henkiloOid: String, hakemusOid: HakemusOid,
-                             ohjausparametrit: Ohjausparametrit): DBIO[HakemuksenSijoitteluntulos] = {
-    latestSijoittelunTulos(hakuOid, henkiloOid, hakemusOid, ohjausparametrit, vastaanotettavuusVirkailijana = false)
+  def tulosVirkailijana(hakuOid: HakuOid,
+                        hakemusOid: HakemusOid,
+                        henkiloOid: String,
+                        ohjausparametrit: Ohjausparametrit): DBIO[HakemuksenSijoitteluntulos] = {
+    tulos(hakuOid, hakemusOid, henkiloOid, ohjausparametrit, vastaanotettavuusVirkailijana = true)
   }
 
-  def latestSijoittelunTulosVirkailijana(hakuOid: HakuOid, henkiloOid: String, hakemusOid: HakemusOid,
-                                         ohjausparametrit: Ohjausparametrit): DBIO[HakemuksenSijoitteluntulos] = {
-    latestSijoittelunTulos(hakuOid, henkiloOid, hakemusOid, ohjausparametrit, vastaanotettavuusVirkailijana = true)
-  }
-
-  private def latestSijoittelunTulos(hakuOid: HakuOid,
-                                     henkiloOid: String,
-                                     hakemusOid: HakemusOid,
-                                     ohjausparametrit: Ohjausparametrit,
-                                     vastaanotettavuusVirkailijana: Boolean): DBIO[HakemuksenSijoitteluntulos] = {
+  private def tulos(hakuOid: HakuOid,
+                    hakemusOid: HakemusOid,
+                    henkiloOid: String,
+                    ohjausparametrit: Ohjausparametrit,
+                    vastaanotettavuusVirkailijana: Boolean): DBIO[HakemuksenSijoitteluntulos] = {
     for {
       valinnantulokset <- valintarekisteriDb.getValinnantuloksetForHakemus(hakemusOid)
       hyvaksyttyJulkaistuDates <- valintarekisteriDb.findHyvaksyttyJulkaistuDatesForHenkilo(henkiloOid)

@@ -22,6 +22,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.ehdollinenVastaanottoMahdollista
 import org.apache.commons.lang3.StringUtils
+import slick.dbio.DBIO
 
 import scala.collection.JavaConverters._
 import scala.compat.java8.OptionConverters._
@@ -81,13 +82,12 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
           case YPSHakukohde(oid, _, koulutuksenAlkamiskausi) => oid -> (koulutuksenAlkamiskausi, vastaanototByKausi(koulutuksenAlkamiskausi).map(_.henkiloOid).toSet)
         }).toMap
       })
+      ohjausparametrit = sijoittelutulosService.findOhjausparametritFromOhjausparametritService(h.hakuOid)
+      tulos = valinnantulosRepository.runBlocking(sijoittelutulosService.tulosHakijana(haku.oid, h.oid, h.henkiloOid, ohjausparametrit))
       hakemus <- fetchTulokset(
         haku,
         () => List(h).iterator,
-        _ => Seq(sijoittelutulosService.hakemuksenTulos(haku,
-          h.oid,
-          h.henkiloOid,
-          sijoittelutulosService.findOhjausparametritFromOhjausparametritService(h.hakuOid))),
+        _ => Seq(tulos),
         vastaanottoKaudella = vastaanototKausilla.get,
         ilmoittautumisenAikaleimat = ilmoittautumisenAikaleimat
       ).toSeq.headOption
@@ -118,17 +118,12 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
           valinnantulosRepository.runBlocking(valinnantulosRepository.getIlmoittautumisenAikaleimat(hakuOid))
             .groupBy(_._1).mapValues(i => i.map(t => (t._2, t._3)))
         }
-        val vastaanottoaikataulu = sijoittelutulosService.findOhjausparametritFromOhjausparametritService(hakuOid)
+        val ohjausparametrit = sijoittelutulosService.findOhjausparametritFromOhjausparametritService(hakuOid)
+        val tulokset = valinnantulosRepository.runBlocking(DBIO.sequence(hakemusOids.map(oid => sijoittelutulosService.tulosHakijana(haku.oid, oid, hakijaOidByHakemusOid(oid), ohjausparametrit)).toSeq))
         val hakemustenTulokset = fetchTulokset(
           haku,
           () => hakemukset.toIterator,
-          _ => hakemusOids
-            .map(hakemusOid => sijoittelutulosService.hakemuksenTulos(
-              haku,
-              hakemusOid,
-              hakijaOidByHakemusOid(hakemusOid),
-              vastaanottoaikataulu
-            )).toSeq,
+          _ => tulokset,
           vastaanottoKaudella = vastaanototKausilla.get,
           ilmoittautumisenAikaleimat = ilmoittautumisenAikaleimat
         )

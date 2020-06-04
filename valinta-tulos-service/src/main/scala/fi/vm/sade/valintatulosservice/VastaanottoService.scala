@@ -100,7 +100,7 @@ class VastaanottoService(hakuService: HakuService,
         hakukohteet <- hakukohdeRecordService.getHakukohdeRecords(hakemus.toiveet.map(_.oid)).right
         hakutoive <- hakijaVastaanottoRepository.runAsSerialized(10, Duration(5, TimeUnit.MILLISECONDS), s"Storing vastaanotto $vastaanottoDto",
           for {
-            sijoittelunTulos <- sijoittelutulosService.latestSijoittelunTulosVirkailijana(hakuOid, henkiloOid, hakemusOid, ohjausparametrit)
+            sijoittelunTulos <- sijoittelutulosService.tulosVirkailijana(hakuOid, hakemusOid, henkiloOid, ohjausparametrit)
             aiemmatVastaanotot <- aiemmatVastaanotot(hakukohteet, henkiloOid)
             ilmoittautumisenAikaleimat <- valinnantulosRepository.getIlmoittautumisenAikaleimat(henkiloOid)
             hakemuksenTulos = valintatulosService.julkaistavaTulos(
@@ -163,7 +163,7 @@ class VastaanottoService(hakuService: HakuService,
       ohjausparametrit <- ohjausparametritService.ohjausparametrit(haku.oid).right
       _ <- hakijaVastaanottoRepository.runAsSerialized(10, Duration(5, TimeUnit.MILLISECONDS), s"Storing vastaanotto $vastaanottoDto",
         for {
-          sijoittelunTulos <- sijoittelutulosService.latestSijoittelunTulos(haku.oid, hakemus.henkiloOid, hakemusOid, ohjausparametrit)
+          sijoittelunTulos <- sijoittelutulosService.tulosHakijana(haku.oid, hakemusOid, hakemus.henkiloOid, ohjausparametrit)
           aiemmatVastaanotot <- aiemmatVastaanotot(hakukohdes, hakemus.henkiloOid)
           ilmoittautumisenAikaleimat <- valinnantulosRepository.getIlmoittautumisenAikaleimat(hakemus.henkiloOid)
           hakemuksenTulos = valintatulosService.julkaistavaTulos(
