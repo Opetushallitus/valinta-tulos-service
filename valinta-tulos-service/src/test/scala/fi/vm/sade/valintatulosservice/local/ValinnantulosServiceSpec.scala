@@ -358,12 +358,12 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
   }
 
   trait SuccessfulVastaanotto { this: Mocks =>
-    vastaanottoService.vastaanotaVirkailijana(any[List[VastaanottoEventDto]]) answers (vs => vs.asInstanceOf[List[VastaanottoEventDto]]
+    vastaanottoService.vastaanotaVirkailijana(any[List[VastaanottoEventDto]]) answers ((vs: Any) => vs.asInstanceOf[List[VastaanottoEventDto]]
       .map(v => VastaanottoResult(v.henkiloOid, v.hakemusOid, v.hakukohdeOid, Result(200, None))))
   }
 
   trait NoConflictingVastaanotto { this: Mocks =>
-    yhdenPaikanSaannos.apply(any[Set[Valinnantulos]]) answers (vs => Right(vs.asInstanceOf[Set[Valinnantulos]]))
+    yhdenPaikanSaannos.apply(any[Set[Valinnantulos]]) answers ((vs: Any) => Right(vs.asInstanceOf[Set[Valinnantulos]]))
   }
 
   trait Authorized { this: Mocks =>

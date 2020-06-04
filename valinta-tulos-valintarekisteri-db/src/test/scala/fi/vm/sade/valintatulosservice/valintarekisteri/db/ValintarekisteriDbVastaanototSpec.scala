@@ -8,7 +8,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, Valintarekister
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
-import org.specs2.specification.BeforeAfterExample
+import org.specs2.specification.BeforeAfterEach
 import slick.dbio.DBIOAction
 import slick.jdbc.PostgresProfile.api._
 
@@ -17,7 +17,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
 @RunWith(classOf[JUnitRunner])
-class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterExample {
+class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterEach {
   sequential
   private val henkiloOid = "1.2.246.562.24.00000000001"
   private val hakemusOid = HakemusOid("1.2.246.562.99.00000000001")

@@ -5,11 +5,11 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, Valintarekister
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
-import org.specs2.specification.BeforeAfterExample
+import org.specs2.specification.BeforeAfterEach
 import slick.jdbc.PostgresProfile.api._
 
 @RunWith(classOf[JUnitRunner])
-class NewestVastaanottoEventsViewSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterExample {
+class NewestVastaanottoEventsViewSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterEach {
   private val hakukohdeOid = HakukohdeOid("1.2.246.561.20.00000000001")
   private val hakuOid = HakuOid("1.2.246.561.29.00000000001")
   private val valintatapajonoOid = ValintatapajonoOid("1.2.246.561.20.00000000001")

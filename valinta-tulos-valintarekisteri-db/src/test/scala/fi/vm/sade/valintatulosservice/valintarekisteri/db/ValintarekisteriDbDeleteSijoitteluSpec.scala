@@ -6,13 +6,13 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, Valintarekister
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
-import org.specs2.specification.BeforeAfterExample
+import org.specs2.specification.BeforeAfterEach
 import slick.jdbc.PostgresProfile.api._
 
 import scala.util.Try
 
 @RunWith(classOf[JUnitRunner])
-class ValintarekisteriDbDeleteSijoitteluSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterExample with Logging {
+class ValintarekisteriDbDeleteSijoitteluSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterEach with Logging {
   sequential
   step(appConfig.start)
   step(deleteAll())
