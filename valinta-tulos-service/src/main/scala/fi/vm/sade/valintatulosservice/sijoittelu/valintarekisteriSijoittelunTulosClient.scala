@@ -5,12 +5,11 @@ import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.SijoitteluajonHakija
+import slick.dbio.DBIO
 
 import scala.util.{Failure, Success, Try}
 
 trait ValintarekisteriSijoittelunTulosClient {
-
-  def fetchLatestSijoitteluajoId(hakuOid: HakuOid): Option[Long]
 
   def fetchLatestSijoitteluAjo(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid] = None): Option[SijoitteluAjo]
 
@@ -25,12 +24,8 @@ class ValintarekisteriSijoittelunTulosClientImpl(repository: HakijaRepository wi
 
   private def run[R](operations: slick.dbio.DBIO[R]): R = repository.runBlocking(operations)
 
-  override def fetchLatestSijoitteluajoId(hakuOid: HakuOid): Option[Long] = {
-    repository.getLatestSijoitteluajoId(hakuOid)
-  }
-
   override def fetchLatestSijoitteluAjo(hakuOid: HakuOid, hakukohdeOid: Option[HakukohdeOid] = None): Option[SijoitteluAjo] = {
-    val latestId = repository.getLatestSijoitteluajoId(hakuOid)
+    val latestId = repository.runBlocking(repository.getLatestSijoitteluajoId(hakuOid))
 
     val sijoitteluajonHakukohdeOidit = latestId.map(id => repository.getSijoitteluajonHakukohdeOidit(id)).getOrElse(List())
     val valinnantulostenHakukohdeOidit = run(repository.getValinnantulostenHakukohdeOiditForHaku(hakuOid))
@@ -51,7 +46,7 @@ class ValintarekisteriSijoittelunTulosClientImpl(repository: HakijaRepository wi
   }
 
   override def fetchLatestSijoitteluAjoWithoutHakukohdes(hakuOid: HakuOid): Option[SijoitteluAjo] = {
-    repository.getLatestSijoitteluajoId(hakuOid) match {
+    repository.runBlocking(repository.getLatestSijoitteluajoId(hakuOid)) match {
       case None => Some(SyntheticSijoitteluAjoForHakusWithoutSijoittelu(hakuOid))
       case Some(id) => repository.getSijoitteluajo(id).map(_.entity(Nil))
     }

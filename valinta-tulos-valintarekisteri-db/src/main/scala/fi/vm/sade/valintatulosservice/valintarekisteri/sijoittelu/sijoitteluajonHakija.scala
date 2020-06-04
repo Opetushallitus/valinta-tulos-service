@@ -100,7 +100,7 @@ object SijoitteluajonHakija {
           sijoitteluajoId: String,
           hakuOid: HakuOid,
           hakemusOid: HakemusOid): Option[HakijaDTO] = {
-    dto(repository, Some(repository.getLatestSijoitteluajoIdThrowFailure(sijoitteluajoId, hakuOid)), hakuOid, hakemusOid)
+    dto(repository, Some(repository.runBlocking(repository.getLatestSijoitteluajoId(sijoitteluajoId, hakuOid))), hakuOid, hakemusOid)
   }
 }
 

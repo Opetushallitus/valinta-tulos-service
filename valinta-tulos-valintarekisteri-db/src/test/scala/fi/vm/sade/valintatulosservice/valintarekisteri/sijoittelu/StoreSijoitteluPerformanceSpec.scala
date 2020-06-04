@@ -40,9 +40,9 @@ class StoreSijoitteluPerformanceSpec extends Specification with ITSetup with Val
 
     case Failure(t) => throw t
     case Success(db) => try {
-      val latest: Long = db.getLatestSijoitteluajoId(hakuOid).get
+      val latest: Long = db.runBlocking(db.getLatestSijoitteluajoId(hakuOid)).get
 
-      val valintarekisteriQa = new Valintarekisteri(db, null, db) {}
+      val valintarekisteriQa = new Valintarekisteri(db, null) {}
 
       val label = s"Read sijoittelu results of ajo $latest of haku $hakuOid from db"
       MemoryTracker.memoryUsage(label) {

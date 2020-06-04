@@ -34,33 +34,32 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
   def hakemuksenTulos(haku: Haku,
                       hakemusOid: HakemusOid,
                       hakijaOid: String,
-                      ohjausparametrit: Ohjausparametrit,
-                      latestSijoitteluajoId: Option[Long]): HakemuksenSijoitteluntulos = {
+                      ohjausparametrit: Ohjausparametrit): HakemuksenSijoitteluntulos = {
     valintarekisteriDb.runBlocking(
-      latestSijoittelunTulos(haku.oid, hakijaOid, hakemusOid, ohjausparametrit, latestSijoitteluajoId, vastaanotettavuusVirkailijana = false)
+      latestSijoittelunTulos(haku.oid, hakijaOid, hakemusOid, ohjausparametrit, vastaanotettavuusVirkailijana = false)
     )
   }
 
   def latestSijoittelunTulos(hakuOid: HakuOid, henkiloOid: String, hakemusOid: HakemusOid,
                              ohjausparametrit: Ohjausparametrit): DBIO[HakemuksenSijoitteluntulos] = {
-    latestSijoittelunTulos(hakuOid, henkiloOid, hakemusOid, ohjausparametrit, findLatestSijoitteluajoId(hakuOid), vastaanotettavuusVirkailijana = false)
+    latestSijoittelunTulos(hakuOid, henkiloOid, hakemusOid, ohjausparametrit, vastaanotettavuusVirkailijana = false)
   }
 
   def latestSijoittelunTulosVirkailijana(hakuOid: HakuOid, henkiloOid: String, hakemusOid: HakemusOid,
                                          ohjausparametrit: Ohjausparametrit): DBIO[HakemuksenSijoitteluntulos] = {
-    latestSijoittelunTulos(hakuOid, henkiloOid, hakemusOid, ohjausparametrit, findLatestSijoitteluajoId(hakuOid), vastaanotettavuusVirkailijana = true)
+    latestSijoittelunTulos(hakuOid, henkiloOid, hakemusOid, ohjausparametrit, vastaanotettavuusVirkailijana = true)
   }
 
   private def latestSijoittelunTulos(hakuOid: HakuOid,
                                      henkiloOid: String,
                                      hakemusOid: HakemusOid,
                                      ohjausparametrit: Ohjausparametrit,
-                                     latestSijoitteluajoId: Option[Long],
                                      vastaanotettavuusVirkailijana: Boolean): DBIO[HakemuksenSijoitteluntulos] = {
     for {
       valinnantulokset <- valintarekisteriDb.getValinnantuloksetForHakemus(hakemusOid)
       hyvaksyttyJulkaistuDates <- valintarekisteriDb.findHyvaksyttyJulkaistuDatesForHenkilo(henkiloOid)
       vastaanottoRecords <- valintarekisteriDb.findHenkilonVastaanototHaussa(henkiloOid, hakuOid)
+      latestSijoitteluajoId <- valintarekisteriDb.getLatestSijoitteluajoId(hakuOid)
       hakutoiveetSijoittelussa <- latestSijoitteluajoId.fold(DBIO.successful(List.empty[HakutoiveRecord]))(valintarekisteriDb.getHakemuksenHakutoiveetSijoittelussa(hakemusOid, _))
       valintatapajonotSijoittelussa <- latestSijoitteluajoId.fold(DBIO.successful(List.empty[HakutoiveenValintatapajonoRecord]))(valintarekisteriDb.getHakemuksenHakutoiveidenValintatapajonotSijoittelussa(hakemusOid, _))
     } yield HakemuksenSijoitteluntulos(
@@ -205,12 +204,6 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     }
   }
 
-  def findLatestSijoitteluajoId(hakuOid: HakuOid): Option[Long] = {
-    Timer.timed("findLatestSijoitteluajoId -> sijoittelunTulosClient.fetchLatestSijoitteluajoId", 100) {
-      sijoittelunTulosClient.fetchLatestSijoitteluajoId(hakuOid)
-    }
-  }
-
   def findLatestSijoitteluAjoForHaku(hakuOid: HakuOid): Option[SijoitteluAjo] = {
     Timer.timed("findLatestSijoitteluAjoForHaku -> latestSijoitteluAjoClient.fetchLatestSijoitteluAjoFromSijoitteluService", 100) {
       sijoittelunTulosClient.fetchLatestSijoitteluAjo(hakuOid)
@@ -242,7 +235,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
   @Deprecated //TODO: Ei toimi erillishaulla, jolla ei ole laskentaa, jos käytössä PostgreSQL eikä Mongo. Käytetäänkö vielä oikeasti?
   def findSijoitteluAjo(hakuOid: HakuOid, sijoitteluajoId: String): Option[Long] = {
     if ("latest" == sijoitteluajoId) {
-      findLatestSijoitteluajoId(hakuOid)
+      valintarekisteriDb.runBlocking(valintarekisteriDb.getLatestSijoitteluajoId(hakuOid))
     } else raportointiService.getSijoitteluAjo(sijoitteluajoId.toLong).map(_.getSijoitteluajoId)
   }
 

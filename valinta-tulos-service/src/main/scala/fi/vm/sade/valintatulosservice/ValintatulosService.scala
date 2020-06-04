@@ -67,7 +67,6 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
   def hakemuksentulos(h: Hakemus): Option[Hakemuksentulos] = {
     for {
       haku <- hakuService.getHaku(h.hakuOid).right.toOption
-      latestSijoitteluajoId = sijoittelutulosService.findLatestSijoitteluajoId(h.hakuOid)
       ilmoittautumisenAikaleimat = timed(s"Ilmoittautumisten aikaleimojen haku hakijalle ${h.henkiloOid}", 1000) {
         Map(h.henkiloOid -> valinnantulosRepository.runBlocking(valinnantulosRepository.getIlmoittautumisenAikaleimat(h.henkiloOid)))
       }
@@ -88,8 +87,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         _ => Seq(sijoittelutulosService.hakemuksenTulos(haku,
           h.oid,
           h.henkiloOid,
-          sijoittelutulosService.findOhjausparametritFromOhjausparametritService(h.hakuOid),
-          latestSijoitteluajoId)),
+          sijoittelutulosService.findOhjausparametritFromOhjausparametritService(h.hakuOid))),
         vastaanottoKaudella = vastaanototKausilla.get,
         ilmoittautumisenAikaleimat = ilmoittautumisenAikaleimat
       ).toSeq.headOption
@@ -121,7 +119,6 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
             .groupBy(_._1).mapValues(i => i.map(t => (t._2, t._3)))
         }
         val vastaanottoaikataulu = sijoittelutulosService.findOhjausparametritFromOhjausparametritService(hakuOid)
-        val latestSijoitteluajoId = sijoittelutulosService.findLatestSijoitteluajoId(hakuOid)
         val hakemustenTulokset = fetchTulokset(
           haku,
           () => hakemukset.toIterator,
@@ -130,8 +127,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
               haku,
               hakemusOid,
               hakijaOidByHakemusOid(hakemusOid),
-              vastaanottoaikataulu,
-              latestSijoitteluajoId
+              vastaanottoaikataulu
             )).toSeq,
           vastaanottoKaudella = vastaanototKausilla.get,
           ilmoittautumisenAikaleimat = ilmoittautumisenAikaleimat

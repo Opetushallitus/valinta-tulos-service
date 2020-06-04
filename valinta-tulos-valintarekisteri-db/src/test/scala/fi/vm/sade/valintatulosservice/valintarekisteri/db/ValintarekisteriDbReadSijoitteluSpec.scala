@@ -36,7 +36,7 @@ class ValintarekisteriDbReadSijoitteluSpec extends Specification with ITSetup wi
     }
 
     "get latest sijoitteluajoid for haku" in {
-      singleConnectionValintarekisteriDb.getLatestSijoitteluajoId(HakuOid("1.2.246.562.29.75203638285")).get mustEqual 1476936450191L
+      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.getLatestSijoitteluajoId(HakuOid("1.2.246.562.29.75203638285"))).get mustEqual 1476936450191L
     }
 
     "get sijoitteluajo" in {

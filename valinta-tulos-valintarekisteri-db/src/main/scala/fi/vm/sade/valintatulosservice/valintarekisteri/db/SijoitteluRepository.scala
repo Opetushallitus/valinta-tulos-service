@@ -3,28 +3,27 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import slick.dbio.DBIO
 
 import scala.util.Try
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
 trait SijoitteluRepository extends PerformanceLogger { this:Logging =>
 
-  def getLatestSijoitteluajoId(hakuOid: HakuOid): Option[Long]
+  def getLatestSijoitteluajoId(hakuOid: HakuOid): DBIO[Option[Long]]
 
   def isLatest(sijoitteluajoId: String) = "latest".equalsIgnoreCase(sijoitteluajoId)
   def parseId(sijoitteluajoId: String) = Try(sijoitteluajoId.toLong).toOption
 
-  def getLatestSijoitteluajoId(sijoitteluajoId: String, hakuOid: HakuOid): Either[Throwable,Long] = sijoitteluajoId match {
-      case x if isLatest(x) => getLatestSijoitteluajoId(hakuOid).toRight(
-        new NotFoundException(s"Yhtään sijoitteluajoa ei löytynyt haulle $hakuOid"))
-      case x => parseId(x).toRight(
-        new IllegalArgumentException(s"Väärän tyyppinen sijoitteluajon ID: $sijoitteluajoId"))
+  def getLatestSijoitteluajoId(sijoitteluajoId: String, hakuOid: HakuOid): DBIO[Long] = sijoitteluajoId match {
+      case x if isLatest(x) => getLatestSijoitteluajoId(hakuOid).flatMap {
+        case Some(id) => DBIO.successful(id)
+        case None => DBIO.failed(new NotFoundException(s"Yhtään sijoitteluajoa ei löytynyt haulle $hakuOid"))
+      }
+      case _ => Try(DBIO.successful(sijoitteluajoId.toLong))
+        .getOrElse(DBIO.failed(new IllegalArgumentException(s"Väärän tyyppinen sijoitteluajon ID: $sijoitteluajoId")))
   }
-
-  def getLatestSijoitteluajoIdThrowFailure(sijoitteluajoId: String, hakuOid: HakuOid):Long =
-    getLatestSijoitteluajoId(sijoitteluajoId, hakuOid) match {
-      case Right(id) => id
-      case Left(failure) => throw failure
-    }
 
   def getSijoitteluajo(sijoitteluajoId:Long): Option[SijoitteluajoRecord]
   def getSijoitteluajonHakukohteet(sijoitteluajoId:Long): List[SijoittelunHakukohdeRecord]
