@@ -826,9 +826,8 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
   }
 
   private def näytäToiveenAlemmatPeruuntuneetJonotKeskeneräisinäJosYlemmätKeskeneräisiä(hakutoiveenTulos: Hakutoiveentulos): List[JonokohtainenTulostieto] = {
-    val jonojenTulokset = hakutoiveenTulos.jonokohtaisetTulostiedotPrioriteettiJarjestyksessa
-    val firstKeskeneräinen: Int = jonojenTulokset.indexWhere(_.valintatila == Valintatila.kesken)
-    jonojenTulokset.zipWithIndex.map {
+    val firstKeskeneräinen = hakutoiveenTulos.jonokohtaisetTulostiedot.indexWhere(_.valintatila == Valintatila.kesken)
+    hakutoiveenTulos.jonokohtaisetTulostiedot.zipWithIndex.map {
       case (jononTulos, index) if firstKeskeneräinen >= 0 && index > firstKeskeneräinen && jononTulos.valintatila == Valintatila.peruuntunut =>
         logger.debug("näytäToiveenAlemmatPeruuntuneetJonotKeskeneräisinäJosYlemmätKeskeneräisiä toKesken {}", index)
         jononTulos.toKesken

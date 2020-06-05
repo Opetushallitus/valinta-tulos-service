@@ -52,9 +52,6 @@ case class Hakutoiveentulos(hakukohdeOid: HakukohdeOid,
                             kelaURL: Option[String] = None,
                             jonokohtaisetTulostiedot: List[JonokohtainenTulostieto]
                             ) {
-
-  def jonokohtaisetTulostiedotPrioriteettiJarjestyksessa: List[JonokohtainenTulostieto] = jonokohtaisetTulostiedot.sortBy(_.valintatapajonoPrioriteetti)
-
   def toKesken = {
     copy(
         valintatila = Valintatila.kesken,
