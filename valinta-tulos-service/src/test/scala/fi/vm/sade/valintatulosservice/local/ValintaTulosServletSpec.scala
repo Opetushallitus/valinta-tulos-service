@@ -418,16 +418,17 @@ class ValintaTulosServletSpec extends ServletSpecification {
   }
 
   "GET /haku/:hakuOid/ilmanHyvaksyntaa" should {
-    "palauttaa oikea hylkäyksen syy" in {
+    "palauttaa oikeat hylkäyksen syyt" in {
       useFixture("hylatty-peruste-viimeisesta-jonosta.json")
       val hakuOid = "1.2.246.562.5.2013080813081926341928"
       get(s"haku/$hakuOid/ilmanHyvaksyntaa") {
         status must_== 200
         val streamedJson = JsonMethods.parse(body)
 
-        val result = (((streamedJson \\ "results").asInstanceOf[JArray](0) \\ "hakutoiveet").asInstanceOf[JArray](0) \\ "hakutoiveenValintatapajonot").asInstanceOf[JArray](0) \\ "tilanKuvaukset"
-
-        compact(render(result)) must_== """{"FI":"Toinen jono","SV":"Toinen jono sv","EN":"Toinen jono en"}"""
+        (((streamedJson \ "results")(0) \ "hakutoiveet")(0) \ "hakutoiveenValintatapajonot").asInstanceOf[JArray]
+          .arr
+          .map(jono => ((jono \ "valintatapajonoPrioriteetti").extract[Int], (jono \ "tilanKuvaukset" \ "FI").extract[String]))
+          .sortBy(_._1) must beEqualTo(List((0, "Ensimmäinen jono"), (1, "Toinen jono")))
       }
     }
   }
