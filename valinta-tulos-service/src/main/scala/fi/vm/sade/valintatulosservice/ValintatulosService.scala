@@ -335,11 +335,6 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
             getOrElse(throw new IllegalStateException(s"Ei löydy hakutoiveelle ${hakutoiveDto.getHakukohdeOid} tulosta hakemukselta ${hakijaDto.getHakemusOid}. " +
               s"Hakutoive saattaa olla poistettu hakemukselta sijoittelun jälkeen."))._1
           hakutoiveDto.setVastaanottotieto(fi.vm.sade.sijoittelu.tulos.dto.ValintatuloksenTila.valueOf(tulos.vastaanottotila.toString))
-          if (tulos.julkaistavissa) {
-            hakutoiveDto.getHakutoiveenValintatapajonot.asScala
-              .find(_.getValintatapajonoOid == tulos.valintatapajonoOid.s)
-              .foreach(_.setTilanKuvaukset(tulos.tilanKuvaukset.asJava))
-          }
         })
       }
       hakijaPaginationObject
@@ -371,9 +366,6 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
 
   def copyVastaanottotieto(hakutoiveDto: HakutoiveDTO, hakutoiveenTulos: Hakutoiveentulos): Unit = {
     hakutoiveDto.setVastaanottotieto(fi.vm.sade.sijoittelu.tulos.dto.ValintatuloksenTila.valueOf(hakutoiveenTulos.vastaanottotila.toString))
-    hakutoiveDto.getHakutoiveenValintatapajonot.asScala
-      .find(_.getValintatapajonoOid == hakutoiveenTulos.valintatapajonoOid.s)
-      .foreach(_.setTilanKuvaukset(hakutoiveenTulos.tilanKuvaukset.asJava))
   }
 
   def populateVastaanottotieto(hakijaDto: HakijaDTO, hakemuksenHakutoiveidenTuloksetVastaanottotiedonKanssa: List[Hakutoiveentulos]): Unit = {
