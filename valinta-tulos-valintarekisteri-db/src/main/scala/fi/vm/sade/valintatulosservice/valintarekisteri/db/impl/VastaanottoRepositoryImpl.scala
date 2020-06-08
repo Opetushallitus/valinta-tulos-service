@@ -60,7 +60,7 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
                 and vt.hakukohde_oid = vastaanotot.hakukohde
             where deleted is null
                 and action in ('VastaanotaSitovasti', 'VastaanotaEhdollisesti')
-            union
+            union all
             select
               henkiloviitteet.linked_oid as henkilo,
               hakukohde,
@@ -82,6 +82,7 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
   }
 
   override def findYpsVastaanototDBIO(kausi: Kausi, henkiloOids: Set[String]): DBIO[Set[(HakemusOid, HakukohdeRecord, VastaanottoRecord)]] = {
+    logger.info(s"findYpsVastaanototDBIO, kausi $kausi for ${henkiloOids.size} henkiloOids")
     findkoulutuksenAlkamiskaudenVastaanottaneetYhdenPaikanSaadoksenPiirissaDBIO(kausi).zip(findYpsHakukohteetDBIO(kausi)).zip(findYpsHakemusOiditDBIO(kausi))
       .map{ case ((x, y), z) => { (x.filter(v => henkiloOids.contains(v.henkiloOid)), y.map(h => h.oid -> h).toMap, z.toMap) } }
       .flatMap { case (vastaanotot, hakukohteet, hakemusoidit) => {
