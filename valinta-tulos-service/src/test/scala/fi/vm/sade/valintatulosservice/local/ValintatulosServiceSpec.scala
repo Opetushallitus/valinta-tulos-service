@@ -83,7 +83,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
   lazy val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
   lazy val hakemusRepository = new HakemusRepository(new HakuAppRepository(), new AtaruHakemusRepository(appConfig), new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService))
   lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, hakemusRepository, valintarekisteriDb,
-    hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, hakijaDtoClient)
+    hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao)
 
   val hakuOid = HakuOid("1.2.246.562.5.2013080813081926341928")
   val sijoitteluAjoId: String = "latest"

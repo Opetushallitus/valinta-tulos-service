@@ -10,6 +10,7 @@ import org.json4s.jackson.Serialization._
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 import org.scalatra.{Forbidden, Ok}
+
 import scala.collection.JavaConverters._
 
 class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, vastaanottoService: VastaanottoService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
@@ -95,7 +96,7 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     val valintatapajonoOid = ValintatapajonoOid(params("valintatapajonoOid"))
     val hakemusOids = read[Set[HakemusOid]](request.body)
-    Ok(valintatulosService.haeTilatHakijoille(hakuOid, hakukohdeOid, valintatapajonoOid, hakemusOids))
+    Ok(valintatulosService.haeTilatHakijoille(hakuOid, valintatapajonoOid, hakemusOids))
   }
 
   val getValintatuloksetByHakuSwagger: OperationBuilder = (apiOperation[Unit]("getValintatuloksetByHaku")

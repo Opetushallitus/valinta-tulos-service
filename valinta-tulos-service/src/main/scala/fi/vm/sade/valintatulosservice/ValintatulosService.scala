@@ -14,7 +14,7 @@ import fi.vm.sade.valintatulosservice.domain.Valintatila.isHyväksytty
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
-import fi.vm.sade.valintatulosservice.sijoittelu.{SijoittelutulosService, ValintarekisteriHakijaDTOClient, ValintarekisteriValintatulosDao}
+import fi.vm.sade.valintatulosservice.sijoittelu.{SijoittelutulosService, ValintarekisteriValintatulosDao}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository, VastaanottoRecord, VirkailijaVastaanottoRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.vastaanottanut
@@ -35,8 +35,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
                           hakuService: HakuService,
                           hakijaVastaanottoRepository: HakijaVastaanottoRepository,
                           hakukohdeRecordService: HakukohdeRecordService,
-                          valintatulosDao: ValintarekisteriValintatulosDao,
-                          hakijaDTOClient: ValintarekisteriHakijaDTOClient)(implicit appConfig: VtsAppConfig) extends Logging {
+                          valintatulosDao: ValintarekisteriValintatulosDao)(implicit appConfig: VtsAppConfig) extends Logging {
   def this(valinnantulosRepository: ValinnantulosRepository,
            sijoittelutulosService: SijoittelutulosService,
            hakemusRepository: HakemusRepository,
@@ -44,9 +43,8 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
            hakuService: HakuService,
            hakijaVastaanottoRepository: HakijaVastaanottoRepository,
            hakukohdeRecordService: HakukohdeRecordService,
-           valintatulosDao: ValintarekisteriValintatulosDao,
-           hakijaDTOClient: ValintarekisteriHakijaDTOClient )(implicit appConfig: VtsAppConfig) =
-    this(valinnantulosRepository, sijoittelutulosService, appConfig.ohjausparametritService, hakemusRepository, virkailijaVastaanottoRepository, hakuService, hakijaVastaanottoRepository, hakukohdeRecordService, valintatulosDao, hakijaDTOClient)
+           valintatulosDao: ValintarekisteriValintatulosDao)(implicit appConfig: VtsAppConfig) =
+    this(valinnantulosRepository, sijoittelutulosService, appConfig.ohjausparametritService, hakemusRepository, virkailijaVastaanottoRepository, hakuService, hakijaVastaanottoRepository, hakukohdeRecordService, valintatulosDao)
 
   def haunKoulutuksenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid: HakuOid) : Set[VastaanottoRecord] = {
     (for {
@@ -101,7 +99,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     hakemustenTulosByHaku(hakuOid, Some(haunVastaanotot), checkJulkaisuAikaParametri)
   }
 
-  def haeTilatHakijoille(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOids: Set[HakemusOid]): Set[TilaHakijalle] = {
+  def haeTilatHakijoille(hakuOid: HakuOid, valintatapajonoOid: ValintatapajonoOid, hakemusOids: Set[HakemusOid]): Set[TilaHakijalle] = {
     val hakemukset: Seq[Hakemus] = hakemusRepository.findHakemuksetByOids(hakemusOids).toSeq
     val hakijaOidByHakemusOid = hakemukset.map(h => h.oid -> h.henkiloOid).toMap
     val uniqueHakukohdeOids: Seq[HakukohdeOid] = hakemukset.flatMap(_.toiveet.map(_.oid)).distinct
@@ -227,7 +225,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     val hakemustenTulokset = hakemustenTulosByHaku(hakuOid, Some(haunVastaanotot)).getOrElse(throw new IllegalArgumentException(s"Unknown hakuOid $hakuOid"))
     val valintatulokset = valintatulosDao.loadValintatulokset(hakuOid)
 
-    setValintatuloksetTilat(hakuOid, valintatulokset, mapHakemustenTuloksetByHakemusOid(hakemustenTulokset), haunVastaanotot)
+    setValintatuloksetTilat(valintatulokset, mapHakemustenTuloksetByHakemusOid(hakemustenTulokset), haunVastaanotot)
     valintatulokset
   }
 
@@ -239,7 +237,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
     val valintatulokset:List[Valintatulos] = valintatulosDao.loadValintatuloksetForHakukohde(hakukohdeOid)
 
-    setValintatuloksetTilat(hakuOid, valintatulokset, mapHakemustenTuloksetByHakemusOid(hakemustenTulokset), haunVastaanotot)
+    setValintatuloksetTilat(valintatulokset, mapHakemustenTuloksetByHakemusOid(hakemustenTulokset), haunVastaanotot)
     valintatulokset
   }
 
@@ -301,7 +299,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     val vastaanotot = virkailijaVastaanottoRepository.runBlocking(virkailijaVastaanottoRepository.findHenkilonVastaanototHaussa(henkiloOid, hakuOid))
     val valintatulokset: List[Valintatulos] = valintatulosDao.loadValintatuloksetForHakemus(hakemusOid)
 
-    setValintatuloksetTilat(hakuOid, valintatulokset, Map(hakemusOid -> hakemuksenTulos), Map(henkiloOid -> vastaanotot))
+    setValintatuloksetTilat(valintatulokset, Map(hakemusOid -> hakemuksenTulos), Map(henkiloOid -> vastaanotot))
     valintatulokset
   }
 
@@ -380,8 +378,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     hakemustenTulokset.toList.groupBy(_.hakemusOid).mapValues(_.head)
   }
 
-  private def setValintatuloksetTilat(hakuOid:HakuOid,
-                                      valintatulokset: Seq[Valintatulos],
+  private def setValintatuloksetTilat(valintatulokset: Seq[Valintatulos],
                                       hakemustenTulokset: Map[HakemusOid, Hakemuksentulos],
                                       haunVastaanotot: Map[String, Set[VastaanottoRecord]] ): Unit = {
     valintatulokset.foreach(valintaTulos => {
@@ -395,7 +392,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       tulosPari match {
         case Some((hakemuksenTulos, hakutoiveenTulos)) =>
           assertThatHakijaOidsDoNotConflict(valintaTulos, hakemuksenTulos)
-          val tilaHakijalle = ValintatuloksenTila.valueOf(hakutoiveenTulos.vastaanottotila.toString)
+          val tilaHakijalle = ValintatuloksenTila.valueOf(hakutoiveenTulos.vastaanottotila)
 
           val hakijaOid = hakemuksenTulos.hakijaOid
           val tilaVirkailijalle = ValintatulosService.toVirkailijaTila(tilaHakijalle, haunVastaanotot.get(hakijaOid), hakutoiveenTulos.hakukohdeOid)
@@ -634,7 +631,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     def hyvaksyttyTaiVaralla(tulos: Hakutoiveentulos): Boolean = isHyväksytty(tulos.valintatila) || tulos.valintatila == Valintatila.varalla
     val hakutoiveetGroupedByKausi: Map[Option[(Kausi, Boolean)], List[Hakutoiveentulos]] = tulokset.groupBy(tulos => vastaanottoKaudella(tulos.hakukohdeOid))
 
-    def hakutoiveetToOriginalOrder(originalHakutoiveet: List[Hakutoiveentulos]): Ordering[Hakutoiveentulos] = {
+    val hakutoiveetToOriginalOrder: Ordering[Hakutoiveentulos] = {
       val oids = tulokset.map(_.hakukohdeOid)
       Ordering.by[Hakutoiveentulos,Int](u => oids.indexOf(u.hakukohdeOid))
     }
@@ -665,7 +662,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       case (None, kaudettomatTulokset) =>
         logger.debug("asetaVastaanotettavuusValintarekisterinPerusteella kaudettomatTulokset")
         kaudettomatTulokset
-    }.toList.sorted(hakutoiveetToOriginalOrder(tulokset))
+    }.toList.sorted(hakutoiveetToOriginalOrder)
   }
 
   private def paatteleVastaanottotilaVirkailijaaVarten(hakijaOid: String,

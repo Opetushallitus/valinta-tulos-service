@@ -4,12 +4,10 @@ import fi.vm.sade.auditlog.{ApplicationType, Audit, Logger}
 import fi.vm.sade.oppijantunnistus.OppijanTunnistusService
 import fi.vm.sade.security._
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.config.EmailerRegistry
-import fi.vm.sade.valintatulosservice.config.EmailerRegistry.EmailerRegistry
-import fi.vm.sade.valintatulosservice.vastaanottomeili.EmailerServlet
 import fi.vm.sade.valintatulosservice._
+import fi.vm.sade.valintatulosservice.config.EmailerRegistry.EmailerRegistry
+import fi.vm.sade.valintatulosservice.config.{EmailerRegistry, VtsAppConfig}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.{Dev, IT, VtsAppConfig}
-import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusRepository, HakuAppRepository}
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetailsService
@@ -28,7 +26,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
-import fi.vm.sade.valintatulosservice.vastaanottomeili._
+import fi.vm.sade.valintatulosservice.vastaanottomeili.{EmailerServlet, _}
 import javax.servlet.{DispatcherType, ServletContext}
 import org.scalatra._
 import org.slf4j.LoggerFactory
@@ -81,7 +79,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
     lazy val ataruHakemusTarjontaEnricher = new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService)
     lazy val hakemusRepository = new HakemusRepository(hakuAppRepository, ataruHakemusRepository, ataruHakemusTarjontaEnricher)
-    lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, hakemusRepository, valintarekisteriDb, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, hakijaDTOClient)(appConfig)
+    lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, hakemusRepository, valintarekisteriDb, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao)(appConfig)
     lazy val streamingValintatulosService = new StreamingValintatulosService(valintatulosService, valintarekisteriDb, hakijaDTOClient)(appConfig)
     lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, valintatulosService, valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, hakemusRepository, valintarekisteriDb)
     lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService, valintarekisteriDb, valintarekisteriDb)
