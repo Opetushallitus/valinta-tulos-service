@@ -68,7 +68,8 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
           hakutoiveetSijoittelussa.find(_.hakukohdeOid == oid),
           hyvaksyttyJulkaistuDates.get(oid)
         ))
-        .sortBy({ case (_, _, _, hakutoive, _) => hakutoive.flatMap(_.hakutoive) }) // FIXME hakutoivejärjestys hakemukselta
+        // FIXME hakutoivejärjestys hakemukselta jos sijoittelu ei käytössä
+        .sortBy({ case (_, _, _, hakutoive, _) => hakutoive.flatMap(_.hakutoive) })
         .map({ case (valinnantulokset, valintatapajonot, vastaanotto, hakutoive, hakutoiveenHyvaksyttyJaJulkaistuDate) =>
           hakutoiveenSijoittelunTulos(ohjausparametrit,
             vastaanotettavuusVirkailijana,
