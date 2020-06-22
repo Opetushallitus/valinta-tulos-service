@@ -116,12 +116,12 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     val pisteet = merkitsevaValintatapajono.flatMap(_.pisteet)
 
     val tilankuvaukset = {
-      val (valinnantulos, valintatapajono) = if (Valintatila.hylätty == valintatila) {
-        jonot.last
+      val valinnantulos = if (Valintatila.hylätty == valintatila) {
+        jonot.last._1
       } else {
-        (merkitsevaValinnantulos, merkitsevaValintatapajono)
+        merkitsevaValinnantulos
       }
-      tilanKuvaukset(valinnantulos, valintatapajono)
+      tilanKuvaukset(valinnantulos)
     }
 
     HakutoiveenSijoitteluntulos(
@@ -170,7 +170,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
       ),
       julkaistavissa = valinnantulos.flatMap(_.julkaistavissa).getOrElse(false),
       valintatapajonoPrioriteetti = valintatapajono.map(_.valintatapajonoPrioriteetti),
-      tilanKuvaukset = valinnantulos.map(v => tilanKuvaukset(Some(v), valintatapajono)),
+      tilanKuvaukset = valinnantulos.map(v => tilanKuvaukset(Some(v))),
       ehdollisestiHyvaksyttavissa = valinnantulos.flatMap(_.ehdollisestiHyvaksyttavissa).getOrElse(false),
       ehdollisenHyvaksymisenEhto = Some(EhdollisenHyvaksymisenEhto(
         FI = valinnantulos.flatMap(_.ehdollisenHyvaksymisenEhtoFI),
@@ -325,14 +325,11 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     HakemuksenSijoitteluntulos(HakemusOid(hakija.getHakemusOid), Option(StringUtils.trimToNull(hakija.getHakijaOid)), hakutoiveidenYhteenvedot)
   }
 
-  private def tilanKuvaukset(valinnantulos: Option[Valinnantulos],
-                             valintatapajono: Option[HakutoiveenValintatapajonoRecord]): Map[String, String] = {
-    def replaceLisatieto(text: String, tarkenteenLisatieto: Option[String]): String =
-      tarkenteenLisatieto.map(text.replace("<lisatieto>", _)).getOrElse(text)
+  private def tilanKuvaukset(valinnantulos: Option[Valinnantulos]): Map[String, String] = {
     List(
-      valinnantulos.flatMap(_.valinnantilanKuvauksenTekstiFI).map("FI" -> replaceLisatieto(_, valintatapajono.flatMap(_.tarkenteenLisatieto))),
-      valinnantulos.flatMap(_.valinnantilanKuvauksenTekstiSV).map("SV" -> replaceLisatieto(_, valintatapajono.flatMap(_.tarkenteenLisatieto))),
-      valinnantulos.flatMap(_.valinnantilanKuvauksenTekstiEN).map("EN" -> replaceLisatieto(_, valintatapajono.flatMap(_.tarkenteenLisatieto)))
+      valinnantulos.flatMap(_.valinnantilanKuvauksenTekstiFI).map("FI" -> _),
+      valinnantulos.flatMap(_.valinnantilanKuvauksenTekstiSV).map("SV" -> _),
+      valinnantulos.flatMap(_.valinnantilanKuvauksenTekstiEN).map("EN" -> _)
     ).flatten.toMap
   }
 
