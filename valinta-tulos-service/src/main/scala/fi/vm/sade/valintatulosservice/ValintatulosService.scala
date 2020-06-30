@@ -838,12 +838,20 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
+  /**
+   * Jos kaikki jonot eivät ole vielä sijoittelussa, SijoittelutulosService.jononValintatila asettaa
+   * hakutoiveen tilaksi "kesken", mutta jättää jonokohtaiset tulostiedot paikalleen. Koska jonokohtaisia
+   * tulostietoja joistakin muista tiloista voidaan haluta näyttää, ei siivota niitä vielä siellä, vaan
+   * vasta tapauskohtaisesti täällä.
+   *
+   * @see [[fi.vm.sade.valintatulosservice.sijoittelu.SijoittelutulosService.jononValintatila]]
+   */
   private def onJulkaisematontaAlempiaPeruuntuneitaTaiKeskeneräisiä(ylimmänJulkaisemattomanIndeksi: Int,
                                                                     tulos: Hakutoiveentulos,
                                                                     hakutoiveenIndeksi: Int): Boolean = {
     ylimmänJulkaisemattomanIndeksi >= 0 &&
       hakutoiveenIndeksi > ylimmänJulkaisemattomanIndeksi &&
-      tulos.valintatila == Valintatila.peruuntunut
+      List(Valintatila.peruuntunut, Valintatila.kesken).contains(tulos.valintatila)
   }
 
   private def näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
