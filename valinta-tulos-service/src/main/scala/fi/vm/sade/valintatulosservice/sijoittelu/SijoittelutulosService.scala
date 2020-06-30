@@ -166,43 +166,43 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
 
     val hakutoiveidenYhteenvedot = hakija.getHakutoiveet.toList.map { hakutoive: HakutoiveDTO =>
       val vastaanotto = vastaanottoRecords.find(v => v.hakukohdeOid.toString == hakutoive.getHakukohdeOid)
-      val jonot = JonoFinder.järjestäJonotPrioriteetinMukaan(hakutoive)
-      val jono = jonot.headOption.get
-      val valintatila = jononValintatila(jono, hakutoive)
+      val jonotLaskevassaPrioriteettijärjestyksessä = JonoFinder.järjestäJonotPrioriteetinMukaan(hakutoive)
+      val ylimmänPrioriteetinJono = jonotLaskevassaPrioriteettijärjestyksessä.headOption.get
+      val valintatila = jononValintatila(ylimmänPrioriteetinJono, hakutoive)
 
       val hakutoiveenHyvaksyttyJaJulkaistuDate = hyvaksyttyJulkaistuDates.get(HakukohdeOid(hakutoive.getHakukohdeOid))
 
       val (hakijanTilat, vastaanottoDeadline) = tilatietoJaVastaanottoDeadline(valintatila, vastaanotto, ohjausparametrit, hakutoiveenHyvaksyttyJaJulkaistuDate, vastaanotettavuusVirkailijana)
       val (virkailijanTilat, _) = tilatietoJaVastaanottoDeadline(valintatila, vastaanotto, ohjausparametrit, hakutoiveenHyvaksyttyJaJulkaistuDate, true)
 
-      val hyväksyttyJulkaistussaJonossa = Valintatila.isHyväksytty(valintatila) && jono.isJulkaistavissa
+      val hyväksyttyJulkaistussaJonossa = Valintatila.isHyväksytty(valintatila) && ylimmänPrioriteetinJono.isJulkaistavissa
       val julkaistavissa = hyväksyttyJulkaistussaJonossa || kaikkiJonotJulkaistu(hakutoive)
-      val pisteet: Option[BigDecimal] = Option(jono.getPisteet).map((p: java.math.BigDecimal) => new BigDecimal(p))
+      val pisteet: Option[BigDecimal] = Option(ylimmänPrioriteetinJono.getPisteet).map((p: java.math.BigDecimal) => new BigDecimal(p))
 
       HakutoiveenSijoitteluntulos(
         HakukohdeOid(hakutoive.getHakukohdeOid),
         hakutoive.getTarjoajaOid,
-        ValintatapajonoOid(jono.getValintatapajonoOid),
+        ValintatapajonoOid(ylimmänPrioriteetinJono.getValintatapajonoOid),
         hakijanTilat = hakijanTilat,
         virkailijanTilat = virkailijanTilat,
         vastaanottoDeadline.map(_.toDate),
-        SijoitteluajonIlmoittautumistila(Option(jono.getIlmoittautumisTila).getOrElse(IlmoittautumisTila.EI_TEHTY)),
-        viimeisinHakemuksenTilanMuutos = Option(jono.getHakemuksenTilanViimeisinMuutos),
-        viimeisinValintatuloksenMuutos = Option(jono.getValintatuloksenViimeisinMuutos),
-        Option(jono.getJonosija).map(_.toInt),
-        Option(jono.getVarasijojaKaytetaanAlkaen),
-        Option(jono.getVarasijojaTaytetaanAsti),
-        Option(jono.getVarasijanNumero).map(_.toInt),
+        SijoitteluajonIlmoittautumistila(Option(ylimmänPrioriteetinJono.getIlmoittautumisTila).getOrElse(IlmoittautumisTila.EI_TEHTY)),
+        viimeisinHakemuksenTilanMuutos = Option(ylimmänPrioriteetinJono.getHakemuksenTilanViimeisinMuutos),
+        viimeisinValintatuloksenMuutos = Option(ylimmänPrioriteetinJono.getValintatuloksenViimeisinMuutos),
+        Option(ylimmänPrioriteetinJono.getJonosija).map(_.toInt),
+        Option(ylimmänPrioriteetinJono.getVarasijojaKaytetaanAlkaen),
+        Option(ylimmänPrioriteetinJono.getVarasijojaTaytetaanAsti),
+        Option(ylimmänPrioriteetinJono.getVarasijanNumero).map(_.toInt),
         julkaistavissa,
-        ehdollisestiHyvaksyttavissa = jono.isEhdollisestiHyvaksyttavissa,
-        ehdollisenHyvaksymisenEhtoKoodi = Option(jono.getEhdollisenHyvaksymisenEhtoKoodi),
-        ehdollisenHyvaksymisenEhtoFI = Option(jono.getEhdollisenHyvaksymisenEhtoFI),
-        ehdollisenHyvaksymisenEhtoSV = Option(jono.getEhdollisenHyvaksymisenEhtoSV),
-        ehdollisenHyvaksymisenEhtoEN = Option(jono.getEhdollisenHyvaksymisenEhtoEN),
-        (if (fromHakemuksenTila(jono.getTila) == Valintatila.hylätty) {
-          jonot.last.getTilanKuvaukset
+        ehdollisestiHyvaksyttavissa = ylimmänPrioriteetinJono.isEhdollisestiHyvaksyttavissa,
+        ehdollisenHyvaksymisenEhtoKoodi = Option(ylimmänPrioriteetinJono.getEhdollisenHyvaksymisenEhtoKoodi),
+        ehdollisenHyvaksymisenEhtoFI = Option(ylimmänPrioriteetinJono.getEhdollisenHyvaksymisenEhtoFI),
+        ehdollisenHyvaksymisenEhtoSV = Option(ylimmänPrioriteetinJono.getEhdollisenHyvaksymisenEhtoSV),
+        ehdollisenHyvaksymisenEhtoEN = Option(ylimmänPrioriteetinJono.getEhdollisenHyvaksymisenEhtoEN),
+        (if (fromHakemuksenTila(ylimmänPrioriteetinJono.getTila) == Valintatila.hylätty) {
+          jonotLaskevassaPrioriteettijärjestyksessä.last.getTilanKuvaukset
         } else {
-          jono.getTilanKuvaukset
+          ylimmänPrioriteetinJono.getTilanKuvaukset
         }).toMap,
         pisteet,
         jonokohtaisetTulostiedot = hakutoive
@@ -216,7 +216,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
               valintatila = vastaanottotilanVaikutusValintatilaan(
                 hakemuksenTilastaJononValintatilaksi(valintatapajono),
                 hakijanTilat.vastaanottotila,
-                Some(jono),
+                Some(ylimmänPrioriteetinJono),
                 Some(valintatapajono)
               ),
               julkaistavissa = valintatapajono.isJulkaistavissa,
@@ -229,8 +229,8 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
                 EN = Option(valintatapajono.getEhdollisenHyvaksymisenEhtoEN)
               )),
               varasijanumero = Option(valintatapajono.getVarasijanNumero).map {_.toInt},
-              eiVarasijatayttoa = jono.isEiVarasijatayttoa,
-              varasijat = Option(jono.getVarasijat).map(_.toInt).filter(_ != 0)
+              eiVarasijatayttoa = ylimmänPrioriteetinJono.isEiVarasijatayttoa,
+              varasijat = Option(ylimmänPrioriteetinJono.getVarasijat).map(_.toInt).filter(_ != 0)
             )
           })
           .toList
