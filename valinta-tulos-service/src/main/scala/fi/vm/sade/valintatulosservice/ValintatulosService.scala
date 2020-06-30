@@ -838,10 +838,18 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
+  private def onJulkaisematontaAlempiaPeruuntuneitaTaiKeskeneräisiä(ylimmänJulkaisemattomanIndeksi: Int,
+                                                                    tulos: Hakutoiveentulos,
+                                                                    hakutoiveenIndeksi: Int): Boolean = {
+    ylimmänJulkaisemattomanIndeksi >= 0 &&
+      hakutoiveenIndeksi > ylimmänJulkaisemattomanIndeksi &&
+      tulos.valintatila == Valintatila.peruuntunut
+  }
+
   private def näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
     val firstJulkaisematon: Int = tulokset.indexWhere (!_.julkaistavissa)
     tulokset.zipWithIndex.map {
-      case (tulos, index) if firstJulkaisematon >= 0 && index > firstJulkaisematon && tulos.valintatila == Valintatila.peruuntunut =>
+      case (tulos, index) if onJulkaisematontaAlempiaPeruuntuneitaTaiKeskeneräisiä(firstJulkaisematon, tulos, index) =>
         logger.debug("näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä toKesken {}", index)
         tulos.
           toKesken.
