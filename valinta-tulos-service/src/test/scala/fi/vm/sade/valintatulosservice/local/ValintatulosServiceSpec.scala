@@ -20,6 +20,7 @@ import org.joda.time.DateTime
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 import slick.jdbc.PostgresProfile.api._
+import slick.sql.SqlAction
 
 import scala.collection.JavaConverters._
 import scala.compat.java8.OptionConverters._
@@ -258,7 +259,11 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           "testi")
 
         // Ajetaan uudet valintatilat:
-        valintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = 'false' where hakukohde_oid = '1.2.246.562.5.72607738902' and valintatapajono_oid = '14090336922663576781797489829884' and hakemus_oid = '1.2.246.562.11.00000441369'"
+        valintarekisteriDb.runBlocking(asetaJulkaistavissa(
+          HakukohdeOid("1.2.246.562.5.72607738902"),
+          ValintatapajonoOid("14090336922663576781797489829884"),
+          HakemusOid("1.2.246.562.11.00000441369"),
+          julkaistavissa = false)
           .andThen(valintarekisteriDb.storeValinnantila(hakemuksen3tila, None))
           .andThen(valintarekisteriDb.storeValinnantila(hakemuksen21tila, None))
           .andThen(valintarekisteriDb.storeValinnantila(hakemuksen22tila, None))
@@ -276,8 +281,11 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
 
         // Julkaistaan tulos:
-        valintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = 'true' where hakukohde_oid = '1.2.246.562.5.72607738902' and valintatapajono_oid = '14090336922663576781797489829884' and hakemus_oid = '1.2.246.562.11.00000441369'")
-
+        valintarekisteriDb.runBlocking(asetaJulkaistavissa(
+          HakukohdeOid("1.2.246.562.5.72607738902"),
+          ValintatapajonoOid("14090336922663576781797489829884"),
+          HakemusOid("1.2.246.562.11.00000441369"),
+          julkaistavissa = true))
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.vastaanotettavissa_sitovasti, true)
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.peruuntunut, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.peruuntunut, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
@@ -342,7 +350,8 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           PERUUNTUNUT_HYVAKSYTTY_YLEMMALLE_HAKUTOIVEELLE)
 
         // Ajetaan uudet valintatilat:
-        valintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = 'false' where hakukohde_oid = '1.2.246.562.5.72607738902' and valintatapajono_oid = '14090336922663576781797489829884' and hakemus_oid = '1.2.246.562.11.00000441369'"
+        valintarekisteriDb.runBlocking(
+          asetaJulkaistavissa(HakukohdeOid("1.2.246.562.5.72607738902"), ValintatapajonoOid("14090336922663576781797489829884"), HakemusOid("1.2.246.562.11.00000441369"), julkaistavissa = false)
           .andThen(valintarekisteriDb.storeValinnantila(hakemuksen3tila, None))
           .andThen(valintarekisteriDb.storeValinnantila(hakemuksen21tila, None))
           .andThen(valintarekisteriDb.storeValinnantila(hakemuksen22tila, None))
@@ -361,7 +370,12 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
         alimmanPeruuntuneenToiveenTulosKunYlinOnJulkaisematonHyvaksytty.jonokohtaisetTulostiedot.head.tilanKuvaukset must beNone
 
         // Julkaistaan tulos:
-        valintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = 'true' where hakukohde_oid = '1.2.246.562.5.72607738902' and valintatapajono_oid = '14090336922663576781797489829884' and hakemus_oid = '1.2.246.562.11.00000441369'")
+        valintarekisteriDb.runBlocking(asetaJulkaistavissa(
+          HakukohdeOid("1.2.246.562.5.72607738902"),
+          ValintatapajonoOid("14090336922663576781797489829884"),
+          HakemusOid("1.2.246.562.11.00000441369"),
+          julkaistavissa = true
+        ))
 
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.vastaanotettavissa_sitovasti, true)
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.hylätty, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
@@ -412,7 +426,12 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
         // BUG-2026 reproduction step 3
         // HYVAKSYTTY KESKEN false
         // KESKEN KESKEN true
-        valintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = 'true' where hakukohde_oid = ${alempiHakukohdeOid.s} and valintatapajono_oid = ${alemmanKohteenJonoOid.s} and hakemus_oid = ${hakemusOid.s}")
+        valintarekisteriDb.runBlocking(asetaJulkaistavissa(
+          alempiHakukohdeOid,
+          alemmanKohteenJonoOid,
+          hakemusOid,
+          julkaistavissa = true
+        ))
 
         val ylemmanHyvaksytynToiveenTulos: Hakutoiveentulos = getHakutoive(ylempiHakukohdeOid)
         checkHakutoiveState(ylemmanHyvaksytynToiveenTulos, Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
@@ -480,18 +499,27 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           "testi")
 
         // Ajetaan uudet valintatilat:
-        valintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = 'false' where hakukohde_oid = '1.2.246.562.5.72607738902' and valintatapajono_oid = '14090336922663576781797489829884' and hakemus_oid = '1.2.246.562.11.00000441369'"
+
+        valintarekisteriDb.runBlocking(
+          asetaJulkaistavissa(
+            HakukohdeOid("1.2.246.562.5.72607738902"),
+            ValintatapajonoOid("14090336922663576781797489829884"),
+            HakemusOid("1.2.246.562.11.00000441369"),
+            julkaistavissa = false)
           .andThen(valintarekisteriDb.storeValinnantila(hakemuksen3tila, None))
           .andThen(valintarekisteriDb.storeValinnantila(hakemuksen1tila, None))
           .transactionally)
-
 
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, true)
 
         // Julkaistaan tulos:
-        valintarekisteriDb.runBlocking(sqlu"update valinnantulokset set julkaistavissa = 'true' where hakukohde_oid = '1.2.246.562.5.72607738902' and valintatapajono_oid = '14090336922663576781797489829884' and hakemus_oid = '1.2.246.562.11.00000441369'")
+        valintarekisteriDb.runBlocking(asetaJulkaistavissa(
+          HakukohdeOid("1.2.246.562.5.72607738902"),
+          ValintatapajonoOid("14090336922663576781797489829884"),
+          HakemusOid("1.2.246.562.11.00000441369"),
+          julkaistavissa = true))
 
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.hyväksytty, Vastaanottotila.kesken, Vastaanotettavuustila.vastaanotettavissa_sitovasti, true)
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.peruuntunut, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
@@ -552,11 +580,11 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
               Hyvaksytty,
               "testi")).
             andThen(
-              sqlu"""update valinnantulokset set julkaistavissa = 'true'
-                 where
-                   hakukohde_oid = ${alempiToiveOid.s}
-                   and valintatapajono_oid = ${alemmanToiveenHyvaksytynJononOid.s}
-                   and hakemus_oid = ${hakemusOid.s}"""))
+              asetaJulkaistavissa(
+                alempiToiveOid,
+                alemmanToiveenHyvaksytynJononOid,
+                hakemusOid,
+                julkaistavissa = true)))
 
         valintarekisteriDb.runBlocking(
           valintarekisteriDb.storeValinnantila(
@@ -623,17 +651,9 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
               Hyvaksytty,
               "testi")).
             andThen(
-              sqlu"""update valinnantulokset set julkaistavissa = 'true'
-                 where
-                   hakukohde_oid = ${alempiToiveOid.s}
-                   and valintatapajono_oid = ${alemmanToiveenYlemmanHyvaksytynJononOid.s}
-                   and hakemus_oid = ${hakemusOid.s}""").
+              asetaJulkaistavissa(alempiToiveOid, alemmanToiveenYlemmanHyvaksytynJononOid, hakemusOid, julkaistavissa = true)).
             andThen(
-              sqlu"""update valinnantulokset set julkaistavissa = 'true'
-                 where
-                   hakukohde_oid = ${alempiToiveOid.s}
-                   and valintatapajono_oid = ${alemmanToiveenAlemmanHyvaksytynJononOid.s}
-                   and hakemus_oid = ${hakemusOid.s}"""))
+              asetaJulkaistavissa(alempiToiveOid, alemmanToiveenAlemmanHyvaksytynJononOid, hakemusOid, julkaistavissa = true)))
 
         valintarekisteriDb.runBlocking(
           valintarekisteriDb.storeValinnantila(
@@ -1094,6 +1114,18 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
       syyTeksti(tarkenne, "FI"),
       syyTeksti(tarkenne, "SV"),
       syyTeksti(tarkenne, "EN"))
+  }
+
+  private def asetaJulkaistavissa(hakukohdeOid: HakukohdeOid,
+                                  jonoOid: ValintatapajonoOid,
+                                  hakemusOid: HakemusOid,
+                                  julkaistavissa: Boolean
+                                 ): SqlAction[Int, NoStream, Effect] = {
+    sqlu"""update valinnantulokset set julkaistavissa = ${julkaistavissa}
+                 where
+                   hakukohde_oid = ${hakukohdeOid.s}
+                   and valintatapajono_oid = ${jonoOid.s}
+                   and hakemus_oid = ${hakemusOid.s}"""
   }
 
   private def syyTeksti(tarkenne: TilankuvauksenTarkenne, kielikoodi: String): Some[String] = {
