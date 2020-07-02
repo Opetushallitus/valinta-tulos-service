@@ -4,7 +4,7 @@ import java.time.Instant
 import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain.TilankuvauksenTarkenne.{PERUUNTUNUT_EI_VASTAANOTTANUT_MAARAAIKANA, PERUUNTUNUT_VASTAANOTTANUT_TOISEN_PAIKAN_YHDEN_SAANNON_PAIKAN_PIIRISSA}
-import fi.vm.sade.sijoittelu.domain.{TilankuvauksenTarkenne, ValintatuloksenTila, Valintatulos}
+import fi.vm.sade.sijoittelu.domain.{TilanKuvaukset, TilankuvauksenTarkenne, ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.sijoittelu.tulos.dto
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationObject, HakutoiveDTO}
 import fi.vm.sade.utils.Timer.timed
@@ -500,6 +500,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       .map(piilotaVarasijanumeroJonoiltaJosValintatilaEiVaralla)
       .map(merkitseValintatapajonotPeruuntuneeksiKunEiVastaanottanutMääräaikaanMennessä)
       .map(piilotaEhdollisenHyväksymisenEhdotJonoiltaKunEiEhdollisestiHyväksytty)
+      .map(muutaJonojenPeruuntumistenSyytHakukohteissaJoissaOnHyväksyttyTulos)
       .tulokset
 
     Hakemuksentulos(haku.oid, h.oid, sijoitteluTulos.hakijaOid.getOrElse(h.henkiloOid), ohjausparametrit.vastaanottoaikataulu, lopullisetTulokset)
@@ -934,6 +935,33 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
+  private def peruuntumisenSyyksiHyväksyttyToisessaJonossa(hakemusOid: HakemusOid,
+                                                           hakukohdeOid: HakukohdeOid,
+                                                           jonokohtainenTulostieto: JonokohtainenTulostieto
+                                                          ): JonokohtainenTulostieto = {
+    if (jonokohtainenTulostieto.valintatila == Valintatila.peruuntunut && !jonokohtainenTulostieto.tilanKuvaukset.map(_.asJava).contains(TilanKuvaukset.peruuntunutHyvaksyttyToisessaJonossa)) {
+      val uusiSyy: Some[Map[String, String]] = Some(TilanKuvaukset.peruuntunutHyvaksyttyToisessaJonossa.asScala.toMap)
+      logger.info(s"Vaihdetaan peruuntumisen syyn ilmoittavat tilankuvaukset peruuntuneelta tulokselta " +
+        s"hakemuksen $hakemusOid toiveen $hakukohdeOid jonolta ${jonokohtainenTulostieto.oid} . " +
+        s"Vanhat tilankuvaukset: ${jonokohtainenTulostieto.tilanKuvaukset} , " +
+        s"Uudet tilankuvaukset: $uusiSyy")
+      jonokohtainenTulostieto.copy(tilanKuvaukset = uusiSyy)
+    } else {
+      jonokohtainenTulostieto
+    }
+  }
+
+  private def muutaJonojenPeruuntumistenSyytHakukohteissaJoissaOnHyväksyttyTulos(hakemusOid: HakemusOid,
+                                                                                 tulokset: List[Hakutoiveentulos],
+                                                                                 haku: Haku,
+                                                                                 ohjausparametrit: Ohjausparametrit) = {
+    tulokset.map {
+      case tulos if tulos.valintatila == Valintatila.hyväksytty =>
+        tulos.copy(jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map(peruuntumisenSyyksiHyväksyttyToisessaJonossa(hakemusOid, tulos.hakukohdeOid, _)))
+      case tulos =>
+        tulos
+    }
+  }
 
   case class Välitulos(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) {
     def map(f: (HakemusOid, List[Hakutoiveentulos], Haku, Ohjausparametrit) => List[Hakutoiveentulos]): Välitulos = {
