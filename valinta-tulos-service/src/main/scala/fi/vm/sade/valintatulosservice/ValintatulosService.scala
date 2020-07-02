@@ -4,7 +4,7 @@ import java.time.Instant
 import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain.TilankuvauksenTarkenne.{PERUUNTUNUT_EI_VASTAANOTTANUT_MAARAAIKANA, PERUUNTUNUT_VASTAANOTTANUT_TOISEN_PAIKAN_YHDEN_SAANNON_PAIKAN_PIIRISSA}
-import fi.vm.sade.sijoittelu.domain.{TilankuvauksenTarkenne, ValintatuloksenTila, Valintatulos}
+import fi.vm.sade.sijoittelu.domain.{TilanKuvaukset, TilankuvauksenTarkenne, ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.sijoittelu.tulos.dto
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationObject, HakutoiveDTO}
 import fi.vm.sade.utils.Timer.timed
@@ -500,6 +500,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       .map(piilotaVarasijanumeroJonoiltaJosValintatilaEiVaralla)
       .map(merkitseValintatapajonotPeruuntuneeksiKunEiVastaanottanutMääräaikaanMennessä)
       .map(piilotaEhdollisenHyväksymisenEhdotJonoiltaKunEiEhdollisestiHyväksytty)
+      .map(muutaJonojenPeruuntumistenSyytHakukohteissaJoissaOnHyväksyttyTulos)
       .tulokset
 
     Hakemuksentulos(haku.oid, h.oid, sijoitteluTulos.hakijaOid.getOrElse(h.henkiloOid), ohjausparametrit.vastaanottoaikataulu, lopullisetTulokset)
@@ -838,10 +839,26 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
+  /**
+   * Jos kaikki jonot eivät ole vielä sijoittelussa, SijoittelutulosService.jononValintatila asettaa
+   * hakutoiveen tilaksi "kesken", mutta jättää jonokohtaiset tulostiedot paikalleen. Koska jonokohtaisia
+   * tulostietoja joistakin muista tiloista voidaan haluta näyttää, ei siivota niitä vielä siellä, vaan
+   * vasta tapauskohtaisesti täällä.
+   *
+   * @see [[fi.vm.sade.valintatulosservice.sijoittelu.SijoittelutulosService.jononValintatila]]
+   */
+  private def onJulkaisematontaAlempiaPeruuntuneitaTaiKeskeneräisiä(ylimmänJulkaisemattomanIndeksi: Int,
+                                                                    tulos: Hakutoiveentulos,
+                                                                    hakutoiveenIndeksi: Int): Boolean = {
+    ylimmänJulkaisemattomanIndeksi >= 0 &&
+      hakutoiveenIndeksi > ylimmänJulkaisemattomanIndeksi &&
+      List(Valintatila.peruuntunut, Valintatila.kesken).contains(tulos.valintatila)
+  }
+
   private def näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
     val firstJulkaisematon: Int = tulokset.indexWhere (!_.julkaistavissa)
     tulokset.zipWithIndex.map {
-      case (tulos, index) if firstJulkaisematon >= 0 && index > firstJulkaisematon && tulos.valintatila == Valintatila.peruuntunut =>
+      case (tulos, index) if onJulkaisematontaAlempiaPeruuntuneitaTaiKeskeneräisiä(firstJulkaisematon, tulos, index) =>
         logger.debug("näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä toKesken {}", index)
         tulos.
           toKesken.
@@ -866,12 +883,12 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     tuloksetWithIndex.map {
       case (tulos, index) =>
         val higherJulkaisematon = firstJulkaisematon >= 0 && index > firstJulkaisematon
-        if (higherJulkaisematon && tulos.valintatila == Valintatila.peruuntunut) {
+        if (higherJulkaisematon && List(Valintatila.peruuntunut, Valintatila.kesken).contains(tulos.valintatila)) {
           val jonoJostaOliHyvaksyttyJulkaistu: Option[ValintatapajonoOid] = valinnantulosRepository.getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuJonoOidHistoriasta(hakemusOid, tulos.hakukohdeOid)
           val wasHyvaksyttyJulkaistu = jonoJostaOliHyvaksyttyJulkaistu.nonEmpty
           val existsHigherHyvaksyttyJulkaistu = tuloksetWithIndex.exists(twi => twi._2 < index && twi._1.valintatila.equals(Valintatila.hyväksytty) && twi._1.julkaistavissa)
           if (wasHyvaksyttyJulkaistu && !existsHigherHyvaksyttyJulkaistu && !firstChanged) {
-            logger.info("Merkitään aiemmin hyväksyttynä ollut peruuntunut hyväksytyksi koska ylemmän hakutoiveen tuloksia ei ole vielä julkaistu. Index {}, tulos {}", index, tulos)
+            logger.info(s"Merkitään aiemmin hyväksyttynä ollut ${tulos.valintatila} hyväksytyksi koska ylemmän hakutoiveen tuloksia ei ole vielä julkaistu. Index {}, tulos {}", index, tulos)
             firstChanged = true
             tulos.copy(
               valintatila = Valintatila.hyväksytty,
@@ -918,6 +935,33 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
+  private def peruuntumisenSyyksiHyväksyttyToisessaJonossa(hakemusOid: HakemusOid,
+                                                           hakukohdeOid: HakukohdeOid,
+                                                           jonokohtainenTulostieto: JonokohtainenTulostieto
+                                                          ): JonokohtainenTulostieto = {
+    if (jonokohtainenTulostieto.valintatila == Valintatila.peruuntunut && !jonokohtainenTulostieto.tilanKuvaukset.map(_.asJava).contains(TilanKuvaukset.peruuntunutHyvaksyttyToisessaJonossa)) {
+      val uusiSyy: Some[Map[String, String]] = Some(TilanKuvaukset.peruuntunutHyvaksyttyToisessaJonossa.asScala.toMap)
+      logger.info(s"Vaihdetaan peruuntumisen syyn ilmoittavat tilankuvaukset peruuntuneelta tulokselta " +
+        s"hakemuksen $hakemusOid toiveen $hakukohdeOid jonolta ${jonokohtainenTulostieto.oid} . " +
+        s"Vanhat tilankuvaukset: ${jonokohtainenTulostieto.tilanKuvaukset} , " +
+        s"Uudet tilankuvaukset: $uusiSyy")
+      jonokohtainenTulostieto.copy(tilanKuvaukset = uusiSyy)
+    } else {
+      jonokohtainenTulostieto
+    }
+  }
+
+  private def muutaJonojenPeruuntumistenSyytHakukohteissaJoissaOnHyväksyttyTulos(hakemusOid: HakemusOid,
+                                                                                 tulokset: List[Hakutoiveentulos],
+                                                                                 haku: Haku,
+                                                                                 ohjausparametrit: Ohjausparametrit) = {
+    tulokset.map {
+      case tulos if tulos.valintatila == Valintatila.hyväksytty =>
+        tulos.copy(jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map(peruuntumisenSyyksiHyväksyttyToisessaJonossa(hakemusOid, tulos.hakukohdeOid, _)))
+      case tulos =>
+        tulos
+    }
+  }
 
   case class Välitulos(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) {
     def map(f: (HakemusOid, List[Hakutoiveentulos], Haku, Ohjausparametrit) => List[Hakutoiveentulos]): Välitulos = {
