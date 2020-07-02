@@ -882,12 +882,12 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     tuloksetWithIndex.map {
       case (tulos, index) =>
         val higherJulkaisematon = firstJulkaisematon >= 0 && index > firstJulkaisematon
-        if (higherJulkaisematon && tulos.valintatila == Valintatila.peruuntunut) {
+        if (higherJulkaisematon && List(Valintatila.peruuntunut, Valintatila.kesken).contains(tulos.valintatila)) {
           val jonoJostaOliHyvaksyttyJulkaistu: Option[ValintatapajonoOid] = valinnantulosRepository.getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuJonoOidHistoriasta(hakemusOid, tulos.hakukohdeOid)
           val wasHyvaksyttyJulkaistu = jonoJostaOliHyvaksyttyJulkaistu.nonEmpty
           val existsHigherHyvaksyttyJulkaistu = tuloksetWithIndex.exists(twi => twi._2 < index && twi._1.valintatila.equals(Valintatila.hyväksytty) && twi._1.julkaistavissa)
           if (wasHyvaksyttyJulkaistu && !existsHigherHyvaksyttyJulkaistu && !firstChanged) {
-            logger.info("Merkitään aiemmin hyväksyttynä ollut peruuntunut hyväksytyksi koska ylemmän hakutoiveen tuloksia ei ole vielä julkaistu. Index {}, tulos {}", index, tulos)
+            logger.info(s"Merkitään aiemmin hyväksyttynä ollut ${tulos.valintatila} hyväksytyksi koska ylemmän hakutoiveen tuloksia ei ole vielä julkaistu. Index {}, tulos {}", index, tulos)
             firstChanged = true
             tulos.copy(
               valintatila = Valintatila.hyväksytty,

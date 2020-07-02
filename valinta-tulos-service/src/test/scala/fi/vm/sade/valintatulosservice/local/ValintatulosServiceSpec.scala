@@ -531,6 +531,75 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
         alemmanToiveenTulos.jonokohtaisetTulostiedot(1).valintatila must_== Valintatila.kesken
         alemmanToiveenTulos.jonokohtaisetTulostiedot(1).tilanKuvaukset must beNone
       }
+
+      "ylimmällä toivella julkaistu varalla ja julkaisematon hyväksytty, alempi julkaistu hyväksytty mutta kaikki jonot ei sijoittelussa -> näytetään alempi hyväksytty, odottaa ylempiä" in {
+        useFixture("ylin-toive-hyvaksytty-toisesta-jonosta-mutta-julkaisematon-alempi-peruuntunut.json",
+          hakuFixture = hakuFixture,
+          hakemusFixtures = List( "00000441369-3"),
+          ohjausparametritFixture =  "varasijasaannot-ei-viela-voimassa")
+
+        val alemmanToiveenHyvaksytynJononOid = ValintatapajonoOid("14090336922663576781797489829888")
+        val alempiToiveOid = HakukohdeOid("1.2.246.562.5.72607738904")
+        val hakijaOid = "1.2.246.562.24.14229104472"
+
+        valintarekisteriDb.runBlocking(
+          valintarekisteriDb.storeValinnantila(
+            ValinnantilanTallennus(
+              hakemusOid,
+              alemmanToiveenHyvaksytynJononOid,
+              alempiToiveOid,
+              hakijaOid,
+              Hyvaksytty,
+              "testi")).
+            andThen(
+              sqlu"""update valinnantulokset set julkaistavissa = 'true'
+                 where
+                   hakukohde_oid = ${alempiToiveOid.s}
+                   and valintatapajono_oid = ${alemmanToiveenHyvaksytynJononOid.s}
+                   and hakemus_oid = ${hakemusOid.s}"""))
+
+        valintarekisteriDb.runBlocking(
+          valintarekisteriDb.storeValinnantila(
+            ValinnantilanTallennus(
+              hakemusOid,
+              alemmanToiveenHyvaksytynJononOid,
+              alempiToiveOid,
+              hakijaOid,
+              Peruuntunut,
+              "testi")).
+            andThen(tallennaTilankuvauksenTarkenne(
+              alempiToiveOid,
+              alemmanToiveenHyvaksytynJononOid,
+              hakemusOid,
+              PeruuntunutHyvaksyttyYlemmalleHakutoiveelle.tilankuvauksenTarkenne)))
+
+        val ylemmanToiveenTulos = getHakutoive("1.2.246.562.5.72607738903")
+        checkHakutoiveState(
+          ylemmanToiveenTulos,
+          Valintatila.kesken,
+          Vastaanottotila.kesken,
+          Vastaanotettavuustila.ei_vastaanotettavissa,
+          julkaistavissa = false)
+
+        ylemmanToiveenTulos.jonokohtaisetTulostiedot.size must_== 2
+        ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.valintatila must_== Valintatila.varalla
+        ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.tilanKuvaukset must beSome(Map())
+        ylemmanToiveenTulos.jonokohtaisetTulostiedot(1).valintatila must_== Valintatila.kesken
+        ylemmanToiveenTulos.jonokohtaisetTulostiedot(1).tilanKuvaukset must beNone
+
+        val alemmanToiveenTulos = getHakutoive("1.2.246.562.5.72607738904")
+        checkHakutoiveState(
+          alemmanToiveenTulos,
+          Valintatila.hyväksytty,
+          Vastaanottotila.kesken,
+          Vastaanotettavuustila.ei_vastaanotettavissa,
+          julkaistavissa = false)
+        alemmanToiveenTulos.jonokohtaisetTulostiedot.size must_== 2
+        alemmanToiveenTulos.jonokohtaisetTulostiedot.head.valintatila must_== Valintatila.hyväksytty
+        alemmanToiveenTulos.jonokohtaisetTulostiedot.head.tilanKuvaukset must beNone
+        alemmanToiveenTulos.jonokohtaisetTulostiedot(1).valintatila must_== Valintatila.kesken
+        alemmanToiveenTulos.jonokohtaisetTulostiedot(1).tilanKuvaukset must beNone
+      }
     }
 
     "peruuntunut, sijoittelua käyttävä korkeakouluhaku" in {
