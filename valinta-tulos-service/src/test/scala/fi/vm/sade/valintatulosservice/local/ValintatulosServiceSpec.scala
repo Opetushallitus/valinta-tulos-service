@@ -498,7 +498,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
         checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738904"), Valintatila.peruuntunut, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
       }
 
-      "ylimmällä toivella julkaistu varalla ja julkaisematon hyväksytty, alempi hyväksytty mutta kaikki jonot ei sijoittelussa -> näytetään alempi kesken" in {
+      "ylimmällä toiveella julkaistu varalla ja julkaisematon hyväksytty, alempi hyväksytty mutta kaikki jonot ei sijoittelussa -> näytetään alempi kesken" in {
         useFixture("ylin-toive-hyvaksytty-toisesta-jonosta-mutta-julkaisematon-alempi-peruuntunut.json",
           hakuFixture = hakuFixture,
           hakemusFixtures = List( "00000441369-3"),
@@ -532,7 +532,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
         alemmanToiveenTulos.jonokohtaisetTulostiedot(1).tilanKuvaukset must beNone
       }
 
-      "ylimmällä toivella julkaistu varalla ja julkaisematon hyväksytty, alempi julkaistu hyväksytty mutta kaikki jonot ei sijoittelussa -> näytetään alempi hyväksytty, odottaa ylempiä" in {
+      "ylimmällä toiveella julkaistu varalla ja julkaisematon hyväksytty, alempi julkaistu hyväksytty mutta kaikki jonot ei sijoittelussa -> näytetään alempi hyväksytty, odottaa ylempiä" in {
         useFixture("ylin-toive-hyvaksytty-toisesta-jonosta-mutta-julkaisematon-alempi-peruuntunut.json",
           hakuFixture = hakuFixture,
           hakemusFixtures = List( "00000441369-3"),
@@ -601,7 +601,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
         alemmanToiveenTulos.jonokohtaisetTulostiedot(1).tilanKuvaukset must beNone
       }
 
-      "ylimmällä toivella julkaistu varalla ja julkaisematon hyväksytty, alempana kaksi julkaistua hyväksyttyä mutta kaikki jonot ei sijoittelussa -> " +
+      "ylimmällä toiveella julkaistu varalla ja julkaisematon hyväksytty, alempana kaksi julkaistua hyväksyttyä mutta kaikki jonot ei sijoittelussa -> " +
         "näytetään alempi hyväksytty, odottaa ylempiä ja peruuntunut, hyväksytty toisessa valintatapajonossa" in {
         useFixture("ylin-toive-hyvaksytty-toisesta-jonosta-mutta-kaksi-kolmesta-julkaistua-jonoa-alemmmassa-peruuntununeessa.json",
           hakuFixture = hakuFixture,
