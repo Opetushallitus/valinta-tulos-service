@@ -14,7 +14,7 @@ import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Futu
 class HakemustenTulosHakuLockSpec extends Specification {
   private implicit val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(10))
 
-  private val operationLagMillis: Int = 500
+  private val operationLagMillis: Int = 1000
   private val fastLockMillis: Int = operationLagMillis / 10
   private val slowLockMillis: Int = (operationLagMillis * 1.5).toInt
 
