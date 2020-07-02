@@ -636,8 +636,8 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           hakemusFixtures = List( "00000441369-3"),
           ohjausparametritFixture =  "varasijasaannot-ei-viela-voimassa")
 
-        val alemmanToiveenYlemmanHyvaksytynJononOid = ValintatapajonoOid("14090336922663576781797489829888")
-        val alemmanToiveenAlemmanHyvaksytynJononOid = ValintatapajonoOid("14090336922663576781797489829889")
+        val alemmanToiveenEnsimmäisenHyväksytynJononOid = ValintatapajonoOid("14090336922663576781797489829888")
+        val alemmanToiveenToisenHyväksytynJononOid = ValintatapajonoOid("14090336922663576781797489829889")
         val alempiToiveOid = HakukohdeOid("1.2.246.562.5.72607738904")
         val hakijaOid = "1.2.246.562.24.14229104472"
 
@@ -645,33 +645,33 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           valintarekisteriDb.storeValinnantila(
             ValinnantilanTallennus(
               hakemusOid,
-              alemmanToiveenYlemmanHyvaksytynJononOid,
+              alemmanToiveenEnsimmäisenHyväksytynJononOid,
               alempiToiveOid,
               hakijaOid,
               Hyvaksytty,
               "testi")).
             andThen(
-              asetaJulkaistavissa(alempiToiveOid, alemmanToiveenYlemmanHyvaksytynJononOid, hakemusOid, julkaistavissa = true)).
+              asetaJulkaistavissa(alempiToiveOid, alemmanToiveenEnsimmäisenHyväksytynJononOid, hakemusOid, julkaistavissa = true)).
             andThen(
-              asetaJulkaistavissa(alempiToiveOid, alemmanToiveenAlemmanHyvaksytynJononOid, hakemusOid, julkaistavissa = true)))
+              asetaJulkaistavissa(alempiToiveOid, alemmanToiveenToisenHyväksytynJononOid, hakemusOid, julkaistavissa = true)))
 
         valintarekisteriDb.runBlocking(
           valintarekisteriDb.storeValinnantila(
             ValinnantilanTallennus(
               hakemusOid,
-              alemmanToiveenYlemmanHyvaksytynJononOid,
+              alemmanToiveenEnsimmäisenHyväksytynJononOid,
               alempiToiveOid,
               hakijaOid,
               Peruuntunut,
               "testi")).
             andThen(tallennaTilankuvauksenTarkenne(
               alempiToiveOid,
-              alemmanToiveenYlemmanHyvaksytynJononOid,
+              alemmanToiveenEnsimmäisenHyväksytynJononOid,
               hakemusOid,
               PeruuntunutHyvaksyttyYlemmalleHakutoiveelle.tilankuvauksenTarkenne)).
             andThen(tallennaTilankuvauksenTarkenne(
               alempiToiveOid,
-              alemmanToiveenAlemmanHyvaksytynJononOid,
+              alemmanToiveenToisenHyväksytynJononOid,
               hakemusOid,
               PeruuntunutHyvaksyttyYlemmalleHakutoiveelle.tilankuvauksenTarkenne)))
 
