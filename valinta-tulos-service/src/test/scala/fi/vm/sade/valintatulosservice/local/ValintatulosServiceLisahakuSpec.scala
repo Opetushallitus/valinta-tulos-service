@@ -10,7 +10,7 @@ import fi.vm.sade.valintatulosservice.sijoittelu._
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, JonokohtainenTulostieto, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.{ITSpecification, TimeWarp, ValintatulosService}
 import org.junit.runner.RunWith
@@ -82,7 +82,7 @@ class ValintatulosServiceLisahakuSpec extends ITSpecification with TimeWarp {
   lazy val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
   lazy val hakemusRepository = new HakemusRepository(new HakuAppRepository(), new AtaruHakemusRepository(appConfig), new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService))
   lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, hakemusRepository, valintarekisteriDb,
-    hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, hakijaDtoClient)
+    hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao)
 
   val hakuOid = HakuOid("korkeakoulu-lisahaku1")
   val hakemusOid = HakemusOid("1.2.246.562.11.00000878230")

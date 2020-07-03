@@ -83,7 +83,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
   lazy val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
   lazy val hakemusRepository = new HakemusRepository(new HakuAppRepository(), new AtaruHakemusRepository(appConfig), new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService))
   lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, hakemusRepository, valintarekisteriDb,
-    hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, hakijaDtoClient)
+    hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao)
 
   val hakuOid = HakuOid("1.2.246.562.5.2013080813081926341928")
   val sijoitteluAjoId: String = "latest"
@@ -858,9 +858,9 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
             checkHakutoiveState(hakutoiveentulos, Valintatila.perunut, Vastaanottotila.perunut, Vastaanotettavuustila.ei_vastaanotettavissa, true)
             hakutoiveentulos.jonokohtaisetTulostiedot.size must beEqualTo(2)
             hakutoiveentulos.jonokohtaisetTulostiedot(0).valintatila must beEqualTo(Valintatila.perunut)
-            hakutoiveentulos.jonokohtaisetTulostiedot(0).pisteet must beSome(6)
+            hakutoiveentulos.jonokohtaisetTulostiedot(0).pisteet must beSome(4)
             hakutoiveentulos.jonokohtaisetTulostiedot(1).valintatila must beEqualTo(Valintatila.perunut)
-            hakutoiveentulos.jonokohtaisetTulostiedot(1).pisteet must beSome(4)
+            hakutoiveentulos.jonokohtaisetTulostiedot(1).pisteet must beSome(6)
           }
 
           "hyvaksytty, toisessa jonossa hylatty" in {
@@ -945,10 +945,31 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
             // VARALLA(1), VARALLA(2), VARALLA(3) KESKEN true
             useFixture("hyvaksytty-ylempi-varalla.json", hakuFixture = hakuFixture)
             val hakutoiveentulos = getHakutoive("1.2.246.562.5.72607738902")
-            hakutoiveentulos.varasijanumero must_== Some(2)
+            hakutoiveentulos.varasijanumero must beSome(2)
             hakutoiveentulos.jonokohtaisetTulostiedot(0).varasijanumero must beSome(3)
             hakutoiveentulos.jonokohtaisetTulostiedot(1).varasijanumero must beSome(2)
             hakutoiveentulos.jonokohtaisetTulostiedot.forall(_.valintatila == Valintatila.varalla) must beTrue
+          }
+
+          "varasijojen määrä näytetään" in {
+            useFixture("hyvaksytty-ylempi-varalla.json", hakuFixture = hakuFixture)
+            val jonokohtaisetTulostiedot = getHakutoive("1.2.246.562.5.72607738902").jonokohtaisetTulostiedot
+            jonokohtaisetTulostiedot(0).varasijat must beSome(5)
+            jonokohtaisetTulostiedot(1).varasijat must beNone
+          }
+
+          "ei varasijatäyttöä näytetään" in {
+            useFixture("hyvaksytty-ylempi-varalla.json", hakuFixture = hakuFixture)
+            val jonokohtaisetTulostiedot = getHakutoive("1.2.246.562.5.72607738902").jonokohtaisetTulostiedot
+            jonokohtaisetTulostiedot(0).eiVarasijatayttoa must beFalse
+            jonokohtaisetTulostiedot(1).eiVarasijatayttoa must beTrue
+          }
+
+          "sijoiteltu varasijasääntöjen ollessa voimassa näytetään" in {
+            useFixture("hyvaksytty-ylempi-varalla.json", hakuFixture = hakuFixture)
+            val jonokohtaisetTulostiedot = getHakutoive("1.2.246.562.5.72607738902").jonokohtaisetTulostiedot
+            jonokohtaisetTulostiedot(0).varasijasaannotKaytossa must beTrue
+            jonokohtaisetTulostiedot(1).varasijasaannotKaytossa must beFalse
           }
 
           "varasijojen käsittelypäivämäärät näytetään" in {

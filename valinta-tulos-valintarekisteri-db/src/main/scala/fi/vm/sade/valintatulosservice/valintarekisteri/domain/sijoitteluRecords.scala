@@ -87,11 +87,26 @@ case class HakutoiveRecord(hakemusOid: HakemusOid, hakutoive: Option[Int], hakuk
   }
 }
 
-case class HakutoiveenValintatapajonoRecord(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, valintatapajonoPrioriteetti:Int, valintatapajonoOid: ValintatapajonoOid,
-    valintatapajonoNimi:String, eiVarasijatayttoa:Boolean, jonosija:Int,
-    varasijanNumero:Option[Int], hyvaksyttyHarkinnanvaraisesti:Boolean, tasasijaJonosija:Int, pisteet:Option[BigDecimal],
-    alinHyvaksyttyPistemaara:Option[BigDecimal], varasijat:Option[Int], varasijaTayttoPaivat:Option[Int], varasijojaKaytetaanAlkaen:Option[Date],
-    varasijojaTaytetaanAsti:Option[Date], tayttojono:Option[String], tilankuvausHash:Int, tarkenteenLisatieto:Option[String]) {
+case class HakutoiveenValintatapajonoRecord(hakemusOid: HakemusOid,
+                                            hakukohdeOid: HakukohdeOid,
+                                            valintatapajonoPrioriteetti:Int,
+                                            valintatapajonoOid: ValintatapajonoOid,
+                                            valintatapajonoNimi:String,
+                                            eiVarasijatayttoa:Boolean,
+                                            jonosija:Int,
+                                            varasijanNumero:Option[Int],
+                                            hyvaksyttyHarkinnanvaraisesti:Boolean,
+                                            tasasijaJonosija:Int,
+                                            pisteet:Option[BigDecimal],
+                                            alinHyvaksyttyPistemaara:Option[BigDecimal],
+                                            varasijat:Option[Int],
+                                            varasijaTayttoPaivat:Option[Int],
+                                            varasijojaKaytetaanAlkaen:Option[Date],
+                                            varasijojaTaytetaanAsti:Option[Date],
+                                            tayttojono:Option[String],
+                                            tilankuvausHash:Int,
+                                            tarkenteenLisatieto:Option[String],
+                                            sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa: Boolean) {
 
   def dto(valinnantulos: Option[Valinnantulos], tilankuvaus: Option[TilankuvausRecord], hakeneet:Int, hyvaksytty:Int): HakutoiveenValintatapajonoDTO = {
     val hakutoiveenValintatapajonoDto = new HakutoiveenValintatapajonoDTO()

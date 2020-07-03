@@ -128,18 +128,9 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
 
   override def findHenkilonVastaanototHaussa(henkiloOid: String, hakuOid: HakuOid): DBIO[Set[VastaanottoRecord]] = {
     sql"""select henkilo, haku_oid, hakukohde, action, ilmoittaja, "timestamp"
-          from (
-              select henkilo, haku_oid, hakukohde, action, ilmoittaja, "timestamp", id
-              from vastaanotot
-                  join hakukohteet on hakukohde_oid = vastaanotot.hakukohde and haku_oid = ${hakuOid}
-              where henkilo = ${henkiloOid} and deleted is null
-              union
-              select henkiloviitteet.linked_oid as henkilo, haku_oid, hakukohde, action, ilmoittaja, "timestamp", id
-              from vastaanotot
-                  join hakukohteet on hakukohde_oid = vastaanotot.hakukohde and haku_oid = ${hakuOid}
-                  join henkiloviitteet on vastaanotot.henkilo = henkiloviitteet.person_oid and henkiloviitteet.linked_oid = ${henkiloOid}
-              where deleted is null) as t
-          order by id""".as[VastaanottoRecord].map(_.toSet)
+          from newest_vastaanotto_events
+          where haku_oid = ${hakuOid} and
+                henkilo = ${henkiloOid}""".as[VastaanottoRecord].map(_.toSet)
   }
 
   override def findHenkilonVastaanotot(personOid: String, alkuaika: Option[Date] = None): Set[VastaanottoRecord] = {
@@ -267,22 +258,19 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
     }
   }
 
-  override def findHyvaksyttyJulkaistuDatesForHenkilo(henkiloOid: HenkiloOid): Map[HakukohdeOid, OffsetDateTime] =
-    timed(s"Hyväksytty ja julkaistu -pvm henkilölle $henkiloOid", 100) {
-      runBlocking(
-        sql"""select
-                hyvaksytyt_ja_julkaistut_hakutoiveet.hakukohde,
-                hyvaksytyt_ja_julkaistut_hakutoiveet.hyvaksytty_ja_julkaistu
-              from hyvaksytyt_ja_julkaistut_hakutoiveet
-              where hyvaksytyt_ja_julkaistut_hakutoiveet.henkilo = ${henkiloOid}
-              union
-              select
-                hyvaksytyt_ja_julkaistut_hakutoiveet.hakukohde,
-                hyvaksytyt_ja_julkaistut_hakutoiveet.hyvaksytty_ja_julkaistu
-              from hyvaksytyt_ja_julkaistut_hakutoiveet
-              join henkiloviitteet on hyvaksytyt_ja_julkaistut_hakutoiveet.henkilo = henkiloviitteet.person_oid
-              where henkiloviitteet.linked_oid = ${henkiloOid}""".as[(HakukohdeOid, OffsetDateTime)]).toMap
-    }
+  override def findHyvaksyttyJulkaistuDatesForHenkilo(henkiloOid: HenkiloOid): DBIO[Map[HakukohdeOid, OffsetDateTime]] =
+    sql"""select
+            hyvaksytyt_ja_julkaistut_hakutoiveet.hakukohde,
+            hyvaksytyt_ja_julkaistut_hakutoiveet.hyvaksytty_ja_julkaistu
+          from hyvaksytyt_ja_julkaistut_hakutoiveet
+          where hyvaksytyt_ja_julkaistut_hakutoiveet.henkilo = ${henkiloOid}
+          union
+          select
+            hyvaksytyt_ja_julkaistut_hakutoiveet.hakukohde,
+            hyvaksytyt_ja_julkaistut_hakutoiveet.hyvaksytty_ja_julkaistu
+          from hyvaksytyt_ja_julkaistut_hakutoiveet
+          join henkiloviitteet on hyvaksytyt_ja_julkaistut_hakutoiveet.henkilo = henkiloviitteet.linked_oid
+          where henkiloviitteet.person_oid = ${henkiloOid}""".as[(HakukohdeOid, OffsetDateTime)].map(_.toMap)
 
   override def findHyvaksyttyJulkaistuDatesForHaku(hakuOid: HakuOid): Map[HenkiloOid, Map[HakukohdeOid, OffsetDateTime]] =
     timed(s"Hyväksytty ja julkaistu -pvm haulle $hakuOid", 100) {

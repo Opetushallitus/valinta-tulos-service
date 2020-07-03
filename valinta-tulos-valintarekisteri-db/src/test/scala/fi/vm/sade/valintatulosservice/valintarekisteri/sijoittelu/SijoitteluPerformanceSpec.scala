@@ -17,7 +17,7 @@ class SijoitteluPerformanceSpec extends Specification with ITSetup with Valintar
   step(appConfig.start)
   step(deleteAll())
 
-  lazy val valintarekisteri = new ValintarekisteriService(singleConnectionValintarekisteriDb, singleConnectionValintarekisteriDb, hakukohdeRecordService)
+  lazy val valintarekisteri = new ValintarekisteriService(singleConnectionValintarekisteriDb, hakukohdeRecordService)
 
   "Store and read huge sijoittelu fast" in {
     skipped("Use this test only locally for performance tuning")

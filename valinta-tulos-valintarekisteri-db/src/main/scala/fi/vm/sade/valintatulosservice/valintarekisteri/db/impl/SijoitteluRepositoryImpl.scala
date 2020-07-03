@@ -18,15 +18,11 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
 
   private val LOG = LoggerFactory.getLogger(classOf[SijoitteluRepositoryImpl])
 
-  override def getLatestSijoitteluajoId(hakuOid: HakuOid): Option[Long] =
-    timed(s"Haun $hakuOid latest sijoitteluajon haku", 100) {
-      runBlocking(
-        sql"""select id
-              from sijoitteluajot
-              where haku_oid = ${hakuOid}
-              order by id desc
-              limit 1""".as[Long]).headOption
-    }
+  override def getLatestSijoitteluajoId(hakuOid: HakuOid): DBIO[Option[Long]] = {
+    sql"""select max(id)
+          from sijoitteluajot
+          where haku_oid = ${hakuOid}""".as[Option[Long]].map(_.head)
+  }
 
   override def getSijoitteluajo(sijoitteluajoId: Long): Option[SijoitteluajoRecord] =
     timed(s"Sijoitteluajon $sijoitteluajoId haku", 100) {

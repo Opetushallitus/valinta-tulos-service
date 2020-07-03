@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.local
 
-import fi.vm.sade.sijoittelu.domain.{LogEntry, ValintatuloksenTila, Valintatulos}
+import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusRepository, HakuAppRepository}
@@ -518,7 +518,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
   lazy val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
   lazy val hakemusRepository = new HakemusRepository(new HakuAppRepository(), new AtaruHakemusRepository(appConfig), new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService))
   lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, hakemusRepository, valintarekisteriDb,
-    hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, hakijaDtoClient)
+    hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao)
   lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, valintatulosService,
     valintarekisteriDb, appConfig.ohjausparametritService, sijoittelutulosService, hakemusRepository, valintarekisteriDb)
   lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService,

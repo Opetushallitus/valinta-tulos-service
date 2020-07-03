@@ -3,12 +3,13 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import slick.dbio.{DBIO, DBIOAction, Effect, NoStream}
 
 trait HakijaRepository extends PerformanceLogger { this:Logging =>
   def getHakemuksenHakija(hakemusOid: HakemusOid, sijoitteluajoId: Option[Long] = None):Option[HakijaRecord]
 
-  def getHakemuksenHakutoiveetSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId: Long): List[HakutoiveRecord]
-  def getHakemuksenHakutoiveidenValintatapajonotSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId: Long): List[HakutoiveenValintatapajonoRecord]
+  def getHakemuksenHakutoiveetSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId: Long): DBIOAction[List[HakutoiveRecord], NoStream, Effect]
+  def getHakemuksenHakutoiveidenValintatapajonotSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId: Long): DBIOAction[List[HakutoiveenValintatapajonoRecord], NoStream, Effect]
   def getHakemuksenHakutoiveidenHakijaryhmatSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId: Long): List[HakutoiveenHakijaryhmaRecord]
 
   def getHakukohteenHakijat(hakukohdeOid: HakukohdeOid, sijoitteluajoId: Option[Long] = None):List[HakijaRecord]

@@ -3,15 +3,14 @@ package fi.vm.sade.valintatulosservice.streamingresults
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.{ValintatulosService, ValintatulosUtil}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.sijoittelu.{HakijaDTOSearchCriteria, ValintarekisteriHakijaDTOClient}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.VirkailijaVastaanottoRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import fi.vm.sade.valintatulosservice.{ValintatulosService, ValintatulosUtil}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
 import scala.collection.parallel.ForkJoinTaskSupport
 import scala.concurrent.forkjoin.ForkJoinPool
 

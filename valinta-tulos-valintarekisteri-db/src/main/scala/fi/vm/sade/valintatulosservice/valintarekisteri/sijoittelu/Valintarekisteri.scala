@@ -9,7 +9,7 @@ import fi.vm.sade.valintatulosservice.config.ValintarekisteriAppConfig
 import fi.vm.sade.valintatulosservice.koodisto.KoodistoService
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{ValintarekisteriDb, ValintarekisteriRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, StoreSijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, SijoitteluWrapper}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
@@ -17,10 +17,9 @@ import org.http4s.client.blaze.SimpleHttp1Client
 
 import scala.collection.JavaConverters._
 
-class ValintarekisteriForSijoittelu(sijoitteluRepository:SijoitteluRepository with StoreSijoitteluRepository,
-                                    hakukohdeRecordService: HakukohdeRecordService,
-                                    valinnantulosRepository: ValinnantulosRepository)
-  extends Valintarekisteri(sijoitteluRepository, hakukohdeRecordService, valinnantulosRepository) {
+class ValintarekisteriForSijoittelu(valintarekisteriDb: SijoitteluRepository with StoreSijoitteluRepository with ValinnantulosRepository,
+                                    hakukohdeRecordService: HakukohdeRecordService)
+  extends Valintarekisteri(valintarekisteriDb, hakukohdeRecordService) {
 
   private def this(appConfig: ValintarekisteriAppConfig.ValintarekisteriAppConfig, valintarekisteriDb: ValintarekisteriDb) = this (
     valintarekisteriDb,
@@ -35,8 +34,7 @@ class ValintarekisteriForSijoittelu(sijoitteluRepository:SijoitteluRepository wi
         new KoodistoService(appConfig)
       ),
       valintarekisteriDb,
-      appConfig.settings.lenientTarjontaDataParsing),
-    valintarekisteriDb
+      appConfig.settings.lenientTarjontaDataParsing)
   )
 
   def this(appConfig: ValintarekisteriAppConfig.ValintarekisteriAppConfig) =
@@ -47,14 +45,12 @@ class ValintarekisteriForSijoittelu(sijoitteluRepository:SijoitteluRepository wi
   def this(properties:java.util.Properties) = this(ValintarekisteriAppConfig.getDefault(properties))
 }
 
-class ValintarekisteriService(sijoitteluRepository:SijoitteluRepository with StoreSijoitteluRepository,
-                              valinnantulosRepository: ValinnantulosRepository,
+class ValintarekisteriService(valintarekisteriDb: SijoitteluRepository with StoreSijoitteluRepository with ValinnantulosRepository,
                               hakukohdeRecordService: HakukohdeRecordService)
-  extends Valintarekisteri(sijoitteluRepository, hakukohdeRecordService, valinnantulosRepository) { }
+  extends Valintarekisteri(valintarekisteriDb, hakukohdeRecordService) { }
 
-abstract class Valintarekisteri(sijoitteluRepository:SijoitteluRepository with StoreSijoitteluRepository,
-                                hakukohdeRecordService: HakukohdeRecordService,
-                                valinnantulosRepository: ValinnantulosRepository) extends Logging {
+abstract class Valintarekisteri(valintarekisteriDb:SijoitteluRepository with StoreSijoitteluRepository with ValintarekisteriRepository with ValinnantulosRepository,
+                                hakukohdeRecordService: HakukohdeRecordService) extends Logging {
 
   def tallennaSijoittelu(sijoitteluajo:SijoitteluAjo, hakukohteet:java.util.List[Hakukohde], valintatulokset:java.util.List[Valintatulos]): Unit = {
     logger.info(s"Tallennetaan sijoitteluajo haulle: ${sijoitteluajo.getHakuOid}")
@@ -65,7 +61,7 @@ abstract class Valintarekisteri(sijoitteluRepository:SijoitteluRepository with S
       logger.info(s"Tallennetaan hakukohteet haulle")
       sijoittelu.hakukohteet.map(h => HakukohdeOid(h.getOid)).foreach(hakukohdeRecordService.getHakukohdeRecord)
       logger.info(s"Tallennetaan sijoittelu")
-      sijoitteluRepository.storeSijoittelu(sijoittelu)
+      valintarekisteriDb.storeSijoittelu(sijoittelu)
       logger.info(s"Sijoitteluajon tallennus onnistui haulle: ${sijoitteluajo.getHakuOid}")
     } catch {
       case sqle: java.sql.SQLException =>
@@ -79,29 +75,29 @@ abstract class Valintarekisteri(sijoitteluRepository:SijoitteluRepository with S
   }
 
   def cleanRedundantSijoitteluTuloksesForHakemusInHakukohde(hakemusOid: String, hakukohdeOid: String): Unit = {
-    sijoitteluRepository.deleteSijoitteluResultsForHakemusInHakukohde(HakemusOid(hakemusOid), HakukohdeOid(hakukohdeOid))
+    valintarekisteriDb.deleteSijoitteluResultsForHakemusInHakukohde(HakemusOid(hakemusOid), HakukohdeOid(hakukohdeOid))
   }
 
   def getLatestSijoitteluajo(hakuOid: String): SijoitteluAjo = getSijoitteluajo(hakuOid, "latest")
 
   def getSijoitteluajo(hakuOid: String, sijoitteluajoId: String): SijoitteluAjo = {
-    val latestId = sijoitteluRepository.getLatestSijoitteluajoIdThrowFailure(sijoitteluajoId, HakuOid(hakuOid))
-    sijoitteluRepository.getSijoitteluajo(latestId).getOrElse(
+    val latestId = valintarekisteriDb.runBlocking(valintarekisteriDb.getLatestSijoitteluajoId(sijoitteluajoId, HakuOid(hakuOid)))
+    valintarekisteriDb.getSijoitteluajo(latestId).getOrElse(
       throw new IllegalArgumentException(s"Sijoitteluajoa $latestId ei löytynyt haulle $hakuOid")
-    ).entity(sijoitteluRepository.getSijoitteluajonHakukohdeOidit(latestId))
+    ).entity(valintarekisteriDb.getSijoitteluajonHakukohdeOidit(latestId))
   }
 
   def getSijoitteluajonHakukohteet(sijoitteluajoId:Long): java.util.List[Hakukohde] = {
-    new SijoitteluajonHakukohteet(sijoitteluRepository, sijoitteluajoId).entity()
+    new SijoitteluajonHakukohteet(valintarekisteriDb, sijoitteluajoId).entity()
   }
 
   def getValintatulokset(hakuOid: String): java.util.List[Valintatulos] = {
-    val (read, valinnantulokset) = valinnantulosRepository.getValinnantuloksetAndReadTimeForHaku(HakuOid(hakuOid))
+    val (read, valinnantulokset) = valintarekisteriDb.getValinnantuloksetAndReadTimeForHaku(HakuOid(hakuOid))
     valinnantulokset.map(_.toValintatulos(read, Some(hakuOid))).toList.asJava
   }
 
   def getHakukohdeForSijoitteluajo(sijoitteluajoId:Long, hakukohdeOid:String) = {
-    new SijoitteluajonHakukohde(sijoitteluRepository, sijoitteluajoId, HakukohdeOid(hakukohdeOid)).entity()
+    new SijoitteluajonHakukohde(valintarekisteriDb, sijoitteluajoId, HakukohdeOid(hakukohdeOid)).entity()
   }
 }
 

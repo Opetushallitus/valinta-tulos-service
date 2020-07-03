@@ -21,7 +21,7 @@ class ValintarekisteriForSijoitteluSpec extends Specification with ITSetup with 
   step(appConfig.start)
   step(deleteAll())
 
-  lazy val valintarekisteri = new ValintarekisteriService(singleConnectionValintarekisteriDb, singleConnectionValintarekisteriDb, hakukohdeRecordService)
+  lazy val valintarekisteri = new ValintarekisteriService(singleConnectionValintarekisteriDb, hakukohdeRecordService)
 
   def getLatestSijoittelu(hakuOid: String) = {
     val sijoitteluajo = time("Get latest sijoitteluajo") { valintarekisteri.getLatestSijoitteluajo(hakuOid) }

@@ -30,13 +30,13 @@ class ValintarekisteriDbReadSijoitteluSpec extends Specification with ITSetup wi
     }
 
     "get hakijan hakutoiveet" in {
-      val res = singleConnectionValintarekisteriDb.getHakemuksenHakutoiveetSijoittelussa(hakemusOid, 1476936450191L)
+      val res = singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.getHakemuksenHakutoiveetSijoittelussa(hakemusOid, 1476936450191L))
       res.size mustEqual 1
       res.head.hakutoive mustEqual Some(6)
     }
 
     "get latest sijoitteluajoid for haku" in {
-      singleConnectionValintarekisteriDb.getLatestSijoitteluajoId(HakuOid("1.2.246.562.29.75203638285")).get mustEqual 1476936450191L
+      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.getLatestSijoitteluajoId(HakuOid("1.2.246.562.29.75203638285"))).get mustEqual 1476936450191L
     }
 
     "get sijoitteluajo" in {

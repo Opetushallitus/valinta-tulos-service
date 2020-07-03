@@ -60,7 +60,8 @@
             "SV": "andra",
             "EN": "other"
           },
-          "eiVarasijatayttoa": false
+          "eiVarasijatayttoa": false,
+          "varasijasaannotKaytossa": false
         }
       ]
     },

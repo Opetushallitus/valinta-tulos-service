@@ -66,7 +66,8 @@ trait ValintarekisteriResultExtractors {
     varasijojaTaytetaanAsti = r.nextTimestampOption,
     tayttojono = r.nextStringOption,
     tilankuvausHash = r.nextInt,
-    tarkenteenLisatieto = r.nextStringOption
+    tarkenteenLisatieto = r.nextStringOption,
+    sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa = r.nextBoolean
   ))
 
   protected implicit val getHakutoiveenHakijaryhmaResult = GetResult(r => HakutoiveenHakijaryhmaRecord(

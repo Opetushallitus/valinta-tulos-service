@@ -6,11 +6,12 @@ import java.util.{Date, UUID}
 
 import fi.vm.sade.auditlog._
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
-import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
-import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice._
+import fi.vm.sade.valintatulosservice.json.JsonFormats
+import fi.vm.sade.valintatulosservice.mock.RunBlockingMock
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.junit.runner.RunWith
@@ -20,6 +21,7 @@ import org.specs2.mock.mockito.{MockitoMatchers, MockitoStubs}
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.Scope
+import slick.dbio.DBIO
 
 @RunWith(classOf[JUnitRunner])
 class SijoitteluServiceSpec extends Specification with MockitoMatchers with MockitoStubs {
@@ -90,7 +92,7 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
     )
   }
 
-  trait SijoitteluServiceMocks extends Mockito with Scope with MustThrownExpectations {
+  trait SijoitteluServiceMocks extends Mockito with Scope with MustThrownExpectations with RunBlockingMock {
     val audit = mock[Audit]
 
     val hakuService = mock[HakuService]
@@ -110,10 +112,10 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
     val authorizer = mock[OrganizationHierarchyAuthorizer]
     authorizer.checkAccess(session, Set(tarjoajaOid, organisaatioRyhmaOid), Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Right(())
 
-    type repositoryType = SijoitteluRepository with HakijaRepository with ValinnantulosRepository
-    val sijoitteluRepository = mock[repositoryType]
+    val sijoitteluRepository = mock[ValintarekisteriDb]
+    mockRunBlocking(sijoitteluRepository)
 
-    sijoitteluRepository.getLatestSijoitteluajoId("latest", hakuOid) returns Right(sijoitteluajoId)
+    sijoitteluRepository.getLatestSijoitteluajoId("latest", hakuOid) returns DBIO.successful(sijoitteluajoId)
     sijoitteluRepository.getSijoitteluajonHakukohde(sijoitteluajoId, hakukohdeOid) returns Some(SijoittelunHakukohdeRecord(sijoitteluajoId, hakukohdeOid, true))
     sijoitteluRepository.getHakukohteenValintatapajonot(sijoitteluajoId, hakukohdeOid) returns List(
       ValintatapajonoRecord("arvonta", ValintatapajonoOid("valintatapajono1"), "valintatapajono1", 1, Some(10), Some(10), 1, true, true, true, None, 0, None, None, None, None, None, false, hakukohdeOid),

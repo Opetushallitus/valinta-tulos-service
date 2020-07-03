@@ -60,7 +60,8 @@
             "SV": "ehto ruotsi",
             "EN": "ehto englanti"
           },
-          "eiVarasijatayttoa": false
+          "eiVarasijatayttoa": false,
+          "varasijasaannotKaytossa": false
         }
       ]
     },

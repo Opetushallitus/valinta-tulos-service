@@ -7,6 +7,8 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakijaRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.jdbc.PostgresProfile.api._
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
 trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriRepository {
 
   override def getHakemuksenHakija(hakemusOid: HakemusOid, sijoitteluajoId: Option[Long] = None): Option[HakijaRecord] =
@@ -103,13 +105,18 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
   }
 
 
-  override def getHakemuksenHakutoiveetSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId:Long): List[HakutoiveRecord] =
-    timed(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid hakutoiveiden haku", 100) {
-      runBlocking(
-        sql"""select distinct j.hakemus_oid, j.prioriteetti, j.hakukohde_oid, sh.kaikki_jonot_sijoiteltu
-              from jonosijat j
-              inner join sijoitteluajon_hakukohteet sh on sh.hakukohde_oid = j.hakukohde_oid and sh.sijoitteluajo_id = j.sijoitteluajo_id
-              where j.sijoitteluajo_id = ${sijoitteluajoId} and j.hakemus_oid = ${hakemusOid}""".as[HakutoiveRecord]).toList
+  override def getHakemuksenHakutoiveetSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId:Long): DBIOAction[List[HakutoiveRecord], NoStream, Effect] = {
+    sql"""select distinct
+                 j.hakemus_oid,
+                 j.prioriteetti,
+                 j.hakukohde_oid,
+                 sh.kaikki_jonot_sijoiteltu
+          from jonosijat j
+          join sijoitteluajon_hakukohteet sh
+            on sh.hakukohde_oid = j.hakukohde_oid and
+               sh.sijoitteluajo_id = j.sijoitteluajo_id
+          where j.sijoitteluajo_id = ${sijoitteluajoId} and
+                j.hakemus_oid = ${hakemusOid}""".as[HakutoiveRecord].map(_.toList)
   }
 
   override def getHakukohteenHakemuksienHakutoiveetSijoittelussa(hakukohdeOid: HakukohdeOid, sijoitteluajoId:Long): List[HakutoiveRecord] =
@@ -187,19 +194,37 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
               where j.sijoitteluajo_id = ${sijoitteluajoId} and j.hakukohde_oid = ${hakukohdeOid}""".as[HakutoiveRecord]).toList
     }
 
-  override def getHakemuksenHakutoiveidenValintatapajonotSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId: Long): List[HakutoiveenValintatapajonoRecord] =
-    timed(s"Sijoitteluajon $sijoitteluajoId hakemuksen $hakemusOid hakutoiveiden valintatapajonojen haku", 100) {
-      runBlocking(
-        sql"""select j.hakemus_oid, j.hakukohde_oid, v.prioriteetti, v.oid, v.nimi, v.ei_varasijatayttoa, j.jonosija,
-                  j.varasijan_numero, j.hyvaksytty_harkinnanvaraisesti, j.tasasijajonosija, j.pisteet,
-                  v.alin_hyvaksytty_pistemaara, v.varasijat, v.varasijatayttopaivat,
-                  v.varasijoja_kaytetaan_alkaen, v.varasijoja_taytetaan_asti, v.tayttojono,
-                  tk.tilankuvaus_hash, tk.tarkenteen_lisatieto
-                from jonosijat j
-                inner join valintatapajonot v on j.valintatapajono_oid = v.oid and j.sijoitteluajo_id = v.sijoitteluajo_id
-                inner join tilat_kuvaukset tk on tk.valintatapajono_oid = v.oid and tk.hakemus_oid = j.hakemus_oid and tk.hakukohde_oid = j.hakukohde_oid
-                where j.sijoitteluajo_id = ${sijoitteluajoId} and j.hakemus_oid = ${hakemusOid}""".as[HakutoiveenValintatapajonoRecord]).toList
-    }
+  override def getHakemuksenHakutoiveidenValintatapajonotSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId: Long): DBIOAction[List[HakutoiveenValintatapajonoRecord], NoStream, Effect] = {
+    sql"""select j.hakemus_oid,
+                 j.hakukohde_oid,
+                 v.prioriteetti,
+                 v.oid,
+                 v.nimi,
+                 v.ei_varasijatayttoa,
+                 j.jonosija,
+                 j.varasijan_numero,
+                 j.hyvaksytty_harkinnanvaraisesti,
+                 j.tasasijajonosija, j.pisteet,
+                 v.alin_hyvaksytty_pistemaara,
+                 v.varasijat,
+                 v.varasijatayttopaivat,
+                 v.varasijoja_kaytetaan_alkaen,
+                 v.varasijoja_taytetaan_asti,
+                 v.tayttojono,
+                 tk.tilankuvaus_hash,
+                 tk.tarkenteen_lisatieto,
+                 v.sijoiteltu_ilman_varasijasaantoja_niiden_ollessa_voimassa
+          from jonosijat j
+          join valintatapajonot v
+            on j.valintatapajono_oid = v.oid and
+               j.sijoitteluajo_id = v.sijoitteluajo_id
+          join tilat_kuvaukset tk
+            on tk.valintatapajono_oid = v.oid and
+               tk.hakemus_oid = j.hakemus_oid and
+               tk.hakukohde_oid = j.hakukohde_oid
+          where j.sijoitteluajo_id = ${sijoitteluajoId} and
+                j.hakemus_oid = ${hakemusOid}""".as[HakutoiveenValintatapajonoRecord].map(_.toList)
+  }
 
   override def getHakukohteenHakemuksienValintatapajonotSijoittelussa(hakukohdeOid: HakukohdeOid, sijoitteluajoId:Long): List[HakutoiveenValintatapajonoRecord] =
     timed(s"Sijoitteluajon $sijoitteluajoId hakukohteen $hakukohdeOid hakutoiveiden valintatapajonojen haku", 100) {
@@ -212,11 +237,25 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
                  from valinnantilat v
                  where v.hakukohde_oid = ${hakukohdeOid}
                )
-               select j.hakemus_oid, j.hakukohde_oid, v.prioriteetti, v.oid, v.nimi, v.ei_varasijatayttoa, j.jonosija,
-                  j.varasijan_numero, j.hyvaksytty_harkinnanvaraisesti, j.tasasijajonosija, j.pisteet,
-                  v.alin_hyvaksytty_pistemaara, v.varasijat, v.varasijatayttopaivat,
-                  v.varasijoja_kaytetaan_alkaen, v.varasijoja_taytetaan_asti, v.tayttojono,
-                  tk.tilankuvaus_hash, tk.tarkenteen_lisatieto, null
+               select j.hakemus_oid,
+                      j.hakukohde_oid,
+                      v.prioriteetti,
+                      v.oid,
+                      v.nimi,
+                      v.ei_varasijatayttoa,
+                      j.jonosija,
+                      j.varasijan_numero,
+                      j.hyvaksytty_harkinnanvaraisesti,
+                      j.tasasijajonosija, j.pisteet,
+                      v.alin_hyvaksytty_pistemaara,
+                      v.varasijat,
+                      v.varasijatayttopaivat,
+                      v.varasijoja_kaytetaan_alkaen,
+                      v.varasijoja_taytetaan_asti,
+                      v.tayttojono,
+                      tk.tilankuvaus_hash,
+                      tk.tarkenteen_lisatieto,
+                      v.sijoiteltu_ilman_varasijasaantoja_niiden_ollessa_voimassa
                 from jonosijat j
                 inner join hakemukset h on j.hakemus_oid = h.hakemus_oid
                 inner join valintatapajonot v on j.valintatapajono_oid = v.oid and j.sijoitteluajo_id = v.sijoitteluajo_id
@@ -227,11 +266,26 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
   override def getHaunHakemuksienValintatapajonotSijoittelussa(hakuOid: HakuOid, sijoitteluajoId: Long): List[HakutoiveenValintatapajonoRecord] =
     timed(s"Sijoitteluajon $sijoitteluajoId haun $hakuOid hakemusten hakutoiveiden valintatapajonojen haku", 100) {
       runBlocking(
-        sql"""select j.hakemus_oid, j.hakukohde_oid, v.prioriteetti, v.oid, v.nimi, v.ei_varasijatayttoa, j.jonosija,
-                j.varasijan_numero, j.hyvaksytty_harkinnanvaraisesti, j.tasasijajonosija, j.pisteet,
-                v.alin_hyvaksytty_pistemaara, v.varasijat, v.varasijatayttopaivat,
-                v.varasijoja_kaytetaan_alkaen, v.varasijoja_taytetaan_asti, v.tayttojono,
-                tk.tilankuvaus_hash, tk.tarkenteen_lisatieto, null
+        sql"""select j.hakemus_oid,
+                     j.hakukohde_oid,
+                     v.prioriteetti,
+                     v.oid,
+                     v.nimi,
+                     v.ei_varasijatayttoa,
+                     j.jonosija,
+                     j.varasijan_numero,
+                     j.hyvaksytty_harkinnanvaraisesti,
+                     j.tasasijajonosija,
+                     j.pisteet,
+                     v.alin_hyvaksytty_pistemaara,
+                     v.varasijat,
+                     v.varasijatayttopaivat,
+                     v.varasijoja_kaytetaan_alkaen,
+                     v.varasijoja_taytetaan_asti,
+                     v.tayttojono,
+                     tk.tilankuvaus_hash,
+                     tk.tarkenteen_lisatieto,
+                     v.sijoiteltu_ilman_varasijasaantoja_niiden_ollessa_voimassa
               from jonosijat j
                 inner join valintatapajonot v on j.valintatapajono_oid = v.oid and j.sijoitteluajo_id = v.sijoitteluajo_id
                 inner join tilat_kuvaukset tk on tk.valintatapajono_oid = v.oid and tk.hakemus_oid = j.hakemus_oid and tk.hakukohde_oid = j.hakukohde_oid
@@ -241,11 +295,26 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
   override def getHakukohteenHakemuksienHakutoiveenValintatapajonotSijoittelussa(hakukohdeOid: HakukohdeOid, sijoitteluajoId:Long): List[HakutoiveenValintatapajonoRecord] =
     timed(s"Sijoitteluajon $sijoitteluajoId hakukohteen $hakukohdeOid hakutoiveen valintatapajonojen haku", 100) {
       runBlocking(
-        sql"""select j.hakemus_oid, j.hakukohde_oid, v.prioriteetti, v.oid, v.nimi, v.ei_varasijatayttoa, j.jonosija,
-                  j.varasijan_numero, j.hyvaksytty_harkinnanvaraisesti, j.tasasijajonosija, j.pisteet,
-                  v.alin_hyvaksytty_pistemaara, v.varasijat, v.varasijatayttopaivat,
-                  v.varasijoja_kaytetaan_alkaen, v.varasijoja_taytetaan_asti, v.tayttojono,
-                  tk.tilankuvaus_hash, tk.tarkenteen_lisatieto, null
+        sql"""select j.hakemus_oid,
+                     j.hakukohde_oid,
+                     v.prioriteetti,
+                     v.oid,
+                     v.nimi,
+                     v.ei_varasijatayttoa,
+                     j.jonosija,
+                     j.varasijan_numero,
+                     j.hyvaksytty_harkinnanvaraisesti,
+                     j.tasasijajonosija,
+                     j.pisteet,
+                     v.alin_hyvaksytty_pistemaara,
+                     v.varasijat,
+                     v.varasijatayttopaivat,
+                     v.varasijoja_kaytetaan_alkaen,
+                     v.varasijoja_taytetaan_asti,
+                     v.tayttojono,
+                     tk.tilankuvaus_hash,
+                     tk.tarkenteen_lisatieto,
+                     v.sijoiteltu_ilman_varasijasaantoja_niiden_ollessa_voimassa
                 from jonosijat j
                 inner join valintatapajonot v on j.valintatapajono_oid = v.oid and j.sijoitteluajo_id = v.sijoitteluajo_id
                 inner join tilat_kuvaukset tk on tk.valintatapajono_oid = v.oid and tk.hakemus_oid = j.hakemus_oid and tk.hakukohde_oid = j.hakukohde_oid
