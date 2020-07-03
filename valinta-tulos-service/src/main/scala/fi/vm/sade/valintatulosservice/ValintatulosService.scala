@@ -338,7 +338,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     } catch {
       case e: Exception =>
         logger.error(s"Sijoittelun hakemuksia ei saatu haulle $hakuOid", e)
-        new HakijaPaginationObject
+        throw new Exception(s"Sijoittelun hakemuksia ei saatu haulle $hakuOid", e)
     }
   }
 
