@@ -372,7 +372,7 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
       ))
       val hakemuksentulos = hakemuksenTulos
       vastaanotonTulos match {
-        case Failure(cae: ConflictingAcceptancesException) => cae.conflictingVastaanottos.map(_.hakukohdeOid) must_== Vector(alinHakukohdeOid, keskimmainenHakukohdeOid)
+        case Failure(cae: ConflictingAcceptancesException) => cae.conflictingVastaanottos.map(_.hakukohdeOid).toSet must_== Set(alinHakukohdeOid, keskimmainenHakukohdeOid)
         case x => fail(s"Should have failed on several conflicting records but got $x")
       }
 
