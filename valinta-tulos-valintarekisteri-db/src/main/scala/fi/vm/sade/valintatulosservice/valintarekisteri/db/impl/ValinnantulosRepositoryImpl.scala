@@ -69,9 +69,9 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
         and vth.transaction_id = (
                 select max(vths.transaction_id)
                 from valinnantilat_history as vths
-                where vths.hakemus_oid = ${hakemusOid}
-                  and vths.hakukohde_oid = ${hakukohdeOid}
-                limit 1
+                where vths.hakemus_oid = vth.hakemus_oid
+                  and vths.hakukohde_oid = vth.hakukohde_oid
+                  and vths.tila = vth.tila
         )
         and ((
                 select true
