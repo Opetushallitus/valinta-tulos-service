@@ -69,15 +69,15 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
         and vth.transaction_id = (
                 select max(vths.transaction_id)
                 from valinnantilat_history as vths
-                where vths.hakemus_oid = ${hakemusOid}
-                  and vths.hakukohde_oid = ${hakukohdeOid}
-                limit 1
+                where vths.hakemus_oid = vth.hakemus_oid
+                  and vths.hakukohde_oid = vth.hakukohde_oid
+                  and vths.tila = vth.tila
         )
         and ((
                 select true
                 from valinnantulokset as t
-                where t.hakemus_oid = ${hakemusOid}
-                  and t.hakukohde_oid = ${hakukohdeOid}
+                where t.hakemus_oid = vth.hakemus_oid
+                  and t.hakukohde_oid = vth.hakukohde_oid
                   and t.valintatapajono_oid = vth.valintatapajono_oid
                   and t.julkaistavissa = 'true'
                   and lower(t.system_time) <@ vth.system_time
@@ -85,8 +85,8 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             or (
                 select true
                 from valinnantulokset_history as th
-                where th.hakemus_oid = ${hakemusOid}
-                  and th.hakukohde_oid = ${hakukohdeOid}
+                where th.hakemus_oid = vth.hakemus_oid
+                  and th.hakukohde_oid = vth.hakukohde_oid
                   and th.valintatapajono_oid = vth.valintatapajono_oid
                   and th.julkaistavissa = 'true'
                   and th.system_time && vth.system_time
