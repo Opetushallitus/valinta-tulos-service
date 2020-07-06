@@ -11,7 +11,7 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelutulosService
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository, VastaanottoEvent, VastaanottoRecord}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository, VastaanottoEvent, VastaanottoRecord, VirkailijaVastaanottoRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
@@ -25,11 +25,12 @@ class VastaanottoService(hakuService: HakuService,
                          hakukohdeRecordService: HakukohdeRecordService,
                          valintatulosService: ValintatulosService,
                          hakijaVastaanottoRepository: HakijaVastaanottoRepository,
+                         virkailijaVastaanottoRepository: VirkailijaVastaanottoRepository,
                          ohjausparametritService: OhjausparametritService,
                          sijoittelutulosService: SijoittelutulosService,
                          hakemusRepository: HakemusRepository,
-                         valinnantulosRepository: ValinnantulosRepository) extends Logging {
-
+                         valinnantulosRepository: ValinnantulosRepository
+                        ) extends Logging {
   private val statesMatchingInexistentActions = Set(
     Vastaanottotila.kesken,
     Vastaanottotila.ei_vastaanotettu_määräaikana,
@@ -75,8 +76,10 @@ class VastaanottoService(hakuService: HakuService,
 
     val hakuOid: HakuOid = hakuOidit.head
 
+    val haunVastaanototHenkiloittain: Map[String, Set[VastaanottoRecord]] = virkailijaVastaanottoRepository.findHaunVastaanotot(hakuOid).groupBy(_.henkiloOid)
+
     val henkiloidenVastaanototByHakukohdeOid: Map[HakukohdeOid, Map[String, List[Valintatulos]]] =
-      vastaanotot.map(_.hakukohdeOid).toSet.map((hakukohdeOid: HakukohdeOid) => (hakukohdeOid, findValintatulokset(hakuOid, hakukohdeOid))).toMap
+      vastaanotot.map(_.hakukohdeOid).toSet.map((hakukohdeOid: HakukohdeOid) => (hakukohdeOid, findValintatulokset(hakuOid, hakukohdeOid, haunVastaanototHenkiloittain))).toMap
 
     (for {
       (hakukohdeOid, vastaanottoEventDtos) <- vastaanotot.groupBy(v => v.hakukohdeOid)
@@ -141,8 +144,11 @@ class VastaanottoService(hakuService: HakuService,
     !Vastaanottotila.matches(newStateFromVirkailijanVastaanotto, currentState)
   }
 
-  private def findValintatulokset(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Map[String, List[Valintatulos]] = {
-    valintatulosService.findValintaTuloksetForVirkailija(hakuOid, hakukohdeOid).groupBy(_.getHakijaOid)
+  private def findValintatulokset(hakuOid: HakuOid,
+                                  hakukohdeOid: HakukohdeOid,
+                                  haunVastaanototHakijoittain: Map[String, Set[VastaanottoRecord]]
+                                 ): Map[String, List[Valintatulos]] = {
+    valintatulosService.findValintaTuloksetForVirkailija(hakuOid, hakukohdeOid, Some(haunVastaanototHakijoittain)).groupBy(_.getHakijaOid)
   }
 
   private def createVastaanottoResult(statusCode: Int, exception: Option[Throwable], vastaanottoEvent: VastaanottoEvent) = {
