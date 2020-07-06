@@ -353,25 +353,29 @@ object SijoitteluajonHakijat {
                                      hyvaksytytJaHakeneetHakukohteittain: Map[HakukohdeOid, Map[ValintatapajonoOid, HyvaksytytJaHakeneet]])
 
   object ValinnantuloksetGrouped {
-    def apply(valinnantulokset: Set[Valinnantulos], countHyvaksytytJaHakeneet:Boolean = true):ValinnantuloksetGrouped =
+    def apply(valinnantulokset: Set[Valinnantulos], countHyvaksytytJaHakeneet:Boolean = true):ValinnantuloksetGrouped = {
+      val valinnantuloksetByHakemusOid = valinnantulokset.groupBy(_.hakemusOid)
       ValinnantuloksetGrouped(
-        valinnantulokset.groupBy(_.hakemusOid).map(t => t._1 -> t._2.groupBy(_.hakukohdeOid)),
-        valinnantulokset.groupBy(_.hakemusOid).map(t => t._1 -> t._2.map(_.hakukohdeOid)),
+        valinnantuloksetByHakemusOid.map(t => t._1 -> t._2.groupBy(_.hakukohdeOid)),
+        valinnantuloksetByHakemusOid.map(t => t._1 -> t._2.map(_.hakukohdeOid)),
         Option(countHyvaksytytJaHakeneet).collect { case true =>
           valinnantulokset.groupBy(_.hakukohdeOid)
             .map(t => t._1 -> t._2.groupBy(_.valintatapajonoOid).map(t => t._1 -> HyvaksytytJaHakeneet(t._2)))
         }.getOrElse(Map())
       )
+    }
   }
 
   case class HakutoiveetGrouped(hakutoiveetSijoittelussa: Map[HakemusOid, List[HakutoiveRecord]], hakutoiveOiditHakemuksittain: Map[HakemusOid, Set[HakukohdeOid]])
 
   object HakutoiveetGrouped {
-    def apply(hakutoiveet: List[HakutoiveRecord]):HakutoiveetGrouped =
+    def apply(hakutoiveet: List[HakutoiveRecord]):HakutoiveetGrouped = {
+      val hakutoiveetByHakemusOid = hakutoiveet.groupBy(_.hakemusOid)
       HakutoiveetGrouped(
-        hakutoiveet.groupBy(_.hakemusOid),
-        hakutoiveet.groupBy(_.hakemusOid).map(t => t._1 -> t._2.map(_.hakukohdeOid).toSet)
+        hakutoiveetByHakemusOid,
+        hakutoiveetByHakemusOid.map(t => t._1 -> t._2.map(_.hakukohdeOid).toSet)
       )
+    }
   }
 
   case class ValintatapajonotGrouped(valintatapajonotSijoittelussa:Map[HakemusOid,Map[HakukohdeOid, List[HakutoiveenValintatapajonoRecord]]], tilankuvausHashit:List[Int])
