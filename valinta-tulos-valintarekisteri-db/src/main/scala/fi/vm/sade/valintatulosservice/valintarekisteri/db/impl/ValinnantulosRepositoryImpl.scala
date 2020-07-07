@@ -80,7 +80,8 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                   and t.hakukohde_oid = vth.hakukohde_oid
                   and t.valintatapajono_oid = vth.valintatapajono_oid
                   and t.julkaistavissa = 'true'
-                  and lower(t.system_time) <@ vth.system_time
+                  and ((lower(t.system_time) <@ vth.system_time)
+                    or (lower(t.system_time) < lower(vth.system_time)))
                 limit 1)
             or (
                 select true
