@@ -1,6 +1,5 @@
 package fi.vm.sade.valintatulosservice.streamingresults
 
-import java.util.concurrent.TimeUnit.SECONDS
 import java.util.concurrent.{Executors, TimeUnit}
 
 import org.junit.runner.RunWith
@@ -17,6 +16,7 @@ class HakemustenTulosHakuLockSpec extends Specification {
   private val operationLagMillis: Int = 1000
   private val fastLockMillis: Int = operationLagMillis / 10
   private val slowLockMillis: Int = (operationLagMillis * 1.5).toInt
+  private val resultTimeout = Duration(operationLagMillis * 5, TimeUnit.MILLISECONDS)
 
   private val fastLock: HakemustenTulosHakuLock = new HakemustenTulosHakuLock(queueLimit = 2, lockDuration = fastLockMillis, TimeUnit.MILLISECONDS)
   private val slowLock: HakemustenTulosHakuLock = new HakemustenTulosHakuLock(queueLimit = 2, lockDuration = slowLockMillis, TimeUnit.MILLISECONDS)
@@ -33,14 +33,14 @@ class HakemustenTulosHakuLockSpec extends Specification {
       val slow3 = runSlowFuture(slowLock)
 
 
-      Await.result(fast1, Duration(1, SECONDS)) must beRight("ok")
-      Await.result(fast2, Duration(1, SECONDS)) must beLeft(s"Acquiring lock timed out after $fastLockMillis milliseconds: No available capacity for this request, please try again later")
-      Await.result(fast3, Duration(1, SECONDS)) must beLeft(s"Acquiring lock timed out after $fastLockMillis milliseconds: No available capacity for this request, please try again later")
-      Await.result(fast4, Duration(1, SECONDS)) must beLeft(s"Results loading queue of size 2 full: No available capacity for this request, please try again later")
+      Await.result(fast1, resultTimeout) must beRight("ok")
+      Await.result(fast2, resultTimeout) must beLeft(s"Acquiring lock timed out after $fastLockMillis milliseconds: No available capacity for this request, please try again later")
+      Await.result(fast3, resultTimeout) must beLeft(s"Acquiring lock timed out after $fastLockMillis milliseconds: No available capacity for this request, please try again later")
+      Await.result(fast4, resultTimeout) must beLeft(s"Results loading queue of size 2 full: No available capacity for this request, please try again later")
 
-      Await.result(slow1, Duration(1, SECONDS)) must beRight("ok")
-      Await.result(slow2, Duration(1, SECONDS)) must beRight("ok")
-      Await.result(slow3, Duration(1, SECONDS)) must beLeft(s"Acquiring lock timed out after $slowLockMillis milliseconds: No available capacity for this request, please try again later")
+      Await.result(slow1, resultTimeout) must beRight("ok")
+      Await.result(slow2, resultTimeout) must beRight("ok")
+      Await.result(slow3, resultTimeout) must beLeft(s"Acquiring lock timed out after $slowLockMillis milliseconds: No available capacity for this request, please try again later")
     }
   }
 
