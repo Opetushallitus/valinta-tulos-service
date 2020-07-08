@@ -871,6 +871,84 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
       alemmanToiveenTulos.jonokohtaisetTulostiedot(2).tilanKuvaukset must beNone
     }
 
+    "ylimmällä toiveella julkaistu varalla ja julkaisematon hyväksytty, alempi julkaistu ehdollisesti hyväksyttynä ja muutettu varalle" +
+      "-> näytetään alempi varalla" in {
+      useFixture("ylin-toive-hyvaksytty-toisesta-jonosta-mutta-kaksi-kolmesta-julkaistua-jonoa-alemmmassa-peruuntununeessa.json",
+        hakuFixture = hakuFixture,
+        hakemusFixtures = List( "00000441369-3"),
+        ohjausparametritFixture = "varasijasaannot-ei-viela-voimassa")
+
+      val alemmanToiveenEnsimmäisenHyväksytynJononOid = ValintatapajonoOid("14090336922663576781797489829888")
+      val alemmanToiveenToisenHyväksytynJononOid = ValintatapajonoOid("14090336922663576781797489829889")
+      val alempiToiveOid = HakukohdeOid("1.2.246.562.5.72607738904")
+      val hakijaOid = "1.2.246.562.24.14229104472"
+
+      valintarekisteriDb.runBlocking(
+        valintarekisteriDb.storeValinnantila(
+          ValinnantilanTallennus(
+            hakemusOid,
+            alemmanToiveenEnsimmäisenHyväksytynJononOid,
+            alempiToiveOid,
+            hakijaOid,
+            Hyvaksytty,
+            "testi")).
+          andThen(
+            asetaJulkaistavissa(alempiToiveOid, alemmanToiveenEnsimmäisenHyväksytynJononOid, hakemusOid, julkaistavissa = true)).
+          andThen(
+            asetaJulkaistavissa(alempiToiveOid, alemmanToiveenToisenHyväksytynJononOid, hakemusOid, julkaistavissa = true)))
+
+      valintarekisteriDb.runBlocking(
+        valintarekisteriDb.storeValinnantila(
+          ValinnantilanTallennus(
+            hakemusOid,
+            alemmanToiveenEnsimmäisenHyväksytynJononOid,
+            alempiToiveOid,
+            hakijaOid,
+            Varalla,
+            "testi")).
+          andThen(tallennaTilankuvauksenTarkenne(
+            alempiToiveOid,
+            alemmanToiveenEnsimmäisenHyväksytynJononOid,
+            hakemusOid,
+            EiTilankuvauksenTarkennetta.tilankuvauksenTarkenne)))
+
+      valintarekisteriDb.runBlocking(tallennaTilankuvauksenTarkenne(
+            alempiToiveOid,
+            alemmanToiveenToisenHyväksytynJononOid,
+            hakemusOid,
+            PeruuntunutHyvaksyttyYlemmalleHakutoiveelle.tilankuvauksenTarkenne))
+
+      val ylemmanToiveenTulos = getHakutoive("1.2.246.562.5.72607738903")
+      checkHakutoiveState(
+        ylemmanToiveenTulos,
+        Valintatila.kesken,
+        Vastaanottotila.kesken,
+        Vastaanotettavuustila.ei_vastaanotettavissa,
+        julkaistavissa = false)
+
+      ylemmanToiveenTulos.jonokohtaisetTulostiedot.size must_== 2
+      ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.valintatila must_== Valintatila.varalla
+      ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.tilanKuvaukset must beSome(Map())
+      ylemmanToiveenTulos.jonokohtaisetTulostiedot(1).valintatila must_== Valintatila.kesken
+      ylemmanToiveenTulos.jonokohtaisetTulostiedot(1).tilanKuvaukset must beNone
+
+      val alemmanToiveenTulos = getHakutoive("1.2.246.562.5.72607738904")
+      checkHakutoiveState(
+        alemmanToiveenTulos,
+        Valintatila.kesken,
+        Vastaanottotila.kesken,
+        Vastaanotettavuustila.ei_vastaanotettavissa,
+        julkaistavissa = false)
+      alemmanToiveenTulos.jonokohtaisetTulostiedot.size must_== 3
+      alemmanToiveenTulos.jonokohtaisetTulostiedot.head.valintatila must_== Valintatila.varalla
+      alemmanToiveenTulos.jonokohtaisetTulostiedot.head.tilanKuvaukset must beSome
+      alemmanToiveenTulos.jonokohtaisetTulostiedot.head.tilanKuvaukset.get("FI") must_== ""
+      alemmanToiveenTulos.jonokohtaisetTulostiedot(1).valintatila must_== Valintatila.kesken
+      alemmanToiveenTulos.jonokohtaisetTulostiedot(1).tilanKuvaukset must beNone
+      alemmanToiveenTulos.jonokohtaisetTulostiedot(2).valintatila must_== Valintatila.kesken
+      alemmanToiveenTulos.jonokohtaisetTulostiedot(2).tilanKuvaukset must beNone
+    }
+
     "peruuntunut, sijoittelua käyttävä korkeakouluhaku" in {
       "ylempi hyväksytty kesken, koska varasijasäännöt ei vielä voimassa -> näytetään peruuntunut keskeneräisenä" in {
         // VARALLA KESKEN true

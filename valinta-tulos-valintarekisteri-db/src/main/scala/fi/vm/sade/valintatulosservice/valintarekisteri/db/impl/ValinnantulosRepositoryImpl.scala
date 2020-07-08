@@ -63,9 +63,14 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   override def getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuJonoOidHistoriasta(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Option[ValintatapajonoOid] = {
     runBlocking(sql"""select vth.valintatapajono_oid
       from valinnantilat_history vth
+      join valinnantilat vt_curr
+        on vt_curr.valintatapajono_oid = vth.valintatapajono_oid
+        and vt_curr.hakemus_oid = vth.hakemus_oid
+        and vt_curr.hakukohde_oid = vth.hakukohde_oid
       where vth.hakemus_oid = ${hakemusOid}
         and vth.hakukohde_oid = ${hakukohdeOid}
         and vth.tila = 'Hyvaksytty'
+        and vt_curr.tila in ('Hyvaksytty', 'VarasijaltaHyvaksytty', 'Peruuntunut')
         and vth.transaction_id = (
                 select max(vths.transaction_id)
                 from valinnantilat_history as vths
@@ -90,13 +95,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                   and th.valintatapajono_oid = vth.valintatapajono_oid
                   and th.julkaistavissa = 'true'
                   and th.system_time && vth.system_time
-                  limit 1))
-        and not exists
-          (select * from valinnantilat vt_curr
-           where vt_curr.valintatapajono_oid = vth.valintatapajono_oid and
-                 vt_curr.hakemus_oid = vth.hakemus_oid and
-                 vt_curr.hakukohde_oid = vth.hakukohde_oid and
-                 vt_curr.tila = 'Hylatty')""".as[String].headOption).map(ValintatapajonoOid)
+                  limit 1))""".as[String].headOption).map(ValintatapajonoOid)
   }
 
   private def getValinnantulosMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {
