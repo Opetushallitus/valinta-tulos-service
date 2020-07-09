@@ -64,9 +64,9 @@ class VastaanottoService(hakuService: HakuService,
     } yield ()).fold(Failure(_), Success(_))
   }
 
-  private def generateTallennettavatVastaanototList(vastaanotot: List[VastaanottoEventDto]): List[VirkailijanVastaanotto] = {
-    val hakuOidit = vastaanotot.map(_.hakuOid).toSet
-    logger.info(s"Ollaan tallentamassa ${vastaanotot.size} vastaanottoa, joista löytyi ${hakuOidit.size} eri hakuOidia ($hakuOidit).")
+  private def generateTallennettavatVastaanototList(uudetVastaanotot: List[VastaanottoEventDto]): List[VirkailijanVastaanotto] = {
+    val hakuOidit = uudetVastaanotot.map(_.hakuOid).toSet
+    logger.info(s"Ollaan tallentamassa ${uudetVastaanotot.size} vastaanottoa, joista löytyi ${hakuOidit.size} eri hakuOidia ($hakuOidit).")
     if (hakuOidit.size > 1) {
       throw new IllegalArgumentException("Pitäisi olla vain yksi hakuOid")
     } else if (hakuOidit.isEmpty) {
@@ -76,17 +76,20 @@ class VastaanottoService(hakuService: HakuService,
 
     val hakuOid: HakuOid = hakuOidit.head
 
-    val haunVastaanototHenkiloittain: Map[String, Set[VastaanottoRecord]] = virkailijaVastaanottoRepository.findHaunVastaanotot(hakuOid).groupBy(_.henkiloOid)
+    val haunOlemassaolevatVastaanototHenkiloittain: Map[String, Set[VastaanottoRecord]] = virkailijaVastaanottoRepository.findHaunVastaanotot(hakuOid).groupBy(_.henkiloOid)
 
-    val henkiloidenVastaanototByHakukohdeOid: Map[HakukohdeOid, Map[String, List[Valintatulos]]] =
-      vastaanotot.map(_.hakukohdeOid).toSet.map((hakukohdeOid: HakukohdeOid) => (hakukohdeOid, findValintatulokset(hakuOid, hakukohdeOid, haunVastaanototHenkiloittain))).toMap
+    val olemassaolevatTuloksetHakukohteittainJaHenkiloittain: Map[HakukohdeOid, Map[String, List[Valintatulos]]] =
+      uudetVastaanotot.map(_.hakukohdeOid).toSet.map((hakukohdeOid: HakukohdeOid) =>
+        (hakukohdeOid, findValintatulokset(hakuOid, hakukohdeOid, haunOlemassaolevatVastaanototHenkiloittain))).toMap
 
     (for {
-      (hakukohdeOid, vastaanottoEventDtos) <- vastaanotot.groupBy(v => v.hakukohdeOid)
-      hakukohteenValintatuloksetHenkiloittain: Map[String, Option[Valintatulos]] = henkiloidenVastaanototByHakukohdeOid(hakukohdeOid).mapValues(_.headOption)
-      vastaanottoEventDto <- vastaanottoEventDtos if isPaivitys(vastaanottoEventDto, hakukohteenValintatuloksetHenkiloittain.get(vastaanottoEventDto.henkiloOid).flatten.map(_.getTila))
+      (hakukohdeOid, kohteenUudetVastaanotot) <- uudetVastaanotot.groupBy(v => v.hakukohdeOid)
+      hakukohteenValintatuloksetHenkiloittain: Map[String, Option[Valintatulos]] = olemassaolevatTuloksetHakukohteittainJaHenkiloittain(hakukohdeOid).mapValues(_.headOption)
+      uusiVastaanotto <- kohteenUudetVastaanotot
+      olemassaolevaTila = hakukohteenValintatuloksetHenkiloittain.get(uusiVastaanotto.henkiloOid).flatten.map(_.getTila)
+      if isPaivitys(uusiVastaanotto, olemassaolevaTila)
     } yield {
-      VirkailijanVastaanotto(vastaanottoEventDto)
+      VirkailijanVastaanotto(uusiVastaanotto)
     }).toList.sortWith(VirkailijanVastaanotto.tallennusJarjestys)
   }
 
