@@ -33,7 +33,7 @@ trait RestTestHelper {
   protected def createCasClientForOldData(target:String): Client = {
     val casParams = CasParams(target, casUserOld, casPasswordOld)
     CasAuthenticatingClient(
-      casClient = new CasClient(casUrlOld, org.http4s.client.blaze.defaultClient),
+      casClient = new CasClient(casUrlOld, org.http4s.client.blaze.defaultClient, "vts-test-caller-id"),
       casParams = casParams,
       serviceClient = org.http4s.client.blaze.defaultClient,
       clientCallerId = "RestTestHelper",
