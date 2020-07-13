@@ -28,7 +28,8 @@ class ValintarekisteriForSijoittelu(valintarekisteriDb: SijoitteluRepository wit
         appConfig,
         new CasClient(
           appConfig.ophUrlProperties.url("cas.service"),
-          SimpleHttp1Client(appConfig.blazeDefaultConfig)
+          SimpleHttp1Client(appConfig.blazeDefaultConfig),
+          appConfig.settings.callerId
         ),
         OrganisaatioService(appConfig),
         new KoodistoService(appConfig)

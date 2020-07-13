@@ -12,7 +12,8 @@ class VtsKelaAuthenticationClient(val appConfig: VtsAppConfig) extends VtsKelaSe
       "auth/login",
       appConfig.settings.securitySettings.casKelaUsername,
       appConfig.settings.securitySettings.casKelaPassword,
-      appConfig.blazeDefaultConfig
+      appConfig.blazeDefaultConfig,
+      appConfig.settings.callerId
     )
     vtsClient.getVtsSession(appConfig.settings.securitySettings.casUrl)
   }

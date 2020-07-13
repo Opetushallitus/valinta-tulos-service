@@ -13,9 +13,10 @@ class VtsAuthenticatingClient(virkailijaBaseUrlForCas: String,
                               securityUri: String,
                               casUser: String,
                               casPassword: String,
-                              blazeDefaultConfig: BlazeClientConfig) extends Logging {
+                              blazeDefaultConfig: BlazeClientConfig,
+                              callerId: String) extends Logging {
   private val client = SimpleHttp1Client(blazeDefaultConfig)
-  private val casAuthenticatingClient = new CasClient(virkailijaBaseUrlForCas, client)
+  private val casAuthenticatingClient = new CasClient(virkailijaBaseUrlForCas, client, callerId)
   private val params = CasParams(serviceUrl, securityUri, casUser, casPassword)
 
   def getVtsSession(virkailijaBaseUrlForService: String): String = {

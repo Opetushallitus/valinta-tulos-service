@@ -206,7 +206,8 @@ object VtsAppConfig extends Logging {
     lazy val securityContext: SecurityContext = {
       val casClient = new CasClient(
         settings.securitySettings.casUrl,
-        SimpleHttp1Client(blazeDefaultConfig)
+        SimpleHttp1Client(blazeDefaultConfig),
+        settings.callerId
       )
       new ProductionSecurityContext(
         casClient,

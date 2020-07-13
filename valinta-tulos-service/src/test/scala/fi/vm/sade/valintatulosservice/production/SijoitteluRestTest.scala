@@ -44,7 +44,7 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
   "New sijoittelu (valintarekisteri) and old sijoittelu (sijoitteluDb)" should {
     "contain same information" in {
 
-      val vtsClient = new VtsAuthenticatingClient(casHost, newHost + "/valinta-tulos-service", "auth/login", casUserNew, casPasswordNew, BlazeClientConfig.defaultConfig)
+      val vtsClient = new VtsAuthenticatingClient(casHost, newHost + "/valinta-tulos-service", "auth/login", casUserNew, casPasswordNew, BlazeClientConfig.defaultConfig, "vts-test-caller-id")
       val vtsSessionCookie = vtsClient.getVtsSession(newHost)
 
       hakuOidsToTest.foreach { oid =>
