@@ -11,7 +11,7 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelutulosService
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository, VastaanottoEvent, VastaanottoRecord}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository, VastaanottoEvent, VastaanottoRecord, VirkailijaVastaanottoRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
@@ -25,11 +25,12 @@ class VastaanottoService(hakuService: HakuService,
                          hakukohdeRecordService: HakukohdeRecordService,
                          valintatulosService: ValintatulosService,
                          hakijaVastaanottoRepository: HakijaVastaanottoRepository,
+                         virkailijaVastaanottoRepository: VirkailijaVastaanottoRepository,
                          ohjausparametritService: OhjausparametritService,
                          sijoittelutulosService: SijoittelutulosService,
                          hakemusRepository: HakemusRepository,
-                         valinnantulosRepository: ValinnantulosRepository) extends Logging {
-
+                         valinnantulosRepository: ValinnantulosRepository
+                        ) extends Logging {
   private val statesMatchingInexistentActions = Set(
     Vastaanottotila.kesken,
     Vastaanottotila.ei_vastaanotettu_määräaikana,
@@ -63,26 +64,32 @@ class VastaanottoService(hakuService: HakuService,
     } yield ()).fold(Failure(_), Success(_))
   }
 
-  private def generateTallennettavatVastaanototList(vastaanotot: List[VastaanottoEventDto]): List[VirkailijanVastaanotto] = {
-    val hakuOidit = vastaanotot.map(_.hakuOid).toSet
-    logger.info(s"Ollaan tallentamassa ${vastaanotot.size} vastaanottoa, joista löytyi ${hakuOidit.size} eri hakuOidia ($hakuOidit).")
+  private def generateTallennettavatVastaanototList(uudetVastaanotot: List[VastaanottoEventDto]): List[VirkailijanVastaanotto] = {
+    val hakuOidit = uudetVastaanotot.map(_.hakuOid).toSet
+    logger.info(s"Ollaan tallentamassa ${uudetVastaanotot.size} vastaanottoa, joista löytyi ${hakuOidit.size} eri hakuOidia ($hakuOidit).")
     if (hakuOidit.size > 1) {
-      logger.warn("Pitäisi olla vain yksi hakuOid")
+      throw new IllegalArgumentException("Pitäisi olla vain yksi hakuOid")
     } else if (hakuOidit.isEmpty) {
       logger.warn("Ei löytynyt yhtään hakuOidia, lopetetaan.")
       return Nil
     }
 
-    val henkiloidenVastaanototHauissaByHakuOid: Map[HakuOid, Map[String, List[Valintatulos]]] =
-      hakuOidit.map(hakuOid => (hakuOid, findValintatulokset(hakuOid))).toMap
+    val hakuOid: HakuOid = hakuOidit.head
+
+    val haunOlemassaolevatVastaanototHenkiloittain: Map[String, Set[VastaanottoRecord]] = virkailijaVastaanottoRepository.findHaunVastaanotot(hakuOid).groupBy(_.henkiloOid)
+
+    val olemassaolevatTuloksetHakukohteittainJaHenkiloittain: Map[HakukohdeOid, Map[String, List[Valintatulos]]] =
+      uudetVastaanotot.map(_.hakukohdeOid).toSet.map((hakukohdeOid: HakukohdeOid) =>
+        (hakukohdeOid, findValintatulokset(hakuOid, hakukohdeOid, haunOlemassaolevatVastaanototHenkiloittain))).toMap
 
     (for {
-      ((hakukohdeOid, hakuOid), vastaanottoEventDtos) <- vastaanotot.groupBy(v => (v.hakukohdeOid, v.hakuOid))
-      haunValintatulokset = henkiloidenVastaanototHauissaByHakuOid(hakuOid)
-      hakukohteenValintatulokset: Map[String, Option[Valintatulos]] = haunValintatulokset.mapValues(_.find(_.getHakukohdeOid == hakukohdeOid.toString))
-      vastaanottoEventDto <- vastaanottoEventDtos if isPaivitys(vastaanottoEventDto, hakukohteenValintatulokset.get(vastaanottoEventDto.henkiloOid).flatten.map(_.getTila))
+      (hakukohdeOid, kohteenUudetVastaanotot) <- uudetVastaanotot.groupBy(v => v.hakukohdeOid)
+      hakukohteenValintatuloksetHenkiloittain: Map[String, Option[Valintatulos]] = olemassaolevatTuloksetHakukohteittainJaHenkiloittain(hakukohdeOid).mapValues(_.headOption)
+      uusiVastaanotto <- kohteenUudetVastaanotot
+      olemassaolevaTila = hakukohteenValintatuloksetHenkiloittain.get(uusiVastaanotto.henkiloOid).flatten.map(_.getTila)
+      if isPaivitys(uusiVastaanotto, olemassaolevaTila)
     } yield {
-      VirkailijanVastaanotto(vastaanottoEventDto)
+      VirkailijanVastaanotto(uusiVastaanotto)
     }).toList.sortWith(VirkailijanVastaanotto.tallennusJarjestys)
   }
 
@@ -140,8 +147,11 @@ class VastaanottoService(hakuService: HakuService,
     !Vastaanottotila.matches(newStateFromVirkailijanVastaanotto, currentState)
   }
 
-  private def findValintatulokset(hakuOid: HakuOid): Map[String, List[Valintatulos]] = {
-    valintatulosService.findValintaTuloksetForVirkailija(hakuOid).groupBy(_.getHakijaOid)
+  private def findValintatulokset(hakuOid: HakuOid,
+                                  hakukohdeOid: HakukohdeOid,
+                                  haunVastaanototHakijoittain: Map[String, Set[VastaanottoRecord]]
+                                 ): Map[String, List[Valintatulos]] = {
+    valintatulosService.findValintaTuloksetForVirkailija(hakuOid, hakukohdeOid, Some(haunVastaanototHakijoittain)).groupBy(_.getHakijaOid)
   }
 
   private def createVastaanottoResult(statusCode: Int, exception: Option[Throwable], vastaanottoEvent: VastaanottoEvent) = {
