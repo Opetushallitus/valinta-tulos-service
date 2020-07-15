@@ -3,25 +3,30 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.domain
 import org.json4s.{CustomKeySerializer, CustomSerializer, Formats}
 import org.json4s.JsonAST.JString
 
-trait VtsOid {
-  val s: String
-  override val toString: String = s
-  override val hashCode: Int = s.hashCode
+case class HakemusOid(s: String) {
+  override def toString: String = s
 }
 
-case class HakemusOid(s: String) extends VtsOid
+case class ValintatapajonoOid(s: String) {
+  override def toString: String = s
+}
 
-case class ValintatapajonoOid(s: String) extends VtsOid
-
-case class HakukohdeOid(s: String) extends VtsOid {
+case class HakukohdeOid(s: String) {
+  override def toString: String = s
   def valid: Boolean = OidValidator.isOid(s)
 }
 
-case class HakuOid(s: String) extends VtsOid
+case class HakuOid(s: String) {
+  override def toString: String = s
+}
 
-case class TarjoajaOid(s: String) extends VtsOid
+case class TarjoajaOid(s: String) {
+  override def toString: String = s
+}
 
-case class HakijaOid(s: String) extends VtsOid
+case class HakijaOid(s: String) {
+  override def toString: String = s
+}
 
 class HakuOidSerializer extends CustomSerializer[HakuOid]((_: Formats) => {
   ({

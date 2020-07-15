@@ -229,11 +229,8 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     valintatulokset
   }
 
-  def findValintaTuloksetForVirkailija(hakuOid: HakuOid,
-                                       hakukohdeOid: HakukohdeOid,
-                                       haunVastaanototHakijoittain: Option[Map[String, Set[VastaanottoRecord]]] = None
-                                      ): List[Valintatulos] = {
-    val haunVastaanotot: Map[String, Set[VastaanottoRecord]] = haunVastaanototHakijoittain.getOrElse(virkailijaVastaanottoRepository.findHaunVastaanotot(hakuOid).groupBy(_.henkiloOid))
+  def findValintaTuloksetForVirkailija(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): List[Valintatulos] = {
+    val haunVastaanotot: Map[String, Set[VastaanottoRecord]] = virkailijaVastaanottoRepository.findHaunVastaanotot(hakuOid).groupBy(_.henkiloOid)
     val hakemustenTulokset: Iterator[Hakemuksentulos] = hakemustenTulosByHakukohde(hakuOid, hakukohdeOid, Some(haunVastaanotot)) match {
       case Right(x) => x
       case Left(e) => throw e
