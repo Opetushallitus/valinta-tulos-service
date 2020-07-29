@@ -21,7 +21,7 @@ case class HakutoiveenValinnantulos(hakutoive: Int,
                                     julkaistavissa: Option[Boolean],
                                     vastaanottotila: ValintatuloksenTila) extends HakijanHakutoive {
 
-  override def isHyväksytty() = List(HyvaksyttyVarasijalta, Hyvaksytty).contains(valinnantila)
+  override def isHyväksytty() = List(VarasijaltaHyvaksytty, Hyvaksytty).contains(valinnantila)
 
   override def isJulkaistu() = julkaistavissa.getOrElse(false)
 
