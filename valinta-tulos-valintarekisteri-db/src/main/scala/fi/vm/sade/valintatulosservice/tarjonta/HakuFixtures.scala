@@ -12,6 +12,7 @@ object HakuFixtures extends HakuService with JsonHakuService {
   val korkeakouluYhteishaku = HakuOid("korkeakoulu-yhteishaku")
   val korkeakouluLisahaku1 = HakuOid("korkeakoulu-lisahaku1")
   val korkeakouluErillishaku = HakuOid("korkeakoulu-erillishaku")
+  val korkeakouluErillishakuEiSijoittelua = HakuOid("korkeakoulu-erillishaku-ei-sijoittelua")
   val toinenAsteYhteishaku = HakuOid("toinen-aste-yhteishaku")
   val toinenAsteErillishakuEiSijoittelua = HakuOid("toinen-aste-erillishaku-ei-sijoittelua")
   val korkeakouluErillishakuEiYhdenPaikanSaantoa = HakuOid("korkeakoulu-erillishaku-ei-yhden-paikan-saantoa")
