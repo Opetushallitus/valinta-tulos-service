@@ -105,8 +105,8 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
     val hakukohdeOid = valinnantulokset.head.hakukohdeOid // FIXME käyttäjän syötettä, tarvittaisiin jono-hakukohde tieto valintaperusteista
     (for {
       hakukohde <- hakuService.getHakukohde(hakukohdeOid).right
-      _ <- authorizer.checkAccess(auditInfo.session._2, hakukohde.organisaatioOiditAuktorisointiin, Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).right
       haku <- hakuService.getHaku(hakukohde.hakuOid).right
+      _ <- authorizer.checkAccess(auditInfo.session._2, hakukohde.organisaatioOiditAuktorisointiin, Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD) ++ (if (erillishaku) { Set(Role.ATARU_KEVYT_VALINTA_CRUD) } else { Set.empty })).right
       ohjausparametrit <- ohjausparametritService.ohjausparametrit(hakukohde.hakuOid).right
     } yield {
       val strategy = if (erillishaku) {
