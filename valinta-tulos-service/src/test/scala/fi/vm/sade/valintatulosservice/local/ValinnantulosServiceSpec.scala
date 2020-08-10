@@ -188,12 +188,16 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
   }
 
   "Erillishaku / ValinnantulosService" in {
-    "exception is thrown, if no authorization" in new Mocks with Korkeakouluhaku {
+    "exception is thrown, if no authorization" in new Mocks with KorkeakouluErillishaku {
       authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]]) returns Left(new AuthorizationFailedException("error"))
       val valinnantulokset = List(valinnantulosA)
-      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(Instant.now()), auditInfo) must throwA[AuthorizationFailedException]
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(Instant.now()), auditInfo, true) must throwA[AuthorizationFailedException]
     }
-    "different statuses for invalid valinnantulokset" in new Mocks with Authorized with Korkeakouluhaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
+    "exception is thrown, if haku uses sijoittelu" in new Mocks with Authorized with Korkeakouluhaku {
+      val valinnantulokset = List(valinnantulosA)
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(Instant.now()), auditInfo, true) must throwA[IllegalArgumentException]
+    }
+    "different statuses for invalid valinnantulokset" in new Mocks with Authorized with KorkeakouluErillishaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
       valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set())
       yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(Set())
       val valinnantulokset = List(
@@ -215,7 +219,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
         ValinnantulosUpdateStatus(404, s"Valinnantulosta ei voida poistaa, koska sitä ei ole olemassa", valintatapajonoOid, valinnantulokset(6).hakemusOid)
       )
     }
-    "no status for succesfully modified valinnantulos" in new Mocks with Authorized with Korkeakouluhaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
+    "no status for succesfully modified valinnantulos" in new Mocks with Authorized with KorkeakouluErillishaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
       valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set(valinnantulosA.copy(valinnantila = Hyvaksytty)))
       yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(Set(valinnantulosA.copy(valinnantila = Hyvaksytty)))
       valinnantulosRepository.storeValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]]) returns DBIO.successful(())
@@ -229,7 +233,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       there was no (valinnantulosRepository).storeIlmoittautuminen(any[String], any[Ilmoittautuminen], any[Option[Instant]])
       there was no (valinnantulosRepository).storeValinnantila(any[ValinnantilanTallennus], any[Option[Instant]])
     }
-    "no status for succesfully deleted valinnantulos" in new Mocks with Authorized with Korkeakouluhaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
+    "no status for succesfully deleted valinnantulos" in new Mocks with Authorized with KorkeakouluErillishaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
       val validiValinnantulos = valinnantulosA.copy(
         julkaistavissa = Some(true),
         valinnantila = Hyvaksytty,
@@ -253,7 +257,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       there was no (valinnantulosRepository).storeIlmoittautuminen(any[String], any[Ilmoittautuminen], any[Option[Instant]])
       there was no (valinnantulosRepository).storeValinnantila(any[ValinnantilanTallennus], any[Option[Instant]])
     }
-    "no status for succesfully created tila/valinnantulos/ilmoittautuminen" in new Mocks with Authorized with Korkeakouluhaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
+    "no status for succesfully created tila/valinnantulos/ilmoittautuminen" in new Mocks with Authorized with KorkeakouluErillishaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
       val erillishaunValinnantulos = valinnantulosA.copy(
         valinnantila = Hyvaksytty,
         ehdollisestiHyvaksyttavissa = Some(false),
@@ -420,6 +424,35 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       toinenAste = false,
       sallittuKohdejoukkoKelaLinkille = true,
       käyttääSijoittelua = true,
+      käyttääHakutoiveidenPriorisointia = true,
+      varsinaisenHaunOid = null,
+      sisältyvätHaut = null,
+      hakuAjat = null,
+      koulutuksenAlkamiskausi = null,
+      yhdenPaikanSaanto = null,
+      nimi = null))
+  }
+
+  trait KorkeakouluErillishaku { this: Mocks =>
+    hakuService.getHakukohde(hakukohdeOid) returns Right(Hakukohde(
+      oid = hakukohdeOid,
+      hakuOid = hakuOid,
+      tarjoajaOids = Set(tarjoajaOid),
+      koulutusAsteTyyppi = null,
+      hakukohteenNimet = null,
+      tarjoajaNimet = null,
+      yhdenPaikanSaanto = null,
+      tutkintoonJohtava = true,
+      koulutuksenAlkamiskausiUri = Some("kausi_k#1"),
+      koulutuksenAlkamisvuosi = Some(2015),
+      organisaatioRyhmaOids = Set()
+    ))
+    hakuService.getHaku(hakuOid) returns Right(Haku(
+      oid = hakuOid,
+      korkeakoulu = true,
+      toinenAste = false,
+      sallittuKohdejoukkoKelaLinkille = true,
+      käyttääSijoittelua = false,
       käyttääHakutoiveidenPriorisointia = true,
       varsinaisenHaunOid = null,
       sisältyvätHaut = null,

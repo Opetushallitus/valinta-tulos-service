@@ -9,7 +9,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
 import fi.vm.sade.valintatulosservice.security.Role
-import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde}
+import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valinnantulos._
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhtoRepository
@@ -97,16 +97,25 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
     })
   }
 
+  private def isErillishaku(valintatapajonoOid: ValintatapajonoOid, haku: Haku, hakukohde: Hakukohde, erillishaku: Boolean): Either[Throwable, Boolean] = {
+    if (haku.käyttääSijoittelua && erillishaku) { // FIXME tarkista myös onko valintatapajonossa käytössä valintalaskenta, ja luovu erillishaku-parametrista
+      Left(new IllegalArgumentException("Valintatapajonon %s hakukohteen %s haku %s käyttää sijoittelua, eikä voi olla erillishaku".format(valintatapajonoOid, hakukohde.oid, haku.oid)))
+    } else {
+      Right(erillishaku)
+    }
+  }
+
   def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid: ValintatapajonoOid,
                                                valinnantulokset: List[Valinnantulos],
                                                ifUnmodifiedSince: Option[Instant],
                                                auditInfo: AuditInfo,
-                                               erillishaku:Boolean = false): List[ValinnantulosUpdateStatus] = {
+                                               erillishaku: Boolean = false): List[ValinnantulosUpdateStatus] = {
     val hakukohdeOid = valinnantulokset.head.hakukohdeOid // FIXME käyttäjän syötettä, tarvittaisiin jono-hakukohde tieto valintaperusteista
     (for {
       hakukohde <- hakuService.getHakukohde(hakukohdeOid).right
-      _ <- authorizer.checkAccess(auditInfo.session._2, hakukohde.organisaatioOiditAuktorisointiin, Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).right
       haku <- hakuService.getHaku(hakukohde.hakuOid).right
+      erillishaku <- isErillishaku(valintatapajonoOid, haku, hakukohde, erillishaku).right
+      _ <- authorizer.checkAccess(auditInfo.session._2, hakukohde.organisaatioOiditAuktorisointiin, Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD) ++ (if (erillishaku) { Set(Role.ATARU_KEVYT_VALINTA_CRUD) } else { Set.empty })).right
       ohjausparametrit <- ohjausparametritService.ohjausparametrit(hakukohde.hakuOid).right
     } yield {
       val strategy = if (erillishaku) {

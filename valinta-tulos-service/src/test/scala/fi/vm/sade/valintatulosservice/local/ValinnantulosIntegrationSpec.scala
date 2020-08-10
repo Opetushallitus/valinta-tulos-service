@@ -145,6 +145,7 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
   }
 
   "päivittää valinnantulosta erillishaussa" in {
+    HakuFixtures.useFixture(HakuFixtures.korkeakouluErillishakuEiSijoittelua, List(HakuFixtures.defaultHakuOid))
     val update = valinnantulos.copy(
       valinnantila = Peruuntunut,
       ehdollisestiHyvaksyttavissa = Some(true),
