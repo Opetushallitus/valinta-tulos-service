@@ -61,19 +61,11 @@ case class Haku(oid: HakuOid,
                 käyttääHakutoiveidenPriorisointia: Boolean,
                 varsinaisenHaunOid: Option[String],
                 sisältyvätHaut: Set[String],
-                hakuAjat: List[Hakuaika],
                 koulutuksenAlkamiskausi: Option[Kausi],
                 yhdenPaikanSaanto: YhdenPaikanSaanto,
                 nimi: Map[String, String]) {
 
   val sijoitteluJaPriorisointi = käyttääSijoittelua && käyttääHakutoiveidenPriorisointia
-}
-
-case class Hakuaika(hakuaikaId: String, alkuPvm: Option[Long], loppuPvm: Option[Long]) {
-  def hasStarted: Boolean = alkuPvm match {
-    case Some(alku) => new DateTime().isAfter(new DateTime(alku))
-    case _ => true
-  }
 }
 
 case class Hakukohde(oid: HakukohdeOid,
@@ -162,7 +154,6 @@ protected trait JsonHakuService {
       käyttääHakutoiveidenPriorisointia = haku.usePriority,
       varsinaisenHaunOid = haku.parentHakuOid,
       sisältyvätHaut = haku.sisaltyvatHaut,
-      hakuAjat = haku.hakuaikas,
       koulutuksenAlkamiskausi = kausi,
       yhdenPaikanSaanto = haku.yhdenPaikanSaanto,
       nimi = haku.nimi)
@@ -213,7 +204,6 @@ private case class HakuTarjonnassa(oid: HakuOid,
                                    parentHakuOid: Option[String],
                                    sisaltyvatHaut: Set[String],
                                    tila: String,
-                                   hakuaikas: List[Hakuaika],
                                    yhdenPaikanSaanto: YhdenPaikanSaanto,
                                    nimi: Map[String, String],
                                    organisaatioOids: Seq[String],
@@ -320,23 +310,10 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
   }
 }
 
-case class KoutaHakuaika(alkaa: String,
-                         paattyy: String) {
-  def toHakuaika: Hakuaika = {
-    val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.of("Europe/Helsinki"))
-    Hakuaika(
-      hakuaikaId = "kouta-hakuaika-id",
-      alkuPvm = Some(Instant.from(formatter.parse(alkaa)).toEpochMilli),
-      loppuPvm = Some(Instant.from(formatter.parse(paattyy)).toEpochMilli)
-    )
-  }
-}
-
 case class KoutaHaku(oid: String,
                      nimi: Map[String, String],
                      kohdejoukkoKoodiUri: String,
                      kohdejoukonTarkenneKoodiUri: Option[String],
-                     hakuajat: List[KoutaHakuaika],
                      alkamisvuosi: Option[String],
                      alkamiskausiKoodiUri: Option[String]) {
   def toHaku: Either[Throwable, Haku] = {
@@ -357,7 +334,6 @@ case class KoutaHaku(oid: String,
       käyttääHakutoiveidenPriorisointia = false, // FIXME
       varsinaisenHaunOid = None,
       sisältyvätHaut = Set.empty,
-      hakuAjat = hakuajat.map(_.toHakuaika),
       koulutuksenAlkamiskausi = alkamiskausi,
       yhdenPaikanSaanto = YhdenPaikanSaanto(voimassa = false, syy = "Yhden paikan sääntö Kouta:ssa aina hakukohdekohtainen"),
       nimi = nimi.map { case (lang, text) => ("kieli_" + lang) -> text })
