@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice.tarjonta
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId}
+import java.util
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.HOURS
 
@@ -500,7 +501,8 @@ class KoutaHakuService(config: AppConfig, casClient: CasClient, organisaatioServ
   }
 
   private def getKoutaHaunHakukohteet(oid: HakuOid): Either[Throwable, Seq[KoutaHakukohde]] = {
-    val query = Map("haku" -> oid.toString)
+    val query = new util.HashMap[String, String]()
+    query.put("haku", oid.toString)
     fetch[List[KoutaHakukohde]](config.ophUrlProperties.url("kouta-internal.hakukohde.search", query))
   }
 
