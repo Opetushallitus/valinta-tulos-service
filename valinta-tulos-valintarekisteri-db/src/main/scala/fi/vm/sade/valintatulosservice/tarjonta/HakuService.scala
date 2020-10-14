@@ -6,12 +6,11 @@ import java.util
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.HOURS
 
-import fi.vm.sade.properties.OphProperties
 import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasClient, CasParams}
 import fi.vm.sade.utils.http.DefaultHttpClient
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.MonadHelper
-import fi.vm.sade.valintatulosservice.config.AppConfig
+import fi.vm.sade.valintatulosservice.config.{AppConfig, StubbedExternalDeps}
 import fi.vm.sade.valintatulosservice.koodisto.{Koodi, KoodistoService}
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 import fi.vm.sade.valintatulosservice.organisaatio.{Organisaatio, OrganisaatioService, Organisaatiot}
@@ -41,15 +40,13 @@ trait HakuService {
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]]
 }
 
-case class HakuServiceConfig(ophProperties: OphProperties, stubbedExternalDeps: Boolean)
-
 object HakuService {
   def apply(appConfig: AppConfig, casClient: CasClient, organisaatioService: OrganisaatioService, koodistoService: KoodistoService): HakuService = {
-    val config = appConfig.hakuServiceConfig
-    if (config.stubbedExternalDeps) {
+    if (appConfig.isInstanceOf[StubbedExternalDeps]) {
+      HakuFixtures.config = appConfig
       HakuFixtures
     } else {
-      new CachedHakuService(new TarjontaHakuService(config), new KoutaHakuService(appConfig, casClient, organisaatioService, koodistoService), appConfig)
+      new CachedHakuService(new TarjontaHakuService(appConfig), new KoutaHakuService(appConfig, casClient, organisaatioService, koodistoService), appConfig)
     }
   }
 }
@@ -132,11 +129,10 @@ protected trait JsonHakuService {
     new HakemusOidSerializer
   )
 
-  protected def toHaku(haku: HakuTarjonnassa): Haku = {
-    val korkeakoulu: Boolean = haku.kohdejoukkoUri.startsWith("haunkohdejoukko_12#")
-    val amkopeTarkenteet = Set("haunkohdejoukontarkenne_2#", "haunkohdejoukontarkenne_4#", "haunkohdejoukontarkenne_5#", "haunkohdejoukontarkenne_6#")
-    val sallittuKohdejoukkoKelaLinkille: Boolean = !haku.kohdejoukonTarkenne.exists(tarkenne => amkopeTarkenteet.exists(tarkenne.startsWith))
-    val toinenAste: Boolean = Option(haku.kohdejoukkoUri).exists(k => k.contains("_11") || k.contains("_17") || k.contains("_20"))
+  protected def toHaku(haku: HakuTarjonnassa, config: AppConfig): Haku = {
+    val korkeakoulu = config.settings.kohdejoukotKorkeakoulu.exists(s => haku.kohdejoukkoUri.startsWith(s + "#"))
+    val sallittuKohdejoukkoKelaLinkille = !haku.kohdejoukonTarkenne.exists(tarkenne => config.settings.kohdejoukonTarkenteetAmkOpe.exists(s => tarkenne.startsWith(s + "#")))
+    val toinenAste = config.settings.kohdejoukotToinenAste.exists(s => haku.kohdejoukkoUri.startsWith(s + "#"))
     val koulutuksenAlkamisvuosi = haku.koulutuksenAlkamisVuosi
     val kausi = if (haku.koulutuksenAlkamiskausiUri.isDefined && haku.koulutuksenAlkamisVuosi.isDefined) {
       if (haku.koulutuksenAlkamiskausiUri.get.startsWith("kausi_k")) {
@@ -216,7 +212,7 @@ private case class HakuTarjonnassa(oid: HakuOid,
 
 case class YhdenPaikanSaanto(voimassa: Boolean, syy: String)
 
-class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with JsonHakuService with Logging {
+class TarjontaHakuService(config: AppConfig) extends HakuService with JsonHakuService with Logging {
 
   def parseStatus(json: String): Option[String] = {
     for {
@@ -225,10 +221,10 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
   }
 
   def getHaku(oid: HakuOid): Either[Throwable, Haku] = {
-    val url = config.ophProperties.url("tarjonta-service.haku", oid)
+    val url = config.ophUrlProperties.url("tarjonta-service.haku", oid)
     fetch(url) { response =>
       val hakuTarjonnassa = (parse(response) \ "result").extract[HakuTarjonnassa]
-      toHaku(hakuTarjonnassa)
+      toHaku(hakuTarjonnassa, config)
     }.left.map {
       case e: IllegalArgumentException => new IllegalArgumentException(s"No haku $oid found", e)
       case e: IllegalStateException => new IllegalStateException(s"Parsing haku $oid failed", e)
@@ -237,7 +233,7 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
   }
 
   def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]] = {
-    val url = config.ophProperties.url("tarjonta-service.haku", hakuOid)
+    val url = config.ophUrlProperties.url("tarjonta-service.haku", hakuOid)
     fetch(url) { response =>
       (parse(response) \ "result" \ "hakukohdeOids" ).extract[List[HakukohdeOid]]
     }
@@ -251,7 +247,7 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
       hakukohde <- getHakukohde(hakukohdeOid).right
       haku <- getHaku(hakukohde.hakuOid).right
       kelaHakukohde <- (if (haku.sallittuKohdejoukkoKelaLinkille) {
-        val hakukohdeUrl = config.ophProperties.url(
+        val hakukohdeUrl = config.ophUrlProperties.url(
           "tarjonta-service.hakukohdekela", hakukohdeOid)
         fetch(hakukohdeUrl) { response =>
           Some(parse(response).extract[HakukohdeKela])
@@ -267,7 +263,7 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
   }
 
   def getHakukohde(hakukohdeOid: HakukohdeOid): Either[Throwable, Hakukohde] = {
-    val hakukohdeUrl = config.ophProperties.url(
+    val hakukohdeUrl = config.ophUrlProperties.url(
       "tarjonta-service.hakukohde", hakukohdeOid, Map("populateAdditionalKomotoFields" -> true).asJava)
     fetch(hakukohdeUrl) { response =>
       (parse(response) \ "result").extract[Hakukohde]
@@ -279,10 +275,10 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
   }
 
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = {
-    val url = config.ophProperties.url("tarjonta-service.find", Map("addHakuKohdes" -> false).asJava)
+    val url = config.ophUrlProperties.url("tarjonta-service.find", Map("addHakuKohdes" -> false).asJava)
     fetch(url) { response =>
       val haut = (parse(response) \ "result").extract[List[HakuTarjonnassa]]
-      haut.filter(_.julkaistu).map(toHaku)
+      haut.filter(_.julkaistu).map(toHaku(_, config))
     }
   }
 
@@ -317,7 +313,7 @@ case class KoutaHaku(oid: String,
                      kohdejoukonTarkenneKoodiUri: Option[String],
                      alkamisvuosi: Option[String],
                      alkamiskausiKoodiUri: Option[String]) {
-  def toHaku: Either[Throwable, Haku] = {
+  def toHaku(config: AppConfig): Either[Throwable, Haku] = {
     for {
       alkamiskausi <- ((alkamiskausiKoodiUri, alkamisvuosi.map(s => (s, Try(s.toInt)))) match {
         case (Some(uri), Some((_, Success(vuosi)))) if uri.startsWith("kausi_k#") => Right(Some(Kevat(vuosi)))
@@ -328,9 +324,9 @@ case class KoutaHaku(oid: String,
       }).right
     } yield Haku(
       oid = HakuOid(oid),
-      korkeakoulu = kohdejoukkoKoodiUri.startsWith("haunkohdejoukko_12#"),
-      toinenAste = List("haunkohdejoukko_11#", "haunkohdejoukko_17#", "haunkohdejoukko_20#").exists(kohdejoukkoKoodiUri.startsWith),
-      sallittuKohdejoukkoKelaLinkille = !List("haunkohdejoukontarkenne_2#", "haunkohdejoukontarkenne_4#", "haunkohdejoukontarkenne_5#", "haunkohdejoukontarkenne_6#").exists(kiellettyTarkenne => kohdejoukonTarkenneKoodiUri.exists(_.startsWith(kiellettyTarkenne))),
+      korkeakoulu = config.settings.kohdejoukotKorkeakoulu.exists(s => kohdejoukkoKoodiUri.startsWith(s + "#")),
+      toinenAste = config.settings.kohdejoukotToinenAste.exists(s => kohdejoukkoKoodiUri.startsWith(s + "#")),
+      sallittuKohdejoukkoKelaLinkille = !kohdejoukonTarkenneKoodiUri.exists(tarkenne => config.settings.kohdejoukonTarkenteetAmkOpe.exists(s => tarkenne.startsWith(s + "#"))),
       käyttääSijoittelua = false, // FIXME
       käyttääHakutoiveidenPriorisointia = false, // FIXME
       varsinaisenHaunOid = None,
@@ -446,7 +442,7 @@ class KoutaHakuService(config: AppConfig, casClient: CasClient, organisaatioServ
   )
 
   def getHaku(oid: HakuOid): Either[Throwable, Haku] = {
-    getKoutaHaku(oid).right.flatMap(_.toHaku)
+    getKoutaHaku(oid).right.flatMap(_.toHaku(config))
   }
 
   def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]] = {
