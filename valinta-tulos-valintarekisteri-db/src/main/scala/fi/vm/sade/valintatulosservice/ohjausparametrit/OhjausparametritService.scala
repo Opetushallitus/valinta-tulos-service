@@ -5,9 +5,7 @@ import java.util.concurrent.TimeUnit
 import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.http.DefaultHttpClient
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.domain.Vastaanottoaikataulu
-import fi.vm.sade.valintatulosservice.json.JsonFormats
+import fi.vm.sade.valintatulosservice.config.AppConfig
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 import org.joda.time.DateTime
@@ -54,7 +52,7 @@ class StubbedOhjausparametritService extends OhjausparametritService {
   }
 }
 
-class CachedRemoteOhjausparametritService(appConfig: VtsAppConfig) extends OhjausparametritService {
+class CachedRemoteOhjausparametritService(appConfig: AppConfig) extends OhjausparametritService {
   val service = new RemoteOhjausparametritService(appConfig)
   val ohjausparametritMemo = TTLOptionalMemoize.memoize[HakuOid, Ohjausparametrit](service.ohjausparametrit, Duration(1, TimeUnit.HOURS).toSeconds, appConfig.settings.estimatedMaxActiveHakus)
   val naytetaankoSiirryKelaanURLMemo = TTLOptionalMemoize.memoize[Unit, Boolean](_ => service.naytetaankoSiirryKelaanURL, Duration(30, TimeUnit.SECONDS).toSeconds, 1)
@@ -67,7 +65,7 @@ class CachedRemoteOhjausparametritService(appConfig: VtsAppConfig) extends Ohjau
   }
 }
 
-class RemoteOhjausparametritService(appConfig: VtsAppConfig) extends OhjausparametritService with JsonFormats with Logging {
+class RemoteOhjausparametritService(appConfig: AppConfig) extends OhjausparametritService with Logging {
   def fetch[T](url: String, parser: String => T): Either[Throwable, Option[T]] = {
     Timer.timed(s"Find parameters for url $url", 500) {
       Try(DefaultHttpClient.httpGet(url)(appConfig.settings.callerId)
@@ -85,6 +83,7 @@ class RemoteOhjausparametritService(appConfig: VtsAppConfig) extends Ohjausparam
   }
 
   def naytetaankoSiirryKelaanURL: Either[Throwable, Boolean] = {
+    implicit val jsonFormats: Formats = DefaultFormats
     val url = appConfig.ophUrlProperties.url("ohjausparametrit-service.parametri", "valintatulosservice")
     fetch(url, body => (parse(body) \ "nayta_siirry_kelaan_url").extractOrElse[Boolean](true)).right.map(_.getOrElse(false))
   }
@@ -98,7 +97,8 @@ class RemoteOhjausparametritService(appConfig: VtsAppConfig) extends Ohjausparam
   }
 }
 
-object OhjausparametritParser extends JsonFormats {
+object OhjausparametritParser {
+  private implicit val jsonFormats: Formats = DefaultFormats
   def parseOhjausparametrit(json: JValue, naytetaankoSiirryKelaanURL: Boolean): Ohjausparametrit = {
     Ohjausparametrit(
       vastaanottoaikataulu = Vastaanottoaikataulu(

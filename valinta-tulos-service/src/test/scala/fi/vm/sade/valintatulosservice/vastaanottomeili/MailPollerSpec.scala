@@ -5,9 +5,9 @@ import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.oppijantunnistus.{OppijanTunnistus, OppijanTunnistusService}
 import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
-import fi.vm.sade.valintatulosservice.domain.{Hakemuksentulos, Hakemus, Hakutoive, HakutoiveenIlmoittautumistila, HakutoiveenSijoittelunTilaTieto, Hakutoiveentulos, Henkilotiedot, Ilmoittautumisaika, Sijoittelu, Valintatila, Vastaanotettavuustila, Vastaanottoaikataulu}
+import fi.vm.sade.valintatulosservice.domain.{Hakemuksentulos, Hakemus, Hakutoive, HakutoiveenIlmoittautumistila, HakutoiveenSijoittelunTilaTieto, Hakutoiveentulos, Henkilotiedot, Ilmoittautumisaika, Sijoittelu, Valintatila, Vastaanotettavuustila}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
-import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
+import fi.vm.sade.valintatulosservice.ohjausparametrit.{OhjausparametritService, Vastaanottoaikataulu}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, YhdenPaikanSaanto}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EhdollisenPeriytymisenIlmoitus, EiTehty, HakemusOid, HakuOid, HakukohdeOid, Kevat, MailReason, SitovanVastaanotonIlmoitus, ValintatapajonoOid, Vastaanottoilmoitus, Vastaanottotila}
