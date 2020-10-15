@@ -23,7 +23,9 @@ case class Ohjausparametrit(vastaanottoaikataulu: Vastaanottoaikataulu,
                             tulostenJulkistusAlkaa: Option[DateTime],
                             kaikkiJonotSijoittelussa: Option[DateTime],
                             valintaesitysHyvaksyttavissa: Option[DateTime],
-                            naytetaankoSiirryKelaanURL: Boolean)
+                            naytetaankoSiirryKelaanURL: Boolean,
+                            sijoittelu: Boolean,
+                            jarjestetytHakutoiveet: Boolean)
 
 object Ohjausparametrit {
   val empty = Ohjausparametrit(
@@ -36,7 +38,9 @@ object Ohjausparametrit {
     tulostenJulkistusAlkaa = None,
     kaikkiJonotSijoittelussa = None,
     valintaesitysHyvaksyttavissa = None,
-    naytetaankoSiirryKelaanURL = true)
+    naytetaankoSiirryKelaanURL = true,
+    sijoittelu = false,
+    jarjestetytHakutoiveet = false)
 }
 
 trait OhjausparametritService {
@@ -114,7 +118,9 @@ object OhjausparametritParser {
       tulostenJulkistusAlkaa = parseDateTime(json \ "PH_VTJH" \ "dateStart"),
       kaikkiJonotSijoittelussa = parseDateTime(json \ "PH_VTSSV" \ "date"),
       valintaesitysHyvaksyttavissa = parseDateTime(json \ "PH_VEH" \ "date"),
-      naytetaankoSiirryKelaanURL = naytetaankoSiirryKelaanURL)
+      naytetaankoSiirryKelaanURL = naytetaankoSiirryKelaanURL,
+      sijoittelu = (json \ "sijoittelu").extractOrElse(false),
+      jarjestetytHakutoiveet = (json \ "jarjestetytHakutoiveet").extractOrElse(false))
   }
 
   private def parseDateTime(json: JValue): Option[DateTime] = {

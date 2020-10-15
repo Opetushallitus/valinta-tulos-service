@@ -134,10 +134,10 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
           case Right(ohjausparametrit) if ohjausparametrit.hakukierrosPaattyy.isEmpty =>
             logger.warn(s"Pudotetaan haku ${haku.oid} koska hakukierros päättyy ei asetettu")
             false
-          case Right(Ohjausparametrit(_, _, _, Some(hakukierrosPaattyy), _, _, _, _)) if hakukierrosPaattyy.isBeforeNow =>
+          case Right(Ohjausparametrit(_, _, _, Some(hakukierrosPaattyy), _, _, _, _, _, _)) if hakukierrosPaattyy.isBeforeNow =>
             logger.debug(s"Pudotetaan haku ${haku.oid} koska hakukierros päättynyt $hakukierrosPaattyy")
             false
-          case Right(Ohjausparametrit(_, _, _, _, Some(tulostenJulkistusAlkaa), _, _, _)) if tulostenJulkistusAlkaa.isAfterNow =>
+          case Right(Ohjausparametrit(_, _, _, _, Some(tulostenJulkistusAlkaa), _, _, _, _, _)) if tulostenJulkistusAlkaa.isAfterNow =>
             logger.info(s"Pudotetaan haku ${haku.oid} koska tulosten julkistus alkaa $tulostenJulkistusAlkaa")
             false
           case Left(e) =>

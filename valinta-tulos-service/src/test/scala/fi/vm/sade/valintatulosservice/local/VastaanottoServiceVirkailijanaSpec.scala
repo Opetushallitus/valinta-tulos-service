@@ -402,7 +402,7 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
   step(valintarekisteriDb.db.shutdown)
 
   lazy val ohjausparametritService = new StubbedOhjausparametritService()
-  lazy val hakuService = HakuService(appConfig, null, OrganisaatioService(appConfig), null)
+  lazy val hakuService = HakuService(appConfig, null, ohjausparametritService, OrganisaatioService(appConfig), null)
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, true)
   lazy val sijoittelutulosService = new SijoittelutulosService(new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintatulosDao), ohjausparametritService,
