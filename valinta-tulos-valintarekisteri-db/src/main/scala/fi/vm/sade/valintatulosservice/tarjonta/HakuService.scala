@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice.tarjonta
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId}
+import java.util
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.HOURS
 
@@ -62,19 +63,11 @@ case class Haku(oid: HakuOid,
                 käyttääHakutoiveidenPriorisointia: Boolean,
                 varsinaisenHaunOid: Option[String],
                 sisältyvätHaut: Set[String],
-                hakuAjat: List[Hakuaika],
                 koulutuksenAlkamiskausi: Option[Kausi],
                 yhdenPaikanSaanto: YhdenPaikanSaanto,
                 nimi: Map[String, String]) {
 
   val sijoitteluJaPriorisointi = käyttääSijoittelua && käyttääHakutoiveidenPriorisointia
-}
-
-case class Hakuaika(hakuaikaId: String, alkuPvm: Option[Long], loppuPvm: Option[Long]) {
-  def hasStarted: Boolean = alkuPvm match {
-    case Some(alku) => new DateTime().isAfter(new DateTime(alku))
-    case _ => true
-  }
 }
 
 case class Hakukohde(oid: HakukohdeOid,
@@ -163,7 +156,6 @@ protected trait JsonHakuService {
       käyttääHakutoiveidenPriorisointia = haku.usePriority,
       varsinaisenHaunOid = haku.parentHakuOid,
       sisältyvätHaut = haku.sisaltyvatHaut,
-      hakuAjat = haku.hakuaikas,
       koulutuksenAlkamiskausi = kausi,
       yhdenPaikanSaanto = haku.yhdenPaikanSaanto,
       nimi = haku.nimi)
@@ -214,7 +206,6 @@ private case class HakuTarjonnassa(oid: HakuOid,
                                    parentHakuOid: Option[String],
                                    sisaltyvatHaut: Set[String],
                                    tila: String,
-                                   hakuaikas: List[Hakuaika],
                                    yhdenPaikanSaanto: YhdenPaikanSaanto,
                                    nimi: Map[String, String],
                                    organisaatioOids: Seq[String],
@@ -321,23 +312,10 @@ class TarjontaHakuService(config: HakuServiceConfig) extends HakuService with Js
   }
 }
 
-case class KoutaHakuaika(alkaa: String,
-                         paattyy: String) {
-  def toHakuaika: Hakuaika = {
-    val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.of("Europe/Helsinki"))
-    Hakuaika(
-      hakuaikaId = "kouta-hakuaika-id",
-      alkuPvm = Some(Instant.from(formatter.parse(alkaa)).toEpochMilli),
-      loppuPvm = Some(Instant.from(formatter.parse(paattyy)).toEpochMilli)
-    )
-  }
-}
-
 case class KoutaHaku(oid: String,
                      nimi: Map[String, String],
                      kohdejoukkoKoodiUri: String,
                      kohdejoukonTarkenneKoodiUri: Option[String],
-                     hakuajat: List[KoutaHakuaika],
                      alkamisvuosi: Option[String],
                      alkamiskausiKoodiUri: Option[String]) {
   def toHaku(ohjausparametrit: Ohjausparametrit): Either[Throwable, Haku] = {
@@ -358,7 +336,6 @@ case class KoutaHaku(oid: String,
       käyttääHakutoiveidenPriorisointia = ohjausparametrit.jarjestetytHakutoiveet,
       varsinaisenHaunOid = None,
       sisältyvätHaut = Set.empty,
-      hakuAjat = hakuajat.map(_.toHakuaika),
       koulutuksenAlkamiskausi = alkamiskausi,
       yhdenPaikanSaanto = YhdenPaikanSaanto(voimassa = false, syy = "Yhden paikan sääntö Kouta:ssa aina hakukohdekohtainen"),
       nimi = nimi.map { case (lang, text) => ("kieli_" + lang) -> text })
@@ -379,7 +356,7 @@ case class KoutaToteutus(oid: String,
 
 case class KoutaHakukohde(oid: String,
                           hakuOid: String,
-                          tarjoajat: Option[List[String]],
+                          tarjoajat: List[String],
                           nimi: Map[String, String],
                           kaytetaanHaunAlkamiskautta: Boolean,
                           alkamiskausiKoodiUri: Option[String],
@@ -387,12 +364,7 @@ case class KoutaHakukohde(oid: String,
                           tila: String,
                           toteutusOid: String,
                           yhdenPaikanSaanto: YhdenPaikanSaanto) {
-  def tarjoajat(toteutus: KoutaToteutus): Set[String] = {
-    tarjoajat.filter(_.nonEmpty).getOrElse(toteutus.tarjoajat).toSet
-  }
-
   def toHakukohde(haku: Option[KoutaHaku],
-                  toteutus: KoutaToteutus,
                   koulutus: KoutaKoulutus,
                   tarjoajaorganisaatiot: List[Organisaatio]): Either[Throwable, Hakukohde] = {
     for {
@@ -406,7 +378,7 @@ case class KoutaHakukohde(oid: String,
     } yield Hakukohde(
       oid = HakukohdeOid(oid),
       hakuOid = HakuOid(hakuOid),
-      tarjoajaOids = tarjoajat(toteutus),
+      tarjoajaOids = tarjoajat.toSet,
       koulutusAsteTyyppi = if (List("yo", "amk").exists(koulutus.koulutustyyppi.contains(_))) { "KORKEAKOULUTUS" } else { "" },
       hakukohteenNimet = nimi.map { case (lang, text) => ("kieli_" + lang) -> text },
       tarjoajaNimet = tarjoaja.nimi,
@@ -419,7 +391,6 @@ case class KoutaHakukohde(oid: String,
   }
 
   def toHakukohdeKela(haku: Option[KoutaHaku],
-                      toteutus: KoutaToteutus,
                       koulutus: KoutaKoulutus,
                       koulutuskoodi: Option[Koodi],
                       opintojenLaajuusKoodi: Option[Koodi],
@@ -494,8 +465,8 @@ class KoutaHakuService(config: AppConfig,
         koutaKoulutus <- getKoutaKoulutus(koutaToteutus.koulutusOid).right
         koulutuskoodi <- koutaKoulutus.koulutusKoodiUri.fold[Either[Throwable, Option[Koodi]]](Right(None))(koodistoService.getKoodi(_).right.map(Some(_))).right
         opintojenlaajuuskoodi <- koutaKoulutus.metadata.flatMap(_.opintojenLaajuusKoodiUri).fold[Either[Throwable, Option[Koodi]]](Right(None))(koodistoService.getKoodi(_).right.map(Some(_))).right
-        tarjoajaorganisaatiohierarkiat <- MonadHelper.sequence(koutaHakukohde.tarjoajat(koutaToteutus).map(organisaatioService.hae)).right
-        hakukohde <- koutaHakukohde.toHakukohdeKela(koutaHaku, koutaToteutus, koutaKoulutus, koulutuskoodi, opintojenlaajuuskoodi, tarjoajaorganisaatiohierarkiat).right
+        tarjoajaorganisaatiohierarkiat <- MonadHelper.sequence(koutaHakukohde.tarjoajat.map(organisaatioService.hae)).right
+        hakukohde <- koutaHakukohde.toHakukohdeKela(koutaHaku, koutaKoulutus, koulutuskoodi, opintojenlaajuuskoodi, tarjoajaorganisaatiohierarkiat).right
       } yield hakukohde
     }
     getKoutaHakukohde(oid).right.map(_ => None)
@@ -507,8 +478,8 @@ class KoutaHakuService(config: AppConfig,
       koutaHaku <- (if (koutaHakukohde.kaytetaanHaunAlkamiskautta) { getKoutaHaku(HakuOid(koutaHakukohde.hakuOid)).right.map(Some(_)) } else { Right(None) }).right
       koutaToteutus <- getKoutaToteutus(koutaHakukohde.toteutusOid).right
       koutaKoulutus <- getKoutaKoulutus(koutaToteutus.koulutusOid).right
-      tarjoajaorganisaatiot <- MonadHelper.sequence(koutaHakukohde.tarjoajat(koutaToteutus).map(getOrganisaatio)).right
-      hakukohde <- koutaHakukohde.toHakukohde(koutaHaku, koutaToteutus, koutaKoulutus, tarjoajaorganisaatiot).right
+      tarjoajaorganisaatiot <- MonadHelper.sequence(koutaHakukohde.tarjoajat.map(getOrganisaatio)).right
+      hakukohde <- koutaHakukohde.toHakukohde(koutaHaku, koutaKoulutus, tarjoajaorganisaatiot).right
     } yield hakukohde
   }
 
@@ -521,7 +492,10 @@ class KoutaHakuService(config: AppConfig,
   }
 
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = {
-    Right(List.empty) // FIXME
+    for {
+      koutaHaut <- fetch[List[KoutaHaku]](config.ophUrlProperties.url("kouta-internal.haku.search")).right
+      haut <- MonadHelper.sequence(koutaHaut.map(koutaHaku => ohjausparametritService.ohjausparametrit(HakuOid(koutaHaku.oid)).right.flatMap(o => koutaHaku.toHaku(o)))).right
+    } yield haut
   }
 
   private def getKoutaHaku(oid: HakuOid): Either[Throwable, KoutaHaku] = {
@@ -533,7 +507,8 @@ class KoutaHakuService(config: AppConfig,
   }
 
   private def getKoutaHaunHakukohteet(oid: HakuOid): Either[Throwable, Seq[KoutaHakukohde]] = {
-    val query = Map("haku" -> oid.toString)
+    val query = new util.HashMap[String, String]()
+    query.put("haku", oid.toString)
     fetch[List[KoutaHakukohde]](config.ophUrlProperties.url("kouta-internal.hakukohde.search", query))
   }
 
