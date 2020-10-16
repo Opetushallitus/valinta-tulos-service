@@ -483,7 +483,8 @@ class KoutaHakuService(config: AppConfig, casClient: CasClient, organisaatioServ
   }
 
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = {
-    Right(List.empty) // FIXME
+    fetch[List[KoutaHaku]](config.ophUrlProperties.url("kouta-internal.haku.search")).right
+      .flatMap(koutaHaut => MonadHelper.sequence(koutaHaut.map(_.toHaku)))
   }
 
   private def getKoutaHaku(oid: HakuOid): Either[Throwable, KoutaHaku] = {
