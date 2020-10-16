@@ -355,7 +355,7 @@ case class KoutaToteutus(oid: String,
 
 case class KoutaHakukohde(oid: String,
                           hakuOid: String,
-                          tarjoajat: Option[List[String]],
+                          tarjoajat: List[String],
                           nimi: Map[String, String],
                           kaytetaanHaunAlkamiskautta: Boolean,
                           alkamiskausiKoodiUri: Option[String],
@@ -363,12 +363,7 @@ case class KoutaHakukohde(oid: String,
                           tila: String,
                           toteutusOid: String,
                           yhdenPaikanSaanto: YhdenPaikanSaanto) {
-  def tarjoajat(toteutus: KoutaToteutus): Set[String] = {
-    tarjoajat.filter(_.nonEmpty).getOrElse(toteutus.tarjoajat).toSet
-  }
-
   def toHakukohde(haku: Option[KoutaHaku],
-                  toteutus: KoutaToteutus,
                   koulutus: KoutaKoulutus,
                   tarjoajaorganisaatiot: List[Organisaatio]): Either[Throwable, Hakukohde] = {
     for {
@@ -382,7 +377,7 @@ case class KoutaHakukohde(oid: String,
     } yield Hakukohde(
       oid = HakukohdeOid(oid),
       hakuOid = HakuOid(hakuOid),
-      tarjoajaOids = tarjoajat(toteutus),
+      tarjoajaOids = tarjoajat.toSet,
       koulutusAsteTyyppi = if (List("yo", "amk").exists(koulutus.koulutustyyppi.contains(_))) { "KORKEAKOULUTUS" } else { "" },
       hakukohteenNimet = nimi.map { case (lang, text) => ("kieli_" + lang) -> text },
       tarjoajaNimet = tarjoaja.nimi,
@@ -395,7 +390,6 @@ case class KoutaHakukohde(oid: String,
   }
 
   def toHakukohdeKela(haku: Option[KoutaHaku],
-                      toteutus: KoutaToteutus,
                       koulutus: KoutaKoulutus,
                       koulutuskoodi: Option[Koodi],
                       opintojenLaajuusKoodi: Option[Koodi],
@@ -462,8 +456,8 @@ class KoutaHakuService(config: AppConfig, casClient: CasClient, organisaatioServ
         koutaKoulutus <- getKoutaKoulutus(koutaToteutus.koulutusOid).right
         koulutuskoodi <- koutaKoulutus.koulutusKoodiUri.fold[Either[Throwable, Option[Koodi]]](Right(None))(koodistoService.getKoodi(_).right.map(Some(_))).right
         opintojenlaajuuskoodi <- koutaKoulutus.metadata.flatMap(_.opintojenLaajuusKoodiUri).fold[Either[Throwable, Option[Koodi]]](Right(None))(koodistoService.getKoodi(_).right.map(Some(_))).right
-        tarjoajaorganisaatiohierarkiat <- MonadHelper.sequence(koutaHakukohde.tarjoajat(koutaToteutus).map(organisaatioService.hae)).right
-        hakukohde <- koutaHakukohde.toHakukohdeKela(koutaHaku, koutaToteutus, koutaKoulutus, koulutuskoodi, opintojenlaajuuskoodi, tarjoajaorganisaatiohierarkiat).right
+        tarjoajaorganisaatiohierarkiat <- MonadHelper.sequence(koutaHakukohde.tarjoajat.map(organisaatioService.hae)).right
+        hakukohde <- koutaHakukohde.toHakukohdeKela(koutaHaku, koutaKoulutus, koulutuskoodi, opintojenlaajuuskoodi, tarjoajaorganisaatiohierarkiat).right
       } yield hakukohde
     }
     getKoutaHakukohde(oid).right.map(_ => None)
@@ -475,8 +469,8 @@ class KoutaHakuService(config: AppConfig, casClient: CasClient, organisaatioServ
       koutaHaku <- (if (koutaHakukohde.kaytetaanHaunAlkamiskautta) { getKoutaHaku(HakuOid(koutaHakukohde.hakuOid)).right.map(Some(_)) } else { Right(None) }).right
       koutaToteutus <- getKoutaToteutus(koutaHakukohde.toteutusOid).right
       koutaKoulutus <- getKoutaKoulutus(koutaToteutus.koulutusOid).right
-      tarjoajaorganisaatiot <- MonadHelper.sequence(koutaHakukohde.tarjoajat(koutaToteutus).map(getOrganisaatio)).right
-      hakukohde <- koutaHakukohde.toHakukohde(koutaHaku, koutaToteutus, koutaKoulutus, tarjoajaorganisaatiot).right
+      tarjoajaorganisaatiot <- MonadHelper.sequence(koutaHakukohde.tarjoajat.map(getOrganisaatio)).right
+      hakukohde <- koutaHakukohde.toHakukohde(koutaHaku, koutaKoulutus, tarjoajaorganisaatiot).right
     } yield hakukohde
   }
 
