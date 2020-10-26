@@ -36,7 +36,8 @@ class SmokeTest extends Specification with HttpComponentsClient with Mockito wit
 
   private val mailDecorator = new MailDecorator(
     hakuService,
-    oppijanTunnistusService
+    oppijanTunnistusService,
+    ohjausparametritService
   )
   private val mailPoller = mock[MailPoller]
 

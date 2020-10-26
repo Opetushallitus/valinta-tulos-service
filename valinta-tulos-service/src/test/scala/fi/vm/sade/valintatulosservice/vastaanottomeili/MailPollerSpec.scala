@@ -7,7 +7,7 @@ import fi.vm.sade.oppijantunnistus.{OppijanTunnistus, OppijanTunnistusService}
 import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
 import fi.vm.sade.valintatulosservice.domain.{Hakemuksentulos, Hakemus, Hakutoive, HakutoiveenIlmoittautumistila, HakutoiveenSijoittelunTilaTieto, Hakutoiveentulos, Henkilotiedot, Ilmoittautumisaika, Sijoittelu, Valintatila, Vastaanotettavuustila, Vastaanottoaikataulu}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
-import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
+import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, YhdenPaikanSaanto}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EhdollisenPeriytymisenIlmoitus, EiTehty, HakemusOid, HakuOid, HakukohdeOid, Kevat, MailReason, SitovanVastaanotonIlmoitus, ValintatapajonoOid, Vastaanottoilmoitus, Vastaanottotila}
@@ -63,7 +63,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
           )
         ))
         there was one (mailPollerRepository).markAsToBeSent(Set((hakemusOidA, hakukohdeOidA, Vastaanottoilmoitus)))
-        there was no (oppijanTunnistusService).luoSecureLink(any[String], any[HakemusOid], any[String], any[String])
+        there was no (oppijanTunnistusService).luoSecureLink(any[String], any[HakemusOid], any[String], any[String], any[Option[Long]])
       }
       "Ilmoitus vastaanotettavasta paikasta secure linkillä jos hetuton hakija" in new Mocks {
         hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
@@ -71,10 +71,12 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         hakuService.getHakukohde(hakukohdeOidA) returns Right(tarjontaHakukohdeA)
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA))
         mailPollerRepository.candidates(hakukohdeOidA, recheckIntervalHours = 0) returns Set((hakemusOidB, hakukohdeOidA, None, true))
+        var hakukierrosPaattyy = DateTime.now().plusDays(1)
+        ohjausparametritService.ohjausparametrit(hakuOidA) returns Right(Ohjausparametrit(Vastaanottoaikataulu(None, None), None, None, Some(hakukierrosPaattyy), None, None, None, false))
         mailPollerRepository.lastChecked(hakukohdeOidA) returns None
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusB)
         valintatulosService.hakemuksentulos(hakemusB) returns Some(hakemuksentulosB)
-        oppijanTunnistusService.luoSecureLink(hakijaOidB, hakemusOidB, emailB, asiointikieliA) returns Right(OppijanTunnistus(secureLinkA))
+        oppijanTunnistusService.luoSecureLink(hakijaOidB, hakemusOidB, emailB, asiointikieliA, Some(hakukierrosPaattyy.getMillis)) returns Right(OppijanTunnistus(secureLinkA))
         service.pollForAllMailables(mailDecorator, 1, oneMinute).mailables mustEqual List(Ilmoitus(
           hakemusOid = hakemusOidB,
           hakijaOid = hakijaOidB,
@@ -466,7 +468,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
           )
         ))
         there was one (mailPollerRepository).markAsToBeSent(Set((hakemusOidA, hakukohdeOidA, Vastaanottoilmoitus)))
-        there was no (oppijanTunnistusService).luoSecureLink(any[String], any[HakemusOid], any[String], any[String])
+        there was no (oppijanTunnistusService).luoSecureLink(any[String], any[HakemusOid], any[String], any[String], any[Option[Long]])
       }
     }
   }
@@ -1201,7 +1203,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
 
     val mailDecorator = new MailDecorator(
       hakuService,
-      oppijanTunnistusService
+      oppijanTunnistusService,
+      ohjausparametritService
     )
     val service = new MailPoller(
       mailPollerRepository,

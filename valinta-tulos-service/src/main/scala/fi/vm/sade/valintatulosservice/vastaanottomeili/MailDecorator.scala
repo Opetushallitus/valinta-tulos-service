@@ -5,6 +5,7 @@ import java.util.Date
 import fi.vm.sade.oppijantunnistus.{OppijanTunnistus, OppijanTunnistusService}
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.tarjonta
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -14,7 +15,8 @@ class HakukohdeNotFoundException(message: String) extends RuntimeException(messa
 class HakuNotFoundException(message: String) extends RuntimeException(message)
 
 class MailDecorator(hakuService: HakuService,
-                    oppijanTunnistusService: OppijanTunnistusService) extends Logging {
+                    oppijanTunnistusService: OppijanTunnistusService,
+                    ohjausparametritService: OhjausparametritService) extends Logging {
   def statusToMail(status: HakemusMailStatus): Option[Ilmoitus] = {
       if (status.anyMailToBeSent) {
         try {
@@ -28,7 +30,11 @@ class MailDecorator(hakuService: HakuService,
           if (status.hasHetu && !tarjontaHaku.toinenAste) {
             Some(ilmoitus)
           } else {
-            oppijanTunnistusService.luoSecureLink(status.hakijaOid, status.hakemusOid, status.email, status.asiointikieli) match {
+            val haunOhjausparametrit: Option[Ohjausparametrit] = timed(s"Ohjausparametrien hakeminen hakuoidilla ${status.hakuOid}", 50) {
+              fetchOhjausparametrit(status.hakuOid)
+            }
+            val hakukierrosPaattyy: Option[Long] = haunOhjausparametrit.flatMap(_.hakukierrosPaattyy.map(_.getMillis))
+            oppijanTunnistusService.luoSecureLink(status.hakijaOid, status.hakemusOid, status.email, status.asiointikieli, hakukierrosPaattyy) match {
               case Right(OppijanTunnistus(securelink)) =>
                 Some(ilmoitus.copy(secureLink = Some(securelink)))
               case Left(e) =>
@@ -82,6 +88,18 @@ class MailDecorator(hakuService: HakuService,
         val msg = s"Hakua ei löydy, oid: $oid"
         logger.error(msg, e)
         throw new HakuNotFoundException(msg)
+    }
+  }
+
+  def fetchOhjausparametrit(oid: HakuOid): Option[Ohjausparametrit] = {
+    ohjausparametritService.ohjausparametrit(oid) match {
+      case Right(ohjausparametrit: Ohjausparametrit) =>
+        Some(ohjausparametrit)
+      case Left(e) =>
+        val msg = s"Virhe haettaessa hakua ohjausparametreista, oid: $oid"
+        logger.info(msg, e)
+        None
+      case _ => None
     }
   }
 }
