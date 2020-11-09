@@ -19,6 +19,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.mock.RunBlockingMock
+import fi.vm.sade.valintatulosservice.valintaperusteet.ValintaPerusteetService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhtoRepository
 import org.joda.time.DateTime
 import org.junit.runner.RunWith
@@ -191,11 +192,11 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     "exception is thrown, if no authorization" in new Mocks with KorkeakouluErillishaku {
       authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]]) returns Left(new AuthorizationFailedException("error"))
       val valinnantulokset = List(valinnantulosA)
-      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(Instant.now()), auditInfo, true) must throwA[AuthorizationFailedException]
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(Instant.now()), auditInfo) must throwA[AuthorizationFailedException]
     }
     "exception is thrown, if haku uses sijoittelu" in new Mocks with Authorized with Korkeakouluhaku {
       val valinnantulokset = List(valinnantulosA)
-      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(Instant.now()), auditInfo, true) must throwA[IllegalArgumentException]
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(Instant.now()), auditInfo) must throwA[IllegalArgumentException]
     }
     "different statuses for invalid valinnantulokset" in new Mocks with Authorized with KorkeakouluErillishaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
       valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set())
@@ -209,7 +210,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
         valinnantulosF.copy(valinnantila = Perunut, vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI),
         valinnantulosG.copy(poistettava = Some(true))
       )
-      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(Instant.now()), auditInfo, true) mustEqual List(
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(Instant.now()), auditInfo) mustEqual List(
         ValinnantulosUpdateStatus(409, s"Ilmoittautumistieto voi olla ainoastaan hyväksytyillä ja vastaanottaneilla hakijoilla", valintatapajonoOid, valinnantulokset(0).hakemusOid),
         ValinnantulosUpdateStatus(409, s"Ilmoittautumistieto voi olla ainoastaan hyväksytyillä ja vastaanottaneilla hakijoilla", valintatapajonoOid, valinnantulokset(1).hakemusOid),
         ValinnantulosUpdateStatus(409, s"Peruneella vastaanottajalla ei voi olla vastaanottotilaa", valintatapajonoOid, valinnantulokset(2).hakemusOid),
@@ -226,7 +227,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(any[HakemusOid], any[ValintatapajonoOid], any[String], any[String]) returns DBIO.successful(())
       valinnantulosRepository.deleteHyvaksyttyJaJulkaistavissaIfExists(any[String], any[HakukohdeOid], any[Option[Instant]]) returns DBIO.successful(())
       val valinnantulokset = List(valinnantulosA.copy(valinnantila = Hyvaksytty, julkaistavissa = Some(true)))
-      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo, true) mustEqual List()
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo) mustEqual List()
       there was one (valinnantulosRepository).storeValinnantuloksenOhjaus(valinnantulokset(0).getValinnantuloksenOhjaus(session.personOid, "Erillishaun tallennus"), Some(lastModified))
       there was one (valinnantulosRepository).setHyvaksyttyJaJulkaistavissa(valinnantulosA.hakemusOid, valintatapajonoOid, session.personOid, "Erillishaun tallennus")
       there was no (valinnantulosRepository).updateValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
@@ -246,7 +247,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       valinnantulosRepository.deleteHyvaksyttyJaJulkaistavissaIfExists(any[String], any[HakukohdeOid], any[Option[Instant]]) returns DBIO.successful(())
       yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(Set(validiValinnantulos))
       val valinnantulokset = List(validiValinnantulos.copy(poistettava = Some(true)))
-      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo, true) mustEqual List()
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo) mustEqual List()
       there was one (valinnantulosRepository).deleteValinnantulos(session.personOid, valinnantulokset(0), Some(lastModified))
       there was one (valinnantulosRepository).deleteIlmoittautuminen(validiValinnantulos.henkiloOid, Ilmoittautuminen(validiValinnantulos.hakukohdeOid, validiValinnantulos.ilmoittautumistila,
         session.personOid, "Erillishaun tallennus"), Some(lastModified))
@@ -287,7 +288,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
         any[Option[String]],
         any[Option[String]]
       ) returns DBIO.successful(())
-      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo, true) mustEqual List()
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo) mustEqual List()
       there was no (valinnantulosRepository).updateValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
       there was one (valinnantulosRepository).storeAction(any[VastaanottoEvent])
       there was one (valinnantulosRepository).storeValinnantuloksenOhjaus(erillishaunValinnantulos.getValinnantuloksenOhjaus(session.personOid, "Erillishaun tallennus"), Some(lastModified))
@@ -320,6 +321,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     val ohjausparametritService = mock[OhjausparametritService]
     val audit = mock[Audit]
     val hakukohdeRecordService = mock[HakukohdeRecordService]
+    val valintaperusteetService = mock[ValintaPerusteetService]
     val vastaanottoService = mock[VastaanottoService]
     val yhdenPaikanSaannos = mock[YhdenPaikanSaannos]
     val settings = mock[VtsApplicationSettings]
@@ -384,6 +386,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       hakuService,
       ohjausparametritService,
       hakukohdeRecordService,
+      valintaperusteetService,
       vastaanottoService,
       yhdenPaikanSaannos,
       appConfig,

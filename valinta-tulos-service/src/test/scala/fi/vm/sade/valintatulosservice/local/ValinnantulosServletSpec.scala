@@ -206,7 +206,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
     "palauttaa 409 jos tietoihin on tehty samanaikaisia muutoksia" in { t: (String, ValinnantulosService, SessionRepository) =>
       t._3.get(sessionId) returns Some(crudSession)
       t._2.storeValinnantuloksetAndIlmoittautumiset(
-        any[ValintatapajonoOid], any[List[Valinnantulos]], any[Option[Instant]], any[AuditInfo], any[Boolean]
+        any[ValintatapajonoOid], any[List[Valinnantulos]], any[Option[Instant]], any[AuditInfo]
       ) throws new ConcurrentModificationException(s"Original exception text")
       patch(
         s"${t._1}/${valintatapajonoOid.toString}",
@@ -224,8 +224,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
         valintatapajonoOid,
         List(valinnantulos.copy(julkaistavissa = Some(true))),
         Some(now),
-        auditInfo(crudSession),
-        false
+        auditInfo(crudSession)
       ) returns List.empty
       patch(
         s"${t._1}/${valintatapajonoOid.toString}",
@@ -244,8 +243,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
         valintatapajonoOid,
         List(valinnantulos.copy(julkaistavissa = Some(true))),
         Some(now),
-        auditInfo(crudSession),
-        false
+        auditInfo(crudSession)
       ) returns List(virhe)
       patch(
         s"${t._1}/${valintatapajonoOid.toString}",
@@ -263,8 +261,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
         valintatapajonoOid,
         List(valinnantulos.copy(julkaistavissa = Some(true))),
         Some(now),
-        auditInfo(crudSession),
-        true
+        auditInfo(crudSession)
       ) returns List.empty
       patch(
         s"${t._1}/${valintatapajonoOid.toString}?erillishaku=true",

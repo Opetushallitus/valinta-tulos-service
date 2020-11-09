@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice
 import java.net.InetAddress
+import java.time.Instant
 import java.time.format.DateTimeFormatter
-import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.UUID
 
 import fi.vm.sade.security.AuthorizationFailedException
@@ -15,7 +15,7 @@ import org.scalatra._
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Try}
 
 trait ValinnantulosServletBase extends VtsServletBase {
   protected def ilmoittautumistilaModelProperty(mp: ModelProperty) = {
@@ -32,11 +32,6 @@ trait ValinnantulosServletBase extends VtsServletBase {
 
   protected def parseMandatoryParam(paramName:String): String = {
     params.getOrElse(paramName, throw new IllegalArgumentException(s"Parametri ${paramName} on pakollinen."))
-  }
-
-  protected def parseErillishaku: Option[Boolean] = Try(params.get("erillishaku").map(_.toBoolean)) match {
-    case Success(erillishaku) => erillishaku
-    case Failure(e) => throw new IllegalArgumentException("Parametri erillishaku pitää olla true tai false", e)
   }
 
   protected def parseIfUnmodifiedSince(appConfig: VtsAppConfig): Option[Instant] = request.headers.get(appConfig.settings.headerIfUnmodifiedSince) match {
@@ -156,13 +151,12 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     contentType = formats("json")
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD, Role.ATARU_KEVYT_VALINTA_CRUD)
-    val erillishaku = parseErillishaku
     val valintatapajonoOid = parseValintatapajonoOid.fold(throw _, x => x)
     val ifUnmodifiedSince: Instant = getIfUnmodifiedSince(appConfig)
     val valinnantulokset = parsedBody.extract[List[Valinnantulos]]
     Ok(
       valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
-        valintatapajonoOid, valinnantulokset, Some(ifUnmodifiedSince), auditInfo, erillishaku.getOrElse(false))
+        valintatapajonoOid, valinnantulokset, Some(ifUnmodifiedSince), auditInfo)
     )
   }
 }
@@ -216,7 +210,7 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymisk
     val ifUnmodifiedSince: Option[Instant] = parseIfUnmodifiedSince(appConfig)
     val valinnantulokset = parsedBody.extract[ValinnantulosRequest].valinnantulokset
     val storeValinnantulosResult = valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
-      valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, auditInfo, true)
+      valintatapajonoOid, valinnantulokset, ifUnmodifiedSince, auditInfo)
     Try(hyvaksymiskirjeService.updateHyvaksymiskirjeet(
       valinnantulokset.map(v => HyvaksymiskirjePatch(v.henkiloOid, v.hakukohdeOid, v.hyvaksymiskirjeLahetetty)).toSet, auditInfo)) match {
         case Failure(e) => logger.warn("Virhe hyväksymiskirjeiden lähetyspäivämäärien päivityksessä", e)
