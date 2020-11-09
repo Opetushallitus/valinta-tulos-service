@@ -217,7 +217,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
     }
 
     "palauttaa 200 ja tyhjän taulukon jos päivitys onnistui" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService) =>
-      t._2.storeValinnantuloksetAndIlmoittautumiset(any[ValintatapajonoOid], any[List[Valinnantulos]], any[Option[Instant]], any[AuditInfo], any[Boolean]) returns List.empty
+      t._2.storeValinnantuloksetAndIlmoittautumiset(any[ValintatapajonoOid], any[List[Valinnantulos]], any[Option[Instant]], any[AuditInfo]) returns List.empty
       post(
         s"${t._1}/${valintatapajonoOid.toString}",
         write(ValinnantulosRequest(List(valinnantulos), AuditSessionRequest(kayttajaOid, List(Role.SIJOITTELU_CRUD.s), userAgent, inetAddress))).getBytes("UTF-8"),
@@ -235,7 +235,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
         valinnantulos.valintatapajonoOid,
         valinnantulos.hakemusOid
       )
-      t._2.storeValinnantuloksetAndIlmoittautumiset(any[ValintatapajonoOid], any[List[Valinnantulos]], any[Option[Instant]], any[AuditInfo], any[Boolean]) returns List(virhe)
+      t._2.storeValinnantuloksetAndIlmoittautumiset(any[ValintatapajonoOid], any[List[Valinnantulos]], any[Option[Instant]], any[AuditInfo]) returns List(virhe)
       post(
         s"${t._1}/${valintatapajonoOid.toString}",
         write(ValinnantulosRequest(List(valinnantulos), AuditSessionRequest(kayttajaOid, List(Role.SIJOITTELU_CRUD.s), userAgent, inetAddress))).getBytes("UTF-8"),
@@ -247,7 +247,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
     }
 
     "palauttaa 200 jos hyväksymiskirjeiden tietojen päivitys epäonnistui" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, KayttooikeusUserDetailsService) =>
-      t._2.storeValinnantuloksetAndIlmoittautumiset(any[ValintatapajonoOid], any[List[Valinnantulos]], any[Option[Instant]], any[AuditInfo], any[Boolean]) returns List.empty
+      t._2.storeValinnantuloksetAndIlmoittautumiset(any[ValintatapajonoOid], any[List[Valinnantulos]], any[Option[Instant]], any[AuditInfo]) returns List.empty
       t._3.updateHyvaksymiskirjeet(any[Set[HyvaksymiskirjePatch]], any[AuditInfo]) throws new RuntimeException("error")
       post(
         s"${t._1}/${valintatapajonoOid.toString}",

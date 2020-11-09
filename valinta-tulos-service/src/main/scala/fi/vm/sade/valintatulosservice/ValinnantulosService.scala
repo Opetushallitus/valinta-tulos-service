@@ -11,6 +11,7 @@ import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valinnantulos._
+import fi.vm.sade.valintatulosservice.valintaperusteet.ValintaPerusteetService
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhtoRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnanTilanKuvausRepository, ValinnantulosRepository}
@@ -18,7 +19,6 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import slick.dbio._
 
-import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success}
 
 class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
@@ -29,6 +29,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
                            val hakuService: HakuService,
                            val ohjausparametritService: OhjausparametritService,
                            val hakukohdeRecordService: HakukohdeRecordService,
+                           val valintaPerusteetService: ValintaPerusteetService,
                            vastaanottoService: VastaanottoService,
                            yhdenPaikanSaannos: YhdenPaikanSaannos,
                            val appConfig: VtsAppConfig,
@@ -97,24 +98,25 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
     })
   }
 
-  private def isErillishaku(valintatapajonoOid: ValintatapajonoOid, haku: Haku, hakukohde: Hakukohde, erillishaku: Boolean): Either[Throwable, Boolean] = {
-    if (haku.käyttääSijoittelua && erillishaku) { // FIXME tarkista myös onko valintatapajonossa käytössä valintalaskenta, ja luovu erillishaku-parametrista
-      Left(new IllegalArgumentException("Valintatapajonon %s hakukohteen %s haku %s käyttää sijoittelua, eikä voi olla erillishaku".format(valintatapajonoOid, hakukohde.oid, haku.oid)))
+  private def isErillishaku(valintatapajonoOid: ValintatapajonoOid, haku: Haku):Boolean = {
+    val isKayttaaValintalaskentaa = valintaPerusteetService.getKaytetaanValintalaskentaaFromValintatapajono(valintatapajonoOid)
+    if (haku.käyttääSijoittelua || isKayttaaValintalaskentaa) {
+      false
+      //Left(new IllegalArgumentException("Valintatapajonon %s hakukohteen %s haku %s käyttää sijoittelua tai valintalaskentaa, eikä voi olla erillishaku".format(valintatapajonoOid, hakukohde.oid, haku.oid)))
     } else {
-      Right(erillishaku)
+      true
     }
   }
 
   def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid: ValintatapajonoOid,
                                                valinnantulokset: List[Valinnantulos],
                                                ifUnmodifiedSince: Option[Instant],
-                                               auditInfo: AuditInfo,
-                                               erillishaku: Boolean = false): List[ValinnantulosUpdateStatus] = {
+                                               auditInfo: AuditInfo): List[ValinnantulosUpdateStatus] = {
     val hakukohdeOid = valinnantulokset.head.hakukohdeOid // FIXME käyttäjän syötettä, tarvittaisiin jono-hakukohde tieto valintaperusteista
     (for {
       hakukohde <- hakuService.getHakukohde(hakukohdeOid).right
       haku <- hakuService.getHaku(hakukohde.hakuOid).right
-      erillishaku <- isErillishaku(valintatapajonoOid, haku, hakukohde, erillishaku).right
+      erillishaku = isErillishaku(valintatapajonoOid, haku)
       _ <- authorizer.checkAccess(auditInfo.session._2, hakukohde.organisaatioOiditAuktorisointiin, Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD) ++ (if (erillishaku) { Set(Role.ATARU_KEVYT_VALINTA_CRUD) } else { Set.empty })).right
       ohjausparametrit <- ohjausparametritService.ohjausparametrit(hakukohde.hakuOid).right
     } yield {
