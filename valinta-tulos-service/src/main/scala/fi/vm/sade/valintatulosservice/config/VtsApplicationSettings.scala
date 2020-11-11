@@ -23,6 +23,7 @@ case class VtsApplicationSettings(config: Config) extends ApplicationSettings(co
   val lenientSijoitteluntuloksetParsing: Boolean = BooleanUtils.isTrue(withConfig(_.getBoolean("valinta-tulos-service.parseleniently.sijoitteluajontulos")))
   val kelaURL = withConfig(_.getString("valinta-tulos-service.kela.url"))
   val organisaatioServiceUrl = withConfig(_.getString("cas.service.organisaatio-service"))
+  val valintaPerusteetServiceUrl = withConfig(_.getString("cas.service.valintaperusteet-service"))
   val rootOrganisaatioOid = withConfig(_.getString("root.organisaatio.oid"))
   val scheduledMigrationStart = withConfig(_.getInt("valinta-tulos-service.scheduled-migration.start-hour"))
   val scheduledDeleteSijoitteluAjoStart = withConfig(_.getInt("valinta-tulos-service.scheduled-delete-sijoitteluajo.start-hour"))

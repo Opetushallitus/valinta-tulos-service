@@ -7,20 +7,20 @@ import java.util.UUID
 import fi.vm.sade.auditlog.Audit
 import fi.vm.sade.security.{AuthorizationFailedException, OrganizationHierarchyAuthorizer}
 import fi.vm.sade.sijoittelu.domain.{EhdollisenHyvaksymisenEhtoKoodi, ValintatuloksenTila}
+import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
 import fi.vm.sade.valintatulosservice.domain.Vastaanottoaikataulu
+import fi.vm.sade.valintatulosservice.mock.RunBlockingMock
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhtoRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnanTilanKuvausRepository, ValinnantulosRepository, VastaanottoEvent}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
-import fi.vm.sade.valintatulosservice._
-import fi.vm.sade.valintatulosservice.mock.RunBlockingMock
-import fi.vm.sade.valintatulosservice.valintaperusteet.ValintaPerusteetService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhtoRepository
+import fi.vm.sade.valintatulosservice.valintaperusteet.ValintaPerusteetServiceMock
 import org.joda.time.DateTime
 import org.junit.runner.RunWith
 import org.specs2.matcher.MustThrownExpectations
@@ -321,10 +321,10 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     val ohjausparametritService = mock[OhjausparametritService]
     val audit = mock[Audit]
     val hakukohdeRecordService = mock[HakukohdeRecordService]
-    val valintaperusteetService = mock[ValintaPerusteetService]
     val vastaanottoService = mock[VastaanottoService]
     val yhdenPaikanSaannos = mock[YhdenPaikanSaannos]
     val settings = mock[VtsApplicationSettings]
+    val valintaPerusteetService = new ValintaPerusteetServiceMock
 
     val rootOrganisaatioOid = "1.2.246.562.10.00000000001"
     settings.rootOrganisaatioOid returns rootOrganisaatioOid
@@ -386,7 +386,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       hakuService,
       ohjausparametritService,
       hakukohdeRecordService,
-      valintaperusteetService,
+      valintaPerusteetService,
       vastaanottoService,
       yhdenPaikanSaannos,
       appConfig,
