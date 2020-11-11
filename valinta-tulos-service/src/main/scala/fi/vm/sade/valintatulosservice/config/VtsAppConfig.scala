@@ -14,6 +14,7 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusFixtures
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetails
 import fi.vm.sade.valintatulosservice.ohjausparametrit._
 import fi.vm.sade.valintatulosservice.security.Role
+import fi.vm.sade.valintatulosservice.valintaperusteet.{ValintaPerusteetService, ValintaPerusteetServiceMock}
 import org.http4s.client.blaze.{BlazeClientConfig, SimpleHttp1Client}
 
 object VtsAppConfig extends Logging {
@@ -24,6 +25,7 @@ object VtsAppConfig extends Logging {
   private val itPostgresPortChooser = new PortFromSystemPropertyOrFindFree("valintatulos.it.postgres.port")
   lazy val organisaatioMockPort = PortChecker.findFreeLocalPort
   lazy val vtsMockPort = PortChecker.findFreeLocalPort
+  lazy val valintaPerusteetMockPort = PortChecker.findFreeLocalPort
 
   def fromOptionalString(profile: Option[String]) = {
     fromString(profile.getOrElse(getProfileProperty))
@@ -123,6 +125,7 @@ object VtsAppConfig extends Logging {
       .withOverride("valinta-tulos-service.valintarekisteri.db.maxConnections", "5")
       .withOverride("valinta-tulos-service.valintarekisteri.db.minConnections", "3")
       .withOverride(("cas.service.organisaatio-service", s"http://localhost:${organisaatioMockPort}/organisaatio-service"))
+      .withOverride(("cas.service.valintaperusteet-service", s"http://localhost:${valintaPerusteetMockPort}/valintaperusteet-service"))
       .withOverride(("cas.url", s"https://itest-virkailija.oph.ware.fi/cas"))
       .withOverride(("valinta-tulos-service.cas.service", s"http://localhost:${vtsMockPort}/valinta-tulos-service"))
       .withOverride(("valinta-tulos-service.read-from-valintarekisteri", s"false"))
@@ -175,6 +178,11 @@ object VtsAppConfig extends Logging {
     lazy val ohjausparametritService = this match {
       case _ : StubbedExternalDeps => new StubbedOhjausparametritService()
       case _ => new CachedRemoteOhjausparametritService(this)
+    }
+
+    lazy val valintaPerusteetService = this match {
+      case _ : StubbedExternalDeps => new ValintaPerusteetServiceMock
+      case _ => new ValintaPerusteetService(this)
     }
 
     override def settings: VtsApplicationSettings

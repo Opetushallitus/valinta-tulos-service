@@ -18,6 +18,8 @@ trait ITSetup {
 
   lazy val valintarekisteriDbWithPool = new ValintarekisteriDb(dbConfig)
 
+//  lazy val valintaPerusteetService = new ValintaPerusteetServiceMock
+
   lazy val hakemusFixtureImporter = HakemusFixtures()(appConfig)
 
   lazy val sijoitteluFixtures = SijoitteluFixtures(singleConnectionValintarekisteriDb)

@@ -94,7 +94,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         hakuService,
         appConfig.ohjausparametritService,
         hakukohdeRecordService,
-        valintaPerusteetService,
+        appConfig.valintaPerusteetService,
         vastaanottoService,
         yhdenPaikanSaannos,
         appConfig,

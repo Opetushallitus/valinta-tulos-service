@@ -6,12 +6,12 @@ import java.time.{Instant, ZoneId, ZonedDateTime}
 
 import fi.vm.sade.auditlog.Audit
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
+import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiTehty, HakemusOid, HakemusOidSerializer, HakuOid, HakuOidSerializer, HakukohdeOid, HakukohdeOidSerializer, Hyvaksytty, Lasna, Peruuntunut, Valinnantulos, ValinnantulosUpdateStatus, ValintatapajonoOid, ValintatapajonoOidSerializer}
-import fi.vm.sade.valintatulosservice.{IlmoittautumistilaSerializer, OffsetDateTimeSerializer, ServletSpecification, ValinnantuloksenLuku, ValinnantuloksenMuokkaus, ValintatuloksenTilaSerializer, VastaanottoActionSerializer}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.apache.log4j.{LogManager, PatternLayout, WriterAppender}
 import org.json4s.DefaultFormats
 import org.json4s.native.JsonMethods._
@@ -42,6 +42,7 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
   )
 
   private var organisaatioService: ClientAndServer = _
+  private var valintaPerusteetService: ClientAndServer = _
   private var session: String = _
   private var auditlogSpy: StringWriter = _
 
@@ -56,6 +57,11 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
     organisaatioService.when(new HttpRequest().withPath(
       s"/organisaatio-service/rest/organisaatio/123.123.123.123/parentoids"
     )).respond(new HttpResponse().withStatusCode(200).withBody("1.2.246.562.10.00000000001/1.2.246.562.10.39804091914/123.123.123.123"))
+
+    valintaPerusteetService = ClientAndServer.startClientAndServer(VtsAppConfig.valintaPerusteetMockPort)
+    valintaPerusteetService.when(new HttpRequest().withPath(
+      s"/valintaperusteet-service/resources/valintatapajono/14090336922663576781797489829886"
+    )).respond(new HttpResponse().withStatusCode(200).withBody("{\n  \"aloituspaikat\": 20,\n  \"nimi\": \"Yhteispisteet\",\n  \"kuvaus\": \"Sote valintakoe max. 70p. väh. 30p.\",\n  \"tyyppi\": null,\n  \"siirretaanSijoitteluun\": true,\n  \"tasapistesaanto\": \"ARVONTA\",\n  \"aktiivinen\": true,\n  \"valisijoittelu\": false,\n  \"automaattinenSijoitteluunSiirto\": true,\n  \"eiVarasijatayttoa\": false,\n  \"kaikkiEhdonTayttavatHyvaksytaan\": false,\n  \"varasijat\": 0,\n  \"varasijaTayttoPaivat\": 0,\n  \"poissaOlevaTaytto\": true,\n  \"poistetaankoHylatyt\": false,\n  \"varasijojaKaytetaanAlkaen\": null,\n  \"varasijojaTaytetaanAsti\": 1450357200000,\n  \"eiLasketaPaivamaaranJalkeen\": null,\n  \"kaytetaanValintalaskentaa\": true,\n  \"tayttojono\": \"1444970907893-6142922285374076608\",\n  \"oid\": \"14449709078975581700456044041853\",\n  \"inheritance\": true,\n  \"prioriteetti\": -1\n}"))
 
     session = createTestSession(roles)
 
@@ -72,6 +78,7 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
 
   override def after: Any = {
     organisaatioService.stop()
+    valintaPerusteetService.stop()
     LogManager.getLogger(classOf[Audit]).removeAppender("AUDITSPY")
   }
 
@@ -120,8 +127,8 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
     }
   }
 
-  private def paivita(valinnantulos: Valinnantulos, erillishaku: Boolean, session: String, ifUnmodifiedSince: Instant) = {
-    patchJSON(s"auth/valinnan-tulos/${valinnantulos.valintatapajonoOid}?erillishaku=$erillishaku", write(List(valinnantulos)),
+  private def paivita(valinnantulos: Valinnantulos, session: String, ifUnmodifiedSince: Instant) = {
+    patchJSON(s"auth/valinnan-tulos/${valinnantulos.valintatapajonoOid}", write(List(valinnantulos)),
       Map("Cookie" -> s"session=$session", appConfig.settings.headerIfUnmodifiedSince -> renderRFC1123DateTime(ifUnmodifiedSince))) {
       status must_== 200
       parse(body).extract[List[ValinnantulosUpdateStatus]].find(_.hakemusOid == valinnantulos.hakemusOid)
@@ -140,7 +147,7 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
     )
 
     val Some(lastModified) = hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
-    paivita(update, false, session, lastModified) must beNone
+    paivita(update, session, lastModified) must beNone
     hae(Some(update), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session) must beSome
   }
 
@@ -155,7 +162,7 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
       ehdollisenHyvaksymisenEhtoEN = Some("reason"))
 
     val Some(lastModified) = hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
-    paivita(update, true, session, lastModified) must beNone
+    paivita(update, session, lastModified) must beNone
     hae(Some(update), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session) must beSome
   }
 
@@ -181,7 +188,7 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
 
     val Some(lastModified) = hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
     val ifUnmodifiedSince = lastModified.minusSeconds(2)
-    paivita(update, false, session, ifUnmodifiedSince) must beSome(
+    paivita(update, session, ifUnmodifiedSince) must beSome(
       ValinnantulosUpdateStatus(409, s"Hakemus on muuttunut lukemisen jälkeen", valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid)
     )
     hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session) must beSome
@@ -193,12 +200,12 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
     val update = valinnantulos.copy(julkaistavissa = Some(false))
 
     val Some(lastModified) = hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
-    paivita(updateVastaanottanut, false, session, lastModified) must beNone
+    paivita(updateVastaanottanut, session, lastModified) must beNone
     val Some(lastModifiedA) = hae(Some(updateVastaanottanut), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
-    paivita(updateKesken, false, session, lastModifiedA.plusSeconds(2)) must beNone
+    paivita(updateKesken, session, lastModifiedA.plusSeconds(2)) must beNone
     hae(Some(updateKesken), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
     val ifUnmodifiedSince = lastModified.minusSeconds(2)
-    paivita(update, false, session, ifUnmodifiedSince) must beSome(
+    paivita(update, session, ifUnmodifiedSince) must beSome(
       ValinnantulosUpdateStatus(409, s"Hakemus on muuttunut lukemisen jälkeen", valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid)
     )
     hae(Some(updateKesken), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session) must beSome
@@ -212,7 +219,7 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
       ehdollisenHyvaksymisenEhtoEN = Some("reason"))
 
     val Some(lastModified) = hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
-    paivita(update, false, session, lastModified) must beNone
+    paivita(update, session, lastModified) must beNone
     hae(Some(update), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session) must beSome
 
     val logEntries = auditlogSpy.toString.split("\n").toList.map(parse(_))
