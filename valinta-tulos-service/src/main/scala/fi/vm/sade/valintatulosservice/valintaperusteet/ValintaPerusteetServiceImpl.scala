@@ -13,11 +13,11 @@ import scalaj.http.HttpOptions
 import scala.util.Try
 import scala.util.control.NonFatal
 
-trait IValintaPerusteetService {
+trait ValintaPerusteetService {
   def getKaytetaanValintalaskentaaFromValintatapajono(valintatapajonoOid: ValintatapajonoOid, haku: Haku): Either[Throwable, Boolean]
 }
 
-class ValintaPerusteetService(appConfig: AppConfig) extends IValintaPerusteetService with Logging {
+class ValintaPerusteetServiceImpl(appConfig: AppConfig) extends ValintaPerusteetService with Logging {
 
   import org.json4s._
 
@@ -67,7 +67,7 @@ class ValintaPerusteetService(appConfig: AppConfig) extends IValintaPerusteetSer
   }
 }
 
-class ValintaPerusteetServiceMock extends IValintaPerusteetService {
+class ValintaPerusteetServiceMock extends ValintaPerusteetService {
   override def getKaytetaanValintalaskentaaFromValintatapajono(valintatapajonoOid: ValintatapajonoOid, haku: Haku): Either[Throwable, Boolean] = {
     if (valintatapajonoOid.toString == "14090336922663576781797489829886" && haku.oid != HakuFixtures.korkeakouluErillishakuEiSijoittelua) {
       return Right(true)

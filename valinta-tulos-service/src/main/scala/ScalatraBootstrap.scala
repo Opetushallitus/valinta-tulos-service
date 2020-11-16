@@ -6,8 +6,8 @@ import fi.vm.sade.security._
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.EmailerRegistry.EmailerRegistry
-import fi.vm.sade.valintatulosservice.config.{EmailerRegistry, VtsAppConfig}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.{Dev, IT, VtsAppConfig}
+import fi.vm.sade.valintatulosservice.config.{EmailerRegistry, VtsAppConfig}
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusRepository, HakuAppRepository}
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetailsService
@@ -22,7 +22,6 @@ import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtures
 import fi.vm.sade.valintatulosservice.streamingresults.{HakemustenTulosHakuLock, StreamingValintatulosService}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.tulostenmetsastaja.PuuttuvienTulostenMetsastajaServlet
-import fi.vm.sade.valintatulosservice.valintaperusteet.ValintaPerusteetService
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
@@ -63,7 +62,6 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val oppijanTunnistusService = OppijanTunnistusService(appConfig.settings)
     lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig, appConfig.isInstanceOf[IT])
     lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing)
-    lazy val valintaPerusteetService = new ValintaPerusteetService(appConfig)
     lazy val sijoitteluService = new SijoitteluService(valintarekisteriDb, authorizer, hakuService, audit)
 
     lazy val valintarekisteriValintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
