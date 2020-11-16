@@ -42,7 +42,6 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
   )
 
   private var organisaatioService: ClientAndServer = _
-  private var valintaPerusteetService: ClientAndServer = _
   private var session: String = _
   private var auditlogSpy: StringWriter = _
 
@@ -57,11 +56,6 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
     organisaatioService.when(new HttpRequest().withPath(
       s"/organisaatio-service/rest/organisaatio/123.123.123.123/parentoids"
     )).respond(new HttpResponse().withStatusCode(200).withBody("1.2.246.562.10.00000000001/1.2.246.562.10.39804091914/123.123.123.123"))
-
-    valintaPerusteetService = ClientAndServer.startClientAndServer(VtsAppConfig.valintaPerusteetMockPort)
-    valintaPerusteetService.when(new HttpRequest().withPath(
-      s"/valintaperusteet-service/resources/valintatapajono/14090336922663576781797489829886"
-    )).respond(new HttpResponse().withStatusCode(200).withBody("{\n  \"aloituspaikat\": 20,\n  \"nimi\": \"Yhteispisteet\",\n  \"kuvaus\": \"Sote valintakoe max. 70p. väh. 30p.\",\n  \"tyyppi\": null,\n  \"siirretaanSijoitteluun\": true,\n  \"tasapistesaanto\": \"ARVONTA\",\n  \"aktiivinen\": true,\n  \"valisijoittelu\": false,\n  \"automaattinenSijoitteluunSiirto\": true,\n  \"eiVarasijatayttoa\": false,\n  \"kaikkiEhdonTayttavatHyvaksytaan\": false,\n  \"varasijat\": 0,\n  \"varasijaTayttoPaivat\": 0,\n  \"poissaOlevaTaytto\": true,\n  \"poistetaankoHylatyt\": false,\n  \"varasijojaKaytetaanAlkaen\": null,\n  \"varasijojaTaytetaanAsti\": 1450357200000,\n  \"eiLasketaPaivamaaranJalkeen\": null,\n  \"kaytetaanValintalaskentaa\": true,\n  \"tayttojono\": \"1444970907893-6142922285374076608\",\n  \"oid\": \"14449709078975581700456044041853\",\n  \"inheritance\": true,\n  \"prioriteetti\": -1\n}"))
 
     session = createTestSession(roles)
 
@@ -78,7 +72,6 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
 
   override def after: Any = {
     organisaatioService.stop()
-    valintaPerusteetService.stop()
     LogManager.getLogger(classOf[Audit]).removeAppender("AUDITSPY")
   }
 
@@ -152,7 +145,7 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
   }
 
   "päivittää valinnantulosta erillishaussa" in {
-    HakuFixtures.useFixture(HakuFixtures.korkeakouluErillishakuEiSijoittelua, List(HakuFixtures.defaultHakuOid))
+    HakuFixtures.useFixture(HakuFixtures.korkeakouluErillishakuEiSijoittelua, List(HakuFixtures.korkeakouluErillishakuEiSijoittelua))
     val update = valinnantulos.copy(
       valinnantila = Peruuntunut,
       ehdollisestiHyvaksyttavissa = Some(true),
