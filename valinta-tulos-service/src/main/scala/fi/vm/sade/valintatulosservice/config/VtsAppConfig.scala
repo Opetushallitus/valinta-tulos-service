@@ -14,7 +14,7 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusFixtures
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetails
 import fi.vm.sade.valintatulosservice.ohjausparametrit._
 import fi.vm.sade.valintatulosservice.security.Role
-import fi.vm.sade.valintatulosservice.valintaperusteet.{ValintaPerusteetService, ValintaPerusteetServiceMock}
+import fi.vm.sade.valintatulosservice.valintaperusteet.{ValintaPerusteetServiceImpl, ValintaPerusteetServiceMock}
 import org.http4s.client.blaze.{BlazeClientConfig, SimpleHttp1Client}
 
 object VtsAppConfig extends Logging {
@@ -182,7 +182,7 @@ object VtsAppConfig extends Logging {
 
     lazy val valintaPerusteetService = this match {
       case _ : StubbedExternalDeps => new ValintaPerusteetServiceMock
-      case _ => new ValintaPerusteetService(this)
+      case _ => new ValintaPerusteetServiceImpl(this)
     }
 
     override def settings: VtsApplicationSettings
