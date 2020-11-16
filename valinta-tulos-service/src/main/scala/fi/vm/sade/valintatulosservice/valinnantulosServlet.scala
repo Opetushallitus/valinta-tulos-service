@@ -138,7 +138,6 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     summary "Muokkaa valinnantulosta"
     parameter pathParam[String]("valintatapajonoOid").description("Valintatapajonon OID")
     parameter headerParam[String](appConfig.settings.headerIfUnmodifiedSince).description(s"Aikaleima RFC 1123 määrittelemässä muodossa $RFC1123sample").required
-    parameter queryParam[Boolean](name = "erillishaku").description("Onko kyseessä erillishaku").optional
     parameter bodyParam[List[Valinnantulos]].description("Muutokset valinnan tulokseen").required
     tags "valinnan-tulos")
   models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
