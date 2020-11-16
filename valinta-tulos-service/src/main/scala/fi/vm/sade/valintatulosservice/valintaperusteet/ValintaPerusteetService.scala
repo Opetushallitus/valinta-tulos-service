@@ -1,23 +1,38 @@
 package fi.vm.sade.valintatulosservice.valintaperusteet
 
 import java.time.LocalDateTime
+import java.util.concurrent.TimeUnit
 
-import fi.vm.sade.utils.http.DefaultHttpClient
+import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasParams}
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.config.AppConfig
+import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuFixtures}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.ValintatapajonoOid
-import org.json4s.jackson.JsonMethods.parse
-import scalaj.http.HttpOptions
+import org.http4s.Method.GET
+import org.http4s.client.blaze.SimpleHttp1Client
+import org.http4s.json4s.native.jsonExtract
+import org.http4s.{Request, Uri}
+import scalaz.concurrent.Task
 
-import scala.util.Try
-import scala.util.control.NonFatal
+import scala.concurrent.duration.Duration
 
 trait ValintaPerusteetService {
   def getKaytetaanValintalaskentaaFromValintatapajono(valintatapajonoOid: ValintatapajonoOid, haku: Haku): Either[Throwable, Boolean]
 }
 
-class ValintaPerusteetServiceImpl(appConfig: AppConfig) extends ValintaPerusteetService with Logging {
+class ValintaPerusteetServiceImpl(appConfig: VtsAppConfig) extends ValintaPerusteetService with Logging {
+  private val params = CasParams(
+    "/valintaperusteet-service",
+    appConfig.settings.securitySettings.casUsername,
+    appConfig.settings.securitySettings.casPassword
+  )
+  private val client = CasAuthenticatingClient(
+    casClient = appConfig.securityContext.casClient,
+    casParams = params,
+    serviceClient = SimpleHttp1Client(appConfig.blazeDefaultConfig),
+    clientCallerId = appConfig.settings.callerId,
+    sessionCookieName = "JSESSIONID"
+  )
 
   import org.json4s._
 
@@ -39,31 +54,17 @@ class ValintaPerusteetServiceImpl(appConfig: AppConfig) extends ValintaPerusteet
   }
 
   def getValintatapajonoByValintatapajonoOid(valintatapajonoOid: ValintatapajonoOid, haku: Haku): Either[Throwable, ValintatapaJono] = {
-    val url = appConfig.ophUrlProperties.url("valintaperusteet-service.valintatapajono", valintatapajonoOid.toString)
+    Uri.fromString(appConfig.ophUrlProperties.url("valintaperusteet-service.valintatapajono", valintatapajonoOid.toString))
+      .fold(Task.fail, uri => {
+        client.fetch(Request(method = GET, uri = uri)) {
+          case r if r.status.code == 200 => r.as[ValintatapaJono](jsonExtract[ValintatapaJono])
+            .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing valintatapajono for $valintatapajonoOid failed", t)) }
+          case r => r.bodyAsText.runLast
+            .flatMap(body => Task.fail(new RuntimeException(s"Failed to get valintatapajono for oid $valintatapajonoOid, haku: ${haku.oid}: ${body.getOrElse("Failed to parse body")}")))
+        }
+      }).attemptRunFor(Duration(1, TimeUnit.MINUTES)).toEither
 
-    fetch(url) { response =>
-      parse(response).extract[ValintatapaJono]
-    }.left.map {
-      case e: Exception => new RuntimeException(s"Failed to get valintapajono $valintatapajonoOid details for haku ${haku.oid}", e)
-    }
-  }
 
-  private def fetch[T](url: String)(parse: (String => T)): Either[Throwable, T] = {
-    Try(DefaultHttpClient.httpGet(
-      url,
-      HttpOptions.connTimeout(5000),
-      HttpOptions.readTimeout(10000)
-    )("1.2.246.562.10.00000000001.valinta-tulos-service")
-      .responseWithHeaders match {
-      case (200, _, resultString) =>
-        Try(Right(parse(resultString))).recover {
-          case NonFatal(e) => Left(new IllegalStateException(s"Parsing result $resultString of GET $url failed", e))
-        }.get
-      case (responseCode, _, resultString) =>
-        Left(new RuntimeException(s"GET $url failed for with status $responseCode: $resultString"))
-    }).recover {
-      case NonFatal(e) => Left(new RuntimeException(s"GET $url failed", e))
-    }.get
   }
 }
 
