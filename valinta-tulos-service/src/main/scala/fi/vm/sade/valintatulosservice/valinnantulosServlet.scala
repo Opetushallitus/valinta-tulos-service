@@ -8,7 +8,7 @@ import fi.vm.sade.security.AuthorizationFailedException
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, IlmoittautumisTila, ValintatuloksenTila}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetailsService
-import fi.vm.sade.valintatulosservice.security.{Role, Session}
+import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HyvaksymiskirjePatch, SessionRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra._
@@ -116,6 +116,25 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
       case None =>
         Ok(body = List.empty)
     }
+  }
+
+  val valinnantuloksetHakemuksilleSwagger: OperationBuilder = (apiOperation[List[ValinnantulosWithTilahistoria]]("valinnantuloksetHakemuksille")
+    summary "Valinnantulos usealle hakemukselle kerralla"
+    //parameter queryParam[String]("hakemusOid").description("Hakemuksen OID")
+    parameter bodyParam[Set[String]]("hakemusOids").description("Hakemuksien OIDit")
+    tags "valinnan-tulos")
+  models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
+    case ("ilmoittautumistila", mp) => ("ilmoittautumistila", ilmoittautumistilaModelProperty(mp))
+    case ("valinnantila", mp) => ("valinnantila", valinnantilaModelProperty(mp))
+    case ("vastaanottotila", mp) => ("vastaanottotila", vastaanottotilaModelProperty(mp))
+    case p => p
+  }))
+  post("/hakemus/", operation(valinnantuloksetHakemuksilleSwagger)) {
+    contentType = formats("json")
+    implicit val authenticated = authenticate
+    val hakemusOids = parsedBody.extract[Set[HakemusOid]]
+    valinnantulosService.getValinnantuloksetForHakemukset(hakemusOids, auditInfo)
+      .groupBy(_.valinnantulos.hakemusOid)
   }
 
   val valinnantulosMuutosSwagger: OperationBuilder = (apiOperation[Unit]("muokkaaValinnantulosta")
