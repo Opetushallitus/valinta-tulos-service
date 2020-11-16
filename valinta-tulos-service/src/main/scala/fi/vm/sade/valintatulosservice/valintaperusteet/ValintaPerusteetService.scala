@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 import fi.vm.sade.utils.http.DefaultHttpClient
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.AppConfig
-import fi.vm.sade.valintatulosservice.tarjonta.Haku
+import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuFixtures}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.ValintatapajonoOid
 import org.json4s.jackson.JsonMethods.parse
 import scalaj.http.HttpOptions
@@ -69,7 +69,7 @@ class ValintaPerusteetService(appConfig: AppConfig) extends IValintaPerusteetSer
 
 class ValintaPerusteetServiceMock extends IValintaPerusteetService {
   override def getKaytetaanValintalaskentaaFromValintatapajono(valintatapajonoOid: ValintatapajonoOid, haku: Haku): Either[Throwable, Boolean] = {
-    if (valintatapajonoOid.toString == "14090336922663576781797489829886") {
+    if (valintatapajonoOid.toString == "14090336922663576781797489829886" && haku.oid != HakuFixtures.korkeakouluErillishakuEiSijoittelua) {
       return Right(true)
     }
     Right(false)
