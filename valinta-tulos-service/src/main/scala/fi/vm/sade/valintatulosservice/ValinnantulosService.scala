@@ -127,8 +127,8 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
     tuloksetIlmanHistoriatietoa.map(tulos => ValinnantulosWithTilahistoria(tulos, tilaHistoriat.getOrElse((tulos.hakemusOid, tulos.valintatapajonoOid), List.empty)))
   }
 
-  private def isErillishaku(valintatapajonoOid: ValintatapajonoOid, hakukohde: Hakukohde, haku: Haku): Either[Throwable, Boolean] = {
-    valintaPerusteetService.getKaytetaanValintalaskentaaFromValintatapajono(valintatapajonoOid, haku) match {
+  private def isErillishaku(valintatapajonoOid: ValintatapajonoOid, haku: Haku, hakukohdeOid: HakukohdeOid): Either[Throwable, Boolean] = {
+    valintaPerusteetService.getKaytetaanValintalaskentaaFromValintatapajono(valintatapajonoOid, haku, hakukohdeOid) match {
       case Right(isKayttaaValintalaskentaa) => {
         if (haku.käyttääSijoittelua || isKayttaaValintalaskentaa) {
           Right(false)
@@ -137,7 +137,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
         }
     }
       case Left(e) => {
-        logger.error(s"""Valintatapajonotietojen haku valintaperusteista epäonnistui valintatapajonolle: ${valintatapajonoOid}""", e)
+        logger.error(s"""Valintatapajonotietojen haku valintaperusteista epäonnistui valintatapajonolle: ${valintatapajonoOid}, hakukohde: $hakukohdeOid""", e)
         if (haku.käyttääSijoittelua) {
           Right(false)
         } else {
@@ -155,7 +155,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
     (for {
       hakukohde <- hakuService.getHakukohde(hakukohdeOid).right
       haku <- hakuService.getHaku(hakukohde.hakuOid).right
-      erillishaku <- isErillishaku(valintatapajonoOid, haku).right
+      erillishaku <- isErillishaku(valintatapajonoOid, haku, hakukohdeOid).right
       _ <- authorizer.checkAccess(auditInfo.session._2, hakukohde.organisaatioOiditAuktorisointiin, Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD) ++ (if (erillishaku) { Set(Role.ATARU_KEVYT_VALINTA_CRUD) } else { Set.empty })).right
       ohjausparametrit <- ohjausparametritService.ohjausparametrit(hakukohde.hakuOid).right
     } yield {
