@@ -98,6 +98,29 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
     })
   }
 
+  def getValinnantuloksetForHakemukset(hakemusOids: Set[HakemusOid], auditInfo: AuditInfo): Set[ValinnantulosWithTilahistoria] = {
+    val tulokset: Set[Valinnantulos] = valinnantulosRepository
+      .getValinnantuloksetForHakemukses(hakemusOids).toSet
+    val hakukohteet = hakuService.getHakukohdes(tulokset.map(_.hakukohdeOid).toSeq).fold(throw _, x => x)
+    val orgOids: Set[String] = hakukohteet
+        .flatMap(_.organisaatioOiditAuktorisointiin)
+        .toSet
+    val roles = Set(
+      Role.SIJOITTELU_READ,
+      Role.SIJOITTELU_READ_UPDATE,
+      Role.SIJOITTELU_CRUD,
+      Role.ATARU_KEVYT_VALINTA_READ,
+      Role.ATARU_KEVYT_VALINTA_CRUD)
+    authorizer.checkAccess(auditInfo.session._2, orgOids, roles).fold(throw _, x => x)
+    audit.log(auditInfo.user, ValinnantuloksenLuku,
+      new Target.Builder().setField("hakemus", hakemusOids.toString).build(),
+      new Changes.Builder().build()
+    )
+    val tilaHistoriat = valinnantulosRepository.getHakemustenTilahistoriat(hakemusOids).groupBy(r => (r.hakemusOid, r.valintatapajonoOid))
+    yhdenPaikanSaannos(hakukohteet, tulokset).fold(throw _, x => x)
+      .map(tulos => ValinnantulosWithTilahistoria(tulos, tilaHistoriat.getOrElse((tulos.hakemusOid, tulos.valintatapajonoOid), List.empty)))
+  }
+
   private def isErillishaku(valintatapajonoOid: ValintatapajonoOid, haku: Haku, hakukohdeOid: HakukohdeOid): Either[Throwable, Boolean] = {
     valintaPerusteetService.getKaytetaanValintalaskentaaFromValintatapajono(valintatapajonoOid, haku, hakukohdeOid) match {
       case Right(isKayttaaValintalaskentaa) => {
@@ -120,8 +143,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
           Right(true)
         }
       }
-    }
-  }
+
 
   def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid: ValintatapajonoOid,
                                                valinnantulokset: List[Valinnantulos],

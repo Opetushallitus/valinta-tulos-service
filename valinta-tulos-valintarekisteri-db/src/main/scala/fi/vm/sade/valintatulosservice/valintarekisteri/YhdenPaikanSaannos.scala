@@ -6,6 +6,8 @@ import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoRecord, VirkailijaVastaanottoRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.dbio.DBIO
+
+import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class YhdenPaikanSaannos(hakuService: HakuService,
@@ -28,6 +30,22 @@ class YhdenPaikanSaannos(hakuService: HakuService,
   def apply(valinnantulokset: Set[Valinnantulos]): Either[Throwable, Set[Valinnantulos]] = {
     MonadHelper.sequence(
       valinnantulokset.groupBy(_.hakukohdeOid).map(t => ottanutVastaanToisenPaikan(t._1, t._2))
+    ).right.map(_.flatten.toSet)
+  }
+
+  def apply(hakukohteet: Seq[Hakukohde], valinnantulokset: Set[Valinnantulos]): Either[Throwable, Set[Valinnantulos]] = {
+    val hakukohteetByKausi: Map[Option[Kausi], Seq[Hakukohde]] = hakukohteet.groupBy(hk => hk.koulutuksenAlkamiskausi)
+    MonadHelper.sequence(
+      hakukohteetByKausi.map(hks =>
+        hks._1 match {
+          case None =>
+            Left(new IllegalStateException(s"Yhden paikan säännön piirissä olevissa hakukohteissa ${hks._2.map(hk => hk.oid)} ei ole koulutuksen alkamiskautta."))
+          case Some(kausi) =>
+            val vastaanotot = virkailijaVastaanottoRepository
+              .findYpsVastaanotot(kausi, valinnantulokset.map(_.henkiloOid))
+              .map(t => t._3.henkiloOid -> t).toMap
+            Right(valinnantulokset.map(v => ottanutVastaanToisenPaikan(v, vastaanotot.get(v.henkiloOid))))
+        })
     ).right.map(_.flatten.toSet)
   }
 
@@ -57,6 +75,7 @@ class YhdenPaikanSaannos(hakuService: HakuService,
     if (valinnantulos.vastaanottotila == ValintatuloksenTila.KESKEN &&
       Set[Valinnantila](Hyvaksytty, VarasijaltaHyvaksytty, Varalla).contains(valinnantulos.valinnantila) &&
       (sitovaVastaanotto || ehdollinenVastaanottoToisellaHakemuksella)) {
+      System.out.println("haa")
       valinnantulos.copy(vastaanottotila = ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)
     } else {
       valinnantulos

@@ -280,6 +280,50 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       """.as[Valinnantulos].map(_.toSet)
   }
 
+  override def getValinnantuloksetForHakemukses(hakemusOids: Set[HakemusOid]): Seq[Valinnantulos] = {
+    val inParameter = hakemusOids.map(oid => s"'$oid'").mkString(",")
+    logger.info("inParam: " + inParameter)
+    timed(s"Getting valinnantulokset for ${hakemusOids.size} hakemukses") {
+      runBlocking(sql"""select ti.hakukohde_oid,
+                ti.valintatapajono_oid,
+                ti.hakemus_oid,
+                ti.henkilo_oid,
+                ti.tila,
+                eh.ehdollisen_hyvaksymisen_ehto_koodi is not null,
+                eh.ehdollisen_hyvaksymisen_ehto_koodi,
+                eh.ehdollisen_hyvaksymisen_ehto_fi,
+                eh.ehdollisen_hyvaksymisen_ehto_sv,
+                eh.ehdollisen_hyvaksymisen_ehto_en,
+                vk.text_fi,
+                vk.text_sv,
+                vk.text_en,
+                tu.julkaistavissa,
+                tu.hyvaksytty_varasijalta,
+                tu.hyvaksy_peruuntunut,
+                v.action,
+                i.tila,
+                ti.tilan_viimeisin_muutos,
+                v.timestamp
+            from valinnantilat as ti
+            left join ehdollisen_hyvaksynnan_ehto as eh on eh.hakemus_oid = ti.hakemus_oid
+                and eh.valintatapajono_oid = ti.valintatapajono_oid
+            left join valinnantulokset as tu on tu.hakemus_oid = ti.hakemus_oid
+                and tu.valintatapajono_oid = ti.valintatapajono_oid
+            left join vastaanotot as v on v.hakukohde = ti.hakukohde_oid
+                and v.henkilo = ti.henkilo_oid and v.deleted is null
+            left join ilmoittautumiset as i on i.hakukohde = ti.hakukohde_oid
+                and i.henkilo = ti.henkilo_oid
+            left join tilat_kuvaukset tk
+              on ti.valintatapajono_oid = tk.valintatapajono_oid
+                and ti.hakemus_oid = tk.hakemus_oid
+                and ti.hakukohde_oid = tk.hakukohde_oid
+            left join valinnantilan_kuvaukset vk
+              on tk.tilankuvaus_hash = vk.hash
+            where ti.hakemus_oid in (#$inParameter)
+        """.as[Valinnantulos].map(_.toSeq))
+    }
+  }
+
   override def getValinnantuloksetAndLastModifiedDateForHakemus(hakemusOid: HakemusOid): Option[(Instant, Set[Valinnantulos])] = {
     runBlockingTransactionally(
       sql"""select greatest(max(lower(ti.system_time)),
@@ -501,6 +545,17 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               inner join hakukohteet h on v.hakukohde_oid = h.hakukohde_oid
               where h.haku_oid = ${hakuOid}
         """.as[(HakukohdeOid, ValintatapajonoOid, HakemusOid, Valinnantila)]).toList
+    }
+
+  override def getHakemustenTilahistoriat(hakemusOids: Set[HakemusOid]): List[TilaHistoriaRecord] = {
+    val inParameter = hakemusOids.map(oid => s"'$oid'").mkString(",")
+    timed(s"Getting ${hakemusOids.size} hakemuksen valinnantilojen historiat") {
+      runBlocking(
+        sql"""select vth.valintatapajono_oid, vth.hakemus_oid, vth.tila, vth.tilan_viimeisin_muutos
+              from valinnantilat_history vth
+              where vth.hakemus_oid in (#$inParameter)
+        """.as[TilaHistoriaRecord]).toList
+    }
   }
 
   override def getHakemuksenTilahistoriat(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[TilaHistoriaRecord] =
