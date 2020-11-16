@@ -7,7 +7,7 @@ import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasParams}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuFixtures}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.ValintatapajonoOid
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, ValintatapajonoOid}
 import org.http4s.Method.GET
 import org.http4s.client.blaze.SimpleHttp1Client
 import org.http4s.json4s.native.jsonExtract
@@ -17,7 +17,7 @@ import scalaz.concurrent.Task
 import scala.concurrent.duration.Duration
 
 trait ValintaPerusteetService {
-  def getKaytetaanValintalaskentaaFromValintatapajono(valintatapajonoOid: ValintatapajonoOid, haku: Haku): Either[Throwable, Boolean]
+  def getKaytetaanValintalaskentaaFromValintatapajono(valintatapajonoOid: ValintatapajonoOid, haku: Haku, hakukohdeOid: HakukohdeOid): Either[Throwable, Boolean]
 }
 
 class ValintaPerusteetServiceImpl(appConfig: VtsAppConfig) extends ValintaPerusteetService with Logging {
@@ -46,21 +46,25 @@ class ValintaPerusteetServiceImpl(appConfig: VtsAppConfig) extends ValintaPerust
                              prioriteetti: Int
                             )
 
-  def getKaytetaanValintalaskentaaFromValintatapajono(valintapajonoOid: ValintatapajonoOid, haku: Haku): Either[Throwable, Boolean] = {
-    getValintatapajonoByValintatapajonoOid(valintapajonoOid, haku) match {
+  def getKaytetaanValintalaskentaaFromValintatapajono(valintapajonoOid: ValintatapajonoOid, haku: Haku, hakukohdeOid: HakukohdeOid): Either[Throwable, Boolean] = {
+    getValintatapajonoByValintatapajonoOid(valintapajonoOid, haku, hakukohdeOid) match {
       case Right(valintatapaJono) => Right(valintatapaJono.kaytetaanValintalaskentaa)
       case Left(e) => Left(e)
     }
   }
 
-  def getValintatapajonoByValintatapajonoOid(valintatapajonoOid: ValintatapajonoOid, haku: Haku): Either[Throwable, ValintatapaJono] = {
+  def getValintatapajonoByValintatapajonoOid(valintatapajonoOid: ValintatapajonoOid, haku: Haku, hakukohdeOid: HakukohdeOid): Either[Throwable, ValintatapaJono] = {
     Uri.fromString(appConfig.ophUrlProperties.url("valintaperusteet-service.valintatapajono", valintatapajonoOid.toString))
       .fold(Task.fail, uri => {
         client.fetch(Request(method = GET, uri = uri)) {
-          case r if r.status.code == 200 => r.as[ValintatapaJono](jsonExtract[ValintatapaJono])
-            .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing valintatapajono for $valintatapajonoOid failed", t)) }
+          case r if r.status.code == 200 => {
+            logger.info(s"Successfully got valintatapajono (oid: $valintatapajonoOid) from valintaperusteet-service for haku: ${haku.oid}, hakukohde: $hakukohdeOid, ${r.body.toString}")
+            logger.info(r.toString())
+            r.as[ValintatapaJono](jsonExtract[ValintatapaJono])
+          }
+            .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing valintatapajono for oid: $valintatapajonoOid failed", t)) }
           case r => r.bodyAsText.runLast
-            .flatMap(body => Task.fail(new RuntimeException(s"Failed to get valintatapajono for oid $valintatapajonoOid, haku: ${haku.oid}: ${body.getOrElse("Failed to parse body")}")))
+            .flatMap(body => Task.fail(new RuntimeException(s"Failed to get valintatapajono for oid $valintatapajonoOid, hakukohde: $hakukohdeOid, haku: ${haku.oid}, body: ${body.getOrElse("Failed to parse body")}")))
         }
       }).attemptRunFor(Duration(1, TimeUnit.MINUTES)).toEither
 
@@ -69,7 +73,7 @@ class ValintaPerusteetServiceImpl(appConfig: VtsAppConfig) extends ValintaPerust
 }
 
 class ValintaPerusteetServiceMock extends ValintaPerusteetService {
-  override def getKaytetaanValintalaskentaaFromValintatapajono(valintatapajonoOid: ValintatapajonoOid, haku: Haku): Either[Throwable, Boolean] = {
+  override def getKaytetaanValintalaskentaaFromValintatapajono(valintatapajonoOid: ValintatapajonoOid, haku: Haku, hakukohdeOid: HakukohdeOid): Either[Throwable, Boolean] = {
     if (valintatapajonoOid.toString == "14090336922663576781797489829886" && haku.oid != HakuFixtures.korkeakouluErillishakuEiSijoittelua) {
       return Right(true)
     }
