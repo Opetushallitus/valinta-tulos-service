@@ -7,10 +7,9 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuFixtures}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, ValintatapajonoOid}
-import org.http4s.Method.GET
+import org.http4s._
 import org.http4s.client.blaze.SimpleHttp1Client
-import org.http4s.json4s.native.jsonExtract
-import org.http4s.{Request, Uri}
+import org.http4s.json4s.native.jsonOf
 import scalaz.concurrent.Task
 
 import scala.concurrent.duration.Duration
@@ -37,11 +36,28 @@ class ValintaPerusteetServiceImpl(appConfig: VtsAppConfig) extends ValintaPerust
 
   implicit val formats = DefaultFormats
 
-  case class ValintatapaJono(aloituspaikat: Int, nimi: String, kuvaus: Option[String], tyyppi: Option[String], siirretaanSijoitteluun: Boolean,
-                             tasapistesaanto: String, aktiivinen: Boolean, valisijoittelu: Boolean, getautomaattinenSijoitteluunSiirto: Boolean,
-                             eiVarasijatayttoa: Boolean, kaikkiEhdonTayttavatHyvaksytaan: Boolean, varasijat: Int, varasijaTayttoPaivat: Int,
-                             poissaOlevaTaytto: Boolean, poistetaankoHylatyt: Boolean, varasijojaKaytetaanAlkaen: Option[String], varasijojaTaytetaanAsti: Option[String],
-                             eiLasketaPaivamaaranJalkeen: Option[String], kaytetaanValintalaskentaa: Boolean, tayttojono: Option[String], oid: String, inheritance: Option[Boolean],
+  case class ValintatapaJono(aloituspaikat: Int,
+                             nimi: String,
+                             kuvaus: Option[String],
+                             tyyppi: Option[String],
+                             siirretaanSijoitteluun: Boolean,
+                             tasapistesaanto: String,
+                             aktiivinen: Boolean,
+                             valisijoittelu: Boolean,
+                             automaattinenSijoitteluunSiirto: Boolean,
+                             eiVarasijatayttoa: Boolean,
+                             kaikkiEhdonTayttavatHyvaksytaan: Boolean,
+                             varasijat: Int,
+                             varasijaTayttoPaivat: Int,
+                             poissaOlevaTaytto: Boolean,
+                             poistetaankoHylatyt: Boolean,
+                             varasijojaKaytetaanAlkaen: Option[String],
+                             varasijojaTaytetaanAsti: Option[String],
+                             eiLasketaPaivamaaranJalkeen: Option[String],
+                             kaytetaanValintalaskentaa: Boolean,
+                             tayttojono: Option[String],
+                             oid: String,
+                             inheritance: Option[Boolean],
                              prioriteetti: Option[Int]
                             )
 
@@ -53,21 +69,57 @@ class ValintaPerusteetServiceImpl(appConfig: VtsAppConfig) extends ValintaPerust
   }
 
   def getValintatapajonoByValintatapajonoOid(valintatapajonoOid: ValintatapajonoOid, haku: Haku, hakukohdeOid: HakukohdeOid): Either[Throwable, ValintatapaJono] = {
+    implicit val formats = DefaultFormats
+    implicit val valintatapajonoReader = new Reader[ValintatapaJono] {
+      def read(value: JValue): ValintatapaJono = {
+        ValintatapaJono(
+          (value \ "aloituspaikat").extract[Int],
+          (value \ "nimi").extract[String],
+          (value \ "kuvaus").extract[Option[String]],
+          (value \ "tyyppi").extract[Option[String]],
+          (value \ "siirretaanSijoitteluun").extract[Boolean],
+          (value \ "tasapistesaanto").extract[String],
+          (value \ "aktiivinen").extract[Boolean],
+          (value \ "valisijoittelu").extract[Boolean],
+          (value \ "automaattinenSijoitteluunSiirto").extract[Boolean],
+          (value \ "eiVarasijatayttoa").extract[Boolean],
+          (value \ "kaikkiEhdonTayttavatHyvaksytaan").extract[Boolean],
+          (value \ "varasijat").extract[Int],
+          (value \ "varasijaTayttoPaivat").extract[Int],
+          (value \ "poissaOlevaTaytto").extract[Boolean],
+          (value \ "poistetaankoHylatyt").extract[Boolean],
+          (value \ "varasijojaKaytetaanAlkaen").extract[Option[String]],
+          (value \ "varasijojaTaytetaanAsti").extract[Option[String]],
+          (value \ "eiLasketaPaivamaaranJalkeen").extract[Option[String]],
+          (value \ "kaytetaanValintalaskentaa").extract[Boolean],
+          (value \ "tayttojono").extract[Option[String]],
+          (value \ "oid").extract[String],
+          (value \ "inheritance").extract[Option[Boolean]],
+          (value \ "prioriteetti").extract[Option[Int]]
+        )
+      }
+    }
+
+    implicit val ValintatapajonoDecoder = jsonOf[ValintatapaJono]
+
     Uri.fromString(appConfig.ophUrlProperties.url("valintaperusteet-service.valintatapajono", valintatapajonoOid.toString))
       .fold(Task.fail, uri => {
-        client.fetch(Request(method = GET, uri = uri)) {
+        val request = Request(
+          method = Method.GET,
+          uri = uri
+        )
+
+        client.fetch(request) {
           case r if r.status.code == 200 => {
             logger.info(s"Successfully got valintatapajono (oid: $valintatapajonoOid) from valintaperusteet-service for haku: ${haku.oid}, hakukohde: $hakukohdeOid, ${r.body.toString}")
             logger.info(r.toString())
-            r.as[ValintatapaJono](jsonExtract[ValintatapaJono])
+            r.as[ValintatapaJono]
           }
             .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing valintatapajono for oid: $valintatapajonoOid failed", t)) }
           case r => r.bodyAsText.runLast
             .flatMap(body => Task.fail(new RuntimeException(s"Failed to get valintatapajono for oid $valintatapajonoOid, hakukohde: $hakukohdeOid, haku: ${haku.oid}, body: ${body.getOrElse("Failed to parse body")}")))
         }
       }).attemptRunFor(Duration(1, TimeUnit.MINUTES)).toEither
-
-
   }
 }
 
