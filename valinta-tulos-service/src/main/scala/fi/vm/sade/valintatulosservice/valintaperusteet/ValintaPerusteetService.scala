@@ -9,7 +9,7 @@ import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuFixtures}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, ValintatapajonoOid}
 import org.http4s._
 import org.http4s.client.blaze.SimpleHttp1Client
-import org.http4s.json4s.native.jsonOf
+import org.http4s.json4s.native.{jsonExtract, jsonOf}
 import scalaz.concurrent.Task
 
 import scala.concurrent.duration.Duration
@@ -33,8 +33,6 @@ class ValintaPerusteetServiceImpl(appConfig: VtsAppConfig) extends ValintaPerust
   )
 
   import org.json4s._
-
-  implicit val formats = DefaultFormats
 
   case class ValintatapaJono(aloituspaikat: Int,
                              nimi: String,
@@ -68,7 +66,7 @@ class ValintaPerusteetServiceImpl(appConfig: VtsAppConfig) extends ValintaPerust
     }
   }
 
-  def getValintatapajonoByValintatapajonoOid(valintatapajonoOid: ValintatapajonoOid, haku: Haku, hakukohdeOid: HakukohdeOid): Either[Throwable, ValintatapaJono] = {
+  private def getValintatapajonoByValintatapajonoOid(valintatapajonoOid: ValintatapajonoOid, haku: Haku, hakukohdeOid: HakukohdeOid): Either[Throwable, ValintatapaJono] = {
     implicit val formats = DefaultFormats
     implicit val valintatapajonoReader = new Reader[ValintatapaJono] {
       def read(value: JValue): ValintatapaJono = {
@@ -111,8 +109,7 @@ class ValintaPerusteetServiceImpl(appConfig: VtsAppConfig) extends ValintaPerust
 
         client.fetch(request) {
           case r if r.status.code == 200 => {
-            logger.info(s"Successfully got valintatapajono (oid: $valintatapajonoOid) from valintaperusteet-service for haku: ${haku.oid}, hakukohde: $hakukohdeOid, ${r.body.toString}")
-            logger.info(r.toString())
+            logger.info(s"Successfully got valintatapajono (oid: $valintatapajonoOid) from valintaperusteet-service for haku: ${haku.oid}, hakukohde: $hakukohdeOid")
             r.as[ValintatapaJono]
           }
             .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing valintatapajono for oid: $valintatapajonoOid failed", t)) }
