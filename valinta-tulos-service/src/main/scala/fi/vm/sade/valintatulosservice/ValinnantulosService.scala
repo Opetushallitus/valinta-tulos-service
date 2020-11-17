@@ -5,6 +5,7 @@ import java.util.ConcurrentModificationException
 
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
+import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
@@ -99,26 +100,31 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
   }
 
   def getValinnantuloksetForHakemukset(hakemusOids: Set[HakemusOid], auditInfo: AuditInfo): Set[ValinnantulosWithTilahistoria] = {
-    val tulokset: Set[Valinnantulos] = valinnantulosRepository
-      .getValinnantuloksetForHakemukses(hakemusOids).toSet
-    val hakukohteet = hakuService.getHakukohdes(tulokset.map(_.hakukohdeOid).toSeq).fold(throw _, x => x)
-    val orgOids: Set[String] = hakukohteet
-        .flatMap(_.organisaatioOiditAuktorisointiin)
-        .toSet
+    val tulokset: Seq[Valinnantulos] = valinnantulosRepository
+      .getValinnantuloksetForHakemukses(hakemusOids)
+    val hakukohteet = Timer.timed(s"${hakemusOids.size} hakemuksen tuloksiin liittyvien hakukohteiden haku") {
+      hakuService.getHakukohdes(tulokset.map(_.hakukohdeOid).distinct).fold(throw _, x => x) }
+    val tuloksetJaHakukohteet = tulokset.map(t => (t, hakukohteet.find(hk => hk.oid == t.hakukohdeOid)
+      .getOrElse(throw new Exception(s"Hakukohdetta ${t.hakukohdeOid} ei löytynyt"))))
     val roles = Set(
       Role.SIJOITTELU_READ,
       Role.SIJOITTELU_READ_UPDATE,
       Role.SIJOITTELU_CRUD,
       Role.ATARU_KEVYT_VALINTA_READ,
       Role.ATARU_KEVYT_VALINTA_CRUD)
-    authorizer.checkAccess(auditInfo.session._2, orgOids, roles).fold(throw _, x => x)
+    tuloksetJaHakukohteet.foreach(t => {
+      val orgOids: Set[String] = t._2.organisaatioOiditAuktorisointiin
+      authorizer.checkAccess(auditInfo.session._2, orgOids, roles).fold(throw _, x => x)
+    })
     audit.log(auditInfo.user, ValinnantuloksenLuku,
-      new Target.Builder().setField("hakemus", hakemusOids.toString).build(),
+      new Target.Builder().setField("hakemusOids", hakemusOids.toString).build(),
       new Changes.Builder().build()
     )
+    val yps_ja_ilman = tuloksetJaHakukohteet.toSet.span(t => t._2.yhdenPaikanSaanto.voimassa)
+    logger.info(s"${tulokset.size} valinnantuloksesta ${yps_ja_ilman._1.size} kohdistuu yhden paikan sääntöä käyttäviin hakukohteisiin ja ${yps_ja_ilman._2.size} muihin.")
+    val tuloksetIlmanHistoriatietoa = yhdenPaikanSaannos.getYpsTuloksetForManyHakemukses(yps_ja_ilman._1).fold(throw _, x => x) ++ yps_ja_ilman._2.map(t => t._1)
     val tilaHistoriat = valinnantulosRepository.getHakemustenTilahistoriat(hakemusOids).groupBy(r => (r.hakemusOid, r.valintatapajonoOid))
-    yhdenPaikanSaannos(hakukohteet, tulokset).fold(throw _, x => x)
-      .map(tulos => ValinnantulosWithTilahistoria(tulos, tilaHistoriat.getOrElse((tulos.hakemusOid, tulos.valintatapajonoOid), List.empty)))
+    tuloksetIlmanHistoriatietoa.map(tulos => ValinnantulosWithTilahistoria(tulos, tilaHistoriat.getOrElse((tulos.hakemusOid, tulos.valintatapajonoOid), List.empty)))
   }
 
   private def isErillishaku(valintatapajonoOid: ValintatapajonoOid, haku: Haku, hakukohdeOid: HakukohdeOid): Either[Throwable, Boolean] = {
