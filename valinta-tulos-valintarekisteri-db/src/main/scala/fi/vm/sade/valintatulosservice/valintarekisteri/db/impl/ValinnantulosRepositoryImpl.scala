@@ -282,7 +282,6 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
 
   override def getValinnantuloksetForHakemukses(hakemusOids: Set[HakemusOid]): Seq[Valinnantulos] = {
     val inParameter = hakemusOids.map(oid => s"'$oid'").mkString(",")
-    logger.info("inParam: " + inParameter)
     timed(s"Getting valinnantulokset for ${hakemusOids.size} hakemukses") {
       runBlocking(sql"""select ti.hakukohde_oid,
                 ti.valintatapajono_oid,
