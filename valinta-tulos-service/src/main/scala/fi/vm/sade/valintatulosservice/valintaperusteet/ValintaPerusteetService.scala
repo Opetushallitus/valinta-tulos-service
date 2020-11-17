@@ -1,6 +1,5 @@
 package fi.vm.sade.valintatulosservice.valintaperusteet
 
-import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasParams}
@@ -38,12 +37,12 @@ class ValintaPerusteetServiceImpl(appConfig: VtsAppConfig) extends ValintaPerust
 
   implicit val formats = DefaultFormats
 
-  case class ValintatapaJono(aloituspaikat: String, nimi: String, kuvaus: String, tyyppi: String, siirretaanSijoitteluun: Boolean,
+  case class ValintatapaJono(aloituspaikat: Int, nimi: String, kuvaus: Option[String], tyyppi: Option[String], siirretaanSijoitteluun: Boolean,
                              tasapistesaanto: String, aktiivinen: Boolean, valisijoittelu: Boolean, getautomaattinenSijoitteluunSiirto: Boolean,
                              eiVarasijatayttoa: Boolean, kaikkiEhdonTayttavatHyvaksytaan: Boolean, varasijat: Int, varasijaTayttoPaivat: Int,
-                             poissaOlevaTaytto: Boolean, poistetaankoHylatyt: Boolean, varasijojaKaytetaanAlkaen: LocalDateTime, varasijojaTaytetaanAsti: LocalDateTime,
-                             eiLasketaPaivamaaranJalkeen: LocalDateTime, kaytetaanValintalaskentaa: Boolean, tayttojono: String, oid: String, inheritance: Boolean,
-                             prioriteetti: Int
+                             poissaOlevaTaytto: Boolean, poistetaankoHylatyt: Boolean, varasijojaKaytetaanAlkaen: Option[String], varasijojaTaytetaanAsti: Option[String],
+                             eiLasketaPaivamaaranJalkeen: Option[String], kaytetaanValintalaskentaa: Boolean, tayttojono: Option[String], oid: String, inheritance: Option[Boolean],
+                             prioriteetti: Option[Int]
                             )
 
   def getKaytetaanValintalaskentaaFromValintatapajono(valintapajonoOid: ValintatapajonoOid, haku: Haku, hakukohdeOid: HakukohdeOid): Either[Throwable, Boolean] = {
