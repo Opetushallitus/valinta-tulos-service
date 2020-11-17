@@ -130,17 +130,22 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
   private def isErillishaku(valintatapajonoOid: ValintatapajonoOid, haku: Haku, hakukohdeOid: HakukohdeOid): Either[Throwable, Boolean] = {
     valintaPerusteetService.getKaytetaanValintalaskentaaFromValintatapajono(valintatapajonoOid, haku, hakukohdeOid) match {
       case Right(isKayttaaValintalaskentaa) => {
+        logger.info(s"""Valintatapajonotietojen haku valintaperusteista onnistui valintatapajonolle: ${valintatapajonoOid}, haku: ${haku.oid}, hakukohde: $hakukohdeOid""")
         if (haku.käyttääSijoittelua || isKayttaaValintalaskentaa) {
+          logger.info(s"""Haku: ${haku.oid}, hakukohde: $hakukohdeOid EI OLE erillishaku, koska haku.kayttaaSijoittelua: ${haku.käyttääSijoittelua} ja valintatapajono $valintatapajonoOid.kayttaaValintalaskentaa: $isKayttaaValintalaskentaa""")
           Right(false)
         } else {
+          logger.info(s"""Haku: ${haku.oid}, hakukohde: $hakukohdeOid ON erillishaku, koska haku.kayttaaSijoittelua: ${haku.käyttääSijoittelua} ja valintatapajono $valintatapajonoOid.kayttaaValintalaskentaa: $isKayttaaValintalaskentaa""")
           Right(true)
         }
     }
       case Left(e) => {
-        logger.error(s"""Valintatapajonotietojen haku valintaperusteista epäonnistui valintatapajonolle: ${valintatapajonoOid}, hakukohde: $hakukohdeOid""", e)
+        logger.error(s"""Valintatapajonotietojen haku valintaperusteista epäonnistui valintatapajonolle: ${valintatapajonoOid}, haku: ${haku.oid}, hakukohde: $hakukohdeOid""", e)
         if (haku.käyttääSijoittelua) {
+          logger.info(s"""Haku: ${haku.oid}, hakukohde: $hakukohdeOid EI OLE erillishaku, koska haku.kayttaaSijoittelua: ${haku.käyttääSijoittelua}. Valintatapajonotietojen haku epäonnistui.""")
           Right(false)
         } else {
+          logger.info(s"""Haku: ${haku.oid}, hakukohde: $hakukohdeOid ON erillishaku, koska haku.kayttaaSijoittelua: ${haku.käyttääSijoittelua}. Valintatapajonotietojen haku epäonnistui.""")
           Right(true)
         }
       }
