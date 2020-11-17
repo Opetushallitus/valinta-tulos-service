@@ -49,6 +49,22 @@ class YhdenPaikanSaannos(hakuService: HakuService,
     ).right.map(_.flatten.toSet)
   }
 
+  def getYpsTuloksetForManyHakemukses(tuloksetJaHakukohteet: Set[(Valinnantulos, Hakukohde)]): Either[Throwable, Set[Valinnantulos]] = {
+    val byKausi = tuloksetJaHakukohteet.groupBy(t => t._2.koulutuksenAlkamiskausi)
+    MonadHelper.sequence(
+      byKausi.map((kth: (Option[Kausi], Set[(Valinnantulos, Hakukohde)])) =>
+        kth._1 match {
+          case None =>
+            Left(new IllegalStateException(s"Yhden paikan säännön piirissä olevissa hakukohteissa ${kth._2.map(hk => hk._2.oid)} ei ole koulutuksen alkamiskautta."))
+          case Some(kausi) =>
+            val vastaanotot = virkailijaVastaanottoRepository
+              .findYpsVastaanotot(kausi, kth._2.map(_._1.henkiloOid))
+              .map(t => t._3.henkiloOid -> t).toMap
+            Right(kth._2.map(v => ottanutVastaanToisenPaikan(v._1, vastaanotot.get(v._1.henkiloOid))))
+        })
+    ).right.map(_.flatten.toSet)
+  }
+
   private def ottanutVastaanToisenPaikan(hakukohdeOid: HakukohdeOid,
                                          valinnantulokset: Set[Valinnantulos]): Either[Throwable, Set[Valinnantulos]] = {
     hakuService.getHakukohde(hakukohdeOid).right.flatMap(hakukohde => {
