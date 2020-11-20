@@ -91,7 +91,6 @@ class YhdenPaikanSaannos(hakuService: HakuService,
     if (valinnantulos.vastaanottotila == ValintatuloksenTila.KESKEN &&
       Set[Valinnantila](Hyvaksytty, VarasijaltaHyvaksytty, Varalla).contains(valinnantulos.valinnantila) &&
       (sitovaVastaanotto || ehdollinenVastaanottoToisellaHakemuksella)) {
-      System.out.println("haa")
       valinnantulos.copy(vastaanottotila = ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)
     } else {
       valinnantulos
