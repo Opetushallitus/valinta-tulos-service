@@ -129,7 +129,6 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     implicit val authenticated = authenticate
     val hakemusOids = parsedBody.extract[Set[HakemusOid]]
     valinnantulosService.getValinnantuloksetForHakemukset(hakemusOids, auditInfo)
-      .groupBy(_.valinnantulos.hakemusOid)
   }
 
   val valinnantulosMuutosSwagger: OperationBuilder = (apiOperation[Unit]("muokkaaValinnantulosta")
