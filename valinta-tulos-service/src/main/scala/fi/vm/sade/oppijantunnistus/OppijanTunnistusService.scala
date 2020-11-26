@@ -1,6 +1,7 @@
 package fi.vm.sade.oppijantunnistus
 
 import fi.vm.sade.utils.http.DefaultHttpClient
+import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakemusOid
 import org.json4s.jackson.JsonMethods._
@@ -12,25 +13,26 @@ import scalaj.http.HttpOptions
 
 trait OppijanTunnistusService {
 
-  def luoSecureLink(personOid: String, hakemusOid: HakemusOid, email: String, lang: String): Either[RuntimeException, OppijanTunnistus]
+  def luoSecureLink(personOid: String, hakemusOid: HakemusOid, email: String, lang: String, expires: Option[Long]): Either[RuntimeException, OppijanTunnistus]
 
 }
 object OppijanTunnistusService {
   def apply(appConfig: VtsApplicationSettings): OppijanTunnistusService = new RealOppijanTunnistusService(appConfig)
 }
-class RealOppijanTunnistusService(appConfig:VtsApplicationSettings) extends OppijanTunnistusService {
+class RealOppijanTunnistusService(appConfig:VtsApplicationSettings) extends OppijanTunnistusService with Logging {
   import org.json4s._
   implicit val formats = DefaultFormats
   import org.json4s.jackson.Serialization.write
 
-  def luoSecureLink(personOid: String, hakemusOid: HakemusOid, email: String, lang: String): Either[RuntimeException, OppijanTunnistus] = {
+  def luoSecureLink(personOid: String, hakemusOid: HakemusOid, email: String, lang: String, expires: Option[Long]): Either[RuntimeException, OppijanTunnistus] = {
+    logger.info(s"Creating secure link: hakemusOid=${hakemusOid}, email=${email}. lang=${lang}, expires=${expires}")
     val url = appConfig.oppijanTunnistusUrl
     val callbackUrl = lang.toLowerCase match {
       case "en" => appConfig.omatsivutUrlEn
       case "sv" => appConfig.omatsivutUrlSv
       case _ => appConfig.omatsivutUrlFi
     }
-    val oppijanTunnistusBody = OppijanTunnistusCreate(callbackUrl, email, lang, Metadata(hakemusOid.s, personOid))
+    val oppijanTunnistusBody = OppijanTunnistusCreate(callbackUrl, email, lang, expires, Metadata(hakemusOid.s, personOid))
     fetch(url, oppijanTunnistusBody){ response =>
       (parse(response)).extract[OppijanTunnistus]
     }.left.map {
