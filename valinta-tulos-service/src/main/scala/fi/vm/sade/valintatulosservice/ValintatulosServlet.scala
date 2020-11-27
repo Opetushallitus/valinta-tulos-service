@@ -10,7 +10,7 @@ import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.json.{JsonFormats, JsonStreamWriter, StreamingFailureException}
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.streamingresults.{HakemustenTulosHakuLock, StreamingValintatulosService}
-import fi.vm.sade.valintatulosservice.tarjonta.{Haku, Hakuaika, YhdenPaikanSaanto}
+import fi.vm.sade.valintatulosservice.tarjonta.{Haku, YhdenPaikanSaanto}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import javax.servlet.http.HttpServletResponse
@@ -52,7 +52,6 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
           käyttääHakutoiveidenPriorisointia = true,
           varsinaisenHaunOid = None,
           sisältyvätHaut = Set(),
-          hakuAjat = List(Hakuaika("12345", Some(System.currentTimeMillis()), Some(System.currentTimeMillis()))),
           koulutuksenAlkamiskausi = Some(Kausi("2016S")),
           yhdenPaikanSaanto = YhdenPaikanSaanto(voimassa = false, ""),
           nimi = Map("kieli_fi" -> "Haun nimi")),
