@@ -8,7 +8,7 @@ import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.json.{JsonFormats, JsonStreamWriter, StreamingFailureException}
-import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
+import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, Vastaanottoaikataulu}
 import fi.vm.sade.valintatulosservice.streamingresults.{HakemustenTulosHakuLock, StreamingValintatulosService}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, Hakuaika, YhdenPaikanSaanto}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
@@ -56,7 +56,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
           koulutuksenAlkamiskausi = Some(Kausi("2016S")),
           yhdenPaikanSaanto = YhdenPaikanSaanto(voimassa = false, ""),
           nimi = Map("kieli_fi" -> "Haun nimi")),
-        Ohjausparametrit(Vastaanottoaikataulu(None, None), Some(DateTime.now().plusDays(10)), Some(DateTime.now().plusDays(30)), Some(DateTime.now().plusDays(60)), None, None, None, true),
+        Ohjausparametrit(Vastaanottoaikataulu(None, None), Some(DateTime.now().plusDays(10)), Some(DateTime.now().plusDays(30)), Some(DateTime.now().plusDays(60)), None, None, None, true, true, true),
         hasHetu = true
       )
     )

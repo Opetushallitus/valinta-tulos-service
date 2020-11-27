@@ -5,9 +5,9 @@ import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.oppijantunnistus.{OppijanTunnistus, OppijanTunnistusService}
 import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
-import fi.vm.sade.valintatulosservice.domain.{Hakemuksentulos, Hakemus, Hakutoive, HakutoiveenIlmoittautumistila, HakutoiveenSijoittelunTilaTieto, Hakutoiveentulos, Henkilotiedot, Ilmoittautumisaika, Sijoittelu, Valintatila, Vastaanotettavuustila, Vastaanottoaikataulu}
+import fi.vm.sade.valintatulosservice.domain.{Hakemuksentulos, Hakemus, Hakutoive, HakutoiveenIlmoittautumistila, HakutoiveenSijoittelunTilaTieto, Hakutoiveentulos, Henkilotiedot, Ilmoittautumisaika, Sijoittelu, Valintatila, Vastaanotettavuustila}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
-import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
+import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService, Vastaanottoaikataulu}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, YhdenPaikanSaanto}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EhdollisenPeriytymisenIlmoitus, EiTehty, HakemusOid, HakuOid, HakukohdeOid, Kevat, MailReason, SitovanVastaanotonIlmoitus, ValintatapajonoOid, Vastaanottoilmoitus, Vastaanottotila}
@@ -72,7 +72,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA))
         mailPollerRepository.candidates(hakukohdeOidA, recheckIntervalHours = 0) returns Set((hakemusOidB, hakukohdeOidA, None, true))
         var hakukierrosPaattyy = DateTime.now().plusDays(1)
-        ohjausparametritService.ohjausparametrit(hakuOidA) returns Right(Ohjausparametrit(Vastaanottoaikataulu(None, None), None, None, Some(hakukierrosPaattyy), None, None, None, false))
+        ohjausparametritService.ohjausparametrit(hakuOidA) returns Right(Ohjausparametrit(Vastaanottoaikataulu(None, None), None, None, Some(hakukierrosPaattyy), None, None, None, false, false, false))
         mailPollerRepository.lastChecked(hakukohdeOidA) returns None
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusB)
         valintatulosService.hakemuksentulos(hakemusB) returns Some(hakemuksentulosB)
