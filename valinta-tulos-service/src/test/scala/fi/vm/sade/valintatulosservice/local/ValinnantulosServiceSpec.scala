@@ -426,7 +426,6 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       käyttääHakutoiveidenPriorisointia = true,
       varsinaisenHaunOid = null,
       sisältyvätHaut = null,
-      hakuAjat = null,
       koulutuksenAlkamiskausi = null,
       yhdenPaikanSaanto = null,
       nimi = null))
@@ -455,7 +454,6 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       käyttääHakutoiveidenPriorisointia = true,
       varsinaisenHaunOid = null,
       sisältyvätHaut = null,
-      hakuAjat = null,
       koulutuksenAlkamiskausi = null,
       yhdenPaikanSaanto = null,
       nimi = null))
@@ -484,7 +482,6 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       käyttääHakutoiveidenPriorisointia = true,
       varsinaisenHaunOid = null,
       sisältyvätHaut = null,
-      hakuAjat = null,
       koulutuksenAlkamiskausi = null,
       yhdenPaikanSaanto = null,
       nimi = null))

@@ -532,9 +532,6 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       "sv" -> "haku_nimi_a_sv",
       "en" -> "haku_nimi_a_en"
     )
-    val hakuaikaIdA = "hakuaika_a_id"
-    val hakuaikaAlkuA = Some(1l)
-    val hakuaikaLoppuA = Some(2l)
     val valintatapajonoOidA = ValintatapajonoOid("14538080612623056182813241345174")
     val valintatapajonoOidB = ValintatapajonoOid("14538080612623056182813241345175")
     val valintatapajonoOidC = ValintatapajonoOid("14538080612623056182813241345176")
@@ -551,7 +548,6 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       käyttääHakutoiveidenPriorisointia = true,
       varsinaisenHaunOid = None,
       sisältyvätHaut = Set.empty,
-      hakuAjat = List(tarjonta.Hakuaika(hakuaikaId = hakuaikaIdA, alkuPvm = hakuaikaAlkuA, loppuPvm = hakuaikaLoppuA)),
       koulutuksenAlkamiskausi = Some(Kevat(2018)),
       yhdenPaikanSaanto = yhdenPaikanSaantoA,
       nimi = hakuNimetA)
