@@ -172,11 +172,6 @@ object VtsAppConfig extends Logging {
 
     def start {}
 
-    lazy val ohjausparametritService = this match {
-      case _ : StubbedExternalDeps => new StubbedOhjausparametritService()
-      case _ => new CachedRemoteOhjausparametritService(this)
-    }
-
     override def settings: VtsApplicationSettings
 
     def properties: Map[String, String] = settings.toProperties

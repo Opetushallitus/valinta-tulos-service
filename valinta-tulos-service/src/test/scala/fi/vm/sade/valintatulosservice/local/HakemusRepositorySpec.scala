@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice.local
 import fi.vm.sade.valintatulosservice.ITSpecification
 import fi.vm.sade.valintatulosservice.domain.{Hakemus, Hakutoive, Henkilotiedot}
 import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusFixtures, HakemusRepository, HakuAppRepository}
+import fi.vm.sade.valintatulosservice.ohjausparametrit.StubbedOhjausparametritService
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
@@ -13,7 +14,7 @@ import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class HakemusRepositorySpec extends ITSpecification with ValintarekisteriDbTools {
-  val hakuService = HakuService(appConfig, null, OrganisaatioService(appConfig), null)
+  val hakuService = HakuService(appConfig, null, new StubbedOhjausparametritService(), OrganisaatioService(appConfig), null)
   val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
   val repo = new HakemusRepository(
     new HakuAppRepository(),

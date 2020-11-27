@@ -13,6 +13,7 @@ import fi.vm.sade.valintatulosservice.MonadHelper
 import fi.vm.sade.valintatulosservice.config.AppConfig
 import fi.vm.sade.valintatulosservice.koodisto.{Koodi, KoodistoService}
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
+import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.organisaatio.{Organisaatio, OrganisaatioService, Organisaatiot}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.http4s.json4s.native.jsonExtract
@@ -43,12 +44,12 @@ trait HakuService {
 case class HakuServiceConfig(ophProperties: OphProperties, stubbedExternalDeps: Boolean)
 
 object HakuService {
-  def apply(appConfig: AppConfig, casClient: CasClient, organisaatioService: OrganisaatioService, koodistoService: KoodistoService): HakuService = {
+  def apply(appConfig: AppConfig, casClient: CasClient, ohjausparametritService: OhjausparametritService, organisaatioService: OrganisaatioService, koodistoService: KoodistoService): HakuService = {
     val config = appConfig.hakuServiceConfig
     if (config.stubbedExternalDeps) {
       HakuFixtures
     } else {
-      new CachedHakuService(new TarjontaHakuService(config), new KoutaHakuService(appConfig, casClient, organisaatioService, koodistoService), appConfig)
+      new CachedHakuService(new TarjontaHakuService(config), new KoutaHakuService(appConfig, casClient, ohjausparametritService, organisaatioService, koodistoService), appConfig)
     }
   }
 }
@@ -339,7 +340,7 @@ case class KoutaHaku(oid: String,
                      hakuajat: List[KoutaHakuaika],
                      alkamisvuosi: Option[String],
                      alkamiskausiKoodiUri: Option[String]) {
-  def toHaku: Either[Throwable, Haku] = {
+  def toHaku(ohjausparametrit: Ohjausparametrit): Either[Throwable, Haku] = {
     for {
       alkamiskausi <- ((alkamiskausiKoodiUri, alkamisvuosi.map(s => (s, Try(s.toInt)))) match {
         case (Some(uri), Some((_, Success(vuosi)))) if uri.startsWith("kausi_k#") => Right(Some(Kevat(vuosi)))
@@ -353,8 +354,8 @@ case class KoutaHaku(oid: String,
       korkeakoulu = kohdejoukkoKoodiUri.startsWith("haunkohdejoukko_12#"),
       toinenAste = List("haunkohdejoukko_11#", "haunkohdejoukko_17#", "haunkohdejoukko_20#").exists(kohdejoukkoKoodiUri.startsWith),
       sallittuKohdejoukkoKelaLinkille = !List("haunkohdejoukontarkenne_2#", "haunkohdejoukontarkenne_4#", "haunkohdejoukontarkenne_5#", "haunkohdejoukontarkenne_6#").exists(kiellettyTarkenne => kohdejoukonTarkenneKoodiUri.exists(_.startsWith(kiellettyTarkenne))),
-      käyttääSijoittelua = false, // FIXME
-      käyttääHakutoiveidenPriorisointia = false, // FIXME
+      käyttääSijoittelua = ohjausparametrit.sijoittelu,
+      käyttääHakutoiveidenPriorisointia = ohjausparametrit.jarjestetytHakutoiveet,
       varsinaisenHaunOid = None,
       sisältyvätHaut = Set.empty,
       hakuAjat = hakuajat.map(_.toHakuaika),
@@ -453,7 +454,11 @@ case class KoutaHakukohde(oid: String,
   }
 }
 
-class KoutaHakuService(config: AppConfig, casClient: CasClient, organisaatioService: OrganisaatioService, koodistoService: KoodistoService) extends HakuService with Logging {
+class KoutaHakuService(config: AppConfig,
+                       casClient: CasClient,
+                       ohjausparametritService: OhjausparametritService,
+                       organisaatioService: OrganisaatioService,
+                       koodistoService: KoodistoService) extends HakuService with Logging {
   private implicit val jsonFormats: Formats = DefaultFormats
   private val client = CasAuthenticatingClient(
     casClient = casClient,
@@ -469,7 +474,11 @@ class KoutaHakuService(config: AppConfig, casClient: CasClient, organisaatioServ
   )
 
   def getHaku(oid: HakuOid): Either[Throwable, Haku] = {
-    getKoutaHaku(oid).right.flatMap(_.toHaku)
+    for {
+      o <- ohjausparametritService.ohjausparametrit(oid).right
+      kh <- getKoutaHaku(oid).right
+      h <- kh.toHaku(o).right
+    } yield h
   }
 
   def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]] = {
