@@ -120,7 +120,6 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
 
   val valinnantuloksetHakemuksilleSwagger: OperationBuilder = (apiOperation[List[ValinnantulosWithTilahistoria]]("valinnantuloksetHakemuksille")
     summary "Valinnantulos usealle hakemukselle kerralla"
-    //parameter queryParam[String]("hakemusOid").description("Hakemuksen OID")
     parameter bodyParam[Set[String]]("hakemusOids").description("Hakemuksien OIDit")
     tags "valinnan-tulos")
   models.update("Valinnantulos", models("Valinnantulos").copy(properties = models("Valinnantulos").properties.map {
