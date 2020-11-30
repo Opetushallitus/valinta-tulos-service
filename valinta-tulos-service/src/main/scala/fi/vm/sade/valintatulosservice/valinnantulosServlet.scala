@@ -127,7 +127,11 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     contentType = formats("json")
     implicit val authenticated = authenticate
     val hakemusOids = parsedBody.extract[Set[HakemusOid]]
-    valinnantulosService.getValinnantuloksetForHakemukset(hakemusOids, auditInfo)
+    if (hakemusOids.isEmpty || hakemusOids.size > 5000) {
+      BadRequest("Minimum of 1 and maximum of 5000 hakemusOids at a time.")
+    } else {
+      valinnantulosService.getValinnantuloksetForHakemukset(hakemusOids, auditInfo)
+    }
   }
 
   val valinnantulosMuutosSwagger: OperationBuilder = (apiOperation[Unit]("muokkaaValinnantulosta")
