@@ -6,6 +6,8 @@ import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoRecord, VirkailijaVastaanottoRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.dbio.DBIO
+
+import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class YhdenPaikanSaannos(hakuService: HakuService,
@@ -28,6 +30,22 @@ class YhdenPaikanSaannos(hakuService: HakuService,
   def apply(valinnantulokset: Set[Valinnantulos]): Either[Throwable, Set[Valinnantulos]] = {
     MonadHelper.sequence(
       valinnantulokset.groupBy(_.hakukohdeOid).map(t => ottanutVastaanToisenPaikan(t._1, t._2))
+    ).right.map(_.flatten.toSet)
+  }
+
+  def getYpsTuloksetForManyHakemukses(tuloksetJaHakukohteet: Set[(Valinnantulos, Hakukohde)]): Either[Throwable, Set[Valinnantulos]] = {
+    val byKausi = tuloksetJaHakukohteet.groupBy(t => t._2.koulutuksenAlkamiskausi)
+    MonadHelper.sequence(
+      byKausi.map((kth: (Option[Kausi], Set[(Valinnantulos, Hakukohde)])) =>
+        kth._1 match {
+          case None =>
+            Left(new IllegalStateException(s"Yhden paikan säännön piirissä olevissa hakukohteissa ${kth._2.map(hk => hk._2.oid)} ei ole koulutuksen alkamiskautta."))
+          case Some(kausi) =>
+            val vastaanotot = virkailijaVastaanottoRepository
+              .findYpsVastaanotot(kausi, kth._2.map(_._1.henkiloOid))
+              .map(t => t._3.henkiloOid -> t).toMap
+            Right(kth._2.map(v => ottanutVastaanToisenPaikan(v._1, vastaanotot.get(v._1.henkiloOid))))
+        })
     ).right.map(_.flatten.toSet)
   }
 
