@@ -12,27 +12,41 @@ import scala.concurrent.duration.Duration
 
 trait ValinnantulosRepository extends ValintarekisteriRepository {
   def getIlmoittautumisenAikaleimat(henkiloOid: String): DBIO[Iterable[(HakukohdeOid, Instant)]]
+
   def getIlmoittautumisenAikaleimat(hakuOid: HakuOid): DBIO[Iterable[(String, HakukohdeOid, Instant)]]
+
   def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
-  def storeValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
-  def storeValinnantila(tila:ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
-  def storeValinnantilaOverridingTimestamp(tila:ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None, tilanViimeisinMuutos: TilanViimeisinMuutos): DBIO[Unit]
+
+  def storeValinnantuloksenOhjaus(ohjaus: ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
+
+  def storeValinnantila(tila: ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
+
+  def storeValinnantilaOverridingTimestamp(tila: ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None, tilanViimeisinMuutos: TilanViimeisinMuutos): DBIO[Unit]
 
   def setJulkaistavissa(valintatapajonoOid: ValintatapajonoOid, ilmoittaja: String, selite: String): DBIO[Unit]
+
   def setHyvaksyttyJaJulkaistavissa(valintatapajonoOid: ValintatapajonoOid, ilmoittaja: String, selite: String): DBIO[Unit]
+
   def setHyvaksyttyJaJulkaistavissa(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid, ilmoittaja: String, selite: String): DBIO[Unit]
 
-  def updateValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
+  def updateValinnantuloksenOhjaus(ohjaus: ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
 
   def getMuutoshistoriaForHakemus(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[Muutos]
 
   def getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuJonoOidHistoriasta(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Option[ValintatapajonoOid]
 
   def getValinnantuloksetForHakukohde(hakukohdeOid: HakukohdeOid): DBIO[Set[Valinnantulos]]
+
   def getValinnantuloksetForValintatapajono(valintatapajonoOid: ValintatapajonoOid): Set[Valinnantulos]
+
   def getValinnantuloksetAndLastModifiedDateForValintatapajono(valintatapajonoOid: ValintatapajonoOid, timeout: Duration = Duration(10, TimeUnit.SECONDS)): Option[(Instant, Set[Valinnantulos])]
+
   def getValinnantuloksetForHaku(hakuOid: HakuOid): DBIO[Set[Valinnantulos]]
+
   def getValinnantuloksetForHakemus(hakemusOid: HakemusOid): DBIO[Set[Valinnantulos]]
+
+  def getValinnantuloksetForHakemukses(hakemusOids: Set[HakemusOid]): Seq[Valinnantulos]
+
   def getValinnantuloksetAndLastModifiedDateForHakemus(hakemusOid: HakemusOid): Option[(Instant, Set[Valinnantulos])]
 
   def getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid: ValintatapajonoOid): DBIO[Set[Valinnantulos]]
@@ -41,18 +55,24 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
 
   def getHakemuksenTilahistoriat(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[TilaHistoriaRecord]
 
+  def getHakemustenTilahistoriat(hakemusOids: Set[HakemusOid]): List[TilaHistoriaRecord]
+
   def getValinnantulostenHakukohdeOiditForHaku(hakuOid: HakuOid): DBIO[List[HakukohdeOid]]
 
   def getLastModifiedForHakukohde(hakukohdeOid: HakukohdeOid): DBIO[Option[Instant]]
-  def getLastModifiedForValintatapajono(valintatapajonoOid: ValintatapajonoOid):DBIO[Option[Instant]]
+
+  def getLastModifiedForValintatapajono(valintatapajonoOid: ValintatapajonoOid): DBIO[Option[Instant]]
 
   def getHakuForHakukohde(hakukohdeOid: HakukohdeOid): HakuOid
 
-  def getHakutoiveidenValinnantuloksetForHakemusDBIO(hakuOid:HakuOid, hakemusOid:HakemusOid): DBIO[List[HakutoiveenValinnantulos]]
+  def getHakutoiveidenValinnantuloksetForHakemusDBIO(hakuOid: HakuOid, hakemusOid: HakemusOid): DBIO[List[HakutoiveenValinnantulos]]
 
-  def deleteValinnantulos(muokkaaja:String, valinnantulos:Valinnantulos, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
+  def deleteValinnantulos(muokkaaja: String, valinnantulos: Valinnantulos, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
+
   def deleteIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
+
   def deleteHyvaksyttyJaJulkaistavissa(henkiloOid: String, hakukohdeOid: HakukohdeOid, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
+
   def deleteHyvaksyttyJaJulkaistavissaIfExists(henkiloOid: String, hakukohdeOid: HakukohdeOid, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
 
   def getValinnantuloksetAndLastModifiedDateForHakukohde(hakukohdeOid: HakukohdeOid, timeout: Duration = Duration(10, TimeUnit.SECONDS)): Option[(Instant, Set[Valinnantulos])] =
@@ -76,4 +96,5 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
       case Left(error) => throw error
     }
   }
+
 }
