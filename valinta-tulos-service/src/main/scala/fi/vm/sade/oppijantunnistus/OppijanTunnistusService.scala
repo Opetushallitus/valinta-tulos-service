@@ -27,7 +27,8 @@ class RealOppijanTunnistusService(appConfig: VtsAppConfig) extends OppijanTunnis
   private val client = CasAuthenticatingClient(
     casClient = appConfig.securityContext.casClient,
     casParams = CasParams(
-      "/oppijan-tunnistus/auth/cas",
+      appConfig.ophUrlProperties.url("url-oppijantunnistus-service"),
+      "/auth/cas",
       appConfig.settings.securitySettings.casUsername,
       appConfig.settings.securitySettings.casPassword
     ),
