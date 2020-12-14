@@ -4,10 +4,11 @@ import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasParams}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakemusOid
 import org.http4s.Method.POST
-import org.http4s.{Request, Uri}
+import org.http4s.{Charset, EntityEncoder, MediaType, Request, Uri}
 import org.http4s.client.blaze.SimpleHttp1Client
+import org.http4s.headers.`Content-Type`
 import scalaz.concurrent.Task
 
 
@@ -64,8 +65,9 @@ class RealOppijanTunnistusService(appConfig: VtsAppConfig) extends OppijanTunnis
 
     Uri.fromString(url)
       .fold(Task.fail, uri => {
+        logger.info(s"Calling oppijantunnistus uri: $uri")
         val req: Task[Request] = Request(method = POST, uri = uri)
-          .withBody[String](write(body))
+          .withBody[String](write(body))(EntityEncoder.stringEncoder(Charset.`UTF-8`).withContentType(`Content-Type`(MediaType.`application/json`)))
 
         client.fetch(req) {
           case r if r.status.code == 404 =>
