@@ -1,5 +1,7 @@
 package fi.vm.sade.oppijantunnistus
 
+import java.util.concurrent.TimeUnit
+
 import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasParams}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
@@ -9,7 +11,10 @@ import org.http4s.Method.POST
 import org.http4s.{Charset, EntityEncoder, MediaType, Request, Uri}
 import org.http4s.client.blaze.SimpleHttp1Client
 import org.http4s.headers.`Content-Type`
+import org.http4s.json4s.native.{jsonEncoder, jsonExtract}
 import scalaz.concurrent.Task
+
+import scala.concurrent.duration.Duration
 
 
 trait OppijanTunnistusService {
@@ -35,7 +40,7 @@ class RealOppijanTunnistusService(appConfig: VtsAppConfig) extends OppijanTunnis
     ),
     serviceClient = SimpleHttp1Client(appConfig.blazeDefaultConfig),
     clientCallerId = appConfig.settings.callerId,
-    sessionCookieName = "Ring-Session"
+    sessionCookieName = "ring-session"
   )
   def luoSecureLink(personOid: String, hakemusOid: HakemusOid, email: String, lang: String, expires: Option[Long]): Either[RuntimeException, OppijanTunnistus] = {
     logger.info(s"Creating secure link: hakemusOid=${hakemusOid}, email=${email}. lang=${lang}, expires=${expires}")
@@ -48,38 +53,24 @@ class RealOppijanTunnistusService(appConfig: VtsAppConfig) extends OppijanTunnis
     val oppijanTunnistusBody = OppijanTunnistusCreate(callbackUrl, email, lang, expires, Metadata(hakemusOid.s, personOid))
     fetch(url, oppijanTunnistusBody) match {
       case Left(e) => Left(new RuntimeException(s"Failed to get securelink for ${write(oppijanTunnistusBody)}", e))
-      case Right(Some(o)) => Right(o)
-      case Right(None) => Left(new RuntimeException("Unable to parse secure link from 200 OK response!"))
+      case Right(o) => Right(o)
     }
   }
 
 
-  private def fetch(url: String, body: OppijanTunnistusCreate): Either[Throwable, Option[OppijanTunnistus]] = {
-    implicit val oppijanTunnistusReader = new Reader[Option[OppijanTunnistus]] {
-      override def read(v: JValue): Option[OppijanTunnistus] = {
-        Some(OppijanTunnistus( (v \ "securelink").extract[String]))
-      }
-    }
-
-    implicit val oppijanTunnistusDecoder = org.http4s.json4s.native.jsonOf[Option[OppijanTunnistus]]
-
+  private def fetch(url: String, body: OppijanTunnistusCreate): Either[Throwable, OppijanTunnistus] = {
     Uri.fromString(url)
       .fold(Task.fail, uri => {
         logger.info(s"Calling oppijantunnistus uri: $uri")
-        val req: Task[Request] = Request(method = POST, uri = uri)
-          .withBody[String](write(body))(EntityEncoder.stringEncoder(Charset.`UTF-8`).withContentType(`Content-Type`(MediaType.`application/json`)))
-
-        client.fetch(req) {
-          case r if r.status.code == 404 =>
-            Task.now(Left(new IllegalArgumentException(s"POST $url failed with status 404: $r.body")))
+        val bodyJson: JValue = Extraction.decompose(body)
+        client.fetch(Request(method = POST, uri = uri)
+          .withBody(bodyJson)(jsonEncoder[JValue])) {
           case r if r.status.code == 200  =>
-            r.as[Option[OppijanTunnistus]].map(Right(_))
-          case r if r.status.code == 502 =>
-            Task.now(Left(new RuntimeException(s"POST $url failed with status 502")))
-          case r =>
-            Task.now(Left(new RuntimeException(s"POST $url failed with status $r.status")))
+            r.as[OppijanTunnistus](jsonExtract[OppijanTunnistus])
+              .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing securelink failed", t)) }
+          case r => r.bodyAsText.runLast
+            .flatMap(body => Task.fail(new RuntimeException(s"Failed to fetch securelink: ${body.getOrElse("Failed to parse body")}")))
         }
-      }).unsafePerformSync
-
+      }).attemptRunFor(Duration(1, TimeUnit.MINUTES)).toEither
   }
 }
