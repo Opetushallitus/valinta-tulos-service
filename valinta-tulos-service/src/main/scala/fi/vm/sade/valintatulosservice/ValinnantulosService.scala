@@ -149,6 +149,8 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
           Right(true)
         }
       }
+    }
+  }
 
 
   def storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid: ValintatapajonoOid,
