@@ -35,7 +35,7 @@ class RealOppijanTunnistusService(appConfig: VtsAppConfig) extends OppijanTunnis
     ),
     serviceClient = SimpleHttp1Client(appConfig.blazeDefaultConfig),
     clientCallerId = appConfig.settings.callerId,
-    sessionCookieName = "ring-session"
+    sessionCookieName = "Ring-Session"
   )
   def luoSecureLink(personOid: String, hakemusOid: HakemusOid, email: String, lang: String, expires: Option[Long]): Either[RuntimeException, OppijanTunnistus] = {
     logger.info(s"Creating secure link: hakemusOid=${hakemusOid}, email=${email}. lang=${lang}, expires=${expires}")
