@@ -23,27 +23,34 @@ object HenkilotFixture {
 }
 
 class FixtureServlet(valintarekisteriDb: ValintarekisteriDb)(implicit val appConfig: VtsAppConfig)
-  extends ScalatraServlet with Logging with JacksonJsonSupport with JsonFormats {
+    extends ScalatraServlet
+    with Logging
+    with JacksonJsonSupport
+    with JsonFormats {
 
   options("/fixtures/apply") {
     response.addHeader("Access-Control-Allow-Origin", "*")
     response.addHeader("Access-Control-Allow-Methods", "PUT")
-    response.addHeader("Access-Control-Allow-Headers", request.getHeader("Access-Control-Allow-Headers"))
+    response.addHeader(
+      "Access-Control-Allow-Headers",
+      request.getHeader("Access-Control-Allow-Headers")
+    )
   }
 
   put("/fixtures/apply") {
     response.addHeader("Access-Control-Allow-Origin", "*")
     val fixturename = params("fixturename")
     SijoitteluFixtures(valintarekisteriDb).importFixture(fixturename + ".json", true)
-    val ohjausparametrit = paramOption("ohjausparametrit").getOrElse(OhjausparametritFixtures.vastaanottoLoppuu2030)
+    val ohjausparametrit =
+      paramOption("ohjausparametrit").getOrElse(OhjausparametritFixtures.vastaanottoLoppuu2030)
     OhjausparametritFixtures.activeFixture = ohjausparametrit
     val haku = paramOption("haku").map(HakuOid).getOrElse(HakuFixtures.korkeakouluYhteishaku)
     val useHakuAsHakuOid = paramOption("useHakuAsHakuOid").getOrElse("false")
     val useHakuOid = paramOption("useHakuOid").map(HakuOid)
-    if(useHakuOid.isDefined) {
+    if (useHakuOid.isDefined) {
       HakuFixtures.useFixture(haku, List(useHakuOid.get))
     } else {
-      if("true".equalsIgnoreCase(useHakuAsHakuOid)) {
+      if ("true".equalsIgnoreCase(useHakuAsHakuOid)) {
         HakuFixtures.useFixture(haku, List(haku))
       } else {
         HakuFixtures.useFixture(haku)
@@ -59,7 +66,9 @@ class FixtureServlet(valintarekisteriDb: ValintarekisteriDb)(implicit val appCon
 
   post("/oppijanumerorekisteri/henkilot") {
     contentType = formats("json")
-    org.json4s.DefaultWriters.mapWriter[Henkilo](Henkilo.henkiloWriter).write(HenkilotFixture.fixture.map(h => h.oid.toString -> h).toMap)
+    org.json4s.DefaultWriters
+      .mapWriter[Henkilo](Henkilo.henkiloWriter)
+      .write(HenkilotFixture.fixture.map(h => h.oid.toString -> h).toMap)
   }
 
   get("/kayttooikeus/userdetails/:username") {
@@ -67,7 +76,6 @@ class FixtureServlet(valintarekisteriDb: ValintarekisteriDb)(implicit val appCon
     contentType = formats("json")
     "{\"username\": \"1.2.246.562.24.64735725450\",\"authorities\": [{\"authority\": \"ROLE_APP_VALINTATULOSSERVICE_CRUD\"}],\"accountNonExpired\": true,\"accountNonLocked\": true,\"credentialsNonExpired\": true,\"enabled\": true}"
   }
-
 
   error {
     case e => {

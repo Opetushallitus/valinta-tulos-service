@@ -11,7 +11,11 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{Hyvaksymiskirje, SessionRepository, Valintaesitys}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{
+  Hyvaksymiskirje,
+  SessionRepository,
+  Valintaesitys
+}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra.{NotFound, Ok}
 import org.scalatra.swagger.{Swagger, SwaggerEngine}
@@ -19,19 +23,25 @@ import org.scalatra.swagger.{Swagger, SwaggerEngine}
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.concurrent.duration.Duration
 
-class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
-                              valintaesitysService: ValintaesitysService,
-                              valinnantulosService: ValinnantulosService,
-                              hyvaksymiskirjeService: HyvaksymiskirjeService,
-                              lukuvuosimaksuService: LukuvuosimaksuService, hakuService: HakuService,
-                              authorizer: OrganizationHierarchyAuthorizer,
-                              sijoitteluService: SijoitteluService, val sessionRepository: SessionRepository)
-                             (implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase
-  with CasAuthenticatedServlet with DeadlineDecorator {
+class SijoittelunTulosServlet(
+  val valintatulosService: ValintatulosService,
+  valintaesitysService: ValintaesitysService,
+  valinnantulosService: ValinnantulosService,
+  hyvaksymiskirjeService: HyvaksymiskirjeService,
+  lukuvuosimaksuService: LukuvuosimaksuService,
+  hakuService: HakuService,
+  authorizer: OrganizationHierarchyAuthorizer,
+  sijoitteluService: SijoitteluService,
+  val sessionRepository: SessionRepository
+)(implicit val swagger: Swagger, appConfig: VtsAppConfig)
+    extends VtsServletBase
+    with CasAuthenticatedServlet
+    with DeadlineDecorator {
 
   override protected def applicationDescription: String = "Sijoittelun Tulos REST API"
 
-  private implicit val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(8))
+  private implicit val ec: ExecutionContextExecutor =
+    ExecutionContext.fromExecutor(Executors.newFixedThreadPool(8))
 
   val gson = new GsonBuilder().create()
 
@@ -43,17 +53,40 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     val hakukohde = hakuService.getHakukohde(hakukohdeOid).fold(throw _, h => h)
 
-    authorizer.checkAccess(ai.session._2, hakukohde.organisaatioOiditAuktorisointiin,
-      Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).fold(throw _, x => x)
+    authorizer
+      .checkAccess(
+        ai.session._2,
+        hakukohde.organisaatioOiditAuktorisointiin,
+        Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
+      )
+      .fold(throw _, x => x)
     try {
-      val futureSijoittelunTulokset: Future[HakukohdeDTO] = Future { sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session, ai) }
-      val futureLukuvuosimaksut: Future[Seq[Lukuvuosimaksu]] = Future { lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, ai) }
-      val futureHyvaksymiskirjeet: Future[Set[Hyvaksymiskirje]] = Future { hyvaksymiskirjeService.getHyvaksymiskirjeet(hakukohdeOid, ai) }
-      val futureValintaesitys: Future[Set[Valintaesitys]] = Future { valintaesitysService.get(hakukohdeOid, ai) }
+      val futureSijoittelunTulokset: Future[HakukohdeDTO] = Future {
+        sijoitteluService.getHakukohdeBySijoitteluajo(
+          hakuOid,
+          sijoitteluajoId,
+          hakukohdeOid,
+          authenticated.session,
+          ai
+        )
+      }
+      val futureLukuvuosimaksut: Future[Seq[Lukuvuosimaksu]] = Future {
+        lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, ai)
+      }
+      val futureHyvaksymiskirjeet: Future[Set[Hyvaksymiskirje]] = Future {
+        hyvaksymiskirjeService.getHyvaksymiskirjeet(hakukohdeOid, ai)
+      }
+      val futureValintaesitys: Future[Set[Valintaesitys]] = Future {
+        valintaesitysService.get(hakukohdeOid, ai)
+      }
 
-      val (lastModified, valinnantulokset: Set[Valinnantulos]) = valinnantulosService.getValinnantuloksetForHakukohde(hakukohdeOid, ai).map(a => (Option(a._1), a._2)).getOrElse((None, Set()))
+      val (lastModified, valinnantulokset: Set[Valinnantulos]) = valinnantulosService
+        .getValinnantuloksetForHakukohde(hakukohdeOid, ai)
+        .map(a => (Option(a._1), a._2))
+        .getOrElse((None, Set()))
       val modified: String = lastModified.map(createLastModifiedHeader).getOrElse("")
-      val valinnantuloksetWithTakarajat: Set[Valinnantulos] = decorateValinnantuloksetWithDeadlines(hakuOid, hakukohdeOid, valinnantulokset)
+      val valinnantuloksetWithTakarajat: Set[Valinnantulos] =
+        decorateValinnantuloksetWithDeadlines(hakuOid, hakukohdeOid, valinnantulokset)
 
       val resultJson = for {
         sijoittelunTulokset <- futureSijoittelunTulokset

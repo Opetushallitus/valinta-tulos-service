@@ -1,6 +1,5 @@
 package fi.vm.sade.valintatulosservice
 
-
 import java.util.Date
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
@@ -21,15 +20,21 @@ import scala.concurrent.forkjoin.ForkJoinPool
 
 case class Status(started: Date)
 
-class HakukohdeRefreshServlet(hakukohdeRepository: HakukohdeRepository,
-                              hakukohdeRecordService: HakukohdeRecordService)
-                             (implicit val swagger: Swagger) extends ScalatraServlet with Logging with JacksonJsonSupport with JsonFormats with SwaggerSupport with UrlGeneratorSupport {
+class HakukohdeRefreshServlet(
+  hakukohdeRepository: HakukohdeRepository,
+  hakukohdeRecordService: HakukohdeRecordService
+)(implicit val swagger: Swagger)
+    extends ScalatraServlet
+    with Logging
+    with JacksonJsonSupport
+    with JsonFormats
+    with SwaggerSupport
+    with UrlGeneratorSupport {
 
   override protected def applicationDescription: String = "Hakukohdetietojen virkistys API"
 
   private val running = new AtomicReference[Option[Date]](None)
   import scala.concurrent.ExecutionContext.Implicits.global
-
 
   val statusSwagger = (apiOperation[Status]("virkistysStatus")
     summary "Virkistyksen tila"
@@ -37,14 +42,17 @@ class HakukohdeRefreshServlet(hakukohdeRepository: HakukohdeRepository,
   val statusController = get("/", operation(statusSwagger)) {
     running.get() match {
       case Some(started) => Ok(Status(started))
-      case None => NoContent()
+      case None          => NoContent()
     }
   }
 
   val virkistaSwagger = (apiOperation[Unit]("virkistaHakukohteet")
     summary "Virkistä hakukohteiden tiedot"
-    parameter queryParam[Boolean]("dryrun").defaultValue(true).description("Dry run logittaa muuttuneet hakukohteet, mutta ei päivitä kantaa.")
-    parameter bodyParam[Set[String]]("hakukohdeOids").description("Virkistettävien hakukohteiden oidit. Huom, tyhjä lista virkistää kaikki!")
+    parameter queryParam[Boolean]("dryrun")
+      .defaultValue(true)
+      .description("Dry run logittaa muuttuneet hakukohteet, mutta ei päivitä kantaa.")
+    parameter bodyParam[Set[String]]("hakukohdeOids")
+      .description("Virkistettävien hakukohteiden oidit. Huom, tyhjä lista virkistää kaikki!")
     tags "virkistys")
   post("/", operation(virkistaSwagger)) {
     val dryRun = params.getOrElse("dryrun", "true").toBoolean

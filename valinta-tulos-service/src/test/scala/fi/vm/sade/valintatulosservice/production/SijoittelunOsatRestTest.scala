@@ -14,7 +14,12 @@ import scala.language.experimental.macros
 
 @Ignore
 @RunWith(classOf[JUnitRunner])
-class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logging with PerformanceLogger with RestTestHelper {
+class SijoittelunOsatRestTest
+    extends Specification
+    with MatcherMacros
+    with Logging
+    with PerformanceLogger
+    with RestTestHelper {
   val casHost = "https://testi.virkailija.opintopolku.fi"
   val oldSijoitteluHost = casHost
   val vtsHost = "http://localhost:8097"
@@ -22,19 +27,36 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
   //val cas_password = System.getProperty("cas_password")
   override val casUrlOld = casHost + "/cas"
 
-  val vtsClient = new VtsAuthenticatingClient(casHost, vtsHost + "/valinta-tulos-service", "auth/login", casUserNew, casPasswordNew, BlazeClientConfig.defaultConfig, "vts-test-caller-id")
+  val vtsClient = new VtsAuthenticatingClient(
+    casHost,
+    vtsHost + "/valinta-tulos-service",
+    "auth/login",
+    casUserNew,
+    casPasswordNew,
+    BlazeClientConfig.defaultConfig,
+    "vts-test-caller-id"
+  )
   val vtsSessionCookie = vtsClient.getVtsSession(casHost)
 
   val hakuOid = "1.2.246.562.29.75203638285"
   val hakukohdeOid = "1.2.246.562.20.85377848495"
-  val hakemusOids = List("1.2.246.562.11.00006979630", "1.2.246.562.11.00006926939", "1.2.246.562.11.00004677086")
+  val hakemusOids =
+    List("1.2.246.562.11.00006979630", "1.2.246.562.11.00006926939", "1.2.246.562.11.00004677086")
 
   "Hakemus in new sijoittelu should equal to hakemus in old sijoittelu" in {
     hakemusOids.foreach { hakemusOid =>
       logger.info(s"HAKEMUS ${hakemusOid}")
 
-      val uusiHakemus = time("Get uusi hakemus") { get[Hakija](() => getNewHakemus(hakuOid, hakemusOid, vtsSessionCookie))}
-      val vanhaHakemus = time("Get vanha hakemus") { get[Hakija](() => getOld(s"$oldSijoitteluHost/sijoittelu-service/resources/sijoittelu/$hakuOid/sijoitteluajo/latest/hakemus/$hakemusOid")) }
+      val uusiHakemus = time("Get uusi hakemus") {
+        get[Hakija](() => getNewHakemus(hakuOid, hakemusOid, vtsSessionCookie))
+      }
+      val vanhaHakemus = time("Get vanha hakemus") {
+        get[Hakija](() =>
+          getOld(
+            s"$oldSijoitteluHost/sijoittelu-service/resources/sijoittelu/$hakuOid/sijoitteluajo/latest/hakemus/$hakemusOid"
+          )
+        )
+      }
 
       uusiHakemus.hakemusOid mustEqual vanhaHakemus.hakemusOid
       uusiHakemus.hakijaOid mustEqual vanhaHakemus.hakijaOid
@@ -43,22 +65,27 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
       logger.info(s"Hakutoiveiden lukumäärä ${uusiHakemus.hakutoiveet.size}")
       uusiHakemus.hakutoiveet.foreach(uusiHakutoive => {
         logger.info(s"Hakutoive ${uusiHakutoive.hakukohdeOid}")
-        val vanhaHakutoive = vanhaHakemus.hakutoiveet.find(_.hakukohdeOid == uusiHakutoive.hakukohdeOid).get
+        val vanhaHakutoive =
+          vanhaHakemus.hakutoiveet.find(_.hakukohdeOid == uusiHakutoive.hakukohdeOid).get
 
         uusiHakutoive.hakutoive mustEqual vanhaHakutoive.hakutoive
         //TODO: voidaanko jättää pois? uusiHakutoive.tarjoajaOid mustEqual vanhaHakutoive.tarjoajaOid
         vanhaHakutoive.vastaanottotieto match {
           case None => uusiHakutoive.vastaanottotieto mustEqual Some("KESKEN")
-          case x => uusiHakutoive.vastaanottotieto mustEqual x
+          case x    => uusiHakutoive.vastaanottotieto mustEqual x
         }
         uusiHakutoive.ensikertalaisuusHakijaryhmanAlimmatHyvaksytytPisteet mustEqual vanhaHakutoive.ensikertalaisuusHakijaryhmanAlimmatHyvaksytytPisteet
         uusiHakutoive.kaikkiJonotSijoiteltu mustEqual vanhaHakutoive.kaikkiJonotSijoiteltu
 
         uusiHakutoive.hakutoiveenValintatapajonot.size mustEqual vanhaHakutoive.hakutoiveenValintatapajonot.size
-        logger.info(s"Hakutoiveen valintatapajonojen lukumäärä ${uusiHakutoive.hakutoiveenValintatapajonot.size}")
+        logger.info(
+          s"Hakutoiveen valintatapajonojen lukumäärä ${uusiHakutoive.hakutoiveenValintatapajonot.size}"
+        )
         uusiHakutoive.hakutoiveenValintatapajonot.foreach(uusiValintatapajono => {
           logger.info(s"Valintatapajono ${uusiValintatapajono.valintatapajonoOid}")
-          val vanhaValintatapajono = vanhaHakutoive.hakutoiveenValintatapajonot.find(_.valintatapajonoOid == uusiValintatapajono.valintatapajonoOid).get
+          val vanhaValintatapajono = vanhaHakutoive.hakutoiveenValintatapajonot
+            .find(_.valintatapajonoOid == uusiValintatapajono.valintatapajonoOid)
+            .get
           uusiValintatapajono.valintatapajonoNimi mustEqual vanhaValintatapajono.valintatapajonoNimi
           uusiValintatapajono.jonosija mustEqual vanhaValintatapajono.jonosija
           uusiValintatapajono.eiVarasijatayttoa mustEqual vanhaValintatapajono.eiVarasijatayttoa
@@ -89,7 +116,8 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
         uusiHakutoive.pistetiedot.size mustEqual vanhaHakutoive.pistetiedot.size
         logger.info(s"Pistetietojen lukumäärä ${uusiHakutoive.pistetiedot.size}")
         uusiHakutoive.pistetiedot.foreach(uusiPistetieto => {
-          val vanhaPistetieto = vanhaHakutoive.pistetiedot.find(_.tunniste.equals(uusiPistetieto.tunniste)).get
+          val vanhaPistetieto =
+            vanhaHakutoive.pistetiedot.find(_.tunniste.equals(uusiPistetieto.tunniste)).get
           logger.info(s"Pistetieto ${uusiPistetieto.tunniste}")
           uusiPistetieto must matchA[Pistetieto]
             .tunniste(vanhaPistetieto.tunniste)
@@ -103,7 +131,8 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
         uusiHakutoive.hakijaryhmat.size mustEqual vanhaHakutoive.hakijaryhmat.size
         logger.info(s"Hakijaryhmien lukumäärä ${uusiHakutoive.hakijaryhmat.size}")
         uusiHakutoive.hakijaryhmat.foreach(uusiHakijaryhma => {
-          val vanhaHakijaryhma = vanhaHakutoive.hakijaryhmat.find(_.oid.equals(uusiHakijaryhma.oid)).get
+          val vanhaHakijaryhma =
+            vanhaHakutoive.hakijaryhmat.find(_.oid.equals(uusiHakijaryhma.oid)).get
           logger.info(s"Hakijaryhma ${uusiHakijaryhma.oid}")
           uusiHakijaryhma must matchA[Hakijaryhma]
             .prioriteetti(vanhaHakijaryhma.prioriteetti)
@@ -126,8 +155,16 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
 
   "New sijoitteluajon perustiedot should equal to old sijoitteluajo" in {
     logger.info(s"SIJOITTELUAJO ${hakuOid}")
-    val uusiSijoittelu = time("Get uusi sijoitteluajo") { get[Sijoitteluajo](() => getNewSijoitteluajo(hakuOid, vtsSessionCookie)) }
-    val vanhaSijoittelu = time("Get vanha sijoitteluajo") { get[Sijoitteluajo](() => getOld(s"$oldSijoitteluHost/sijoittelu-service/resources/sijoittelu/$hakuOid/sijoitteluajo/latest")) }
+    val uusiSijoittelu = time("Get uusi sijoitteluajo") {
+      get[Sijoitteluajo](() => getNewSijoitteluajo(hakuOid, vtsSessionCookie))
+    }
+    val vanhaSijoittelu = time("Get vanha sijoitteluajo") {
+      get[Sijoitteluajo](() =>
+        getOld(
+          s"$oldSijoitteluHost/sijoittelu-service/resources/sijoittelu/$hakuOid/sijoitteluajo/latest"
+        )
+      )
+    }
 
     uusiSijoittelu.sijoitteluajoId mustEqual vanhaSijoittelu.sijoitteluajoId
     uusiSijoittelu.hakuOid mustEqual vanhaSijoittelu.hakuOid
@@ -136,18 +173,29 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
     uusiSijoittelu.hakukohteet.size mustEqual vanhaSijoittelu.hakukohteet.size
 
     logger.info(s"Hakukohteita ${uusiSijoittelu.hakukohteet.size}")
-    uusiSijoittelu.hakukohteet.filter(_.kaikkiJonotSijoiteltu).size mustEqual vanhaSijoittelu.hakukohteet.filter(_.kaikkiJonotSijoiteltu).size
+    uusiSijoittelu.hakukohteet
+      .filter(_.kaikkiJonotSijoiteltu)
+      .size mustEqual vanhaSijoittelu.hakukohteet.filter(_.kaikkiJonotSijoiteltu).size
 
     uusiSijoittelu.hakukohteet.foreach(uusiHakukohde => {
-      vanhaSijoittelu.hakukohteet.find(_.oid.equals(uusiHakukohde.oid)).isDefined must be_==(true).setMessage(s"Hakukohde ${uusiHakukohde.oid} puuttuu")
+      vanhaSijoittelu.hakukohteet.find(_.oid.equals(uusiHakukohde.oid)).isDefined must be_==(true)
+        .setMessage(s"Hakukohde ${uusiHakukohde.oid} puuttuu")
     })
     true mustEqual true
   }
 
   "Hakukohde in new sijoittelu should equal to hakukohde in old sijoittelu" in {
     logger.info(s"HAKUKOHDE ${hakukohdeOid}")
-    val uusiHakukohde = time("Get uusi hakukohde") { get[Hakukohde](() => getNewHakukohde(hakuOid, hakukohdeOid, vtsSessionCookie))}
-    val vanhaHakukohde = time("Get vanha hakukohde") { get[Hakukohde](() => getOld(s"$oldSijoitteluHost/sijoittelu-service/resources/sijoittelu/$hakuOid/sijoitteluajo/latest/hakukohde/$hakukohdeOid")) }
+    val uusiHakukohde = time("Get uusi hakukohde") {
+      get[Hakukohde](() => getNewHakukohde(hakuOid, hakukohdeOid, vtsSessionCookie))
+    }
+    val vanhaHakukohde = time("Get vanha hakukohde") {
+      get[Hakukohde](() =>
+        getOld(
+          s"$oldSijoitteluHost/sijoittelu-service/resources/sijoittelu/$hakuOid/sijoitteluajo/latest/hakukohde/$hakukohdeOid"
+        )
+      )
+    }
 
     uusiHakukohde.sijoitteluajoId mustEqual vanhaHakukohde.sijoitteluajoId
     uusiHakukohde.tila mustEqual vanhaHakukohde.tila
@@ -158,7 +206,8 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
     uusiHakukohde.valintatapajonot.size mustEqual vanhaHakukohde.valintatapajonot.size
     uusiHakukohde.valintatapajonot.foreach(uusiValintatapajono => {
       logger.info(s"Valintatapajono ${uusiValintatapajono.oid}")
-      val vanhaValintatapajono = vanhaHakukohde.valintatapajonot.find(_.oid.equals(uusiValintatapajono.oid)).get
+      val vanhaValintatapajono =
+        vanhaHakukohde.valintatapajonot.find(_.oid.equals(uusiValintatapajono.oid)).get
       uusiValintatapajono must matchA[Valintatapajono]
         .tasasijasaanto(vanhaValintatapajono.tasasijasaanto)
         .tila(vanhaValintatapajono.tila)
@@ -182,7 +231,8 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
       uusiValintatapajono.hakemukset.size mustEqual vanhaValintatapajono.hakemukset.size
       uusiValintatapajono.hakemukset.foreach(uusiHakemus => {
         logger.info(s"Hakemus ${uusiHakemus.hakemusOid}")
-        val vanhaHakemus = vanhaValintatapajono.hakemukset.find(_.hakemusOid.equals(uusiHakemus.hakemusOid)).get
+        val vanhaHakemus =
+          vanhaValintatapajono.hakemukset.find(_.hakemusOid.equals(uusiHakemus.hakemusOid)).get
         uusiHakemus must matchA[Hakemus]
           .hakijaOid(vanhaHakemus.hakijaOid)
           .pisteet(vanhaHakemus.pisteet)
@@ -207,7 +257,8 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
 
         uusiHakemus.pistetiedot.size mustEqual vanhaHakemus.pistetiedot.size
         uusiHakemus.pistetiedot.foreach(uusiPistetieto => {
-          val vanhaPistetieto = vanhaHakemus.pistetiedot.find(_.tunniste.equals(uusiPistetieto.tunniste)).get
+          val vanhaPistetieto =
+            vanhaHakemus.pistetiedot.find(_.tunniste.equals(uusiPistetieto.tunniste)).get
           logger.info(s"Pistetieto ${uusiPistetieto.tunniste}")
           uusiPistetieto must matchA[Pistetieto]
             .tunniste(vanhaPistetieto.tunniste)
@@ -220,8 +271,12 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
 
         logger.info(s"Tilahistoria ${uusiHakemus.tilaHistoria}")
         if (uusiHakemus.tilaHistoria.size > vanhaHakemus.tilaHistoria.size) {
-          logger.info(s"vanhaHakemus.tilaHistoria: ${vanhaHakemus.hakemusOid} / ${vanhaHakemus.valintatapajonoOid} : ${vanhaHakemus.tilaHistoria}")
-          logger.info(s"uusiHakemus.tilaHistoria: ${uusiHakemus.hakemusOid} / ${uusiHakemus.valintatapajonoOid} : ${uusiHakemus.tilaHistoria}")
+          logger.info(
+            s"vanhaHakemus.tilaHistoria: ${vanhaHakemus.hakemusOid} / ${vanhaHakemus.valintatapajonoOid} : ${vanhaHakemus.tilaHistoria}"
+          )
+          logger.info(
+            s"uusiHakemus.tilaHistoria: ${uusiHakemus.hakemusOid} / ${uusiHakemus.valintatapajonoOid} : ${uusiHakemus.tilaHistoria}"
+          )
         }
         uusiHakemus.tilaHistoria.size must be_<=(vanhaHakemus.tilaHistoria.size)
         for ((uusiTilahistoria, i) <- uusiHakemus.tilaHistoria.reverse.zipWithIndex) {
@@ -260,29 +315,32 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
     true mustEqual true
   }
 
-  override def getOld(uriString:String) = {
+  override def getOld(uriString: String) = {
     val result = super.getOld(uriString)
     println(result)
     result
   }
 
-  private def getNewSijoitteluajo(hakuOid:String, vtsSessionCookie: String) = {
-    val url = vtsHost + s"/valinta-tulos-service/auth/sijoittelu/$hakuOid/sijoitteluajo/latest/perustiedot"
+  private def getNewSijoitteluajo(hakuOid: String, vtsSessionCookie: String) = {
+    val url =
+      vtsHost + s"/valinta-tulos-service/auth/sijoittelu/$hakuOid/sijoitteluajo/latest/perustiedot"
     val result = time("Uuden sijoitteluajon perustietojen haku") { getNew(url, vtsSessionCookie) }
     println(result)
     result
   }
 
-  private def getNewHakukohde(hakuOid:String, hakukohdeOid:String, vtsSessionCookie: String) = {
-    val url = vtsHost + s"/valinta-tulos-service/auth/sijoittelu/$hakuOid/sijoitteluajo/latest/hakukohde/$hakukohdeOid"
+  private def getNewHakukohde(hakuOid: String, hakukohdeOid: String, vtsSessionCookie: String) = {
+    val url =
+      vtsHost + s"/valinta-tulos-service/auth/sijoittelu/$hakuOid/sijoitteluajo/latest/hakukohde/$hakukohdeOid"
     val result = time("Uuden hakukohteen haku") { getNew(url, vtsSessionCookie) }
     println(result)
     result
   }
 
-  private def getNewHakemus(hakuOid: String, hakemusOid:String, vtsSessionCookie: String) = {
-    val url = vtsHost + s"/valinta-tulos-service/auth/sijoittelu/$hakuOid/sijoitteluajo/latest/hakemus/$hakemusOid"
-    val result = time("Uuden hakemuksen haku") {getNew(url, vtsSessionCookie)}
+  private def getNewHakemus(hakuOid: String, hakemusOid: String, vtsSessionCookie: String) = {
+    val url =
+      vtsHost + s"/valinta-tulos-service/auth/sijoittelu/$hakuOid/sijoitteluajo/latest/hakemus/$hakemusOid"
+    val result = time("Uuden hakemuksen haku") { getNew(url, vtsSessionCookie) }
     println(result)
     result
   }

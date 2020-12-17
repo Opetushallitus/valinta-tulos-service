@@ -9,7 +9,7 @@ import slick.dbio.DBIO
 
 trait ValintarekisteriTestData extends ValintarekisteriDbTools {
 
-  val singleConnectionValintarekisteriDb:ValintarekisteriDb
+  val singleConnectionValintarekisteriDb: ValintarekisteriDb
 
   val hakuOid1 = HakuOid("Haku1")
   val hakuOid2 = HakuOid("Haku2")
@@ -32,7 +32,7 @@ trait ValintarekisteriTestData extends ValintarekisteriDbTools {
   val hakemusOid7 = HakemusOid("hakemus7")
   val hakemusOid8 = HakemusOid("hakemus8")
 
-  val sijoitteluajoId = 12345l
+  val sijoitteluajoId = 12345L
 
   val sijoittelunHakemusOid1 = HakemusOid("Haku2.2.1.1")
   val sijoittelunHakemusOid2 = HakemusOid("Haku2.2.1.2")
@@ -42,24 +42,60 @@ trait ValintarekisteriTestData extends ValintarekisteriDbTools {
   val sijoittelunValintatapajonoOid2 = ValintatapajonoOid("Haku2.2.1")
 
   def createSijoitteluajoHaulle2() = {
-    singleConnectionValintarekisteriDb.storeSijoittelu(createHugeSijoittelu(sijoitteluajoId, hakuOid2, 2))
+    singleConnectionValintarekisteriDb.storeSijoittelu(
+      createHugeSijoittelu(sijoitteluajoId, hakuOid2, 2)
+    )
   }
 
   def createHakujen1Ja2ValinnantuloksetIlmanSijoittelua() = {
-    singleConnectionValintarekisteriDb.storeHakukohde(EiKktutkintoonJohtavaHakukohde(oidHaku1hakukohde1, hakuOid1, Some(Kevat(2017))))
-    singleConnectionValintarekisteriDb.storeHakukohde(EiKktutkintoonJohtavaHakukohde(oidHaku1hakukohde2, hakuOid1, Some(Kevat(2017))))
-    singleConnectionValintarekisteriDb.storeHakukohde(EiKktutkintoonJohtavaHakukohde(oidHaku2hakukohde1, hakuOid2, Some(Kevat(2017))))
-    insertValinnantulos(hakuOid1, valinnantulos(oidHaku1hakukohde1, oidHaku1hakukohde1jono1, hakemusOid1))
-    insertValinnantulos(hakuOid1, valinnantulos(oidHaku1hakukohde1, oidHaku1hakukohde1jono1, hakemusOid2))
-    insertValinnantulos(hakuOid1, valinnantulos(oidHaku1hakukohde2, oidHaku1hakukohde2jono1, hakemusOid3))
-    insertValinnantulos(hakuOid1, valinnantulos(oidHaku1hakukohde2, oidHaku1hakukohde2jono1, hakemusOid4))
-    insertValinnantulos(hakuOid2, valinnantulos(oidHaku2hakukohde1, oidHaku2hakukohde1jono1, hakemusOid5))
-    insertValinnantulos(hakuOid2, valinnantulos(oidHaku2hakukohde1, oidHaku2hakukohde1jono1, hakemusOid6))
-    insertValinnantulos(hakuOid2, valinnantulos(oidHaku2hakukohde1, oidHaku2hakukohde1jono2, hakemusOid7))
-    insertValinnantulos(hakuOid2, valinnantulos(oidHaku2hakukohde1, oidHaku2hakukohde1jono2, hakemusOid8))
+    singleConnectionValintarekisteriDb.storeHakukohde(
+      EiKktutkintoonJohtavaHakukohde(oidHaku1hakukohde1, hakuOid1, Some(Kevat(2017)))
+    )
+    singleConnectionValintarekisteriDb.storeHakukohde(
+      EiKktutkintoonJohtavaHakukohde(oidHaku1hakukohde2, hakuOid1, Some(Kevat(2017)))
+    )
+    singleConnectionValintarekisteriDb.storeHakukohde(
+      EiKktutkintoonJohtavaHakukohde(oidHaku2hakukohde1, hakuOid2, Some(Kevat(2017)))
+    )
+    insertValinnantulos(
+      hakuOid1,
+      valinnantulos(oidHaku1hakukohde1, oidHaku1hakukohde1jono1, hakemusOid1)
+    )
+    insertValinnantulos(
+      hakuOid1,
+      valinnantulos(oidHaku1hakukohde1, oidHaku1hakukohde1jono1, hakemusOid2)
+    )
+    insertValinnantulos(
+      hakuOid1,
+      valinnantulos(oidHaku1hakukohde2, oidHaku1hakukohde2jono1, hakemusOid3)
+    )
+    insertValinnantulos(
+      hakuOid1,
+      valinnantulos(oidHaku1hakukohde2, oidHaku1hakukohde2jono1, hakemusOid4)
+    )
+    insertValinnantulos(
+      hakuOid2,
+      valinnantulos(oidHaku2hakukohde1, oidHaku2hakukohde1jono1, hakemusOid5)
+    )
+    insertValinnantulos(
+      hakuOid2,
+      valinnantulos(oidHaku2hakukohde1, oidHaku2hakukohde1jono1, hakemusOid6)
+    )
+    insertValinnantulos(
+      hakuOid2,
+      valinnantulos(oidHaku2hakukohde1, oidHaku2hakukohde1jono2, hakemusOid7)
+    )
+    insertValinnantulos(
+      hakuOid2,
+      valinnantulos(oidHaku2hakukohde1, oidHaku2hakukohde1jono2, hakemusOid8)
+    )
   }
 
-  def valinnantulos(hakukohdeOid:HakukohdeOid, valintatapajonoOid:ValintatapajonoOid, hakemusOid:HakemusOid) = {
+  def valinnantulos(
+    hakukohdeOid: HakukohdeOid,
+    valintatapajonoOid: ValintatapajonoOid,
+    hakemusOid: HakemusOid
+  ) = {
     Valinnantulos(
       hakukohdeOid = hakukohdeOid,
       valintatapajonoOid = valintatapajonoOid,
@@ -78,10 +114,15 @@ trait ValintarekisteriTestData extends ValintarekisteriDbTools {
       hyvaksyttyVarasijalta = None,
       hyvaksyPeruuntunut = None,
       vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI,
-      ilmoittautumistila = Lasna)
+      ilmoittautumistila = Lasna
+    )
   }
 
-  def valinnantulosHylatty(hakukohdeOid:HakukohdeOid, valintatapajonoOid:ValintatapajonoOid, hakemusOid:HakemusOid) = {
+  def valinnantulosHylatty(
+    hakukohdeOid: HakukohdeOid,
+    valintatapajonoOid: ValintatapajonoOid,
+    hakemusOid: HakemusOid
+  ) = {
     Valinnantulos(
       hakukohdeOid = hakukohdeOid,
       valintatapajonoOid = valintatapajonoOid,
@@ -100,20 +141,51 @@ trait ValintarekisteriTestData extends ValintarekisteriDbTools {
       hyvaksyttyVarasijalta = None,
       hyvaksyPeruuntunut = None,
       vastaanottotila = ValintatuloksenTila.KESKEN,
-      ilmoittautumistila = EiTehty)
+      ilmoittautumistila = EiTehty
+    )
   }
 
-  def insertValinnantulos(hakuOid:HakuOid, valinnantulos: Valinnantulos): Unit = {
-    singleConnectionValintarekisteriDb.runBlocking(DBIO.sequence(List(
-      singleConnectionValintarekisteriDb.storeValinnantila(valinnantulos.getValinnantilanTallennus("muokkaaja")),
-      singleConnectionValintarekisteriDb.storeValinnantuloksenOhjaus(valinnantulos.getValinnantuloksenOhjaus("muokkaaja", "selite"))
-    )))
-    if(valinnantulos.vastaanottotila == ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI) {
-      singleConnectionValintarekisteriDb.runBlocking(DBIO.sequence(List(
-        singleConnectionValintarekisteriDb.storeAction(VirkailijanVastaanotto(hakuOid, valinnantulos.valintatapajonoOid, valinnantulos.henkiloOid,
-          valinnantulos.hakemusOid, valinnantulos.hakukohdeOid, VastaanotaSitovasti, "muokkaaja", "selite")),
-        singleConnectionValintarekisteriDb.storeIlmoittautuminen(valinnantulos.henkiloOid, Ilmoittautuminen(valinnantulos.hakukohdeOid, valinnantulos.ilmoittautumistila, "muokkaaja", "selite"))
-      )))
+  def insertValinnantulos(hakuOid: HakuOid, valinnantulos: Valinnantulos): Unit = {
+    singleConnectionValintarekisteriDb.runBlocking(
+      DBIO.sequence(
+        List(
+          singleConnectionValintarekisteriDb.storeValinnantila(
+            valinnantulos.getValinnantilanTallennus("muokkaaja")
+          ),
+          singleConnectionValintarekisteriDb.storeValinnantuloksenOhjaus(
+            valinnantulos.getValinnantuloksenOhjaus("muokkaaja", "selite")
+          )
+        )
+      )
+    )
+    if (valinnantulos.vastaanottotila == ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI) {
+      singleConnectionValintarekisteriDb.runBlocking(
+        DBIO.sequence(
+          List(
+            singleConnectionValintarekisteriDb.storeAction(
+              VirkailijanVastaanotto(
+                hakuOid,
+                valinnantulos.valintatapajonoOid,
+                valinnantulos.henkiloOid,
+                valinnantulos.hakemusOid,
+                valinnantulos.hakukohdeOid,
+                VastaanotaSitovasti,
+                "muokkaaja",
+                "selite"
+              )
+            ),
+            singleConnectionValintarekisteriDb.storeIlmoittautuminen(
+              valinnantulos.henkiloOid,
+              Ilmoittautuminen(
+                valinnantulos.hakukohdeOid,
+                valinnantulos.ilmoittautumistila,
+                "muokkaaja",
+                "selite"
+              )
+            )
+          )
+        )
+      )
     }
   }
 }

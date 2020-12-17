@@ -12,15 +12,18 @@ import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.duration.Duration
 
+trait MailPollerRepositoryImpl
+    extends MailPollerRepository
+    with ValintarekisteriRepository
+    with Logging {
 
-trait MailPollerRepositoryImpl extends MailPollerRepository with ValintarekisteriRepository with Logging {
-
-  override def candidates(hakukohdeOid: HakukohdeOid,
-                          ignoreEarlier: Boolean = false,
-                          recheckIntervalHours: Int): Set[MailableCandidate] = {
+  override def candidates(
+    hakukohdeOid: HakukohdeOid,
+    ignoreEarlier: Boolean = false,
+    recheckIntervalHours: Int
+  ): Set[MailableCandidate] = {
     timed(s"Fetching mailable candidates database call for hakukohde $hakukohdeOid", 100) {
-      runBlocking(
-        sql"""select vt.hakemus_oid,
+      runBlocking(sql"""select vt.hakemus_oid,
                      vt.hakukohde_oid,
                      v.syy,
                      (v.lahetetty is not null)
@@ -50,12 +53,11 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                                                nv.action is not distinct from 'VastaanotaSitovasti' and
                                                nv.ilmoittaja is not distinct from 'järjestelmä')))))
          """.as[MailableCandidate]).toSet
-       }
+    }
   }
 
   override def lastChecked(hakukohdeOid: HakukohdeOid): Option[Date] = {
-    runBlocking(
-      sql"""select tark.tarkistettu
+    runBlocking(sql"""select tark.tarkistettu
               from viestinlahetys_tarkistettu tark
               where tark.hakukohde_oid = $hakukohdeOid
          """.as[Timestamp]).headOption
@@ -63,8 +65,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
 
   override def candidate(hakemusOid: HakemusOid): Set[MailableCandidate] = {
     timed(s"Fetching mailable candidates database call for hakemus $hakemusOid", 100) {
-      runBlocking(
-        sql"""select vt.hakemus_oid,
+      runBlocking(sql"""select vt.hakemus_oid,
                      vt.hakukohde_oid,
                      v.syy,
                      (v.lahetetty is not null)
@@ -86,30 +87,30 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
   override def markAsToBeSent(toMark: Set[(HakemusOid, HakukohdeOid, MailReason)]): Unit = {
     if (toMark.nonEmpty) {
       timed("Marking as to be sent", 100) {
-        runBlocking(
-          SimpleDBIO { session =>
-            val statement = session.connection.prepareStatement(
-              """
+        runBlocking(SimpleDBIO { session =>
+          val statement = session.connection.prepareStatement("""
                    insert into viestit
                    (hakemus_oid, hakukohde_oid, syy)
                    values (?, ?, ?)
                    on conflict (hakemus_oid, hakukohde_oid) do
                    update set syy = excluded.syy
                 """)
-            try {
-              toMark.foreach {
-                case (hakemusOid, hakukohdeOid, reason) =>
-                  statement.setString(1, hakemusOid.s)
-                  statement.setString(2, hakukohdeOid.s)
-                  statement.setString(3, reason.toString)
-                  statement.addBatch()
-              }
-              val result = statement.executeBatch()
-              logger.info(s"Tried to mark ${toMark.size} viestis to be sent. Successes: ${result.count(s => s.equals(1))}")
-            } finally {
-              statement.close()
+          try {
+            toMark.foreach {
+              case (hakemusOid, hakukohdeOid, reason) =>
+                statement.setString(1, hakemusOid.s)
+                statement.setString(2, hakukohdeOid.s)
+                statement.setString(3, reason.toString)
+                statement.addBatch()
             }
-          })
+            val result = statement.executeBatch()
+            logger.info(
+              s"Tried to mark ${toMark.size} viestis to be sent. Successes: ${result.count(s => s.equals(1))}"
+            )
+          } finally {
+            statement.close()
+          }
+        })
       }
     }
   }
@@ -135,7 +136,9 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
                   statement.addBatch()
               }
               val result = statement.executeBatch()
-              logger.info(s"Tried to mark ${toMark.size} viestis as sent. Successes: ${result.count(s => s.equals(1))}")
+              logger.info(
+                s"Tried to mark ${toMark.size} viestis as sent. Successes: ${result.count(s => s.equals(1))}"
+              )
             } finally {
               statement.close()
             }
@@ -147,8 +150,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
 
   def markAsCheckedForEmailing(hakukohdeOid: HakukohdeOid): Unit = {
     timed(s"Marking hakukohde $hakukohdeOid as checked for emailing in db", 1000) {
-      runBlocking(
-        sqlu"""insert into viestinlahetys_tarkistettu
+      runBlocking(sqlu"""insert into viestinlahetys_tarkistettu
           (hakukohde_oid)
           values ($hakukohdeOid)
           on conflict (hakukohde_oid) do
@@ -156,23 +158,28 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
     }
   }
 
-  def findHakukohdeOidsCheckedRecently(emptyHakukohdeRecheckInterval: Duration): Set[HakukohdeOid] = {
-    runBlocking(
-      sql"""select hakukohde_oid from viestinlahetys_tarkistettu
+  def findHakukohdeOidsCheckedRecently(
+    emptyHakukohdeRecheckInterval: Duration
+  ): Set[HakukohdeOid] = {
+    runBlocking(sql"""select hakukohde_oid from viestinlahetys_tarkistettu
             where tarkistettu > now() -
-              make_interval(hours => ${emptyHakukohdeRecheckInterval.toHours.toInt})""".
-        as[String]).map(HakukohdeOid).toSet
+              make_interval(hours => ${emptyHakukohdeRecheckInterval.toHours.toInt})""".as[String])
+      .map(HakukohdeOid)
+      .toSet
   }
 
-  def getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid: HakukohdeOid): List[String] = {
-    runBlocking(
-      sql"""select distinct hakemus_oid from viestit
+  def getOidsOfApplicationsWithSentOrResolvedMailStatus(
+    hakukohdeOid: HakukohdeOid
+  ): List[String] = {
+    runBlocking(sql"""select distinct hakemus_oid from viestit
             where hakukohde_oid = ${hakukohdeOid} and lahetetty is not null
             order by hakemus_oid""".as[String]).toList
   }
 
   def deleteHakemusMailEntriesForHakemus(hakemusOid: HakemusOid): Int = {
-    runBlockingTransactionally[Int](sqlu"""delete from viestit where hakemus_oid = ${hakemusOid}""") match {
+    runBlockingTransactionally[Int](
+      sqlu"""delete from viestit where hakemus_oid = ${hakemusOid}"""
+    ) match {
       case Right(n) =>
         n
       case Left(e) =>
@@ -182,7 +189,9 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
   }
 
   def deleteHakemusMailEntriesForHakukohde(hakukohdeOid: HakukohdeOid): Int = {
-    runBlockingTransactionally[Int](sqlu"""delete from viestit where hakukohde_oid = ${hakukohdeOid}""") match {
+    runBlockingTransactionally[Int](
+      sqlu"""delete from viestit where hakukohde_oid = ${hakukohdeOid}"""
+    ) match {
       case Right(n) =>
         n
       case Left(e) =>
@@ -191,7 +200,8 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
     }
   }
 
-  def deleteIncompleteMailEntries(): Set[(HakemusOid, HakukohdeOid, Option[MailReason], Option[Timestamp], Timestamp)] = {
+  def deleteIncompleteMailEntries()
+    : Set[(HakemusOid, HakukohdeOid, Option[MailReason], Option[Timestamp], Timestamp)] = {
     runBlocking(
       sql"""delete from viestit where lahetetty is null
             returning hakemus_oid, hakukohde_oid, syy, lahetetty, lahettaminen_aloitettu

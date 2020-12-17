@@ -7,7 +7,7 @@ import org.eclipse.jetty.webapp.WebAppContext
 object JettyLauncher {
   def main(args: Array[String]) {
     System.setProperty("valintatulos.it.postgres.port", PortChecker.findFreeLocalPort.toString)
-    new JettyLauncher(System.getProperty("valintatulos.port","8097").toInt).start.join
+    new JettyLauncher(System.getProperty("valintatulos.port", "8097").toInt).start.join
   }
 }
 
@@ -17,14 +17,13 @@ class JettyLauncher(val port: Int, profile: Option[String] = None) {
   context.setResourceBase("src/main/webapp")
   context.setContextPath("/valinta-tulos-service")
   context.setDescriptor("src/main/webapp/WEB-INF/web.xml")
-  profile.foreach (context.setAttribute("valintatulos.profile", _))
+  profile.foreach(context.setAttribute("valintatulos.profile", _))
   server.setHandler(context)
 
   def start = {
     server.start
     server
   }
-
 
   def withJetty[T](block: => T) = {
     val server = start

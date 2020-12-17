@@ -10,7 +10,8 @@ import org.json4s.Formats
 import org.json4s.ext.EnumNameSerializer
 
 object JsonFormats {
-  private val enumSerializers = List(new EnumNameSerializer(Vastaanotettavuustila), new EnumNameSerializer(Valintatila))
+  private val enumSerializers =
+    List(new EnumNameSerializer(Vastaanotettavuustila), new EnumNameSerializer(Valintatila))
   val customSerializers = enumSerializers ++ List(
     new EnsikertalaisuusSerializer,
     new VastaanottoActionSerializer,
@@ -31,10 +32,13 @@ object JsonFormats {
     new EhdollisenHyvaksymisenEhtoSerializer
   )
   val jsonFormats: Formats = (GenericJsonFormats.genericFormats ++ customSerializers)
-    .addKeySerializers(List(
-      new HakemusOidKeySerializer,
-      new LanguageKeySerializer,
-      new ValintatapajonoOidKeySerializer))
+    .addKeySerializers(
+      List(
+        new HakemusOidKeySerializer,
+        new LanguageKeySerializer,
+        new ValintatapajonoOidKeySerializer
+      )
+    )
 
   def formatJson(found: AnyRef): String = {
     org.json4s.jackson.Serialization.write(found)(jsonFormats)
@@ -42,7 +46,8 @@ object JsonFormats {
 
   def javaObjectToJsonString(x: Object): String = new ObjectMapper().writeValueAsString(x)
 
-  def writeJavaObjectToOutputStream(x: Object, s:java.io.OutputStream): Unit = new ObjectMapper().writeValue(s, x)
+  def writeJavaObjectToOutputStream(x: Object, s: java.io.OutputStream): Unit =
+    new ObjectMapper().writeValue(s, x)
 }
 
 trait JsonFormats {

@@ -7,9 +7,9 @@ import fi.vm.sade.utils.slf4j.Logging
 trait PerformanceLogger extends Logging {
 
   //TODO: Make configurable
-  val timeLogging:Boolean = true
+  val timeLogging: Boolean = true
 
-  private def logTime[R](description:String)(block: => R): R = {
+  private def logTime[R](description: String)(block: => R): R = {
     val t0 = System.nanoTime()
     val result = block
     val t1 = System.nanoTime()
@@ -17,7 +17,8 @@ trait PerformanceLogger extends Logging {
     result
   }
 
-  def time[R](description:String, log:Boolean = true)(block: => R): R =
-    if(timeLogging && log) logTime(description){ block } else block
+  def time[R](description: String, log: Boolean = true)(block: => R): R =
+    if (timeLogging && log) logTime(description) { block }
+    else block
 
 }

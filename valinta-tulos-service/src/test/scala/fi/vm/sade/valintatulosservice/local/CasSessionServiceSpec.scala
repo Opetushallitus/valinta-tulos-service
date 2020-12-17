@@ -3,9 +3,16 @@ package fi.vm.sade.valintatulosservice.local
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
-import fi.vm.sade.security.{AuthenticationFailedException, CasSessionService, ProductionSecurityContext}
+import fi.vm.sade.security.{
+  AuthenticationFailedException,
+  CasSessionService,
+  ProductionSecurityContext
+}
 import fi.vm.sade.utils.cas.CasClient
-import fi.vm.sade.valintatulosservice.kayttooikeus.{KayttooikeusUserDetails, KayttooikeusUserDetailsService}
+import fi.vm.sade.valintatulosservice.kayttooikeus.{
+  KayttooikeusUserDetails,
+  KayttooikeusUserDetailsService
+}
 import fi.vm.sade.valintatulosservice.security.{CasSession, ServiceTicket}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import org.junit.runner.RunWith
@@ -24,26 +31,42 @@ class CasSessionServiceSpec extends Specification with MockitoStubs {
 
   "CasSessionService" in {
     "Authentication fails without credentials" in new CasSessionServiceWithMocks {
-      cas.getSession(None, None) must beLeft.like { case t => t must beAnInstanceOf[AuthenticationFailedException] }
+      cas.getSession(None, None) must beLeft.like {
+        case t => t must beAnInstanceOf[AuthenticationFailedException]
+      }
     }
     "Authentication fails if session not found and no ticket given" in new CasSessionServiceWithMocks {
       sessionRepository.get(id) returns None
-      cas.getSession(None, Some(id)) must beLeft.like { case t => t must beAnInstanceOf[AuthenticationFailedException] }
+      cas.getSession(None, Some(id)) must beLeft.like {
+        case t => t must beAnInstanceOf[AuthenticationFailedException]
+      }
     }
     "Authentication fails if session not found and ticket is invalid" in new CasSessionServiceWithMocks {
       sessionRepository.get(id) returns None
-      casClient.validateServiceTicket(service)(ticket) returns Task.fail(new RuntimeException("error"))
-      cas.getSession(Some(ServiceTicket(ticket)), Some(id)) must beLeft.like { case t => t must beAnInstanceOf[AuthenticationFailedException] }
+      casClient.validateServiceTicket(service)(ticket) returns Task.fail(
+        new RuntimeException("error")
+      )
+      cas.getSession(Some(ServiceTicket(ticket)), Some(id)) must beLeft.like {
+        case t => t must beAnInstanceOf[AuthenticationFailedException]
+      }
     }
     "Authentication fails if session not found, ticket is valid and KO user not found" in new CasSessionServiceWithMocks {
       sessionRepository.get(id) returns None
       casClient.validateServiceTicket(service)(ticket) returns Task.now(uid)
-      userDetailsService.getUserByUsername(uid) returns Left(new IllegalArgumentException("User not found for testing purposes"))
-      cas.getSession(Some(ServiceTicket(ticket)), Some(id)) must beLeft.like { case t => t must beAnInstanceOf[IllegalArgumentException] }
+      userDetailsService.getUserByUsername(uid) returns Left(
+        new IllegalArgumentException("User not found for testing purposes")
+      )
+      cas.getSession(Some(ServiceTicket(ticket)), Some(id)) must beLeft.like {
+        case t => t must beAnInstanceOf[IllegalArgumentException]
+      }
     }
     "Authentication fails if ticket is invalid" in new CasSessionServiceWithMocks {
-      casClient.validateServiceTicket(service)(ticket) returns Task.fail(new RuntimeException("error for testing"))
-      cas.getSession(Some(ServiceTicket(ticket)), None) must beLeft.like { case t => t must beAnInstanceOf[AuthenticationFailedException] }
+      casClient.validateServiceTicket(service)(ticket) returns Task.fail(
+        new RuntimeException("error for testing")
+      )
+      cas.getSession(Some(ServiceTicket(ticket)), None) must beLeft.like {
+        case t => t must beAnInstanceOf[AuthenticationFailedException]
+      }
     }
     "Return session if found" in new CasSessionServiceWithMocks {
       sessionRepository.get(id) returns Some(session)
@@ -51,7 +74,9 @@ class CasSessionServiceSpec extends Specification with MockitoStubs {
     }
     "Return session if found and don't validate ticket" in new CasSessionServiceWithMocks {
       sessionRepository.get(id) returns Some(session)
-      casClient.validateServiceTicket(service)(ticket) returns Task.fail(new RuntimeException("not reached"))
+      casClient.validateServiceTicket(service)(ticket) returns Task.fail(
+        new RuntimeException("not reached")
+      )
       cas.getSession(Some(ServiceTicket(ticket)), Some(id)) must beRight((id, session))
     }
     "Return created session" in new CasSessionServiceWithMocks {
@@ -69,8 +94,12 @@ class CasSessionServiceSpec extends Specification with MockitoStubs {
     }
     "Return exception if fetching session fails and don't validate ticket" in new CasSessionServiceWithMocks {
       sessionRepository.get(id) throws new RuntimeException("error")
-      casClient.validateServiceTicket(service)(ticket) returns Task.fail(new RuntimeException("not reached"))
-      cas.getSession(Some(ServiceTicket(ticket)), Some(id)) must beLeft.like { case t => t must not(beAnInstanceOf[AuthenticationFailedException]) }
+      casClient.validateServiceTicket(service)(ticket) returns Task.fail(
+        new RuntimeException("not reached")
+      )
+      cas.getSession(Some(ServiceTicket(ticket)), Some(id)) must beLeft.like {
+        case t => t must not(beAnInstanceOf[AuthenticationFailedException])
+      }
     }
   }
 
@@ -85,8 +114,10 @@ class CasSessionServiceSpec extends Specification with MockitoStubs {
     val casClient: CasClient = mock[CasClient]
     val sessionRepository: SessionRepository = mock[SessionRepository]
     val userDetailsService: KayttooikeusUserDetailsService = mock[KayttooikeusUserDetailsService]
-    val securityContext = new ProductionSecurityContext(casClient, service, Set(), Duration(1, TimeUnit.SECONDS))
+    val securityContext =
+      new ProductionSecurityContext(casClient, service, Set(), Duration(1, TimeUnit.SECONDS))
 
-    val cas: CasSessionService = new CasSessionService(securityContext, service, userDetailsService, sessionRepository)
+    val cas: CasSessionService =
+      new CasSessionService(securityContext, service, userDetailsService, sessionRepository)
   }
 }

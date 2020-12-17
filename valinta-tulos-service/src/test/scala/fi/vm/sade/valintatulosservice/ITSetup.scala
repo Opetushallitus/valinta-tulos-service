@@ -14,7 +14,8 @@ trait ITSetup {
   val dbConfig = appConfig.settings.valintaRekisteriDbConfig
 
   lazy val singleConnectionValintarekisteriDb = new ValintarekisteriDb(
-    dbConfig.copy(maxConnections = Some(1), minConnections = Some(1)))
+    dbConfig.copy(maxConnections = Some(1), minConnections = Some(1))
+  )
 
   lazy val valintarekisteriDbWithPool = new ValintarekisteriDb(dbConfig)
 
@@ -24,20 +25,32 @@ trait ITSetup {
 
   lazy val sijoitteluFixtures = SijoitteluFixtures(singleConnectionValintarekisteriDb)
 
-  def useFixture(fixtureName: String,
-                 extraFixtureNames: List[String] = List(),
-                 ohjausparametritFixture: String = OhjausparametritFixtures.vastaanottoLoppuu2030,
-                 hakemusFixtures: List[String] = HakemusFixtures.defaultFixtures,
-                 hakuFixture: HakuOid = HakuFixtures.korkeakouluYhteishaku,
-                 yhdenPaikanSaantoVoimassa: Boolean = false,
-                 kktutkintoonJohtava: Boolean = false,
-                 clearFixturesInitially: Boolean = true,
-                 ataruHakemusFixture: List[AtaruHakemus] = List.empty,
-                 ataruHenkiloFixture: List[Henkilo] = List.empty) {
+  def useFixture(
+    fixtureName: String,
+    extraFixtureNames: List[String] = List(),
+    ohjausparametritFixture: String = OhjausparametritFixtures.vastaanottoLoppuu2030,
+    hakemusFixtures: List[String] = HakemusFixtures.defaultFixtures,
+    hakuFixture: HakuOid = HakuFixtures.korkeakouluYhteishaku,
+    yhdenPaikanSaantoVoimassa: Boolean = false,
+    kktutkintoonJohtava: Boolean = false,
+    clearFixturesInitially: Boolean = true,
+    ataruHakemusFixture: List[AtaruHakemus] = List.empty,
+    ataruHenkiloFixture: List[Henkilo] = List.empty
+  ) {
 
-    sijoitteluFixtures.importFixture(fixtureName, clear = clearFixturesInitially, yhdenPaikanSaantoVoimassa = yhdenPaikanSaantoVoimassa, kktutkintoonJohtava = kktutkintoonJohtava)
+    sijoitteluFixtures.importFixture(
+      fixtureName,
+      clear = clearFixturesInitially,
+      yhdenPaikanSaantoVoimassa = yhdenPaikanSaantoVoimassa,
+      kktutkintoonJohtava = kktutkintoonJohtava
+    )
     extraFixtureNames.map(fixtureName =>
-      sijoitteluFixtures.importFixture(fixtureName, clear = false, yhdenPaikanSaantoVoimassa = yhdenPaikanSaantoVoimassa, kktutkintoonJohtava = kktutkintoonJohtava)
+      sijoitteluFixtures.importFixture(
+        fixtureName,
+        clear = false,
+        yhdenPaikanSaantoVoimassa = yhdenPaikanSaantoVoimassa,
+        kktutkintoonJohtava = kktutkintoonJohtava
+      )
     )
 
     OhjausparametritFixtures.activeFixture = ohjausparametritFixture

@@ -20,7 +20,8 @@ class VastaanottoServletSpec extends ServletSpecification {
           val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
           tulos.hakutoiveet.head.vastaanottotila must_== Vastaanottotila.vastaanottanut
           tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.isDefined must beTrue
-          tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.get.getTime must be ~ (System.currentTimeMillis() +/- 4000)
+          tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.get.getTime must be ~ (System
+            .currentTimeMillis() +/- 4000)
         }
       }
     }
@@ -35,7 +36,8 @@ class VastaanottoServletSpec extends ServletSpecification {
           val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
           tulos.hakutoiveet.head.vastaanottotila.toString must_== "PERUNUT"
           tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.isDefined must beTrue
-          tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.get.getTime must be ~ (System.currentTimeMillis() +/- 4000)
+          tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.get.getTime must be ~ (System
+            .currentTimeMillis() +/- 4000)
         }
       }
     }
@@ -59,9 +61,16 @@ class VastaanottoServletSpec extends ServletSpecification {
     }
   }
 
-  def vastaanota[T](action: String, hakukohde: String = "1.2.246.562.5.72607738902", personOid: String = "1.2.246.562.24.14229104472", hakemusOid: String = "1.2.246.562.11.00000441369")(block: => T) = {
-    postJSON(s"""vastaanotto/henkilo/$personOid/hakemus/$hakemusOid/hakukohde/$hakukohde""",
-      s"""{"action":"$action"}""") {
+  def vastaanota[T](
+    action: String,
+    hakukohde: String = "1.2.246.562.5.72607738902",
+    personOid: String = "1.2.246.562.24.14229104472",
+    hakemusOid: String = "1.2.246.562.11.00000441369"
+  )(block: => T) = {
+    postJSON(
+      s"""vastaanotto/henkilo/$personOid/hakemus/$hakemusOid/hakukohde/$hakukohde""",
+      s"""{"action":"$action"}"""
+    ) {
       block
     }
   }

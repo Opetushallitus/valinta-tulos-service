@@ -8,7 +8,8 @@ case class EmailerConfig(config: Config) extends GroupEmailerSettings(config) {
   val recipientBatchLimitMinutes: Int = config.getInt("valinta-tulos-service.batch.limit.minutes")
 }
 
-case class EmailerConfigParser() extends fi.vm.sade.utils.config.ApplicationSettingsParser[EmailerConfig] {
+case class EmailerConfigParser()
+    extends fi.vm.sade.utils.config.ApplicationSettingsParser[EmailerConfig] {
   override def parse(config: Config) = EmailerConfig(config)
 }
 

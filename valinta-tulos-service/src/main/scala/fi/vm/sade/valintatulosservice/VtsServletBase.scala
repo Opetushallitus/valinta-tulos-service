@@ -9,7 +9,11 @@ import fi.vm.sade.security.{AuthenticationFailedException, AuthorizationFailedEx
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.json.JsonFormats.writeJavaObjectToOutputStream
 import fi.vm.sade.valintatulosservice.json.{JsonFormats, StreamingFailureException}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, ValintatapajonoOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{
+  HakemusOid,
+  HakukohdeOid,
+  ValintatapajonoOid
+}
 import org.json4s.MappingException
 import org.scalatra._
 import org.scalatra.json.JacksonJsonSupport
@@ -17,7 +21,12 @@ import org.scalatra.swagger.SwaggerSupport
 
 import scala.util.{Failure, Success, Try}
 
-trait VtsServletBase extends ScalatraServlet with Logging with JacksonJsonSupport with JsonFormats with SwaggerSupport {
+trait VtsServletBase
+    extends ScalatraServlet
+    with Logging
+    with JacksonJsonSupport
+    with JsonFormats
+    with SwaggerSupport {
   private val maxBodyLengthToLog = 500000
 
   before() {
@@ -61,7 +70,9 @@ trait VtsServletBase extends ScalatraServlet with Logging with JacksonJsonSuppor
           InternalServerError(e.contentToInsertToBody)
         case e: ConcurrentModificationException =>
           logger.error(errorDescription, e)
-          Conflict("error" -> ("Tietoihin on tehty samanaikaisia muutoksia, päivitä sivu ja yritä uudelleen (" + e.getMessage + ")"))
+          Conflict(
+            "error" -> ("Tietoihin on tehty samanaikaisia muutoksia, päivitä sivu ja yritä uudelleen (" + e.getMessage + ")")
+          )
         case e =>
           logger.error(errorDescription, e)
           InternalServerError("error" -> "500 Internal Server Error")
@@ -73,7 +84,10 @@ trait VtsServletBase extends ScalatraServlet with Logging with JacksonJsonSuppor
     val bodyLength = request.body.length
     def bodyToLog(): String = {
       if (bodyLength > maxBodyLengthToLog) {
-        request.body.substring(0, maxBodyLengthToLog) + s"[TRUNCATED from $bodyLength to $maxBodyLengthToLog characters]"
+        request.body.substring(
+          0,
+          maxBodyLengthToLog
+        ) + s"[TRUNCATED from $bodyLength to $maxBodyLengthToLog characters]"
       } else {
         request.body
       }
@@ -96,27 +110,43 @@ trait VtsServletBase extends ScalatraServlet with Logging with JacksonJsonSuppor
   }
 
   protected def checkJsonContentType() {
-    if (request.requestMethod == Post && request.body.nonEmpty && request.contentType.forall(!_.contains("application/json"))) {
+    if (
+      request.requestMethod == Post && request.body.nonEmpty && request.contentType.forall(
+        !_.contains("application/json")
+      )
+    ) {
       halt(415, "error" -> "Only application/json accepted")
     }
   }
 
-  def streamOk(x: Object):Unit = {
+  def streamOk(x: Object): Unit = {
     response.setStatus(200)
     response.setContentType("application/json;charset=UTF-8")
     writeJavaObjectToOutputStream(x, response.getOutputStream)
   }
 
   protected def parseHakemusOid: Either[Throwable, HakemusOid] = {
-    params.get("hakemusOid").fold[Either[Throwable, HakemusOid]](Left(new NoSuchElementException("URL parametri hakemusOid on pakollinen.")))(s => Right(HakemusOid(s)))
+    params
+      .get("hakemusOid")
+      .fold[Either[Throwable, HakemusOid]](
+        Left(new NoSuchElementException("URL parametri hakemusOid on pakollinen."))
+      )(s => Right(HakemusOid(s)))
   }
 
   protected def parseHakukohdeOid: Either[Throwable, HakukohdeOid] = {
-    params.get("hakukohdeOid").fold[Either[Throwable, HakukohdeOid]](Left(new NoSuchElementException("URL parametri hakukohdeOid on pakollinen.")))(s => Right(HakukohdeOid(s)))
+    params
+      .get("hakukohdeOid")
+      .fold[Either[Throwable, HakukohdeOid]](
+        Left(new NoSuchElementException("URL parametri hakukohdeOid on pakollinen."))
+      )(s => Right(HakukohdeOid(s)))
   }
 
   protected def parseValintatapajonoOid: Either[Throwable, ValintatapajonoOid] = {
-    params.get("valintatapajonoOid").fold[Either[Throwable, ValintatapajonoOid]](Left(new NoSuchElementException("URL parametri valintatapajonoOid on pakollinen.")))(s => Right(ValintatapajonoOid(s)))
+    params
+      .get("valintatapajonoOid")
+      .fold[Either[Throwable, ValintatapajonoOid]](
+        Left(new NoSuchElementException("URL parametri valintatapajonoOid on pakollinen."))
+      )(s => Right(ValintatapajonoOid(s)))
   }
 
   protected def createLastModifiedHeader(instant: Instant): String = {
@@ -132,16 +162,27 @@ trait VtsServletBase extends ScalatraServlet with Logging with JacksonJsonSuppor
   }
 
   protected val RFC1123sample: String = renderHttpDate(Instant.EPOCH)
-  protected def parseIfUnmodifiedSince: Either[Throwable, Instant] = request.headers.get("If-Unmodified-Since") match {
-    case Some(s) =>
-      Try(Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(s))) match {
-        case Success(i) => Right(i)
-        case Failure(e) => Left(new IllegalArgumentException(s"Ei voitu jäsentää otsaketta If-Unmodified-Since muodossa $RFC1123sample.", e))
-      }
-    case None => Left(new NoSuchElementException("Otsake If-Unmodified-Since on pakollinen."))
-  }
+  protected def parseIfUnmodifiedSince: Either[Throwable, Instant] =
+    request.headers.get("If-Unmodified-Since") match {
+      case Some(s) =>
+        Try(Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(s))) match {
+          case Success(i) => Right(i)
+          case Failure(e) =>
+            Left(
+              new IllegalArgumentException(
+                s"Ei voitu jäsentää otsaketta If-Unmodified-Since muodossa $RFC1123sample.",
+                e
+              )
+            )
+        }
+      case None => Left(new NoSuchElementException("Otsake If-Unmodified-Since on pakollinen."))
+    }
 
   protected def parseIfNoneMatch: Either[Throwable, String] = {
-    request.headers.get("If-None-Match").fold[Either[Throwable, String]](Left(new NoSuchElementException("Otsake If-None-Match on pakollinen.")))(Right(_))
+    request.headers
+      .get("If-None-Match")
+      .fold[Either[Throwable, String]](
+        Left(new NoSuchElementException("Otsake If-None-Match on pakollinen."))
+      )(Right(_))
   }
 }
