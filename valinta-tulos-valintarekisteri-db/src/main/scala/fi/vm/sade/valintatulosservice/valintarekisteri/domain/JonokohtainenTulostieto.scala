@@ -4,21 +4,21 @@ import fi.vm.sade.valintatulosservice.domain.Valintatila
 import fi.vm.sade.valintatulosservice.domain.Valintatila.Valintatila
 
 case class JonokohtainenTulostieto(
-                                  oid: ValintatapajonoOid,
-                                  nimi: String,
-                                  pisteet: Option[BigDecimal],
-                                  alinHyvaksyttyPistemaara: Option[BigDecimal],
-                                  valintatila: Valintatila,
-                                  julkaistavissa: Boolean,
-                                  valintatapajonoPrioriteetti: Option[Int],
-                                  tilanKuvaukset: Option[Map[String, String]],
-                                  ehdollisestiHyvaksyttavissa: Boolean,
-                                  ehdollisenHyvaksymisenEhto: Option[EhdollisenHyvaksymisenEhto],
-                                  varasijanumero: Option[Int],
-                                  eiVarasijatayttoa: Boolean,
-                                  varasijat: Option[Int],
-                                  varasijasaannotKaytossa: Boolean
-                                  ) {
+  oid: ValintatapajonoOid,
+  nimi: String,
+  pisteet: Option[BigDecimal],
+  alinHyvaksyttyPistemaara: Option[BigDecimal],
+  valintatila: Valintatila,
+  julkaistavissa: Boolean,
+  valintatapajonoPrioriteetti: Option[Int],
+  tilanKuvaukset: Option[Map[String, String]],
+  ehdollisestiHyvaksyttavissa: Boolean,
+  ehdollisenHyvaksymisenEhto: Option[EhdollisenHyvaksymisenEhto],
+  varasijanumero: Option[Int],
+  eiVarasijatayttoa: Boolean,
+  varasijat: Option[Int],
+  varasijasaannotKaytossa: Boolean
+) {
   def toKesken: JonokohtainenTulostieto = {
     copy(
       valintatila = Valintatila.kesken,

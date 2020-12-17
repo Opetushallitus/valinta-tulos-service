@@ -1,35 +1,60 @@
 package fi.vm.sade.valintatulosservice.sijoittelu
 
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SijoitteluRepository, ValinnantulosRepository}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, SyntheticSijoitteluAjoForHakusWithoutSijoittelu}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{
+  SijoitteluRepository,
+  ValinnantulosRepository
+}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{
+  HakuOid,
+  HakukohdeOid,
+  SyntheticSijoitteluAjoForHakusWithoutSijoittelu
+}
 
 import scala.collection.JavaConverters._
 
-case class HakijaDTOSearchCriteria(hakuOid: HakuOid, sijoitteluajoId: String, hakukohdeOids: Option[Set[HakukohdeOid]] = None)
+case class HakijaDTOSearchCriteria(
+  hakuOid: HakuOid,
+  sijoitteluajoId: String,
+  hakukohdeOids: Option[Set[HakukohdeOid]] = None
+)
 
 trait ValintarekisteriHakijaDTOClient {
-  def processSijoittelunTulokset[T](hakijaDTOSearchCriteria: HakijaDTOSearchCriteria, processor: HakijaDTO => T)
+  def processSijoittelunTulokset[T](
+    hakijaDTOSearchCriteria: HakijaDTOSearchCriteria,
+    processor: HakijaDTO => T
+  )
 }
 
-class ValintarekisteriHakijaDTOClientImpl(raportointiService: ValintarekisteriRaportointiService,
-                                          sijoittelunTulosClient: ValintarekisteriSijoittelunTulosClient,
-                                          repository: SijoitteluRepository with ValinnantulosRepository) extends ValintarekisteriHakijaDTOClient {
+class ValintarekisteriHakijaDTOClientImpl(
+  raportointiService: ValintarekisteriRaportointiService,
+  sijoittelunTulosClient: ValintarekisteriSijoittelunTulosClient,
+  repository: SijoitteluRepository with ValinnantulosRepository
+) extends ValintarekisteriHakijaDTOClient {
 
-  override def processSijoittelunTulokset[T](criteria: HakijaDTOSearchCriteria, processor: (HakijaDTO) => T): Unit = {
+  override def processSijoittelunTulokset[T](
+    criteria: HakijaDTOSearchCriteria,
+    processor: (HakijaDTO) => T
+  ): Unit = {
 
     (criteria.sijoitteluajoId match {
-      case x if repository.isLatest(x) => sijoittelunTulosClient.fetchLatestSijoitteluAjo(criteria.hakuOid)
-      case x => repository.parseId(x).flatMap {
-        case id if 0 < id => raportointiService.getSijoitteluAjo(id)
-        case _ => Some(SyntheticSijoitteluAjoForHakusWithoutSijoittelu(criteria.hakuOid))
-      }
+      case x if repository.isLatest(x) =>
+        sijoittelunTulosClient.fetchLatestSijoitteluAjo(criteria.hakuOid)
+      case x =>
+        repository.parseId(x).flatMap {
+          case id if 0 < id => raportointiService.getSijoitteluAjo(id)
+          case _            => Some(SyntheticSijoitteluAjoForHakusWithoutSijoittelu(criteria.hakuOid))
+        }
     }) foreach { sijoitteluajo =>
       criteria match {
         case HakijaDTOSearchCriteria(_, _, None) =>
           raportointiService.hakemukset(sijoitteluajo).getResults.asScala.foreach(processor)
         case HakijaDTOSearchCriteria(_, _, Some(hakukohdeOids)) =>
-          raportointiService.hakemukset(sijoitteluajo, hakukohdeOids).getResults.asScala.foreach(processor)
+          raportointiService
+            .hakemukset(sijoitteluajo, hakukohdeOids)
+            .getResults
+            .asScala
+            .foreach(processor)
       }
     }
   }

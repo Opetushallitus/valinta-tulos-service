@@ -2,7 +2,6 @@ package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy.LahetysSyy
 
-
 class MailerHelper {
 
   /** Splits each Ilmoitus so that Ilmoitus has only hakukohtees that share the same LahetysSyy. Groups the list of Ilmoituses by language and LahetysSyy.
@@ -16,14 +15,14 @@ class MailerHelper {
     splitIlmoituses.groupBy(asiointikieliAndLahetysSyy)
   }
 
-  private def asiointikieliAndLahetysSyy(x: Ilmoitus): (String, LahetysSyy) = (x.asiointikieli, x.hakukohteet.head.lahetysSyy)
+  private def asiointikieliAndLahetysSyy(x: Ilmoitus): (String, LahetysSyy) =
+    (x.asiointikieli, x.hakukohteet.head.lahetysSyy)
 
   private def splitIlmoitusByLahetysSyy(original: Ilmoitus): List[Ilmoitus] = {
-    if (original.hakukohteet.isEmpty) throw new IllegalArgumentException("Empty hakukohdelist in hakemus " + original.hakemusOid)
+    if (original.hakukohteet.isEmpty)
+      throw new IllegalArgumentException("Empty hakukohdelist in hakemus " + original.hakemusOid)
     val hakukohteetByLahetysSyy = original.hakukohteet.groupBy(_.lahetysSyy)
-    val res = for (
-      syy <- hakukohteetByLahetysSyy
-    ) yield {
+    val res = for (syy <- hakukohteetByLahetysSyy) yield {
       Ilmoitus(
         original.hakemusOid,
         original.hakijaOid,

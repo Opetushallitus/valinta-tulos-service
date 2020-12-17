@@ -7,38 +7,45 @@ import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhto
 import org.joda.time.DateTime
 
-case class ValinnantulosUpdateStatus(status: Int, message: String, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid)
+case class ValinnantulosUpdateStatus(
+  status: Int,
+  message: String,
+  valintatapajonoOid: ValintatapajonoOid,
+  hakemusOid: HakemusOid
+)
 
 case class KentanMuutos(field: String, from: Option[Any], to: Any)
 
 case class Muutos(changes: List[KentanMuutos], timestamp: OffsetDateTime)
 
-case class Valinnantulos(hakukohdeOid: HakukohdeOid,
-                         valintatapajonoOid: ValintatapajonoOid,
-                         hakemusOid: HakemusOid,
-                         henkiloOid: String,
-                         valinnantila: Valinnantila,
-                         ehdollisestiHyvaksyttavissa: Option[Boolean],
-                         ehdollisenHyvaksymisenEhtoKoodi: Option[String],
-                         ehdollisenHyvaksymisenEhtoFI: Option[String],
-                         ehdollisenHyvaksymisenEhtoSV: Option[String],
-                         ehdollisenHyvaksymisenEhtoEN: Option[String],
-                         valinnantilanKuvauksenTekstiFI: Option[String],
-                         valinnantilanKuvauksenTekstiSV: Option[String],
-                         valinnantilanKuvauksenTekstiEN: Option[String],
-                         julkaistavissa: Option[Boolean],
-                         hyvaksyttyVarasijalta: Option[Boolean],
-                         hyvaksyPeruuntunut: Option[Boolean],
-                         vastaanottotila: ValintatuloksenTila,
-                         ilmoittautumistila: SijoitteluajonIlmoittautumistila,
-                         poistettava: Option[Boolean] = None,
-                         ohitaVastaanotto: Option[Boolean] = None,
-                         ohitaIlmoittautuminen: Option[Boolean] = None,
-                         hyvaksymiskirjeLahetetty: Option[OffsetDateTime] = None,
-                         valinnantilanViimeisinMuutos: Option[OffsetDateTime] = None,
-                         vastaanotonViimeisinMuutos: Option[OffsetDateTime] = None,
-                         vastaanottoDeadlineMennyt: Option[Boolean] = None,
-                         vastaanottoDeadline: Option[DateTime] = None) {
+case class Valinnantulos(
+  hakukohdeOid: HakukohdeOid,
+  valintatapajonoOid: ValintatapajonoOid,
+  hakemusOid: HakemusOid,
+  henkiloOid: String,
+  valinnantila: Valinnantila,
+  ehdollisestiHyvaksyttavissa: Option[Boolean],
+  ehdollisenHyvaksymisenEhtoKoodi: Option[String],
+  ehdollisenHyvaksymisenEhtoFI: Option[String],
+  ehdollisenHyvaksymisenEhtoSV: Option[String],
+  ehdollisenHyvaksymisenEhtoEN: Option[String],
+  valinnantilanKuvauksenTekstiFI: Option[String],
+  valinnantilanKuvauksenTekstiSV: Option[String],
+  valinnantilanKuvauksenTekstiEN: Option[String],
+  julkaistavissa: Option[Boolean],
+  hyvaksyttyVarasijalta: Option[Boolean],
+  hyvaksyPeruuntunut: Option[Boolean],
+  vastaanottotila: ValintatuloksenTila,
+  ilmoittautumistila: SijoitteluajonIlmoittautumistila,
+  poistettava: Option[Boolean] = None,
+  ohitaVastaanotto: Option[Boolean] = None,
+  ohitaIlmoittautuminen: Option[Boolean] = None,
+  hyvaksymiskirjeLahetetty: Option[OffsetDateTime] = None,
+  valinnantilanViimeisinMuutos: Option[OffsetDateTime] = None,
+  vastaanotonViimeisinMuutos: Option[OffsetDateTime] = None,
+  vastaanottoDeadlineMennyt: Option[Boolean] = None,
+  vastaanottoDeadline: Option[DateTime] = None
+) {
 
   def isHyvaksytty = Hyvaksytty == valinnantila || VarasijaltaHyvaksytty == valinnantila
 
@@ -57,7 +64,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
       other.henkiloOid == henkiloOid
 
   def hasOhjausChanged(other: Valinnantulos) =
-      booleanOptionChanged(julkaistavissa, other.julkaistavissa) ||
+    booleanOptionChanged(julkaistavissa, other.julkaistavissa) ||
       booleanOptionChanged(hyvaksyttyVarasijalta, other.hyvaksyttyVarasijalta) ||
       booleanOptionChanged(hyvaksyPeruuntunut, other.hyvaksyPeruuntunut)
 
@@ -73,7 +80,8 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
       stringChanged(valinnantilanKuvauksenTekstiSV, other.valinnantilanKuvauksenTekstiSV) ||
       stringChanged(valinnantilanKuvauksenTekstiEN, other.valinnantilanKuvauksenTekstiEN)
 
-  private def booleanOptionChanged(thisParam: Option[Boolean], otherParam: Option[Boolean]) = thisParam.isDefined && thisParam != otherParam
+  private def booleanOptionChanged(thisParam: Option[Boolean], otherParam: Option[Boolean]) =
+    thisParam.isDefined && thisParam != otherParam
 
   private def getBooleanOptionChange(thisParam: Option[Boolean], otherParam: Option[Boolean]) =
     if (booleanOptionChanged(thisParam, otherParam)) {
@@ -82,9 +90,14 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
       otherParam.getOrElse(false)
     }
 
-  private def stringChanged(thisParam: Option[String], otherParam: Option[String]) = thisParam.isDefined && thisParam != otherParam
+  private def stringChanged(thisParam: Option[String], otherParam: Option[String]) =
+    thisParam.isDefined && thisParam != otherParam
 
-  def getValinnantuloksenOhjauksenMuutos(vanha: Valinnantulos, muokkaaja: String, selite: String) = {
+  def getValinnantuloksenOhjauksenMuutos(
+    vanha: Valinnantulos,
+    muokkaaja: String,
+    selite: String
+  ) = {
     ValinnantuloksenOhjaus(
       this.hakemusOid,
       this.valintatapajonoOid,
@@ -97,37 +110,41 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
     )
   }
 
-  def getValinnantuloksenOhjaus(muokkaaja: String, selite: String) = ValinnantuloksenOhjaus(
-    this.hakemusOid,
-    this.valintatapajonoOid,
-    this.hakukohdeOid,
-    this.julkaistavissa.getOrElse(false),
-    this.hyvaksyttyVarasijalta.getOrElse(false),
-    this.hyvaksyPeruuntunut.getOrElse(false),
-    muokkaaja,
-    selite
-  )
+  def getValinnantuloksenOhjaus(muokkaaja: String, selite: String) =
+    ValinnantuloksenOhjaus(
+      this.hakemusOid,
+      this.valintatapajonoOid,
+      this.hakukohdeOid,
+      this.julkaistavissa.getOrElse(false),
+      this.hyvaksyttyVarasijalta.getOrElse(false),
+      this.hyvaksyPeruuntunut.getOrElse(false),
+      muokkaaja,
+      selite
+    )
 
   def getEhdollisenHyvaksynnanEhto: Option[HyvaksynnanEhto] =
     if (ehdollisestiHyvaksyttavissa.contains(true)) {
-      Some(HyvaksynnanEhto(
-        this.ehdollisenHyvaksymisenEhtoKoodi.getOrElse(""),
-        this.ehdollisenHyvaksymisenEhtoFI.getOrElse(""),
-        this.ehdollisenHyvaksymisenEhtoSV.getOrElse(""),
-        this.ehdollisenHyvaksymisenEhtoEN.getOrElse("")
-      ))
+      Some(
+        HyvaksynnanEhto(
+          this.ehdollisenHyvaksymisenEhtoKoodi.getOrElse(""),
+          this.ehdollisenHyvaksymisenEhtoFI.getOrElse(""),
+          this.ehdollisenHyvaksymisenEhtoSV.getOrElse(""),
+          this.ehdollisenHyvaksymisenEhtoEN.getOrElse("")
+        )
+      )
     } else {
       None
     }
 
-  def getValinnantilanTallennus(muokkaaja: String) = ValinnantilanTallennus(
-    this.hakemusOid,
-    this.valintatapajonoOid,
-    this.hakukohdeOid,
-    this.henkiloOid,
-    this.valinnantila,
-    muokkaaja
-  )
+  def getValinnantilanTallennus(muokkaaja: String) =
+    ValinnantilanTallennus(
+      this.hakemusOid,
+      this.valintatapajonoOid,
+      this.hakukohdeOid,
+      this.henkiloOid,
+      this.valinnantila,
+      muokkaaja
+    )
 
   def toValintatulos(hakuOid: Option[String] = None): Valintatulos = {
     val valintatulos = new Valintatulos(
@@ -135,7 +152,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
       henkiloOid,
       hakukohdeOid.toString,
       hakuOid.getOrElse(null),
-      0,  // hakutoive doesn't seem to be present in this context either
+      0, // hakutoive doesn't seem to be present in this context either
       hyvaksyttyVarasijalta.getOrElse(false),
       ilmoittautumistila.ilmoittautumistila,
       julkaistavissa.getOrElse(false),
@@ -160,24 +177,29 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
   }
 }
 
-case class ValinnantulosWithTilahistoria(valinnantulos: Valinnantulos, tilaHistoria: List[TilaHistoriaRecord])
+case class ValinnantulosWithTilahistoria(
+  valinnantulos: Valinnantulos,
+  tilaHistoria: List[TilaHistoriaRecord]
+)
 
-case class ValinnantuloksenOhjaus(hakemusOid: HakemusOid,
-                                  valintatapajonoOid: ValintatapajonoOid,
-                                  hakukohdeOid: HakukohdeOid,
-                                  julkaistavissa: Boolean,
-                                  hyvaksyttyVarasijalta: Boolean,
-                                  hyvaksyPeruuntunut: Boolean,
-                                  muokkaaja: String,
-                                  selite: String)
+case class ValinnantuloksenOhjaus(
+  hakemusOid: HakemusOid,
+  valintatapajonoOid: ValintatapajonoOid,
+  hakukohdeOid: HakukohdeOid,
+  julkaistavissa: Boolean,
+  hyvaksyttyVarasijalta: Boolean,
+  hyvaksyPeruuntunut: Boolean,
+  muokkaaja: String,
+  selite: String
+)
 
-case class ValinnantilanTallennus(hakemusOid: HakemusOid,
-                                  valintatapajonoOid: ValintatapajonoOid,
-                                  hakukohdeOid: HakukohdeOid,
-                                  henkiloOid: String,
-                                  valinnantila: Valinnantila,
-                                  muokkaaja: String)
+case class ValinnantilanTallennus(
+  hakemusOid: HakemusOid,
+  valintatapajonoOid: ValintatapajonoOid,
+  hakukohdeOid: HakukohdeOid,
+  henkiloOid: String,
+  valinnantila: Valinnantila,
+  muokkaaja: String
+)
 
-case class Hyvaksymiskirje(henkiloOid: String,
-                           hakukohdeOid: HakukohdeOid,
-                           lahetetty: Date)
+case class Hyvaksymiskirje(henkiloOid: String, hakukohdeOid: HakukohdeOid, lahetetty: Date)

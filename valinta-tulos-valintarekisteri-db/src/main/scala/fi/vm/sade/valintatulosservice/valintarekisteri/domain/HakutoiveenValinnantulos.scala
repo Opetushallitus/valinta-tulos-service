@@ -7,19 +7,21 @@ trait HakijanHakutoive {
 
   def isHyväksytty() = false
   def isJulkaistu() = false
-  def isKesken():Boolean
+  def isKesken(): Boolean
 
 }
 
-case class HakutoiveenValinnantulos(hakutoive: Int,
-                                    prioriteetti: Option[Int],
-                                    varasijanNumero:Option[Int],
-                                    hakukohdeOid: HakukohdeOid,
-                                    valintatapajonoOid: ValintatapajonoOid,
-                                    hakemusOid: HakemusOid,
-                                    valinnantila: Valinnantila,
-                                    julkaistavissa: Option[Boolean],
-                                    vastaanottotila: ValintatuloksenTila) extends HakijanHakutoive {
+case class HakutoiveenValinnantulos(
+  hakutoive: Int,
+  prioriteetti: Option[Int],
+  varasijanNumero: Option[Int],
+  hakukohdeOid: HakukohdeOid,
+  valintatapajonoOid: ValintatapajonoOid,
+  hakemusOid: HakemusOid,
+  valinnantila: Valinnantila,
+  julkaistavissa: Option[Boolean],
+  vastaanottotila: ValintatuloksenTila
+) extends HakijanHakutoive {
 
   override def isHyväksytty() = List(VarasijaltaHyvaksytty, Hyvaksytty).contains(valinnantila)
 

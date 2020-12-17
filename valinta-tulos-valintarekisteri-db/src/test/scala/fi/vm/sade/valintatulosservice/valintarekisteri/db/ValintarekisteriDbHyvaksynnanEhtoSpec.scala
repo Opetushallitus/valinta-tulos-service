@@ -3,8 +3,21 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db
 import java.time.Instant
 import java.util.ConcurrentModificationException
 
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.{GoneException, HyvaksynnanEhto}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiKktutkintoonJohtavaHakukohde, HakemusOid, HakuOid, HakukohdeOid, HakukohdeRecord, Hyvaksytty, Kausi, ValinnantilanTallennus, ValintatapajonoOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.{
+  GoneException,
+  HyvaksynnanEhto
+}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{
+  EiKktutkintoonJohtavaHakukohde,
+  HakemusOid,
+  HakuOid,
+  HakukohdeOid,
+  HakukohdeRecord,
+  Hyvaksytty,
+  Kausi,
+  ValinnantilanTallennus,
+  ValintatapajonoOid
+}
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
@@ -13,7 +26,13 @@ import org.specs2.specification.{AfterAll, BeforeAll, BeforeEach}
 import slick.jdbc.PostgresProfile.api._
 
 @RunWith(classOf[JUnitRunner])
-class ValintarekisteriDbHyvaksynnanEhtoSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAll with BeforeEach with AfterAll {
+class ValintarekisteriDbHyvaksynnanEhtoSpec
+    extends Specification
+    with ITSetup
+    with ValintarekisteriDbTools
+    with BeforeAll
+    with BeforeEach
+    with AfterAll {
   sequential
 
   def beforeAll: Unit = {
@@ -32,14 +51,16 @@ class ValintarekisteriDbHyvaksynnanEhtoSpec extends Specification with ITSetup w
   val hakukohdeOid = HakukohdeOid("1.2.246.562.20.00000000001")
   val ehto = HyvaksynnanEhto("muu", "muu", "andra", "other")
   val ilmoittaja = "1.2.246.562.24.00000000002"
-  val hakukohdeRecord = EiKktutkintoonJohtavaHakukohde(hakukohdeOid, HakuOid(""), Some(Kausi("2000S")))
+  val hakukohdeRecord =
+    EiKktutkintoonJohtavaHakukohde(hakukohdeOid, HakuOid(""), Some(Kausi("2000S")))
   val valinnantilanTallennus = ValinnantilanTallennus(
     hakemusOid,
     ValintatapajonoOid("valintatapajonoOid"),
     hakukohdeOid,
     "1.2.246.562.24.00000000001",
     Hyvaksytty,
-    "muokkaaja")
+    "muokkaaja"
+  )
 
   "ValintareksiteriDb" should {
     "store ehdollisesti hyväksyttävissä hakukohteessa" in {
@@ -48,7 +69,9 @@ class ValintarekisteriDbHyvaksynnanEhtoSpec extends Specification with ITSetup w
           hakemusOid,
           hakukohdeOid,
           ehto,
-          ilmoittaja))
+          ilmoittaja
+        )
+      )
       result._1 should_== ehto
       getRows should_== Vector(("muu", "muu", "andra", "other"))
     }
@@ -59,26 +82,33 @@ class ValintarekisteriDbHyvaksynnanEhtoSpec extends Specification with ITSetup w
           hakemusOid,
           hakukohdeOid,
           ehto,
-          ilmoittaja))
+          ilmoittaja
+        )
+      )
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.insertHyvaksynnanEhtoHakukohteessa(
           hakemusOid,
           hakukohdeOid,
           ehto.copy(fi = "toinen muu"),
-          ilmoittaja)) must throwAn[ConcurrentModificationException]
+          ilmoittaja
+        )
+      ) must throwAn[ConcurrentModificationException]
       getRows should_== Vector(("muu", "muu", "andra", "other"))
     }
 
     "not store ehdollisesti hyväksyttävissä hakukohteessa if valinnantulos exists" in {
       singleConnectionValintarekisteriDb.storeHakukohde(hakukohdeRecord)
       singleConnectionValintarekisteriDb.runBlocking(
-        singleConnectionValintarekisteriDb.storeValinnantila(valinnantilanTallennus, None))
+        singleConnectionValintarekisteriDb.storeValinnantila(valinnantilanTallennus, None)
+      )
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.insertHyvaksynnanEhtoHakukohteessa(
           hakemusOid,
           hakukohdeOid,
           ehto,
-          ilmoittaja)) must throwAn[GoneException]
+          ilmoittaja
+        )
+      ) must throwAn[GoneException]
       getRows should_== Vector.empty
     }
 
@@ -88,7 +118,9 @@ class ValintarekisteriDbHyvaksynnanEhtoSpec extends Specification with ITSetup w
           hakemusOid,
           hakukohdeOid,
           ehto,
-          ilmoittaja))
+          ilmoittaja
+        )
+      )
       val updatedEhto = ehto.copy(fi = "toinen muu")
       val result = singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.updateHyvaksynnanEhtoHakukohteessa(
@@ -96,7 +128,9 @@ class ValintarekisteriDbHyvaksynnanEhtoSpec extends Specification with ITSetup w
           hakukohdeOid,
           updatedEhto,
           ilmoittaja,
-          lastModified))
+          lastModified
+        )
+      )
       result._1 should_== updatedEhto
       getRows should_== Vector(("muu", "toinen muu", "andra", "other"))
     }
@@ -107,21 +141,27 @@ class ValintarekisteriDbHyvaksynnanEhtoSpec extends Specification with ITSetup w
           hakemusOid,
           hakukohdeOid,
           ehto,
-          ilmoittaja))
+          ilmoittaja
+        )
+      )
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.updateHyvaksynnanEhtoHakukohteessa(
           hakemusOid,
           hakukohdeOid,
           ehto.copy(fi = "toinen muu"),
           ilmoittaja,
-          lastModified))
+          lastModified
+        )
+      )
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.updateHyvaksynnanEhtoHakukohteessa(
           hakemusOid,
           hakukohdeOid,
           ehto,
           ilmoittaja,
-          lastModified)) must throwAn[ConcurrentModificationException]
+          lastModified
+        )
+      ) must throwAn[ConcurrentModificationException]
       getRows should_== Vector(("muu", "toinen muu", "andra", "other"))
     }
 
@@ -131,17 +171,22 @@ class ValintarekisteriDbHyvaksynnanEhtoSpec extends Specification with ITSetup w
           hakemusOid,
           hakukohdeOid,
           ehto,
-          ilmoittaja))
+          ilmoittaja
+        )
+      )
       singleConnectionValintarekisteriDb.storeHakukohde(hakukohdeRecord)
       singleConnectionValintarekisteriDb.runBlocking(
-        singleConnectionValintarekisteriDb.storeValinnantila(valinnantilanTallennus, None))
+        singleConnectionValintarekisteriDb.storeValinnantila(valinnantilanTallennus, None)
+      )
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.updateHyvaksynnanEhtoHakukohteessa(
           hakemusOid,
           hakukohdeOid,
           ehto.copy(fi = "toinen muu"),
           ilmoittaja,
-          lastModified)) must throwAn[GoneException]
+          lastModified
+        )
+      ) must throwAn[GoneException]
       getRows should_== Vector(("muu", "muu", "andra", "other"))
     }
 
@@ -151,14 +196,18 @@ class ValintarekisteriDbHyvaksynnanEhtoSpec extends Specification with ITSetup w
           hakemusOid,
           hakukohdeOid,
           ehto,
-          ilmoittaja))
+          ilmoittaja
+        )
+      )
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.updateHyvaksynnanEhtoHakukohteessa(
           hakemusOid,
           hakukohdeOid,
           ehto,
           ilmoittaja,
-          lastModified)) must throwAn[ConcurrentModificationException]
+          lastModified
+        )
+      ) must throwAn[ConcurrentModificationException]
       getRows should_== Vector(("muu", "muu", "andra", "other"))
     }
 
@@ -168,12 +217,16 @@ class ValintarekisteriDbHyvaksynnanEhtoSpec extends Specification with ITSetup w
           hakemusOid,
           hakukohdeOid,
           ehto,
-          ilmoittaja))
+          ilmoittaja
+        )
+      )
       val result = singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.deleteHyvaksynnanEhtoHakukohteessa(
           hakemusOid,
           hakukohdeOid,
-          lastModified))
+          lastModified
+        )
+      )
       result should_== ehto
       getRows should_== Vector.empty
     }
@@ -184,19 +237,25 @@ class ValintarekisteriDbHyvaksynnanEhtoSpec extends Specification with ITSetup w
           hakemusOid,
           hakukohdeOid,
           ehto,
-          ilmoittaja))
+          ilmoittaja
+        )
+      )
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.updateHyvaksynnanEhtoHakukohteessa(
           hakemusOid,
           hakukohdeOid,
           ehto.copy(fi = "toinen muu"),
           ilmoittaja,
-          lastModified))
+          lastModified
+        )
+      )
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.deleteHyvaksynnanEhtoHakukohteessa(
           hakemusOid,
           hakukohdeOid,
-          lastModified)) must throwAn[ConcurrentModificationException]
+          lastModified
+        )
+      ) must throwAn[ConcurrentModificationException]
       getRows should_== Vector(("muu", "toinen muu", "andra", "other"))
     }
 
@@ -206,15 +265,20 @@ class ValintarekisteriDbHyvaksynnanEhtoSpec extends Specification with ITSetup w
           hakemusOid,
           hakukohdeOid,
           ehto,
-          ilmoittaja))
+          ilmoittaja
+        )
+      )
       singleConnectionValintarekisteriDb.storeHakukohde(hakukohdeRecord)
       singleConnectionValintarekisteriDb.runBlocking(
-        singleConnectionValintarekisteriDb.storeValinnantila(valinnantilanTallennus, None))
+        singleConnectionValintarekisteriDb.storeValinnantila(valinnantilanTallennus, None)
+      )
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.deleteHyvaksynnanEhtoHakukohteessa(
           hakemusOid,
           hakukohdeOid,
-          lastModified)) must throwAn[GoneException]
+          lastModified
+        )
+      ) must throwAn[GoneException]
       getRows should_== Vector(("muu", "muu", "andra", "other"))
     }
 
@@ -223,7 +287,9 @@ class ValintarekisteriDbHyvaksynnanEhtoSpec extends Specification with ITSetup w
         singleConnectionValintarekisteriDb.deleteHyvaksynnanEhtoHakukohteessa(
           hakemusOid,
           hakukohdeOid,
-          Instant.now())) must throwAn[ConcurrentModificationException]
+          Instant.now()
+        )
+      ) must throwAn[ConcurrentModificationException]
       getRows should_== Vector.empty
     }
   }

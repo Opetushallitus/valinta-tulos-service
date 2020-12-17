@@ -5,13 +5,14 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.LukuvuosimaksuRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, Lukuvuosimaksu}
 
-class LukuvuosimaksuService(lukuvuosimaksuRepository: LukuvuosimaksuRepository,
-                            audit: Audit
-                           ) extends Logging {
+class LukuvuosimaksuService(lukuvuosimaksuRepository: LukuvuosimaksuRepository, audit: Audit)
+    extends Logging {
 
   def getLukuvuosimaksut(hakukohdeOid: HakukohdeOid, auditInfo: AuditInfo): Seq[Lukuvuosimaksu] = {
     val result = lukuvuosimaksuRepository.getLukuvuosimaksus(hakukohdeOid)
-    audit.log(auditInfo.user, LukuvuosimaksujenLuku,
+    audit.log(
+      auditInfo.user,
+      LukuvuosimaksujenLuku,
       new Target.Builder()
         .setField("hakukohde", hakukohdeOid.toString)
         .setField("muokkaaja", "")
@@ -21,9 +22,14 @@ class LukuvuosimaksuService(lukuvuosimaksuRepository: LukuvuosimaksuRepository,
     filterRelevantMaksusOfEachperson(result)
   }
 
-  def getLukuvuosimaksut(hakukohdeOids: Set[HakukohdeOid], auditInfo: AuditInfo): Seq[Lukuvuosimaksu] = {
+  def getLukuvuosimaksut(
+    hakukohdeOids: Set[HakukohdeOid],
+    auditInfo: AuditInfo
+  ): Seq[Lukuvuosimaksu] = {
     val result = lukuvuosimaksuRepository.getLukuvuosimaksus(hakukohdeOids)
-    audit.log(auditInfo.user, LukuvuosimaksujenLuku,
+    audit.log(
+      auditInfo.user,
+      LukuvuosimaksujenLuku,
       new Target.Builder()
         .setField("hakukohde", hakukohdeOids.mkString(","))
         .setField("muokkaaja", "")
@@ -35,15 +41,19 @@ class LukuvuosimaksuService(lukuvuosimaksuRepository: LukuvuosimaksuRepository,
 
   private def filterRelevantMaksusOfEachperson(result: List[Lukuvuosimaksu]) = {
     result
-      .groupBy(l => l.personOid).values
+      .groupBy(l => l.personOid)
+      .values
       .map(l => l.sortBy(a => a.luotu).reverse)
-      .map(l => l.head).toList
+      .map(l => l.head)
+      .toList
   }
 
   def updateLukuvuosimaksut(lukuvuosimaksut: List[Lukuvuosimaksu], auditInfo: AuditInfo) = {
     lukuvuosimaksuRepository.update(lukuvuosimaksut)
     lukuvuosimaksut.foreach(m => {
-      audit.log(auditInfo.user, LukuvuosimaksujenMuokkaus,
+      audit.log(
+        auditInfo.user,
+        LukuvuosimaksujenMuokkaus,
         new Target.Builder()
           .setField("henkilö", m.personOid)
           .setField("hakukohde", m.hakukohdeOid.toString)

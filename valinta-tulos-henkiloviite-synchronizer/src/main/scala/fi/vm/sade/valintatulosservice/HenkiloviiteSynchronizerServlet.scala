@@ -6,8 +6,10 @@ import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
 
 import scala.util.{Failure, Success}
 
-class HenkiloviiteSynchronizerServlet(henkiloviiteSynchronizer: HenkiloviiteSynchronizer,
-                                      schedulerIntervalHours: Option[Long]) extends HttpServlet {
+class HenkiloviiteSynchronizerServlet(
+  henkiloviiteSynchronizer: HenkiloviiteSynchronizer,
+  schedulerIntervalHours: Option[Long]
+) extends HttpServlet {
 
   override def doPost(request: HttpServletRequest, response: HttpServletResponse): Unit = {
     henkiloviiteSynchronizer.startSync() match {
@@ -23,7 +25,8 @@ class HenkiloviiteSynchronizerServlet(henkiloviiteSynchronizer: HenkiloviiteSync
     val (code, msg) = state match {
       case Started(at) if at.isBefore(LocalDateTime.now().minus(5, MINUTES)) =>
         (500, "Too much time elapsed since sync started")
-      case Stopped(at, _) if at.isBefore(LocalDateTime.now().minus(schedulerIntervalHours.getOrElse(24), HOURS)) =>
+      case Stopped(at, _)
+          if at.isBefore(LocalDateTime.now().minus(schedulerIntervalHours.getOrElse(24), HOURS)) =>
         (500, "Too much time elapsed since last sync")
       case Stopped(_, Failure(_)) =>
         (500, "")
@@ -33,7 +36,7 @@ class HenkiloviiteSynchronizerServlet(henkiloviiteSynchronizer: HenkiloviiteSync
     writeResponse(code, s"${state.toString} $msg", response)
   }
 
-  private def writeResponse(status:Int, message:String, response: HttpServletResponse ) = {
+  private def writeResponse(status: Int, message: String, response: HttpServletResponse) = {
     response.setStatus(status)
     response.setCharacterEncoding("UTF-8")
     response.setContentType("text/plain")

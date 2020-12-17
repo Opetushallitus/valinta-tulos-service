@@ -18,8 +18,13 @@ import scala.concurrent.duration.Duration
 
 trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with ValintarekisteriRepository {
 
-  override def getMuutoshistoriaForHakemus(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[Muutos] = {
-    timed(s"Getting muutoshistoria for hakemus $hakemusOid in valintatapajono $valintatapajonoOid") {
+  override def getMuutoshistoriaForHakemus(
+    hakemusOid: HakemusOid,
+    valintatapajonoOid: ValintatapajonoOid
+  ): List[Muutos] = {
+    timed(
+      s"Getting muutoshistoria for hakemus $hakemusOid in valintatapajono $valintatapajonoOid"
+    ) {
       val actions: List[MuutosDBIOAction] = List(
         getValinnantilaMuutos(hakemusOid, valintatapajonoOid),
         getValinnantulosMuutos(hakemusOid, valintatapajonoOid),
@@ -28,18 +33,31 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
         getViestitMuutos(hakemusOid, valintatapajonoOid),
         getEhdollisenHyvaksymisenEhtoMuutos(hakemusOid, valintatapajonoOid)
       )
-      runBlocking(DBIO.sequence(actions).map(r => r.flatten
-        .groupBy(_._1)
-        .mapValues(changes => Muutos(changes = changes.map(_._3), timestamp = changes.map(_._2).max))
-        .values.toList
-        .sortBy(_.timestamp).reverse)
+      runBlocking(
+        DBIO
+          .sequence(actions)
+          .map(r =>
+            r.flatten
+              .groupBy(_._1)
+              .mapValues(changes =>
+                Muutos(changes = changes.map(_._3), timestamp = changes.map(_._2).max)
+              )
+              .values
+              .toList
+              .sortBy(_.timestamp)
+              .reverse
+          )
       )
     }
   }
 
-  type MuutosDBIOAction = DBIOAction[Iterable[(Any, OffsetDateTime, KentanMuutos)], NoStream, Effect]
+  type MuutosDBIOAction =
+    DBIOAction[Iterable[(Any, OffsetDateTime, KentanMuutos)], NoStream, Effect]
 
-  private def getValinnantilaMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {
+  private def getValinnantilaMuutos(
+    hakemusOid: HakemusOid,
+    valintatapajonoOid: ValintatapajonoOid
+  ): MuutosDBIOAction = {
     sql"""(select tila, tilan_viimeisin_muutos, lower(system_time) as ts, transaction_id
             from valinnantilat
             where valintatapajono_oid = ${valintatapajonoOid}
@@ -50,17 +68,29 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             where valintatapajono_oid = ${valintatapajonoOid}
                 and hakemus_oid = ${hakemusOid})
             order by ts asc
-        """.as[(Valinnantila, OffsetDateTime, OffsetDateTime, Long)]
+        """
+      .as[(Valinnantila, OffsetDateTime, OffsetDateTime, Long)]
       .map(_.flatMap {
-        case (tila, tilanViimeisinMuutos, ts,txid) =>
+        case (tila, tilanViimeisinMuutos, ts, txid) =>
           List(
             (txid, ts, KentanMuutos(field = "valinnantila", from = None, to = tila)),
-            (txid, ts, KentanMuutos(field = "valinnantilanViimeisinMuutos", from = None, to = tilanViimeisinMuutos))
+            (
+              txid,
+              ts,
+              KentanMuutos(
+                field = "valinnantilanViimeisinMuutos",
+                from = None,
+                to = tilanViimeisinMuutos
+              )
+            )
           )
       }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten)
   }
 
-  override def getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuJonoOidHistoriasta(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Option[ValintatapajonoOid] = {
+  override def getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuJonoOidHistoriasta(
+    hakemusOid: HakemusOid,
+    hakukohdeOid: HakukohdeOid
+  ): Option[ValintatapajonoOid] = {
     runBlocking(sql"""select vth.valintatapajono_oid
       from valinnantilat_history vth
       join valinnantilat vt_curr
@@ -98,7 +128,10 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                   limit 1))""".as[String].headOption).map(ValintatapajonoOid)
   }
 
-  private def getValinnantulosMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {
+  private def getValinnantulosMuutos(
+    hakemusOid: HakemusOid,
+    valintatapajonoOid: ValintatapajonoOid
+  ): MuutosDBIOAction = {
     sql"""(select julkaistavissa,
                 hyvaksytty_varasijalta,
                 hyvaksy_peruuntunut,
@@ -117,18 +150,30 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             where valintatapajono_oid = ${valintatapajonoOid}
                 and hakemus_oid = ${hakemusOid})
             order by ts asc
-        """.as[(Boolean, Boolean, Boolean, OffsetDateTime, Long)]
+        """
+      .as[(Boolean, Boolean, Boolean, OffsetDateTime, Long)]
       .map(_.flatMap {
         case (julkaistavissa, hyvaksyttyVarasijalta, hyvaksyPeruuntunut, ts, txid) =>
           List(
             (txid, ts, KentanMuutos(field = "julkaistavissa", from = None, to = julkaistavissa)),
-            (txid, ts, KentanMuutos(field = "hyvaksyttyVarasijalta", from = None, to = hyvaksyttyVarasijalta)),
-            (txid, ts, KentanMuutos(field = "hyvaksyPeruuntunut", from = None, to = hyvaksyPeruuntunut))
+            (
+              txid,
+              ts,
+              KentanMuutos(field = "hyvaksyttyVarasijalta", from = None, to = hyvaksyttyVarasijalta)
+            ),
+            (
+              txid,
+              ts,
+              KentanMuutos(field = "hyvaksyPeruuntunut", from = None, to = hyvaksyPeruuntunut)
+            )
           )
       }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten)
   }
 
-  private def getEhdollisenHyvaksymisenEhtoMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {
+  private def getEhdollisenHyvaksymisenEhtoMuutos(
+    hakemusOid: HakemusOid,
+    valintatapajonoOid: ValintatapajonoOid
+  ): MuutosDBIOAction = {
     sql"""(select ehdollisen_hyvaksymisen_ehto_koodi,
                   ehdollisen_hyvaksymisen_ehto_fi,
                   ehdollisen_hyvaksymisen_ehto_sv,
@@ -151,23 +196,59 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
            where hakemus_oid = $hakemusOid and
                  valintatapajono_oid = $valintatapajonoOid)
           order by lower_ts asc
-       """.as[(String, String, String, String, OffsetDateTime, Option[OffsetDateTime], Long)]
-      .map(v => v.flatMap {
-        case (koodi, fi, sv, en, lower_ts, upper_ts, txid) =>
-          List(
-            (txid, lower_ts, upper_ts, KentanMuutos(field = "ehdollisenHyvaksymisenEhtoKoodi", from = None, to = koodi)),
-            (txid, lower_ts, upper_ts, KentanMuutos(field = "ehdollisenHyvaksymisenEhtoFI", from = None, to = fi)),
-            (txid, lower_ts, upper_ts, KentanMuutos(field = "ehdollisenHyvaksymisenEhtoSV", from = None, to = sv)),
-            (txid, lower_ts, upper_ts, KentanMuutos(field = "ehdollisenHyvaksymisenEhtoEN", from = None, to = en))
-          )
-      }.groupBy(_._4.field).flatMap(t => formMuutoshistoriaWithDeletes(t._2, None)) ++ formMuutoshistoriaWithDeletes(v.map {
-        case (_, _, _, _, lower_ts, upper_ts, txid) =>
-          (txid, lower_ts, upper_ts, KentanMuutos(field = "ehdollisestiHyvaksyttavissa", from = None, to = true))
-      }, Some(false)))
+       """
+      .as[(String, String, String, String, OffsetDateTime, Option[OffsetDateTime], Long)]
+      .map(v =>
+        v.flatMap {
+          case (koodi, fi, sv, en, lower_ts, upper_ts, txid) =>
+            List(
+              (
+                txid,
+                lower_ts,
+                upper_ts,
+                KentanMuutos(field = "ehdollisenHyvaksymisenEhtoKoodi", from = None, to = koodi)
+              ),
+              (
+                txid,
+                lower_ts,
+                upper_ts,
+                KentanMuutos(field = "ehdollisenHyvaksymisenEhtoFI", from = None, to = fi)
+              ),
+              (
+                txid,
+                lower_ts,
+                upper_ts,
+                KentanMuutos(field = "ehdollisenHyvaksymisenEhtoSV", from = None, to = sv)
+              ),
+              (
+                txid,
+                lower_ts,
+                upper_ts,
+                KentanMuutos(field = "ehdollisenHyvaksymisenEhtoEN", from = None, to = en)
+              )
+            )
+        }.groupBy(_._4.field)
+          .flatMap(t => formMuutoshistoriaWithDeletes(t._2, None)) ++ formMuutoshistoriaWithDeletes(
+          v.map {
+            case (_, _, _, _, lower_ts, upper_ts, txid) =>
+              (
+                txid,
+                lower_ts,
+                upper_ts,
+                KentanMuutos(field = "ehdollisestiHyvaksyttavissa", from = None, to = true)
+              )
+          },
+          Some(false)
+        )
+      )
   }
 
-  private def getVastaanottoMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {
-    def vastaanottotilaMuutos[T](x:T, tila:ValintatuloksenTila) = (x, x, KentanMuutos(field = "vastaanottotila", from = None, to = tila))
+  private def getVastaanottoMuutos(
+    hakemusOid: HakemusOid,
+    valintatapajonoOid: ValintatapajonoOid
+  ): MuutosDBIOAction = {
+    def vastaanottotilaMuutos[T](x: T, tila: ValintatuloksenTila) =
+      (x, x, KentanMuutos(field = "vastaanottotila", from = None, to = tila))
 
     sql"""select v.action, v.timestamp, vd.id, vd.poistaja, vd.selite, vd.timestamp
             from vastaanotot as v
@@ -177,21 +258,59 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             where ti.valintatapajono_oid = ${valintatapajonoOid}
                 and ti.hakemus_oid = ${hakemusOid}
             order by v.timestamp asc
-        """.as[(ValintatuloksenTila, OffsetDateTime, Option[Long], Option[String], Option[String], Option[OffsetDateTime])]
-      .map(_.flatMap {
-        case (tila, ts, None, _, _, _) => List(vastaanottotilaMuutos(ts, tila))
-        case (tila, ts, Some(-2), _, _, _) => List(vastaanottotilaMuutos(ts, tila))
-        case (tila, ts, Some(deletedId), Some(poistaja), Some(selite), Some(deletedTs)) => List(
-          vastaanottotilaMuutos(ts, tila),
-          (deletedId, deletedTs, KentanMuutos(field = "vastaanottotila", from = Some(tila), to = "Kesken (poistettu)")),
-          (deletedId, deletedTs, KentanMuutos(field = "Vastaanoton poistaja", from = None, to = poistaja)),
-          (deletedId, deletedTs, KentanMuutos(field = "Vastaanoton poiston selite", from = None, to = selite))
+        """
+      .as[
+        (
+          ValintatuloksenTila,
+          OffsetDateTime,
+          Option[Long],
+          Option[String],
+          Option[String],
+          Option[OffsetDateTime]
         )
-        case (_, _, Some(id), _, _, _) => throw new RuntimeException(s"Poistetulta vastaanottoriviltä ${id} puuttuu tietoja!")
-      }.groupBy(_._3.field).mapValues(v => formMuutoshistoria(v.sortWith{case (a, b) => a._2.compareTo(b._2) < 0})).values.flatten)
+      ]
+      .map(
+        _.flatMap {
+          case (tila, ts, None, _, _, _)     => List(vastaanottotilaMuutos(ts, tila))
+          case (tila, ts, Some(-2), _, _, _) => List(vastaanottotilaMuutos(ts, tila))
+          case (tila, ts, Some(deletedId), Some(poistaja), Some(selite), Some(deletedTs)) =>
+            List(
+              vastaanottotilaMuutos(ts, tila),
+              (
+                deletedId,
+                deletedTs,
+                KentanMuutos(
+                  field = "vastaanottotila",
+                  from = Some(tila),
+                  to = "Kesken (poistettu)"
+                )
+              ),
+              (
+                deletedId,
+                deletedTs,
+                KentanMuutos(field = "Vastaanoton poistaja", from = None, to = poistaja)
+              ),
+              (
+                deletedId,
+                deletedTs,
+                KentanMuutos(field = "Vastaanoton poiston selite", from = None, to = selite)
+              )
+            )
+          case (_, _, Some(id), _, _, _) =>
+            throw new RuntimeException(s"Poistetulta vastaanottoriviltä ${id} puuttuu tietoja!")
+        }.groupBy(_._3.field)
+          .mapValues(v =>
+            formMuutoshistoria(v.sortWith { case (a, b) => a._2.compareTo(b._2) < 0 })
+          )
+          .values
+          .flatten
+      )
   }
 
-  private def getIlmoittautumisMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {
+  private def getIlmoittautumisMuutos(
+    hakemusOid: HakemusOid,
+    valintatapajonoOid: ValintatapajonoOid
+  ): MuutosDBIOAction = {
     sql"""(select i.tila, lower(i.system_time) as ts, i.transaction_id
             from ilmoittautumiset as i
             join valinnantilat as ti on ti.hakukohde_oid = i.hakukohde
@@ -206,11 +325,21 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             where ti.valintatapajono_oid = ${valintatapajonoOid}
                 and ti.hakemus_oid = ${hakemusOid})
             order by ts asc
-        """.as[(SijoitteluajonIlmoittautumistila, OffsetDateTime, Long)]
-      .map(r => formMuutoshistoria(r.map(t => (t._3, t._2, KentanMuutos(field = "ilmoittautumistila", from = None, to = t._1)))))
+        """
+      .as[(SijoitteluajonIlmoittautumistila, OffsetDateTime, Long)]
+      .map(r =>
+        formMuutoshistoria(
+          r.map(t =>
+            (t._3, t._2, KentanMuutos(field = "ilmoittautumistila", from = None, to = t._1))
+          )
+        )
+      )
   }
 
-  private def getViestitMuutos(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): MuutosDBIOAction = {
+  private def getViestitMuutos(
+    hakemusOid: HakemusOid,
+    valintatapajonoOid: ValintatapajonoOid
+  ): MuutosDBIOAction = {
     sql"""(select syy, lahetetty, lahettaminen_aloitettu, lower(system_time) as ts, transaction_id
       from viestit where hakemus_oid = ${hakemusOid}
         and hakukohde_oid in (select distinct hakukohde_oid from valinnantilat where valintatapajono_oid = ${valintatapajonoOid})
@@ -219,18 +348,45 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       from viestit_history where hakemus_oid = ${hakemusOid}
         and hakukohde_oid in (select distinct hakukohde_oid from valinnantilat where valintatapajono_oid = ${valintatapajonoOid}))
       order by ts asc
-      """.as[(Option[MailReason], Option[OffsetDateTime], OffsetDateTime, OffsetDateTime, Long)]
+      """
+      .as[(Option[MailReason], Option[OffsetDateTime], OffsetDateTime, OffsetDateTime, Long)]
       .map(_.flatMap {
         case (syy, lahetetty, lahettaminenAloitettu, ts, txid) =>
           List(
-            (txid, ts, KentanMuutos(field = "Sähköpostilähetyksen syy", from = None, to = syy.getOrElse(None).toString)),
-            (txid, ts, KentanMuutos(field = "Sähköposti lähetetty", from = None, to = lahetetty.getOrElse(""))),
-            (txid, ts, KentanMuutos(field = "Sähköposti merkitty lähetettäväksi", from = None, to = lahettaminenAloitettu))
+            (
+              txid,
+              ts,
+              KentanMuutos(
+                field = "Sähköpostilähetyksen syy",
+                from = None,
+                to = syy.getOrElse(None).toString
+              )
+            ),
+            (
+              txid,
+              ts,
+              KentanMuutos(
+                field = "Sähköposti lähetetty",
+                from = None,
+                to = lahetetty.getOrElse("")
+              )
+            ),
+            (
+              txid,
+              ts,
+              KentanMuutos(
+                field = "Sähköposti merkitty lähetettäväksi",
+                from = None,
+                to = lahettaminenAloitettu
+              )
+            )
           )
       }.groupBy(_._3.field).mapValues(formMuutoshistoria).values.flatten)
   }
 
-  override def getValinnantulostenHakukohdeOiditForHaku(hakuOid: HakuOid): DBIO[List[HakukohdeOid]] = {
+  override def getValinnantulostenHakukohdeOiditForHaku(
+    hakuOid: HakuOid
+  ): DBIO[List[HakukohdeOid]] = {
     sql"""select hk.hakukohde_oid
          from (select h.hakukohde_oid
                from hakukohteet h
@@ -280,7 +436,9 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       """.as[Valinnantulos].map(_.toSet)
   }
 
-  override def getValinnantuloksetForHakemukses(hakemusOids: Set[HakemusOid]): Seq[Valinnantulos] = {
+  override def getValinnantuloksetForHakemukses(
+    hakemusOids: Set[HakemusOid]
+  ): Seq[Valinnantulos] = {
     val inParameter = hakemusOids.map(oid => s"'$oid'").mkString(",")
     timed(s"Getting valinnantulokset for ${hakemusOids.size} hakemukses") {
       runBlocking(sql"""select ti.hakukohde_oid,
@@ -323,7 +481,9 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     }
   }
 
-  override def getValinnantuloksetAndLastModifiedDateForHakemus(hakemusOid: HakemusOid): Option[(Instant, Set[Valinnantulos])] = {
+  override def getValinnantuloksetAndLastModifiedDateForHakemus(
+    hakemusOid: HakemusOid
+  ): Option[(Instant, Set[Valinnantulos])] = {
     runBlockingTransactionally(
       sql"""select greatest(max(lower(ti.system_time)),
                             max(lower(tu.system_time)),
@@ -359,15 +519,22 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             left join hyvaksytyt_ja_julkaistut_hakutoiveet as hjj
               on hjj.henkilo = ti.henkilo_oid and
                  hjj.hakukohde = ti.hakukohde_oid
-            where ti.hakemus_oid = $hakemusOid""".as[Option[Instant]].flatMap(_.head match {
-        case Some(lastModified) =>
-          getValinnantuloksetForHakemus(hakemusOid).map(tulokset => Some((lastModified, tulokset)))
-        case None =>
-          DBIO.successful(None)
-      })).fold(throw _, x => x)
+            where ti.hakemus_oid = $hakemusOid"""
+        .as[Option[Instant]]
+        .flatMap(_.head match {
+          case Some(lastModified) =>
+            getValinnantuloksetForHakemus(hakemusOid).map(tulokset =>
+              Some((lastModified, tulokset))
+            )
+          case None =>
+            DBIO.successful(None)
+        })
+    ).fold(throw _, x => x)
   }
 
-  override def getValinnantuloksetForHakukohde(hakukohdeOid: HakukohdeOid): DBIO[Set[Valinnantulos]] = {
+  override def getValinnantuloksetForHakukohde(
+    hakukohdeOid: HakukohdeOid
+  ): DBIO[Set[Valinnantulos]] = {
     sql"""select ti.hakukohde_oid,
               ti.valintatapajono_oid,
               ti.hakemus_oid,
@@ -407,7 +574,9 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       """.as[Valinnantulos].map(_.toSet)
   }
 
-  def getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid: ValintatapajonoOid): DBIO[Set[Valinnantulos]] = {
+  def getValinnantuloksetForValintatapajonoDBIO(
+    valintatapajonoOid: ValintatapajonoOid
+  ): DBIO[Set[Valinnantulos]] = {
     sql"""with jonon_hakukohde as (select hakukohde_oid
               from valintaesitykset
               where valintatapajono_oid = ${valintatapajonoOid}
@@ -451,21 +620,29 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
        """.as[Valinnantulos].map(_.toSet)
   }
 
-  override def getValinnantuloksetForValintatapajono(valintatapajonoOid: ValintatapajonoOid): Set[Valinnantulos] = {
+  override def getValinnantuloksetForValintatapajono(
+    valintatapajonoOid: ValintatapajonoOid
+  ): Set[Valinnantulos] = {
     runBlocking(getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid))
   }
 
-  override def getValinnantuloksetAndLastModifiedDateForValintatapajono(valintatapajonoOid: ValintatapajonoOid, timeout: Duration = Duration(10, TimeUnit.SECONDS)): Option[(Instant, Set[Valinnantulos])] =
+  override def getValinnantuloksetAndLastModifiedDateForValintatapajono(
+    valintatapajonoOid: ValintatapajonoOid,
+    timeout: Duration = Duration(10, TimeUnit.SECONDS)
+  ): Option[(Instant, Set[Valinnantulos])] =
     runBlockingTransactionally(
       getLastModifiedForValintatapajono(valintatapajonoOid)
         .flatMap {
-          case Some(lastModified) => getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid).map(vs => Some((lastModified, vs)))
+          case Some(lastModified) =>
+            getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid).map(vs =>
+              Some((lastModified, vs))
+            )
           case None => DBIO.successful(None)
         },
       timeout = timeout
     ) match {
       case Right(result) => result
-      case Left(error) => throw error
+      case Left(error)   => throw error
     }
 
   override def getValinnantuloksetForHaku(hakuOid: HakuOid): DBIO[Set[Valinnantulos]] = {
@@ -507,9 +684,12 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                        on tk.tilankuvaus_hash = vk.hash
     where ti.hakukohde_oid in (select hakukohde_oid from hakukohteet where haku_oid = $hakuOid);
       """.as[Valinnantulos].map(_.toSet)
-    }
+  }
 
-  override def getHakutoiveidenValinnantuloksetForHakemusDBIO(hakuOid:HakuOid, hakemusOid:HakemusOid): DBIO[List[HakutoiveenValinnantulos]] = {
+  override def getHakutoiveidenValinnantuloksetForHakemusDBIO(
+    hakuOid: HakuOid,
+    hakemusOid: HakemusOid
+  ): DBIO[List[HakutoiveenValinnantulos]] = {
     sql"""with latest as (
             select id from sijoitteluajot where haku_oid = ${hakuOid} order by id desc limit 1
           )
@@ -536,36 +716,46 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       """.as[HakutoiveenValinnantulos].map(_.toList)
   }
 
-  override def getHaunValinnantilat(hakuOid: HakuOid): List[(HakukohdeOid, ValintatapajonoOid, HakemusOid, Valinnantila)] =
+  override def getHaunValinnantilat(
+    hakuOid: HakuOid
+  ): List[(HakukohdeOid, ValintatapajonoOid, HakemusOid, Valinnantila)] =
     timed(s"Getting haun $hakuOid valinnantilat") {
-      runBlocking(
-        sql"""select v.hakukohde_oid, v.valintatapajono_oid, v.hakemus_oid, v.tila
+      runBlocking(sql"""select v.hakukohde_oid, v.valintatapajono_oid, v.hakemus_oid, v.tila
               from valinnantilat v
               inner join hakukohteet h on v.hakukohde_oid = h.hakukohde_oid
               where h.haku_oid = ${hakuOid}
         """.as[(HakukohdeOid, ValintatapajonoOid, HakemusOid, Valinnantila)]).toList
     }
 
-  override def getHakemustenTilahistoriat(hakemusOids: Set[HakemusOid]): List[TilaHistoriaRecord] = {
+  override def getHakemustenTilahistoriat(
+    hakemusOids: Set[HakemusOid]
+  ): List[TilaHistoriaRecord] = {
     val inParameter = hakemusOids.map(oid => s"'$oid'").mkString(",")
     timed(s"Getting ${hakemusOids.size} hakemuksen valinnantilojen historiat") {
       runBlocking(
         sql"""select vth.valintatapajono_oid, vth.hakemus_oid, vth.tila, vth.tilan_viimeisin_muutos
               from valinnantilat_history vth
               where vth.hakemus_oid in (#$inParameter)
-        """.as[TilaHistoriaRecord]).toList
+        """.as[TilaHistoriaRecord]
+      ).toList
     }
   }
 
-  override def getHakemuksenTilahistoriat(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[TilaHistoriaRecord] =
-    timed(s"Getting hakemuksen $hakemusOid valinnantilan historia valintatapajonolle $valintatapajonoOid") {
+  override def getHakemuksenTilahistoriat(
+    hakemusOid: HakemusOid,
+    valintatapajonoOid: ValintatapajonoOid
+  ): List[TilaHistoriaRecord] =
+    timed(
+      s"Getting hakemuksen $hakemusOid valinnantilan historia valintatapajonolle $valintatapajonoOid"
+    ) {
       runBlocking(
         sql"""select vth.valintatapajono_oid, vth.hakemus_oid, vth.tila, vth.tilan_viimeisin_muutos
               from valinnantilat_history vth
               where vth.hakemus_oid = ${hakemusOid}
               and vth.valintatapajono_oid = ${valintatapajonoOid}
-        """.as[TilaHistoriaRecord]).toList
-  }
+        """.as[TilaHistoriaRecord]
+      ).toList
+    }
 
   override def getLastModifiedForHakukohde(hakukohdeOid: HakukohdeOid): DBIO[Option[Instant]] = {
     sql"""select greatest(
@@ -593,7 +783,9 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
           where ti.hakukohde_oid = ${hakukohdeOid}""".as[Option[Instant]].head
   }
 
-  override def getLastModifiedForValintatapajono(valintatapajonoOid: ValintatapajonoOid):DBIO[Option[Instant]] = {
+  override def getLastModifiedForValintatapajono(
+    valintatapajonoOid: ValintatapajonoOid
+  ): DBIO[Option[Instant]] = {
     sql"""select greatest(
                      max(lower(ti.system_time)),
                      max(lower(tu.system_time)),
@@ -625,10 +817,15 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
         sql"""select a.haku_oid from sijoitteluajot a
               inner join sijoitteluajon_hakukohteet h on a.id = h.sijoitteluajo_id
               where h.hakukohde_oid = ${hakukohdeOid}
-              order by sijoitteluajo_id desc limit 1""".as[HakuOid], Duration(1, TimeUnit.SECONDS)).head
-  }
+              order by sijoitteluajo_id desc limit 1""".as[HakuOid],
+        Duration(1, TimeUnit.SECONDS)
+      ).head
+    }
 
-  override def updateValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+  override def updateValinnantuloksenOhjaus(
+    ohjaus: ValinnantuloksenOhjaus,
+    ifUnmodifiedSince: Option[Instant] = None
+  ): DBIO[Unit] = {
     sqlu"""update valinnantulokset
            set julkaistavissa = ${ohjaus.julkaistavissa},
               hyvaksytty_varasijalta = ${ohjaus.hyvaksyttyVarasijalta},
@@ -644,16 +841,33 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               system_time @> ${ifUnmodifiedSince}
            )""".flatMap {
       case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ohjausta $ohjaus ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
+      case _ =>
+        DBIO.failed(
+          new ConcurrentModificationException(
+            s"Valinnantuloksen ohjausta $ohjaus ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"
+          )
+        )
     }
   }
 
-  override def storeValinnantila(tila:ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+  override def storeValinnantila(
+    tila: ValinnantilanTallennus,
+    ifUnmodifiedSince: Option[Instant] = None
+  ): DBIO[Unit] = {
     ensureValintaesitys(tila.hakukohdeOid, tila.valintatapajonoOid)
-      .andThen(storeValinnantilaOverridingTimestamp(tila, ifUnmodifiedSince, new Timestamp(System.currentTimeMillis)))
+      .andThen(
+        storeValinnantilaOverridingTimestamp(
+          tila,
+          ifUnmodifiedSince,
+          new Timestamp(System.currentTimeMillis)
+        )
+      )
   }
 
-  private def ensureValintaesitys(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid): DBIO[Unit] = {
+  private def ensureValintaesitys(
+    hakukohdeOid: HakukohdeOid,
+    valintatapajonoOid: ValintatapajonoOid
+  ): DBIO[Unit] = {
     sqlu"""insert into valintaesitykset (
                hakukohde_oid,
                valintatapajono_oid,
@@ -666,7 +880,11 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       """.map(_ => ())
   }
 
-  override def storeValinnantilaOverridingTimestamp(tila: ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant], tilanViimeisinMuutos: TilanViimeisinMuutos) = {
+  override def storeValinnantilaOverridingTimestamp(
+    tila: ValinnantilanTallennus,
+    ifUnmodifiedSince: Option[Instant],
+    tilanViimeisinMuutos: TilanViimeisinMuutos
+  ) = {
     sqlu"""insert into valinnantilat(
              valintatapajono_oid,
              hakemus_oid,
@@ -691,11 +909,20 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               ${ifUnmodifiedSince}::timestamptz is null or
               valinnantilat.system_time @> ${ifUnmodifiedSince})""".flatMap {
       case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantilaa $tila ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
+      case _ =>
+        DBIO.failed(
+          new ConcurrentModificationException(
+            s"Valinnantilaa $tila ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"
+          )
+        )
     }
   }
 
-  override def setJulkaistavissa(valintatapajonoOid: ValintatapajonoOid, ilmoittaja: String, selite: String): DBIO[Unit] = {
+  override def setJulkaistavissa(
+    valintatapajonoOid: ValintatapajonoOid,
+    ilmoittaja: String,
+    selite: String
+  ): DBIO[Unit] = {
     sqlu"""update valinnantulokset
            set julkaistavissa = true,
                ilmoittaja = $ilmoittaja,
@@ -705,7 +932,11 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       """.map(_ => ())
   }
 
-  override def setHyvaksyttyJaJulkaistavissa(valintatapajonoOid: ValintatapajonoOid, ilmoittaja: String, selite: String): DBIO[Unit] = {
+  override def setHyvaksyttyJaJulkaistavissa(
+    valintatapajonoOid: ValintatapajonoOid,
+    ilmoittaja: String,
+    selite: String
+  ): DBIO[Unit] = {
     sqlu"""insert into hyvaksytyt_ja_julkaistut_hakutoiveet(
              henkilo,
              hakukohde,
@@ -722,7 +953,12 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
         """.map(_ => ())
   }
 
-  override def setHyvaksyttyJaJulkaistavissa(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid, ilmoittaja: String, selite: String): DBIO[Unit] = {
+  override def setHyvaksyttyJaJulkaistavissa(
+    hakemusOid: HakemusOid,
+    valintatapajonoOid: ValintatapajonoOid,
+    ilmoittaja: String,
+    selite: String
+  ): DBIO[Unit] = {
     sqlu"""insert into hyvaksytyt_ja_julkaistut_hakutoiveet(
              henkilo,
              hakukohde,
@@ -739,20 +975,33 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
         """.map(_ => ())
   }
 
-  private def getHyvaksyttyJaJulkaistavissa(henkiloOid: String, hakukohdeOid: HakukohdeOid): DBIOAction[Option[OffsetDateTime], NoStream, Effect] = {
+  private def getHyvaksyttyJaJulkaistavissa(
+    henkiloOid: String,
+    hakukohdeOid: HakukohdeOid
+  ): DBIOAction[Option[OffsetDateTime], NoStream, Effect] = {
     sql"""select hyvaksytty_ja_julkaistu
           from hyvaksytyt_ja_julkaistut_hakutoiveet
-          where henkilo = ${henkiloOid} and hakukohde = ${hakukohdeOid}""".as[OffsetDateTime].map(_.headOption)
+          where henkilo = ${henkiloOid} and hakukohde = ${hakukohdeOid}"""
+      .as[OffsetDateTime]
+      .map(_.headOption)
   }
 
-  override def deleteHyvaksyttyJaJulkaistavissaIfExists(henkiloOid: String, hakukohdeOid: HakukohdeOid, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+  override def deleteHyvaksyttyJaJulkaistavissaIfExists(
+    henkiloOid: String,
+    hakukohdeOid: HakukohdeOid,
+    ifUnmodifiedSince: Option[Instant] = None
+  ): DBIO[Unit] = {
     getHyvaksyttyJaJulkaistavissa(henkiloOid, hakukohdeOid).flatMap {
-      case None => DBIO.successful(None)
+      case None    => DBIO.successful(None)
       case Some(x) => deleteHyvaksyttyJaJulkaistavissa(henkiloOid, hakukohdeOid, ifUnmodifiedSince)
     }
   }
 
-  override def deleteHyvaksyttyJaJulkaistavissa(henkiloOid: String, hakukohdeOid: HakukohdeOid, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+  override def deleteHyvaksyttyJaJulkaistavissa(
+    henkiloOid: String,
+    hakukohdeOid: HakukohdeOid,
+    ifUnmodifiedSince: Option[Instant] = None
+  ): DBIO[Unit] = {
     sqlu"""with hyvaksytty_jono as (
               select hakukohde_oid
               from valinnantilat
@@ -764,11 +1013,19 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
            and (${ifUnmodifiedSince}::timestamptz is null
                 or system_time @> ${ifUnmodifiedSince})""".flatMap {
       case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Hyväksytty ja julkaistu -päivämäärää (henkilo $henkiloOid, hakukohde $hakukohdeOid) ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
+      case _ =>
+        DBIO.failed(
+          new ConcurrentModificationException(
+            s"Hyväksytty ja julkaistu -päivämäärää (henkilo $henkiloOid, hakukohde $hakukohdeOid) ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"
+          )
+        )
     }
   }
 
-  override def storeValinnantuloksenOhjaus(ohjaus:ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+  override def storeValinnantuloksenOhjaus(
+    ohjaus: ValinnantuloksenOhjaus,
+    ifUnmodifiedSince: Option[Instant] = None
+  ): DBIO[Unit] = {
     sqlu"""insert into valinnantulokset(
              valintatapajono_oid,
              hakemus_oid,
@@ -799,11 +1056,18 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               ${ifUnmodifiedSince}::timestamptz is null or
               valinnantulokset.system_time @> ${ifUnmodifiedSince})""".flatMap {
       case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ohjausta $ohjaus ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
-}
-}
+      case _ =>
+        DBIO.failed(
+          new ConcurrentModificationException(
+            s"Valinnantuloksen ohjausta $ohjaus ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"
+          )
+        )
+    }
+  }
 
-  override def getIlmoittautumisenAikaleimat(henkiloOid: String): DBIO[Iterable[(HakukohdeOid, Instant)]] = {
+  override def getIlmoittautumisenAikaleimat(
+    henkiloOid: String
+  ): DBIO[Iterable[(HakukohdeOid, Instant)]] = {
     sql"""select hakukohde, lower(system_time)
           from ilmoittautumiset
           where henkilo = ${henkiloOid}
@@ -811,7 +1075,9 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       """.as[(HakukohdeOid, Instant)]
   }
 
-  override def getIlmoittautumisenAikaleimat(hakuOid: HakuOid): DBIO[Iterable[(String, HakukohdeOid, Instant)]] = {
+  override def getIlmoittautumisenAikaleimat(
+    hakuOid: HakuOid
+  ): DBIO[Iterable[(String, HakukohdeOid, Instant)]] = {
     sql"""select henkilo, hakukohde, lower(system_time)
           from ilmoittautumiset
           join hakukohteet on hakukohteet.hakukohde_oid = ilmoittautumiset.hakukohde
@@ -820,7 +1086,11 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       """.as[(String, HakukohdeOid, Instant)]
   }
 
-  override def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+  override def storeIlmoittautuminen(
+    henkiloOid: String,
+    ilmoittautuminen: Ilmoittautuminen,
+    ifUnmodifiedSince: Option[Instant] = None
+  ): DBIO[Unit] = {
     sqlu"""insert into ilmoittautumiset (henkilo, hakukohde, tila, ilmoittaja, selite)
              values (${henkiloOid},
                      ${ilmoittautuminen.hakukohdeOid},
@@ -835,26 +1105,57 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                  and (${ifUnmodifiedSince}::timestamptz is null
                       or ilmoittautumiset.system_time @> ${ifUnmodifiedSince})""".flatMap {
       case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Ilmoittautumista $ilmoittautuminen ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
+      case _ =>
+        DBIO.failed(
+          new ConcurrentModificationException(
+            s"Ilmoittautumista $ilmoittautuminen ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"
+          )
+        )
     }
   }
 
-  override def deleteValinnantulos(muokkaaja:String, valinnantulos: Valinnantulos, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
+  override def deleteValinnantulos(
+    muokkaaja: String,
+    valinnantulos: Valinnantulos,
+    ifUnmodifiedSince: Option[Instant]
+  ): DBIO[Unit] = {
     deleteViestit(valinnantulos.hakukohdeOid, valinnantulos.hakemusOid)
-      .andThen(deleteValinnantuloksenOhjaus(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince))
-      .andThen(deleteTilatKuvaukset(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid))
-      .andThen(deleteValinnantila(valinnantulos.getValinnantilanTallennus(muokkaaja), ifUnmodifiedSince))
+      .andThen(
+        deleteValinnantuloksenOhjaus(
+          valinnantulos.hakukohdeOid,
+          valinnantulos.valintatapajonoOid,
+          valinnantulos.hakemusOid,
+          ifUnmodifiedSince
+        )
+      )
+      .andThen(
+        deleteTilatKuvaukset(
+          valinnantulos.hakukohdeOid,
+          valinnantulos.valintatapajonoOid,
+          valinnantulos.hakemusOid
+        )
+      )
+      .andThen(
+        deleteValinnantila(valinnantulos.getValinnantilanTallennus(muokkaaja), ifUnmodifiedSince)
+      )
       .transactionally
   }
 
-  private def deleteTilatKuvaukset(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid): DBIO[Unit] = {
+  private def deleteTilatKuvaukset(
+    hakukohdeOid: HakukohdeOid,
+    valintatapajonoOid: ValintatapajonoOid,
+    hakemusOid: HakemusOid
+  ): DBIO[Unit] = {
     sqlu"""delete from tilat_kuvaukset
           where hakukohde_oid = $hakukohdeOid
                and hakemus_oid = $hakemusOid
                and valintatapajono_oid = $valintatapajonoOid""".map(_ => ())
   }
 
-  private def deleteValinnantila(tila: ValinnantilanTallennus, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
+  private def deleteValinnantila(
+    tila: ValinnantilanTallennus,
+    ifUnmodifiedSince: Option[Instant]
+  ): DBIO[Unit] = {
     sqlu"""delete from valinnantilat
            where hakukohde_oid = ${tila.hakukohdeOid}
                and hakemus_oid = ${tila.hakemusOid}
@@ -864,7 +1165,12 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                    or system_time @> $ifUnmodifiedSince)
       """.flatMap {
       case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantilaa $tila ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
+      case _ =>
+        DBIO.failed(
+          new ConcurrentModificationException(
+            s"Valinnantilaa $tila ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"
+          )
+        )
     }
   }
 
@@ -876,7 +1182,12 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       """.map(_ => ())
   }
 
-  private def deleteValinnantuloksenOhjaus(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
+  private def deleteValinnantuloksenOhjaus(
+    hakukohdeOid: HakukohdeOid,
+    valintatapajonoOid: ValintatapajonoOid,
+    hakemusOid: HakemusOid,
+    ifUnmodifiedSince: Option[Instant]
+  ): DBIO[Unit] = {
     sqlu"""delete from valinnantulokset
                where hakukohde_oid = $hakukohdeOid
                and hakemus_oid = $hakemusOid
@@ -884,11 +1195,20 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                and ($ifUnmodifiedSince::timestamptz is null
                    or system_time @> $ifUnmodifiedSince)""".flatMap {
       case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Valinnantuloksen ohjausta ($hakukohdeOid, $valintatapajonoOid, $hakemusOid) ei voitu poistaa, koska joku oli muokannut sitä ${format(ifUnmodifiedSince)} jälkeen"))
+      case _ =>
+        DBIO.failed(
+          new ConcurrentModificationException(
+            s"Valinnantuloksen ohjausta ($hakukohdeOid, $valintatapajonoOid, $hakemusOid) ei voitu poistaa, koska joku oli muokannut sitä ${format(ifUnmodifiedSince)} jälkeen"
+          )
+        )
     }
   }
 
-  override def deleteIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
+  override def deleteIlmoittautuminen(
+    henkiloOid: String,
+    ilmoittautuminen: Ilmoittautuminen,
+    ifUnmodifiedSince: Option[Instant] = None
+  ): DBIO[Unit] = {
     sqlu"""delete from ilmoittautumiset
               where henkilo = ${henkiloOid}
               and hakukohde = ${ilmoittautuminen.hakukohdeOid}
@@ -896,42 +1216,76 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               and (${ifUnmodifiedSince}::timestamptz is null
                    or system_time @> ${ifUnmodifiedSince})""".flatMap {
       case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Ilmoittautumista $ilmoittautuminen ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
+      case _ =>
+        DBIO.failed(
+          new ConcurrentModificationException(
+            s"Ilmoittautumista $ilmoittautuminen ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"
+          )
+        )
     }
   }
 
-  private def formMuutoshistoria[A, B](muutokset: Iterable[(A, B, KentanMuutos)]): List[(A, B, KentanMuutos)] = muutokset.headOption match {
-    case Some(origin) =>
-      muutokset.tail.foldLeft(List(origin)) {
-        case (ms @ (_, _, KentanMuutos(_, _, to)) :: _, (a, b, muutos)) if muutos.to != to => (a, b, muutos.copy(from = Some(to))) :: ms
-        case (ms, _) => ms
-      }
-    case None => List()
-  }
+  private def formMuutoshistoria[A, B](
+    muutokset: Iterable[(A, B, KentanMuutos)]
+  ): List[(A, B, KentanMuutos)] =
+    muutokset.headOption match {
+      case Some(origin) =>
+        muutokset.tail.foldLeft(List(origin)) {
+          case (ms @ (_, _, KentanMuutos(_, _, to)) :: _, (a, b, muutos)) if muutos.to != to =>
+            (a, b, muutos.copy(from = Some(to))) :: ms
+          case (ms, _) => ms
+        }
+      case None => List()
+    }
 
-  private def formMuutoshistoriaWithDeletes(muutokset: Iterable[(Long, OffsetDateTime, Option[OffsetDateTime], KentanMuutos)], deletedRepresentation: Option[Any]): List[(Long, OffsetDateTime, KentanMuutos)] = muutokset.headOption match {
-    case Some(origin) =>
-      (muutokset.tail.foldLeft(List(origin)) {
-        case (ms @ (_, _, Some(previous_upper_ts), previous_muutos) :: _, (txid, lower_ts, upper_ts, muutos)) if previous_upper_ts.isBefore(lower_ts) =>
-          deletedRepresentation match {
-            case Some(repr) => (txid, lower_ts, upper_ts, muutos.copy(from = Some(repr))) :: (-txid, previous_upper_ts, Some(lower_ts), KentanMuutos(muutos.field, Some(previous_muutos.to), repr)) :: ms
-            case None => (txid, lower_ts, upper_ts, muutos) :: ms
-          }
-        case (ms @ (_, _, _, KentanMuutos(_, _, to)) :: _, (a, b, c, muutos)) if muutos.to != to => (a, b, c, muutos.copy(from = Some(to))) :: ms
-        case (ms, _) => ms
-      } match {
-        case muutokset @ (txid, _, Some(upper_ts), muutos) :: _ =>
-          deletedRepresentation match {
-            case Some(repr) => (-txid, upper_ts, None, KentanMuutos(muutos.field, Some(muutos.to), repr)) :: muutokset
-            case None => muutokset
-          }
-        case muutokset => muutokset
-      }).map {
-        case (a, b, _, muutos) => (a, b, muutos)
-      }
-    case None => List()
-  }
+  private def formMuutoshistoriaWithDeletes(
+    muutokset: Iterable[(Long, OffsetDateTime, Option[OffsetDateTime], KentanMuutos)],
+    deletedRepresentation: Option[Any]
+  ): List[(Long, OffsetDateTime, KentanMuutos)] =
+    muutokset.headOption match {
+      case Some(origin) =>
+        (muutokset.tail.foldLeft(List(origin)) {
+          case (
+                ms @ (_, _, Some(previous_upper_ts), previous_muutos) :: _,
+                (txid, lower_ts, upper_ts, muutos)
+              ) if previous_upper_ts.isBefore(lower_ts) =>
+            deletedRepresentation match {
+              case Some(repr) =>
+                (txid, lower_ts, upper_ts, muutos.copy(from = Some(repr))) :: (
+                  -txid,
+                  previous_upper_ts,
+                  Some(lower_ts),
+                  KentanMuutos(muutos.field, Some(previous_muutos.to), repr)
+                ) :: ms
+              case None => (txid, lower_ts, upper_ts, muutos) :: ms
+            }
+          case (ms @ (_, _, _, KentanMuutos(_, _, to)) :: _, (a, b, c, muutos))
+              if muutos.to != to =>
+            (a, b, c, muutos.copy(from = Some(to))) :: ms
+          case (ms, _) => ms
+        } match {
+          case muutokset @ (txid, _, Some(upper_ts), muutos) :: _ =>
+            deletedRepresentation match {
+              case Some(repr) =>
+                (
+                  -txid,
+                  upper_ts,
+                  None,
+                  KentanMuutos(muutos.field, Some(muutos.to), repr)
+                ) :: muutokset
+              case None => muutokset
+            }
+          case muutokset => muutokset
+        }).map {
+          case (a, b, _, muutos) => (a, b, muutos)
+        }
+      case None => List()
+    }
 
-  private def format(ifUnmodifiedSince: Option[Instant] = None) = ifUnmodifiedSince.map(i =>
-    DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant(i, ZoneId.of("GMT")))).getOrElse("None")
+  private def format(ifUnmodifiedSince: Option[Instant] = None) =
+    ifUnmodifiedSince
+      .map(i =>
+        DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant(i, ZoneId.of("GMT")))
+      )
+      .getOrElse("None")
 }

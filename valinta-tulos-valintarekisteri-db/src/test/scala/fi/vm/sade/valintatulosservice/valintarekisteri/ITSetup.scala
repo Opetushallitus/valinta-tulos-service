@@ -5,7 +5,12 @@ import fi.vm.sade.valintatulosservice.config.ValintarekisteriAppConfig
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{
+  HakemusOid,
+  HakuOid,
+  HakukohdeOid,
+  ValintatapajonoOid
+}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import slick.jdbc.{GetResult, PositionedParameters, SetParameter}
 
@@ -14,12 +19,17 @@ trait ITSetup {
   val dbConfig = appConfig.settings.valintaRekisteriDbConfig
 
   lazy val singleConnectionValintarekisteriDb = new ValintarekisteriDb(
-    dbConfig.copy(maxConnections = Some(1), minConnections = Some(1)))
+    dbConfig.copy(maxConnections = Some(1), minConnections = Some(1))
+  )
 
   lazy val valintarekisteriDbWithPool = new ValintarekisteriDb(dbConfig, true)
 
   lazy private val hakuService = HakuService(appConfig, null, OrganisaatioService(appConfig), null)
-  lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, singleConnectionValintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing)
+  lazy val hakukohdeRecordService = new HakukohdeRecordService(
+    hakuService,
+    singleConnectionValintarekisteriDb,
+    appConfig.settings.lenientTarjontaDataParsing
+  )
 
   implicit val getHakukohdeOid: GetResult[HakukohdeOid] = GetResult(r => {
     HakukohdeOid(r.nextString())

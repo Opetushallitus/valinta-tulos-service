@@ -23,7 +23,11 @@ import org.specs2.runner.JUnitRunner
 import org.specs2.specification.{AfterEach, BeforeEach}
 
 @RunWith(classOf[JUnitRunner])
-class ValinnantulosIntegrationSpec extends ServletSpecification with ValintarekisteriDbTools with BeforeEach with AfterEach {
+class ValinnantulosIntegrationSpec
+    extends ServletSpecification
+    with ValintarekisteriDbTools
+    with BeforeEach
+    with AfterEach {
 
   override implicit val formats = DefaultFormats ++ List(
     new NumberLongSerializer,
@@ -50,12 +54,22 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
     HakuFixtures.useFixture(HakuFixtures.korkeakouluYhteishaku, List(HakuFixtures.defaultHakuOid))
     hakemusFixtureImporter.clear
     hakemusFixtureImporter.importFixture("00000441369")
-    singleConnectionValintarekisteriDb.storeSijoittelu(loadSijoitteluFromFixture("hyvaksytty-kesken-julkaistavissa"))
+    singleConnectionValintarekisteriDb.storeSijoittelu(
+      loadSijoitteluFromFixture("hyvaksytty-kesken-julkaistavissa")
+    )
 
     organisaatioService = ClientAndServer.startClientAndServer(VtsAppConfig.organisaatioMockPort)
-    organisaatioService.when(new HttpRequest().withPath(
-      s"/organisaatio-service/rest/organisaatio/123.123.123.123/parentoids"
-    )).respond(new HttpResponse().withStatusCode(200).withBody("1.2.246.562.10.00000000001/1.2.246.562.10.39804091914/123.123.123.123"))
+    organisaatioService
+      .when(
+        new HttpRequest().withPath(
+          s"/organisaatio-service/rest/organisaatio/123.123.123.123/parentoids"
+        )
+      )
+      .respond(
+        new HttpResponse()
+          .withStatusCode(200)
+          .withBody("1.2.246.562.10.00000000001/1.2.246.562.10.39804091914/123.123.123.123")
+      )
 
     session = createTestSession(roles)
 
@@ -107,24 +121,46 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
     DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant(i, ZoneId.of("GMT")))
   }
 
-  private def hae(valinnantulos: Option[Valinnantulos], valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid, session: String) = {
-    get(s"auth/valinnan-tulos?valintatapajonoOid=$valintatapajonoOid", Seq.empty, Map("Cookie" -> s"session=$session")) {
+  private def hae(
+    valinnantulos: Option[Valinnantulos],
+    valintatapajonoOid: ValintatapajonoOid,
+    hakemusOid: HakemusOid,
+    session: String
+  ) = {
+    get(
+      s"auth/valinnan-tulos?valintatapajonoOid=$valintatapajonoOid",
+      Seq.empty,
+      Map("Cookie" -> s"session=$session")
+    ) {
       status must_== 200
-      val valinnantulosOption = parse(body).extract[List[Valinnantulos]].find(_.hakemusOid == hakemusOid)
-      valinnantulosOption.map(_.copy(
-        hyvaksymiskirjeLahetetty = None,
-        valinnantilanViimeisinMuutos = None,
-        vastaanotonViimeisinMuutos = None)
+      val valinnantulosOption =
+        parse(body).extract[List[Valinnantulos]].find(_.hakemusOid == hakemusOid)
+      valinnantulosOption.map(
+        _.copy(
+          hyvaksymiskirjeLahetetty = None,
+          valinnantilanViimeisinMuutos = None,
+          vastaanotonViimeisinMuutos = None
+        )
       ) must_== valinnantulos
-      httpComponentsClient.header.get(appConfig.settings.headerLastModified).map(s => Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(s)))
+      httpComponentsClient.header
+        .get(appConfig.settings.headerLastModified)
+        .map(s => Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(s)))
     }
   }
 
   private def paivita(valinnantulos: Valinnantulos, session: String, ifUnmodifiedSince: Instant) = {
-    patchJSON(s"auth/valinnan-tulos/${valinnantulos.valintatapajonoOid}", write(List(valinnantulos)),
-      Map("Cookie" -> s"session=$session", appConfig.settings.headerIfUnmodifiedSince -> renderRFC1123DateTime(ifUnmodifiedSince))) {
+    patchJSON(
+      s"auth/valinnan-tulos/${valinnantulos.valintatapajonoOid}",
+      write(List(valinnantulos)),
+      Map(
+        "Cookie" -> s"session=$session",
+        appConfig.settings.headerIfUnmodifiedSince -> renderRFC1123DateTime(ifUnmodifiedSince)
+      )
+    ) {
       status must_== 200
-      parse(body).extract[List[ValinnantulosUpdateStatus]].find(_.hakemusOid == valinnantulos.hakemusOid)
+      parse(body)
+        .extract[List[ValinnantulosUpdateStatus]]
+        .find(_.hakemusOid == valinnantulos.hakemusOid)
     }
   }
 
@@ -139,24 +175,40 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
       ilmoittautumistila = Lasna
     )
 
-    val Some(lastModified) = hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
+    val Some(lastModified) =
+      hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
     paivita(update, session, lastModified) must beNone
-    hae(Some(update), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session) must beSome
+    hae(
+      Some(update),
+      valinnantulos.valintatapajonoOid,
+      valinnantulos.hakemusOid,
+      session
+    ) must beSome
   }
 
   "päivittää valinnantulosta erillishaussa" in {
-    HakuFixtures.useFixture(HakuFixtures.korkeakouluErillishakuEiSijoittelua, List(HakuFixtures.korkeakouluErillishakuEiSijoittelua))
+    HakuFixtures.useFixture(
+      HakuFixtures.korkeakouluErillishakuEiSijoittelua,
+      List(HakuFixtures.korkeakouluErillishakuEiSijoittelua)
+    )
     val update = valinnantulos.copy(
       valinnantila = Peruuntunut,
       ehdollisestiHyvaksyttavissa = Some(true),
       ehdollisenHyvaksymisenEhtoKoodi = Some("<koodi>"),
       ehdollisenHyvaksymisenEhtoFI = Some("syy"),
       ehdollisenHyvaksymisenEhtoSV = Some("anledning"),
-      ehdollisenHyvaksymisenEhtoEN = Some("reason"))
+      ehdollisenHyvaksymisenEhtoEN = Some("reason")
+    )
 
-    val Some(lastModified) = hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
+    val Some(lastModified) =
+      hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
     paivita(update, session, lastModified) must beNone
-    hae(Some(update), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session) must beSome
+    hae(
+      Some(update),
+      valinnantulos.valintatapajonoOid,
+      valinnantulos.hakemusOid,
+      session
+    ) must beSome
   }
 
   /*
@@ -174,59 +226,99 @@ class ValinnantulosIntegrationSpec extends ServletSpecification with Valintareki
     paivita(update.copy(poistettava = Some(true)), true, session, lastModified) must beNone
     hae(None, update.valintatapajonoOid, update.hakemusOid, session) must beNone
   }
-  */
+   */
 
   "palauttaa virheen päivitystä yritettäessä jos valinnantulosta muokattu lukemisen jälkeen" in {
     val update = valinnantulos.copy(julkaistavissa = Some(false))
 
-    val Some(lastModified) = hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
+    val Some(lastModified) =
+      hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
     val ifUnmodifiedSince = lastModified.minusSeconds(2)
     paivita(update, session, ifUnmodifiedSince) must beSome(
-      ValinnantulosUpdateStatus(409, s"Hakemus on muuttunut lukemisen jälkeen", valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid)
+      ValinnantulosUpdateStatus(
+        409,
+        s"Hakemus on muuttunut lukemisen jälkeen",
+        valinnantulos.valintatapajonoOid,
+        valinnantulos.hakemusOid
+      )
     )
-    hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session) must beSome
+    hae(
+      Some(valinnantulos),
+      valinnantulos.valintatapajonoOid,
+      valinnantulos.hakemusOid,
+      session
+    ) must beSome
   }
 
   "palauttaa virheen päivitystä yritettäessä jos vastaanotto poistettu lukemisen jälkeen" in {
-    val updateVastaanottanut = valinnantulos.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+    val updateVastaanottanut =
+      valinnantulos.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
     val updateKesken = valinnantulos.copy(vastaanottotila = ValintatuloksenTila.KESKEN)
     val update = valinnantulos.copy(julkaistavissa = Some(false))
 
-    val Some(lastModified) = hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
+    val Some(lastModified) =
+      hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
     paivita(updateVastaanottanut, session, lastModified) must beNone
-    val Some(lastModifiedA) = hae(Some(updateVastaanottanut), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
+    val Some(lastModifiedA) = hae(
+      Some(updateVastaanottanut),
+      valinnantulos.valintatapajonoOid,
+      valinnantulos.hakemusOid,
+      session
+    )
     paivita(updateKesken, session, lastModifiedA.plusSeconds(2)) must beNone
     hae(Some(updateKesken), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
     val ifUnmodifiedSince = lastModified.minusSeconds(2)
     paivita(update, session, ifUnmodifiedSince) must beSome(
-      ValinnantulosUpdateStatus(409, s"Hakemus on muuttunut lukemisen jälkeen", valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid)
+      ValinnantulosUpdateStatus(
+        409,
+        s"Hakemus on muuttunut lukemisen jälkeen",
+        valinnantulos.valintatapajonoOid,
+        valinnantulos.hakemusOid
+      )
     )
-    hae(Some(updateKesken), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session) must beSome
+    hae(
+      Some(updateKesken),
+      valinnantulos.valintatapajonoOid,
+      valinnantulos.hakemusOid,
+      session
+    ) must beSome
   }
 
   "auditlogittaa valinnantuloksen luvut ja muokkaukset" in {
-    val update = valinnantulos.copy(ehdollisestiHyvaksyttavissa = Some(true),
+    val update = valinnantulos.copy(
+      ehdollisestiHyvaksyttavissa = Some(true),
       ehdollisenHyvaksymisenEhtoKoodi = Some("<koodi>"),
       ehdollisenHyvaksymisenEhtoFI = Some("syy"),
       ehdollisenHyvaksymisenEhtoSV = Some("anledning"),
-      ehdollisenHyvaksymisenEhtoEN = Some("reason"))
+      ehdollisenHyvaksymisenEhtoEN = Some("reason")
+    )
 
-    val Some(lastModified) = hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
+    val Some(lastModified) =
+      hae(Some(valinnantulos), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session)
     paivita(update, session, lastModified) must beNone
-    hae(Some(update), valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, session) must beSome
+    hae(
+      Some(update),
+      valinnantulos.valintatapajonoOid,
+      valinnantulos.hakemusOid,
+      session
+    ) must beSome
 
     val logEntries = auditlogSpy.toString.split("\n").toList.map(parse(_))
     logEntries
       .find(json => (json \ "operation").extractOpt[String].contains(ValinnantuloksenLuku.name))
-      .map(json => (
-        (json \ "user" \ "session").extractOpt[String],
-        (json \ "target" \ "valintatapajono").extractOpt[ValintatapajonoOid]
-      )) must beSome((Some(session), Some(valinnantulos.valintatapajonoOid)))
+      .map(json =>
+        (
+          (json \ "user" \ "session").extractOpt[String],
+          (json \ "target" \ "valintatapajono").extractOpt[ValintatapajonoOid]
+        )
+      ) must beSome((Some(session), Some(valinnantulos.valintatapajonoOid)))
     logEntries
       .find(json => (json \ "operation").extractOpt[String].contains(ValinnantuloksenMuokkaus.name))
-      .map(json => (
-        (json \ "user" \ "session").extractOpt[String],
-        (json \ "target" \ "valintatapajono").extractOpt[ValintatapajonoOid]
-      )) must beSome((Some(session), Some(valinnantulos.valintatapajonoOid)))
+      .map(json =>
+        (
+          (json \ "user" \ "session").extractOpt[String],
+          (json \ "target" \ "valintatapajono").extractOpt[ValintatapajonoOid]
+        )
+      ) must beSome((Some(session), Some(valinnantulos.valintatapajonoOid)))
   }
 }

@@ -14,10 +14,17 @@ import org.scalatra.swagger.Swagger
 
 import scalaj.http.{Http, HttpOptions}
 
-class KelaHealthCheckServlet(val audit: Audit, val sessionRepository: SessionRepository, val appConfig: VtsAppConfig, val vtsKelaSessionCookie: VtsKelaSessionCookie)
-                            (override implicit val swagger: Swagger) extends VtsServletBase with Logging {
+class KelaHealthCheckServlet(
+  val audit: Audit,
+  val sessionRepository: SessionRepository,
+  val appConfig: VtsAppConfig,
+  val vtsKelaSessionCookie: VtsKelaSessionCookie
+)(override implicit val swagger: Swagger)
+    extends VtsServletBase
+    with Logging {
 
-  protected val applicationDescription = "Valvonnan Kelan paikanvastaanottorajapinnan health check REST API"
+  protected val applicationDescription =
+    "Valvonnan Kelan paikanvastaanottorajapinnan health check REST API"
 
   get("/") {
     val hetu: String = appConfig.settings.securitySettings.kelaVastaanototTestihetu
@@ -53,12 +60,15 @@ class KelaHealthCheckServlet(val audit: Audit, val sessionRepository: SessionRep
 
   private def doRequest(hetu: String, vtsSessionCookie: SessionCookie): KelaHealthCheckResponse = {
     val (statusCode, responseHeaders, result) =
-      new DefaultHttpRequest(Http(appConfig.settings.securitySettings.casServiceIdentifier + "/cas/kela/vastaanotot/henkilo")
-        .method("POST")
-        .options(Seq(HttpOptions.connTimeout(10000), HttpOptions.readTimeout(120000)))
-        .header("Content-Type", "text/plain")
-        .header("Cookie", s"session=$vtsSessionCookie")
-        .postData(hetu)
+      new DefaultHttpRequest(
+        Http(
+          appConfig.settings.securitySettings.casServiceIdentifier + "/cas/kela/vastaanotot/henkilo"
+        )
+          .method("POST")
+          .options(Seq(HttpOptions.connTimeout(10000), HttpOptions.readTimeout(120000)))
+          .header("Content-Type", "text/plain")
+          .header("Cookie", s"session=$vtsSessionCookie")
+          .postData(hetu)
       ).responseWithHeaders()
     KelaHealthCheckResponse(statusCode, responseHeaders, result)
   }
@@ -72,7 +82,7 @@ class KelaHealthCheckServlet(val audit: Audit, val sessionRepository: SessionRep
         var vtsSessionCookie = KelaHealthCheckSessionCookieHolder.NOT_FETCHED
         vtsSessionCookie = cookies.get("session") match {
           case Some(cookie) => cookie
-          case _ => vtsKelaSessionCookie.retrieveSessionCookie()
+          case _            => vtsKelaSessionCookie.retrieveSessionCookie()
         }
         KelaHealthCheckSessionCookieHolder.sessionCookie.set(vtsSessionCookie)
         logger.info("Set new session cookie")
@@ -87,11 +97,16 @@ class KelaHealthCheckServlet(val audit: Audit, val sessionRepository: SessionRep
 
     def hasSessionCookie: Boolean = sessionCookie.get() != NOT_FETCHED
 
-    def clear(): Unit = KelaHealthCheckSessionCookieHolder.synchronized {
-      logger.info("Cleared stored session cookie")
-      sessionCookie.set(NOT_FETCHED)
-    }
+    def clear(): Unit =
+      KelaHealthCheckSessionCookieHolder.synchronized {
+        logger.info("Cleared stored session cookie")
+        sessionCookie.set(NOT_FETCHED)
+      }
   }
 
-  case class KelaHealthCheckResponse(statusCode: Int, responseHeaders: Map[String, String], result: String)
+  case class KelaHealthCheckResponse(
+    statusCode: Int,
+    responseHeaders: Map[String, String],
+    result: String
+  )
 }

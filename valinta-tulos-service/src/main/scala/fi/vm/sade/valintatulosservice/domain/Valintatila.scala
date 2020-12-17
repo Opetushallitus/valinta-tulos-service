@@ -3,7 +3,6 @@ package fi.vm.sade.valintatulosservice.domain
 /**
   * The ordering of values is significant
   * @see [[fi.vm.sade.valintatulosservice.sijoittelu.SijoittelutulosService.merkitseväJono]]
-  *
   */
 object Valintatila extends Enumeration {
   type Valintatila = Value

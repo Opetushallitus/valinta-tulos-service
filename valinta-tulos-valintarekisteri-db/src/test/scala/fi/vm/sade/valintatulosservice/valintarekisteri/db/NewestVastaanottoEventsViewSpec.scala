@@ -9,7 +9,11 @@ import org.specs2.specification.BeforeAfterEach
 import slick.jdbc.PostgresProfile.api._
 
 @RunWith(classOf[JUnitRunner])
-class NewestVastaanottoEventsViewSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterEach {
+class NewestVastaanottoEventsViewSpec
+    extends Specification
+    with ITSetup
+    with ValintarekisteriDbTools
+    with BeforeAfterEach {
   private val hakukohdeOid = HakukohdeOid("1.2.246.561.20.00000000001")
   private val hakuOid = HakuOid("1.2.246.561.29.00000000001")
   private val valintatapajonoOid = ValintatapajonoOid("1.2.246.561.20.00000000001")
@@ -22,61 +26,123 @@ class NewestVastaanottoEventsViewSpec extends Specification with ITSetup with Va
   sequential
   step(appConfig.start)
   step(deleteAll())
-  step(singleConnectionValintarekisteriDb.storeHakukohde(YPSHakukohde(hakukohdeOid, hakuOid, Kevat(2015))))
+  step(
+    singleConnectionValintarekisteriDb.storeHakukohde(
+      YPSHakukohde(hakukohdeOid, hakuOid, Kevat(2015))
+    )
+  )
 
   "View" should {
     "have vastaanotto for A without linked persons" in {
-      singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(
-        hakuOid, valintatapajonoOid, henkiloOidA, hakemusOid, hakukohdeOid, VastaanotaEhdollisesti,
-        "testiilmoittaja", "testiselite"))
+      singleConnectionValintarekisteriDb.store(
+        VirkailijanVastaanotto(
+          hakuOid,
+          valintatapajonoOid,
+          henkiloOidA,
+          hakemusOid,
+          hakukohdeOid,
+          VastaanotaEhdollisesti,
+          "testiilmoittaja",
+          "testiselite"
+        )
+      )
       singleConnectionValintarekisteriDb.runBlocking(
         sql"""select henkilo, action from newest_vastaanotto_events
-           """.as[(String, String)]) mustEqual Vector((henkiloOidA, VastaanotaEhdollisesti.toString))
+           """.as[(String, String)]
+      ) mustEqual Vector((henkiloOidA, VastaanotaEhdollisesti.toString))
     }
     "have vastaanotto for A if stored for person A" in {
-      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
-        sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidA, $henkiloOidB)""",
-        sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidB, $henkiloOidA)""",
-        sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidC, $henkiloOidD)""",
-        sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidD, $henkiloOidC)"""))
-      singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(
-        hakuOid, valintatapajonoOid, henkiloOidA, hakemusOid, hakukohdeOid, VastaanotaEhdollisesti,
-        "testiilmoittaja", "testiselite"))
+      singleConnectionValintarekisteriDb.runBlocking(
+        DBIO.seq(
+          sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidA, $henkiloOidB)""",
+          sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidB, $henkiloOidA)""",
+          sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidC, $henkiloOidD)""",
+          sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidD, $henkiloOidC)"""
+        )
+      )
+      singleConnectionValintarekisteriDb.store(
+        VirkailijanVastaanotto(
+          hakuOid,
+          valintatapajonoOid,
+          henkiloOidA,
+          hakemusOid,
+          hakukohdeOid,
+          VastaanotaEhdollisesti,
+          "testiilmoittaja",
+          "testiselite"
+        )
+      )
       singleConnectionValintarekisteriDb.runBlocking(
         sql"""select henkilo, action from newest_vastaanotto_events
                 where henkilo = ${henkiloOidA}
-             """.as[(String, String)]) mustEqual Vector((henkiloOidA, VastaanotaEhdollisesti.toString))
+             """.as[(String, String)]
+      ) mustEqual Vector((henkiloOidA, VastaanotaEhdollisesti.toString))
     }
     "have vastaanotto for A if stored for linked person B" in {
-      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
-        sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidA, $henkiloOidB)""",
-        sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidB, $henkiloOidA)""",
-        sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidC, $henkiloOidD)""",
-        sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidD, $henkiloOidC)"""))
-      singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(
-        hakuOid, valintatapajonoOid, henkiloOidB, hakemusOid, hakukohdeOid, VastaanotaEhdollisesti,
-        "testiilmoittaja", "testiselite"))
+      singleConnectionValintarekisteriDb.runBlocking(
+        DBIO.seq(
+          sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidA, $henkiloOidB)""",
+          sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidB, $henkiloOidA)""",
+          sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidC, $henkiloOidD)""",
+          sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidD, $henkiloOidC)"""
+        )
+      )
+      singleConnectionValintarekisteriDb.store(
+        VirkailijanVastaanotto(
+          hakuOid,
+          valintatapajonoOid,
+          henkiloOidB,
+          hakemusOid,
+          hakukohdeOid,
+          VastaanotaEhdollisesti,
+          "testiilmoittaja",
+          "testiselite"
+        )
+      )
       singleConnectionValintarekisteriDb.runBlocking(
         sql"""select henkilo, action from newest_vastaanotto_events
                 where henkilo = ${henkiloOidA}
-             """.as[(String, String)]) mustEqual Vector((henkiloOidA, VastaanotaEhdollisesti.toString))
+             """.as[(String, String)]
+      ) mustEqual Vector((henkiloOidA, VastaanotaEhdollisesti.toString))
     }
     "have no extra vastaanottos" in {
-      singleConnectionValintarekisteriDb.runBlocking(DBIO.seq(
-        sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidA, $henkiloOidB)""",
-        sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidB, $henkiloOidA)""",
-        sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidC, $henkiloOidD)""",
-        sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidD, $henkiloOidC)"""))
-      singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(
-        hakuOid, valintatapajonoOid, henkiloOidA, hakemusOid, hakukohdeOid, VastaanotaEhdollisesti,
-        "testiilmoittaja", "testiselite"))
-      singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(
-        hakuOid, valintatapajonoOid, henkiloOidC, hakemusOid, hakukohdeOid, VastaanotaEhdollisesti,
-        "testiilmoittaja", "testiselite"))
+      singleConnectionValintarekisteriDb.runBlocking(
+        DBIO.seq(
+          sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidA, $henkiloOidB)""",
+          sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidB, $henkiloOidA)""",
+          sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidC, $henkiloOidD)""",
+          sqlu"""insert into henkiloviitteet (person_oid, linked_oid) values ($henkiloOidD, $henkiloOidC)"""
+        )
+      )
+      singleConnectionValintarekisteriDb.store(
+        VirkailijanVastaanotto(
+          hakuOid,
+          valintatapajonoOid,
+          henkiloOidA,
+          hakemusOid,
+          hakukohdeOid,
+          VastaanotaEhdollisesti,
+          "testiilmoittaja",
+          "testiselite"
+        )
+      )
+      singleConnectionValintarekisteriDb.store(
+        VirkailijanVastaanotto(
+          hakuOid,
+          valintatapajonoOid,
+          henkiloOidC,
+          hakemusOid,
+          hakukohdeOid,
+          VastaanotaEhdollisesti,
+          "testiilmoittaja",
+          "testiselite"
+        )
+      )
       singleConnectionValintarekisteriDb.runBlocking(
         sql"""select henkilo, action from newest_vastaanotto_events
                 where henkilo = ${henkiloOidA}
-             """.as[(String, String)]) mustEqual Vector((henkiloOidA, VastaanotaEhdollisesti.toString))
+             """.as[(String, String)]
+      ) mustEqual Vector((henkiloOidA, VastaanotaEhdollisesti.toString))
     }
   }
 

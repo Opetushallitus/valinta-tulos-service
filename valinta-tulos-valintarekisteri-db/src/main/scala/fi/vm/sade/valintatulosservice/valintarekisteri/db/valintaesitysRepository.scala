@@ -11,4 +11,8 @@ trait ValintaesitysRepository {
   def hyvaksyValintaesitys(valintatapajonoOid: ValintatapajonoOid): DBIO[Valintaesitys]
 }
 
-case class Valintaesitys(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hyvaksytty: Option[ZonedDateTime])
+case class Valintaesitys(
+  hakukohdeOid: HakukohdeOid,
+  valintatapajonoOid: ValintatapajonoOid,
+  hyvaksytty: Option[ZonedDateTime]
+)

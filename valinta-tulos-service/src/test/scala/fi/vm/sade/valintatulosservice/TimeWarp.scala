@@ -13,7 +13,7 @@ trait TimeWarp {
     parseDate(dateTime).getTime
   }
 
-  def withFixedDateTime[T](dateTime: String)(f: => T):T = {
+  def withFixedDateTime[T](dateTime: String)(f: => T): T = {
     withFixedDateTime(getMillisFromTime(dateTime))(f)
   }
 
@@ -21,8 +21,7 @@ trait TimeWarp {
     DateTimeUtils.setCurrentMillisFixed(millis)
     try {
       f
-    }
-    finally {
+    } finally {
       DateTimeUtils.setCurrentMillisSystem
     }
   }

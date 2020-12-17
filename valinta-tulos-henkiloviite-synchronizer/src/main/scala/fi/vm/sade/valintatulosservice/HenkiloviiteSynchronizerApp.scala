@@ -4,7 +4,12 @@ import java.util.Calendar
 import java.util.concurrent.{ScheduledThreadPoolExecutor, TimeUnit}
 
 import ch.qos.logback.access.jetty.RequestLogImpl
-import org.eclipse.jetty.server.handler.{ContextHandler, ContextHandlerCollection, RequestLogHandler, ResourceHandler}
+import org.eclipse.jetty.server.handler.{
+  ContextHandler,
+  ContextHandlerCollection,
+  RequestLogHandler,
+  ResourceHandler
+}
 import org.eclipse.jetty.server.{RequestLog, Server}
 import org.eclipse.jetty.servlet.{ServletContextHandler, ServletHolder}
 import org.eclipse.jetty.util.resource.Resource
@@ -37,7 +42,9 @@ object HenkiloviiteSynchronizerApp {
     resourceContext.setContextPath("/valinta-tulos-henkiloviite-synchronizer/html")
     val resourceHandler = new ResourceHandler
     resourceHandler.setDirectoriesListed(false)
-    resourceHandler.setBaseResource(Resource.newClassPathResource("fi/vm/sade/valintatulosservice/html"))
+    resourceHandler.setBaseResource(
+      Resource.newClassPathResource("fi/vm/sade/valintatulosservice/html")
+    )
     resourceHandler.setWelcomeFiles(Array("index.html"))
     resourceContext.setHandler(resourceHandler)
 
@@ -73,15 +80,19 @@ object HenkiloviiteSynchronizerApp {
     else 24 - hourOfDay + startHour
   }
 
-  private def startScheduledSynchronization(config: SchedulerConfiguration,
-                                            synchronizer: HenkiloviiteSynchronizer): ScheduledThreadPoolExecutor = {
+  private def startScheduledSynchronization(
+    config: SchedulerConfiguration,
+    synchronizer: HenkiloviiteSynchronizer
+  ): ScheduledThreadPoolExecutor = {
     val scheduler = new ScheduledThreadPoolExecutor(1)
     (config.startHour.map(hoursUntilSchedulerStart), config.intervalHours) match {
       case (Some(delay), Some(interval)) =>
         scheduler.scheduleAtFixedRate(synchronizer, delay, interval, TimeUnit.HOURS)
         logger.info(s"Scheduled synchronization started, next synchronization in $delay hours.")
       case (_, _) =>
-        logger.warn("Scheduler start hour or run interval not given, scheduled synchronization not started.")
+        logger.warn(
+          "Scheduler start hour or run interval not given, scheduled synchronization not started."
+        )
     }
     scheduler
   }

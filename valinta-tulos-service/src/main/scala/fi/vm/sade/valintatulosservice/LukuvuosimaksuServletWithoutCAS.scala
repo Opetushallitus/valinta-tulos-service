@@ -5,7 +5,11 @@ import java.util.Date
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.lukuvuosimaksut.LukuvuosimaksuMuutos
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, Lukuvuosimaksu, Maksuntila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{
+  HakukohdeOid,
+  Lukuvuosimaksu,
+  Maksuntila
+}
 import org.json4s.DefaultFormats
 import org.json4s.ext.EnumNameSerializer
 import org.scalatra.swagger.Swagger
@@ -13,10 +17,11 @@ import org.scalatra.{InternalServerError, NoContent, Ok}
 
 import scala.util.Try
 
-
-class LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService: LukuvuosimaksuService)
-                                  (implicit val swagger: Swagger, appConfig: VtsAppConfig)
-  extends VtsServletBase with AuditInfoParameter {
+class LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService: LukuvuosimaksuService)(implicit
+  val swagger: Swagger,
+  appConfig: VtsAppConfig
+) extends VtsServletBase
+    with AuditInfoParameter {
 
   implicit val vtsJsonFormats = JsonFormats.jsonFormats + new EnumNameSerializer(Maksuntila)
 
@@ -36,8 +41,14 @@ class LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService: LukuvuosimaksuServi
   }
 
   post("/read") {
-    val maksuRequest: LukuvuosimaksuBulkReadRequest = parsedBody.extract[LukuvuosimaksuBulkReadRequest]
-    Ok(lukuvuosimaksuService.getLukuvuosimaksut(maksuRequest.hakukohdeOids.toSet, getAuditInfo(maksuRequest)))
+    val maksuRequest: LukuvuosimaksuBulkReadRequest =
+      parsedBody.extract[LukuvuosimaksuBulkReadRequest]
+    Ok(
+      lukuvuosimaksuService.getLukuvuosimaksut(
+        maksuRequest.hakukohdeOids.toSet,
+        getAuditInfo(maksuRequest)
+      )
+    )
   }
 
   post("/write/:hakukohdeOid") {
@@ -50,7 +61,13 @@ class LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService: LukuvuosimaksuServi
     lukuvuosimaksuRequest.lukuvuosimaksuMuutokset match {
       case lukuvuosimaksuMuutokset if lukuvuosimaksuMuutokset.nonEmpty =>
         val lukuvuosimaksut = lukuvuosimaksuMuutokset.map(m => {
-          Lukuvuosimaksu(m.personOid, hakukohdeOid, m.maksuntila, auditInfo.session._2.personOid, new Date)
+          Lukuvuosimaksu(
+            m.personOid,
+            hakukohdeOid,
+            m.maksuntila,
+            auditInfo.session._2.personOid,
+            new Date
+          )
         })
         lukuvuosimaksuService.updateLukuvuosimaksut(lukuvuosimaksut, auditInfo)
 
@@ -61,14 +78,21 @@ class LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService: LukuvuosimaksuServi
   }
 
   private def hakukohdeOidParam: HakukohdeOid = {
-    HakukohdeOid(Try(params("hakukohdeOid")).toOption.filter(!_.isEmpty)
-      .getOrElse(throw new RuntimeException("HakukohdeOid is mandatory!")))
+    HakukohdeOid(
+      Try(params("hakukohdeOid")).toOption
+        .filter(!_.isEmpty)
+        .getOrElse(throw new RuntimeException("HakukohdeOid is mandatory!"))
+    )
   }
 
 }
 
-case class LukuvuosimaksuRequest(lukuvuosimaksuMuutokset: List[LukuvuosimaksuMuutos], auditSession: AuditSessionRequest)
-  extends RequestWithAuditSession
+case class LukuvuosimaksuRequest(
+  lukuvuosimaksuMuutokset: List[LukuvuosimaksuMuutos],
+  auditSession: AuditSessionRequest
+) extends RequestWithAuditSession
 
-case class LukuvuosimaksuBulkReadRequest(hakukohdeOids: List[HakukohdeOid], auditSession: AuditSessionRequest)
-  extends RequestWithAuditSession
+case class LukuvuosimaksuBulkReadRequest(
+  hakukohdeOids: List[HakukohdeOid],
+  auditSession: AuditSessionRequest
+) extends RequestWithAuditSession
