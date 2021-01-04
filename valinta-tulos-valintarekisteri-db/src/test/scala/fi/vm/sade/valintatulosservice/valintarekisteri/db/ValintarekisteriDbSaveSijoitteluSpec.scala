@@ -22,8 +22,13 @@ import slick.jdbc.PostgresProfile.api.actionBasedSQLInterpolation
 import scala.collection.JavaConverters._
 
 @RunWith(classOf[JUnitRunner])
-class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterEach
-  with Logging with PerformanceLogger {
+class ValintarekisteriDbSaveSijoitteluSpec
+    extends Specification
+    with ITSetup
+    with ValintarekisteriDbTools
+    with BeforeAfterEach
+    with Logging
+    with PerformanceLogger {
   sequential
   private val hakuOid = "1.2.246.561.29.00000000001"
 
@@ -47,7 +52,7 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
     "store tilan_viimeisin_muutos correctly" in {
       val dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
 
-      def assertTilanViimeisinMuutos(hakemusOid:String, expected:java.util.Date) = {
+      def assertTilanViimeisinMuutos(hakemusOid: String, expected: java.util.Date) = {
         val muutokset = findTilanViimeisinMuutos(hakemusOid)
         muutokset.size mustEqual 1
         logger.info(s"Got date:${dateFormat.format(new java.util.Date(muutokset.head.getTime))}")
@@ -58,15 +63,26 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       val wrapper = loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")
       singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
       assertSijoittelu(wrapper)
-      assertTilanViimeisinMuutos("1.2.246.562.11.00006465296", dateFormat.parse("2016-10-17T09:08:11.967+0000"))
-      assertTilanViimeisinMuutos("1.2.246.562.11.00004685599", dateFormat.parse("2016-10-12T04:11:20.526+0000"))
+      assertTilanViimeisinMuutos(
+        "1.2.246.562.11.00006465296",
+        dateFormat.parse("2016-10-17T09:08:11.967+0000")
+      )
+      assertTilanViimeisinMuutos(
+        "1.2.246.562.11.00004685599",
+        dateFormat.parse("2016-10-12T04:11:20.526+0000")
+      )
     }
   }
-  implicit val resultAsObjectMap = GetResult[Map[String,Object]] (
-    prs => (1 to prs.numColumns).map(_ => prs.rs.getMetaData.getColumnName(prs.currentPos+1) -> prs.nextString ).toMap )
+  implicit val resultAsObjectMap = GetResult[Map[String, Object]](prs =>
+    (1 to prs.numColumns)
+      .map(_ => prs.rs.getMetaData.getColumnName(prs.currentPos + 1) -> prs.nextString)
+      .toMap
+  )
   val hakemusOid = "1.2.246.562.11.00006926939"
-  def readTable(table:String) = singleConnectionValintarekisteriDb.runBlocking(
-    sql"""select * from #${table} where hakemus_oid = ${hakemusOid}""".as[Map[String,Object]])
+  def readTable(table: String) =
+    singleConnectionValintarekisteriDb.runBlocking(
+      sql"""select * from #${table} where hakemus_oid = ${hakemusOid}""".as[Map[String, Object]]
+    )
 
   "Valintarekisteri" should {
     "store valinnantulos history correctly" in {
@@ -76,8 +92,7 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       readTable("valinnantulokset_history").size mustEqual 0
 
       val original = readTable("valinnantulokset").head
-      singleConnectionValintarekisteriDb.runBlocking(
-        sqlu"""update valinnantulokset
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"""update valinnantulokset
                set julkaistavissa = true
                where hakemus_oid = ${hakemusOid}""")
 
@@ -88,7 +103,7 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
 
       history("system_time").asInstanceOf[String] mustEqual
         original("system_time").asInstanceOf[String].replace(")", "") +
-        updated("system_time").asInstanceOf[String].replace("[", "").replace(",", "")
+          updated("system_time").asInstanceOf[String].replace("[", "").replace(",", "")
     }
     "store valinnantila history correctly" in {
       val wrapper = loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")
@@ -97,8 +112,7 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       readTable("valinnantilat_history").size mustEqual 0
 
       val original = readTable("valinnantilat").head
-      singleConnectionValintarekisteriDb.runBlocking(
-        sqlu"""update valinnantilat
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"""update valinnantilat
                set tila = 'Hylatty'
                where hakemus_oid = ${hakemusOid}""")
 
@@ -116,10 +130,15 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
 
       val oldDate = new Date()
 
-      def readJulkaistavissa() = singleConnectionValintarekisteriDb.runBlocking(
-        sql"""select julkaistavissa from valinnantulokset where hakemus_oid = '1.2.246.562.11.00000441369' order by valintatapajono_oid desc""".as[Boolean]).toList
+      def readJulkaistavissa() =
+        singleConnectionValintarekisteriDb
+          .runBlocking(
+            sql"""select julkaistavissa from valinnantulokset where hakemus_oid = '1.2.246.562.11.00000441369' order by valintatapajono_oid desc"""
+              .as[Boolean]
+          )
+          .toList
 
-      def startNewSijoittelu(wrapper:SijoitteluWrapper) = {
+      def startNewSijoittelu(wrapper: SijoitteluWrapper) = {
         val sijoitteluajoId = System.currentTimeMillis
         wrapper.sijoitteluajo.setStartMils(System.currentTimeMillis)
         wrapper.sijoitteluajo.setSijoitteluajoId(sijoitteluajoId)
@@ -133,81 +152,115 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       List(true, false) mustEqual readJulkaistavissa()
 
       startNewSijoittelu(wrapper)
-      wrapper.valintatulokset.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(vt => {
-        vt.setJulkaistavissa(false, "", "")
-        vt.setRead(oldDate)
-      })
+      wrapper.valintatulokset
+        .find(_.getHakemusOid.equals("1.2.246.562.11.00000441369"))
+        .foreach(vt => {
+          vt.setJulkaistavissa(false, "", "")
+          vt.setRead(oldDate)
+        })
       singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
       //Ei päivitetä täppää, koska se "on muuttunut" sijoittelun aikana
       List(true, false) mustEqual readJulkaistavissa()
 
       startNewSijoittelu(wrapper)
-      wrapper.hakukohteet.head.getValintatapajonot.asScala.find(_.getOid.equals("14090336922663576781797489829887")
-      ).get.getHakemukset.asScala.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(h => {
-        h.setTila(HakemuksenTila.PERUUNTUNUT)
-      })
-      wrapper.valintatulokset.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(vt => {
-        vt.setJulkaistavissa(false, "", "")
-        vt.setRead(new Date())
-      })
+      wrapper.hakukohteet.head.getValintatapajonot.asScala
+        .find(_.getOid.equals("14090336922663576781797489829887"))
+        .get
+        .getHakemukset
+        .asScala
+        .find(_.getHakemusOid.equals("1.2.246.562.11.00000441369"))
+        .foreach(h => {
+          h.setTila(HakemuksenTila.PERUUNTUNUT)
+        })
+      wrapper.valintatulokset
+        .find(_.getHakemusOid.equals("1.2.246.562.11.00000441369"))
+        .foreach(vt => {
+          vt.setJulkaistavissa(false, "", "")
+          vt.setRead(new Date())
+        })
       //Ei päivitetä täppää, koska tila on peruuntunut
       singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
       List(true, false).diff(readJulkaistavissa()) mustEqual List()
 
       startNewSijoittelu(wrapper)
-      wrapper.hakukohteet.head.getValintatapajonot.asScala.find(_.getOid.equals("14090336922663576781797489829887")
-      ).get.getHakemukset.asScala.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(h => {
-        h.setTila(HYVAKSYTTY)
-      })
-      wrapper.valintatulokset.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(vt => {
-        vt.setJulkaistavissa(false, "", "")
-        vt.setRead(new Date())
-      })
+      wrapper.hakukohteet.head.getValintatapajonot.asScala
+        .find(_.getOid.equals("14090336922663576781797489829887"))
+        .get
+        .getHakemukset
+        .asScala
+        .find(_.getHakemusOid.equals("1.2.246.562.11.00000441369"))
+        .foreach(h => {
+          h.setTila(HYVAKSYTTY)
+        })
+      wrapper.valintatulokset
+        .find(_.getHakemusOid.equals("1.2.246.562.11.00000441369"))
+        .foreach(vt => {
+          vt.setJulkaistavissa(false, "", "")
+          vt.setRead(new Date())
+        })
       //Päivitetään täppä
       singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
       List(false, false).diff(readJulkaistavissa()) mustEqual List()
 
       startNewSijoittelu(wrapper)
-      singleConnectionValintarekisteriDb.runBlocking(
-        sqlu"""update valinnantulokset
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"""update valinnantulokset
                set hyvaksy_peruuntunut = true
                where hakemus_oid = '1.2.246.562.11.00000441369' and
                      valintatapajono_oid = '14090336922663576781797489829887'""")
-      wrapper.hakukohteet.head.getValintatapajonot.asScala.find(_.getOid.equals("14090336922663576781797489829887")
-      ).get.getHakemukset.asScala.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(h => {
-        h.setTila(HYVAKSYTTY)
-      })
-      wrapper.valintatulokset.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(vt => {
-        vt.setJulkaistavissa(false, "", "")
-        vt.setHyvaksyPeruuntunut(true, "", "")
-        vt.setRead(new Date())
-      })
+      wrapper.hakukohteet.head.getValintatapajonot.asScala
+        .find(_.getOid.equals("14090336922663576781797489829887"))
+        .get
+        .getHakemukset
+        .asScala
+        .find(_.getHakemusOid.equals("1.2.246.562.11.00000441369"))
+        .foreach(h => {
+          h.setTila(HYVAKSYTTY)
+        })
+      wrapper.valintatulokset
+        .find(_.getHakemusOid.equals("1.2.246.562.11.00000441369"))
+        .foreach(vt => {
+          vt.setJulkaistavissa(false, "", "")
+          vt.setHyvaksyPeruuntunut(true, "", "")
+          vt.setRead(new Date())
+        })
       singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
       // Päivitä hyväksy peruuntunut täppä aina false:ksi
-      singleConnectionValintarekisteriDb.runBlocking(
-        sql"""select hyvaksy_peruuntunut from valinnantulokset where hakemus_oid = '1.2.246.562.11.00000441369'""".as[Boolean]
-      ).toList mustEqual List(false, false)
+      singleConnectionValintarekisteriDb
+        .runBlocking(
+          sql"""select hyvaksy_peruuntunut from valinnantulokset where hakemus_oid = '1.2.246.562.11.00000441369'"""
+            .as[Boolean]
+        )
+        .toList mustEqual List(false, false)
 
       startNewSijoittelu(wrapper)
-      singleConnectionValintarekisteriDb.runBlocking(
-        sqlu"""update valinnantulokset
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"""update valinnantulokset
                set hyvaksytty_varasijalta = true
                where hakemus_oid = '1.2.246.562.11.00000441369' and
                      valintatapajono_oid = '14090336922663576781797489829887'""")
-      wrapper.hakukohteet.head.getValintatapajonot.asScala.find(_.getOid.equals("14090336922663576781797489829887")
-      ).get.getHakemukset.asScala.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(h => {
-        h.setTila(HYVAKSYTTY)
-      })
-      wrapper.valintatulokset.find(_.getHakemusOid.equals("1.2.246.562.11.00000441369")).foreach(vt => {
-        vt.setJulkaistavissa(false, "", "")
-        vt.setHyvaksyttyVarasijalta(true, "", "")
-        vt.setRead(new Date())
-      })
+      wrapper.hakukohteet.head.getValintatapajonot.asScala
+        .find(_.getOid.equals("14090336922663576781797489829887"))
+        .get
+        .getHakemukset
+        .asScala
+        .find(_.getHakemusOid.equals("1.2.246.562.11.00000441369"))
+        .foreach(h => {
+          h.setTila(HYVAKSYTTY)
+        })
+      wrapper.valintatulokset
+        .find(_.getHakemusOid.equals("1.2.246.562.11.00000441369"))
+        .foreach(vt => {
+          vt.setJulkaistavissa(false, "", "")
+          vt.setHyvaksyttyVarasijalta(true, "", "")
+          vt.setRead(new Date())
+        })
       singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
       // Päivitä hyväksytty varasijalta täppä aina false:ksi
-      singleConnectionValintarekisteriDb.runBlocking(
-        sql"""select hyvaksytty_varasijalta from valinnantulokset where hakemus_oid = '1.2.246.562.11.00000441369'""".as[Boolean]
-      ).toList mustEqual List(false, false)
+      singleConnectionValintarekisteriDb
+        .runBlocking(
+          sql"""select hyvaksytty_varasijalta from valinnantulokset where hakemus_oid = '1.2.246.562.11.00000441369'"""
+            .as[Boolean]
+        )
+        .toList mustEqual List(false, false)
     }
     "not update existing julkaistavissa if valintatulos not updated in sijoitteluajo" in {
       val wrapper = loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")
@@ -216,8 +269,7 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       readTable("valinnantulokset_history").size mustEqual 0
       readTable("valinnantulokset").size mustEqual 1
 
-      singleConnectionValintarekisteriDb.runBlocking(
-        sqlu"""update valinnantulokset
+      singleConnectionValintarekisteriDb.runBlocking(sqlu"""update valinnantulokset
                set julkaistavissa = true, hyvaksytty_varasijalta = true
                where hakemus_oid = ${hakemusOid}""")
       readTable("valinnantulokset_history").size mustEqual 1
@@ -228,7 +280,8 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
 
       val flagsFromDb = singleConnectionValintarekisteriDb.runBlocking(
         sql"""select julkaistavissa, hyvaksytty_varasijalta
-              from valinnantulokset where hakemus_oid = ${hakemusOid}""".as[(Boolean, Boolean)])
+              from valinnantulokset where hakemus_oid = ${hakemusOid}""".as[(Boolean, Boolean)]
+      )
       flagsFromDb must haveSize(1)
       flagsFromDb.head mustEqual (true, false)
 
@@ -239,7 +292,8 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       singleConnectionValintarekisteriDb.storeSijoittelu(newSijoitteluajoWrapper)
       val flagsFromDbAfterSecondSave = singleConnectionValintarekisteriDb.runBlocking(
         sql"""select julkaistavissa, hyvaksytty_varasijalta
-              from valinnantulokset where hakemus_oid = ${hakemusOid}""".as[(Boolean, Boolean)])
+              from valinnantulokset where hakemus_oid = ${hakemusOid}""".as[(Boolean, Boolean)]
+      )
 
       flagsFromDbAfterSecondSave must haveSize(1)
       flagsFromDbAfterSecondSave.head mustEqual (true, false)
@@ -247,16 +301,20 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       readTable("valinnantulokset").size mustEqual 1
     }
     "handle hyväksytty ja julkaistu -dates correctly" in {
-      def readHyvaksyttyJaJulkaistuTable() = singleConnectionValintarekisteriDb.runBlocking(
-        sql"""select * from hyvaksytyt_ja_julkaistut_hakutoiveet""".as[Map[String,Object]])
+      def readHyvaksyttyJaJulkaistuTable() =
+        singleConnectionValintarekisteriDb.runBlocking(
+          sql"""select * from hyvaksytyt_ja_julkaistut_hakutoiveet""".as[Map[String, Object]]
+        )
 
-      def validate(hyvaksyttyJaJulkaistu:Vector[Map[String,Object]]) = {
+      def validate(hyvaksyttyJaJulkaistu: Vector[Map[String, Object]]) = {
         hyvaksyttyJaJulkaistu.map(_("henkilo")).distinct.size must_== 2
-        hyvaksyttyJaJulkaistu.foreach(m => m("henkilo") match {
-          case "1.2.246.562.24.14229104473" => m("hakukohde") must_== "1.2.246.562.5.72607738933"
-          case "1.2.246.562.24.14229104472" => m("hakukohde") must_== "1.2.246.562.5.72607738922"
-          case x => throw new AssertionError(s"Tuntematon henkilö oid ${x}")
-        })
+        hyvaksyttyJaJulkaistu.foreach(m =>
+          m("henkilo") match {
+            case "1.2.246.562.24.14229104473" => m("hakukohde") must_== "1.2.246.562.5.72607738933"
+            case "1.2.246.562.24.14229104472" => m("hakukohde") must_== "1.2.246.562.5.72607738922"
+            case x                            => throw new AssertionError(s"Tuntematon henkilö oid ${x}")
+          }
+        )
         val pvm = hyvaksyttyJaJulkaistu.map(_("hyvaksytty_ja_julkaistu")).distinct
         pvm.size must_== 1
         pvm.head
@@ -275,20 +333,26 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
 
       //Hakijalta 1.2.246.562.24.14229104472 poistetaan yksi hyväksyntä -> päivämäärä ei poistu, koska hyväksyntä toisessa jonossa
       //Hakija 1.2.246.562.24.14229104473 tulee hylätyksi vanhassa ja hyväksytyksi uudessa hakukohteessa -> vanha pvm poistuu, uusi tulee tilalle
-      val wrapper2 = loadSijoitteluFromFixture("hyvaksytty-julkaistu-pvm-2", "sijoittelu/", tallennaHakukohteet = false)
+      val wrapper2 = loadSijoitteluFromFixture(
+        "hyvaksytty-julkaistu-pvm-2",
+        "sijoittelu/",
+        tallennaHakukohteet = false
+      )
       singleConnectionValintarekisteriDb.storeSijoittelu(wrapper2)
       val hyvaksyttyJaJulkaistu = readHyvaksyttyJaJulkaistuTable()
-      hyvaksyttyJaJulkaistu.foreach(m => m("henkilo") match {
-        case "1.2.246.562.24.14229104473" => {
-          m("hakukohde") must_== "1.2.246.562.5.72607738922"
-          m("hyvaksytty_ja_julkaistu") must_!= pvm
+      hyvaksyttyJaJulkaistu.foreach(m =>
+        m("henkilo") match {
+          case "1.2.246.562.24.14229104473" => {
+            m("hakukohde") must_== "1.2.246.562.5.72607738922"
+            m("hyvaksytty_ja_julkaistu") must_!= pvm
+          }
+          case "1.2.246.562.24.14229104472" => {
+            m("hakukohde") must_== "1.2.246.562.5.72607738922"
+            m("hyvaksytty_ja_julkaistu") must_== pvm
+          }
+          case x => throw new AssertionError(s"Tuntematon henkilö oid ${x}")
         }
-        case "1.2.246.562.24.14229104472" => {
-          m("hakukohde") must_== "1.2.246.562.5.72607738922"
-          m("hyvaksytty_ja_julkaistu") must_== pvm
-        }
-        case x => throw new AssertionError(s"Tuntematon henkilö oid ${x}")
-      })
+      )
       hyvaksyttyJaJulkaistu.map(_("henkilo")).distinct.size must_== 2
     }
     "set ehdollisesti hyväksyttävissä" in {
@@ -301,10 +365,12 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
           hakemusOid,
           hakukohdeOid,
           HyvaksynnanEhto("muu", "muu", "andra", "other"),
-          "1.2.246.562.24.00000000002"))
+          "1.2.246.562.24.00000000002"
+        )
+      )
       singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
-      val valinnantulos = singleConnectionValintarekisteriDb.runBlocking(
-        singleConnectionValintarekisteriDb.getValinnantuloksetForHakemus(hakemusOid))
+      val valinnantulos = singleConnectionValintarekisteriDb
+        .runBlocking(singleConnectionValintarekisteriDb.getValinnantuloksetForHakemus(hakemusOid))
         .find(v => v.hakukohdeOid == hakukohdeOid && v.valintatapajonoOid == valintatapajonoOid)
       valinnantulos.flatMap(_.ehdollisestiHyvaksyttavissa) must beSome(true)
       valinnantulos.flatMap(_.ehdollisenHyvaksymisenEhtoKoodi) must beSome("muu")
@@ -322,30 +388,41 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
           hakemusOid,
           hakukohdeOid,
           HyvaksynnanEhto("muu", "muu", "andra", "other"),
-          "1.2.246.562.24.00000000002"))
-      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeValinnantila(
-        ValinnantilanTallennus(
-          hakemusOid,
-          valintatapajonoOid,
-          hakukohdeOid,
-          "1.2.246.562.24.14229104472",
-          Hylatty,
-          "muokkaaja"),
-        None))
-      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeValinnantuloksenOhjaus(
-        ValinnantuloksenOhjaus(
-          hakemusOid,
-          valintatapajonoOid,
-          hakukohdeOid,
-          false,
-          false,
-          false,
-          "muokkaaja",
-          "selite"),
-        None))
+          "1.2.246.562.24.00000000002"
+        )
+      )
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.storeValinnantila(
+          ValinnantilanTallennus(
+            hakemusOid,
+            valintatapajonoOid,
+            hakukohdeOid,
+            "1.2.246.562.24.14229104472",
+            Hylatty,
+            "muokkaaja"
+          ),
+          None
+        )
+      )
+      singleConnectionValintarekisteriDb.runBlocking(
+        singleConnectionValintarekisteriDb.storeValinnantuloksenOhjaus(
+          ValinnantuloksenOhjaus(
+            hakemusOid,
+            valintatapajonoOid,
+            hakukohdeOid,
+            false,
+            false,
+            false,
+            "muokkaaja",
+            "selite"
+          ),
+          None
+        )
+      )
       singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
       val valinnantulokset = singleConnectionValintarekisteriDb.runBlocking(
-        singleConnectionValintarekisteriDb.getValinnantuloksetForHakemus(hakemusOid))
+        singleConnectionValintarekisteriDb.getValinnantuloksetForHakemus(hakemusOid)
+      )
 
       val eiEhdollisestiHyvaksyttavissa = valinnantulokset
         .find(v => v.hakukohdeOid == hakukohdeOid && v.valintatapajonoOid == valintatapajonoOid)
@@ -356,7 +433,11 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       eiEhdollisestiHyvaksyttavissa.flatMap(_.ehdollisenHyvaksymisenEhtoEN) must beNone
 
       val ehdollisestiHyvaksyttavissa = valinnantulokset
-        .find(v => v.hakukohdeOid == hakukohdeOid && v.valintatapajonoOid == ValintatapajonoOid("14090336922663576781797489829886"))
+        .find(v =>
+          v.hakukohdeOid == hakukohdeOid && v.valintatapajonoOid == ValintatapajonoOid(
+            "14090336922663576781797489829886"
+          )
+        )
       ehdollisestiHyvaksyttavissa.flatMap(_.ehdollisestiHyvaksyttavissa) must beSome(true)
       ehdollisestiHyvaksyttavissa.flatMap(_.ehdollisenHyvaksymisenEhtoKoodi) must beSome("muu")
       ehdollisestiHyvaksyttavissa.flatMap(_.ehdollisenHyvaksymisenEhtoFI) must beSome("muu")
@@ -366,7 +447,9 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
   }
   "store sijoiteltu ilman varasijasääntöjä niiden ollessa voimassa flag by valintatapajono" in {
     val wrapper = loadSijoitteluFromFixture("haku-1.2.246.562.29.75203638285", "QA-import/")
-    wrapper.hakukohteet.head.getValintatapajonot.get(0).setSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa(true)
+    wrapper.hakukohteet.head.getValintatapajonot
+      .get(0)
+      .setSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa(true)
     singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
     assertSijoittelu(wrapper)
   }
@@ -375,7 +458,9 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
     val jono: Valintatapajono = wrapper.hakukohteet.head.getValintatapajonot.get(0)
     jono.setSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa(true)
     val hakemusOids = jono.getHakemukset.asScala.map(_.getHakemusOid).asJava
-    jono.setSivssnovSijoittelunVarasijataytonRajoitus(java.util.Optional.of(new JonosijaTieto(79, 2, HYVAKSYTTY, hakemusOids)))
+    jono.setSivssnovSijoittelunVarasijataytonRajoitus(
+      java.util.Optional.of(new JonosijaTieto(79, 2, HYVAKSYTTY, hakemusOids))
+    )
     singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
     assertSijoittelu(wrapper)
   }

@@ -9,7 +9,11 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import scala.concurrent.duration.Duration
 
 trait MailPollerRepository {
-  def candidates(hakukohdeOid: HakukohdeOid, ignoreEarlier: Boolean = false, recheckIntervalHours: Int): Set[MailableCandidate]
+  def candidates(
+    hakukohdeOid: HakukohdeOid,
+    ignoreEarlier: Boolean = false,
+    recheckIntervalHours: Int
+  ): Set[MailableCandidate]
 
   def lastChecked(hakukohdeOid: HakukohdeOid): Option[Date]
 
@@ -29,7 +33,8 @@ trait MailPollerRepository {
 
   def deleteHakemusMailEntriesForHakukohde(hakukohdeOid: HakukohdeOid): Int
 
-  def deleteIncompleteMailEntries(): Set[(HakemusOid, HakukohdeOid, Option[MailReason], Option[Timestamp], Timestamp)]
+  def deleteIncompleteMailEntries()
+    : Set[(HakemusOid, HakukohdeOid, Option[MailReason], Option[Timestamp], Timestamp)]
 }
 
 object MailPollerRepository {

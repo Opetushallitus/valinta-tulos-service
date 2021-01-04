@@ -8,15 +8,18 @@ import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.{Henkilo, Oppijanume
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakijaOid, HakukohdeOid}
 
-class AtaruHakemusEnricher(config: VtsAppConfig,
-                           hakuService: HakuService,
-                           oppijanumerorekisteriService: OppijanumerorekisteriService) {
+class AtaruHakemusEnricher(
+  config: VtsAppConfig,
+  hakuService: HakuService,
+  oppijanumerorekisteriService: OppijanumerorekisteriService
+) {
 
   private val hakukohdeCache: HakukohdeOid => Either[Throwable, Hakukohde] =
     TTLOptionalMemoize.memoize(
       hakuService.getHakukohde,
       lifetimeSeconds = config.settings.ataruHakemusEnricherHakukohdeCacheTtl.toSeconds,
-      maxSize = config.settings.ataruHakemusEnricherHakukohdeCacheMaxSize)
+      maxSize = config.settings.ataruHakemusEnricherHakukohdeCacheMaxSize
+    )
 
   def apply(ataruHakemukset: List[AtaruHakemus]): Either[Throwable, List[Hakemus]] = {
     for {
@@ -25,7 +28,11 @@ class AtaruHakemusEnricher(config: VtsAppConfig,
     } yield ataruHakemukset.map(hakemus => toHakemus(henkilot, hakutoiveet, hakemus))
   }
 
-  private def toHakemus(henkilot: Map[HakijaOid, Henkilo], hakutoiveet: Map[HakukohdeOid, String => Hakutoive], hakemus: AtaruHakemus): Hakemus = {
+  private def toHakemus(
+    henkilot: Map[HakijaOid, Henkilo],
+    hakutoiveet: Map[HakukohdeOid, String => Hakutoive],
+    hakemus: AtaruHakemus
+  ): Hakemus = {
     val henkilo = henkilot(hakemus.henkiloOid)
     Hakemus(
       oid = hakemus.oid,
@@ -41,22 +48,27 @@ class AtaruHakemusEnricher(config: VtsAppConfig,
     )
   }
 
-  private def henkilot(hakemukset: List[AtaruHakemus]): Either[Throwable, Map[HakijaOid, Henkilo]] = {
+  private def henkilot(
+    hakemukset: List[AtaruHakemus]
+  ): Either[Throwable, Map[HakijaOid, Henkilo]] = {
     val personOids = uniquePersonOids(hakemukset)
-    oppijanumerorekisteriService.henkilot(personOids)
-      .right.flatMap(hs => {
-      val missingOids = personOids.diff(hs.keySet)
-      if (missingOids.isEmpty) {
-        Right(hs)
-      } else {
-        Left(new IllegalArgumentException(s"No henkilöt $missingOids found"))
-      }
-    })
+    oppijanumerorekisteriService
+      .henkilot(personOids)
+      .right
+      .flatMap(hs => {
+        val missingOids = personOids.diff(hs.keySet)
+        if (missingOids.isEmpty) {
+          Right(hs)
+        } else {
+          Left(new IllegalArgumentException(s"No henkilöt $missingOids found"))
+        }
+      })
   }
 
-  private def hakutoiveet(hakemukset: List[AtaruHakemus]): Either[Throwable, Map[HakukohdeOid, String => Hakutoive]] = {
-    MonadHelper.sequence(uniqueHakukohdeOids(hakemukset).map(hakutoive))
-      .right.map(_.toMap)
+  private def hakutoiveet(
+    hakemukset: List[AtaruHakemus]
+  ): Either[Throwable, Map[HakukohdeOid, String => Hakutoive]] = {
+    MonadHelper.sequence(uniqueHakukohdeOids(hakemukset).map(hakutoive)).right.map(_.toMap)
   }
 
   private def uniquePersonOids(hakemukset: List[AtaruHakemus]): Set[HakijaOid] = {
@@ -71,16 +83,27 @@ class AtaruHakemusEnricher(config: VtsAppConfig,
     keys.collectFirst { case k if m.contains(k) && m(k).trim.nonEmpty => m(k) }
   }
 
-  private def hakutoive(oid: HakukohdeOid): Either[Throwable, (HakukohdeOid, String => Hakutoive)] = {
+  private def hakutoive(
+    oid: HakukohdeOid
+  ): Either[Throwable, (HakukohdeOid, String => Hakutoive)] = {
     hakukohdeCache(oid).right.map(h => {
-      (oid, lang => Hakutoive(
-        oid = oid,
-        tarjoajaOid = h.tarjoajaOids.head,
-        nimi = getFirstNonBlank(h.hakukohteenNimet, List("kieli_" + lang, "kieli_fi", "kieli_sv", "kieli_en"))
-          .getOrElse(throw new IllegalStateException(s"Hakukohteella $oid ei ole nimeä")),
-        tarjoajaNimi = getFirstNonBlank(h.tarjoajaNimet, List(lang, "fi", "sv", "en"))
-          .getOrElse(throw new IllegalStateException(s"Hakukohteella $oid ei ole tarjoajan nimeä"))
-      ))
+      (
+        oid,
+        lang =>
+          Hakutoive(
+            oid = oid,
+            tarjoajaOid = h.tarjoajaOids.head,
+            nimi = getFirstNonBlank(
+              h.hakukohteenNimet,
+              List("kieli_" + lang, "kieli_fi", "kieli_sv", "kieli_en")
+            )
+              .getOrElse(throw new IllegalStateException(s"Hakukohteella $oid ei ole nimeä")),
+            tarjoajaNimi = getFirstNonBlank(h.tarjoajaNimet, List(lang, "fi", "sv", "en"))
+              .getOrElse(
+                throw new IllegalStateException(s"Hakukohteella $oid ei ole tarjoajan nimeä")
+              )
+          )
+      )
     })
   }
 }

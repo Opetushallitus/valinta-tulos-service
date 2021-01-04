@@ -20,7 +20,7 @@ class VtsOphUrlPropertiesTest extends Specification {
           urlprops.url(s.toString)
         })
       }
-      fn must not throwA[RuntimeException] "Evaluation failed, missing property"
+      fn must not throwA [RuntimeException] "Evaluation failed, missing property"
     }
   }
 }

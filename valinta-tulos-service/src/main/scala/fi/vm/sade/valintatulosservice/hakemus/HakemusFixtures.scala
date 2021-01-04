@@ -44,33 +44,49 @@ class HakemusFixtures(config: MongoConfig) {
     }
   }
 
-  private var builder:BulkWriteOperation = null
+  private var builder: BulkWriteOperation = null
 
   def startBulkOperationInsert() = {
     builder = db.underlying.getCollection("application").initializeUnorderedBulkOperation
   }
 
   def importTemplateFixture(hakemus: HakemusFixture) = {
-    val currentTemplateObject = MongoMockData.readJson("fixtures/hakemus/hakemus-template.json").asInstanceOf[BasicDBObject]
+    val currentTemplateObject =
+      MongoMockData.readJson("fixtures/hakemus/hakemus-template.json").asInstanceOf[BasicDBObject]
     currentTemplateObject.put("_id", new ObjectId())
     currentTemplateObject.put("oid", hakemus.hakemusOid.toString)
     currentTemplateObject.put("applicationSystemId", hakemus.hakuOid.toString)
     currentTemplateObject.put("personOid", hakemus.hakemusOid.toString)
-    val hakutoiveetDbObject = currentTemplateObject.get("answers").asInstanceOf[BasicDBObject].get("hakutoiveet").asInstanceOf[BasicDBObject]
+    val hakutoiveetDbObject = currentTemplateObject
+      .get("answers")
+      .asInstanceOf[BasicDBObject]
+      .get("hakutoiveet")
+      .asInstanceOf[BasicDBObject]
     val hakutoiveetMetaDbList = currentTemplateObject
-      .get("authorizationMeta").asInstanceOf[BasicDBObject]
-      .get("applicationPreferences").asInstanceOf[BasicDBList]
+      .get("authorizationMeta")
+      .asInstanceOf[BasicDBObject]
+      .get("applicationPreferences")
+      .asInstanceOf[BasicDBList]
 
     hakemus.hakutoiveet.foreach { hakutoive =>
-      hakutoiveetDbObject.put("preference" + hakutoive.index + "-Koulutus-id", hakutoive.hakukohdeOid.toString)
-      hakutoiveetDbObject.put("preference" + hakutoive.index + "-Opetuspiste-id", hakutoive.tarjoajaOid)
-      hakutoiveetMetaDbList.add(BasicDBObjectBuilder.start()
-        .add("ordinal", hakutoive.index)
-        .push("preferenceData")
-        .add("Koulutus-id", hakutoive.hakukohdeOid.toString)
-        .add("Opetuspiste-id", hakutoive.tarjoajaOid)
-        .pop()
-        .get())
+      hakutoiveetDbObject.put(
+        "preference" + hakutoive.index + "-Koulutus-id",
+        hakutoive.hakukohdeOid.toString
+      )
+      hakutoiveetDbObject.put(
+        "preference" + hakutoive.index + "-Opetuspiste-id",
+        hakutoive.tarjoajaOid
+      )
+      hakutoiveetMetaDbList.add(
+        BasicDBObjectBuilder
+          .start()
+          .add("ordinal", hakutoive.index)
+          .push("preferenceData")
+          .add("Koulutus-id", hakutoive.hakukohdeOid.toString)
+          .add("Opetuspiste-id", hakutoive.tarjoajaOid)
+          .pop()
+          .get()
+      )
     }
     builder.insert(currentTemplateObject)
   }
@@ -80,16 +96,24 @@ class HakemusFixtures(config: MongoConfig) {
     try {
       builder.execute(WriteConcern.UNACKNOWLEDGED)
     } catch {
-      case e:BulkWriteException => {
+      case e: BulkWriteException => {
         e.printStackTrace()
-        for(error <- e.getWriteErrors.asScala) println(error.getMessage)
+        for (error <- e.getWriteErrors.asScala) println(error.getMessage)
       }
     }
   }
 }
 
 object HakemusFixtures {
-  val defaultFixtures = List("00000878229", "00000441369", "00000441370", "00000441371", "00000878230", "00000878231", "00000878229-SE")
+  val defaultFixtures = List(
+    "00000878229",
+    "00000441369",
+    "00000441370",
+    "00000441371",
+    "00000878230",
+    "00000878231",
+    "00000878229-SE"
+  )
 
   def apply()(implicit appConfig: VtsAppConfig) = {
     new HakemusFixtures(appConfig.settings.hakemusMongoConfig)
@@ -103,16 +127,20 @@ object MongoMockData {
   import java.io.IOException
   import com.mongodb.util.JSON
 
-  def readJson(path:String):DBObject = {
+  def readJson(path: String): DBObject = {
     val writer = new StringWriter()
     try {
       IOUtils.copy(new ClassPathResource(path).getInputStream, writer)
     } catch {
-      case ioe:IOException => throw new RuntimeException(ioe)
+      case ioe: IOException => throw new RuntimeException(ioe)
     }
     JSON.parse(writer.toString()).asInstanceOf[DBObject]
   }
 }
 
-case class HakemusFixture(hakuOid: HakuOid, hakemusOid: HakemusOid, hakutoiveet: List[HakutoiveFixture])
+case class HakemusFixture(
+  hakuOid: HakuOid,
+  hakemusOid: HakemusOid,
+  hakutoiveet: List[HakutoiveFixture]
+)
 case class HakutoiveFixture(index: Int, tarjoajaOid: String, hakukohdeOid: HakukohdeOid)

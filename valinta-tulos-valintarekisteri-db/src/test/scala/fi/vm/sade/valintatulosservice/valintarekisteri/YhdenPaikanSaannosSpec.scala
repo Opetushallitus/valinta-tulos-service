@@ -4,7 +4,10 @@ import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde, YhdenPaikanSaanto}
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoRecord, VirkailijaVastaanottoRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{
+  VastaanottoRecord,
+  VirkailijaVastaanottoRepository
+}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.junit.runner.RunWith
 import org.specs2.matcher.MustThrownExpectations
@@ -100,13 +103,21 @@ class YhdenPaikanSaannosSpec extends Specification {
         )
         "and sitova vastaanotto exists" in new YhdenPaikanSaannosWithMocks {
           hakuService.getHakukohde(v.hakukohdeOid) returns Right(hakukohde)
-          virkailijaVastaanottoRepository.findYpsVastaanotot(kausi, Set(v.henkiloOid)) returns Set((hakemusOid, vastaanotonHakukohde, sitovaVastaanotto))
-          yhdenPaikanSaannos.apply(Set(v)) must beEqualTo(Right(Set(v.copy(vastaanottotila = ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN))))
+          virkailijaVastaanottoRepository.findYpsVastaanotot(kausi, Set(v.henkiloOid)) returns Set(
+            (hakemusOid, vastaanotonHakukohde, sitovaVastaanotto)
+          )
+          yhdenPaikanSaannos.apply(Set(v)) must beEqualTo(
+            Right(Set(v.copy(vastaanottotila = ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)))
+          )
         }
         "and ehdollinen vastaanotto for other hakemus exists" in new YhdenPaikanSaannosWithMocks {
           hakuService.getHakukohde(v.hakukohdeOid) returns Right(hakukohde)
-          virkailijaVastaanottoRepository.findYpsVastaanotot(kausi, Set(v.henkiloOid)) returns Set((otherHakemusOid, vastaanotonHakukohde, ehdollinenVastaanotto))
-          yhdenPaikanSaannos.apply(Set(v)) must beEqualTo(Right(Set(v.copy(vastaanottotila = ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN))))
+          virkailijaVastaanottoRepository.findYpsVastaanotot(kausi, Set(v.henkiloOid)) returns Set(
+            (otherHakemusOid, vastaanotonHakukohde, ehdollinenVastaanotto)
+          )
+          yhdenPaikanSaannos.apply(Set(v)) must beEqualTo(
+            Right(Set(v.copy(vastaanottotila = ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)))
+          )
         }
       }
       "if hyväksytty varasijalta, vastaanottamatta" in {
@@ -116,13 +127,21 @@ class YhdenPaikanSaannosSpec extends Specification {
         )
         "and sitova vastaanotto exists" in new YhdenPaikanSaannosWithMocks {
           hakuService.getHakukohde(v.hakukohdeOid) returns Right(hakukohde)
-          virkailijaVastaanottoRepository.findYpsVastaanotot(kausi, Set(v.henkiloOid)) returns Set((hakemusOid, vastaanotonHakukohde, sitovaVastaanotto))
-          yhdenPaikanSaannos.apply(Set(v)) must beEqualTo(Right(Set(v.copy(vastaanottotila = ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN))))
+          virkailijaVastaanottoRepository.findYpsVastaanotot(kausi, Set(v.henkiloOid)) returns Set(
+            (hakemusOid, vastaanotonHakukohde, sitovaVastaanotto)
+          )
+          yhdenPaikanSaannos.apply(Set(v)) must beEqualTo(
+            Right(Set(v.copy(vastaanottotila = ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)))
+          )
         }
         "and ehdollinen vastaanotto for other hakemus exists" in new YhdenPaikanSaannosWithMocks {
           hakuService.getHakukohde(v.hakukohdeOid) returns Right(hakukohde)
-          virkailijaVastaanottoRepository.findYpsVastaanotot(kausi, Set(v.henkiloOid)) returns Set((otherHakemusOid, vastaanotonHakukohde, ehdollinenVastaanotto))
-          yhdenPaikanSaannos.apply(Set(v)) must beEqualTo(Right(Set(v.copy(vastaanottotila = ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN))))
+          virkailijaVastaanottoRepository.findYpsVastaanotot(kausi, Set(v.henkiloOid)) returns Set(
+            (otherHakemusOid, vastaanotonHakukohde, ehdollinenVastaanotto)
+          )
+          yhdenPaikanSaannos.apply(Set(v)) must beEqualTo(
+            Right(Set(v.copy(vastaanottotila = ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)))
+          )
         }
       }
       "if varalla, vastaanottamatta" in {
@@ -132,13 +151,21 @@ class YhdenPaikanSaannosSpec extends Specification {
         )
         "and sitova vastaanotto exists" in new YhdenPaikanSaannosWithMocks {
           hakuService.getHakukohde(v.hakukohdeOid) returns Right(hakukohde)
-          virkailijaVastaanottoRepository.findYpsVastaanotot(kausi, Set(v.henkiloOid)) returns Set((hakemusOid, vastaanotonHakukohde, sitovaVastaanotto))
-          yhdenPaikanSaannos.apply(Set(v)) must beEqualTo(Right(Set(v.copy(vastaanottotila = ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN))))
+          virkailijaVastaanottoRepository.findYpsVastaanotot(kausi, Set(v.henkiloOid)) returns Set(
+            (hakemusOid, vastaanotonHakukohde, sitovaVastaanotto)
+          )
+          yhdenPaikanSaannos.apply(Set(v)) must beEqualTo(
+            Right(Set(v.copy(vastaanottotila = ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)))
+          )
         }
         "and ehdollinen vastaanotto for other hakemus exists" in new YhdenPaikanSaannosWithMocks {
           hakuService.getHakukohde(v.hakukohdeOid) returns Right(hakukohde)
-          virkailijaVastaanottoRepository.findYpsVastaanotot(kausi, Set(v.henkiloOid)) returns Set((otherHakemusOid, vastaanotonHakukohde, ehdollinenVastaanotto))
-          yhdenPaikanSaannos.apply(Set(v)) must beEqualTo(Right(Set(v.copy(vastaanottotila = ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN))))
+          virkailijaVastaanottoRepository.findYpsVastaanotot(kausi, Set(v.henkiloOid)) returns Set(
+            (otherHakemusOid, vastaanotonHakukohde, ehdollinenVastaanotto)
+          )
+          yhdenPaikanSaannos.apply(Set(v)) must beEqualTo(
+            Right(Set(v.copy(vastaanottotila = ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN)))
+          )
         }
       }
     }
@@ -165,7 +192,9 @@ class YhdenPaikanSaannosSpec extends Specification {
         vastaanottotila = ValintatuloksenTila.KESKEN
       )
       hakuService.getHakukohde(v.hakukohdeOid) returns Right(hakukohde)
-      virkailijaVastaanottoRepository.findYpsVastaanotot(kausi, Set(v.henkiloOid)) returns Set((v.hakemusOid, vastaanotonHakukohde, ehdollinenVastaanotto))
+      virkailijaVastaanottoRepository.findYpsVastaanotot(kausi, Set(v.henkiloOid)) returns Set(
+        (v.hakemusOid, vastaanotonHakukohde, ehdollinenVastaanotto)
+      )
       yhdenPaikanSaannos.apply(Set(v)) must beEqualTo(Right(Set(v)))
     }
   }

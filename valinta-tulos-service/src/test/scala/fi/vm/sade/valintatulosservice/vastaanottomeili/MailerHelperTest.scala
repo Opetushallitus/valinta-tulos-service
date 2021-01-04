@@ -16,7 +16,9 @@ class MailerHelperTest extends Specification {
   "MailerHelper" should {
     "survive corner cases" in {
       helper.splitAndGroupIlmoitus(List.empty).size shouldEqual 0
-      helper.splitAndGroupIlmoitus(List(getDummyIlmoitus(List()))) must throwA(new IllegalArgumentException("Empty hakukohdelist in hakemus null"))
+      helper.splitAndGroupIlmoitus(List(getDummyIlmoitus(List()))) must throwA(
+        new IllegalArgumentException("Empty hakukohdelist in hakemus null")
+      )
     }
 
     "not split one simple ilmoitus" in {
@@ -60,9 +62,17 @@ class MailerHelperTest extends Specification {
   }
 
   def getDummyIlmoitus(hakukohteidenLahetysSyyt: List[LahetysSyy]): Ilmoitus = {
-    vastaanottomeili.Ilmoitus(null, null, None, FI, null, null, null,
+    vastaanottomeili.Ilmoitus(
+      null,
+      null,
+      None,
+      FI,
+      null,
+      null,
+      null,
       hakukohteidenLahetysSyyt.map(Hakukohde(null, _, null, true, Map.empty, Map.empty)),
-      null)
+      null
+    )
   }
 
 }

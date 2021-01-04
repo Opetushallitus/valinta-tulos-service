@@ -15,21 +15,27 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriD
 
 import scala.util.{Failure, Success, Try}
 
-class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, cronExpression: String) extends Logging {
+class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, cronExpression: String)
+    extends Logging {
   logger.info("***** VT-emailer initializing *****")
-  logger.info(s"Using settings: " +
-    s"${registry.settings.withOverride("ryhmasahkoposti.cas.password", "***" )(EmailerConfigParser())}")
+  logger.info(
+    s"Using settings: " +
+      s"${registry.settings.withOverride("ryhmasahkoposti.cas.password", "***")(EmailerConfigParser())}"
+  )
 
   private val executionHandler: VoidExecutionHandler[Void] = new VoidExecutionHandler[Void] {
     logger.info("Scheduled task execution handler setup")
 
-    override def execute(taskInstance: TaskInstance[Void], executionContext: ExecutionContext): Unit = {
+    override def execute(
+      taskInstance: TaskInstance[Void],
+      executionContext: ExecutionContext
+    ): Unit = {
       logger.info("Scheduled VT-emailer run starting")
       runMailerQuery(AllQuery) match {
         case Success(ids) =>
           logger.info(s"Scheduled VT-emailer run was successful")
         case Failure(e) =>
-          logger.error(s"Scheduled VT-emailer run failed: " , e)
+          logger.error(s"Scheduled VT-emailer run failed: ", e)
       }
       logger.info("Scheduled VT-emailer post-run cleanup")
       cleanup()
@@ -39,7 +45,10 @@ class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, cronExpr
 
   class DeadExecutionRescheduler(schedule: Schedule) extends DeadExecutionHandler[Void] {
     logger.info(s"Dead execution handler setup for schedule $schedule")
-    override def deadExecution(execution: Execution, executionOperations: ExecutionOperations[Void]): Unit = {
+    override def deadExecution(
+      execution: Execution,
+      executionOperations: ExecutionOperations[Void]
+    ): Unit = {
       val now = Instant.now
       val complete = ExecutionComplete.failure(execution, now, now, null)
       val next: Instant = schedule.getNextExecutionTime(complete)
@@ -51,14 +60,16 @@ class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, cronExpr
   private val cronSchedule: Schedule = new CronSchedule(cronExpression)
   private val deadExecutionRescheduler = new DeadExecutionRescheduler(cronSchedule)
 
-  private val cronTask = Tasks.recurring(s"cron-emailer-task", cronSchedule)
+  private val cronTask = Tasks
+    .recurring(s"cron-emailer-task", cronSchedule)
     .onDeadExecution(deadExecutionRescheduler)
     .execute(executionHandler)
 
   logger.info("Scheduled emailer task for cron expression: " + cronExpression)
 
   private val numberOfThreads: Int = 1
-  private val scheduler: Scheduler = Scheduler.create(db.dataSource).startTasks(cronTask).threads(numberOfThreads).build
+  private val scheduler: Scheduler =
+    Scheduler.create(db.dataSource).startTasks(cronTask).threads(numberOfThreads).build
 
   scheduler.start()
 
@@ -72,12 +83,12 @@ class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, cronExpr
         logger.info(s"Nothing was sent for $targetName. More info in logs.")
       }
       ids
-    }).recoverWith { case t =>
-      logger.error(s"Emailer query $query failed", t)
-      Failure(t)
+    }).recoverWith {
+      case t =>
+        logger.error(s"Emailer query $query failed", t)
+        Failure(t)
     }
   }
-
 
   private def cleanup(): Unit = {
     try {

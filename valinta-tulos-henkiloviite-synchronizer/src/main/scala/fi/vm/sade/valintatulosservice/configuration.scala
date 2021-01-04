@@ -14,13 +14,15 @@ case class AuthenticationConfiguration(url: Uri, cas: CasConfiguration)
 case class CasConfiguration(user: String, password: String, host: String)
 case class SchedulerConfiguration(startHour: Option[Long], intervalHours: Option[Long])
 case class Buildversion(version: String, branch: String, commit: String, timestamp: String)
-case class Configuration(port: Int,
-                         idleTimeoutSeconds: Long,
-                         accessLogConfigPath: String,
-                         buildversion: Buildversion,
-                         db: DbConfiguration,
-                         authentication: AuthenticationConfiguration,
-                         scheduler: SchedulerConfiguration)
+case class Configuration(
+  port: Int,
+  idleTimeoutSeconds: Long,
+  accessLogConfigPath: String,
+  buildversion: Buildversion,
+  db: DbConfiguration,
+  authentication: AuthenticationConfiguration,
+  scheduler: SchedulerConfiguration
+)
 
 object Configuration {
   def read(): Configuration = {
@@ -85,7 +87,8 @@ object Configuration {
   }
 
   private def getString(properties: Properties, key: String): String = {
-    Option(properties.getProperty(key)).getOrElse(throw new IllegalArgumentException(s"Configuration $key is missing"))
+    Option(properties.getProperty(key))
+      .getOrElse(throw new IllegalArgumentException(s"Configuration $key is missing"))
   }
 
   private def getDate(properties: Properties, key: String): Date = {
@@ -96,19 +99,25 @@ object Configuration {
 
   private def getUri(properties: Properties, key: String): Uri = {
     val uriString = getString(properties, key)
-    Uri.fromString(uriString).toOption
+    Uri
+      .fromString(uriString)
+      .toOption
       .getOrElse(throw new RuntimeException(s"Invalid URI $uriString in configuration $key"))
   }
 
   private def getInt(properties: Properties, key: String): Int = {
     val intString = getString(properties, key)
     Try(intString.toInt)
-      .getOrElse(throw new IllegalArgumentException(s"Invalid int $intString in configuration $key"))
+      .getOrElse(
+        throw new IllegalArgumentException(s"Invalid int $intString in configuration $key")
+      )
   }
 
   private def getLong(properties: Properties, key: String): Long = {
     val longString = getString(properties, key)
     Try(longString.toLong)
-      .getOrElse(throw new IllegalArgumentException(s"Invalid long $longString in configuration $key"))
+      .getOrElse(
+        throw new IllegalArgumentException(s"Invalid long $longString in configuration $key")
+      )
   }
 }

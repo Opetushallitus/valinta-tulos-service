@@ -29,21 +29,37 @@ class HenkiloviiteClient(configuration: AuthenticationConfiguration) {
     val request = Request(
       method = Method.POST,
       uri = resourceUrl
-    ).withBody("{}")(EntityEncoder.stringEncoder(Charset.`UTF-8`).withContentType(`Content-Type`(MediaType.`application/json`)))
+    ).withBody("{}")(
+      EntityEncoder
+        .stringEncoder(Charset.`UTF-8`)
+        .withContentType(`Content-Type`(MediaType.`application/json`))
+    )
 
-    client.fetch(request) {
-      case Successful(response) => response.as[Array[Henkiloviite]](HenkiloviiteClient.henkiloviiteDecoder).map(_.toList)
-      case response => Task.fail(new RuntimeException(s"Request $request failed with response $response"))
-    }.attemptRunFor(Duration(1, TimeUnit.MINUTES)) match {
+    client
+      .fetch(request) {
+        case Successful(response) =>
+          response.as[Array[Henkiloviite]](HenkiloviiteClient.henkiloviiteDecoder).map(_.toList)
+        case response =>
+          Task.fail(new RuntimeException(s"Request $request failed with response $response"))
+      }
+      .attemptRunFor(Duration(1, TimeUnit.MINUTES)) match {
       case \/-(results) => Success(results)
-      case -\/(e) => Failure(e)
+      case -\/(e)       => Failure(e)
     }
   }
 
   private def createCasClient(): Client = {
-    val casParams = CasParams("/oppijanumerorekisteri-service", configuration.cas.user, configuration.cas.password)
+    val casParams = CasParams(
+      "/oppijanumerorekisteri-service",
+      configuration.cas.user,
+      configuration.cas.password
+    )
     CasAuthenticatingClient(
-      casClient = new CasClient(configuration.cas.host, org.http4s.client.blaze.defaultClient, "1.2.246.562.24.00000000001.valinta-tulos-henkiloviite-synchronizer"),
+      casClient = new CasClient(
+        configuration.cas.host,
+        org.http4s.client.blaze.defaultClient,
+        "1.2.246.562.24.00000000001.valinta-tulos-henkiloviite-synchronizer"
+      ),
       casParams = casParams,
       serviceClient = org.http4s.client.blaze.defaultClient,
       clientCallerId = callerId,

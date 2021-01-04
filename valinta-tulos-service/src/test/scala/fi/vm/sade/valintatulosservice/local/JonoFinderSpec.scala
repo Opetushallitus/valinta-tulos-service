@@ -12,7 +12,6 @@ import scala.collection.JavaConversions._
 @RunWith(classOf[JUnitRunner])
 class JonoFinderSpec extends Specification {
 
-
   "JonoFinder" should {
 
     "handle case no 'jonos'" in {
@@ -58,9 +57,11 @@ class JonoFinderSpec extends Specification {
     }
   }
 
-  private def jonoWithTila(tila: HakemuksenTila,
-                           varasijaNumero: Option[Integer],
-                           prioriteetti: Int = 0): HakutoiveenValintatapajonoDTO = {
+  private def jonoWithTila(
+    tila: HakemuksenTila,
+    varasijaNumero: Option[Integer],
+    prioriteetti: Int = 0
+  ): HakutoiveenValintatapajonoDTO = {
 
     val jono = new HakutoiveenValintatapajonoDTO()
     jono.setTila(tila)

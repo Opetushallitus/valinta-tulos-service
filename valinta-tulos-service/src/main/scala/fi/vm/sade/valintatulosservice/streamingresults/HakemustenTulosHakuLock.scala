@@ -6,7 +6,11 @@ import java.util.concurrent.{Semaphore, TimeUnit}
 
 import fi.vm.sade.utils.slf4j.Logging
 
-class HakemustenTulosHakuLock(queueLimit: Int, lockDuration: Int, lockDurationTimeUnit: TimeUnit = SECONDS) extends Logging {
+class HakemustenTulosHakuLock(
+  queueLimit: Int,
+  lockDuration: Int,
+  lockDurationTimeUnit: TimeUnit = SECONDS
+) extends Logging {
   private val lockQueue: Semaphore = new Semaphore(queueLimit + 1)
   private val loadingLock: ReentrantLock = new ReentrantLock(true)
 
@@ -20,14 +24,18 @@ class HakemustenTulosHakuLock(queueLimit: Int, lockDuration: Int, lockDurationTi
             loadingLock.unlock()
           }
         } else {
-          Left(s"Acquiring lock timed out after $lockDuration" +
-            s" ${lockDurationTimeUnit.toString.toLowerCase}: No available capacity for this request, please try again later")
+          Left(
+            s"Acquiring lock timed out after $lockDuration" +
+              s" ${lockDurationTimeUnit.toString.toLowerCase}: No available capacity for this request, please try again later"
+          )
         }
       } finally {
         lockQueue.release()
       }
     } else {
-      Left(s"Results loading queue of size $queueLimit full: No available capacity for this request, please try again later")
+      Left(
+        s"Results loading queue of size $queueLimit full: No available capacity for this request, please try again later"
+      )
     }
   }
 }

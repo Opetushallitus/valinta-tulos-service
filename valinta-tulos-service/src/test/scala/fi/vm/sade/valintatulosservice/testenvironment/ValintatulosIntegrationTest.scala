@@ -23,14 +23,24 @@ class ValintatulosIntegrationTest extends ITSpecification {
       val varsFile = "ENVIRONMENT OPHITEST PATH HERE/deploy/ophitest_vars.yml"
       if (new File(varsFile).exists()) {
         implicit val appConfig = new VtsAppConfig.LocalTestingWithTemplatedVars(varsFile)
-        val casClient = new CasClient(appConfig.ophUrlProperties.url(""), org.http4s.client.blaze.defaultClient, "vts-test-caller-id")
-        val hakuService = HakuService(appConfig, casClient, OrganisaatioService(appConfig), new KoodistoService(appConfig))
+        val casClient = new CasClient(
+          appConfig.ophUrlProperties.url(""),
+          org.http4s.client.blaze.defaultClient,
+          "vts-test-caller-id"
+        )
+        val hakuService = HakuService(
+          appConfig,
+          casClient,
+          OrganisaatioService(appConfig),
+          new KoodistoService(appConfig)
+        )
         //lazy val sijoitteluContext = new SijoitteluSpringContext(appConfig, SijoitteluSpringContext.createApplicationContext(appConfig))
         /*val sijoittelutulosService = new SijoittelutulosService(sijoitteluContext.raportointiService, appConfig.ohjausparametritService, null,
           SijoittelunTulosRestClient(sijoitteluContext, appConfig))
         val valintatulosService = new ValintatulosService(null, sijoittelutulosService, null, hakuService, null, null, null, new StreamingHakijaDtoClient(appConfig))*/
 
-        val tulos: Hakemuksentulos = null//valintatulosService.hakemuksentulos(HakemusOid("1.2.246.562.11.00000000330")).get
+        val tulos: Hakemuksentulos =
+          null //valintatulosService.hakemuksentulos(HakemusOid("1.2.246.562.11.00000000330")).get
 
         tulos.hakutoiveet.length must_== 2
       } else {

@@ -17,28 +17,49 @@ import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class LukuvuosimaksuServletSpec extends ServletSpecification with ValintarekisteriDbTools {
-  override implicit val formats: Formats = DefaultFormats ++ List(new TasasijasaantoSerializer, new ValinnantilaSerializer,
-    new DateSerializer, new TilankuvauksenTarkenneSerializer, new IlmoittautumistilaSerializer, new VastaanottoActionSerializer, new ValintatuloksenTilaSerializer,
-    new EnumNameSerializer(Maksuntila), new HakukohdeOidSerializer)
+  override implicit val formats: Formats = DefaultFormats ++ List(
+    new TasasijasaantoSerializer,
+    new ValinnantilaSerializer,
+    new DateSerializer,
+    new TilankuvauksenTarkenneSerializer,
+    new IlmoittautumistilaSerializer,
+    new VastaanottoActionSerializer,
+    new ValintatuloksenTilaSerializer,
+    new EnumNameSerializer(Maksuntila),
+    new HakukohdeOidSerializer
+  )
 
-  val organisaatioService: ClientAndServer = ClientAndServer.startClientAndServer(VtsAppConfig.organisaatioMockPort)
-  organisaatioService.when(new HttpRequest().withPath(
-    s"/organisaatio-service/rest/organisaatio/123.123.123.123/parentoids"
-  )).respond(new HttpResponse().withStatusCode(200)
-    .withBody("1.2.246.562.10.00000000001/1.2.246.562.10.39804091914/123.123.123.123"))
+  val organisaatioService: ClientAndServer =
+    ClientAndServer.startClientAndServer(VtsAppConfig.organisaatioMockPort)
+  organisaatioService
+    .when(
+      new HttpRequest().withPath(
+        s"/organisaatio-service/rest/organisaatio/123.123.123.123/parentoids"
+      )
+    )
+    .respond(
+      new HttpResponse()
+        .withStatusCode(200)
+        .withBody("1.2.246.562.10.00000000001/1.2.246.562.10.39804091914/123.123.123.123")
+    )
 
   lazy val vapautettu = LukuvuosimaksuMuutos("1.2.3.personOid", Maksuntila.vapautettu)
   lazy val maksettu = LukuvuosimaksuMuutos("1.2.3.personOid", Maksuntila.maksettu)
   lazy val testSession = createTestSession()
-  lazy val auditSession: AuditSessionRequest = AuditSessionRequest("1.2.3.4", List(), "userAgent", "localhost")
-
+  lazy val auditSession: AuditSessionRequest =
+    AuditSessionRequest("1.2.3.4", List(), "userAgent", "localhost")
 
   private val httpHeaders: Map[String, String] = Map("Content-type" -> "application/json")
-  private lazy val httpHeadersWithSession: Map[String, String] = Map("Cookie" -> s"session=${testSession}", "Content-type" -> "application/json")
+  private lazy val httpHeadersWithSession: Map[String, String] =
+    Map("Cookie" -> s"session=${testSession}", "Content-type" -> "application/json")
 
   "Lukuvuosimaksu API without CAS should work" should {
     "palauttaa 204 when POST with 'auditInfo'" in {
-      post(s"lukuvuosimaksu/write/1.2.3.200", muutosAsJsonWithAuditSession(vapautettu), httpHeaders) {
+      post(
+        s"lukuvuosimaksu/write/1.2.3.200",
+        muutosAsJsonWithAuditSession(vapautettu),
+        httpHeaders
+      ) {
         status must_== 204
       }
     }
@@ -49,10 +70,23 @@ class LukuvuosimaksuServletSpec extends ServletSpecification with Valintarekiste
     }
     "find lukuvuosimaksut by several hakukohde oids" in {
       val maksettavaKohde = HakukohdeOid("1.2.3.200")
-      post(s"lukuvuosimaksu/write/${maksettavaKohde.s}", muutosAsJsonWithAuditSession(maksettu), httpHeaders) {
+      post(
+        s"lukuvuosimaksu/write/${maksettavaKohde.s}",
+        muutosAsJsonWithAuditSession(maksettu),
+        httpHeaders
+      ) {
         status must_== 204
       }
-      post("lukuvuosimaksu/read", serialiseToJson(LukuvuosimaksuBulkReadRequest(List(maksettavaKohde, HakukohdeOid("1.2.3.300")), auditSession)), httpHeaders) {
+      post(
+        "lukuvuosimaksu/read",
+        serialiseToJson(
+          LukuvuosimaksuBulkReadRequest(
+            List(maksettavaKohde, HakukohdeOid("1.2.3.300")),
+            auditSession
+          )
+        ),
+        httpHeaders
+      ) {
         val maksut = JsonParser.parse(body).extract[Seq[Lukuvuosimaksu]]
         maksut must have size 1
         val maksu = maksut.head
@@ -60,7 +94,7 @@ class LukuvuosimaksuServletSpec extends ServletSpecification with Valintarekiste
         maksu.maksuntila must_== maksettu.maksuntila
         maksu.hakukohdeOid must_== maksettavaKohde
         maksu.muokkaaja must_== auditSession.personOid
-        maksu.luotu.getTime must be_< (System.currentTimeMillis() + (60 * 1000))
+        maksu.luotu.getTime must be_<(System.currentTimeMillis() + (60 * 1000))
         status must_== 200
       }
     }

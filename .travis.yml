@@ -37,7 +37,7 @@ before_script:
 - psql -d $DB_NAME -f valinta-tulos-valintarekisteri-db/postgresql/init_it_postgresql.sql
 
 script:
-- mvn -B -Dvalintatulos.it.postgres.port=5432 -Dvalintatulos.it.postgres.alreadyrunning=true clean package
+- mvn -B -Dvalintatulos.it.postgres.port=5432 -Dvalintatulos.it.postgres.alreadyrunning=true clean spotless:check package
 
 - export BASE_IMAGE="baseimage-war-openjdk8:master"
 - ./ci-tools/common/pull-image.sh

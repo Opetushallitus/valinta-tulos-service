@@ -17,12 +17,14 @@ import org.json4s.JsonDSL._
 import scala.concurrent.duration.Duration
 import scalaz.concurrent.Task
 
-case class AtaruHakemus(oid: HakemusOid,
-                        hakuOid: HakuOid,
-                        hakukohdeOids: List[HakukohdeOid],
-                        henkiloOid: HakijaOid,
-                        asiointikieli: String,
-                        email: String)
+case class AtaruHakemus(
+  oid: HakemusOid,
+  hakuOid: HakuOid,
+  hakukohdeOids: List[HakukohdeOid],
+  henkiloOid: HakijaOid,
+  asiointikieli: String,
+  email: String
+)
 
 case class AtaruResponse(applications: List[AtaruHakemus], offset: Option[String])
 
@@ -34,19 +36,28 @@ sealed trait HakemuksetQuery {
 case class WithHakuOid(hakuOid: HakuOid, offset: Option[String]) extends HakemuksetQuery {
   override val postData: JObject = ("hakuOid" -> hakuOid.s) ~ offset.fold(JObject())("offset" -> _)
 
-  override def withOffset(newOffset: Option[String]): HakemuksetQuery = this.copy(offset = newOffset)
+  override def withOffset(newOffset: Option[String]): HakemuksetQuery =
+    this.copy(offset = newOffset)
 }
 
-case class WithHakukohdeOid(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid, offset: Option[String]) extends HakemuksetQuery {
-  override val postData: JObject = ("hakuOid" -> hakuOid.s) ~ ("hakukohdeOid" -> hakukohdeOid.s) ~ offset.fold(JObject())("offset" -> _)
+case class WithHakukohdeOid(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid, offset: Option[String])
+    extends HakemuksetQuery {
+  override val postData: JObject =
+    ("hakuOid" -> hakuOid.s) ~ ("hakukohdeOid" -> hakukohdeOid.s) ~ offset.fold(JObject())(
+      "offset" -> _
+    )
 
-  override def withOffset(newOffset: Option[String]): HakemuksetQuery = this.copy(offset = newOffset)
+  override def withOffset(newOffset: Option[String]): HakemuksetQuery =
+    this.copy(offset = newOffset)
 }
 
-case class WithHakemusOids(hakemusOids: List[HakemusOid], offset: Option[String]) extends HakemuksetQuery {
-  override val postData: JObject = ("hakemusOids" -> hakemusOids.map(_.s)) ~ offset.fold(JObject())("offset" -> _)
+case class WithHakemusOids(hakemusOids: List[HakemusOid], offset: Option[String])
+    extends HakemuksetQuery {
+  override val postData: JObject =
+    ("hakemusOids" -> hakemusOids.map(_.s)) ~ offset.fold(JObject())("offset" -> _)
 
-  override def withOffset(newOffset: Option[String]): HakemuksetQuery = this.copy(offset = newOffset)
+  override def withOffset(newOffset: Option[String]): HakemuksetQuery =
+    this.copy(offset = newOffset)
 }
 
 class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats {
@@ -68,14 +79,33 @@ class AtaruHakemusRepository(config: VtsAppConfig) extends JsonFormats {
   )
 
   def getHakemukset(query: HakemuksetQuery): Either[Throwable, AtaruResponse] = {
-    Uri.fromString(config.ophUrlProperties.url("ataru-service.applications"))
-      .fold(Task.fail, uri => {
-        client.fetch(Request(method = POST, uri = uri).withBody(query.postData)(jsonEncoder[JObject])) {
-          case r if r.status.code == 200 => r.as[AtaruResponse](jsonExtract[AtaruResponse])
-            .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing hakemukset for $query failed", t)) }
-          case r => r.bodyAsText.runLast
-            .flatMap(body => Task.fail(new RuntimeException(s"Failed to get hakemus for query $query: ${body.getOrElse("Failed to parse body")}")))
+    Uri
+      .fromString(config.ophUrlProperties.url("ataru-service.applications"))
+      .fold(
+        Task.fail,
+        uri => {
+          client.fetch(
+            Request(method = POST, uri = uri).withBody(query.postData)(jsonEncoder[JObject])
+          ) {
+            case r if r.status.code == 200 =>
+              r.as[AtaruResponse](jsonExtract[AtaruResponse])
+                .handleWith {
+                  case t =>
+                    Task.fail(new IllegalStateException(s"Parsing hakemukset for $query failed", t))
+                }
+            case r =>
+              r.bodyAsText.runLast
+                .flatMap(body =>
+                  Task.fail(
+                    new RuntimeException(
+                      s"Failed to get hakemus for query $query: ${body.getOrElse("Failed to parse body")}"
+                    )
+                  )
+                )
+          }
         }
-      }).attemptRunFor(Duration(1, TimeUnit.MINUTES)).toEither
+      )
+      .attemptRunFor(Duration(1, TimeUnit.MINUTES))
+      .toEither
   }
 }
