@@ -10,7 +10,6 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.{
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.dbio.DBIO
 
-import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class YhdenPaikanSaannos(
@@ -84,38 +83,36 @@ class YhdenPaikanSaannos(
       .map(_.flatten.toSet)
   }
 
-  def getYpsTuloksetForManyHakemukses(tuloksetJaHakukohteet: Set[(Valinnantulos, Hakukohde)]): Either[Throwable, Set[Valinnantulos]] = {
-    val byKausi = tuloksetJaHakukohteet.groupBy(t => t._2.koulutuksenAlkamiskausi)
-    MonadHelper.sequence(
-      byKausi.map((kth: (Option[Kausi], Set[(Valinnantulos, Hakukohde)])) =>
-        kth._1 match {
-          case None =>
-            Left(new IllegalStateException(s"Yhden paikan säännön piirissä olevissa hakukohteissa ${kth._2.map(hk => hk._2.oid)} ei ole koulutuksen alkamiskautta."))
-          case Some(kausi) =>
-            val vastaanotot = virkailijaVastaanottoRepository
-              .findYpsVastaanotot(kausi, kth._2.map(_._1.henkiloOid))
-              .map(t => t._3.henkiloOid -> t).toMap
-            Right(kth._2.map(v => ottanutVastaanToisenPaikan(v._1, vastaanotot.get(v._1.henkiloOid))))
-        })
-    ).right.map(_.flatten.toSet)
-  }
-
-  private def ottanutVastaanToisenPaikan(hakukohdeOid: HakukohdeOid,
-                                         valinnantulokset: Set[Valinnantulos]): Either[Throwable, Set[Valinnantulos]] = {
-    hakuService.getHakukohde(hakukohdeOid).right.flatMap(hakukohde => {
-      if (hakukohde.yhdenPaikanSaanto.voimassa) {
-        hakukohde.koulutuksenAlkamiskausi match {
-          case None =>
-            Left(new IllegalStateException(s"Yhden paikan säännön piirissä olevassa hakukohteessa ${hakukohde.oid} ei ole koulutuksen alkamiskautta."))
-          case Some(kausi) =>
-            val vastaanotot = virkailijaVastaanottoRepository.findYpsVastaanotot(kausi, valinnantulokset.map(_.henkiloOid))
-              .map(t => t._3.henkiloOid -> t).toMap
-            Right(valinnantulokset.map(v => ottanutVastaanToisenPaikan(v, vastaanotot.get(v.henkiloOid))))
+  private def ottanutVastaanToisenPaikan(
+    hakukohdeOid: HakukohdeOid,
+    valinnantulokset: Set[Valinnantulos]
+  ): Either[Throwable, Set[Valinnantulos]] = {
+    hakuService
+      .getHakukohde(hakukohdeOid)
+      .right
+      .flatMap(hakukohde => {
+        if (hakukohde.yhdenPaikanSaanto.voimassa) {
+          hakukohde.koulutuksenAlkamiskausi match {
+            case None =>
+              Left(
+                new IllegalStateException(
+                  s"Yhden paikan säännön piirissä olevassa hakukohteessa ${hakukohde.oid} ei ole koulutuksen alkamiskautta."
+                )
+              )
+            case Some(kausi) =>
+              val vastaanotot = virkailijaVastaanottoRepository
+                .findYpsVastaanotot(kausi, valinnantulokset.map(_.henkiloOid))
+                .map(t => t._3.henkiloOid -> t)
+                .toMap
+              Right(
+                valinnantulokset
+                  .map(v => ottanutVastaanToisenPaikan(v, vastaanotot.get(v.henkiloOid)))
+              )
+          }
+        } else {
+          Right(valinnantulokset)
         }
-      } else {
-        Right(valinnantulokset)
-      }
-    })
+      })
   }
 
   private def ottanutVastaanToisenPaikan(
