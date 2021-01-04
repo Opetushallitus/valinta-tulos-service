@@ -206,50 +206,35 @@ class ValinnantulosService(
     haku: Haku,
     hakukohdeOid: HakukohdeOid
   ): Either[Throwable, Boolean] = {
-    valintaPerusteetService.getKaytetaanValintalaskentaaFromValintatapajono(
-      valintatapajonoOid,
-      haku,
-      hakukohdeOid
-    ) match {
-      case Right(isKayttaaValintalaskentaa) => {
-        logger.info(
-          s"""Valintatapajonotietojen haku valintaperusteista onnistui valintatapajonolle: ${valintatapajonoOid}, haku: ${haku.oid}, hakukohde: $hakukohdeOid"""
-        )
-        if (haku.käyttääSijoittelua || isKayttaaValintalaskentaa) {
-          logger.info(
-            s"""Haku: ${haku.oid}, hakukohde: $hakukohdeOid EI OLE erillishaku, koska haku.kayttaaSijoittelua: ${haku.käyttääSijoittelua} ja valintatapajono $valintatapajonoOid.kayttaaValintalaskentaa: $isKayttaaValintalaskentaa"""
-          )
-          Right(false)
-        } else {
-          logger.info(
-            s"""Haku: ${haku.oid}, hakukohde: $hakukohdeOid ON erillishaku, koska haku.kayttaaSijoittelua: ${haku.käyttääSijoittelua} ja valintatapajono $valintatapajonoOid.kayttaaValintalaskentaa: $isKayttaaValintalaskentaa"""
-          )
-          Right(true)
-        }
-      }
-      case Left(e) => {
-        e match {
-          case e: NotFoundException => {
-            logger.info(
-              s"""Valintatapajonoa: ${valintatapajonoOid} ei löytynyt valintaperusteet-servicestä."""
-            )
-          }
-          case _ => {
-            logger.error(
-              s"""Valintatapajonotietojen haku valintaperusteista epäonnistui valintatapajonolle: ${valintatapajonoOid}, haku: ${haku.oid}, hakukohde: $hakukohdeOid""",
-              e
-            )
+    if (haku.käyttääSijoittelua) {
+      Right(false)
+    } else {
+      valintaPerusteetService.getKaytetaanValintalaskentaaFromValintatapajono(
+        valintatapajonoOid,
+        haku,
+        hakukohdeOid
+      ) match {
+        case Right(isKayttaaValintalaskentaa) => {
+          if (isKayttaaValintalaskentaa) {
+            Right(false)
+          } else {
+            Right(true)
           }
         }
-        if (haku.käyttääSijoittelua) {
-          logger.info(
-            s"""Haku: ${haku.oid}, hakukohde: $hakukohdeOid EI OLE erillishaku, koska haku.kayttaaSijoittelua: ${haku.käyttääSijoittelua}. Valintatapajonotietojen haku epäonnistui."""
-          )
-          Right(false)
-        } else {
-          logger.info(
-            s"""Haku: ${haku.oid}, hakukohde: $hakukohdeOid ON erillishaku, koska haku.kayttaaSijoittelua: ${haku.käyttääSijoittelua}. Valintatapajonotietojen haku epäonnistui."""
-          )
+        case Left(e) => {
+          e match {
+            case e: NotFoundException => {
+              logger.info(
+                s"""Valintatapajonoa: ${valintatapajonoOid} ei löytynyt valintaperusteet-servicestä."""
+              )
+            }
+            case _ => {
+              logger.error(
+                s"""Valintatapajonotietojen haku valintaperusteista epäonnistui valintatapajonolle: ${valintatapajonoOid}, haku: ${haku.oid}, hakukohde: $hakukohdeOid""",
+                e
+              )
+            }
+          }
           Right(true)
         }
       }
