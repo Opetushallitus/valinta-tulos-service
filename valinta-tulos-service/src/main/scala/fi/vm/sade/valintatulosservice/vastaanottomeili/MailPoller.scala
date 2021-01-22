@@ -139,7 +139,12 @@ class MailPoller(
   ): PollResult = {
     val mailables: List[Ilmoitus] = {
       val candidates = mailPollerRepository.candidate(hakemusOid)
-      val hakemus = hakemusRepository.findHakemus(hakemusOid).right.get
+      val hakemus = hakemusRepository.findHakemus(hakemusOid) match {
+        case Right(hakemus) => hakemus
+        case Left(e) =>
+          logger.error(s"Couldn't fetch application $hakemusOid for mailing!", e)
+          throw e
+      }
       val hakemuksetByOid = Map(hakemusOid -> hakemus)
       val hakutoiveCheckedCountsAndMailables: List[(Int, List[Ilmoitus])] = hakemus.toiveet.map {
         hakutoive =>
