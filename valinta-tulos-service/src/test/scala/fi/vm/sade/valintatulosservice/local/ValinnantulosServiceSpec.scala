@@ -9,8 +9,7 @@ import fi.vm.sade.security.{AuthorizationFailedException, OrganizationHierarchyA
 import fi.vm.sade.sijoittelu.domain.{EhdollisenHyvaksymisenEhtoKoodi, ValintatuloksenTila}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
-import fi.vm.sade.valintatulosservice.domain.Vastaanottoaikataulu
-import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
+import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService, Vastaanottoaikataulu}
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
@@ -427,7 +426,6 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       käyttääHakutoiveidenPriorisointia = true,
       varsinaisenHaunOid = null,
       sisältyvätHaut = null,
-      hakuAjat = null,
       koulutuksenAlkamiskausi = null,
       yhdenPaikanSaanto = null,
       nimi = null))
@@ -456,7 +454,6 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       käyttääHakutoiveidenPriorisointia = true,
       varsinaisenHaunOid = null,
       sisältyvätHaut = null,
-      hakuAjat = null,
       koulutuksenAlkamiskausi = null,
       yhdenPaikanSaanto = null,
       nimi = null))
@@ -485,7 +482,6 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       käyttääHakutoiveidenPriorisointia = true,
       varsinaisenHaunOid = null,
       sisältyvätHaut = null,
-      hakuAjat = null,
       koulutuksenAlkamiskausi = null,
       yhdenPaikanSaanto = null,
       nimi = null))
@@ -500,7 +496,9 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       None,
       None,
       Some(DateTime.now().plusDays(2)),
-      true
+      true,
+      false,
+      false
     ))
   }
 
@@ -513,7 +511,9 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       None,
       None,
       Some(DateTime.now().minusDays(2)),
-      true
+      true,
+      false,
+      false
     ))
   }
 
@@ -526,7 +526,9 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       None,
       None,
       None,
-      true
+      true,
+      false,
+      false
     ))
   }
 }

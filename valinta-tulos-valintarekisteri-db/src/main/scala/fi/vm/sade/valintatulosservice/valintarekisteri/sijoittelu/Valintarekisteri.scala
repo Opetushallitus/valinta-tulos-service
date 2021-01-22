@@ -5,8 +5,9 @@ import java.util
 import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatulos}
 import fi.vm.sade.utils.cas.CasClient
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.config.ValintarekisteriAppConfig
+import fi.vm.sade.valintatulosservice.config.{StubbedExternalDeps, ValintarekisteriAppConfig}
 import fi.vm.sade.valintatulosservice.koodisto.KoodistoService
+import fi.vm.sade.valintatulosservice.ohjausparametrit.{RemoteOhjausparametritService, StubbedOhjausparametritService}
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{ValintarekisteriDb, ValintarekisteriRepository}
@@ -31,6 +32,11 @@ class ValintarekisteriForSijoittelu(valintarekisteriDb: SijoitteluRepository wit
           SimpleHttp1Client(appConfig.blazeDefaultConfig),
           appConfig.settings.callerId
         ),
+        if (appConfig.isInstanceOf[StubbedExternalDeps]) {
+          new StubbedOhjausparametritService()
+        } else {
+          new RemoteOhjausparametritService(appConfig)
+        },
         OrganisaatioService(appConfig),
         new KoodistoService(appConfig)
       ),
