@@ -130,19 +130,14 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
       case Left(e) => throw e
     }).filter { haku => haku.toinenAste || haku.korkeakoulu }
       .filter { haku =>
-        val include = haku.hakuAjat.isEmpty || haku.hakuAjat.exists(hakuaika => hakuaika.hasStarted)
-        if (!include) logger.info("Pudotetaan haku " + haku.oid + " koska hakuaika ei alkanut")
-        include
-      }
-      .filter { haku =>
         ohjausparameteritService.ohjausparametrit(haku.oid) match {
           case Right(ohjausparametrit) if ohjausparametrit.hakukierrosPaattyy.isEmpty =>
             logger.warn(s"Pudotetaan haku ${haku.oid} koska hakukierros päättyy ei asetettu")
             false
-          case Right(Ohjausparametrit(_, _, _, Some(hakukierrosPaattyy), _, _, _, _)) if hakukierrosPaattyy.isBeforeNow =>
+          case Right(Ohjausparametrit(_, _, _, Some(hakukierrosPaattyy), _, _, _, _, _, _)) if hakukierrosPaattyy.isBeforeNow =>
             logger.debug(s"Pudotetaan haku ${haku.oid} koska hakukierros päättynyt $hakukierrosPaattyy")
             false
-          case Right(Ohjausparametrit(_, _, _, _, Some(tulostenJulkistusAlkaa), _, _, _)) if tulostenJulkistusAlkaa.isAfterNow =>
+          case Right(Ohjausparametrit(_, _, _, _, Some(tulostenJulkistusAlkaa), _, _, _, _, _)) if tulostenJulkistusAlkaa.isAfterNow =>
             logger.info(s"Pudotetaan haku ${haku.oid} koska tulosten julkistus alkaa $tulostenJulkistusAlkaa")
             false
           case Left(e) =>

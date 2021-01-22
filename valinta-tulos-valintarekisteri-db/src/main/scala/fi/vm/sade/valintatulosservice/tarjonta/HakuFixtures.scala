@@ -3,8 +3,8 @@ package fi.vm.sade.valintatulosservice.tarjonta
 import java.io.InputStream
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid}
-
 import fi.vm.sade.valintatulosservice.MonadHelper
+import fi.vm.sade.valintatulosservice.config.AppConfig
 import org.json4s.jackson.JsonMethods._
 
 object HakuFixtures extends HakuService with JsonHakuService {
@@ -20,6 +20,7 @@ object HakuFixtures extends HakuService with JsonHakuService {
 
   private var hakuOids = List(defaultHakuOid)
   private var activeFixture = korkeakouluYhteishaku
+  var config: AppConfig = _
 
   def useFixture(fixtureName: HakuOid, hakuOids: List[HakuOid] = List(defaultHakuOid)) {
     this.hakuOids = hakuOids
@@ -27,7 +28,7 @@ object HakuFixtures extends HakuService with JsonHakuService {
   }
 
   override def getHaku(oid: HakuOid): Either[Throwable, Haku] = {
-    getHakuFixture(oid).map(toHaku(_).copy(oid = oid)).toRight(new IllegalArgumentException(s"No haku $oid found"))
+    getHakuFixture(oid).map(toHaku(_, config).copy(oid = oid)).toRight(new IllegalArgumentException(s"No haku $oid found"))
   }
 
   private def getHakuFixture(oid: HakuOid): Option[HakuTarjonnassa] = {
@@ -54,7 +55,7 @@ object HakuFixtures extends HakuService with JsonHakuService {
 
   override def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = {
     Right(hakuOids.flatMap { hakuOid =>
-      getHakuFixture(hakuOid).toList.filter {_.julkaistu}.map(toHaku(_).copy(oid = hakuOid))
+      getHakuFixture(hakuOid).toList.filter {_.julkaistu}.map(toHaku(_, config).copy(oid = hakuOid))
     })
   }
 
@@ -67,7 +68,7 @@ object HakuFixtures extends HakuService with JsonHakuService {
   override def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde] ={
     val hakuOid = hakuOids.head
     // TODO: Saner / more working test data
-    if (activeFixture == toinenAsteYhteishaku || activeFixture == toinenAsteErillishakuEiSijoittelua) {
+    if (activeFixture == HakuFixtures.toinenAsteYhteishaku || activeFixture == HakuFixtures.toinenAsteErillishakuEiSijoittelua) {
       Right(Hakukohde(
         oid,
         hakuOid,
@@ -80,7 +81,7 @@ object HakuFixtures extends HakuService with JsonHakuService {
         Some("kausi_k#1"),
         Some(2016),
         organisaatioRyhmaOids = Set()))
-    } else if (activeFixture == ataruHaku) {
+    } else if (activeFixture == HakuFixtures.ataruHaku) {
       Right(Hakukohde(
         oid,
         hakuOid,
@@ -101,7 +102,7 @@ object HakuFixtures extends HakuService with JsonHakuService {
         "KORKEAKOULUTUS",
         Map("kieli_fi" -> "Lukion ilmaisutaitolinja"),
         Map("fi" -> "Kallion lukio"),
-        YhdenPaikanSaanto(activeFixture != korkeakouluErillishakuEiYhdenPaikanSaantoa, "testihakukohde"),
+        YhdenPaikanSaanto(activeFixture != HakuFixtures.korkeakouluErillishakuEiYhdenPaikanSaantoa, "testihakukohde"),
         true,
         Some("kausi_k#1"),
         Some(2016),
