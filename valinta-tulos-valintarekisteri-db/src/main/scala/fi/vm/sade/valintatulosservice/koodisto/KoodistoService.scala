@@ -9,26 +9,18 @@ import scalaj.http.HttpOptions
 import scala.util.Try
 import scala.util.control.NonFatal
 
+
 case class SisaltyvaKoodi(koodiUri: String, versio: Int, arvo: String)
-case class Koodi(
-  koodiUri: String,
-  versio: Int,
-  arvo: String,
-  sisaltyvatKoodit: List[SisaltyvaKoodi]
-) {
+case class Koodi(koodiUri: String, versio: Int, arvo: String, sisaltyvatKoodit: List[SisaltyvaKoodi]) {
   def findSisaltyvaKoodi(koodisto: String): Option[SisaltyvaKoodi] = {
     sisaltyvatKoodit.filter(_.koodiUri.startsWith(koodisto + "_")) match {
-      case Nil    => None
+      case Nil => None
       case koodit => Some(koodit.maxBy(_.versio))
     }
   }
 }
 
-case class SisaltyvaKoodistoKoodi(
-  codeElementUri: String,
-  codeElementVersion: Int,
-  codeElementValue: String
-) {
+case class SisaltyvaKoodistoKoodi(codeElementUri: String, codeElementVersion: Int, codeElementValue: String) {
   def toSisaltyvaKoodi: SisaltyvaKoodi = {
     SisaltyvaKoodi(
       koodiUri = codeElementUri + "#" + codeElementVersion,
@@ -38,12 +30,7 @@ case class SisaltyvaKoodistoKoodi(
   }
 }
 
-case class KoodistoKoodi(
-  koodiUri: String,
-  versio: Int,
-  koodiArvo: String,
-  includesCodeElements: List[SisaltyvaKoodistoKoodi]
-) {
+case class KoodistoKoodi(koodiUri: String, versio: Int, koodiArvo: String, includesCodeElements: List[SisaltyvaKoodistoKoodi]) {
   def toKoodi: Koodi = {
     Koodi(
       koodiUri = koodiUri + "#" + versio,
@@ -64,23 +51,19 @@ class KoodistoService(config: AppConfig) {
   }
 
   private def fetch[T](url: String)(implicit manifest: Manifest[T]): Either[Throwable, T] = {
-    Try(
-      DefaultHttpClient
-        .httpGet(
-          url,
-          HttpOptions.connTimeout(30000),
-          HttpOptions.readTimeout(120000)
-        )(config.settings.callerId)
-        .responseWithHeaders match {
-        case (200, _, resultString) =>
-          Try(Right(parse(resultString).extract[T])).recover {
-            case NonFatal(e) =>
-              Left(new IllegalStateException(s"Parsing result $resultString of GET $url failed", e))
-          }.get
-        case (responseCode, _, resultString) =>
-          Left(new RuntimeException(s"GET $url failed with status $responseCode: $resultString"))
-      }
-    ).recover {
+    Try(DefaultHttpClient.httpGet(
+      url,
+      HttpOptions.connTimeout(30000),
+      HttpOptions.readTimeout(120000)
+    )(config.settings.callerId)
+      .responseWithHeaders match {
+      case (200, _, resultString) =>
+        Try(Right(parse(resultString).extract[T])).recover {
+          case NonFatal(e) => Left(new IllegalStateException(s"Parsing result $resultString of GET $url failed", e))
+        }.get
+      case (responseCode, _, resultString) =>
+        Left(new RuntimeException(s"GET $url failed with status $responseCode: $resultString"))
+    }).recover {
       case NonFatal(e) => Left(new RuntimeException(s"GET $url failed", e))
     }.get
   }

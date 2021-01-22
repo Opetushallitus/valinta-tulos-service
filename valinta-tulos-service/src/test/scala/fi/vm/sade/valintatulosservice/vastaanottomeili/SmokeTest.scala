@@ -10,12 +10,7 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{
-  HakemusOid,
-  HakuOid,
-  HakukohdeOid,
-  Vastaanottotila
-}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, Vastaanottotila}
 
 import org.apache.log4j._
 import org.apache.log4j.spi.LoggingEvent
@@ -68,19 +63,11 @@ class SmokeTest extends Specification with HttpComponentsClient with Mockito wit
     hakukohteet = List(hakukohde),
     haku = Haku(HakuOid("haku_oid"), nimi = Map("fi" -> "haun_nimi"), toinenAste = false)
   )
-  mailPoller
-    .pollForAllMailables(any, any, any)
-    .returns(
-      PollResult(mailables = List(ilmoitus)),
-      PollResult(isPollingComplete = true, mailables = Nil)
-    )
+  mailPoller.pollForAllMailables(any, any, any).returns(PollResult(mailables = List(ilmoitus)), PollResult(isPollingComplete = true, mailables = Nil))
 
-  lazy val registry: EmailerRegistry = EmailerRegistry.fromString(
-    Option(System.getProperty("valintatulos.profile")).getOrElse("it")
-  )(mailPoller, mailDecorator)
+  lazy val registry: EmailerRegistry = EmailerRegistry.fromString(Option(System.getProperty("valintatulos.profile")).getOrElse("it"))(mailPoller, mailDecorator)
 
-  private val valintatulosPort: Int =
-    sys.props.getOrElse("valintatulos.port", PortChecker.findFreeLocalPort.toString).toInt
+  private val valintatulosPort: Int = sys.props.getOrElse("valintatulos.port", PortChecker.findFreeLocalPort.toString).toInt
   override def baseUrl: String = "http://localhost:" + valintatulosPort + "/valinta-tulos-service"
 
   "Fetch, send and confirm batch" in {
@@ -95,10 +82,7 @@ class SmokeTest extends Specification with HttpComponentsClient with Mockito wit
 class TestAppender extends AppenderSkeleton {
   private var events: List[LoggingEvent] = Nil
 
-  def errors =
-    events
-      .filter { event => List(Level.ERROR, Level.FATAL).contains(event.getLevel) }
-      .map(_.getMessage)
+  def errors = events.filter { event => List(Level.ERROR, Level.FATAL).contains(event.getLevel)}.map(_.getMessage)
 
   override def append(event: LoggingEvent): Unit = {
     events = events ++ List(event)

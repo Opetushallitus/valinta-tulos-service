@@ -10,14 +10,9 @@ import slick.jdbc.PostgresProfile.api._
 import scala.concurrent.duration.Duration
 import scala.util.Try
 
-trait EnsikertalaisuusRepositoryImpl
-    extends EnsikertalaisuusRepository
-    with ValintarekisteriRepository {
+trait EnsikertalaisuusRepositoryImpl extends EnsikertalaisuusRepository with ValintarekisteriRepository {
 
-  override def findEnsikertalaisuus(
-    personOid: String,
-    koulutuksenAlkamisKausi: Kausi
-  ): Ensikertalaisuus = {
+  override def findEnsikertalaisuus(personOid: String, koulutuksenAlkamisKausi: Kausi): Ensikertalaisuus = {
     val d = runBlocking(
       sql"""with old_vastaanotot as (
                 select "timestamp", koulutuksen_alkamiskausi from vanhat_vastaanotot
@@ -31,9 +26,7 @@ trait EnsikertalaisuusRepositoryImpl
                       and newest_vastaanotot.kk_tutkintoon_johtava
                   union
                   select "timestamp", koulutuksen_alkamiskausi from old_vastaanotot) as all_vastaanotot
-            where all_vastaanotot.koulutuksen_alkamiskausi >= ${koulutuksenAlkamisKausi.toKausiSpec}"""
-        .as[Option[java.sql.Timestamp]]
-    )
+            where all_vastaanotot.koulutuksen_alkamiskausi >= ${koulutuksenAlkamisKausi.toKausiSpec}""".as[Option[java.sql.Timestamp]])
     Ensikertalaisuus(personOid, d.head)
   }
 
@@ -45,15 +38,7 @@ trait EnsikertalaisuusRepositoryImpl
                 and henkilo = ${personOid}
             order by "timestamp" desc
       """.as[(HakuOid, HakukohdeOid, String, java.sql.Timestamp)]
-    ).map(vastaanotto =>
-      OpintopolunVastaanottotieto(
-        personOid,
-        vastaanotto._1,
-        vastaanotto._2,
-        vastaanotto._3,
-        vastaanotto._4
-      )
-    ).toList
+    ).map(vastaanotto => OpintopolunVastaanottotieto(personOid, vastaanotto._1, vastaanotto._2, vastaanotto._3, vastaanotto._4)).toList
     val oldList = runBlocking(
       sql"""select hakukohde, "timestamp" from vanhat_vastaanotot
             where kk_tutkintoon_johtava
@@ -65,17 +50,12 @@ trait EnsikertalaisuusRepositoryImpl
     VastaanottoHistoria(newList, oldList)
   }
 
-  override def findEnsikertalaisuus(
-    personOids: Set[String],
-    koulutuksenAlkamisKausi: Kausi
-  ): Set[Ensikertalaisuus] = {
+  override def findEnsikertalaisuus(personOids: Set[String], koulutuksenAlkamisKausi: Kausi): Set[Ensikertalaisuus] = {
     val createTempTable = sqlu"create temporary table person_oids (oid varchar) on commit drop"
     val insertPersonOids = SimpleDBIO[Unit](jdbcActionContext => {
-      var statement: Option[PreparedStatement] = None
+      var statement:Option[PreparedStatement] = None
       try {
-        statement = Some(
-          jdbcActionContext.connection.prepareStatement("""insert into person_oids values (?)""")
-        )
+        statement = Some(jdbcActionContext.connection.prepareStatement("""insert into person_oids values (?)"""))
         personOids.foreach(oid => {
           statement.get.setString(1, oid)
           statement.get.addBatch()

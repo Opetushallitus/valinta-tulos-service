@@ -4,18 +4,10 @@ import java.util.Date
 
 import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila._
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{
-  EiTehty,
-  HakemusOid,
-  HakukohdeOid,
-  JonokohtainenTulostieto,
-  SijoitteluajonIlmoittautumistila,
-  ValintatapajonoOid,
-  Vastaanottotila
-}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiTehty, HakemusOid, HakukohdeOid, JonokohtainenTulostieto, SijoitteluajonIlmoittautumistila, ValintatapajonoOid, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
 
-case class HakemuksenSijoitteluntulos(
+case class HakemuksenSijoitteluntulos (
   hakemusOid: HakemusOid,
   hakijaOid: Option[String],
   hakutoiveet: List[HakutoiveenSijoitteluntulos]
@@ -85,9 +77,7 @@ object HakutoiveenSijoitteluntulos {
   }
 }
 
-case class HakutoiveenSijoittelunTilaTieto(
-  valintatila: Valintatila,
-  vastaanottotila: Vastaanottotila,
-  vastaanotonIlmoittaja: Option[VastaanotonIlmoittaja],
-  vastaanotettavuustila: Vastaanotettavuustila
-)
+case class HakutoiveenSijoittelunTilaTieto(valintatila: Valintatila,
+                                           vastaanottotila: Vastaanottotila,
+                                           vastaanotonIlmoittaja: Option[VastaanotonIlmoittaja],
+                                           vastaanotettavuustila: Vastaanotettavuustila)

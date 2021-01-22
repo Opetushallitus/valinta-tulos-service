@@ -2,12 +2,7 @@ package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import java.util.Date
 
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{
-  HakemusOid,
-  HakuOid,
-  HakukohdeOid,
-  Vastaanottotila
-}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
 import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy.LahetysSyy
 

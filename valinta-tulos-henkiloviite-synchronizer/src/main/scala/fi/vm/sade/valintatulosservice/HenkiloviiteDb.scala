@@ -25,20 +25,15 @@ class HenkiloviiteDb(configuration: DbConfiguration) {
     def logChanges(): Unit = {
       statement = connection.prepareStatement("select person_oid, linked_oid from henkiloviitteet")
       val henkiloResultSetBeforeUpdate = statement.executeQuery()
-      val henkiloviitteetEnnenPaivitysta: mutable.Set[HenkiloRelation] =
-        new mutable.HashSet[HenkiloRelation]
+      val henkiloviitteetEnnenPaivitysta: mutable.Set[HenkiloRelation] = new mutable.HashSet[HenkiloRelation]
       while (henkiloResultSetBeforeUpdate.next()) {
-        val relation = HenkiloRelation(
-          henkiloResultSetBeforeUpdate.getString("person_oid"),
-          henkiloResultSetBeforeUpdate.getString("linked_oid")
-        )
+        val relation = HenkiloRelation(henkiloResultSetBeforeUpdate.getString("person_oid"),
+          henkiloResultSetBeforeUpdate.getString("linked_oid"))
         henkiloviitteetEnnenPaivitysta += relation
       }
       henkiloResultSetBeforeUpdate.close()
       statement.close()
-      logger.info(
-        s"Before update, we have ${henkiloviitteetEnnenPaivitysta.size} relations in the database."
-      )
+      logger.info(s"Before update, we have ${henkiloviitteetEnnenPaivitysta.size} relations in the database.")
       logger.info(s"New relations: ${henkiloviitteet -- henkiloviitteetEnnenPaivitysta.toSet}")
       logger.info(s"Removed relations: ${henkiloviitteetEnnenPaivitysta.toSet -- henkiloviitteet}")
     }
@@ -86,17 +81,17 @@ class HenkiloviiteDb(configuration: DbConfiguration) {
       Success(())
 
     } catch {
-      case e: Exception if null != connection =>
-        try {
-          logger.error("Something when wrong. Going to rollback.", e)
-          connection.rollback()
+      case e: Exception if null != connection => try {
+        logger.error("Something when wrong. Going to rollback.", e)
+        connection.rollback()
+        Failure(e)
+      } catch {
+        case e: Exception =>
+          logger.error("Rollback failed.", e)
           Failure(e)
-        } catch {
-          case e: Exception =>
-            logger.error("Rollback failed.", e)
-            Failure(e)
-        }
-    } finally {
+      }
+    }
+    finally {
       closeInTry(statement)
       closeInTry(connection)
     }

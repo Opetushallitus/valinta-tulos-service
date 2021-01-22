@@ -19,16 +19,13 @@ import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
-trait ValintarekisteriRepository
-    extends ValintarekisteriResultExtractors
-    with Logging
-    with PerformanceLogger {
+trait ValintarekisteriRepository extends ValintarekisteriResultExtractors with Logging with PerformanceLogger {
   type TilanViimeisinMuutos = Timestamp
   private val logSqlOfSomeQueries = false // For debugging only. Do NOT enable in production.
 
   val dataSource: javax.sql.DataSource
   val db: Database
-  def runBlocking[R](operations: DBIO[R], timeout: Duration = Duration(10, TimeUnit.MINUTES)): R = { // TODO put these 3–4 different default timeouts behind common, configurable value
+  def runBlocking[R](operations: DBIO[R], timeout: Duration = Duration(10, TimeUnit.MINUTES)): R = {  // TODO put these 3–4 different default timeouts behind common, configurable value
     if (logSqlOfSomeQueries) {
       logger.error("This should not happen in production.")
       operations.getClass.getDeclaredFields.foreach { f =>
@@ -40,29 +37,17 @@ trait ValintarekisteriRepository
       }
     }
     Await.result(
-      db.run(
-        operations.withStatementParameters(statementInit =
-          st => st.setQueryTimeout(timeout.toSeconds.toInt)
-        )
-      ),
+      db.run(operations.withStatementParameters(statementInit = st => st.setQueryTimeout(timeout.toSeconds.toInt))),
       timeout + Duration(1, TimeUnit.SECONDS)
     )
   }
-  def runBlockingTransactionally[R](
-    operations: DBIO[R],
-    timeout: Duration = Duration(20, TimeUnit.SECONDS)
-  ): Either[Throwable, R] = { //  // TODO put these 3–4 different default timeouts behind common, configurable value
+  def runBlockingTransactionally[R](operations: DBIO[R], timeout: Duration = Duration(20, TimeUnit.SECONDS)): Either[Throwable, R] = { //  // TODO put these 3–4 different default timeouts behind common, configurable value
     val SERIALIZATION_VIOLATION = "40001"
     try {
       Right(runBlocking(operations.transactionally.withTransactionIsolation(Serializable), timeout))
     } catch {
       case e: PSQLException if e.getSQLState == SERIALIZATION_VIOLATION =>
-        Left(
-          new ConcurrentModificationException(
-            s"Operation(s) failed because of an concurrent action.",
-            e
-          )
-        )
+        Left(new ConcurrentModificationException(s"Operation(s) failed because of an concurrent action.", e))
       case NonFatal(e) => Left(e)
     }
   }

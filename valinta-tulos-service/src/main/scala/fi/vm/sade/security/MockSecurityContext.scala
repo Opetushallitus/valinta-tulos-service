@@ -11,16 +11,10 @@ import scalaz.concurrent.Task
 
 import scala.concurrent.duration.Duration
 
-class MockSecurityContext(
-  val casServiceIdentifier: String,
-  val requiredRoles: Set[Role],
-  users: Map[String, KayttooikeusUserDetails]
-) extends SecurityContext {
+class MockSecurityContext(val casServiceIdentifier: String, val requiredRoles: Set[Role], users: Map[String, KayttooikeusUserDetails]) extends SecurityContext {
 
   val casClient = new CasClient("", null, "vts-test-caller-id") {
-    override def validateServiceTicket(
-      service: scala.Predef.String
-    )(ticket: ServiceTicket): Task[Username] = {
+    override def validateServiceTicket(service : scala.Predef.String)(ticket : ServiceTicket): Task[Username] = {
       if (ticket.startsWith(MockSecurityContext.ticketPrefix(service))) {
         val username = ticket.stripPrefix(MockSecurityContext.ticketPrefix(service))
         Task.now(username)
@@ -29,10 +23,7 @@ class MockSecurityContext(
       }
     }
 
-    override def fetchCasSession(
-      params: CasParams,
-      sessionCookieName: String
-    ): Task[SessionCookie] =
+    override def fetchCasSession(params: CasParams, sessionCookieName: String): Task[SessionCookie] =
       Task.now("jsessionidFromMockSecurityContext")
   }
 

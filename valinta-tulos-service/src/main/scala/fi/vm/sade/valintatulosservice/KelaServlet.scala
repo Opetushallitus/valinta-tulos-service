@@ -14,15 +14,13 @@ import org.scalatra.swagger.{Swagger, SwaggerEngine}
 
 import scala.util.{Success, Try}
 
-class KelaServlet(audit: Audit, kelaService: KelaService, val sessionRepository: SessionRepository)(
-  implicit val swagger: Swagger
-) extends VtsServletBase
-    with VtsSwaggerBase
-    with CasAuthenticatedServlet {
+class KelaServlet(audit: Audit, kelaService: KelaService, val sessionRepository: SessionRepository)(implicit val swagger: Swagger)  extends VtsServletBase with VtsSwaggerBase with CasAuthenticatedServlet {
 
   protected val applicationDescription = "Julkinen Kela REST API"
 
-  override protected def checkJsonContentType() {}
+  override protected def checkJsonContentType() {
+
+  }
 
   error {
     case a: TimeoutException => {
@@ -34,25 +32,18 @@ class KelaServlet(audit: Audit, kelaService: KelaService, val sessionRepository:
   }
 
   val kelaVastaanottoSwagger: OperationBuilder = apiOperation[Henkilo]("getKelaVastaanotot")
-    .summary("Kelan vastaanottotietojen rajapinta")
+    .summary ("Kelan vastaanottotietojen rajapinta")
     .parameter(bodyParam[String]("henkilotunnus").description("Henkilötunnus").required)
-    .parameter(
-      queryParam[String]("alkuaika").description("Henkilön vastaanottotietojen alkuaika").optional
-    )
+    .parameter(queryParam[String]("alkuaika").description("Henkilön vastaanottotietojen alkuaika").optional)
     .tags("kela")
-  post("/vastaanotot/henkilo", operation(kelaVastaanottoSwagger)) {
+    post("/vastaanotot/henkilo", operation(kelaVastaanottoSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.KELA_READ)
     val credentials: AuditInfo = auditInfo
-    val builder = new Target.Builder()
+    val builder= new Target.Builder()
       .setField("henkilotunnus", request.body)
-    params.get("alkuaika").foreach(builder.setField("alkuaika", _))
-    audit.log(
-      auditInfo.user,
-      VastaanottotietojenLuku,
-      builder.build(),
-      new Changes.Builder().build()
-    )
+    params.get("alkuaika").foreach(builder.setField("alkuaika",_))
+    audit.log(auditInfo.user, VastaanottotietojenLuku, builder.build(), new Changes.Builder().build())
     parseParams() match {
       case HetuQuery(henkilotunnus, startingAt) =>
         kelaService.fetchVastaanototForPersonWithHetu(henkilotunnus, startingAt) match {

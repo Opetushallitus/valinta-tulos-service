@@ -17,9 +17,7 @@ object ServletTest {
     finally {
       jetty.servletContextHandler.synchronized {
         jetty.servletContextHandler.getServletHandler.setServletMappings(
-          jetty.servletContextHandler.getServletHandler.getServletMappings.filter(m =>
-            m.getServletName != servletHolder.getName
-          )
+          jetty.servletContextHandler.getServletHandler.getServletMappings.filter(m => m.getServletName != servletHolder.getName)
         )
         jetty.servletContextHandler.getServletHandler.setServlets(
           jetty.servletContextHandler.getServletHandler.getServlets.filter(s => s != servletHolder)

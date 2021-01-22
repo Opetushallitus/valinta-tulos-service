@@ -18,15 +18,8 @@ abstract class Scheduler extends Logging {
     val initialExecution = Calendar.getInstance()
     initialExecution.add(SECOND, initialDelay)
 
-    logger.info(
-      s"Starting $schedulerName scheduler. First iteration in $initialDelay seconds. That is on ${initialExecution.getTime.toString}"
-    )
-    scheduler.scheduleAtFixedRate(
-      task,
-      initialDelay,
-      24 * 60 * 60 /* Seconds in a day */,
-      TimeUnit.SECONDS
-    )
+    logger.info(s"Starting $schedulerName scheduler. First iteration in $initialDelay seconds. That is on ${initialExecution.getTime.toString}")
+    scheduler.scheduleAtFixedRate(task, initialDelay, 24 * 60 * 60 /* Seconds in a day */, TimeUnit.SECONDS)
     Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
       override def run(): Unit = {
         logger.info(s"Shutting down scheduler $schedulerName")

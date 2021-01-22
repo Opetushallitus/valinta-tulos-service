@@ -23,11 +23,9 @@ class ITPostgres(portChooser: PortChooser) extends Logging {
   val startStopRetryIntervalMillis = 100
   private val dataDirFile = new File(dataDirName)
   val dataDirPath = dataDirFile.getAbsolutePath
-  if (!postgresAlreadyRunning) {
+  if(!postgresAlreadyRunning) {
     if (!dataDirFile.isDirectory) {
-      logger.info(
-        s"PostgreSQL data directory $dataDirPath does not exist, initing new database there."
-      )
+      logger.info(s"PostgreSQL data directory $dataDirPath does not exist, initing new database there.")
       Files.createDirectories(dataDirFile.toPath)
       runBlocking(s"chmod 0700 $dataDirPath")
       runBlocking(s"initdb -D $dataDirPath --no-locale")
@@ -36,6 +34,7 @@ class ITPostgres(portChooser: PortChooser) extends Logging {
   } else {
     logger.info(s"Using already running PostgreSQL in port $port")
   }
+
 
   private def isAcceptingConnections(): Boolean = {
     runBlocking(s"pg_isready -q -t 1 -h localhost -p $port -d $dbName", failOnError = false) == 0
@@ -50,12 +49,11 @@ class ITPostgres(portChooser: PortChooser) extends Logging {
     }
   }
 
-  private def tryTimes(times: Int, sleep: Int)(thunk: () => Boolean): Boolean =
-    times match {
-      case n if n < 1 => false
-      case 1          => thunk()
-      case n          => thunk() || { Thread.sleep(sleep); tryTimes(n - 1, sleep)(thunk) }
-    }
+  private def tryTimes(times: Int, sleep: Int)(thunk: () => Boolean): Boolean = times match {
+    case n if n < 1 => false
+    case 1 => thunk()
+    case n => thunk() || { Thread.sleep(sleep); tryTimes(n - 1, sleep)(thunk) }
+  }
 
   private def runBlocking(command: String, failOnError: Boolean = true): Int = {
     val returnValue = command.!
@@ -66,7 +64,7 @@ class ITPostgres(portChooser: PortChooser) extends Logging {
   }
 
   def start() {
-    if (!postgresAlreadyRunning) {
+    if(!postgresAlreadyRunning) {
       readPid match {
         case Some(pid) => {
           logger.info(s"PostgreSQL pid $pid is found in pid file, not touching the database.")
@@ -75,9 +73,7 @@ class ITPostgres(portChooser: PortChooser) extends Logging {
           logger.info(s"PostgreSQL pid file cannot be read, starting:")
           s"postgres --config_file=postgresql/postgresql.conf -D $dataDirPath -p $port".run()
           if (!tryTimes(startStopRetries, startStopRetryIntervalMillis)(isAcceptingConnections)) {
-            throw new RuntimeException(
-              s"postgres not accepting connections in port $port after $startStopRetries attempts with $startStopRetryIntervalMillis ms intervals"
-            )
+            throw new RuntimeException(s"postgres not accepting connections in port $port after $startStopRetries attempts with $startStopRetryIntervalMillis ms intervals")
           }
 
           runBlocking(s"dropdb -p $port --if-exists $dbName")
@@ -95,15 +91,13 @@ class ITPostgres(portChooser: PortChooser) extends Logging {
   }
 
   def stop() {
-    if (!postgresAlreadyRunning) {
+    if(!postgresAlreadyRunning) {
       readPid match {
         case Some(pid) => {
           logger.info(s"Killing PostgreSQL process $pid")
           runBlocking(s"kill -s SIGINT $pid")
           if (!tryTimes(startStopRetries, startStopRetryIntervalMillis)(() => readPid.isEmpty)) {
-            logger.error(
-              s"postgres in pid $pid did not stop gracefully after $startStopRetries attempts with $startStopRetryIntervalMillis ms intervals"
-            )
+            logger.error(s"postgres in pid $pid did not stop gracefully after $startStopRetries attempts with $startStopRetryIntervalMillis ms intervals")
           }
         }
         case None => logger.info("No PostgreSQL pid found, not trying to stop it.")

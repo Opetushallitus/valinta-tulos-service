@@ -4,22 +4,13 @@ import java.util
 import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain._
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{
-  HakemusOid,
-  HakuOid,
-  HakukohdeOid,
-  ValintatapajonoOid
-}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 
 object SijoitteluFixtureCreator {
   import collection.JavaConversions._
 
-  def newHakemus(
-    hakemusOid: HakemusOid,
-    hakijaOid: String,
-    hakutoiveIndex: Int,
-    hakemuksenTila: HakemuksenTila
-  ): Hakemus = {
+
+  def newHakemus(hakemusOid: HakemusOid, hakijaOid: String, hakutoiveIndex: Int, hakemuksenTila: HakemuksenTila): Hakemus = {
     val hakemus = new Hakemus
     hakemus.setHakijaOid(hakijaOid)
     hakemus.setHakemusOid(hakemusOid.toString)
@@ -46,13 +37,7 @@ object SijoitteluFixtureCreator {
     jono
   }
 
-  def newHakukohde(
-    hakukohdeOid: HakukohdeOid,
-    tarjoajaOid: String,
-    sijoitteluajoId: Long,
-    kaikkiJonotSijoiteltu: Boolean,
-    jonot: List[Valintatapajono]
-  ) = {
+  def newHakukohde(hakukohdeOid: HakukohdeOid, tarjoajaOid: String, sijoitteluajoId: Long, kaikkiJonotSijoiteltu: Boolean, jonot: List[Valintatapajono]) = {
     val hakukohde = new Hakukohde()
     hakukohde.setSijoitteluajoId(sijoitteluajoId)
     hakukohde.setOid(hakukohdeOid.toString)
@@ -62,15 +47,7 @@ object SijoitteluFixtureCreator {
     hakukohde
   }
 
-  def newValintatulos(
-    jonoOid: ValintatapajonoOid,
-    hakuOid: HakuOid,
-    hakemusOid: HakemusOid,
-    hakukohdeOid: HakukohdeOid,
-    hakijaOid: String,
-    hakutoiveIndex: Int,
-    julkaistavissa: Boolean = true
-  ) = {
+  def newValintatulos(jonoOid: ValintatapajonoOid, hakuOid: HakuOid, hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, hakijaOid: String, hakutoiveIndex: Int, julkaistavissa: Boolean = true) = {
     val valintatulos = new Valintatulos(
       jonoOid.toString,
       hakemusOid.toString,
@@ -83,11 +60,7 @@ object SijoitteluFixtureCreator {
     valintatulos
   }
 
-  def newSijoittelu(
-    hakuOid: HakuOid,
-    sijoitteluajoId: Long,
-    hakukohdeOids: List[HakukohdeOid]
-  ): Sijoittelu = {
+  def newSijoittelu(hakuOid: HakuOid, sijoitteluajoId: Long, hakukohdeOids: List[HakukohdeOid]): Sijoittelu = {
     val sijoitteluAjo = new SijoitteluAjo
     sijoitteluAjo.setSijoitteluajoId(sijoitteluajoId)
     sijoitteluAjo.setHakuOid(hakuOid.toString)
@@ -101,7 +74,7 @@ object SijoitteluFixtureCreator {
 
     val sijoittelu = new Sijoittelu()
     sijoittelu.setHakuOid(hakuOid.toString)
-    sijoittelu.setSijoitteluId(1L)
+    sijoittelu.setSijoitteluId(1l)
     sijoittelu.setCreated(new Date)
     sijoittelu.setSijoittele(true)
     sijoittelu.getSijoitteluajot.add(sijoitteluAjo)

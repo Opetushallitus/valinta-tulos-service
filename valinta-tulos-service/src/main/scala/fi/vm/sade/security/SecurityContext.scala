@@ -18,5 +18,5 @@ class ProductionSecurityContext(
   val casClient: CasClient,
   val casServiceIdentifier: String,
   val requiredRoles: Set[Role],
-  val validateServiceTicketTimeout: Duration = Duration(1, TimeUnit.SECONDS)
-) extends SecurityContext {}
+  val validateServiceTicketTimeout: Duration = Duration(1, TimeUnit.SECONDS)) extends SecurityContext {
+}

@@ -5,30 +5,26 @@ import java.util.Date
 import fi.vm.sade.valintatulosservice.domain.Valintatila.Valintatila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
 
-case class HakemusMailStatus(
-  hakijaOid: String,
-  hakemusOid: HakemusOid,
-  asiointikieli: String,
-  kutsumanimi: String,
-  email: String,
-  hasHetu: Boolean,
-  hakuOid: HakuOid,
-  hakukohteet: List[HakukohdeMailStatus]
-) {
+case class HakemusMailStatus(hakijaOid: String,
+                             hakemusOid: HakemusOid,
+                             asiointikieli: String,
+                             kutsumanimi: String,
+                             email: String,
+                             hasHetu: Boolean,
+                             hakuOid: HakuOid,
+                             hakukohteet: List[HakukohdeMailStatus]) {
   def anyMailToBeSent: Boolean = {
     hakukohteet.exists(_.shouldMail)
   }
 }
 
-case class HakukohdeMailStatus(
-  hakukohdeOid: HakukohdeOid,
-  valintatapajonoOid: ValintatapajonoOid,
-  reasonToMail: Option[MailReason],
-  deadline: Option[Date],
-  valintatila: Valintatila,
-  vastaanottotila: Vastaanottotila,
-  ehdollisestiHyvaksyttavissa: Boolean
-) {
+case class HakukohdeMailStatus(hakukohdeOid: HakukohdeOid,
+                               valintatapajonoOid: ValintatapajonoOid,
+                               reasonToMail: Option[MailReason],
+                               deadline: Option[Date],
+                               valintatila: Valintatila,
+                               vastaanottotila: Vastaanottotila,
+                               ehdollisestiHyvaksyttavissa: Boolean) {
   def shouldMail: Boolean = {
     reasonToMail.isDefined
   }
@@ -52,11 +48,6 @@ object MailReason {
     "SITOVAN_VASTAANOTON_ILMOITUS" -> SitovanVastaanotonIlmoitus
   )
   def apply(s: String): MailReason = {
-    valueMapping.getOrElse(
-      s,
-      throw new IllegalArgumentException(
-        s"Unknown MailReason $s, expected one of ${valueMapping.keys.mkString(", ")}"
-      )
-    )
+    valueMapping.getOrElse(s, throw new IllegalArgumentException(s"Unknown MailReason $s, expected one of ${valueMapping.keys.mkString(", ")}"))
   }
 }

@@ -9,13 +9,5 @@ trait HyvaksymiskirjeRepository {
   def update(hyvaksymiskirjeet: Set[HyvaksymiskirjePatch]): Unit
 }
 
-case class Hyvaksymiskirje(
-  henkiloOid: String,
-  hakukohdeOid: HakukohdeOid,
-  lahetetty: OffsetDateTime
-)
-case class HyvaksymiskirjePatch(
-  henkiloOid: String,
-  hakukohdeOid: HakukohdeOid,
-  lahetetty: Option[OffsetDateTime]
-)
+case class Hyvaksymiskirje(henkiloOid: String, hakukohdeOid: HakukohdeOid, lahetetty: OffsetDateTime)
+case class HyvaksymiskirjePatch(henkiloOid: String, hakukohdeOid: HakukohdeOid, lahetetty: Option[OffsetDateTime])

@@ -9,14 +9,11 @@ import org.scalatra.json._
 import org.scalatra.{CookieOptions, InternalServerError, ScalatraFilter, Unauthorized}
 
 /**
-  * Filter that verifies CAS service ticket and checks user permissions from Käyttöoikeuspalvelu.
-  *
-  * @param requiredRoles         Required roles.
-  */
-class CasFilter(cas: CasSessionService, requiredRoles: Set[Role])
-    extends ScalatraFilter
-    with JacksonJsonSupport
-    with LazyLogging {
+ * Filter that verifies CAS service ticket and checks user permissions from Käyttöoikeuspalvelu.
+ *
+ * @param requiredRoles         Required roles.
+ */
+class CasFilter(cas: CasSessionService, requiredRoles: Set[Role]) extends ScalatraFilter with JacksonJsonSupport with LazyLogging {
 
   protected implicit val jsonFormats: Formats = DefaultFormats
 
@@ -27,11 +24,10 @@ class CasFilter(cas: CasSessionService, requiredRoles: Set[Role])
       cookies.get("session").map(UUID.fromString)
     ) match {
       case Right((id, session)) if session.hasEveryRole(requiredRoles) =>
-        implicit val cookieOptions =
-          CookieOptions(path = "/valinta-tulos-service", secure = false, httpOnly = true)
+        implicit val cookieOptions = CookieOptions(path = "/valinta-tulos-service", secure = false, httpOnly = true)
         cookies += ("session" -> id.toString)
         request.setAttribute("session", id.toString)
-      // pass
+        // pass
       case Right((_, session)) =>
         logger.warn(s"User ${session.personOid} does not have all required roles $requiredRoles")
         halt(Unauthorized("error" -> "Unauthorized"))

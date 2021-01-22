@@ -11,10 +11,7 @@ import org.specs2.runner.JUnitRunner
 import org.specs2.specification.Scope
 
 @RunWith(classOf[JUnitRunner])
-class SijoitteluajoDeleteSchedulerSpec
-    extends Specification
-    with MockitoMatchers
-    with MockitoStubs {
+class SijoitteluajoDeleteSchedulerSpec extends Specification with MockitoMatchers with MockitoStubs {
 
   trait Mocks extends Mockito with Scope with MustThrownExpectations {
     val repository = mock[DeleteSijoitteluRepository]
@@ -22,22 +19,18 @@ class SijoitteluajoDeleteSchedulerSpec
 
     repository.acquireLockForSijoitteluajoCleaning(55) returns Seq(true)
     repository.clearLockForSijoitteluajoCleaning(55) returns Seq(true)
-    repository.listHakuAndSijoitteluAjoCount() returns Seq(
-      (HakuOid("1"), 3),
-      (HakuOid("2"), 5),
-      (HakuOid("3"), 6)
-    )
-    repository.findSijoitteluAjotSkippingFirst(HakuOid("2"), 3) returns Seq(1L, 2L)
-    repository.findSijoitteluAjotSkippingFirst(HakuOid("3"), 3) returns Seq(3L, 4L, 5L)
+    repository.listHakuAndSijoitteluAjoCount() returns Seq((HakuOid("1"),3), (HakuOid("2"),5), (HakuOid("3"),6))
+    repository.findSijoitteluAjotSkippingFirst(HakuOid("2"),3) returns Seq(1l,2l)
+    repository.findSijoitteluAjotSkippingFirst(HakuOid("3"),3) returns Seq(3l,4l,5l)
 
     def checkConditions() = {
-      there was one(repository).acquireLockForSijoitteluajoCleaning(55)
-      there was one(repository).listHakuAndSijoitteluAjoCount()
-      there was two(repository).findSijoitteluAjotSkippingFirst(any[HakuOid], anyInt)
-      there was two(repository).deleteSijoitteluajot(any[HakuOid], any[Seq[Long]])
-      there was one(repository).deleteSijoitteluajot(HakuOid("2"), Seq(1L, 2L))
-      there was one(repository).deleteSijoitteluajot(HakuOid("3"), Seq(3L, 4L, 5L))
-      there was one(repository).clearLockForSijoitteluajoCleaning(55)
+      there was one (repository).acquireLockForSijoitteluajoCleaning(55)
+      there was one (repository).listHakuAndSijoitteluAjoCount()
+      there was two (repository).findSijoitteluAjotSkippingFirst(any[HakuOid],anyInt)
+      there was two (repository).deleteSijoitteluajot(any[HakuOid],any[Seq[Long]])
+      there was one (repository).deleteSijoitteluajot(HakuOid("2"),Seq(1l,2l))
+      there was one (repository).deleteSijoitteluajot(HakuOid("3"),Seq(3l,4l,5l))
+      there was one (repository).clearLockForSijoitteluajoCleaning(55)
     }
   }
 
@@ -47,9 +40,7 @@ class SijoitteluajoDeleteSchedulerSpec
       checkConditions()
     }
     "ignore failing delete" in new Mocks {
-      repository.deleteSijoitteluajot(HakuOid("2"), Seq(1L, 2L)) throws (new RuntimeException(
-        "foo"
-      ))
+      repository.deleteSijoitteluajot(HakuOid("2"),Seq(1l,2l)) throws(new RuntimeException("foo"))
       scheduler.task.run()
       checkConditions()
     }

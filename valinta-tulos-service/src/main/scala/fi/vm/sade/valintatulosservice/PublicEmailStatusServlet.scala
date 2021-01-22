@@ -8,12 +8,11 @@ import fi.vm.sade.valintatulosservice.vastaanottomeili.MailPoller
 import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 
-class PublicEmailStatusServlet(
-  mailPoller: MailPoller,
-  val sessionRepository: SessionRepository,
-  audit: Audit
-)(implicit val swagger: Swagger)
-    extends VtsServletBase
+class PublicEmailStatusServlet(mailPoller: MailPoller,
+                               val sessionRepository: SessionRepository,
+                               audit: Audit)
+                              (implicit val swagger: Swagger)
+  extends VtsServletBase
     with CasAuthenticatedServlet {
 
   protected val applicationDescription = "Julkinen vastaanottosähköpostin REST API"
@@ -28,14 +27,9 @@ class PublicEmailStatusServlet(
     implicit val authenticated: Authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
     val hakukohdeOid: HakukohdeOid = parseHakukohdeOid.fold(throw _, x => x)
-    val builder = new Target.Builder()
+    val builder= new Target.Builder()
       .setField("hakukohdeoid", hakukohdeOid.toString)
-    audit.log(
-      auditInfo.user,
-      VastaanottoPostitietojenLuku,
-      builder.build(),
-      new Changes.Builder().build()
-    )
+    audit.log(auditInfo.user, VastaanottoPostitietojenLuku, builder.build(), new Changes.Builder().build())
     mailPoller.getOidsOfApplicationsWithSentOrResolvedMailStatus(hakukohdeOid)
   }
 }

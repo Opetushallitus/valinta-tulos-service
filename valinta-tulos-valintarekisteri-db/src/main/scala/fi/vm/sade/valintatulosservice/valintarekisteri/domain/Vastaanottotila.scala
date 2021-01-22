@@ -11,20 +11,10 @@ object Vastaanottotila {
   val peruutettu: Vastaanottotila = "PERUUTETTU"
   val ottanut_vastaan_toisen_paikan: Vastaanottotila = "OTTANUT_VASTAAN_TOISEN_PAIKAN"
   val ehdollisesti_vastaanottanut: Vastaanottotila = "EHDOLLISESTI_VASTAANOTTANUT"
-  val values: Set[Vastaanottotila] = Set(
-    kesken,
-    vastaanottanut,
-    ei_vastaanotettu_määräaikana,
-    perunut,
-    peruutettu,
-    ottanut_vastaan_toisen_paikan,
-    ehdollisesti_vastaanottanut
-  )
+  val values: Set[Vastaanottotila] = Set(kesken, vastaanottanut, ei_vastaanotettu_määräaikana,
+    perunut, peruutettu, ottanut_vastaan_toisen_paikan, ehdollisesti_vastaanottanut)
 
-  def matches(
-    vastaanottotila: Vastaanottotila,
-    valintatuloksenTila: ValintatuloksenTila
-  ): Boolean = {
+  def matches(vastaanottotila: Vastaanottotila, valintatuloksenTila: ValintatuloksenTila): Boolean = {
     vastaanottotila == valintatuloksenTila.name()
   }
 }

@@ -15,12 +15,8 @@ trait ValintaesitysRepositoryImpl extends ValintaesitysRepository with Valintare
           where valintatapajono_oid = $valintatapajonoOid
       """.as[(HakukohdeOid, Option[ZonedDateTime])].map {
       case Vector() => None
-      case (hakukohdeOid, hyvaksytty) +: Vector() =>
-        Some(Valintaesitys(hakukohdeOid, valintatapajonoOid, hyvaksytty))
-      case v =>
-        throw new RuntimeException(
-          s"Multiple results ($v) for primary key. Are we missing a constraint?"
-        )
+      case (hakukohdeOid, hyvaksytty) +: Vector() => Some(Valintaesitys(hakukohdeOid, valintatapajonoOid, hyvaksytty))
+      case v => throw new RuntimeException(s"Multiple results ($v) for primary key. Are we missing a constraint?")
     }
   }
 
@@ -28,42 +24,25 @@ trait ValintaesitysRepositoryImpl extends ValintaesitysRepository with Valintare
     sql"""select valintatapajono_oid, hyvaksytty
           from valintaesitykset
           where hakukohde_oid = $hakukohdeOid
-      """
-      .as[(ValintatapajonoOid, Option[ZonedDateTime])]
-      .map(_.map {
-        case (valintatapajonoOid, hyvaksytty) =>
-          Valintaesitys(hakukohdeOid, valintatapajonoOid, hyvaksytty)
-      }.toSet)
+      """.as[(ValintatapajonoOid, Option[ZonedDateTime])].map(_.map {
+      case (valintatapajonoOid, hyvaksytty) => Valintaesitys(hakukohdeOid, valintatapajonoOid, hyvaksytty)
+    }.toSet)
   }
 
   override def hyvaksyValintaesitys(valintatapajonoOid: ValintatapajonoOid): DBIO[Valintaesitys] = {
     sqlu"""update valintaesitykset set hyvaksytty = now()
            where valintatapajono_oid = $valintatapajonoOid
                and hyvaksytty is null
-      """
-      .flatMap(updated => get(valintatapajonoOid).map((updated == 1, _)))
+      """.flatMap(updated => get(valintatapajonoOid).map((updated == 1, _)))
       .flatMap {
         case (false, None) =>
-          DBIO.failed(
-            new IllegalStateException(
-              s"Valintatapajonolla $valintatapajonoOid ei ole valintaesitystä."
-            )
-          )
+            DBIO.failed(new IllegalStateException(s"Valintatapajonolla $valintatapajonoOid ei ole valintaesitystä."))
         case (false, Some(Valintaesitys(_, _, None))) =>
-          DBIO.failed(
-            new RuntimeException(
-              "No update, but valintaesitys still not hyväksytty. Are we not using isolation level serializable?"
-            )
-          )
+          DBIO.failed(new RuntimeException("No update, but valintaesitys still not hyväksytty. Are we not using isolation level serializable?"))
         case (true, None) =>
-          DBIO.failed(
-            new RuntimeException(
-              "Updated, but valintaesitys no longer exists. Are we not using isolation level serializable?"
-            )
-          )
+          DBIO.failed(new RuntimeException("Updated, but valintaesitys no longer exists. Are we not using isolation level serializable?"))
         case (_, Some(valintaesitys)) =>
           DBIO.successful(valintaesitys)
-      }
-      .transactionally
+    }.transactionally
   }
 }

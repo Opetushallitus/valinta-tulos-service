@@ -12,26 +12,17 @@ import org.specs2.specification.BeforeAfterEach
 
 @RunWith(classOf[JUnitRunner])
 @Ignore
-class SijoitteluPerformanceSpec
-    extends Specification
-    with ITSetup
-    with ValintarekisteriDbTools
-    with BeforeAfterEach
-    with Logging
-    with PerformanceLogger {
+class SijoitteluPerformanceSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterEach with Logging with PerformanceLogger {
   sequential
   step(appConfig.start)
   step(deleteAll())
 
-  lazy val valintarekisteri =
-    new ValintarekisteriService(singleConnectionValintarekisteriDb, hakukohdeRecordService)
+  lazy val valintarekisteri = new ValintarekisteriService(singleConnectionValintarekisteriDb, hakukohdeRecordService)
 
   "Store and read huge sijoittelu fast" in {
     skipped("Use this test only locally for performance tuning")
-    val wrapper = time("create test data") {
-      createHugeSijoittelu(12345L, HakuOid("11.22.33.44.55.66"), 50)
-    }
-    time("Store sijoittelu") { singleConnectionValintarekisteriDb.storeSijoittelu(wrapper) }
+    val wrapper = time("create test data") { createHugeSijoittelu(12345l, HakuOid("11.22.33.44.55.66"), 50) }
+    time("Store sijoittelu") {singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)}
     //time("Get sijoittelu") { valintarekisteri.getSijoitteluajoDTO("11.22.33.44.55.66", "12345") }
     getSijoittelu("11.22.33.44.55.66")
     true must beTrue
@@ -39,32 +30,22 @@ class SijoitteluPerformanceSpec
   "Reading latest huge sijoitteluajo is not timing out" in {
     skipped("Use this test only locally for performance tuning")
     val numberOfSijoitteluajot = 15
-    val wrapper = time("create test data") {
-      createHugeSijoittelu(12345L, HakuOid("11.22.33.44.55.66"), 40)
-    }
-    (12345L to (12345L + numberOfSijoitteluajot - 1)).foreach(sijoitteluajoId => {
+    val wrapper = time("create test data") { createHugeSijoittelu(12345l, HakuOid("11.22.33.44.55.66"), 40) }
+    (12345l to (12345l + numberOfSijoitteluajot - 1)).foreach(sijoitteluajoId => {
       wrapper.sijoitteluajo.setSijoitteluajoId(sijoitteluajoId)
       wrapper.hakukohteet.foreach(_.setSijoitteluajoId(sijoitteluajoId))
-      time(s"Store sijoittelu ${sijoitteluajoId}") {
-        singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)
-      }
+      time(s"Store sijoittelu ${sijoitteluajoId}") {singleConnectionValintarekisteriDb.storeSijoittelu(wrapper)}
     })
-    val (sijoitteluajo, hakukohteet) = getSijoittelu("11.22.33.44.55.66")
+    val ( sijoitteluajo, hakukohteet ) = getSijoittelu("11.22.33.44.55.66")
     compareSijoitteluWrapperToEntity(
-      wrapper,
-      sijoitteluajo,
-      hakukohteet
+      wrapper, sijoitteluajo, hakukohteet
     )
     true must beTrue
   }
 
   def getSijoittelu(hakuOid: String) = {
-    val sijoitteluajo = time("Get latest sijoitteluajo") {
-      valintarekisteri.getLatestSijoitteluajo(hakuOid)
-    }
-    val hakukohteet = time("Get hakukohteet") {
-      valintarekisteri.getSijoitteluajonHakukohteet(sijoitteluajo.getSijoitteluajoId)
-    }
+    val sijoitteluajo = time("Get latest sijoitteluajo") { valintarekisteri.getLatestSijoitteluajo(hakuOid) }
+    val hakukohteet = time("Get hakukohteet") { valintarekisteri.getSijoitteluajonHakukohteet(sijoitteluajo.getSijoitteluajoId) }
     (sijoitteluajo, hakukohteet)
   }
 

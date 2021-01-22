@@ -3,29 +3,22 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 import java.util
 
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnanTilanKuvausRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{
-  HakemusOid,
-  HakukohdeOid,
-  ValinnantilanTarkenne,
-  ValintatapajonoOid
-}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, ValinnantilanTarkenne, ValintatapajonoOid}
 import slick.dbio.DBIO
 import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-trait ValinnanTilanKuvausRepositoryImpl
-    extends ValinnanTilanKuvausRepository
-    with ValintarekisteriRepository {
+trait ValinnanTilanKuvausRepositoryImpl extends ValinnanTilanKuvausRepository with ValintarekisteriRepository {
   override def storeValinnanTilanKuvaus(
-    hakukohdeOid: HakukohdeOid,
-    valintatapajonoOid: ValintatapajonoOid,
-    hakemusOid: HakemusOid,
-    valinnantilanTarkenne: ValinnantilanTarkenne,
-    valinnantilanKuvauksenTekstiFI: Option[String],
-    valinnantilanKuvauksenTekstiSV: Option[String],
-    valinnantilanKuvauksenTekstiEN: Option[String]
-  ): DBIO[Unit] = {
+                                         hakukohdeOid: HakukohdeOid,
+                                         valintatapajonoOid: ValintatapajonoOid,
+                                         hakemusOid: HakemusOid,
+                                         valinnantilanTarkenne: ValinnantilanTarkenne,
+                                         valinnantilanKuvauksenTekstiFI: Option[String],
+                                         valinnantilanKuvauksenTekstiSV: Option[String],
+                                         valinnantilanKuvauksenTekstiEN: Option[String]
+                                       ): DBIO[Unit] = {
     getTilankuvausHash(hakukohdeOid, valintatapajonoOid, hakemusOid).flatMap(previousHashCode => {
       insertKuvaukset(
         valinnantilanTarkenne,
@@ -33,24 +26,17 @@ trait ValinnanTilanKuvausRepositoryImpl
         valinnantilanKuvauksenTekstiSV,
         valinnantilanKuvauksenTekstiEN
       )
-        .flatMap(newHashCode =>
-          upsertTilatKuvaukset(hakukohdeOid, valintatapajonoOid, hakemusOid, newHashCode)
-        )
-        .flatMap(wasUpsert =>
-          (wasUpsert, previousHashCode) match {
-            case (true, Some(possiblyOrphanHashCode)) =>
-              deleteOrphanKuvaukset(possiblyOrphanHashCode)
-            case _ => DBIO.successful(())
-          }
-        )
+        .flatMap(newHashCode => upsertTilatKuvaukset(hakukohdeOid, valintatapajonoOid, hakemusOid, newHashCode))
+        .flatMap(wasUpsert => (wasUpsert, previousHashCode) match {
+          case (true, Some(possiblyOrphanHashCode)) => deleteOrphanKuvaukset(possiblyOrphanHashCode)
+          case _ => DBIO.successful(())
+        })
     })
   }
 
-  private def getTilankuvausHash(
-    hakukohdeOid: HakukohdeOid,
-    valintatapajonoOid: ValintatapajonoOid,
-    hakemusOid: HakemusOid
-  ): DBIO[Option[Int]] = {
+  private def getTilankuvausHash(hakukohdeOid: HakukohdeOid,
+                                 valintatapajonoOid: ValintatapajonoOid,
+                                 hakemusOid: HakemusOid): DBIO[Option[Int]] = {
     sql"""select tilankuvaus_hash
           from tilat_kuvaukset
           where hakukohde_oid = ${hakukohdeOid} and
@@ -59,17 +45,14 @@ trait ValinnanTilanKuvausRepositoryImpl
        """.as[Int].map(_.headOption)
   }
 
-  private def insertKuvaukset(
-    valinnantilanTarkenne: ValinnantilanTarkenne,
-    valinnantilanKuvauksenTekstiFI: Option[String],
-    valinnantilanKuvauksenTekstiSV: Option[String],
-    valinnantilanKuvauksenTekstiEN: Option[String]
-  ): DBIO[Int] = {
+  private def insertKuvaukset(valinnantilanTarkenne: ValinnantilanTarkenne,
+                              valinnantilanKuvauksenTekstiFI: Option[String],
+                              valinnantilanKuvauksenTekstiSV: Option[String],
+                              valinnantilanKuvauksenTekstiEN: Option[String]): DBIO[Int] = {
     val valinnanTilanKuvausHashCode = tilanKuvauksetHashCode(
       valinnantilanKuvauksenTekstiFI,
       valinnantilanKuvauksenTekstiSV,
-      valinnantilanKuvauksenTekstiEN
-    )
+      valinnantilanKuvauksenTekstiEN)
     sqlu"""insert into valinnantilan_kuvaukset (
                hash,
                tilan_tarkenne,
@@ -93,27 +76,15 @@ trait ValinnanTilanKuvausRepositoryImpl
                  valinnantilan_kuvaukset.text_en is not distinct from excluded.text_en
       """.flatMap {
       case 1 => DBIO.successful(valinnanTilanKuvausHashCode)
-      case 0 =>
-        DBIO.failed(
-          new RuntimeException(
-            s"Hash-koodi törmäys tallennettaessa tilan kuvauksia $valinnantilanKuvauksenTekstiFI, $valinnantilanKuvauksenTekstiSV, $valinnantilanKuvauksenTekstiEN, hash-koodilla $valinnanTilanKuvausHashCode"
-          )
-        )
-      case n =>
-        DBIO.failed(
-          new RuntimeException(
-            s"Odottamaton päivitysten määrä $n tallennettaessa tilan kuvauksia $valinnantilanKuvauksenTekstiFI, $valinnantilanKuvauksenTekstiSV, $valinnantilanKuvauksenTekstiEN, hash-koodilla $valinnanTilanKuvausHashCode"
-          )
-        )
+      case 0 => DBIO.failed(new RuntimeException(s"Hash-koodi törmäys tallennettaessa tilan kuvauksia $valinnantilanKuvauksenTekstiFI, $valinnantilanKuvauksenTekstiSV, $valinnantilanKuvauksenTekstiEN, hash-koodilla $valinnanTilanKuvausHashCode"))
+      case n => DBIO.failed(new RuntimeException(s"Odottamaton päivitysten määrä $n tallennettaessa tilan kuvauksia $valinnantilanKuvauksenTekstiFI, $valinnantilanKuvauksenTekstiSV, $valinnantilanKuvauksenTekstiEN, hash-koodilla $valinnanTilanKuvausHashCode"))
     }
   }
 
-  private def upsertTilatKuvaukset(
-    hakukohdeOid: HakukohdeOid,
-    valintatapajonoOid: ValintatapajonoOid,
-    hakemusOid: HakemusOid,
-    valinnanTilanKuvausHashCode: Int
-  ): DBIO[Boolean] = {
+  private def upsertTilatKuvaukset(hakukohdeOid: HakukohdeOid,
+                                   valintatapajonoOid: ValintatapajonoOid,
+                                   hakemusOid: HakemusOid,
+                                   valinnanTilanKuvausHashCode: Int): DBIO[Boolean] = {
     sqlu"""insert into tilat_kuvaukset (
                tilankuvaus_hash,
                hakukohde_oid,
@@ -131,12 +102,7 @@ trait ValinnanTilanKuvausRepositoryImpl
       """.flatMap {
       case 1 => DBIO.successful(true)
       case 0 => DBIO.successful(false)
-      case n =>
-        DBIO.failed(
-          new RuntimeException(
-            s"Odottamaton päivitysten määrä $n tallennettaessa tilat_kuvaukset riviä hash-koodilla $valinnanTilanKuvausHashCode hakukohteelle $hakukohdeOid, valintatapajonolle $valintatapajonoOid ja hakemukselle $hakemusOid"
-          )
-        )
+      case n => DBIO.failed(new RuntimeException(s"Odottamaton päivitysten määrä $n tallennettaessa tilat_kuvaukset riviä hash-koodilla $valinnanTilanKuvausHashCode hakukohteelle $hakukohdeOid, valintatapajonolle $valintatapajonoOid ja hakemukselle $hakemusOid"))
     }
   }
 
@@ -147,11 +113,9 @@ trait ValinnanTilanKuvausRepositoryImpl
       """.map(_ => ())
   }
 
-  private def tilanKuvauksetHashCode(
-    valinnantilanKuvauksenTekstiFI: Option[String],
-    valinnantilanKuvauksenTekstiSV: Option[String],
-    valinnantilanKuvauksenTekstiEN: Option[String]
-  ): Int = {
+  private def tilanKuvauksetHashCode(valinnantilanKuvauksenTekstiFI: Option[String],
+                                     valinnantilanKuvauksenTekstiSV: Option[String],
+                                     valinnantilanKuvauksenTekstiEN: Option[String]): Int = {
     val m = new util.HashMap[String, String]()
     valinnantilanKuvauksenTekstiFI.foreach(m.put("FI", _))
     valinnantilanKuvauksenTekstiSV.foreach(m.put("SV", _))
