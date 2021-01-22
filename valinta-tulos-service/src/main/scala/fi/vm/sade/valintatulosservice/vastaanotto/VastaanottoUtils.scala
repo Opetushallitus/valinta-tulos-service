@@ -3,8 +3,7 @@ package fi.vm.sade.valintatulosservice.vastaanotto
 import java.time.OffsetDateTime
 import java.util.concurrent.TimeUnit
 
-import fi.vm.sade.valintatulosservice.domain.Vastaanottoaikataulu
-import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
+import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, Vastaanottoaikataulu}
 import org.joda.time.{DateTime, DateTimeZone}
 
 object VastaanottoUtils {
