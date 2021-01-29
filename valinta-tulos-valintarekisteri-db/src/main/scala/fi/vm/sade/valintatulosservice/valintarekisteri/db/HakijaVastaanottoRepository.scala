@@ -12,51 +12,19 @@ import scala.concurrent.duration.Duration
 trait HakijaVastaanottoRepository {
   type HenkiloOid = String
 
-  def runBlocking[R](
-    operations: DBIO[R],
-    timeout: Duration = Duration(10, TimeUnit.MINUTES)
-  ): R // TODO put these 3–4 different default timeouts behind common, configurable value
-  def findHenkilonVastaanototHaussa(
-    henkiloOid: HenkiloOid,
-    hakuOid: HakuOid
-  ): DBIO[Set[VastaanottoRecord]]
-  def findHenkilonVastaanottoHakukohteeseen(
-    henkiloOid: HenkiloOid,
-    hakukohdeOid: HakukohdeOid
-  ): DBIO[Option[VastaanottoRecord]]
-  def findYhdenPaikanSaannonPiirissaOlevatVastaanotot(
-    henkiloOid: HenkiloOid,
-    koulutuksenAlkamiskausi: Kausi
-  ): DBIO[Option[VastaanottoRecord]]
+  def runBlocking[R](operations: DBIO[R], timeout: Duration = Duration(10, TimeUnit.MINUTES)): R // TODO put these 3–4 different default timeouts behind common, configurable value
+  def findHenkilonVastaanototHaussa(henkiloOid: HenkiloOid, hakuOid: HakuOid): DBIO[Set[VastaanottoRecord]]
+  def findHenkilonVastaanottoHakukohteeseen(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid): DBIO[Option[VastaanottoRecord]]
+  def findYhdenPaikanSaannonPiirissaOlevatVastaanotot(henkiloOid: HenkiloOid, koulutuksenAlkamiskausi: Kausi): DBIO[Option[VastaanottoRecord]]
   def store(vastaanottoEvent: VastaanottoEvent): Unit
   def storeAction(vastaanottoEvent: VastaanottoEvent): DBIO[Unit]
-  def storeAction(
-    vastaanottoEvent: VastaanottoEvent,
-    ifUnmodifiedSince: Option[Instant]
-  ): DBIO[Unit]
-  def store(
-    vastaanottoEvents: List[VastaanottoEvent],
-    postCondition: DBIO[_]
-  ): Either[Throwable, Unit]
+  def storeAction(vastaanottoEvent: VastaanottoEvent, ifUnmodifiedSince: Option[Instant]): DBIO[Unit]
+  def store(vastaanottoEvents: List[VastaanottoEvent], postCondition: DBIO[_]): Either[Throwable, Unit]
   def store(vastaanottoEvent: VastaanottoEvent, vastaanottoDate: Date): Unit
-  def runAsSerialized[T](
-    retries: Int,
-    wait: Duration,
-    description: String,
-    action: DBIO[T]
-  ): Either[Throwable, T]
+  def runAsSerialized[T](retries: Int, wait: Duration, description: String, action: DBIO[T]): Either[Throwable, T]
 
-  def findHyvaksyttyJulkaistuDatesForHenkilo(
-    henkiloOid: HenkiloOid
-  ): DBIO[Map[HakukohdeOid, OffsetDateTime]]
-  def findHyvaksyttyJulkaistuDatesForHaku(
-    hakuOid: HakuOid
-  ): Map[HenkiloOid, Map[HakukohdeOid, OffsetDateTime]]
-  def findHyvaksyttyJulkaistuDatesForHakukohde(
-    hakukohdeOid: HakukohdeOid
-  ): Map[HenkiloOid, OffsetDateTime]
-  def findHyvaksyttyJaJulkaistuDateForHenkiloAndHakukohdeDBIO(
-    henkiloOid: HenkiloOid,
-    hakukohdeOid: HakukohdeOid
-  ): DBIO[Option[OffsetDateTime]]
+  def findHyvaksyttyJulkaistuDatesForHenkilo(henkiloOid: HenkiloOid): DBIO[Map[HakukohdeOid, OffsetDateTime]]
+  def findHyvaksyttyJulkaistuDatesForHaku(hakuOid: HakuOid): Map[HenkiloOid, Map[HakukohdeOid, OffsetDateTime]]
+  def findHyvaksyttyJulkaistuDatesForHakukohde(hakukohdeOid:HakukohdeOid): Map[HenkiloOid, OffsetDateTime]
+  def findHyvaksyttyJaJulkaistuDateForHenkiloAndHakukohdeDBIO(henkiloOid: HenkiloOid, hakukohdeOid:HakukohdeOid): DBIO[Option[OffsetDateTime]]
 }

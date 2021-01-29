@@ -7,8 +7,8 @@ import slick.sql.{SqlAction, SqlStreamingAction}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object DbUtils extends Logging {
 
+object DbUtils extends Logging {
   /**
     * @param tableNames Prone to SQL injection, so don't use with user-provided data.
     */
@@ -33,16 +33,13 @@ object DbUtils extends Logging {
     sqlu"alter table #${tableName} enable trigger #${triggerName}"
   }
 
-  private def processTriggers(
-    action: (String, String) => SqlAction[Int, NoStream, Effect]
-  ): DBIO[Seq[Int]] = {
+  private def processTriggers(action: (String, String) => SqlAction[Int, NoStream, Effect]): DBIO[Seq[Int]] = {
     findTriggerNames.flatMap { triggerNames =>
       DBIO.sequence(triggerNames.map(action.tupled))
     }
   }
 
-  private def findTriggerNames
-    : SqlStreamingAction[Vector[(String, String)], (String, String), Effect] = {
+  private def findTriggerNames: SqlStreamingAction[Vector[(String, String)], (String, String), Effect] = {
     sql"""select relname, tgname
             from (pg_trigger join pg_class on tgrelid = pg_class.oid)
             join pg_proc on (tgfoid = pg_proc.oid)

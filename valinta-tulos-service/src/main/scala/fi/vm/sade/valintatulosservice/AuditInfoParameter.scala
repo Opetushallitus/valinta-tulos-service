@@ -19,24 +19,15 @@ trait AuditInfoParameter {
     )
   }
 
-  private def getSession(auditSession: AuditSessionRequest): (UUID, Session) =
-    (
-      UUID
-        .randomUUID(),
-      getAuditSession(auditSession)
-    )
+  private def getSession(auditSession: AuditSessionRequest): (UUID, Session) = (UUID
+    .randomUUID(), getAuditSession(auditSession))
 
-  private def getAuditSession(s: AuditSessionRequest) =
-    AuditSession(s.personOid, s.roles.map(Role(_)).toSet)
+  private def getAuditSession(s: AuditSessionRequest) = AuditSession(s.personOid, s.roles.map(Role(_)).toSet)
 }
 
-case class AuditSessionRequest(
-  personOid: String,
-  roles: List[String],
-  userAgent: String,
-  inetAddress: String
-)
+case class AuditSessionRequest(personOid: String, roles: List[String], userAgent: String, inetAddress: String)
 
 trait RequestWithAuditSession {
   val auditSession: AuditSessionRequest
 }
+

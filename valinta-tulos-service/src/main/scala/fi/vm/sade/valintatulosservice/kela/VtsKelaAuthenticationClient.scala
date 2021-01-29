@@ -4,8 +4,7 @@ import fi.vm.sade.security.VtsAuthenticatingClient
 import fi.vm.sade.utils.cas.CasClient.SessionCookie
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 
-class VtsKelaAuthenticationClient(val appConfig: VtsAppConfig)
-    extends VtsKelaSessionCookie(appConfig) {
+class VtsKelaAuthenticationClient(val appConfig: VtsAppConfig) extends VtsKelaSessionCookie(appConfig) {
   override def retrieveSessionCookie(): SessionCookie = {
     val vtsClient = new VtsAuthenticatingClient(
       appConfig.settings.securitySettings.casUrl,

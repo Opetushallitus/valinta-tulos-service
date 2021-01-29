@@ -28,101 +28,69 @@ case class HakijaOid(s: String) {
   override def toString: String = s
 }
 
-class HakuOidSerializer
-    extends CustomSerializer[HakuOid]((_: Formats) => {
-      (
-        {
-          case json: JString => HakuOid(json.s)
-        },
-        {
-          case hakuOid: HakuOid => JString(hakuOid.toString)
-        }
-      )
-    })
+class HakuOidSerializer extends CustomSerializer[HakuOid]((_: Formats) => {
+  ({
+    case json: JString => HakuOid(json.s)
+  }, {
+    case hakuOid: HakuOid => JString(hakuOid.toString)
+  })
+})
 
-class HakukohdeOidSerializer
-    extends CustomSerializer[HakukohdeOid]((_: Formats) => {
-      (
-        {
-          case json: JString => HakukohdeOid(json.s)
-        },
-        {
-          case hakukohdeOid: HakukohdeOid => JString(hakukohdeOid.toString)
-        }
-      )
-    })
+class HakukohdeOidSerializer extends CustomSerializer[HakukohdeOid]((_: Formats) => {
+  ({
+    case json: JString => HakukohdeOid(json.s)
+  }, {
+    case hakukohdeOid: HakukohdeOid => JString(hakukohdeOid.toString)
+  })
+})
 
-class ValintatapajonoOidSerializer
-    extends CustomSerializer[ValintatapajonoOid]((_: Formats) => {
-      (
-        {
-          case json: JString => ValintatapajonoOid(json.s)
-        },
-        {
-          case valintatapajonoOid: ValintatapajonoOid => JString(valintatapajonoOid.toString)
-        }
-      )
-    })
+class ValintatapajonoOidSerializer extends CustomSerializer[ValintatapajonoOid]((_: Formats) => {
+  ({
+    case json: JString => ValintatapajonoOid(json.s)
+  }, {
+    case valintatapajonoOid: ValintatapajonoOid => JString(valintatapajonoOid.toString)
+  })
+})
 
-class ValintatapajonoOidKeySerializer
-    extends CustomKeySerializer[ValintatapajonoOid]((_: Formats) => {
-      (
-        {
-          case json: String => ValintatapajonoOid(json)
-        },
-        {
-          case valintatapajonoOid: ValintatapajonoOid => valintatapajonoOid.toString
-        }
-      )
-    })
+class ValintatapajonoOidKeySerializer extends CustomKeySerializer[ValintatapajonoOid]((_: Formats) => {
+  ({
+    case json: String => ValintatapajonoOid(json)
+  }, {
+    case valintatapajonoOid: ValintatapajonoOid => valintatapajonoOid.toString
+  })
+})
 
-class HakemusOidSerializer
-    extends CustomSerializer[HakemusOid]((_: Formats) => {
-      (
-        {
-          case json: JString => HakemusOid(json.s)
-        },
-        {
-          case hakemusOid: HakemusOid => JString(hakemusOid.toString)
-        }
-      )
-    })
+class HakemusOidSerializer extends CustomSerializer[HakemusOid]((_: Formats) => {
+  ({
+    case json: JString => HakemusOid(json.s)
+  }, {
+    case hakemusOid: HakemusOid => JString(hakemusOid.toString)
+  })
+})
 
-class HakemusOidKeySerializer
-    extends CustomKeySerializer[HakemusOid]((_: Formats) => {
-      (
-        {
-          case json: String => HakemusOid(json)
-        },
-        {
-          case hakemusOid: HakemusOid => hakemusOid.toString
-        }
-      )
-    })
+class HakemusOidKeySerializer extends CustomKeySerializer[HakemusOid]((_: Formats) => {
+  ({
+    case json: String => HakemusOid(json)
+  }, {
+    case hakemusOid: HakemusOid => hakemusOid.toString
+  })
+})
 
-class TarjoajaOidSerializer
-    extends CustomSerializer[TarjoajaOid]((_: Formats) => {
-      (
-        {
-          case json: JString => TarjoajaOid(json.s)
-        },
-        {
-          case tarjoajaOid: TarjoajaOid => JString(tarjoajaOid.toString)
-        }
-      )
-    })
+class TarjoajaOidSerializer extends CustomSerializer[TarjoajaOid]((_: Formats) => {
+  ({
+    case json: JString => TarjoajaOid(json.s)
+  }, {
+    case tarjoajaOid: TarjoajaOid => JString(tarjoajaOid.toString)
+  })
+})
 
-class HakijaOidSerializer
-    extends CustomSerializer[HakijaOid]((_: Formats) => {
-      (
-        {
-          case json: JString => HakijaOid(json.s)
-        },
-        {
-          case hakijaOid: HakijaOid => JString(hakijaOid.toString)
-        }
-      )
-    })
+class HakijaOidSerializer extends CustomSerializer[HakijaOid]((_: Formats) => {
+  ({
+    case json: JString => HakijaOid(json.s)
+  }, {
+    case hakijaOid: HakijaOid => JString(hakijaOid.toString)
+  })
+})
 
 object Oids {
   def getSerializers() = {

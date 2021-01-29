@@ -11,16 +11,13 @@ import org.http4s.client.blaze.BlazeClientConfig
 object ValintarekisteriAppConfig extends Logging {
   private val propertiesFile = "/oph-configuration/valinta-tulos-valintarekisteri-db-oph.properties"
   private implicit val settingsParser = ValintarekisteriApplicationSettingsParser
-  private val itPostgresPortChooser = new PortFromSystemPropertyOrFindFree(
-    "valintatulos.it.postgres.port"
-  )
+  private val itPostgresPortChooser = new PortFromSystemPropertyOrFindFree("valintatulos.it.postgres.port")
 
   def getDefault() = new Default(ConfigFactory.load())
 
-  def getDefault(properties: java.util.Properties) =
-    new Default(ConfigFactory.parseProperties(properties))
+  def getDefault(properties:java.util.Properties) = new Default(ConfigFactory.parseProperties(properties))
 
-  class Default(config: Config) extends ValintarekisteriAppConfig {
+  class Default(config:Config) extends ValintarekisteriAppConfig {
     override val ophUrlProperties = new ProdOphUrlProperties(propertiesFile)
     val settings = settingsParser.parse(config)
   }
@@ -35,20 +32,14 @@ object ValintarekisteriAppConfig extends Logging {
     }
 
     override val settings = loadSettings
-      .withOverride(
-        ("valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids", "100")
-      )
-      .withOverride(
-        "valinta-tulos-service.valintarekisteri.db.url",
-        s"jdbc:postgresql://localhost:${itPostgresPortChooser.chosenPort}/valintarekisteri"
-      )
+      .withOverride(("valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids", "100"))
+      .withOverride("valinta-tulos-service.valintarekisteri.db.url", s"jdbc:postgresql://localhost:${itPostgresPortChooser.chosenPort}/valintarekisteri")
       .withoutPath("valinta-tulos-service.valintarekisteri.db.user")
       .withoutPath("valinta-tulos-service.valintarekisteri.db.password")
   }
 
   trait ExternalProps {
-    def configFile =
-      System.getProperty("user.home") + "/oph-configuration/valinta-tulos-service.properties"
+    def configFile = System.getProperty("user.home") + "/oph-configuration/valinta-tulos-service.properties"
     val settings = ApplicationSettingsLoader.loadSettings(configFile)
   }
 
@@ -61,11 +52,8 @@ object ValintarekisteriAppConfig extends Logging {
     val settings = loadSettings
     def loadSettings = {
       ConfigTemplateProcessor.createSettings(
-        getClass.getResource(
-          "/oph-configuration/valinta-tulos-service-devtest.properties.template"
-        ),
-        templateAttributesURL
-      )
+        getClass.getResource("/oph-configuration/valinta-tulos-service-devtest.properties.template"),
+        templateAttributesURL)
     }
 
     def templateAttributesURL: URL
@@ -79,13 +67,14 @@ object ValintarekisteriAppConfig extends Logging {
 
     def properties: Map[String, String] = settings.toProperties
 
-    override def blazeDefaultConfig: BlazeClientConfig =
-      BlazeClientConfig.defaultConfig.copy(
-        responseHeaderTimeout = settings.blazeResponseHeaderTimeout,
-        idleTimeout = settings.blazeIdleTimeout,
-        requestTimeout = settings.requestTimeout
-      )
+    override def blazeDefaultConfig: BlazeClientConfig = BlazeClientConfig.defaultConfig.copy(
+      responseHeaderTimeout = settings.blazeResponseHeaderTimeout,
+      idleTimeout = settings.blazeIdleTimeout,
+      requestTimeout = settings.requestTimeout
+    )
   }
 }
 
-trait StubbedExternalDeps {}
+trait StubbedExternalDeps {
+
+}

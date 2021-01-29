@@ -8,8 +8,7 @@ import org.apache.commons.lang3.BooleanUtils
 
 import scala.concurrent.duration.Duration
 
-abstract class ApplicationSettings(config: Config)
-    extends fi.vm.sade.utils.config.ApplicationSettings(config) {
+abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.config.ApplicationSettings(config) {
 
   val callerId = "1.2.246.562.10.00000000001.valinta-tulos-service"
   val tarjontaUrl = withConfig(_.getString("tarjonta-service.url"))
@@ -22,26 +21,18 @@ abstract class ApplicationSettings(config: Config)
     numThreads = getInt(config, "valinta-tulos-service.valintarekisteri.db.numThreads"),
     queueSize = getInt(config, "valinta-tulos-service.valintarekisteri.db.queueSize"),
     registerMbeans = getBoolean(config, "valinta-tulos-service.valintarekisteri.db.registerMbeans"),
-    initializationFailTimeout =
-      getLong(config, "valinta-tulos-service.valintarekisteri.db.initializationFailFast"),
-    leakDetectionThresholdMillis =
-      getLong(config, "valinta-tulos-service.valintarekisteri.db.leakDetectionThresholdMillis")
+    initializationFailTimeout = getLong(config, "valinta-tulos-service.valintarekisteri.db.initializationFailFast"),
+    leakDetectionThresholdMillis = getLong(config, "valinta-tulos-service.valintarekisteri.db.leakDetectionThresholdMillis")
   )
   val koutaUsername = config.getString("valinta-tulos-service.cas.username")
   val koutaPassword = config.getString("valinta-tulos-service.cas.password")
   withConfig(_.getConfig("valinta-tulos-service.valintarekisteri.db"))
-  val lenientTarjontaDataParsing: Boolean =
-    BooleanUtils.isTrue(withConfig(_.getBoolean("valinta-tulos-service.parseleniently.tarjonta")))
+  val lenientTarjontaDataParsing: Boolean = BooleanUtils.isTrue(withConfig(_.getBoolean("valinta-tulos-service.parseleniently.tarjonta")))
   val estimatedMaxActiveHakus: Long = 6000
 
-  val blazeResponseHeaderTimeout: Duration = Duration(
-    withConfig(_.getLong("valinta-tulos-service.blaze.response-header-timeout")),
-    TimeUnit.SECONDS
-  )
-  val blazeIdleTimeout: Duration =
-    Duration(withConfig(_.getLong("valinta-tulos-service.blaze.idle-timeout")), TimeUnit.SECONDS)
-  val requestTimeout: Duration =
-    Duration(withConfig(_.getLong("valinta-tulos-service.blaze.request-timeout")), TimeUnit.SECONDS)
+  val blazeResponseHeaderTimeout: Duration = Duration(withConfig(_.getLong("valinta-tulos-service.blaze.response-header-timeout")), TimeUnit.SECONDS)
+  val blazeIdleTimeout: Duration = Duration(withConfig(_.getLong("valinta-tulos-service.blaze.idle-timeout")), TimeUnit.SECONDS)
+  val requestTimeout: Duration = Duration(withConfig(_.getLong("valinta-tulos-service.blaze.request-timeout")), TimeUnit.SECONDS)
 
   protected def withConfig[T](operation: Config => T): T = {
     try {
@@ -71,10 +62,9 @@ abstract class ApplicationSettings(config: Config)
   }
 }
 
-case class ValintarekisteriApplicationSettings(config: Config)
-    extends ApplicationSettings(config) {}
+case class ValintarekisteriApplicationSettings(config: Config) extends ApplicationSettings(config) {
+}
 
-object ValintarekisteriApplicationSettingsParser
-    extends fi.vm.sade.utils.config.ApplicationSettingsParser[ValintarekisteriApplicationSettings] {
+object ValintarekisteriApplicationSettingsParser extends fi.vm.sade.utils.config.ApplicationSettingsParser[ValintarekisteriApplicationSettings] {
   override def parse(config: Config) = ValintarekisteriApplicationSettings(config)
 }

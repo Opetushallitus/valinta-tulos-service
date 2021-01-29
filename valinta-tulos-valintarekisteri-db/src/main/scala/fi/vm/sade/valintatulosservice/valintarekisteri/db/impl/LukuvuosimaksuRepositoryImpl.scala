@@ -8,9 +8,7 @@ import org.json4s.DefaultFormats
 import org.json4s.jackson.Serialization
 import slick.jdbc.PostgresProfile.api._
 
-trait LukuvuosimaksuRepositoryImpl
-    extends LukuvuosimaksuRepository
-    with ValintarekisteriRepository {
+trait LukuvuosimaksuRepositoryImpl extends LukuvuosimaksuRepository with ValintarekisteriRepository {
   type BulkResultType = (String, String, String, String, TilanViimeisinMuutos)
 
   def getLukuvuosimaksus(hakukohdeOid: HakukohdeOid): List[Lukuvuosimaksu] = {
@@ -19,15 +17,7 @@ trait LukuvuosimaksuRepositoryImpl
             from lukuvuosimaksut
             where hakukohdeOid = ${hakukohdeOid}
         """.as[(String, String, String, Timestamp)]
-    ).map(m =>
-      Lukuvuosimaksu(
-        personOid = m._1,
-        hakukohdeOid = hakukohdeOid,
-        maksuntila = Maksuntila.withName(m._2),
-        muokkaaja = m._3,
-        luotu = m._4
-      )
-    ).toList
+    ).map(m => Lukuvuosimaksu(personOid = m._1, hakukohdeOid = hakukohdeOid, maksuntila = Maksuntila.withName(m._2), muokkaaja = m._3, luotu = m._4)).toList
   }
 
   def getLukuvuosimaksus(hakukohdeOids: Set[HakukohdeOid]): List[Lukuvuosimaksu] = {
@@ -36,16 +26,13 @@ trait LukuvuosimaksuRepositoryImpl
       sql"""select personoid, hakukohdeoid, maksuntila, muokkaaja, luotu
             from lukuvuosimaksut where ${hakukohdeOidsJsonArray}::jsonb ?? hakukohdeoid
          """.as[BulkResultType]
-    runBlocking(query)
-      .map(m =>
-        Lukuvuosimaksu(
-          personOid = m._1,
-          hakukohdeOid = HakukohdeOid(m._2),
-          maksuntila = Maksuntila.withName(m._3),
-          muokkaaja = m._4,
-          luotu = m._5
-        )
-      )
+    runBlocking(query).map(m =>
+      Lukuvuosimaksu(
+        personOid = m._1,
+        hakukohdeOid = HakukohdeOid(m._2),
+        maksuntila = Maksuntila.withName(m._3),
+        muokkaaja = m._4,
+        luotu = m._5))
       .toList
   }
 

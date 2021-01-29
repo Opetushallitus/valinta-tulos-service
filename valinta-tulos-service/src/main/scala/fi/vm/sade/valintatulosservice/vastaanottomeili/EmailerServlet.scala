@@ -3,34 +3,19 @@ package fi.vm.sade.valintatulosservice.vastaanottomeili
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{
-  HakemusOid,
-  HakuOid,
-  HakukohdeOid,
-  ValintatapajonoOid
-}
-import fi.vm.sade.valintatulosservice.{
-  CasAuthenticatedServlet,
-  VtsServletBase,
-  VtsSwaggerBase,
-  Authenticated,
-  VastaanottosahkopostienLähetys
-}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
+import fi.vm.sade.valintatulosservice.{CasAuthenticatedServlet, VtsServletBase, VtsSwaggerBase, Authenticated, VastaanottosahkopostienLähetys}
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger.{SwaggerSupport, _}
 import org.scalatra.{ActionResult, InternalServerError, Ok}
 
 import scala.util.{Failure, Success}
 
-class EmailerServlet(
-  emailerService: EmailerService,
-  val sessionRepository: SessionRepository,
-  audit: Audit
-)(implicit val swagger: Swagger)
-    extends VtsServletBase
-    with CasAuthenticatedServlet
-    with EmailerSwagger
-    with Logging {
+
+class EmailerServlet(emailerService: EmailerService,
+                     val sessionRepository: SessionRepository,
+                     audit: Audit)(implicit val swagger: Swagger)
+  extends VtsServletBase with CasAuthenticatedServlet with EmailerSwagger with Logging {
 
   post("/run", operation(postRunEmailerSwagger)) {
     logger.info("EmailerServlet POST /run called")
@@ -64,18 +49,12 @@ class EmailerServlet(
     runMailerAndCreateResponse(query)
   }
 
-  post(
-    "/run/hakukohde/:hakukohdeOid/valintatapajono/:jonoOid",
-    operation(postRunEmailerForValintatapajonoSwagger)
-  ) {
+  post("/run/hakukohde/:hakukohdeOid/valintatapajono/:jonoOid", operation(postRunEmailerForValintatapajonoSwagger)) {
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     val jonoOid = ValintatapajonoOid(params("jonoOid"))
     logger.info(s"EmailerServlet POST /run/valintatapajono/ called for valintatapajono $jonoOid")
     implicit val authenticated: Authenticated = authenticate
-    val target = new Target.Builder()
-      .setField("hakukohdeOid", hakukohdeOid.s)
-      .setField("jonoOid", jonoOid.s)
-      .build()
+    val target = new Target.Builder().setField("hakukohdeOid", hakukohdeOid.s).setField("jonoOid", jonoOid.s).build()
     audit.log(auditInfo.user, VastaanottosahkopostienLähetys, target, new Changes.Builder().build())
 
     val query: MailerQuery = ValintatapajonoQuery(hakukohdeOid, jonoOid)
@@ -110,11 +89,10 @@ trait EmailerSwagger extends VtsSwaggerBase { this: SwaggerSupport =>
 
   val postRunEmailerSwagger: OperationBuilder = apiOperation[Unit]("postRunEmailer")
     .summary("Aja sähköpostien lähetys")
-    .notes(
-      "Vastaanottosähköpostien manuaalinen lähetys. Ajetaan myös automaattisesti määrättyinä kellonaikoina."
-    )
+    .notes("Vastaanottosähköpostien manuaalinen lähetys. Ajetaan myös automaattisesti määrättyinä kellonaikoina.")
     .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
     .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
+
 
   val postRunEmailerForHakuSwagger: OperationBuilder = apiOperation[Unit]("postRunEmailerForHaku")
     .summary("Aja sähköpostien lähetys haulle")
@@ -123,30 +101,30 @@ trait EmailerSwagger extends VtsSwaggerBase { this: SwaggerSupport =>
     .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
     .parameter(pathParam[String]("hakuOid").description("Haun oid"))
 
-  val postRunEmailerForHakukohdeSwagger: OperationBuilder =
-    apiOperation[Unit]("postRunEmailerForHakukohde")
-      .summary("Aja sähköpostien lähetys hakukohteelle")
-      .notes("Vastaanottosähköpostien manuaalinen lähetys yhdelle hakukohteelle.")
-      .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
-      .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
-      .parameter(pathParam[String]("hakukohdeOid").description("Hakukohteen oid"))
 
-  val postRunEmailerForHakemusSwagger: OperationBuilder =
-    apiOperation[Unit]("postRunEmailerForHakemus")
-      .summary("Aja sähköpostien lähetys hakemukselle")
-      .notes("Vastaanottosähköpostien manuaalinen lähetys yhdelle hakemukselle.")
-      .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
-      .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
-      .consumes("application/json")
-      .parameter(pathParam[String]("hakemusOid").description("Hakemuksen oid"))
+  val postRunEmailerForHakukohdeSwagger: OperationBuilder = apiOperation[Unit]("postRunEmailerForHakukohde")
+    .summary("Aja sähköpostien lähetys hakukohteelle")
+    .notes("Vastaanottosähköpostien manuaalinen lähetys yhdelle hakukohteelle.")
+    .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
+    .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
+    .parameter(pathParam[String]("hakukohdeOid").description("Hakukohteen oid"))
 
-  val postRunEmailerForValintatapajonoSwagger: OperationBuilder =
-    apiOperation[Unit]("postRunEmailerForValintatapajono")
-      .summary("Aja sähköpostien lähetys valintatapajonolle")
-      .notes("Vastaanottosähköpostien manuaalinen lähetys yhdelle valintatapajonolle.")
-      .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
-      .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
-      .consumes("application/json")
-      .parameter(pathParam[String]("hakukohdeOid").description("Hakukohteen oid"))
-      .parameter(pathParam[String]("jonoOid").description("Valintatapajonon oid"))
+
+  val postRunEmailerForHakemusSwagger: OperationBuilder = apiOperation[Unit]("postRunEmailerForHakemus")
+    .summary("Aja sähköpostien lähetys hakemukselle")
+    .notes("Vastaanottosähköpostien manuaalinen lähetys yhdelle hakemukselle.")
+    .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
+    .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
+    .consumes("application/json")
+    .parameter(pathParam[String]("hakemusOid").description("Hakemuksen oid"))
+
+
+  val postRunEmailerForValintatapajonoSwagger: OperationBuilder = apiOperation[Unit]("postRunEmailerForValintatapajono")
+    .summary("Aja sähköpostien lähetys valintatapajonolle")
+    .notes("Vastaanottosähköpostien manuaalinen lähetys yhdelle valintatapajonolle.")
+    .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
+    .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
+    .consumes("application/json")
+    .parameter(pathParam[String]("hakukohdeOid").description("Hakukohteen oid"))
+    .parameter(pathParam[String]("jonoOid").description("Valintatapajonon oid"))
 }

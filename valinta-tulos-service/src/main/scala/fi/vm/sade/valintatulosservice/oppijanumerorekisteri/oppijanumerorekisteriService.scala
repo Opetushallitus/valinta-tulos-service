@@ -57,13 +57,9 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) {
   )
 
   def henkilot(oids: Set[HakijaOid]): Either[Throwable, Map[HakijaOid, Henkilo]] = {
-    oids
-      .grouped(5000)
-      .foldLeft(Task(Map.empty[HakijaOid, Henkilo])) { (f, chunk) =>
-        f.flatMap(m => henkilotChunk(chunk).map(m ++ _))
-      }
-      .attemptRunFor(Duration(1, TimeUnit.MINUTES))
-      .toEither
+    oids.grouped(5000).foldLeft(Task(Map.empty[HakijaOid, Henkilo])) {
+      (f, chunk) => f.flatMap(m => henkilotChunk(chunk).map(m ++ _))
+    }.attemptRunFor(Duration(1, TimeUnit.MINUTES)).toEither
   }
 
   private def henkilotChunk(oids: Set[HakijaOid]): Task[Map[HakijaOid, Henkilo]] = {
@@ -71,25 +67,15 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) {
     import org.json4s.DefaultReaders.mapReader
     implicit val hr: Reader[Henkilo] = Henkilo.henkiloReader
 
-    Uri
-      .fromString(appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.henkilotByOids"))
-      .fold(
-        Task.fail,
-        uri => {
-          val req = Request(method = POST, uri = uri)
-            .withBody[Array[String]](oids.map(_.toString).toArray)(jsonEncoderOf[Array[String]])
-          client.fetch(req) {
-            case r if r.status.code == 200 =>
-              r.as[Map[String, Henkilo]](jsonOf[Map[String, Henkilo]])
-                .map(_.map { case (oid, h) => HakijaOid(oid) -> h })
-                .handleWith {
-                  case t =>
-                    Task.fail(new IllegalStateException(s"Parsing henkilöt $oids failed", t))
-                }
-            case r =>
-              Task.fail(new RuntimeException(s"Failed to get henkilöt $oids: ${r.toString()}"))
-          }
+    Uri.fromString(appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.henkilotByOids"))
+      .fold(Task.fail, uri => {
+        val req = Request(method = POST, uri = uri)
+          .withBody[Array[String]](oids.map(_.toString).toArray)(jsonEncoderOf[Array[String]])
+        client.fetch(req) {
+          case r if r.status.code == 200 => r.as[Map[String, Henkilo]](jsonOf[Map[String, Henkilo]]).map(_.map { case (oid, h) => HakijaOid(oid) -> h })
+            .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing henkilöt $oids failed", t)) }
+          case r => Task.fail(new RuntimeException(s"Failed to get henkilöt $oids: ${r.toString()}"))
         }
-      )
+      })
   }
 }

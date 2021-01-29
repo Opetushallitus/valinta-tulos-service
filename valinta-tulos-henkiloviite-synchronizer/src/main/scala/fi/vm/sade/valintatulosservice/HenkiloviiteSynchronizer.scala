@@ -15,8 +15,7 @@ case object NotStarted extends State
 case class Started(at: LocalDateTime) extends State
 case class Stopped(at: LocalDateTime, result: Try[Unit]) extends State
 
-class HenkiloviiteSynchronizer(henkiloClient: HenkiloviiteClient, db: HenkiloviiteDb)
-    extends Runnable {
+class HenkiloviiteSynchronizer(henkiloClient: HenkiloviiteClient, db: HenkiloviiteDb) extends Runnable {
 
   private val logger = LoggerFactory.getLogger(classOf[HenkiloviiteSynchronizer])
   private val running: AtomicBoolean = new AtomicBoolean(false)
@@ -76,8 +75,7 @@ object HenkiloviiteSynchronizer {
     henkiloviitteet
       .groupBy(_.masterOid)
       .map({ case (masterOid, slaves) => (masterOid, masterOid +: slaves.map(_.henkiloOid)) })
-      .values
-      .toSeq
+      .values.toSeq
   }
 
   def allPairs[A](xs: Seq[A]): Seq[(A, A)] = {
@@ -86,8 +84,6 @@ object HenkiloviiteSynchronizer {
   }
 
   def henkiloRelations(henkiloviitteet: Seq[Henkiloviite]): Set[HenkiloRelation] = {
-    relatedHenkilot(henkiloviitteet)
-      .flatMap(allPairs(_).map(t => HenkiloRelation(t._1, t._2)))
-      .toSet
+    relatedHenkilot(henkiloviitteet).flatMap(allPairs(_).map(t => HenkiloRelation(t._1, t._2))).toSet
   }
 }

@@ -30,29 +30,14 @@ object VastaanottoStoreTester extends App with Logging {
   val errors = new AtomicInteger(0)
   val runtimes = (1 to 20).map(_ => {
     val start = System.currentTimeMillis()
-    Await.result(
-      Future.sequence(
-        (1 to concurrency).map(i =>
-          Future {
-            Thread.sleep(r.nextInt(10))
-            if (
-              Try(
-                valintarekisteriDb.store(
-                  HakijanVastaanotto(henkiloOid + i, hakemusOid, hakukohdeOid, VastaanotaSitovasti)
-                )
-              ).isFailure
-            ) {
-              errors.incrementAndGet()
-            }
-          }
-        )
-      ),
-      Duration(60, TimeUnit.SECONDS)
-    )
+    Await.result(Future.sequence((1 to concurrency).map(i => Future {
+      Thread.sleep(r.nextInt(10))
+      if (Try(valintarekisteriDb.store(HakijanVastaanotto(henkiloOid + i, hakemusOid, hakukohdeOid, VastaanotaSitovasti))).isFailure) {
+        errors.incrementAndGet()
+      }
+    })), Duration(60, TimeUnit.SECONDS))
     System.currentTimeMillis() - start
   })
   Thread.sleep(2000)
-  logger.info(
-    s"Average runtime ${runtimes.sum / runtimes.length / concurrency} ms, errors ${errors.get()}"
-  )
+  logger.info(s"Average runtime ${runtimes.sum / runtimes.length / concurrency} ms, errors ${errors.get()}")
 }

@@ -16,37 +16,21 @@ trait AppConfig {
   def blazeDefaultConfig: BlazeClientConfig
 }
 
-protected[config] class DevOphUrlProperties(propertiesFile: String)
-    extends OphUrlProperties(propertiesFile, false, Some("localhost"))
+protected[config] class DevOphUrlProperties(propertiesFile:String) extends OphUrlProperties(propertiesFile, false, Some("localhost"))
 
-protected[config] class ProdOphUrlProperties(propertiesFile: String)
-    extends OphUrlProperties(propertiesFile, true, None)
+protected[config] class ProdOphUrlProperties(propertiesFile:String) extends OphUrlProperties(propertiesFile, true, None)
 
-protected[config] class OphUrlProperties(
-  propertiesFile: String,
-  readUserHome: Boolean = false,
-  host: Option[String] = None
-) extends OphProperties(propertiesFile)
+protected[config] class OphUrlProperties(propertiesFile: String, readUserHome: Boolean = false, host: Option[String] = None)
+  extends OphProperties(propertiesFile)
     with Logging {
 
-  if (readUserHome) {
-    addOptionalFiles(
-      Paths
-        .get(sys.props.getOrElse("user.home", ""), "/oph-configuration/common.properties")
-        .toString
-    )
-    addOptionalFiles(
-      Paths
-        .get(
-          sys.props.getOrElse("user.home", ""),
-          "/oph-configuration/valinta-tulos-service.properties"
-        )
-        .toString
-    )
+  if(readUserHome) {
+    addOptionalFiles(Paths.get(sys.props.getOrElse("user.home", ""), "/oph-configuration/common.properties").toString)
+    addOptionalFiles(Paths.get(sys.props.getOrElse("user.home", ""), "/oph-configuration/valinta-tulos-service.properties").toString)
   }
 
   host.foreach(h =>
     addDefault("host.virkailija", h)
-      addDefault ("host.oppija", h)
+    addDefault("host.oppija", h)
   )
 }

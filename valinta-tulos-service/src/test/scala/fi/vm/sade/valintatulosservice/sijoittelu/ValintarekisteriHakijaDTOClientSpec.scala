@@ -13,37 +13,21 @@ class ValintarekisteriHakijaDTOClientSpec extends ITSpecification with Valintare
   step(deleteAll())
 
   lazy val client = new ValintarekisteriHakijaDTOClientImpl(
-    new ValintarekisteriRaportointiServiceImpl(
-      singleConnectionValintarekisteriDb,
-      new ValintarekisteriValintatulosDaoImpl(singleConnectionValintarekisteriDb)
-    ),
+    new ValintarekisteriRaportointiServiceImpl(singleConnectionValintarekisteriDb, new ValintarekisteriValintatulosDaoImpl(singleConnectionValintarekisteriDb)),
     new ValintarekisteriSijoittelunTulosClientImpl(singleConnectionValintarekisteriDb),
     singleConnectionValintarekisteriDb
   )
 
   step(createSijoitteluajoHaulle2)
   step(createHakujen1Ja2ValinnantuloksetIlmanSijoittelua)
-  step(
-    insertValinnantulos(
-      hakuOid2,
-      valinnantulos(oidHaku2hakukohde1, oidHaku2hakukohde1jono1, sijoittelunHakemusOid2)
-    )
-  )
-  step(
-    insertValinnantulos(
-      hakuOid2,
-      valinnantulosHylatty(oidHaku2hakukohde1, oidHaku2hakukohde1jono2, sijoittelunHakemusOid2)
-    )
-  )
+  step(insertValinnantulos(hakuOid2, valinnantulos(oidHaku2hakukohde1, oidHaku2hakukohde1jono1, sijoittelunHakemusOid2)))
+  step(insertValinnantulos(hakuOid2, valinnantulosHylatty(oidHaku2hakukohde1, oidHaku2hakukohde1jono2, sijoittelunHakemusOid2)))
 
   "processSijoittelunTulokset" should {
-    def test(sijoitteluajoId: String, hakuOid: HakuOid, expectedSize: Int) = {
+    def test(sijoitteluajoId:String, hakuOid:HakuOid, expectedSize:Int) = {
       val list = new ListBuffer[HakemusOid]
 
-      client.processSijoittelunTulokset(
-        HakijaDTOSearchCriteria(hakuOid, sijoitteluajoId),
-        (hakija: HakijaDTO) => list += HakemusOid(hakija.getHakemusOid)
-      )
+      client.processSijoittelunTulokset(HakijaDTOSearchCriteria(hakuOid, sijoitteluajoId), (hakija:HakijaDTO) => list += HakemusOid(hakija.getHakemusOid))
 
       list.distinct.size must_== expectedSize
     }
@@ -65,3 +49,4 @@ class ValintarekisteriHakijaDTOClientSpec extends ITSpecification with Valintare
     }
   }
 }
+

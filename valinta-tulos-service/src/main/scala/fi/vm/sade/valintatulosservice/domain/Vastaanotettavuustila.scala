@@ -6,6 +6,5 @@ object Vastaanotettavuustila extends Enumeration {
   val vastaanotettavissa_sitovasti = Value("VASTAANOTETTAVISSA_SITOVASTI")
   val vastaanotettavissa_ehdollisesti = Value("VASTAANOTETTAVISSA_EHDOLLISESTI")
 
-  def isVastaanotettavissa(tila: Vastaanotettavuustila.Vastaanotettavuustila) =
-    tila != ei_vastaanotettavissa
+  def isVastaanotettavissa(tila: Vastaanotettavuustila.Vastaanotettavuustila) = tila != ei_vastaanotettavissa
 }
