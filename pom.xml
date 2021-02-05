@@ -356,7 +356,7 @@
             <dependency>
                 <groupId>org.http4s</groupId>
                 <artifactId>blaze-http_2.11</artifactId>
-                <version>0.12.11</version>
+                <version>0.14.15</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
