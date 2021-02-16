@@ -16,7 +16,7 @@ class CasSessionService(securityContext: SecurityContext, val serviceIdentifier:
   private def validateServiceTicket(ticket: ServiceTicket): Either[Throwable, String] = {
     logger.info("validateServiceTicket: using timeout value: " + securityContext.validateServiceTicketTimeout)
     val ServiceTicket(s) = ticket
-    securityContext.casClient.validateServiceTicket(serviceIdentifier)(s,securityContext.casClient.decodeVirkailijaUsername).handleWith {
+    securityContext.casClient.validateServiceTicketWithVirkailijaUsername(serviceIdentifier)(s).handleWith {
       case NonFatal(t) => Task.fail(new AuthenticationFailedException(s"Failed to validate service ticket $s", t))
     }.attemptRunFor(securityContext.validateServiceTicketTimeout).toEither
   }
