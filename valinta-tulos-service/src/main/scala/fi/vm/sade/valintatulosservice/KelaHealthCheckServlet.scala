@@ -93,5 +93,5 @@ class KelaHealthCheckServlet(val audit: Audit, val sessionRepository: SessionRep
     }
   }
 
-  case class KelaHealthCheckResponse(statusCode: Int, responseHeaders: Map[String, String], result: String)
+  case class KelaHealthCheckResponse(statusCode: Int, responseHeaders: Map[String, Seq[String]], result: String)
 }
