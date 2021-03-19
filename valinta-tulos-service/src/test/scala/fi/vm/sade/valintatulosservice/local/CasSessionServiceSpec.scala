@@ -32,17 +32,17 @@ class CasSessionServiceSpec extends Specification with MockitoStubs {
     }
     "Authentication fails if session not found and ticket is invalid" in new CasSessionServiceWithMocks {
       sessionRepository.get(id) returns None
-      casClient.validateServiceTicket(service)(ticket) returns Task.fail(new RuntimeException("error"))
+      casClient.validateServiceTicketWithVirkailijaUsername(service)(ticket) returns Task.fail(new RuntimeException("error"))
       cas.getSession(Some(ServiceTicket(ticket)), Some(id)) must beLeft.like { case t => t must beAnInstanceOf[AuthenticationFailedException] }
     }
     "Authentication fails if session not found, ticket is valid and KO user not found" in new CasSessionServiceWithMocks {
       sessionRepository.get(id) returns None
-      casClient.validateServiceTicket(service)(ticket) returns Task.now(uid)
+      casClient.validateServiceTicketWithVirkailijaUsername(service)(ticket) returns Task.now(uid)
       userDetailsService.getUserByUsername(uid) returns Left(new IllegalArgumentException("User not found for testing purposes"))
       cas.getSession(Some(ServiceTicket(ticket)), Some(id)) must beLeft.like { case t => t must beAnInstanceOf[IllegalArgumentException] }
     }
     "Authentication fails if ticket is invalid" in new CasSessionServiceWithMocks {
-      casClient.validateServiceTicket(service)(ticket) returns Task.fail(new RuntimeException("error for testing"))
+      casClient.validateServiceTicketWithVirkailijaUsername(service)(ticket) returns Task.fail(new RuntimeException("error for testing"))
       cas.getSession(Some(ServiceTicket(ticket)), None) must beLeft.like { case t => t must beAnInstanceOf[AuthenticationFailedException] }
     }
     "Return session if found" in new CasSessionServiceWithMocks {
@@ -51,25 +51,25 @@ class CasSessionServiceSpec extends Specification with MockitoStubs {
     }
     "Return session if found and don't validate ticket" in new CasSessionServiceWithMocks {
       sessionRepository.get(id) returns Some(session)
-      casClient.validateServiceTicket(service)(ticket) returns Task.fail(new RuntimeException("not reached"))
+      casClient.validateServiceTicketWithVirkailijaUsername(service)(ticket) returns Task.fail(new RuntimeException("not reached"))
       cas.getSession(Some(ServiceTicket(ticket)), Some(id)) must beRight((id, session))
     }
     "Return created session" in new CasSessionServiceWithMocks {
-      casClient.validateServiceTicket(service)(ticket) returns Task.now(uid)
+      casClient.validateServiceTicketWithVirkailijaUsername(service)(ticket) returns Task.now(uid)
       userDetailsService.getUserByUsername(uid) returns Right(user)
       sessionRepository.store(session) returns newId
       cas.getSession(Some(ServiceTicket(ticket)), None) must beRight((newId, session))
     }
     "Return created session if session not found" in new CasSessionServiceWithMocks {
       sessionRepository.get(id) returns None
-      casClient.validateServiceTicket(service)(ticket) returns Task.now(uid)
+      casClient.validateServiceTicketWithVirkailijaUsername(service)(ticket) returns Task.now(uid)
       userDetailsService.getUserByUsername(uid) returns Right(user)
       sessionRepository.store(session) returns newId
       cas.getSession(Some(ServiceTicket(ticket)), Some(id)) must beRight((newId, session))
     }
     "Return exception if fetching session fails and don't validate ticket" in new CasSessionServiceWithMocks {
       sessionRepository.get(id) throws new RuntimeException("error")
-      casClient.validateServiceTicket(service)(ticket) returns Task.fail(new RuntimeException("not reached"))
+      casClient.validateServiceTicketWithVirkailijaUsername(service)(ticket) returns Task.fail(new RuntimeException("not reached"))
       cas.getSession(Some(ServiceTicket(ticket)), Some(id)) must beLeft.like { case t => t must not(beAnInstanceOf[AuthenticationFailedException]) }
     }
   }
