@@ -29,6 +29,9 @@ abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.conf
   withConfig(_.getConfig("valinta-tulos-service.valintarekisteri.db"))
   val lenientTarjontaDataParsing: Boolean = BooleanUtils.isTrue(withConfig(_.getBoolean("valinta-tulos-service.parseleniently.tarjonta")))
   val estimatedMaxActiveHakus: Long = 6000
+  val kohdejoukotKorkeakoulu: List[String] = config.getString("valinta-tulos-service.kohdejoukot.korkeakoulu").split(",").toList
+  val kohdejoukotToinenAste: List[String] = config.getString("valinta-tulos-service.kohdejoukot.toinen-aste").split(",").toList
+  val kohdejoukonTarkenteetAmkOpe: List[String] = config.getString("valinta-tulos-service.kohdejoukon-tarkenteet.amkope").split(",").toList
 
   val blazeResponseHeaderTimeout: Duration = Duration(withConfig(_.getLong("valinta-tulos-service.blaze.response-header-timeout")), TimeUnit.SECONDS)
   val blazeIdleTimeout: Duration = Duration(withConfig(_.getLong("valinta-tulos-service.blaze.idle-timeout")), TimeUnit.SECONDS)

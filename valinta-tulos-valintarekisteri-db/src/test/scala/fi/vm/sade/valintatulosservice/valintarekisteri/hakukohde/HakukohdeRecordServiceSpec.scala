@@ -96,7 +96,6 @@ class HakukohdeRecordServiceSpec extends Specification with MockitoMatchers with
       käyttääHakutoiveidenPriorisointia = true,
       varsinaisenHaunOid = None,
       sisältyvätHaut = Set(),
-      hakuAjat = Nil,
       koulutuksenAlkamiskausi = Some(Kausi("2016K")),
       yhdenPaikanSaanto = yhdenpaikansaanto,
       nimi = Map("kieli_fi" -> "Haun nimi"))

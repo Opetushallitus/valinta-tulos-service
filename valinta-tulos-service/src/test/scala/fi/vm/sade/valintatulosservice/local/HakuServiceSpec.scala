@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.local
 
 import fi.vm.sade.valintatulosservice.ITSpecification
+import fi.vm.sade.valintatulosservice.ohjausparametrit.StubbedOhjausparametritService
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
 import org.junit.runner.RunWith
@@ -8,7 +9,7 @@ import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class HakuServiceSpec extends ITSpecification {
-  val service = HakuService(appConfig, null, OrganisaatioService(appConfig), null)
+  val service = HakuService(appConfig, null, new StubbedOhjausparametritService(), OrganisaatioService(appConfig), null)
 
   "HakuService" should {
     "löytää kaikki haut, jotka on JULKAISTU" in {

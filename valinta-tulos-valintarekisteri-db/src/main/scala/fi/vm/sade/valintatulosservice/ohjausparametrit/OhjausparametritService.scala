@@ -5,9 +5,7 @@ import java.util.concurrent.TimeUnit
 import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.http.DefaultHttpClient
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.domain.Vastaanottoaikataulu
-import fi.vm.sade.valintatulosservice.json.JsonFormats
+import fi.vm.sade.valintatulosservice.config.AppConfig
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 import org.joda.time.DateTime
@@ -25,7 +23,9 @@ case class Ohjausparametrit(vastaanottoaikataulu: Vastaanottoaikataulu,
                             tulostenJulkistusAlkaa: Option[DateTime],
                             kaikkiJonotSijoittelussa: Option[DateTime],
                             valintaesitysHyvaksyttavissa: Option[DateTime],
-                            naytetaankoSiirryKelaanURL: Boolean)
+                            naytetaankoSiirryKelaanURL: Boolean,
+                            sijoittelu: Boolean,
+                            jarjestetytHakutoiveet: Boolean)
 
 object Ohjausparametrit {
   val empty = Ohjausparametrit(
@@ -38,26 +38,30 @@ object Ohjausparametrit {
     tulostenJulkistusAlkaa = None,
     kaikkiJonotSijoittelussa = None,
     valintaesitysHyvaksyttavissa = None,
-    naytetaankoSiirryKelaanURL = true)
+    naytetaankoSiirryKelaanURL = true,
+    sijoittelu = false,
+    jarjestetytHakutoiveet = false)
 }
 
 trait OhjausparametritService {
   def ohjausparametrit(hakuOid: HakuOid): Either[Throwable, Ohjausparametrit]
+  def naytetaankoSiirryKelaanURL(): Either[Throwable, Boolean]
 }
 
 class StubbedOhjausparametritService extends OhjausparametritService {
-  def ohjausparametrit(hakuOid: HakuOid): Either[Throwable, Ohjausparametrit] = {
+  override def ohjausparametrit(hakuOid: HakuOid): Either[Throwable, Ohjausparametrit] = {
     val fileName = "/fixtures/ohjausparametrit/" + OhjausparametritFixtures.activeFixture + ".json"
     Right(OhjausparametritParser.parseOhjausparametrit(
       parse(scala.io.Source.fromInputStream(getClass.getResourceAsStream(fileName)).mkString),
       naytetaankoSiirryKelaanURL = true))
   }
+
+  override def naytetaankoSiirryKelaanURL(): Either[Throwable, Boolean] = Right(true)
 }
 
-class CachedRemoteOhjausparametritService(appConfig: VtsAppConfig) extends OhjausparametritService {
-  val service = new RemoteOhjausparametritService(appConfig)
-  val ohjausparametritMemo = TTLOptionalMemoize.memoize[HakuOid, Ohjausparametrit](service.ohjausparametrit, Duration(1, TimeUnit.HOURS).toSeconds, appConfig.settings.estimatedMaxActiveHakus)
-  val naytetaankoSiirryKelaanURLMemo = TTLOptionalMemoize.memoize[Unit, Boolean](_ => service.naytetaankoSiirryKelaanURL, Duration(30, TimeUnit.SECONDS).toSeconds, 1)
+class CachedOhjausparametritService(appConfig: AppConfig, ohjausparametritService: OhjausparametritService) extends OhjausparametritService {
+  private val ohjausparametritMemo = TTLOptionalMemoize.memoize[HakuOid, Ohjausparametrit](ohjausparametritService.ohjausparametrit, Duration(1, TimeUnit.HOURS).toSeconds, appConfig.settings.estimatedMaxActiveHakus)
+  private val naytetaankoSiirryKelaanURLMemo = TTLOptionalMemoize.memoize[Unit, Boolean](_ => ohjausparametritService.naytetaankoSiirryKelaanURL(), Duration(30, TimeUnit.SECONDS).toSeconds, 1)
 
   override def ohjausparametrit(hakuOid: HakuOid): Either[Throwable, Ohjausparametrit] = {
     for {
@@ -65,9 +69,11 @@ class CachedRemoteOhjausparametritService(appConfig: VtsAppConfig) extends Ohjau
       ohjausparametrit <- ohjausparametritMemo(hakuOid).right
     } yield ohjausparametrit.copy(naytetaankoSiirryKelaanURL = naytetaankoSiirryKelaanURL)
   }
+
+  override def naytetaankoSiirryKelaanURL(): Either[Throwable, Boolean] = naytetaankoSiirryKelaanURLMemo()
 }
 
-class RemoteOhjausparametritService(appConfig: VtsAppConfig) extends OhjausparametritService with JsonFormats with Logging {
+class RemoteOhjausparametritService(appConfig: AppConfig) extends OhjausparametritService with Logging {
   def fetch[T](url: String, parser: String => T): Either[Throwable, Option[T]] = {
     Timer.timed(s"Find parameters for url $url", 500) {
       Try(DefaultHttpClient.httpGet(url)(appConfig.settings.callerId)
@@ -84,7 +90,8 @@ class RemoteOhjausparametritService(appConfig: VtsAppConfig) extends Ohjausparam
     }
   }
 
-  def naytetaankoSiirryKelaanURL: Either[Throwable, Boolean] = {
+  override def naytetaankoSiirryKelaanURL(): Either[Throwable, Boolean] = {
+    implicit val jsonFormats: Formats = DefaultFormats
     val url = appConfig.ophUrlProperties.url("ohjausparametrit-service.parametri", "valintatulosservice")
     fetch(url, body => (parse(body) \ "nayta_siirry_kelaan_url").extractOrElse[Boolean](true)).right.map(_.getOrElse(false))
   }
@@ -92,13 +99,14 @@ class RemoteOhjausparametritService(appConfig: VtsAppConfig) extends Ohjausparam
   override def ohjausparametrit(hakuOid: HakuOid): Either[Throwable, Ohjausparametrit] = {
     val url = appConfig.ophUrlProperties.url("ohjausparametrit-service.parametri", hakuOid.toString)
     for {
-      naytetaankoSiirryKelaanURL <- naytetaankoSiirryKelaanURL.right
+      naytetaankoSiirryKelaanURL <- naytetaankoSiirryKelaanURL().right
       ohjausparametrit <- fetch(url, body => OhjausparametritParser.parseOhjausparametrit(parse(body), naytetaankoSiirryKelaanURL)).right
     } yield ohjausparametrit.getOrElse(Ohjausparametrit.empty)
   }
 }
 
-object OhjausparametritParser extends JsonFormats {
+object OhjausparametritParser {
+  private implicit val jsonFormats: Formats = DefaultFormats
   def parseOhjausparametrit(json: JValue, naytetaankoSiirryKelaanURL: Boolean): Ohjausparametrit = {
     Ohjausparametrit(
       vastaanottoaikataulu = Vastaanottoaikataulu(
@@ -110,7 +118,9 @@ object OhjausparametritParser extends JsonFormats {
       tulostenJulkistusAlkaa = parseDateTime(json \ "PH_VTJH" \ "dateStart"),
       kaikkiJonotSijoittelussa = parseDateTime(json \ "PH_VTSSV" \ "date"),
       valintaesitysHyvaksyttavissa = parseDateTime(json \ "PH_VEH" \ "date"),
-      naytetaankoSiirryKelaanURL = naytetaankoSiirryKelaanURL)
+      naytetaankoSiirryKelaanURL = naytetaankoSiirryKelaanURL,
+      sijoittelu = (json \ "sijoittelu").extractOrElse(false),
+      jarjestetytHakutoiveet = (json \ "jarjestetytHakutoiveet").extractOrElse(false))
   }
 
   private def parseDateTime(json: JValue): Option[DateTime] = {

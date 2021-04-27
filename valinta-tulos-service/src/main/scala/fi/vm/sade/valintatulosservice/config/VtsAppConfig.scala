@@ -175,11 +175,6 @@ object VtsAppConfig extends Logging {
 
     def start {}
 
-    lazy val ohjausparametritService = this match {
-      case _ : StubbedExternalDeps => new StubbedOhjausparametritService()
-      case _ => new CachedRemoteOhjausparametritService(this)
-    }
-
     lazy val valintaPerusteetService = this match {
       case _ : StubbedExternalDeps => new ValintaPerusteetServiceMock
       case _ => new ValintaPerusteetServiceImpl(this)
