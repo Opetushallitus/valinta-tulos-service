@@ -96,7 +96,8 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         vastaanottoService,
         yhdenPaikanSaannos,
         appConfig,
-        audit)
+        audit,
+      hakemusRepository)
     lazy val userDetailsService = new KayttooikeusUserDetailsService(appConfig)
     lazy val hyvaksymiskirjeService = new HyvaksymiskirjeService(valintarekisteriDb, hakuService, audit, authorizer)
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)

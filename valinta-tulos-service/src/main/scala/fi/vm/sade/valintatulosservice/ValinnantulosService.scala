@@ -2,12 +2,12 @@ package fi.vm.sade.valintatulosservice
 
 import java.time.Instant
 import java.util.ConcurrentModificationException
-
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
 import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde}
@@ -34,7 +34,8 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
                            vastaanottoService: VastaanottoService,
                            yhdenPaikanSaannos: YhdenPaikanSaannos,
                            val appConfig: VtsAppConfig,
-                           val audit: Audit) extends Logging {
+                           val audit: Audit,
+                           val hakemusRepository: HakemusRepository) extends Logging {
   def getMuutoshistoriaForHakemusWithoutAuditInfo(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[Muutos] = {
     valinnantulosRepository.getMuutoshistoriaForHakemus(hakemusOid, valintatapajonoOid)
   }
@@ -188,7 +189,8 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
           valinnantulosRepository,
           hakukohdeRecordService,
           ifUnmodifiedSince,
-          audit
+          audit,
+          hakemusRepository
         )
       } else {
         new SijoittelunValinnantulosStrategy(

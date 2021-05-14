@@ -431,7 +431,7 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
   lazy val yhdenPaikanSaannos = new YhdenPaikanSaannos(hakuService, valintarekisteriDb)
 
   lazy val valinnantulosService = new ValinnantulosService(valintarekisteriDb, authorizer, hakuService, ohjausparametritService,
-    hakukohdeRecordService, valintaPerusteetServiceMock, vastaanottoService, yhdenPaikanSaannos, appConfig, audit)
+    hakukohdeRecordService, valintaPerusteetServiceMock, vastaanottoService, yhdenPaikanSaannos, appConfig, audit, hakemusRepository)
 
   private def expectFailure[T](block: => T): Result = expectFailure[T](None)(block)
 
