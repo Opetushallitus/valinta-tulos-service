@@ -1,21 +1,23 @@
 package fi.vm.sade.valintatulosservice
 
 import java.util.Date
-
 import fi.vm.sade.auditlog.Operation
 import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain._
+import fi.vm.sade.valintatulosservice.json.JsonFormats.javaObjectToJsonString
 import fi.vm.sade.valintatulosservice.json.{JsonFormats, JsonStreamWriter, StreamingFailureException}
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.streamingresults.{HakemustenTulosHakuLock, StreamingValintatulosService}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, Hakuaika, YhdenPaikanSaanto}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+
 import javax.servlet.http.HttpServletResponse
 import org.joda.time.DateTime
 import org.json4s.Extraction
+import org.json4s.jackson.Serialization.read
 import org.scalatra._
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
@@ -77,6 +79,15 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
       case Some(tulos) => tulos
       case _ => NotFound("error" -> "Not found")
     }
+  }
+
+  lazy val getValintatuloksetByHakemuksetSwagger: OperationBuilder = (apiOperation[Unit]("getValintatuloksetByHakemukset")
+    summary "Hakee hakemuksen valintatulokset hakemuksille"
+    parameter bodyParam[Set[String]]("hakemusOids").description("Kiinnostavien hakemusten oidit")
+    tags swaggerGroupTag)
+  post("/hakemukset", operation(getValintatuloksetByHakemuksetSwagger)) {
+    val hakemusOids = read[Set[HakemusOid]](request.body)
+    Ok(valintatulosService.hakemuksentulos(hakemusOids))
   }
 
   lazy val getHakemuksetSwagger: OperationBuilder = (apiOperation[Unit]("getHakemukset")
