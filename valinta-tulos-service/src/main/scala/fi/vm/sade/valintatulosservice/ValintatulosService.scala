@@ -2,7 +2,6 @@ package fi.vm.sade.valintatulosservice
 
 import java.time.Instant
 import java.util.Date
-
 import fi.vm.sade.sijoittelu.domain.TilankuvauksenTarkenne.{PERUUNTUNUT_EI_VASTAANOTTANUT_MAARAAIKANA, PERUUNTUNUT_VASTAANOTTANUT_TOISEN_PAIKAN_YHDEN_SAANNON_PAIKAN_PIIRISSA}
 import fi.vm.sade.sijoittelu.domain.{TilanKuvaukset, TilankuvauksenTarkenne, ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.sijoittelu.tulos.dto
@@ -62,6 +61,10 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
 
   def hakemuksentulos(hakemusOid: HakemusOid): Option[Hakemuksentulos] =
     hakemusRepository.findHakemus(hakemusOid).right.toOption.flatMap(hakemuksentulos)
+
+  def hakemuksentulos(hakemusOids: Set[HakemusOid]): List[Hakemuksentulos] =
+    hakemusRepository.findHakemuksetByOids(hakemusOids).flatMap(h =>
+      hakemuksentulos(h).toList).toList
 
   def hakemuksentulos(h: Hakemus): Option[Hakemuksentulos] = {
     for {
@@ -290,10 +293,8 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     sijoittelutulosService.haeVastaanotonAikarajaTiedot(hakuOid, hakukohdeOid, hakemusOids)
   }
 
-
-  def findValintaTuloksetForVirkailijaByHakemus(hakemusOid: HakemusOid): List[Valintatulos] = {
-    val hakemuksenTulos = hakemuksentulos(hakemusOid)
-      .getOrElse(throw new IllegalArgumentException(s"Not hakemuksen tulos for hakemus $hakemusOid"))
+  private def findTuloksetForHakemustulos(hakemuksenTulos: Hakemuksentulos): List[Valintatulos] = {
+    val hakemusOid = hakemuksenTulos.hakemusOid
     val hakuOid = hakemuksenTulos.hakuOid
     val henkiloOid = hakemuksenTulos.hakijaOid
     val vastaanotot = virkailijaVastaanottoRepository.runBlocking(virkailijaVastaanottoRepository.findHenkilonVastaanototHaussa(henkiloOid, hakuOid))
@@ -301,6 +302,15 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
 
     setValintatuloksetTilat(valintatulokset, Map(hakemusOid -> hakemuksenTulos), Map(henkiloOid -> vastaanotot))
     valintatulokset
+  }
+  def findValintaTuloksetForVirkailijaByHakemukset(hakemusOids: Set[HakemusOid]): List[Valintatulos] = {
+    val hakemuksenTulokset: Seq[Hakemuksentulos] = hakemuksentulos(hakemusOids)
+    hakemuksenTulokset.flatMap(findTuloksetForHakemustulos).toList
+  }
+  def findValintaTuloksetForVirkailijaByHakemus(hakemusOid: HakemusOid): List[Valintatulos] = {
+    val hakemuksenTulos = hakemuksentulos(hakemusOid)
+      .getOrElse(throw new IllegalArgumentException(s"Not hakemuksen tulos for hakemus $hakemusOid"))
+    findTuloksetForHakemustulos(hakemuksenTulos)
   }
 
   def sijoittelunTulokset(hakuOid: HakuOid, sijoitteluajoId: String, hyvaksytyt: Option[Boolean], ilmanHyvaksyntaa: Option[Boolean], vastaanottaneet: Option[Boolean],
