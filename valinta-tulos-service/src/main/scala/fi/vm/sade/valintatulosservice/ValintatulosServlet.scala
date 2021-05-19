@@ -81,7 +81,6 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     }
   }
 
-  /*
   lazy val getValintatuloksetByHakemuksetSwagger: OperationBuilder = (apiOperation[Unit]("getValintatuloksetByHakemukset")
     summary "Hakee hakemuksen valintatulokset hakemuksille"
     parameter bodyParam[Set[String]]("hakemusOids").description("Kiinnostavien hakemusten oidit")
@@ -90,7 +89,6 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     val hakemusOids = read[Set[HakemusOid]](request.body)
     Ok(valintatulosService.hakemuksentulos(hakemusOids))
   }
-  */
 
   lazy val getHakemuksetSwagger: OperationBuilder = (apiOperation[Unit]("getHakemukset")
     summary "Hae haun kaikkien hakemusten tulokset. Palauttaa julkaistu tilaiset valintatulokset jo ennen haun tulosten julkaisupäivää."
