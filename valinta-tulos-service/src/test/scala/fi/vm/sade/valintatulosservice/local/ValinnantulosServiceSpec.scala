@@ -332,8 +332,6 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     val yhdenPaikanSaannos = mock[YhdenPaikanSaannos]
     val settings = mock[VtsApplicationSettings]
     val valintaPerusteetService = new ValintaPerusteetServiceMock
-    //val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
-    //val hakemusRepository = new HakemusRepository(new HakuAppRepository(), new AtaruHakemusRepository(appConfig), new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService))
     val hakemusRepository = mock[HakemusRepository]
 
     val rootOrganisaatioOid = "1.2.246.562.10.00000000001"
