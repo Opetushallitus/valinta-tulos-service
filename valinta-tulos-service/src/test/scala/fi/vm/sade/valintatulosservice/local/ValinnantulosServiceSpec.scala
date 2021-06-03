@@ -3,16 +3,17 @@ package fi.vm.sade.valintatulosservice.local
 import java.net.InetAddress
 import java.time.{Instant, ZonedDateTime}
 import java.util.UUID
-
 import fi.vm.sade.auditlog.Audit
 import fi.vm.sade.security.{AuthorizationFailedException, OrganizationHierarchyAuthorizer}
 import fi.vm.sade.sijoittelu.domain.{EhdollisenHyvaksymisenEhtoKoodi, ValintatuloksenTila}
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
-import fi.vm.sade.valintatulosservice.domain.Vastaanottoaikataulu
+import fi.vm.sade.valintatulosservice.config.{VtsAppConfig, VtsApplicationSettings}
+import fi.vm.sade.valintatulosservice.domain.{Hakemus, Vastaanottoaikataulu}
+import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusRepository, HakuAppRepository}
 import fi.vm.sade.valintatulosservice.mock.RunBlockingMock
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
+import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
@@ -34,6 +35,16 @@ import slick.dbio.DBIO
 @RunWith(classOf[JUnitRunner])
 class ValinnantulosServiceSpec extends Specification with MockitoMatchers with MockitoStubs {
   "ValinnantulosService" in {
+    "storing fails if hakemus not found" in new Mocks with Authorized with KorkeakouluErillishaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
+      val hakemusOid = HakemusOid("OID")
+      valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set())
+      yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(Set())
+      hakemusRepository.findHakemus(hakemusOid) returns Left(new IllegalArgumentException())
+      val valinnantulokset = List(valinnantulosA.copy(hakemusOid = hakemusOid))
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(Instant.now()), auditInfo) mustEqual List(
+        ValinnantulosUpdateStatus(400, "Hakemuksen tietojen hakeminen epäonnistui" ,valintatapajonoOid, hakemusOid)
+      )
+    }
     "exception is thrown, if no authorization" in new Mocks with Korkeakouluhaku {
       authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]]) returns Left(new AuthorizationFailedException("error"))
       val valinnantulokset = List(valinnantulosA)
@@ -312,7 +323,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     mockRunBlocking(valinnantulosRepository)
 
     val authorizer = mock[OrganizationHierarchyAuthorizer]
-    val appConfig = mock[VtsAppConfig]
+    implicit val appConfig = mock[VtsAppConfig]
     val hakuService = mock[HakuService]
     val ohjausparametritService = mock[OhjausparametritService]
     val audit = mock[Audit]
@@ -321,6 +332,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     val yhdenPaikanSaannos = mock[YhdenPaikanSaannos]
     val settings = mock[VtsApplicationSettings]
     val valintaPerusteetService = new ValintaPerusteetServiceMock
+    val hakemusRepository = mock[HakemusRepository]
 
     val rootOrganisaatioOid = "1.2.246.562.10.00000000001"
     settings.rootOrganisaatioOid returns rootOrganisaatioOid
@@ -386,7 +398,8 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       vastaanottoService,
       yhdenPaikanSaannos,
       appConfig,
-      audit
+      audit,
+      hakemusRepository
     )
   }
 
@@ -459,6 +472,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       koulutuksenAlkamiskausi = null,
       yhdenPaikanSaanto = null,
       nimi = null))
+    hakemusRepository.findHakemus(any()) returns Right(Hakemus(null, null, null, null, null, null))
   }
 
   trait ToisenAsteenHaku { this: Mocks =>

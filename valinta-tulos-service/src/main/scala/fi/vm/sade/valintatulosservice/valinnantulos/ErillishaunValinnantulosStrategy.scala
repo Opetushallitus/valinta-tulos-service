@@ -1,13 +1,13 @@
 package fi.vm.sade.valintatulosservice.valinnantulos
 
 import java.time.Instant
-
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.{HyvaksynnanEhtoRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhtoRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnanTilanKuvausRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
@@ -26,7 +26,8 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
                                          with HyvaksynnanEhtoRepository,
                                        hakukohdeRecordService: HakukohdeRecordService,
                                        ifUnmodifiedSince: Option[Instant],
-                                       audit: Audit) extends ValinnantulosStrategy with Logging {
+                                       audit: Audit,
+                                       hakemusRepository: HakemusRepository) extends ValinnantulosStrategy with Logging {
   private val session = auditInfo.session._2
 
   lazy val hakukohdeRecord: Either[Throwable, HakukohdeRecord] = hakukohdeRecordService.getHakukohdeRecord(hakukohdeOid)
@@ -35,6 +36,16 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
   def hasChange(uusi:Valinnantulos, vanha:Valinnantulos) = uusi.hasChanged(vanha) || uusi.poistettava.getOrElse(false)
 
   def validate(uusi: Valinnantulos, vanha: Option[Valinnantulos]) = {
+
+    def validateHakemus() = {
+      hakemusRepository.findHakemus(uusi.hakemusOid) match {
+        case Left(t) => {
+          logger.warn(s"Failed to fetch hakemus ${uusi.hakemusOid}", t);
+          Left(ValinnantulosUpdateStatus(400, s"Hakemuksen tietojen hakeminen epäonnistui", uusi.valintatapajonoOid, uusi.hakemusOid))
+        }
+        case Right(_) => Right()
+      }
+    }
 
     def validateValinnantila() = (uusi.valinnantila, uusi.vastaanottotila) match {
       case (Hylatty, ValintatuloksenTila.KESKEN) |
@@ -132,6 +143,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
 
     def validateMuutos() = {
       for {
+        hakemus <- validateHakemus.right
         poisto <- validatePoisto.right
         tilat <- validateTilat.right
         valinnantila <- validateValinnantila.right
