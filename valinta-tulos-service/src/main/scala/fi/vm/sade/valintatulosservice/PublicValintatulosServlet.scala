@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.auditlog.{Audit, Changes, Operation, Target}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.streamingresults.{HakemustenTulosHakuLock, StreamingValintatulosService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
@@ -14,6 +15,7 @@ class PublicValintatulosServlet(audit: Audit,
                                 vastaanottoService: VastaanottoService,
                                 ilmoittautumisService: IlmoittautumisService,
                                 valintarekisteriDb: ValintarekisteriDb,
+                                hakemusRepository: HakemusRepository,
                                 val sessionRepository: SessionRepository,
                                 hakemustenTulosHakuLock: HakemustenTulosHakuLock) (override implicit val swagger: Swagger, appConfig: VtsAppConfig)
   extends ValintatulosServlet(valintatulosService,
@@ -21,6 +23,7 @@ class PublicValintatulosServlet(audit: Audit,
     vastaanottoService,
     ilmoittautumisService,
     valintarekisteriDb,
+    hakemusRepository,
     hakemustenTulosHakuLock,
   "valintatulos-public")(swagger, appConfig) with CasAuthenticatedServlet {
 

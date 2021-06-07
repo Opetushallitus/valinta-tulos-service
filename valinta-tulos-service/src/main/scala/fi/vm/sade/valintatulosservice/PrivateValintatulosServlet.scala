@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.auditlog.Operation
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.streamingresults.{HakemustenTulosHakuLock, StreamingValintatulosService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import org.scalatra.swagger._
@@ -11,6 +12,7 @@ class PrivateValintatulosServlet(valintatulosService: ValintatulosService,
                                  vastaanottoService: VastaanottoService,
                                  ilmoittautumisService: IlmoittautumisService,
                                  valintarekisteriDb: ValintarekisteriDb,
+                                 hakemusRepository: HakemusRepository,
                                  hakemustenTulosHakuLock: HakemustenTulosHakuLock )
                                 (override implicit val swagger: Swagger,
                                  appConfig: VtsAppConfig)
@@ -19,6 +21,7 @@ class PrivateValintatulosServlet(valintatulosService: ValintatulosService,
     vastaanottoService,
     ilmoittautumisService,
     valintarekisteriDb,
+    hakemusRepository,
     hakemustenTulosHakuLock,
     "valintatulos-private")(swagger, appConfig) {
 

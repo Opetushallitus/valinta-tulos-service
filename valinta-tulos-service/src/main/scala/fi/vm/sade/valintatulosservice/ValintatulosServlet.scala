@@ -1,20 +1,18 @@
 package fi.vm.sade.valintatulosservice
 
-import java.util.Date
 import fi.vm.sade.auditlog.Operation
 import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain._
-import fi.vm.sade.valintatulosservice.json.JsonFormats.javaObjectToJsonString
+import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.json.{JsonFormats, JsonStreamWriter, StreamingFailureException}
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.streamingresults.{HakemustenTulosHakuLock, StreamingValintatulosService}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, Hakuaika, YhdenPaikanSaanto}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakemuksenHakukohteet
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-
-import javax.servlet.http.HttpServletResponse
 import org.joda.time.DateTime
 import org.json4s.Extraction
 import org.json4s.jackson.Serialization.read
@@ -22,6 +20,8 @@ import org.scalatra._
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 
+import java.util.Date
+import javax.servlet.http.HttpServletResponse
 import scala.util.Try
 
 
@@ -31,6 +31,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
                                    vastaanottoService: VastaanottoService,
                                    ilmoittautumisService: IlmoittautumisService,
                                    valintarekisteriDb: ValintarekisteriDb,
+                                   hakemusRepository: HakemusRepository,
                                    hakemustenTulosHakuLock: HakemustenTulosHakuLock,
                                    swaggerGroupTag: String)
                                   (implicit val swagger: Swagger,
@@ -314,6 +315,33 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     } else {
       writeSijoittelunTuloksetStreamingToResponse(response, hakuOid, w => streamingValintatulosService.streamSijoittelunTuloksetOfHakukohdes(
         hakuOid, sijoitteluajoId, hakukohdeOids.toSet.map(HakukohdeOid), w, vainMerkitsevaJono))
+    }
+  }
+
+  lazy val postTallennaHakemustenHakukohteetSwagger: OperationBuilder = (apiOperation[Unit]("postTallennaHakemustenHakukohteetSwagger")
+    summary """Hakemusten hakukohteiden tallennus hakemusoidien tai hakukohdeoidin perusteella"""
+    notes "Parametrinä tulee antaa joko hakukohdeoid TAI lista hakemusoideja. Jos molemmat on annettu tallennetaan hakemusten hakukohteet hakukohdeoidin perusteella."
+    parameter pathParam[String]("hakuOid").description("Haun oid").required
+    parameter pathParam[String]("hakukohdeOid").description("Tallennettavien hakemusten hakukohteen oid").optional
+    parameter bodyParam[Seq[HakemusOid]]("hakemusOids").description("Tallennettavien hakemusten oidit").optional
+    tags swaggerGroupTag)
+  post("/hakemustenhakukohteet/:hakuOid/hakukohdeOid/:hakukohdeOid", operation(postTallennaHakemustenHakukohteetSwagger)) {
+    val hakuOid = HakuOid(params("hakuOid"))
+    val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
+    val hakemusOids = read[Set[HakemusOid]](request.body)
+
+    if (hakemusOids.isEmpty && hakukohdeOid.toString.isEmpty) {
+      BadRequest("hakukohdeoid tai hakemusoidit on pakollinen tieto.")
+    } else {
+      var hakemukset =
+        if (hakukohdeOid.toString.isEmpty)
+          hakemusRepository.findHakemuksetByHakukohde(hakuOid, hakukohdeOid)
+            .map(h => HakemuksenHakukohteet(h.oid, h.toiveet.map(t => t.oid))).toList
+        else hakemusRepository.findHakemuksetByOids(hakemusOids)
+          .map(h => HakemuksenHakukohteet(h.oid, h.toiveet.map(t => t.oid))).toList
+          logger.info(s"Tallennetaan haun $hakuOid hakukohteen $hakukohdeOid hakemusoidien ${hakemusOids} hakukohteet.")
+      valintarekisteriDb.storeHakemuksenHakukohteet(hakemukset)
+          //todo store to db
     }
   }
 

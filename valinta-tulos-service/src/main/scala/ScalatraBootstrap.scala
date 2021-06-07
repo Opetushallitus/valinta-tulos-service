@@ -1,5 +1,3 @@
-import java.util
-
 import fi.vm.sade.auditlog.{ApplicationType, Audit, Logger}
 import fi.vm.sade.oppijantunnistus.OppijanTunnistusService
 import fi.vm.sade.security._
@@ -27,9 +25,11 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.vastaanottomeili.{EmailerServlet, _}
-import javax.servlet.{DispatcherType, ServletContext}
 import org.scalatra._
 import org.slf4j.LoggerFactory
+
+import java.util
+import javax.servlet.{DispatcherType, ServletContext}
 
 class ScalatraBootstrap extends LifeCycle with Logging {
 
@@ -132,6 +132,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         vastaanottoService,
         ilmoittautumisService,
         valintarekisteriDb,
+        hakemusRepository,
         hakemustenTulosHakuLock),
         "/haku", "haku")
       context.mount(new EnsikertalaisuusServlet(valintarekisteriDb, appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus", "ensikertalaisuus")
@@ -156,6 +157,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         vastaanottoService,
         ilmoittautumisService,
         valintarekisteriDb,
+        hakemusRepository,
         valintarekisteriDb,
         hakemustenTulosHakuLock
       ),
