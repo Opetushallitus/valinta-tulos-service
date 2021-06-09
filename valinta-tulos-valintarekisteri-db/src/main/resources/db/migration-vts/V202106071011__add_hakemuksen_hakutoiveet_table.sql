@@ -1,8 +1,9 @@
 create table hakemuksen_hakukohteet
 (
     hakemus_oid varchar not null,
-    hakukohde_oids jsonb not null,
+    hakukohde_oids varchar not null,
     system_time tstzrange default tstzrange(now(), NULL::timestamp with time zone, '[)'::text) not null,
+    transaction_id bigint not null default txid_current(),
     constraint hakemuksen_hakukohteet_pkey
         primary key (hakemus_oid)
 );
@@ -21,7 +22,7 @@ create trigger set_system_time_on_hakemuksen_hakukohteet_on_insert
     for each row
 execute procedure set_temporal_columns();
 
-create trigger set_system_time_on_valinnantilat_on_update
+create trigger set_system_time_on_hakemuksen_hakukohteet_on_update
     before update
     on hakemuksen_hakukohteet
     for each row

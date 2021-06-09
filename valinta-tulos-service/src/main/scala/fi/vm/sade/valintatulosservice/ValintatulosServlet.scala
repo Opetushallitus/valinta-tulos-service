@@ -320,10 +320,10 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
 
   lazy val postTallennaHakemustenHakukohteetSwagger: OperationBuilder = (apiOperation[Unit]("postTallennaHakemustenHakukohteetSwagger")
     summary """Hakemusten hakukohteiden tallennus hakemusoidien tai hakukohdeoidin perusteella"""
-    notes "Parametrinä tulee antaa joko hakukohdeoid TAI lista hakemusoideja. Jos molemmat on annettu tallennetaan hakemusten hakukohteet hakukohdeoidin perusteella."
+    notes "Parametrinä tulee antaa joko hakuoid, hakukohdeoid sekä halutessa lista hakemusoideja. Jos hakemusoideja on annettu, tallennetaan hakemuksen hakukohteet listan perusteella, muuten hakukohdeoidin perusteella."
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     parameter pathParam[String]("hakukohdeOid").description("Tallennettavien hakemusten hakukohteen oid").optional
-    parameter bodyParam[Seq[HakemusOid]]("hakemusOids").description("Tallennettavien hakemusten oidit").optional
+    parameter bodyParam[Set[String]]("hakemusOids").description("Tallennettavien hakemusten oidit").optional
     tags swaggerGroupTag)
   post("/hakemustenhakukohteet/:hakuOid/hakukohdeOid/:hakukohdeOid", operation(postTallennaHakemustenHakukohteetSwagger)) {
     val hakuOid = HakuOid(params("hakuOid"))
@@ -333,15 +333,16 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     if (hakemusOids.isEmpty && hakukohdeOid.toString.isEmpty) {
       BadRequest("hakukohdeoid tai hakemusoidit on pakollinen tieto.")
     } else {
-      var hakemukset =
-        if (hakukohdeOid.toString.isEmpty)
-          hakemusRepository.findHakemuksetByHakukohde(hakuOid, hakukohdeOid)
-            .map(h => HakemuksenHakukohteet(h.oid, h.toiveet.map(t => t.oid))).toList
-        else hakemusRepository.findHakemuksetByOids(hakemusOids)
-          .map(h => HakemuksenHakukohteet(h.oid, h.toiveet.map(t => t.oid))).toList
+      val hakemukset = List(HakemuksenHakukohteet(HakemusOid("1.1.1"), List(HakukohdeOid("12121243"))))
+//        if (!hakemusOids.isEmpty)
+//          hakemusRepository.findHakemuksetByOids(hakemusOids)
+//            .map(h => HakemuksenHakukohteet(h.oid, h.toiveet.map(t => t.oid))).toList
+//        else
+//          hakemusRepository.findHakemuksetByHakukohde(hakuOid, hakukohdeOid)
+//            .map(h => HakemuksenHakukohteet(h.oid, h.toiveet.map(t => t.oid))).toList
+
           logger.info(s"Tallennetaan haun $hakuOid hakukohteen $hakukohdeOid hakemusoidien ${hakemusOids} hakukohteet.")
       valintarekisteriDb.storeHakemuksenHakukohteet(hakemukset)
-          //todo store to db
     }
   }
 
