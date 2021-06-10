@@ -15,7 +15,7 @@ import fi.vm.sade.valintatulosservice.valinnantulos._
 import fi.vm.sade.valintatulosservice.valintaperusteet.ValintaPerusteetService
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhtoRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnanTilanKuvausRepository, ValinnantulosRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakemuksenHakukohteetRepository, HakijaVastaanottoRepository, ValinnanTilanKuvausRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import slick.dbio._
@@ -25,7 +25,8 @@ import scala.util.{Failure, Success}
 class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
                              with HakijaVastaanottoRepository
                              with ValinnanTilanKuvausRepository
-                             with HyvaksynnanEhtoRepository,
+                             with HyvaksynnanEhtoRepository
+                           with HakemuksenHakukohteetRepository,
                            val authorizer:OrganizationHierarchyAuthorizer,
                            val hakuService: HakuService,
                            val ohjausparametritService: OhjausparametritService,
@@ -79,16 +80,20 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
       (t._1, yhdenPaikanSaannos(t._2).fold(throw _, x => x))
     })
     r.foreach(t => {
-      val oids = hakuService.getHakukohdes(t._2.map(_.hakukohdeOid).toSeq)
-        .fold(throw _, x => x)
-        .flatMap(_.organisaatioOiditAuktorisointiin)
-        .toSet
+//      val oids = hakuService.getHakukohdes(t._2.map(_.hakukohdeOid).toSeq)
+//        .fold(throw _, x => x)
+//        .flatMap(_.organisaatioOiditAuktorisointiin)
+//        .toSet
+
       val roles = Set(
         Role.SIJOITTELU_READ,
         Role.SIJOITTELU_READ_UPDATE,
         Role.SIJOITTELU_CRUD,
         Role.ATARU_KEVYT_VALINTA_READ,
         Role.ATARU_KEVYT_VALINTA_CRUD)
+
+      val oids: Set[String] = valinnantulosRepository.findHakemuksenHakukohteet(hakemusOid).getOrElse(Set())
+
       authorizer.checkAccess(auditInfo.session._2, oids, roles).fold(throw _, x => x)
     })
     audit.log(auditInfo.user, ValinnantuloksenLuku,

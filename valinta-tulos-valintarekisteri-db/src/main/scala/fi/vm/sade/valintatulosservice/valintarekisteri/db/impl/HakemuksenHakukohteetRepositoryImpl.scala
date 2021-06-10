@@ -9,13 +9,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 trait HakemuksenHakukohteetRepositoryImpl extends HakemuksenHakukohteetRepository with ValintarekisteriRepository {
 
-  override def findHakemuksenHakukohde(oid: HakemusOid): Option[HakemuksenHakukohteet] = ???
-
-  override def findHakemuksenHakukohteet(hakemusOids: Set[HakemusOid]): Set[HakemuksenHakukohteet] = ???
+  override def findHakemuksenHakukohteet(hakemusOid: HakemusOid): Option[Set[String]] = {
+    Option(runBlocking(
+      sqlu"""select hakukohde_oids from hakemuksen_hakukohteet where hakemus_oid = ${hakemusOid}"""
+    ).toString.split(",").toSet)
+  }
 
   override def storeHakemuksenHakukohteet(hakemuksenHakukohteet: List[HakemuksenHakukohteet]): Unit = {
     hakemuksenHakukohteet.foreach(h => {
-      val hakukohteetString = "[" + h.hakukohdeOids.map(hk => hk.toString).mkString(",") + "]"
+      val hakukohteetString = h.hakukohdeOids.map(hk => hk.toString).mkString(",")
       runBlocking(
         sqlu"""insert into hakemuksen_hakukohteet (
                hakemus_oid,
@@ -30,8 +32,7 @@ trait HakemuksenHakukohteetRepositoryImpl extends HakemuksenHakukohteetRepositor
       """.flatMap {
           case 1 => DBIO.successful(true)
           case 0 => DBIO.successful(false)
-          case n => DBIO.failed(new RuntimeException(s"vituix män!"))
-          //        case n => DBIO.failed(new RuntimeException(s"Odottamaton päivitysten määrä $n tallennettaessa tilat_kuvaukset riviä hash-koodilla $valinnanTilanKuvausHashCode hakukohteelle $hakukohdeOid, valintatapajonolle $valintatapajonoOid ja hakemukselle $hakemusOid"))
+          case n => DBIO.failed(new RuntimeException(s"Hakemuksen ${h.hakemusOid} hakukohteiden tallennus epäonnistui."))
         })
     })
   }

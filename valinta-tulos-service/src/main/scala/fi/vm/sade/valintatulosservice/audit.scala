@@ -123,3 +123,7 @@ case object HyvaksynnanEhtoPoisto extends Operation {
 case object VastaanottosahkopostienLähetys extends Operation {
   def name: String = "VASTAANOTTOSÄHKÖPOSTIEN_LAHETYS"
 }
+
+case object HakemuksenHakukohteidenTallennus extends Operation {
+  def name: String = "HAKEMUKSEN_HAKUKOHTEIDEN_TALLENNUS"
+}

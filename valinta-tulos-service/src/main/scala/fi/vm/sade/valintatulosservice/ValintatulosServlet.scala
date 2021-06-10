@@ -320,7 +320,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
 
   lazy val postTallennaHakemustenHakukohteetSwagger: OperationBuilder = (apiOperation[Unit]("postTallennaHakemustenHakukohteetSwagger")
     summary """Hakemusten hakukohteiden tallennus hakemusoidien tai hakukohdeoidin perusteella"""
-    notes "Parametrinä tulee antaa joko hakuoid, hakukohdeoid sekä halutessa lista hakemusoideja. Jos hakemusoideja on annettu, tallennetaan hakemuksen hakukohteet listan perusteella, muuten hakukohdeoidin perusteella."
+    notes "Parametrinä tulee antaa hakuoid ja hakukohdeoid sekä halutessa lista hakemusoideja. Jos hakemusoideja on annettu, tallennetaan hakemuksen hakukohteet listan perusteella, muuten hakukohdeoidin perusteella."
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     parameter pathParam[String]("hakukohdeOid").description("Tallennettavien hakemusten hakukohteen oid").optional
     parameter bodyParam[Set[String]]("hakemusOids").description("Tallennettavien hakemusten oidit").optional
@@ -333,15 +333,23 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     if (hakemusOids.isEmpty && hakukohdeOid.toString.isEmpty) {
       BadRequest("hakukohdeoid tai hakemusoidit on pakollinen tieto.")
     } else {
-      val hakemukset = List(HakemuksenHakukohteet(HakemusOid("1.1.1"), List(HakukohdeOid("12121243"))))
-//        if (!hakemusOids.isEmpty)
-//          hakemusRepository.findHakemuksetByOids(hakemusOids)
-//            .map(h => HakemuksenHakukohteet(h.oid, h.toiveet.map(t => t.oid))).toList
-//        else
-//          hakemusRepository.findHakemuksetByHakukohde(hakuOid, hakukohdeOid)
-//            .map(h => HakemuksenHakukohteet(h.oid, h.toiveet.map(t => t.oid))).toList
+      val hakemukset =
+      //        List(
+      //        HakemuksenHakukohteet(HakemusOid("1.1.1"), List(HakukohdeOid("1.1.1.1"),HakukohdeOid("1.1.1.2"),HakukohdeOid("1.1.1.3"))),
+      //        HakemuksenHakukohteet(HakemusOid("1.1.2"), List(HakukohdeOid("1.1.2.1"),HakukohdeOid("1.1.1.2"),HakukohdeOid("1.1.2.3"))),
+      //        HakemuksenHakukohteet(HakemusOid("1.1.3"), List(HakukohdeOid("1.1.3.1"),HakukohdeOid("1.1.3.2"),HakukohdeOid("1.1.3.3")))
+      //      )
+        if (!hakemusOids.isEmpty)
+          hakemusRepository.findHakemuksetByOids(hakemusOids)
+            .map(h => HakemuksenHakukohteet(h.oid, h.toiveet.map(t => t.oid))).toList
+        else
+          hakemusRepository.findHakemuksetByHakukohde(hakuOid, hakukohdeOid)
+            .map(h => HakemuksenHakukohteet(h.oid, h.toiveet.map(t => t.oid))).toList
 
-          logger.info(s"Tallennetaan haun $hakuOid hakukohteen $hakukohdeOid hakemusoidien ${hakemusOids} hakukohteet.")
+      logger.info(s"Tallennetaan haun $hakuOid hakukohteen $hakukohdeOid hakemusoidien ${hakemusOids} hakukohteet.")
+      hakemukset.foreach(h => {
+        auditLog(Map("hakemusOid" -> h.hakemusOid.toString(), "hakukohdeOids" -> h.hakukohdeOids.map(hk => hk.toString).mkString(",")), HakemuksenHakukohteidenTallennus)
+      })
       valintarekisteriDb.storeHakemuksenHakukohteet(hakemukset)
     }
   }

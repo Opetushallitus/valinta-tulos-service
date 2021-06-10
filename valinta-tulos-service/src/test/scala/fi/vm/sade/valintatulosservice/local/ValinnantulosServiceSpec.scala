@@ -18,7 +18,7 @@ import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket,
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhtoRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnanTilanKuvausRepository, ValinnantulosRepository, VastaanottoEvent}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakemuksenHakukohteetRepository, HakijaVastaanottoRepository, ValinnanTilanKuvausRepository, ValinnantulosRepository, VastaanottoEvent}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.valintaperusteet.ValintaPerusteetServiceMock
@@ -318,6 +318,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       with HakijaVastaanottoRepository
       with ValinnanTilanKuvausRepository
       with HyvaksynnanEhtoRepository
+    with HakemuksenHakukohteetRepository
 
     val valinnantulosRepository = mock[Repository]
     mockRunBlocking(valinnantulosRepository)
