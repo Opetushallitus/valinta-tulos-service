@@ -65,9 +65,9 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
   }
 
   def findHakemukset(hakuOid: HakuOid): Iterator[Hakemus] = {
-    hakuAppRepository.findHakemukset(hakuOid) match {
+    hakemuksetFromAtaru(WithHakuOid(hakuOid, None)) match {
       case hakemukset if hakemukset.hasNext => hakemukset
-      case _ => hakemuksetFromAtaru(WithHakuOid(hakuOid, None))
+      case _ => hakuAppRepository.findHakemukset(hakuOid)
     }
   }
 
@@ -85,16 +85,16 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
   }
 
   def findHakemuksetByOids(hakemusOids: Iterable[HakemusOid]): Iterator[Hakemus] = {
-    hakuAppRepository.findHakemuksetByOids(hakemusOids) match {
+    hakemuksetFromAtaru(WithHakemusOids(hakemusOids.toList, None))match {
       case hakemukset if hakemukset.hasNext => hakemukset
-      case _ => hakemuksetFromAtaru(WithHakemusOids(hakemusOids.toList, None))
+      case _ => hakuAppRepository.findHakemuksetByOids(hakemusOids)
     }
   }
 
   def findHakemuksetByHakukohde(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Iterator[Hakemus] = {
-    hakuAppRepository.findHakemuksetByHakukohde(hakuOid, hakukohdeOid) match {
+    hakemuksetFromAtaru(WithHakukohdeOid(hakuOid, hakukohdeOid, None))match {
       case hakemukset if hakemukset.hasNext => hakemukset
-      case _ => hakemuksetFromAtaru(WithHakukohdeOid(hakuOid, hakukohdeOid, None))
+      case _ => hakuAppRepository.findHakemuksetByHakukohde(hakuOid, hakukohdeOid)
     }
   }
 }
