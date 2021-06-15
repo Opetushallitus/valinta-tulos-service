@@ -93,8 +93,8 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
       authorizer.checkAccess(auditInfo.session._2, oids, roles) match {
         case Right(b) => b
         case Left(e: AuthorizationFailedException) => {
-          logger.info("Failed to authorizate with valinnantulokset hakutoiveoids, maybe results do not exist yes, trying with hakemus hakutoiveoids...")
-          oids = hakemusRepository.findHakemus(hakemusOid).fold(throw _, x => x.toiveet.map(t => t.oid.toString()).toSet)
+          logger.info("Failed to authorize with results, maybe they don't exit yet?  Retrying with hakemus hakutoiveoids...")
+          oids = hakemusRepository.findHakemus(hakemusOid).fold(throw _, x => x.toiveet.map(t => t.tarjoajaOid).toSet)
           authorizer.checkAccess(auditInfo.session._2, oids, roles).fold(throw _, x => x)
         }
         case Left(e) => throw e
