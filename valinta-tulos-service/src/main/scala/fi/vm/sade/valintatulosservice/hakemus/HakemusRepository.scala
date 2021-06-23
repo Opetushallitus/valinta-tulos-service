@@ -5,8 +5,6 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain.Hakemus
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
 
-import scala.util.{Failure, Success, Try}
-
 class HakemusRepository(hakuAppRepository: HakuAppRepository,
                         ataruHakemusRepository: AtaruHakemusRepository,
                         ataruHakemusTarjontaEnricher: AtaruHakemusEnricher)
@@ -65,36 +63,55 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
   }
 
   def findHakemukset(hakuOid: HakuOid): Iterator[Hakemus] = {
-    hakuAppRepository.findHakemukset(hakuOid) match {
-      case hakemukset if hakemukset.hasNext => hakemukset
-      case _ => hakemuksetFromAtaru(WithHakuOid(hakuOid, None))
+    try {
+      hakemuksetFromAtaru(WithHakuOid(hakuOid, None)) match {
+        case hakemukset if hakemukset.hasNext => hakemukset
+        case _ => hakuAppRepository.findHakemukset(hakuOid)
+      }
+    } catch {
+      case e: Exception =>
+        logger.error(s"Haun ${hakuOid} hakemusten hakeminen päättyi virheeseen, yritetään vielä haku-appista.", e)
+        hakuAppRepository.findHakemukset(hakuOid)
     }
   }
 
   def findHakemus(hakemusOid: HakemusOid): Either[Throwable, Hakemus] = {
-    hakuAppRepository.findHakemus(hakemusOid) match {
-      case Right(hakemus) => Right(hakemus)
-      case Left(e) => Try {
-        val i = hakemuksetFromAtaru(WithHakemusOids(List(hakemusOid), None))
-        if (i.hasNext) i.next() else throw new IllegalArgumentException(s"Hakemusta $hakemusOid ei löytynyt", e)
-      } match {
-        case Failure(t) => Left(t)
-        case Success(hakemus) => Right(hakemus)
+    try {
+      val hakemus = hakemuksetFromAtaru(WithHakemusOids(List(hakemusOid), None))
+      if (hakemus.hasNext) Right(hakemus.next()) else hakuAppRepository.findHakemus(hakemusOid) match {
+        case Right(hakemus) => Right(hakemus)
+        case Left(e) => throw new RuntimeException(s"Hakemusta ${hakemusOid} ei löytynyt.", e)
       }
+    } catch {
+      case e: Exception =>
+        logger.error(s"Hakemuksen ${hakemusOid} hakeminen päättyi virheeseen, yritetään vielä haku-appista.", e)
+        hakuAppRepository.findHakemus(hakemusOid)
     }
   }
 
   def findHakemuksetByOids(hakemusOids: Iterable[HakemusOid]): Iterator[Hakemus] = {
-    hakuAppRepository.findHakemuksetByOids(hakemusOids) match {
-      case hakemukset if hakemukset.hasNext => hakemukset
-      case _ => hakemuksetFromAtaru(WithHakemusOids(hakemusOids.toList, None))
+    try {
+      hakemuksetFromAtaru(WithHakemusOids(hakemusOids.toList, None)) match {
+        case hakemukset if hakemukset.hasNext => hakemukset
+        case _ => hakuAppRepository.findHakemuksetByOids(hakemusOids)
+      }
+    } catch {
+      case e: Exception =>
+        logger.error(s"Hakemusten ${hakemusOids.toString()} hakeminen päättyi virheeseen, yritetään vielä haku-appista.", e)
+        hakuAppRepository.findHakemuksetByOids(hakemusOids)
     }
   }
 
   def findHakemuksetByHakukohde(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): Iterator[Hakemus] = {
-    hakuAppRepository.findHakemuksetByHakukohde(hakuOid, hakukohdeOid) match {
-      case hakemukset if hakemukset.hasNext => hakemukset
-      case _ => hakemuksetFromAtaru(WithHakukohdeOid(hakuOid, hakukohdeOid, None))
+    try {
+      hakemuksetFromAtaru(WithHakukohdeOid(hakuOid, hakukohdeOid, None)) match {
+        case hakemukset if hakemukset.hasNext => hakemukset
+        case _ => hakuAppRepository.findHakemuksetByHakukohde(hakuOid, hakukohdeOid)
+      }
+    } catch {
+      case e: Exception =>
+        logger.error(s"Haun ${hakuOid} hakukohteen ${hakukohdeOid} hakemusten hakeminen päättyi virheeseen, yritetään vielä haku-appista.", e)
+        hakuAppRepository.findHakemuksetByHakukohde(hakuOid, hakukohdeOid)
     }
   }
 }

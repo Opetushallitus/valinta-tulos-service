@@ -1,9 +1,7 @@
 package fi.vm.sade.valintatulosservice
 
-import java.time.Instant
-import java.util.ConcurrentModificationException
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
-import fi.vm.sade.security.OrganizationHierarchyAuthorizer
+import fi.vm.sade.security.{AuthorizationFailedException, OrganizationHierarchyAuthorizer}
 import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
@@ -20,6 +18,8 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import slick.dbio._
 
+import java.time.Instant
+import java.util.ConcurrentModificationException
 import scala.util.{Failure, Success}
 
 class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
@@ -79,7 +79,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
       (t._1, yhdenPaikanSaannos(t._2).fold(throw _, x => x))
     })
     r.foreach(t => {
-      val oids = hakuService.getHakukohdes(t._2.map(_.hakukohdeOid).toSeq)
+      var oids = hakuService.getHakukohdes(t._2.map(_.hakukohdeOid).toSeq)
         .fold(throw _, x => x)
         .flatMap(_.organisaatioOiditAuktorisointiin)
         .toSet
@@ -89,7 +89,16 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
         Role.SIJOITTELU_CRUD,
         Role.ATARU_KEVYT_VALINTA_READ,
         Role.ATARU_KEVYT_VALINTA_CRUD)
-      authorizer.checkAccess(auditInfo.session._2, oids, roles).fold(throw _, x => x)
+
+      authorizer.checkAccess(auditInfo.session._2, oids, roles) match {
+        case Right(b) => b
+        case Left(e: AuthorizationFailedException) => {
+          logger.info("Failed to authorize with results, maybe they don't exit yet?  Retrying with hakemus hakutoiveoids...")
+          oids = hakemusRepository.findHakemus(hakemusOid).fold(throw _, x => x.toiveet.map(t => t.tarjoajaOid).toSet)
+          authorizer.checkAccess(auditInfo.session._2, oids, roles).fold(throw _, x => x)
+        }
+        case Left(e) => throw e
+      }
     })
     audit.log(auditInfo.user, ValinnantuloksenLuku,
       new Target.Builder().setField("hakemus", hakemusOid.toString).build(),
