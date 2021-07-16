@@ -2,7 +2,6 @@ package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import java.util.Date
 import java.util.concurrent.TimeUnit.DAYS
-
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
@@ -400,7 +399,7 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
         s" Pyritään kiertämään ongelma, mutta juurisyy tulee selvittää. Onko viesti jäänyt lähtemättä? Pudottaako emailer lähetettäviä lattialle?")
     }
 
-    if (Vastaanotettavuustila.isVastaanotettavissa(vastaanotettavuustila) && (!hasPreviouslySent || !mailReason.contains(Vastaanottoilmoitus))) {
+    if (Vastaanottotila.kesken.equals(vastaanottotila) && Vastaanotettavuustila.isVastaanotettavissa(vastaanotettavuustila) && (!hasPreviouslySent || !mailReason.contains(Vastaanottoilmoitus))) {
       Some(Vastaanottoilmoitus)
     } else if (vastaanotonIlmoittaja.contains(Sijoittelu) && vastaanottotila == Vastaanottotila.vastaanottanut && (!hasPreviouslySent || !mailReason.contains(SitovanVastaanotonIlmoitus))) {
       Some(SitovanVastaanotonIlmoitus)
