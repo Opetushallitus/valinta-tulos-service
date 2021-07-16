@@ -60,7 +60,7 @@ class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, cronExpr
   private val numberOfThreads: Int = 1
   private val scheduler: Scheduler = Scheduler.create(db.dataSource).startTasks(cronTask).threads(numberOfThreads).build
 
-  scheduler.start()
+  //scheduler.start() OY-3013 Temporarily disabled
 
   def runMailerQuery(query: MailerQuery): Try[List[String]] = {
     val targetName = query.toString
