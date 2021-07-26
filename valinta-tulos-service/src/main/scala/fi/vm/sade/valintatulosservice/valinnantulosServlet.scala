@@ -3,7 +3,6 @@ import java.net.InetAddress
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.UUID
-
 import fi.vm.sade.security.AuthorizationFailedException
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, IlmoittautumisTila, ValintatuloksenTila}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
@@ -15,6 +14,7 @@ import org.scalatra._
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Try}
 
 trait ValinnantulosServletBase extends VtsServletBase {
@@ -54,7 +54,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
                            val sessionRepository: SessionRepository,
                            appConfig: VtsAppConfig)
                           (implicit val swagger: Swagger)
-  extends ValinnantulosServletBase with CasAuthenticatedServlet with DeadlineDecorator {
+  extends ValinnantulosServletBase with CasAuthenticatedServlet with DeadlineDecorator with FutureSupport {
 
   override val applicationDescription = "Valinnantuloksen REST API"
 
@@ -153,11 +153,18 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     val valintatapajonoOid = parseValintatapajonoOid.fold(throw _, x => x)
     val ifUnmodifiedSince: Instant = getIfUnmodifiedSince(appConfig)
     val valinnantulokset = parsedBody.extract[List[Valinnantulos]]
-    Ok(
-      valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
-        valintatapajonoOid, valinnantulokset, Some(ifUnmodifiedSince), auditInfo)
-    )
+    def store(): List[ValinnantulosUpdateStatus] = valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
+      valintatapajonoOid, valinnantulokset, Some(ifUnmodifiedSince), auditInfo)
+    Future {
+      store()
+    }.recover {
+      case _ =>
+        Thread.sleep(1000L)
+        store()
+    }
   }
+
+  override protected implicit def executor: ExecutionContext = ExecutionContext.global
 }
 
 class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymiskirjeService: HyvaksymiskirjeService, userDetailsService: KayttooikeusUserDetailsService, appConfig: VtsAppConfig)
