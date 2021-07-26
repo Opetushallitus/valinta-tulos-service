@@ -153,12 +153,13 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     val valintatapajonoOid = parseValintatapajonoOid.fold(throw _, x => x)
     val ifUnmodifiedSince: Instant = getIfUnmodifiedSince(appConfig)
     val valinnantulokset = parsedBody.extract[List[Valinnantulos]]
+    val audit = auditInfo
     def store(): List[ValinnantulosUpdateStatus] = valinnantulosService.storeValinnantuloksetAndIlmoittautumiset(
-      valintatapajonoOid, valinnantulokset, Some(ifUnmodifiedSince), auditInfo)
+      valintatapajonoOid, valinnantulokset, Some(ifUnmodifiedSince), audit)
     Future {
       store()
     }.recover {
-      case _ =>
+      case t =>
         Thread.sleep(1000L)
         store()
     }
