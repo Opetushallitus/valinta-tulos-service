@@ -473,23 +473,20 @@ class KoutaHakuService(config: AppConfig, casClient: CasClient, organisaatioServ
   }
 
   def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]] = {
-    if (false) {
-      for {
-        koutaHakukohde <- getKoutaHakukohde(oid).right
-        koutaHaku <- (if (koutaHakukohde.kaytetaanHaunAlkamiskautta) {
-          getKoutaHaku(HakuOid(koutaHakukohde.hakuOid)).right.map(Some(_))
-        } else {
-          Right(None)
-        }).right
-        koutaToteutus <- getKoutaToteutus(koutaHakukohde.toteutusOid).right
-        koutaKoulutus <- getKoutaKoulutus(koutaToteutus.koulutusOid).right
-        koulutuskoodi <- koutaKoulutus.koulutusKoodiUri.fold[Either[Throwable, Option[Koodi]]](Right(None))(koodistoService.getKoodi(_).right.map(Some(_))).right
-        opintojenlaajuuskoodi <- koutaKoulutus.metadata.flatMap(_.opintojenLaajuusKoodiUri).fold[Either[Throwable, Option[Koodi]]](Right(None))(koodistoService.getKoodi(_).right.map(Some(_))).right
-        tarjoajaorganisaatiohierarkiat <- MonadHelper.sequence(koutaHakukohde.tarjoajat(koutaToteutus).map(organisaatioService.hae)).right
-        hakukohde <- koutaHakukohde.toHakukohdeKela(koutaHaku, koutaToteutus, koutaKoulutus, koulutuskoodi, opintojenlaajuuskoodi, tarjoajaorganisaatiohierarkiat).right
-      } yield hakukohde
-    }
-    getKoutaHakukohde(oid).right.map(_ => None)
+    for {
+      koutaHakukohde <- getKoutaHakukohde(oid).right
+      koutaHaku <- (if (koutaHakukohde.kaytetaanHaunAlkamiskautta) {
+        getKoutaHaku(HakuOid(koutaHakukohde.hakuOid)).right.map(Some(_))
+      } else {
+        Right(None)
+      }).right
+      koutaToteutus <- getKoutaToteutus(koutaHakukohde.toteutusOid).right
+      koutaKoulutus <- getKoutaKoulutus(koutaToteutus.koulutusOid).right
+      koulutuskoodi <- koutaKoulutus.koulutusKoodiUri.fold[Either[Throwable, Option[Koodi]]](Right(None))(koodistoService.getKoodi(_).right.map(Some(_))).right
+      opintojenlaajuuskoodi <- koutaKoulutus.metadata.flatMap(_.opintojenLaajuusKoodiUri).fold[Either[Throwable, Option[Koodi]]](Right(None))(koodistoService.getKoodi(_).right.map(Some(_))).right
+      tarjoajaorganisaatiohierarkiat <- MonadHelper.sequence(koutaHakukohde.tarjoajat(koutaToteutus).map(organisaatioService.hae)).right
+      hakukohde <- koutaHakukohde.toHakukohdeKela(koutaHaku, koutaToteutus, koutaKoulutus, koulutuskoodi, opintojenlaajuuskoodi, tarjoajaorganisaatiohierarkiat).right
+    } yield hakukohde
   }
 
   def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde] = {
