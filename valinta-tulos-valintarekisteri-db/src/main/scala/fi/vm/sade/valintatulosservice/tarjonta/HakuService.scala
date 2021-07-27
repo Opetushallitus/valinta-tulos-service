@@ -486,7 +486,7 @@ class KoutaHakuService(config: AppConfig, casClient: CasClient, organisaatioServ
       opintojenlaajuuskoodi <- koutaKoulutus.metadata.flatMap(_.opintojenLaajuusKoodiUri).fold[Either[Throwable, Option[Koodi]]](Right(None))(koodistoService.getKoodi(_).right.map(Some(_))).right
       tarjoajaorganisaatiohierarkiat <- MonadHelper.sequence(koutaHakukohde.tarjoajat(koutaToteutus).map(organisaatioService.hae)).right
       hakukohde <- koutaHakukohde.toHakukohdeKela(koutaHaku, koutaToteutus, koutaKoulutus, koulutuskoodi, opintojenlaajuuskoodi, tarjoajaorganisaatiohierarkiat).right
-    } yield hakukohde
+    } yield Some(hakukohde)
   }
 
   def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde] = {
