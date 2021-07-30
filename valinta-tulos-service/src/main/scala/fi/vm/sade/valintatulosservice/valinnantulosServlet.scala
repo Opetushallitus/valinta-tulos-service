@@ -160,6 +160,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
       store()
     }.recover {
       case t =>
+        logger.warn("Retrying store Valinnantulokset And Ilmoittautumiset", t)
         Thread.sleep(1000L)
         store()
     }
