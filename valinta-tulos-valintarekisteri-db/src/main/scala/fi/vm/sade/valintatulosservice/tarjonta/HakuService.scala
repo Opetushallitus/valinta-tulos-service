@@ -308,15 +308,29 @@ class TarjontaHakuService(config: AppConfig) extends HakuService with JsonHakuSe
   }
 }
 
+case class KoodiUri(koodiUri: String)
+
+case class KoulutuksenAlkamiskausi(koulutuksenAlkamiskausi: Option[KoodiUri],
+                                   koulutuksenAlkamisvuosi: Option[String]
+                                  )
+
+case class KoutaHakuMetadata(koulutuksenAlkamiskausi: Option[KoulutuksenAlkamiskausi])
+
 case class KoutaHaku(oid: String,
                      nimi: Map[String, String],
                      kohdejoukkoKoodiUri: String,
                      kohdejoukonTarkenneKoodiUri: Option[String],
-                     alkamisvuosi: Option[String],
-                     alkamiskausiKoodiUri: Option[String]) {
+                     metadata: KoutaHakuMetadata) {
+  def getKausiAndVuosi(metadata: KoutaHakuMetadata): (Option[String], Option[String]) = {
+    val kausiUri = metadata.koulutuksenAlkamiskausi.flatMap(ak => ak.koulutuksenAlkamiskausi.map(ak => ak.koodiUri))
+    val vuosi = metadata.koulutuksenAlkamiskausi.flatMap(ak => ak.koulutuksenAlkamisvuosi)
+    (kausiUri, vuosi)
+  }
+
   def toHaku(ohjausparametrit: Ohjausparametrit, config: AppConfig): Either[Throwable, Haku] = {
+    val (alkamisKausiKoodiUri, alkamisVuosi) = getKausiAndVuosi(metadata)
     for {
-      alkamiskausi <- ((alkamiskausiKoodiUri, alkamisvuosi.map(s => (s, Try(s.toInt)))) match {
+      alkamiskausi <- ((alkamisKausiKoodiUri, alkamisVuosi.map(s => (s, Try(s.toInt)))) match {
         case (Some(uri), Some((_, Success(vuosi)))) if uri.startsWith("kausi_k#") => Right(Some(Kevat(vuosi)))
         case (Some(uri), Some((_, Success(vuosi)))) if uri.startsWith("kausi_s#") => Right(Some(Syksy(vuosi)))
         case (Some(uri), Some((_, Success(_)))) => Left(new IllegalStateException(s"Unrecognized koulutuksen alkamiskausi URI $uri"))
@@ -371,14 +385,14 @@ case class KoutaHakukohde(oid: String,
                        toteutus: KoutaToteutus): (Option[String], Option[Int]) = {
     val alkamisKausi =
       (if (kaytetaanHaunAlkamiskautta)
-        haku.get.alkamiskausiKoodiUri
+        haku.get.metadata.koulutuksenAlkamiskausi.flatMap(ak => ak.koulutuksenAlkamiskausi.map(k => k.koodiUri))
       else alkamiskausiKoodiUri ) match {
         case Some(alkamiskausi) => Some(alkamiskausi)
         case None => toteutus.metadata.flatMap(metadata => metadata.opetus.flatMap(opetustiedot => opetustiedot.alkamiskausiKoodiUri))
       }
     val alkamisVuosi =
     (if (kaytetaanHaunAlkamiskautta)
-      haku.get.alkamisvuosi.map(v => v.toInt)
+      haku.get.metadata.koulutuksenAlkamiskausi.flatMap(ak => ak.koulutuksenAlkamisvuosi).map(v => v.toInt)
     else None ) match {
       case Some(alkamisvuosi: Int) => Some(alkamisvuosi)
       case None => toteutus.metadata.flatMap(metadata => metadata.opetus.flatMap(opetustiedot => opetustiedot.alkamisvuosi)).map(v => v.toInt)
@@ -415,8 +429,14 @@ case class KoutaHakukohde(oid: String,
                       koulutuskoodi: Option[Koodi],
                       opintojenLaajuusKoodi: Option[Koodi],
                       tarjoajaorganisaatiohierarkiat: List[Organisaatiot]): Either[Throwable, HakukohdeKela] = {
-    val koulutuksenAlkamiskausiUri = if (kaytetaanHaunAlkamiskautta) { haku.get.alkamiskausiKoodiUri } else { alkamiskausiKoodiUri }
-    val koulutuksenAlkamisvuosi = if (kaytetaanHaunAlkamiskautta) { haku.get.alkamisvuosi } else { alkamisvuosi }
+    val koulutuksenAlkamiskausiUri =
+      if (kaytetaanHaunAlkamiskautta) {
+        haku.get.metadata.koulutuksenAlkamiskausi.flatMap(ak => ak.koulutuksenAlkamiskausi.map(k => k.koodiUri))
+      } else alkamiskausiKoodiUri
+    val koulutuksenAlkamisvuosi =
+      if (kaytetaanHaunAlkamiskautta) {
+        haku.get.metadata.koulutuksenAlkamiskausi.flatMap(ak => ak.koulutuksenAlkamisvuosi)
+      } else alkamisvuosi
     for {
       oppilaitos <- tarjoajaorganisaatiohierarkiat.toStream.map(_.find(_.organisaatiotyypit.contains("OPPILAITOS"))).collectFirst {
         case Some(oppilaitos) => oppilaitos
