@@ -346,9 +346,15 @@ case class KoutaKoulutus(oid: String,
                          koulutustyyppi: Option[String],
                          metadata: Option[KoutaKoulutusMetadata])
 
+case class KoutaToteutusOpetustiedot(alkamiskausiKoodiUri: Option[String],
+                                     alkamisvuosi: Option[String])
+
+case class KoutaToteutusMetadata(opetus: Option[KoutaToteutusOpetustiedot])
+
 case class KoutaToteutus(oid: String,
                          koulutusOid: String,
-                         tarjoajat: List[String])
+                         tarjoajat: List[String],
+                         metadata: Option[KoutaToteutusMetadata])
 
 case class KoutaHakukohde(oid: String,
                           hakuOid: String,
@@ -360,17 +366,35 @@ case class KoutaHakukohde(oid: String,
                           tila: String,
                           toteutusOid: String,
                           yhdenPaikanSaanto: YhdenPaikanSaanto) {
+
+  def getKausiAndVuosi(haku: Option[KoutaHaku],
+                       toteutus: KoutaToteutus): (Option[String], Option[Int]) = {
+    val alkamisKausi =
+      (if (kaytetaanHaunAlkamiskautta)
+        haku.get.alkamiskausiKoodiUri
+      else alkamiskausiKoodiUri ) match {
+        case Some(alkamiskausi) => Some(alkamiskausi)
+        case None => toteutus.metadata.flatMap(metadata => metadata.opetus.flatMap(opetustiedot => opetustiedot.alkamiskausiKoodiUri))
+      }
+    val alkamisVuosi =
+    (if (kaytetaanHaunAlkamiskautta)
+      haku.get.alkamisvuosi.map(v => v.toInt)
+    else None ) match {
+      case Some(alkamisvuosi: Int) => Some(alkamisvuosi)
+      case None => toteutus.metadata.flatMap(metadata => metadata.opetus.flatMap(opetustiedot => opetustiedot.alkamisvuosi)).map(v => v.toInt)
+      case _ => throw new RuntimeException("Unrecognized koulutuksen alkamisvuosi")
+    }
+    (alkamisKausi, alkamisVuosi)
+  }
+
   def toHakukohde(haku: Option[KoutaHaku],
                   koulutus: KoutaKoulutus,
+                  toteutus: KoutaToteutus,
                   tarjoajaorganisaatiot: List[Organisaatio]): Either[Throwable, Hakukohde] = {
+    val (kausi, vuosi) = getKausiAndVuosi(haku, toteutus)
     for {
       tarjoaja <- tarjoajaorganisaatiot.headOption
         .toRight(new IllegalStateException(s"Could not find tarjoaja for hakukohde $oid")).right
-      koulutuksenAlkamisvuosi <- ((if (kaytetaanHaunAlkamiskautta) { haku.get.alkamisvuosi } else { alkamisvuosi }).map(s => (s, Try(s.toInt))) match {
-        case Some((_, Success(vuosi))) => Right(Some(vuosi))
-        case Some((s, Failure(t))) => Left(new IllegalStateException(s"Unrecognized koulutuksen alkamisvuosi $s", t))
-        case None => Right(None)
-      }).right
     } yield Hakukohde(
       oid = HakukohdeOid(oid),
       hakuOid = HakuOid(hakuOid),
@@ -380,8 +404,8 @@ case class KoutaHakukohde(oid: String,
       tarjoajaNimet = tarjoaja.nimi,
       yhdenPaikanSaanto = yhdenPaikanSaanto,
       tutkintoonJohtava = koulutus.johtaaTutkintoon,
-      koulutuksenAlkamiskausiUri = if (kaytetaanHaunAlkamiskautta) { haku.get.alkamiskausiKoodiUri } else { alkamiskausiKoodiUri },
-      koulutuksenAlkamisvuosi = koulutuksenAlkamisvuosi,
+      koulutuksenAlkamiskausiUri = kausi,
+      koulutuksenAlkamisvuosi = vuosi,
       organisaatioRyhmaOids = Set.empty // FIXME
     )
   }
@@ -475,7 +499,7 @@ class KoutaHakuService(config: AppConfig,
       koutaToteutus <- getKoutaToteutus(koutaHakukohde.toteutusOid).right
       koutaKoulutus <- getKoutaKoulutus(koutaToteutus.koulutusOid).right
       tarjoajaorganisaatiot <- MonadHelper.sequence(koutaHakukohde.tarjoajat.map(getOrganisaatio)).right
-      hakukohde <- koutaHakukohde.toHakukohde(koutaHaku, koutaKoulutus, tarjoajaorganisaatiot).right
+      hakukohde <- koutaHakukohde.toHakukohde(koutaHaku, koutaKoulutus, koutaToteutus, tarjoajaorganisaatiot).right
     } yield hakukohde
   }
 
