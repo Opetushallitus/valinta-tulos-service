@@ -39,11 +39,12 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
            sijoittelutulosService: SijoittelutulosService,
            hakemusRepository: HakemusRepository,
            virkailijaVastaanottoRepository: VirkailijaVastaanottoRepository,
+           ohjausparametritService: OhjausparametritService,
            hakuService: HakuService,
            hakijaVastaanottoRepository: HakijaVastaanottoRepository,
            hakukohdeRecordService: HakukohdeRecordService,
            valintatulosDao: ValintarekisteriValintatulosDao)(implicit appConfig: VtsAppConfig) =
-    this(valinnantulosRepository, sijoittelutulosService, appConfig.ohjausparametritService, hakemusRepository, virkailijaVastaanottoRepository, hakuService, hakijaVastaanottoRepository, hakukohdeRecordService, valintatulosDao)
+    this(valinnantulosRepository, sijoittelutulosService, ohjausparametritService, hakemusRepository, virkailijaVastaanottoRepository, hakuService, hakijaVastaanottoRepository, hakukohdeRecordService, valintatulosDao)
 
   def haunKoulutuksenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid: HakuOid) : Set[VastaanottoRecord] = {
     (for {

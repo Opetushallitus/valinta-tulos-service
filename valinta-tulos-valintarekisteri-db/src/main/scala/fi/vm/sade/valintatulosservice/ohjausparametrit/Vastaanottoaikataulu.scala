@@ -1,4 +1,4 @@
-package fi.vm.sade.valintatulosservice.domain
+package fi.vm.sade.valintatulosservice.ohjausparametrit
 
 import org.joda.time.DateTime
 
