@@ -175,7 +175,7 @@ class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, 
 
   override def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]] = {
     tarjonta.getHakukohdeKela(oid) match {
-      case Left(_) || Right(None) =>
+      case Left(_) | Right(None) =>
         kouta.getHakukohdeKela(oid)
       case a => a
     }
@@ -183,7 +183,7 @@ class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, 
 
   override def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde] = {
     tarjonta.getHakukohde(oid) match {
-      case Left(_) || Right(None) =>
+      case Left(_) =>
         kouta.getHakukohde(oid)
       case a => a
     }
@@ -195,7 +195,7 @@ class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, 
 
   override def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]] = {
     tarjonta.getHakukohdeOids(hakuOid) match {
-      case Left(_) || Right(None) =>
+      case Left(_) | Seq.empty =>
         kouta.getHakukohdeOids(hakuOid)
       case a => a
     }
