@@ -174,11 +174,19 @@ class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, 
   override def getHaku(oid: HakuOid): Either[Throwable, Haku] = hakuCache(oid)
 
   override def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]] = {
-    tarjonta.getHakukohdeKela(oid).left.flatMap(_ => kouta.getHakukohdeKela(oid))
+    tarjonta.getHakukohdeKela(oid) match {
+      case Left(_) || Right(None) =>
+        kouta.getHakukohdeKela(oid)
+      case a => a
+    }
   }
 
   override def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde] = {
-    tarjonta.getHakukohde(oid).left.flatMap(_ => kouta.getHakukohde(oid))
+    tarjonta.getHakukohde(oid) match {
+      case Left(_) || Right(None) =>
+        kouta.getHakukohde(oid)
+      case a => a
+    }
   }
 
   override def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[Hakukohde]] = {
@@ -186,7 +194,11 @@ class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, 
   }
 
   override def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]] = {
-    tarjonta.getHakukohdeOids(hakuOid).left.flatMap(_ => kouta.getHakukohdeOids(hakuOid))
+    tarjonta.getHakukohdeOids(hakuOid) match {
+      case Left(_) || Right(None) =>
+        kouta.getHakukohdeOids(hakuOid)
+      case a => a
+    }
   }
 
   override def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = kaikkiJulkaistutHautCache(())
