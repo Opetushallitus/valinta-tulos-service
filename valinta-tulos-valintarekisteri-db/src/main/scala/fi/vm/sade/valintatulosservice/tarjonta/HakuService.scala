@@ -160,7 +160,7 @@ protected trait JsonHakuService {
   }
 }
 
-class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, config: AppConfig) extends HakuService {
+class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, config: AppConfig) extends HakuService with Logging {
   private val hakuCache = TTLOptionalMemoize.memoize[HakuOid, Haku](
     f = oid => tarjonta.getHaku(oid).left.flatMap(_ => kouta.getHaku(oid)),
     lifetimeSeconds = Duration(4, HOURS).toSeconds,
@@ -175,7 +175,10 @@ class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, 
 
   override def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]] = {
     tarjonta.getHakukohdeKela(oid) match {
-      case Left(_) | Right(None) =>
+      case Left(e) =>
+        logger.warn(s"Couldn't get old tarjonta hakkohde $oid. Trying to fetch from kouta", e)
+        kouta.getHakukohdeKela(oid)
+      case Right(None) =>
         kouta.getHakukohdeKela(oid)
       case a => a
     }
@@ -514,8 +517,10 @@ class KoutaHakuService(config: AppConfig,
     for {
       koutaHakukohde <- getKoutaHakukohde(oid).right
       koutaHaku <- (if (koutaHakukohde.kaytetaanHaunAlkamiskautta) {
+        logger.warn(s"Fetching kouta haku ${koutaHakukohde.hakuOid} for alkamiskausi for hakukohde $oid")
         getKoutaHaku(HakuOid(koutaHakukohde.hakuOid)).right.map(Some(_))
       } else {
+        logger.warn(s"Skipping fetching kouta haku for hakukohde $oid")
         Right(None)
       }).right
       koutaToteutus <- getKoutaToteutus(koutaHakukohde.toteutusOid).right
@@ -523,7 +528,14 @@ class KoutaHakuService(config: AppConfig,
       koulutuskoodi <- koutaKoulutus.koulutusKoodiUri.fold[Either[Throwable, Option[Koodi]]](Right(None))(koodistoService.getKoodi(_).right.map(Some(_))).right
       opintojenlaajuuskoodi <- koutaKoulutus.metadata.flatMap(_.opintojenLaajuusKoodiUri).fold[Either[Throwable, Option[Koodi]]](Right(None))(koodistoService.getKoodi(_).right.map(Some(_))).right
       tarjoajaorganisaatiohierarkiat <- MonadHelper.sequence(koutaHakukohde.tarjoajat.map(organisaatioService.hae)).right
-      hakukohde <- koutaHakukohde.toHakukohdeKela(koutaHaku, koutaKoulutus, koulutuskoodi, opintojenlaajuuskoodi, tarjoajaorganisaatiohierarkiat).right
+      hakukohde <- (koutaHakukohde.toHakukohdeKela(koutaHaku, koutaKoulutus, koulutuskoodi, opintojenlaajuuskoodi, tarjoajaorganisaatiohierarkiat) match {
+        case Right(e) =>
+          logger.warn(s"Saatiin hakukohde $e")
+          Right(e)
+        case Left(e) =>
+          logger.error(s"Kouta hakukohteen haku epaonnistui", e)
+          Left(e)
+      }).right
     } yield Some(hakukohde)
   }
 

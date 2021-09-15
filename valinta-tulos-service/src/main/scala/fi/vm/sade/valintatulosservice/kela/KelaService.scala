@@ -1,8 +1,9 @@
 package fi.vm.sade.valintatulosservice.kela
 
+import fi.vm.sade.utils.slf4j.Logging
+
 import java.text.SimpleDateFormat
 import java.util.Date
-
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
 import fi.vm.sade.valintatulosservice.tarjonta._
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoRecord, VirkailijaVastaanottoRepository}
@@ -11,7 +12,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import scala.concurrent.duration._
 
 
-class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, valintarekisteriService: VirkailijaVastaanottoRepository) {
+class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, valintarekisteriService: VirkailijaVastaanottoRepository) extends Logging {
   private val fetchPersonTimeout = 5 seconds
 
   def fetchVastaanototForPersonWithHetu(hetu: String, alkaen: Option[Date]): Option[Henkilo] = {
@@ -28,6 +29,7 @@ class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, vali
   }
 
   private def convertToVastaanotto(vastaanotto: VastaanottoRecord): Option[fi.vm.sade.valintatulosservice.kela.Vastaanotto] = {
+    logger.warn(s"Got vastaanotto $vastaanotto")
     for {
       hakukohde <- hakuService.getHakukohdeKela(vastaanotto.hakukohdeOid).fold(throw _, h => h)
       kela <- KelaKoulutus(hakukohde.koulutuslaajuusarvot)
