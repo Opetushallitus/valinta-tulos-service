@@ -195,8 +195,14 @@ class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, 
 
   override def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]] = {
     tarjonta.getHakukohdeOids(hakuOid) match {
-      case Left(_) | Seq.empty =>
+      case Left(_) =>
         kouta.getHakukohdeOids(hakuOid)
+      case Right(a) =>
+        if(a.isEmpty) {
+          kouta.getHakukohdeOids(hakuOid)
+        } else {
+          Right(a)
+        }
       case a => a
     }
   }
