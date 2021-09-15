@@ -33,7 +33,14 @@ class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, vali
     for {
       hakukohde <- hakuService.getHakukohdeKela(vastaanotto.hakukohdeOid).fold(throw _, h => h)
       kela <- KelaKoulutus(hakukohde.koulutuslaajuusarvot)
-      kausi <- hakukohde.koulutuksenAlkamiskausi.map(kausiToDate)
+      kausi <- (hakukohde.koulutuksenAlkamiskausi match {
+        case None =>
+          logger.warn(s"Ei alkamiskautta hakukohteella ${vastaanotto.hakukohdeOid}")
+          None
+        case Some(alkamiskausi) =>
+          logger.warn(s"alkamiskausi $alkamiskausi")
+          Some(kausiToDate(alkamiskausi))
+      })
     } yield fi.vm.sade.valintatulosservice.kela.Vastaanotto(
       organisaatio = hakukohde.tarjoajaOid,
       oppilaitos = hakukohde.oppilaitoskoodi,
