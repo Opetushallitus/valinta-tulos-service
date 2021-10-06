@@ -185,6 +185,7 @@ object KelaKoulutus extends Logging {
       case (None, None, None, None, None, None, None, None, None, Some(Lukio(laajuus)), _) => Some(LukioKoulutus(laajuus))
       case (None, None, None, None, None, None, None, None, None, None, Some(Muu(laajuus))) => Some(MuuTutkinto(laajuus))
       case _ =>
+        logger.warn(s"$reduced ei ole Kela-koulutus")
         None
     }
 

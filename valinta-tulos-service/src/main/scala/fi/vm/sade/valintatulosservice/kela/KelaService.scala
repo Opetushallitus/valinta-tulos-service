@@ -31,7 +31,6 @@ class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, vali
     for {
       hakukohde <- hakuService.getHakukohdeKela(vastaanotto.hakukohdeOid).fold(throw _, h => h)
       kela <- KelaKoulutus(hakukohde.koulutuslaajuusarvot)
-      kausi <- hakukohde.koulutuksenAlkamiskausi.map(kausiToDate)
     } yield fi.vm.sade.valintatulosservice.kela.Vastaanotto(
       organisaatio = hakukohde.tarjoajaOid,
       oppilaitos = hakukohde.oppilaitoskoodi,
@@ -40,7 +39,7 @@ class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, vali
       tutkinnonlaajuus2 = kela.tutkinnonlaajuus2,
       tutkinnontaso = kela.tutkinnontaso,
       vastaaottoaika = new SimpleDateFormat("yyyy-MM-dd").format(vastaanotto.timestamp),
-      alkamiskausipvm = kausi)
+      alkamiskausipvm = hakukohde.koulutuksenAlkamiskausi.map(kausiToDate))
   }
 
   private def kausiToDate(k: Kausi): String = {

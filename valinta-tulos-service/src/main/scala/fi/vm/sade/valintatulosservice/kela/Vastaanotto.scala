@@ -11,6 +11,6 @@ case class Vastaanotto(organisaatio: String,
                        tutkinnonlaajuus2: Option[String],
                        tutkinnontaso: Option[String],
                        vastaaottoaika: String,
-                       alkamiskausipvm: String) {
+                       alkamiskausipvm: Option[String]) {
 
 }
