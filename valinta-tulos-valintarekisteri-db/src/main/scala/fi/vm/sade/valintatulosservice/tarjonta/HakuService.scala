@@ -262,8 +262,6 @@ class TarjontaHakuService(config: AppConfig) extends HakuService with JsonHakuSe
     MonadHelper.sequence(for {oid <- oids.toStream} yield getHakukohde(oid))
   }
   def getHakukohdeKela(hakukohdeOid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]] = {
-    Right(None)
-    /*
     for {
       hakukohde <- getHakukohde(hakukohdeOid).right
       haku <- getHaku(hakukohde.hakuOid).right
@@ -281,7 +279,6 @@ class TarjontaHakuService(config: AppConfig) extends HakuService with JsonHakuSe
         Right(None)
       }).right
     } yield kelaHakukohde
-     */
   }
 
   def getHakukohde(hakukohdeOid: HakukohdeOid): Either[Throwable, Hakukohde] = {
@@ -513,6 +510,8 @@ class KoutaHakuService(config: AppConfig,
   }
 
   def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]] = {
+    Right(None)
+    /*
     for {
       koutaHakukohde <- getKoutaHakukohde(oid).right
       koutaHaku <- (if (koutaHakukohde.kaytetaanHaunAlkamiskautta) {
@@ -527,6 +526,7 @@ class KoutaHakuService(config: AppConfig,
       tarjoajaorganisaatiohierarkia <- organisaatioService.hae(koutaHakukohde.tarjoaja).right
       hakukohde <- koutaHakukohde.toHakukohdeKela(koutaHaku, koutaKoulutus, koulutuskoodi, opintojenlaajuuskoodi, List(tarjoajaorganisaatiohierarkia)).right
     } yield Some(hakukohde)
+     */
   }
 
   def getKoulutusKoodit(koulutusKoodiUrit: Set[String]): Either[Throwable, Set[Koodi]] = {
