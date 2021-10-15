@@ -1,12 +1,15 @@
 package fi.vm.sade.valintatulosservice
 
+import java.time.Instant
+
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
+import fi.vm.sade.valintatulosservice.domain.Hakutoive
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.{GoneException, HyvaksynnanEhto, HyvaksynnanEhtoRepository, Versio}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.{GoneException, HakemuksenEhdotJaHistoriat, HakutoiveenEhtoJaMuutoshistoria, HyvaksynnanEhto, HyvaksynnanEhtoRepository, Versio}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, ValintatapajonoOid}
 import org.scalatra._
 import org.scalatra.swagger.Swagger
@@ -42,7 +45,7 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     val response = hyvaksynnanEhtoRepository.runBlocking(
       hyvaksynnanEhtoRepository.hyvaksynnanEhtoHakukohteessa(hakukohdeOid))
 
-    response.foreach(r => auditLogRead(r._1, hakukohdeOid))
+    response.foreach(r => auditLogRead(r._1, Some(hakukohdeOid)))
 
     response match {
       case Nil => Ok(body = Map.empty)
@@ -67,12 +70,50 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     val response = hyvaksynnanEhtoRepository.runBlocking(
       hyvaksynnanEhtoRepository.hyvaksynnanEhtoHakukohteessa(hakemusOid, hakukohdeOid))
 
-    auditLogRead(hakemusOid, hakukohdeOid)
+    auditLogRead(hakemusOid, Some(hakukohdeOid))
 
     response match {
       case Some((ehto, lastModified)) =>
         Ok(body = ehto, headers = Map("Last-Modified" -> createLastModifiedHeader(lastModified)))
       case None =>
+        NotFound(body = Map("error" -> "Not Found"))
+    }
+  }
+
+  val hyvaksynnanEhdotHakemukselleSwagger: OperationBuilder =
+    (apiOperation[HakemuksenEhdotJaHistoriat]("hyvaksynnanEhdotHakemukselle")
+      summary "Hakemuksen hyväksynnän ehto ja tilahistoriat hakemukselle"
+      parameter pathParam[String]("hakemusOid").description("Hakemuksen OID").required
+      tags "hyvaksynnan-ehto")
+  get("/hakemukselle/:hakemusOid", operation(hyvaksynnanEhdotHakemukselleSwagger)) {
+    contentType = formats("json")
+    val hakemusOid = parseHakemusOid.fold(throw _, x => x)
+
+    implicit val authenticated: Authenticated = authenticate
+
+    val hakutoiveet: Set[HakukohdeOid] = hakemusRepository.findHakemus(hakemusOid).fold(throw _, x => x)
+      .toiveet.map(_.oid).toSet
+    authorize(hakutoiveet, Set(Role.ATARU_HAKEMUS_READ, Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
+
+    val result = hakutoiveet.map(toive => {
+      val ehto = hyvaksynnanEhtoRepository.runBlocking(
+        hyvaksynnanEhtoRepository.hyvaksynnanEhtoHakukohteessa(hakemusOid, toive))
+      val historia = hyvaksynnanEhtoRepository.runBlocking(
+        hyvaksynnanEhtoRepository.hyvaksynnanEhtoHakukohteessaMuutoshistoria(hakemusOid, toive))
+      HakutoiveenEhtoJaMuutoshistoria(toive, ehto, historia)
+    }).toList
+
+    val response = HakemuksenEhdotJaHistoriat(hakemusOid, result)
+
+    auditLogRead(hakemusOid, None)
+
+    response match {
+      case result: HakemuksenEhdotJaHistoriat if result.tiedot.exists(tieto => tieto.ehto.isDefined) =>
+        val lastModified = result.tiedot.map(tieto => tieto.ehto.map(ehto => ehto._2)).filter(e => e.isDefined).max.get
+        Ok(body = result, headers = Map("Last-Modified" -> createLastModifiedHeader(lastModified)))
+      case result: HakemuksenEhdotJaHistoriat if result.tiedot.exists(tieto => tieto.muutoshistoria.nonEmpty) =>
+        Ok(body = result)
+      case _ =>
         NotFound(body = Map("error" -> "Not Found"))
     }
   }
@@ -92,7 +133,7 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     val response = hyvaksynnanEhtoRepository.runBlocking(
       hyvaksynnanEhtoRepository.hyvaksynnanEhdotValintatapajonoissa(hakukohdeOid))
 
-    response.foreach(r => auditLogRead(r._1, hakukohdeOid))
+    response.foreach(r => auditLogRead(r._1, Some(hakukohdeOid)))
 
     response match {
       case Nil => Ok(body = Map.empty)
@@ -119,7 +160,7 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     val response = hyvaksynnanEhtoRepository.runBlocking(
       hyvaksynnanEhtoRepository.hyvaksynnanEhdotValintatapajonoissa(hakemusOid, hakukohdeOid))
 
-    auditLogRead(hakemusOid, hakukohdeOid)
+    auditLogRead(hakemusOid, Some(hakukohdeOid))
 
     response match {
       case Nil => Ok(body = Map.empty)
@@ -221,7 +262,7 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     val response = hyvaksynnanEhtoRepository.runBlocking(
       hyvaksynnanEhtoRepository.hyvaksynnanEhtoHakukohteessaMuutoshistoria(hakemusOid, hakukohdeOid))
 
-    auditLogRead(hakemusOid, hakukohdeOid)
+    auditLogRead(hakemusOid, Some(hakukohdeOid))
 
     Ok(response)
   }
@@ -230,6 +271,12 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     authorize(roles.toSeq: _*)
     val hakukohde = hakuService.getHakukohde(hakukohdeOid).fold(throw _, x => x)
     authorizer.checkAccess(authenticated.session, hakukohde.organisaatioOiditAuktorisointiin, roles).fold(throw _, x => x)
+  }
+
+  private def authorize(hakutoiveet: Set[HakukohdeOid], roles: Set[Role])(implicit authenticated: Authenticated): Unit = {
+    authorize(roles.toSeq: _*)
+    val organisaatiot = hakutoiveet.map(toive => hakuService.getHakukohde(toive).fold(throw _, x => x)).flatMap(_.organisaatioOiditAuktorisointiin)
+    authorizer.checkAccess(authenticated.session, organisaatiot, roles).fold(throw _, x => x)
   }
 
   private def authorize(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, roles: Set[Role])(implicit authenticated: Authenticated): Unit = {
@@ -246,13 +293,13 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     } yield authorized).fold(throw _, x => x)
   }
 
-  private def auditLogRead(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid)(implicit authenticated: Authenticated): Unit = {
+  private def auditLogRead(hakemusOid: HakemusOid, hakukohdeOid: Option[HakukohdeOid])(implicit authenticated: Authenticated): Unit = {
     audit.log(
       auditInfo.user,
       HyvaksynnanEhtoLuku,
       new Target.Builder()
         .setField("hakemus", hakemusOid.toString)
-        .setField("hakukohde", hakukohdeOid.toString)
+        .setField("hakukohde", hakukohdeOid.map(_.toString).getOrElse("Kaikki hakemuksen hakutoiveet"))
         .build(),
       new Changes.Builder().build())
   }
