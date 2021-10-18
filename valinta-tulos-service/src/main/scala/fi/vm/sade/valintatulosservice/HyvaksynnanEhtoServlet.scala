@@ -4,7 +4,6 @@ import java.time.Instant
 
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
-import fi.vm.sade.valintatulosservice.domain.Hakutoive
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
@@ -96,11 +95,27 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     authorize(hakutoiveet, Set(Role.ATARU_HAKEMUS_READ, Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
 
     val result = hakutoiveet.map(toive => {
-      val ehto = hyvaksynnanEhtoRepository.runBlocking(
-        hyvaksynnanEhtoRepository.hyvaksynnanEhtoHakukohteessa(hakemusOid, toive))
+      val (suoraEhto, ehtoJonoille: Map[ValintatapajonoOid, HyvaksynnanEhto], lastModified) = {
+        try {
+          val ehto = hyvaksynnanEhtoRepository.runBlocking(
+            hyvaksynnanEhtoRepository.hyvaksynnanEhtoHakukohteessa(hakemusOid, toive))
+          (ehto, Map.empty, ehto.map(e => e._2))
+        } catch {
+          case _: GoneException =>
+            logger.info(s"Saatiin GoneException hakemuksen ${hakemusOid.toString} hakutoiveelle ${toive.toString}, haetaan jonokohtaiset tiedot")
+            val ehdotJonoittain: Seq[(ValintatapajonoOid, HyvaksynnanEhto, Instant)] = hyvaksynnanEhtoRepository.runBlocking(
+              hyvaksynnanEhtoRepository.hyvaksynnanEhdotValintatapajonoissa(hakemusOid, toive))
+            val lastModified: Option[Instant] = if (ehdotJonoittain.nonEmpty) Some(ehdotJonoittain.map(_._3).max) else None
+            (None, ehdotJonoittain.map(t => t._1 -> t._2).toMap, lastModified)
+          case e: Exception =>
+            logger.info(s"Jokin meni pieleen hyväksynnän ehtojen haussa hakemuksen ${hakemusOid.toString} hakutoiveelle ${toive.toString}: $e")
+            throw e
+        }
+      }
       val historia = hyvaksynnanEhtoRepository.runBlocking(
         hyvaksynnanEhtoRepository.hyvaksynnanEhtoHakukohteessaMuutoshistoria(hakemusOid, toive))
-      HakutoiveenEhtoJaMuutoshistoria(toive, ehto, historia)
+
+      HakutoiveenEhtoJaMuutoshistoria(toive, suoraEhto, ehtoJonoille, historia, lastModified)
     }).toList
 
     val response = HakemuksenEhdotJaHistoriat(hakemusOid, result)
@@ -108,8 +123,8 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     auditLogRead(hakemusOid, None)
 
     response match {
-      case result: HakemuksenEhdotJaHistoriat if result.tiedot.exists(tieto => tieto.ehto.isDefined) =>
-        val lastModified = result.tiedot.map(tieto => tieto.ehto.map(ehto => ehto._2)).filter(e => e.isDefined).max.get
+      case result: HakemuksenEhdotJaHistoriat if result.tiedot.exists(tieto => tieto.lastModifled.isDefined) =>
+        val lastModified = result.tiedot.map(tieto => tieto.lastModifled).filter(lm => lm.isDefined).max.get
         Ok(body = result, headers = Map("Last-Modified" -> createLastModifiedHeader(lastModified)))
       case result: HakemuksenEhdotJaHistoriat if result.tiedot.exists(tieto => tieto.muutoshistoria.nonEmpty) =>
         Ok(body = result)
