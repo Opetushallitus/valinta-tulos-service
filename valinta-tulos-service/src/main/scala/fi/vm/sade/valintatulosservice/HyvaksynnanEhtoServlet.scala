@@ -99,7 +99,7 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
         try {
           val ehto = hyvaksynnanEhtoRepository.runBlocking(
             hyvaksynnanEhtoRepository.hyvaksynnanEhtoHakukohteessa(hakemusOid, toive))
-          (ehto, Map.empty, ehto.map(e => e._2))
+          (ehto.map(e => e._1), Map.empty, ehto.map(e => e._2))
         } catch {
           case _: GoneException =>
             logger.info(s"Saatiin GoneException hakemuksen ${hakemusOid.toString} hakutoiveelle ${toive.toString}, haetaan jonokohtaiset tiedot")
