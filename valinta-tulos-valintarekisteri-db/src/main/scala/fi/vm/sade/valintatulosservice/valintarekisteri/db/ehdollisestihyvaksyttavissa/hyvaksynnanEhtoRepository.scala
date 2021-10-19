@@ -24,7 +24,7 @@ case class HakutoiveenEhtoJaMuutoshistoria(hakukohdeOid: HakukohdeOid,
                                            ehto: Option[HyvaksynnanEhto],
                                            ehtoJonoissa: Map[ValintatapajonoOid, HyvaksynnanEhto], //Tätä käytetään tilanteissa, joissa suora ehto aiheutti GoneExceptionin.
                                            muutoshistoria: List[Versio[HyvaksynnanEhto]],
-                                           lastModified: Option[Instant])
+                                           lastModified: Option[String])
 case class HyvaksynnanEhto(koodi: String, fi: String, sv: String, en: String)
 
 sealed trait Versio[+T]
