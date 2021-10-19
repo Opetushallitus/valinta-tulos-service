@@ -21,7 +21,7 @@ trait HyvaksynnanEhtoRepository extends ValintarekisteriRepository {
 }
 case class HakemuksenEhdotJaHistoriat(hakemusOid: HakemusOid, tiedot: List[HakutoiveenEhtoJaMuutoshistoria])
 case class HakutoiveenEhtoJaMuutoshistoria(hakukohdeOid: HakukohdeOid,
-                                           ehto: Option[(HyvaksynnanEhto, Instant)],
+                                           ehto: Option[HyvaksynnanEhto],
                                            ehtoJonoissa: Map[ValintatapajonoOid, HyvaksynnanEhto], //Tätä käytetään tilanteissa, joissa suora ehto aiheutti GoneExceptionin.
                                            muutoshistoria: List[Versio[HyvaksynnanEhto]],
                                            lastModifled: Option[Instant])
