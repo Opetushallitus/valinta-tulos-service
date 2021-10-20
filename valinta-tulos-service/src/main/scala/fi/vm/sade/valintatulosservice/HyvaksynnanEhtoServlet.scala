@@ -115,7 +115,7 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
       val historia = hyvaksynnanEhtoRepository.runBlocking(
         hyvaksynnanEhtoRepository.hyvaksynnanEhtoHakukohteessaMuutoshistoria(hakemusOid, toive))
 
-      HakutoiveenEhtoJaMuutoshistoria(toive, suoraEhto, ehtoJonoille, historia, lastModified)
+      HakutoiveenEhtoJaMuutoshistoria(toive, suoraEhto, ehtoJonoille, historia, lastModified.map(createLastModifiedHeader))
     }).toList
 
     val response = HakemuksenEhdotJaHistoriat(hakemusOid, result)
@@ -123,13 +123,8 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     auditLogRead(hakemusOid, None)
 
     response match {
-      case result: HakemuksenEhdotJaHistoriat if result.tiedot.exists(tieto => tieto.lastModifled.isDefined) =>
-        val lastModified = result.tiedot.map(tieto => tieto.lastModifled).filter(lm => lm.isDefined).max.get
-        Ok(body = result, headers = Map("Last-Modified" -> createLastModifiedHeader(lastModified)))
-      case result: HakemuksenEhdotJaHistoriat if result.tiedot.exists(tieto => tieto.muutoshistoria.nonEmpty) =>
+      case result: HakemuksenEhdotJaHistoriat =>
         Ok(body = result)
-      case _ =>
-        NotFound(body = Map("error" -> "Not Found"))
     }
   }
 
