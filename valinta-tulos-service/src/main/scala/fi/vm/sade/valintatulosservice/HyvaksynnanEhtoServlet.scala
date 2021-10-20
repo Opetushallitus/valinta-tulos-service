@@ -44,7 +44,7 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     val response = hyvaksynnanEhtoRepository.runBlocking(
       hyvaksynnanEhtoRepository.hyvaksynnanEhtoHakukohteessa(hakukohdeOid))
 
-    response.foreach(r => auditLogRead(r._1, Some(hakukohdeOid)))
+    response.foreach(r => auditLogRead(r._1, Set(hakukohdeOid)))
 
     response match {
       case Nil => Ok(body = Map.empty)
@@ -69,7 +69,7 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     val response = hyvaksynnanEhtoRepository.runBlocking(
       hyvaksynnanEhtoRepository.hyvaksynnanEhtoHakukohteessa(hakemusOid, hakukohdeOid))
 
-    auditLogRead(hakemusOid, Some(hakukohdeOid))
+    auditLogRead(hakemusOid, Set(hakukohdeOid))
 
     response match {
       case Some((ehto, lastModified)) =>
@@ -120,7 +120,7 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
 
     val response = HakemuksenEhdotJaHistoriat(hakemusOid, result)
 
-    auditLogRead(hakemusOid, None)
+    auditLogRead(hakemusOid, hakutoiveet)
 
     response match {
       case result: HakemuksenEhdotJaHistoriat =>
@@ -143,7 +143,7 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     val response = hyvaksynnanEhtoRepository.runBlocking(
       hyvaksynnanEhtoRepository.hyvaksynnanEhdotValintatapajonoissa(hakukohdeOid))
 
-    response.foreach(r => auditLogRead(r._1, Some(hakukohdeOid)))
+    response.foreach(r => auditLogRead(r._1, Set(hakukohdeOid)))
 
     response match {
       case Nil => Ok(body = Map.empty)
@@ -170,7 +170,7 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     val response = hyvaksynnanEhtoRepository.runBlocking(
       hyvaksynnanEhtoRepository.hyvaksynnanEhdotValintatapajonoissa(hakemusOid, hakukohdeOid))
 
-    auditLogRead(hakemusOid, Some(hakukohdeOid))
+    auditLogRead(hakemusOid, Set(hakukohdeOid))
 
     response match {
       case Nil => Ok(body = Map.empty)
@@ -272,7 +272,7 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     val response = hyvaksynnanEhtoRepository.runBlocking(
       hyvaksynnanEhtoRepository.hyvaksynnanEhtoHakukohteessaMuutoshistoria(hakemusOid, hakukohdeOid))
 
-    auditLogRead(hakemusOid, Some(hakukohdeOid))
+    auditLogRead(hakemusOid, Set(hakukohdeOid))
 
     Ok(response)
   }
@@ -303,13 +303,13 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     } yield authorized).fold(throw _, x => x)
   }
 
-  private def auditLogRead(hakemusOid: HakemusOid, hakukohdeOid: Option[HakukohdeOid])(implicit authenticated: Authenticated): Unit = {
+  private def auditLogRead(hakemusOid: HakemusOid, hakukohdeOids: Set[HakukohdeOid])(implicit authenticated: Authenticated): Unit = {
     audit.log(
       auditInfo.user,
       HyvaksynnanEhtoLuku,
       new Target.Builder()
         .setField("hakemus", hakemusOid.toString)
-        .setField("hakukohde", hakukohdeOid.map(_.toString).getOrElse("Kaikki hakemuksen hakutoiveet"))
+        .setField("hakukohde", hakukohdeOids.map(_.toString).mkString(", "))
         .build(),
       new Changes.Builder().build())
   }
