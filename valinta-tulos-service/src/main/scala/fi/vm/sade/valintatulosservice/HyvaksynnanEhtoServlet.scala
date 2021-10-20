@@ -123,13 +123,8 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
     auditLogRead(hakemusOid, None)
 
     response match {
-      case result: HakemuksenEhdotJaHistoriat if result.tiedot.exists(tieto => tieto.lastModified.isDefined) =>
-        val lastModified = result.tiedot.map(tieto => tieto.lastModified).filter(lm => lm.isDefined).max.get
+      case result: HakemuksenEhdotJaHistoriat =>
         Ok(body = result)
-      case result: HakemuksenEhdotJaHistoriat if result.tiedot.exists(tieto => tieto.muutoshistoria.nonEmpty) =>
-        Ok(body = result)
-      case _ =>
-        NotFound(body = Map("error" -> "Not Found"))
     }
   }
 
