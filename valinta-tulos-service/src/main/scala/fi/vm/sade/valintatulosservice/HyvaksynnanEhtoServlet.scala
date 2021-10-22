@@ -102,13 +102,12 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
           (ehto.map(e => e._1), Map.empty, ehto.map(e => e._2))
         } catch {
           case _: GoneException =>
-            logger.info(s"Saatiin GoneException hakemuksen ${hakemusOid.toString} hakutoiveelle ${toive.toString}, haetaan jonokohtaiset tiedot")
             val ehdotJonoittain: Seq[(ValintatapajonoOid, HyvaksynnanEhto, Instant)] = hyvaksynnanEhtoRepository.runBlocking(
               hyvaksynnanEhtoRepository.hyvaksynnanEhdotValintatapajonoissa(hakemusOid, toive))
             val lastModified: Option[Instant] = if (ehdotJonoittain.nonEmpty) Some(ehdotJonoittain.map(_._3).max) else None
             (None, ehdotJonoittain.map(t => t._1 -> t._2).toMap, lastModified)
           case e: Exception =>
-            logger.info(s"Jokin meni pieleen hyväksynnän ehtojen haussa hakemuksen ${hakemusOid.toString} hakutoiveelle ${toive.toString}: $e")
+            logger.error(s"Jokin meni pieleen hyväksynnän ehtojen haussa hakemuksen ${hakemusOid.toString} hakutoiveelle ${toive.toString}: $e")
             throw e
         }
       }
