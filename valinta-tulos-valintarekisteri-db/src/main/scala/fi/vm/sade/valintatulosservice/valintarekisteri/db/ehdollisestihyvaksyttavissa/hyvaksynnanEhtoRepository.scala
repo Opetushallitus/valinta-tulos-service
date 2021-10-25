@@ -19,7 +19,12 @@ trait HyvaksynnanEhtoRepository extends ValintarekisteriRepository {
   def updateHyvaksynnanEhtoValintatapajonossa(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid, hakukohdeOid: HakukohdeOid, ehto: HyvaksynnanEhto, ifUnmodifiedSince: Instant): DBIO[Unit]
   def deleteHyvaksynnanEhtoValintatapajonossa(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid, hakukohdeOid: HakukohdeOid, ifUnmodifiedSince: Instant): DBIO[Unit]
 }
-
+case class HakemuksenEhdotJaHistoriat(hakemusOid: HakemusOid, tiedot: List[HakutoiveenEhtoJaMuutoshistoria])
+case class HakutoiveenEhtoJaMuutoshistoria(hakukohdeOid: HakukohdeOid,
+                                           ehto: Option[HyvaksynnanEhto],
+                                           ehtoJonoissa: Map[ValintatapajonoOid, HyvaksynnanEhto], //Tätä käytetään tilanteissa, joissa suora ehto aiheutti GoneExceptionin.
+                                           muutoshistoria: List[Versio[HyvaksynnanEhto]],
+                                           lastModified: Option[String])
 case class HyvaksynnanEhto(koodi: String, fi: String, sv: String, en: String)
 
 sealed trait Versio[+T]
