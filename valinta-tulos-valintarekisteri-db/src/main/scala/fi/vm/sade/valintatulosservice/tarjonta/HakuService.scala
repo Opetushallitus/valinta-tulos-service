@@ -262,8 +262,6 @@ class TarjontaHakuService(config: AppConfig) extends HakuService with JsonHakuSe
     MonadHelper.sequence(for {oid <- oids.toStream} yield getHakukohde(oid))
   }
   def getHakukohdeKela(hakukohdeOid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]] = {
-    Right(None)
-    /*
     for {
       hakukohde <- getHakukohde(hakukohdeOid).right
       haku <- getHaku(hakukohde.hakuOid).right
@@ -281,7 +279,6 @@ class TarjontaHakuService(config: AppConfig) extends HakuService with JsonHakuSe
         Right(None)
       }).right
     } yield kelaHakukohde
-     */
   }
 
   def getHakukohde(hakukohdeOid: HakukohdeOid): Either[Throwable, Hakukohde] = {
