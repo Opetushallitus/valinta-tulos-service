@@ -171,21 +171,21 @@ class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, 
     lifetimeSeconds = Duration(4, HOURS).toSeconds,
     maxSize = 1)
 
+  val KOUTA_OID_LENGTH = 35
+
   override def getHaku(oid: HakuOid): Either[Throwable, Haku] = hakuCache(oid)
 
   override def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]] = {
-    tarjonta.getHakukohdeKela(oid) match {
-      case Left(_) | Right(None) =>
-        kouta.getHakukohdeKela(oid)
-      case a => a
+    oid.toString match {
+      case hakukohdeOid if hakukohdeOid.length == KOUTA_OID_LENGTH => kouta.getHakukohdeKela(oid)
+      case _ => tarjonta.getHakukohdeKela(oid)
     }
   }
 
   override def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde] = {
-    tarjonta.getHakukohde(oid) match {
-      case Left(_) =>
-        kouta.getHakukohde(oid)
-      case a => a
+    oid.toString match {
+      case hakukohdeOid if hakukohdeOid.length == KOUTA_OID_LENGTH => kouta.getHakukohde(oid)
+      case _ => tarjonta.getHakukohde(oid)
     }
   }
 
@@ -194,16 +194,9 @@ class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, 
   }
 
   override def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]] = {
-    tarjonta.getHakukohdeOids(hakuOid) match {
-      case Left(_) =>
-        kouta.getHakukohdeOids(hakuOid)
-      case Right(a) =>
-        if(a.isEmpty) {
-          kouta.getHakukohdeOids(hakuOid)
-        } else {
-          Right(a)
-        }
-      case a => a
+    hakuOid match {
+      case hakuOid if hakuOid.toString.length == KOUTA_OID_LENGTH => kouta.getHakukohdeOids(hakuOid)
+      case _ => tarjonta.getHakukohdeOids(hakuOid)
     }
   }
 
