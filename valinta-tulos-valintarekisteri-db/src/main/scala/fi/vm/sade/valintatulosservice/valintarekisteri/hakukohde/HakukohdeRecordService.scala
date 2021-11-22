@@ -67,7 +67,7 @@ class HakukohdeRecordService(hakuService: HakuService, hakukohdeRepository: Haku
 
   private def fetchAndStoreHakukohdeDetails(oid: HakukohdeOid): Either[Throwable, HakukohdeRecord] = {
     val fresh = fetchHakukohdeDetails(oid)
-    fresh.left.foreach(t => logger.warn(s"Error fetching hakukohde ${oid} details. Cannot store it to the database.", t))
+    fresh.left.foreach(t => logger.error(s"Error fetching hakukohde ${oid} details. Cannot store it to the database.", t))
     fresh.right.foreach(hakukohdeRepository.storeHakukohde)
     fresh
   }
@@ -80,9 +80,9 @@ class HakukohdeRecordService(hakuService: HakuService, hakukohdeRepository: Haku
         case (true, true, Some(kausi)) => Right(YPSHakukohde(oid, haku.oid, kausi))
         case (false, true, Some(kausi)) => Right(EiYPSHakukohde(oid, haku.oid, kausi))
         case (false, false, kausi) => Right(EiKktutkintoonJohtavaHakukohde(oid, haku.oid, kausi))
-        case (true, false, _) => Left(new IllegalStateException(s"YPS hakukohde $oid ei ole kktutkintoon johtava"))
-        case (true, _, None) => Left(new IllegalStateException(s"YPS hakukohteella $oid ei ole koulutuksen alkamiskautta"))
-        case (_, true, None) => Left(new IllegalStateException(s"Kktutkintoon johtavalla hakukohteella $oid ei ole koulutuksen alkamiskautta"))
+        case (true, false, _) => Left(new IllegalStateException(s"Haun ${haku.oid} YPS hakukohde $oid ei ole kktutkintoon johtava"))
+        case (true, _, None) => Left(new IllegalStateException(s"Haun ${haku.oid} YPS hakukohteella $oid ei ole koulutuksen alkamiskautta"))
+        case (_, true, None) => Left(new IllegalStateException(s"Kktutkintoon johtavalla haun ${haku.oid} hakukohteella $oid ei ole koulutuksen alkamiskautta"))
       }).right
     } yield hakukohdeRecord
   }
