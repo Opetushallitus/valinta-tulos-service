@@ -404,7 +404,7 @@ case class KoutaHakukohde(oid: String,
     val alkamisVuosi =
     (if (kaytetaanHaunAlkamiskautta)
       haku.get.metadata.koulutuksenAlkamiskausi.flatMap(ak => ak.koulutuksenAlkamisvuosi).map(v => v.toInt)
-    else None ) match {
+    else alkamisvuosi.map(v => v.toInt) ) match {
       case Some(alkamisvuosi: Int) => Some(alkamisvuosi)
       case None => toteutus.metadata.flatMap(metadata => metadata.opetus.flatMap(opetustiedot => opetustiedot.alkamisvuosi)).map(v => v.toInt)
       case _ => throw new RuntimeException("Unrecognized koulutuksen alkamisvuosi")
