@@ -2,7 +2,6 @@ package fi.vm.sade.valintatulosservice.sijoittelu
 
 import java.time.OffsetDateTime
 import java.util.Date
-
 import fi.vm.sade.sijoittelu.domain.SijoitteluAjo
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi._
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, IlmoittautumisTila}
@@ -18,6 +17,7 @@ import fi.vm.sade.valintatulosservice.{PersonOidFromHakemusResolver, Vastaanotto
 import org.apache.commons.lang.StringUtils
 import org.apache.commons.lang3.builder.ToStringBuilder
 import org.joda.time.DateTime
+import org.slf4j.{Logger, LoggerFactory}
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -29,6 +29,8 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
   import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.laskeVastaanottoDeadline
 
   import scala.collection.JavaConversions._
+
+  private val logger = LoggerFactory.getLogger(classOf[SijoittelutulosService])
 
   def tulosHakijana(hakuOid: HakuOid,
                     hakemusOid: HakemusOid,
@@ -152,6 +154,14 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     )
   }
 
+  private def getPisteetForJono(jono: HakutoiveenValintatapajonoRecord): Option[BigDecimal] = {
+    val eiKaytaLaskentaa = jono.pisteet.exists(p => p.intValue() == (-1 * jono.jonosija))
+    if (eiKaytaLaskentaa) {
+      logger.info(s"Jono ${jono.valintatapajonoOid} ei käytä laskentaa joten ei palauteta pisteitä (${jono.pisteet}) hakemukselle ${jono.hakemusOid}")
+    }
+    if (eiKaytaLaskentaa) None else jono.pisteet
+  }
+
   private def jonokohtainenTulostieto(merkitsevaValinnantulos: Option[Valinnantulos],
                                       merkitsevaValintatapajono: Option[HakutoiveenValintatapajonoRecord],
                                       hakijanTilat: HakutoiveenSijoittelunTilaTieto,
@@ -161,7 +171,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     JonokohtainenTulostieto(
       oid = valinnantulos.map(_.valintatapajonoOid).orElse(valintatapajono.map(_.valintatapajonoOid)).get,
       nimi = valintatapajono.map(_.valintatapajonoNimi).getOrElse(""),
-      pisteet = valintatapajono.flatMap(_.pisteet),
+      pisteet = valintatapajono.flatMap(getPisteetForJono),
       alinHyvaksyttyPistemaara = valintatapajono.flatMap(_.alinHyvaksyttyPistemaara),
       valintatila = vastaanottotilanVaikutusValintatilaan(
         hakemuksenTilastaJononValintatilaksi(valinnantulos, valintatapajono),
