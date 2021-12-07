@@ -4,14 +4,13 @@ import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasParams}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuFixtures}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, ValintatapajonoOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, NotFoundException, ValintatapajonoOid}
 import org.http4s._
 import org.http4s.client.blaze.SimpleHttp1Client
 import org.http4s.json4s.native.jsonOf
 import scalaz.concurrent.Task
 
 import java.util.concurrent.TimeUnit
-import javax.ws.rs.NotFoundException
 import scala.concurrent.duration.Duration
 
 trait ValintaPerusteetService {
