@@ -155,11 +155,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
   }
 
   private def getPisteetForJono(jono: HakutoiveenValintatapajonoRecord): Option[BigDecimal] = {
-    val eiKaytaLaskentaa = jono.pisteet.exists(p => p.intValue() == (-1 * jono.jonosija))
-    if (eiKaytaLaskentaa) {
-      logger.info(s"Jono ${jono.valintatapajonoOid} ei käytä laskentaa joten ei palauteta pisteitä (${jono.pisteet}) hakemukselle ${jono.hakemusOid}")
-    }
-    if (eiKaytaLaskentaa) None else jono.pisteet
+    if (jono.pisteet.exists(p => p.intValue() == (-1 * jono.jonosija))) None else jono.pisteet
   }
 
   private def jonokohtainenTulostieto(merkitsevaValinnantulos: Option[Valinnantulos],
