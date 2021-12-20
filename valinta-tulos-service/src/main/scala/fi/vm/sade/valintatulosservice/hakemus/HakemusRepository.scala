@@ -19,7 +19,13 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
     def getOrThrow(offset: Option[String]): Paging = {
       val q = query.withOffset(offset)
       ataruHakemusRepository.getHakemukset(q) match {
-        case Left(t) => throw new RuntimeException(s"Hakemusten haku kyselyllä $q epäonnistui", t)
+        case Left(t) =>
+          logger.error(s"Hakemusten haku kyselyllä $q epäonnistui, yritetään uudelleen", t)
+          Thread.sleep(5000L)
+          ataruHakemusRepository.getHakemukset(q) match {
+            case Left(t) => throw new RuntimeException(s"Hakemusten haku kyselyllä $q epäonnistui myös uudelleenyrityksellä", t)
+            case Right(response) => Page(response)
+          }
         case Right(response) => Page(response)
       }
     }
