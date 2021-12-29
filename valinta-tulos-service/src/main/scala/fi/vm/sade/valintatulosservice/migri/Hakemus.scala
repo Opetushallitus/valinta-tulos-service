@@ -1,8 +1,11 @@
 package fi.vm.sade.valintatulosservice.migri
 
-import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.Henkilo
-
-case class Hakija(henkilo: Henkilo,
+case class Hakija(henkilotunnus: String,
+                  henkiloOid: String,
+                  sukunimi: String,
+                  etunimet: String,
+                  kansalaisuudet: List[String],
+                  syntymaaika: String,
                   vastaanotot: Seq[Hakemus])
 
 case class Hakemus(hakuOid: String,

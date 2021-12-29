@@ -1,8 +1,5 @@
 package fi.vm.sade.valintatulosservice.config
 
-import java.io.File
-import java.net.URL
-
 import fi.vm.sade.security.mock.MockSecurityContext
 import fi.vm.sade.security.{ProductionSecurityContext, SecurityContext}
 import fi.vm.sade.utils.cas.CasClient
@@ -16,6 +13,9 @@ import fi.vm.sade.valintatulosservice.ohjausparametrit._
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintaperusteet.{ValintaPerusteetServiceImpl, ValintaPerusteetServiceMock}
 import org.http4s.client.blaze.{BlazeClientConfig, SimpleHttp1Client}
+
+import java.io.File
+import java.net.URL
 
 object VtsAppConfig extends Logging {
   def getProfileProperty() = System.getProperty("valintatulos.profile", "default")
@@ -151,7 +151,7 @@ object VtsAppConfig extends Logging {
   }
 
   trait ExternalProps {
-    def configFile = System.getProperty("user.home") + "/oph-configuration/valinta-tulos-service.properties"
+    def configFile = System.getProperty("user.home") + "/work/oph/OPH-CONFIGS/oph-configuration/valinta-tulos-service.properties"
     lazy val settings = ApplicationSettingsLoader.loadSettings(configFile)
   }
 
