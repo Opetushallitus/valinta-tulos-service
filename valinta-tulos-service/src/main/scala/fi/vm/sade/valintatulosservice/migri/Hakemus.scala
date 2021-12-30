@@ -6,7 +6,7 @@ case class Hakija(henkilotunnus: String,
                   etunimet: String,
                   kansalaisuudet: List[String],
                   syntymaaika: String,
-                  vastaanotot: Seq[Hakemus])
+                  hakemukset: Seq[Hakemus])
 
 case class Hakemus(hakuOid: String,
                    hakuNimi: Map[String, String],

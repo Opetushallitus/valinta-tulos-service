@@ -307,6 +307,12 @@ trait ValintarekisteriResultExtractors {
     }
   }
 
+  implicit object SetHakijaOid extends SetParameter[HakijaOid] {
+    def apply(o: HakijaOid, pp: PositionedParameters) {
+      pp.setString(o.toString)
+    }
+  }
+
   implicit object SetUUID extends SetParameter[UUID] {
     def apply(v: UUID, pp: PositionedParameters) {
       pp.setObject(v, JDBCType.BINARY.getVendorTypeNumber)

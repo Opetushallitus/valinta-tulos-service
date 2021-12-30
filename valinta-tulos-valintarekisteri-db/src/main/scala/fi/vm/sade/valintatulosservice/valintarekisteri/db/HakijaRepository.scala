@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import slick.dbio.{DBIO, DBIOAction, Effect, NoStream}
+import slick.dbio.{DBIOAction, Effect, NoStream}
 
 trait HakijaRepository extends PerformanceLogger { this:Logging =>
   def getHakemuksenHakija(hakemusOid: HakemusOid, sijoitteluajoId: Option[Long] = None):Option[HakijaRecord]

@@ -1,18 +1,17 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
-import java.sql.Timestamp
-import java.time.format.DateTimeFormatter
-import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
-import java.util.ConcurrentModificationException
-import java.util.concurrent.TimeUnit
-
-import fi.vm.sade.sijoittelu.domain.{TilaHistoria, ValintatuloksenTila}
+import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.dbio.DBIO
 import slick.jdbc.PostgresProfile.api._
 
+import java.sql.Timestamp
+import java.time.format.DateTimeFormatter
+import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
+import java.util.ConcurrentModificationException
+import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
@@ -899,6 +898,16 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       case _ => DBIO.failed(new ConcurrentModificationException(s"Ilmoittautumista $ilmoittautuminen ei voitu poistaa, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
     }
   }
+
+  override def getHakijanHyvaksytHakemusOidit(hakijaOid: HakijaOid): Set[HakemusOid] =
+    timed(s"Hakijan $hakijaOid hyväksyttyjen hakemusoidien haku", 100) {
+      runBlocking(
+        sql"""select hakemus_oid
+            from valinnantilat
+            where tila in ('Hyvaksytty', 'VarasijaltaHyvaksytty')
+            and henkilo_oid = $hakijaOid""".as[HakemusOid]
+      ).toSet
+    }
 
   private def formMuutoshistoria[A, B](muutokset: Iterable[(A, B, KentanMuutos)]): List[(A, B, KentanMuutos)] = muutokset.headOption match {
     case Some(origin) =>
