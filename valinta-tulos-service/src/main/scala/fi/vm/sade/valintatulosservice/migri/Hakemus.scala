@@ -1,12 +1,14 @@
 package fi.vm.sade.valintatulosservice.migri
 
+import scala.collection.mutable
+
 case class Hakija(henkilotunnus: String,
                   henkiloOid: String,
                   sukunimi: String,
                   etunimet: String,
                   kansalaisuudet: List[String],
                   syntymaaika: String,
-                  hakemukset: Seq[Hakemus])
+                  hakemukset: mutable.Set[Hakemus])
 
 case class Hakemus(hakuOid: String,
                    hakuNimi: Map[String, String],
