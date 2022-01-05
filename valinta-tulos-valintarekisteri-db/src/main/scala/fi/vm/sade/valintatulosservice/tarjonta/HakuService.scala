@@ -1,11 +1,5 @@
 package fi.vm.sade.valintatulosservice.tarjonta
 
-import java.time.format.DateTimeFormatter
-import java.time.{Instant, ZoneId}
-import java.util
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeUnit.HOURS
-
 import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasClient, CasParams}
 import fi.vm.sade.utils.http.DefaultHttpClient
 import fi.vm.sade.utils.slf4j.Logging
@@ -16,21 +10,23 @@ import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.organisaatio.{Organisaatio, OrganisaatioService, Organisaatiot}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import org.http4s.json4s.native.jsonExtract
 import org.http4s.Method.GET
 import org.http4s.client.blaze.SimpleHttp1Client
+import org.http4s.json4s.native.jsonExtract
 import org.http4s.{Request, Uri}
-import org.joda.time.DateTime
 import org.json4s.JsonAST.{JInt, JObject, JString}
 import org.json4s.jackson.JsonMethods._
 import org.json4s.{CustomSerializer, DefaultFormats, Formats, MappingException}
 import scalaj.http.HttpOptions
 import scalaz.concurrent.Task
 
+import java.util
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.HOURS
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
-import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
+import scala.util.{Failure, Success, Try}
 
 case class YhdenPaikanSaanto(voimassa: Boolean, syy: String)
 
@@ -72,6 +68,23 @@ case class Hakukohde(oid: HakukohdeOid,
   def organisaatioOiditAuktorisointiin: Set[String] = tarjoajaOids ++ organisaatioRyhmaOids
 }
 
+case class HakukohdeMigri(oid: HakukohdeOid,
+                          hakuOid: HakuOid,
+                          hakuNimi: Map[String, String],
+                          hakukohteenNimi: Map[String, String],
+                          koulutuksenAlkamiskausiUri: Option[String],
+                          koulutuksenAlkamisvuosi: Option[Int],
+                          organisaatioOid: String,
+                          organisaatioNimi: Map[String, String],
+                          toteutusOid: String,
+                          toteutusNimi: Map[String, String]) {
+  def koulutuksenAlkamiskausi: Option[Kausi] = (koulutuksenAlkamiskausiUri, koulutuksenAlkamisvuosi) match {
+    case (Some(uri), Some(alkamisvuosi)) if uri.matches("""kausi_k#\d+""") => Some(Kevat(alkamisvuosi))
+    case (Some(uri), Some(alkamisvuosi)) if uri.matches("""kausi_s#\d+""") => Some(Syksy(alkamisvuosi))
+    case _ => None
+  }
+}
+
 case class HakukohdeKela(koulutuksenAlkamiskausi: Option[Kausi],
                          hakukohdeOid: String,
                          tarjoajaOid: String,
@@ -81,6 +94,7 @@ case class HakukohdeKela(koulutuksenAlkamiskausi: Option[Kausi],
 trait HakuService {
   def getHaku(oid: HakuOid): Either[Throwable, Haku]
   def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]]
+  def getHakukohdeMigri(oid: HakukohdeOid): Either[Throwable, HakukohdeMigri]
   def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde]
   def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[Hakukohde]]
   def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]]
@@ -160,7 +174,7 @@ protected trait JsonHakuService {
   }
 }
 
-class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, config: AppConfig) extends HakuService {
+class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, config: AppConfig) extends HakuService with Logging {
   private val hakuCache = TTLOptionalMemoize.memoize[HakuOid, Haku](
     f = oid => tarjonta.getHaku(oid).left.flatMap(_ => kouta.getHaku(oid)),
     lifetimeSeconds = Duration(4, HOURS).toSeconds,
@@ -181,6 +195,14 @@ class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, 
       case _ => tarjonta.getHakukohdeKela(oid)
     }
   }
+
+  override def getHakukohdeMigri(oid: HakukohdeOid): Either[Throwable, HakukohdeMigri] = {
+    oid.toString match {
+      case hakukohdeOid if hakukohdeOid.length == KOUTA_OID_LENGTH => kouta.getHakukohdeMigri(oid)
+      case _ => tarjonta.getHakukohdeMigri(oid)
+    }
+  }
+
 
   override def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde] = {
     oid.toString match {
@@ -223,6 +245,7 @@ private case class HakuTarjonnassa(oid: HakuOid,
     tila == "JULKAISTU"
   }
 }
+
 
 class TarjontaHakuService(config: AppConfig) extends HakuService with JsonHakuService with Logging {
 
@@ -272,6 +295,10 @@ class TarjontaHakuService(config: AppConfig) extends HakuService with JsonHakuSe
         Right(None)
       }).right
     } yield kelaHakukohde
+  }
+
+  def getHakukohdeMigri(hakukohdeOid: HakukohdeOid): Either[Throwable, HakukohdeMigri] = {
+    throw new RuntimeException(s"Migri hakukohde from tarjonta not implemented. Hakukohdeoid: $hakukohdeOid")
   }
 
   def getHakukohde(hakukohdeOid: HakukohdeOid): Either[Throwable, Hakukohde] = {
@@ -379,6 +406,7 @@ case class KoutaToteutusMetadata(opetus: Option[KoutaToteutusOpetustiedot])
 case class KoutaToteutus(oid: String,
                          koulutusOid: String,
                          tarjoajat: List[String],
+                         nimi: Map[String, String],
                          metadata: Option[KoutaToteutusMetadata])
 
 case class KoutaHakukohde(oid: String,
@@ -429,6 +457,24 @@ case class KoutaHakukohde(oid: String,
       koulutuksenAlkamiskausiUri = kausi,
       koulutuksenAlkamisvuosi = vuosi,
       organisaatioRyhmaOids = Set.empty // FIXME
+    )
+  }
+
+  def toHakukohdeMigri(haku: KoutaHaku,
+                       toteutus: KoutaToteutus,
+                       tarjoaja: Organisaatio): HakukohdeMigri = {
+    val (kausi, vuosi) = getKausiAndVuosi(Some(haku), toteutus)
+    HakukohdeMigri(
+      oid = HakukohdeOid(oid),
+      hakuOid = HakuOid(hakuOid),
+      hakuNimi = haku.nimi,
+      hakukohteenNimi = nimi,
+      koulutuksenAlkamiskausiUri = kausi,
+      koulutuksenAlkamisvuosi = vuosi,
+      organisaatioOid = tarjoaja.oid,
+      organisaatioNimi = tarjoaja.nimi,
+      toteutusOid = toteutus.oid,
+      toteutusNimi = toteutus.nimi
     )
   }
 
@@ -517,6 +563,15 @@ class KoutaHakuService(config: AppConfig,
       tarjoajaorganisaatiohierarkia <- organisaatioService.hae(koutaHakukohde.tarjoaja).right
       hakukohde <- koutaHakukohde.toHakukohdeKela(koutaHaku, koutaKoulutus, koulutuskoodi, opintojenlaajuuskoodi, List(tarjoajaorganisaatiohierarkia)).right
     } yield Some(hakukohde)
+  }
+
+  def getHakukohdeMigri(oid: HakukohdeOid): Either[Throwable, HakukohdeMigri] = {
+    for {
+       koutaHakukohde <- getKoutaHakukohde(oid).right
+      koutaHaku <- getKoutaHaku(HakuOid(koutaHakukohde.hakuOid)).right
+      koutaToteutus <- getKoutaToteutus(koutaHakukohde.toteutusOid).right
+      tarjoajaorganisaatio <- getOrganisaatio(koutaHakukohde.tarjoaja).right
+    } yield koutaHakukohde.toHakukohdeMigri(koutaHaku, koutaToteutus, tarjoajaorganisaatio)
   }
 
   def getKoulutusKoodit(koulutusKoodiUrit: Set[String]): Either[Throwable, Set[Koodi]] = {
