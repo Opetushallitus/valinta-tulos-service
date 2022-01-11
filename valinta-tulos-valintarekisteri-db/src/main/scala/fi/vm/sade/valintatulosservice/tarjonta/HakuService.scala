@@ -298,7 +298,7 @@ class TarjontaHakuService(config: AppConfig) extends HakuService with JsonHakuSe
   }
 
   def getHakukohdeMigri(hakukohdeOid: HakukohdeOid): Either[Throwable, HakukohdeMigri] = {
-    throw new RuntimeException(s"Migri hakukohde from tarjonta not implemented. Hakukohdeoid: $hakukohdeOid")
+    throw new RuntimeException(s"Migri hakukohde from tarjonta not implemented, skipping. Hakukohdeoid: $hakukohdeOid.")
   }
 
   def getHakukohde(hakukohdeOid: HakukohdeOid): Either[Throwable, Hakukohde] = {

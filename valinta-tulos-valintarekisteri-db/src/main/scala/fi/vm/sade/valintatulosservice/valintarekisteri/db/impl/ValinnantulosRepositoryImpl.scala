@@ -900,7 +900,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   }
 
   override def getHakijanHyvaksytHakemusOidit(hakijaOid: HakijaOid): Set[HakemusOid] =
-    timed(s"Hakijan $hakijaOid hyväksyttyjen hakemusoidien haku", 100) {
+    timed(s"Hakijan $hakijaOid hyväksyttyjen/varasijalta hyväksyttyjen hakemusoidien haku", 100) {
       runBlocking(
         sql"""select hakemus_oid
             from valinnantilat

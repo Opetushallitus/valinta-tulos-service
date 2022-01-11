@@ -1,7 +1,5 @@
 package fi.vm.sade.valintatulosservice.vastaanottomeili
 
-import java.util.Date
-import java.util.concurrent.TimeUnit.DAYS
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
@@ -321,7 +319,7 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
                             mailReasons: Map[HakukohdeOid, (Option[MailReason],Boolean)],
                             valintatapajonoFilter: Option[ValintatapajonoOid]): Option[HakemusMailStatus] = {
     hakemus match {
-      case Hakemus(_, _, _, asiointikieli, _, Henkilotiedot(Some(kutsumanimi), Some(email), hasHetu)) =>
+      case Hakemus(_, _, _, asiointikieli, _, Henkilotiedot(Some(kutsumanimi), Some(email), hasHetu), _) =>
         val hakukohteenToiveet = hakemuksenTulos.hakutoiveet.filter(_.hakukohdeOid == hakukohdeOid)
         val filteredHakutoiveet = hakukohteenToiveet.filter(toive => valintatapajonoFilter.isEmpty || valintatapajonoFilter.get.equals(toive.valintatapajonoOid))
         if (filteredHakutoiveet.size != hakukohteenToiveet.size) {
@@ -338,13 +336,13 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
           hakuOid = hakemuksenTulos.hakuOid,
           hakukohteet = hakukohdeMailStatii
         ))
-      case Hakemus(_, _, _, _, _, Henkilotiedot(None, None, _)) =>
+      case Hakemus(_, _, _, _, _, Henkilotiedot(None, None, _), _) =>
         logger.error(s"Hakemus ${hakemus.oid} is missing hakemus.henkilotiedot.kutsumanimi and hakemus.henkilotiedot.email")
         None
-      case Hakemus(_, _, _, _, _, Henkilotiedot(None, Some(email), _)) =>
+      case Hakemus(_, _, _, _, _, Henkilotiedot(None, Some(email), _), _) =>
         logger.error(s"Hakemus ${hakemus.oid} is missing hakemus.henkilotiedot.kutsumanimi")
         None
-      case Hakemus(_, _, _, _, _, Henkilotiedot(Some(kutsumanimi), None, _)) =>
+      case Hakemus(_, _, _, _, _, Henkilotiedot(Some(kutsumanimi), None, _), _) =>
         logger.warn(s"Hakemus ${hakemus.oid} is missing hakemus.henkilotiedot.email")
         None
     }

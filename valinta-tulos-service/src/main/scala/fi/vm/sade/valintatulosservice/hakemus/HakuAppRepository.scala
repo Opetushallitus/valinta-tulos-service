@@ -114,7 +114,7 @@ class HakuAppRepository()(implicit appConfig: VtsAppConfig) extends Logging {
       answers <- data.getAs[MongoDBObject](DatabaseKeys.answersKey)
       hakutoiveet <- extractHakutoiveet(answers)
     } yield {
-      Hakemus(HakemusOid(hakemusOid), HakuOid(hakuOid), henkiloOid, asiointikieli, parseHakutoiveet(hakutoiveet), parseHenkilotiedot(henkilotiedot))
+      Hakemus(HakemusOid(hakemusOid), HakuOid(hakuOid), henkiloOid, asiointikieli, parseHakutoiveet(hakutoiveet), parseHenkilotiedot(henkilotiedot), Map())
     }
   }
 

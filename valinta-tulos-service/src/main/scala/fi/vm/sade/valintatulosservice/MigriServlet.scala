@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
-import fi.vm.sade.valintatulosservice.migri.{Hakija, MigriService}
+import fi.vm.sade.valintatulosservice.migri.{MigriHakija, MigriService}
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakijaOid
@@ -24,7 +24,7 @@ class MigriServlet(audit: Audit, migriService: MigriService, val sessionReposito
 //    }
 //  }
 
-  val migriHakemuksetSwagger: OperationBuilder = apiOperation[List[Hakija]]("getMigriHakemukset")
+  val migriHakemuksetSwagger: OperationBuilder = apiOperation[List[MigriHakija]]("getMigriHakemukset")
     .summary("Migrin hakemustietojen rajapinta usealle hakijalle")
     .parameter(bodyParam[Set[String]]("hakijaOids").description("Hakijoiden OIDit").required)
     .tags("migri")
@@ -51,8 +51,8 @@ val session = CasSession(ServiceTicket("myFakeTicket"), "1.2.246.562.24.1", Set(
         .setField("hakijaOids", hakijaOids.toString())
       audit.log(auditInfo.user, HakemuksenLuku, builder.build(), new Changes.Builder().build())
 
-      migriService.fetchHakemuksetByHakijaOid(hakijaOids, auditInfo) match {
-        case hakijat: Set[Hakija] =>
+      migriService.getHakemuksetByHakijaOid(hakijaOids, auditInfo) match {
+        case hakijat: Set[MigriHakija] =>
           Ok(hakijat)
         case _ =>
           NoContent()

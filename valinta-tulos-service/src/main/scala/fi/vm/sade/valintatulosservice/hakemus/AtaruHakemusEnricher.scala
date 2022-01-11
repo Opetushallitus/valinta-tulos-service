@@ -37,7 +37,8 @@ class AtaruHakemusEnricher(config: VtsAppConfig,
         kutsumanimi = henkilo.kutsumanimi,
         email = Some(hakemus.email),
         hasHetu = henkilo.hetu.isDefined
-      )
+      ),
+      maksuvelvollisuudet = hakemus.paymentObligations
     )
   }
 

@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.LukuvuosimaksuRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, Lukuvuosimaksu}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakijaOid, HakukohdeOid, Lukuvuosimaksu}
 
 class LukuvuosimaksuService(lukuvuosimaksuRepository: LukuvuosimaksuRepository,
                             audit: Audit
@@ -31,6 +31,18 @@ class LukuvuosimaksuService(lukuvuosimaksuRepository: LukuvuosimaksuRepository,
       new Changes.Builder().build()
     )
     filterRelevantMaksusOfEachperson(result)
+  }
+
+  def getLukuvuosimaksuByHakijaAndHakukohde(hakijaOid: HakijaOid, hakukohdeOid: HakukohdeOid, auditInfo: AuditInfo): Option[Lukuvuosimaksu] = {
+    audit.log(auditInfo.user, LukuvuosimaksujenLuku,
+      new Target.Builder()
+        .setField("hakukohde", hakukohdeOid.toString)
+        .setField("hakija", hakijaOid.toString)
+        .setField("muokkaaja", "")
+        .build(),
+      new Changes.Builder().build()
+    )
+    lukuvuosimaksuRepository.getLukuvuosimaksuByHakijaAndHakukohde(hakijaOid, hakukohdeOid)
   }
 
   private def filterRelevantMaksusOfEachperson(result: List[Lukuvuosimaksu]) = {

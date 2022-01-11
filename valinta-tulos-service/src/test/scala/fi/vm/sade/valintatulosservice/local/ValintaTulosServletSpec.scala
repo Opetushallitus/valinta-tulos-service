@@ -21,9 +21,9 @@ import org.tsers.zeison.Zeison
 @RunWith(classOf[JUnitRunner])
 class ValintaTulosServletSpec extends ServletSpecification {
   val ataruHakemus1 = AtaruHakemus(HakemusOid("1.2.246.562.11.00000000000000000005"),
-    HakuOid("1.2.246.562.29.37061034627"), List(HakukohdeOid("1.2.246.562.20.14875157126")), HakijaOid("ataru-tyyppi"), "fi", "test@example.com")
+    HakuOid("1.2.246.562.29.37061034627"), List(HakukohdeOid("1.2.246.562.20.14875157126")), HakijaOid("ataru-tyyppi"), "fi", "test@example.com", Map("1.2.246.562.20.14875157126" -> "NOT_CHECKED"))
   val ataruHakemus2 = AtaruHakemus(HakemusOid("1.2.246.562.11.00000000000000000006"),
-    HakuOid("1.2.246.562.29.37061034627"), List(HakukohdeOid("1.2.246.562.20.14875157126"), HakukohdeOid("1.2.246.562.20.27958725015")), HakijaOid("ataru-tyyppi2"), "fi", "test@example.com")
+    HakuOid("1.2.246.562.29.37061034627"), List(HakukohdeOid("1.2.246.562.20.14875157126"), HakukohdeOid("1.2.246.562.20.27958725015")), HakijaOid("ataru-tyyppi2"), "fi", "test@example.com", Map("1.2.246.562.20.27958725015" -> "NOT_CHECKED"))
   val ataruHenkilo1 = Henkilo(HakijaOid("ataru-tyyppi"), None, Some("Ataru"), None, None, None, None)
   val ataruHenkilo2 = Henkilo(HakijaOid("ataru-tyyppi2"), None, Some("Ataru2"), None, None, None, None)
 

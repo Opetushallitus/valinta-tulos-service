@@ -173,7 +173,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       ),
         "/cas/haku", "cas/haku")
       context.mount(new KelaServlet(audit, new KelaService(HakijaResolver(appConfig), hakuService, valintarekisteriDb), valintarekisteriDb), "/cas/kela", "cas/kela")
-      context.mount(new MigriServlet(audit, new MigriService(hakuService, valinnantulosService, oppijanumerorekisteriService, valintarekisteriDb), valintarekisteriDb), "/cas/migri", "cas/migri")
+      context.mount(new MigriServlet(audit, new MigriService(hakemusRepository, hakuService, valinnantulosService, oppijanumerorekisteriService, valintarekisteriDb, lukuvuosimaksuService), valintarekisteriDb), "/cas/migri", "cas/migri")
       context.mount(new KelaHealthCheckServlet(audit, valintarekisteriDb, appConfig, new VtsKelaAuthenticationClient(appConfig)), "/health-check/kela", "health-check/kela")
 
       val valintaesitysService = new ValintaesitysService(hakuService, authorizer, valintarekisteriDb, valintarekisteriDb, audit)
