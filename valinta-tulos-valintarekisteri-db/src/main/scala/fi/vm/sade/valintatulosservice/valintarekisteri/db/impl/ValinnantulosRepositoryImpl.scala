@@ -899,14 +899,14 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     }
   }
 
-  override def getHakijanHyvaksytHakemusOidit(hakijaOid: HakijaOid): Set[HakemusOid] =
+  override def getHakijanHyvaksytValinnantilat(hakijaOid: HakijaOid): Set[HyvaksyttyValinnanTila] =
     timed(s"Hakijan $hakijaOid hyväksyttyjen/varasijalta hyväksyttyjen hakemusoidien haku", 100) {
       runBlocking(
-        sql"""select hakemus_oid
+        sql"""select distinct hakemus_oid, hakukohde_oid
             from valinnantilat
             where tila in ('Hyvaksytty', 'VarasijaltaHyvaksytty')
-            and henkilo_oid = $hakijaOid""".as[HakemusOid]
-      ).toSet
+            and henkilo_oid = $hakijaOid
+            """.as[HyvaksyttyValinnanTila]).toSet
     }
 
   private def formMuutoshistoria[A, B](muutokset: Iterable[(A, B, KentanMuutos)]): List[(A, B, KentanMuutos)] = muutokset.headOption match {

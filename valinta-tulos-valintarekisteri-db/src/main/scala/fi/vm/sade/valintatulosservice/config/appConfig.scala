@@ -22,7 +22,7 @@ protected[config] class OphUrlProperties(propertiesFile: String, readUserHome: B
 
   if(readUserHome) {
     addOptionalFiles(Paths.get(sys.props.getOrElse("user.home", ""), "/oph-configuration/common.properties").toString)
-    addOptionalFiles(Paths.get(sys.props.getOrElse("user.home", ""), "/work/oph/OPH-CONFIGS/oph-configuration/valinta-tulos-service.properties").toString)
+    addOptionalFiles(Paths.get(sys.props.getOrElse("user.home", ""), "/oph-configuration/valinta-tulos-service.properties").toString)
   }
 
   host.foreach(h =>

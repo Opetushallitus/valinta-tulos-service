@@ -203,7 +203,6 @@ class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, 
     }
   }
 
-
   override def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde] = {
     oid.toString match {
       case hakukohdeOid if hakukohdeOid.length == KOUTA_OID_LENGTH => kouta.getHakukohde(oid)
@@ -245,7 +244,6 @@ private case class HakuTarjonnassa(oid: HakuOid,
     tila == "JULKAISTU"
   }
 }
-
 
 class TarjontaHakuService(config: AppConfig) extends HakuService with JsonHakuService with Logging {
 

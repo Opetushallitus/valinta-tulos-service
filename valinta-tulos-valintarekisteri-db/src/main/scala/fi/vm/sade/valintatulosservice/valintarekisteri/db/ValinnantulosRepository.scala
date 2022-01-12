@@ -97,5 +97,5 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
     }
   }
 
-  def getHakijanHyvaksytHakemusOidit(hakijaOid: HakijaOid): Set[HakemusOid]
+  def getHakijanHyvaksytValinnantilat(hakijaOid: HakijaOid): Set[HyvaksyttyValinnanTila]
 }

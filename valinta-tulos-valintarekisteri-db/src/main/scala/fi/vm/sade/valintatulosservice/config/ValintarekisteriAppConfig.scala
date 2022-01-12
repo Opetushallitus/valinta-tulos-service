@@ -39,7 +39,7 @@ object ValintarekisteriAppConfig extends Logging {
   }
 
   trait ExternalProps {
-    def configFile = System.getProperty("user.home") + "/work/oph/OPH-CONFIGS/oph-configuration/valinta-tulos-service.properties"
+    def configFile = System.getProperty("user.home") + "/oph-configuration/valinta-tulos-service.properties"
     val settings = ApplicationSettingsLoader.loadSettings(configFile)
   }
 

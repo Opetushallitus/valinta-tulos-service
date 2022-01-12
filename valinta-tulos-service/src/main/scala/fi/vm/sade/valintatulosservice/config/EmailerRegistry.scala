@@ -20,7 +20,7 @@ object EmailerRegistry extends Logging {
     * Default profile, uses ~/oph-configuration/valinta-tulos-emailer.properties
     */
   class Default(val mailPoller: MailPoller, val mailDecorator: MailDecorator) extends EmailerRegistry {
-    def configFile: String = System.getProperty("user.home") + "/work/oph/OPH-CONFIGS/oph-configuration/valinta-tulos-service.properties"
+    def configFile: String = System.getProperty("user.home") + "/oph-configuration/valinta-tulos-service.properties"
 
     lazy val settings: EmailerConfig = ApplicationSettingsLoader.loadSettings(configFile)(EmailerConfigParser())
   }

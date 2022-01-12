@@ -111,7 +111,6 @@ object HakuFixtures extends HakuService with JsonHakuService {
     }
   }
 
-
   override def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde] ={
     val hakuOid = hakuOids.head
     // TODO: Saner / more working test data
