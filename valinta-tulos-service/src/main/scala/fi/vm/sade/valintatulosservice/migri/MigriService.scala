@@ -17,12 +17,12 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
     oppijanumerorekisteriService.henkilot(hakijaOids).fold(_ => throw new IllegalArgumentException(s"No migri hakijas found for oid: $hakijaOids found."), henkilot => {
       henkilot.map(henkilo =>
         MigriHakija(
-          henkilotunnus = henkilo._2.hetu.getOrElse("").toString,
+          henkilotunnus = if(henkilo._2.hetu.nonEmpty) henkilo._2.hetu.toString else null,
           henkiloOid = henkilo._2.oid.toString,
-          sukunimi = henkilo._2.sukunimi.getOrElse(""),
-          etunimet = henkilo._2.etunimet.getOrElse(""),
-          kansalaisuudet = henkilo._2.kansalaisuudet.getOrElse(List()),
-          syntymaaika = henkilo._2.syntymaaika.getOrElse(""),
+          sukunimi = henkilo._2.sukunimi.orNull,
+          etunimet = henkilo._2.etunimet.orNull,
+          kansalaisuudet = henkilo._2.kansalaisuudet.orNull,
+          syntymaaika = henkilo._2.syntymaaika.orNull,
           mutable.Set()
         )
       ).filterNot(hakija => hakija.kansalaisuudet.contains("246")).toSet
@@ -48,10 +48,9 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
                       logger.warn(s"No hakemus found for migri hakijaOid: ${tulos.valinnantulos.hakemusOid}, cause: ${e.toString}"), h => {
                       val maksuntila: String = lukuvuosimaksuService.getLukuvuosimaksuByHakijaAndHakukohde(HakijaOid(h.henkiloOid), tulos.valinnantulos.hakukohdeOid, auditInfo) match {
                         case Some(maksu) => maksu.maksuntila.toString
-                        case None => ""
+                        case None => null
                       }
-
-                      val maksuvelvollisuus: String = if (h.maksuvelvollisuudet.exists(m => m._1 == tulos.valinnantulos.hakukohdeOid.toString)) h.maksuvelvollisuudet.filter(m => m._1 == tulos.valinnantulos.hakukohdeOid.toString).head._2 else ""
+                      val maksuvelvollisuus: String = if (h.maksuvelvollisuudet.exists(m => m._1 == tulos.valinnantulos.hakukohdeOid.toString)) h.maksuvelvollisuudet.filter(m => m._1 == tulos.valinnantulos.hakukohdeOid.toString).head._2 else null
 
                       hakija.hakemukset += MigriHakemus(
                         hakuOid = h.hakuOid.toString,
@@ -68,8 +67,8 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
                         ilmoittautuminenTila = tulos.valinnantulos.ilmoittautumistila.toString,
                         maksuvelvollisuus = maksuvelvollisuus,
                         lukuvuosimaksu = maksuntila,
-                        koulutuksenAlkamiskausi = hakukohde.koulutuksenAlkamiskausi.getOrElse("").toString,
-                        koulutuksenAlkamisvuosi = hakukohde.koulutuksenAlkamisvuosi.getOrElse("").toString
+                        koulutuksenAlkamiskausi = hakukohde.koulutuksenAlkamiskausi.orNull,
+                        koulutuksenAlkamisvuosi = hakukohde.koulutuksenAlkamisvuosi
                       )
                     })
                   }

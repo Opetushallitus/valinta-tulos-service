@@ -73,14 +73,14 @@ case class HakukohdeMigri(oid: HakukohdeOid,
                           hakuNimi: Map[String, String],
                           hakukohteenNimi: Map[String, String],
                           koulutuksenAlkamiskausiUri: Option[String],
-                          koulutuksenAlkamisvuosi: Option[Int],
+                          koulutuksenAlkamisvuosi: String,
                           organisaatioOid: String,
                           organisaatioNimi: Map[String, String],
                           toteutusOid: String,
                           toteutusNimi: Map[String, String]) {
-  def koulutuksenAlkamiskausi: Option[Kausi] = (koulutuksenAlkamiskausiUri, koulutuksenAlkamisvuosi) match {
-    case (Some(uri), Some(alkamisvuosi)) if uri.matches("""kausi_k#\d+""") => Some(Kevat(alkamisvuosi))
-    case (Some(uri), Some(alkamisvuosi)) if uri.matches("""kausi_s#\d+""") => Some(Syksy(alkamisvuosi))
+  def koulutuksenAlkamiskausi: Option[String] = koulutuksenAlkamiskausiUri match {
+    case Some(uri) if uri.matches("""kausi_k#\d+""") => Some("K")
+    case Some(uri) if uri.matches("""kausi_s#\d+""") => Some("S")
     case _ => None
   }
 }
@@ -468,7 +468,7 @@ case class KoutaHakukohde(oid: String,
       hakuNimi = haku.nimi,
       hakukohteenNimi = nimi,
       koulutuksenAlkamiskausiUri = kausi,
-      koulutuksenAlkamisvuosi = vuosi,
+      koulutuksenAlkamisvuosi = vuosi.getOrElse(null).toString,
       organisaatioOid = tarjoaja.oid,
       organisaatioNimi = tarjoaja.nimi,
       toteutusOid = toteutus.oid,
