@@ -24,5 +24,5 @@ case class MigriHakemus(hakuOid: String,
                         ilmoittautuminenTila: String,
                         maksuvelvollisuus: String,
                         lukuvuosimaksu: String,
-                        koulutuksenAlkamisvuosi: Int,
+                        koulutuksenAlkamisvuosi: Integer,
                         koulutuksenAlkamiskausi: String)

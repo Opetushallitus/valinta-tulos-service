@@ -54,8 +54,9 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
                         case Some(kausi) => kausi
                         case None => null
                       }
-                      val koulutuksenAlkamisvuosi: Int = hakukohde.koulutuksenAlkamisvuosi match {
+                      val koulutuksenAlkamisvuosi: Integer = hakukohde.koulutuksenAlkamisvuosi match {
                         case Some(vuosi) => vuosi
+                        case None => null
                       }
 
                       hakija.hakemukset += MigriHakemus(

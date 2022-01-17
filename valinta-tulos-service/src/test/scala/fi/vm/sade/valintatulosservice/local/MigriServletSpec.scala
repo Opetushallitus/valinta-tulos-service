@@ -1,52 +1,200 @@
 package fi.vm.sade.valintatulosservice.local
 
+import fi.vm.sade.auditlog.Audit
+import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
+import fi.vm.sade.utils.ServletTest
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.ServletSpecification
-import fi.vm.sade.valintatulosservice.config.VtsAppConfig
-import fi.vm.sade.valintatulosservice.security.Role
-import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijaOid, HakukohdeOid, HyvaksyttyValinnanTila}
-import org.json4s.DefaultFormats
+import fi.vm.sade.valintatulosservice._
+import fi.vm.sade.valintatulosservice.domain.{Hakemus, Hakutoive, Henkilotiedot}
+import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
+import fi.vm.sade.valintatulosservice.migri.MigriService
+import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.{Henkilo, OppijanumerorekisteriService}
+import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket}
+import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, HakukohdeMigri}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SessionRepository, ValinnantulosRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.junit.runner.RunWith
-import org.mockserver.integration.ClientAndServer
-import org.mockserver.model.{HttpRequest, HttpResponse}
-import org.specs2.mock.Mockito.{any, mock, theStubbed}
+import org.scalatra.swagger.Swagger
+import org.scalatra.test.{EmbeddedJettyContainer, HttpComponentsClient}
+import org.specs2.execute.AsResult
+import org.specs2.mock.Mockito
+import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
+import org.specs2.specification.{BeforeAfterAll, ForEach}
+import org.springframework.core.io.ClassPathResource
+import org.tsers.zeison.Zeison
+
+import java.util.{Date, UUID}
 
 @RunWith(classOf[JUnitRunner])
-class MigriServletSpec extends ServletSpecification with ValintarekisteriDbTools with Logging {
-  override implicit val formats = DefaultFormats
+class MigriServletSpec extends Specification with EmbeddedJettyContainer with HttpComponentsClient with BeforeAfterAll with ForEach[(String, MigriService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, HakemusRepository, LukuvuosimaksuService)] with ITSetup with Mockito with Logging {
 
-  lazy val testSession = createTestSession(Set(Role.MIGRI_READ))
-  lazy val headers = Map("Cookie" -> s"session=${testSession}", "Content-Type" -> "application/json")
+  override def beforeAll(): Unit = start()
 
-  val valintarekisteriService = mock[ValinnantulosRepository]
-  val oppijanumerorekisteriService: ClientAndServer = ClientAndServer.startClientAndServer(VtsAppConfig.oppijanumeroMockPort)
+  override def afterAll(): Unit = stop()
 
-  oppijanumerorekisteriService.when(new HttpRequest().withPath(
-    s"/oppijanumerorekisteri-service/henkilo/masterHenkilosByOidList"
-  )).respond(new HttpResponse().withStatusCode(200)
-    .withBody("  {\n    \"1.2.246.562.24.51986460849\": {\n      \"oidHenkilo\": \"1.2.246.562.24.51986460849\",\n      \"hetu\": null,\n      \"kaikkiHetut\": [],\n      \"passivoitu\": false,\n      \"etunimet\": \"Vikke Testi\",\n      \"kutsumanimi\": \"Vikke\",\n      \"sukunimi\": \"Leskinen-Testi\",\n      \"aidinkieli\": {\n      \"kieliKoodi\": \"bn\",\n      \"kieliTyyppi\": \"bengali\"\n    },\n      \"asiointiKieli\": {\n      \"kieliKoodi\": \"en\",\n      \"kieliTyyppi\": \"English\"\n    },\n      \"kansalaisuus\": [\n    {\n      \"kansalaisuusKoodi\": \"050\"\n    }\n      ],\n      \"kasittelijaOid\": \"1.2.246.562.24.48475174060\",\n      \"syntymaaika\": \"1916-02-19\",\n      \"sukupuoli\": \"1\",\n      \"kotikunta\": null,\n      \"oppijanumero\": \"1.2.246.562.24.51986460849\",\n      \"turvakielto\": false,\n      \"eiSuomalaistaHetua\": false,\n      \"yksiloity\": true,\n      \"yksiloityVTJ\": false,\n      \"yksilointiYritetty\": false,\n      \"duplicate\": false,\n      \"created\": 1610366561702,\n      \"modified\": 1611802946172,\n      \"vtjsynced\": null,\n      \"yhteystiedotRyhma\": [],\n      \"yksilointivirheet\": [],\n      \"henkiloTyyppi\": \"OPPIJA\",\n      \"kielisyys\": []\n    }\n  }"))
+  def foreach[R: AsResult](f: ((String, MigriService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, HakemusRepository, LukuvuosimaksuService)) => R): org.specs2.execute.Result = {
+    val sessionRepository = mock[SessionRepository]
+    val valintarekisteriService = mock[ValinnantulosRepository]
+    val lukuvuosimaksuService = mock[LukuvuosimaksuService]
+    val valinnantulosService = mock[ValinnantulosService]
+    val hakuService = mock[HakuService]
+    val hakemusRepository = mock[HakemusRepository]
+    val oppijanumerorekisteriService = mock[OppijanumerorekisteriService]
+    val migriService = new MigriService(hakemusRepository, hakuService, valinnantulosService, oppijanumerorekisteriService, valintarekisteriService, lukuvuosimaksuService)
+    val audit = mock[Audit]
 
-  "palauttaa 200 kun henkilö löytyy" in {
-    valintarekisteriService.getHakijanHyvaksytValinnantilat(any[HakijaOid]) returns Set(HyvaksyttyValinnanTila(HakemusOid("1.2.333"), HakukohdeOid("1.2.34")))
-    post(s"cas/migri/hakemukset", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
-      status must_== 200
-      httpComponentsClient.header.get("Content-Type") must_== Some("application/json;charset=utf-8")
-      logger.info("----")
-      logger.info(body)
-      logger.info("----")
-      body startsWith ("{")
+    val servlet = new MigriServlet(audit, migriService, sessionRepository)(mock[Swagger])
+    ServletTest.withServlet(this, servlet, (uri: String) => AsResult(f((uri, migriService, sessionRepository, oppijanumerorekisteriService, valintarekisteriService, valinnantulosService, hakuService, hakemusRepository, lukuvuosimaksuService))))
+  }
+
+  private val sessionId = UUID.randomUUID()
+  private val migriSession = CasSession(ServiceTicket("ST"), "1.2.246.562.24.1", Set(Role.MIGRI_READ, Role.SIJOITTELU_CRUD, Role.ATARU_HAKEMUS_CRUD, Role.VALINTATULOSSERVICE_CRUD))
+  private val withoutMigriSession = CasSession(ServiceTicket("ST"), "1.2.246.562.24.1", Set(Role.ATARU_HAKEMUS_READ))
+  private val headers = Map("Cookie" -> s"session=${sessionId.toString}", "Content-type" -> "application/json")
+  private val userAgent = "MigriServletSpec-user-agent"
+
+  val hakukohdeOid = HakukohdeOid("1.2.246.562.20.00000000000000000976")
+  val valintatapajonoOid = ValintatapajonoOid("1.2.246.562.11.0000000000000011111111222")
+  val hakemusOid = HakemusOid("1.2.246.562.11.00000000000000964775")
+  val henkiloOid = "1.2.246.562.24.51986460849"
+  val hakuOid = HakuOid("1.2.246.562.29.00000000000000000800")
+  val organisaatioOid = "1.2.246.562.10.80612632382"
+  val toteutusOid = "1.2.246.562.17.00000000000000000531"
+  val hakijaOid = HakijaOid("1.2.246.562.24.51986460849")
+
+  val valinnantulos = Valinnantulos(
+    hakukohdeOid,
+    valintatapajonoOid,
+    hakemusOid,
+    henkiloOid,
+    Hyvaksytty,
+    Some(false),
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    Some(false),
+    Some(false),
+    Some(false),
+    ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI,
+    LasnaKokoLukuvuosi,
+    None)
+
+  val hylattyvalinnantulos = Valinnantulos(
+    hakukohdeOid,
+    valintatapajonoOid,
+    hakemusOid,
+    henkiloOid,
+    Hylatty,
+    Some(false),
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    Some(false),
+    Some(false),
+    Some(false),
+    ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI,
+    LasnaKokoLukuvuosi,
+    None)
+
+
+  val tilahistoria = TilaHistoriaRecord(
+    ValintatapajonoOid("hamburgerbörs-1"),
+    hakemusOid, Valinnantila("Hyvaksytty"), new Date())
+
+  val hakemus = Hakemus(
+    hakemusOid,
+    hakuOid,
+    henkiloOid,
+    "turku",
+    List(Hakutoive(hakukohdeOid, organisaatioOid, "Turuun förikuski", "Turun murre ry")),
+    Henkilotiedot(None, None, false),
+    Map(hakukohdeOid.toString -> "REQUIRED"))
+
+  val hakukohdeMigri = HakukohdeMigri(
+    hakukohdeOid,
+    hakuOid,
+    Map("fi" -> "Haku Turun förikuskin koulutukseen"),
+    Map("fi" -> "Turun förikuski"),
+    None,
+    None,
+    organisaatioOid,
+    Map("fi" -> "Turun murre ry"),
+    toteutusOid,
+    Map("fi" -> "Turggusen förikuskin peruskoulutuus"))
+
+  private def prettify(json: String) = {
+    Zeison.renderPretty(Zeison.parse(json))
+  }
+
+  private def assertJson(expected: String, actual: String) = {
+    prettify(actual) must_== prettify(expected)
+  }
+
+  private def jsonFromClasspath(filename: String): String = {
+    scala.io.Source.fromInputStream(new ClassPathResource("fixtures/migri/" + filename).getInputStream).mkString
+  }
+
+  "POST /cas/migri/hakemukset/" in {
+    "palauttaa forbidden jos ei migri-lukuoikeuksia" in { t: (String, MigriService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, HakemusRepository, LukuvuosimaksuService) =>
+      t._3.get(any()) returns Some(withoutMigriSession)
+      post(t._1 + "/hakemukset/", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
+        status must_== 403
+        body must_== "{\"error\":\"Forbidden\"}"
+      }
+    }
+
+    "palauttaa 200 ja tyhjän jsonin kun henkilöllä on kaksoiskansalaisuus ja hänellä on hyväksytty hakemus" in { t: (String, MigriService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, HakemusRepository, LukuvuosimaksuService) =>
+      t._3.get(any()) returns Some(migriSession)
+      t._4.henkilot(Set(hakijaOid)) returns Right(Map(hakijaOid -> Henkilo(hakijaOid, None, None, None, None, Some(List("246", "666")), None)))
+      t._5.getHakijanHyvaksytValinnantilat(hakijaOid) returns Set(HyvaksyttyValinnanTila(HakemusOid("1.2.246.562.11.00000000000000964775"), HakukohdeOid("1.2.246.562.20.00000000000000000976")))
+      t._6.getValinnantuloksetForHakemukset(any(), any()) returns Set(ValinnantulosWithTilahistoria(valinnantulos, List(tilahistoria)))
+      t._7.getHakukohdeMigri(hakukohdeOid) returns Right(hakukohdeMigri)
+      t._8.findHakemus(any()) returns Right(hakemus)
+      t._9.getLukuvuosimaksuByHakijaAndHakukohde(any(), any(), any()) returns None
+      post(t._1 + "/hakemukset/", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
+        status must_== 200
+        body must_== "[]"
+      }
+    }
+
+    "palauttaa 200 ja tyhjän jsonin kun henkilö on ulkomaalainen ja hänellä on hylätty valinnantulos" in { t: (String, MigriService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, HakemusRepository, LukuvuosimaksuService) =>
+      t._3.get(any()) returns Some(migriSession)
+      t._4.henkilot(Set(hakijaOid)) returns Right(Map(hakijaOid -> Henkilo(hakijaOid, None, None, None, None, Some(List("666")), None)))
+      t._5.getHakijanHyvaksytValinnantilat(hakijaOid) returns Set(HyvaksyttyValinnanTila(HakemusOid("1.2.246.562.11.00000000000000964775"), HakukohdeOid("1.2.246.562.20.00000000000000000976")))
+      t._6.getValinnantuloksetForHakemukset(any(), any()) returns Set(ValinnantulosWithTilahistoria(hylattyvalinnantulos, List(tilahistoria)))
+      t._7.getHakukohdeMigri(hakukohdeOid) returns Right(hakukohdeMigri)
+      t._8.findHakemus(any()) returns Right(hakemus)
+      t._9.getLukuvuosimaksuByHakijaAndHakukohde(any(), any(), any()) returns None
+      post(t._1 + "/hakemukset/", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
+        status must_== 200
+        body must_== "[]"
+      }
+    }
+
+    "palauttaa 200 ja jsonin kun henkilö on ulkomaalainen ja hänellä on hyväksytty hakemus" in { t: (String, MigriService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, HakemusRepository, LukuvuosimaksuService) =>
+      t._3.get(any()) returns Some(migriSession)
+      t._4.henkilot(Set(hakijaOid)) returns Right(Map(hakijaOid -> Henkilo(hakijaOid, None, None, None, None, Some(List("666")), None)))
+      t._5.getHakijanHyvaksytValinnantilat(hakijaOid) returns Set(HyvaksyttyValinnanTila(HakemusOid("1.2.246.562.11.00000000000000964775"), HakukohdeOid("1.2.246.562.20.00000000000000000976")))
+      t._6.getValinnantuloksetForHakemukset(any(), any()) returns Set(ValinnantulosWithTilahistoria(valinnantulos, List(tilahistoria)))
+      t._7.getHakukohdeMigri(hakukohdeOid) returns Right(hakukohdeMigri)
+      t._8.findHakemus(any()) returns Right(hakemus)
+      t._9.getLukuvuosimaksuByHakijaAndHakukohde(any(), any(), any()) returns None
+      post(t._1 + "/hakemukset/", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
+        status must_== 200
+        assertJson(
+          jsonFromClasspath("expected-migri-hakemus.json"),
+          body
+        )
+      }
     }
   }
-  //  "POST /cas/migri/hakemukset" should {
-  //    "palauttaa tyhjää kun henkilöltä ei löydy hyväksyttyjä tuloksia" in {
-  //      post(s"cas/migri/hakemukset", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
-  //        status must_== 200
-  //      }
-  //    }
-  //  }
-
-
 }
