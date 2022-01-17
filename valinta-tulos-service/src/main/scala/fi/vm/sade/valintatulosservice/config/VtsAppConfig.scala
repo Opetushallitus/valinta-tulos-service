@@ -26,6 +26,7 @@ object VtsAppConfig extends Logging {
   lazy val organisaatioMockPort = PortChecker.findFreeLocalPort
   lazy val vtsMockPort = PortChecker.findFreeLocalPort
   lazy val valintaPerusteetMockPort = PortChecker.findFreeLocalPort
+  lazy val oppijanumeroMockPort = PortChecker.findFreeLocalPort
 
   def fromOptionalString(profile: Option[String]) = {
     fromString(profile.getOrElse(getProfileProperty))

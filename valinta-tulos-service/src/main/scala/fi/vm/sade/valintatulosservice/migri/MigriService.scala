@@ -17,12 +17,12 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
     oppijanumerorekisteriService.henkilot(hakijaOids).fold(_ => throw new IllegalArgumentException(s"No migri hakijas found for oid: $hakijaOids found."), henkilot => {
       henkilot.map(henkilo =>
         MigriHakija(
-          henkilotunnus = if(henkilo._2.hetu.nonEmpty) henkilo._2.hetu.toString else null,
+          henkilotunnus = if (henkilo._2.hetu.nonEmpty) henkilo._2.hetu.toString else null,
           henkiloOid = henkilo._2.oid.toString,
-          sukunimi = henkilo._2.sukunimi.orNull,
-          etunimet = henkilo._2.etunimet.orNull,
-          kansalaisuudet = henkilo._2.kansalaisuudet.orNull,
-          syntymaaika = henkilo._2.syntymaaika.orNull,
+          sukunimi = if (henkilo._2.sukunimi.nonEmpty) henkilo._2.sukunimi.toString else null,
+          etunimet = if (henkilo._2.etunimet.nonEmpty) henkilo._2.etunimet.toString else null,
+          kansalaisuudet = if (henkilo._2.kansalaisuudet.nonEmpty) henkilo._2.kansalaisuudet.get else null,
+          syntymaaika = if (henkilo._2.syntymaaika.nonEmpty) henkilo._2.syntymaaika.toString else null,
           mutable.Set()
         )
       ).filterNot(hakija => hakija.kansalaisuudet.contains("246")).toSet
@@ -35,7 +35,6 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
       val hyvaksytyt: Set[HyvaksyttyValinnanTila] = valintarekisteriService.getHakijanHyvaksytValinnantilat(HakijaOid(hakija.henkiloOid))
       val hyvaksytytHakemusOidit = hyvaksytyt.map(h => h.hakemusOid)
       val hyvaksytytHakukohdeOidit = hyvaksytyt.map(h => h.hakukohdeOid)
-
       valinnantulosService.getValinnantuloksetForHakemukset(hyvaksytytHakemusOidit, auditInfo) match {
         case tulokset: Set[ValinnantulosWithTilahistoria] =>
           tulokset
@@ -46,11 +45,18 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
                   if (hyvaksytytHakukohdeOidit.contains(hakukohde.oid)) {
                     hakemusRepository.findHakemus(tulos.valinnantulos.hakemusOid).fold(e =>
                       logger.warn(s"No hakemus found for migri hakijaOid: ${tulos.valinnantulos.hakemusOid}, cause: ${e.toString}"), h => {
-                      val maksuntila: String = lukuvuosimaksuService.getLukuvuosimaksuByHakijaAndHakukohde(HakijaOid(h.henkiloOid), tulos.valinnantulos.hakukohdeOid, auditInfo) match {
+                      val lukuvuosimaksu: String = lukuvuosimaksuService.getLukuvuosimaksuByHakijaAndHakukohde(HakijaOid(h.henkiloOid), tulos.valinnantulos.hakukohdeOid, auditInfo) match {
                         case Some(maksu) => maksu.maksuntila.toString
                         case None => null
                       }
                       val maksuvelvollisuus: String = if (h.maksuvelvollisuudet.exists(m => m._1 == tulos.valinnantulos.hakukohdeOid.toString)) h.maksuvelvollisuudet.filter(m => m._1 == tulos.valinnantulos.hakukohdeOid.toString).head._2 else null
+                      val koulutuksenAlkamiskausi: String = hakukohde.koulutuksenAlkamiskausi match {
+                        case Some(kausi) => kausi
+                        case None => null
+                      }
+                      val koulutuksenAlkamisvuosi: Int = hakukohde.koulutuksenAlkamisvuosi match {
+                        case Some(vuosi) => vuosi
+                      }
 
                       hakija.hakemukset += MigriHakemus(
                         hakuOid = h.hakuOid.toString,
@@ -62,13 +68,13 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
                         hakukohdeNimi = hakukohde.hakukohteenNimi,
                         toteutusOid = hakukohde.toteutusOid,
                         toteutusNimi = hakukohde.toteutusNimi,
-                        valintaTila = tulos.valinnantulos.valinnantila.toString,
+                        valintaTila = tulos.valinnantulos.valinnantila.valinnantila.toString,
                         vastaanottoTila = tulos.valinnantulos.vastaanottotila.toString,
-                        ilmoittautuminenTila = tulos.valinnantulos.ilmoittautumistila.toString,
+                        ilmoittautuminenTila = tulos.valinnantulos.ilmoittautumistila.ilmoittautumistila.toString,
                         maksuvelvollisuus = maksuvelvollisuus,
-                        lukuvuosimaksu = maksuntila,
-                        koulutuksenAlkamiskausi = hakukohde.koulutuksenAlkamiskausi.orNull,
-                        koulutuksenAlkamisvuosi = hakukohde.koulutuksenAlkamisvuosi
+                        lukuvuosimaksu = lukuvuosimaksu,
+                        koulutuksenAlkamiskausi = koulutuksenAlkamiskausi,
+                        koulutuksenAlkamisvuosi = koulutuksenAlkamisvuosi
                       )
                     })
                   }
