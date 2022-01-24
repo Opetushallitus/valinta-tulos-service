@@ -1,13 +1,13 @@
 [
   {
-    "henkilotunnus": null,
+    "henkilotunnus": "121188-666F",
     "henkiloOid": "1.2.246.562.24.51986460849",
-    "sukunimi": null,
-    "etunimet": null,
+    "sukunimi": "Harittu",
+    "etunimet": "Hese Rauma Repola",
     "kansalaisuudet": [
       "666"
     ],
-    "syntymaaika": null,
+    "syntymaaika": "12.11.1988",
     "hakemukset": [
       {
         "hakuOid": "1.2.246.562.29.00000000000000000800",
@@ -31,9 +31,8 @@
         "vastaanottoTila": "VASTAANOTTANUT_SITOVASTI",
         "ilmoittautuminenTila": "LASNA_KOKO_LUKUVUOSI",
         "maksuvelvollisuus": "REQUIRED",
-        "lukuvuosimaksu": null,
-        "koulutuksenAlkamisvuosi": null,
-        "koulutuksenAlkamiskausi": null
+        "koulutuksenAlkamisvuosi": 2022,
+        "koulutuksenAlkamiskausi": "S"
       }
     ]
   }

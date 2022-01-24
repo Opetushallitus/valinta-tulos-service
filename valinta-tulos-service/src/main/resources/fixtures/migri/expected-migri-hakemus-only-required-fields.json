@@ -1,0 +1,33 @@
+[
+  {
+    "henkiloOid": "1.2.246.562.24.51986460849",
+    "kansalaisuudet": [
+      "666"
+    ],
+    "hakemukset": [
+      {
+        "hakuOid": "1.2.246.562.29.00000000000000000800",
+        "hakuNimi": {
+          "fi": "Haku Turun förikuskin koulutukseen"
+        },
+        "hakemusOid": "1.2.246.562.11.00000000000000964775",
+        "organisaatioOid": "1.2.246.562.10.80612632382",
+        "organisaatioNimi": {
+          "fi": "Turun murre ry"
+        },
+        "hakukohdeOid": "1.2.246.562.20.00000000000000000976",
+        "hakukohdeNimi": {
+          "fi": "Turun förikuski"
+        },
+        "toteutusOid": "1.2.246.562.17.00000000000000000531",
+        "toteutusNimi": {
+          "fi": "Turggusen förikuskin peruskoulutuus"
+        },
+        "valintaTila": "HYVAKSYTTY",
+        "vastaanottoTila": "VASTAANOTTANUT_SITOVASTI",
+        "ilmoittautuminenTila": "LASNA_KOKO_LUKUVUOSI",
+        "maksuvelvollisuus": "REQUIRED"
+      }
+    ]
+  }
+]

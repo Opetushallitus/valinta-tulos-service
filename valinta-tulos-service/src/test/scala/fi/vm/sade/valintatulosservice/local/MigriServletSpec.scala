@@ -8,7 +8,7 @@ import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain.{Hakemus, Hakutoive, Henkilotiedot}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.migri.MigriService
-import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.{Henkilo, OppijanumerorekisteriService}
+import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.{Henkilo, Hetu, OppijanumerorekisteriService}
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, HakukohdeMigri}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SessionRepository, ValinnantulosRepository}
@@ -62,6 +62,15 @@ class MigriServletSpec extends Specification with EmbeddedJettyContainer with Ht
   val organisaatioOid = "1.2.246.562.10.80612632382"
   val toteutusOid = "1.2.246.562.17.00000000000000000531"
   val hakijaOid = HakijaOid("1.2.246.562.24.51986460849")
+
+  val henkilo = Henkilo(
+    hakijaOid,
+    None,
+    None,
+    None,
+    None,
+    Some(List("666")),
+    None)
 
   val valinnantulos = Valinnantulos(
     hakukohdeOid,
@@ -131,6 +140,59 @@ class MigriServletSpec extends Specification with EmbeddedJettyContainer with Ht
     toteutusOid,
     Map("fi" -> "Turggusen förikuskin peruskoulutuus"))
 
+  val henkiloFull = Henkilo(
+    hakijaOid,
+    Some(Hetu("121188-666F")),
+    Some("Hese"),
+    Some("Harittu"),
+    Some("Hese Rauma Repola"),
+    Some(List("666")),
+    Some("12.11.1988"))
+
+  val valinnantulosFull = Valinnantulos(
+    hakukohdeOid,
+    valintatapajonoOid,
+    hakemusOid,
+    henkiloOid,
+    Hyvaksytty,
+    Some(true),
+    Some("Koodi"),
+    Some("Ehto fi"),
+    Some("Ehto sv"),
+    Some("Ehto en"),
+    Some("Text fi"),
+    Some("Text sv"),
+    Some("Text en"),
+    Some(false),
+    Some(false),
+    Some(false),
+    ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI,
+    LasnaKokoLukuvuosi,
+    Some(false))
+
+  val hakemusFull = Hakemus(
+    hakemusOid,
+    hakuOid,
+    henkiloOid,
+    "turku",
+    List(Hakutoive(hakukohdeOid, organisaatioOid, "Turuun förikuski", "Turun murre ry")),
+    Henkilotiedot(Some("Heikki Hese Harittu"), Some("hese@hese.com"), true),
+    Map(hakukohdeOid.toString -> "REQUIRED"))
+
+  val hakukohdeMigriFull = HakukohdeMigri(
+    hakukohdeOid,
+    hakuOid,
+    Map("fi" -> "Haku Turun förikuskin koulutukseen"),
+    Map("fi" -> "Turun förikuski"),
+    Some("kausi_s#1"),
+    Some(2022),
+    organisaatioOid,
+    Map("fi" -> "Turun murre ry"),
+    toteutusOid,
+    Map("fi" -> "Turggusen förikuskin peruskoulutuus"))
+
+
+
   private def prettify(json: String) = {
     Zeison.renderPretty(Zeison.parse(json))
   }
@@ -182,7 +244,7 @@ class MigriServletSpec extends Specification with EmbeddedJettyContainer with Ht
 
     "palauttaa 200 ja jsonin kun henkilö on ulkomaalainen ja hänellä on hyväksytty hakemus" in { t: (String, MigriService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, HakemusRepository, LukuvuosimaksuService) =>
       t._3.get(any()) returns Some(migriSession)
-      t._4.henkilot(Set(hakijaOid)) returns Right(Map(hakijaOid -> Henkilo(hakijaOid, None, None, None, None, Some(List("666")), None)))
+      t._4.henkilot(Set(hakijaOid)) returns Right(Map(hakijaOid -> henkilo))
       t._5.getHakijanHyvaksytValinnantilat(hakijaOid) returns Set(HyvaksyttyValinnanTila(HakemusOid("1.2.246.562.11.00000000000000964775"), HakukohdeOid("1.2.246.562.20.00000000000000000976")))
       t._6.getValinnantuloksetForHakemukset(any(), any()) returns Set(ValinnantulosWithTilahistoria(valinnantulos, List(tilahistoria)))
       t._7.getHakukohdeMigri(hakukohdeOid) returns Right(hakukohdeMigri)
@@ -191,7 +253,24 @@ class MigriServletSpec extends Specification with EmbeddedJettyContainer with Ht
       post(t._1 + "/hakemukset/", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
         status must_== 200
         assertJson(
-          jsonFromClasspath("expected-migri-hakemus.json"),
+          jsonFromClasspath("expected-migri-hakemus-only-required-fields.json"),
+          body
+        )
+      }
+    }
+
+    "palauttaa 200 ja jsonin kaikilla ei-pakollisilla kentillä kun henkilö on ulkomaalainen ja hänellä on hyväksytty hakemus" in { t: (String, MigriService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, HakemusRepository, LukuvuosimaksuService) =>
+      t._3.get(any()) returns Some(migriSession)
+      t._4.henkilot(Set(hakijaOid)) returns Right(Map(hakijaOid -> henkiloFull))
+      t._5.getHakijanHyvaksytValinnantilat(hakijaOid) returns Set(HyvaksyttyValinnanTila(HakemusOid("1.2.246.562.11.00000000000000964775"), HakukohdeOid("1.2.246.562.20.00000000000000000976")))
+      t._6.getValinnantuloksetForHakemukset(any(), any()) returns Set(ValinnantulosWithTilahistoria(valinnantulosFull, List(tilahistoria)))
+      t._7.getHakukohdeMigri(hakukohdeOid) returns Right(hakukohdeMigriFull)
+      t._8.findHakemus(any()) returns Right(hakemusFull)
+      t._9.getLukuvuosimaksuByHakijaAndHakukohde(any(), any(), any()) returns None
+      post(t._1 + "/hakemukset/", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
+        status must_== 200
+        assertJson(
+          jsonFromClasspath("expected-migri-hakemus-all-fields.json"),
           body
         )
       }
