@@ -14,7 +14,6 @@ class LukuvuosimaksuService(lukuvuosimaksuRepository: LukuvuosimaksuRepository,
     audit.log(auditInfo.user, LukuvuosimaksujenLuku,
       new Target.Builder()
         .setField("hakukohde", hakukohdeOid.toString)
-        .setField("muokkaaja", "")
         .build(),
       new Changes.Builder().build()
     )
@@ -26,7 +25,6 @@ class LukuvuosimaksuService(lukuvuosimaksuRepository: LukuvuosimaksuRepository,
     audit.log(auditInfo.user, LukuvuosimaksujenLuku,
       new Target.Builder()
         .setField("hakukohde", hakukohdeOids.mkString(","))
-        .setField("muokkaaja", "")
         .build(),
       new Changes.Builder().build()
     )
@@ -38,7 +36,6 @@ class LukuvuosimaksuService(lukuvuosimaksuRepository: LukuvuosimaksuRepository,
       new Target.Builder()
         .setField("hakukohde", hakukohdeOid.toString)
         .setField("hakija", hakijaOid.toString)
-        .setField("muokkaaja", "")
         .build(),
       new Changes.Builder().build()
     )
