@@ -469,7 +469,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       koulutuksenAlkamiskausi = null,
       yhdenPaikanSaanto = null,
       nimi = null))
-    hakemusRepository.findHakemus(any()) returns Right(Hakemus(null, null, null, null, null, null))
+    hakemusRepository.findHakemus(any()) returns Right(Hakemus(null, null, null, null, null, null, null))
   }
 
   trait ToisenAsteenHaku { this: Mocks =>

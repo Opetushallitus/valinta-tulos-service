@@ -1,8 +1,5 @@
 package fi.vm.sade.valintatulosservice.config
 
-import java.io.File
-import java.net.URL
-
 import fi.vm.sade.security.mock.MockSecurityContext
 import fi.vm.sade.security.{ProductionSecurityContext, SecurityContext}
 import fi.vm.sade.utils.cas.CasClient
@@ -17,6 +14,9 @@ import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintaperusteet.{ValintaPerusteetServiceImpl, ValintaPerusteetServiceMock}
 import org.http4s.client.blaze.{BlazeClientConfig, SimpleHttp1Client}
 
+import java.io.File
+import java.net.URL
+
 object VtsAppConfig extends Logging {
   def getProfileProperty() = System.getProperty("valintatulos.profile", "default")
   private val propertiesFile = "/oph-configuration/valinta-tulos-service-oph.properties"
@@ -26,6 +26,7 @@ object VtsAppConfig extends Logging {
   lazy val organisaatioMockPort = PortChecker.findFreeLocalPort
   lazy val vtsMockPort = PortChecker.findFreeLocalPort
   lazy val valintaPerusteetMockPort = PortChecker.findFreeLocalPort
+  lazy val oppijanumeroMockPort = PortChecker.findFreeLocalPort
 
   def fromOptionalString(profile: Option[String]) = {
     fromString(profile.getOrElse(getProfileProperty))

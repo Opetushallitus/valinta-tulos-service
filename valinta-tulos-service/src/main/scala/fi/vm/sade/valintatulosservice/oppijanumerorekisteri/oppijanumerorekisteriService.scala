@@ -1,7 +1,5 @@
 package fi.vm.sade.valintatulosservice.oppijanumerorekisteri
 
-import java.util.concurrent.TimeUnit
-
 import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasParams}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakijaOid
@@ -10,24 +8,42 @@ import org.http4s.client.blaze.SimpleHttp1Client
 import org.http4s.json4s.native.{jsonEncoderOf, jsonOf}
 import org.http4s.{Request, Uri}
 import org.json4s.DefaultReaders.StringReader
-import org.json4s.JsonAST.{JNull, JObject, JString}
-import org.json4s.{JValue, Reader, Writer}
-
-import scala.concurrent.duration.Duration
+import org.json4s.JsonAST.{JNull, JObject, JString, JValue}
+import org.json4s.{DefaultFormats, JArray, Reader, Writer}
 import scalaz.concurrent.Task
+
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.Duration
+
+case class KansalaisuusKoodi(kansalaisuusKoodi: String)
 
 case class Hetu(s: String) {
   override def toString: String = s
 }
-case class Henkilo(oid: HakijaOid, hetu: Option[Hetu], kutsumanimi: Option[String])
+
+case class Henkilo(oid: HakijaOid,
+                   hetu: Option[Hetu],
+                   kutsumanimi: Option[String],
+                   sukunimi: Option[String],
+                   etunimet: Option[String],
+                   kansalaisuudet: Option[List[String]],
+                   syntymaaika: Option[String])
 
 object Henkilo {
   val henkiloReader = new Reader[Henkilo] {
+    implicit val formats = DefaultFormats
+
     override def read(value: JValue): Henkilo = {
+      val kansalaisuusKoodit: List[String] = (value \ "kansalaisuus").extract[List[Option[KansalaisuusKoodi]]].map(x => x.get.kansalaisuusKoodi)
+
       Henkilo(
         HakijaOid(StringReader.read(value \ "oidHenkilo")),
         Option(StringReader.read(value \ "hetu")).map(Hetu),
-        Option(StringReader.read(value \ "kutsumanimi"))
+        Option(StringReader.read(value \ "kutsumanimi")),
+        Option(StringReader.read(value \ "sukunimi")),
+        Option(StringReader.read(value \ "etunimet")),
+        Option(kansalaisuusKoodit),
+        Option(StringReader.read(value \ "syntymaaika"))
       )
     }
   }
@@ -36,7 +52,11 @@ object Henkilo {
       JObject(
         "oidHenkilo" -> JString(h.oid.toString),
         "hetu" -> h.hetu.map(s => JString(s.toString)).getOrElse(JNull),
-        "kutsumanimi" -> h.kutsumanimi.map(JString).getOrElse(JNull)
+        "kutsumanimi" -> h.kutsumanimi.map(JString).getOrElse(JNull),
+        "sukunimi" -> h.sukunimi.map(JString).getOrElse(JNull),
+        "etunimet" -> h.etunimet.map(JString).getOrElse(JNull),
+        "kansalaisuus" -> h.kansalaisuudet.map(k => k.asInstanceOf[JArray]).getOrElse(JNull),
+        "syntymaaika" -> h.syntymaaika.map(JString).getOrElse(JNull)
       )
     }
   }
@@ -63,8 +83,8 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) {
   }
 
   private def henkilotChunk(oids: Set[HakijaOid]): Task[Map[HakijaOid, Henkilo]] = {
-    import org.json4s.DefaultWriters.{StringWriter, arrayWriter}
     import org.json4s.DefaultReaders.mapReader
+    import org.json4s.DefaultWriters.{StringWriter, arrayWriter}
     implicit val hr: Reader[Henkilo] = Henkilo.henkiloReader
 
     Uri.fromString(appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.henkilotByOids"))

@@ -13,6 +13,8 @@ case class KentanMuutos(field: String, from: Option[Any], to: Any)
 
 case class Muutos(changes: List[KentanMuutos], timestamp: OffsetDateTime)
 
+case class HyvaksyttyValinnanTila(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid)
+
 case class Valinnantulos(hakukohdeOid: HakukohdeOid,
                          valintatapajonoOid: ValintatapajonoOid,
                          hakemusOid: HakemusOid,

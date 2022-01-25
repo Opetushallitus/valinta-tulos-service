@@ -22,7 +22,8 @@ case class AtaruHakemus(oid: HakemusOid,
                         hakukohdeOids: List[HakukohdeOid],
                         henkiloOid: HakijaOid,
                         asiointikieli: String,
-                        email: String)
+                        email: String,
+                        paymentObligations: Map[String, String])
 
 case class AtaruResponse(applications: List[AtaruHakemus], offset: Option[String])
 

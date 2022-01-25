@@ -13,7 +13,6 @@ import org.json4s.JValue
 import org.json4s.JsonAST.JArray
 import org.json4s.jackson.Serialization
 import org.json4s.native.JsonMethods
-import org.json4s.native.JsonMethods.{compact, render}
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 import org.springframework.core.io.ClassPathResource
@@ -22,11 +21,11 @@ import org.tsers.zeison.Zeison
 @RunWith(classOf[JUnitRunner])
 class ValintaTulosServletSpec extends ServletSpecification {
   val ataruHakemus1 = AtaruHakemus(HakemusOid("1.2.246.562.11.00000000000000000005"),
-    HakuOid("1.2.246.562.29.37061034627"), List(HakukohdeOid("1.2.246.562.20.14875157126")), HakijaOid("ataru-tyyppi"), "fi", "test@example.com")
+    HakuOid("1.2.246.562.29.37061034627"), List(HakukohdeOid("1.2.246.562.20.14875157126")), HakijaOid("ataru-tyyppi"), "fi", "test@example.com", Map("1.2.246.562.20.14875157126" -> "NOT_CHECKED"))
   val ataruHakemus2 = AtaruHakemus(HakemusOid("1.2.246.562.11.00000000000000000006"),
-    HakuOid("1.2.246.562.29.37061034627"), List(HakukohdeOid("1.2.246.562.20.14875157126"), HakukohdeOid("1.2.246.562.20.27958725015")), HakijaOid("ataru-tyyppi2"), "fi", "test@example.com")
-  val ataruHenkilo1 = Henkilo(HakijaOid("ataru-tyyppi"), None, Some("Ataru"))
-  val ataruHenkilo2 = Henkilo(HakijaOid("ataru-tyyppi2"), None, Some("Ataru2"))
+    HakuOid("1.2.246.562.29.37061034627"), List(HakukohdeOid("1.2.246.562.20.14875157126"), HakukohdeOid("1.2.246.562.20.27958725015")), HakijaOid("ataru-tyyppi2"), "fi", "test@example.com", Map("1.2.246.562.20.27958725015" -> "NOT_CHECKED"))
+  val ataruHenkilo1 = Henkilo(HakijaOid("ataru-tyyppi"), None, Some("Ataru"), None, None, None, None)
+  val ataruHenkilo2 = Henkilo(HakijaOid("ataru-tyyppi2"), None, Some("Ataru2"), None, None, None, None)
 
   private def prettify(json: String) = {
     Zeison.renderPretty(Zeison.parse(json))

@@ -137,6 +137,10 @@ trait ValintarekisteriResultExtractors {
     tila = Valinnantila(r.nextString),
     luotu = r.nextTimestamp))
 
+  protected implicit val getHyvaksyttyValinnanTilaResult = GetResult(r => HyvaksyttyValinnanTila(
+    hakemusOid = HakemusOid(r.nextString),
+    hakukohdeOid = HakukohdeOid(r.nextString)))
+
   protected implicit val getHakijaryhmatResult = GetResult(r => HakijaryhmaRecord(
     prioriteetti = r.nextInt,
     oid = r.nextString,
@@ -303,6 +307,12 @@ trait ValintarekisteriResultExtractors {
 
   implicit object SetHakemusOid extends SetParameter[HakemusOid] {
     def apply(o: HakemusOid, pp: PositionedParameters) {
+      pp.setString(o.toString)
+    }
+  }
+
+  implicit object SetHakijaOid extends SetParameter[HakijaOid] {
+    def apply(o: HakijaOid, pp: PositionedParameters) {
       pp.setString(o.toString)
     }
   }

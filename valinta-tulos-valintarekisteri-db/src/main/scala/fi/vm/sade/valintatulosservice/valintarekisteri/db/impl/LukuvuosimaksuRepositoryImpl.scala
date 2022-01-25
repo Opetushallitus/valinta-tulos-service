@@ -36,6 +36,17 @@ trait LukuvuosimaksuRepositoryImpl extends LukuvuosimaksuRepository with Valinta
       .toList
   }
 
+  def getLukuvuosimaksuByHakijaAndHakukohde(hakijaOid: HakijaOid, hakukohdeOid: HakukohdeOid): Option[Lukuvuosimaksu] = {
+    runBlocking(
+      sql"""select hakukohdeoid, maksuntila, muokkaaja, luotu
+            from lukuvuosimaksut
+            where personoid = ${hakijaOid}
+            and hakukohdeoid = ${hakukohdeOid}
+        """.as[(String, String, String, Timestamp)].headOption
+    ).map(m => Lukuvuosimaksu(personOid = hakijaOid.toString, hakukohdeOid = hakukohdeOid, maksuntila = Maksuntila.withName(m._2), muokkaaja = m._3, luotu = m._4))
+  }
+
+
   def update(hyvaksymiskirjeet: List[Lukuvuosimaksu]): Unit = {
     runBlocking(
       SimpleDBIO { session =>

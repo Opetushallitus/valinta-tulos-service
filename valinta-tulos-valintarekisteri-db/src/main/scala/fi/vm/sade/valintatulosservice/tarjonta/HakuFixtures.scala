@@ -65,6 +65,51 @@ object HakuFixtures extends HakuService with JsonHakuService {
   override def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[Hakukohde]] ={
     MonadHelper.sequence(for {oid <- oids.toStream} yield getHakukohde(oid))
   }
+
+  override def getHakukohdeMigri(oid: HakukohdeOid): Either[Throwable, HakukohdeMigri] ={
+    val hakuOid = hakuOids.head
+    if (activeFixture == HakuFixtures.toinenAsteYhteishaku || activeFixture == HakuFixtures.toinenAsteErillishakuEiSijoittelua) {
+      Right(HakukohdeMigri(
+        oid,
+        hakuOid,
+        Map("fi" -> "toisen asteen haku"),
+        Map("fi" -> "Lukio"),
+        Some("kausi_k#1"),
+        Some(2016),
+        "123.123.123",
+        Map("fi" -> "Kallion lukio"),
+        "123.123.321",
+        Map("fi" -> "Lukion ilmaisutaitolinja")
+        ))
+    } else if (activeFixture == HakuFixtures.ataruHaku) {
+      Right(HakukohdeMigri(
+        oid,
+        hakuOid,
+        Map("fi" -> "kk-haku"),
+        Map("fi" -> "Ataru testihakukohde"),
+        Some("kausi_s#1"),
+        Some(2017),
+        "123.123.124",
+        Map("fi" -> "Aalto-yliopisto, Insinööritieteiden korkeakoulu"),
+        "123.123.421",
+        Map("fi" -> "Döplömi-insinööri")
+      ))
+    } else {
+      Right(HakukohdeMigri(
+        oid,
+        hakuOid,
+        Map("fi" -> "toisen asteen haku"),
+        Map("fi" -> "Lukio"),
+        Some("kausi_k#1"),
+        Some(2016),
+        "123.123.123",
+        Map("fi" -> "Kallion lukio"),
+        "123.123.321",
+        Map("fi" -> "Lukion ilmaisutaitolinja")
+      ))
+    }
+  }
+
   override def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde] ={
     val hakuOid = hakuOids.head
     // TODO: Saner / more working test data
