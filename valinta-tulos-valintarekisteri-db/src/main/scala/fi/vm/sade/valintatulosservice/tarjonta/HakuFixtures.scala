@@ -68,7 +68,6 @@ object HakuFixtures extends HakuService with JsonHakuService {
 
   override def getHakukohdeMigri(oid: HakukohdeOid): Either[Throwable, HakukohdeMigri] ={
     val hakuOid = hakuOids.head
-    // TODO: Saner / more working test data
     if (activeFixture == HakuFixtures.toinenAsteYhteishaku || activeFixture == HakuFixtures.toinenAsteErillishakuEiSijoittelua) {
       Right(HakukohdeMigri(
         oid,

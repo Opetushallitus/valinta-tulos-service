@@ -7,7 +7,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakijaOid
 import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
-import org.scalatra.{BadRequest, NoContent, Ok}
+import org.scalatra.{BadRequest, NotFound, Ok}
 
 class MigriServlet(audit: Audit, migriService: MigriService, val sessionRepository: SessionRepository)(implicit val swagger: Swagger) extends VtsServletBase with VtsSwaggerBase with CasAuthenticatedServlet {
   protected val applicationDescription = "Migri REST API"
@@ -31,10 +31,8 @@ class MigriServlet(audit: Audit, migriService: MigriService, val sessionReposito
       audit.log(auditInfo.user, HakemuksenLuku, builder.build(), new Changes.Builder().build())
 
       migriService.getHakemuksetByHakijaOids(hakijaOids, auditInfo) match {
-        case hakijat: Set[MigriHakija] =>
-          Ok(hakijat)
-        case _ =>
-          NoContent()
+        case hakijat if hakijat.nonEmpty => Ok(hakijat)
+        case _ => NotFound(body = Map("error" -> "Not Found"))
       }
     }
   }

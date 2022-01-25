@@ -12,8 +12,12 @@ import scala.collection.immutable.Set
 
 class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuService, valinnantulosService: ValinnantulosService, oppijanumerorekisteriService: OppijanumerorekisteriService, valintarekisteriService: ValinnantulosRepository, lukuvuosimaksuService: LukuvuosimaksuService) extends Logging {
 
-  private def getHakijat(hakijaOids: Set[HakijaOid]): Set[MigriHakija] = {
-    oppijanumerorekisteriService.henkilot(hakijaOids).fold(_ => throw new IllegalArgumentException(s"No migri hakijas found for oid: $hakijaOids found."), henkilot => {
+  private def getForeignHakijat(hakijaOids: Set[HakijaOid]): Set[MigriHakija] = {
+    oppijanumerorekisteriService.henkilot(hakijaOids).fold(e => {
+      val errorString: String = s"No migri hakijas found for oid(s): $hakijaOids found. Cause: $e"
+      logger.warn(errorString)
+      throw new RuntimeException(errorString)
+    }, henkilot => {
       henkilot.map(henkilo => {
         val hetu = henkilo._2.hetu match {
           case Some(hetu) => Some(hetu.toString)
@@ -43,8 +47,11 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
           .map { tulos =>
             getHakukohdeMigri(tulos.valinnantulos.hakukohdeOid) match {
               case Some(hakukohde: HakukohdeMigri) =>
-                hakemusRepository.findHakemus(tulos.valinnantulos.hakemusOid).fold(e =>
-                  logger.warn(s"No hakemus found for migri hakijaOid: ${tulos.valinnantulos.hakemusOid}, cause: ${e.toString}"), h => {
+                hakemusRepository.findHakemus(tulos.valinnantulos.hakemusOid).fold(e => {
+                  val errorString: String = s"No hakemus found for migri hakijaOid: ${tulos.valinnantulos.hakemusOid}, cause: ${e.toString}"
+                  logger.error(errorString)
+                  throw new RuntimeException(errorString)
+                }, h => {
                   val lukuvuosimaksu: Option[String] = lukuvuosimaksuService.getLukuvuosimaksuByHakijaAndHakukohde(HakijaOid(h.henkiloOid), tulos.valinnantulos.hakukohdeOid, auditInfo) match {
                     case Some(maksu) => Some(maksu.maksuntila.toString)
                     case None => None
@@ -76,7 +83,7 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
   }
 
   def getHakemuksetByHakijaOids(hakijaOids: Set[HakijaOid], auditInfo: AuditInfo): Set[MigriHakija] = {
-    val foreignHakijat: Set[MigriHakija] = getHakijat(hakijaOids)
+    val foreignHakijat: Set[MigriHakija] = getForeignHakijat(hakijaOids)
     foreignHakijat.map(hakija => {
       val hyvaksytyt: Set[HyvaksyttyValinnanTila] = valintarekisteriService.getHakijanHyvaksytValinnantilat(HakijaOid(hakija.henkiloOid))
       val hyvaksytytHakemusOidit = hyvaksytyt.map(h => h.hakemusOid)
