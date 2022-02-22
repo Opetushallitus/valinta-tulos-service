@@ -1,5 +1,7 @@
 package fi.vm.sade.valintatulosservice
 
+import fi.vm.sade.sijoittelu.tulos.dto.SijoitteluajoDTO
+import fi.vm.sade.valintatulosservice.SijoitteluServlet.wrapNotFound
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.Role
@@ -7,7 +9,27 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
-import org.scalatra.{NoContent, NotFound, Ok}
+import org.scalatra.{InternalServerError, NoContent, NotFound, Ok}
+
+import scala.util.{Failure, Success, Try}
+
+object SijoitteluServlet {
+  def wrapNotFound[T](t: () => T): Any = {
+    Try(t()) match {
+      case Failure(e) =>
+        e match {
+          case e: IllegalArgumentException =>
+            NotFound(Map("error" -> e.getMessage))
+          case e: NotFoundException =>
+            NotFound(Map("error" -> e.getMessage))
+          case _ =>
+            InternalServerError(Map("error" -> e.getMessage))
+        }
+      case Success(result) =>
+        result
+    }
+  }
+}
 
 class SijoitteluServlet(sijoitteluService: SijoitteluService,
                         val sessionRepository: SessionRepository)
@@ -35,7 +57,8 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
 
     val hakuOid = HakuOid(params("hakuOid"))
     val sijoitteluajoId = params("sijoitteluajoId")
-    streamOk(sijoitteluService.getSijoitteluajo(hakuOid, sijoitteluajoId, auditInfo))
+
+    wrapNotFound(() => streamOk(sijoitteluService.getSijoitteluajo(hakuOid, sijoitteluajoId, auditInfo)))
   }
 
   lazy val getSijoitteluajonPerustiedotSwagger: OperationBuilder = (apiOperation[Unit]("getSijoitteluajoSwagger")
@@ -49,7 +72,8 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
 
     val hakuOid = HakuOid(params("hakuOid"))
     val sijoitteluajoId = params("sijoitteluajoId")
-    Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getSijoitteluajonPerustiedot(hakuOid, sijoitteluajoId, auditInfo)))
+
+    wrapNotFound(() => Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getSijoitteluajonPerustiedot(hakuOid, sijoitteluajoId, auditInfo))))
   }
 
   lazy val getHakemusBySijoitteluajoSwagger: OperationBuilder = (apiOperation[Unit]("getHakemusBySijoitteluajoSwagger")
@@ -64,12 +88,7 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
     val hakuOid = HakuOid(params("hakuOid"))
     val sijoitteluajoId = params("sijoitteluajoId")
     val hakemusOid = HakemusOid(params("hakemusOid"))
-    try {
-      Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakemusBySijoitteluajo(hakuOid, sijoitteluajoId, hakemusOid, auditInfo)))
-    } catch {
-      case e: NotFoundException =>
-        NotFound(Map("error" -> e.getMessage))
-    }
+    wrapNotFound(() => Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakemusBySijoitteluajo(hakuOid, sijoitteluajoId, hakemusOid, auditInfo))))
   }
 
   lazy val getHakukohdeBySijoitteluajoSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohdeBySijoitteluajoSwagger")
@@ -86,12 +105,8 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
 
-    try {
-      Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session, auditInfo)))
-    } catch {
-      case e: NotFoundException =>
-        NotFound(Map("error" -> e.getMessage))
-    }
+    wrapNotFound(() =>
+      Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session, auditInfo))))
   }
 
   lazy val sijoitteluajoExistsForHakuJonoSwagger: OperationBuilder = (apiOperation[Unit]("sijoitteluajoExistsForHakuJonoSwagger")
@@ -107,7 +122,7 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
 
-    val isSijoiteltu: Boolean = sijoitteluService.isJonoSijoiteltu(jonoOid)
-    Ok(Json(DefaultFormats).write(Map("IsSijoiteltu" -> isSijoiteltu)))
+    val isSijoiteltu = sijoitteluService.isJonoSijoiteltu(jonoOid)
+    wrapNotFound(() => Ok(Json(DefaultFormats).write(Map("IsSijoiteltu" -> isSijoiteltu))))
   }
 }

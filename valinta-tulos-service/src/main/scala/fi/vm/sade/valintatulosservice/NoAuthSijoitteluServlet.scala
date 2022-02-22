@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
+import fi.vm.sade.valintatulosservice.SijoitteluServlet.wrapNotFound
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, NotFoundException, ValintatapajonoOid}
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
@@ -23,12 +24,8 @@ class NoAuthSijoitteluServlet(sijoitteluService: SijoitteluService)
     val sijoitteluajoId = params("sijoitteluajoId")
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
 
-    try {
-      Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakukohdeBySijoitteluajoWithoutAuthentication(hakuOid, sijoitteluajoId, hakukohdeOid)))
-    } catch {
-      case e: NotFoundException =>
-        NotFound(Map("error" -> e.getMessage))
-    }
+    wrapNotFound(() =>
+      Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakukohdeBySijoitteluajoWithoutAuthentication(hakuOid, sijoitteluajoId, hakukohdeOid))))
   }
 
   lazy val sijoitteluajoExistsForHakuJonoSwaggerWithoutCas: OperationBuilder = (apiOperation[Unit]("sijoitteluajoExistsForHakuJonoSwaggerWithoutCas")
@@ -41,7 +38,7 @@ class NoAuthSijoitteluServlet(sijoitteluService: SijoitteluService)
     import org.json4s.DefaultFormats
 
     val jonoOid = ValintatapajonoOid(params("jonoOid"))
-    val isSijoiteltu: Boolean = sijoitteluService.isJonoSijoiteltu(jonoOid)
-    Ok(Json(DefaultFormats).write(Map("IsSijoiteltu" -> isSijoiteltu)))
+    val isSijoiteltu = sijoitteluService.isJonoSijoiteltu(jonoOid)
+    wrapNotFound(() => Ok(Json(DefaultFormats).write(Map("IsSijoiteltu" -> isSijoiteltu))))
   }
 }
