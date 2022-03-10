@@ -4,11 +4,11 @@ import java.time.format.DateTimeFormatter
 import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
 import java.util.{ConcurrentModificationException, Date}
 import java.util.concurrent.TimeUnit
-
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.postgresql.util.PSQLException
+import slick.dbio.DBIO
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.TransactionIsolation.Serializable
 
@@ -131,6 +131,16 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
           from newest_vastaanotto_events
           where haku_oid = ${hakuOid} and
                 henkilo = ${henkiloOid}""".as[VastaanottoRecord].map(_.toSet)
+  }
+
+  override def findHenkiloidenVastaanototHaussa(henkiloOids: Set[HenkiloOid], hakuOid: HakuOid): Map[HenkiloOid, Set[VastaanottoRecord]] = {
+    val inParameter = henkiloOids.map(oid => s"'$oid'").mkString(",")
+    runBlocking(
+      sql"""select henkilo, haku_oid, hakukohde, action, ilmoittaja, "timestamp"
+          from newest_vastaanotto_events
+          where haku_oid = ${hakuOid} and
+                henkilo in (#$inParameter)""".as[VastaanottoRecord]
+    ).map(vr => vr.henkiloOid -> vr).groupBy(_._1).mapValues(_.map(_._2).toSet)
   }
 
   override def findHenkilonVastaanotot(personOid: String, alkuaika: Option[Date] = None): Set[VastaanottoRecord] = {
@@ -271,6 +281,26 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
           from hyvaksytyt_ja_julkaistut_hakutoiveet
           join henkiloviitteet on hyvaksytyt_ja_julkaistut_hakutoiveet.henkilo = henkiloviitteet.linked_oid
           where henkiloviitteet.person_oid = ${henkiloOid}""".as[(HakukohdeOid, OffsetDateTime)].map(_.toMap)
+
+  override def findHyvaksyttyJulkaistuDatesForHenkilos(henkiloOids: Set[HenkiloOid]): Map[HenkiloOid, Map[HakukohdeOid, OffsetDateTime]] = {
+    val inParameter = henkiloOids.map(oid => s"'$oid'").mkString(",")
+    runBlocking(
+      sql"""select
+              hyvaksytyt_ja_julkaistut_hakutoiveet.henkilo,
+              hyvaksytyt_ja_julkaistut_hakutoiveet.hakukohde,
+              hyvaksytyt_ja_julkaistut_hakutoiveet.hyvaksytty_ja_julkaistu
+            from hyvaksytyt_ja_julkaistut_hakutoiveet
+            where hyvaksytyt_ja_julkaistut_hakutoiveet.henkilo in (#$inParameter)
+            union
+            select
+              hyvaksytyt_ja_julkaistut_hakutoiveet.henkilo,
+              hyvaksytyt_ja_julkaistut_hakutoiveet.hakukohde,
+              hyvaksytyt_ja_julkaistut_hakutoiveet.hyvaksytty_ja_julkaistu
+            from hyvaksytyt_ja_julkaistut_hakutoiveet
+            join henkiloviitteet on hyvaksytyt_ja_julkaistut_hakutoiveet.henkilo = henkiloviitteet.linked_oid
+            where henkiloviitteet.person_oid in (#$inParameter)""".as[(HenkiloOid, HakukohdeOid, OffsetDateTime)])
+      .map(x => x._1 -> (x._2, x._3)).groupBy(_._1).mapValues(_.map(_._2).toMap)
+  }
 
   override def findHyvaksyttyJulkaistuDatesForHaku(hakuOid: HakuOid): Map[HenkiloOid, Map[HakukohdeOid, OffsetDateTime]] =
     timed(s"Hyväksytty ja julkaistu -pvm haulle $hakuOid", 100) {

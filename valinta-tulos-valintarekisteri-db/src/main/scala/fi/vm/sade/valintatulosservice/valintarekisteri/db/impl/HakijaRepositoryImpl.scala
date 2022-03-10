@@ -119,6 +119,23 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
                 j.hakemus_oid = ${hakemusOid}""".as[HakutoiveRecord].map(_.toList)
   }
 
+  override def getHakemuksienHakutoiveetSijoittelussa(hakemusOids: Set[HakemusOid], sijoitteluajoId: Long): Map[HakemusOid,List[HakutoiveRecord]] = {
+    val inParameter = hakemusOids.map(oid => s"'$oid'").mkString(",")
+    runBlocking(
+      sql"""select distinct
+                 j.hakemus_oid,
+                 j.prioriteetti,
+                 j.hakukohde_oid,
+                 sh.kaikki_jonot_sijoiteltu
+          from jonosijat j
+          join sijoitteluajon_hakukohteet sh
+            on sh.hakukohde_oid = j.hakukohde_oid and
+               sh.sijoitteluajo_id = j.sijoitteluajo_id
+          where j.sijoitteluajo_id = ${sijoitteluajoId} and
+                j.hakemus_oid in (#$inParameter)""".as[HakutoiveRecord]
+    ).map(hr => hr.hakemusOid -> hr).groupBy(_._1).mapValues(_.map(_._2).toList)
+  }
+
   override def getHakukohteenHakemuksienHakutoiveetSijoittelussa(hakukohdeOid: HakukohdeOid, sijoitteluajoId:Long): List[HakutoiveRecord] =
     timed(s"Sijoitteluajon $sijoitteluajoId hakukohteen $hakukohdeOid hakemuksien hakutoiveiden haku", 100) {
       runBlocking(
@@ -224,6 +241,41 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
                tk.hakukohde_oid = j.hakukohde_oid
           where j.sijoitteluajo_id = ${sijoitteluajoId} and
                 j.hakemus_oid = ${hakemusOid}""".as[HakutoiveenValintatapajonoRecord].map(_.toList)
+  }
+
+  override def getHakemuksienHakutoiveidenValintatapajonotSijoittelussa(hakemusOids: Set[HakemusOid], sijoitteluajoId: Long): Map[HakemusOid, List[HakutoiveenValintatapajonoRecord]] = {
+    val inParameter = hakemusOids.map(oid => s"'$oid'").mkString(",")
+    runBlocking(
+      sql"""select j.hakemus_oid,
+                 j.hakukohde_oid,
+                 v.prioriteetti,
+                 v.oid,
+                 v.nimi,
+                 v.ei_varasijatayttoa,
+                 j.jonosija,
+                 j.varasijan_numero,
+                 j.hyvaksytty_harkinnanvaraisesti,
+                 j.tasasijajonosija, j.pisteet,
+                 v.alin_hyvaksytty_pistemaara,
+                 v.varasijat,
+                 v.varasijatayttopaivat,
+                 v.varasijoja_kaytetaan_alkaen,
+                 v.varasijoja_taytetaan_asti,
+                 v.tayttojono,
+                 tk.tilankuvaus_hash,
+                 tk.tarkenteen_lisatieto,
+                 v.sijoiteltu_ilman_varasijasaantoja_niiden_ollessa_voimassa
+          from jonosijat j
+          join valintatapajonot v
+            on j.valintatapajono_oid = v.oid and
+               j.sijoitteluajo_id = v.sijoitteluajo_id
+          join tilat_kuvaukset tk
+            on tk.valintatapajono_oid = v.oid and
+               tk.hakemus_oid = j.hakemus_oid and
+               tk.hakukohde_oid = j.hakukohde_oid
+          where j.sijoitteluajo_id = ${sijoitteluajoId} and
+                j.hakemus_oid in (#$inParameter)""".as[HakutoiveenValintatapajonoRecord]
+    ).map(hvr => hvr.hakemusOid -> hvr).groupBy(_._1).mapValues(_.map(_._2).toList)
   }
 
   override def getHakukohteenHakemuksienValintatapajonotSijoittelussa(hakukohdeOid: HakukohdeOid, sijoitteluajoId:Long): List[HakutoiveenValintatapajonoRecord] =
