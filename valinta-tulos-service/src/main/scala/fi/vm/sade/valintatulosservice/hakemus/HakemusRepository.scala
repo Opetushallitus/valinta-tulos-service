@@ -96,15 +96,14 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
   }
 
   def findHakemuksetByOids(hakemusOids: Iterable[HakemusOid]): Iterator[Hakemus] = {
-    try {
-      hakemuksetFromAtaru(WithHakemusOids(hakemusOids.toList, None)) match {
-        case hakemukset if hakemukset.hasNext => hakemukset
-        case _ => hakuAppRepository.findHakemuksetByOids(hakemusOids)
-      }
-    } catch {
-      case e: Exception =>
-        logger.error(s"Hakemusten ${hakemusOids.toString()} hakeminen päättyi virheeseen, yritetään vielä haku-appista.", e)
-        hakuAppRepository.findHakemuksetByOids(hakemusOids)
+    val isAtaruOid = (hakemusOid: HakemusOid) => hakemusOid.toString().length == 20
+    val ataruOids = hakemusOids.filter(isAtaruOid).toList
+    val hakuAppOids = hakemusOids.filterNot(isAtaruOid).toList
+    (ataruOids.isEmpty, hakuAppOids.isEmpty) match {
+      case(false, false) => hakemuksetFromAtaru(WithHakemusOids(ataruOids, None)) ++ hakuAppRepository.findHakemuksetByOids(hakuAppOids)
+      case(true, false) => hakuAppRepository.findHakemuksetByOids(hakuAppOids)
+      case(false, true) => hakemuksetFromAtaru(WithHakemusOids(ataruOids, None))
+      case(true, true) => Iterator.empty
     }
   }
 

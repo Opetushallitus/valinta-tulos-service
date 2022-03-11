@@ -95,6 +95,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     tags swaggerGroupTag)
   post("/hakemukset/valpas", operation(getValintatuloksetByHakemuksetForValpasSwagger)) {
     val hakemusOids = read[Set[HakemusOid]](request.body)
+    logger.info("Haetaan " + hakemusOids.size + " hakemuksen tiedot valintarekisteri Valpas-palvelua varten")
     Ok(valintatulosService.valpasHakemuksienTulokset(hakemusOids))
   }
 

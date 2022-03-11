@@ -68,7 +68,9 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       hakemuksentulos(h).toList).toList
 
   def valpasHakemuksienTulokset(hakemusOids: Set[HakemusOid]): List[Hakemuksentulos] = {
-    val hakemuksetByHakuOid: Map[HakuOid, List[Hakemus]] = hakemusRepository.findHakemuksetByOids(hakemusOids).toList.groupBy(_.hakuOid)
+    val hakemuksetByHakuOid: Map[HakuOid, List[Hakemus]] = timed("Haetaan hakemukset Valpas-palvelun tarvitsemien tietojen hakemista varten", 1000) (
+      hakemusRepository.findHakemuksetByOids(hakemusOids).toList.groupBy(_.hakuOid)
+    )
     hakemuksetByHakuOid.flatMap(hakuWithHakemukset => valpasHakemuksienTuloksetHaulle(hakuWithHakemukset._1, hakuWithHakemukset._2)).flatten.toList
   }
 

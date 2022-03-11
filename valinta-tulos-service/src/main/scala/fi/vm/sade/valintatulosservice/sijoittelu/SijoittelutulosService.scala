@@ -93,6 +93,10 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
       latestSijoitteluajoId <- valintarekisteriDb.runBlocking(valintarekisteriDb.getLatestSijoitteluajoId(hakuOid))
     } yield {
       val valinnantuloksetByHakemusOids: Map[HakemusOid, List[Valinnantulos]] = valintarekisteriDb.getValinnantuloksetForHakemukses(hakemusOids).map(vt => vt.hakemusOid -> vt).groupBy(_._1).mapValues(_.map(_._2).toList)
+      if(valinnantuloksetByHakemusOids.isEmpty) {
+        logger.info("Hakemuksille ei löytynyt haussa " + hakuOid + " Valpas-palvelun tarvitsemaa tietoja. Lopetetaan hakeminen")
+        return List.empty
+      }
       val hyvaksyttyJulkaistuDatesByHenkiloOid: Map[String, Map[HakukohdeOid, OffsetDateTime]] = valintarekisteriDb.findHyvaksyttyJulkaistuDatesForHenkilos(henkiloOids)
       val vastaanottoRecordsByHenkiloOid: Map[String, Set[VastaanottoRecord]] = valintarekisteriDb.findHenkiloidenVastaanototHaussa(henkiloOids, hakuOid)
       val hakutoiveetSijoittelussaByHakemusOids: Map[HakemusOid, List[HakutoiveRecord]] = valintarekisteriDb.getHakemuksienHakutoiveetSijoittelussa(hakemusOids, latestSijoitteluajoId)
