@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice.hakemus
 
+import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.MonadHelper
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain.{Hakemus, Hakutoive, Henkilotiedot}
@@ -20,8 +21,8 @@ class AtaruHakemusEnricher(config: VtsAppConfig,
 
   def apply(ataruHakemukset: List[AtaruHakemus]): Either[Throwable, List[Hakemus]] = {
     for {
-      henkilot <- henkilot(ataruHakemukset).right
-      hakutoiveet <- hakutoiveet(ataruHakemukset).right
+      henkilot <- timed("Ataru: Henkilöiden tietojen hakeminen ONR:stä", 1000)(henkilot(ataruHakemukset).right)
+      hakutoiveet <- timed("Ataru: Hakukohdeiden tietojen hakeminen Kouta-internalista", 1000)(hakutoiveet(ataruHakemukset).right)
     } yield ataruHakemukset.map(hakemus => toHakemus(henkilot, hakutoiveet, hakemus))
   }
 

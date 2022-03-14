@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice.hakemus
 
+import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain.Hakemus
@@ -47,7 +48,7 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
   }
 
   private def hakemuksetFromAtaru(query: HakemuksetQuery): Iterator[Hakemus] = {
-    ataruHakemusIterator(query)
+    timed("Ataru: Hakemuksien haku", 1000)(ataruHakemusIterator(query))
       .flatMap(ataruHakemusTarjontaEnricher.apply(_) match {
         case Left(t) => throw new RuntimeException(s"Hakemusten rikastaminen epäonnistui, kysely $query", t)
         case Right(as) => as
