@@ -97,7 +97,7 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
   }
 
   def findHakemuksetByOids(hakemusOids: Iterable[HakemusOid]): Iterator[Hakemus] = {
-    val isAtaruOid = (hakemusOid: HakemusOid) => hakemusOid.toString().length == 20
+    val isAtaruOid = (hakemusOid: HakemusOid) => hakemusOid.toString().length == 35
     val ataruOids = hakemusOids.filter(isAtaruOid).toList
     val hakuAppOids = hakemusOids.filterNot(isAtaruOid).toList
     (ataruOids.isEmpty, hakuAppOids.isEmpty) match {
