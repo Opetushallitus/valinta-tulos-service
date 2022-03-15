@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice.tarjonta
 
+import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasClient, CasParams}
 import fi.vm.sade.utils.http.DefaultHttpClient
 import fi.vm.sade.utils.slf4j.Logging
@@ -581,11 +582,11 @@ class KoutaHakuService(config: AppConfig,
 
   def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde] = {
     for {
-      koutaHakukohde <- getKoutaHakukohde(oid).right
-      koutaHaku <- (if (koutaHakukohde.kaytetaanHaunAlkamiskautta) { getKoutaHaku(HakuOid(koutaHakukohde.hakuOid)).right.map(Some(_)) } else { Right(None) }).right
-      koutaToteutus <- getKoutaToteutus(koutaHakukohde.toteutusOid).right
-      koutaKoulutus <- getKoutaKoulutus(koutaToteutus.koulutusOid).right
-      tarjoajaorganisaatio <- getOrganisaatio(koutaHakukohde.tarjoaja).right
+      koutaHakukohde <- Timer.timed("Kouta-internal get hakukohde: ", 1000)(getKoutaHakukohde(oid).right)
+      koutaHaku <- Timer.timed("Kouta-internal get haku: ", 1000)(if (koutaHakukohde.kaytetaanHaunAlkamiskautta) { getKoutaHaku(HakuOid(koutaHakukohde.hakuOid)).right.map(Some(_)) } else { Right(None) }).right
+      koutaToteutus <- Timer.timed("Kouta-internal get toteutus: ", 1000)(getKoutaToteutus(koutaHakukohde.toteutusOid).right)
+      koutaKoulutus <- Timer.timed("Kouta-internal get koulutus: ", 1000)(getKoutaKoulutus(koutaToteutus.koulutusOid).right)
+      tarjoajaorganisaatio <- Timer.timed("Kouta-internal get organisaatio: ", 1000)(getOrganisaatio(koutaHakukohde.tarjoaja).right)
     } yield koutaHakukohde.toHakukohde(koutaHaku, koutaKoulutus, koutaToteutus, tarjoajaorganisaatio)
   }
 
