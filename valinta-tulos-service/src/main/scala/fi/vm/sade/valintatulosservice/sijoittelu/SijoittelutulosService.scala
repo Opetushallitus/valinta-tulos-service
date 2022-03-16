@@ -83,6 +83,76 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
         }))
   }
 
+  def tuloksetForValpas(hakuOid: HakuOid,
+                    hakemukset: List[Hakemus],
+                    ohjausparametrit: Ohjausparametrit,
+                    vastaanotettavuusVirkailijana: Boolean): List[HakemuksenSijoitteluntulos] = {
+    val hakemusOids: Set[HakemusOid] = hakemukset.map(_.oid).toSet
+    val henkiloOids: Set[String] = hakemukset.map(_.henkiloOid).toSet
+    for {
+      latestSijoitteluajoId <- valintarekisteriDb.runBlocking(valintarekisteriDb.getLatestSijoitteluajoId(hakuOid))
+    } yield {
+      val valinnantuloksetByHakemusOids: Map[HakemusOid, List[Valinnantulos]] = valintarekisteriDb.getValinnantuloksetForHakemukses(hakemusOids).map(vt => vt.hakemusOid -> vt).groupBy(_._1).mapValues(_.map(_._2).toList)
+      if(valinnantuloksetByHakemusOids.isEmpty) {
+        logger.info("Hakemuksille ei löytynyt haussa " + hakuOid + " Valpas-palvelun tarvitsemaa tietoja. Lopetetaan hakeminen")
+        return List.empty
+      }
+      val hyvaksyttyJulkaistuDatesByHenkiloOid: Map[String, Map[HakukohdeOid, OffsetDateTime]] = valintarekisteriDb.findHyvaksyttyJulkaistuDatesForHenkilos(henkiloOids)
+      val vastaanottoRecordsByHenkiloOid: Map[String, Set[VastaanottoRecord]] = valintarekisteriDb.findHenkiloidenVastaanototHaussa(henkiloOids, hakuOid)
+      val hakutoiveetSijoittelussaByHakemusOids: Map[HakemusOid, List[HakutoiveRecord]] = valintarekisteriDb.getHakemuksienHakutoiveetSijoittelussa(hakemusOids, latestSijoitteluajoId)
+      val valintatapajonotSijoittelussaByHakemusOids: Map[HakemusOid, List[HakutoiveenValintatapajonoRecord]] = valintarekisteriDb.getHakemuksienHakutoiveidenValintatapajonotSijoittelussa(hakemusOids, latestSijoitteluajoId)
+
+      logger.info("latestSijoitteluajoId: " + latestSijoitteluajoId)
+      logger.info("valinnantuloksetByHakemusOids: " + valinnantuloksetByHakemusOids)
+      logger.info("hyvaksyttyJulkaistuDatesByHenkiloOid: " + hyvaksyttyJulkaistuDatesByHenkiloOid)
+      logger.info("vastaanottoRecordsByHenkiloOid: " + vastaanottoRecordsByHenkiloOid)
+      logger.info("hakutoiveetSijoittelussaByHakemusOids: " + hakutoiveetSijoittelussaByHakemusOids)
+      logger.info("valintatapajonotSijoittelussaByHakemusOids: " + valintatapajonotSijoittelussaByHakemusOids)
+
+      hakemukset.map(hakemus => {
+        val hakemusOid: HakemusOid = hakemus.oid
+        val henkiloOid: String = hakemus.henkiloOid
+        val valinnantulokset: List[Valinnantulos] = valinnantuloksetByHakemusOids.get(hakemusOid).getOrElse(List.empty)
+        val hyvaksyttyJulkaistuDates: Map[HakukohdeOid, OffsetDateTime] = hyvaksyttyJulkaistuDatesByHenkiloOid.get(henkiloOid).getOrElse(Map.empty)
+        val vastaanottoRecords: Set[VastaanottoRecord] = vastaanottoRecordsByHenkiloOid.get(henkiloOid).getOrElse(Set.empty)
+        val hakutoiveetSijoittelussa: List[HakutoiveRecord] = hakutoiveetSijoittelussaByHakemusOids.get(hakemusOid).getOrElse(List.empty)
+        val valintatapajonotSijoittelussa: List[HakutoiveenValintatapajonoRecord] = valintatapajonotSijoittelussaByHakemusOids.get(hakemusOid).getOrElse(List.empty)
+
+        logger.info("hakemusOid: " + hakemusOid)
+        logger.info("henkiloOid: " + henkiloOid)
+        logger.info("valinnantulokset: " + valinnantulokset)
+        logger.info("hyvaksyttyJulkaistuDates: " + hyvaksyttyJulkaistuDates)
+        logger.info("vastaanottoRecords: " + vastaanottoRecords)
+        logger.info("hakutoiveetSijoittelussa: " + hakutoiveetSijoittelussa)
+        logger.info("valintatapajonotSijoittelussa: " + valintatapajonotSijoittelussa)
+
+        HakemuksenSijoitteluntulos(
+          hakemusOid,
+          Some(henkiloOid),
+          valinnantulokset.map(_.hakukohdeOid).union(hakutoiveetSijoittelussa.map(_.hakukohdeOid))
+            .distinct
+            .map(oid => (
+              valinnantulokset.filter(_.hakukohdeOid == oid),
+              valintatapajonotSijoittelussa.filter(_.hakukohdeOid == oid),
+              vastaanottoRecords.find(_.hakukohdeOid == oid),
+              hakutoiveetSijoittelussa.find(_.hakukohdeOid == oid),
+              hyvaksyttyJulkaistuDates.get(oid)
+            ))
+            // FIXME hakutoivejärjestys hakemukselta jos sijoittelu ei käytössä
+            .sortBy({ case (_, _, _, hakutoive, _) => hakutoive.flatMap(_.hakutoive) })
+            .map({ case (valinnantulokset, valintatapajonot, vastaanotto, hakutoive, hakutoiveenHyvaksyttyJaJulkaistuDate) =>
+              hakutoiveenSijoittelunTulos(ohjausparametrit,
+                vastaanotettavuusVirkailijana,
+                valinnantulokset.toSet,
+                valintatapajonot,
+                vastaanotto,
+                hakutoive,
+                hakutoiveenHyvaksyttyJaJulkaistuDate)
+            }))
+      })
+    }
+  }.getOrElse(List.empty)
+
   private def hakutoiveenSijoittelunTulos(ohjausparametrit: Ohjausparametrit,
                                           vastaanotettavuusVirkailijana: Boolean,
                                           valinnantulokset: Set[Valinnantulos],

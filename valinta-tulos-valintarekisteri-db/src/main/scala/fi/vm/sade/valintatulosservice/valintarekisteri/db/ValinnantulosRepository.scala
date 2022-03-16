@@ -13,6 +13,8 @@ import scala.concurrent.duration.Duration
 trait ValinnantulosRepository extends ValintarekisteriRepository {
   def getIlmoittautumisenAikaleimat(henkiloOid: String): DBIO[Iterable[(HakukohdeOid, Instant)]]
 
+  def getIlmoittautumisenAikaleimat(hakuOid: HakuOid, henkiloOids: List[String]): DBIO[Iterable[(String, HakukohdeOid, Instant)]]
+
   def getIlmoittautumisenAikaleimat(hakuOid: HakuOid): DBIO[Iterable[(String, HakukohdeOid, Instant)]]
 
   def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]

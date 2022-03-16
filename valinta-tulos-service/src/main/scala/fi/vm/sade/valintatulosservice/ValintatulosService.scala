@@ -67,6 +67,34 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     hakemusRepository.findHakemuksetByOids(hakemusOids).flatMap(h =>
       hakemuksentulos(h).toList).toList
 
+  def valpasHakemuksienTulokset(hakemusOids: Set[HakemusOid]): List[Hakemuksentulos] = {
+    val hakemuksetByHakuOid: Map[HakuOid, List[Hakemus]] = timed("Haetaan hakemukset Valpas-palvelun tarvitsemien tietojen hakemista varten", 1000) (
+      hakemusRepository.findHakemuksetByOids(hakemusOids).toList.groupBy(_.hakuOid)
+    )
+    hakemuksetByHakuOid.flatMap(hakuWithHakemukset => valpasHakemuksienTuloksetHaulle(hakuWithHakemukset._1, hakuWithHakemukset._2)).flatten.toList
+  }
+
+  def valpasHakemuksienTuloksetHaulle(hakuOid: HakuOid, hakemukset: List[Hakemus]): Option[List[Hakemuksentulos]] = {
+    timed("Fetch hakemusten tulos for Valpas in haku: "+ hakuOid, 1000) (
+      for {
+        haku: Haku <- hakuService.getHaku(hakuOid).right.toOption
+        ohjausparametrit: Ohjausparametrit <- ohjausparametritService.ohjausparametrit(hakuOid).right.toOption
+      } yield {
+        val ilmoittautumisenAikaleimat = timed(s"Ilmoittautumisten aikaleimojen haku haulle $hakuOid", 1000) {
+          valinnantulosRepository.runBlocking(valinnantulosRepository.getIlmoittautumisenAikaleimat(hakuOid))
+            .groupBy(_._1).mapValues(i => i.map(t => (t._2, t._3)))
+        }
+        val tulokset: List[HakemuksenSijoitteluntulos] = sijoittelutulosService.tuloksetForValpas(hakuOid, hakemukset, ohjausparametrit, false)
+        fetchTulokset(
+          haku,
+          () => hakemukset.toIterator,
+          _ => tulokset,
+          vastaanottoKaudella = _ => None,
+          ilmoittautumisenAikaleimat = ilmoittautumisenAikaleimat
+        ).toList
+      })
+  }
+
   def hakemuksentulos(h: Hakemus): Option[Hakemuksentulos] = {
     for {
       haku <- hakuService.getHaku(h.hakuOid).right.toOption

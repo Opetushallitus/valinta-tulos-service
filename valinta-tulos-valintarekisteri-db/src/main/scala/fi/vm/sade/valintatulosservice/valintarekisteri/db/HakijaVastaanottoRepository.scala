@@ -14,6 +14,7 @@ trait HakijaVastaanottoRepository {
 
   def runBlocking[R](operations: DBIO[R], timeout: Duration = Duration(10, TimeUnit.MINUTES)): R // TODO put these 3–4 different default timeouts behind common, configurable value
   def findHenkilonVastaanototHaussa(henkiloOid: HenkiloOid, hakuOid: HakuOid): DBIO[Set[VastaanottoRecord]]
+  def findHenkiloidenVastaanototHaussa(henkiloOids: Set[HenkiloOid], hakuOid: HakuOid): Map[HenkiloOid, Set[VastaanottoRecord]]
   def findHenkilonVastaanottoHakukohteeseen(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid): DBIO[Option[VastaanottoRecord]]
   def findYhdenPaikanSaannonPiirissaOlevatVastaanotot(henkiloOid: HenkiloOid, koulutuksenAlkamiskausi: Kausi): DBIO[Option[VastaanottoRecord]]
   def store(vastaanottoEvent: VastaanottoEvent): Unit
@@ -24,6 +25,7 @@ trait HakijaVastaanottoRepository {
   def runAsSerialized[T](retries: Int, wait: Duration, description: String, action: DBIO[T]): Either[Throwable, T]
 
   def findHyvaksyttyJulkaistuDatesForHenkilo(henkiloOid: HenkiloOid): DBIO[Map[HakukohdeOid, OffsetDateTime]]
+  def findHyvaksyttyJulkaistuDatesForHenkilos(henkiloOids: Set[HenkiloOid]): Map[HenkiloOid, Map[HakukohdeOid, OffsetDateTime]]
   def findHyvaksyttyJulkaistuDatesForHaku(hakuOid: HakuOid): Map[HenkiloOid, Map[HakukohdeOid, OffsetDateTime]]
   def findHyvaksyttyJulkaistuDatesForHakukohde(hakukohdeOid:HakukohdeOid): Map[HenkiloOid, OffsetDateTime]
   def findHyvaksyttyJaJulkaistuDateForHenkiloAndHakukohdeDBIO(henkiloOid: HenkiloOid, hakukohdeOid:HakukohdeOid): DBIO[Option[OffsetDateTime]]

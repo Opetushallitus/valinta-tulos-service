@@ -810,6 +810,17 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       """.as[(HakukohdeOid, Instant)]
   }
 
+  override def getIlmoittautumisenAikaleimat(hakuOid: HakuOid, henkiloOids: List[String]): DBIO[Iterable[(String, HakukohdeOid, Instant)]] = {
+    val inParameter = henkiloOids.map(oid => s"'$oid'").mkString(",")
+    sql"""select henkilo, hakukohde, lower(system_time)
+          from ilmoittautumiset
+          join hakukohteet on hakukohteet.hakukohde_oid = ilmoittautumiset.hakukohde
+          where hakukohteet.haku_oid = ${hakuOid}
+          and henkilo in (#$inParameter)
+            and tila in ('Lasna', 'LasnaSyksy', 'LasnaKokoLukuvuosi')
+      """.as[(String, HakukohdeOid, Instant)]
+  }
+
   override def getIlmoittautumisenAikaleimat(hakuOid: HakuOid): DBIO[Iterable[(String, HakukohdeOid, Instant)]] = {
     sql"""select henkilo, hakukohde, lower(system_time)
           from ilmoittautumiset

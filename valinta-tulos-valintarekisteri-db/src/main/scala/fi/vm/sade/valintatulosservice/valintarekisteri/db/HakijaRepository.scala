@@ -9,7 +9,9 @@ trait HakijaRepository extends PerformanceLogger { this:Logging =>
   def getHakemuksenHakija(hakemusOid: HakemusOid, sijoitteluajoId: Option[Long] = None):Option[HakijaRecord]
 
   def getHakemuksenHakutoiveetSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId: Long): DBIOAction[List[HakutoiveRecord], NoStream, Effect]
+  def getHakemuksienHakutoiveetSijoittelussa(hakemusOids: Set[HakemusOid], sijoitteluajoId: Long): Map[HakemusOid,List[HakutoiveRecord]]
   def getHakemuksenHakutoiveidenValintatapajonotSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId: Long): DBIOAction[List[HakutoiveenValintatapajonoRecord], NoStream, Effect]
+  def getHakemuksienHakutoiveidenValintatapajonotSijoittelussa(hakemusOids: Set[HakemusOid], sijoitteluajoId: Long): Map[HakemusOid, List[HakutoiveenValintatapajonoRecord]]
   def getHakemuksenHakutoiveidenHakijaryhmatSijoittelussa(hakemusOid: HakemusOid, sijoitteluajoId: Long): List[HakutoiveenHakijaryhmaRecord]
 
   def getHakukohteenHakijat(hakukohdeOid: HakukohdeOid, sijoitteluajoId: Option[Long] = None):List[HakijaRecord]
