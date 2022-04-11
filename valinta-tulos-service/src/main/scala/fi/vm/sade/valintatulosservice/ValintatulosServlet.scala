@@ -107,8 +107,13 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     tags swaggerGroupTag)
   get("/:hakuOid", operation(getHakemuksetSwagger)) {
     val hakuOidString = params("hakuOid")
-    auditLog(Map("hakuOid" -> hakuOidString), HakemuksenLuku)
-    serveStreamingResults({ valintatulosService.hakemustenTulosByHaku(HakuOid(hakuOidString), false) })
+    if ("1.2.246.562.29.00000000000000005368".equals(hakuOidString)) {
+      logger.warn("OY-3451 - Palautetaan haulle 1.2.246.562.29.00000000000000005368 tyhjä setti tuloksia!")
+      NotFound(Set.empty)
+    } else {
+      auditLog(Map("hakuOid" -> hakuOidString), HakemuksenLuku)
+      serveStreamingResults({ valintatulosService.hakemustenTulosByHaku(HakuOid(hakuOidString), false) })
+    }
   }
 
   get("/:hakuOid/hakukohde/:hakukohdeOid", operation(getHakukohteenHakemuksetSwagger)) {
