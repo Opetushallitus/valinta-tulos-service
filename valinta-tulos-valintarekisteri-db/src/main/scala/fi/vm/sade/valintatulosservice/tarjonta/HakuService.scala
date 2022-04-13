@@ -61,8 +61,8 @@ case class Hakukohde(oid: HakukohdeOid,
   def kkHakukohde: Boolean = koulutusAsteTyyppi == "KORKEAKOULUTUS"
 
   def koulutuksenAlkamiskausi: Option[Kausi] = (koulutuksenAlkamiskausiUri, koulutuksenAlkamisvuosi) match {
-    case (Some(uri), Some(alkamisvuosi)) if uri.matches("""kausi_k#\d+""") => Some(Kevat(alkamisvuosi))
-    case (Some(uri), Some(alkamisvuosi)) if uri.matches("""kausi_s#\d+""") => Some(Syksy(alkamisvuosi))
+    case (Some(uri), Some(alkamisvuosi)) if uri.startsWith("kausi_k") => Some(Kevat(alkamisvuosi))
+    case (Some(uri), Some(alkamisvuosi)) if uri.startsWith("kausi_s") => Some(Syksy(alkamisvuosi))
     case _ => None
   }
 
@@ -80,8 +80,8 @@ case class HakukohdeMigri(oid: HakukohdeOid,
                           toteutusOid: String,
                           toteutusNimi: Map[String, String]) {
   def koulutuksenAlkamiskausi: Option[String] = koulutuksenAlkamiskausiUri match {
-    case Some(uri) if uri.matches("""kausi_k#\d+""") => Some("K")
-    case Some(uri) if uri.matches("""kausi_s#\d+""") => Some("S")
+    case Some(uri) if uri.startsWith("kausi_k") => Some("K")
+    case Some(uri) if uri.startsWith("kausi_s") => Some("S")
     case _ => None
   }
 }
@@ -368,8 +368,8 @@ case class KoutaHaku(oid: String,
     val (alkamisKausiKoodiUri, alkamisVuosi) = getKausiAndVuosi(metadata)
     for {
       alkamiskausi <- ((alkamisKausiKoodiUri, alkamisVuosi.map(s => (s, Try(s.toInt)))) match {
-        case (Some(uri), Some((_, Success(vuosi)))) if uri.startsWith("kausi_k#") => Right(Some(Kevat(vuosi)))
-        case (Some(uri), Some((_, Success(vuosi)))) if uri.startsWith("kausi_s#") => Right(Some(Syksy(vuosi)))
+        case (Some(uri), Some((_, Success(vuosi)))) if uri.startsWith("kausi_k") => Right(Some(Kevat(vuosi)))
+        case (Some(uri), Some((_, Success(vuosi)))) if uri.startsWith("kausi_s") => Right(Some(Syksy(vuosi)))
         case (Some(uri), Some((_, Success(_)))) => Left(new IllegalStateException(s"Unrecognized koulutuksen alkamiskausi URI $uri"))
         case (Some(_), Some((s, Failure(t)))) => Left(new IllegalStateException(s"Unrecognized koulutuksen alkamisvuosi $s", t))
         case _ => Right(None)
@@ -497,8 +497,8 @@ case class KoutaHakukohde(oid: String,
       oppilaitoskoodi <- oppilaitos.oppilaitosKoodi
         .toRight(new IllegalStateException(s"Could not find oppilaitoskoodi for oppilaitos ${oppilaitos.oid}")).right
       koulutuksenAlkamiskausi <- ((koulutuksenAlkamiskausiUri, koulutuksenAlkamisvuosi.map(s => (s, Try(s.toInt)))) match {
-        case (Some(uri), Some((_, Success(vuosi)))) if uri.startsWith("kausi_k#") => Right(Some(Kevat(vuosi)))
-        case (Some(uri), Some((_, Success(vuosi)))) if uri.startsWith("kausi_s#") => Right(Some(Syksy(vuosi)))
+        case (Some(uri), Some((_, Success(vuosi)))) if uri.startsWith("kausi_k") => Right(Some(Kevat(vuosi)))
+        case (Some(uri), Some((_, Success(vuosi)))) if uri.startsWith("kausi_s") => Right(Some(Syksy(vuosi)))
         case (Some(uri), Some((_, Success(_)))) => Left(new IllegalStateException(s"Unrecognized koulutuksen alkamiskausi URI $uri"))
         case (Some(_), Some((s, Failure(t)))) => Left(new IllegalStateException(s"Unrecognized koulutuksen alkamisvuosi $s", t))
         case _ => Right(None)
