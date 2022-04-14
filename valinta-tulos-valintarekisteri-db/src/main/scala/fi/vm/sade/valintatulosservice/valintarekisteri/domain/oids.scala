@@ -6,7 +6,13 @@ import org.json4s.JsonAST.JString
 case class HakemusOid(s: String) {
   override def toString: String = s
 }
-
+case class HenkiloOid(s: String) {
+  override def toString: String = s
+}
+case class ValpasValinnantuloksetKysely(hetu: Map[String, Set[HakemusOid]], hetuton: Map[String, Set[HakemusOid]]) {
+}
+case class HakemusOidAndHenkiloOid(hakemusOid: String, henkiloOid: String, hetullinen: Boolean) {
+}
 case class ValintatapajonoOid(s: String) {
   override def toString: String = s
 }

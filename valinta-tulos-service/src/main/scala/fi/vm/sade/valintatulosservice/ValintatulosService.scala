@@ -67,14 +67,14 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     hakemusRepository.findHakemuksetByOids(hakemusOids).flatMap(h =>
       hakemuksentulos(h).toList).toList
 
-  def valpasHakemuksienTulokset(hakemusOids: Set[HakemusOid]): List[Hakemuksentulos] = {
-    val hakemuksetByHakuOid: Map[HakuOid, List[Hakemus]] = timed("Haetaan hakemukset Valpas-palvelun tarvitsemien tietojen hakemista varten", 1000) (
-      hakemusRepository.findHakemuksetByOids(hakemusOids).toList.groupBy(_.hakuOid)
-    )
-    hakemuksetByHakuOid.flatMap(hakuWithHakemukset => valpasHakemuksienTuloksetHaulle(hakuWithHakemukset._1, hakuWithHakemukset._2)).flatten.toList
+  def valpasHakemuksienTulokset(hakuOid: HakuOid, hakemukset: ValpasValinnantuloksetKysely): List[Hakemuksentulos] = {
+    val hetulla = hakemukset.hetu.flatMap(h => h._2.map(hh => HakemusOidAndHenkiloOid(hh.toString, h._1,hetullinen = true)))
+    val ilman = hakemukset.hetuton.flatMap(h => h._2.map(hh => HakemusOidAndHenkiloOid(hh.toString, h._1,hetullinen = false)))
+
+    valpasHakemuksienTuloksetHaulle(hakuOid, (hetulla ++ ilman).toList).toList.flatten
   }
 
-  def valpasHakemuksienTuloksetHaulle(hakuOid: HakuOid, hakemukset: List[Hakemus]): Option[List[Hakemuksentulos]] = {
+  def valpasHakemuksienTuloksetHaulle(hakuOid: HakuOid, hakemukset: List[HakemusOidAndHenkiloOid]): Option[List[Hakemuksentulos]] = {
     timed("Fetch hakemusten tulos for Valpas in haku: "+ hakuOid, 1000) (
       for {
         haku: Haku <- hakuService.getHaku(hakuOid).right.toOption
@@ -84,10 +84,27 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
           valinnantulosRepository.runBlocking(valinnantulosRepository.getIlmoittautumisenAikaleimat(hakuOid))
             .groupBy(_._1).mapValues(i => i.map(t => (t._2, t._3)))
         }
-        val tulokset: List[HakemuksenSijoitteluntulos] = sijoittelutulosService.tuloksetForValpas(hakuOid, hakemukset, ohjausparametrit, false)
+        val hakemusToHenkilo: Map[String, List[HakemusOidAndHenkiloOid]] = hakemukset.groupBy(_.hakemusOid)
+        val tulokset: List[HakemuksenSijoitteluntulos] = sijoittelutulosService.tuloksetForValpas(hakuOid, hakemukset, ohjausparametrit, vastaanotettavuusVirkailijana = false)
+        def tulosToHakemus(t: HakemuksenSijoitteluntulos): List[Hakemus] = {
+          val oid = t.hakemusOid
+          def toiveToHakutoive(ht: HakutoiveenSijoitteluntulos): Hakutoive = {
+            Hakutoive(ht.hakukohdeOid, ht.tarjoajaOid, "","")
+          }
+          hakemusToHenkilo.get(oid.toString).flatMap(_.headOption).map(henkilo => {
+            Hakemus(oid,
+              hakuOid,
+              henkilo.henkiloOid,
+              "fi",
+              t.hakutoiveet.map(toiveToHakutoive),
+              Henkilotiedot(None,None,hasHetu = henkilo.hetullinen),
+              Map.empty)
+          }).toList
+        }
         fetchTulokset(
           haku,
-          () => hakemukset.toIterator,
+          () =>
+            tulokset.flatMap(tulosToHakemus).toIterator,
           _ => tulokset,
           vastaanottoKaudella = _ => None,
           ilmoittautumisenAikaleimat = ilmoittautumisenAikaleimat

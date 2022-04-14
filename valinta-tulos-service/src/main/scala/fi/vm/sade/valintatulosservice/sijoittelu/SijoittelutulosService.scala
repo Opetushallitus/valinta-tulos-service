@@ -84,10 +84,10 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
   }
 
   def tuloksetForValpas(hakuOid: HakuOid,
-                    hakemukset: List[Hakemus],
-                    ohjausparametrit: Ohjausparametrit,
-                    vastaanotettavuusVirkailijana: Boolean): List[HakemuksenSijoitteluntulos] = {
-    val hakemusOids: Set[HakemusOid] = hakemukset.map(_.oid).toSet
+                        hakemukset: List[HakemusOidAndHenkiloOid],
+                        ohjausparametrit: Ohjausparametrit,
+                        vastaanotettavuusVirkailijana: Boolean): List[HakemuksenSijoitteluntulos] = {
+    val hakemusOids: Set[HakemusOid] = hakemukset.map(h => HakemusOid(h.hakemusOid)).toSet
     val henkiloOids: Set[String] = hakemukset.map(_.henkiloOid).toSet
     for {
       latestSijoitteluajoId <- valintarekisteriDb.runBlocking(valintarekisteriDb.getLatestSijoitteluajoId(hakuOid))
@@ -110,13 +110,13 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
       logger.info("valintatapajonotSijoittelussaByHakemusOids: " + valintatapajonotSijoittelussaByHakemusOids)
 
       hakemukset.map(hakemus => {
-        val hakemusOid: HakemusOid = hakemus.oid
+        val hakemusOid: HakemusOid = HakemusOid(hakemus.hakemusOid)
         val henkiloOid: String = hakemus.henkiloOid
-        val valinnantulokset: List[Valinnantulos] = valinnantuloksetByHakemusOids.get(hakemusOid).getOrElse(List.empty)
-        val hyvaksyttyJulkaistuDates: Map[HakukohdeOid, OffsetDateTime] = hyvaksyttyJulkaistuDatesByHenkiloOid.get(henkiloOid).getOrElse(Map.empty)
-        val vastaanottoRecords: Set[VastaanottoRecord] = vastaanottoRecordsByHenkiloOid.get(henkiloOid).getOrElse(Set.empty)
-        val hakutoiveetSijoittelussa: List[HakutoiveRecord] = hakutoiveetSijoittelussaByHakemusOids.get(hakemusOid).getOrElse(List.empty)
-        val valintatapajonotSijoittelussa: List[HakutoiveenValintatapajonoRecord] = valintatapajonotSijoittelussaByHakemusOids.get(hakemusOid).getOrElse(List.empty)
+        val valinnantulokset: List[Valinnantulos] = valinnantuloksetByHakemusOids.getOrElse(hakemusOid, List.empty)
+        val hyvaksyttyJulkaistuDates: Map[HakukohdeOid, OffsetDateTime] = hyvaksyttyJulkaistuDatesByHenkiloOid.getOrElse(henkiloOid, Map.empty)
+        val vastaanottoRecords: Set[VastaanottoRecord] = vastaanottoRecordsByHenkiloOid.getOrElse(henkiloOid, Set.empty)
+        val hakutoiveetSijoittelussa: List[HakutoiveRecord] = hakutoiveetSijoittelussaByHakemusOids.getOrElse(hakemusOid, List.empty)
+        val valintatapajonotSijoittelussa: List[HakutoiveenValintatapajonoRecord] = valintatapajonotSijoittelussaByHakemusOids.getOrElse(hakemusOid, List.empty)
 
         logger.info("hakemusOid: " + hakemusOid)
         logger.info("henkiloOid: " + henkiloOid)
