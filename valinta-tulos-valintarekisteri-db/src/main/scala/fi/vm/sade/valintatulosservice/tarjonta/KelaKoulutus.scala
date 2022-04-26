@@ -14,19 +14,19 @@ trait KelaLaajuus {
 trait KelaTutkinnontaso {
   val tutkinnontaso: Option[String]
 }
-private object TuvaTutkinto {
+private object MuuTutkinto {
   def apply(laajuus: Option[String]) = {
-    KelaKoulutus(tutkinnontaso = Some("007"), tutkinnonlaajuus1 = None, tutkinnonlaajuus2 = None)
+    KelaKoulutus(tutkinnontaso = None, tutkinnonlaajuus1 = None, tutkinnonlaajuus2 = None)
   }
 }
 private object OpistovuosiTutkinto {
   def apply(laajuus: Option[String]) = {
-    KelaKoulutus(tutkinnontaso = None, tutkinnonlaajuus1 = None, tutkinnonlaajuus2 = None)
+    KelaKoulutus(tutkinnontaso = Some("008"), tutkinnonlaajuus1 = None, tutkinnonlaajuus2 = None)
   }
 }
-private object MuuTutkinto {
+private object TuvaTutkinto {
   def apply(laajuus: Option[String]) = {
-    KelaKoulutus(tutkinnontaso = None, tutkinnonlaajuus1 = None, tutkinnonlaajuus2 = None)
+    KelaKoulutus(tutkinnontaso = Some("007"), tutkinnonlaajuus1 = None, tutkinnonlaajuus2 = None)
   }
 }
 private object TelmaKoulutus {
