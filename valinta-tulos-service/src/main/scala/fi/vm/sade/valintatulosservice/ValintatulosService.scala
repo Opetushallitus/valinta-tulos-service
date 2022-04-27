@@ -907,23 +907,25 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
   }
 
   private def näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
-    val firstJulkaisematon: Int = tulokset.indexWhere (!_.julkaistavissa)
-    tulokset.zipWithIndex.map {
-      case (tulos, index) if onJulkaisematontaAlempiaPeruuntuneitaTaiKeskeneräisiä(firstJulkaisematon, tulos, index) =>
-        logger.debug("näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä toKesken {}", index)
-        tulos.
-          toKesken.
-          copy(jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map { t =>
-            if (t.valintatila == Valintatila.peruuntunut || Valintatila.isHyväksytty(t.valintatila)) {
-              t.toKesken
-            } else {
-              t
-            }
-        })
-      case (tulos, _) =>
-        logger.debug("näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä {}", tulos.valintatila)
-        tulos
-    }
+    if(haku.sijoitteluJaPriorisointi) {
+      val firstJulkaisematon: Int = tulokset.indexWhere (!_.julkaistavissa)
+      tulokset.zipWithIndex.map {
+        case (tulos, index) if onJulkaisematontaAlempiaPeruuntuneitaTaiKeskeneräisiä(firstJulkaisematon, tulos, index) =>
+          logger.debug("näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä toKesken {}", index)
+          tulos.
+            toKesken.
+            copy(jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map { t =>
+              if (t.valintatila == Valintatila.peruuntunut || Valintatila.isHyväksytty(t.valintatila)) {
+                t.toKesken
+              } else {
+                t
+              }
+            })
+        case (tulos, _) =>
+          logger.debug("näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä {}", tulos.valintatila)
+          tulos
+      }
+    } else tulokset
   }
 
   private def näytäHyväksyttyäJulkaisematontaAlemmistaKorkeinHyvaksyttyOdottamassaYlempiä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
