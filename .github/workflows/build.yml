@@ -1,4 +1,4 @@
-name: Valintaperusteet-service
+name: Valinta-tulos-service
 
 on:
   workflow_dispatch:
