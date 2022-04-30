@@ -15,16 +15,17 @@ Tavoitteena on jatkossa siirtää tulokset `valintarekisteri`-kantaan. Tällä h
 
 ### Testit
 
-Uudet testit käyttävät lokaalia valintarekisteri-tietokantaa. Sen ajamista varten tarvitaan
-* toimiva PostgreSQL-asennus
-* `PATH`iin tarvittavat PostgreSQL-binäärit (esim /usr/lib/postgresql/9.5/bin/ :inistä), ainakin
-   - `initdb`
-   - `pg_isready`
-   - `postgres`
-   - `dropdb`
-   - `createdb`
-   - `psql`
-* todennäköisesti käyttäjäsi tulee olla postgres-ryhmässä, jotta lukkotiedoston kirjoittaminen onnistuu (tämä selviää kokeilemalla)
+Testit käyttävät Dockerissa ajettavaa valintarekisteri-tietokantaa. Testien käyttämä kontti on buildattava ennen testien ajamista.
+
+#### PostgreSQL-kontin build
+
+```
+cd valinta-tulos-valintarekisteri-db/postgresql/docker/
+docker build --tag valintarekisteri-postgres .
+cd -
+```
+
+#### Testien ajaminen
 
 Aja kaikki testit
 
