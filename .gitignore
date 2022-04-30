@@ -17,5 +17,4 @@ target/
 .cache
 /bin
 valintarekisteri-it-db
-.java-version
 .opintopolku-local/
