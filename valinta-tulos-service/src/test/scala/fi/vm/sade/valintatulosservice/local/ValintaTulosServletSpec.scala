@@ -132,12 +132,12 @@ class ValintaTulosServletSpec extends ServletSpecification {
 
   "GET /cas/haku/:hakuId/hakemus/:hakemusId" should {
     "estää pääsyn ilman tikettiä" in {
-      get("cas/haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
+      get("cas/haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000000000000000005") {
         status must_== 401
       }
     }
     "mahdolistaa pääsyn validilla tiketillä" in {
-      get("cas/haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369", ("ticket", getTicket)) {
+      get("cas/haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000000000000000005", ("ticket", getTicket)) {
         status must_== 200
       }
     }

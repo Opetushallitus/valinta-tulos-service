@@ -83,21 +83,28 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
   }
 
   def findHakemus(hakemusOid: HakemusOid): Either[Throwable, Hakemus] = {
-    try {
-      val hakemus = hakemuksetFromAtaru(WithHakemusOids(List(hakemusOid), None))
-      if (hakemus.hasNext) Right(hakemus.next()) else hakuAppRepository.findHakemus(hakemusOid) match {
-        case Right(hakemus) => Right(hakemus)
-        case Left(e) => throw new RuntimeException(s"Hakemusta ${hakemusOid} ei löytynyt.", e)
+    if(isAtaruOid(hakemusOid)) {
+      val hakemukset = hakemuksetFromAtaru(WithHakemusOids(List(hakemusOid), None))
+      if(hakemukset.hasNext) Right(hakemukset.next())
+      else throw new RuntimeException(s"Hakemusta ${hakemusOid} ei löytynyt atarusta.")
+    }
+    else {
+      try {
+        hakuAppRepository.findHakemus(hakemusOid) match {
+          case Right(hakemus) => Right(hakemus)
+          case Left(e) => throw new RuntimeException(s"Hakemusta ${hakemusOid} ei löytynyt haku-appista.", e)
+        }
+      } catch {
+        case e: Exception =>
+          logger.error(s"Hakemuksen ${hakemusOid} hakeminen haku-appista päättyi virheeseen, yritetään vielä uudestaan haku-appista.", e)
+          hakuAppRepository.findHakemus(hakemusOid)
       }
-    } catch {
-      case e: Exception =>
-        logger.error(s"Hakemuksen ${hakemusOid} hakeminen päättyi virheeseen, yritetään vielä haku-appista.", e)
-        hakuAppRepository.findHakemus(hakemusOid)
     }
   }
 
+  def isAtaruOid: HakemusOid => Boolean = (hakemusOid: HakemusOid) => hakemusOid.toString().length == 35
+
   def findHakemuksetByOids(hakemusOids: Iterable[HakemusOid]): Iterator[Hakemus] = {
-    val isAtaruOid = (hakemusOid: HakemusOid) => hakemusOid.toString().length == 35
     val ataruOids = hakemusOids.filter(isAtaruOid).toList
     val hakuAppOids = hakemusOids.filterNot(isAtaruOid).toList
     (ataruOids.isEmpty, hakuAppOids.isEmpty) match {
