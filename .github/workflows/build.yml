@@ -106,7 +106,7 @@ jobs:
           key: ${{ github.sha }}
 
       - name: Deploy jar library
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/github-actions'
         shell: bash
         env:
           ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
