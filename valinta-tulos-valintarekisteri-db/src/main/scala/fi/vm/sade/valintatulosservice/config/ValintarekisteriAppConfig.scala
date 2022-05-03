@@ -34,8 +34,8 @@ object ValintarekisteriAppConfig extends Logging {
     override val settings = loadSettings
       .withOverride(("valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids", "100"))
       .withOverride("valinta-tulos-service.valintarekisteri.db.url", s"jdbc:postgresql://localhost:${itPostgresPortChooser.chosenPort}/valintarekisteri")
-      .withoutPath("valinta-tulos-service.valintarekisteri.db.user")
-      .withoutPath("valinta-tulos-service.valintarekisteri.db.password")
+      .withOverride("valinta-tulos-service.valintarekisteri.db.user", "oph")
+      .withOverride("valinta-tulos-service.valintarekisteri.db.password", "oph")
   }
 
   trait ExternalProps {
