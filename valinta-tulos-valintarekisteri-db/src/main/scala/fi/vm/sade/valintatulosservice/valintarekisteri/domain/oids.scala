@@ -22,6 +22,11 @@ case class HakukohdeOid(s: String) {
   def valid: Boolean = OidValidator.isOid(s)
 }
 
+case class HakukohderyhmaOid(s: String) {
+  override def toString: String = s
+  def valid: Boolean = OidValidator.isOid(s)
+}
+
 case class HakuOid(s: String) {
   override def toString: String = s
 }
