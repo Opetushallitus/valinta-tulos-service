@@ -147,6 +147,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
     "delete valinnantulos" in {
       storeValinnantilaAndValinnantulos
       singleConnectionValintarekisteriDb.getValinnantuloksetForValintatapajono(valintatapajonoOid).size mustEqual 1
+      Thread.sleep(1000)
       singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.deleteHyvaksynnanEhtoValintatapajonossa(
         hakemusOid, valintatapajonoOid, hakukohdeOid, Instant.now()))
       singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.deleteValinnantulos(muokkaaja, valinnantulos.copy(poistettava = Some(true))))
@@ -163,6 +164,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
     }
     "generate muutoshistoria from updates" in {
       storeValinnantilaAndValinnantulos()
+      Thread.sleep(1000)
       singleConnectionValintarekisteriDb.runBlocking(
         singleConnectionValintarekisteriDb.deleteHyvaksynnanEhtoValintatapajonossa(hakemusOid, valintatapajonoOid, hakukohdeOid, Instant.now())
       )

@@ -1,6 +1,6 @@
 update valinnantulokset set ilmoittaja = sijoitteluajo_id::text where sijoitteluajo_id is not null;
 update valinnantulokset_history set ilmoittaja = sijoitteluajo_id::text where sijoitteluajo_id is not null;
-alter table valinnantulokset drop constraint valinnantulokset_sijoitteluajo_id_fkey;
+alter table valinnantulokset drop constraint if exists valinnantulokset_sijoitteluajo_id_fkey;
 alter table valinnantulokset drop column sijoitteluajo_id;
 alter table valinnantulokset_history drop column sijoitteluajo_id;
 

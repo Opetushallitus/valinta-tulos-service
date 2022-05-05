@@ -1,1 +1,1 @@
-alter table pistetiedot drop constraint pistetiedot_sijoitteluajo_id_fkey;
+alter table pistetiedot drop constraint if exists pistetiedot_sijoitteluajo_id_fkey;
