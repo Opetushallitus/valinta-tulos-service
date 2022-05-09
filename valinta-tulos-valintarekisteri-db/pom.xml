@@ -58,6 +58,12 @@
         <dependency>
             <groupId>fi.vm.sade</groupId>
             <artifactId>scala-utils_2.11</artifactId>
+<!--            <exclusions>-->
+<!--                <exclusion>-->
+<!--                    <groupId>com.hubspot.jinjava</groupId>-->
+<!--                    <artifactId>jinjava</artifactId>-->
+<!--                </exclusion>-->
+<!--            </exclusions>-->
         </dependency>
         <dependency>
             <groupId>fi.vm.sade</groupId>
@@ -151,6 +157,7 @@
                     <args>
                         <arg>-Xmax-classfile-name</arg>
                         <arg>140</arg>
+                        <arg>-nobootcp</arg>
                     </args>
                 </configuration>
             </plugin>
@@ -163,7 +170,8 @@
                         <exclude>**/*Spec.java</exclude>
                         <exclude>**/*Test.java</exclude>
                     </includes>
-                    <argLine>-Xms512M -Xmx1G -XX:MaxPermSize=512M -DJAVA8_HOME=${env.JAVA8_HOME}</argLine>
+<!--                    <argLine>-Xms512M -Xmx1G -XX:MaxPermSize=512M -DJAVA11_HOME=${env.JAVA11_HOME}</argLine>-->
+                    <argLine>-Xms512M -Xmx1G -XX:MaxPermSize=512M -DJAVA11_HOME=${env.JAVA11_HOME} --illegal-access=permit</argLine>
                     <systemProperties>
                         <valintatulos.profile>it</valintatulos.profile>
                     </systemProperties>

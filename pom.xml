@@ -36,7 +36,7 @@
         <morphia.version>1.2.1</morphia.version>
         <postgresql.version>42.1.4</postgresql.version>
         <scala-cas_2.11.version>2.2.1-SNAPSHOT</scala-cas_2.11.version>
-        <scala.version>2.11.8</scala.version>
+        <scala.version>2.11.12</scala.version>
         <scala-logging_2.11.version>3.1.0</scala-logging_2.11.version>
         <scala-parser-combinators_2.11.version>1.0.4</scala-parser-combinators_2.11.version>
         <scala-xml_2.11.version>1.0.5</scala-xml_2.11.version>
@@ -54,7 +54,7 @@
         <!-- Old duplicate versions -->
         <FIXME.plugin.maven-surefire-plugin.version>2.13</FIXME.plugin.maven-surefire-plugin.version>
 
-        <enforce.java.version>[1.8,1.9)</enforce.java.version>
+        <enforce.java.version>[11,)</enforce.java.version>
 
         <plugin.exec-maven-plugin.version>1.6.0</plugin.exec-maven-plugin.version>
         <plugin.maven-assembly-plugin.version>2.6</plugin.maven-assembly-plugin.version>
@@ -62,7 +62,7 @@
         <plugin.maven-jar-plugin.version>3.0.2</plugin.maven-jar-plugin.version>
         <plugin.maven-surefire-plugin.version>2.19.1</plugin.maven-surefire-plugin.version>
         <plugin.maven-war-plugin.version>2.6</plugin.maven-war-plugin.version>
-        <plugin.scala-maven-plugin.version>3.2.1</plugin.scala-maven-plugin.version>
+        <plugin.scala-maven-plugin.version>3.3.3</plugin.scala-maven-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -507,6 +507,11 @@
                 <version>0.8.0</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>com.hubspot.jinjava</groupId>
+                <artifactId>jinjava</artifactId>
+                <version>2.4.12</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -627,6 +632,7 @@
                                 <args>
                                     <arg>-Xmax-classfile-name</arg>
                                     <arg>140</arg>
+                                    <arg>-nobootcp</arg>
                                 </args>
                                 <recompileMode>incremental</recompileMode>
                             </configuration>
