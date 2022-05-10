@@ -78,7 +78,7 @@ jobs:
         run: |
           git clone https://github.com/Opetushallitus/ci-tools.git
           source ci-tools/common/setup-tools.sh
-          export BASE_IMAGE="baseimage-war-openjdk8:master"
+          export BASE_IMAGE="baseimage-war-openjdk11:master"
           ./ci-tools/common/pull-image.sh
           mv valinta-tulos-service/target/valinta-tulos-service-*.war $DOCKER_BUILD_DIR/artifact/valinta-tulos-service.war
           cp -vr valinta-tulos-service/src/main/resources/oph-configuration $DOCKER_BUILD_DIR/config/
