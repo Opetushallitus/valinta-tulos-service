@@ -982,6 +982,14 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
       }
     }
 
+    "peruuntunut: ylempi julkaisematon -> näytetään keskeneräisenä" in {
+      // HYVÄKSYTTY KESKEN false
+      // PERUUNTUNUT KESKEN true
+      useFixture("julkaisematon-peruuntunut.json", hakuFixture = hakuFixture, hakemusFixtures = List( "00000441369-3"))
+      checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
+      checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
+    }
+
     "peruuntunut toisessa jonossa hyväksymisen takia näytetään kesken, jos hyväksytty-jonoa ei ole julkaistu" in {
       useFixture("samassa-kohteessa-julkaisematon-hyvaksytty-ja-julkaistu-peruuntunut.json", hakuFixture = hakuFixture, hakemusFixtures = List("00000441369-3"))
       val hakukohdeOid = HakukohdeOid("1.2.246.562.5.72607738902")
@@ -1306,7 +1314,6 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
             // PERUUNTUNUT KESKEN true
             useFixture("julkaisematon-peruuntunut.json", hakuFixture = hakuFixture, hakemusFixtures = List( "00000441369-3"))
             checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738902"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
-            checkHakutoiveState(getHakutoive("1.2.246.562.5.72607738903"), Valintatila.kesken, Vastaanottotila.kesken, Vastaanotettavuustila.ei_vastaanotettavissa, false)
           }
         }
 
