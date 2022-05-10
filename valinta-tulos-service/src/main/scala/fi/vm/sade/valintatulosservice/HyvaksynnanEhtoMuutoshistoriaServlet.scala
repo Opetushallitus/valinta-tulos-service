@@ -36,7 +36,7 @@ class HyvaksynnanEhtoMuutoshistoriaServlet(hyvaksynnanEhtoRepository: Hyvaksynna
     val roles = Set(Role.ATARU_HAKEMUS_READ, Role.ATARU_HAKEMUS_CRUD, Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
     authorize(roles.toSeq: _*)
     val hakukohde = hakuService.getHakukohde(hakukohdeOid).fold(throw _, x => x)
-    authorizer.checkAccess(authenticated.session, hakukohde.organisaatioOiditAuktorisointiin, roles).fold(throw _, x => x)
+    authorizer.checkAccess(authenticated.session, hakukohde.organisaatioOiditAuktorisointiin, roles, hakukohdeOid).fold(throw _, x => x)
 
     val response = hyvaksynnanEhtoRepository.runBlocking(
       hyvaksynnanEhtoRepository.hyvaksynnanEhtoHakukohteessaMuutoshistoria(hakemusOid, hakukohdeOid))

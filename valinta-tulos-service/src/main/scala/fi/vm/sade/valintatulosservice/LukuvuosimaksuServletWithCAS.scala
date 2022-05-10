@@ -39,7 +39,7 @@ class LukuvuosimaksuServletWithCAS(lukuvuosimaksuService: LukuvuosimaksuService,
 
     val hakukohde = hakuService.getHakukohde(hakukohdeOid).fold(throw _, h => h)
     authorizer.checkAccess(auditInfo.session._2, hakukohde.organisaatioOiditAuktorisointiin,
-      Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).fold(throw _, x => x)
+      Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD), hakukohdeOid).fold(throw _, x => x)
 
     val lukuvuosimaksus = lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, auditInfo)
     Ok(lukuvuosimaksus)
@@ -61,7 +61,7 @@ class LukuvuosimaksuServletWithCAS(lukuvuosimaksuService: LukuvuosimaksuService,
         lukuvuosimaksut.map(_.hakukohdeOid).foreach(hakukohdeOid => {
           val hakukohde = hakuService.getHakukohde(hakukohdeOid).fold(throw _, h => h)
           authorizer.checkAccess(auditInfo.session._2, hakukohde.organisaatioOiditAuktorisointiin,
-            Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).fold(throw _, x => x)
+            Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD), hakukohdeOid).fold(throw _, x => x)
         })
         lukuvuosimaksuService.updateLukuvuosimaksut(lukuvuosimaksut, auditInfo)
         NoContent()

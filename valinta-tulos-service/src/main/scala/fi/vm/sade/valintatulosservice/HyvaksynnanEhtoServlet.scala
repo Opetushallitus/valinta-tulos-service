@@ -279,7 +279,7 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
   private def authorize(hakukohdeOid: HakukohdeOid, roles: Set[Role])(implicit authenticated: Authenticated): Unit = {
     authorize(roles.toSeq: _*)
     val hakukohde = hakuService.getHakukohde(hakukohdeOid).fold(throw _, x => x)
-    authorizer.checkAccess(authenticated.session, hakukohde.organisaatioOiditAuktorisointiin, roles).fold(throw _, x => x)
+    authorizer.checkAccess(authenticated.session, hakukohde.organisaatioOiditAuktorisointiin, roles, hakukohdeOid).fold(throw _, x => x)
   }
 
   private def authorize(hakutoiveet: Set[HakukohdeOid], roles: Set[Role])(implicit authenticated: Authenticated): Unit = {
@@ -298,7 +298,7 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
         Left(new IllegalArgumentException(s"Hakukohde $hakukohdeOid ei ole hakemuksen $hakemusOid hakutoive"))
       }).right
       hakukohteet <- MonadHelper.sequence(hakemus.toiveet.map(h => hakuService.getHakukohde(h.oid))).right
-      authorized <- authorizer.checkAccess(authenticated.session, hakukohteet.flatMap(_.organisaatioOiditAuktorisointiin).toSet, roles).right
+      authorized <- authorizer.checkAccess(authenticated.session, hakukohteet.flatMap(_.organisaatioOiditAuktorisointiin).toSet, roles, hakukohdeOid).right
     } yield authorized).fold(throw _, x => x)
   }
 

@@ -1,7 +1,5 @@
 package fi.vm.sade.valintatulosservice.valinnantulos
 
-import java.time.Instant
-
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
 import fi.vm.sade.sijoittelu.domain.{EhdollisenHyvaksymisenEhtoKoodi, ValintatuloksenTila}
@@ -10,13 +8,13 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.{HyvaksynnanEhtoRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhtoRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantuloksenMuokkaus}
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import java.time.Instant
 
 class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
                                        tarjoajaOids: Set[String],
@@ -128,13 +126,13 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
         case (_, _) => Left(ValinnantulosUpdateStatus(409, s"Ilmoittautumista ei voida muuttaa, koska vastaanotto ei ole sitova", uusi.valintatapajonoOid, uusi.hakemusOid))
       }
 
-      def allowPeruuntuneidenHyvaksynta() = authorizer.checkAccess(session, tarjoajaOids, Set(Role.SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH))
+      def allowPeruuntuneidenHyvaksynta() = authorizer.checkAccess(session, tarjoajaOids, Set(Role.SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH), hakukohdeOid)
         .left.map(_ => ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä peruuntunutta", uusi.valintatapajonoOid, uusi.hakemusOid))
 
       def allowOphUpdate(session: Session) = session.hasAnyRole(Set(Role.SIJOITTELU_CRUD_OPH))
 
       def allowMusiikkiUpdate(session: Session, tarjoajaOids: Set[String]) =
-        authorizer.checkAccess(session, tarjoajaOids, Set(Role.VALINTAKAYTTAJA_MUSIIKKIALA)).isRight
+        authorizer.checkAccess(session, tarjoajaOids, Set(Role.VALINTAKAYTTAJA_MUSIIKKIALA), hakukohdeOid).isRight
 
       validateMuutos().fold(
         e => DBIO.successful(Left(e)),

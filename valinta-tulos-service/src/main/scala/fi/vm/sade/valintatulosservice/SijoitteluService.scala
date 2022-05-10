@@ -30,7 +30,7 @@ class SijoitteluService(val sijoitteluRepository: SijoitteluRepository with Haki
     )
     (for {
       tarjonta  <- hakuService.getHakukohde(hakukohdeOid).right
-      _         <- authorizer.checkAccess(session, tarjonta.organisaatioOiditAuktorisointiin, Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).right
+      _         <- authorizer.checkAccess(session, tarjonta.organisaatioOiditAuktorisointiin, Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD), hakukohdeOid).right
     } yield {
       new SijoitteluajonHakukohde(sijoitteluRepository, sijoitteluRepository.runBlocking(sijoitteluRepository.getLatestSijoitteluajoId(sijoitteluajoId, hakuOid)), hakukohdeOid).dto()
     }).fold( t => throw t, r => r)
