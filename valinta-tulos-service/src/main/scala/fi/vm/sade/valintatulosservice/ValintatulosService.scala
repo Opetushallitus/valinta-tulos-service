@@ -861,21 +861,26 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
 
 
   private def näytäAlemmatPeruuntuneetHakukohteetKeskeneräisinäJosYlemmätKeskeneräisiä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
-    val firstKeskeneräinen: Int = tulokset.indexWhere (_.valintatila == Valintatila.kesken)
-    tulokset.zipWithIndex.map {
-      case (tulos, index) if firstKeskeneräinen >= 0 && index > firstKeskeneräinen && tulos.valintatila == Valintatila.peruuntunut =>
-        logger.debug("näytäAlemmatPeruuntuneetHakukohteetKeskeneräisinäJosYlemmätKeskeneräisiä toKesken {}", index)
-        tulos.toKesken
-      case (tulos, _) =>
-        logger.debug("tulos.valintatila "+tulos.valintatila)
-        tulos
-    }
+    if(haku.sijoitteluJaPriorisointi) {
+      val firstKeskeneräinen: Int = tulokset.indexWhere (_.valintatila == Valintatila.kesken)
+      tulokset.zipWithIndex.map {
+        case (tulos, index) if firstKeskeneräinen >= 0 && index > firstKeskeneräinen && tulos.valintatila == Valintatila.peruuntunut =>
+          logger.debug("näytäAlemmatPeruuntuneetHakukohteetKeskeneräisinäJosYlemmätKeskeneräisiä toKesken {}", index)
+          tulos.toKesken
+        case (tulos, _) =>
+          logger.debug("tulos.valintatila "+tulos.valintatila)
+          tulos
+      }
+    } else tulokset
   }
 
   private def näytäAlemmatPeruuntuneetJonotKeskeneräisinäJosYlemmätKeskeneräisiä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
-    tulokset.map { hakutoiveenTulos =>
-      hakutoiveenTulos.copy(jonokohtaisetTulostiedot = näytäToiveenAlemmatPeruuntuneetJonotKeskeneräisinäJosYlemmätKeskeneräisiä(hakutoiveenTulos))
+    if(haku.sijoitteluJaPriorisointi) {
+      tulokset.map { hakutoiveenTulos =>
+        hakutoiveenTulos.copy(jonokohtaisetTulostiedot = näytäToiveenAlemmatPeruuntuneetJonotKeskeneräisinäJosYlemmätKeskeneräisiä(hakutoiveenTulos))
+      }
     }
+    else tulokset
   }
 
   private def näytäToiveenAlemmatPeruuntuneetJonotKeskeneräisinäJosYlemmätKeskeneräisiä(hakutoiveenTulos: Hakutoiveentulos): List[JonokohtainenTulostieto] = {
