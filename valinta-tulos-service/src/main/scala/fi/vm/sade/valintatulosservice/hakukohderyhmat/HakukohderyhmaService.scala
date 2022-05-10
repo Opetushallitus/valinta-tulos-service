@@ -58,6 +58,7 @@ class HakukohderyhmaService(appConfig: VtsAppConfig) extends Logging {
   }
 
   def getHakukohderyhmat(oid: HakukohdeOid): Future[Seq[HakukohderyhmaOid]] = {
+    logger.info(s"getHakukohderyhmat with oid: $oid")
     fetch(Method.GET, appConfig.ophUrlProperties.url("hakukohderyhmapalvelu.hakukohderyhmat", oid)).flatMap {
       case response if response.getStatusCode.equals(200) => Future.successful(parse(response.getResponseBody).values.asInstanceOf[Seq[String]].map(s => HakukohderyhmaOid(s)))
       case failure =>
@@ -86,6 +87,7 @@ class HakukohderyhmaService(appConfig: VtsAppConfig) extends Logging {
     val requestBuilder = new RequestBuilder()
       .setMethod(method.name)
       .setUrl(url)
+    logger.info(s"Hakukohderyhmapalvelu fetch for oid: $url")
     val request = requestBuilder.build()
     val future: CompletableFuture[Response] = client.execute(request)
     toScala(future)

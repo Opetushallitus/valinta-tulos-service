@@ -1,10 +1,11 @@
 package fi.vm.sade.security
 
 import fi.vm.sade.authorization.NotAuthorizedException
+import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.hakukohderyhmat.HakukohderyhmaService
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, HakukohderyhmaOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakukohdeOid
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -13,21 +14,23 @@ import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
 
 class OrganizationHierarchyAuthorizer(appConfig: VtsAppConfig, hakukohderyhmaService: HakukohderyhmaService) extends fi.vm.sade.authorization.OrganizationHierarchyAuthorizer(
-  new OrganizationOidProvider(appConfig)) {
+  new OrganizationOidProvider(appConfig)) with Logging {
 
   import scala.collection.JavaConverters._
 
-  private def isAuthorized(session: Session, oids: Seq[HakukohderyhmaOid]): Future[Boolean] = {
-    Future(session.roles.filter(role => role.toString contains "APP_KOUTA_HAKUKOHDE_CRUD_").flatMap(koutaHakukohdeRole => {
+  private def isAuthorized(session: Session, oids: Seq[HakukohdeOid]): Boolean = {
+    session.roles.filter(role => role.toString contains "APP_KOUTA_HAKUKOHDE_CRUD_").flatMap(koutaHakukohdeRole => {
       oids.map(oid => koutaHakukohdeRole.toString contains oid)
-    }).foldLeft(true)(_ && _))
+    }).contains(true)
   }
 
   private def isAuthorizedByHakukohderyhmat(session: Session, hakukohdeOid: HakukohdeOid): Boolean = {
-    Await.result(hakukohderyhmaService.getHakukohderyhmat(hakukohdeOid).flatMap {
-      case oids if oids.nonEmpty => isAuthorized(session, oids)
-      case _ => Future.successful(false)
+    logger.info(s"isAuthorizedByHakukohderyhmat for hakukohde: $hakukohdeOid, roles: ${session.roles.toString()}")
+    val hakukohdeOids = Await.result(hakukohderyhmaService.getHakukohderyhmat(hakukohdeOid).flatMap {
+      case hakukohderyhmaOids if hakukohderyhmaOids.nonEmpty => Future.sequence(hakukohderyhmaOids.map(o => hakukohderyhmaService.getHakukohteet(o))).map(_.flatten)
+      case _ => Future.successful(Seq())
     }, Duration(5, TimeUnit.SECONDS))
+    isAuthorized(session, hakukohdeOids)
   }
 
 
@@ -41,6 +44,7 @@ class OrganizationHierarchyAuthorizer(appConfig: VtsAppConfig, hakukohderyhmaSer
   }
 
   def checkAccessWithHakukohderyhmat(session: Session, organisationOids: Set[String], roles: Set[Role], hakukohdeOid: HakukohdeOid): Either[Throwable, Unit] = {
+    logger.info(s"checkAccessWithHakukohderyhmat for hakukohde: $hakukohdeOid")
     if (organisationOids.exists(oid => checkAccess(session, oid, roles).isRight)) {
       Right(())
     } else if (isAuthorizedByHakukohderyhmat(session, hakukohdeOid)) {
