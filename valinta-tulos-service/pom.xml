@@ -476,7 +476,6 @@
                         <exclude>**/*Test.java</exclude>
                     </includes>
                     <argLine>-Xms512M -Xmx1G -XX:MaxPermSize=512M -DJAVA11_HOME=${env.JAVA11_HOME} </argLine>
-<!--                    <argLine>-Xms512M -Xmx1G -XX:MaxPermSize=512M -DJAVA11_HOME=${env.JAVA11_HOME} &#45;&#45;illegal-access=permit</argLine>-->
                     <systemProperties>
                         <valintatulos.profile>it</valintatulos.profile>
                     </systemProperties>

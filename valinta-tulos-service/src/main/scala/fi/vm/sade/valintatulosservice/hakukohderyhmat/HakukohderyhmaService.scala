@@ -37,8 +37,7 @@ object ScalaCasConfig {
 }
 
 
-class HakukohderyhmaService(appConfig: VtsAppConfig,
-                            casClient: CasClient) extends Logging {
+class HakukohderyhmaService(appConfig: VtsAppConfig) extends Logging {
   protected val loginParams: String = "/auth/cas"
   protected val sessionCookieName: String = "ring-session"
   protected val serviceName: String = appConfig.ophUrlProperties.url("hakukohderyhmapalvelu.service")
@@ -63,10 +62,10 @@ class HakukohderyhmaService(appConfig: VtsAppConfig,
       case response if response.getStatusCode.equals(200) => Future.successful(parse(response.getResponseBody).values.asInstanceOf[Seq[String]].map(s => HakukohderyhmaOid(s)))
       case failure =>
         val errorString = s"Hakukohderyhmät fetch failed for hakukohdeoid: $oid with status ${failure.getStatusCode}, body: ${failure.getResponseBody}"
-            logger.error(errorString)
-            Future.failed(
-              new RuntimeException(errorString)
-            )
+        logger.error(errorString)
+        Future.failed(
+          new RuntimeException(errorString)
+        )
 
     }
   }
