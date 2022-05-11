@@ -126,13 +126,13 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
         case (_, _) => Left(ValinnantulosUpdateStatus(409, s"Ilmoittautumista ei voida muuttaa, koska vastaanotto ei ole sitova", uusi.valintatapajonoOid, uusi.hakemusOid))
       }
 
-      def allowPeruuntuneidenHyvaksynta() = authorizer.checkAccess(session, tarjoajaOids, Set(Role.SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH), hakukohdeOid)
+      def allowPeruuntuneidenHyvaksynta() = authorizer.checkAccessWithHakukohderyhmat(session, tarjoajaOids, Set(Role.SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH), hakukohdeOid)
         .left.map(_ => ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä peruuntunutta", uusi.valintatapajonoOid, uusi.hakemusOid))
 
       def allowOphUpdate(session: Session) = session.hasAnyRole(Set(Role.SIJOITTELU_CRUD_OPH))
 
       def allowMusiikkiUpdate(session: Session, tarjoajaOids: Set[String]) =
-        authorizer.checkAccess(session, tarjoajaOids, Set(Role.VALINTAKAYTTAJA_MUSIIKKIALA), hakukohdeOid).isRight
+        authorizer.checkAccessWithHakukohderyhmat(session, tarjoajaOids, Set(Role.VALINTAKAYTTAJA_MUSIIKKIALA), hakukohdeOid).isRight
 
       validateMuutos().fold(
         e => DBIO.successful(Left(e)),

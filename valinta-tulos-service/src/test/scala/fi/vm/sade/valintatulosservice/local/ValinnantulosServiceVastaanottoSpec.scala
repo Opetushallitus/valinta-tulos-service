@@ -392,7 +392,7 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
   step(valintarekisteriDb.db.shutdown)
 
   val authorizer = mock[OrganizationHierarchyAuthorizer]
-  authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]], null) returns Right(())
+  authorizer.checkAccessWithHakukohderyhmat(any[Session], any[Set[String]], any[Set[Role]], any[HakukohdeOid]) returns Right(())
 
   val ohjausparametritService = mock[OhjausparametritService]
 

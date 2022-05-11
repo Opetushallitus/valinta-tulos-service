@@ -46,7 +46,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       )
     }
     "exception is thrown, if no authorization" in new Mocks with Korkeakouluhaku {
-      authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]], null) returns Left(new AuthorizationFailedException("error"))
+      authorizer.checkAccessWithHakukohderyhmat(any[Session], any[Set[String]], any[Set[Role]], any[HakukohdeOid]) returns Left(new AuthorizationFailedException("error"))
       val valinnantulokset = List(valinnantulosA)
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(Instant.now()), auditInfo) must throwA[AuthorizationFailedException]
     }
@@ -146,8 +146,8 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       )
     }
     "no authorization to change hyvaksyPeruuntunut" in new Mocks with Korkeakouluhaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
-      authorizer.checkAccess(session, Set(tarjoajaOid), Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Right(())
-      authorizer.checkAccess(session, Set(tarjoajaOid), Set(Role.SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH)) returns Left(new AuthorizationFailedException("error"))
+      authorizer.checkAccessWithHakukohderyhmat(session, Set(tarjoajaOid), Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD), hakukohdeOid) returns Right(())
+      authorizer.checkAccessWithHakukohderyhmat(session, Set(tarjoajaOid), Set(Role.SIJOITTELU_PERUUNTUNEIDEN_HYVAKSYNTA_OPH), hakukohdeOid) returns Left(new AuthorizationFailedException("error"))
       valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set(valinnantulosA.copy(valinnantila = Peruuntunut)))
       yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(Set(valinnantulosA.copy(valinnantila = Peruuntunut)))
       val valinnantulokset = List(valinnantulosA.copy( valinnantila = Peruuntunut, hyvaksyPeruuntunut = Some(true)))
@@ -164,7 +164,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       there was one (valinnantulosRepository).updateValinnantuloksenOhjaus(valinnantulokset(0).getValinnantuloksenOhjaus(session.personOid, "Virkailijan tallennus"), Some(lastModified))
     }
     "no authorization to change julkaistavissa" in new Mocks with ToisenAsteenHaku with SuccessfulVastaanotto with NoConflictingVastaanotto with ValintaesitysEiHyvaksyttavissa {
-      authorizer.checkAccess(session, Set(tarjoajaOid), Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Right(())
+      authorizer.checkAccessWithHakukohderyhmat(session, Set(tarjoajaOid), Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD), hakukohdeOid) returns Right(())
       authorizer.checkAccess(session, rootOrganisaatioOid, Set(Role.SIJOITTELU_CRUD)) returns Left(new AuthorizationFailedException("error"))
       valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set(valinnantulosA))
       yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(Set(valinnantulosA))
@@ -175,7 +175,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       there was no (valinnantulosRepository).updateValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
     }
     "no authorization to change julkaistavissa but valintaesitys is hyväksyttävissä" in new Mocks with ToisenAsteenHaku with SuccessfulVastaanotto with NoConflictingVastaanotto with ValintaesitysHyvaksyttavissa {
-      authorizer.checkAccess(session, Set(tarjoajaOid), Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Right(())
+      authorizer.checkAccessWithHakukohderyhmat(session, Set(tarjoajaOid), Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD), hakukohdeOid) returns Right(())
       authorizer.checkAccess(session, rootOrganisaatioOid, Set(Role.SIJOITTELU_CRUD)) returns Left(new AuthorizationFailedException("error"))
       valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set(valinnantulosA))
       yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(Set(valinnantulosA))
@@ -186,7 +186,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       there was no (valinnantulosRepository).setHyvaksyttyJaJulkaistavissa(any[HakemusOid], any[ValintatapajonoOid], any[String], any[String])
     }
     "authorization to change julkaistavissa" in new Mocks with ToisenAsteenHaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
-      authorizer.checkAccess(session, Set(tarjoajaOid), Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Right(())
+      authorizer.checkAccessWithHakukohderyhmat(session, Set(tarjoajaOid), Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD), hakukohdeOid) returns Right(())
       authorizer.checkAccess(session, rootOrganisaatioOid, Set(Role.SIJOITTELU_CRUD)) returns Right(())
       valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set(valinnantulosA.copy(valinnantila = Hyvaksytty)))
       yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(Set(valinnantulosA.copy(valinnantila = Hyvaksytty)))
@@ -201,7 +201,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
 
   "Erillishaku / ValinnantulosService" in {
     "exception is thrown, if no authorization" in new Mocks with KorkeakouluErillishaku {
-      authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]], null) returns Left(new AuthorizationFailedException("error"))
+      authorizer.checkAccessWithHakukohderyhmat(any[Session], any[Set[String]], any[Set[Role]], any[HakukohdeOid]) returns Left(new AuthorizationFailedException("error"))
       val valinnantulokset = List(valinnantulosA)
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(Instant.now()), auditInfo) must throwA[AuthorizationFailedException]
     }
@@ -413,7 +413,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
   }
 
   trait Authorized { this: Mocks =>
-    authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]], null) returns Right(())
+    authorizer.checkAccessWithHakukohderyhmat(any[Session], any[Set[String]], any[Set[Role]], any[HakukohdeOid]) returns Right(())
   }
 
   trait Korkeakouluhaku { this: Mocks =>

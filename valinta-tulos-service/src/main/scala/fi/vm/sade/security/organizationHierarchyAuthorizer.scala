@@ -49,15 +49,7 @@ class OrganizationHierarchyAuthorizer(appConfig: VtsAppConfig, hakukohderyhmaSer
     }
   }
 
-  def checkAccess(session: Session, organisationOids: Set[String], roles: Set[Role], hakukohdeOid: HakukohdeOid): Either[Throwable, Unit] = {
-    if (organisationOids.exists(oid => checkAccess(session, oid, roles).isRight)) {
-      Right(())
-    } else if (isAuthorizedByHakukohderyhmat(session, hakukohdeOid)) {
-      Right(())
-    } else {
-      Left(new AuthorizationFailedException(s"User ${session.personOid} has none of the roles $roles in none of the organizations $organisationOids"))
-    }
-  }
+
 
 
 
@@ -66,6 +58,16 @@ class OrganizationHierarchyAuthorizer(appConfig: VtsAppConfig, hakukohderyhmaSer
       case Success(_) => Right(())
       case Failure(e: NotAuthorizedException) => Left(new AuthorizationFailedException("Organization authentication failed", e))
       case Failure(e) => throw e
+    }
+  }
+
+  def checkAccessWithHakukohderyhmat(session: Session, organisationOids: Set[String], roles: Set[Role], hakukohdeOid: HakukohdeOid): Either[Throwable, Unit] = {
+    if (organisationOids.exists(oid => checkAccess(session, oid, roles).isRight)) {
+      Right(())
+    } else if (isAuthorizedByHakukohderyhmat(session, hakukohdeOid)) {
+      Right(())
+    } else {
+      Left(new AuthorizationFailedException(s"User ${session.personOid} has none of the roles $roles in none of the organizations $organisationOids"))
     }
   }
 }

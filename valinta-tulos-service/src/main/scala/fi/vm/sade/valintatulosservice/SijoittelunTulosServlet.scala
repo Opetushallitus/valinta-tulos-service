@@ -40,7 +40,7 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     val hakukohde = hakuService.getHakukohde(hakukohdeOid).fold(throw _, h => h)
 
-    authorizer.checkAccess(ai.session._2, hakukohde.organisaatioOiditAuktorisointiin,
+    authorizer.checkAccessWithHakukohderyhmat(ai.session._2, hakukohde.organisaatioOiditAuktorisointiin,
       Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD), hakukohdeOid).fold(throw _, x => x)
     try {
       val futureSijoittelunTulokset: Future[HakukohdeDTO] = Future { sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session, ai) }

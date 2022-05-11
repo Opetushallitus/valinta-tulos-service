@@ -35,7 +35,7 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
   val sessionId = UUID.randomUUID()
   val auditInfo = AuditInfo((sessionId, session), InetAddress.getLocalHost, "user-agent")
   trait Authorized { this: SijoitteluServiceMocks =>
-    authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]], null) returns Right(())
+    authorizer.checkAccessWithHakukohderyhmat(any[Session], any[Set[String]], any[Set[Role]], any[HakukohdeOid]) returns Right(())
   }
 
   "SijoitteluService" in {
@@ -109,7 +109,7 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
       organisaatioRyhmaOids = Set(organisaatioRyhmaOid)))
 
     val authorizer = mock[OrganizationHierarchyAuthorizer]
-    authorizer.checkAccess(session, Set(tarjoajaOid, organisaatioRyhmaOid), Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Right(())
+    authorizer.checkAccessWithHakukohderyhmat(session, Set(tarjoajaOid, organisaatioRyhmaOid), Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD), hakukohdeOid) returns Right(())
 
     val sijoitteluRepository = mock[ValintarekisteriDb]
     mockRunBlocking(sijoitteluRepository)
