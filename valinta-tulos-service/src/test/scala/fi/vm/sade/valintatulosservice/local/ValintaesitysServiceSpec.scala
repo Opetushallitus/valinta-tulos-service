@@ -39,7 +39,7 @@ class ValintaesitysServiceSpec extends Specification with MockitoMatchers with M
     }
     "tarkistaa lukuoikeudet" in new Mocks with Hakukohde {
       val e = new AuthorizationFailedException("error")
-      authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]]) returns Left(e)
+      authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]], null) returns Left(e)
       service.get(hakukohdeOid, auditInfo) must throwAn[AuthorizationFailedException](e)
       there was no (valintaesitysRepository).get(any[HakukohdeOid])
     }
@@ -58,7 +58,7 @@ class ValintaesitysServiceSpec extends Specification with MockitoMatchers with M
     }
     "tarkistaa päivitysoikeudet" in new Mocks with Hakukohde with MockReturns {
       val e = new AuthorizationFailedException("error")
-      authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]]) returns Left(e)
+      authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]], null) returns Left(e)
       service.hyvaksyValintaesitys(valintatapajonoOidB, auditInfo) must throwAn[AuthorizationFailedException](e)
       /* CheckAccess-kutsua ei voida tehdä ilman hakukohde oidia. Ensimmäinen tietokantakutsu ajetaan transaktiossa ennen
          oikeustarkistusta, jotta saadaan kannasta haettua hakukohde oid ilman yhtä ylimääräistä kantakyselyä.
@@ -122,6 +122,6 @@ class ValintaesitysServiceSpec extends Specification with MockitoMatchers with M
   }
 
   trait Authorized { this: Mocks =>
-    authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]]) returns Right(())
+    authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]], null) returns Right(())
   }
 }

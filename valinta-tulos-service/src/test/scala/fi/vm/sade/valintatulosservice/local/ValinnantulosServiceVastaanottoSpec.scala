@@ -1,16 +1,11 @@
 package fi.vm.sade.valintatulosservice.local
 
-import java.net.InetAddress
-import java.time.Instant
-import java.util.UUID
-import java.util.concurrent.TimeUnit
-
 import fi.vm.sade.auditlog.Audit
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusRepository, HakuAppRepository}
-import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService, StubbedOhjausparametritService, Vastaanottoaikataulu}
+import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService, Vastaanottoaikataulu}
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
@@ -28,6 +23,11 @@ import org.specs2.execute.{FailureException, Result}
 import org.specs2.matcher.ThrownMessages
 import org.specs2.mock.mockito.{MockitoMatchers, MockitoStubs}
 import org.specs2.runner.JUnitRunner
+
+import java.net.InetAddress
+import java.time.Instant
+import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 @RunWith(classOf[JUnitRunner])
 class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp with ThrownMessages with MockitoMatchers with MockitoStubs {
@@ -392,7 +392,7 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
   step(valintarekisteriDb.db.shutdown)
 
   val authorizer = mock[OrganizationHierarchyAuthorizer]
-  authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]]) returns Right(())
+  authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]], null) returns Right(())
 
   val ohjausparametritService = mock[OhjausparametritService]
 

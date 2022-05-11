@@ -1,26 +1,23 @@
 package fi.vm.sade.valintatulosservice.local
 
-import java.net.InetAddress
-import java.time.{Instant, ZonedDateTime}
-import java.util.UUID
 import fi.vm.sade.auditlog.Audit
 import fi.vm.sade.security.{AuthorizationFailedException, OrganizationHierarchyAuthorizer}
 import fi.vm.sade.sijoittelu.domain.{EhdollisenHyvaksymisenEhtoKoodi, ValintatuloksenTila}
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.domain.{Hakemus}
-import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusRepository, HakuAppRepository}
 import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
+import fi.vm.sade.valintatulosservice.domain.Hakemus
+import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.mock.RunBlockingMock
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService, Vastaanottoaikataulu}
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde}
+import fi.vm.sade.valintatulosservice.valintaperusteet.ValintaPerusteetServiceMock
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhtoRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnanTilanKuvausRepository, ValinnantulosRepository, VastaanottoEvent}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
-import fi.vm.sade.valintatulosservice.valintaperusteet.ValintaPerusteetServiceMock
 import org.joda.time.DateTime
 import org.junit.runner.RunWith
 import org.specs2.matcher.MustThrownExpectations
@@ -30,6 +27,10 @@ import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.Scope
 import slick.dbio.DBIO
+
+import java.net.InetAddress
+import java.time.{Instant, ZonedDateTime}
+import java.util.UUID
 
 @RunWith(classOf[JUnitRunner])
 class ValinnantulosServiceSpec extends Specification with MockitoMatchers with MockitoStubs {
@@ -45,7 +46,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       )
     }
     "exception is thrown, if no authorization" in new Mocks with Korkeakouluhaku {
-      authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]]) returns Left(new AuthorizationFailedException("error"))
+      authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]], null) returns Left(new AuthorizationFailedException("error"))
       val valinnantulokset = List(valinnantulosA)
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(Instant.now()), auditInfo) must throwA[AuthorizationFailedException]
     }
@@ -200,7 +201,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
 
   "Erillishaku / ValinnantulosService" in {
     "exception is thrown, if no authorization" in new Mocks with KorkeakouluErillishaku {
-      authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]]) returns Left(new AuthorizationFailedException("error"))
+      authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]], null) returns Left(new AuthorizationFailedException("error"))
       val valinnantulokset = List(valinnantulosA)
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(Instant.now()), auditInfo) must throwA[AuthorizationFailedException]
     }
@@ -412,7 +413,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
   }
 
   trait Authorized { this: Mocks =>
-    authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]]) returns Right(())
+    authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]], null) returns Right(())
   }
 
   trait Korkeakouluhaku { this: Mocks =>
