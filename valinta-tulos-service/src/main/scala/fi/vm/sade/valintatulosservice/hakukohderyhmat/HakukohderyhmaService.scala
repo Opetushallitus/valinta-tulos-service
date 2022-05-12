@@ -1,52 +1,54 @@
 package fi.vm.sade.valintatulosservice.hakukohderyhmat
 
-import fi.vm.sade.javautils.nio.cas.{CasClient, CasClientBuilder, CasConfig}
+import fi.vm.sade.javautils.nio.cas.{CasClient, CasClientBuilder}
+import fi.vm.sade.security.ScalaCasConfig
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, HakukohderyhmaOid}
+import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
+import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, HakukohderyhmaOid}
 import org.asynchttpclient.{RequestBuilder, Response}
 import org.json4s.jackson.JsonMethods._
 
-import java.util.concurrent.CompletableFuture
+import java.util.concurrent.{CompletableFuture, TimeUnit}
 import scala.compat.java8.FutureConverters.toScala
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 
-object ScalaCasConfig {
-
-  def apply(username: String,
-            password: String,
-            casUrl: String,
-            serviceUrl: String,
-            csrf: String,
-            callerId: String,
-            serviceUrlSuffix: String,
-            jSessionName: String): CasConfig = {
-
-    new CasConfig.CasConfigBuilder(
-      username,
-      password,
-      casUrl,
-      serviceUrl,
-      csrf,
-      callerId,
-      serviceUrlSuffix
-    ).setJsessionName(jSessionName).build()
-  }
-}
-
+//trait HakukohderyhmaService {
+//  def getHakukohderyhmat(oid: HakukohdeOid): Future[Seq[HakukohderyhmaOid]]
+//  def getHakukohteet(oid: HakukohderyhmaOid): Future[Seq[HakukohdeOid]]
+//}
+//
+//object HakukohderyhmaService {
+//  def apply(appConfig: VtsAppConfig) = new CachedHakukohderyhmaService(appConfig)
+//}
+//
+//class CachedHakukohderyhmaService(appConfig: VtsAppConfig, hakukohderyhmaService: HakukohderyhmaService) extends HakukohderyhmaService {
+//private val hakukohderyhmatMemo = TTLOptionalMemoize.memoize[HakukohdeOid](hakukohderyhmaService.getHakukohderyhmat(), Duration(1, TimeUnit.HOURS).toSeconds, appConfig.settings.estimatedMaxActiveHakus)
+//  private val hakukohdeCache: HakukohdeOid => Either[Throwable, Hakukohde] =
+//    TTLOptionalMemoize.memoize(
+//      hakuService.getHakukohde,
+//      lifetimeSeconds = config.settings.ataruHakemusEnricherHakukohdeCacheTtl.toSeconds,
+//      maxSize = config.settings.ataruHakemusEnricherHakukohdeCacheMaxSize)
+//
+//
+//}
 
 class HakukohderyhmaService(appConfig: VtsAppConfig) extends Logging {
+  protected val callerId: String = appConfig.settings.callerId
+  protected val casUrl: String = appConfig.ophUrlProperties.url("cas.url")
+  protected val casUsername: String = appConfig.settings.securitySettings.casUsername
+  protected val casPassword: String = appConfig.settings.securitySettings.casPassword
   protected val loginParams: String = "/auth/cas"
   protected val sessionCookieName: String = "ring-session"
   protected val serviceName: String = appConfig.ophUrlProperties.url("hakukohderyhmapalvelu.service")
-  protected val callerId: String = appConfig.settings.callerId
-  protected val casUrl: String = appConfig.ophUrlProperties.url("cas.url")
 
   lazy protected val client: CasClient = {
     CasClientBuilder.build(ScalaCasConfig(
-      appConfig.settings.securitySettings.casUsername,
-      appConfig.settings.securitySettings.casPassword,
+      casUsername,
+      casPassword,
       casUrl,
       serviceName,
       callerId,
@@ -57,7 +59,6 @@ class HakukohderyhmaService(appConfig: VtsAppConfig) extends Logging {
   }
 
   def getHakukohderyhmat(oid: HakukohdeOid): Future[Seq[HakukohderyhmaOid]] = {
-    logger.info(s"getHakukohderyhmat with oid: $oid")
     fetch(appConfig.ophUrlProperties.url("hakukohderyhmapalvelu.hakukohderyhmat", oid)).flatMap {
       case response if response.getStatusCode.equals(200) => Future.successful(parse(response.getResponseBody).values.asInstanceOf[Seq[String]].map(s => HakukohderyhmaOid(s)))
       case failure =>
@@ -66,12 +67,10 @@ class HakukohderyhmaService(appConfig: VtsAppConfig) extends Logging {
         Future.failed(
           new RuntimeException(errorString)
         )
-
     }
   }
 
   def getHakukohteet(oid: HakukohderyhmaOid): Future[Seq[HakukohdeOid]] = {
-    logger.info(s"getHakukohteet with oid: $oid")
     fetch(appConfig.ophUrlProperties.url("hakukohderyhmapalvelu.hakukohteet", oid)).flatMap {
       case response if response.getStatusCode.equals(200) => Future.successful(parse(response.getResponseBody).values.asInstanceOf[Seq[String]].map(s => HakukohdeOid(s)))
       case failure =>
@@ -87,7 +86,6 @@ class HakukohderyhmaService(appConfig: VtsAppConfig) extends Logging {
     val requestBuilder = new RequestBuilder()
       .setMethod("GET")
       .setUrl(url)
-    logger.info(s"Hakukohderyhmapalvelu fetch for oid: $url")
     val request = requestBuilder.build()
     val future: CompletableFuture[Response] = client.execute(request)
     toScala(future)

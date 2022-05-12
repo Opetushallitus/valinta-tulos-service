@@ -19,25 +19,28 @@ class OrganizationHierarchyAuthorizer(appConfig: VtsAppConfig, hakukohderyhmaSer
 
   import scala.collection.JavaConverters._
 
-  private def getAuthorizedHakukohderyhmaoids(session: Session): Set[HakukohderyhmaOid] = {
-    session.roles.filter(role => role.toString contains "APP_KOUTA_HAKUKOHDE_").filter(role => role.toString.exists(_.isDigit)).map(role => {
-      HakukohderyhmaOid(role.toString.split("_").last.dropRight(1))
-    })
+  private def getAuthorizedHakukohderyhmaOidsFromSession(session: Session): Set[HakukohderyhmaOid] = {
+    val res = {
+    session.roles.filter(role => role.getString.contains("APP_KOUTA_HAKUKOHDE_") && role.getString.contains("1.2.246.562.28."))
+      .map(role => {
+        logger.info(s"Oidstring from role: $role, roleString (${role.getString}): ${role.getOidString}")
+        role.getOidString match {
+          case Some(oid: String) => HakukohderyhmaOid(oid)
+        }
+      })
+    }
+    logger.info(s"Authorized hakukohderyhmaoids for user ${session.personOid} : $res")
+    res
   }
 
   private def isAuthorizedByHakukohderyhmat(session: Session, hakukohdeOid: HakukohdeOid): Boolean = {
-    logger.info(s"isAuthorizedByHakukohderyhmat for hakukohde: $hakukohdeOid, roles: ${session.roles.toString()}")
-    val hakukohdeOids: Set[HakukohdeOid] = getAuthorizedHakukohderyhmaoids(session) match {
-      case Seq() => Set()
-      case o =>
-
-        Await.result(
-          Future.sequence(o.map(oid => hakukohderyhmaService.getHakukohteet(oid))
-          ), Duration(10, TimeUnit.SECONDS)).flatten
+    logger.info(s"isAuthorizedByHakukohderyhmat, session:${session.roles}")
+    val hakukohdeOids: Set[HakukohdeOid] = getAuthorizedHakukohderyhmaOidsFromSession(session) match {
+      case s: Set[HakukohderyhmaOid] if s.isEmpty => Set()
+      case oids => Await.result(
+        Future.sequence(oids.map(oid => hakukohderyhmaService.getHakukohteet(oid))
+        ), Duration(10, TimeUnit.SECONDS)).flatten
     }
-
-    logger.info(s"authorized hakukohdeoids $hakukohdeOids")
-    logger.info(s"authorized hakukohdeoids ${hakukohdeOids contains hakukohdeOid}")
     hakukohdeOids contains hakukohdeOid
   }
 
@@ -49,10 +52,6 @@ class OrganizationHierarchyAuthorizer(appConfig: VtsAppConfig, hakukohderyhmaSer
     }
   }
 
-
-
-
-
   def checkAccess(session: Session, organisationOid: String, roles: Set[Role]): Either[Throwable, Unit] = {
     Try(super.checkAccessToTargetOrParentOrganization(session.roles.map(_.s).toList.asJava, organisationOid, roles.map(_.s).toArray[String])) match {
       case Success(_) => Right(())
@@ -62,11 +61,14 @@ class OrganizationHierarchyAuthorizer(appConfig: VtsAppConfig, hakukohderyhmaSer
   }
 
   def checkAccessWithHakukohderyhmat(session: Session, organisationOids: Set[String], roles: Set[Role], hakukohdeOid: HakukohdeOid): Either[Throwable, Unit] = {
+    logger.info(s"checkAccessWithHakukohderyhmat org oids: $organisationOids")
     if (organisationOids.exists(oid => checkAccess(session, oid, roles).isRight)) {
       Right(())
     } else if (isAuthorizedByHakukohderyhmat(session, hakukohdeOid)) {
+      logger.warn(s"User ${session.personOid} had no rights from ordinary checkAccess, checking with hakukohderyhmat")
       Right(())
     } else {
+      logger.warn(s"User ${session.personOid} has none of the roles $roles in none of the organizations $organisationOids")
       Left(new AuthorizationFailedException(s"User ${session.personOid} has none of the roles $roles in none of the organizations $organisationOids"))
     }
   }
