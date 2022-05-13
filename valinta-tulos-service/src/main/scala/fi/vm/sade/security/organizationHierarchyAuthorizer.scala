@@ -1,5 +1,6 @@
 package fi.vm.sade.security
 
+import com.github.blemale.scaffeine.Scaffeine
 import fi.vm.sade.authorization.NotAuthorizedException
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
@@ -18,6 +19,14 @@ class OrganizationHierarchyAuthorizer(appConfig: VtsAppConfig, hakukohderyhmaSer
   new OrganizationOidProvider(appConfig)) with Logging {
 
   import scala.collection.JavaConverters._
+
+//  private lazy val hakukohderyhmaCache = Scaffeine()
+//    .expireAfterWrite(Duration(10, TimeUnit.MINUTES))
+//    .buildAsync[HakukohdeOid, Seq[HakukohderyhmaOid]]()
+
+  private lazy val hakukohdeCache = Scaffeine()
+    .expireAfterWrite(Duration(10, TimeUnit.MINUTES))
+    .buildAsync[HakukohderyhmaOid, Seq[HakukohdeOid]]()
 
   private def getAuthorizedHakukohderyhmaOidsFromSession(session: Session): Set[HakukohderyhmaOid] = {
     val res = {
@@ -38,7 +47,7 @@ class OrganizationHierarchyAuthorizer(appConfig: VtsAppConfig, hakukohderyhmaSer
     val hakukohdeOids: Set[HakukohdeOid] = getAuthorizedHakukohderyhmaOidsFromSession(session) match {
       case s: Set[HakukohderyhmaOid] if s.isEmpty => Set()
       case oids => Await.result(
-        Future.sequence(oids.map(oid => hakukohderyhmaService.getHakukohteet(oid))
+        Future.sequence(oids.map(oid => getHakukohteet(oid))
         ), Duration(10, TimeUnit.SECONDS)).flatten
     }
     hakukohdeOids contains hakukohdeOid
@@ -72,6 +81,14 @@ class OrganizationHierarchyAuthorizer(appConfig: VtsAppConfig, hakukohderyhmaSer
       Left(new AuthorizationFailedException(s"User ${session.personOid} has none of the roles $roles in none of the organizations $organisationOids"))
     }
   }
+
+  def getHakukohteet(oid: HakukohderyhmaOid): Future[Seq[HakukohdeOid]] = {
+    hakukohdeCache.getFuture(oid, hakukohderyhmaService.getHakukohteet)
+  }
+
+//  def getHakukohderyhmat(oid: HakukohdeOid): Future[Seq[HakukohderyhmaOid]] = {
+//    hakukohderyhmaCache.getFuture(oid, hakukohderyhmaService.getHakukohderyhmat)
+//  }
 }
 
 class OrganizationOidProvider(appConfig: VtsAppConfig) extends fi.vm.sade.authorization.OrganizationOidProvider(

@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice.hakukohderyhmat
 
+import com.github.blemale.scaffeine.Scaffeine
 import fi.vm.sade.javautils.nio.cas.{CasClient, CasClientBuilder}
 import fi.vm.sade.security.ScalaCasConfig
 import fi.vm.sade.utils.slf4j.Logging
@@ -16,27 +17,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
-//trait HakukohderyhmaService {
-//  def getHakukohderyhmat(oid: HakukohdeOid): Future[Seq[HakukohderyhmaOid]]
-//  def getHakukohteet(oid: HakukohderyhmaOid): Future[Seq[HakukohdeOid]]
-//}
-//
-//object HakukohderyhmaService {
-//  def apply(appConfig: VtsAppConfig) = new CachedHakukohderyhmaService(appConfig)
-//}
-//
-//class CachedHakukohderyhmaService(appConfig: VtsAppConfig, hakukohderyhmaService: HakukohderyhmaService) extends HakukohderyhmaService {
-//private val hakukohderyhmatMemo = TTLOptionalMemoize.memoize[HakukohdeOid](hakukohderyhmaService.getHakukohderyhmat(), Duration(1, TimeUnit.HOURS).toSeconds, appConfig.settings.estimatedMaxActiveHakus)
-//  private val hakukohdeCache: HakukohdeOid => Either[Throwable, Hakukohde] =
-//    TTLOptionalMemoize.memoize(
-//      hakuService.getHakukohde,
-//      lifetimeSeconds = config.settings.ataruHakemusEnricherHakukohdeCacheTtl.toSeconds,
-//      maxSize = config.settings.ataruHakemusEnricherHakukohdeCacheMaxSize)
-//
-//
-//}
 
 class HakukohderyhmaService(appConfig: VtsAppConfig) extends Logging {
+
   protected val callerId: String = appConfig.settings.callerId
   protected val casUrl: String = appConfig.ophUrlProperties.url("cas.url")
   protected val casUsername: String = appConfig.settings.securitySettings.casUsername
@@ -83,6 +66,7 @@ class HakukohderyhmaService(appConfig: VtsAppConfig) extends Logging {
   }
 
   protected def fetch(url: String): Future[Response] = {
+    logger.info(s"Fetching from hakukohderyhmapalvelu: $url")
     val requestBuilder = new RequestBuilder()
       .setMethod("GET")
       .setUrl(url)
@@ -90,4 +74,12 @@ class HakukohderyhmaService(appConfig: VtsAppConfig) extends Logging {
     val future: CompletableFuture[Response] = client.execute(request)
     toScala(future)
   }
+
+//  def getHakukohteet(oid: HakukohderyhmaOid): Future[Seq[HakukohdeOid]] = {
+//    hakukohdeCache.getFuture(oid, getHakukohteet)
+//  }
+//
+//  def getHakukohderyhmat(oid: HakukohdeOid): Future[Seq[HakukohderyhmaOid]] = {
+//    hakukohderyhmaCache.getFuture(oid, getHakukohderyhmat)
+//  }
 }

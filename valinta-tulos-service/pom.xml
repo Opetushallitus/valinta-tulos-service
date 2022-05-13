@@ -152,6 +152,11 @@
             <version>${guava.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.github.blemale</groupId>
+            <artifactId>scaffeine_2.11</artifactId>
+            <version>${scaffeine.version}</version>
+        </dependency>
+        <dependency>
             <groupId>fi.vm.sade</groupId>
             <artifactId>scala-json_2.11</artifactId>
         </dependency>
