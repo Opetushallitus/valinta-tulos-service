@@ -1,22 +1,17 @@
 package fi.vm.sade.valintatulosservice.hakukohderyhmat
 
-import com.github.blemale.scaffeine.Scaffeine
 import fi.vm.sade.javautils.nio.cas.{CasClient, CasClientBuilder}
 import fi.vm.sade.security.ScalaCasConfig
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
-import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, HakukohderyhmaOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, HakukohderyhmaOid}
 import org.asynchttpclient.{RequestBuilder, Response}
 import org.json4s.jackson.JsonMethods._
 
-import java.util.concurrent.{CompletableFuture, TimeUnit}
+import java.util.concurrent.{CompletableFuture}
 import scala.compat.java8.FutureConverters.toScala
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.duration.Duration
-
 
 class HakukohderyhmaService(appConfig: VtsAppConfig) extends Logging {
 
@@ -66,7 +61,6 @@ class HakukohderyhmaService(appConfig: VtsAppConfig) extends Logging {
   }
 
   protected def fetch(url: String): Future[Response] = {
-    logger.info(s"Fetching from hakukohderyhmapalvelu: $url")
     val requestBuilder = new RequestBuilder()
       .setMethod("GET")
       .setUrl(url)
@@ -74,12 +68,4 @@ class HakukohderyhmaService(appConfig: VtsAppConfig) extends Logging {
     val future: CompletableFuture[Response] = client.execute(request)
     toScala(future)
   }
-
-//  def getHakukohteet(oid: HakukohderyhmaOid): Future[Seq[HakukohdeOid]] = {
-//    hakukohdeCache.getFuture(oid, getHakukohteet)
-//  }
-//
-//  def getHakukohderyhmat(oid: HakukohdeOid): Future[Seq[HakukohderyhmaOid]] = {
-//    hakukohderyhmaCache.getFuture(oid, getHakukohderyhmat)
-//  }
 }
