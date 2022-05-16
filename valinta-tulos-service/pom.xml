@@ -32,6 +32,17 @@
                 <artifactId>scala-cas_2.11</artifactId>
                 <version>${scala-cas_2.11.version}</version>
             </dependency>
+            <dependency>
+                <groupId>fi.vm.sade.java-utils</groupId>
+                <artifactId>java-cas</artifactId>
+                <version>1.0.7-SNAPSHOT</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-simple</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -123,6 +134,12 @@
             <groupId>fi.vm.sade.sijoittelu</groupId>
             <artifactId>sijoittelu-tulos-service</artifactId>
             <version>${sijoittelu.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.sun.xml.messaging.saaj</groupId>
+                    <artifactId>saaj-impl</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>fi.vm.sade.sijoittelu</groupId>
@@ -133,6 +150,11 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.blemale</groupId>
+            <artifactId>scaffeine_2.11</artifactId>
+            <version>${scaffeine.version}</version>
         </dependency>
         <dependency>
             <groupId>fi.vm.sade</groupId>
@@ -174,6 +196,12 @@
             <groupId>com.typesafe.slick</groupId>
             <artifactId>slick_2.11</artifactId>
             <version>${slick_2.11.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.reactivestreams</groupId>
+                    <artifactId>reactive-streams</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>
@@ -371,6 +399,30 @@
                     <artifactId>logback-classic</artifactId>
                     <groupId>ch.qos.logback</groupId>
                 </exclusion>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty-buffer</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty-transport</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty-codec-socks</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty-codec</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty-codec-http</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty-common</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -414,6 +466,7 @@
                     <args>
                         <arg>-Xmax-classfile-name</arg>
                         <arg>140</arg>
+                        <arg>-nobootcp</arg>
                     </args>
                     <recompileMode>incremental</recompileMode>
                 </configuration>
@@ -427,7 +480,7 @@
                         <exclude>**/*Spec.java</exclude>
                         <exclude>**/*Test.java</exclude>
                     </includes>
-                    <argLine>-Xms512M -Xmx1G -XX:MaxPermSize=512M -DJAVA8_HOME=${env.JAVA8_HOME}</argLine>
+                    <argLine>-Xms512M -Xmx1G -XX:MaxPermSize=512M -DJAVA11_HOME=${env.JAVA11_HOME} </argLine>
                     <systemProperties>
                         <valintatulos.profile>it</valintatulos.profile>
                     </systemProperties>

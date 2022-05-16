@@ -1,9 +1,5 @@
 package fi.vm.sade.valintatulosservice.local
 
-import java.net.InetAddress
-import java.time.Instant
-import java.util.{Date, UUID}
-
 import fi.vm.sade.auditlog._
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
 import fi.vm.sade.valintatulosservice._
@@ -12,7 +8,6 @@ import fi.vm.sade.valintatulosservice.mock.RunBlockingMock
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.junit.runner.RunWith
 import org.specs2.matcher.MustThrownExpectations
@@ -22,6 +17,10 @@ import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.Scope
 import slick.dbio.DBIO
+
+import java.net.InetAddress
+import java.time.Instant
+import java.util.{Date, UUID}
 
 @RunWith(classOf[JUnitRunner])
 class SijoitteluServiceSpec extends Specification with MockitoMatchers with MockitoStubs {
@@ -36,7 +35,7 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
   val sessionId = UUID.randomUUID()
   val auditInfo = AuditInfo((sessionId, session), InetAddress.getLocalHost, "user-agent")
   trait Authorized { this: SijoitteluServiceMocks =>
-    authorizer.checkAccess(any[Session], any[Set[String]], any[Set[Role]]) returns Right(())
+    authorizer.checkAccessWithHakukohderyhmat(any[Session], any[Set[String]], any[Set[Role]], any[HakukohdeOid]) returns Right(())
   }
 
   "SijoitteluService" in {
@@ -110,7 +109,7 @@ class SijoitteluServiceSpec extends Specification with MockitoMatchers with Mock
       organisaatioRyhmaOids = Set(organisaatioRyhmaOid)))
 
     val authorizer = mock[OrganizationHierarchyAuthorizer]
-    authorizer.checkAccess(session, Set(tarjoajaOid, organisaatioRyhmaOid), Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)) returns Right(())
+    authorizer.checkAccessWithHakukohderyhmat(session, Set(tarjoajaOid, organisaatioRyhmaOid), Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD), hakukohdeOid) returns Right(())
 
     val sijoitteluRepository = mock[ValintarekisteriDb]
     mockRunBlocking(sijoitteluRepository)

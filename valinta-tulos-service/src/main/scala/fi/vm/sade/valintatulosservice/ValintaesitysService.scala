@@ -33,14 +33,14 @@ class ValintaesitysService(hakuService: HakuService,
   private def authorizeGet(hakukohdeOid: HakukohdeOid, session: Session): Unit = {
     (for {
       tarjoajaOids <- hakuService.getHakukohde(hakukohdeOid).right.map(_.organisaatioOiditAuktorisointiin).right
-      _ <- authorizer.checkAccess(session, tarjoajaOids, Set (Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).right
+      _ <- authorizer.checkAccessWithHakukohderyhmat(session, tarjoajaOids, Set (Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD), hakukohdeOid).right
     } yield ()).fold(throw _, x => x)
   }
 
   private def authorizeValintaesityksenHyvaksyminen(valintaesitys: Valintaesitys, session: Session): DBIO[Valintaesitys] = {
     (for {
       tarjoajaOids <- hakuService.getHakukohde(valintaesitys.hakukohdeOid).right.map(_.organisaatioOiditAuktorisointiin).right
-      _ <- authorizer.checkAccess(session, tarjoajaOids, Set (Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).right
+      _ <- authorizer.checkAccessWithHakukohderyhmat(session, tarjoajaOids, Set (Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD), valintaesitys.hakukohdeOid).right
     } yield valintaesitys).fold(DBIO.failed, DBIO.successful)
   }
 

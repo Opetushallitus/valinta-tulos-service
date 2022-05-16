@@ -1,9 +1,5 @@
 package fi.vm.sade.valintatulosservice
 
-import java.time.format.DateTimeFormatter
-import java.time.{Instant, ZoneId, ZonedDateTime}
-import java.util.concurrent.{Executors, TimeUnit}
-
 import com.google.gson.GsonBuilder
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
 import fi.vm.sade.sijoittelu.tulos.dto.HakukohdeDTO
@@ -13,11 +9,12 @@ import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{Hyvaksymiskirje, SessionRepository, Valintaesitys}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import org.scalatra.swagger.Swagger
 import org.scalatra.{NotFound, Ok}
-import org.scalatra.swagger.{Swagger, SwaggerEngine}
 
-import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
+import java.util.concurrent.{Executors, TimeUnit}
 import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 
 class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
                               valintaesitysService: ValintaesitysService,
@@ -43,8 +40,8 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     val hakukohde = hakuService.getHakukohde(hakukohdeOid).fold(throw _, h => h)
 
-    authorizer.checkAccess(ai.session._2, hakukohde.organisaatioOiditAuktorisointiin,
-      Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)).fold(throw _, x => x)
+    authorizer.checkAccessWithHakukohderyhmat(ai.session._2, hakukohde.organisaatioOiditAuktorisointiin,
+      Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD), hakukohdeOid).fold(throw _, x => x)
     try {
       val futureSijoittelunTulokset: Future[HakukohdeDTO] = Future { sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session, ai) }
       val futureLukuvuosimaksut: Future[Seq[Lukuvuosimaksu]] = Future { lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, ai) }

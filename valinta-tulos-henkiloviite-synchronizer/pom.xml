@@ -165,6 +165,7 @@
                     <args>
                         <arg>-Xmax-classfile-name</arg>
                         <arg>140</arg>
+                        <arg>-nobootcp</arg>
                     </args>
                 </configuration>
             </plugin>

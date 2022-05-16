@@ -8,6 +8,7 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.{Dev, IT, VtsAppConfig
 import fi.vm.sade.valintatulosservice.config.{EmailerRegistry, StubbedExternalDeps, VtsAppConfig}
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusRepository, HakuAppRepository}
+import fi.vm.sade.valintatulosservice.hakukohderyhmat.HakukohderyhmaService
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetailsService
 import fi.vm.sade.valintatulosservice.kela.{KelaService, VtsKelaAuthenticationClient}
 import fi.vm.sade.valintatulosservice.koodisto.KoodistoService
@@ -95,8 +96,9 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val streamingValintatulosService = new StreamingValintatulosService(valintatulosService, valintarekisteriDb, hakijaDTOClient)(appConfig)
     lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, valintatulosService, valintarekisteriDb, cachedOhjausparametritService, sijoittelutulosService, hakemusRepository, valintarekisteriDb)
     lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService, valintarekisteriDb, valintarekisteriDb)
+    lazy val hakukohderyhmaService = new HakukohderyhmaService(appConfig)
 
-    lazy val authorizer = new OrganizationHierarchyAuthorizer(appConfig)
+    lazy val authorizer = new OrganizationHierarchyAuthorizer(appConfig, hakukohderyhmaService)
     lazy val yhdenPaikanSaannos = new YhdenPaikanSaannos(hakuService, valintarekisteriDb)
     lazy val valinnantulosService = new ValinnantulosService(
         valintarekisteriDb,

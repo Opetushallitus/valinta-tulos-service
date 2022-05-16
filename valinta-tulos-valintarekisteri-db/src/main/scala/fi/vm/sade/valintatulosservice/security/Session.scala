@@ -1,6 +1,16 @@
 package fi.vm.sade.valintatulosservice.security
 
-case class Role(s: String)
+case class Role(s: String) {
+  def getString: String = s
+
+  def roleHasOid: Boolean = {
+    s.exists(_.isDigit)
+  }
+
+  def getOidString: Option[String] = {
+    if (roleHasOid) Some(s.split("_").last) else None
+  }
+}
 
 object Role {
   val KELA_READ = Role("APP_VALINTATULOSSERVICE_KELA_READ")

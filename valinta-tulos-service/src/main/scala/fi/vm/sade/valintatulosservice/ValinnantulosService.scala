@@ -124,7 +124,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
       Role.ATARU_KEVYT_VALINTA_CRUD)
     tuloksetJaHakukohteet.foreach(t => {
       val orgOids: Set[String] = t._2.organisaatioOiditAuktorisointiin
-      authorizer.checkAccess(auditInfo.session._2, orgOids, roles).fold(throw _, x => x)
+      authorizer.checkAccessWithHakukohderyhmat(auditInfo.session._2, orgOids, roles, t._2.oid).fold(throw _, x => x)
     })
     audit.log(auditInfo.user, ValinnantuloksenLuku,
       new Target.Builder().setField("hakemusOids", hakemusOids.toString).build(),
@@ -186,7 +186,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
       hakukohde <- hakuService.getHakukohde(hakukohdeOid).right
       haku <- hakuService.getHaku(hakukohde.hakuOid).right
       erillishaku <- isErillishaku(valintatapajonoOid, haku, hakukohdeOid).right
-      _ <- authorizer.checkAccess(auditInfo.session._2, hakukohde.organisaatioOiditAuktorisointiin, Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD) ++ (if (erillishaku) { Set(Role.ATARU_KEVYT_VALINTA_CRUD) } else { Set.empty })).right
+      _ <- authorizer.checkAccessWithHakukohderyhmat(auditInfo.session._2, hakukohde.organisaatioOiditAuktorisointiin, Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD) ++ (if (erillishaku) { Set(Role.ATARU_KEVYT_VALINTA_CRUD) } else { Set.empty }), hakukohdeOid).right
       ohjausparametrit <- ohjausparametritService.ohjausparametrit(hakukohde.hakuOid).right
     } yield {
       val strategy = if (erillishaku) {
