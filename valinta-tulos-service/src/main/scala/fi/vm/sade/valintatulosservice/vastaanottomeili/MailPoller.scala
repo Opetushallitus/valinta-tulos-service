@@ -70,7 +70,12 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
     val msg = "Looking for haku oids for hakukohde to process"
     logger.info(s"Start: $msg")
     timed(msg, 1000) {
-      hakuService.getHakukohde(hakukohdeOid).right.get.hakuOid
+      hakuService.getHakukohde(hakukohdeOid) match {
+        case Right(hakukohde) => hakukohde.hakuOid
+        case Left(e) =>
+          logger.error(s"Couldn't fetch hakukohde $hakukohdeOid for mailing!", e)
+          throw e
+      }
     }
 
   }
