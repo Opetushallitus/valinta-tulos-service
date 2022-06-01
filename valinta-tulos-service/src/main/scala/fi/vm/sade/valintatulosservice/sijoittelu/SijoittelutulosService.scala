@@ -285,6 +285,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
         case None => Option(Timer.timed("hakemukset", 1000)(raportointiService.kevytHakemukset(sijoittelu)))
       };
       hakijat <- {
+        logger.info(s"Luodaan hakijat haulle $hakuOid ja hakukohteelle $hakukohdeOid")
         val hyvaksyttyJaJulkaistuDates = valintarekisteriDb.findHyvaksyttyJulkaistuDatesForHaku(hakuOid)
         Option(hakijaDtot.map(h => hakemuksenKevytYhteenveto(h, ohjausparametrit, hyvaksyttyJaJulkaistuDates.getOrElse(h.getHakijaOid, Map()),
           fetchVastaanottos(HakemusOid(h.getHakemusOid), Option(h.getHakijaOid)))))

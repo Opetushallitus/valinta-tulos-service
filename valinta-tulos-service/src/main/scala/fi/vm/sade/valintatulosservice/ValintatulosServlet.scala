@@ -109,8 +109,10 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     tags swaggerGroupTag)
   get("/:hakuOid", operation(getHakemuksetSwagger)) {
     val hakuOidString = params("hakuOid")
+    val info = hakuOidString + "_" + System.currentTimeMillis()
+    logger.info(s"getHakemuksetForHaku: $hakuOidString")
     auditLog(Map("hakuOid" -> hakuOidString), HakemuksenLuku)
-    serveStreamingResults({ valintatulosService.hakemustenTulosByHaku(HakuOid(hakuOidString), false) })
+    serveStreamingResults({ valintatulosService.hakemustenTulosByHaku(HakuOid(hakuOidString), false) }, info)
   }
 
   get("/:hakuOid/hakukohde/:hakukohdeOid", operation(getHakukohteenHakemuksetSwagger)) {
@@ -353,13 +355,13 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     writer.print("]")
   }
 
-  private def serveStreamingResults(fetchData: => Option[Iterator[Hakemuksentulos]]): Any = {
+  private def serveStreamingResults(fetchData: => Option[Iterator[Hakemuksentulos]], info: String = ""): Any = {
     hakemustenTulosHakuLock.execute[Any](() => {
       fetchData match {
         case Some(tulos) => JsonStreamWriter.writeJsonStream(tulos, response.writer)
         case _ => NotFound("error" -> "Not found")
       }
-    }) match {
+    }, info) match {
       case Right(ok) => ok
       case Left(message) =>
         logger.error(message)

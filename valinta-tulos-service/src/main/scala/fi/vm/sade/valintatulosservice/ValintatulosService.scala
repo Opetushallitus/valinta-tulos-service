@@ -214,6 +214,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
             .groupBy(_._1).mapValues(i => i.map(t => (t._2, t._3)))
         }
       } yield {
+        logger.info(s"Esitiedot haettu, haetaan tulokset haulle $hakuOid")
         fetchTulokset(
           haku,
           () => hakemusRepository.findHakemukset(hakuOid),
@@ -495,6 +496,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         })
       ).map(t => (t.hakemusOid, t)).toMap
     }
+    logger.info(s"sijoitteluTulokset haettu haulle ${haku.oid}, muodostetaan Hakemuksentulokset")
     hakemukset.map(hakemus => {
       val sijoitteluTulos = sijoitteluTulokset.getOrElse(hakemus.oid, HakemuksenSijoitteluntulos(hakemus.oid, None, Nil))
       val henkiloOid = sijoitteluTulos.hakijaOid.getOrElse(hakemus.henkiloOid)
