@@ -220,7 +220,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
           () => hakemusRepository.findHakemukset(hakuOid),
           personOidFromHakemusResolver => sijoittelutulosService.hakemustenTulos(hakuOid, None, personOidFromHakemusResolver, haunVastaanotot = haunVastaanotot),
           Some(new PersonOidFromHakemusResolver {
-            private lazy val hakijaOidByHakemusOid = timed("personOids from hakemus", 1000)(hakemusRepository.findPersonOids(hakuOid))
+            private lazy val hakijaOidByHakemusOid = timed("personOids from hakemus", 1000)(hakemusRepository.findPersonOidsAtaruFirst(hakuOid))
             override def findBy(hakemusOid: HakemusOid): Option[String] = hakijaOidByHakemusOid.get(hakemusOid)
           }),
           checkJulkaisuAikaParametri,

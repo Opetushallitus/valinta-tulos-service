@@ -55,6 +55,15 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
       })
   }
 
+  def findPersonOidsAtaruFirst(hakuOid: HakuOid): Map[HakemusOid, String] = {
+    personOidsFromAtaru(WithHakuOid(hakuOid, None)) match {
+      case oids if oids.nonEmpty =>
+        logger.info(s"Saatiin henkilöOidit atarusta haulle $hakuOid")
+        oids
+      case _ => hakuAppRepository.findPersonOids(hakuOid)
+    }
+  }
+
   def findPersonOids(hakuOid: HakuOid): Map[HakemusOid, String] = {
     hakuAppRepository.findPersonOids(hakuOid) match {
       case oids if oids.nonEmpty => oids
@@ -72,7 +81,9 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
   def findHakemukset(hakuOid: HakuOid): Iterator[Hakemus] = {
     try {
       hakemuksetFromAtaru(WithHakuOid(hakuOid, None)) match {
-        case hakemukset if hakemukset.hasNext => hakemukset
+        case hakemukset if hakemukset.hasNext =>
+          logger.info(s"Saatiin hakemukset atarusta haulle $hakuOid")
+          hakemukset
         case _ => hakuAppRepository.findHakemukset(hakuOid)
       }
     } catch {
