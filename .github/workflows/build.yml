@@ -42,7 +42,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          mvn -B clean package
+          mvn -B clean install
       - uses: actions/cache@v2
         id: restore-build
         with:
