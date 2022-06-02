@@ -55,6 +55,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     context.setInitParameter(org.scalatra.EnvironmentKey, "production")
     context.setInitParameter(org.scalatra.CorsSupport.EnableKey, "false")
     if (appConfig.isInstanceOf[IT] || appConfig.isInstanceOf[Dev]) {
+      logger.info("Mounting FixtureServlet")
       context.mount(new FixtureServlet(valintarekisteriDb), "/util")
       SijoitteluFixtures(valintarekisteriDb).importFixture("hyvaksytty-kesken-julkaistavissa.json")
     }
