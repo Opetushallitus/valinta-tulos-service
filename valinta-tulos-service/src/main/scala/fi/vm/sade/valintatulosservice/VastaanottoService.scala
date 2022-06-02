@@ -153,7 +153,14 @@ class VastaanottoService(hakuService: HakuService,
     findHakutoive(vastaanotettavaHakemusOid, hakukohdeOid).fold(throw _, x => x)
   }
 
+
+  //TODO CACHE KEHIIN!??
   def vastaanotaHakijana(vastaanottoDto: HakijanVastaanottoDto): Either[Throwable, Unit] = {
+    if (vastaanottoDto.action.toString.equals("VastaanotaSitovastiPeruAlemmat")) {
+      logger.info(s"VASTAANOTA HAKIJANA ACTION ${vastaanottoDto.action.toString}")
+      throw new RuntimeException("VASTAANOTA SITOVASTI JA PERU ALEMMAT SUCCESS!")
+    }
+
     val HakijanVastaanottoDto(hakemusOid, hakukohdeOid, action) = vastaanottoDto
     for {
       hakemus <- hakemusRepository.findHakemus(hakemusOid).right
