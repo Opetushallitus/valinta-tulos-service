@@ -3,7 +3,6 @@ package fi.vm.sade.valintatulosservice
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.concurrent.TimeUnit
-
 import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.domain._
@@ -153,12 +152,27 @@ class VastaanottoService(hakuService: HakuService,
     findHakutoive(vastaanotettavaHakemusOid, hakukohdeOid).fold(throw _, x => x)
   }
 
+  private def peruKaikkiVastaanotot(vastaanottoDto: HakijanVastaanottoDto): Unit = {
+    hakemusRepository.findHakemus(vastaanottoDto.hakemusOid) match {
+      case Right(hakemus) =>
+        hakukohdeRecordService.getHakukohdeRecords(hakemus.toiveet.map(_.oid)) match {
+          case Right(hakukohteet) =>
+            aiemmatVastaanotot(hakukohteet, hakemus.henkiloOid).map(vastaanotot => {
+              vastaanotot.map(vastaanotto => {
+                hakijaVastaanottoRepository.storeAction(HakijanVastaanotto(hakemus.henkiloOid, hakemus.oid, vastaanotto._1, HakijanVastaanottoAction("Peru")))
+              })
+            })
+        }
+    }
+  }
+
 
   //TODO CACHE KEHIIN!??
   def vastaanotaHakijana(vastaanottoDto: HakijanVastaanottoDto): Either[Throwable, Unit] = {
-    if (vastaanottoDto.action.toString.equals("VastaanotaSitovastiPeruAlemmat")) {
+    if (vastaanottoDto.action.equals(VastaanotaSitovastiPeruAlemmat)) {
       logger.info(s"VASTAANOTA HAKIJANA ACTION ${vastaanottoDto.action.toString}")
-      throw new RuntimeException("VASTAANOTA SITOVASTI JA PERU ALEMMAT SUCCESS!")
+      peruKaikkiVastaanotot(vastaanottoDto)
+     throw new RuntimeException("VASTAANOTA SITOVASTI JA PERU ALEMMAT SUCCESS!")
     }
 
     val HakijanVastaanottoDto(hakemusOid, hakukohdeOid, action) = vastaanottoDto
