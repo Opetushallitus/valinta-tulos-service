@@ -48,7 +48,7 @@ case class VtsApplicationSettings(config: Config) extends ApplicationSettings(co
   val hakuResultsLoadingLockSeconds: Int = withConfig(_.getInt("valinta-tulos-service.streaming.lock.timeout.seconds"))
   val hakuResultsLoadingLockQueueLimit: Int = withConfig(_.getInt("valinta-tulos-service.streaming.lock.queue.limit"))
   val ataruHakemusEnricherHakukohdeCacheTtl: Duration = Duration(withConfig(_.getInt("valinta-tulos-service.ataru-hakemus-enricher-hakukohde-cache.ttl.seconds")), TimeUnit.SECONDS)
-  val ataruHakemusEnricherHakukohdeCacheMaxSize: Long = 3000
+  val ataruHakemusEnricherHakukohdeCacheMaxSize: Long = 6000
 
   val emailerCronString: String = withConfig(_.getString("valinta-tulos-service.emailer.cron.string"))
 }

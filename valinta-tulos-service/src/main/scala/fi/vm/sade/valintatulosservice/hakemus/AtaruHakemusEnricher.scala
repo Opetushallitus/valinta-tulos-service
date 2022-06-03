@@ -1,17 +1,20 @@
 package fi.vm.sade.valintatulosservice.hakemus
 
 import fi.vm.sade.utils.Timer.timed
-import fi.vm.sade.valintatulosservice.MonadHelper
+import fi.vm.sade.valintatulosservice.{MonadHelper}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain.{Hakemus, Hakutoive, Henkilotiedot}
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.{Henkilo, OppijanumerorekisteriService}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakijaOid, HakukohdeOid}
+import org.slf4j.LoggerFactory
 
 class AtaruHakemusEnricher(config: VtsAppConfig,
                            hakuService: HakuService,
                            oppijanumerorekisteriService: OppijanumerorekisteriService) {
+
+  private val logger = LoggerFactory.getLogger(classOf[AtaruHakemusEnricher])
 
   private val hakukohdeCache: HakukohdeOid => Either[Throwable, Hakukohde] =
     TTLOptionalMemoize.memoize(
@@ -20,6 +23,7 @@ class AtaruHakemusEnricher(config: VtsAppConfig,
       maxSize = config.settings.ataruHakemusEnricherHakukohdeCacheMaxSize)
 
   def apply(ataruHakemukset: List[AtaruHakemus]): Either[Throwable, List[Hakemus]] = {
+    logger.info(s"Enriching ${ataruHakemukset.size} ataruhakemukses")
     for {
       henkilot <- timed("Ataru: Henkilöiden tietojen hakeminen ONR:stä", 1000)(henkilot(ataruHakemukset).right)
       hakutoiveet <- timed("Ataru: Hakukohdeiden tietojen hakeminen Kouta-internalista", 1000)(hakutoiveet(ataruHakemukset).right)
