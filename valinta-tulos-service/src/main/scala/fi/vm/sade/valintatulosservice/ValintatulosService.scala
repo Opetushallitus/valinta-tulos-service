@@ -220,8 +220,12 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
           () => hakemusRepository.findHakemukset(hakuOid),
           personOidFromHakemusResolver => sijoittelutulosService.hakemustenTulos(hakuOid, None, personOidFromHakemusResolver, haunVastaanotot = haunVastaanotot),
           Some(new PersonOidFromHakemusResolver {
-            private lazy val hakijaOidByHakemusOid = timed("personOids from hakemus", 1000)(hakemusRepository.findPersonOidsAtaruFirst(hakuOid))
-            override def findBy(hakemusOid: HakemusOid): Option[String] = hakijaOidByHakemusOid.get(hakemusOid)
+            private val haku = hakuOid
+            private val hakijaOidByHakemusOid = timed("personOids from hakemus", 1000)(hakemusRepository.findPersonOidsAtaruFirst(hakuOid))
+            override def findBy(hakemusOid: HakemusOid): Option[String] = {
+              logger.info(s"Findby hakemus $hakemusOid for haku $haku")
+              hakijaOidByHakemusOid.get(hakemusOid)
+            }
           }),
           checkJulkaisuAikaParametri,
           vastaanottoKaudella = vastaanototKausilla.get,
@@ -498,6 +502,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
     logger.info(s"sijoitteluTulokset haettu haulle ${haku.oid}, muodostetaan Hakemuksentulokset")
     hakemukset.map(hakemus => {
+      logger.info(s"handling haun ${haku.oid} hakemus ${hakemus.oid}")
       val sijoitteluTulos = sijoitteluTulokset.getOrElse(hakemus.oid, HakemuksenSijoitteluntulos(hakemus.oid, None, Nil))
       val henkiloOid = sijoitteluTulos.hakijaOid.getOrElse(hakemus.henkiloOid)
       val hakemuksenVastaanototKaudella: HakukohdeOid => Option[(Kausi, Boolean)] = hakukohdeOid =>
