@@ -549,6 +549,11 @@ class KoutaHakuService(config: AppConfig,
     lifetimeSeconds = Duration(1, HOURS).toSeconds,
     maxSize = config.settings.koutaHakuServiceSingleEntityCacheSize)
 
+  private val organisaatioSingleCache = TTLOptionalMemoize.memoize[String, Organisaatio](
+    f = oid => getOrganisaatio(oid).left.flatMap(_ => getOrganisaatio(oid)),
+    lifetimeSeconds = Duration(1, HOURS).toSeconds,
+    maxSize = config.settings.koutaHakuServiceSingleEntityCacheSize)
+
 
   private val client = CasAuthenticatingClient(
     casClient = casClient,
@@ -567,6 +572,8 @@ class KoutaHakuService(config: AppConfig,
   def getKoutaHakukohdeCached(oid: HakukohdeOid): Either[Throwable, KoutaHakukohde] = hakukohdeSingleCache(oid)
   def getKoutaKoulutusCached(oid: String): Either[Throwable, KoutaKoulutus] = koulutusSingleCache(oid)
   def getKoutaToteutusCached(oid: String): Either[Throwable, KoutaToteutus] = toteutusSingleCache(oid)
+
+  def getOrganisaatioCached(oid: String): Either[Throwable, Organisaatio] = organisaatioSingleCache(oid)
 
   def getHaku(oid: HakuOid): Either[Throwable, Haku] = {
     for {
@@ -598,7 +605,7 @@ class KoutaHakuService(config: AppConfig,
       koutaHakukohde <- getKoutaHakukohdeCached(oid).right
       koutaHaku <- getKoutaHakuCached(HakuOid(koutaHakukohde.hakuOid)).right
       koutaToteutus <- getKoutaToteutusCached(koutaHakukohde.toteutusOid).right
-      tarjoajaorganisaatio <- getOrganisaatio(koutaHakukohde.tarjoaja).right
+      tarjoajaorganisaatio <- getOrganisaatioCached(koutaHakukohde.tarjoaja).right
     } yield koutaHakukohde.toHakukohdeMigri(koutaHaku, koutaToteutus, tarjoajaorganisaatio)
   }
 
@@ -616,7 +623,7 @@ class KoutaHakuService(config: AppConfig,
       koutaHaku <- Timer.timed(s"Kouta-internal get haku: ${koutaHakukohde.hakuOid}", 1000)(if (koutaHakukohde.kaytetaanHaunAlkamiskautta) { getKoutaHakuCached(HakuOid(koutaHakukohde.hakuOid)).right.map(Some(_)) } else { Right(None) }).right
       koutaToteutus <- Timer.timed(s"Kouta-internal get toteutus: ${koutaHakukohde.toteutusOid} ", 1000)(getKoutaToteutusCached(koutaHakukohde.toteutusOid).right)
       koutaKoulutus <- Timer.timed(s"Kouta-internal get koulutus: ${koutaToteutus.koulutusOid} ", 1000)(getKoutaKoulutusCached(koutaToteutus.koulutusOid).right)
-      tarjoajaorganisaatio <- Timer.timed(s"Kouta-internal get organisaatio: ${koutaHakukohde.tarjoaja} ", 1000)(getOrganisaatio(koutaHakukohde.tarjoaja).right)
+      tarjoajaorganisaatio <- Timer.timed(s"Kouta-internal get organisaatio: ${koutaHakukohde.tarjoaja} ", 1000)(getOrganisaatioCached(koutaHakukohde.tarjoaja).right)
     } yield koutaHakukohde.toHakukohde(koutaHaku, koutaKoulutus, koutaToteutus, tarjoajaorganisaatio)
   }
 
@@ -666,6 +673,7 @@ class KoutaHakuService(config: AppConfig,
   }
 
   private def getOrganisaatio(oid: String): Either[Throwable, Organisaatio] = {
+    logger.info(s"ACTUALLY GET ORGANISAATIO SINGLE $oid")
     organisaatioService.hae(oid).right
       .flatMap(_.find(_.oid == oid).toRight(new IllegalArgumentException(s"Could not find organisation $oid")))
   }
