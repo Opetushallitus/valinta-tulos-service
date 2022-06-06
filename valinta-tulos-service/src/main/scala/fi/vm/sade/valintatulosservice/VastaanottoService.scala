@@ -155,13 +155,11 @@ class VastaanottoService(hakuService: HakuService,
   private def peruKaikkiVastaanotot(vastaanottoDto: HakijanVastaanottoDto): Unit = {
     hakemusRepository.findHakemus(vastaanottoDto.hakemusOid) match {
       case Right(hakemus) =>
-        hakukohdeRecordService.getHakukohdeRecords(hakemus.toiveet.map(_.oid)) match {
-          case Right(hakukohteet) =>
-            aiemmatVastaanotot(hakukohteet, hakemus.henkiloOid).map(vastaanotot => {
-              logger.info("HENKILÖN VASTAANOTOT" + vastaanotot.toString())
-              vastaanotot.map(vastaanotto => {
-                hakijaVastaanottoRepository.storeAction(HakijanVastaanotto(hakemus.henkiloOid, hakemus.oid, vastaanotto._1, HakijanVastaanottoAction("Peru")))
-              })
+        hakijaVastaanottoRepository.runBlocking(hakijaVastaanottoRepository.findHenkilonVastaanototHaussa(hakemus.henkiloOid, hakemus.hakuOid)) match {
+          case vastaanotot =>
+            vastaanotot.map(vastaanotto => {
+              logger.info("DELETING VASTAANOTTO: " + vastaanotto.toString())
+              hakijaVastaanottoRepository.storeAction(HakijanVastaanotto(hakemus.henkiloOid, hakemus.oid, vastaanotto.hakukohdeOid, HakijanVastaanottoAction("Peru")))
             })
         }
     }
@@ -175,6 +173,8 @@ class VastaanottoService(hakuService: HakuService,
     if (vastaanottoDto.action.equals(VastaanotaSitovastiPeruAlemmat)) {
       logger.info(s"VASTAANOTA HAKIJANA ACTION ${vastaanottoDto.action.toString}")
       peruKaikkiVastaanotot(vastaanottoDto)
+
+      //TODO: TÄÄ PAREMMAKSI.
       action = VastaanotaSitovasti
       logger.info("ACTION ENNEN PERUMISEN JÄLKEEN: " + action.toString)
       //     throw new RuntimeException("VASTAANOTA SITOVASTI JA PERU ALEMMAT SUCCESS!")
