@@ -158,6 +158,7 @@ class VastaanottoService(hakuService: HakuService,
         hakukohdeRecordService.getHakukohdeRecords(hakemus.toiveet.map(_.oid)) match {
           case Right(hakukohteet) =>
             aiemmatVastaanotot(hakukohteet, hakemus.henkiloOid).map(vastaanotot => {
+              logger.info("HENKILÖN VASTAANOTOT" + vastaanotot.toString())
               vastaanotot.map(vastaanotto => {
                 hakijaVastaanottoRepository.storeAction(HakijanVastaanotto(hakemus.henkiloOid, hakemus.oid, vastaanotto._1, HakijanVastaanottoAction("Peru")))
               })
@@ -169,13 +170,17 @@ class VastaanottoService(hakuService: HakuService,
 
   //TODO CACHE KEHIIN!??
   def vastaanotaHakijana(vastaanottoDto: HakijanVastaanottoDto): Either[Throwable, Unit] = {
+    var HakijanVastaanottoDto(hakemusOid, hakukohdeOid, action) = vastaanottoDto
+    logger.info("ACTION ENNEN PERUMISTA: " + action.toString)
     if (vastaanottoDto.action.equals(VastaanotaSitovastiPeruAlemmat)) {
       logger.info(s"VASTAANOTA HAKIJANA ACTION ${vastaanottoDto.action.toString}")
       peruKaikkiVastaanotot(vastaanottoDto)
-     throw new RuntimeException("VASTAANOTA SITOVASTI JA PERU ALEMMAT SUCCESS!")
+      action = VastaanotaSitovasti
+      logger.info("ACTION ENNEN PERUMISEN JÄLKEEN: " + action.toString)
+      //     throw new RuntimeException("VASTAANOTA SITOVASTI JA PERU ALEMMAT SUCCESS!")
     }
 
-    val HakijanVastaanottoDto(hakemusOid, hakukohdeOid, action) = vastaanottoDto
+
     for {
       hakemus <- hakemusRepository.findHakemus(hakemusOid).right
       hakukohdes <- hakukohdeRecordService.getHakukohdeRecords(hakemus.toiveet.map(_.oid)).right

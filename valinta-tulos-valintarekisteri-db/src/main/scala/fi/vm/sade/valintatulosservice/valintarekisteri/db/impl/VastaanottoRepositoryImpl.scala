@@ -241,6 +241,7 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
   }
 
   private def kumoaVastaanottotapahtumatAction(vastaanottoEvent: VastaanottoEvent, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
+    logger.info("kumoaVastaanottotapahtumatAction!!!!!! " + vastaanottoEvent)
     val VastaanottoEvent(henkiloOid, _, hakukohdeOid, _, ilmoittaja, selite) = vastaanottoEvent
     val insertDelete =
       sqlu"""insert into deleted_vastaanotot (poistaja, selite) select $ilmoittaja, $selite
