@@ -209,8 +209,16 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
   }
 
   def storeAction(vastaanottoEvent: VastaanottoEvent): DBIO[Unit] = vastaanottoEvent.action match {
-    case Poista => kumoaVastaanottotapahtumatAction(vastaanottoEvent, None)
-    case _ => tallennaVastaanottoTapahtumaAction(vastaanottoEvent, None)
+    case Poista => {
+      kumoaVastaanottotapahtumatAction(vastaanottoEvent, None)
+    }
+    case VastaanotaSitovastiPeruAlemmat => {
+      logger.info("PERUTAAN ALEMMAT" + vastaanottoEvent)
+        kumoaVastaanottotapahtumatAction(HakijanVastaanotto(vastaanottoEvent.henkiloOid, vastaanottoEvent.hakemusOid, vastaanottoEvent.hakukohdeOid, Peru), None)
+    }
+    case _ => {
+      tallennaVastaanottoTapahtumaAction(vastaanottoEvent, None)
+    }
   }
 
   def storeAction(vastaanottoEvent: VastaanottoEvent, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = vastaanottoEvent.action match {
@@ -261,11 +269,18 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
                 and vastaanotot.deleted is null
                 and (${ifUnmodifiedSince}::timestamptz is null
                 or vastaanotot.timestamp < ${ifUnmodifiedSince})"""
+
+    logger.info("insertDelete: " + insertDelete)
+    logger.info("updateVastaanotto: " + updateVastaanotto)
     insertDelete.andThen(updateVastaanotto).flatMap {
-      case 0 =>
+      case 0 => {
+        logger.info("vituix män")
         DBIO.failed(new ConcurrentModificationException(s"Vastaanottoa $vastaanottoEvent ei voitu päivittää koska sitä ei ole tai joku oli muokannut sitä samanaikaisesti (${ifUnmodifiedSince})"))
-      case n =>
-        DBIO.successful (() )
+      }
+      case n => {
+        logger.info("not vituix män")
+        DBIO.successful(())
+      }
     }
   }
 

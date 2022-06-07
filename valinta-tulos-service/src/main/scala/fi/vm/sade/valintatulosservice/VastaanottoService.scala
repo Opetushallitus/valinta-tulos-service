@@ -1,8 +1,5 @@
 package fi.vm.sade.valintatulosservice
 
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.concurrent.TimeUnit
 import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.domain._
@@ -16,6 +13,9 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import slick.dbio.DBIO
 
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
@@ -159,7 +159,7 @@ class VastaanottoService(hakuService: HakuService,
           case vastaanotot =>
             vastaanotot.map(vastaanotto => {
               logger.info("DELETING VASTAANOTTO: " + vastaanotto.toString())
-              hakijaVastaanottoRepository.storeAction(HakijanVastaanotto(hakemus.henkiloOid, hakemus.oid, vastaanotto.hakukohdeOid, HakijanVastaanottoAction("Peru")))
+              hakijaVastaanottoRepository.runBlocking(hakijaVastaanottoRepository.storeAction(HakijanVastaanotto(hakemus.henkiloOid, hakemus.oid, vastaanotto.hakukohdeOid, VastaanotaSitovastiPeruAlemmat)), Duration(10, TimeUnit.SECONDS))
             })
         }
     }
