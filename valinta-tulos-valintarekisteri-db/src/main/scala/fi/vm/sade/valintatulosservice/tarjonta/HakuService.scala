@@ -647,12 +647,10 @@ class KoutaHakuService(config: AppConfig,
   }
 
   private def getKoutaHaku(oid: HakuOid): Either[Throwable, KoutaHaku] = {
-    logger.info(s"ACTUALLY GET HAKU SINGLE $oid")
     fetch[KoutaHaku](config.ophUrlProperties.url("kouta-internal.haku", oid.toString))
   }
 
   private def getKoutaHakukohde(oid: HakukohdeOid): Either[Throwable, KoutaHakukohde] = {
-    logger.info(s"ACTUALLY GET HAKUKOHDE SINGLE $oid")
     fetch[KoutaHakukohde](config.ophUrlProperties.url("kouta-internal.hakukohde", oid.toString))
   }
 
@@ -663,17 +661,14 @@ class KoutaHakuService(config: AppConfig,
   }
 
   private def getKoutaToteutus(oid: String): Either[Throwable, KoutaToteutus] = {
-    logger.info(s"ACTUALLY GET TOTEUTUS SINGLE $oid")
     fetch[KoutaToteutus](config.ophUrlProperties.url("kouta-internal.toteutus", oid))
   }
 
   private def getKoutaKoulutus(oid: String): Either[Throwable, KoutaKoulutus] = {
-    logger.info(s"ACTUALLY GET KOULUTUS SINGLE $oid")
     fetch[KoutaKoulutus](config.ophUrlProperties.url("kouta-internal.koulutus", oid))
   }
 
   private def getOrganisaatio(oid: String): Either[Throwable, Organisaatio] = {
-    logger.info(s"ACTUALLY GET ORGANISAATIO SINGLE $oid")
     organisaatioService.hae(oid).right
       .flatMap(_.find(_.oid == oid).toRight(new IllegalArgumentException(s"Could not find organisation $oid")))
   }

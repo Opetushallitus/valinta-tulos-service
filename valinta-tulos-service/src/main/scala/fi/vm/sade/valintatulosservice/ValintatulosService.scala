@@ -500,14 +500,11 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         })
       ).map(t => (t.hakemusOid, t)).toMap
     }
-    logger.info(s"sijoitteluTulokset haettu haulle ${haku.oid}, muodostetaan Hakemuksentulokset")
     hakemukset.map(hakemus => {
-      logger.info(s"handling haun ${haku.oid} hakemus ${hakemus.oid}")
       val sijoitteluTulos = sijoitteluTulokset.getOrElse(hakemus.oid, HakemuksenSijoitteluntulos(hakemus.oid, None, Nil))
       val henkiloOid = sijoitteluTulos.hakijaOid.getOrElse(hakemus.henkiloOid)
       val hakemuksenVastaanototKaudella: HakukohdeOid => Option[(Kausi, Boolean)] = hakukohdeOid =>
         vastaanottoKaudella(hakukohdeOid).map(a => (a._1, a._2.contains(henkiloOid)))
-      logger.debug("sijoittelunTulos " + sijoitteluTulos.toString)
       julkaistavaTulos(
         sijoitteluTulos,
         haku,
