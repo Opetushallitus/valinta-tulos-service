@@ -55,7 +55,7 @@ class HakemusRepository(hakuAppRepository: HakuAppRepository,
       })
   }
 
-  def findPersonOidsAtaruFirst(hakuOid: HakuOid): Map[HakemusOid, String] = {
+  def findPersonOidsFromAtaruFirst(hakuOid: HakuOid): Map[HakemusOid, String] = {
     personOidsFromAtaru(WithHakuOid(hakuOid, None)) match {
       case oids if oids.nonEmpty =>
         logger.info(s"Saatiin henkilöOidit atarusta haulle $hakuOid")
