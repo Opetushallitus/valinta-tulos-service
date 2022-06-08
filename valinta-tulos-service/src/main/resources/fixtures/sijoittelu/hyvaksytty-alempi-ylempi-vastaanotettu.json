@@ -190,7 +190,7 @@
       "hakijaOid": "1.2.246.562.24.14229104472",
       "hakuOid": "1.2.246.562.5.2013080813081926341928",
       "hakutoive": 1,
-      "tila": "KESKEN",
+      "tila": "VASTAANOTTANUT_SITOVASTI",
       "julkaistavissa": true,
       "ilmoittautumisTila": "EI_TEHTY",
       "logEntries": [
@@ -240,7 +240,7 @@
       "hakijaOid": "1.2.246.562.24.14229104472",
       "hakuOid": "1.2.246.562.5.2013080813081926341928",
       "hakutoive": 2,
-      "tila": "VASTAANOTTANUT_SITOVASTI",
+      "tila": "KESKEN",
       "julkaistavissa": true,
       "ilmoittautumisTila": "EI_TEHTY",
       "logEntries": [
