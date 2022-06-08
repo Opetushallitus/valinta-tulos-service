@@ -1,9 +1,5 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
-import java.time.format.DateTimeFormatter
-import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
-import java.util.{ConcurrentModificationException, Date}
-import java.util.concurrent.TimeUnit
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -12,7 +8,10 @@ import slick.dbio.DBIO
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.TransactionIsolation.Serializable
 
-import scala.compat.Platform.ConcurrentModificationException
+import java.time.format.DateTimeFormatter
+import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
+import java.util.concurrent.TimeUnit
+import java.util.{ConcurrentModificationException, Date}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
@@ -209,16 +208,8 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
   }
 
   def storeAction(vastaanottoEvent: VastaanottoEvent): DBIO[Unit] = vastaanottoEvent.action match {
-    case Poista => {
-      kumoaVastaanottotapahtumatAction(vastaanottoEvent, None)
-    }
-    case VastaanotaSitovastiPeruAlemmat => {
-      logger.info("PERUTAAN ALEMMAT" + vastaanottoEvent)
-        kumoaVastaanottotapahtumatAction(HakijanVastaanotto(vastaanottoEvent.henkiloOid, vastaanottoEvent.hakemusOid, vastaanottoEvent.hakukohdeOid, Peru), None)
-    }
-    case _ => {
-      tallennaVastaanottoTapahtumaAction(vastaanottoEvent, None)
-    }
+    case Poista => kumoaVastaanottotapahtumatAction(vastaanottoEvent, None)
+    case _ => tallennaVastaanottoTapahtumaAction(vastaanottoEvent, None)
   }
 
   def storeAction(vastaanottoEvent: VastaanottoEvent, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = vastaanottoEvent.action match {
@@ -249,7 +240,6 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
   }
 
   private def kumoaVastaanottotapahtumatAction(vastaanottoEvent: VastaanottoEvent, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
-    logger.info("kumoaVastaanottotapahtumatAction!!!!!! " + vastaanottoEvent)
     val VastaanottoEvent(henkiloOid, _, hakukohdeOid, _, ilmoittaja, selite) = vastaanottoEvent
     val insertDelete =
       sqlu"""insert into deleted_vastaanotot (poistaja, selite) select $ilmoittaja, $selite
@@ -269,18 +259,11 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
                 and vastaanotot.deleted is null
                 and (${ifUnmodifiedSince}::timestamptz is null
                 or vastaanotot.timestamp < ${ifUnmodifiedSince})"""
-
-    logger.info("insertDelete: " + insertDelete)
-    logger.info("updateVastaanotto: " + updateVastaanotto)
     insertDelete.andThen(updateVastaanotto).flatMap {
-      case 0 => {
-        logger.info("vituix män")
+      case 0 =>
         DBIO.failed(new ConcurrentModificationException(s"Vastaanottoa $vastaanottoEvent ei voitu päivittää koska sitä ei ole tai joku oli muokannut sitä samanaikaisesti (${ifUnmodifiedSince})"))
-      }
-      case n => {
-        logger.info("not vituix män")
-        DBIO.successful(())
-      }
+      case n =>
+        DBIO.successful (() )
     }
   }
 

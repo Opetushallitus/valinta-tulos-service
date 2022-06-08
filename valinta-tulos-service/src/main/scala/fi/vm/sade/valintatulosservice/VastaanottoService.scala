@@ -152,34 +152,50 @@ class VastaanottoService(hakuService: HakuService,
     findHakutoive(vastaanotettavaHakemusOid, hakukohdeOid).fold(throw _, x => x)
   }
 
-  private def peruKaikkiVastaanotot(vastaanottoDto: HakijanVastaanottoDto): Unit = {
-    hakemusRepository.findHakemus(vastaanottoDto.hakemusOid) match {
-      case Right(hakemus) =>
-        hakijaVastaanottoRepository.runBlocking(hakijaVastaanottoRepository.findHenkilonVastaanototHaussa(hakemus.henkiloOid, hakemus.hakuOid)) match {
-          case vastaanotot =>
-            vastaanotot.map(vastaanotto => {
-              logger.info("DELETING VASTAANOTTO: " + vastaanotto.toString())
-              hakijaVastaanottoRepository.runBlocking(hakijaVastaanottoRepository.storeAction(HakijanVastaanotto(hakemus.henkiloOid, hakemus.oid, vastaanotto.hakukohdeOid, VastaanotaSitovastiPeruAlemmat)), Duration(10, TimeUnit.SECONDS))
-            })
-        }
-    }
+  private def getAlemmatHakutoiveOidit(hakemus: Hakemus, hakukohdeOid: HakukohdeOid): List[HakukohdeOid] = {
+    val hakutoiveOidit: List[HakukohdeOid] = hakemus.toiveet.map(hakutoive => hakutoive.oid)
+    hakutoiveOidit.drop(hakutoiveOidit.indexOf(hakukohdeOid)).drop(1)
   }
 
+  private def getAlemmatVastaanotot(hakemus: Hakemus, vastaanottoDto: HakijanVastaanottoDto): List[VastaanottoRecord] = {
+    getAlemmatHakutoiveOidit(hakemus, vastaanottoDto.hakukohdeOid).flatMap(hakukohdeOid =>
+      hakijaVastaanottoRepository.runBlocking(
+        hakijaVastaanottoRepository.findHenkilonVastaanottoHakukohteeseen(hakemus.henkiloOid, hakukohdeOid), Duration(10, TimeUnit.SECONDS)
+      )
+    )
+  }
 
-  //TODO CACHE KEHIIN!??
-  def vastaanotaHakijana(vastaanottoDto: HakijanVastaanottoDto): Either[Throwable, Unit] = {
-    var HakijanVastaanottoDto(hakemusOid, hakukohdeOid, action) = vastaanottoDto
-    logger.info("ACTION ENNEN PERUMISTA: " + action.toString)
-    if (vastaanottoDto.action.equals(VastaanotaSitovastiPeruAlemmat)) {
-      logger.info(s"VASTAANOTA HAKIJANA ACTION ${vastaanottoDto.action.toString}")
-      peruKaikkiVastaanotot(vastaanottoDto)
-
-      //TODO: TÄÄ PAREMMAKSI.
-      action = VastaanotaSitovasti
-      logger.info("ACTION ENNEN PERUMISEN JÄLKEEN: " + action.toString)
-      //     throw new RuntimeException("VASTAANOTA SITOVASTI JA PERU ALEMMAT SUCCESS!")
+  private def peruAlemmatVastaanotot(vastaanottoDto: HakijanVastaanottoDto): Unit = {
+    val isToisenAsteenHaku = hakukohdeRecordService.getHakukohdeRecord(vastaanottoDto.hakukohdeOid) match {
+      case Right(hakukohdeRecord: HakukohdeRecord) => hakuService.getHaku(hakukohdeRecord.hakuOid) match {
+        case Right(haku) => haku.toinenAste
+        case _ => throw new RuntimeException(s"Unable to find haku from vastaanotto: ${vastaanottoDto.toString}")
+      }
+      case _ => throw new RuntimeException(s"Unable to find hakukohde from vastaanotto: ${vastaanottoDto.toString}")
     }
 
+    if (isToisenAsteenHaku) {
+      hakemusRepository.findHakemus(vastaanottoDto.hakemusOid) match {
+        case Right(hakemus) =>
+          getAlemmatVastaanotot(hakemus, vastaanottoDto).map(vastaanotto => {
+            logger.info(s"Poistetaan hakijan aiempi vastaanotto: ${vastaanotto.toString}")
+            hakijaVastaanottoRepository.storeAction(HakijanVastaanotto(hakemus.henkiloOid, hakemus.oid, vastaanotto.hakukohdeOid, Peru))
+          }
+      )
+        case _ => throw new RuntimeException(s"Unable to find hakemus from vastaanotto: ${vastaanottoDto.toString}")
+      }
+    }
+
+
+  }
+
+  def vastaanotaHakijana(vastaanottoDto: HakijanVastaanottoDto): Either[Throwable, Unit] = {
+    var HakijanVastaanottoDto(hakemusOid, hakukohdeOid, action) = vastaanottoDto
+
+    if (vastaanottoDto.action.equals(VastaanotaSitovastiPeruAlemmat)) {
+      peruAlemmatVastaanotot(vastaanottoDto)
+      action = VastaanotaSitovasti
+    }
 
     for {
       hakemus <- hakemusRepository.findHakemus(hakemusOid).right
