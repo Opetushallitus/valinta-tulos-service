@@ -478,6 +478,26 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
       yhteenveto.hakutoiveet(2).vastaanottotila must_== Vastaanottotila.vastaanottanut
     }
 
+    "vastaanota ylempi kun alempi vastaanotettu -> alempi vastaanotto peruuntunut" in {
+      useFixture("hyvaksytty-ylempi-alempi-vastaanotettu.json", hakuFixture = hakuFixture, hakemusFixtures = List("00000441369-3"))
+      hakemuksenTulos.hakutoiveet(0).valintatila must_== Valintatila.hyväksytty
+      hakemuksenTulos.hakutoiveet(1).valintatila must_== Valintatila.hyväksytty
+      hakemuksenTulos.hakutoiveet(2).valintatila must_== Valintatila.peruuntunut
+      hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.kesken
+      hakemuksenTulos.hakutoiveet(1).vastaanottotila must_== Vastaanottotila.vastaanottanut
+      hakemuksenTulos.hakutoiveet(2).vastaanottotila must_== Vastaanottotila.kesken
+
+      vastaanottoService.vastaanotaHakijana(HakijanVastaanottoDto(HakemusOid(hakemusOid), HakukohdeOid("1.2.246.562.5.72607738902"), VastaanotaSitovastiPeruAlemmat))
+
+      val yhteenveto = hakemuksenTulos
+      yhteenveto.hakutoiveet(0).valintatila must_== Valintatila.hyväksytty
+      yhteenveto.hakutoiveet(1).valintatila must_== Valintatila.perunut
+      yhteenveto.hakutoiveet(2).valintatila must_== Valintatila.peruuntunut
+      yhteenveto.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
+      yhteenveto.hakutoiveet(1).vastaanottotila must_== Vastaanottotila.perunut
+      yhteenveto.hakutoiveet(2).vastaanottotila must_== Vastaanottotila.kesken
+    }
+
     "vastaanota varsinaisessa haussa, kun lisähaussa jo vastaanottanut, onnistuu" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json", List("lisahaku-vastaanottanut.json"), hakuFixture = hakuFixture)
       vastaanota(hakemusOid, "1.2.246.562.5.72607738902", Vastaanottotila.vastaanottanut)
