@@ -214,13 +214,18 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
             .groupBy(_._1).mapValues(i => i.map(t => (t._2, t._3)))
         }
       } yield {
+        logger.info(s"Esitiedot haettu, haetaan tulokset haulle $hakuOid")
         fetchTulokset(
           haku,
           () => hakemusRepository.findHakemukset(hakuOid),
           personOidFromHakemusResolver => sijoittelutulosService.hakemustenTulos(hakuOid, None, personOidFromHakemusResolver, haunVastaanotot = haunVastaanotot),
           Some(new PersonOidFromHakemusResolver {
-            private lazy val hakijaOidByHakemusOid = timed("personOids from hakemus", 1000)(hakemusRepository.findPersonOids(hakuOid))
-            override def findBy(hakemusOid: HakemusOid): Option[String] = hakijaOidByHakemusOid.get(hakemusOid)
+            private val haku = hakuOid
+            private lazy val hakijaOidByHakemusOid = timed("personOids from hakemus", 1000)(hakemusRepository.findPersonOidsFromAtaruFirst(hakuOid))
+            override def findBy(hakemusOid: HakemusOid): Option[String] = {
+              logger.info(s"Findby hakemus $hakemusOid for haku $haku")
+              hakijaOidByHakemusOid.get(hakemusOid)
+            }
           }),
           checkJulkaisuAikaParametri,
           vastaanottoKaudella = vastaanototKausilla.get,
@@ -500,7 +505,6 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       val henkiloOid = sijoitteluTulos.hakijaOid.getOrElse(hakemus.henkiloOid)
       val hakemuksenVastaanototKaudella: HakukohdeOid => Option[(Kausi, Boolean)] = hakukohdeOid =>
         vastaanottoKaudella(hakukohdeOid).map(a => (a._1, a._2.contains(henkiloOid)))
-      logger.debug("sijoittelunTulos " + sijoitteluTulos.toString)
       julkaistavaTulos(
         sijoitteluTulos,
         haku,

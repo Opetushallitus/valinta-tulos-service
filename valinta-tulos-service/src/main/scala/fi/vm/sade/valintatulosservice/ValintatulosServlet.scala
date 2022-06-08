@@ -109,13 +109,10 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     tags swaggerGroupTag)
   get("/:hakuOid", operation(getHakemuksetSwagger)) {
     val hakuOidString = params("hakuOid")
-    if ("1.2.246.562.29.00000000000000005368".equals(hakuOidString)) {
-      logger.warn("OY-3451 - Palautetaan haulle 1.2.246.562.29.00000000000000005368 tyhjä setti tuloksia!")
-      NotFound("error" -> "Not found")
-    } else {
-      auditLog(Map("hakuOid" -> hakuOidString), HakemuksenLuku)
-      serveStreamingResults({ valintatulosService.hakemustenTulosByHaku(HakuOid(hakuOidString), false) })
-    }
+    val info = hakuOidString + "_" + System.currentTimeMillis()
+    logger.info(s"getHakemuksetForHaku: $hakuOidString")
+    auditLog(Map("hakuOid" -> hakuOidString), HakemuksenLuku)
+    serveStreamingResults({ valintatulosService.hakemustenTulosByHaku(HakuOid(hakuOidString), false) }, info)
   }
 
   get("/:hakuOid/hakukohde/:hakukohdeOid", operation(getHakukohteenHakemuksetSwagger)) {
@@ -358,13 +355,13 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     writer.print("]")
   }
 
-  private def serveStreamingResults(fetchData: => Option[Iterator[Hakemuksentulos]]): Any = {
+  private def serveStreamingResults(fetchData: => Option[Iterator[Hakemuksentulos]], info: String = ""): Any = {
     hakemustenTulosHakuLock.execute[Any](() => {
       fetchData match {
         case Some(tulos) => JsonStreamWriter.writeJsonStream(tulos, response.writer)
         case _ => NotFound("error" -> "Not found")
       }
-    }) match {
+    }, info) match {
       case Right(ok) => ok
       case Left(message) =>
         logger.error(message)

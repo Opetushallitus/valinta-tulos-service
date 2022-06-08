@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.organisaatio
 
 import fi.vm.sade.utils.http.DefaultHttpClient
-import fi.vm.sade.valintatulosservice.config.{StubbedExternalDeps, AppConfig}
+import fi.vm.sade.valintatulosservice.config.{AppConfig, StubbedExternalDeps}
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import org.json4s.jackson.JsonMethods._
@@ -9,7 +9,10 @@ import org.json4s.jackson.JsonMethods._
 import scala.util.Try
 import scala.util.control.NonFatal
 import scalaj.http.HttpOptions
+
+import java.util.concurrent.TimeUnit.HOURS
 import scala.collection.JavaConversions._
+import scala.concurrent.duration.Duration
 
 trait OrganisaatioService {
 
@@ -20,10 +23,12 @@ object OrganisaatioService {
   def apply(appConfig: AppConfig): OrganisaatioService = new CachedOrganisaatioService(new RealOrganisaatioService(appConfig))
 }
 class CachedOrganisaatioService(realOrganisaatioService: RealOrganisaatioService) extends OrganisaatioService {
-  //private val cache = TTLOptionalMemoize.memoize[String, Organisaatiot](oid => realOrganisaatioService.hae(oid), 4 * 60 * 60)
+  private val orgCache = TTLOptionalMemoize.memoize[String, Organisaatiot](
+    f = oid => realOrganisaatioService.hae(oid).left.flatMap(_ => realOrganisaatioService.hae(oid)),
+    lifetimeSeconds = Duration(1, HOURS).toSeconds,
+    maxSize = 5000)
 
-  def hae(oid:String) = realOrganisaatioService.hae(oid)
-
+  def hae(oid: String): Either[Throwable, Organisaatiot] = orgCache(oid)
 }
 
 class RealOrganisaatioService(appConfig:AppConfig) extends OrganisaatioService{

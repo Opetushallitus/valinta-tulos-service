@@ -46,6 +46,8 @@ case class Haku(oid: HakuOid,
   val sijoitteluJaPriorisointi = käyttääSijoittelua && käyttääHakutoiveidenPriorisointia
 }
 
+
+
 case class Hakukohde(oid: HakukohdeOid,
                      hakuOid: HakuOid,
                      tarjoajaOids: Set[String],
@@ -526,6 +528,33 @@ class KoutaHakuService(config: AppConfig,
                        organisaatioService: OrganisaatioService,
                        koodistoService: KoodistoService) extends HakuService with Logging {
   private implicit val jsonFormats: Formats = DefaultFormats
+
+  private val hakuSingleCache = TTLOptionalMemoize.memoize[HakuOid, KoutaHaku](
+    f = oid => getKoutaHaku(oid).left.flatMap(_ => getKoutaHaku(oid)),
+    lifetimeSeconds = Duration(1, HOURS).toSeconds,
+    maxSize = config.settings.koutaHakuServiceSingleEntityCacheSize)
+
+  private val hakukohdeSingleCache = TTLOptionalMemoize.memoize[HakukohdeOid, KoutaHakukohde](
+    f = oid => getKoutaHakukohde(oid).left.flatMap(_ => getKoutaHakukohde(oid)),
+    lifetimeSeconds = Duration(1, HOURS).toSeconds,
+    maxSize = config.settings.koutaHakuServiceSingleEntityCacheSize)
+
+  private val koulutusSingleCache = TTLOptionalMemoize.memoize[String, KoutaKoulutus](
+    f = oid => getKoutaKoulutus(oid).left.flatMap(_ => getKoutaKoulutus(oid)),
+    lifetimeSeconds = Duration(1, HOURS).toSeconds,
+    maxSize = config.settings.koutaHakuServiceSingleEntityCacheSize)
+
+  private val toteutusSingleCache = TTLOptionalMemoize.memoize[String, KoutaToteutus](
+    f = oid => getKoutaToteutus(oid).left.flatMap(_ => getKoutaToteutus(oid)),
+    lifetimeSeconds = Duration(1, HOURS).toSeconds,
+    maxSize = config.settings.koutaHakuServiceSingleEntityCacheSize)
+
+  private val organisaatioSingleCache = TTLOptionalMemoize.memoize[String, Organisaatio](
+    f = oid => getOrganisaatio(oid).left.flatMap(_ => getOrganisaatio(oid)),
+    lifetimeSeconds = Duration(1, HOURS).toSeconds,
+    maxSize = config.settings.koutaHakuServiceSingleEntityCacheSize)
+
+
   private val client = CasAuthenticatingClient(
     casClient = casClient,
     casParams = CasParams(
@@ -539,6 +568,13 @@ class KoutaHakuService(config: AppConfig,
     sessionCookieName = "session"
   )
 
+  def getKoutaHakuCached(oid: HakuOid): Either[Throwable, KoutaHaku] = hakuSingleCache(oid)
+  def getKoutaHakukohdeCached(oid: HakukohdeOid): Either[Throwable, KoutaHakukohde] = hakukohdeSingleCache(oid)
+  def getKoutaKoulutusCached(oid: String): Either[Throwable, KoutaKoulutus] = koulutusSingleCache(oid)
+  def getKoutaToteutusCached(oid: String): Either[Throwable, KoutaToteutus] = toteutusSingleCache(oid)
+
+  def getOrganisaatioCached(oid: String): Either[Throwable, Organisaatio] = organisaatioSingleCache(oid)
+
   def getHaku(oid: HakuOid): Either[Throwable, Haku] = {
     for {
       o <- ohjausparametritService.ohjausparametrit(oid).right
@@ -549,14 +585,14 @@ class KoutaHakuService(config: AppConfig,
 
   def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]] = {
     for {
-      koutaHakukohde <- getKoutaHakukohde(oid).right
+      koutaHakukohde <- getKoutaHakukohdeCached(oid).right
       koutaHaku <- (if (koutaHakukohde.kaytetaanHaunAlkamiskautta) {
-        getKoutaHaku(HakuOid(koutaHakukohde.hakuOid)).right.map(Some(_))
+        getKoutaHakuCached(HakuOid(koutaHakukohde.hakuOid)).right.map(Some(_))
       } else {
         Right(None)
       }).right
-      koutaToteutus <- getKoutaToteutus(koutaHakukohde.toteutusOid).right
-      koutaKoulutus <- getKoutaKoulutus(koutaToteutus.koulutusOid).right
+      koutaToteutus <- getKoutaToteutusCached(koutaHakukohde.toteutusOid).right
+      koutaKoulutus <- getKoutaKoulutusCached(koutaToteutus.koulutusOid).right
       koulutuskoodi <- getKoulutusKoodit(koutaKoulutus.koulutusKoodiUrit).right
       opintojenlaajuuskoodi <- koutaKoulutus.metadata.flatMap(_.opintojenLaajuusKoodiUri).fold[Either[Throwable, Option[Koodi]]](Right(None))(koodistoService.getKoodi(_).right.map(Some(_))).right
       tarjoajaorganisaatiohierarkia <- organisaatioService.hae(koutaHakukohde.tarjoaja).right
@@ -566,10 +602,10 @@ class KoutaHakuService(config: AppConfig,
 
   def getHakukohdeMigri(oid: HakukohdeOid): Either[Throwable, HakukohdeMigri] = {
     for {
-       koutaHakukohde <- getKoutaHakukohde(oid).right
-      koutaHaku <- getKoutaHaku(HakuOid(koutaHakukohde.hakuOid)).right
-      koutaToteutus <- getKoutaToteutus(koutaHakukohde.toteutusOid).right
-      tarjoajaorganisaatio <- getOrganisaatio(koutaHakukohde.tarjoaja).right
+      koutaHakukohde <- getKoutaHakukohdeCached(oid).right
+      koutaHaku <- getKoutaHakuCached(HakuOid(koutaHakukohde.hakuOid)).right
+      koutaToteutus <- getKoutaToteutusCached(koutaHakukohde.toteutusOid).right
+      tarjoajaorganisaatio <- getOrganisaatioCached(koutaHakukohde.tarjoaja).right
     } yield koutaHakukohde.toHakukohdeMigri(koutaHaku, koutaToteutus, tarjoajaorganisaatio)
   }
 
@@ -581,12 +617,13 @@ class KoutaHakuService(config: AppConfig,
   }
 
   def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde] = {
+    logger.info(s"Get hakukohde, using cached singles $oid")
     for {
-      koutaHakukohde <- Timer.timed("Kouta-internal get hakukohde: ", 1000)(getKoutaHakukohde(oid).right)
-      koutaHaku <- Timer.timed("Kouta-internal get haku: ", 1000)(if (koutaHakukohde.kaytetaanHaunAlkamiskautta) { getKoutaHaku(HakuOid(koutaHakukohde.hakuOid)).right.map(Some(_)) } else { Right(None) }).right
-      koutaToteutus <- Timer.timed("Kouta-internal get toteutus: ", 1000)(getKoutaToteutus(koutaHakukohde.toteutusOid).right)
-      koutaKoulutus <- Timer.timed("Kouta-internal get koulutus: ", 1000)(getKoutaKoulutus(koutaToteutus.koulutusOid).right)
-      tarjoajaorganisaatio <- Timer.timed("Kouta-internal get organisaatio: ", 1000)(getOrganisaatio(koutaHakukohde.tarjoaja).right)
+      koutaHakukohde <- Timer.timed(s"Kouta-internal get hakukohde: $oid", 1000)(getKoutaHakukohdeCached(oid).right)
+      koutaHaku <- Timer.timed(s"Kouta-internal get haku: ${koutaHakukohde.hakuOid}", 1000)(if (koutaHakukohde.kaytetaanHaunAlkamiskautta) { getKoutaHakuCached(HakuOid(koutaHakukohde.hakuOid)).right.map(Some(_)) } else { Right(None) }).right
+      koutaToteutus <- Timer.timed(s"Kouta-internal get toteutus: ${koutaHakukohde.toteutusOid} ", 1000)(getKoutaToteutusCached(koutaHakukohde.toteutusOid).right)
+      koutaKoulutus <- Timer.timed(s"Kouta-internal get koulutus: ${koutaToteutus.koulutusOid} ", 1000)(getKoutaKoulutusCached(koutaToteutus.koulutusOid).right)
+      tarjoajaorganisaatio <- Timer.timed(s"Kouta-internal get organisaatio: ${koutaHakukohde.tarjoaja} ", 1000)(getOrganisaatioCached(koutaHakukohde.tarjoaja).right)
     } yield koutaHakukohde.toHakukohde(koutaHaku, koutaKoulutus, koutaToteutus, tarjoajaorganisaatio)
   }
 

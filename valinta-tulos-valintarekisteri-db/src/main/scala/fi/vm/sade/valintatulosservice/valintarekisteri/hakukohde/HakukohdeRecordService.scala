@@ -15,12 +15,13 @@ class HakukohdeRecordService(hakuService: HakuService, hakukohdeRepository: Haku
   }
 
   def getHakukohdeRecords(hakuOid: HakuOid, oids: Set[HakukohdeOid]): Either[Throwable, List[HakukohdeRecord]] = {
+    logger.info(s"getHakukohdeRecords for haku $hakuOid")
     for {
       hakukohteet <- (Try(hakukohdeRepository.findHaunHakukohteet(hakuOid).filter(h => oids.contains(h.oid))) match {
         case Success(hs) => Right(hs)
         case Failure(t) => Left(t)
       }).right
-      missingHakukohteet <- MonadHelper.sequence(for { oid <- oids.diff(hakukohteet.map(_.oid)) } yield fetchAndStoreHakukohdeDetails(oid)).right
+      missingHakukohteet <- MonadHelper.sequence(for { oid <- oids.diff(hakukohteet.map(_.oid)) } yield fetchAndStoreHakukohdeDetails(oid, Some(hakuOid))).right
     } yield (hakukohteet ++ missingHakukohteet).toList
   }
 
@@ -65,10 +66,12 @@ class HakukohdeRecordService(hakuService: HakuService, hakukohdeRepository: Haku
     }
   }
 
-  private def fetchAndStoreHakukohdeDetails(oid: HakukohdeOid): Either[Throwable, HakukohdeRecord] = {
+  private def fetchAndStoreHakukohdeDetails(oid: HakukohdeOid, hakuOid: Option[HakuOid] = None): Either[Throwable, HakukohdeRecord] = {
+    logger.info(s"fetchAndStoreHakukohdeDetails for $oid in haku $hakuOid")
     val fresh = fetchHakukohdeDetails(oid)
     fresh.left.foreach(t => logger.error(s"Error fetching hakukohde ${oid} details. Cannot store it to the database.", t))
     fresh.right.foreach(hakukohdeRepository.storeHakukohde)
+    logger.info(s"done: fetchAndStoreHakukohdeDetails for $oid in haku $hakuOid")
     fresh
   }
 
