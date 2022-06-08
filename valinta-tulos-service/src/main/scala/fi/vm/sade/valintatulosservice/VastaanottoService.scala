@@ -179,7 +179,10 @@ class VastaanottoService(hakuService: HakuService,
         case Right(hakemus) =>
           getAlemmatVastaanotot(hakemus, vastaanottoDto).map(vastaanotto => {
             logger.info(s"Poistetaan hakijan aiempi vastaanotto: ${vastaanotto.toString}")
-            hakijaVastaanottoRepository.storeAction(HakijanVastaanotto(hakemus.henkiloOid, hakemus.oid, vastaanotto.hakukohdeOid, Peru))
+            //TODO: tsekataan et vastaanotto on VASTAANOTTO, ei peruttu
+            hakijaVastaanottoRepository.runBlocking(
+              hakijaVastaanottoRepository.storeAction(HakijanVastaanotto(hakemus.henkiloOid, hakemus.oid, vastaanotto.hakukohdeOid, Peru)), Duration(10, TimeUnit.SECONDS)
+            )
           }
       )
         case _ => throw new RuntimeException(s"Unable to find hakemus from vastaanotto: ${vastaanottoDto.toString}")
