@@ -458,6 +458,26 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
           expectFailure{ilmoittaudu(hakemusOid, "1.2.246.562.5.16303028779", LasnaKokoLukuvuosi, muokkaaja, selite)}
         }
       }
+
+      "vastaanota ylempi kun alempi vastaanotettu -> tilojen ei tule muuttua, kyseessä korkeakouluhaku" in {
+        useFixture("hyvaksytty-ylempi-alempi-vastaanotettu.json", hakuFixture = hakuFixture, hakemusFixtures = List("00000441369-3"))
+        hakemuksenTulos.hakutoiveet(0).valintatila must_== Valintatila.peruuntunut
+        hakemuksenTulos.hakutoiveet(1).valintatila must_== Valintatila.hyväksytty
+        hakemuksenTulos.hakutoiveet(2).valintatila must_== Valintatila.peruuntunut
+        hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.kesken
+        hakemuksenTulos.hakutoiveet(1).vastaanottotila must_== Vastaanottotila.vastaanottanut
+        hakemuksenTulos.hakutoiveet(2).vastaanottotila must_== Vastaanottotila.kesken
+
+        vastaanottoService.vastaanotaHakijana(HakijanVastaanottoDto(HakemusOid(hakemusOid), HakukohdeOid("1.2.246.562.5.72607738902"), VastaanotaSitovastiPeruAlemmat))
+
+        val yhteenveto = hakemuksenTulos
+        yhteenveto.hakutoiveet(0).valintatila must_== Valintatila.peruuntunut
+        yhteenveto.hakutoiveet(1).valintatila must_== Valintatila.hyväksytty
+        yhteenveto.hakutoiveet(2).valintatila must_== Valintatila.peruuntunut
+        yhteenveto.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.kesken
+        yhteenveto.hakutoiveet(1).vastaanottotila must_== Vastaanottotila.vastaanottanut
+        yhteenveto.hakutoiveet(2).vastaanottotila must_== Vastaanottotila.kesken
+      }
     }
   }
 
