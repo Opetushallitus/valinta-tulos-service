@@ -177,7 +177,7 @@ class VastaanottoService(hakuService: HakuService,
     if (isToisenAsteenHaku) {
       hakemusRepository.findHakemus(vastaanottoDto.hakemusOid) match {
         case Right(hakemus) =>
-          getAlemmatVastaanotot(hakemus, vastaanottoDto).map(vastaanotto => {
+          getAlemmatVastaanotot(hakemus, vastaanottoDto).foreach(vastaanotto => {
             hakijaVastaanottoRepository.runBlocking(
               hakijaVastaanottoRepository.storeAction(HakijanVastaanotto(hakemus.henkiloOid, hakemus.oid, vastaanotto.hakukohdeOid, Peru)), Duration(10, TimeUnit.SECONDS)
             )
