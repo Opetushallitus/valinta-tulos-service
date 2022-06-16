@@ -1,9 +1,5 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
-import java.time.format.DateTimeFormatter
-import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
-import java.util.{ConcurrentModificationException, Date}
-import java.util.concurrent.TimeUnit
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -12,7 +8,10 @@ import slick.dbio.DBIO
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.TransactionIsolation.Serializable
 
-import scala.compat.Platform.ConcurrentModificationException
+import java.time.format.DateTimeFormatter
+import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
+import java.util.concurrent.TimeUnit
+import java.util.{ConcurrentModificationException, Date}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal

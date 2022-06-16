@@ -49,6 +49,9 @@ case object Peru extends VirkailijanVastaanottoAction with HakijanVastaanottoAct
 case object VastaanotaSitovasti extends VirkailijanVastaanottoAction with HakijanVastaanottoAction {
   val valintatuloksenTila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI
 }
+case object VastaanotaSitovastiPeruAlemmat extends VirkailijanVastaanottoAction with HakijanVastaanottoAction {
+  val valintatuloksenTila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI
+}
 case object VastaanotaEhdollisesti extends VirkailijanVastaanottoAction with HakijanVastaanottoAction {
   val valintatuloksenTila = ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT
 }
@@ -66,6 +69,7 @@ object HakijanVastaanottoAction {
   private val valueMapping = Map(
     "Peru" -> Peru,
     "VastaanotaSitovasti" -> VastaanotaSitovasti,
+    "VastaanotaSitovastiPeruAlemmat" -> VastaanotaSitovastiPeruAlemmat,
     "VastaanotaEhdollisesti" -> VastaanotaEhdollisesti)
   val values: List[String] = valueMapping.keysIterator.toList
   def apply(value: String): HakijanVastaanottoAction = valueMapping.getOrElse(value, {

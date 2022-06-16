@@ -1,9 +1,5 @@
 package fi.vm.sade.valintatulosservice
 
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.concurrent.TimeUnit
-
 import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.domain._
@@ -17,6 +13,9 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import slick.dbio.DBIO
 
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
@@ -153,8 +152,49 @@ class VastaanottoService(hakuService: HakuService,
     findHakutoive(vastaanotettavaHakemusOid, hakukohdeOid).fold(throw _, x => x)
   }
 
+  private def getAlemmatHakutoiveOidit(hakemus: Hakemus, hakukohdeOid: HakukohdeOid): List[HakukohdeOid] = {
+    val hakutoiveOidit: List[HakukohdeOid] = hakemus.toiveet.map(hakutoive => hakutoive.oid)
+    hakutoiveOidit.drop(hakutoiveOidit.indexOf(hakukohdeOid)).drop(1)
+  }
+
+  private def getAlemmatVastaanotot(hakemus: Hakemus, vastaanottoDto: HakijanVastaanottoDto): List[VastaanottoRecord] = {
+    getAlemmatHakutoiveOidit(hakemus, vastaanottoDto.hakukohdeOid).flatMap(hakukohdeOid =>
+      hakijaVastaanottoRepository.runBlocking(
+        hakijaVastaanottoRepository.findHenkilonVastaanottoHakukohteeseen(hakemus.henkiloOid, hakukohdeOid), Duration(10, TimeUnit.SECONDS)
+      )
+    ).filter(vastaanotto => vastaanotto.action.equals(VastaanotaSitovasti))
+  }
+
+  private def peruAlemmatVastaanotot(vastaanottoDto: HakijanVastaanottoDto): Unit = {
+    val isToisenAsteenHaku = hakukohdeRecordService.getHakukohdeRecord(vastaanottoDto.hakukohdeOid) match {
+      case Right(hakukohdeRecord: HakukohdeRecord) => hakuService.getHaku(hakukohdeRecord.hakuOid) match {
+        case Right(haku) => haku.toinenAste
+        case _ => throw new RuntimeException(s"Unable to find haku from vastaanotto: ${vastaanottoDto.toString}")
+      }
+      case _ => throw new RuntimeException(s"Unable to find hakukohde from vastaanotto: ${vastaanottoDto.toString}")
+    }
+
+    if (isToisenAsteenHaku) {
+      hakemusRepository.findHakemus(vastaanottoDto.hakemusOid) match {
+        case Right(hakemus) =>
+          getAlemmatVastaanotot(hakemus, vastaanottoDto).foreach(vastaanotto => {
+            hakijaVastaanottoRepository.runBlocking(
+              hakijaVastaanottoRepository.storeAction(HakijanVastaanotto(hakemus.henkiloOid, hakemus.oid, vastaanotto.hakukohdeOid, Peru)), Duration(10, TimeUnit.SECONDS)
+            )
+          })
+        case _ => throw new RuntimeException(s"Unable to find hakemus from vastaanotto: ${vastaanottoDto.toString}")
+      }
+    }
+  }
+
   def vastaanotaHakijana(vastaanottoDto: HakijanVastaanottoDto): Either[Throwable, Unit] = {
-    val HakijanVastaanottoDto(hakemusOid, hakukohdeOid, action) = vastaanottoDto
+    var HakijanVastaanottoDto(hakemusOid, hakukohdeOid, action) = vastaanottoDto
+
+    if (vastaanottoDto.action.equals(VastaanotaSitovastiPeruAlemmat)) {
+      peruAlemmatVastaanotot(vastaanottoDto)
+      action = VastaanotaSitovasti
+    }
+
     for {
       hakemus <- hakemusRepository.findHakemus(hakemusOid).right
       hakukohdes <- hakukohdeRecordService.getHakukohdeRecords(hakemus.toiveet.map(_.oid)).right
