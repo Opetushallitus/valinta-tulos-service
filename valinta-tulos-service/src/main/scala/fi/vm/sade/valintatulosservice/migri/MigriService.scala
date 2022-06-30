@@ -44,7 +44,7 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
     tulokset match {
       case tulokset: Set[ValinnantulosWithTilahistoria] =>
         tulokset
-          .map { tulos =>
+          .foreach { tulos =>
             getHakukohdeMigri(tulos.valinnantulos.hakukohdeOid) match {
               case Some(hakukohde: HakukohdeMigri) =>
                 hakemusRepository.findHakemus(tulos.valinnantulos.hakemusOid).fold(e => {
@@ -75,7 +75,6 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
                     koulutuksenAlkamiskausi = hakukohde.koulutuksenAlkamiskausi,
                     koulutuksenAlkamisvuosi = hakukohde.koulutuksenAlkamisvuosi)
                 })
-              case _ =>
             }
           }
     }
