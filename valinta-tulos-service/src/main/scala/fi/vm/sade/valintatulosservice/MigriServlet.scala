@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
+import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.migri.{MigriHakija, MigriService}
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
@@ -9,7 +10,9 @@ import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.{BadRequest, NotFound, Ok}
 
-class MigriServlet(audit: Audit, migriService: MigriService, val sessionRepository: SessionRepository)(implicit val swagger: Swagger) extends VtsServletBase with VtsSwaggerBase with CasAuthenticatedServlet {
+import scala.util.{Failure, Success, Try}
+
+class MigriServlet(audit: Audit, migriService: MigriService, val sessionRepository: SessionRepository)(implicit val swagger: Swagger) extends VtsServletBase with VtsSwaggerBase with CasAuthenticatedServlet with Logging {
   protected val applicationDescription = "Migri REST API"
 
   val migriHakemuksetSwagger: OperationBuilder = apiOperation[List[MigriHakija]]("getMigriHakemukset")
@@ -30,9 +33,13 @@ class MigriServlet(audit: Audit, migriService: MigriService, val sessionReposito
         .setField("hakijaOids", hakijaOids.toString())
       audit.log(auditInfo.user, HakemuksenLuku, builder.build(), new Changes.Builder().build())
 
-      migriService.getHakemuksetByHakijaOids(hakijaOids, auditInfo) match {
-        case hakijat if hakijat.nonEmpty => Ok(hakijat)
-        case _ => NotFound(body = Map("error" -> "Not Found"))
+      Try(migriService.getHakemuksetByHakijaOids(hakijaOids, auditInfo)) match {
+        case Success(hakijat) =>
+          if(hakijat.nonEmpty) {
+            Ok(hakijat)
+          } else NotFound(body = Map("error" -> "Not Found"))
+        case Failure(e) =>
+          logger.error("Failed to fetch Migri-hakijat", e)
       }
     }
   }
