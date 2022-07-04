@@ -110,31 +110,36 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
   }
 
   def getValinnantuloksetForHakemukset(hakemusOids: Set[HakemusOid], auditInfo: AuditInfo): Set[ValinnantulosWithTilahistoria] = {
-    val tulokset: Seq[Valinnantulos] = valinnantulosRepository
-      .getValinnantuloksetForHakemukses(hakemusOids)
-    val hakukohteet = Timer.timed(s"${hakemusOids.size} hakemuksen tuloksiin liittyvien hakukohteiden haku") {
-      hakuService.getHakukohdes(tulokset.map(_.hakukohdeOid).distinct).fold(throw _, x => x) }
-    val tuloksetJaHakukohteet = tulokset.map(t => (t, hakukohteet.find(hk => hk.oid == t.hakukohdeOid)
-      .getOrElse(throw new Exception(s"Hakukohdetta ${t.hakukohdeOid} ei löytynyt"))))
-    val roles = Set(
-      Role.SIJOITTELU_READ,
-      Role.SIJOITTELU_READ_UPDATE,
-      Role.SIJOITTELU_CRUD,
-      Role.ATARU_KEVYT_VALINTA_READ,
-      Role.ATARU_KEVYT_VALINTA_CRUD)
-    tuloksetJaHakukohteet.foreach(t => {
-      val orgOids: Set[String] = t._2.organisaatioOiditAuktorisointiin
-      authorizer.checkAccessWithHakukohderyhmat(auditInfo.session._2, orgOids, roles, t._2.oid).fold(throw _, x => x)
-    })
-    audit.log(auditInfo.user, ValinnantuloksenLuku,
-      new Target.Builder().setField("hakemusOids", hakemusOids.toString).build(),
-      new Changes.Builder().build()
-    )
-    val yps_ja_ilman = tuloksetJaHakukohteet.toSet.span(t => t._2.yhdenPaikanSaanto.voimassa)
-    logger.info(s"${tulokset.size} valinnantuloksesta ${yps_ja_ilman._1.size} kohdistuu yhden paikan sääntöä käyttäviin hakukohteisiin ja ${yps_ja_ilman._2.size} muihin.")
-    val tuloksetIlmanHistoriatietoa = yhdenPaikanSaannos.getYpsTuloksetForManyHakemukses(yps_ja_ilman._1).fold(throw _, x => x) ++ yps_ja_ilman._2.map(t => t._1)
-    val tilaHistoriat = valinnantulosRepository.getHakemustenTilahistoriat(hakemusOids).groupBy(r => (r.hakemusOid, r.valintatapajonoOid))
-    tuloksetIlmanHistoriatietoa.map(tulos => ValinnantulosWithTilahistoria(tulos, tilaHistoriat.getOrElse((tulos.hakemusOid, tulos.valintatapajonoOid), List.empty)))
+    if (hakemusOids.isEmpty) {
+      Set.empty
+    } else {
+      val tulokset: Seq[Valinnantulos] = valinnantulosRepository
+        .getValinnantuloksetForHakemukses(hakemusOids)
+      val hakukohteet = Timer.timed(s"${hakemusOids.size} hakemuksen tuloksiin liittyvien hakukohteiden haku") {
+        hakuService.getHakukohdes(tulokset.map(_.hakukohdeOid).distinct).fold(throw _, x => x)
+      }
+      val tuloksetJaHakukohteet = tulokset.map(t => (t, hakukohteet.find(hk => hk.oid == t.hakukohdeOid)
+        .getOrElse(throw new Exception(s"Hakukohdetta ${t.hakukohdeOid} ei löytynyt"))))
+      val roles = Set(
+        Role.SIJOITTELU_READ,
+        Role.SIJOITTELU_READ_UPDATE,
+        Role.SIJOITTELU_CRUD,
+        Role.ATARU_KEVYT_VALINTA_READ,
+        Role.ATARU_KEVYT_VALINTA_CRUD)
+      tuloksetJaHakukohteet.foreach(t => {
+        val orgOids: Set[String] = t._2.organisaatioOiditAuktorisointiin
+        authorizer.checkAccessWithHakukohderyhmat(auditInfo.session._2, orgOids, roles, t._2.oid).fold(throw _, x => x)
+      })
+      audit.log(auditInfo.user, ValinnantuloksenLuku,
+        new Target.Builder().setField("hakemusOids", hakemusOids.toString).build(),
+        new Changes.Builder().build()
+      )
+      val yps_ja_ilman = tuloksetJaHakukohteet.toSet.span(t => t._2.yhdenPaikanSaanto.voimassa)
+      logger.info(s"${tulokset.size} valinnantuloksesta ${yps_ja_ilman._1.size} kohdistuu yhden paikan sääntöä käyttäviin hakukohteisiin ja ${yps_ja_ilman._2.size} muihin.")
+      val tuloksetIlmanHistoriatietoa = yhdenPaikanSaannos.getYpsTuloksetForManyHakemukses(yps_ja_ilman._1).fold(throw _, x => x) ++ yps_ja_ilman._2.map(t => t._1)
+      val tilaHistoriat = valinnantulosRepository.getHakemustenTilahistoriat(hakemusOids).groupBy(r => (r.hakemusOid, r.valintatapajonoOid))
+      tuloksetIlmanHistoriatietoa.map(tulos => ValinnantulosWithTilahistoria(tulos, tilaHistoriat.getOrElse((tulos.hakemusOid, tulos.valintatapajonoOid), List.empty)))
+    }
   }
 
   private def isErillishaku(
