@@ -1,4 +1,5 @@
 import fi.vm.sade.auditlog.{ApplicationType, Audit, Logger}
+import fi.vm.sade.openapi.OpenAPIServlet
 import fi.vm.sade.oppijantunnistus.OppijanTunnistusService
 import fi.vm.sade.security._
 import fi.vm.sade.utils.slf4j.Logging
@@ -125,6 +126,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     context.mount(new HakukohdeRefreshServlet(valintarekisteriDb, hakukohdeRecordService), "/virkistys")
 
     context.mount(new SwaggerServlet, "/swagger/*", "swagger")
+    context.mount(new OpenAPIServlet, "/open-api/*", "OpenAPI v3")
 
     def mountBasicVts(): Unit = {
       context.mount(new BuildInfoServlet, "/", "buildinfoservlet")
