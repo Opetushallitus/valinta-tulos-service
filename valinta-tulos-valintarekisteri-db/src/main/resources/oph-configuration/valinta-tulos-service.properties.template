@@ -88,3 +88,6 @@ valinta-tulos-service.blaze.request-timeout={{ valintatulosservice_blaze_request
 hakukohderyhmapalvelu.service=https://{{host_virkailija}}/hakukohderyhmapalvelu
 hakukohderyhmapalvelu.hakukohderyhmat=https://{{host_virkailija}}/hakukohderyhmapalvelu/api/hakukohde/$1/hakukohderyhmat
 hakukohderyhmapalvelu.hakukohteet=https://{{host_virkailija}}/hakukohderyhmapalvelu/api/hakukohderyhma/$1/hakukohteet
+
+# Swagger
+valinta-tulos-service.swagger=https\://{{host_virkailija}}/valinta-tulos-service/swagger/swagger.json
