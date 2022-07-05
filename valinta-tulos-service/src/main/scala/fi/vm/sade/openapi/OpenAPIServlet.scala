@@ -13,7 +13,7 @@ import io.swagger.parser.models.ParseOptions
 class OpenAPIServlet(config: VtsAppConfig)(implicit val swagger: Swagger) extends VtsServletBase with VtsSwaggerBase with Logging {
   override protected def applicationDescription: String = "Valinta-tulos-service Open API v3"
 
-  get("/") {
+  get("/open-api.json") {
     val openAPIParser = new OpenAPIParser
     val options = new ParseOptions
     options.setResolveFully(true)
@@ -21,6 +21,7 @@ class OpenAPIServlet(config: VtsAppConfig)(implicit val swagger: Swagger) extend
     logger.error(s"Swagger URL is $swaggerURL")
     val swaggerParseResult = openAPIParser.readLocation(swaggerURL, null, options)
     val prettyJson = Json.pretty(swaggerParseResult.getOpenAPI)
+    response.setContentType("application/json;charset=UTF-8")
     Ok(prettyJson)
   }
 }
