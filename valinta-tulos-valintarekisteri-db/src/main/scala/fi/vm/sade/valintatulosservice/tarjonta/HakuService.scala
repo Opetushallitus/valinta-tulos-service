@@ -410,6 +410,12 @@ case class KoutaToteutus(oid: String,
                          nimi: Map[String, String],
                          metadata: Option[KoutaToteutusMetadata])
 
+case class PaateltyAlkamiskausi(
+                                 source: String, //lähde-entiteetin oid (hakukohde, haku tai toteutus)
+                                 kausiUri: String,
+                                 vuosi: String
+                               )
+
 case class KoutaHakukohde(oid: String,
                           hakuOid: String,
                           tarjoaja: String,
@@ -419,33 +425,13 @@ case class KoutaHakukohde(oid: String,
                           alkamisvuosi: Option[String],
                           tila: String,
                           toteutusOid: String,
-                          yhdenPaikanSaanto: YhdenPaikanSaanto) {
-
-  def getKausiAndVuosi(haku: Option[KoutaHaku],
-                       toteutus: KoutaToteutus): (Option[String], Option[Int]) = {
-    val alkamisKausi =
-      (if (kaytetaanHaunAlkamiskautta)
-        haku.get.metadata.koulutuksenAlkamiskausi.flatMap(ak => ak.koulutuksenAlkamiskausi.map(k => k.koodiUri))
-      else alkamiskausiKoodiUri ) match {
-        case Some(alkamiskausi) => Some(alkamiskausi)
-        case None => toteutus.metadata.flatMap(metadata => metadata.opetus.flatMap(opetustiedot => opetustiedot.alkamiskausiKoodiUri))
-      }
-    val alkamisVuosi =
-    (if (kaytetaanHaunAlkamiskautta)
-      haku.get.metadata.koulutuksenAlkamiskausi.flatMap(ak => ak.koulutuksenAlkamisvuosi).map(v => v.toInt)
-    else alkamisvuosi.map(v => v.toInt) ) match {
-      case Some(alkamisvuosi: Int) => Some(alkamisvuosi)
-      case None => toteutus.metadata.flatMap(metadata => metadata.opetus.flatMap(opetustiedot => opetustiedot.alkamisvuosi)).map(v => v.toInt)
-      case _ => throw new RuntimeException("Unrecognized koulutuksen alkamisvuosi")
-    }
-    (alkamisKausi, alkamisVuosi)
-  }
+                          yhdenPaikanSaanto: YhdenPaikanSaanto,
+                          paateltyAlkamiskausi: Option[PaateltyAlkamiskausi]) {
 
   def toHakukohde(haku: Option[KoutaHaku],
                   koulutus: KoutaKoulutus,
                   toteutus: KoutaToteutus,
                   tarjoaja: Organisaatio): Hakukohde = {
-    val (kausi, vuosi) = getKausiAndVuosi(haku, toteutus)
     Hakukohde(
       oid = HakukohdeOid(oid),
       hakuOid = HakuOid(hakuOid),
@@ -455,8 +441,8 @@ case class KoutaHakukohde(oid: String,
       tarjoajaNimet = tarjoaja.nimi,
       yhdenPaikanSaanto = yhdenPaikanSaanto,
       tutkintoonJohtava = koulutus.johtaaTutkintoon,
-      koulutuksenAlkamiskausiUri = kausi,
-      koulutuksenAlkamisvuosi = vuosi,
+      koulutuksenAlkamiskausiUri = paateltyAlkamiskausi.map(ak => ak.kausiUri),
+      koulutuksenAlkamisvuosi = paateltyAlkamiskausi.map(ak => Integer.parseInt(ak.vuosi)),
       organisaatioRyhmaOids = Set.empty // FIXME
     )
   }
@@ -464,14 +450,13 @@ case class KoutaHakukohde(oid: String,
   def toHakukohdeMigri(haku: KoutaHaku,
                        toteutus: KoutaToteutus,
                        tarjoaja: Organisaatio): HakukohdeMigri = {
-    val (kausi, vuosi) = getKausiAndVuosi(Some(haku), toteutus)
     HakukohdeMigri(
       oid = HakukohdeOid(oid),
       hakuOid = HakuOid(hakuOid),
       hakuNimi = haku.nimi,
       hakukohteenNimi = nimi,
-      koulutuksenAlkamiskausiUri = kausi,
-      koulutuksenAlkamisvuosi = vuosi,
+      koulutuksenAlkamiskausiUri = paateltyAlkamiskausi.map(ak => ak.kausiUri),
+      koulutuksenAlkamisvuosi = paateltyAlkamiskausi.map(ak => Integer.parseInt(ak.vuosi)),
       organisaatioOid = tarjoaja.oid,
       organisaatioNimi = tarjoaja.nimi,
       toteutusOid = toteutus.oid,
