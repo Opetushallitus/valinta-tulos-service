@@ -15,6 +15,7 @@ case class VtsApplicationSettings(config: Config) extends ApplicationSettings(co
   val omatsivutUrlFi = withConfig(_.getString("omatsivut.fi"))
   val omatsivutUrlSv = withConfig(_.getString("omatsivut.sv"))
   val oppijanTunnistusUrl = withConfig(_.getString("oppijan-tunnistus-service.url"))
+  val swaggerPath = withConfig(_.getString("valinta-tulos-service.swagger"))
   val hakemusMongoConfig: MongoConfig = getMongoConfig(config.getConfig("hakemus.mongodb"))
   val securitySettings = new SecuritySettings(config)
   val valintaRekisteriEnsikertalaisuusMaxPersonOids = withConfig(_.getInt("valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids"))

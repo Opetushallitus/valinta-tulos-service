@@ -72,3 +72,6 @@ omatsivut.sv=https://{{host_haku_sv}}/omatsivut/hakutoiveidenMuokkaus.html#/toke
 valinta-tulos-service.blaze.response-header-timeout={{ valintatulosservice_blaze_response_header_timeout | default('10') }}
 valinta-tulos-service.blaze.idle-timeout={{ valintatulosservice_blaze_idle_timeout | default('60') }}
 valinta-tulos-service.blaze.request-timeout={{ valintatulosservice_blaze_request_timeout | default('3600') }}
+
+# Swagger
+valinta-tulos-service.swagger=https\://{{host_virkailija}}/valinta-tulos-service/swagger/swagger.json
