@@ -428,9 +428,7 @@ case class KoutaHakukohde(oid: String,
                           yhdenPaikanSaanto: YhdenPaikanSaanto,
                           paateltyAlkamiskausi: Option[PaateltyAlkamiskausi]) {
 
-  def toHakukohde(haku: Option[KoutaHaku],
-                  koulutus: KoutaKoulutus,
-                  toteutus: KoutaToteutus,
+  def toHakukohde(koulutus: KoutaKoulutus,
                   tarjoaja: Organisaatio): Hakukohde = {
     Hakukohde(
       oid = HakukohdeOid(oid),
@@ -605,11 +603,10 @@ class KoutaHakuService(config: AppConfig,
     logger.info(s"Get hakukohde, using cached singles $oid")
     for {
       koutaHakukohde <- Timer.timed(s"Kouta-internal get hakukohde: $oid", 1000)(getKoutaHakukohdeCached(oid).right)
-      koutaHaku <- Timer.timed(s"Kouta-internal get haku: ${koutaHakukohde.hakuOid}", 1000)(if (koutaHakukohde.kaytetaanHaunAlkamiskautta) { getKoutaHakuCached(HakuOid(koutaHakukohde.hakuOid)).right.map(Some(_)) } else { Right(None) }).right
       koutaToteutus <- Timer.timed(s"Kouta-internal get toteutus: ${koutaHakukohde.toteutusOid} ", 1000)(getKoutaToteutusCached(koutaHakukohde.toteutusOid).right)
       koutaKoulutus <- Timer.timed(s"Kouta-internal get koulutus: ${koutaToteutus.koulutusOid} ", 1000)(getKoutaKoulutusCached(koutaToteutus.koulutusOid).right)
       tarjoajaorganisaatio <- Timer.timed(s"Kouta-internal get organisaatio: ${koutaHakukohde.tarjoaja} ", 1000)(getOrganisaatioCached(koutaHakukohde.tarjoaja).right)
-    } yield koutaHakukohde.toHakukohde(koutaHaku, koutaKoulutus, koutaToteutus, tarjoajaorganisaatio)
+    } yield koutaHakukohde.toHakukohde(koutaKoulutus, tarjoajaorganisaatio)
   }
 
   def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[Hakukohde]] = {
