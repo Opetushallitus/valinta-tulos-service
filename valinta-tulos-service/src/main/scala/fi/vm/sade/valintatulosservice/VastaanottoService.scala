@@ -181,6 +181,9 @@ class VastaanottoService(hakuService: HakuService,
             hakijaVastaanottoRepository.runBlocking(
               hakijaVastaanottoRepository.storeAction(HakijanVastaanotto(hakemus.henkiloOid, hakemus.oid, vastaanotto.hakukohdeOid, Peru)), Duration(10, TimeUnit.SECONDS)
             )
+            valinnantulosRepository.runBlocking(
+              valinnantulosRepository.resetIlmoittautuminen(vastaanotto.henkiloOid, vastaanotto.hakukohdeOid)
+            )
           })
         case _ => throw new RuntimeException(s"Unable to find hakemus from vastaanotto: ${vastaanottoDto.toString}")
       }
