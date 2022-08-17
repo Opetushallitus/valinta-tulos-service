@@ -862,7 +862,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       case 1 =>
         logger.info(s"Poistettiin ilmoittautuminen henkilöltä $henkiloOid hakukohteesta $hakukohdeOid")
         DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Ilmoittautumista henkilölle $henkiloOid hakukohteessa $hakukohdeOid ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti"))
+      case _ => DBIO.failed(new RuntimeException(s"Jokin meni vikaan resetoitaessa ilmoittautumista henkilölle $henkiloOid hakukohteessa $hakukohdeOid"))
     }
   }
 
