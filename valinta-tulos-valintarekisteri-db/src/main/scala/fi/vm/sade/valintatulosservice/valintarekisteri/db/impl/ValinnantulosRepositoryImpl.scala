@@ -849,6 +849,23 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
     }
   }
 
+  override def resetIlmoittautuminen(henkiloOid: String, hakukohdeOid: HakukohdeOid): DBIO[Unit] = {
+    sqlu"""update ilmoittautumiset set tila = 'EiTehty',
+                                       selite = 'Ilmoittautumisen resetointi',
+                                       ilmoittaja = 'Järjestelmä'
+             where henkilo = ${henkiloOid}
+               and hakukohde = ${hakukohdeOid}
+               and tila <> 'EiTehty'""".flatMap {
+      case 0 =>
+        logger.info(s"Ei löytynyt resetoitavaa ilmoittautumista henkilölle $henkiloOid hakukoteessa $hakukohdeOid")
+        DBIO.successful(())
+      case 1 =>
+        logger.info(s"Poistettiin ilmoittautuminen henkilöltä $henkiloOid hakukohteesta $hakukohdeOid")
+        DBIO.successful(())
+      case _ => DBIO.failed(new RuntimeException(s"Jokin meni vikaan resetoitaessa ilmoittautumista henkilölle $henkiloOid hakukohteessa $hakukohdeOid"))
+    }
+  }
+
   override def deleteValinnantulos(muokkaaja:String, valinnantulos: Valinnantulos, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
     deleteViestit(valinnantulos.hakukohdeOid, valinnantulos.hakemusOid)
       .andThen(deleteValinnantuloksenOhjaus(valinnantulos.hakukohdeOid, valinnantulos.valintatapajonoOid, valinnantulos.hakemusOid, ifUnmodifiedSince))

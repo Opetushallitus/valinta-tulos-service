@@ -498,7 +498,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
       yhteenveto.hakutoiveet(2).vastaanottotila must_== Vastaanottotila.vastaanottanut
     }
 
-    "vastaanota ylempi kun alempi vastaanotettu -> alempi vastaanotto peruuntunut" in {
+    "vastaanota ylempi kun alempi vastaanotettu ja ilmoittauduttu -> alempi vastaanotto peruuntunut ja sen aiempi ilmoittautuminen resetoidaan" in {
       useFixture("hyvaksytty-ylempi-alempi-vastaanotettu.json", hakuFixture = hakuFixture, hakemusFixtures = List("00000441369-3"))
       hakemuksenTulos.hakutoiveet(0).valintatila must_== Valintatila.hyväksytty
       hakemuksenTulos.hakutoiveet(1).valintatila must_== Valintatila.hyväksytty
@@ -506,6 +506,10 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
       hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.kesken
       hakemuksenTulos.hakutoiveet(1).vastaanottotila must_== Vastaanottotila.kesken
       hakemuksenTulos.hakutoiveet(2).vastaanottotila must_== Vastaanottotila.vastaanottanut
+      hakemuksenTulos.hakutoiveet(2).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2030, None, EiTehty, ilmoittauduttavissa = true)
+
+      ilmoittautumisService.ilmoittaudu(HakemusOid(hakemusOid), Ilmoittautuminen(hakemuksenTulos.hakutoiveet(2).hakukohdeOid, LasnaSyksy, "muokkaaja", "selite"))
+      hakemuksenTulos.hakutoiveet(2).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2030, None, LasnaSyksy, ilmoittauduttavissa = false)
 
       vastaanottoService.vastaanotaHakijana(HakijanVastaanottoDto(HakemusOid(hakemusOid), HakukohdeOid("1.2.246.562.5.72607738903"), VastaanotaSitovastiPeruAlemmat))
 
@@ -516,6 +520,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
       yhteenveto.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.kesken
       yhteenveto.hakutoiveet(1).vastaanottotila must_== Vastaanottotila.vastaanottanut
       yhteenveto.hakutoiveet(2).vastaanottotila must_== Vastaanottotila.perunut
+      yhteenveto.hakutoiveet(2).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2030, None, EiTehty, ilmoittauduttavissa = false)
     }
 
     "vastaanota alempi kun ylempi vastaanotettu -> ei tule peruuttaa ylempää" in {
