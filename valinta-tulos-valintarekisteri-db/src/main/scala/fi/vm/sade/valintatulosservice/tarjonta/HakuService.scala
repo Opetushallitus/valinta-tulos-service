@@ -410,6 +410,12 @@ case class KoutaToteutus(oid: String,
                          nimi: Map[String, String],
                          metadata: Option[KoutaToteutusMetadata])
 
+case class PaateltyAlkamiskausi(
+                                 source: String, //lähde-entiteetin oid (hakukohde, haku tai toteutus)
+                                 kausiUri: String,
+                                 vuosi: String
+                               )
+
 case class KoutaHakukohde(oid: String,
                           hakuOid: String,
                           tarjoaja: String,
@@ -419,33 +425,11 @@ case class KoutaHakukohde(oid: String,
                           alkamisvuosi: Option[String],
                           tila: String,
                           toteutusOid: String,
-                          yhdenPaikanSaanto: YhdenPaikanSaanto) {
+                          yhdenPaikanSaanto: YhdenPaikanSaanto,
+                          paateltyAlkamiskausi: Option[PaateltyAlkamiskausi]) {
 
-  def getKausiAndVuosi(haku: Option[KoutaHaku],
-                       toteutus: KoutaToteutus): (Option[String], Option[Int]) = {
-    val alkamisKausi =
-      (if (kaytetaanHaunAlkamiskautta)
-        haku.get.metadata.koulutuksenAlkamiskausi.flatMap(ak => ak.koulutuksenAlkamiskausi.map(k => k.koodiUri))
-      else alkamiskausiKoodiUri ) match {
-        case Some(alkamiskausi) => Some(alkamiskausi)
-        case None => toteutus.metadata.flatMap(metadata => metadata.opetus.flatMap(opetustiedot => opetustiedot.alkamiskausiKoodiUri))
-      }
-    val alkamisVuosi =
-    (if (kaytetaanHaunAlkamiskautta)
-      haku.get.metadata.koulutuksenAlkamiskausi.flatMap(ak => ak.koulutuksenAlkamisvuosi).map(v => v.toInt)
-    else alkamisvuosi.map(v => v.toInt) ) match {
-      case Some(alkamisvuosi: Int) => Some(alkamisvuosi)
-      case None => toteutus.metadata.flatMap(metadata => metadata.opetus.flatMap(opetustiedot => opetustiedot.alkamisvuosi)).map(v => v.toInt)
-      case _ => throw new RuntimeException("Unrecognized koulutuksen alkamisvuosi")
-    }
-    (alkamisKausi, alkamisVuosi)
-  }
-
-  def toHakukohde(haku: Option[KoutaHaku],
-                  koulutus: KoutaKoulutus,
-                  toteutus: KoutaToteutus,
+  def toHakukohde(koulutus: KoutaKoulutus,
                   tarjoaja: Organisaatio): Hakukohde = {
-    val (kausi, vuosi) = getKausiAndVuosi(haku, toteutus)
     Hakukohde(
       oid = HakukohdeOid(oid),
       hakuOid = HakuOid(hakuOid),
@@ -455,8 +439,8 @@ case class KoutaHakukohde(oid: String,
       tarjoajaNimet = tarjoaja.nimi,
       yhdenPaikanSaanto = yhdenPaikanSaanto,
       tutkintoonJohtava = koulutus.johtaaTutkintoon,
-      koulutuksenAlkamiskausiUri = kausi,
-      koulutuksenAlkamisvuosi = vuosi,
+      koulutuksenAlkamiskausiUri = paateltyAlkamiskausi.map(ak => ak.kausiUri),
+      koulutuksenAlkamisvuosi = paateltyAlkamiskausi.map(ak => Integer.parseInt(ak.vuosi)),
       organisaatioRyhmaOids = Set.empty // FIXME
     )
   }
@@ -464,14 +448,13 @@ case class KoutaHakukohde(oid: String,
   def toHakukohdeMigri(haku: KoutaHaku,
                        toteutus: KoutaToteutus,
                        tarjoaja: Organisaatio): HakukohdeMigri = {
-    val (kausi, vuosi) = getKausiAndVuosi(Some(haku), toteutus)
     HakukohdeMigri(
       oid = HakukohdeOid(oid),
       hakuOid = HakuOid(hakuOid),
       hakuNimi = haku.nimi,
       hakukohteenNimi = nimi,
-      koulutuksenAlkamiskausiUri = kausi,
-      koulutuksenAlkamisvuosi = vuosi,
+      koulutuksenAlkamiskausiUri = paateltyAlkamiskausi.map(ak => ak.kausiUri),
+      koulutuksenAlkamisvuosi = paateltyAlkamiskausi.map(ak => Integer.parseInt(ak.vuosi)),
       organisaatioOid = tarjoaja.oid,
       organisaatioNimi = tarjoaja.nimi,
       toteutusOid = toteutus.oid,
@@ -620,11 +603,10 @@ class KoutaHakuService(config: AppConfig,
     logger.info(s"Get hakukohde, using cached singles $oid")
     for {
       koutaHakukohde <- Timer.timed(s"Kouta-internal get hakukohde: $oid", 1000)(getKoutaHakukohdeCached(oid).right)
-      koutaHaku <- Timer.timed(s"Kouta-internal get haku: ${koutaHakukohde.hakuOid}", 1000)(if (koutaHakukohde.kaytetaanHaunAlkamiskautta) { getKoutaHakuCached(HakuOid(koutaHakukohde.hakuOid)).right.map(Some(_)) } else { Right(None) }).right
       koutaToteutus <- Timer.timed(s"Kouta-internal get toteutus: ${koutaHakukohde.toteutusOid} ", 1000)(getKoutaToteutusCached(koutaHakukohde.toteutusOid).right)
       koutaKoulutus <- Timer.timed(s"Kouta-internal get koulutus: ${koutaToteutus.koulutusOid} ", 1000)(getKoutaKoulutusCached(koutaToteutus.koulutusOid).right)
       tarjoajaorganisaatio <- Timer.timed(s"Kouta-internal get organisaatio: ${koutaHakukohde.tarjoaja} ", 1000)(getOrganisaatioCached(koutaHakukohde.tarjoaja).right)
-    } yield koutaHakukohde.toHakukohde(koutaHaku, koutaKoulutus, koutaToteutus, tarjoajaorganisaatio)
+    } yield koutaHakukohde.toHakukohde(koutaKoulutus, tarjoajaorganisaatio)
   }
 
   def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[Hakukohde]] = {
