@@ -120,7 +120,7 @@ trait MailerComponent {
     }
 
     private lazy val templates: String => String = Memo.mutableHashMapMemo(name =>
-      Resources.toString(getResource(name), Charsets.UTF_8))
+      Resources.toString(getResource(classOf[MailerImpl],name), Charsets.UTF_8))
 
     private def sendBatch(batch: List[Ilmoitus], language: String, lahetysSyy: LahetysSyy): List[String] = {
       val recipients: List[Recipient] = batch.map(VTRecipient(_, language))
