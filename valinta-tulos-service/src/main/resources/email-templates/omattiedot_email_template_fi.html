@@ -1,41 +1,91 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title></title>
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8" />
+    <meta http-equiv="Content-Style-Type" content="text/css" />
+    <title>
+    </title>
 </head>
-<body style="margin: 0; font-family: 'Open Sans', Arial, sans-serif;">
-<table style="width: 600px;">
-    <tr>
-        <td style="padding-left: 20px; padding-top: 20px;">
-            hakemusOid: {{hakemus_oid}}
-            etunimi: {{etunimi}}
-            asiointikieli: {{asiointikieli}}
-            email: {{email}}
-            hakijaOid: {{hakija_oid}}
-            haku: {{haku.oid}}
-        </td>
-    </tr>
-    {% if hakukohteet|length > 0 %}
-    <tr>
-        <td style="padding-left: 20px; padding-top: 20px;">
-            Hakutoiveesi:
-        </td>
-    </tr>
-    {% for h in hakukohteet %}
-    <tr>
-        <td style="padding-left: 20px; padding-top: 10px;">
-            {{h}}
-        </td>
-    </tr>
-    {% endfor %}
-    {% endif %}
-
-    <tr>
-        <td style="padding-left: 20px; padding-top: 20px;">
-            Älä vastaa tähän viestiin - viesti on lähetetty automaattisesti.
-        </td>
-    </tr>
-</table>
+<body>
+#if($securelink)
+<p>
+    Hei $etunimi
+</p>
+<p>
+    Onneksi olkoon! Sinulle on myönnetty opiskelupaikka:
+</p>
+#foreach( $hakukohde in $hakukohteet )
+<p>
+    $hakukohde.nimi $hakukohde.tarjoaja
+</p>
+#end
+<p>
+    Haun nimi: $haunNimi
+</p>
+<p>
+    Ota paikka vastaan seuraavan linkin kautta: <a href="$securelink">$securelink</a>. Linkki on henkilökohtainen - älä jaa sitä muille.
+</p>
+#if($deadline != '')
+<p>
+    Ota vastaan tarjottu opiskelupaikka ennen $deadline.
+</p>
+#end
+<p>
+    Voit ottaa vastaan vain yhden opiskelupaikan samana lukukautena alkavasta korkeakoulututkintoon johtavasta koulutuksesta.
+    Säännös koskee yhteishaussa, erillishauissa kuin myös yliopistojen jatkotutkintohauissa saatuja opiskelupaikkoja.
+    Siirtohaussa saatu paikka korkeakoulussa ei kuulu säännöksen piiriin. Säännös ei koske Poliisiammattikorkeakoulua,
+    Högskolan på Ålandia eikä ulkomaisia korkeakouluja.
+</p>
+<p>
+    Lisäohjeita opiskelupaikan vastaanottamisesta saat
+    <a href="https://opintopolku.fi/konfo/fi/sivu/paikan-vastaanotto-ja-ilmoittautuminen-korkeakouluun">Opintopolku-palvelusta</a>
+    tai korkeakoulusta johon sinut on hyväksytty.
+</p>
+<p>
+    Älä vastaa tähän viestiin - viesti on lähetetty automaattisesti.
+</p>
+#else
+<p>
+    Hei $etunimi
+</p>
+<p>
+    Onneksi olkoon! Sinulle on myönnetty opiskelupaikka:
+</p>
+#foreach( $hakukohde in $hakukohteet )
+<p>
+    $hakukohde.nimi $hakukohde.tarjoaja
+</p>
+#end
+<p>
+    Haun nimi: $haunNimi
+</p>
+<p>
+    Ota opiskelupaikka vastaan <a href="https://opintopolku.fi/omatsivut">Oma Opintopolku-palvelussa</a>.
+    Kirjautumista varten sinun tulee tunnistautua verkkopankkitunnuksella, mobiilivarmenteella tai sirullisella henkilökortilla.
+    Ulkomaalaisten tunnistustavat suomi.fi-tunnistuksessa eivät ole tällä hetkellä tuettuja.
+</p>
+#if($deadline != '')
+<p>
+    Ota vastaan tarjottu opiskelupaikka ennen $deadline.
+</p>
+#end
+<p>
+    Voit ottaa vastaan vain yhden opiskelupaikan samana lukukautena alkavasta korkeakoulututkintoon johtavasta koulutuksesta.
+    Säännös koskee yhteishaussa, erillishauissa kuin myös yliopistojen jatkotutkintohauissa saatuja opiskelupaikkoja.
+    Siirtohaussa saatu paikka korkeakoulussa ei kuulu säännöksen piiriin. Säännös ei koske Poliisiammattikorkeakoulua,
+    Högskolan på Ålandia eikä ulkomaisia korkeakouluja.
+</p>
+<p>
+    Lisäohjeita opiskelupaikan vastaanottamisesta saat
+    <a href="https://opintopolku.fi/konfo/fi/sivu/paikan-vastaanotto-ja-ilmoittautuminen-korkeakouluun">Opintopolku-palvelusta</a>
+    tai korkeakoulusta johon sinut on hyväksytty.
+</p>
+<p>
+    Älä vastaa tähän viestiin - viesti on lähetetty automaattisesti.
+</p>
+#end
 </body>
 </html>
