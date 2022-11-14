@@ -249,6 +249,11 @@ case class HakutoiveenHakijaryhmaRecord(oid:String, nimi:String, hakukohdeOid: H
   }
 }
 
+case class JononAlimmatPisteet(valintatapajonoOid: ValintatapajonoOid,
+                               hakukohdeOid: HakukohdeOid,
+                               alinHyvaksyttyPistemaara: Double,
+                               sijoitteluajoId: Long)
+
 case class SijoittelunHakukohdeRecord(sijoitteluajoId: Long, oid: HakukohdeOid, kaikkiJonotsijoiteltu: Boolean) {
 
   def dto(valintatapajonot:List[ValintatapajonoDTO], hakijaryhmat:List[HakijaryhmaDTO]): HakukohdeDTO = {

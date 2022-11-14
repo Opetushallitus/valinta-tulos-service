@@ -58,7 +58,8 @@ case class Hakukohde(oid: HakukohdeOid,
                      tutkintoonJohtava:Boolean,
                      koulutuksenAlkamiskausiUri: Option[String],
                      koulutuksenAlkamisvuosi: Option[Int],
-                     organisaatioRyhmaOids: Set[String]) {
+                     organisaatioRyhmaOids: Set[String],
+                     hakukohteenNimiUri: Option[String] = None) {
   def kkTutkintoonJohtava: Boolean = kkHakukohde && tutkintoonJohtava
   def kkHakukohde: Boolean = koulutusAsteTyyppi == "KORKEAKOULUTUS"
 
