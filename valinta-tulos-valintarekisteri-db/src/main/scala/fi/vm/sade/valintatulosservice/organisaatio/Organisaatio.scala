@@ -14,3 +14,6 @@ case class Organisaatiot(organisaatiot: Seq[Organisaatio]) {
 }
 
 case class Organisaatio(oid: String, nimi: Map[String, String], oppilaitosKoodi: Option[String], organisaatiotyypit: List[String], children: Seq[Organisaatio])
+
+//organisaatio-service/api/{oid}, data on vähän eri muotoista kuin aiemmin käytetyssä rajapinnassa.
+case class SingleOrganisaatio(oid: String, nimi: Map[String, String])

@@ -9,7 +9,7 @@ import fi.vm.sade.valintatulosservice.config.{AppConfig, StubbedExternalDeps}
 import fi.vm.sade.valintatulosservice.koodisto.{Koodi, KoodistoService}
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
-import fi.vm.sade.valintatulosservice.organisaatio.{Organisaatio, OrganisaatioService, Organisaatiot}
+import fi.vm.sade.valintatulosservice.organisaatio.{Organisaatio, OrganisaatioService, Organisaatiot, SingleOrganisaatio}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.http4s.Method.GET
 import org.http4s.client.blaze.SimpleHttp1Client
@@ -429,7 +429,7 @@ case class KoutaHakukohde(oid: String,
                           paateltyAlkamiskausi: Option[PaateltyAlkamiskausi]) {
 
   def toHakukohde(koulutus: KoutaKoulutus,
-                  tarjoaja: Organisaatio): Hakukohde = {
+                  tarjoaja: SingleOrganisaatio): Hakukohde = {
     Hakukohde(
       oid = HakukohdeOid(oid),
       hakuOid = HakuOid(hakuOid),
@@ -447,7 +447,7 @@ case class KoutaHakukohde(oid: String,
 
   def toHakukohdeMigri(haku: KoutaHaku,
                        toteutus: KoutaToteutus,
-                       tarjoaja: Organisaatio): HakukohdeMigri = {
+                       tarjoaja: SingleOrganisaatio): HakukohdeMigri = {
     HakukohdeMigri(
       oid = HakukohdeOid(oid),
       hakuOid = HakuOid(hakuOid),
@@ -532,7 +532,7 @@ class KoutaHakuService(config: AppConfig,
     lifetimeSeconds = Duration(1, HOURS).toSeconds,
     maxSize = config.settings.koutaHakuServiceSingleEntityCacheSize)
 
-  private val organisaatioSingleCache = TTLOptionalMemoize.memoize[String, Organisaatio](
+  private val organisaatioSingleCache = TTLOptionalMemoize.memoize[String, SingleOrganisaatio](
     f = oid => getOrganisaatio(oid).left.flatMap(_ => getOrganisaatio(oid)),
     lifetimeSeconds = Duration(1, HOURS).toSeconds,
     maxSize = config.settings.koutaHakuServiceSingleEntityCacheSize)
@@ -556,7 +556,7 @@ class KoutaHakuService(config: AppConfig,
   def getKoutaKoulutusCached(oid: String): Either[Throwable, KoutaKoulutus] = koulutusSingleCache(oid)
   def getKoutaToteutusCached(oid: String): Either[Throwable, KoutaToteutus] = toteutusSingleCache(oid)
 
-  def getOrganisaatioCached(oid: String): Either[Throwable, Organisaatio] = organisaatioSingleCache(oid)
+  def getOrganisaatioCached(oid: String): Either[Throwable, SingleOrganisaatio] = organisaatioSingleCache(oid)
 
   def getHaku(oid: HakuOid): Either[Throwable, Haku] = {
     for {
@@ -650,9 +650,9 @@ class KoutaHakuService(config: AppConfig,
     fetch[KoutaKoulutus](config.ophUrlProperties.url("kouta-internal.koulutus", oid))
   }
 
-  private def getOrganisaatio(oid: String): Either[Throwable, Organisaatio] = {
-    organisaatioService.hae(oid).right
-      .flatMap(_.find(_.oid == oid).toRight(new IllegalArgumentException(s"Could not find organisation $oid")))
+  private def getOrganisaatio(oid: String): Either[Throwable, SingleOrganisaatio] = {
+    logger.info(s"Haetaan yksittäinen organisaatio: $oid")
+    organisaatioService.haeYksi(oid)
   }
 
   private def fetch[T](url: String)(implicit manifest: Manifest[T]): Either[Throwable, T] = {

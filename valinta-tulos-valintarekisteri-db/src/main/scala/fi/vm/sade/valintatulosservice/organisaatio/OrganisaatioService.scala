@@ -17,7 +17,7 @@ import scala.concurrent.duration.Duration
 trait OrganisaatioService {
 
   def hae(oid: String): Either[Throwable, Organisaatiot]
-
+  def haeYksi(oid: String): Either[Throwable, SingleOrganisaatio]
 }
 object OrganisaatioService {
   def apply(appConfig: AppConfig): OrganisaatioService = new CachedOrganisaatioService(new RealOrganisaatioService(appConfig))
@@ -29,11 +29,19 @@ class CachedOrganisaatioService(realOrganisaatioService: RealOrganisaatioService
     maxSize = 5000)
 
   def hae(oid: String): Either[Throwable, Organisaatiot] = orgCache(oid)
+  def haeYksi(oid: String): Either[Throwable, SingleOrganisaatio] = realOrganisaatioService.haeYksi(oid)
 }
 
 class RealOrganisaatioService(appConfig:AppConfig) extends OrganisaatioService{
   import org.json4s._
   implicit val formats = DefaultFormats
+
+  override def haeYksi(oid: String): Either[Throwable, SingleOrganisaatio] = {
+    val url = appConfig.ophUrlProperties.url("organisaatio-service.organisaatio.oid", oid)
+    fetch[SingleOrganisaatio](url){ response =>
+      parse(response).extract[SingleOrganisaatio]
+    }
+  }
 
   override def hae(oid: String): Either[Throwable, Organisaatiot] = {
     val url = appConfig.ophUrlProperties.url("organisaatio-service.organisaatio.hae", mapAsJavaMap(Map(
