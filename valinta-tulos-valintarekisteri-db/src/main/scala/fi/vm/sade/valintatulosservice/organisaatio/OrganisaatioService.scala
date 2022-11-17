@@ -16,46 +16,47 @@ import scala.concurrent.duration.Duration
 
 trait OrganisaatioService {
 
-  def hae(oid: String): Either[Throwable, Organisaatiot]
-  def haeYksi(oid: String): Either[Throwable, SingleOrganisaatio]
+  def getOrganisaatio(oid: String): Either[Throwable, Organisaatio]
 }
 object OrganisaatioService {
   def apply(appConfig: AppConfig): OrganisaatioService = new CachedOrganisaatioService(new RealOrganisaatioService(appConfig))
 }
 class CachedOrganisaatioService(realOrganisaatioService: RealOrganisaatioService) extends OrganisaatioService {
-  private val orgCache = TTLOptionalMemoize.memoize[String, Organisaatiot](
-    f = oid => realOrganisaatioService.hae(oid).left.flatMap(_ => realOrganisaatioService.hae(oid)),
+  private val orgCache = TTLOptionalMemoize.memoize[String, Organisaatio](
+    f = oid => realOrganisaatioService.getOrganisaatio(oid).left.flatMap(_ => realOrganisaatioService.getOrganisaatio(oid)),
     lifetimeSeconds = Duration(1, HOURS).toSeconds,
     maxSize = 5000)
 
-  def hae(oid: String): Either[Throwable, Organisaatiot] = orgCache(oid)
-  def haeYksi(oid: String): Either[Throwable, SingleOrganisaatio] = realOrganisaatioService.haeYksi(oid)
+  def getOrganisaatio(oid: String): Either[Throwable, Organisaatio] = orgCache(oid)
 }
 
 class RealOrganisaatioService(appConfig:AppConfig) extends OrganisaatioService{
   import org.json4s._
   implicit val formats = DefaultFormats
 
-  override def haeYksi(oid: String): Either[Throwable, SingleOrganisaatio] = {
-    val url = appConfig.ophUrlProperties.url("organisaatio-service.organisaatio.oid", oid)
-    fetch[SingleOrganisaatio](url){ response =>
-      parse(response).extract[SingleOrganisaatio]
+  //Organisaation lapset haetaan eri rajapinnasta kuin itse organisaatio
+  override def getOrganisaatio(oid: String): Either[Throwable, Organisaatio] = {
+    haeOrganisaatio(oid) match {
+      case Right(organisaatio) =>
+        haeJalkelaiset(oid) match {
+          case Right(jalkelaiset) => Right(organisaatio.copy(children = jalkelaiset.organisaatiot))
+          case Left(e) => Left(new RuntimeException(s"Failed to get jalkelaiset for organsaatio $oid: ", e))
+        }
+      case Left(e) => Left(new RuntimeException(s"Failed to get organsaatio $oid: ", e))
     }
   }
 
-  override def hae(oid: String): Either[Throwable, Organisaatiot] = {
-    val url = appConfig.ophUrlProperties.url("organisaatio-service.organisaatio.hae", mapAsJavaMap(Map(
-      "vainAktiiviset" -> true,
-      "vainLakkautetut" -> false,
-      "suunnitellut" -> false,
-      "oid" -> oid)))
+  private def haeOrganisaatio(oid: String): Either[Throwable, Organisaatio] = {
+    val url = appConfig.ophUrlProperties.url("organisaatio-service.organisaatio.oid", oid)
+    fetch[Organisaatio](url){ response =>
+      parse(response).extract[Organisaatio]
+    }
+  }
 
-    fetch(url){ response =>
+  private def haeJalkelaiset(oid: String): Either[Throwable, Organisaatiot] = {
+    val url = appConfig.ophUrlProperties.url("organisaatio-service.organisaatio.oid.jalkelaiset", oid)
+    fetch[Organisaatiot](url){ response =>
       parse(response).extract[Organisaatiot]
-    }.left.map {
-      case e: IllegalArgumentException => new IllegalArgumentException(s"No organisaatio $oid found", e)
-      case e: IllegalStateException => new IllegalStateException(s"Parsing organisaatio $oid failed", e)
-      case e: Exception => new RuntimeException(s"Failed to get organisaatio $oid", e)
     }
   }
 

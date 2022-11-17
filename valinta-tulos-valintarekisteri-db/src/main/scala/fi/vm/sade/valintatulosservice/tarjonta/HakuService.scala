@@ -9,7 +9,7 @@ import fi.vm.sade.valintatulosservice.config.{AppConfig, StubbedExternalDeps}
 import fi.vm.sade.valintatulosservice.koodisto.{Koodi, KoodistoService}
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
-import fi.vm.sade.valintatulosservice.organisaatio.{Organisaatio, OrganisaatioService, Organisaatiot, SingleOrganisaatio}
+import fi.vm.sade.valintatulosservice.organisaatio.{Organisaatio, OrganisaatioService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.http4s.Method.GET
 import org.http4s.client.blaze.SimpleHttp1Client
@@ -429,7 +429,7 @@ case class KoutaHakukohde(oid: String,
                           paateltyAlkamiskausi: Option[PaateltyAlkamiskausi]) {
 
   def toHakukohde(koulutus: KoutaKoulutus,
-                  tarjoaja: SingleOrganisaatio): Hakukohde = {
+                  tarjoaja: Organisaatio): Hakukohde = {
     Hakukohde(
       oid = HakukohdeOid(oid),
       hakuOid = HakuOid(hakuOid),
@@ -447,7 +447,7 @@ case class KoutaHakukohde(oid: String,
 
   def toHakukohdeMigri(haku: KoutaHaku,
                        toteutus: KoutaToteutus,
-                       tarjoaja: SingleOrganisaatio): HakukohdeMigri = {
+                       tarjoaja: Organisaatio): HakukohdeMigri = {
     HakukohdeMigri(
       oid = HakukohdeOid(oid),
       hakuOid = HakuOid(hakuOid),
@@ -466,7 +466,7 @@ case class KoutaHakukohde(oid: String,
                       koulutus: KoutaKoulutus,
                       koulutuskoodit: Set[Koodi],
                       opintojenLaajuusKoodi: Option[Koodi],
-                      tarjoajaorganisaatiohierarkiat: List[Organisaatiot]): Either[Throwable, HakukohdeKela] = {
+                      tarjoajaOrganisaatio: Organisaatio): Either[Throwable, HakukohdeKela] = {
     val koulutuksenAlkamiskausiUri =
       if (kaytetaanHaunAlkamiskautta) {
         haku.get.metadata.koulutuksenAlkamiskausi.flatMap(ak => ak.koulutuksenAlkamiskausi.map(k => k.koodiUri))
@@ -476,9 +476,8 @@ case class KoutaHakukohde(oid: String,
         haku.get.metadata.koulutuksenAlkamiskausi.flatMap(ak => ak.koulutuksenAlkamisvuosi)
       } else alkamisvuosi
     for {
-      oppilaitos <- tarjoajaorganisaatiohierarkiat.toStream.map(_.find(_.organisaatiotyypit.contains("OPPILAITOS"))).collectFirst {
-        case Some(oppilaitos) => oppilaitos
-      }.toRight(new IllegalStateException(s"Could not find oppilaitos for hakukohde $oid")).right
+      oppilaitos <- tarjoajaOrganisaatio.find(_.isOppilaitos)
+        .toRight(new RuntimeException(s"Could not find oppilaitos for oid ${tarjoajaOrganisaatio.oid}")).right
       oppilaitoskoodi <- oppilaitos.oppilaitosKoodi
         .toRight(new IllegalStateException(s"Could not find oppilaitoskoodi for oppilaitos ${oppilaitos.oid}")).right
       koulutuksenAlkamiskausi <- ((koulutuksenAlkamiskausiUri, koulutuksenAlkamisvuosi.map(s => (s, Try(s.toInt)))) match {
@@ -532,7 +531,7 @@ class KoutaHakuService(config: AppConfig,
     lifetimeSeconds = Duration(1, HOURS).toSeconds,
     maxSize = config.settings.koutaHakuServiceSingleEntityCacheSize)
 
-  private val organisaatioSingleCache = TTLOptionalMemoize.memoize[String, SingleOrganisaatio](
+  private val organisaatioSingleCache = TTLOptionalMemoize.memoize[String, Organisaatio](
     f = oid => getOrganisaatio(oid).left.flatMap(_ => getOrganisaatio(oid)),
     lifetimeSeconds = Duration(1, HOURS).toSeconds,
     maxSize = config.settings.koutaHakuServiceSingleEntityCacheSize)
@@ -556,7 +555,7 @@ class KoutaHakuService(config: AppConfig,
   def getKoutaKoulutusCached(oid: String): Either[Throwable, KoutaKoulutus] = koulutusSingleCache(oid)
   def getKoutaToteutusCached(oid: String): Either[Throwable, KoutaToteutus] = toteutusSingleCache(oid)
 
-  def getOrganisaatioCached(oid: String): Either[Throwable, SingleOrganisaatio] = organisaatioSingleCache(oid)
+  def getOrganisaatioCached(oid: String): Either[Throwable, Organisaatio] = organisaatioSingleCache(oid)
 
   def getHaku(oid: HakuOid): Either[Throwable, Haku] = {
     for {
@@ -578,8 +577,8 @@ class KoutaHakuService(config: AppConfig,
       koutaKoulutus <- getKoutaKoulutusCached(koutaToteutus.koulutusOid).right
       koulutuskoodi <- getKoulutusKoodit(koutaKoulutus.koulutusKoodiUrit).right
       opintojenlaajuuskoodi <- koutaKoulutus.metadata.flatMap(_.opintojenLaajuusKoodiUri).fold[Either[Throwable, Option[Koodi]]](Right(None))(koodistoService.getKoodi(_).right.map(Some(_))).right
-      tarjoajaorganisaatiohierarkia <- organisaatioService.hae(koutaHakukohde.tarjoaja).right
-      hakukohde <- koutaHakukohde.toHakukohdeKela(koutaHaku, koutaKoulutus, koulutuskoodi, opintojenlaajuuskoodi, List(tarjoajaorganisaatiohierarkia)).right
+      tarjoajaOrganisaatio <- organisaatioService.getOrganisaatio(koutaHakukohde.tarjoaja).right
+      hakukohde <- koutaHakukohde.toHakukohdeKela(koutaHaku, koutaKoulutus, koulutuskoodi, opintojenlaajuuskoodi, tarjoajaOrganisaatio).right
     } yield Some(hakukohde)
   }
 
@@ -650,9 +649,9 @@ class KoutaHakuService(config: AppConfig,
     fetch[KoutaKoulutus](config.ophUrlProperties.url("kouta-internal.koulutus", oid))
   }
 
-  private def getOrganisaatio(oid: String): Either[Throwable, SingleOrganisaatio] = {
+  private def getOrganisaatio(oid: String): Either[Throwable, Organisaatio] = {
     logger.info(s"Haetaan yksittäinen organisaatio: $oid")
-    organisaatioService.haeYksi(oid)
+    organisaatioService.getOrganisaatio(oid)
   }
 
   private def fetch[T](url: String)(implicit manifest: Manifest[T]): Either[Throwable, T] = {
