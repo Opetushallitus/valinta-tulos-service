@@ -22,6 +22,7 @@ case class EmailHakukohde(nimi: String, tarjoaja: String)
 
 case class EmailStructure(etunimi: String,
                           haunNimi: String,
+                          securelink: Option[String],
                           deadline: Option[String],
                           hakukohteet: List[EmailHakukohde]) {
 
@@ -47,6 +48,7 @@ object EmailStructure {
         .map(hk => EmailHakukohde(
           hk.hakukohteenNimet.getAny(lang, "fi", "sv", "en"),
           hk.tarjoajaNimet.getAny(lang, "fi", "sv", "en"))),
+      securelink = ilmoitus.secureLink,
       etunimi = ilmoitus.etunimi,
       haunNimi = ilmoitus.haku.nimi.getAny(lang, "fi", "sv", "en"),
       deadline = ilmoitus.deadline match {
