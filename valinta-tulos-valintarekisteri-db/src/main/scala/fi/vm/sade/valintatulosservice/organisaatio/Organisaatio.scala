@@ -13,4 +13,6 @@ case class Organisaatiot(organisaatiot: Seq[Organisaatio]) {
   }
 }
 
-case class Organisaatio(oid: String, nimi: Map[String, String], oppilaitosKoodi: Option[String], organisaatiotyypit: List[String], children: Seq[Organisaatio])
+case class Organisaatio(oid: String, nimi: Map[String, String], oppilaitosKoodi: Option[String], organisaatiotyypit: List[String], status: String, children: Seq[Organisaatio]) {
+  def isAktiivinenOppilaitos: Boolean = "AKTIIVINEN".equals(status) && organisaatiotyypit.exists(tyyppi => tyyppi.startsWith("organisaatiotyyppi_02"))
+}

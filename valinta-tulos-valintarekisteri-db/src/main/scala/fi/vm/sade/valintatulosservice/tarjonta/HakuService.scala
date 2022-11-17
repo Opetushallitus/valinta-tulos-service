@@ -476,7 +476,7 @@ case class KoutaHakukohde(oid: String,
         haku.get.metadata.koulutuksenAlkamiskausi.flatMap(ak => ak.koulutuksenAlkamisvuosi)
       } else alkamisvuosi
     for {
-      oppilaitos <- tarjoajaorganisaatiohierarkiat.toStream.map(_.find(_.organisaatiotyypit.contains("OPPILAITOS"))).collectFirst {
+      oppilaitos <- tarjoajaorganisaatiohierarkiat.toStream.map(_.find(_.isAktiivinenOppilaitos)).collectFirst {
         case Some(oppilaitos) => oppilaitos
       }.toRight(new IllegalStateException(s"Could not find oppilaitos for hakukohde $oid")).right
       oppilaitoskoodi <- oppilaitos.oppilaitosKoodi
