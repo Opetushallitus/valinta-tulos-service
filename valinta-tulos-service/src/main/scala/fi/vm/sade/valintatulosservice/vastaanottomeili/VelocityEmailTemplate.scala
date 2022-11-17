@@ -34,20 +34,21 @@ object EmailStructure {
 
   class MapWithGetAny[A, B <: String](m: Map[A, String]) {
     def getAny(s: A*): String =
-      s.flatMap(m.get).headOption
+      s.flatMap(m.get).find(_.nonEmpty)
         .getOrElse("-")
   }
 
   private val timezone = ZoneId.of("Europe/Helsinki")
 
   def apply(ilmoitus: Ilmoitus): EmailStructure = {
+    val lang = ilmoitus.asiointikieli.toLowerCase()
     EmailStructure(
       hakukohteet = ilmoitus.hakukohteet
         .map(hk => EmailHakukohde(
-          hk.hakukohteenNimet.getAny(ilmoitus.asiointikieli, "fi", "sv", "en"),
-          hk.tarjoajaNimet.getAny(ilmoitus.asiointikieli, "fi", "sv", "en"))),
+          hk.hakukohteenNimet.getAny(lang, "fi", "sv", "en"),
+          hk.tarjoajaNimet.getAny(lang, "fi", "sv", "en"))),
       etunimi = ilmoitus.etunimi,
-      haunNimi = ilmoitus.haku.nimi.getAny(ilmoitus.asiointikieli, "fi", "sv", "en"),
+      haunNimi = ilmoitus.haku.nimi.getAny(lang, "fi", "sv", "en"),
       deadline = ilmoitus.deadline match {
         case Some(deadline) =>
 
