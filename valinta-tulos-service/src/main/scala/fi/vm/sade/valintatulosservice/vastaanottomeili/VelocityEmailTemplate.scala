@@ -44,7 +44,7 @@ object EmailStructure {
 
   def apply(ilmoitus: Ilmoitus): EmailStructure = {
     val lang = ilmoitus.asiointikieli.toLowerCase()
-    LOG.error(s"DEBUG ${ilmoitus.hakemusOid} hakukohteenNimet ${ilmoitus.hakukohteet.map(_.hakukohteenNimet)}")
+    LOG.warn(s"DEBUG ${ilmoitus.hakemusOid} hakukohteenNimet ${ilmoitus.hakukohteet.map(_.hakukohteenNimet)}")
     EmailStructure(
       hakukohteet = ilmoitus.hakukohteet
         .map(hk => EmailHakukohde(
