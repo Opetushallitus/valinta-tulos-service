@@ -1,20 +1,20 @@
 package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import fi.vm.sade.valintatulosservice.json.JsonFormats.jsonFormats
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, Vastaanottotila}
 import org.apache.velocity.VelocityContext
 import org.apache.velocity.app.VelocityEngine
 import org.json4s.DefaultFormats
 import org.json4s.jackson.JsonMethods.parse
 import org.json4s.jackson.Serialization.write
+import org.slf4j.LoggerFactory
 
 import java.util
 import scala.collection.JavaConverters._
 import java.io.StringWriter
 import java.time.ZoneId
-import java.time.chrono.IsoChronology
-import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder, ResolverStyle}
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import java.util.Date
 import scala.collection.Iterable
 import scala.language.implicitConversions
 
@@ -38,11 +38,13 @@ object EmailStructure {
       s.flatMap(m.get).find(_.nonEmpty)
         .getOrElse("-")
   }
+  private val LOG : org.slf4j.Logger = LoggerFactory.getLogger(classOf[EmailStructure])
 
   private val timezone = ZoneId.of("Europe/Helsinki")
 
   def apply(ilmoitus: Ilmoitus): EmailStructure = {
     val lang = ilmoitus.asiointikieli.toLowerCase()
+    LOG.error(s"DEBUG ${ilmoitus.hakemusOid} hakukohteenNimet ${ilmoitus.hakukohteet.map(_.hakukohteenNimet)}")
     EmailStructure(
       hakukohteet = ilmoitus.hakukohteet
         .map(hk => EmailHakukohde(
