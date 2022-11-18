@@ -31,11 +31,11 @@ case class EmailStructure(etunimi: String,
 
 object EmailStructure {
 
-  implicit def mapToGetAnyMap[A](m: Map[A, String]): MapWithGetAny[A, String] = new MapWithGetAny(m)
+  implicit def mapToGetAnyMap(m: Map[String, String]): MapWithGetAny[String, String] = new MapWithGetAny(m)
 
-  class MapWithGetAny[A, B <: String](m: Map[A, String]) {
-    def getAny(s: A*): String =
-      s.flatMap(m.get).find(_.nonEmpty)
+  class MapWithGetAny[A <: String, B <: String](m: Map[String, String]) {
+    def getAny(s: String*): String =
+      s.flatMap(ss => m.get(ss).orElse(m.get(s"kieli_$ss"))).find(_.nonEmpty)
         .getOrElse("-")
   }
   private val LOG : org.slf4j.Logger = LoggerFactory.getLogger(classOf[EmailStructure])
@@ -44,7 +44,7 @@ object EmailStructure {
 
   def apply(ilmoitus: Ilmoitus): EmailStructure = {
     val lang = ilmoitus.asiointikieli.toLowerCase()
-    LOG.warn(s"DEBUG ${ilmoitus.hakemusOid} hakukohteenNimet ${ilmoitus.hakukohteet.map(_.hakukohteenNimet)}")
+    LOG.warn(s"DEBUG ${ilmoitus.hakemusOid} hakukohteenNimet ${ilmoitus.hakukohteet.map(_.hakukohteenNimet)} ja haunNimi ")
     EmailStructure(
       hakukohteet = ilmoitus.hakukohteet
         .map(hk => EmailHakukohde(
