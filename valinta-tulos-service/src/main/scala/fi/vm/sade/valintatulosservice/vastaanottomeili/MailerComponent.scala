@@ -132,12 +132,12 @@ trait MailerComponent {
 
         val (templateName, subjectFi, subjectSv, subjectEn) = lahetysSyy match {
           case LahetysSyy.vastaanottoilmoitusKk =>
-            ("omattiedot_email",
+            ("opiskelupaikka_vastaanotettavissa_email",
               s"Opiskelupaikka vastaanotettavissa Opintopolussa $applicationPostfix",
               s"Studieplatsen kan tas emot i Studieinfo $applicationPostfix",
               s"Offer of admission in Studyinfo $applicationPostfix")
           case LahetysSyy.vastaanottoilmoitus2aste =>
-            ("omattiedot_email_2aste",
+            ("opiskelupaikka_vastaanotettavissa_email_2aste",
               s"Opiskelupaikka vastaanotettavissa Opintopolussa $applicationPostfix",
               s"Studieplatsen kan tas emot i Studieinfo $applicationPostfix",
               s"Offer of admission in Studyinfo $applicationPostfix")
