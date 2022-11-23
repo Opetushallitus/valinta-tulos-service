@@ -23,11 +23,9 @@ class SijoitteluService(val sijoitteluRepository: SijoitteluRepository with Haki
   def getHakukohteidenAlimmatHyvaksytytPisteet(hakuOid: HakuOid): List[JononAlimmatPisteet] = {
     val sid = sijoitteluRepository.runBlocking(sijoitteluRepository.getLatestSijoitteluajoId("latest", hakuOid))
     logger.info(s"AHP Getting alimmat pisteet for sijoitteluajo $sid")
-    val tulokset = sijoitteluRepository.getSijoitteluajonJonojenAlimmatPisteet(sid)
-
-    tulokset.groupBy(t => t.hakukohdeOid).map(entry => {
-      entry._2.minBy(p => p.alinHyvaksyttyPistemaara)
-    }).toList
+    val result = sijoitteluRepository.getSijoitteluajonJonojenAlimmatPisteet(sid)
+    logger.info(s"AHP got ${result.size} results for sijoitteluajo $sid")
+    result 
   }
 
   def getHakukohdeBySijoitteluajo(hakuOid: HakuOid, sijoitteluajoId: String, hakukohdeOid: HakukohdeOid, session: Session, auditInfo: AuditInfo): HakukohdeDTO = {
