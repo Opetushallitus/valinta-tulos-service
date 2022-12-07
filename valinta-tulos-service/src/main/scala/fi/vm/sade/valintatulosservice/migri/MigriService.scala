@@ -2,15 +2,18 @@ package fi.vm.sade.valintatulosservice.migri
 
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
+import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, HakukohdeMigri}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakijaOid, HakukohdeOid, HyvaksyttyValinnanTila, ValinnantulosWithTilahistoria}
 import fi.vm.sade.valintatulosservice.{AuditInfo, LukuvuosimaksuService, ValinnantulosService}
+import scala.concurrent.duration._
 
-import scala.collection.immutable.Set
 
-class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuService, valinnantulosService: ValinnantulosService, oppijanumerorekisteriService: OppijanumerorekisteriService, valintarekisteriService: ValinnantulosRepository, lukuvuosimaksuService: LukuvuosimaksuService) extends Logging {
+class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuService, valinnantulosService: ValinnantulosService,
+                   oppijanumerorekisteriService: OppijanumerorekisteriService, valintarekisteriService: ValinnantulosRepository,
+                   lukuvuosimaksuService: LukuvuosimaksuService, hakijaResolver: HakijaResolver) extends Logging {
 
   private def getForeignHakijat(hakijaOids: Set[HakijaOid]): Set[MigriHakija] = {
     oppijanumerorekisteriService.henkilot(hakijaOids).fold(e => {
@@ -79,6 +82,14 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
           }
     }
     hakemukset
+  }
+
+  def getHakemuksetByHetus(hetus: Set[String], auditInfo: AuditInfo) = {
+    val personOids = hetus.flatMap(hetu => {
+      hakijaResolver.findPersonByHetu(hetu, 5.seconds).map(person => HakijaOid(person.oidHenkilo))
+    })
+    logger.info(s"getHakemuksetByHetus: Löydettiin ${hetus.size} henkilötunnukselle ${personOids.size} henkilöOidia. Haetaan hakemukset.")
+    getHakemuksetByHakijaOids(personOids, auditInfo)
   }
 
   def getHakemuksetByHakijaOids(hakijaOids: Set[HakijaOid], auditInfo: AuditInfo): Set[MigriHakija] = {
