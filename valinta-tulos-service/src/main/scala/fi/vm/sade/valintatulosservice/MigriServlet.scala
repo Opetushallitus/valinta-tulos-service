@@ -30,7 +30,7 @@ class MigriServlet(audit: Audit, migriService: MigriService, val sessionReposito
         .setField("hakijaOids", hakijaOids.toString())
       audit.log(auditInfo.user, HakemuksenLuku, builder.build(), new Changes.Builder().build())
 
-      migriService.getHakemuksetByHakijaOids(hakijaOids, auditInfo) match {
+      migriService.getMigriHakijatByOids(hakijaOids, auditInfo) match {
         case hakijat if hakijat.nonEmpty => Ok(hakijat)
         case _ => NotFound(body = Map("error" -> "Not Found"))
       }
@@ -55,7 +55,7 @@ class MigriServlet(audit: Audit, migriService: MigriService, val sessionReposito
         .setField("hetut", hetus.toString())
       audit.log(auditInfo.user, HakemuksenLuku, builder.build(), new Changes.Builder().build())
 
-      migriService.getHakemuksetByHetus(hetus, auditInfo) match {
+      migriService.getMigriHakijatByHetus(hetus, auditInfo) match {
         case hakijat if hakijat.nonEmpty => Ok(hakijat)
         case _ => NotFound(body = Map("error" -> "Not Found"))
       }
