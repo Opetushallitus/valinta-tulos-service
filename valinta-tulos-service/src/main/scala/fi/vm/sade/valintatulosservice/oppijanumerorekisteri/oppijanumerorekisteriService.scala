@@ -12,6 +12,7 @@ import org.json4s.JsonAST.{JNull, JObject, JString, JValue}
 import org.json4s.{DefaultFormats, JArray, Reader, Writer}
 import scalaz.concurrent.Task
 
+import org.json4s.DefaultReaders.arrayReader
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
 
@@ -82,6 +83,12 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) {
     }.attemptRunFor(Duration(1, TimeUnit.MINUTES)).toEither
   }
 
+  def henkilotForHetus(hetus: Set[String]): Either[Throwable, Set[Henkilo]] = {
+    hetus.grouped(5000).foldLeft(Task(Set.empty[Henkilo])) {
+      (f, chunk) => f.flatMap(m => henkilotChunkHetus(chunk).map(m ++ _))
+    }.attemptRunFor(Duration(1, TimeUnit.MINUTES)).toEither
+  }
+
   private def henkilotChunk(oids: Set[HakijaOid]): Task[Map[HakijaOid, Henkilo]] = {
     import org.json4s.DefaultReaders.mapReader
     import org.json4s.DefaultWriters.{StringWriter, arrayWriter}
@@ -95,6 +102,25 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) {
           case r if r.status.code == 200 => r.as[Map[String, Henkilo]](jsonOf[Map[String, Henkilo]]).map(_.map { case (oid, h) => HakijaOid(oid) -> h })
             .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing henkilöt $oids failed", t)) }
           case r => Task.fail(new RuntimeException(s"Failed to get henkilöt $oids: ${r.toString()}"))
+        }
+      })
+  }
+
+  private def henkilotChunkHetus(hetus: Set[String]): Task[Set[Henkilo]] = {
+    import org.json4s.DefaultWriters.{StringWriter, arrayWriter}
+
+    val hr: Reader[Henkilo] = Henkilo.henkiloReader
+    val henkiloDecoder = jsonOf[Array[Henkilo]](arrayReader[Henkilo](manifest[Henkilo], hr))
+
+    Uri.fromString(appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.perustiedotByHetus"))
+      .fold(Task.fail, uri => {
+        val req = Request(method = POST, uri = uri)
+          .withBody[Array[String]](hetus.toArray)(jsonEncoderOf[Array[String]])
+        client.fetch(req) {
+          case r if r.status.code == 200 =>
+            r.as[Array[Henkilo]](henkiloDecoder).map(_.toSet)
+              .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing onr-result for hetus ($hetus) failed", t)) }
+          case r => Task.fail(new RuntimeException(s"Failed to get henkilöt for hetus ($hetus): ${r.toString()}"))
         }
       })
   }
