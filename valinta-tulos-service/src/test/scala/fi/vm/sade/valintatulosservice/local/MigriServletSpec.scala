@@ -226,7 +226,7 @@ class MigriServletSpec extends Specification with EmbeddedJettyContainer with Ht
       t._9.getLukuvuosimaksuByHakijaAndHakukohde(any(), any(), any()) returns None
       post(t._1 + "/hakemukset/henkilo-oidit", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
         status must_== 404
-        body must_== "{\"error\":\"Not Found\"}"
+        body must_== "[]"
       }
     }
 
@@ -240,7 +240,7 @@ class MigriServletSpec extends Specification with EmbeddedJettyContainer with Ht
       t._9.getLukuvuosimaksuByHakijaAndHakukohde(any(), any(), any()) returns None
       post(t._1 + "/hakemukset/henkilo-oidit", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
         status must_== 404
-        body must_== "{\"error\":\"Not Found\"}"
+        body must_== "[]"
       }
     }
 
