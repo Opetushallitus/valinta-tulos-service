@@ -225,7 +225,7 @@ class MigriServletSpec extends Specification with EmbeddedJettyContainer with Ht
       t._8.findHakemus(any()) returns Right(hakemus)
       t._9.getLukuvuosimaksuByHakijaAndHakukohde(any(), any(), any()) returns None
       post(t._1 + "/hakemukset/henkilo-oidit", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
-        status must_== 404
+        status must_== 200
         body must_== "[]"
       }
     }
@@ -239,7 +239,7 @@ class MigriServletSpec extends Specification with EmbeddedJettyContainer with Ht
       t._8.findHakemus(any()) returns Right(hakemus)
       t._9.getLukuvuosimaksuByHakijaAndHakukohde(any(), any(), any()) returns None
       post(t._1 + "/hakemukset/henkilo-oidit", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
-        status must_== 404
+        status must_== 200
         body must_== "[]"
       }
     }
