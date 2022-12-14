@@ -19,7 +19,7 @@ class MigriServlet(audit: Audit, migriService: MigriService, val sessionReposito
   post("/hakemukset/henkilo-oidit", operation(migriHakemuksetOideilleSwagger)) {
     contentType = formats("json")
 
-    implicit val authenticated = authenticate
+    implicit val authenticated: Authenticated = authenticate
     authorize(Role.MIGRI_READ)
 
     try {
@@ -30,10 +30,7 @@ class MigriServlet(audit: Audit, migriService: MigriService, val sessionReposito
         val builder = new Target.Builder()
           .setField("hakijaOids", hakijaOids.toString())
         audit.log(auditInfo.user, HakemuksenLuku, builder.build(), new Changes.Builder().build())
-        migriService.getMigriHakijatByOids(hakijaOids, auditInfo) match {
-          case hakijat if hakijat.nonEmpty => Ok(hakijat)
-          case _ => NotFound(body = Set())
-        }
+        Ok(migriService.getMigriHakijatByOids(hakijaOids, auditInfo))
       }
     } catch {
       case t: Throwable =>
@@ -49,7 +46,7 @@ class MigriServlet(audit: Audit, migriService: MigriService, val sessionReposito
   post("/hakemukset/hetut", operation(migriHakemuksetHetuilleSwagger)) {
     contentType = formats("json")
 
-    implicit val authenticated = authenticate
+    implicit val authenticated: Authenticated = authenticate
     authorize(Role.MIGRI_READ)
 
     try {
@@ -61,10 +58,7 @@ class MigriServlet(audit: Audit, migriService: MigriService, val sessionReposito
           .setField("hetut", hetus.toString())
         audit.log(auditInfo.user, HakemuksenLuku, builder.build(), new Changes.Builder().build())
 
-        migriService.getMigriHakijatByHetus(hetus, auditInfo) match {
-          case hakijat if hakijat.nonEmpty => Ok(hakijat)
-          case _ => NotFound(body = Set())
-        }
+        Ok(migriService.getMigriHakijatByHetus(hetus, auditInfo))
       }
     } catch {
       case t: Throwable =>
