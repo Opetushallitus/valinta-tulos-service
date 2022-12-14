@@ -50,7 +50,6 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
   }
 
   private def tuloksetToMigriHakemukset(tulokset: Set[ValinnantulosWithTilahistoria], auditInfo: AuditInfo): Set[MigriHakemus] = {
-    logger.info(s"Muodostetaan MigriHakemukset ${tulokset.size} valinnantulokselle")
     tulokset.map(tulos => {
       getHakukohdeMigri(tulos.valinnantulos.hakukohdeOid) match {
         case Some(hakukohde: HakukohdeMigri) =>
@@ -90,19 +89,16 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
   }
 
   def getMigriHakijatByHetus(hetus: Set[String], auditInfo: AuditInfo) = {
-    logger.info(s"migriHakijat: Haetaan henkilöt ${hetus.size} henkilötunnukselle.")
     val hakijat = getMigriHenkilotForHetus(hetus)
     logger.info(s"migriHakijat: Löydettiin ${hetus.size} henkilötunnukselle ${hakijat.size} henkilöä. Haetaan hakemukset.")
     enrichHakijatWithHakemukses(hakijat, auditInfo)
   }
 
   def getMigriHakijatByOids(henkilot: Set[HakijaOid], auditInfo: AuditInfo) = {
-    logger.info(s"migriHakijat: Haetaan henkilöt ${henkilot.size} henkilöOidille.")
     val hakijat = getMigriHenkilotForOids(henkilot)
     logger.info(s"migriHakijat: Löydettiin ${henkilot.size} henkilöOidille ${hakijat.size} henkilöä. Haetaan hakemukset.")
     enrichHakijatWithHakemukses(hakijat, auditInfo)
   }
-
 
   def enrichHakijatWithHakemukses(henkilot: Set[MigriHakija], auditInfo: AuditInfo): Set[MigriHakija] = {
     henkilot.map(hakija => {
