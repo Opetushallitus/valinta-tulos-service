@@ -31,6 +31,7 @@
         "vastaanottoTila": "VASTAANOTTANUT_SITOVASTI",
         "ilmoittautuminenTila": "LASNA_KOKO_LUKUVUOSI",
         "maksuvelvollisuus": "REQUIRED",
+        "lukuvuosimaksu": "MAKSAMATTA",
         "koulutuksenAlkamisvuosi": 2022,
         "koulutuksenAlkamiskausi": "S"
       }
