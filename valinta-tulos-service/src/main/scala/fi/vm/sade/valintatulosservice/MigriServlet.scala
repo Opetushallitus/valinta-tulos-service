@@ -25,7 +25,7 @@ class MigriServlet(audit: Audit, migriService: MigriService, val sessionReposito
     try {
       val hakijaOids = parsedBody.extract[Set[HakijaOid]]
       if (hakijaOids.isEmpty || hakijaOids.size > 5000) {
-        BadRequest("Minimum of 1 and maximum of 5000 persons at a time.")
+        BadRequest("error" -> "Minimum of 1 and maximum of 5000 persons at a time.")
       } else {
         val builder = new Target.Builder()
           .setField("hakijaOids", hakijaOids.toString())
@@ -52,7 +52,7 @@ class MigriServlet(audit: Audit, migriService: MigriService, val sessionReposito
     try {
       val hetus = parsedBody.extract[Set[String]]
       if (hetus.isEmpty || hetus.size > 5000) {
-        BadRequest("Minimum of 1 and maximum of 5000 persons at a time.")
+        BadRequest("error" -> "Minimum of 1 and maximum of 5000 persons at a time.")
       } else {
         val builder = new Target.Builder()
           .setField("hetut", hetus.toString())
