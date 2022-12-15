@@ -50,7 +50,6 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
   }
 
   private def tuloksetToMigriHakemukset(tulokset: Set[ValinnantulosWithTilahistoria], auditInfo: AuditInfo): Set[MigriHakemus] = {
-    logger.info(s"Muodostetaan MigriHakemukset ${tulokset.size} valinnantulokselle")
     tulokset.map(tulos => {
       getHakukohdeMigri(tulos.valinnantulos.hakukohdeOid) match {
         case Some(hakukohde: HakukohdeMigri) =>
@@ -58,19 +57,20 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
             val errorString: String = s"No hakemus found for migri hakijaOid: ${tulos.valinnantulos.hakemusOid}, cause: ${e.toString}"
             logger.error(errorString)
             throw new RuntimeException(errorString)
-          }, h => {
-            val lukuvuosimaksu = lukuvuosimaksuService.getLukuvuosimaksuByHakijaAndHakukohde(HakijaOid(h.henkiloOid), tulos.valinnantulos.hakukohdeOid, auditInfo) match {
-              case Some(maksu) => Some(maksu.maksuntila.toString)
-              case None => None
+          }, hakemus => {
+            val maksuvelvollisuus: Option[String] = hakemus.maksuvelvollisuudet.find(m => m._1.equals(tulos.valinnantulos.hakukohdeOid.toString)).map(_._2)
+            val lukuvuosimaksu = maksuvelvollisuus match {
+              case Some(mv) if mv.equals("REQUIRED") =>
+                lukuvuosimaksuService.getLukuvuosimaksuByHakijaAndHakukohde(HakijaOid(hakemus.henkiloOid), tulos.valinnantulos.hakukohdeOid, auditInfo) match {
+                  case Some(maksu) => Some(maksu.maksuntila.toString)
+                  case None => Some("MAKSAMATTA")
+              }
+              case _ => None
             }
-            val maksuvelvollisuus: Option[String] =
-              if (h.maksuvelvollisuudet.exists(m => m._1 == tulos.valinnantulos.hakukohdeOid.toString))
-                Some(h.maksuvelvollisuudet.filter(m => m._1 == tulos.valinnantulos.hakukohdeOid.toString).head._2)
-              else None
             MigriHakemus(
-              hakuOid = h.hakuOid.toString,
+              hakuOid = hakemus.hakuOid.toString,
               hakuNimi = hakukohde.hakuNimi,
-              hakemusOid = h.oid.toString,
+              hakemusOid = hakemus.oid.toString,
               organisaatioOid = hakukohde.organisaatioOid,
               organisaatioNimi = hakukohde.organisaatioNimi,
               hakukohdeOid = tulos.valinnantulos.hakukohdeOid.toString,
@@ -90,19 +90,16 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
   }
 
   def getMigriHakijatByHetus(hetus: Set[String], auditInfo: AuditInfo) = {
-    logger.info(s"migriHakijat: Haetaan henkilöt ${hetus.size} henkilötunnukselle.")
     val hakijat = getMigriHenkilotForHetus(hetus)
     logger.info(s"migriHakijat: Löydettiin ${hetus.size} henkilötunnukselle ${hakijat.size} henkilöä. Haetaan hakemukset.")
     enrichHakijatWithHakemukses(hakijat, auditInfo)
   }
 
   def getMigriHakijatByOids(henkilot: Set[HakijaOid], auditInfo: AuditInfo) = {
-    logger.info(s"migriHakijat: Haetaan henkilöt ${henkilot.size} henkilöOidille.")
     val hakijat = getMigriHenkilotForOids(henkilot)
     logger.info(s"migriHakijat: Löydettiin ${henkilot.size} henkilöOidille ${hakijat.size} henkilöä. Haetaan hakemukset.")
     enrichHakijatWithHakemukses(hakijat, auditInfo)
   }
-
 
   def enrichHakijatWithHakemukses(henkilot: Set[MigriHakija], auditInfo: AuditInfo): Set[MigriHakija] = {
     henkilot.map(hakija => {

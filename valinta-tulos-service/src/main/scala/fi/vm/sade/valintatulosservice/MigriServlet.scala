@@ -25,7 +25,7 @@ class MigriServlet(audit: Audit, migriService: MigriService, val sessionReposito
     try {
       val hakijaOids = parsedBody.extract[Set[HakijaOid]]
       if (hakijaOids.isEmpty || hakijaOids.size > 5000) {
-        BadRequest("Minimum of 1 and maximum of 5000 hakijaOids at a time.")
+        BadRequest("Minimum of 1 and maximum of 5000 persons at a time.")
       } else {
         val builder = new Target.Builder()
           .setField("hakijaOids", hakijaOids.toString())
@@ -35,7 +35,7 @@ class MigriServlet(audit: Audit, migriService: MigriService, val sessionReposito
     } catch {
       case t: Throwable =>
         logger.error(s"Virhe haettaessa migrihakemuksia oideille: ", t)
-        InternalServerError("Odottamaton virhe palvelussa. Ota yhteyttä ylläpitoon.")
+        InternalServerError("error" -> "Internal server error.")
     }
   }
 
@@ -52,19 +52,17 @@ class MigriServlet(audit: Audit, migriService: MigriService, val sessionReposito
     try {
       val hetus = parsedBody.extract[Set[String]]
       if (hetus.isEmpty || hetus.size > 5000) {
-        BadRequest("Minimum of 1 and maximum of 5000 hetus at a time.")
+        BadRequest("Minimum of 1 and maximum of 5000 persons at a time.")
       } else {
         val builder = new Target.Builder()
           .setField("hetut", hetus.toString())
         audit.log(auditInfo.user, HakemuksenLuku, builder.build(), new Changes.Builder().build())
-
         Ok(migriService.getMigriHakijatByHetus(hetus, auditInfo))
       }
     } catch {
       case t: Throwable =>
         logger.error(s"Virhe haettaessa migrihakemuksia hetuille: ", t)
-        InternalServerError("Odottamaton virhe palvelussa. Ota yhteyttä ylläpitoon.")
+        InternalServerError("error" -> "Internal server error.")
     }
-
   }
 }
