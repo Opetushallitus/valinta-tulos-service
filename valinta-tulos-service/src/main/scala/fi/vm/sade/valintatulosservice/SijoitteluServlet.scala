@@ -7,9 +7,12 @@ import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import org.json4s.DefaultFormats
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 import org.scalatra.{InternalServerError, NoContent, NotFound, Ok}
+import org.json4s.native.Json
+import org.json4s.DefaultFormats
 
 import scala.util.{Failure, Success, Try}
 
@@ -109,15 +112,25 @@ class SijoitteluServlet(sijoitteluService: SijoitteluService,
       Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakukohdeBySijoitteluajo(hakuOid, sijoitteluajoId, hakukohdeOid, authenticated.session, auditInfo))))
   }
 
+  lazy val getHaunAlimmatPisteetSwagger: OperationBuilder = (apiOperation[Unit]("getHaunAlimmatPisteetSwagger")
+    summary "Hakee haun kaikkien hakukohteiden tiedot tietyssa sijoitteluajossa."
+    parameter pathParam[String]("hakuOid").description("Haun yksilöllinen tunniste")
+    tags "sijoittelu")
+  get("/:hakuOid/sijoitteluajo/latest/alimmatPisteet", operation(getHaunAlimmatPisteetSwagger)) {
+    val hakuOid = HakuOid(params("hakuOid"))
+
+    implicit val authenticated = authenticate
+    authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
+
+    wrapNotFound(() =>
+      Ok(Json(JsonFormats.jsonFormats).write(sijoitteluService.getHakukohteidenAlimmatHyvaksytytPisteet(hakuOid))))
+  }
+
   lazy val sijoitteluajoExistsForHakuJonoSwagger: OperationBuilder = (apiOperation[Unit]("sijoitteluajoExistsForHakuJonoSwagger")
     summary "Kertoo onko valintatapajonolle suoritettu sijoittelua"
     parameter pathParam[String]("jonoOid").description("Valintatapajonon yksilöllinen tunniste")
     tags "sijoittelu")
   get("/jono/:jonoOid", operation(sijoitteluajoExistsForHakuJonoSwagger)) {
-
-    import org.json4s.native.Json
-    import org.json4s.DefaultFormats
-
     val jonoOid = ValintatapajonoOid(params("jonoOid"))
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)

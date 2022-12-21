@@ -91,6 +91,12 @@ trait ValintarekisteriResultExtractors {
     oid = HakukohdeOid(r.nextString),
     kaikkiJonotsijoiteltu = r.nextBoolean))
 
+  protected implicit val getJononAlimmatPisteet = GetResult(r => JononAlimmatPisteet(
+    valintatapajonoOid = ValintatapajonoOid(r.nextString),
+    hakukohdeOid = HakukohdeOid(r.nextString),
+    alinHyvaksyttyPistemaara = r.nextDouble,
+    sijoitteluajoId = r.nextLong))
+
   protected implicit val getValintatapajonotResult = GetResult(r => ValintatapajonoRecord(
     tasasijasaanto = r.nextString,
     oid = ValintatapajonoOid(r.nextString),

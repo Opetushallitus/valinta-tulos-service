@@ -6,7 +6,7 @@ import fi.vm.sade.sijoittelu.tulos.dto.{HakukohdeDTO, SijoitteluajoDTO}
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
-import fi.vm.sade.valintatulosservice.tarjonta.HakuService
+import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.{SijoitteluajonHakija, SijoitteluajonHakukohde, SijoitteluajonHakukohteet}
@@ -18,6 +18,14 @@ class SijoitteluService(val sijoitteluRepository: SijoitteluRepository with Haki
 
   def getHakukohdeBySijoitteluajoWithoutAuthentication(hakuOid: HakuOid, sijoitteluajoId: String, hakukohdeOid: HakukohdeOid): HakukohdeDTO = {
     new SijoitteluajonHakukohde(sijoitteluRepository, sijoitteluRepository.runBlocking(sijoitteluRepository.getLatestSijoitteluajoId(sijoitteluajoId, hakuOid)), hakukohdeOid).dto()
+  }
+
+  def getHakukohteidenAlimmatHyvaksytytPisteet(hakuOid: HakuOid): List[JononAlimmatPisteet] = {
+    val sid = sijoitteluRepository.runBlocking(sijoitteluRepository.getLatestSijoitteluajoId("latest", hakuOid))
+    logger.info(s"AHP Getting alimmat pisteet for sijoitteluajo $sid")
+    val result = sijoitteluRepository.getSijoitteluajonJonojenAlimmatPisteet(sid)
+    logger.info(s"AHP got ${result.size} results for sijoitteluajo $sid")
+    result 
   }
 
   def getHakukohdeBySijoitteluajo(hakuOid: HakuOid, sijoitteluajoId: String, hakukohdeOid: HakukohdeOid, session: Session, auditInfo: AuditInfo): HakukohdeDTO = {

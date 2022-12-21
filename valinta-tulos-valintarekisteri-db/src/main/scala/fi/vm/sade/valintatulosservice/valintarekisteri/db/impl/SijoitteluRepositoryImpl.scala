@@ -49,6 +49,14 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
               where sh.sijoitteluajo_id = ${sijoitteluajoId}""".as[HakukohdeOid]).toList.distinct
     }
 
+  override def getSijoitteluajonJonojenAlimmatPisteet(sijoitteluajoId: Long): List[JononAlimmatPisteet] =
+    timed(s"Sijoitteluajon $sijoitteluajoId jonojen alimpien pisteiden haku", 100) {
+      runBlocking(
+      sql"""select oid, hakukohde_oid, alin_hyvaksytty_pistemaara, sijoitteluajo_id from valintatapajonot v
+            where sijoitteluajo_id = $sijoitteluajoId""".as[JononAlimmatPisteet]
+      ).toList
+    }
+
   override def getSijoitteluajonHakukohde(sijoitteluajoId: Long, hakukohdeOid: HakukohdeOid): Option[SijoittelunHakukohdeRecord] =
     timed(s"Sijoitteluajon $sijoitteluajoId hakukohteen $hakukohdeOid haku", 100) {
       runBlocking(
