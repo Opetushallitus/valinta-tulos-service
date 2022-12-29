@@ -26,7 +26,8 @@
         "valintaTila": "HYVAKSYTTY",
         "vastaanottoTila": "VASTAANOTTANUT_SITOVASTI",
         "ilmoittautuminenTila": "LASNA_KOKO_LUKUVUOSI",
-        "maksuvelvollisuus": "REQUIRED"
+        "maksuvelvollisuus": "REQUIRED",
+        "lukuvuosimaksu": "MAKSAMATTA"
       }
     ]
   }

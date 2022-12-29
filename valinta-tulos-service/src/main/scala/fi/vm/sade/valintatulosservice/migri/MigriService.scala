@@ -2,88 +2,107 @@ package fi.vm.sade.valintatulosservice.migri
 
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
-import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
+import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
+import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.{Henkilo, OppijanumerorekisteriService}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, HakukohdeMigri}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakijaOid, HakukohdeOid, HyvaksyttyValinnanTila, ValinnantulosWithTilahistoria}
 import fi.vm.sade.valintatulosservice.{AuditInfo, LukuvuosimaksuService, ValinnantulosService}
 
-import scala.collection.immutable.Set
+class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuService, valinnantulosService: ValinnantulosService,
+                   oppijanumerorekisteriService: OppijanumerorekisteriService, valintarekisteriService: ValinnantulosRepository,
+                   lukuvuosimaksuService: LukuvuosimaksuService, hakijaResolver: HakijaResolver) extends Logging {
+  def parseForeignHakijat(henkilot: Set[Henkilo]): Set[MigriHakija] = {
+    henkilot.map(henkilo => {
+      val hetu = henkilo.hetu match {
+        case Some(hetu) => Some(hetu.toString)
+        case None => None
+      }
+      MigriHakija(
+        henkilotunnus = hetu,
+        henkiloOid = henkilo.oid.toString,
+        sukunimi = henkilo.sukunimi,
+        etunimet = henkilo.etunimet,
+        kansalaisuudet = henkilo.kansalaisuudet,
+        syntymaaika = henkilo.syntymaaika,
+        Set()
+      )
+    }
+    ).filterNot(hakija => hakija.kansalaisuudet match {
+      case Some(kansalaisuudet) => kansalaisuudet.contains("246")
+    })
+  }
 
-class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuService, valinnantulosService: ValinnantulosService, oppijanumerorekisteriService: OppijanumerorekisteriService, valintarekisteriService: ValinnantulosRepository, lukuvuosimaksuService: LukuvuosimaksuService) extends Logging {
-
-  private def getForeignHakijat(hakijaOids: Set[HakijaOid]): Set[MigriHakija] = {
+  def getMigriHenkilotForOids(hakijaOids: Set[HakijaOid]): Set[MigriHakija] = {
     oppijanumerorekisteriService.henkilot(hakijaOids).fold(e => {
-      val errorString: String = s"No migri hakijas found for oid(s): $hakijaOids found. Cause: $e"
+      val errorString: String = s"Error fetching hakijas for oid(s): $hakijaOids found. Cause: $e"
       logger.warn(errorString)
       throw new RuntimeException(errorString)
-    }, henkilot => {
-      henkilot.map(henkilo => {
-        val hetu = henkilo._2.hetu match {
-          case Some(hetu) => Some(hetu.toString)
-          case None => None
-        }
-        MigriHakija(
-          henkilotunnus = hetu,
-          henkiloOid = henkilo._2.oid.toString,
-          sukunimi = henkilo._2.sukunimi,
-          etunimet = henkilo._2.etunimet,
-          kansalaisuudet = henkilo._2.kansalaisuudet,
-          syntymaaika = henkilo._2.syntymaaika,
-          Set()
-        )
-      }
-      ).filterNot(hakija => hakija.kansalaisuudet match {
-        case Some(kansalaisuudet) => kansalaisuudet.contains("246")
-      }
-      ).toSet})
+    }, henkilot => parseForeignHakijat(henkilot.values.toSet))
+  }
+
+  def getMigriHenkilotForHetus(hetus: Set[String]): Set[MigriHakija] = {
+    oppijanumerorekisteriService.henkilotForHetus(hetus).fold(e => {
+      val errorString: String = s"Error fetching hakijas for hetu(s): $hetus found. Cause: $e"
+      logger.warn(errorString)
+      throw new RuntimeException(errorString)
+    }, henkilot => parseForeignHakijat(henkilot))
   }
 
   private def tuloksetToMigriHakemukset(tulokset: Set[ValinnantulosWithTilahistoria], auditInfo: AuditInfo): Set[MigriHakemus] = {
-    var hakemukset: Set[MigriHakemus] = Set()
-    tulokset match {
-      case tulokset: Set[ValinnantulosWithTilahistoria] =>
-        tulokset
-          .foreach { tulos =>
-            getHakukohdeMigri(tulos.valinnantulos.hakukohdeOid) match {
-              case Some(hakukohde: HakukohdeMigri) =>
-                hakemusRepository.findHakemus(tulos.valinnantulos.hakemusOid).fold(e => {
-                  val errorString: String = s"No hakemus found for migri hakijaOid: ${tulos.valinnantulos.hakemusOid}, cause: ${e.toString}"
-                  logger.error(errorString)
-                  throw new RuntimeException(errorString)
-                }, h => {
-                  val lukuvuosimaksu: Option[String] = lukuvuosimaksuService.getLukuvuosimaksuByHakijaAndHakukohde(HakijaOid(h.henkiloOid), tulos.valinnantulos.hakukohdeOid, auditInfo) match {
-                    case Some(maksu) => Some(maksu.maksuntila.toString)
-                    case None => None
-                  }
-                  val maksuvelvollisuus: Option[String] = if (h.maksuvelvollisuudet.exists(m => m._1 == tulos.valinnantulos.hakukohdeOid.toString)) Some(h.maksuvelvollisuudet.filter(m => m._1 == tulos.valinnantulos.hakukohdeOid.toString).head._2) else None
-                  hakemukset += MigriHakemus(
-                    hakuOid = h.hakuOid.toString,
-                    hakuNimi = hakukohde.hakuNimi,
-                    hakemusOid = h.oid.toString,
-                    organisaatioOid = hakukohde.organisaatioOid,
-                    organisaatioNimi = hakukohde.organisaatioNimi,
-                    hakukohdeOid = tulos.valinnantulos.hakukohdeOid.toString,
-                    hakukohdeNimi = hakukohde.hakukohteenNimi,
-                    toteutusOid = hakukohde.toteutusOid,
-                    toteutusNimi = hakukohde.toteutusNimi,
-                    valintaTila = tulos.valinnantulos.valinnantila.valinnantila.toString,
-                    vastaanottoTila = tulos.valinnantulos.vastaanottotila.toString,
-                    ilmoittautuminenTila = tulos.valinnantulos.ilmoittautumistila.ilmoittautumistila.toString,
-                    maksuvelvollisuus = maksuvelvollisuus,
-                    lukuvuosimaksu = lukuvuosimaksu,
-                    koulutuksenAlkamiskausi = hakukohde.koulutuksenAlkamiskausi,
-                    koulutuksenAlkamisvuosi = hakukohde.koulutuksenAlkamisvuosi)
-                })
+    tulokset.map(tulos => {
+      getHakukohdeMigri(tulos.valinnantulos.hakukohdeOid) match {
+        case Some(hakukohde: HakukohdeMigri) =>
+          hakemusRepository.findHakemus(tulos.valinnantulos.hakemusOid).fold(e => {
+            val errorString: String = s"No hakemus found for migri hakijaOid: ${tulos.valinnantulos.hakemusOid}, cause: ${e.toString}"
+            logger.error(errorString)
+            throw new RuntimeException(errorString)
+          }, hakemus => {
+            val maksuvelvollisuus: Option[String] = hakemus.maksuvelvollisuudet.find(m => m._1.equals(tulos.valinnantulos.hakukohdeOid.toString)).map(_._2)
+            val lukuvuosimaksu = maksuvelvollisuus match {
+              case Some(mv) if mv.equals("REQUIRED") =>
+                lukuvuosimaksuService.getLukuvuosimaksuByHakijaAndHakukohde(HakijaOid(hakemus.henkiloOid), tulos.valinnantulos.hakukohdeOid, auditInfo) match {
+                  case Some(maksu) => Some(maksu.maksuntila.toString)
+                  case None => Some("MAKSAMATTA")
+              }
+              case _ => None
             }
-          }
-    }
-    hakemukset
+            MigriHakemus(
+              hakuOid = hakemus.hakuOid.toString,
+              hakuNimi = hakukohde.hakuNimi,
+              hakemusOid = hakemus.oid.toString,
+              organisaatioOid = hakukohde.organisaatioOid,
+              organisaatioNimi = hakukohde.organisaatioNimi,
+              hakukohdeOid = tulos.valinnantulos.hakukohdeOid.toString,
+              hakukohdeNimi = hakukohde.hakukohteenNimi,
+              toteutusOid = hakukohde.toteutusOid,
+              toteutusNimi = hakukohde.toteutusNimi,
+              valintaTila = tulos.valinnantulos.valinnantila.valinnantila.toString,
+              vastaanottoTila = tulos.valinnantulos.vastaanottotila.toString,
+              ilmoittautuminenTila = tulos.valinnantulos.ilmoittautumistila.ilmoittautumistila.toString,
+              maksuvelvollisuus = maksuvelvollisuus,
+              lukuvuosimaksu = lukuvuosimaksu,
+              koulutuksenAlkamiskausi = hakukohde.koulutuksenAlkamiskausi,
+              koulutuksenAlkamisvuosi = hakukohde.koulutuksenAlkamisvuosi)
+          })
+      }
+    })
   }
 
-  def getHakemuksetByHakijaOids(hakijaOids: Set[HakijaOid], auditInfo: AuditInfo): Set[MigriHakija] = {
-    val foreignHakijat: Set[MigriHakija] = getForeignHakijat(hakijaOids)
-    foreignHakijat.map(hakija => {
+  def getMigriHakijatByHetus(hetus: Set[String], auditInfo: AuditInfo) = {
+    val hakijat = getMigriHenkilotForHetus(hetus)
+    logger.info(s"migriHakijat: Löydettiin ${hetus.size} henkilötunnukselle ${hakijat.size} henkilöä. Haetaan hakemukset.")
+    enrichHakijatWithHakemukses(hakijat, auditInfo)
+  }
+
+  def getMigriHakijatByOids(henkilot: Set[HakijaOid], auditInfo: AuditInfo) = {
+    val hakijat = getMigriHenkilotForOids(henkilot)
+    logger.info(s"migriHakijat: Löydettiin ${henkilot.size} henkilöOidille ${hakijat.size} henkilöä. Haetaan hakemukset.")
+    enrichHakijatWithHakemukses(hakijat, auditInfo)
+  }
+
+  def enrichHakijatWithHakemukses(henkilot: Set[MigriHakija], auditInfo: AuditInfo): Set[MigriHakija] = {
+    henkilot.map(hakija => {
       val hyvaksytyt: Set[HyvaksyttyValinnanTila] = valintarekisteriService.getHakijanHyvaksytValinnantilat(HakijaOid(hakija.henkiloOid))
       val hyvaksytytHakemusOidit = hyvaksytyt.map(h => h.hakemusOid)
       val hyvaksytytHakukohdeOidit = hyvaksytyt.map(h => h.hakukohdeOid)
@@ -100,8 +119,8 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
       Some(hakuService.getHakukohdeMigri(hakukohdeOid).right.get)
     } catch {
       case e: Throwable =>
-        logger.warn(e.toString)
-        None
+        logger.error(s"Jokin meni pieleen migrihakukohteen haussa: ${e.toString}")
+        throw e
     }
   }
 }

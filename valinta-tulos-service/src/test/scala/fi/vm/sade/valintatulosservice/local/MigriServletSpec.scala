@@ -7,6 +7,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain.{Hakemus, Hakutoive, Henkilotiedot}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
+import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
 import fi.vm.sade.valintatulosservice.migri.MigriService
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.{Henkilo, Hetu, OppijanumerorekisteriService}
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket}
@@ -41,7 +42,8 @@ class MigriServletSpec extends Specification with EmbeddedJettyContainer with Ht
     val hakuService = mock[HakuService]
     val hakemusRepository = mock[HakemusRepository]
     val oppijanumerorekisteriService = mock[OppijanumerorekisteriService]
-    val migriService = new MigriService(hakemusRepository, hakuService, valinnantulosService, oppijanumerorekisteriService, valintarekisteriService, lukuvuosimaksuService)
+    val hakijaResolver = mock[HakijaResolver]
+    val migriService = new MigriService(hakemusRepository, hakuService, valinnantulosService, oppijanumerorekisteriService, valintarekisteriService, lukuvuosimaksuService, hakijaResolver)
     val audit = mock[Audit]
 
     val servlet = new MigriServlet(audit, migriService, sessionRepository)(mock[Swagger])
@@ -208,13 +210,13 @@ class MigriServletSpec extends Specification with EmbeddedJettyContainer with Ht
   "POST /cas/migri/hakemukset/" in {
     "palauttaa forbidden jos ei migri-lukuoikeuksia" in { t: (String, MigriService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, HakemusRepository, LukuvuosimaksuService) =>
       t._3.get(any()) returns Some(withoutMigriSession)
-      post(t._1 + "/hakemukset/", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
+      post(t._1 + "/hakemukset/henkilo-oidit", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
         status must_== 403
         body must_== "{\"error\":\"Forbidden\"}"
       }
     }
 
-    "palauttaa 404 not found kun henkilöllä on kaksoiskansalaisuus ja hänellä on hyväksytty hakemus" in { t: (String, MigriService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, HakemusRepository, LukuvuosimaksuService) =>
+    "palauttaa tyhjän 200-vastauksen kun henkilöllä on kaksoiskansalaisuus ja hänellä on hyväksytty hakemus" in { t: (String, MigriService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, HakemusRepository, LukuvuosimaksuService) =>
       t._3.get(any()) returns Some(migriSession)
       t._4.henkilot(Set(hakijaOid)) returns Right(Map(hakijaOid -> Henkilo(hakijaOid, None, None, None, None, Some(List("246", "666")), None)))
       t._5.getHakijanHyvaksytValinnantilat(hakijaOid) returns Set(HyvaksyttyValinnanTila(HakemusOid("1.2.246.562.11.00000000000000964775"), HakukohdeOid("1.2.246.562.20.00000000000000000976")))
@@ -222,13 +224,13 @@ class MigriServletSpec extends Specification with EmbeddedJettyContainer with Ht
       t._7.getHakukohdeMigri(hakukohdeOid) returns Right(hakukohdeMigri)
       t._8.findHakemus(any()) returns Right(hakemus)
       t._9.getLukuvuosimaksuByHakijaAndHakukohde(any(), any(), any()) returns None
-      post(t._1 + "/hakemukset/", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
-        status must_== 404
-        body must_== "{\"error\":\"Not Found\"}"
+      post(t._1 + "/hakemukset/henkilo-oidit", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
+        status must_== 200
+        body must_== "[]"
       }
     }
 
-    "palauttaa 404 not found kun henkilö on ulkomaalainen ja hänellä on hylätty valinnantulos" in { t: (String, MigriService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, HakemusRepository, LukuvuosimaksuService) =>
+    "palauttaa tyhjän 200-vastauksen kun henkilö on ulkomaalainen ja hänellä on hylätty valinnantulos" in { t: (String, MigriService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, HakemusRepository, LukuvuosimaksuService) =>
       t._3.get(any()) returns Some(migriSession)
       t._4.henkilot(Set(hakijaOid)) returns Right(Map(hakijaOid -> Henkilo(hakijaOid, None, None, None, None, Some(List("666")), None)))
       t._5.getHakijanHyvaksytValinnantilat(hakijaOid) returns Set(HyvaksyttyValinnanTila(HakemusOid("1.2.246.562.11.00000000000000964775"), HakukohdeOid("1.2.246.562.20.00000000000000000976")))
@@ -236,9 +238,9 @@ class MigriServletSpec extends Specification with EmbeddedJettyContainer with Ht
       t._7.getHakukohdeMigri(hakukohdeOid) returns Right(hakukohdeMigri)
       t._8.findHakemus(any()) returns Right(hakemus)
       t._9.getLukuvuosimaksuByHakijaAndHakukohde(any(), any(), any()) returns None
-      post(t._1 + "/hakemukset/", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
-        status must_== 404
-        body must_== "{\"error\":\"Not Found\"}"
+      post(t._1 + "/hakemukset/henkilo-oidit", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
+        status must_== 200
+        body must_== "[]"
       }
     }
 
@@ -250,7 +252,7 @@ class MigriServletSpec extends Specification with EmbeddedJettyContainer with Ht
       t._7.getHakukohdeMigri(hakukohdeOid) returns Right(hakukohdeMigri)
       t._8.findHakemus(any()) returns Right(hakemus)
       t._9.getLukuvuosimaksuByHakijaAndHakukohde(any(), any(), any()) returns None
-      post(t._1 + "/hakemukset/", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
+      post(t._1 + "/hakemukset/henkilo-oidit", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
         status must_== 200
         assertJson(
           jsonFromClasspath("expected-migri-hakemus-only-required-fields.json"),
@@ -267,7 +269,7 @@ class MigriServletSpec extends Specification with EmbeddedJettyContainer with Ht
       t._7.getHakukohdeMigri(hakukohdeOid) returns Right(hakukohdeMigriFull)
       t._8.findHakemus(any()) returns Right(hakemusFull)
       t._9.getLukuvuosimaksuByHakijaAndHakukohde(any(), any(), any()) returns None
-      post(t._1 + "/hakemukset/", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
+      post(t._1 + "/hakemukset/henkilo-oidit", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
         status must_== 200
         assertJson(
           jsonFromClasspath("expected-migri-hakemus-all-fields.json"),
