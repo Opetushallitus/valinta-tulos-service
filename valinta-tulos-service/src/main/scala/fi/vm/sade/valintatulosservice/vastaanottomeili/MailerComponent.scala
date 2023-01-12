@@ -136,9 +136,10 @@ trait MailerComponent {
       try {
         val hakemusOid = ilmoitus.hakemusOid
         val applicationPostfix = language match {
-          case "en" => s"$hakemusOid"
-          case "sv" => s"$hakemusOid"
-          case _ => s"$hakemusOid"
+          case "fi" => s"(Hakemusnumero: $hakemusOid)"
+          case "sv" => s"(Ansökningsnummer: $hakemusOid)"
+          case "en" => s"(Application number: $hakemusOid)"
+          case _ => ""
         }
 
         val (templateName, subjectFi, subjectSv, subjectEn) = lahetysSyy match {
