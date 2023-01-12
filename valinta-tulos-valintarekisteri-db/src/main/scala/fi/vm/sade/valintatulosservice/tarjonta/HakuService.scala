@@ -392,7 +392,8 @@ case class KoutaHaku(oid: String,
   }
 }
 
-case class KoutaKoulutusMetadata(opintojenLaajuusKoodiUri: Option[String])
+case class KoutaKoulutusMetadata(opintojenLaajuusKoodiUri: Option[String],
+                                 opintojenLaajuusNumero: Option[Long])
 
 case class KoutaKoulutus(oid: String,
                          johtaaTutkintoon: Boolean,
@@ -466,7 +467,7 @@ case class KoutaHakukohde(oid: String,
   def toHakukohdeKela(haku: Option[KoutaHaku],
                       koulutus: KoutaKoulutus,
                       koulutuskoodit: Set[Koodi],
-                      opintojenLaajuusKoodi: Option[Koodi],
+                      opintojenLaajuus: Option[String],
                       tarjoajaorganisaatiohierarkiat: List[Organisaatiot]): Either[Throwable, HakukohdeKela] = {
     val koulutuksenAlkamiskausiUri =
       if (kaytetaanHaunAlkamiskautta) {
@@ -476,6 +477,7 @@ case class KoutaHakukohde(oid: String,
       if (kaytetaanHaunAlkamiskautta) {
         haku.get.metadata.koulutuksenAlkamiskausi.flatMap(ak => ak.koulutuksenAlkamisvuosi)
       } else alkamisvuosi
+    val opintojenLaajuusarvo: Option[String] = opintojenLaajuus.map(ol => if(ol == "300") "180+120" else ol)
     for {
       oppilaitos <- tarjoajaorganisaatiohierarkiat.toStream.map(_.find(_.isAktiivinenOppilaitos)).collectFirst {
         case Some(oppilaitos) => oppilaitos
@@ -499,7 +501,7 @@ case class KoutaHakukohde(oid: String,
           oid = Some(koulutus.oid),
           koulutuskoodi = Some(koulutuskoodi.arvo),
           koulutustyyppi = koulutuskoodi.findSisaltyvaKoodi("koulutustyyppi").map(_.arvo),
-          opintojenLaajuusarvo = opintojenLaajuusKoodi.map(_.arvo)
+          opintojenLaajuusarvo = opintojenLaajuusarvo
         )
       ).toSeq
     )
@@ -578,9 +580,11 @@ class KoutaHakuService(config: AppConfig,
       koutaToteutus <- getKoutaToteutusCached(koutaHakukohde.toteutusOid).right
       koutaKoulutus <- getKoutaKoulutusCached(koutaToteutus.koulutusOid).right
       koulutuskoodi <- getKoulutusKoodit(koutaKoulutus.koulutusKoodiUrit).right
-      opintojenlaajuuskoodi <- koutaKoulutus.metadata.flatMap(_.opintojenLaajuusKoodiUri).fold[Either[Throwable, Option[Koodi]]](Right(None))(koodistoService.getKoodi(_).right.map(Some(_))).right
       tarjoajaorganisaatiohierarkia <- organisaatioService.hae(koutaHakukohde.tarjoaja).right
-      hakukohde <- koutaHakukohde.toHakukohdeKela(koutaHaku, koutaKoulutus, koulutuskoodi, opintojenlaajuuskoodi, List(tarjoajaorganisaatiohierarkia)).right
+      hakukohde <- {
+        val opintojenlaajuuskoodi = koutaKoulutus.metadata.flatMap(_.opintojenLaajuusNumero.map(_.toString))
+        koutaHakukohde.toHakukohdeKela(koutaHaku, koutaKoulutus, koulutuskoodi, opintojenlaajuuskoodi, List(tarjoajaorganisaatiohierarkia)).right
+      }
     } yield Some(hakukohde)
   }
 

@@ -98,7 +98,11 @@ object VtsAppConfig extends Logging {
     private lazy val itPostgres = new ITPostgres(itPostgresPortChooser)
 
     override def start {
+
+      // Embedded MongoDB toimimaan ARM-arkkitehtuurin kanssa
+      if(System.getProperty("os.arch") == "aarch64") System.setProperty("os.arch", "i686_64")
       val mongo = EmbeddedMongo.start(embeddedMongoPortChooser)
+      
       Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
         override def run() {
           mongo.foreach(_.stop)
