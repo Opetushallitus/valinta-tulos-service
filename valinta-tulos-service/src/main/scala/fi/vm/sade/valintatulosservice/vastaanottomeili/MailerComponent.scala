@@ -114,11 +114,22 @@ trait MailerComponent {
           }
       }
       if (fails.nonEmpty) {
-        logger.error(s"Error response from group email service for batch sending ${batchLogString(0)}")
-        fails.foreach(i => mailPoller.deleteMailEntries(i))
+        logger.error(s"Error response from group email service for batch sending ${batchLogString(0)}. Failed hakemukses: $fails")
       }
-
       ids
+    }
+
+    private def sendWithRetry(data: EmailData, retriesLeft: Int = 1): Option[String] = {
+      try {
+        groupEmailService.sendMailWithoutTemplate(data)
+      } catch {
+        case e: Exception if retriesLeft > 0 =>
+          logger.warn(s"(Will retry) Exception when sending email ${data.email.subject}:", e)
+          sendWithRetry(data, retriesLeft -1)
+        case e =>
+          logger.error(s"(No more retries) Exception when sending email ${data.email.subject}:", e)
+          None
+      }
     }
 
     private def sendIlmoitus(language: String, lahetysSyy: LahetysSyy, batchLogString: Int => String, ilmoitus: Ilmoitus, index: Int): Either[HakemusOid, String] = {
@@ -153,14 +164,16 @@ trait MailerComponent {
               s"Your study place has been confirmed - register for studies $applicationPostfix")
         }
 
-        groupEmailService.sendMailWithoutTemplate(asEmailData(
+        val data = asEmailData(
           language match {
             case "en" => subjectEn
             case "sv" => subjectSv
             case _ => subjectFi
           },
           s"email-templates/${templateName}_template_$language.html",
-          ilmoitus)) match {
+          ilmoitus)
+
+        sendWithRetry(data) match {
           case Some(id) =>
             logger.info(s"Successful response from group email service for batch sending ${batchLogString(index)}.")
             sendConfirmation(List(ilmoitus))
