@@ -82,8 +82,8 @@ trait MailerComponent {
       }
     }
 
-    private def asEmailData(subject: String, templateName: String, ilmoitus: Ilmoitus): EmailData = {
-      val body = VelocityEmailTemplate.render(templateName, EmailStructure(ilmoitus))
+    private def asEmailData(subject: String, templateName: String, ilmoitus: Ilmoitus, lahetysSyy: LahetysSyy): EmailData = {
+      val body = VelocityEmailTemplate.render(templateName, EmailStructure(ilmoitus, lahetysSyy))
       EmailData(
         EmailMessage("omattiedot",
           subject, body, html = true),
@@ -172,7 +172,9 @@ trait MailerComponent {
             case _ => subjectFi
           },
           s"email-templates/${templateName}_template_$language.html",
-          ilmoitus)
+          ilmoitus,
+          lahetysSyy
+        )
 
         sendWithRetry(data) match {
           case Some(id) =>

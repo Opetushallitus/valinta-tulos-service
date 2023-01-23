@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import fi.vm.sade.valintatulosservice.json.JsonFormats.jsonFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy.{LahetysSyy, ehdollisen_periytymisen_ilmoitus}
 import org.apache.velocity.VelocityContext
 import org.apache.velocity.app.VelocityEngine
 import org.json4s.DefaultFormats
@@ -22,6 +23,7 @@ case class EmailHakukohde(nimi: String, tarjoaja: String)
 
 case class EmailStructure(etunimi: String,
                           haunNimi: String,
+                          hakukohde: Option[String],
                           securelink: Option[String],
                           deadline: Option[String],
                           hakukohteet: List[EmailHakukohde]) {
@@ -42,14 +44,25 @@ object EmailStructure {
 
   private val timezone = ZoneId.of("Europe/Helsinki")
 
-  def apply(ilmoitus: Ilmoitus): EmailStructure = {
+  def apply(ilmoitus: Ilmoitus, lahetysSyy: LahetysSyy): EmailStructure = {
+
+    val isValidVastaanottoIlmoitus = ilmoitus.hakukohteet.size == 1 && List(LahetysSyy.sitovan_vastaanoton_ilmoitus, LahetysSyy.sitovan_vastaanoton_ilmoitus).contains(lahetysSyy)
+    val isValidPaikkaVastaanotettavissaIlmoitus = ilmoitus.hakukohteet.size > 0 && List(LahetysSyy.vastaanottoilmoitus2aste, LahetysSyy.vastaanottoilmoitus2aste).contains(lahetysSyy)
+
+    if (!(isValidVastaanottoIlmoitus || isValidPaikkaVastaanotettavissaIlmoitus)) throw new IllegalArgumentException("Failed to add hakukohde information to recipient. Hakemus " + ilmoitus.hakemusOid +
+      ". LahetysSyy was " + lahetysSyy + " and there was " + ilmoitus.hakukohteet.size + "hakukohtees")
+
     val lang = ilmoitus.asiointikieli.toLowerCase()
     LOG.warn(s"DEBUG ${ilmoitus.hakemusOid} hakukohteenNimet ${ilmoitus.hakukohteet.map(_.hakukohteenNimet)} ja haunNimi ")
     EmailStructure(
-      hakukohteet = ilmoitus.hakukohteet
-        .map(hk => EmailHakukohde(
-          hk.hakukohteenNimet.getAny(lang, "fi", "sv", "en"),
-          hk.tarjoajaNimet.getAny(lang, "fi", "sv", "en"))),
+      hakukohde = if(isValidVastaanottoIlmoitus) Some(ilmoitus.hakukohteet.head.hakukohteenNimet.getAny(lang, "fi", "sv", "en")) else None,
+      hakukohteet =
+        if(isValidPaikkaVastaanotettavissaIlmoitus)
+          ilmoitus.hakukohteet
+            .map(hk => EmailHakukohde(
+              hk.hakukohteenNimet.getAny(lang, "fi", "sv", "en"),
+              hk.tarjoajaNimet.getAny(lang, "fi", "sv", "en")))
+      else List(),
       securelink = ilmoitus.secureLink,
       etunimi = ilmoitus.etunimi,
       haunNimi = ilmoitus.haku.nimi.getAny(lang, "fi", "sv", "en"),
