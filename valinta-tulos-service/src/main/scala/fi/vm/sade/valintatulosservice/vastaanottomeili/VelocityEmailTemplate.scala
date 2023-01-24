@@ -55,14 +55,19 @@ object EmailStructure {
     val lang = ilmoitus.asiointikieli.toLowerCase()
     LOG.warn(s"DEBUG ${ilmoitus.hakemusOid} hakukohteenNimet ${ilmoitus.hakukohteet.map(_.hakukohteenNimet)} ja haunNimi ")
     EmailStructure(
-      hakukohde = if(isValidVastaanottoIlmoitus) Some(ilmoitus.hakukohteet.head.hakukohteenNimet.getAny(lang, "fi", "sv", "en")) else None,
+      hakukohde =
+        if(isValidVastaanottoIlmoitus)
+          Some(ilmoitus.hakukohteet.head.hakukohteenNimet.getAny(lang, "fi", "sv", "en")
+          .concat(" / ")
+          .concat(ilmoitus.hakukohteet.head.tarjoajaNimet.getAny(lang, "fi", "sv", "en")))
+        else None,
       hakukohteet =
         if(isValidPaikkaVastaanotettavissaIlmoitus)
           ilmoitus.hakukohteet
             .map(hk => EmailHakukohde(
               hk.hakukohteenNimet.getAny(lang, "fi", "sv", "en"),
               hk.tarjoajaNimet.getAny(lang, "fi", "sv", "en")))
-      else List(),
+        else List(),
       securelink = ilmoitus.secureLink,
       etunimi = ilmoitus.etunimi,
       haunNimi = ilmoitus.haku.nimi.getAny(lang, "fi", "sv", "en"),
