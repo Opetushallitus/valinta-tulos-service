@@ -35,7 +35,7 @@
         <logback-access.version>1.2.3</logback-access.version>
         <mongo-java-driver.version>3.4.2</mongo-java-driver.version>
         <morphia.version>1.2.1</morphia.version>
-        <postgresql.version>42.1.4</postgresql.version>
+        <postgresql.version>42.4.1</postgresql.version>
         <scala-cas_2.11.version>2.2.1-SNAPSHOT</scala-cas_2.11.version>
         <scala.version>2.11.12</scala.version>
         <scala-logging_2.11.version>3.1.0</scala-logging_2.11.version>
