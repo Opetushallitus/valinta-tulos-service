@@ -49,10 +49,13 @@ object VTRecipient extends Logging {
       val lahetysSyy: LahetysSyy = hakukohteet.head.lahetysSyy
       if (hakukohteet.size == 1 && (lahetysSyy.equals(ehdollisen_periytymisen_ilmoitus) || lahetysSyy.equals(sitovan_vastaanoton_ilmoitus))) {
         VTEmailerReplacement.hakukohde(getTranslation(hakukohteet.head.hakukohteenNimet))
-      } else if (lahetysSyy.equals(vastaanottoilmoitusKk)
-        || lahetysSyy.equals(vastaanottoilmoitus2aste)
-        || lahetysSyy.equals(vastaanottoilmoitus2asteEiYhteishaku)
-        || lahetysSyy.equals(vastaanottoilmoitusKkTutkintoonJohtamaton)) {
+      } else if (List(
+        vastaanottoilmoitus2aste,
+        vastaanottoilmoitusKk,
+        vastaanottoilmoitus2asteEiYhteishaku,
+        vastaanottoilmoitusKkTutkintoonJohtamaton,
+        vastaanottoilmoitusMuut
+      ).contains(lahetysSyy)) {
         VTEmailerReplacement.hakukohteet(hakukohteet.map(hakukohde =>
           Hakukohde(hakukohde.oid.s, getTranslation(hakukohde.hakukohteenNimet),
             getTranslation(hakukohde.tarjoajaNimet), hakukohde.ehdollisestiHyvaksyttavissa)
