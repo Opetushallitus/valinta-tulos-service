@@ -47,6 +47,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
         Hakutoive(HakukohdeOid("1.2.3.4"), "4.4.4.4", "Hakukohde1", "Tarjoaja1"),
         Haku(
           HakuOid("5.5.5.5"),
+          yhteishaku = true,
           korkeakoulu = true,
           toinenAste = false,
           sallittuKohdejoukkoKelaLinkille = true,

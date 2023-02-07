@@ -32,6 +32,7 @@ import scala.util.{Failure, Success, Try}
 case class YhdenPaikanSaanto(voimassa: Boolean, syy: String)
 
 case class Haku(oid: HakuOid,
+                yhteishaku: Boolean,
                 korkeakoulu: Boolean,
                 toinenAste: Boolean,
                 sallittuKohdejoukkoKelaLinkille: Boolean,
@@ -151,6 +152,7 @@ protected trait JsonHakuService {
   )
 
   protected def toHaku(haku: HakuTarjonnassa, config: AppConfig): Haku = {
+    val yhteishaku = haku.hakutapaUri.contains("hakutapa_01")
     val korkeakoulu = config.settings.kohdejoukotKorkeakoulu.exists(s => haku.kohdejoukkoUri.startsWith(s + "#"))
     val sallittuKohdejoukkoKelaLinkille = !haku.kohdejoukonTarkenne.exists(tarkenne => config.settings.kohdejoukonTarkenteetAmkOpe.exists(s => tarkenne.startsWith(s + "#")))
     val toinenAste = config.settings.kohdejoukotToinenAste.exists(s => haku.kohdejoukkoUri.startsWith(s + "#"))
@@ -165,6 +167,7 @@ protected trait JsonHakuService {
 
     Haku(
       oid = haku.oid,
+      yhteishaku = yhteishaku,
       korkeakoulu = korkeakoulu,
       toinenAste = toinenAste,
       sallittuKohdejoukkoKelaLinkille = sallittuKohdejoukkoKelaLinkille,
@@ -360,6 +363,7 @@ case class KoutaHaku(oid: String,
                      nimi: Map[String, String],
                      kohdejoukkoKoodiUri: String,
                      kohdejoukonTarkenneKoodiUri: Option[String],
+                     hakutapaKoodiUri: String,
                      metadata: KoutaHakuMetadata) {
   def getKausiAndVuosi(metadata: KoutaHakuMetadata): (Option[String], Option[String]) = {
     val kausiUri = metadata.koulutuksenAlkamiskausi.flatMap(ak => ak.koulutuksenAlkamiskausi.map(ak => ak.koodiUri))
@@ -369,6 +373,7 @@ case class KoutaHaku(oid: String,
 
   def toHaku(ohjausparametrit: Ohjausparametrit, config: AppConfig): Either[Throwable, Haku] = {
     val (alkamisKausiKoodiUri, alkamisVuosi) = getKausiAndVuosi(metadata)
+    val yhteishaku = hakutapaKoodiUri.contains("hakutapa_01")
     for {
       alkamiskausi <- ((alkamisKausiKoodiUri, alkamisVuosi.map(s => (s, Try(s.toInt)))) match {
         case (Some(uri), Some((_, Success(vuosi)))) if uri.startsWith("kausi_k") => Right(Some(Kevat(vuosi)))
@@ -379,6 +384,7 @@ case class KoutaHaku(oid: String,
       }).right
     } yield Haku(
       oid = HakuOid(oid),
+      yhteishaku = yhteishaku,
       korkeakoulu = config.settings.kohdejoukotKorkeakoulu.exists(s => kohdejoukkoKoodiUri.startsWith(s + "#")),
       toinenAste = config.settings.kohdejoukotToinenAste.exists(s => kohdejoukkoKoodiUri.startsWith(s + "#")),
       sallittuKohdejoukkoKelaLinkille = !kohdejoukonTarkenneKoodiUri.exists(tarkenne => config.settings.kohdejoukonTarkenteetAmkOpe.exists(s => tarkenne.startsWith(s + "#"))),
