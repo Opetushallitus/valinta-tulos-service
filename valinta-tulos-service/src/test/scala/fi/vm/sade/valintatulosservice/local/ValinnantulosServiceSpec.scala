@@ -432,6 +432,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     ))
     hakuService.getHaku(hakuOid) returns Right(Haku(
       oid = hakuOid,
+      yhteishaku = true,
       korkeakoulu = true,
       toinenAste = false,
       sallittuKohdejoukkoKelaLinkille = true,
@@ -460,6 +461,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     ))
     hakuService.getHaku(hakuOid) returns Right(Haku(
       oid = hakuOid,
+      yhteishaku = true,
       korkeakoulu = true,
       toinenAste = false,
       sallittuKohdejoukkoKelaLinkille = true,
@@ -489,6 +491,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     ))
     hakuService.getHaku(hakuOid) returns Right(Haku(
       oid = hakuOid,
+      yhteishaku = true,
       korkeakoulu = false,
       toinenAste = true,
       sallittuKohdejoukkoKelaLinkille = true,

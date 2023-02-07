@@ -89,6 +89,7 @@ class HakukohdeRecordServiceSpec extends Specification with MockitoMatchers with
 
     val hakuFromTarjonta: Haku = Haku(
       hakuOid,
+      yhteishaku = true,
       korkeakoulu = true,
       toinenAste = false,
       sallittuKohdejoukkoKelaLinkille = true,
