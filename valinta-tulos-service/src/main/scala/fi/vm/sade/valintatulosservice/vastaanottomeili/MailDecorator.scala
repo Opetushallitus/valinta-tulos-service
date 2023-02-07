@@ -62,6 +62,7 @@ class MailDecorator(hakuService: HakuService,
               case Some(Vastaanottoilmoitus) if haku.korkeakoulu && !hakukohde.tutkintoonJohtava => LahetysSyy.vastaanottoilmoitusKkTutkintoonJohtamaton
               case Some(Vastaanottoilmoitus) if haku.toinenAste && haku.yhteishaku => LahetysSyy.vastaanottoilmoitus2aste
               case Some(Vastaanottoilmoitus) if haku.toinenAste && !haku.yhteishaku => LahetysSyy.vastaanottoilmoitus2asteEiYhteishaku
+              case Some(Vastaanottoilmoitus) => LahetysSyy.vastaanottoilmoitusMuut
               case Some(EhdollisenPeriytymisenIlmoitus) => LahetysSyy.ehdollisen_periytymisen_ilmoitus
               case Some(SitovanVastaanotonIlmoitus) => LahetysSyy.sitovan_vastaanoton_ilmoitus
               case _ =>

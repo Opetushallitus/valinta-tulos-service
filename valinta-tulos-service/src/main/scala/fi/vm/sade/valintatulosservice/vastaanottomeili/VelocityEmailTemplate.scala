@@ -51,7 +51,8 @@ object EmailStructure {
       LahetysSyy.vastaanottoilmoitus2aste,
       LahetysSyy.vastaanottoilmoitusKk,
       LahetysSyy.vastaanottoilmoitus2asteEiYhteishaku,
-      LahetysSyy.vastaanottoilmoitusKkTutkintoonJohtamaton
+      LahetysSyy.vastaanottoilmoitusKkTutkintoonJohtamaton,
+      LahetysSyy.vastaanottoilmoitusMuut
     ).contains(lahetysSyy)
 
     if (!(isValidVastaanottoIlmoitus || isValidPaikkaVastaanotettavissaIlmoitus)) throw new IllegalArgumentException("Failed to add hakukohde information to recipient. Hakemus " + ilmoitus.hakemusOid +
