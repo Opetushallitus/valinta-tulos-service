@@ -9,9 +9,10 @@ import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationO
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.domain.Valintatila.isHyväksytty
+import fi.vm.sade.valintatulosservice.domain.Valintatila.{harkinnanvaraisesti_hyväksytty, hyväksytty, isHyväksytty, varasijalta_hyväksytty}
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
+import fi.vm.sade.valintatulosservice.koodisto.KoodistoService
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.sijoittelu.{SijoittelutulosService, ValintarekisteriValintatulosDao}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService}
@@ -34,7 +35,8 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
                           hakuService: HakuService,
                           hakijaVastaanottoRepository: HakijaVastaanottoRepository,
                           hakukohdeRecordService: HakukohdeRecordService,
-                          valintatulosDao: ValintarekisteriValintatulosDao)(implicit appConfig: VtsAppConfig) extends Logging {
+                          valintatulosDao: ValintarekisteriValintatulosDao,
+                          koodistoService: KoodistoService)(implicit appConfig: VtsAppConfig) extends Logging {
   def this(valinnantulosRepository: ValinnantulosRepository,
            sijoittelutulosService: SijoittelutulosService,
            hakemusRepository: HakemusRepository,
@@ -43,8 +45,9 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
            hakuService: HakuService,
            hakijaVastaanottoRepository: HakijaVastaanottoRepository,
            hakukohdeRecordService: HakukohdeRecordService,
-           valintatulosDao: ValintarekisteriValintatulosDao)(implicit appConfig: VtsAppConfig) =
-    this(valinnantulosRepository, sijoittelutulosService, ohjausparametritService, hakemusRepository, virkailijaVastaanottoRepository, hakuService, hakijaVastaanottoRepository, hakukohdeRecordService, valintatulosDao)
+           valintatulosDao: ValintarekisteriValintatulosDao,
+           koodistoService: KoodistoService)(implicit appConfig: VtsAppConfig) =
+    this(valinnantulosRepository, sijoittelutulosService, ohjausparametritService, hakemusRepository, virkailijaVastaanottoRepository, hakuService, hakijaVastaanottoRepository, hakukohdeRecordService, valintatulosDao, koodistoService)
 
   def haunKoulutuksenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid: HakuOid) : Set[VastaanottoRecord] = {
     (for {
@@ -552,6 +555,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       .map(piilotaKuvauksetKeskeneräisiltä)
       .map(asetaVastaanotettavuusValintarekisterinPerusteella(vastaanottoKaudella))
       .map(asetaKelaURL)
+      .map(asetaMigriURL)
       .map(piilotaKuvauksetEiJulkaistuiltaValintatapajonoilta)
       .map(piilotaVarasijanumeroJonoiltaJosValintatilaEiVaralla)
       .map(merkitseValintatapajonotPeruuntuneeksiKunEiVastaanottanutMääräaikaanMennessä)
@@ -656,15 +660,27 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
+  private def isEuTaiEtaKansalainen(kansalaisuudet: List[String]): Boolean = {
+    val euMaat: List[String] = koodistoService.getKoodi("valtioryhmat_1#1") match {
+      case Left(e) => throw new RuntimeException("Eu-maiden hakeminen koodistosta epäonnistui", e)
+      case Right(koodi) => koodi.sisaltyvatKoodit.filter(_.koodiUri.contains("maatjavaltiot2_")).map(_.arvo)
+    }
+    val etaMaat: List[String] = koodistoService.getKoodi("valtioryhmat_2#1") match {
+      case Left(e) => throw new RuntimeException("Eta-maiden hakeminen koodistosta epäonnistui", e)
+      case Right(koodi) => koodi.sisaltyvatKoodit.filter(_.koodiUri.contains("maatjavaltiot2_")).map(_.arvo)
+    }
+    kansalaisuudet.exists(k => euMaat.contains(k) || etaMaat.contains(k))
+  }
+
   private def asetaMigriURL(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
     val hakukierrosEiOlePäättynyt = !ohjausparametrit.hakukierrosPaattyy.exists(_.isBeforeNow())
-    val näytetäänSiirryKelaanURL = ohjausparametrit.naytetaankoSiirryKelaanURL
-    val näytetäänKelaURL = if (hakukierrosEiOlePäättynyt && näytetäänSiirryKelaanURL && haku.sallittuKohdejoukkoKelaLinkille) Some(appConfig.settings.kelaURL) else None
+    val hakijaOnEuTaiEtaKansalainen = isEuTaiEtaKansalainen(hakemus.henkilotiedot.kansalaisuudet)
+    val migriURL = if (hakukierrosEiOlePäättynyt && !hakijaOnEuTaiEtaKansalainen) Some(appConfig.settings.migriURL) else None
 
     tulokset.map {
-      case tulos if vastaanottanut == tulos.vastaanottotila =>
-        logger.debug("asetaKelaURL vastaanottanut")
-        tulos.copy(kelaURL = näytetäänKelaURL)
+      case tulos if List(hyväksytty, varasijalta_hyväksytty, harkinnanvaraisesti_hyväksytty).contains(tulos.valintatila) =>
+        logger.debug("asetaMigriURL hyväksytylle")
+        tulos.copy(migriURL = migriURL)
       case tulos =>
         tulos
     }

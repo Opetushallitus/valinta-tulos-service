@@ -1,11 +1,10 @@
 package fi.vm.sade.valintatulosservice.testenvironment
 
 import java.io.File
-
 import fi.vm.sade.utils.cas.CasClient
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain.Hakemuksentulos
-import fi.vm.sade.valintatulosservice.koodisto.KoodistoService
+import fi.vm.sade.valintatulosservice.koodisto.{KoodistoService, RemoteKoodistoService}
 import fi.vm.sade.valintatulosservice.ohjausparametrit.RemoteOhjausparametritService
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelutulosService
@@ -25,7 +24,7 @@ class ValintatulosIntegrationTest extends ITSpecification {
       if (new File(varsFile).exists()) {
         implicit val appConfig = new VtsAppConfig.LocalTestingWithTemplatedVars(varsFile)
         val casClient = new CasClient(appConfig.ophUrlProperties.url(""), org.http4s.client.blaze.defaultClient, "vts-test-caller-id")
-        val hakuService = HakuService(appConfig, casClient, new RemoteOhjausparametritService(appConfig), OrganisaatioService(appConfig), new KoodistoService(appConfig))
+        val hakuService = HakuService(appConfig, casClient, new RemoteOhjausparametritService(appConfig), OrganisaatioService(appConfig), new RemoteKoodistoService(appConfig))
         //lazy val sijoitteluContext = new SijoitteluSpringContext(appConfig, SijoitteluSpringContext.createApplicationContext(appConfig))
         /*val sijoittelutulosService = new SijoittelutulosService(sijoitteluContext.raportointiService, appConfig.ohjausparametritService, null,
           SijoittelunTulosRestClient(sijoitteluContext, appConfig))
