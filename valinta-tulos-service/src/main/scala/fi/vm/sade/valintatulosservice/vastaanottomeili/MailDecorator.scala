@@ -27,9 +27,7 @@ class MailDecorator(hakuService: HakuService,
           }
           val ilmoitus = Ilmoitus(status.hakemusOid, status.hakijaOid, None, status.asiointikieli, status.kutsumanimi, status.email, deadline, mailables.map(toHakukohde), toHaku(tarjontaHaku))
 
-          if (status.hasHetu && !tarjontaHaku.toinenAste) {
-            Some(ilmoitus)
-          } else {
+          if(!status.hasHetu || (tarjontaHaku.toinenAste && tarjontaHaku.yhteishaku)) {
             val haunOhjausparametrit: Option[Ohjausparametrit] = timed(s"Ohjausparametrien hakeminen hakuoidilla ${status.hakuOid}", 50) {
               fetchOhjausparametrit(status.hakuOid)
             }
@@ -41,6 +39,8 @@ class MailDecorator(hakuService: HakuService,
                 logger.error(s"Hakemukselle ei lähetetty vastaanottomeiliä, koska securelinkkiä ei saatu! ${status.hakemusOid}", e)
                 None
             }
+          } else {
+            Some(ilmoitus)
           }
         } catch {
           case e: Exception =>
