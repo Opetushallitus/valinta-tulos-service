@@ -97,7 +97,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
               henkilo.henkiloOid,
               "fi",
               t.hakutoiveet.map(toiveToHakutoive),
-              Henkilotiedot(None,None,hasHetu = henkilo.hetullinen),
+              Henkilotiedot(None,None,hasHetu = henkilo.hetullinen, List()),
               Map.empty)
           }).toList
         }
@@ -541,7 +541,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       )
     }
 
-    val lopullisetTulokset = Välitulos(sijoitteluTulos.hakemusOid, tulokset, haku, ohjausparametrit)
+    val lopullisetTulokset = Välitulos(h, tulokset, haku, ohjausparametrit)
       .map(näytäHyväksyttyäJulkaisematontaAlemmistaKorkeinHyvaksyttyOdottamassaYlempiä)
       .map(näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä)
       .map(peruunnutaValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua)
@@ -562,7 +562,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     Hakemuksentulos(haku.oid, h.oid, sijoitteluTulos.hakijaOid.getOrElse(h.henkiloOid), ohjausparametrit.vastaanottoaikataulu, lopullisetTulokset)
   }
 
-  private def piilotaEhdollisenHyväksymisenEhdotJonoiltaKunEiEhdollisestiHyväksytty(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
+  private def piilotaEhdollisenHyväksymisenEhdotJonoiltaKunEiEhdollisestiHyväksytty(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
     tulokset.map {
       tulos =>
         tulos.copy(
@@ -581,7 +581,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
-  private def merkitseValintatapajonotPeruuntuneeksiKunEiVastaanottanutMääräaikaanMennessä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
+  private def merkitseValintatapajonotPeruuntuneeksiKunEiVastaanottanutMääräaikaanMennessä(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
     tulokset.map {
       tulos =>
         if (tulos.vastaanottotila == Vastaanottotila.ei_vastaanotettu_määräaikana && Valintatila.isHyväksytty(tulos.valintatila)) {
@@ -606,7 +606,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
-  private def piilotaVarasijanumeroJonoiltaJosValintatilaEiVaralla(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
+  private def piilotaVarasijanumeroJonoiltaJosValintatilaEiVaralla(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
     tulokset.map {
       tulos =>
         tulos.copy(
@@ -624,7 +624,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
-  private def piilotaKuvauksetEiJulkaistuiltaValintatapajonoilta(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
+  private def piilotaKuvauksetEiJulkaistuiltaValintatapajonoilta(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
     tulokset.map {
       tulos =>
         tulos.copy(
@@ -642,7 +642,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
-  private def asetaKelaURL(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
+  private def asetaKelaURL(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
     val hakukierrosEiOlePäättynyt = !ohjausparametrit.hakukierrosPaattyy.exists(_.isBeforeNow())
     val näytetäänSiirryKelaanURL = ohjausparametrit.naytetaankoSiirryKelaanURL
     val näytetäänKelaURL = if (hakukierrosEiOlePäättynyt && näytetäänSiirryKelaanURL && haku.sallittuKohdejoukkoKelaLinkille) Some(appConfig.settings.kelaURL) else None
@@ -656,7 +656,21 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
-  private def asetaVastaanotettavuusValintarekisterinPerusteella(vastaanottoKaudella: HakukohdeOid => Option[(Kausi, Boolean)])(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
+  private def asetaMigriURL(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
+    val hakukierrosEiOlePäättynyt = !ohjausparametrit.hakukierrosPaattyy.exists(_.isBeforeNow())
+    val näytetäänSiirryKelaanURL = ohjausparametrit.naytetaankoSiirryKelaanURL
+    val näytetäänKelaURL = if (hakukierrosEiOlePäättynyt && näytetäänSiirryKelaanURL && haku.sallittuKohdejoukkoKelaLinkille) Some(appConfig.settings.kelaURL) else None
+
+    tulokset.map {
+      case tulos if vastaanottanut == tulos.vastaanottotila =>
+        logger.debug("asetaKelaURL vastaanottanut")
+        tulos.copy(kelaURL = näytetäänKelaURL)
+      case tulos =>
+        tulos
+    }
+  }
+
+  private def asetaVastaanotettavuusValintarekisterinPerusteella(vastaanottoKaudella: HakukohdeOid => Option[(Kausi, Boolean)])(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
     def ottanutVastaanToisenPaikan(tulos: Hakutoiveentulos): Hakutoiveentulos =
       tulos.copy(
         vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa,
@@ -771,7 +785,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     } else ValintatuloksenTila.KESKEN
   }
 
-  private def sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
+  private def sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
     if (haku.korkeakoulu && haku.sijoitteluJaPriorisointi) {
       val indexedTulokset = tulokset.zipWithIndex
       val firstVaralla = tulokset.indexWhere(_.valintatila == Valintatila.varalla)
@@ -845,7 +859,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
-  private def peruunnutaValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
+  private def peruunnutaValmistaAlemmatKeskeneräisetJosKäytetäänSijoittelua(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
     if (haku.sijoitteluJaPriorisointi) {
       val firstFinished = tulokset.indexWhere { t =>
         isHyväksytty(t.valintatila) || t.valintatila == Valintatila.perunut
@@ -864,7 +878,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
   }
 
 
-  private def näytäAlemmatPeruuntuneetHakukohteetKeskeneräisinäJosYlemmätKeskeneräisiä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
+  private def näytäAlemmatPeruuntuneetHakukohteetKeskeneräisinäJosYlemmätKeskeneräisiä(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
     if(haku.sijoitteluJaPriorisointi) {
       val firstKeskeneräinen: Int = tulokset.indexWhere (_.valintatila == Valintatila.kesken)
       tulokset.zipWithIndex.map {
@@ -878,7 +892,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     } else tulokset
   }
 
-  private def näytäAlemmatPeruuntuneetJonotKeskeneräisinäJosYlemmätKeskeneräisiä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
+  private def näytäAlemmatPeruuntuneetJonotKeskeneräisinäJosYlemmätKeskeneräisiä(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
     if(haku.sijoitteluJaPriorisointi) {
       tulokset.map { hakutoiveenTulos =>
         hakutoiveenTulos.copy(jonokohtaisetTulostiedot = näytäToiveenAlemmatPeruuntuneetJonotKeskeneräisinäJosYlemmätKeskeneräisiä(hakutoiveenTulos))
@@ -915,7 +929,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       List(Valintatila.peruuntunut, Valintatila.kesken).contains(tulos.valintatila)
   }
 
-  private def näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
+  private def näytäJulkaisematontaAlemmatPeruuntuneetKeskeneräisinä(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
     if(haku.sijoitteluJaPriorisointi) {
       val firstJulkaisematon: Int = tulokset.indexWhere (!_.julkaistavissa)
       tulokset.zipWithIndex.map {
@@ -937,7 +951,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     } else tulokset
   }
 
-  private def näytäHyväksyttyäJulkaisematontaAlemmistaKorkeinHyvaksyttyOdottamassaYlempiä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
+  private def näytäHyväksyttyäJulkaisematontaAlemmistaKorkeinHyvaksyttyOdottamassaYlempiä(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
     val firstJulkaisematon: Int = tulokset.indexWhere (!_.julkaistavissa)
     var firstChanged = false
     val tuloksetWithIndex = tulokset.zipWithIndex
@@ -946,7 +960,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       case (tulos, index) =>
         val higherJulkaisematon = firstJulkaisematon >= 0 && index > firstJulkaisematon
         if (higherJulkaisematon && List(Valintatila.peruuntunut, Valintatila.kesken).contains(tulos.valintatila)) {
-          val jonoJostaOliHyvaksyttyJulkaistu: Option[ValintatapajonoOid] = valinnantulosRepository.getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuJonoOidHistoriasta(hakemusOid, tulos.hakukohdeOid)
+          val jonoJostaOliHyvaksyttyJulkaistu: Option[ValintatapajonoOid] = valinnantulosRepository.getViimeisinValinnantilaMuutosHyvaksyttyJaJulkaistuJonoOidHistoriasta(hakemus.oid, tulos.hakukohdeOid)
           val wasHyvaksyttyJulkaistu = jonoJostaOliHyvaksyttyJulkaistu.nonEmpty
           val existsHigherHyvaksyttyJulkaistu = tuloksetWithIndex.exists(twi => twi._2 < index && twi._1.valintatila.equals(Valintatila.hyväksytty) && twi._1.julkaistavissa)
           if (wasHyvaksyttyJulkaistu && !existsHigherHyvaksyttyJulkaistu && !firstChanged) {
@@ -977,7 +991,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
-  private def piilotaKuvauksetKeskeneräisiltä(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
+  private def piilotaKuvauksetKeskeneräisiltä(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
     tulokset.map {
       case h if h.valintatila == Valintatila.kesken =>
         logger.debug("piilotaKuvauksetKeskeneräisiltä tilankuvaukset empty")
@@ -987,7 +1001,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
-  private def näytäVarasijaltaHyväksytytHyväksyttyinäJosVarasijasäännötEiVoimassa(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
+  private def näytäVarasijaltaHyväksytytHyväksyttyinäJosVarasijasäännötEiVoimassa(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
     tulokset.map {
       case tulos if tulos.valintatila == Valintatila.varasijalta_hyväksytty && !ehdollinenVastaanottoMahdollista(ohjausparametrit) =>
         logger.debug("näytäVarasijaltaHyväksytytHyväksyttyinäJosVarasijasäännötEiVoimassa valintatila > hyväksytty")
@@ -1013,21 +1027,21 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
-  private def muutaJonojenPeruuntumistenSyytHakukohteissaJoissaOnHyväksyttyTulos(hakemusOid: HakemusOid,
+  private def muutaJonojenPeruuntumistenSyytHakukohteissaJoissaOnHyväksyttyTulos(hakemus: Hakemus,
                                                                                  tulokset: List[Hakutoiveentulos],
                                                                                  haku: Haku,
                                                                                  ohjausparametrit: Ohjausparametrit) = {
     tulokset.map {
       case tulos if tulos.valintatila == Valintatila.hyväksytty =>
-        tulos.copy(jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map(peruuntumisenSyyksiHyväksyttyToisessaJonossa(hakemusOid, tulos.hakukohdeOid, _)))
+        tulos.copy(jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map(peruuntumisenSyyksiHyväksyttyToisessaJonossa(hakemus.oid, tulos.hakukohdeOid, _)))
       case tulos =>
         tulos
     }
   }
 
-  case class Välitulos(hakemusOid: HakemusOid, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) {
-    def map(f: (HakemusOid, List[Hakutoiveentulos], Haku, Ohjausparametrit) => List[Hakutoiveentulos]): Välitulos = {
-      Välitulos(hakemusOid, f(hakemusOid, tulokset, haku, ohjausparametrit), haku, ohjausparametrit)
+  case class Välitulos(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) {
+    def map(f: (Hakemus, List[Hakutoiveentulos], Haku, Ohjausparametrit) => List[Hakutoiveentulos]): Välitulos = {
+      Välitulos(hakemus, f(hakemus, tulokset, haku, ohjausparametrit), haku, ohjausparametrit)
     }
   }
 
