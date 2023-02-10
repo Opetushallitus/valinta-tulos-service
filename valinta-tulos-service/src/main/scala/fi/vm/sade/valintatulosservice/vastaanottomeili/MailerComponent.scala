@@ -52,7 +52,7 @@ trait MailerComponent {
     private def collectAndSend(query: MailerQuery, batchNr: Int, ids: List[String]): List[String] = {
       def sendAndConfirm(currentBatch: List[Ilmoitus]): List[String] = {
         helper.splitAndGroupIlmoitus(currentBatch).flatMap { case ((language, syy), ilmoitukset) =>
-          sendBatch(ilmoitukset, language, syy)
+          sendBatch(ilmoitukset, language.toLowerCase(), syy)
         }.toList
       }
 
