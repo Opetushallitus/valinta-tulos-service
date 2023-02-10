@@ -1,0 +1,2661 @@
+{
+  "paivitysPvm": "2021-03-05",
+  "paivittajaOid": "1.2.246.562.24.25909319372",
+  "voimassaAlkuPvm": "2015-09-03",
+  "voimassaLoppuPvm": null,
+  "tila": "LUONNOS",
+  "metadata": [
+    {
+      "nimi": "Euroopan unioni",
+      "kuvaus": "",
+      "lyhytNimi": "EU",
+      "kayttoohje": "",
+      "kasite": "",
+      "sisaltaaMerkityksen": "",
+      "eiSisallaMerkitysta": "",
+      "huomioitavaKoodi": "",
+      "sisaltaaKoodiston": "",
+      "kieli": "FI"
+    },
+    {
+      "nimi": "European Union",
+      "kuvaus": "",
+      "lyhytNimi": "EU",
+      "kayttoohje": "",
+      "kasite": "",
+      "sisaltaaMerkityksen": "",
+      "eiSisallaMerkitysta": "",
+      "huomioitavaKoodi": "",
+      "sisaltaaKoodiston": "",
+      "kieli": "EN"
+    },
+    {
+      "nimi": "Europeiska unionen",
+      "kuvaus": "",
+      "lyhytNimi": "EU",
+      "kayttoohje": "",
+      "kasite": "",
+      "sisaltaaMerkityksen": "",
+      "eiSisallaMerkitysta": "",
+      "huomioitavaKoodi": "",
+      "sisaltaaKoodiston": "",
+      "kieli": "SV"
+    }
+  ],
+  "withinCodeElements": [
+    {
+      "codeElementUri": "maatjavaltiot2_616",
+      "codeElementVersion": 1,
+      "codeElementValue": "616",
+      "relationMetadata": [
+        {
+          "nimi": "Poland",
+          "kieli": "EN",
+          "kuvaus": "Poland"
+        },
+        {
+          "nimi": "Puola",
+          "kieli": "FI",
+          "kuvaus": "Puola"
+        },
+        {
+          "nimi": "Polen",
+          "kieli": "SV",
+          "kuvaus": "Polen"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_233",
+      "codeElementVersion": 1,
+      "codeElementValue": "233",
+      "relationMetadata": [
+        {
+          "nimi": "Estland",
+          "kieli": "SV",
+          "kuvaus": "Estland"
+        },
+        {
+          "nimi": "Viro",
+          "kieli": "FI",
+          "kuvaus": "Viro"
+        },
+        {
+          "nimi": "Estonia",
+          "kieli": "EN",
+          "kuvaus": "Estonia"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_442",
+      "codeElementVersion": 1,
+      "codeElementValue": "442",
+      "relationMetadata": [
+        {
+          "nimi": "Luxemburg",
+          "kieli": "SV",
+          "kuvaus": "Luxemburg"
+        },
+        {
+          "nimi": "Luxemburg",
+          "kieli": "FI",
+          "kuvaus": "Luxemburg"
+        },
+        {
+          "nimi": "Luxembourg",
+          "kieli": "EN",
+          "kuvaus": "Luxembourg"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_440",
+      "codeElementVersion": 1,
+      "codeElementValue": "440",
+      "relationMetadata": [
+        {
+          "nimi": "Litauen",
+          "kieli": "SV",
+          "kuvaus": "Litauen"
+        },
+        {
+          "nimi": "Lithuania",
+          "kieli": "EN",
+          "kuvaus": "Lithuania"
+        },
+        {
+          "nimi": "Liettua",
+          "kieli": "FI",
+          "kuvaus": "Liettua"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_752",
+      "codeElementVersion": 1,
+      "codeElementValue": "752",
+      "relationMetadata": [
+        {
+          "nimi": "Sverige",
+          "kieli": "SV",
+          "kuvaus": "Sverige"
+        },
+        {
+          "nimi": "Sweden",
+          "kieli": "EN",
+          "kuvaus": "Sweden"
+        },
+        {
+          "nimi": "Ruotsi",
+          "kieli": "FI",
+          "kuvaus": "Ruotsi"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_826",
+      "codeElementVersion": 1,
+      "codeElementValue": "826",
+      "relationMetadata": [
+        {
+          "nimi": "Britannia",
+          "kieli": "FI",
+          "kuvaus": "Britannia"
+        },
+        {
+          "nimi": "Storbritannien",
+          "kieli": "SV",
+          "kuvaus": "Storbritannien"
+        },
+        {
+          "nimi": "United Kingdom",
+          "kieli": "EN",
+          "kuvaus": "United Kingdom"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_705",
+      "codeElementVersion": 1,
+      "codeElementValue": "705",
+      "relationMetadata": [
+        {
+          "nimi": "Slovenia",
+          "kieli": "EN",
+          "kuvaus": "Slovenia"
+        },
+        {
+          "nimi": "Slovenia",
+          "kieli": "FI",
+          "kuvaus": "Slovenia"
+        },
+        {
+          "nimi": "Slovenien",
+          "kieli": "SV",
+          "kuvaus": "Slovenien"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_040",
+      "codeElementVersion": 1,
+      "codeElementValue": "040",
+      "relationMetadata": [
+        {
+          "nimi": "Austria",
+          "kieli": "EN",
+          "kuvaus": "Austria"
+        },
+        {
+          "nimi": "Österrike",
+          "kieli": "SV",
+          "kuvaus": "Österrike"
+        },
+        {
+          "nimi": "Itävalta",
+          "kieli": "FI",
+          "kuvaus": "Itävalta"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_703",
+      "codeElementVersion": 2,
+      "codeElementValue": "703",
+      "relationMetadata": [
+        {
+          "nimi": "Slovakia",
+          "kieli": "EN",
+          "kuvaus": "Slovakia"
+        },
+        {
+          "nimi": "Slovakien",
+          "kieli": "SV",
+          "kuvaus": "Slovakien"
+        },
+        {
+          "nimi": "Slovakia",
+          "kieli": "FI",
+          "kuvaus": "Slovakia"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_372",
+      "codeElementVersion": 1,
+      "codeElementValue": "372",
+      "relationMetadata": [
+        {
+          "nimi": "Irlanti",
+          "kieli": "FI",
+          "kuvaus": "Irlanti"
+        },
+        {
+          "nimi": "Irland",
+          "kieli": "SV",
+          "kuvaus": "Irland"
+        },
+        {
+          "nimi": "Ireland",
+          "kieli": "EN",
+          "kuvaus": "Ireland"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_620",
+      "codeElementVersion": 2,
+      "codeElementValue": "620",
+      "relationMetadata": [
+        {
+          "nimi": "Portugali",
+          "kieli": "FI",
+          "kuvaus": "Portugali"
+        },
+        {
+          "nimi": "Portugal",
+          "kieli": "EN",
+          "kuvaus": "Portugal"
+        },
+        {
+          "nimi": "Portugal",
+          "kieli": "SV",
+          "kuvaus": "Portugal"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_724",
+      "codeElementVersion": 1,
+      "codeElementValue": "724",
+      "relationMetadata": [
+        {
+          "nimi": "Espanja",
+          "kieli": "FI",
+          "kuvaus": "Espanja"
+        },
+        {
+          "nimi": "Spain",
+          "kieli": "EN",
+          "kuvaus": "Spain"
+        },
+        {
+          "nimi": "Spanien",
+          "kieli": "SV",
+          "kuvaus": "Spanien"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_705",
+      "codeElementVersion": 2,
+      "codeElementValue": "705",
+      "relationMetadata": [
+        {
+          "nimi": "Slovenia",
+          "kieli": "FI",
+          "kuvaus": "Slovenia"
+        },
+        {
+          "nimi": "Slovenia",
+          "kieli": "EN",
+          "kuvaus": "Slovenia"
+        },
+        {
+          "nimi": "Slovenien",
+          "kieli": "SV",
+          "kuvaus": "Slovenien"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_196",
+      "codeElementVersion": 1,
+      "codeElementValue": "196",
+      "relationMetadata": [
+        {
+          "nimi": "Kypros",
+          "kieli": "FI",
+          "kuvaus": "Kypros"
+        },
+        {
+          "nimi": "Cyprus",
+          "kieli": "EN",
+          "kuvaus": "Cyprus"
+        },
+        {
+          "nimi": "Cypern",
+          "kieli": "SV",
+          "kuvaus": "Cypern"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_250",
+      "codeElementVersion": 2,
+      "codeElementValue": "250",
+      "relationMetadata": [
+        {
+          "nimi": "Frankrike",
+          "kieli": "SV",
+          "kuvaus": "Frankrike"
+        },
+        {
+          "nimi": "France",
+          "kieli": "EN",
+          "kuvaus": "France"
+        },
+        {
+          "nimi": "Ranska",
+          "kieli": "FI",
+          "kuvaus": "Ranska"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_380",
+      "codeElementVersion": 1,
+      "codeElementValue": "380",
+      "relationMetadata": [
+        {
+          "nimi": "Italy",
+          "kieli": "EN",
+          "kuvaus": "Italy"
+        },
+        {
+          "nimi": "Italia",
+          "kieli": "FI",
+          "kuvaus": "Italia"
+        },
+        {
+          "nimi": "Italien",
+          "kieli": "SV",
+          "kuvaus": "Italien"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_254",
+      "codeElementVersion": 2,
+      "codeElementValue": "254",
+      "relationMetadata": [
+        {
+          "nimi": "French Guiana",
+          "kieli": "EN",
+          "kuvaus": "French Guiana"
+        },
+        {
+          "nimi": "Ranskan Guayana",
+          "kieli": "FI",
+          "kuvaus": "Ranskan Guayana"
+        },
+        {
+          "nimi": "Franska Guyana",
+          "kieli": "SV",
+          "kuvaus": "Franska Guyana"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_208",
+      "codeElementVersion": 1,
+      "codeElementValue": "208",
+      "relationMetadata": [
+        {
+          "nimi": "Denmark",
+          "kieli": "EN",
+          "kuvaus": "Denmark"
+        },
+        {
+          "nimi": "Tanska",
+          "kieli": "FI",
+          "kuvaus": "Tanska"
+        },
+        {
+          "nimi": "Danmark",
+          "kieli": "SV",
+          "kuvaus": "Danmark"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_100",
+      "codeElementVersion": 2,
+      "codeElementValue": "100",
+      "relationMetadata": [
+        {
+          "nimi": "Bulgarien",
+          "kieli": "SV",
+          "kuvaus": "Bulgarien"
+        },
+        {
+          "nimi": "Bulgaria",
+          "kieli": "EN",
+          "kuvaus": "Bulgaria"
+        },
+        {
+          "nimi": "Bulgaria",
+          "kieli": "FI",
+          "kuvaus": "Bulgaria"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_620",
+      "codeElementVersion": 1,
+      "codeElementValue": "620",
+      "relationMetadata": [
+        {
+          "nimi": "Portugal",
+          "kieli": "SV",
+          "kuvaus": "Portugal"
+        },
+        {
+          "nimi": "Portugal",
+          "kieli": "EN",
+          "kuvaus": "Portugal"
+        },
+        {
+          "nimi": "Portugali",
+          "kieli": "FI",
+          "kuvaus": "Portugali"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_348",
+      "codeElementVersion": 2,
+      "codeElementValue": "348",
+      "relationMetadata": [
+        {
+          "nimi": "Hungary",
+          "kieli": "EN",
+          "kuvaus": "Hungary"
+        },
+        {
+          "nimi": "Ungern",
+          "kieli": "SV",
+          "kuvaus": "Ungern"
+        },
+        {
+          "nimi": "Unkari",
+          "kieli": "FI",
+          "kuvaus": "Unkari"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_470",
+      "codeElementVersion": 1,
+      "codeElementValue": "470",
+      "relationMetadata": [
+        {
+          "nimi": "Malta",
+          "kieli": "SV",
+          "kuvaus": "Malta"
+        },
+        {
+          "nimi": "Malta",
+          "kieli": "FI",
+          "kuvaus": "Malta"
+        },
+        {
+          "nimi": "Malta",
+          "kieli": "EN",
+          "kuvaus": "Malta"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_175",
+      "codeElementVersion": 2,
+      "codeElementValue": "175",
+      "relationMetadata": [
+        {
+          "nimi": "Mayotte",
+          "kieli": "SV",
+          "kuvaus": "Mayotte"
+        },
+        {
+          "nimi": "Mayotte",
+          "kieli": "EN",
+          "kuvaus": "Mayotte"
+        },
+        {
+          "nimi": "Mayotte",
+          "kieli": "FI",
+          "kuvaus": "Mayotte"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_428",
+      "codeElementVersion": 1,
+      "codeElementValue": "428",
+      "relationMetadata": [
+        {
+          "nimi": "Latvia",
+          "kieli": "FI",
+          "kuvaus": "Latvia"
+        },
+        {
+          "nimi": "Lettland",
+          "kieli": "SV",
+          "kuvaus": "Lettland"
+        },
+        {
+          "nimi": "Latvia",
+          "kieli": "EN",
+          "kuvaus": "Latvia"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_528",
+      "codeElementVersion": 2,
+      "codeElementValue": "528",
+      "relationMetadata": [
+        {
+          "nimi": "Alankomaat",
+          "kieli": "FI",
+          "kuvaus": "Alankomaat"
+        },
+        {
+          "nimi": "Netherlands",
+          "kieli": "EN",
+          "kuvaus": "Netherlands"
+        },
+        {
+          "nimi": "Nederländerna",
+          "kieli": "SV",
+          "kuvaus": "Nederländerna"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_642",
+      "codeElementVersion": 1,
+      "codeElementValue": "642",
+      "relationMetadata": [
+        {
+          "nimi": "Rumänien",
+          "kieli": "SV",
+          "kuvaus": "Rumänien"
+        },
+        {
+          "nimi": "Romania",
+          "kieli": "EN",
+          "kuvaus": "Romania"
+        },
+        {
+          "nimi": "Romania",
+          "kieli": "FI",
+          "kuvaus": "Romania"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_246",
+      "codeElementVersion": 2,
+      "codeElementValue": "246",
+      "relationMetadata": [
+        {
+          "nimi": "Finland",
+          "kieli": "SV",
+          "kuvaus": "Finland"
+        },
+        {
+          "nimi": "Suomi",
+          "kieli": "FI",
+          "kuvaus": "Suomi"
+        },
+        {
+          "nimi": "Finland",
+          "kieli": "EN",
+          "kuvaus": "Finland"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_703",
+      "codeElementVersion": 1,
+      "codeElementValue": "703",
+      "relationMetadata": [
+        {
+          "nimi": "Slovakien",
+          "kieli": "SV",
+          "kuvaus": "Slovakien"
+        },
+        {
+          "nimi": "Slovakia",
+          "kieli": "EN",
+          "kuvaus": "Slovakia"
+        },
+        {
+          "nimi": "Slovakia",
+          "kieli": "FI",
+          "kuvaus": "Slovakia"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_616",
+      "codeElementVersion": 2,
+      "codeElementValue": "616",
+      "relationMetadata": [
+        {
+          "nimi": "Polen",
+          "kieli": "SV",
+          "kuvaus": "Polen"
+        },
+        {
+          "nimi": "Poland",
+          "kieli": "EN",
+          "kuvaus": "Poland"
+        },
+        {
+          "nimi": "Puola",
+          "kieli": "FI",
+          "kuvaus": "Puola"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_276",
+      "codeElementVersion": 1,
+      "codeElementValue": "276",
+      "relationMetadata": [
+        {
+          "nimi": "Germany",
+          "kieli": "EN",
+          "kuvaus": "Germany"
+        },
+        {
+          "nimi": "Tyskland",
+          "kieli": "SV",
+          "kuvaus": "Tyskland"
+        },
+        {
+          "nimi": "Saksa",
+          "kieli": "FI",
+          "kuvaus": "Saksa"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_428",
+      "codeElementVersion": 2,
+      "codeElementValue": "428",
+      "relationMetadata": [
+        {
+          "nimi": "Latvia",
+          "kieli": "FI",
+          "kuvaus": "Latvia"
+        },
+        {
+          "nimi": "Lettland",
+          "kieli": "SV",
+          "kuvaus": "Lettland"
+        },
+        {
+          "nimi": "Latvia",
+          "kieli": "EN",
+          "kuvaus": "Latvia"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_100",
+      "codeElementVersion": 1,
+      "codeElementValue": "100",
+      "relationMetadata": [
+        {
+          "nimi": "Bulgaria",
+          "kieli": "EN",
+          "kuvaus": "Bulgaria"
+        },
+        {
+          "nimi": "Bulgarien",
+          "kieli": "SV",
+          "kuvaus": "Bulgarien"
+        },
+        {
+          "nimi": "Bulgaria",
+          "kieli": "FI",
+          "kuvaus": "Bulgaria"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_348",
+      "codeElementVersion": 1,
+      "codeElementValue": "348",
+      "relationMetadata": [
+        {
+          "nimi": "Unkari",
+          "kieli": "FI",
+          "kuvaus": "Unkari"
+        },
+        {
+          "nimi": "Hungary",
+          "kieli": "EN",
+          "kuvaus": "Hungary"
+        },
+        {
+          "nimi": "Ungern",
+          "kieli": "SV",
+          "kuvaus": "Ungern"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_191",
+      "codeElementVersion": 1,
+      "codeElementValue": "191",
+      "relationMetadata": [
+        {
+          "nimi": "Croatia",
+          "kieli": "EN",
+          "kuvaus": "Croatia"
+        },
+        {
+          "nimi": "Kroatien",
+          "kieli": "SV",
+          "kuvaus": "Kroatien"
+        },
+        {
+          "nimi": "Kroatia",
+          "kieli": "FI",
+          "kuvaus": "Kroatia"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_724",
+      "codeElementVersion": 2,
+      "codeElementValue": "724",
+      "relationMetadata": [
+        {
+          "nimi": "Espanja",
+          "kieli": "FI",
+          "kuvaus": "Espanja"
+        },
+        {
+          "nimi": "Spain",
+          "kieli": "EN",
+          "kuvaus": "Spain"
+        },
+        {
+          "nimi": "Spanien",
+          "kieli": "SV",
+          "kuvaus": "Spanien"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_300",
+      "codeElementVersion": 1,
+      "codeElementValue": "300",
+      "relationMetadata": [
+        {
+          "nimi": "Greece",
+          "kieli": "EN",
+          "kuvaus": "Greece"
+        },
+        {
+          "nimi": "Kreikka",
+          "kieli": "FI",
+          "kuvaus": "Kreikka"
+        },
+        {
+          "nimi": "Grekland",
+          "kieli": "SV",
+          "kuvaus": "Grekland"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_440",
+      "codeElementVersion": 2,
+      "codeElementValue": "440",
+      "relationMetadata": [
+        {
+          "nimi": "Litauen",
+          "kieli": "SV",
+          "kuvaus": "Litauen"
+        },
+        {
+          "nimi": "Liettua",
+          "kieli": "FI",
+          "kuvaus": "Liettua"
+        },
+        {
+          "nimi": "Lithuania",
+          "kieli": "EN",
+          "kuvaus": "Lithuania"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_203",
+      "codeElementVersion": 1,
+      "codeElementValue": "203",
+      "relationMetadata": [
+        {
+          "nimi": "Czech Republic",
+          "kieli": "EN",
+          "kuvaus": "Czech Republic"
+        },
+        {
+          "nimi": "Tjeckien",
+          "kieli": "SV",
+          "kuvaus": "Tjeckien"
+        },
+        {
+          "nimi": "Tšekki",
+          "kieli": "FI",
+          "kuvaus": "Tšekki"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_638",
+      "codeElementVersion": 1,
+      "codeElementValue": "638",
+      "relationMetadata": [
+        {
+          "nimi": "Réunion",
+          "kieli": "SV",
+          "kuvaus": "Réunion"
+        },
+        {
+          "nimi": "Réunion",
+          "kieli": "EN",
+          "kuvaus": "Réunion"
+        },
+        {
+          "nimi": "Réunion",
+          "kieli": "FI",
+          "kuvaus": "Réunion"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_312",
+      "codeElementVersion": 1,
+      "codeElementValue": "312",
+      "relationMetadata": [
+        {
+          "nimi": "Guadeloupe",
+          "kieli": "EN",
+          "kuvaus": "Guadeloupe"
+        },
+        {
+          "nimi": "Guadeloupe",
+          "kieli": "FI",
+          "kuvaus": "Guadeloupe"
+        },
+        {
+          "nimi": "Guadeloupe",
+          "kieli": "SV",
+          "kuvaus": "Guadeloupe"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_254",
+      "codeElementVersion": 1,
+      "codeElementValue": "254",
+      "relationMetadata": [
+        {
+          "nimi": "Ranskan Guayana",
+          "kieli": "FI",
+          "kuvaus": "Ranskan Guayana"
+        },
+        {
+          "nimi": "French Guiana",
+          "kieli": "EN",
+          "kuvaus": "French Guiana"
+        },
+        {
+          "nimi": "Franska Guyana",
+          "kieli": "SV",
+          "kuvaus": "Franska Guyana"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_056",
+      "codeElementVersion": 1,
+      "codeElementValue": "056",
+      "relationMetadata": [
+        {
+          "nimi": "Belgium",
+          "kieli": "EN",
+          "kuvaus": "Belgium"
+        },
+        {
+          "nimi": "Belgia",
+          "kieli": "FI",
+          "kuvaus": "Belgia"
+        },
+        {
+          "nimi": "Belgien",
+          "kieli": "SV",
+          "kuvaus": "Belgien"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_246",
+      "codeElementVersion": 1,
+      "codeElementValue": "246",
+      "relationMetadata": [
+        {
+          "nimi": "Finland",
+          "kieli": "EN",
+          "kuvaus": "Finland"
+        },
+        {
+          "nimi": "Finland",
+          "kieli": "SV",
+          "kuvaus": "Finland"
+        },
+        {
+          "nimi": "Suomi",
+          "kieli": "FI",
+          "kuvaus": "Suomi"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_528",
+      "codeElementVersion": 1,
+      "codeElementValue": "528",
+      "relationMetadata": [
+        {
+          "nimi": "Alankomaat",
+          "kieli": "FI",
+          "kuvaus": "Alankomaat"
+        },
+        {
+          "nimi": "Nederländerna",
+          "kieli": "SV",
+          "kuvaus": "Nederländerna"
+        },
+        {
+          "nimi": "Netherlands",
+          "kieli": "EN",
+          "kuvaus": "Netherlands"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_250",
+      "codeElementVersion": 1,
+      "codeElementValue": "250",
+      "relationMetadata": [
+        {
+          "nimi": "Frankrike",
+          "kieli": "SV",
+          "kuvaus": "Frankrike"
+        },
+        {
+          "nimi": "France",
+          "kieli": "EN",
+          "kuvaus": "France"
+        },
+        {
+          "nimi": "Ranska",
+          "kieli": "FI",
+          "kuvaus": "Ranska"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_175",
+      "codeElementVersion": 1,
+      "codeElementValue": "175",
+      "relationMetadata": [
+        {
+          "nimi": "Mayotte",
+          "kieli": "EN",
+          "kuvaus": "Mayotte"
+        },
+        {
+          "nimi": "Mayotte",
+          "kieli": "SV",
+          "kuvaus": "Mayotte"
+        },
+        {
+          "nimi": "Mayotte",
+          "kieli": "FI",
+          "kuvaus": "Mayotte"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_474",
+      "codeElementVersion": 1,
+      "codeElementValue": "474",
+      "relationMetadata": [
+        {
+          "nimi": "Martinique",
+          "kieli": "FI",
+          "kuvaus": "Martinique"
+        },
+        {
+          "nimi": "Martinique",
+          "kieli": "EN",
+          "kuvaus": "Martinique"
+        },
+        {
+          "nimi": "Martinique",
+          "kieli": "SV",
+          "kuvaus": "Martinique"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin."
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        }
+      ],
+      "passive": true
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_442",
+      "codeElementVersion": 2,
+      "codeElementValue": "442",
+      "relationMetadata": [
+        {
+          "nimi": "Luxemburg",
+          "kieli": "FI",
+          "kuvaus": "Luxemburg"
+        },
+        {
+          "nimi": "Luxemburg",
+          "kieli": "SV",
+          "kuvaus": "Luxemburg"
+        },
+        {
+          "nimi": "Luxembourg",
+          "kieli": "EN",
+          "kuvaus": "Luxembourg"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_380",
+      "codeElementVersion": 2,
+      "codeElementValue": "380",
+      "relationMetadata": [
+        {
+          "nimi": "Italien",
+          "kieli": "SV",
+          "kuvaus": "Italien"
+        },
+        {
+          "nimi": "Italia",
+          "kieli": "FI",
+          "kuvaus": "Italia"
+        },
+        {
+          "nimi": "Italy",
+          "kieli": "EN",
+          "kuvaus": "Italy"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_300",
+      "codeElementVersion": 2,
+      "codeElementValue": "300",
+      "relationMetadata": [
+        {
+          "nimi": "Greece",
+          "kieli": "EN",
+          "kuvaus": "Greece"
+        },
+        {
+          "nimi": "Kreikka",
+          "kieli": "FI",
+          "kuvaus": "Kreikka"
+        },
+        {
+          "nimi": "Grekland",
+          "kieli": "SV",
+          "kuvaus": "Grekland"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_638",
+      "codeElementVersion": 2,
+      "codeElementValue": "638",
+      "relationMetadata": [
+        {
+          "nimi": "Réunion",
+          "kieli": "SV",
+          "kuvaus": "Réunion"
+        },
+        {
+          "nimi": "Réunion",
+          "kieli": "FI",
+          "kuvaus": "Réunion"
+        },
+        {
+          "nimi": "Réunion",
+          "kieli": "EN",
+          "kuvaus": "Réunion"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_474",
+      "codeElementVersion": 2,
+      "codeElementValue": "474",
+      "relationMetadata": [
+        {
+          "nimi": "Martinique",
+          "kieli": "SV",
+          "kuvaus": "Martinique"
+        },
+        {
+          "nimi": "Martinique",
+          "kieli": "EN",
+          "kuvaus": "Martinique"
+        },
+        {
+          "nimi": "Martinique",
+          "kieli": "FI",
+          "kuvaus": "Martinique"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_203",
+      "codeElementVersion": 2,
+      "codeElementValue": "203",
+      "relationMetadata": [
+        {
+          "nimi": "Tjeckien",
+          "kieli": "SV",
+          "kuvaus": "Tjeckien"
+        },
+        {
+          "nimi": "Tšekki",
+          "kieli": "FI",
+          "kuvaus": "Tšekki"
+        },
+        {
+          "nimi": "Czechia",
+          "kieli": "EN",
+          "kuvaus": "Czechia"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_233",
+      "codeElementVersion": 2,
+      "codeElementValue": "233",
+      "relationMetadata": [
+        {
+          "nimi": "Estland",
+          "kieli": "SV",
+          "kuvaus": "Estland"
+        },
+        {
+          "nimi": "Estonia",
+          "kieli": "EN",
+          "kuvaus": "Estonia"
+        },
+        {
+          "nimi": "Viro",
+          "kieli": "FI",
+          "kuvaus": "Viro"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_312",
+      "codeElementVersion": 2,
+      "codeElementValue": "312",
+      "relationMetadata": [
+        {
+          "nimi": "Guadeloupe",
+          "kieli": "SV",
+          "kuvaus": "Guadeloupe"
+        },
+        {
+          "nimi": "Guadeloupe",
+          "kieli": "EN",
+          "kuvaus": "Guadeloupe"
+        },
+        {
+          "nimi": "Guadeloupe",
+          "kieli": "FI",
+          "kuvaus": "Guadeloupe"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_196",
+      "codeElementVersion": 2,
+      "codeElementValue": "196",
+      "relationMetadata": [
+        {
+          "nimi": "Cypern",
+          "kieli": "SV",
+          "kuvaus": "Cypern"
+        },
+        {
+          "nimi": "Kypros",
+          "kieli": "FI",
+          "kuvaus": "Kypros"
+        },
+        {
+          "nimi": "Cyprus",
+          "kieli": "EN",
+          "kuvaus": "Cyprus"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_372",
+      "codeElementVersion": 2,
+      "codeElementValue": "372",
+      "relationMetadata": [
+        {
+          "nimi": "Irlanti",
+          "kieli": "FI",
+          "kuvaus": "Irlanti"
+        },
+        {
+          "nimi": "Ireland",
+          "kieli": "EN",
+          "kuvaus": "Ireland"
+        },
+        {
+          "nimi": "Irland",
+          "kieli": "SV",
+          "kuvaus": "Irland"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_642",
+      "codeElementVersion": 2,
+      "codeElementValue": "642",
+      "relationMetadata": [
+        {
+          "nimi": "Romania",
+          "kieli": "EN",
+          "kuvaus": "Romania"
+        },
+        {
+          "nimi": "Romania",
+          "kieli": "FI",
+          "kuvaus": "Romania"
+        },
+        {
+          "nimi": "Rumänien",
+          "kieli": "SV",
+          "kuvaus": "Rumänien"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_191",
+      "codeElementVersion": 2,
+      "codeElementValue": "191",
+      "relationMetadata": [
+        {
+          "nimi": "Kroatien",
+          "kieli": "SV",
+          "kuvaus": "Kroatien"
+        },
+        {
+          "nimi": "Croatia",
+          "kieli": "EN",
+          "kuvaus": "Croatia"
+        },
+        {
+          "nimi": "Kroatia",
+          "kieli": "FI",
+          "kuvaus": "Kroatia"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_208",
+      "codeElementVersion": 2,
+      "codeElementValue": "208",
+      "relationMetadata": [
+        {
+          "nimi": "Tanska",
+          "kieli": "FI",
+          "kuvaus": "Tanska"
+        },
+        {
+          "nimi": "Denmark",
+          "kieli": "EN",
+          "kuvaus": "Denmark"
+        },
+        {
+          "nimi": "Danmark",
+          "kieli": "SV",
+          "kuvaus": "Danmark"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_752",
+      "codeElementVersion": 2,
+      "codeElementValue": "752",
+      "relationMetadata": [
+        {
+          "nimi": "Ruotsi",
+          "kieli": "FI",
+          "kuvaus": "Ruotsi"
+        },
+        {
+          "nimi": "Sweden",
+          "kieli": "EN",
+          "kuvaus": "Sweden"
+        },
+        {
+          "nimi": "Sverige",
+          "kieli": "SV",
+          "kuvaus": "Sverige"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_056",
+      "codeElementVersion": 2,
+      "codeElementValue": "056",
+      "relationMetadata": [
+        {
+          "nimi": "Belgien",
+          "kieli": "SV",
+          "kuvaus": "Belgien"
+        },
+        {
+          "nimi": "Belgium",
+          "kieli": "EN",
+          "kuvaus": "Belgium"
+        },
+        {
+          "nimi": "Belgia",
+          "kieli": "FI",
+          "kuvaus": "Belgia"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_276",
+      "codeElementVersion": 2,
+      "codeElementValue": "276",
+      "relationMetadata": [
+        {
+          "nimi": "Germany",
+          "kieli": "EN",
+          "kuvaus": "Germany"
+        },
+        {
+          "nimi": "Tyskland",
+          "kieli": "SV",
+          "kuvaus": "Tyskland"
+        },
+        {
+          "nimi": "Saksa",
+          "kieli": "FI",
+          "kuvaus": "Saksa"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_040",
+      "codeElementVersion": 2,
+      "codeElementValue": "040",
+      "relationMetadata": [
+        {
+          "nimi": "Itävalta",
+          "kieli": "FI",
+          "kuvaus": "Itävalta"
+        },
+        {
+          "nimi": "Austria",
+          "kieli": "EN",
+          "kuvaus": "Austria"
+        },
+        {
+          "nimi": "Österrike",
+          "kieli": "SV",
+          "kuvaus": "Österrike"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    },
+    {
+      "codeElementUri": "maatjavaltiot2_470",
+      "codeElementVersion": 2,
+      "codeElementValue": "470",
+      "relationMetadata": [
+        {
+          "nimi": "Malta",
+          "kieli": "SV",
+          "kuvaus": "Malta"
+        },
+        {
+          "nimi": "Malta",
+          "kieli": "EN",
+          "kuvaus": "Malta"
+        },
+        {
+          "nimi": "Malta",
+          "kieli": "FI",
+          "kuvaus": "Malta"
+        }
+      ],
+      "parentMetadata": [
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "SV",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "maat ja valtiot 2",
+          "kieli": "EN",
+          "kuvaus": "maat ja valtiot 2"
+        },
+        {
+          "nimi": "Valtiot ja maat 2",
+          "kieli": "FI",
+          "kuvaus": "Valtiot ja maat -luokitusta käytetään mm. väestötilastoissa henkilöiden kansallisuuden luokittamiseen.\nValtioiden ja maiden tunnukset perustuvat kansainväliseen ISO 3166 -standardiin (International Standard ISO 3166-1. Codes for the representation of names of countries and their subdivisions. Fifth edition. 1997.). Tunnusjärjestelmä sisältää yhteensä 243 alueyksikköä. Itsenäisten valtioiden lisäksi siihen kuuluu epäitsenäisiä maita, jotka ovat standardin mukaan siirtomaita tai muita geopoliittisesti merkittäviä alueita.\n \nSuomen standardisoimisliitto vahvistaa vastaavan kansallisen standardin SFS-ISO 3166 (Standardi SFS-ISO 3166. Maiden nimien tunnukset. Suomen standardisoimisliitto, 1998.). Tunnusjärjestelmään kuuluvat valtioiden ja maiden kolminumeroiset, kaksikirjaimiset sekä kolmikirjaimiset tunnukset.\n \nTilastojärjestelmissä suositellaan käytettäväksi ensisijaisesti kolminumeroista tunnusta, joka on YK:n tilastotoimiston antama. Kaksikirjaiminen tunnus on tarkoitettu yleiskäyttöön. Kolmikirjaimista tunnusta voidaan käyttää, kun halutaan helpottaa alueen tunnistamista ja lisätä havainnollisuutta. Kirjaintunnukset perustuvat lähinnä valtioiden ja maiden englanninkielisiin nimiin.\n \nValtioiden ja maiden nimistä käytetään ns. lyhyttä muotoa (vrt. Suomi, Suomen tasavalta). Suomenkieliset nimet perustuvat SFS-ISO 3166 -standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin. Ruotsinkieliset nimet perustuvat Kotimaisten kielten tutkimuskeskuksen ohjeisiin ja englanninkieliset ISO 3166-standardiin sekä Kotimaisten kielten tutkimuskeskuksen ohjeisiin.\n\nHUOM! Älä versioi tätä koodistoa. Versiointi aiheuttaa ongelmia mm. hakemuspalvelussa. \n\nTämä koodisto on ainakin OKM Virta- palvelussa (kehittäjä taho CSC)\n\nKoodistoon liittyvät tiedustelut yhteisetpalvelut@opintopolku.fi\nOpetushallitus varaa oikeuden muuttaa Opintopolun koodistoja, niissä olevia koodeja sekä niiden selitteitä ja kuvauksia\n\nTarkistettu viimeksi 7.11.2022"
+        }
+      ],
+      "passive": false
+    }
+  ],
+  "includesCodeElements": [],
+  "levelsWithCodeElements": [],
+  "koodiUri": "valtioryhmat_1",
+  "resourceUri": "https://virkailija.opintopolku.fi/koodisto-service/rest/codeelement/valtioryhmat_1",
+  "version": 4,
+  "versio": 1,
+  "koodisto": {
+    "koodistoUri": "valtioryhmat",
+    "organisaatioOid": "1.2.246.562.10.00000000001",
+    "koodistoVersios": [
+      1
+    ]
+  },
+  "koodiArvo": "EU"
+}

@@ -83,6 +83,9 @@ valinta-tulos-service.mail-poller.hakemus.recheck.hours={{valintatulosservice_ma
 # KELA
 valinta-tulos-service.kela.url=https://asiointi.kela.fi/go_app/EArtApplication?reitti=oph
 
+# MIGRI
+valinta-tulos-service.migri.url=https://enterfinland.fi/
+
 # Oppijan tunnistus
 oppijan-tunnistus-service.url=https://{{host_virkailija}}/oppijan-tunnistus/api/v1/only_token
 

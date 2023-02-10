@@ -12,7 +12,7 @@ import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemu
 import fi.vm.sade.valintatulosservice.hakukohderyhmat.HakukohderyhmaService
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetailsService
 import fi.vm.sade.valintatulosservice.kela.{KelaService, VtsKelaAuthenticationClient}
-import fi.vm.sade.valintatulosservice.koodisto.KoodistoService
+import fi.vm.sade.valintatulosservice.koodisto.{KoodistoService, RemoteKoodistoService}
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
 import fi.vm.sade.valintatulosservice.migri.MigriService
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{CachedOhjausparametritService, RemoteOhjausparametritService, StubbedOhjausparametritService}
@@ -61,7 +61,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     }
 
     lazy val organisaatioService = OrganisaatioService(appConfig)
-    lazy val koodistoService = new KoodistoService(appConfig)
+    lazy val koodistoService = new RemoteKoodistoService(appConfig)
 
     lazy val ohjausparametritService = if (appConfig.isInstanceOf[StubbedExternalDeps]) {
       new StubbedOhjausparametritService
@@ -93,7 +93,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
     lazy val ataruHakemusTarjontaEnricher = new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService)
     lazy val hakemusRepository = new HakemusRepository(hakuAppRepository, ataruHakemusRepository, ataruHakemusTarjontaEnricher)
-    lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, hakemusRepository, valintarekisteriDb, cachedOhjausparametritService, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao)(appConfig)
+    lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, hakemusRepository, valintarekisteriDb, cachedOhjausparametritService, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, koodistoService)(appConfig)
     lazy val streamingValintatulosService = new StreamingValintatulosService(valintatulosService, valintarekisteriDb, hakijaDTOClient)(appConfig)
     lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, valintatulosService, valintarekisteriDb, cachedOhjausparametritService, sijoittelutulosService, hakemusRepository, valintarekisteriDb)
     lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService, valintarekisteriDb, valintarekisteriDb)

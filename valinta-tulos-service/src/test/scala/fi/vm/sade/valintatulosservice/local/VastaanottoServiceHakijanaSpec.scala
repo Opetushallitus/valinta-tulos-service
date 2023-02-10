@@ -4,6 +4,7 @@ import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusRepository, HakuAppRepository}
+import fi.vm.sade.valintatulosservice.koodisto.{KoodistoService, StubbedKoodistoService}
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{OhjausparametritFixtures, StubbedOhjausparametritService}
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
@@ -573,6 +574,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
   private lazy val valintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
 
   lazy val ohjausparametritService = new StubbedOhjausparametritService()
+  lazy val koodistoService = new StubbedKoodistoService()
   lazy val hakuService = HakuService(appConfig, null, ohjausparametritService, OrganisaatioService(appConfig), null)
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, true)
@@ -584,7 +586,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
   lazy val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
   lazy val hakemusRepository = new HakemusRepository(new HakuAppRepository(), new AtaruHakemusRepository(appConfig), new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService))
   lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, hakemusRepository, valintarekisteriDb,
-    ohjausparametritService, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao)
+    ohjausparametritService, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, koodistoService)
   lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, valintatulosService,
     valintarekisteriDb, ohjausparametritService, sijoittelutulosService, hakemusRepository, valintarekisteriDb)
   lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService,

@@ -41,7 +41,29 @@ case class KoodistoKoodi(koodiUri: String, versio: Int, koodiArvo: String, inclu
   }
 }
 
-class KoodistoService(config: AppConfig) {
+trait KoodistoService {
+  def getKoodi(koodiUri: String): Either[Throwable, Koodi]
+}
+
+class StubbedKoodistoService() extends KoodistoService {
+  private implicit val jsonFormats: Formats = DefaultFormats
+
+  private def getKoodiFromFile(filename: String): Koodi = {
+    val filenameWithPath = s"/fixtures/koodisto/$filename.json"
+    println(s"filenameWithPath: $filenameWithPath")
+    val json = scala.io.Source.fromInputStream(getClass.getResourceAsStream(filenameWithPath)).mkString
+    parse(json).extract[KoodistoKoodi].toKoodi
+  }
+  def getKoodi(koodiUri: String): Either[Throwable, Koodi] = {
+    koodiUri match {
+      case "valtioryhmat_1#1" => Right(getKoodiFromFile("valtioryhmat_1"))
+      case "valtioryhmat_2#1" => Right(getKoodiFromFile("valtioryhmat_2"))
+      case _ => Left(new RuntimeException(s"Testeille tuntematon koodi: $koodiUri"))
+    }
+  }
+}
+
+class RemoteKoodistoService(config: AppConfig) extends KoodistoService {
   private implicit val jsonFormats: Formats = DefaultFormats
 
   def getKoodi(koodiUri: String): Either[Throwable, Koodi] = {
