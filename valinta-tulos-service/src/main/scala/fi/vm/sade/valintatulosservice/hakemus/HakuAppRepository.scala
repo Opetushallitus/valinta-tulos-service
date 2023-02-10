@@ -131,7 +131,7 @@ class HakuAppRepository()(implicit appConfig: VtsAppConfig) extends Logging {
   }
 
   private def parseHenkilotiedot(data: Imports.MongoDBObject): Henkilotiedot = {
-    Henkilotiedot(emptyStringToNone(data.getAs[String]("Kutsumanimi")), emptyStringToNone(data.getAs[String]("Sähköposti")), data.getAs[String]("Henkilotunnus").isDefined)
+    Henkilotiedot(emptyStringToNone(data.getAs[String]("Kutsumanimi")), emptyStringToNone(data.getAs[String]("Sähköposti")), data.getAs[String]("Henkilotunnus").isDefined, List())
   }
 
   private val hakutoiveKey = s"preference([0-9]+)-${DatabaseKeys.hakutoiveIdKeyPostfix}".r
