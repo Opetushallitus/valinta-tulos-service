@@ -12,7 +12,7 @@ import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemu
 import fi.vm.sade.valintatulosservice.hakukohderyhmat.HakukohderyhmaService
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetailsService
 import fi.vm.sade.valintatulosservice.kela.{KelaService, VtsKelaAuthenticationClient}
-import fi.vm.sade.valintatulosservice.koodisto.{KoodistoService, RemoteKoodistoService}
+import fi.vm.sade.valintatulosservice.koodisto.{CachedKoodistoService, KoodistoService, RemoteKoodistoService, StubbedKoodistoService}
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
 import fi.vm.sade.valintatulosservice.migri.MigriService
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{CachedOhjausparametritService, RemoteOhjausparametritService, StubbedOhjausparametritService}
@@ -61,7 +61,11 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     }
 
     lazy val organisaatioService = OrganisaatioService(appConfig)
-    lazy val koodistoService = new RemoteKoodistoService(appConfig)
+    lazy val koodistoService = if (appConfig.isInstanceOf[StubbedExternalDeps]) {
+      new StubbedKoodistoService
+    } else {
+      new CachedKoodistoService(new RemoteKoodistoService(appConfig))
+    }
 
     lazy val ohjausparametritService = if (appConfig.isInstanceOf[StubbedExternalDeps]) {
       new StubbedOhjausparametritService
