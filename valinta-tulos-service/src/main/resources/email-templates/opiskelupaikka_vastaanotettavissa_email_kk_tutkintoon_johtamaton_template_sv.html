@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8" />
+    <meta http-equiv="Content-Style-Type" content="text/css" />
+    <title>
+    </title>
+</head>
+<body>
+#if($securelink)
+<p>
+    Hej $etunimi
+</p>
+<p>
+    Gratulerar! Du har blivit beviljad en studieplats:
+</p>
+#foreach( $hakukohde in $hakukohteet )
+<p>
+    $hakukohde.nimi $hakukohde.tarjoaja
+</p>
+#end
+<p>
+    Ansökan: $haunNimi
+</p>
+<p>
+    Ta emot studieplatsen via följande länk: <a href="$securelink">$securelink</a>. Länken är personlig - dela inte den.
+</p>
+#if($deadline != '')
+<p>
+    Ta emot den beviljade studieplatsen före $deadline.
+</p>
+#end
+<p>
+    Du får ytterligare anvisningar om mottagande av studieplatsen i
+    <a href="https://opintopolku.fi/konfo/sv/sivu/mottagande-av-studieplats-och-anmalning-till-hogskolor">Studieinfo.fi-tjänsten</a>
+    eller från högskolan som du har blivit godkänd till.
+</p>
+<p>
+    Svara inte på detta meddelande - meddelandet har skickats automatiskt.
+</p>
+#else
+<p>
+    Hej $etunimi
+</p>
+<p>
+    Gratulerar! Du har blivit beviljad en studieplats!
+</p>
+#foreach( $hakukohde in $hakukohteet )
+<p>
+    $hakukohde.nimi $hakukohde.tarjoaja
+</p>
+#end
+<p>
+    Ansökan: $haunNimi
+</p>
+<p>
+    Ta emot studieplatsen i <a href="https://studieinfo.fi/omatsivut">Min Studieinfo-tjänsten</a>.
+    För att logga in måste du identifiera dig med nätbankskoder, mobilcertifikat eller elektroniskt id-kort.
+    Identifieringssätt för utlänningar i Suomi.fi identifikation stöds för närvarande inte.
+</p>
+#if($deadline != '')
+<p>
+    Ta emot den beviljade studieplatsen före $deadline.
+</p>
+#end
+<p>
+    Du får ytterligare anvisningar om mottagande av studieplatsen i
+    <a href="https://opintopolku.fi/konfo/sv/sivu/mottagande-av-studieplats-och-anmalning-till-hogskolor">Studieinfo.fi-tjänsten</a>
+    eller från högskolan som du har blivit godkänd till.
+</p>
+<p>
+    Svara inte på detta meddelande - meddelandet har skickats automatiskt.
+</p>
+#end
+</body>
+</html>

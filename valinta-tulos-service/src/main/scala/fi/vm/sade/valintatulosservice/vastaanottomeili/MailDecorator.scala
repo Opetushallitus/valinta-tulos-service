@@ -27,9 +27,7 @@ class MailDecorator(hakuService: HakuService,
           }
           val ilmoitus = Ilmoitus(status.hakemusOid, status.hakijaOid, None, status.asiointikieli, status.kutsumanimi, status.email, deadline, mailables.map(toHakukohde), toHaku(tarjontaHaku))
 
-          if (status.hasHetu && !tarjontaHaku.toinenAste) {
-            Some(ilmoitus)
-          } else {
+          if(!status.hasHetu || (tarjontaHaku.toinenAste && tarjontaHaku.yhteishaku)) {
             val haunOhjausparametrit: Option[Ohjausparametrit] = timed(s"Ohjausparametrien hakeminen hakuoidilla ${status.hakuOid}", 50) {
               fetchOhjausparametrit(status.hakuOid)
             }
@@ -41,6 +39,8 @@ class MailDecorator(hakuService: HakuService,
                 logger.error(s"Hakemukselle ei lähetetty vastaanottomeiliä, koska securelinkkiä ei saatu! ${status.hakemusOid}", e)
                 None
             }
+          } else {
+            Some(ilmoitus)
           }
         } catch {
           case e: Exception =>
@@ -55,19 +55,28 @@ class MailDecorator(hakuService: HakuService,
   def toHakukohde(hakukohdeMailStatus: HakukohdeMailStatus): Hakukohde = {
     hakuService.getHakukohde(hakukohdeMailStatus.hakukohdeOid) match {
       case Right(hakukohde) =>
-        Hakukohde(hakukohdeMailStatus.hakukohdeOid,
-          hakukohdeMailStatus.reasonToMail match {
-            case Some(Vastaanottoilmoitus) if hakukohde.kkHakukohde => LahetysSyy.vastaanottoilmoitusKk
-            case Some(Vastaanottoilmoitus) => LahetysSyy.vastaanottoilmoitus2aste
-            case Some(EhdollisenPeriytymisenIlmoitus) => LahetysSyy.ehdollisen_periytymisen_ilmoitus
-            case Some(SitovanVastaanotonIlmoitus) => LahetysSyy.sitovan_vastaanoton_ilmoitus
-            case _ =>
-              throw new RuntimeException(s"Tuntematon lähetyssyy ${hakukohdeMailStatus.reasonToMail}")
-          },
-          hakukohdeMailStatus.vastaanottotila,
-          hakukohdeMailStatus.ehdollisestiHyvaksyttavissa,
-          hakukohde.hakukohteenNimet,
-          hakukohde.tarjoajaNimet)
+        hakuService.getHaku(hakukohde.hakuOid) match {
+          case Right(haku) => Hakukohde(hakukohdeMailStatus.hakukohdeOid,
+            hakukohdeMailStatus.reasonToMail match {
+              case Some(Vastaanottoilmoitus) if haku.korkeakoulu && hakukohde.tutkintoonJohtava => LahetysSyy.vastaanottoilmoitusKk
+              case Some(Vastaanottoilmoitus) if haku.korkeakoulu && !hakukohde.tutkintoonJohtava => LahetysSyy.vastaanottoilmoitusKkTutkintoonJohtamaton
+              case Some(Vastaanottoilmoitus) if haku.toinenAste && haku.yhteishaku => LahetysSyy.vastaanottoilmoitus2aste
+              case Some(Vastaanottoilmoitus) if haku.toinenAste && !haku.yhteishaku => LahetysSyy.vastaanottoilmoitus2asteEiYhteishaku
+              case Some(Vastaanottoilmoitus) => LahetysSyy.vastaanottoilmoitusMuut
+              case Some(EhdollisenPeriytymisenIlmoitus) => LahetysSyy.ehdollisen_periytymisen_ilmoitus
+              case Some(SitovanVastaanotonIlmoitus) => LahetysSyy.sitovan_vastaanoton_ilmoitus
+              case _ =>
+                throw new RuntimeException(s"Tuntematon lähetyssyy ${hakukohdeMailStatus.reasonToMail}")
+            },
+            hakukohdeMailStatus.vastaanottotila,
+            hakukohdeMailStatus.ehdollisestiHyvaksyttavissa,
+            hakukohde.hakukohteenNimet,
+            hakukohde.tarjoajaNimet)
+          case Left(e) =>
+            val msg = "Hakukohteen" + hakukohdeMailStatus.hakukohdeOid + " hakua ei löydy, oid: " + hakukohde.hakuOid
+            logger.error(msg, e)
+            throw new HakukohdeNotFoundException(msg)
+        }
       case Left(e) =>
         val msg = "Hakukohde ei löydy, oid: " + hakukohdeMailStatus.hakukohdeOid
         logger.error(msg, e)
