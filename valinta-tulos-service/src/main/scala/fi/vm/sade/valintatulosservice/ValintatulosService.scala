@@ -660,15 +660,23 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     }
   }
 
-  private def isEuTaiEtaKansalainen(kansalaisuudet: List[String]): Boolean = {
-    val euMaat: List[String] = koodistoService.getKoodi("valtioryhmat_1#1") match {
+  private def getEuMaat(): List[String] = {
+    koodistoService.getKoodi("valtioryhmat_1#1") match {
       case Left(e) => throw new RuntimeException("Eu-maiden hakeminen koodistosta epäonnistui", e)
-      case Right(koodi) => koodi.sisaltyvatKoodit.filter(_.koodiUri.contains("maatjavaltiot2_")).map(_.arvo)
+      case Right(koodi) => koodi.sisaltavatKoodit.filter(_.koodiUri.contains("maatjavaltiot2_")).map(_.arvo)
     }
-    val etaMaat: List[String] = koodistoService.getKoodi("valtioryhmat_2#1") match {
+  }
+
+  private def getEtaMaat(): List[String] = {
+    koodistoService.getKoodi("valtioryhmat_2#1") match {
       case Left(e) => throw new RuntimeException("Eta-maiden hakeminen koodistosta epäonnistui", e)
-      case Right(koodi) => koodi.sisaltyvatKoodit.filter(_.koodiUri.contains("maatjavaltiot2_")).map(_.arvo)
+      case Right(koodi) => koodi.sisaltavatKoodit.filter(_.koodiUri.contains("maatjavaltiot2_")).map(_.arvo)
     }
+  }
+
+  private def isEuTaiEtaKansalainen(kansalaisuudet: List[String]): Boolean = {
+    val euMaat: List[String] = getEuMaat()
+    val etaMaat: List[String] = getEtaMaat()
     kansalaisuudet.exists(k => euMaat.contains(k) || etaMaat.contains(k))
   }
 
@@ -676,6 +684,8 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     val hakukierrosEiOlePäättynyt = !ohjausparametrit.hakukierrosPaattyy.exists(_.isBeforeNow())
     val hakijaOnEuTaiEtaKansalainen = isEuTaiEtaKansalainen(hakemus.henkilotiedot.kansalaisuudet)
     val migriURL = if (hakukierrosEiOlePäättynyt && !hakijaOnEuTaiEtaKansalainen) Some(appConfig.settings.migriURL) else None
+
+    logger.info(s"Ollaan asettamatta hakemuksen ${hakemus.oid} migri-linkkiä | migriURL: $migriURL | hakukierrosEiOlePäättynyt: $hakukierrosEiOlePäättynyt | hakijaOnEuTaiEtaKansalainen: $hakijaOnEuTaiEtaKansalainen | kansalaisuudet: ${hakemus.henkilotiedot.kansalaisuudet} | EU-naat: ${getEuMaat()} | ETA-maat: ${getEtaMaat()}")
 
     tulokset.map {
       case tulos if List(hyväksytty, varasijalta_hyväksytty, harkinnanvaraisesti_hyväksytty).contains(tulos.valintatila) =>

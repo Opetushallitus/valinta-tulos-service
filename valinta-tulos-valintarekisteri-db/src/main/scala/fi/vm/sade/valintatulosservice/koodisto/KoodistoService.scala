@@ -13,9 +13,9 @@ import scala.util.Try
 import scala.util.control.NonFatal
 
 
-case class SisaltyvaKoodi(koodiUri: String, versio: Int, arvo: String)
-case class Koodi(koodiUri: String, versio: Int, arvo: String, sisaltyvatKoodit: List[SisaltyvaKoodi]) {
-  def findSisaltyvaKoodi(koodisto: String): Option[SisaltyvaKoodi] = {
+case class RelaatioKoodi(koodiUri: String, versio: Int, arvo: String)
+case class Koodi(koodiUri: String, versio: Int, arvo: String, sisaltyvatKoodit: List[RelaatioKoodi], sisaltavatKoodit: List[RelaatioKoodi]) {
+  def findSisaltyvaKoodi(koodisto: String): Option[RelaatioKoodi] = {
     sisaltyvatKoodit.filter(_.koodiUri.startsWith(koodisto + "_")) match {
       case Nil => None
       case koodit => Some(koodit.maxBy(_.versio))
@@ -23,9 +23,9 @@ case class Koodi(koodiUri: String, versio: Int, arvo: String, sisaltyvatKoodit: 
   }
 }
 
-case class SisaltyvaKoodistoKoodi(codeElementUri: String, codeElementVersion: Int, codeElementValue: String) {
-  def toSisaltyvaKoodi: SisaltyvaKoodi = {
-    SisaltyvaKoodi(
+case class RelaatioKoodistoKoodi(codeElementUri: String, codeElementVersion: Int, codeElementValue: String) {
+  def toRelaatioKoodi: RelaatioKoodi = {
+    RelaatioKoodi(
       koodiUri = codeElementUri + "#" + codeElementVersion,
       versio = codeElementVersion,
       arvo = codeElementValue
@@ -33,13 +33,14 @@ case class SisaltyvaKoodistoKoodi(codeElementUri: String, codeElementVersion: In
   }
 }
 
-case class KoodistoKoodi(koodiUri: String, versio: Int, koodiArvo: String, includesCodeElements: List[SisaltyvaKoodistoKoodi]) {
+case class KoodistoKoodi(koodiUri: String, versio: Int, koodiArvo: String, includesCodeElements: List[RelaatioKoodistoKoodi], withinCodeElements: List[RelaatioKoodistoKoodi]) {
   def toKoodi: Koodi = {
     Koodi(
       koodiUri = koodiUri + "#" + versio,
       versio = versio,
       arvo = koodiArvo,
-      sisaltyvatKoodit = includesCodeElements.map(_.toSisaltyvaKoodi)
+      sisaltyvatKoodit = includesCodeElements.map(_.toRelaatioKoodi),
+      sisaltavatKoodit = withinCodeElements.map(_.toRelaatioKoodi)
     )
   }
 }
