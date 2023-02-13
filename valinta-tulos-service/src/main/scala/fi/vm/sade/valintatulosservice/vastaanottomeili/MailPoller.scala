@@ -324,7 +324,7 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
                             mailReasons: Map[HakukohdeOid, (Option[MailReason],Boolean)],
                             valintatapajonoFilter: Option[ValintatapajonoOid]): Option[HakemusMailStatus] = {
     hakemus match {
-      case Hakemus(_, _, _, asiointikieli, _, Henkilotiedot(Some(kutsumanimi), Some(email), hasHetu, List()), _) =>
+      case Hakemus(_, _, _, asiointikieli, _, Henkilotiedot(Some(kutsumanimi), Some(email), hasHetu, _), _) =>
         val hakukohteenToiveet = hakemuksenTulos.hakutoiveet.filter(_.hakukohdeOid == hakukohdeOid)
         val filteredHakutoiveet = hakukohteenToiveet.filter(toive => valintatapajonoFilter.isEmpty || valintatapajonoFilter.get.equals(toive.valintatapajonoOid))
         if (filteredHakutoiveet.size != hakukohteenToiveet.size) {
