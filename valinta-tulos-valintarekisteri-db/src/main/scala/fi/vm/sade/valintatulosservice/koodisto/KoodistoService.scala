@@ -14,7 +14,7 @@ import scala.util.control.NonFatal
 
 
 case class RelaatioKoodi(koodiUri: String, versio: Int, arvo: String)
-case class Koodi(koodiUri: String, versio: Int, arvo: String, sisaltyvatKoodit: List[RelaatioKoodi], sisaltavatKoodit: List[RelaatioKoodi]) {
+case class Koodi(koodiUri: String, versio: Int, arvo: String, sisaltyvatKoodit: List[RelaatioKoodi], sisaltyyKoodeihin: List[RelaatioKoodi]) {
   def findSisaltyvaKoodi(koodisto: String): Option[RelaatioKoodi] = {
     sisaltyvatKoodit.filter(_.koodiUri.startsWith(koodisto + "_")) match {
       case Nil => None
@@ -40,7 +40,7 @@ case class KoodistoKoodi(koodiUri: String, versio: Int, koodiArvo: String, inclu
       versio = versio,
       arvo = koodiArvo,
       sisaltyvatKoodit = includesCodeElements.map(_.toRelaatioKoodi),
-      sisaltavatKoodit = withinCodeElements.map(_.toRelaatioKoodi)
+      sisaltyyKoodeihin = withinCodeElements.map(_.toRelaatioKoodi)
     )
   }
 }

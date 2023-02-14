@@ -555,12 +555,12 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       .map(piilotaKuvauksetKeskeneräisiltä)
       .map(asetaVastaanotettavuusValintarekisterinPerusteella(vastaanottoKaudella))
       .map(asetaKelaURL)
-      .map(asetaMigriURL)
       .map(piilotaKuvauksetEiJulkaistuiltaValintatapajonoilta)
       .map(piilotaVarasijanumeroJonoiltaJosValintatilaEiVaralla)
       .map(merkitseValintatapajonotPeruuntuneeksiKunEiVastaanottanutMääräaikaanMennessä)
       .map(piilotaEhdollisenHyväksymisenEhdotJonoiltaKunEiEhdollisestiHyväksytty)
       .map(muutaJonojenPeruuntumistenSyytHakukohteissaJoissaOnHyväksyttyTulos)
+      .map(asetaMigriURL)
       .tulokset
 
     Hakemuksentulos(haku.oid, h.oid, sijoitteluTulos.hakijaOid.getOrElse(h.henkiloOid), ohjausparametrit.vastaanottoaikataulu, lopullisetTulokset)
@@ -663,14 +663,14 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
   private def getEuMaat(): List[String] = {
     koodistoService.getKoodi("valtioryhmat_1#1") match {
       case Left(e) => throw new RuntimeException("Eu-maiden hakeminen koodistosta epäonnistui", e)
-      case Right(koodi) => koodi.sisaltavatKoodit.filter(_.koodiUri.contains("maatjavaltiot2_")).map(_.arvo)
+      case Right(koodi) => koodi.sisaltyyKoodeihin.filter(_.koodiUri.contains("maatjavaltiot2_")).map(_.arvo)
     }
   }
 
   private def getEtaMaat(): List[String] = {
     koodistoService.getKoodi("valtioryhmat_2#1") match {
       case Left(e) => throw new RuntimeException("Eta-maiden hakeminen koodistosta epäonnistui", e)
-      case Right(koodi) => koodi.sisaltavatKoodit.filter(_.koodiUri.contains("maatjavaltiot2_")).map(_.arvo)
+      case Right(koodi) => koodi.sisaltyyKoodeihin.filter(_.koodiUri.contains("maatjavaltiot2_")).map(_.arvo)
     }
   }
 
