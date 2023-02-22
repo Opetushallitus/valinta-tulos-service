@@ -1,7 +1,6 @@
 package fi.vm.sade.valintatulosservice.domain
 
 import java.util.Date
-
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain.Valintatila.Valintatila
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila.Vastaanotettavuustila
@@ -36,6 +35,7 @@ case class Hakutoiveentulos(hakukohdeOid: HakukohdeOid,
                             vastaanottoDeadline: Option[Date],
                             viimeisinHakemuksenTilanMuutos: Option[Date],
                             viimeisinValintatuloksenMuutos: Option[Date],
+                            hyvaksyttyJaJulkaistuDate: Option[Date],
                             jonosija: Option[Int],
                             varasijojaKaytetaanAlkaen: Option[Date],
                             varasijojaTaytetaanAsti: Option[Date],
@@ -105,6 +105,8 @@ object Hakutoiveentulos {
                                              hasHetu: Boolean)(implicit appConfig: VtsAppConfig): Hakutoiveentulos = {
     val saaJulkaista: Boolean = !checkJulkaisuAikaParametri || ohjausparametrit.tulostenJulkistusAlkaa.forall(_.isBeforeNow())
     val tarjoajaOid = if (tulos.tarjoajaOid != null) tulos.tarjoajaOid else hakutoive.tarjoajaOid
+    val hyvaksyttyJaJulkaistuDate = tulos.hyvaksyttyJaJulkaistuDate.map(d => Date.from(d.toInstant()))
+
     Hakutoiveentulos(
       tulos.hakukohdeOid,
       hakutoive.nimi,
@@ -120,6 +122,7 @@ object Hakutoiveentulos {
       tulos.vastaanottoDeadline,
       tulos.viimeisinHakemuksenTilanMuutos,
       tulos.viimeisinValintatuloksenMuutos,
+      hyvaksyttyJaJulkaistuDate = hyvaksyttyJaJulkaistuDate,
       tulos.jonosija,
       tulos.varasijojaKaytetaanAlkaen,
       tulos.varasijojaTaytetaanAsti,
