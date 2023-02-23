@@ -604,7 +604,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       henkilotiedot = Henkilotiedot(
         kutsumanimi = Some(etunimiA),
         email = Some(emailA),
-        hasHetu = true
+        hasHetu = true,
+        kansalaisuudet = List()
       ),
       maksuvelvollisuudet = Map()
     )
@@ -622,7 +623,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       henkilotiedot = Henkilotiedot(
         kutsumanimi = Some(etunimiB),
         email = Some(emailB),
-        hasHetu = false
+        hasHetu = false,
+        kansalaisuudet = List()
       ),
       maksuvelvollisuudet = Map()
     )
@@ -653,7 +655,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       henkilotiedot = Henkilotiedot(
         kutsumanimi = Some(etunimiC),
         email = Some(emailC),
-        hasHetu = true
+        hasHetu = true,
+        kansalaisuudet = List()
       ),
       maksuvelvollisuudet = Map()
     )
