@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8" />
+    <meta http-equiv="Content-Style-Type" content="text/css" />
+    <title>
+    </title>
+</head>
+<body>
+#if($securelink)
+<p>
+    Dear $etunimi
+</p>
+<p>
+    Congratulations! You have been offered admission in the following programme(s):
+</p>
+#foreach( $hakukohde in $hakukohteet )
+<p>
+    $hakukohde.nimi $hakukohde.tarjoaja
+</p>
+#end
+<p>
+    Application: $haunNimi
+</p>
+<p>
+    Please use the following link to accept the offer of admission: <a href="$securelink">$securelink</a>. The link is personal - do not share it.
+</p>
+#if($deadline != '')
+<p>
+    Accept the offer of admission before the deadline: $deadline.
+</p>
+#end
+<p>
+    You can get further information about accepting an offer of admission from the higher education institution that you have been accepted to.
+</p>
+<p>
+    Do not reply to this message - the message has been sent automatically.
+</p>
+#else
+<p>
+    Dear $etunimi
+</p>
+<p>
+    Congratulations! You have been offered admission in the following programme(s):
+</p>
+#foreach( $hakukohde in $hakukohteet )
+<p>
+    $hakukohde.nimi $hakukohde.tarjoaja
+</p>
+#end
+<p>
+    Application: $haunNimi
+</p>
+<p>
+    You can go to the <a href="https://studyinfo.fi/omatsivut">My Studyinfo</a> service for further information and accept the offer of admission.
+</p>
+#if($deadline != '')
+<p>
+    Confirm the offer of admission before the deadline: $deadline.
+</p>
+#end
+<p>
+    You can get further information about accepting an offer of admission from the higher education institution that you have been accepted to.
+</p>
+<p>
+    Do not reply to this message - the message has been sent automatically.
+</p>
+#end
+</body>
+</html>

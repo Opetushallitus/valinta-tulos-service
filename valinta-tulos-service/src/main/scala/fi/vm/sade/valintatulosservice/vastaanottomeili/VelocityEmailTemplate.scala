@@ -47,7 +47,13 @@ object EmailStructure {
   def apply(ilmoitus: Ilmoitus, lahetysSyy: LahetysSyy): EmailStructure = {
 
     val isValidVastaanottoIlmoitus = ilmoitus.hakukohteet.size == 1 && List(LahetysSyy.sitovan_vastaanoton_ilmoitus, LahetysSyy.sitovan_vastaanoton_ilmoitus).contains(lahetysSyy)
-    val isValidPaikkaVastaanotettavissaIlmoitus = ilmoitus.hakukohteet.nonEmpty && List(LahetysSyy.vastaanottoilmoitus2aste, LahetysSyy.vastaanottoilmoitusKk).contains(lahetysSyy)
+    val isValidPaikkaVastaanotettavissaIlmoitus = ilmoitus.hakukohteet.nonEmpty && List(
+      LahetysSyy.vastaanottoilmoitus2aste,
+      LahetysSyy.vastaanottoilmoitusKk,
+      LahetysSyy.vastaanottoilmoitus2asteEiYhteishaku,
+      LahetysSyy.vastaanottoilmoitusKkTutkintoonJohtamaton,
+      LahetysSyy.vastaanottoilmoitusMuut
+    ).contains(lahetysSyy)
 
     if (!(isValidVastaanottoIlmoitus || isValidPaikkaVastaanotettavissaIlmoitus)) throw new IllegalArgumentException("Failed to add hakukohde information to recipient. Hakemus " + ilmoitus.hakemusOid +
       ". LahetysSyy was " + lahetysSyy + " and there was " + ilmoitus.hakukohteet.size + "hakukohtees")

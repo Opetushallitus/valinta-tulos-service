@@ -22,6 +22,7 @@ class HakutoiveenIlmoittautumistilaSpec extends Specification {
         vastaanottanut,
         Haku(
           HakuOid(""),
+          yhteishaku = true,
           korkeakoulu = true,
           toinenAste = false,
           sallittuKohdejoukkoKelaLinkille = true,
@@ -43,6 +44,7 @@ class HakutoiveenIlmoittautumistilaSpec extends Specification {
         vastaanottanut,
         Haku(
           HakuOid(""),
+          yhteishaku = true,
           korkeakoulu = true,
           toinenAste = false,
           sallittuKohdejoukkoKelaLinkille = true,
