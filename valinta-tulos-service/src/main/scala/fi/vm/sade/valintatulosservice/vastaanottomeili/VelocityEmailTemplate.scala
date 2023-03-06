@@ -17,6 +17,7 @@ import java.text.SimpleDateFormat
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 import scala.collection.Iterable
 import scala.language.implicitConversions
 
@@ -46,7 +47,7 @@ object EmailStructure {
   private val timezone = ZoneId.of("Europe/Helsinki")
   private val deadlineFormatFi = new SimpleDateFormat("d.M.yyyy 'klo' HH:mm")
   private val deadlineFormatSv = new SimpleDateFormat("d.M.yyyy 'kl.' HH:mm")
-  private val deadlineFormatEn = new SimpleDateFormat("MMM. d, yyyy 'at' hh:mm a z")
+  private val deadlineFormatEn = new SimpleDateFormat("MMM. d, yyyy 'at' hh:mm a z", Locale.ENGLISH)
 
   def apply(ilmoitus: Ilmoitus, lahetysSyy: LahetysSyy): EmailStructure = {
 
