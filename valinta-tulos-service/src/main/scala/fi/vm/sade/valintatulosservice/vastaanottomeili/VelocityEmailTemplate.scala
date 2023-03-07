@@ -13,9 +13,11 @@ import org.slf4j.LoggerFactory
 import java.util
 import scala.collection.JavaConverters._
 import java.io.StringWriter
+import java.text.SimpleDateFormat
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 import scala.collection.Iterable
 import scala.language.implicitConversions
 
@@ -43,6 +45,9 @@ object EmailStructure {
   private val LOG : org.slf4j.Logger = LoggerFactory.getLogger(classOf[EmailStructure])
 
   private val timezone = ZoneId.of("Europe/Helsinki")
+  private val deadlineFormatFi = new SimpleDateFormat("d.M.yyyy 'klo' HH:mm")
+  private val deadlineFormatSv = new SimpleDateFormat("d.M.yyyy 'kl.' HH:mm")
+  private val deadlineFormatEn = new SimpleDateFormat("MMM. d, yyyy 'at' hh:mm a z", Locale.ENGLISH)
 
   def apply(ilmoitus: Ilmoitus, lahetysSyy: LahetysSyy): EmailStructure = {
 
@@ -54,6 +59,13 @@ object EmailStructure {
       LahetysSyy.vastaanottoilmoitusKkTutkintoonJohtamaton,
       LahetysSyy.vastaanottoilmoitusMuut
     ).contains(lahetysSyy)
+
+    val formattedDeadline = ilmoitus.asiointikieli match {
+      case "fi" => ilmoitus.deadline.map(deadlineFormatFi.format)
+      case "sv" => ilmoitus.deadline.map(deadlineFormatSv.format)
+      case "en" => ilmoitus.deadline.map(deadlineFormatEn.format)
+      case _ => throw new IllegalArgumentException ("Tuntematon asiointikieli. Hakemus: " + ilmoitus.hakemusOid + ",  asiointikieli:  " + ilmoitus.asiointikieli)
+    }
 
     if (!(isValidVastaanottoIlmoitus || isValidPaikkaVastaanotettavissaIlmoitus)) throw new IllegalArgumentException("Failed to add hakukohde information to recipient. Hakemus " + ilmoitus.hakemusOid +
       ". LahetysSyy was " + lahetysSyy + " and there was " + ilmoitus.hakukohteet.size + "hakukohtees")
@@ -77,16 +89,7 @@ object EmailStructure {
       securelink = ilmoitus.secureLink,
       etunimi = ilmoitus.etunimi,
       haunNimi = ilmoitus.haku.nimi.getAny(lang, "fi", "sv", "en"),
-      deadline = ilmoitus.deadline match {
-        case Some(deadline) =>
-
-          val dl = DateTimeFormatter.ISO_OFFSET_DATE_TIME
-            .format(deadline.toInstant.truncatedTo(ChronoUnit.SECONDS)
-              .atZone(timezone))
-
-          Some(dl)
-        case _ => None
-      })
+      deadline = formattedDeadline)
   }
 }
 
