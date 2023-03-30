@@ -41,8 +41,11 @@ case class LahetysKuittaus(
 
 object LahetysSyy {
   type LahetysSyy = String
+  val vastaanottoilmoitusMuut: LahetysSyy = "VASTAANOTTOILMOITUS_MUUT"
   val vastaanottoilmoitusKk: LahetysSyy = "VASTAANOTTOILMOITUS_KK"
+  val vastaanottoilmoitusKkTutkintoonJohtamaton: LahetysSyy = "VASTAANOTTOILMOITUS_KK_TUTKINTOON_JOHTAMATON"
   val vastaanottoilmoitus2aste: LahetysSyy = "VASTAANOTTOILMOITUS_2_ASTE"
+  val vastaanottoilmoitus2asteEiYhteishaku: LahetysSyy = "VASTAANOTTOILMOITUS_2_ASTE_EI_YHTEISHAKU"
   val ehdollisen_periytymisen_ilmoitus: LahetysSyy = "EHDOLLISEN_PERIYTYMISEN_ILMOITUS"
   val sitovan_vastaanoton_ilmoitus: LahetysSyy = "SITOVAN_VASTAANOTON_ILMOITUS"
 }

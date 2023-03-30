@@ -541,6 +541,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
     )
     val tarjontaHakuA = tarjonta.Haku(
       oid = hakuOidA,
+      yhteishaku = true,
       korkeakoulu = true,
       toinenAste = false,
       sallittuKohdejoukkoKelaLinkille = true,
