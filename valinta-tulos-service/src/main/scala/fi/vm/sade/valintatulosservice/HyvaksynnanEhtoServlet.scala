@@ -285,7 +285,7 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
   private def authorize(hakutoiveet: Set[HakukohdeOid], roles: Set[Role])(implicit authenticated: Authenticated): Unit = {
     authorize(roles.toSeq: _*)
     val organisaatiot = hakutoiveet.map(toive => hakuService.getHakukohde(toive).fold(throw _, x => x)).flatMap(_.organisaatioOiditAuktorisointiin)
-    authorizer.checkAccessWithHakukohderyhmatForAtLeastOneHakukohde(authenticated.session, organisaatiot, roles, hakutoiveet)
+    authorizer.checkAccessWithHakukohderyhmatForAtLeastOneHakukohde(authenticated.session, organisaatiot, roles, hakutoiveet).fold(throw _, x => x)
   }
 
   private def authorize(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, roles: Set[Role])(implicit authenticated: Authenticated): Unit = {
