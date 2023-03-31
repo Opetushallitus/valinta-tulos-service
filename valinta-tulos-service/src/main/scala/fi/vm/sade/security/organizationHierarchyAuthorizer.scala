@@ -25,7 +25,6 @@ class OrganizationHierarchyAuthorizer(appConfig: VtsAppConfig, hakukohderyhmaSer
     .buildAsync[HakukohderyhmaOid, Seq[HakukohdeOid]]()
 
   private def getAuthorizedHakukohderyhmaOidsFromSession(session: Session): Set[HakukohderyhmaOid] = {
-    logger.info(s"getting authorized hakukohderyhmaOids for ${session.personOid} from session, roles: ${session.roles}")
     session.roles.filter(role => role.getString.contains("APP_KOUTA_HAKUKOHDE_") && role.getString.contains("1.2.246.562.28."))
       .map(role => {
         role.getOidString match {
@@ -42,7 +41,6 @@ class OrganizationHierarchyAuthorizer(appConfig: VtsAppConfig, hakukohderyhmaSer
         Future.sequence(oids.map(oid => getHakukohteet(oid))
         ), Duration(10, TimeUnit.SECONDS)).flatten
     }
-    logger.info(s"User ${session.personOid} has rights to $authorizedHakukohtees and wants to access $hakukohteet")
     (hakukohteet intersect authorizedHakukohtees).nonEmpty
   }
 
