@@ -25,12 +25,25 @@ class OrganizationHierarchyAuthorizer(appConfig: VtsAppConfig, hakukohderyhmaSer
     .buildAsync[HakukohderyhmaOid, Seq[HakukohdeOid]]()
 
   private def getAuthorizedHakukohderyhmaOidsFromSession(session: Session): Set[HakukohderyhmaOid] = {
+    logger.info(s"getting authorized hakukohderyhmaOids for ${session.personOid} from session, roles: ${session.roles}")
     session.roles.filter(role => role.getString.contains("APP_KOUTA_HAKUKOHDE_") && role.getString.contains("1.2.246.562.28."))
       .map(role => {
         role.getOidString match {
           case Some(oid: String) => HakukohderyhmaOid(oid)
         }
       })
+  }
+
+  private def atLeastOneHakukohdeAuthorizedByHakukohderyhma(session: Session, hakukohteet: Set[HakukohdeOid]): Boolean = {
+    logger.warn(s"*** User ${session.personOid} had no rights from ordinary checkAccess for hakukohtees $hakukohteet, checking with hakukohderyhmat")
+    val authorizedHakukohtees: Set[HakukohdeOid] = getAuthorizedHakukohderyhmaOidsFromSession(session) match {
+      case s: Set[HakukohderyhmaOid] if s.isEmpty => Set()
+      case oids => Await.result(
+        Future.sequence(oids.map(oid => getHakukohteet(oid))
+        ), Duration(10, TimeUnit.SECONDS)).flatten
+    }
+    logger.info(s"User ${session.personOid} has rights to $authorizedHakukohtees and wants to access $hakukohteet")
+    (hakukohteet intersect authorizedHakukohtees).nonEmpty
   }
 
   private def isAuthorizedByHakukohderyhmat(session: Session, hakukohdeOid: HakukohdeOid): Boolean = {
@@ -57,6 +70,17 @@ class OrganizationHierarchyAuthorizer(appConfig: VtsAppConfig, hakukohderyhmaSer
       case Success(_) => Right(())
       case Failure(e: NotAuthorizedException) => Left(new AuthorizationFailedException("Organization authentication failed", e))
       case Failure(e) => throw e
+    }
+  }
+
+  def checkAccessWithHakukohderyhmatForAtLeastOneHakukohde(session: Session, organisationOids: Set[String], roles: Set[Role], hakukohdeOids: Set[HakukohdeOid]): Either[Throwable, Unit] = {
+    if (organisationOids.exists(oid => checkAccess(session, oid, roles).isRight)) {
+      Right(())
+    } else if (atLeastOneHakukohdeAuthorizedByHakukohderyhma(session, hakukohdeOids)) {
+      Right(())
+    } else {
+      logger.warn(s"User ${session.personOid} has none of the roles $roles in none of the organizations $organisationOids")
+      Left(new AuthorizationFailedException(s"User ${session.personOid} has none of the roles $roles in none of the organizations $organisationOids"))
     }
   }
 
