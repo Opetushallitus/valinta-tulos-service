@@ -51,6 +51,8 @@ object EmailStructure {
 
   def apply(ilmoitus: Ilmoitus, lahetysSyy: LahetysSyy): EmailStructure = {
 
+    val lang = ilmoitus.asiointikieli.toLowerCase()
+
     val isValidVastaanottoIlmoitus = ilmoitus.hakukohteet.size == 1 && List(LahetysSyy.sitovan_vastaanoton_ilmoitus, LahetysSyy.sitovan_vastaanoton_ilmoitus).contains(lahetysSyy)
     val isValidPaikkaVastaanotettavissaIlmoitus = ilmoitus.hakukohteet.nonEmpty && List(
       LahetysSyy.vastaanottoilmoitus2aste,
@@ -60,7 +62,7 @@ object EmailStructure {
       LahetysSyy.vastaanottoilmoitusMuut
     ).contains(lahetysSyy)
 
-    val formattedDeadline = ilmoitus.asiointikieli match {
+    val formattedDeadline = lang match {
       case "fi" => ilmoitus.deadline.map(deadlineFormatFi.format)
       case "sv" => ilmoitus.deadline.map(deadlineFormatSv.format)
       case "en" => ilmoitus.deadline.map(deadlineFormatEn.format)
@@ -70,7 +72,6 @@ object EmailStructure {
     if (!(isValidVastaanottoIlmoitus || isValidPaikkaVastaanotettavissaIlmoitus)) throw new IllegalArgumentException("Failed to add hakukohde information to recipient. Hakemus " + ilmoitus.hakemusOid +
       ". LahetysSyy was " + lahetysSyy + " and there was " + ilmoitus.hakukohteet.size + "hakukohtees")
 
-    val lang = ilmoitus.asiointikieli.toLowerCase()
     LOG.warn(s"DEBUG ${ilmoitus.hakemusOid} hakukohteenNimet ${ilmoitus.hakukohteet.map(_.hakukohteenNimet)} ja haunNimi ")
     EmailStructure(
       hakukohde =
