@@ -33,6 +33,17 @@ class OrganizationHierarchyAuthorizer(appConfig: VtsAppConfig, hakukohderyhmaSer
       })
   }
 
+  private def atLeastOneHakukohdeAuthorizedByHakukohderyhma(session: Session, hakukohteet: Set[HakukohdeOid]): Boolean = {
+    logger.warn(s"*** User ${session.personOid} had no rights from ordinary checkAccess for hakukohtees $hakukohteet, checking with hakukohderyhmat")
+    val authorizedHakukohtees: Set[HakukohdeOid] = getAuthorizedHakukohderyhmaOidsFromSession(session) match {
+      case s: Set[HakukohderyhmaOid] if s.isEmpty => Set()
+      case oids => Await.result(
+        Future.sequence(oids.map(oid => getHakukohteet(oid))
+        ), Duration(10, TimeUnit.SECONDS)).flatten
+    }
+    (hakukohteet intersect authorizedHakukohtees).nonEmpty
+  }
+
   private def isAuthorizedByHakukohderyhmat(session: Session, hakukohdeOid: HakukohdeOid): Boolean = {
     logger.warn(s"User ${session.personOid} had no rights from ordinary checkAccess for hakukohde $hakukohdeOid, checking with hakukohderyhmat")
     val hakukohdeOids: Set[HakukohdeOid] = getAuthorizedHakukohderyhmaOidsFromSession(session) match {
@@ -57,6 +68,17 @@ class OrganizationHierarchyAuthorizer(appConfig: VtsAppConfig, hakukohderyhmaSer
       case Success(_) => Right(())
       case Failure(e: NotAuthorizedException) => Left(new AuthorizationFailedException("Organization authentication failed", e))
       case Failure(e) => throw e
+    }
+  }
+
+  def checkAccessWithHakukohderyhmatForAtLeastOneHakukohde(session: Session, organisationOids: Set[String], roles: Set[Role], hakukohdeOids: Set[HakukohdeOid]): Either[Throwable, Unit] = {
+    if (organisationOids.exists(oid => checkAccess(session, oid, roles).isRight)) {
+      Right(())
+    } else if (atLeastOneHakukohdeAuthorizedByHakukohderyhma(session, hakukohdeOids)) {
+      Right(())
+    } else {
+      logger.warn(s"User ${session.personOid} has none of the roles $roles in none of the organizations $organisationOids")
+      Left(new AuthorizationFailedException(s"User ${session.personOid} has none of the roles $roles in none of the organizations $organisationOids"))
     }
   }
 
