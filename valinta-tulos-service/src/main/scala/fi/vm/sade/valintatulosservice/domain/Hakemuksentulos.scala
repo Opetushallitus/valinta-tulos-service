@@ -50,7 +50,7 @@ case class Hakutoiveentulos(hakukohdeOid: HakukohdeOid,
                             pisteet: Option[BigDecimal],
                             virkailijanTilat: HakutoiveenSijoittelunTilaTieto,
                             kelaURL: Option[String] = None,
-                            migriURL: Option[String] = None,
+                            showMigriURL: Option[Boolean] = None,
                             jonokohtaisetTulostiedot: List[JonokohtainenTulostieto]
                             ) {
   def toKesken = {

@@ -39,7 +39,7 @@
       "julkaistavissa": true,
       "ehdollisestiHyvaksyttavissa": false,
       "tilanKuvaukset": {},
-      "migriURL": "https://enterfinland.fi/",
+      "showMigriURL": true,
       "pisteet": 4.0,
       "jonokohtaisetTulostiedot": [
         {

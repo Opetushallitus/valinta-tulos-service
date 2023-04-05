@@ -43,7 +43,7 @@
       "ehdollisenHyvaksymisenEhtoSV": "andra",
       "ehdollisenHyvaksymisenEhtoEN": "other",
       "tilanKuvaukset": {},
-      "migriURL": "https://enterfinland.fi/",
+      "showMigriURL": true,
       "pisteet": 4.0,
       "jonokohtaisetTulostiedot": [
         {
