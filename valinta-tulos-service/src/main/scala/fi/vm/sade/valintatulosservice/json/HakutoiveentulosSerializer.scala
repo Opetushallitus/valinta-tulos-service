@@ -75,6 +75,7 @@ class HakutoiveentulosSerializer extends CustomSerializer[Hakutoiveentulos]((for
       ("ehdollisenHyvaksymisenEhtoEN" -> tulos.ehdollisenHyvaksymisenEhtoEN) ~
       ("tilanKuvaukset" -> tulos.tilanKuvaukset) ~
       ("kelaURL" -> tulos.kelaURL) ~
+      ("showMigriURL" -> tulos.showMigriURL) ~
       ("pisteet" -> tulos.pisteet) ~
       ("jonokohtaisetTulostiedot" -> decompose(tulos.jonokohtaisetTulostiedot))
 }

@@ -1,12 +1,11 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
 import java.util
-
 import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatulos}
 import fi.vm.sade.utils.cas.CasClient
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.{StubbedExternalDeps, ValintarekisteriAppConfig}
-import fi.vm.sade.valintatulosservice.koodisto.KoodistoService
+import fi.vm.sade.valintatulosservice.koodisto.{CachedKoodistoService, KoodistoService, RemoteKoodistoService}
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{RemoteOhjausparametritService, StubbedOhjausparametritService}
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
@@ -38,7 +37,7 @@ class ValintarekisteriForSijoittelu(valintarekisteriDb: SijoitteluRepository wit
           new RemoteOhjausparametritService(appConfig)
         },
         OrganisaatioService(appConfig),
-        new KoodistoService(appConfig)
+        new CachedKoodistoService(new RemoteKoodistoService(appConfig))
       ),
       valintarekisteriDb,
       appConfig.settings.lenientTarjontaDataParsing)

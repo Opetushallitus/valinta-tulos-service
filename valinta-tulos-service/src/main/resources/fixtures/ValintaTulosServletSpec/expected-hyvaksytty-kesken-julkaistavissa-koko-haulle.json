@@ -40,6 +40,7 @@
         "julkaistavissa": true,
         "ehdollisestiHyvaksyttavissa": false,
         "tilanKuvaukset": {},
+        "showMigriURL": true,
         "pisteet": 4.0,
         "jonokohtaisetTulostiedot": []
       },

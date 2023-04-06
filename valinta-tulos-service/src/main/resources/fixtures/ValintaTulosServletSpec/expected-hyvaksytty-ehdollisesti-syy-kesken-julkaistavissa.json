@@ -43,6 +43,7 @@
       "ehdollisenHyvaksymisenEhtoSV": "ehto ruotsi",
       "ehdollisenHyvaksymisenEhtoEN": "ehto englanti",
       "tilanKuvaukset": {},
+      "showMigriURL": true,
       "pisteet": 4.0,
       "jonokohtaisetTulostiedot": [
         {

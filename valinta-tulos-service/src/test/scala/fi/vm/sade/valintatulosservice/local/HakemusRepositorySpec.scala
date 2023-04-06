@@ -32,7 +32,7 @@ class HakemusRepositorySpec extends ITSpecification with ValintarekisteriDbTools
       hakutoiveet must beRight(Hakemus(HakemusOid("1.2.246.562.11.00000878229"), HakuOid("1.2.246.562.29.92478804245"), "1.2.246.562.24.14229104472", "FI",
               List(Hakutoive(HakukohdeOid("1.2.246.562.20.83060182827"), "1.2.246.562.10.83122281013", "stevari amk hakukohde", "Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta"),
                 Hakutoive(HakukohdeOid("1.2.246.562.10.83122281012"), "1.2.246.562.10.83122281012", "", "")),
-              Henkilotiedot(Some("Teppo"), None, true), Map()
+              Henkilotiedot(Some("Teppo"), None, true, List()), Map()
             ))
     }
 
@@ -44,19 +44,19 @@ class HakemusRepositorySpec extends ITSpecification with ValintarekisteriDbTools
             Hakutoive(HakukohdeOid("1.2.246.562.5.72607738902"), "1.2.246.562.10.591352080610", "stevari amk hakukohde", "Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta"),
             Hakutoive(HakukohdeOid("1.2.246.562.5.16303028779"), "1.2.246.562.10.455978782510", "", "")
           ),
-          Henkilotiedot(Some("Teppo"), Some("teppo@testaaja.fi"), true), Map()),
+          Henkilotiedot(Some("Teppo"), Some("teppo@testaaja.fi"), true, List()), Map()),
         Hakemus(HakemusOid("1.2.246.562.11.00000441370"), HakuOid("1.2.246.562.5.2013080813081926341928"), "1.2.246.562.24.14229104472", "FI",
           List(
             Hakutoive(HakukohdeOid("1.2.246.562.5.72607738902"), "1.2.246.562.10.591352080610", "stevari amk hakukohde", "Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta"),
             Hakutoive(HakukohdeOid("1.2.246.562.20.83060182827"), "1.2.246.562.10.83122281013", "", "")
           ),
-          Henkilotiedot(Some("Teppo"),None,true), Map()),
+          Henkilotiedot(Some("Teppo"),None,true, List()), Map()),
         Hakemus(HakemusOid("1.2.246.562.11.00000441371"), HakuOid("1.2.246.562.5.2013080813081926341928"), "1.2.246.562.24.14229104472", "FI",
           List(
             Hakutoive(HakukohdeOid("1.2.246.562.5.72607738902"), "1.2.246.562.10.591352080610", "stevari amk hakukohde", "Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta"),
             Hakutoive(HakukohdeOid("1.2.246.562.20.83060182827"), "1.2.246.562.10.83122281013", "", "")
           ),
-          Henkilotiedot(Some("Teppo"),None,true), Map())
+          Henkilotiedot(Some("Teppo"),None,true, List()), Map())
       )
     }
 
@@ -67,7 +67,7 @@ class HakemusRepositorySpec extends ITSpecification with ValintarekisteriDbTools
       hakutoiveet must beRight(Hakemus(HakemusOid("1.2.246.562.11.00000878229-SE"), HakuOid("1.2.246.562.29.92478804245"), "1.2.246.562.24.14229104472", "SV",
               List(Hakutoive(HakukohdeOid("1.2.246.562.20.83060182827"), "1.2.246.562.10.83122281013", "stevari amk hakukohde", "Saimaan ammattikorkeakoulu, Skinnarilan kampus, Lappeenranta"),
                 Hakutoive(HakukohdeOid("1.2.246.562.10.83122281012"), "1.2.246.562.10.83122281012", "", "")),
-              Henkilotiedot(Some("Teppo"), None, true), Map()
+              Henkilotiedot(Some("Teppo"), None, true, List()), Map()
             ))
     }
   }

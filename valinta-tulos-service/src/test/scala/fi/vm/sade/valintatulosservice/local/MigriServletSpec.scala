@@ -127,7 +127,7 @@ class MigriServletSpec extends Specification with EmbeddedJettyContainer with Ht
     henkiloOid,
     "turku",
     List(Hakutoive(hakukohdeOid, organisaatioOid, "Turuun förikuski", "Turun murre ry")),
-    Henkilotiedot(None, None, false),
+    Henkilotiedot(None, None, false, List()),
     Map(hakukohdeOid.toString -> "REQUIRED"))
 
   val hakukohdeMigri = HakukohdeMigri(
@@ -178,7 +178,7 @@ class MigriServletSpec extends Specification with EmbeddedJettyContainer with Ht
     henkiloOid,
     "turku",
     List(Hakutoive(hakukohdeOid, organisaatioOid, "Turuun förikuski", "Turun murre ry")),
-    Henkilotiedot(Some("Heikki Hese Harittu"), Some("hese@hese.com"), true),
+    Henkilotiedot(Some("Heikki Hese Harittu"), Some("hese@hese.com"), true, List()),
     Map(hakukohdeOid.toString -> "REQUIRED"))
 
   val hakukohdeMigriFull = HakukohdeMigri(
