@@ -83,7 +83,11 @@ jobs:
           mv valinta-tulos-service/target/valinta-tulos-service-*.war $DOCKER_BUILD_DIR/artifact/valinta-tulos-service.war
           cp -vr valinta-tulos-service/src/main/resources/oph-configuration $DOCKER_BUILD_DIR/config/
           ./ci-tools/github-build/build-war.sh valinta-tulos-service
+          
           ./ci-tools/common/clean-docker-build-dir.sh
+          
+          export BASE_IMAGE="baseimage-fatjar-openjdk11:master"
+          ./ci-tools/common/pull-image.sh
           mv valinta-tulos-henkiloviite-synchronizer/target/valinta-tulos-henkiloviite-synchronizer-*-jar-with-dependencies.jar $DOCKER_BUILD_DIR/artifact/valinta-tulos-henkiloviite-synchronizer.jar
           cp -vr valinta-tulos-henkiloviite-synchronizer/target/classes/oph-configuration $DOCKER_BUILD_DIR/config/
           ./ci-tools/github-build/build-fatjar.sh valinta-tulos-henkiloviite-synchronizer
