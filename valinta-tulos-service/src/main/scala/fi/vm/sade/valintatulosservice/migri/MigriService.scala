@@ -12,25 +12,33 @@ import fi.vm.sade.valintatulosservice.{AuditInfo, LukuvuosimaksuService, Valinna
 class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuService, valinnantulosService: ValinnantulosService,
                    oppijanumerorekisteriService: OppijanumerorekisteriService, valintarekisteriService: ValinnantulosRepository,
                    lukuvuosimaksuService: LukuvuosimaksuService, hakijaResolver: HakijaResolver) extends Logging {
+
+  def isFinnishNational(hakija: MigriHakija): Boolean = hakija.kansalaisuudet match {
+    case Some(kansalaisuudet) => kansalaisuudet.contains("246")
+  }
+
   def parseForeignHakijat(henkilot: Set[Henkilo]): Set[MigriHakija] = {
-    henkilot.map(henkilo => {
-      val hetu = henkilo.hetu match {
-        case Some(hetu) => Some(hetu.toString)
-        case None => None
-      }
-      MigriHakija(
-        henkilotunnus = hetu,
-        henkiloOid = henkilo.oid.toString,
-        sukunimi = henkilo.sukunimi,
-        etunimet = henkilo.etunimet,
-        kansalaisuudet = henkilo.kansalaisuudet,
-        syntymaaika = henkilo.syntymaaika,
-        Set()
-      )
-    }
-    ).filterNot(hakija => hakija.kansalaisuudet match {
-      case Some(kansalaisuudet) => kansalaisuudet.contains("246")
-    })
+    henkilot.map(parseForeignHakija)
+      .filterNot(isFinnishNational)
+  }
+
+  def parseForeignHakijat(henkiloMap: Map[HakijaOid, Henkilo]): Set[MigriHakija] = {
+    henkiloMap.map{ case (henkiloOid, henkilo) =>
+      parseForeignHakija(henkilo).copy(henkiloOid = henkiloOid.toString)
+    }.toSet.filterNot(isFinnishNational)
+  }
+
+  def parseForeignHakija(henkilo: Henkilo): MigriHakija = {
+    val hetu = henkilo.hetu.map(_.toString)
+    MigriHakija(
+      henkilotunnus = hetu,
+      henkiloOid = henkilo.oid.toString,
+      sukunimi = henkilo.sukunimi,
+      etunimet = henkilo.etunimet,
+      kansalaisuudet = henkilo.kansalaisuudet,
+      syntymaaika = henkilo.syntymaaika,
+      Set()
+    )
   }
 
   def getMigriHenkilotForOids(hakijaOids: Set[HakijaOid]): Set[MigriHakija] = {
@@ -38,7 +46,7 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
       val errorString: String = s"Error fetching hakijas for oid(s): $hakijaOids found. Cause: $e"
       logger.warn(errorString)
       throw new RuntimeException(errorString)
-    }, henkilot => parseForeignHakijat(henkilot.values.toSet))
+    }, henkilot => parseForeignHakijat(henkilot))
   }
 
   def getMigriHenkilotForHetus(hetus: Set[String]): Set[MigriHakija] = {

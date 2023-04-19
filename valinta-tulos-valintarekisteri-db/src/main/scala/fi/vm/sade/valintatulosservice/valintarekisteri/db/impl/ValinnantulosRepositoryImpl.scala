@@ -928,12 +928,15 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
   }
 
   override def getHakijanHyvaksytValinnantilat(hakijaOid: HakijaOid): Set[HyvaksyttyValinnanTila] =
-    timed(s"Hakijan $hakijaOid hyväksyttyjen/varasijalta hyväksyttyjen hakemusoidien haku", 100) {
+    timed(s"Hakijan $hakijaOid ja duplikaattien hyväksyttyjen/varasijalta hyväksyttyjen hakemusoidien haku", 100) {
       runBlocking(
         sql"""select distinct hakemus_oid, hakukohde_oid
             from valinnantilat
             where tila in ('Hyvaksytty', 'VarasijaltaHyvaksytty')
             and henkilo_oid = $hakijaOid
+            or henkilo_oid in (
+                select linked_oid from henkiloviitteet where person_oid = $hakijaOid
+            )
             """.as[HyvaksyttyValinnanTila]).toSet
     }
 
