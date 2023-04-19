@@ -1,11 +1,12 @@
 package fi.vm.sade.valintatulosservice.domain
 
 import java.util.Date
-
 import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiTehty, HakemusOid, HakukohdeOid, JonokohtainenTulostieto, SijoitteluajonIlmoittautumistila, ValintatapajonoOid, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
+
+import java.time.OffsetDateTime
 
 case class HakemuksenSijoitteluntulos (
   hakemusOid: HakemusOid,
@@ -22,6 +23,7 @@ case class HakutoiveenSijoitteluntulos(
   ilmoittautumistila: SijoitteluajonIlmoittautumistila,
   viimeisinHakemuksenTilanMuutos: Option[Date],
   viimeisinValintatuloksenMuutos: Option[Date],
+  hyvaksyttyJaJulkaistuDate: Option[OffsetDateTime],
   jonosija: Option[Int],
   varasijojaKaytetaanAlkaen: Option[Date],
   varasijojaTaytetaanAsti: Option[Date],
@@ -60,6 +62,7 @@ object HakutoiveenSijoitteluntulos {
       EiTehty,
       viimeisinHakemuksenTilanMuutos = None,
       viimeisinValintatuloksenMuutos = None,
+      hyvaksyttyJaJulkaistuDate = None,
       jonosija = None,
       varasijojaKaytetaanAlkaen = None,
       varasijojaTaytetaanAsti = None,
