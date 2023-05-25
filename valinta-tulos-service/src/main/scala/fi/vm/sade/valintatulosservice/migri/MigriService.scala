@@ -75,7 +75,7 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
               }
               case _ => None
             }
-            MigriHakemus(
+            Some(MigriHakemus(
               hakuOid = hakemus.hakuOid.toString,
               hakuNimi = hakukohde.hakuNimi,
               hakemusOid = hakemus.oid.toString,
@@ -91,10 +91,11 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
               maksuvelvollisuus = maksuvelvollisuus,
               lukuvuosimaksu = lukuvuosimaksu,
               koulutuksenAlkamiskausi = hakukohde.koulutuksenAlkamiskausi,
-              koulutuksenAlkamisvuosi = hakukohde.koulutuksenAlkamisvuosi)
+              koulutuksenAlkamisvuosi = hakukohde.koulutuksenAlkamisvuosi))
           })
+        case None => None
       }
-    })
+    }).filter(_.isDefined).flatten
   }
 
   def getMigriHakijatByHetus(hetus: Set[String], auditInfo: AuditInfo) = {
