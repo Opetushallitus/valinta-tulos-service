@@ -4,7 +4,7 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.{Henkilo, OppijanumerorekisteriService}
-import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, HakukohdeMigri}
+import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, HakukohdeMigri, MigriTarjontaHakukohdeNotImplementedException}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakijaOid, HakukohdeOid, HyvaksyttyValinnanTila, ValinnantulosWithTilahistoria}
 import fi.vm.sade.valintatulosservice.{AuditInfo, LukuvuosimaksuService, ValinnantulosService}
@@ -126,6 +126,9 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
     try {
       Some(hakuService.getHakukohdeMigri(hakukohdeOid).right.get)
     } catch {
+      case e: MigriTarjontaHakukohdeNotImplementedException =>
+        logger.warn(s"Oltiin hakemassa migrihakukohdetta vanhan tarjonnan hakukohteelle: ${e.toString}. Skipataan hakukohde.")
+        None
       case e: Throwable =>
         logger.error(s"Jokin meni pieleen migrihakukohteen haussa: ${e.toString}")
         throw e

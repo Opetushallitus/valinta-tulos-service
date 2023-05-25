@@ -96,6 +96,8 @@ case class HakukohdeKela(koulutuksenAlkamiskausi: Option[Kausi],
                          oppilaitoskoodi: String,
                          koulutuslaajuusarvot: Seq[KoulutusLaajuusarvo])
 
+class MigriTarjontaHakukohdeNotImplementedException(message: String) extends RuntimeException(message)
+
 trait HakuService {
   def getHaku(oid: HakuOid): Either[Throwable, Haku]
   def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]]
@@ -303,7 +305,7 @@ class TarjontaHakuService(config: AppConfig) extends HakuService with JsonHakuSe
   }
 
   def getHakukohdeMigri(hakukohdeOid: HakukohdeOid): Either[Throwable, HakukohdeMigri] = {
-    throw new RuntimeException(s"Migri hakukohde from tarjonta not implemented, skipping. Hakukohdeoid: $hakukohdeOid.")
+    throw new MigriTarjontaHakukohdeNotImplementedException(s"Migri hakukohde from tarjonta not implemented, skipping. Hakukohdeoid: $hakukohdeOid.")
   }
 
   def getHakukohde(hakukohdeOid: HakukohdeOid): Either[Throwable, Hakukohde] = {
