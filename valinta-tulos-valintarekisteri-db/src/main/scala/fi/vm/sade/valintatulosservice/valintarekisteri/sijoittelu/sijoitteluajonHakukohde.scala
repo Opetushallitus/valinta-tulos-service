@@ -60,7 +60,8 @@ class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, va
           h.entity(
             hakijaryhmatJoistaHakemuksetOnHyvaksytty(h.hakemusOid),
             tilankuvaukset.get(h.tilankuvausHash),
-            tilahistoriat.getOrElse(h.valintatapajonoOid, Map()).getOrElse(h.hakemusOid, List()).map(_.entity)
+            tilahistoriat.getOrElse(h.valintatapajonoOid, Map()).getOrElse(h.hakemusOid, List()).map(_.entity),
+            Option.empty
           )
         )
       )),

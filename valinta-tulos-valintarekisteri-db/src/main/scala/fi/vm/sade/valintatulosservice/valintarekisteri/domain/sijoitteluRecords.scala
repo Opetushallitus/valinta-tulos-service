@@ -420,6 +420,7 @@ case class HakemusRecord(hakijaOid:Option[String], hakemusOid: HakemusOid, piste
     //hakemus.setValintatapajonoOid(valintatapajonoOid)
     hakemus.setTilaHistoria(tilahistoria.asJava)
     hakemus.setVastaanottoMyohassa(isLate)
+    hakemus.setVastaanottoDeadline(vastaanottoDeadline.map(_.toDate).orNull)
     hakemus
   }
 }
