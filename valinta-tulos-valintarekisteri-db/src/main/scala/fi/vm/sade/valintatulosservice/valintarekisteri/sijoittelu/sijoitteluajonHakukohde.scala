@@ -1,9 +1,16 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
+import fi.vm.sade.sijoittelu.domain.Hakukohde
+import fi.vm.sade.sijoittelu.tulos.dto.HakukohdeDTO
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.utils.Timer.timed
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.SijoitteluRepository
+import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, SijoitteluRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.laskeVastaanottoDeadline
+import org.joda.time.DateTime
+
+import java.util
 
 class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, val sijoitteluajoId: Long, val hakukohdeOid:HakukohdeOid) {
 
@@ -62,7 +69,7 @@ class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, va
   }
 }
 
-class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository, val sijoitteluajoId: Long) {
+class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository with HakijaVastaanottoRepository, val sijoitteluajoId: Long, val hakuOid: Option[HakuOid]) {
   import scala.collection.JavaConverters._
 
   val sijoitteluajonHakemukset = sijoitteluRepository.getSijoitteluajonHakemuksetInChunks(sijoitteluajoId)
@@ -75,15 +82,29 @@ class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository, 
   val hakijaryhmiinKuuluvatHakemukset = sijoitteluRepository.getSijoitteluajonHakijaryhmienHakemukset(sijoitteluajoId, hakijaryhmat.map(_.oid))
 
   val hakukohteet = sijoitteluRepository.getSijoitteluajonHakukohteet(sijoitteluajoId)
+  val hyvaksyttyJaJulkaistuDates = hakuOid.map(haku => sijoitteluRepository.findHyvaksyttyJulkaistuDatesForHaku(haku)).getOrElse(Map.empty)
 
-  def entity() = {
-    val hakemukset = sijoitteluajonHakemukset.map(h =>
+  private def hakukohdeForHakemus(hakemus: HakemusRecord): HakukohdeOid = {
+    valintatapajonot.find(p =>
+      p._2.exists(vtjr => vtjr.oid == hakemus.valintatapajonoOid)
+    ).get._1
+  }
+
+  def entity(ohjausparametrit: Option[Ohjausparametrit]): util.List[Hakukohde] = {
+    val hakemukset = sijoitteluajonHakemukset.map(h => {
+      val hakemuksenHakukohde = hakukohdeForHakemus(h)
+      val vastaanottoDeadline: Option[DateTime] = ohjausparametrit.map(ohj => {
+        val hyvaksyttyJaJulkaistuDate = hyvaksyttyJaJulkaistuDates(h.hakijaOid.get).get(hakemuksenHakukohde)
+        laskeVastaanottoDeadline(ohj, hyvaksyttyJaJulkaistuDate)
+      }).getOrElse(Option.empty)
+
       (h.valintatapajonoOid, h.entity(
         hakijaryhmatJoistaHakemuksetOnHyvaksytty.getOrElse(h.hakemusOid, Set()),
         tilankuvaukset.get(h.tilankuvausHash),
-        tilahistoriat.getOrElse((h.hakemusOid, h.valintatapajonoOid), List()).map(_.entity).sortBy(_.getLuotu.getTime)
+        tilahistoriat.getOrElse((h.hakemusOid, h.valintatapajonoOid), List()).map(_.entity).sortBy(_.getLuotu.getTime),
+        vastaanottoDeadline
       ))
-    ).groupBy(_._1).mapValues(_.map(_._2))
+    }).groupBy(_._1).mapValues(_.map(_._2))
 
     val groupedHakijaryhmat = hakijaryhmat.groupBy(_.hakukohdeOid)
 
@@ -91,11 +112,10 @@ class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository, 
       hakukohde.entity(
         valintatapajonot.mapValues(jonot => jonot.map(jono => jono.entity(hakemukset.getOrElse(jono.oid, List())))).getOrElse(hakukohde.oid, List()),
         groupedHakijaryhmat.getOrElse(Some(hakukohde.oid), List()).map(hr => hr.entity(hakijaryhmiinKuuluvatHakemukset.getOrElse(hr.oid, List())))
-      )
-    ).asJava
+      )).asJava
   }
 
-  def dto() = {
+  def dto(): Seq[HakukohdeDTO] = {
     val hakemukset = sijoitteluajonHakemukset.map(h =>
       h.dto(
         hakijaryhmatJoistaHakemuksetOnHyvaksytty.getOrElse(h.hakemusOid, Set()),

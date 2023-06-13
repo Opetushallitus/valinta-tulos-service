@@ -2,11 +2,11 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.domain
 
 import java.util
 import java.util.Date
-
 import fi.vm.sade.sijoittelu.domain.Valintatapajono.JonosijaTieto
 import fi.vm.sade.sijoittelu.domain.{HakemuksenTila => _, IlmoittautumisTila => _, _}
 import fi.vm.sade.sijoittelu.tulos.dto.{ValintatuloksenTila, _}
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakutoiveDTO, HakutoiveenValintatapajonoDTO, KevytHakijaDTO, KevytHakutoiveDTO, KevytHakutoiveenValintatapajonoDTO, HakijaryhmaDTO => HakutoiveenHakijaryhmaDTO}
+import org.joda.time.DateTime
 
 import scala.collection.JavaConverters._
 import scala.compat.java8.OptionConverters._
@@ -396,8 +396,10 @@ case class HakemusRecord(hakijaOid:Option[String], hakemusOid: HakemusOid, piste
 
   def entity(hakijaryhmaOids:Set[String],
              tilankuvaus: Option[TilankuvausRecord],
-             tilahistoria:List[TilaHistoria]): Hakemus = {
+             tilahistoria:List[TilaHistoria],
+             vastaanottoDeadline: Option[DateTime]): Hakemus = {
 
+    val isLate: Boolean = vastaanottoDeadline.exists(new DateTime().isAfter)
     val hakemus = new Hakemus
     hakijaOid.foreach(hakemus.setHakijaOid)
     hakemus.setHakemusOid(hakemusOid.toString)
@@ -417,6 +419,7 @@ case class HakemusRecord(hakijaOid:Option[String], hakemusOid: HakemusOid, piste
     hakemus.setSiirtynytToisestaValintatapajonosta(siirtynytToisestaValintatapaJonosta)
     //hakemus.setValintatapajonoOid(valintatapajonoOid)
     hakemus.setTilaHistoria(tilahistoria.asJava)
+    hakemus.setVastaanottoMyohassa(isLate)
     hakemus
   }
 }
