@@ -116,7 +116,7 @@ class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository w
       )).asJava
   }
 
-  def dto(): Seq[HakukohdeDTO] = {
+  def dto(): List[HakukohdeDTO] = {
     val hakemukset = sijoitteluajonHakemukset.map(h =>
       h.dto(
         hakijaryhmatJoistaHakemuksetOnHyvaksytty.getOrElse(h.hakemusOid, Set()),

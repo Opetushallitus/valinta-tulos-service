@@ -7,11 +7,11 @@ import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde}
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, SijoitteluRepository, ValinnantulosRepository}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, HakijaVastaanottoRepository, SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.{SijoitteluajonHakija, SijoitteluajonHakukohde, SijoitteluajonHakukohteet}
 
-class SijoitteluService(val sijoitteluRepository: SijoitteluRepository with HakijaRepository with ValinnantulosRepository,
+class SijoitteluService(val sijoitteluRepository: SijoitteluRepository with HakijaRepository with ValinnantulosRepository with HakijaVastaanottoRepository,
                         authorizer:OrganizationHierarchyAuthorizer,
                         hakuService: HakuService,
                         audit: Audit ) extends Logging {
@@ -90,7 +90,7 @@ class SijoitteluService(val sijoitteluRepository: SijoitteluRepository with Haki
     logger.info(s"Haetaan sijoitteluajoDTO $latestId")
 
     sijoitteluRepository.getSijoitteluajo(latestId).map(sijoitteluajo => {
-      val hakukohteet = new SijoitteluajonHakukohteet(sijoitteluRepository, latestId).dto()
+      val hakukohteet = new SijoitteluajonHakukohteet(sijoitteluRepository, latestId, Option.empty).dto()
       sijoitteluajo.dto(hakukohteet)
     }).getOrElse(throw new IllegalArgumentException(s"Sijoitteluajoa $sijoitteluajoId ei löytynyt haulle $hakuOid"))
   }
