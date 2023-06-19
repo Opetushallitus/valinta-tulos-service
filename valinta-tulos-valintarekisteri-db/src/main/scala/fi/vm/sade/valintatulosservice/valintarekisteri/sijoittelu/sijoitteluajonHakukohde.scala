@@ -94,9 +94,8 @@ class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository w
                              ohj: Ohjausparametrit,
                              hyvaksyttyJaJulkaistuDates: Map[String, Map[HakukohdeOid, OffsetDateTime]],
                              hakemuksenHakukohde: HakukohdeOid): Option[DateTime] = {
-    val hyvaksyttyJaJulkaistuDate = Option.apply(hyvaksyttyJaJulkaistuDates
-      .getOrElse[Map[HakukohdeOid, OffsetDateTime]](h.hakijaOid.get, Map.empty[HakukohdeOid, OffsetDateTime])
-      .getOrElse[OffsetDateTime](hakemuksenHakukohde, null))
+    val hyvaksyttyJaJulkaistuDate = h.hakijaOid.flatMap(hakijaOid => hyvaksyttyJaJulkaistuDates.get(hakijaOid)
+      .flatMap(hyvaksyttyJaJulkaistuDateByHakukohde => hyvaksyttyJaJulkaistuDateByHakukohde.get(hakemuksenHakukohde)))
     if (hyvaksyttyJaJulkaistuDate.isDefined) {
       laskeVastaanottoDeadline(ohj, hyvaksyttyJaJulkaistuDate)
     } else {
