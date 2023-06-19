@@ -2,14 +2,13 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
 import fi.vm.sade.sijoittelu.domain.Hakukohde
 import fi.vm.sade.sijoittelu.tulos.dto.HakukohdeDTO
-import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
-import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, SijoitteluRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.laskeVastaanottoDeadline
 import org.joda.time.DateTime
 
+import java.time.OffsetDateTime
 import java.util
 
 class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, val sijoitteluajoId: Long, val hakukohdeOid:HakukohdeOid) {
@@ -73,31 +72,43 @@ class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, va
 class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository with HakijaVastaanottoRepository, val sijoitteluajoId: Long, val hakuOid: Option[HakuOid]) {
   import scala.collection.JavaConverters._
 
-  val sijoitteluajonHakemukset = sijoitteluRepository.getSijoitteluajonHakemuksetInChunks(sijoitteluajoId)
-  val tilankuvaukset = sijoitteluRepository.getValinnantilanKuvauksetForHakemukset(sijoitteluajonHakemukset)
-  val hakijaryhmatJoistaHakemuksetOnHyvaksytty = sijoitteluRepository.getHakijaryhmatJoistaHakemuksetOnHyvaksytty(sijoitteluajoId)
-  val tilahistoriat = sijoitteluRepository.getSijoitteluajonTilahistoriatGroupByHakemusValintatapajono(sijoitteluajoId)
+  val sijoitteluajonHakemukset: List[HakemusRecord] = sijoitteluRepository.getSijoitteluajonHakemuksetInChunks(sijoitteluajoId)
+  val tilankuvaukset: Map[Int, TilankuvausRecord] = sijoitteluRepository.getValinnantilanKuvauksetForHakemukset(sijoitteluajonHakemukset)
+  val hakijaryhmatJoistaHakemuksetOnHyvaksytty: Map[HakemusOid, Set[String]] = sijoitteluRepository.getHakijaryhmatJoistaHakemuksetOnHyvaksytty(sijoitteluajoId)
+  val tilahistoriat: Map[(HakemusOid, ValintatapajonoOid), List[TilaHistoriaRecord]] = sijoitteluRepository.getSijoitteluajonTilahistoriatGroupByHakemusValintatapajono(sijoitteluajoId)
 
-  val valintatapajonot = sijoitteluRepository.getSijoitteluajonValintatapajonotGroupedByHakukohde(sijoitteluajoId)
-  val hakijaryhmat = sijoitteluRepository.getSijoitteluajonHakijaryhmat(sijoitteluajoId)
-  val hakijaryhmiinKuuluvatHakemukset = sijoitteluRepository.getSijoitteluajonHakijaryhmienHakemukset(sijoitteluajoId, hakijaryhmat.map(_.oid))
+  val valintatapajonot: Map[HakukohdeOid, List[ValintatapajonoRecord]] = sijoitteluRepository.getSijoitteluajonValintatapajonotGroupedByHakukohde(sijoitteluajoId)
+  val hakijaryhmat: List[HakijaryhmaRecord] = sijoitteluRepository.getSijoitteluajonHakijaryhmat(sijoitteluajoId)
+  val hakijaryhmiinKuuluvatHakemukset: Map[String, List[HakemusOid]] = sijoitteluRepository.getSijoitteluajonHakijaryhmienHakemukset(sijoitteluajoId, hakijaryhmat.map(_.oid))
 
-  val hakukohteet = sijoitteluRepository.getSijoitteluajonHakukohteet(sijoitteluajoId)
-  val hyvaksyttyJaJulkaistuDates = hakuOid.map(haku => sijoitteluRepository.findHyvaksyttyJulkaistuDatesForHaku(haku)).getOrElse(Map.empty)
+  val hakukohteet: List[SijoittelunHakukohdeRecord] = sijoitteluRepository.getSijoitteluajonHakukohteet(sijoitteluajoId)
+  val hyvaksyttyJaJulkaistuDates: Map[sijoitteluRepository.HenkiloOid, Map[HakukohdeOid, OffsetDateTime]] = hakuOid.map(haku => sijoitteluRepository.findHyvaksyttyJulkaistuDatesForHaku(haku)).getOrElse(Map.empty)
 
-  private def hakukohdeForHakemus(hakemus: HakemusRecord): HakukohdeOid = {
+  private def hakukohdeForHakemus(hakemus: HakemusRecord, valintatapajonot: Map[HakukohdeOid, List[ValintatapajonoRecord]]): HakukohdeOid = {
     valintatapajonot.find(p =>
       p._2.exists(vtjr => vtjr.oid == hakemus.valintatapajonoOid)
     ).get._1
   }
 
+  def getVastaanOttoDeadline(h: HakemusRecord,
+                             ohj: Ohjausparametrit,
+                             hyvaksyttyJaJulkaistuDates: Map[String, Map[HakukohdeOid, OffsetDateTime]],
+                             hakemuksenHakukohde: HakukohdeOid): Option[DateTime] = {
+    val hyvaksyttyJaJulkaistuDate = Option.apply(hyvaksyttyJaJulkaistuDates
+      .getOrElse[Map[HakukohdeOid, OffsetDateTime]](h.hakijaOid.get, Map.empty[HakukohdeOid, OffsetDateTime])
+      .getOrElse[OffsetDateTime](hakemuksenHakukohde, null))
+    if (hyvaksyttyJaJulkaistuDate.isDefined) {
+      laskeVastaanottoDeadline(ohj, hyvaksyttyJaJulkaistuDate)
+    } else {
+      Option.empty
+    }
+  }
+
   def entity(ohjausparametrit: Option[Ohjausparametrit]): util.List[Hakukohde] = {
     val hakemukset = sijoitteluajonHakemukset.map(h => {
-      val hakemuksenHakukohde = hakukohdeForHakemus(h)
-      val vastaanottoDeadline: Option[DateTime] = ohjausparametrit.map(ohj => {
-        val hyvaksyttyJaJulkaistuDate = hyvaksyttyJaJulkaistuDates(h.hakijaOid.get).get(hakemuksenHakukohde)
-        laskeVastaanottoDeadline(ohj, hyvaksyttyJaJulkaistuDate)
-      }).getOrElse(Option.empty)
+      val hakemuksenHakukohde = hakukohdeForHakemus(h, valintatapajonot)
+      val vastaanottoDeadline = ohjausparametrit.map(ohj => getVastaanOttoDeadline(h, ohj, hyvaksyttyJaJulkaistuDates, hakemuksenHakukohde))
+        .getOrElse(Option.empty)
 
       (h.valintatapajonoOid, h.entity(
         hakijaryhmatJoistaHakemuksetOnHyvaksytty.getOrElse(h.hakemusOid, Set()),
