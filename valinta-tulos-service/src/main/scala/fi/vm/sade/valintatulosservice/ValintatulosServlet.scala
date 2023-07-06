@@ -235,7 +235,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
       count = None,
       index = None)
     auditLog(Map("hakuOid" -> hakuOidString), HakutietojenLuku)
-    Ok(JsonFormats.javaObjectToJsonString(hakijaPaginationObject))
+    streamOk(hakijaPaginationObject)
   }
 
   lazy val getHaunHyvaksytytSwagger: OperationBuilder = (apiOperation[Unit]("getHaunHyvaksytytSwagger")
