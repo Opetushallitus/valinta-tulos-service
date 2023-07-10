@@ -2,7 +2,6 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
 import fi.vm.sade.sijoittelu.domain.Hakukohde
 import fi.vm.sade.sijoittelu.tulos.dto.HakukohdeDTO
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, SijoitteluRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -70,7 +69,7 @@ class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, va
   }
 }
 
-class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository with HakijaVastaanottoRepository, val sijoitteluajoId: Long, val hakuOid: Option[HakuOid]) extends Logging {
+class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository with HakijaVastaanottoRepository, val sijoitteluajoId: Long, val hakuOid: Option[HakuOid]) {
   import scala.collection.JavaConverters._
 
   val sijoitteluajonHakemukset: List[HakemusRecord] = sijoitteluRepository.getSijoitteluajonHakemuksetInChunks(sijoitteluajoId)
@@ -97,14 +96,6 @@ class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository w
                              hakemuksenHakukohde: HakukohdeOid): Option[DateTime] = {
     val hyvaksyttyJaJulkaistuDate = h.hakijaOid.flatMap(hakijaOid => hyvaksyttyJaJulkaistuDates.get(hakijaOid)
       .flatMap(hyvaksyttyJaJulkaistuDateByHakukohde => hyvaksyttyJaJulkaistuDateByHakukohde.get(hakemuksenHakukohde)))
-    //temp logging
-    if (h.hakemusOid == HakemusOid("1.2.246.562.11.00000000000001349995")) {
-      logger.info(s"getVastaanOttoDeadline for hakemus ${h.hakemusOid} with data ${h}")
-      logger.info(s"getVastaanottoDeadline for hakemus ${h.hakemusOid} with hyvaksyttyJaJulkaistuDate ${hyvaksyttyJaJulkaistuDate}")
-      if (hyvaksyttyJaJulkaistuDate.isDefined) {
-        logger.info(s"getVastaanottoDeadline for hakemus ${h.hakemusOid} with laskeVastaanottoDeadline ${laskeVastaanottoDeadline(ohj, hyvaksyttyJaJulkaistuDate)}")
-      }
-    }
     if (hyvaksyttyJaJulkaistuDate.isDefined) {
       laskeVastaanottoDeadline(ohj, hyvaksyttyJaJulkaistuDate)
     } else {
