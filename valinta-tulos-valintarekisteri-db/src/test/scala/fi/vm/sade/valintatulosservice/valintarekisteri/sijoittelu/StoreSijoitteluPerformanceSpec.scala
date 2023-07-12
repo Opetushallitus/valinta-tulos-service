@@ -48,7 +48,7 @@ class StoreSijoitteluPerformanceSpec extends Specification with ITSetup with Val
       MemoryTracker.memoryUsage(label) {
         Timer.timed(label, 0) {
           SijoitteluWrapper(valintarekisteriQa.getSijoitteluajo(hakuOid.s, s"$latest"),
-            valintarekisteriQa.getSijoitteluajonHakukohteet(latest),
+            valintarekisteriQa.getSijoitteluajonHakukohteet(latest, hakuOid.toString),
             valintarekisteriQa.getValintatulokset(hakuOid.s))
         }
       }._1

@@ -45,7 +45,7 @@ class SijoitteluPerformanceSpec extends Specification with ITSetup with Valintar
 
   def getSijoittelu(hakuOid: String) = {
     val sijoitteluajo = time("Get latest sijoitteluajo") { valintarekisteri.getLatestSijoitteluajo(hakuOid) }
-    val hakukohteet = time("Get hakukohteet") { valintarekisteri.getSijoitteluajonHakukohteet(sijoitteluajo.getSijoitteluajoId) }
+    val hakukohteet = time("Get hakukohteet") { valintarekisteri.getSijoitteluajonHakukohteet(sijoitteluajo.getSijoitteluajoId, hakuOid) }
     (sijoitteluajo, hakukohteet)
   }
 

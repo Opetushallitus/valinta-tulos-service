@@ -25,13 +25,13 @@ class ValintarekisteriForSijoitteluSpec extends Specification with ITSetup with 
 
   def getLatestSijoittelu(hakuOid: String) = {
     val sijoitteluajo = time("Get latest sijoitteluajo") { valintarekisteri.getLatestSijoitteluajo(hakuOid) }
-    val hakukohteet = time("Get hakukohteet") { valintarekisteri.getSijoitteluajonHakukohteet(sijoitteluajo.getSijoitteluajoId) }
+    val hakukohteet = time("Get hakukohteet") { valintarekisteri.getSijoitteluajonHakukohteet(sijoitteluajo.getSijoitteluajoId, hakuOid) }
     (sijoitteluajo, hakukohteet)
   }
 
   def getSijoittelu(hakuOid: String, sijoitteluajoId:String) = {
     val sijoitteluajo = time("Get sijoitteluajo") { valintarekisteri.getSijoitteluajo(hakuOid, sijoitteluajoId) }
-    val hakukohteet = time("Get hakukohteet") { valintarekisteri.getSijoitteluajonHakukohteet(sijoitteluajo.getSijoitteluajoId) }
+    val hakukohteet = time("Get hakukohteet") { valintarekisteri.getSijoitteluajonHakukohteet(sijoitteluajo.getSijoitteluajoId, hakuOid) }
     (sijoitteluajo, hakukohteet)
   }
 

@@ -685,8 +685,6 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     val hakijaOnEuTaiEtaKansalainen = isEuTaiEtaKansalainen(hakemus.henkilotiedot.kansalaisuudet)
     val showMigriURL = if (hakukierrosEiOlePäättynyt && !hakijaOnEuTaiEtaKansalainen) Some(true) else Some(false)
 
-    logger.info(s"Ollaan asettamassa hakemuksen ${hakemus.oid} migri-linkkiä | showMigriURL: $showMigriURL | hakukierrosEiOlePäättynyt: $hakukierrosEiOlePäättynyt | hakijaOnEuTaiEtaKansalainen: $hakijaOnEuTaiEtaKansalainen | kansalaisuudet: ${hakemus.henkilotiedot.kansalaisuudet} | EU-naat: ${getEuMaat()} | ETA-maat: ${getEtaMaat()}")
-
     tulokset.map {
       case tulos if List(hyväksytty, varasijalta_hyväksytty, harkinnanvaraisesti_hyväksytty).contains(tulos.valintatila) =>
         logger.debug("asetaMigriURL hyväksytylle")
