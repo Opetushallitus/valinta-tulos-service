@@ -53,7 +53,7 @@ object EmailStructure {
 
     val lang = ilmoitus.asiointikieli.toLowerCase()
 
-    val isValidVastaanottoIlmoitus = ilmoitus.hakukohteet.size == 1 && List(LahetysSyy.sitovan_vastaanoton_ilmoitus, LahetysSyy.sitovan_vastaanoton_ilmoitus).contains(lahetysSyy)
+    val isValidVastaanottoIlmoitus = ilmoitus.hakukohteet.size == 1 && List(LahetysSyy.sitovan_vastaanoton_ilmoitus, LahetysSyy.ehdollisen_periytymisen_ilmoitus).contains(lahetysSyy)
     val isValidPaikkaVastaanotettavissaIlmoitus = ilmoitus.hakukohteet.nonEmpty && List(
       LahetysSyy.vastaanottoilmoitus2aste,
       LahetysSyy.vastaanottoilmoitusKk,
