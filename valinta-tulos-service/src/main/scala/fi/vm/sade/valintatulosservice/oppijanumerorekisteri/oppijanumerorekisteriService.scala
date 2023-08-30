@@ -80,13 +80,13 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) {
   def henkilot(oids: Set[HakijaOid]): Either[Throwable, Map[HakijaOid, Henkilo]] = {
     oids.grouped(5000).foldLeft(Task(Map.empty[HakijaOid, Henkilo])) {
       (f, chunk) => f.flatMap(m => henkilotChunk(chunk).map(m ++ _))
-    }.attemptRunFor(Duration(1, TimeUnit.MINUTES)).toEither
+    }.attemptRunFor(Duration(5, TimeUnit.MINUTES)).toEither
   }
 
   def henkilotForHetus(hetus: Set[String]): Either[Throwable, Set[Henkilo]] = {
     hetus.grouped(5000).foldLeft(Task(Set.empty[Henkilo])) {
       (f, chunk) => f.flatMap(m => henkilotChunkHetus(chunk).map(m ++ _))
-    }.attemptRunFor(Duration(1, TimeUnit.MINUTES)).toEither
+    }.attemptRunFor(Duration(5, TimeUnit.MINUTES)).toEither
   }
 
   private def henkilotChunk(oids: Set[HakijaOid]): Task[Map[HakijaOid, Henkilo]] = {
