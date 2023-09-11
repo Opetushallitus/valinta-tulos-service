@@ -20,9 +20,8 @@ Testit käyttävät Dockerissa ajettavaa valintarekisteri-tietokantaa. Testien k
 #### PostgreSQL-kontin build
 
 ```
-cd valinta-tulos-valintarekisteri-db/postgresql/docker/
-docker build --tag valintarekisteri-postgres .
-cd -
+docker build -t valintarekisteri-postgres \
+	valinta-tulos-valintarekisteri-db/postgresql/docker/
 ```
 
 #### Testien ajaminen
