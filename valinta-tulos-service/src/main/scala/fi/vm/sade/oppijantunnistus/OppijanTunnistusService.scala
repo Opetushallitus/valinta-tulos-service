@@ -2,18 +2,18 @@ package fi.vm.sade.oppijantunnistus
 
 import java.util.concurrent.TimeUnit
 
-import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasParams}
+import fi.vm.sade.javautils.nio.cas.{CasClient, CasClientBuilder}
+import fi.vm.sade.security.ScalaCasConfig
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakemusOid
-import org.http4s.Method.POST
-import org.http4s.{Charset, EntityEncoder, MediaType, Request, Uri}
-import org.http4s.client.blaze.SimpleHttp1Client
-import org.http4s.headers.`Content-Type`
-import org.http4s.json4s.native.{jsonEncoder, jsonExtract}
-import scalaz.concurrent.Task
-
+import org.asynchttpclient.{RequestBuilder, Response}
+import org.json4s.native.JsonMethods.parse
+import org.json4s.native.Serialization.write
+import scala.compat.java8.FutureConverters.toScala
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
 
@@ -30,18 +30,17 @@ class RealOppijanTunnistusService(appConfig: VtsAppConfig) extends OppijanTunnis
   import org.json4s._
   implicit val formats = DefaultFormats
   import org.json4s.jackson.Serialization.write
-  private val client = CasAuthenticatingClient(
-    casClient = appConfig.securityContext.casClient,
-    casParams = CasParams(
-      appConfig.ophUrlProperties.url("url-oppijantunnistus-service"),
-      "auth/cas",
-      appConfig.settings.securitySettings.casUsername,
-      appConfig.settings.securitySettings.casPassword
-    ),
-    serviceClient = SimpleHttp1Client(appConfig.blazeDefaultConfig),
-    clientCallerId = appConfig.settings.callerId,
-    sessionCookieName = "ring-session"
-  )
+  private val client: CasClient = CasClientBuilder.build(ScalaCasConfig(
+    appConfig.settings.securitySettings.casUsername,
+    appConfig.settings.securitySettings.casPassword,
+    appConfig.settings.securitySettings.casUrl,
+    appConfig.ophUrlProperties.url("url-oppijantunnistus-service"),
+    appConfig.settings.callerId,
+    appConfig.settings.callerId,
+    "/auth/cas",
+    "ring-session"
+  ))
+
   def luoSecureLink(personOid: String, hakemusOid: HakemusOid, email: String, lang: String, expires: Option[Long]): Either[RuntimeException, OppijanTunnistus] = {
     logger.info(s"Creating secure link: hakemusOid=${hakemusOid}, email=${email}. lang=${lang}, expires=${expires}")
     val url = vtsConfig.oppijanTunnistusUrl
@@ -59,18 +58,23 @@ class RealOppijanTunnistusService(appConfig: VtsAppConfig) extends OppijanTunnis
 
 
   private def fetch(url: String, body: OppijanTunnistusCreate): Either[Throwable, OppijanTunnistus] = {
-    Uri.fromString(url)
-      .fold(Task.fail, uri => {
-        logger.info(s"Calling oppijantunnistus uri: $uri")
-        val bodyJson: JValue = Extraction.decompose(body)
-        client.fetch(Request(method = POST, uri = uri)
-          .withBody(bodyJson)(jsonEncoder[JValue])) {
-          case r if r.status.code == 200  =>
-            r.as[OppijanTunnistus](jsonExtract[OppijanTunnistus])
-              .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing securelink failed", t)) }
-          case r => r.bodyAsText.runLast
-            .flatMap(body => Task.fail(new RuntimeException(s"Failed to fetch securelink: ${body.getOrElse("Failed to parse body")}")))
-        }
-      }).attemptRunFor(Duration(1, TimeUnit.MINUTES)).toEither
+    logger.info(s"Calling oppijantunnistus uri: $url")
+    val req = new RequestBuilder()
+      .setMethod("POST")
+      .setUrl(url)
+      .addHeader("Content-type", "application/json")
+      .setBody(write(body))
+      .build()
+    val result = toScala(client.execute(req)).map {
+      case r if r.getStatusCode() == 200  =>
+        Right(parse(r.getResponseBodyAsStream()).extract[OppijanTunnistus])
+      case r =>
+        Left(new RuntimeException("Failed to fetch securelink: " + r.getResponseBody()))
+    }
+    try {
+      Await.result(result, Duration(1, TimeUnit.MINUTES))
+    } catch {
+      case e: Throwable => Left(e)
+    }
   }
 }
