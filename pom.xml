@@ -46,7 +46,7 @@
         <scalaz-stream_2.11.version>0.8.6a</scalaz-stream_2.11.version> <!-- required by specs2 3.5 -->
         <scalaz_2.11.version>7.2.17</scalaz_2.11.version>
         <sijoittelu.version>7.7.1-SNAPSHOT</sijoittelu.version>
-        <slf4j-api.version>1.7.25</slf4j-api.version>
+        <slf4j-api.version>1.7.34</slf4j-api.version>
         <slick_2.11.version>3.2.0</slick_2.11.version>
         <specs2_2.11.version>4.9.4</specs2_2.11.version>
         <spring.version>5.1.5.RELEASE</spring.version>
