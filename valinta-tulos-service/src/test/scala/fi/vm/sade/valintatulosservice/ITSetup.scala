@@ -20,7 +20,7 @@ trait ITSetup {
 
 //  lazy val valintaPerusteetService = new ValintaPerusteetServiceMock
 
-  lazy val hakemusFixtureImporter = HakemusFixtures()(appConfig)
+  lazy val hakemusFixtureImporter = HakemusFixtures()(appConfig.settings)
 
   lazy val sijoitteluFixtures = SijoitteluFixtures(singleConnectionValintarekisteriDb)
 

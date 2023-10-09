@@ -11,7 +11,7 @@ trait ServletSpecification extends Specification with ITSetup with TimeWarp with
 
   def baseUrl = "http://localhost:" + SharedJetty.port + "/valinta-tulos-service"
   implicit def formats = JsonFormats.jsonFormats
-  override lazy val hakemusFixtureImporter = HakemusFixtures()
+  override lazy val hakemusFixtureImporter = HakemusFixtures()(appConfig.settings)
 
   protected val httpComponentsClient = new HttpComponentsClient {
     override def baseUrl: String = ServletSpecification.this.baseUrl

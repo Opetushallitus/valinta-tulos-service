@@ -64,7 +64,7 @@ object VtsAppConfig extends Logging {
   }
 
   /**
-   * Dev profile, uses local mongo db
+   * Dev profile, uses local (prerun) mongo db
    */
   class Dev extends VtsAppConfig with ExampleTemplatedProps with CasSecurity with StubbedExternalDeps {
     override val ophUrlProperties: OphUrlProperties = {
@@ -78,15 +78,10 @@ object VtsAppConfig extends Logging {
       .withOverride(("hakemus.mongodb.uri", "mongodb://localhost:27017"))
   }
 
-  class IT_sysprops extends IT {
-    override val ophUrlProperties: OphUrlProperties = new OphUrlProperties(propertiesFile, false, Some(System.getProperty("valinta-tulos-service.it-profile.hostname",
-      "virkailija.testiopintopolku.fi")))
-  }
-
   /**
    *  IT (integration test) profiles. Uses embedded mongo and PostgreSQL databases, and stubbed external deps
    */
-  class IT extends ExampleTemplatedProps with StubbedExternalDeps with MockSecurity {
+  class IT extends ExampleTemplatedProps with StubbedExternalDeps with MockSecurity with RunEmbeddedMongoAndPostgres {
     override val ophUrlProperties: OphUrlProperties = {
       val ps = new DevOphUrlProperties(propertiesFile)
       ps.addOverride("ataru-service.applications", s"http://localhost:$vtsMockPort/valinta-tulos-service/util/ataru/applications")
@@ -95,30 +90,8 @@ object VtsAppConfig extends Logging {
       ps
     }
 
-    private lazy val itPostgres = new ITPostgres(itPostgresPortChooser)
-
     override def start {
-
-      // Embedded MongoDB toimimaan ARM-arkkitehtuurin kanssa
-      if(System.getProperty("os.arch") == "aarch64") System.setProperty("os.arch", "i686_64")
-      val mongo = EmbeddedMongo.start(embeddedMongoPortChooser)
-      
-      Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
-        override def run() {
-          mongo.foreach(_.stop)
-        }
-      }))
-      itPostgres.start()
-      try {
-        importFixturesToHakemusDatabase
-      } catch {
-        case e: Exception =>
-          throw e
-      }
-    }
-
-    protected def importFixturesToHakemusDatabase {
-      HakemusFixtures()(this).clear.importDefaultFixtures
+      startMongoAndPostgres
     }
 
     override lazy val settings = loadSettings
@@ -151,6 +124,11 @@ object VtsAppConfig extends Logging {
     override def importFixturesToHakemusDatabase { /* Don't import initial fixtures, as database is considered external */ }
   }
 
+  class IT_sysprops extends IT {
+    override val ophUrlProperties: OphUrlProperties = new OphUrlProperties(propertiesFile, false, Some(System.getProperty("valinta-tulos-service.it-profile.hostname",
+      "virkailija.testiopintopolku.fi")))
+  }
+
   class IT_disabledIlmoittautuminen extends IT {
     override lazy val settings = loadSettings.withOverride("valinta-tulos-service.ilmoittautuminen.enabled", "")
   }
@@ -168,12 +146,44 @@ object VtsAppConfig extends Logging {
     logger.info("Using template variables from " + templateAttributesURL)
     lazy val settings = loadSettings
     def loadSettings = {
-      ConfigTemplateProcessor.createSettings(
+      val result = ConfigTemplateProcessor.createSettings(
         getClass.getResource("/oph-configuration/valinta-tulos-service-devtest.properties.template"),
         templateAttributesURL
       )
+      logger.info("SETTINGS:" + result)
+      result
     }
     def templateAttributesURL: URL
+  }
+
+  trait RunEmbeddedMongoAndPostgres extends TemplatedProps {
+    private lazy val itPostgres = new ITPostgres(itPostgresPortChooser)
+
+    def startMongoAndPostgres {
+
+      // Embedded MongoDB toimimaan ARM-arkkitehtuurin kanssa
+      if(System.getProperty("os.arch") == "aarch64") System.setProperty("os.arch", "i686_64")
+      val mongo = EmbeddedMongo.start(embeddedMongoPortChooser)
+
+      Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
+        override def run() {
+          mongo.foreach(_.stop)
+        }
+      }))
+      itPostgres.start()
+      try {
+        importFixturesToHakemusDatabase
+      } catch {
+        case e: Exception =>
+          throw e
+      }
+    }
+
+    protected def importFixturesToHakemusDatabase {
+      val settings = loadSettings
+        .withOverride(("hakemus.mongodb.uri", "mongodb://localhost:" + embeddedMongoPortChooser.chosenPort))
+      HakemusFixtures()(settings).clear.importDefaultFixtures
+    }
   }
 
   trait VtsAppConfig extends AppConfig {
