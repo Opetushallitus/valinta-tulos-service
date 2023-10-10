@@ -61,13 +61,14 @@ object VtsAppConfig extends Logging {
    */
   class LocalTestingWithTemplatedVars(val templateAttributesFile: String = System.getProperty("valintatulos.vars")) extends VtsAppConfig with TemplatedProps with CasSecurity {
     override val ophUrlProperties = new DevOphUrlProperties(propertiesFile)
-    override def templateAttributesURL = new File(templateAttributesFile).toURI.toURL
+    def templateAttributesURL = new File(templateAttributesFile).toURI.toURL
   }
 
   /**
    * Dev profile, uses local (prerun) mongo db
    */
-  class Dev extends VtsAppConfig with ExampleTemplatedProps with CasSecurity with StubbedExternalDeps {
+  class Dev extends VtsAppConfig with TemplatedProps with CasSecurity with StubbedExternalDeps {
+    def templateAttributesURL = getClass.getResource("/oph-configuration/dev-vars.yml")
     override val ophUrlProperties: OphUrlProperties = {
       val ps = new DevOphUrlProperties(propertiesFile)
       ps.addOverride("ataru-service.applications", s"http://localhost:$vtsMockPort/valinta-tulos-service/util/ataru/applications")
@@ -104,7 +105,9 @@ object VtsAppConfig extends Logging {
   /**
    *  IT (integration test) profiles. Uses embedded mongo and PostgreSQL databases, and stubbed external deps
    */
-  class IT extends ExampleTemplatedProps with StubbedExternalDeps with MockSecurity with RunEmbeddedMongoAndPostgres {
+  class IT extends VtsAppConfig
+  with TemplatedProps with StubbedExternalDeps with MockSecurity with RunEmbeddedMongoAndPostgres {
+    def templateAttributesURL = getClass.getResource("/oph-configuration/integration-test-vars.yml")
     override val ophUrlProperties: OphUrlProperties = {
       val ps = new DevOphUrlProperties(propertiesFile)
       ps.addOverride("ataru-service.applications", s"http://localhost:$vtsMockPort/valinta-tulos-service/util/ataru/applications")
@@ -160,10 +163,6 @@ object VtsAppConfig extends Logging {
   trait ExternalProps {
     def configFile = System.getProperty("user.home") + "/oph-configuration/valinta-tulos-service.properties"
     lazy val settings = ApplicationSettingsLoader.loadSettings(configFile)
-  }
-
-  trait ExampleTemplatedProps extends VtsAppConfig with TemplatedProps {
-    def templateAttributesURL = getClass.getResource("/oph-configuration/dev-vars.yml")
   }
 
   trait TemplatedProps {

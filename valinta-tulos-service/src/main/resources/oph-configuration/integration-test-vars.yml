@@ -1,12 +1,8 @@
 ---
-cas_url: "https://virkailija.testiopintopolku.fi/cas"
-omatsivut_haku_app_username: "username"  # XXX replace with real system CAS credentials
-omatsivut_haku_app_password: "password"  # XXX replace with real system CAS credentials
-valintatulosservice_cas_validate_service_ticket_timeout_seconds: 10
 mongodb_hakemus_auth:
 mongodb_hakemus_host: localhost
 mongodb_hakemus_port: 27017
-host_virkailija: "virkailija.testiopintopolku.fi"
+host_virkailija: "itest-virkailija.oph.ware.fi"
 valintatulosservice_ilmoittautuminen_enabled: true
 valintatulosservice_parseleniently_tarjonta: false
 valintatulosservice_parseleniently_sijoitteluajontulos: false
