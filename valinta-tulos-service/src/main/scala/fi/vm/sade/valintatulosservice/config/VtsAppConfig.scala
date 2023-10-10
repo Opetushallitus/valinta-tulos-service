@@ -42,6 +42,7 @@ object VtsAppConfig extends Logging {
       case "default" => new Default
       case "templated" => new LocalTestingWithTemplatedVars
       case "dev" => new Dev
+      case "dev-embdb" => new Dev_EmbeddedDB
       case "it" => new IT
       case "it-externalHakemus" => new IT_externalHakemus
       case name => throw new IllegalArgumentException("Unknown value for valintatulos.profile: " + name);
@@ -76,6 +77,28 @@ object VtsAppConfig extends Logging {
 
     override lazy val settings = loadSettings
       .withOverride(("hakemus.mongodb.uri", "mongodb://localhost:27017"))
+  }
+
+  /**
+   * Dev profile with embedded mongo and Postgres
+   */
+  class Dev_EmbeddedDB extends Dev with RunEmbeddedMongoAndPostgres {
+    override val ophUrlProperties: OphUrlProperties =
+      new OphUrlProperties(propertiesFile, false,
+        Some(System.getProperty("valinta-tulos-service.dev-embdb-profile.hostname",
+          "virkailija.testiopintopolku.fi")))
+
+    override def start {
+      startMongoAndPostgres
+    }
+
+    override lazy val settings = loadSettings
+      .withOverride(("hakemus.mongodb.uri", "mongodb://localhost:" + embeddedMongoPortChooser.chosenPort))
+      .withOverride("valinta-tulos-service.valintarekisteri.db.url", s"jdbc:postgresql://localhost:${itPostgresPortChooser.chosenPort}/valintarekisteri")
+      .withOverride("valinta-tulos-service.valintarekisteri.db.user", "oph")
+      .withOverride("valinta-tulos-service.valintarekisteri.db.password", "oph")
+      .withOverride("valinta-tulos-service.valintarekisteri.db.maxConnections", "5")
+      .withOverride("valinta-tulos-service.valintarekisteri.db.minConnections", "3")
   }
 
   /**
@@ -125,8 +148,9 @@ object VtsAppConfig extends Logging {
   }
 
   class IT_sysprops extends IT {
-    override val ophUrlProperties: OphUrlProperties = new OphUrlProperties(propertiesFile, false, Some(System.getProperty("valinta-tulos-service.it-profile.hostname",
-      "virkailija.testiopintopolku.fi")))
+    override val ophUrlProperties: OphUrlProperties =
+      new OphUrlProperties(propertiesFile, false,
+        Some(System.getProperty("valinta-tulos-service.it-profile.hostname", "virkailija.testiopintopolku.fi")))
   }
 
   class IT_disabledIlmoittautuminen extends IT {
