@@ -31,7 +31,7 @@ class CasLogin(casUrl: String, cas: CasSessionService) extends ScalatraServlet w
   }
 
   get("/") {
-    val ticket = params.get("ticket").map(ServiceTicket)
+    val ticket = params.get("ticket").orElse(request.header("ticket")).map(ServiceTicket)
     val existingSession = cookies.get("session").orElse(Option(request.getAttribute("session")).map(_.toString)).map(UUID.fromString)
     cas.getSession(ticket, existingSession) match {
       case Left(_) if ticket.isEmpty =>
