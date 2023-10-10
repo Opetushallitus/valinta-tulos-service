@@ -1,8 +1,9 @@
 ---
+cas_url: "https://virkailija.testiopintopolku.fi/cas/p3"
 mongodb_hakemus_auth:
 mongodb_hakemus_host: localhost
 mongodb_hakemus_port: 27017
-host_virkailija: "itest-virkailija.oph.ware.fi"
+host_virkailija: "virkailija.testiopintopolku.fi"
 valintatulosservice_ilmoittautuminen_enabled: true
 valintatulosservice_parseleniently_tarjonta: false
 valintatulosservice_parseleniently_sijoitteluajontulos: false
