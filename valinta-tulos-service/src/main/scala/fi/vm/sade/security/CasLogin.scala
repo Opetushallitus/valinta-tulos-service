@@ -23,7 +23,7 @@ class CasLogin(casUrl: String, cas: CasSessionService) extends ScalatraServlet w
     case e: AuthenticationFailedException =>
       logger.warn("Login failed", e)
       contentType = formats("json")
-      halt(Forbidden("error" -> "Forbidden"))
+      halt(Unauthorized("error" -> "Authentication failed: " + e.getMessage))
     case NonFatal(e) =>
       logger.error("Login failed unexpectedly", e)
       contentType = formats("json")
