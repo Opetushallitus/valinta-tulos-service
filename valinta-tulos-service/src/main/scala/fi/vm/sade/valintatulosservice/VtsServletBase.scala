@@ -42,10 +42,11 @@ trait VtsServletBase extends ScalatraServlet with Logging with JacksonJsonSuppor
       t match {
         case e: AuthenticationFailedException =>
           logger.warn("authentication failed", e)
-          Unauthorized("error" -> "Unauthorized")
+          logger.warn("authentication failure root cause", e.getCause)
+          Unauthorized("error" -> ("Unauthenticated: " + e.getMessage))
         case e: AuthorizationFailedException =>
           logger.warn("authorization failed", e)
-          Forbidden("error" -> "Forbidden")
+          Forbidden("error" -> ("Forbidden: " + e.getMessage))
         case e: IllegalStateException =>
           badRequest(e)
         case e: IllegalArgumentException =>

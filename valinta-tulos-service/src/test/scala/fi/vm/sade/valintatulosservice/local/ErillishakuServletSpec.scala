@@ -117,7 +117,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
         Map.empty
       ) {
         status must_== 401
-        body must_== "{\"error\":\"Unauthorized\"}"
+        body must_== "{\"error\":\"Unauthenticated: error for testing\"}"
       }
     }
 
@@ -129,7 +129,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
         Map.empty
       ) {
         status must_== 403
-        body must_== "{\"error\":\"Forbidden\"}"
+        body must_== "{\"error\":\"Forbidden: null\"}"
       }
     }
 
@@ -212,7 +212,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
         Map("Content-Type" -> "application/json")
       ) {
         status must_== 403
-        body must_== "{\"error\":\"Forbidden\"}"
+        body must_== "{\"error\":\"Forbidden: null\"}"
       }
     }
 

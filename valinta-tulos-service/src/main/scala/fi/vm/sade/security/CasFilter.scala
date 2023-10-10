@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import fi.vm.sade.valintatulosservice.security.{Role, ServiceTicket}
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.json._
-import org.scalatra.{CookieOptions, InternalServerError, ScalatraFilter, Unauthorized}
+import org.scalatra.{CookieOptions, InternalServerError, ScalatraFilter, Unauthorized, Forbidden}
 
 /**
  * Filter that verifies CAS service ticket and checks user permissions from Käyttöoikeuspalvelu.
@@ -30,10 +30,11 @@ class CasFilter(cas: CasSessionService, requiredRoles: Set[Role]) extends Scalat
         // pass
       case Right((_, session)) =>
         logger.warn(s"User ${session.personOid} does not have all required roles $requiredRoles")
-        halt(Unauthorized("error" -> "Unauthorized"))
+        halt(Forbidden("error" -> "You don't have the permissions for this"))
       case Left(e: AuthenticationFailedException) =>
         logger.warn("Login failed", e)
-        halt(Unauthorized("error" -> "Unauthorized"))
+        logger.warn("Login failure root cause", e.getCause)
+        halt(Unauthorized("error" -> ("Authentication failed: " + e.getMessage)))
       case Left(e) =>
         logger.error("Login failed unexpectedly", e)
         halt(InternalServerError("error" -> "Internal server error"))
