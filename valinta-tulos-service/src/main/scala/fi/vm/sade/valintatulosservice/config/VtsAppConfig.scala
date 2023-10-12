@@ -84,10 +84,13 @@ object VtsAppConfig extends Logging {
    * Dev profile with embedded mongo and Postgres
    */
   class Dev_EmbeddedDB extends Dev with RunEmbeddedMongoAndPostgres {
-    override val ophUrlProperties: OphUrlProperties =
-      new OphUrlProperties(propertiesFile, false,
+    override val ophUrlProperties: OphUrlProperties = {
+      val ps = new OphUrlProperties(propertiesFile, false,
         Some(System.getProperty("valinta-tulos-service.dev-embdb-profile.hostname",
           "virkailija.testiopintopolku.fi")))
+      ps.addOverride("host.alb", "https://virkailija.testiopintopolku.fi")
+      ps
+    }
 
     override def start {
       startMongoAndPostgres
