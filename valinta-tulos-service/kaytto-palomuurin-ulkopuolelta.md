@@ -12,7 +12,8 @@ Ja QA-ympäristössä
 
 Alla muutama esimerkki, joissa toimitaan QA-ympäristössä.
 Niissä käytetty "http" -komento on [httpie](http://httpie.org/) . curl, Postman tms käy yhtä hyvin POST-pyyntöjen tekemiseen.
-Ajettava esimerkki service ticketin hausta on [oheisessa skriptissä](./get-cas-ticket.bash)
+
+Ajettava esimerkki service ticketin hausta on [TGT:n hakuskriptissä](../scripts/create-cas-tgt.sh) ja [istunnon luontiskriptissä](../scripts/create-vts-session.sh).
 
 **HUOM:** Kukin service ticket on voimassa vain _yhden kerran_ ja vain _kymmenen sekuntia_ sen hakemisesta. Ainakin tällä hetkellä eli 21.5.2019 käytämme CASissa sen oletusarvoja, jotka ovat tällaiset.
 
