@@ -77,6 +77,19 @@ Avaa selaimessa http://localhost:8097/valinta-tulos-service/
 
 [Swagger](http://localhost:8097/valinta-tulos-service/api-docs/index.html).
 
+### Tietokannan käsittely
+
+IT- ja embdb-profiilit (ks alla) käynnistävät Mongon ja PG:n satunnaisiin
+portteihin.  Helpoksi pääsemiseksi tällaiseen tietokantaan käsiksi on
+[skripti](../scripts/connect-embedded-postgres.sh).
+
+Mongodb ei pyöri dockerissa, joten sen portin voi selvittää lähinnä netstatilla.  Esim:
+```
+$ netstat -tnlp | grep extract
+tcp        0      0 127.0.0.1:9565          0.0.0.0:*               LISTEN      952217/extract-70c3
+$ mongosh mongodb://127.0.0.1:9565
+```
+
 ## War-paketointi
 
 `mvn package`
