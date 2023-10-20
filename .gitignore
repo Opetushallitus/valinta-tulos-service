@@ -15,7 +15,6 @@ target/
 .project
 .settings
 .cache
-/scripts
 /bin
 valintarekisteri-it-db
 .opintopolku-local/
