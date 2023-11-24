@@ -18,7 +18,8 @@ case class DbConfig(url: String,
                     queueSize: Option[Int],
                     registerMbeans: Option[Boolean],
                     initializationFailTimeout: Option[Long],
-                    leakDetectionThresholdMillis: Option[Long])
+                    leakDetectionThresholdMillis: Option[Long],
+                    flywayEnabled: Option[Boolean])
 
 class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends ValintarekisteriRepository
   with VastaanottoRepositoryImpl
@@ -38,16 +39,20 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
   with HyvaksynnanEhtoRepositoryImpl {
 
   logger.info(s"Database configuration: ${config.copy(password = Some("***"))}")
-  val m: FluentConfiguration = Flyway.configure
-    .dataSource(
-      config.url,
-      config.user.orNull,
-      config.password.orNull
-    )
-    .outOfOrder(true)
-    .locations("db/migration-vts")
+  if (config.flywayEnabled.getOrElse(true)) {
+    val m: FluentConfiguration = Flyway.configure
+      .dataSource(
+        config.url,
+        config.user.orNull,
+        config.password.orNull
+      )
+      .outOfOrder(true)
+      .locations("db/migration-vts")
 
-  Timer.timed("Flyway migration") { m.load().migrate().migrationsExecuted }
+    Timer.timed("Flyway migration") {
+      m.load().migrate().migrationsExecuted
+    }
+  }
 
   val hikariConfig: HikariConfig = {
     val c = new HikariConfig()
@@ -71,5 +76,9 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
     logger.info(s"Configured Hikari with ${classOf[HikariConfig].getSimpleName} ${ToStringBuilder.reflectionToString(hikariConfig).replaceAll("password=.*?,", "password=<HIDDEN>,")}" +
       s" and executor ${ToStringBuilder.reflectionToString(executor)}")
     Database.forDataSource(dataSource, maxConnections = Some(maxConnections), executor)
+  }
+  if(isItProfile) {
+    logger.warn("alter table public.schema_version owner to oph")
+    runBlocking(sqlu"""alter table public.flyway_schema_history owner to oph""")
   }
 }
