@@ -72,8 +72,4 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
       s" and executor ${ToStringBuilder.reflectionToString(executor)}")
     Database.forDataSource(dataSource, maxConnections = Some(maxConnections), executor)
   }
-  if(isItProfile) {
-    logger.warn("alter table public.schema_version owner to oph")
-    runBlocking(sqlu"""alter table public.schema_version owner to oph""")
-  }
 }
