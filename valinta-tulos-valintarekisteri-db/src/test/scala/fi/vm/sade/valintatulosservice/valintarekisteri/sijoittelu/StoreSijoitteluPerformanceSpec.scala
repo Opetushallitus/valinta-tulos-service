@@ -36,7 +36,7 @@ class StoreSijoitteluPerformanceSpec extends Specification with ITSetup with Val
   val dbPasswd: String = System.getProperty("db_passwd")
 
   def readSijoitteluFromDb: SijoitteluWrapper = Try(new ValintarekisteriDb(DbConfig(
-    dbUrl, Some(dbUser), Some(dbPasswd), Some(1), Some(1), Some(1), None, None, None, None, Some(true)), false)) match {
+    dbUrl, Some(dbUser), Some(dbPasswd), Some(1), Some(1), Some(1), None, None, None, None, Some(false)), false)) match {
 
     case Failure(t) => throw t
     case Success(db) => try {
