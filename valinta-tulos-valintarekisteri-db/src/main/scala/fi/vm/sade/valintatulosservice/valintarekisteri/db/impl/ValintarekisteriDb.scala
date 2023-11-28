@@ -19,7 +19,7 @@ case class DbConfig(url: String,
                     registerMbeans: Option[Boolean],
                     initializationFailTimeout: Option[Long],
                     leakDetectionThresholdMillis: Option[Long],
-                    flywayEnabled: Option[Boolean])
+                    flywayDisabled: Option[Boolean])
 
 class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends ValintarekisteriRepository
   with VastaanottoRepositoryImpl
@@ -39,7 +39,7 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
   with HyvaksynnanEhtoRepositoryImpl {
 
   logger.info(s"Database configuration: ${config.copy(password = Some("***"))}")
-  if (config.flywayEnabled.getOrElse(true)) {
+  if (!config.flywayDisabled.getOrElse(false)) {
     val m: FluentConfiguration = Flyway.configure
       .dataSource(
         config.url,
