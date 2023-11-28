@@ -64,7 +64,7 @@ class VastaanottoService(hakuService: HakuService,
 
   private def generateTallennettavatVastaanototList(vastaanotot: List[VastaanottoEventDto]): List[VirkailijanVastaanotto] = {
     val hakuOidit = vastaanotot.map(_.hakuOid).toSet
-    logger.info(s"Ollaan tallentamassa ${vastaanotot.size} vastaanottoa, joista löytyi ${hakuOidit.size} eri hakuOidia ($hakuOidit).")
+    logger.info(s"Ollaan tallentamassa ${vastaanotot.size} vastaanottoa, joista löytyi ${hakuOidit.size} eri hakuOidia ($hakuOidit). $vastaanotot")
     if (hakuOidit.size > 1) {
       logger.warn("Pitäisi olla vain yksi hakuOid")
     } else if (hakuOidit.isEmpty) {

@@ -20,7 +20,6 @@ log4j.appender.FILE.MaxBackupIndex=100
 # Log valintatulosservice with INFO
 log4j.logger.fi.vm.sade.utils=INFO
 log4j.logger.fi.vm.sade.valintatulosservice=INFO
-log4j.logger.fi.vm.sade.valintatulosservice.VastaanottoService=DEBUG
 log4j.logger.fi.vm.sade.sijoittelu=INFO
 # By default hide these spammers by default
 log4j.logger.org.apache.cxf=ERROR
