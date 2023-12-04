@@ -11,7 +11,7 @@ import scala.util.Try
 
 case class DbConfiguration(user: Option[String], password: Option[String], url: String)
 case class AuthenticationConfiguration(url: Uri, cas: CasConfiguration)
-case class CasConfiguration(user: String, password: String, host: String)
+case class CasConfiguration(user: String, password: String, host: String, service: String)
 case class SchedulerConfiguration(startHour: Option[Long], intervalHours: Option[Long])
 case class Buildversion(version: String, branch: String, commit: String, timestamp: String)
 case class Configuration(port: Int,
@@ -80,7 +80,8 @@ object Configuration {
     CasConfiguration(
       getString(properties, "henkiloviite.username"),
       getString(properties, "henkiloviite.password"),
-      getString(properties, "henkiloviite.cas.host")
+      getString(properties, "henkiloviite.cas.host"),
+      getString(properties, "henkiloviite.oppijanumerorekisteri.url")
     )
   }
 

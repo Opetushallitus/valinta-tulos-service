@@ -1,5 +1,6 @@
 henkiloviite.port={{palvelu_portti}}
 henkiloviite.idle_timeout_seconds={{palvelu_idle_timeout_seconds}}
+henkiloviite.oppijanumerorekisteri.url=https://{{host_virkailija}}/oppijanumerorekisteri-service
 henkiloviite.duplicatehenkilos.url=https://{{host_virkailija}}/oppijanumerorekisteri-service/s2s/duplicateHenkilos
 henkiloviite.username={{valinta_tulos_henkiloviite_synchronizer_cas_user}}
 henkiloviite.password={{valinta_tulos_henkiloviite_synchronizer_cas_password}}
