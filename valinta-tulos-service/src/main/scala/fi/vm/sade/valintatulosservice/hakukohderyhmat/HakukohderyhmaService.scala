@@ -29,7 +29,7 @@ class HakukohderyhmaService(appConfig: VtsAppConfig) extends Logging {
       casPassword,
       casUrl,
       serviceName,
-      callerId,
+      "any-csrf-token",
       callerId,
       loginParams,
       sessionCookieName)
