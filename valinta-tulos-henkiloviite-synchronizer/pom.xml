@@ -250,6 +250,22 @@
                             <workingDirectory>${project.basedir}</workingDirectory>
                         </configuration>
                     </execution>
+		    <execution>
+			<id>run_local</id>
+			<goals>
+			    <goal>java</goal>
+			</goals>
+			<configuration>
+			    <mainClass>fi.vm.sade.valintatulosservice.HenkiloviiteSynchronizerAppRunner</mainClass>
+			    <classpathScope>test</classpathScope>
+			    <systemProperties>
+				<systemProperty>
+				    <key>henkiloviite.properties</key>
+				    <value>src/test/resources/pallero.properties</value>
+				</systemProperty>
+			    </systemProperties>
+			</configuration>
+		    </execution>
                 </executions>
             </plugin>
         </plugins>
