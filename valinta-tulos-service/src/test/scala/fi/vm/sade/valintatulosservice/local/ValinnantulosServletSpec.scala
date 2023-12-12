@@ -88,7 +88,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
     "palauttaa 401, jos sessiokeksi puuttuu" in { t: (String, ValinnantulosService, SessionRepository) =>
       get(t._1, Iterable("valintatapajonoOid" -> valintatapajonoOid.toString), defaultHeaders - "Cookie") {
         status must_== 401
-        body must_== "{\"error\":\"Unauthorized\"}"
+        body must_== "{\"error\":\"Unauthenticated: No session found\"}"
       }
     }
 
@@ -96,7 +96,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       t._3.get(sessionId) returns None
       get(t._1, Iterable("valintatapajonoOid" -> valintatapajonoOid.toString), defaultHeaders) {
         status must_== 401
-        body must_== "{\"error\":\"Unauthorized\"}"
+        body must_== "{\"error\":\"Unauthenticated: No session found\"}"
       }
     }
 
@@ -104,7 +104,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       t._3.get(sessionId) returns Some(unauthorizedSession)
       get(t._1, Iterable("valintatapajonoOid" -> valintatapajonoOid.toString), defaultHeaders) {
         status must_== 403
-        body must_== "{\"error\":\"Forbidden\"}"
+        body must_== "{\"error\":\"Forbidden: null\"}"
       }
     }
 
@@ -163,7 +163,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
         defaultPatchHeaders - "Cookie"
       ) {
         status must_== 401
-        body must_== "{\"error\":\"Unauthorized\"}"
+        body must_== "{\"error\":\"Unauthenticated: No session found\"}"
       }
     }
 
@@ -175,7 +175,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
         defaultPatchHeaders
       ) {
         status must_== 401
-        body must_== "{\"error\":\"Unauthorized\"}"
+        body must_== "{\"error\":\"Unauthenticated: No session found\"}"
       }
     }
 
@@ -187,7 +187,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
         defaultPatchHeaders
       ) {
         status must_== 403
-        body must_== "{\"error\":\"Forbidden\"}"
+        body must_== "{\"error\":\"Forbidden: null\"}"
       }
     }
 
@@ -279,7 +279,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
     "palauttaa 401, jos sessiokeksi puuttuu" in { t: (String, ValinnantulosService, SessionRepository) =>
       get(t._1, Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders - "Cookie") {
         status must_== 401
-        body must_== "{\"error\":\"Unauthorized\"}"
+        body must_== "{\"error\":\"Unauthenticated: No session found\"}"
       }
     }
 
@@ -287,7 +287,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       t._3.get(sessionId) returns None
       get(t._1, Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders) {
         status must_== 401
-        body must_== "{\"error\":\"Unauthorized\"}"
+        body must_== "{\"error\":\"Unauthenticated: No session found\"}"
       }
     }
 
@@ -295,7 +295,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       t._3.get(sessionId) returns Some(unauthorizedSession)
       get(t._1, Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders) {
         status must_== 403
-        body must_== "{\"error\":\"Forbidden\"}"
+        body must_== "{\"error\":\"Forbidden: null\"}"
       }
     }
 

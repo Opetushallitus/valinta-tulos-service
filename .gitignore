@@ -16,5 +16,8 @@ target/
 .settings
 .cache
 /bin
+/tags
+/scripts/cas-tgt-url.txt
+/scripts/cookies.txt
 valintarekisteri-it-db
 .opintopolku-local/

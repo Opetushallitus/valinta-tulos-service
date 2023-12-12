@@ -212,7 +212,7 @@ class MigriServletSpec extends Specification with EmbeddedJettyContainer with Ht
       t._3.get(any()) returns Some(withoutMigriSession)
       post(t._1 + "/hakemukset/henkilo-oidit", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
         status must_== 403
-        body must_== "{\"error\":\"Forbidden\"}"
+        body must_== "{\"error\":\"Forbidden: null\"}"
       }
     }
 

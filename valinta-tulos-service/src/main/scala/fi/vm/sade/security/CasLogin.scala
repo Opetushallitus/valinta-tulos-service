@@ -23,7 +23,7 @@ class CasLogin(casUrl: String, cas: CasSessionService) extends ScalatraServlet w
     case e: AuthenticationFailedException =>
       logger.warn("Login failed", e)
       contentType = formats("json")
-      halt(Forbidden("error" -> "Forbidden"))
+      halt(Unauthorized("error" -> ("Authentication failed: " + e.getMessage)))
     case NonFatal(e) =>
       logger.error("Login failed unexpectedly", e)
       contentType = formats("json")
@@ -31,7 +31,7 @@ class CasLogin(casUrl: String, cas: CasSessionService) extends ScalatraServlet w
   }
 
   get("/") {
-    val ticket = params.get("ticket").map(ServiceTicket)
+    val ticket = params.get("ticket").orElse(request.header("ticket")).map(ServiceTicket)
     val existingSession = cookies.get("session").orElse(Option(request.getAttribute("session")).map(_.toString)).map(UUID.fromString)
     cas.getSession(ticket, existingSession) match {
       case Left(_) if ticket.isEmpty =>
