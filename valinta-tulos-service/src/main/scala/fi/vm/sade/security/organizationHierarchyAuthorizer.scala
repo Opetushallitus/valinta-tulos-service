@@ -25,7 +25,7 @@ class OrganizationHierarchyAuthorizer(appConfig: VtsAppConfig, hakukohderyhmaSer
     .buildAsync[HakukohderyhmaOid, Seq[HakukohdeOid]]()
 
   private def getAuthorizedHakukohderyhmaOidsFromSession(session: Session, authorizedRoles: Set[Role]): Set[HakukohderyhmaOid] = {
-    session.roles.filter(sessionRole => sessionRole.getString.contains("1.2.246.562.28.") && authorizedRoles.exists(authorizedRole => sessionRole.getString.contains(authorizedRole)))
+    session.roles.filter(sessionRole => sessionRole.getString.contains("1.2.246.562.28.") && authorizedRoles.exists(authorizedRole => sessionRole.getString.contains(authorizedRole.getString)))
       .map(role => {
         role.getOidString match {
           case Some(oid: String) => HakukohderyhmaOid(oid)
