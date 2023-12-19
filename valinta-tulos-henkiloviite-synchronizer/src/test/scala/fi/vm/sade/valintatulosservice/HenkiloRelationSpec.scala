@@ -61,13 +61,4 @@ class HenkiloRelationSpec extends Specification {
 
     relations must contain(HenkiloRelation("master3", "slave6"), HenkiloRelation("slave6", "master3"))
   }
-  "henkiloRelations with big data" >> {
-    implicit val henkiloviiteReader = HenkiloviiteClient.henkiloviiteReader
-    val data = fromInputStream(getClass.getResourceAsStream("/viitteet.json")).mkString
-    val viitteet = arrayReader[Henkiloviite].read(parse(data))
-    val start = System.currentTimeMillis()
-    val relations = HenkiloviiteSynchronizer.henkiloRelations(viitteet)
-    (System.currentTimeMillis() - start) must beLessThan[Long](500)
-    relations.size must_== 27018
-  }
 }

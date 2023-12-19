@@ -9,9 +9,8 @@ import org.json4s.native.JsonMethods.parse
 import org.json4s.DefaultReaders.{StringReader, arrayReader}
 import org.json4s.JsonAST.JValue
 import org.json4s.{Reader, Formats, DefaultFormats}
-import org.http4s.json4s.native.jsonOf  // TODO get rid of this
-import org.http4s._  // TODO this too
 import org.slf4j.LoggerFactory
+import org.http4s.Uri
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.compat.java8.FutureConverters.toScala
@@ -66,15 +65,4 @@ class HenkiloviiteClient(configuration: AuthenticationConfiguration) {
     CasClientBuilder.build(config)
   }
 
-}
-
-object HenkiloviiteClient {
-  val henkiloviiteReader = new Reader[Henkiloviite] {
-    override def read(v: JValue): Henkiloviite = {
-      Henkiloviite(StringReader.read(v \ "masterOid"), StringReader.read(v \ "henkiloOid"))
-    }
-  }
-  val henkiloviiteDecoder = jsonOf[Array[Henkiloviite]](
-    arrayReader[Henkiloviite](manifest[Henkiloviite], HenkiloviiteClient.henkiloviiteReader)
-  )
 }
