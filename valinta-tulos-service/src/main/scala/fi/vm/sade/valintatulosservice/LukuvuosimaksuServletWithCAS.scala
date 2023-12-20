@@ -1,7 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
 import java.util.Date
-
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.lukuvuosimaksut.LukuvuosimaksuMuutos
@@ -12,6 +11,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, Luk
 import org.json4s.DefaultFormats
 import org.json4s.ext.EnumNameSerializer
 import org.scalatra.swagger.Swagger
+import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.{InternalServerError, NoContent, Ok}
 
 import scala.util.Try
@@ -24,7 +24,7 @@ class LukuvuosimaksuServletWithCAS(lukuvuosimaksuService: LukuvuosimaksuService,
 
   implicit val defaultFormats = DefaultFormats + new EnumNameSerializer(Maksuntila)
 
-  override protected def applicationDescription: String = "Lukuvuosimaksut authenticated REST API"
+  override protected def applicationDescription: String = "Lukuvuosimaksujen rajapinnat (CAS-autentikoitu)"
 
   protected def authenticatedPersonOid: String = {
     implicit val authenticated = authenticate
@@ -32,7 +32,11 @@ class LukuvuosimaksuServletWithCAS(lukuvuosimaksuService: LukuvuosimaksuService,
     authenticate.session.personOid
   }
 
-  get("/:hakukohdeOid") {
+  val lukuvuosimaksutHakukohteelleSwagger: OperationBuilder = (apiOperation[List[Lukuvuosimaksu]]("Hakukohteen lukuvuosimaksutietojen hakeminen")
+    summary "Hakukohteen lukuvuosimaksutietojen hakeminen"
+    parameter pathParam[String]("hakukohdeOid").description("Hakukohteen OID")
+    tags "lukuvuosimaksu")
+  get("/:hakukohdeOid", operation(lukuvuosimaksutHakukohteelleSwagger)) {
     implicit val authenticated = authenticate
     val muokkaaja = authenticatedPersonOid
     val hakukohdeOid = hakukohdeOidParam
@@ -41,12 +45,15 @@ class LukuvuosimaksuServletWithCAS(lukuvuosimaksuService: LukuvuosimaksuService,
     authorizer.checkAccessWithHakukohderyhmat(auditInfo.session._2, hakukohde.organisaatioOiditAuktorisointiin,
       Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD), hakukohdeOid).fold(throw _, x => x)
 
-    val lukuvuosimaksus = lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, auditInfo)
+    val lukuvuosimaksus: Seq[Lukuvuosimaksu] = lukuvuosimaksuService.getLukuvuosimaksut(hakukohdeOid, auditInfo)
     Ok(lukuvuosimaksus)
   }
 
-
-  post("/:hakukohdeOid") {
+  val lukuvuosimaksutHakukohteelleTallennusSwagger: OperationBuilder = (apiOperation[List[Lukuvuosimaksu]]("Hakukohteen lukuvuosimaksutietojen tallennus")
+    summary "Hakukohteen lukuvuosimaksutietojen tallennus"
+    parameter pathParam[String]("hakukohdeOid").description("Hakukohteen OID")
+    tags "lukuvuosimaksu")
+  post("/:hakukohdeOid", operation(lukuvuosimaksutHakukohteelleTallennusSwagger)) {
     implicit val authenticated = authenticate
 
     val muokkaaja = authenticatedPersonOid
