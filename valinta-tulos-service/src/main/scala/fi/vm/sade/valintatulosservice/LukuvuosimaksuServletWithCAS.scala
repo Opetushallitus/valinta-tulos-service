@@ -32,7 +32,7 @@ class LukuvuosimaksuServletWithCAS(lukuvuosimaksuService: LukuvuosimaksuService,
     authenticate.session.personOid
   }
 
-  val lukuvuosimaksutHakukohteelleSwagger: OperationBuilder = (apiOperation[List[Lukuvuosimaksu]]("Hakukohteen lukuvuosimaksutietojen hakeminen")
+  val lukuvuosimaksutHakukohteelleSwagger: OperationBuilder = (apiOperation[List[Lukuvuosimaksu]]("HakukohteenLukuvuosimaksutietojenHakeminen")
     summary "Hakukohteen lukuvuosimaksutietojen hakeminen"
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen OID")
     tags "lukuvuosimaksu")
@@ -49,7 +49,7 @@ class LukuvuosimaksuServletWithCAS(lukuvuosimaksuService: LukuvuosimaksuService,
     Ok(lukuvuosimaksus)
   }
 
-  val lukuvuosimaksutHakukohteelleTallennusSwagger: OperationBuilder = (apiOperation[List[Lukuvuosimaksu]]("Hakukohteen lukuvuosimaksutietojen tallennus")
+  val lukuvuosimaksutHakukohteelleTallennusSwagger: OperationBuilder = (apiOperation[List[Lukuvuosimaksu]]("HakukohteenLukuvuosimaksutietojenTallennus")
     summary "Hakukohteen lukuvuosimaksutietojen tallennus"
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen OID")
     tags "lukuvuosimaksu")
