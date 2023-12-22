@@ -22,7 +22,8 @@ abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.conf
     queueSize = getInt(config, "valinta-tulos-service.valintarekisteri.db.queueSize"),
     registerMbeans = getBoolean(config, "valinta-tulos-service.valintarekisteri.db.registerMbeans"),
     initializationFailTimeout = getLong(config, "valinta-tulos-service.valintarekisteri.db.initializationFailFast"),
-    leakDetectionThresholdMillis = getLong(config, "valinta-tulos-service.valintarekisteri.db.leakDetectionThresholdMillis")
+    leakDetectionThresholdMillis = getLong(config, "valinta-tulos-service.valintarekisteri.db.leakDetectionThresholdMillis"),
+    flywayDisabled = getBoolean(config, "valinta-tulos-service.valintarekisteri.db.flyway.disabled")
   )
   val koutaUsername = config.getString("valinta-tulos-service.cas.username")
   val koutaPassword = config.getString("valinta-tulos-service.cas.password")
