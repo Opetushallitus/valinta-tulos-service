@@ -16,6 +16,9 @@ import org.scalatra.{InternalServerError, NoContent, Ok}
 
 import scala.util.Try
 
+// This is an ugly solution to the problem that Scalatra does not support enums in Swagger
+case class LukuvuosimaksuForSwagger(personOid: String, hakukohdeOid: HakukohdeOid, maksuntila: String, muokkaaja: String, luotu: Date)
+
 class LukuvuosimaksuServletWithCAS(lukuvuosimaksuService: LukuvuosimaksuService, val sessionRepository: SessionRepository,
                                    hakuService: HakuService,
                                    authorizer: OrganizationHierarchyAuthorizer)
@@ -32,7 +35,7 @@ class LukuvuosimaksuServletWithCAS(lukuvuosimaksuService: LukuvuosimaksuService,
     authenticate.session.personOid
   }
 
-  val lukuvuosimaksutHakukohteelleSwagger: OperationBuilder = (apiOperation[List[Lukuvuosimaksu]]("HakukohteenLukuvuosimaksutietojenHakeminen")
+  val lukuvuosimaksutHakukohteelleSwagger: OperationBuilder = (apiOperation[List[LukuvuosimaksuForSwagger]]("HakukohteenLukuvuosimaksutietojenHakeminen")
     summary "Hakukohteen lukuvuosimaksutietojen hakeminen"
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen OID")
     tags "lukuvuosimaksu")
@@ -49,7 +52,7 @@ class LukuvuosimaksuServletWithCAS(lukuvuosimaksuService: LukuvuosimaksuService,
     Ok(lukuvuosimaksus)
   }
 
-  val lukuvuosimaksutHakukohteelleTallennusSwagger: OperationBuilder = (apiOperation[List[Lukuvuosimaksu]]("HakukohteenLukuvuosimaksutietojenTallennus")
+  val lukuvuosimaksutHakukohteelleTallennusSwagger: OperationBuilder = (apiOperation[List[LukuvuosimaksuForSwagger]]("HakukohteenLukuvuosimaksutietojenTallennus")
     summary "Hakukohteen lukuvuosimaksutietojen tallennus"
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen OID")
     tags "lukuvuosimaksu")
