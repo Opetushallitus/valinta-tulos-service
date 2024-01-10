@@ -17,7 +17,7 @@ import org.scalatra.{InternalServerError, NoContent, Ok}
 import scala.util.Try
 
 // This is an ugly solution to the problem that Scalatra does not support enums in Swagger
-case class LukuvuosimaksuForSwagger(personOid: String, hakukohdeOid: HakukohdeOid, maksuntila: String, muokkaaja: String, luotu: Date)
+case class LukuvuosimaksuForSwagger(personOid: String, hakukohdeOid: String, maksuntila: String, muokkaaja: String, luotu: Date)
 
 class LukuvuosimaksuServletWithCAS(lukuvuosimaksuService: LukuvuosimaksuService, val sessionRepository: SessionRepository,
                                    hakuService: HakuService,
