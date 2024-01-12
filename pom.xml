@@ -543,6 +543,16 @@
             </releases>
         </repository>
         <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/Opetushallitus/packages</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+        </repository>
+        <repository>
             <id>oph-sade-artifactory-releases</id>
             <url>https://artifactory.opintopolku.fi/artifactory/oph-sade-release-local</url>
             <releases>
