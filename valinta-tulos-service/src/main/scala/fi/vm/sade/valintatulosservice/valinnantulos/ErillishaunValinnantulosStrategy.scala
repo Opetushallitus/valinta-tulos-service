@@ -43,6 +43,9 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
           logger.warn(s"Failed to fetch hakemus ${uusi.hakemusOid}", t);
           Left(ValinnantulosUpdateStatus(400, s"Hakemuksen tietojen hakeminen epäonnistui", uusi.valintatapajonoOid, uusi.hakemusOid))
         }
+        case Right(hakemus) if hakemusRepository.isAtaruOid(uusi.hakemusOid) && !hakemus.henkilotiedot.yksiloity.getOrElse(false) =>
+          logger.warn(s"Hakemuksen ${uusi.hakemusOid} henkilö ${hakemus.henkiloOid} ei ole yksilöity")
+          Left(ValinnantulosUpdateStatus(409, s"Hakemuksen henkilö ${hakemus.henkiloOid} ei ole yksilöity", uusi.valintatapajonoOid, uusi.hakemusOid))
         case Right(_) => Right()
       }
     }
