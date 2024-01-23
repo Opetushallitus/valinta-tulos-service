@@ -7,8 +7,8 @@ import org.http4s.Method.POST
 import org.http4s.client.blaze.SimpleHttp1Client
 import org.http4s.json4s.native.{jsonEncoderOf, jsonOf}
 import org.http4s.{Request, Uri}
-import org.json4s.DefaultReaders.StringReader
-import org.json4s.JsonAST.{JNull, JObject, JString, JValue}
+import org.json4s.DefaultReaders.{BooleanReader, StringReader}
+import org.json4s.JsonAST.{JBool, JNull, JObject, JString, JValue}
 import org.json4s.{DefaultFormats, JArray, Reader, Writer}
 import scalaz.concurrent.Task
 
@@ -28,7 +28,8 @@ case class Henkilo(oid: HakijaOid,
                    sukunimi: Option[String],
                    etunimet: Option[String],
                    kansalaisuudet: Option[List[String]],
-                   syntymaaika: Option[String])
+                   syntymaaika: Option[String],
+                   yksiloity: Option[Boolean] = None)
 
 object Henkilo {
   val henkiloReader = new Reader[Henkilo] {
@@ -44,7 +45,8 @@ object Henkilo {
         Option(StringReader.read(value \ "sukunimi")),
         Option(StringReader.read(value \ "etunimet")),
         Option(kansalaisuusKoodit),
-        Option(StringReader.read(value \ "syntymaaika"))
+        Option(StringReader.read(value \ "syntymaaika")),
+        Option(BooleanReader.read(value \ "yksiloity"))
       )
     }
   }
@@ -57,7 +59,8 @@ object Henkilo {
         "sukunimi" -> h.sukunimi.map(JString).getOrElse(JNull),
         "etunimet" -> h.etunimet.map(JString).getOrElse(JNull),
         "kansalaisuus" -> h.kansalaisuudet.map(k => k.asInstanceOf[JArray]).getOrElse(JNull),
-        "syntymaaika" -> h.syntymaaika.map(JString).getOrElse(JNull)
+        "syntymaaika" -> h.syntymaaika.map(JString).getOrElse(JNull),
+        "yksiloity" -> h.yksiloity.map(b => JBool(b)).getOrElse(JNull)
       )
     }
   }
