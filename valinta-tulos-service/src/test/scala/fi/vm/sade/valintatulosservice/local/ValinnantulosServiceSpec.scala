@@ -6,7 +6,7 @@ import fi.vm.sade.sijoittelu.domain.{EhdollisenHyvaksymisenEhtoKoodi, Valintatul
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
-import fi.vm.sade.valintatulosservice.domain.Hakemus
+import fi.vm.sade.valintatulosservice.domain.{Hakemus, Henkilotiedot}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.mock.RunBlockingMock
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService, Vastaanottoaikataulu}
@@ -472,7 +472,8 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       koulutuksenAlkamiskausi = null,
       yhdenPaikanSaanto = null,
       nimi = null))
-    hakemusRepository.findHakemus(any()) returns Right(Hakemus(null, null, null, null, null, null, null))
+    hakemusRepository.isAtaruOid(any()) returns true
+    hakemusRepository.findHakemus(any()) returns Right(Hakemus(null, null, null, null, null, Henkilotiedot(None, None, hasHetu = false, List.empty, Some(true)), null))
   }
 
   trait ToisenAsteenHaku { this: Mocks =>
