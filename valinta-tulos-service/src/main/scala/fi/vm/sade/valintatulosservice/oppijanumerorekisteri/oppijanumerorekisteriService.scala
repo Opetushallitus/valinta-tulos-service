@@ -1,19 +1,21 @@
 package fi.vm.sade.valintatulosservice.oppijanumerorekisteri
 
-import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasParams}
+import fi.vm.sade.javautils.nio.cas.{CasClient, CasClientBuilder}
+import fi.vm.sade.security.ScalaCasConfig
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakijaOid
-import org.http4s.Method.POST
-import org.http4s.client.blaze.SimpleHttp1Client
-import org.http4s.json4s.native.{jsonEncoderOf, jsonOf}
-import org.http4s.{Request, Uri}
-import org.json4s.DefaultReaders.{BooleanReader, StringReader}
+import org.asynchttpclient.{RequestBuilder, Response}
+import org.json4s.native.JsonMethods.parse
+import org.json4s.native.Serialization.write
 import org.json4s.JsonAST.{JBool, JNull, JObject, JString, JValue}
-import org.json4s.{DefaultFormats, JArray, Reader, Writer}
+import org.json4s.{DefaultFormats, JArray}
 import scalaz.concurrent.Task
-import org.json4s.DefaultReaders.arrayReader
 
 import java.util.concurrent.TimeUnit
+import scala.compat.java8.FutureConverters.toScala
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.Try
 
@@ -33,56 +35,51 @@ case class Henkilo(oid: HakijaOid,
                    yksiloity: Option[Boolean] = None,
                    yksiloityVTJ: Option[Boolean] = None)
 
-object Henkilo {
-  val henkiloReader = new Reader[Henkilo] {
-    implicit val formats = DefaultFormats
+object Henkilo extends JsonFormats {
 
-    override def read(value: JValue): Henkilo = {
-      val kansalaisuusKoodit: List[String] = (value \ "kansalaisuus").extract[List[Option[KansalaisuusKoodi]]].map(x => x.get.kansalaisuusKoodi)
-
-      Henkilo(
-        HakijaOid(StringReader.read(value \ "oidHenkilo")),
-        Option(StringReader.read(value \ "hetu")).map(Hetu),
-        Option(StringReader.read(value \ "kutsumanimi")),
-        Option(StringReader.read(value \ "sukunimi")),
-        Option(StringReader.read(value \ "etunimet")),
-        Option(kansalaisuusKoodit),
-        Option(StringReader.read(value \ "syntymaaika")),
-        Try(BooleanReader.read(value \ "yksiloity")).toOption,
-        Try(BooleanReader.read(value \ "yksiloityVTJ")).toOption
-      )
-    }
+  def fromJson(value: JValue): Henkilo = {
+    val kansalaisuusKoodit: List[String] = (value \ "kansalaisuus").extract[List[Option[KansalaisuusKoodi]]].map(x => x.get.kansalaisuusKoodi)
+    Henkilo(
+      HakijaOid((value \ "oidHenkilo").extract[String]),
+      (value \ "hetu").extractOpt[String].map(Hetu),
+      (value \ "kutsumanimi").extractOpt[String],
+      (value \ "sukunimi").extractOpt[String],
+      (value \ "etunimet").extractOpt[String],
+      Option(kansalaisuusKoodit),
+      (value \ "syntymaaika").extractOpt[String],
+      Try((value \ "yksiloity").extract[Boolean]).toOption,
+      Try((value \ "yksiloityVTJ").extract[Boolean]).toOption
+    )
   }
-  val henkiloWriter = new Writer[Henkilo] {
-    override def write(h: Henkilo): JValue = {
-      JObject(
-        "oidHenkilo" -> JString(h.oid.toString),
-        "hetu" -> h.hetu.map(s => JString(s.toString)).getOrElse(JNull),
-        "kutsumanimi" -> h.kutsumanimi.map(JString).getOrElse(JNull),
-        "sukunimi" -> h.sukunimi.map(JString).getOrElse(JNull),
-        "etunimet" -> h.etunimet.map(JString).getOrElse(JNull),
-        "kansalaisuus" -> h.kansalaisuudet.map(k => k.asInstanceOf[JArray]).getOrElse(JNull),
-        "syntymaaika" -> h.syntymaaika.map(JString).getOrElse(JNull),
-        "yksiloity" -> h.yksiloity.map(b => JBool(b)).getOrElse(JNull),
-        "yksiloityVTJ" -> h.yksiloityVTJ.map(b => JBool(b)).getOrElse(JNull)
-      )
-    }
+
+  def toJson(h: Henkilo): JValue = {
+    JObject(
+      "oidHenkilo" -> JString(h.oid.toString),
+      "hetu" -> h.hetu.map(s => JString(s.toString)).getOrElse(JNull),
+      "kutsumanimi" -> h.kutsumanimi.map(JString).getOrElse(JNull),
+      "sukunimi" -> h.sukunimi.map(JString).getOrElse(JNull),
+      "etunimet" -> h.etunimet.map(JString).getOrElse(JNull),
+      "kansalaisuus" -> h.kansalaisuudet.map(k => k.asInstanceOf[JArray]).getOrElse(JNull),
+      "syntymaaika" -> h.syntymaaika.map(JString).getOrElse(JNull),
+      "yksiloity" -> h.yksiloity.map(b => JBool(b)).getOrElse(JNull),
+      "yksiloityVTJ" -> h.yksiloityVTJ.map(b => JBool(b)).getOrElse(JNull)
+    )
   }
 }
 
-class OppijanumerorekisteriService(appConfig: VtsAppConfig) {
-  private val params = CasParams(
-    "/oppijanumerorekisteri-service",
-    appConfig.settings.securitySettings.casUsername,
-    appConfig.settings.securitySettings.casPassword
-  )
-  private val client = CasAuthenticatingClient(
-    casClient = appConfig.securityContext.casClient,
-    casParams = params,
-    serviceClient = SimpleHttp1Client(appConfig.blazeDefaultConfig),
-    clientCallerId = appConfig.settings.callerId,
-    sessionCookieName = "JSESSIONID"
-  )
+class OppijanumerorekisteriService(appConfig: VtsAppConfig) extends JsonFormats {
+  private val client: CasClient =
+    appConfig.securityContext.javaCasClient.getOrElse(
+      CasClientBuilder.build(ScalaCasConfig(
+        appConfig.settings.securitySettings.casUsername,
+        appConfig.settings.securitySettings.casPassword,
+        appConfig.settings.securitySettings.casUrl,
+        appConfig.ophUrlProperties.url("url-oppijanumerorekisteri"),
+        appConfig.settings.callerId,
+        appConfig.settings.callerId,
+        "/j_spring_cas_security_check",
+        "JSESSIONID"
+      )))
 
   def henkilot(oids: Set[HakijaOid]): Either[Throwable, Map[HakijaOid, Henkilo]] = {
     oids.grouped(5000).foldLeft(Task(Map.empty[HakijaOid, Henkilo])) {
@@ -97,38 +94,46 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) {
   }
 
   private def henkilotChunk(oids: Set[HakijaOid]): Task[Map[HakijaOid, Henkilo]] = {
-    import org.json4s.DefaultReaders.mapReader
-    import org.json4s.DefaultWriters.{StringWriter, arrayWriter}
-    implicit val hr: Reader[Henkilo] = Henkilo.henkiloReader
+    val req = new RequestBuilder()
+      .setMethod("POST")
+      .setUrl(appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.henkilotByOids"))
+      .addHeader("Content-type", "application/json")
+      .setBody(write(oids.map(_.toString).toArray))
+      .build()
 
-    Uri.fromString(appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.henkilotByOids"))
-      .fold(Task.fail, uri => {
-        val req = Request(method = POST, uri = uri)
-          .withBody[Array[String]](oids.map(_.toString).toArray)(jsonEncoderOf[Array[String]])
-        client.fetch(req) {
-          case r if r.status.code == 200 => r.as[Map[String, Henkilo]](jsonOf[Map[String, Henkilo]]).map(_.map { case (oid, h) => HakijaOid(oid) -> h })
-            .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing henkilöt $oids failed", t)) }
-          case r => Task.fail(new RuntimeException(s"Failed to get henkilöt $oids: ${r.toString()}"))
-        }
-      })
+    val result = toScala(client.execute(req)).map {
+      case r if r.getStatusCode == 200 =>
+        Task.now(parse(r.getResponseBodyAsStream)
+          .children.map(Henkilo.fromJson).map(h => h.oid -> h).toMap)
+      case r => Task.fail(new RuntimeException(s"Failed to get henkilöt $oids: ${r.toString()}"))
+    }
+
+    try {
+      Await.result(result, Duration(1, TimeUnit.MINUTES))
+    } catch {
+      case e: Throwable => Task.fail(e)
+    }
   }
 
   private def henkilotChunkHetus(hetus: Set[String]): Task[Set[Henkilo]] = {
-    import org.json4s.DefaultWriters.{StringWriter, arrayWriter}
+    val req = new RequestBuilder()
+      .setMethod("POST")
+      .setUrl(appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.perustiedotByHetus"))
+      .addHeader("Content-type", "application/json")
+      .setBody(write(hetus.toArray))
+      .build()
 
-    val hr: Reader[Henkilo] = Henkilo.henkiloReader
-    val henkiloDecoder = jsonOf[Array[Henkilo]](arrayReader[Henkilo](manifest[Henkilo], hr))
+    val result = toScala(client.execute(req)).map {
+      case r if r.getStatusCode == 200 =>
+        Task.now(parse(r.getResponseBodyAsStream).children.map(Henkilo.fromJson).toSet)
+      case r => Task.fail(new RuntimeException(s"Failed to get henkilöt for hetus ($hetus): ${r.toString()}"))
+    }
 
-    Uri.fromString(appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.perustiedotByHetus"))
-      .fold(Task.fail, uri => {
-        val req = Request(method = POST, uri = uri)
-          .withBody[Array[String]](hetus.toArray)(jsonEncoderOf[Array[String]])
-        client.fetch(req) {
-          case r if r.status.code == 200 =>
-            r.as[Array[Henkilo]](henkiloDecoder).map(_.toSet)
-              .handleWith { case t => Task.fail(new IllegalStateException(s"Parsing onr-result for hetus ($hetus) failed", t)) }
-          case r => Task.fail(new RuntimeException(s"Failed to get henkilöt for hetus ($hetus): ${r.toString()}"))
-        }
-      })
+    try {
+      Await.result(result, Duration(1, TimeUnit.MINUTES))
+    } catch {
+      case e: Throwable => Task.fail(e)
+    }
   }
+
 }
