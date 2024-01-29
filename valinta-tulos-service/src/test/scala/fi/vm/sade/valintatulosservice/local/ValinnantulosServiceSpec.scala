@@ -227,6 +227,22 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
         ValinnantulosUpdateStatus(404, s"Valinnantulosta ei voida poistaa, koska sitä ei ole olemassa", valintatapajonoOid, valinnantulokset(6).hakemusOid)
       )
     }
+    "returns 409 for missing yksiloity information" in new Mocks with Authorized with KorkeakouluErillishaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
+      hakemusRepository.findHakemus(any()) returns Right(Hakemus(null, null, "1.2.3", null, null, Henkilotiedot(None, None, hasHetu = false, List.empty, None), null))
+      valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set())
+      yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(Set())
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(valinnantulosA), Some(Instant.now()), auditInfo) mustEqual List(
+        ValinnantulosUpdateStatus(409, s"Hakemuksen henkilö 1.2.3 ei ole yksilöity", valintatapajonoOid, valinnantulosA.hakemusOid)
+      )
+    }
+    "returns 409 for not yksiloity henkilo" in new Mocks with Authorized with KorkeakouluErillishaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
+      hakemusRepository.findHakemus(any()) returns Right(Hakemus(null, null, "1.2.3", null, null, Henkilotiedot(None, None, hasHetu = false, List.empty, Some(false)), null))
+      valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set())
+      yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(Set())
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(valinnantulosA), Some(Instant.now()), auditInfo) mustEqual List(
+        ValinnantulosUpdateStatus(409, s"Hakemuksen henkilö 1.2.3 ei ole yksilöity", valintatapajonoOid, valinnantulosA.hakemusOid)
+      )
+    }
     "no status for succesfully modified valinnantulos" in new Mocks with Authorized with KorkeakouluErillishaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
       valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set(valinnantulosA.copy(valinnantila = Hyvaksytty)))
       yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(Set(valinnantulosA.copy(valinnantila = Hyvaksytty)))
