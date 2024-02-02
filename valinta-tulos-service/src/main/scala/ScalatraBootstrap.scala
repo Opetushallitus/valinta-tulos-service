@@ -58,6 +58,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     if (appConfig.isInstanceOf[IT] || appConfig.isInstanceOf[Dev]) {
       context.mount(new FixtureServlet(valintarekisteriDb), "/util")
       SijoitteluFixtures(valintarekisteriDb).importFixture("hyvaksytty-kesken-julkaistavissa.json")
+      SijoitteluFixtures(valintarekisteriDb).importFixture("yksi-lisajono.json")
     }
 
     lazy val organisaatioService = OrganisaatioService(appConfig)
