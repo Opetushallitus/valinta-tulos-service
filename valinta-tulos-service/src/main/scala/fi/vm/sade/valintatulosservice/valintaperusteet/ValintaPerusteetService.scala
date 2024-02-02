@@ -34,46 +34,13 @@ class ValintaPerusteetServiceImpl(appConfig: VtsAppConfig) extends ValintaPerust
     "JSESSIONID"
   ))
 
-  case class ValintatapaJono(
-    aloituspaikat: Int,
-    nimi: String,
-    kuvaus: Option[String],
-    tyyppi: Option[String],
-    siirretaanSijoitteluun: Boolean,
-    tasapistesaanto: String,
-    aktiivinen: Boolean,
-    valisijoittelu: Boolean,
-    automaattinenSijoitteluunSiirto: Boolean,
-    eiVarasijatayttoa: Boolean,
-    kaikkiEhdonTayttavatHyvaksytaan: Boolean,
-    varasijat: Int,
-    varasijaTayttoPaivat: Int,
-    poissaOlevaTaytto: Boolean,
-    poistetaankoHylatyt: Boolean,
-    varasijojaKaytetaanAlkaen: Option[String],
-    varasijojaTaytetaanAsti: Option[String],
-    eiLasketaPaivamaaranJalkeen: Option[String],
-    kaytetaanValintalaskentaa: Boolean,
-    tayttojono: Option[String],
-    oid: String,
-    inheritance: Option[Boolean],
-    prioriteetti: Option[Int]
-  )
-
   implicit val formats = DefaultFormats
 
-  def getKaytetaanValintalaskentaaFromValintatapajono(valintapajonoOid: ValintatapajonoOid, haku: Haku, hakukohdeOid: HakukohdeOid): Either[Throwable, Boolean] = {
-    getValintatapajonoByValintatapajonoOid(valintapajonoOid, haku, hakukohdeOid) match {
-      case Right(valintatapaJono) => Right(valintatapaJono.kaytetaanValintalaskentaa)
-      case Left(e) => Left(e)
-    }
-  }
-
-  private def getValintatapajonoByValintatapajonoOid(
+  def getKaytetaanValintalaskentaaFromValintatapajono(
     valintatapajonoOid: ValintatapajonoOid,
     haku: Haku,
     hakukohdeOid: HakukohdeOid
-  ): Either[Throwable, ValintatapaJono] = {
+  ): Either[Throwable, Boolean] = {
 
     val req = new RequestBuilder()
       .setMethod("GET")
@@ -86,7 +53,7 @@ class ValintaPerusteetServiceImpl(appConfig: VtsAppConfig) extends ValintaPerust
         logger.info(
           s"Successfully got valintatapajono (oid: $valintatapajonoOid) from valintaperusteet-service for haku: ${haku.oid}, hakukohde: $hakukohdeOid"
         )
-        parse(r.getResponseBodyAsStream).extract[ValintatapaJono]
+        (parse(r.getResponseBodyAsStream) \ "kaytetaanValintalaskentaa").extract[Boolean]
       }
       case r if r.getStatusCode == 404 =>
         throw new NotFoundException(s"Valintatapajono was not found for oid $valintatapajonoOid")
