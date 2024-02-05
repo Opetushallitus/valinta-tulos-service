@@ -19,7 +19,7 @@ trait ITSetup {
 
   lazy val valintarekisteriDbWithPool = new ValintarekisteriDb(dbConfig, true)
 
-  lazy private val hakuService = HakuService(appConfig, null, new StubbedOhjausparametritService(), OrganisaatioService(appConfig), null)
+  lazy private val hakuService = HakuService(appConfig, new StubbedOhjausparametritService(), OrganisaatioService(appConfig), null)
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, singleConnectionValintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing)
 
   implicit val getHakukohdeOid: GetResult[HakukohdeOid] = GetResult(r => {

@@ -75,7 +75,7 @@ class ValintatulosServiceLisahakuSpec extends ITSpecification with TimeWarp {
 
   lazy val ohjausparametritService = new StubbedOhjausparametritService()
   lazy val koodistoService = new StubbedKoodistoService()
-  lazy val hakuService = HakuService(appConfig, null, ohjausparametritService, OrganisaatioService(appConfig), null)
+  lazy val hakuService = HakuService(appConfig, ohjausparametritService, OrganisaatioService(appConfig), null)
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
   lazy val valintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
   lazy val sijoittelunTulosClient = new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb)
