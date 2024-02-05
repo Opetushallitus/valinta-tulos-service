@@ -29,7 +29,8 @@ case class Henkilo(oid: HakijaOid,
                    etunimet: Option[String],
                    kansalaisuudet: Option[List[String]],
                    syntymaaika: Option[String],
-                   yksiloity: Option[Boolean] = None)
+                   yksiloity: Option[Boolean] = None,
+                   yksiloityVTJ: Option[Boolean] = None)
 
 object Henkilo {
   val henkiloReader = new Reader[Henkilo] {
@@ -46,7 +47,8 @@ object Henkilo {
         Option(StringReader.read(value \ "etunimet")),
         Option(kansalaisuusKoodit),
         Option(StringReader.read(value \ "syntymaaika")),
-        Option(BooleanReader.read(value \ "yksiloity"))
+        Option(BooleanReader.read(value \ "yksiloity")),
+        Option(BooleanReader.read(value \ "yksiloityVTJ"))
       )
     }
   }
@@ -60,7 +62,8 @@ object Henkilo {
         "etunimet" -> h.etunimet.map(JString).getOrElse(JNull),
         "kansalaisuus" -> h.kansalaisuudet.map(k => k.asInstanceOf[JArray]).getOrElse(JNull),
         "syntymaaika" -> h.syntymaaika.map(JString).getOrElse(JNull),
-        "yksiloity" -> h.yksiloity.map(b => JBool(b)).getOrElse(JNull)
+        "yksiloity" -> h.yksiloity.map(b => JBool(b)).getOrElse(JNull),
+        "yksiloityVTJ" -> h.yksiloityVTJ.map(b => JBool(b)).getOrElse(JNull)
       )
     }
   }
