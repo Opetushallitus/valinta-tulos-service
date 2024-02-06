@@ -44,7 +44,7 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
   def getMigriHenkilotForOids(hakijaOids: Set[HakijaOid]): Set[MigriHakija] = {
     oppijanumerorekisteriService.henkilot(hakijaOids).fold(e => {
       val errorString: String = s"Error fetching hakijas for oid(s): $hakijaOids found. Cause: $e"
-      logger.warn(errorString)
+      logger.warn(errorString, e)
       throw new RuntimeException(errorString)
     }, henkilot => parseForeignHakijat(henkilot))
   }
@@ -52,7 +52,7 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
   def getMigriHenkilotForHetus(hetus: Set[String]): Set[MigriHakija] = {
     oppijanumerorekisteriService.henkilotForHetus(hetus).fold(e => {
       val errorString: String = s"Error fetching hakijas for hetu(s): $hetus found. Cause: $e"
-      logger.warn(errorString)
+      logger.warn(errorString, e)
       throw new RuntimeException(errorString)
     }, henkilot => parseForeignHakijat(henkilot))
   }
