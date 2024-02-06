@@ -11,10 +11,11 @@ import org.json4s.DefaultReaders.{BooleanReader, StringReader}
 import org.json4s.JsonAST.{JBool, JNull, JObject, JString, JValue}
 import org.json4s.{DefaultFormats, JArray, Reader, Writer}
 import scalaz.concurrent.Task
-
 import org.json4s.DefaultReaders.arrayReader
+
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
+import scala.util.Try
 
 case class KansalaisuusKoodi(kansalaisuusKoodi: String)
 
@@ -47,8 +48,8 @@ object Henkilo {
         Option(StringReader.read(value \ "etunimet")),
         Option(kansalaisuusKoodit),
         Option(StringReader.read(value \ "syntymaaika")),
-        Option(BooleanReader.read(value \ "yksiloity")),
-        Option(BooleanReader.read(value \ "yksiloityVTJ"))
+        Try(BooleanReader.read(value \ "yksiloity")).toOption,
+        Try(BooleanReader.read(value \ "yksiloityVTJ")).toOption
       )
     }
   }
