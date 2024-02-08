@@ -142,6 +142,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new CasLogin(
         appConfig.settings.securitySettings.casUrl,
         new CasSessionService(
+          appConfig,
           appConfig.securityContext,
           appConfig.securityContext.casServiceIdentifier + "/auth/login",
           userDetailsService,
@@ -168,6 +169,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new SiirtotiedostoServlet(siirtotiedostoService, valintarekisteriDb), "/cas/siirtotiedosto", "siirtotiedosto")
 
       val casSessionService = new CasSessionService(
+        appConfig,
         appConfig.securityContext,
         appConfig.securityContext.casServiceIdentifier,
         userDetailsService,

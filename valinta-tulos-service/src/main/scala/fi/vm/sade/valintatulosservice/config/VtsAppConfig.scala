@@ -265,13 +265,7 @@ object VtsAppConfig extends Logging {
 
   trait CasSecurity extends VtsAppConfig {
     lazy val securityContext: SecurityContext = {
-      val casClient = new CasClient(
-        settings.securitySettings.casUrl,
-        SimpleHttp1Client(blazeDefaultConfig),
-        settings.callerId
-      )
       new ProductionSecurityContext(
-        casClient,
         settings.securitySettings.casServiceIdentifier,
         settings.securitySettings.requiredRoles.map(Role(_)).toSet,
         settings.securitySettings.casValidateServiceTicketTimeout

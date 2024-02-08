@@ -1,22 +1,17 @@
 package fi.vm.sade.security.mock
 
-import java.util.concurrent.TimeUnit
-
-import fi.vm.sade.security.{SecurityContext, ScalaCasConfig}
 import fi.vm.sade.javautils.nio.cas.impl.{CasClientImpl, CasSessionFetcher}
-import fi.vm.sade.utils.cas._
-import fi.vm.sade.utils.cas.CasClient._
+import fi.vm.sade.security.{ScalaCasConfig, SecurityContext}
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetails
 import fi.vm.sade.valintatulosservice.security.Role
-
-import scalaz.concurrent.Task
-import scala.concurrent.duration.Duration
-import java.util.concurrent.CompletableFuture
-
 import org.asynchttpclient.Dsl._
+
+import java.util.concurrent.{CompletableFuture, TimeUnit}
+import scala.concurrent.duration.{Duration, SECONDS}
 
 class MockSecurityContext(val casServiceIdentifier: String, val requiredRoles: Set[Role], users: Map[String, KayttooikeusUserDetails]) extends SecurityContext {
 
+  def validateServiceTicketTimeout = Duration(1, SECONDS)
   private val casConfig = ScalaCasConfig("", "", "", "", "", "vts-test-caller-id", "", "session")
   private val httpClient = asyncHttpClient()
   val javaCasClient = Some(
@@ -32,23 +27,16 @@ class MockSecurityContext(val casServiceIdentifier: String, val requiredRoles: S
         override def fetchSessionToken(): CompletableFuture[String] =
           CompletableFuture.completedFuture("session-token-from-mock-context")
 
-      }))
-
-  val casClient = new CasClient("", null, "vts-test-caller-id") {
-    override def validateServiceTicketWithVirkailijaUsername(service : scala.Predef.String)(ticket : ServiceTicket): Task[Username] = {
-      if (ticket.startsWith(MockSecurityContext.ticketPrefix(service))) {
-        val username = ticket.stripPrefix(MockSecurityContext.ticketPrefix(service))
-        Task.now(username)
-      } else {
-        Task.fail(new RuntimeException("unrecognized ticket: " + ticket))
+      }) {
+      override def validateServiceTicketWithVirkailijaUsername(service: String, ticket: String): CompletableFuture[String] = {
+        if (ticket.startsWith(MockSecurityContext.ticketPrefix(service))) {
+          val username = ticket.stripPrefix(MockSecurityContext.ticketPrefix(service))
+          CompletableFuture.completedFuture(username)
+        } else {
+          CompletableFuture.failedFuture(new RuntimeException("unrecognized ticket: " + ticket))
+        }
       }
-    }
-
-    override def fetchCasSession(params: CasParams, sessionCookieName: String): Task[SessionCookie] =
-      Task.now("jsessionidFromMockSecurityContext")
-  }
-
-  val validateServiceTicketTimeout = Duration(1, TimeUnit.SECONDS)
+    })
 }
 
 object MockSecurityContext {
