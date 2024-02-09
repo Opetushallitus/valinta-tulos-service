@@ -6,7 +6,7 @@ import fi.vm.sade.sijoittelu.domain.{EhdollisenHyvaksymisenEhtoKoodi, Valintatul
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
-import fi.vm.sade.valintatulosservice.domain.Hakemus
+import fi.vm.sade.valintatulosservice.domain.{Hakemus, Henkilotiedot}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.mock.RunBlockingMock
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService, Vastaanottoaikataulu}
@@ -226,6 +226,40 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
         ValinnantulosUpdateStatus(409, s"Peruneella vastaanottajalla ei voi olla vastaanottotilaa", valintatapajonoOid, valinnantulokset(5).hakemusOid),
         ValinnantulosUpdateStatus(404, s"Valinnantulosta ei voida poistaa, koska sitä ei ole olemassa", valintatapajonoOid, valinnantulokset(6).hakemusOid)
       )
+    }
+    "returns 409 for missing yksiloity information" in new Mocks with Authorized with KorkeakouluErillishaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
+      hakemusRepository.findHakemus(any()) returns Right(Hakemus(null, null, "1.2.3", null, null, Henkilotiedot(None, None, hasHetu = false, List.empty, None, None), null))
+      valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set())
+      yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(Set())
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(valinnantulosA), Some(Instant.now()), auditInfo) mustEqual List(
+        ValinnantulosUpdateStatus(409, s"Hakemuksen henkilö 1.2.3 ei ole yksilöity", valintatapajonoOid, valinnantulosA.hakemusOid)
+      )
+    }
+    "returns 409 for not yksiloity henkilo" in new Mocks with Authorized with KorkeakouluErillishaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
+      hakemusRepository.findHakemus(any()) returns Right(Hakemus(null, null, "1.2.3", null, null, Henkilotiedot(None, None, hasHetu = false, List.empty, Some(false), Some(false)), null))
+      valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set())
+      yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(Set())
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(valinnantulosA), Some(Instant.now()), auditInfo) mustEqual List(
+        ValinnantulosUpdateStatus(409, s"Hakemuksen henkilö 1.2.3 ei ole yksilöity", valintatapajonoOid, valinnantulosA.hakemusOid)
+      )
+    }
+    "no status for yksiloity henkilo" in new Mocks with Authorized with KorkeakouluErillishaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
+      valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set(valinnantulosA.copy(valinnantila = Hyvaksytty)))
+      yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(Set(valinnantulosA.copy(valinnantila = Hyvaksytty)))
+      valinnantulosRepository.storeValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]]) returns DBIO.successful(())
+      valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(any[HakemusOid], any[ValintatapajonoOid], any[String], any[String]) returns DBIO.successful(())
+      valinnantulosRepository.deleteHyvaksyttyJaJulkaistavissaIfExists(any[String], any[HakukohdeOid], any[Option[Instant]]) returns DBIO.successful(())
+      hakemusRepository.findHakemus(any()) returns Right(Hakemus(null, null, null, null, null, Henkilotiedot(None, None, hasHetu = false, List.empty, Some(true), Some(false)), null))
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(valinnantulosA.copy(valinnantila = Hyvaksytty, julkaistavissa = Some(true))), Some(Instant.now()), auditInfo) mustEqual List()
+    }
+    "no status for yksiloityVTJ henkilo" in new Mocks with Authorized with KorkeakouluErillishaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
+      valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set(valinnantulosA.copy(valinnantila = Hyvaksytty)))
+      yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(Set(valinnantulosA.copy(valinnantila = Hyvaksytty)))
+      valinnantulosRepository.storeValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]]) returns DBIO.successful(())
+      valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(any[HakemusOid], any[ValintatapajonoOid], any[String], any[String]) returns DBIO.successful(())
+      valinnantulosRepository.deleteHyvaksyttyJaJulkaistavissaIfExists(any[String], any[HakukohdeOid], any[Option[Instant]]) returns DBIO.successful(())
+      hakemusRepository.findHakemus(any()) returns Right(Hakemus(null, null, null, null, null, Henkilotiedot(None, None, hasHetu = false, List.empty, Some(false), Some(true)), null))
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, List(valinnantulosA.copy(valinnantila = Hyvaksytty, julkaistavissa = Some(true))), Some(Instant.now()), auditInfo) mustEqual List()
     }
     "no status for succesfully modified valinnantulos" in new Mocks with Authorized with KorkeakouluErillishaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
       valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set(valinnantulosA.copy(valinnantila = Hyvaksytty)))
@@ -472,7 +506,8 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       koulutuksenAlkamiskausi = null,
       yhdenPaikanSaanto = null,
       nimi = null))
-    hakemusRepository.findHakemus(any()) returns Right(Hakemus(null, null, null, null, null, null, null))
+    hakemusRepository.isAtaruOid(any()) returns true
+    hakemusRepository.findHakemus(any()) returns Right(Hakemus(null, null, null, null, null, Henkilotiedot(None, None, hasHetu = false, List.empty, Some(true), Some(true)), null))
   }
 
   trait ToisenAsteenHaku { this: Mocks =>

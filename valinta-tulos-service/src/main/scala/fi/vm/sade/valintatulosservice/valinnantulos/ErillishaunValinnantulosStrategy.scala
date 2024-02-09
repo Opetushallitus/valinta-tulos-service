@@ -4,6 +4,7 @@ import java.time.Instant
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.domain.{Hakemus, Henkilotiedot}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
@@ -43,6 +44,9 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
           logger.warn(s"Failed to fetch hakemus ${uusi.hakemusOid}", t);
           Left(ValinnantulosUpdateStatus(400, s"Hakemuksen tietojen hakeminen epäonnistui", uusi.valintatapajonoOid, uusi.hakemusOid))
         }
+        case Right(Hakemus(_, _, oid, _, _, Henkilotiedot(_, _, _, _, y, yVTJ), _)) if hakemusRepository.isAtaruOid(uusi.hakemusOid) && !y.getOrElse(false) && !yVTJ.getOrElse(false) =>
+          logger.warn(s"Hakemuksen ${uusi.hakemusOid} henkilö ${oid} ei ole yksilöity")
+          Left(ValinnantulosUpdateStatus(409, s"Hakemuksen henkilö ${oid} ei ole yksilöity", uusi.valintatapajonoOid, uusi.hakemusOid))
         case Right(_) => Right()
       }
     }
