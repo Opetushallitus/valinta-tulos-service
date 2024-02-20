@@ -20,6 +20,8 @@ import slick.dbio._
 
 import java.time.Instant
 import java.util.ConcurrentModificationException
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success}
 
 class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
@@ -238,7 +240,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
 
     valinnantulosRepository.runBlockingTransactionally(vanhatValinnantuloksetYhdenPaikanSaannolla().flatMap(vanhatValinnantulokset => {
       DBIO.sequence(valinnantulokset.map(uusi => validateAndSaveValinnantulos(uusi, vanhatValinnantulokset.find(_.hakemusOid == uusi.hakemusOid), s)))
-    })) match {
+    }), timeout = Duration(5, TimeUnit.MINUTES)) match {
       case Left(t) => {
         logger.error(s"""Kaikkien valinnantulosten tallennus valintatapajonolle ${valintatapajonoOid} epäonnistui""", t)
         throw t
