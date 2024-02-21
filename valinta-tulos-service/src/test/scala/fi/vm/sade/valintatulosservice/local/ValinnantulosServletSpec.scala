@@ -5,7 +5,6 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.{ConcurrentModificationException, UUID}
-
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.utils.ServletTest
 import fi.vm.sade.valintatulosservice._
@@ -13,9 +12,10 @@ import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import java.util.Date
 
+import java.util.Date
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
 import org.json4s.jackson.Serialization._
 import org.json4s.native.JsonMethods._
 import org.junit.runner.RunWith
@@ -36,8 +36,9 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
   def foreach[R: AsResult](f: ((String, ValinnantulosService, SessionRepository)) => R): org.specs2.execute.Result = {
     val valinnantulosService = mock[ValinnantulosService]
     val valintatulosService = mock[ValintatulosService]
+    valintatulosService.haeVastaanotonAikarajaTiedot(any(), any(), any()) returns Set(VastaanottoAikarajaMennyt(hakemusOid, mennyt = true, None))
     val sessionRepository = mock[SessionRepository]
-    val servlet = new ValinnantulosServlet(valinnantulosService, valintatulosService, sessionRepository, appConfig)(mock[Swagger])
+    val servlet = new ValinnantulosServlet(valinnantulosService, valintatulosService, HakuFixtures, sessionRepository, appConfig)(mock[Swagger])
     ServletTest.withServlet(this, servlet, (uri: String) => AsResult(f((uri, valinnantulosService, sessionRepository))))
   }
 
@@ -313,7 +314,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       t._2.getValinnantuloksetForHakemus(hakemusOid, auditInfo(readSession)) returns Some((Instant.now(), Set(valinnantulosWithHistoria)))
       get(t._1+"/hakemus/", Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders) {
         status must_== 200
-        parse(body).extract[List[ValinnantulosWithTilahistoria]].toString().trim().replace("\r","") must_== List(valinnantulosWithHistoria).toString().trim().replace("\r","")
+        parse(body).extract[List[ValinnantulosWithTilahistoria]].toString().trim().replace("\r","") must_== List(valinnantulosWithHistoria.copy(valinnantulos = valinnantulos.copy(vastaanottoDeadlineMennyt = Some(true)))).toString().trim().replace("\r","")
       }
     }
   }
