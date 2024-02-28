@@ -121,6 +121,26 @@ trait ValintarekisteriResultExtractors {
       new JonosijaTieto(jonoSija, r.nextInt(), Valinnantila(r.nextString()).valinnantila, JsonMethods.parse(r.nextString()).extract[Seq[String]].asJava)
     }))
 
+  protected implicit val getSiirtotiedostoVastaanottoResult = GetResult(r => SiirtotiedostoVastaanotto(
+    henkilo = r.nextString(),
+    hakukohde = HakukohdeOid(r.nextString()),
+    ilmoittaja = r.nextString(),
+    timestamp = r.nextString(),
+    action = r.nextString(),
+    id = r.nextInt(),
+    selite = r.nextString(),
+    deletedAt = r.nextStringOption(),
+    deletedBy = r.nextStringOption(),
+    deletedSelite = r.nextStringOption()))
+
+  protected implicit val getSiirtotiedostoIlmoittautuminenResult = GetResult(r => SiirtotiedostoIlmoittautuminen(
+    henkilo = r.nextString(),
+    hakukohde = HakukohdeOid(r.nextString()),
+    tila = r.nextString,
+    ilmoittaja = r.nextString(),
+    selite = r.nextString,
+    timestamp = r.nextString))
+
   protected implicit val getHakemuksetForValintatapajonosResult = GetResult(r => HakemusRecord(
     hakijaOid = r.nextStringOption,
     hakemusOid = HakemusOid(r.nextString),
