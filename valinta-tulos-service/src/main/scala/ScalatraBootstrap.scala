@@ -19,6 +19,7 @@ import fi.vm.sade.valintatulosservice.ohjausparametrit.{CachedOhjausparametritSe
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.security.Role
+import fi.vm.sade.valintatulosservice.siirtotiedosto.{SiirtotiedostoServlet, SiirtotiedostoService}
 import fi.vm.sade.valintatulosservice.sijoittelu._
 import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtures
 import fi.vm.sade.valintatulosservice.streamingresults.{HakemustenTulosHakuLock, StreamingValintatulosService}
@@ -103,6 +104,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, valintatulosService, valintarekisteriDb, cachedOhjausparametritService, sijoittelutulosService, hakemusRepository, valintarekisteriDb)
     lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService, valintarekisteriDb, valintarekisteriDb)
     lazy val hakukohderyhmaService = new HakukohderyhmaService(appConfig)
+    lazy val siirtotiedostoService = new SiirtotiedostoService(valintarekisteriDb, valintarekisteriDb)
 
     lazy val authorizer = new OrganizationHierarchyAuthorizer(appConfig, hakukohderyhmaService)
     lazy val yhdenPaikanSaannos = new YhdenPaikanSaannos(hakuService, valintarekisteriDb)
@@ -159,6 +161,8 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new HakijanVastaanottoServlet(vastaanottoService), "/vastaanotto", "vastaanotto")
       context.mount(new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, userDetailsService, appConfig), "/erillishaku/valinnan-tulos", "erillishaku/valinnan-tulos")
       context.mount(new NoAuthSijoitteluServlet(sijoitteluService), "/sijoittelu", "sijoittelu")
+
+      context.mount(new SiirtotiedostoServlet(siirtotiedostoService), "/siirtotiedosto", "siirtotiedosto")
 
       val casSessionService = new CasSessionService(
         appConfig.securityContext,
