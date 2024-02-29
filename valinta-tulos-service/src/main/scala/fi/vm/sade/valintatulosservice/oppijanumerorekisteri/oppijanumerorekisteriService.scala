@@ -14,6 +14,7 @@ import scalaz.concurrent.Task
 
 import java.util.concurrent.TimeUnit
 import scala.compat.java8.FutureConverters.toScala
+import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -68,6 +69,7 @@ object Henkilo extends JsonFormats {
 }
 
 class OppijanumerorekisteriService(appConfig: VtsAppConfig) extends JsonFormats {
+  private val retryCodes = Set(new Integer(401),new Integer(302)).asJava
   private val client: CasClient =
     appConfig.securityContext.javaCasClient.getOrElse(
       CasClientBuilder.build(ScalaCasConfig(
@@ -101,7 +103,7 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) extends JsonFormats 
       .setBody(write(oids.map(_.toString).toArray))
       .build()
 
-    val result = toScala(client.execute(req)).map {
+    val result = toScala(client.executeAndRetryWithCleanSessionOnStatusCodes(req, retryCodes)).map {
       case r if r.getStatusCode == 200 =>
         Task.now(parse(r.getResponseBodyAsStream)
           .children.map(Henkilo.fromJson).map(h => h.oid -> h).toMap)
@@ -123,7 +125,7 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) extends JsonFormats 
       .setBody(write(hetus.toArray))
       .build()
 
-    val result = toScala(client.execute(req)).map {
+    val result = toScala(client.executeAndRetryWithCleanSessionOnStatusCodes(req, retryCodes)).map {
       case r if r.getStatusCode == 200 =>
         Task.now(parse(r.getResponseBodyAsStream).children.map(Henkilo.fromJson).toSet)
       case r => Task.fail(new RuntimeException(s"Failed to get henkilöt for hetus ($hetus): ${r.toString()}"))

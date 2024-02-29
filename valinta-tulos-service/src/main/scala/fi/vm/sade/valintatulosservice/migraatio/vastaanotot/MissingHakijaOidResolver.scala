@@ -17,6 +17,7 @@ import org.json4s.JsonAST.JValue
 import org.json4s._
 
 import scala.compat.java8.FutureConverters.toScala
+import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Await
 import scalaz.concurrent.Task
@@ -46,6 +47,7 @@ object HakijaResolver {
 }
 
 class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with Logging with HakijaResolver {
+  private val retryCodes = Set(new Integer(401),new Integer(302)).asJava
   private val oppijanumerorekisteriClient = createCasClient(appConfig, appConfig.ophUrlProperties.url("url-oppijanumerorekisteri"))
 
   case class HakemusHenkilo(personOid: Option[String], hetu: Option[String], etunimet: String, sukunimi: String, kutsumanimet: String,
@@ -57,7 +59,7 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
       .setUrl(requestUri)
       .addHeader("Accept", "application/json")
       .build()
-    val result = toScala(oppijanumerorekisteriClient.execute(req)).map {
+    val result = toScala(oppijanumerorekisteriClient.executeAndRetryWithCleanSessionOnStatusCodes(req, retryCodes)).map {
       case r if 200 == r.getStatusCode =>
         parse(r.getResponseBodyAsStream).extract[Option[Henkilo]]
       case r if 404 == r.getStatusCode => {
