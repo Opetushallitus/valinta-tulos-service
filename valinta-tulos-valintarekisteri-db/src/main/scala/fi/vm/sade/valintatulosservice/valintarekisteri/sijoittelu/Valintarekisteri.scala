@@ -3,7 +3,6 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 import java.util
 import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatulos}
 import fi.vm.sade.utils.Timer
-import fi.vm.sade.utils.cas.CasClient
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.{StubbedExternalDeps, ValintarekisteriAppConfig}
 import fi.vm.sade.valintatulosservice.koodisto.{CachedKoodistoService, RemoteKoodistoService}
@@ -31,11 +30,6 @@ class ValintarekisteriForSijoittelu(valintarekisteriDb: SijoitteluRepository wit
     new HakukohdeRecordService(
       HakuService(
         appConfig,
-        new CasClient(
-          appConfig.ophUrlProperties.url("cas.service"),
-          SimpleHttp1Client(appConfig.blazeDefaultConfig),
-          appConfig.settings.callerId
-        ),
         ohjausparametritService,
         OrganisaatioService(appConfig),
         new CachedKoodistoService(new RemoteKoodistoService(appConfig))

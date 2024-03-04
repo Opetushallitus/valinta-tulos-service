@@ -58,6 +58,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     if (appConfig.isInstanceOf[IT] || appConfig.isInstanceOf[Dev]) {
       context.mount(new FixtureServlet(valintarekisteriDb), "/util")
       SijoitteluFixtures(valintarekisteriDb).importFixture("hyvaksytty-kesken-julkaistavissa.json")
+      SijoitteluFixtures(valintarekisteriDb).importFixture("yksi-lisajono.json")
     }
 
     lazy val organisaatioService = OrganisaatioService(appConfig)
@@ -77,7 +78,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     } else {
       new CachedOhjausparametritService(appConfig, ohjausparametritService)
     }
-    lazy val hakuService = HakuService(appConfig, appConfig.securityContext.casClient, ohjausparametritService, organisaatioService, koodistoService)
+    lazy val hakuService = HakuService(appConfig, ohjausparametritService, organisaatioService, koodistoService)
     lazy val oppijanTunnistusService = OppijanTunnistusService(appConfig)
     lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig, appConfig.isInstanceOf[IT])
     lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing)
