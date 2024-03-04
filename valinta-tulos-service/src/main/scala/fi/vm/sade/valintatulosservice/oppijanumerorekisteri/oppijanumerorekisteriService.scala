@@ -10,7 +10,6 @@ import org.json4s.native.JsonMethods.parse
 import org.json4s.native.Serialization.write
 import org.json4s.JsonAST.{JBool, JNull, JObject, JString, JValue}
 import org.json4s.{DefaultFormats, JArray}
-import scalaz.concurrent.Task
 
 import java.util.concurrent.TimeUnit
 import scala.compat.java8.FutureConverters.toScala
@@ -84,18 +83,26 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) extends JsonFormats 
       )))
 
   def henkilot(oids: Set[HakijaOid]): Either[Throwable, Map[HakijaOid, Henkilo]] = {
-    oids.grouped(5000).foldLeft(Task(Map.empty[HakijaOid, Henkilo])) {
-      (f, chunk) => f.flatMap(m => henkilotChunk(chunk).map(m ++ _))
-    }.attemptRunFor(Duration(5, TimeUnit.MINUTES)).toEither
+    try {
+      Right(oids.grouped(5000).foldLeft(Map.empty[HakijaOid, Henkilo]) {
+        (result, chunk) => result ++ henkilotChunk(chunk)
+      })
+    } catch {
+      case e: Throwable => Left(e)
+    }
   }
 
   def henkilotForHetus(hetus: Set[String]): Either[Throwable, Set[Henkilo]] = {
-    hetus.grouped(5000).foldLeft(Task(Set.empty[Henkilo])) {
-      (f, chunk) => f.flatMap(m => henkilotChunkHetus(chunk).map(m ++ _))
-    }.attemptRunFor(Duration(5, TimeUnit.MINUTES)).toEither
+    try {
+      Right(hetus.grouped(5000).foldLeft(Set.empty[Henkilo]) {
+        (result, chunk) => result ++ henkilotChunkHetus(chunk)
+      })
+    } catch {
+      case e: Throwable => Left(e)
+    }
   }
 
-  private def henkilotChunk(oids: Set[HakijaOid]): Task[Map[HakijaOid, Henkilo]] = {
+  private def henkilotChunk(oids: Set[HakijaOid]): Map[HakijaOid, Henkilo] = {
     val req = new RequestBuilder()
       .setMethod("POST")
       .setUrl(appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.henkilotByOids"))
@@ -105,19 +112,14 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) extends JsonFormats 
 
     val result = toScala(client.executeAndRetryWithCleanSessionOnStatusCodes(req, retryCodes)).map {
       case r if r.getStatusCode == 200 =>
-        Task.now(parse(r.getResponseBodyAsStream)
-          .children.map(Henkilo.fromJson).map(h => h.oid -> h).toMap)
-      case r => Task.fail(new RuntimeException(s"Failed to get henkilöt $oids: ${r.toString()}"))
+        parse(r.getResponseBodyAsStream).children.map(Henkilo.fromJson).map(h => h.oid -> h).toMap
+      case r =>
+        throw new RuntimeException(s"Failed to get henkilöt $oids: ${r.toString()}")
     }
-
-    try {
-      Await.result(result, Duration(1, TimeUnit.MINUTES))
-    } catch {
-      case e: Throwable => Task.fail(e)
-    }
+    Await.result(result, Duration(1, TimeUnit.MINUTES))
   }
 
-  private def henkilotChunkHetus(hetus: Set[String]): Task[Set[Henkilo]] = {
+  private def henkilotChunkHetus(hetus: Set[String]): Set[Henkilo] = {
     val req = new RequestBuilder()
       .setMethod("POST")
       .setUrl(appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.perustiedotByHetus"))
@@ -127,15 +129,11 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) extends JsonFormats 
 
     val result = toScala(client.executeAndRetryWithCleanSessionOnStatusCodes(req, retryCodes)).map {
       case r if r.getStatusCode == 200 =>
-        Task.now(parse(r.getResponseBodyAsStream).children.map(Henkilo.fromJson).toSet)
-      case r => Task.fail(new RuntimeException(s"Failed to get henkilöt for hetus ($hetus): ${r.toString()}"))
+        parse(r.getResponseBodyAsStream).children.map(Henkilo.fromJson).toSet
+      case r =>
+        throw new RuntimeException(s"Failed to get henkilöt for hetus ($hetus): ${r.toString()}")
     }
-
-    try {
-      Await.result(result, Duration(1, TimeUnit.MINUTES))
-    } catch {
-      case e: Throwable => Task.fail(e)
-    }
+    Await.result(result, Duration(1, TimeUnit.MINUTES))
   }
 
 }
