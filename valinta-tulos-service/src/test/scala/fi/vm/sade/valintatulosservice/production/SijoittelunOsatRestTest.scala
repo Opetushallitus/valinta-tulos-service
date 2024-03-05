@@ -1,6 +1,5 @@
 package fi.vm.sade.valintatulosservice.production
 
-import fi.vm.sade.security.VtsAuthenticatingClient
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import org.http4s.client.blaze.BlazeClientConfig
@@ -21,9 +20,7 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
   //val cas_user = System.getProperty("cas_user")
   //val cas_password = System.getProperty("cas_password")
   override val casUrlOld = casHost + "/cas"
-
-  val vtsClient = new VtsAuthenticatingClient(casHost, vtsHost + "/valinta-tulos-service", "auth/login", casUserNew, casPasswordNew, BlazeClientConfig.defaultConfig, "vts-test-caller-id")
-  val vtsSessionCookie = vtsClient.getVtsSession(casHost)
+  override val casUrlNew = vtsHost + "/cas"
 
   val hakuOid = "1.2.246.562.29.75203638285"
   val hakukohdeOid = "1.2.246.562.20.85377848495"
@@ -33,7 +30,7 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
     hakemusOids.foreach { hakemusOid =>
       logger.info(s"HAKEMUS ${hakemusOid}")
 
-      val uusiHakemus = time("Get uusi hakemus") { get[Hakija](() => getNewHakemus(hakuOid, hakemusOid, vtsSessionCookie))}
+      val uusiHakemus = time("Get uusi hakemus") { get[Hakija](() => getNewHakemus(hakuOid, hakemusOid))}
       val vanhaHakemus = time("Get vanha hakemus") { get[Hakija](() => getOld(s"$oldSijoitteluHost/sijoittelu-service/resources/sijoittelu/$hakuOid/sijoitteluajo/latest/hakemus/$hakemusOid")) }
 
       uusiHakemus.hakemusOid mustEqual vanhaHakemus.hakemusOid
@@ -126,7 +123,7 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
 
   "New sijoitteluajon perustiedot should equal to old sijoitteluajo" in {
     logger.info(s"SIJOITTELUAJO ${hakuOid}")
-    val uusiSijoittelu = time("Get uusi sijoitteluajo") { get[Sijoitteluajo](() => getNewSijoitteluajo(hakuOid, vtsSessionCookie)) }
+    val uusiSijoittelu = time("Get uusi sijoitteluajo") { get[Sijoitteluajo](() => getNewSijoitteluajo(hakuOid)) }
     val vanhaSijoittelu = time("Get vanha sijoitteluajo") { get[Sijoitteluajo](() => getOld(s"$oldSijoitteluHost/sijoittelu-service/resources/sijoittelu/$hakuOid/sijoitteluajo/latest")) }
 
     uusiSijoittelu.sijoitteluajoId mustEqual vanhaSijoittelu.sijoitteluajoId
@@ -146,7 +143,7 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
 
   "Hakukohde in new sijoittelu should equal to hakukohde in old sijoittelu" in {
     logger.info(s"HAKUKOHDE ${hakukohdeOid}")
-    val uusiHakukohde = time("Get uusi hakukohde") { get[Hakukohde](() => getNewHakukohde(hakuOid, hakukohdeOid, vtsSessionCookie))}
+    val uusiHakukohde = time("Get uusi hakukohde") { get[Hakukohde](() => getNewHakukohde(hakuOid, hakukohdeOid))}
     val vanhaHakukohde = time("Get vanha hakukohde") { get[Hakukohde](() => getOld(s"$oldSijoitteluHost/sijoittelu-service/resources/sijoittelu/$hakuOid/sijoitteluajo/latest/hakukohde/$hakukohdeOid")) }
 
     uusiHakukohde.sijoitteluajoId mustEqual vanhaHakukohde.sijoitteluajoId
@@ -266,23 +263,23 @@ class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logg
     result
   }
 
-  private def getNewSijoitteluajo(hakuOid:String, vtsSessionCookie: String) = {
+  private def getNewSijoitteluajo(hakuOid:String) = {
     val url = vtsHost + s"/valinta-tulos-service/auth/sijoittelu/$hakuOid/sijoitteluajo/latest/perustiedot"
-    val result = time("Uuden sijoitteluajon perustietojen haku") { getNew(url, vtsSessionCookie) }
+    val result = time("Uuden sijoitteluajon perustietojen haku") { getNew(url) }
     println(result)
     result
   }
 
-  private def getNewHakukohde(hakuOid:String, hakukohdeOid:String, vtsSessionCookie: String) = {
+  private def getNewHakukohde(hakuOid:String, hakukohdeOid:String) = {
     val url = vtsHost + s"/valinta-tulos-service/auth/sijoittelu/$hakuOid/sijoitteluajo/latest/hakukohde/$hakukohdeOid"
-    val result = time("Uuden hakukohteen haku") { getNew(url, vtsSessionCookie) }
+    val result = time("Uuden hakukohteen haku") { getNew(url) }
     println(result)
     result
   }
 
-  private def getNewHakemus(hakuOid: String, hakemusOid:String, vtsSessionCookie: String) = {
+  private def getNewHakemus(hakuOid: String, hakemusOid:String) = {
     val url = vtsHost + s"/valinta-tulos-service/auth/sijoittelu/$hakuOid/sijoitteluajo/latest/hakemus/$hakemusOid"
-    val result = time("Uuden hakemuksen haku") {getNew(url, vtsSessionCookie)}
+    val result = time("Uuden hakemuksen haku") {getNew(url)}
     println(result)
     result
   }
