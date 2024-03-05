@@ -28,18 +28,18 @@ import org.specs2.runner.JUnitRunner
 import org.specs2.specification.{BeforeAfterAll, ForEach}
 
 @RunWith(classOf[JUnitRunner])
-class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer with HttpComponentsClient with BeforeAfterAll with ForEach[(String, ValinnantulosService, SessionRepository)] with ITSetup with Mockito {
+class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer with HttpComponentsClient with BeforeAfterAll with ForEach[(String, ValinnantulosService, SessionRepository, ValintatulosService)] with ITSetup with Mockito {
 
   override def beforeAll(): Unit = start()
   override def afterAll(): Unit = stop()
 
-  def foreach[R: AsResult](f: ((String, ValinnantulosService, SessionRepository)) => R): org.specs2.execute.Result = {
+  def foreach[R: AsResult](f: ((String, ValinnantulosService, SessionRepository, ValintatulosService)) => R): org.specs2.execute.Result = {
     val valinnantulosService = mock[ValinnantulosService]
     val valintatulosService = mock[ValintatulosService]
     valintatulosService.haeVastaanotonAikarajaTiedot(any(), any(), any()) returns Set(VastaanottoAikarajaMennyt(hakemusOid, mennyt = true, None))
     val sessionRepository = mock[SessionRepository]
     val servlet = new ValinnantulosServlet(valinnantulosService, valintatulosService, HakuFixtures, sessionRepository, appConfig)(mock[Swagger])
-    ServletTest.withServlet(this, servlet, (uri: String) => AsResult(f((uri, valinnantulosService, sessionRepository))))
+    ServletTest.withServlet(this, servlet, (uri: String) => AsResult(f((uri, valinnantulosService, sessionRepository, valintatulosService))))
   }
 
   private implicit val formats = JsonFormats.jsonFormats
@@ -86,14 +86,14 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
   private val valinnantulosWithHistoria = ValinnantulosWithTilahistoria(valinnantulos, List(TilaHistoriaRecord(valintatapajonoOid, hakemusOid, valinnantulos.valinnantila, date)))
 
   "GET /auth/valinnan-tulos" in {
-    "palauttaa 401, jos sessiokeksi puuttuu" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa 401, jos sessiokeksi puuttuu" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
       get(t._1, Iterable("valintatapajonoOid" -> valintatapajonoOid.toString), defaultHeaders - "Cookie") {
         status must_== 401
         body must_== "{\"error\":\"Unauthenticated: No session found\"}"
       }
     }
 
-    "palauttaa 401, jos sessio ei ole voimassa" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa 401, jos sessio ei ole voimassa" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
       t._3.get(sessionId) returns None
       get(t._1, Iterable("valintatapajonoOid" -> valintatapajonoOid.toString), defaultHeaders) {
         status must_== 401
@@ -101,7 +101,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       }
     }
 
-    "palauttaa 403, jos käyttäjällä ei ole lukuoikeuksia" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa 403, jos käyttäjällä ei ole lukuoikeuksia" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
       t._3.get(sessionId) returns Some(unauthorizedSession)
       get(t._1, Iterable("valintatapajonoOid" -> valintatapajonoOid.toString), defaultHeaders) {
         status must_== 403
@@ -109,7 +109,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       }
     }
 
-    "palauttaa 200 ja tyhjän taulukon jos valinnan tuloksia ei löydy" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa 200 ja tyhjän taulukon jos valinnan tuloksia ei löydy" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
       t._3.get(sessionId) returns Some(readSession)
       t._2.getValinnantuloksetForValintatapajono(ValintatapajonoOid("1"), auditInfo(readSession)) returns None
       get(t._1, Iterable("valintatapajonoOid" -> "1"), defaultHeaders) {
@@ -118,7 +118,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       }
     }
 
-    "palauttaa 200 ja valintatapajonon valinnan tulokset valintatapajono-oidilla haettaessa" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa 200 ja valintatapajonon valinnan tulokset valintatapajono-oidilla haettaessa" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
       t._3.get(sessionId) returns Some(readSession)
       t._2.getValinnantuloksetForValintatapajono(valintatapajonoOid, auditInfo(readSession)) returns Some((Instant.now, Set(valinnantulos)))
       get(t._1, Iterable("valintatapajonoOid" -> valintatapajonoOid.toString), defaultHeaders) {
@@ -127,7 +127,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       }
     }
 
-    "palauttaa 200 ja hakukohteen valinnan tulokset hakukohdeoidilla haettaessa" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa 200 ja hakukohteen valinnan tulokset hakukohdeoidilla haettaessa" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
       t._3.get(sessionId) returns Some(readSession)
       t._2.getValinnantuloksetForHakukohde(hakukohdeOid, auditInfo(readSession)) returns Some((Instant.now, Set(valinnantulos)))
       get(t._1, Iterable("hakukohdeOid" -> hakukohdeOid.toString), defaultHeaders) {
@@ -136,7 +136,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       }
     }
 
-    "palauttaa 200 ja valintatapajonon valinnan tulokset hakukohde ja valintatapajono-oidilla haettaessa" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa 200 ja valintatapajonon valinnan tulokset hakukohde ja valintatapajono-oidilla haettaessa" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
       t._3.get(sessionId) returns Some(readSession)
       t._2.getValinnantuloksetForValintatapajono(valintatapajonoOid, auditInfo(readSession)) returns Some((Instant.now, Set(valinnantulos)))
       get(t._1, Iterable("hakukohdeOid" -> hakukohdeOid.toString, "valintatapajonoOid" -> valintatapajonoOid.toString), defaultHeaders) {
@@ -145,7 +145,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       }
     }
 
-    "palauttaa " + appConfig.settings.headerLastModified + " otsakkeen jossa viimeisintä muutoshetkeä seuraava tasasekuntti" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa " + appConfig.settings.headerLastModified + " otsakkeen jossa viimeisintä muutoshetkeä seuraava tasasekuntti" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
       val lastModified = DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant(now.plusSeconds(1), ZoneId.of("GMT")))
       t._3.get(sessionId) returns Some(readSession)
       t._2.getValinnantuloksetForValintatapajono(valintatapajonoOid, auditInfo(readSession)) returns Some((now, Set(valinnantulos)))
@@ -157,7 +157,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
   }
 
   "PATCH /auth/valinnan-tulos" in {
-    "palauttaa 401, jos sessiokeksi puuttuu" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa 401, jos sessiokeksi puuttuu" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
       patch(
         s"${t._1}/${valintatapajonoOid.toString}",
         write(List(valinnantulos.copy(julkaistavissa = Some(true)))).getBytes("UTF-8"),
@@ -168,7 +168,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       }
     }
 
-    "palauttaa 401, jos sessio ei ole voimassa" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa 401, jos sessio ei ole voimassa" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
       t._3.get(sessionId) returns None
       patch(
         s"${t._1}/${valintatapajonoOid.toString}",
@@ -180,7 +180,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       }
     }
 
-    "palauttaa 403, jos käyttäjällä ei ole kirjoitusoikeuksia" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa 403, jos käyttäjällä ei ole kirjoitusoikeuksia" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
       t._3.get(sessionId) returns Some(readSession)
       patch(
         s"${t._1}/${valintatapajonoOid.toString}",
@@ -192,7 +192,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       }
     }
 
-    "palauttaa 400 jos " + appConfig.settings.headerIfUnmodifiedSince + " otsake puuttuu" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa 400 jos " + appConfig.settings.headerIfUnmodifiedSince + " otsake puuttuu" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
       t._3.get(sessionId) returns Some(crudSession)
       patch(
         s"${t._1}/${valintatapajonoOid.toString}",
@@ -204,7 +204,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       }
     }
 
-    "palauttaa 409 jos tietoihin on tehty samanaikaisia muutoksia" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa 409 jos tietoihin on tehty samanaikaisia muutoksia" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
       t._3.get(sessionId) returns Some(crudSession)
       t._2.storeValinnantuloksetAndIlmoittautumiset(
         any[ValintatapajonoOid], any[List[Valinnantulos]], any[Option[Instant]], any[AuditInfo]
@@ -219,7 +219,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       }
     }
 
-    "palauttaa 200 ja tyhjän taulukon jos päivitys onnistui" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa 200 ja tyhjän taulukon jos päivitys onnistui" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
       t._3.get(sessionId) returns Some(crudSession)
       t._2.storeValinnantuloksetAndIlmoittautumiset(
         valintatapajonoOid,
@@ -237,7 +237,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       }
     }
 
-    "palauttaa 200 ja virhetiedon taulukossa jos päivitys epäonnistui" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa 200 ja virhetiedon taulukossa jos päivitys epäonnistui" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
       val virhe = ValinnantulosUpdateStatus(400, "error", valintatapajonoOid, hakemusOid)
       t._3.get(sessionId) returns Some(crudSession)
       t._2.storeValinnantuloksetAndIlmoittautumiset(
@@ -256,7 +256,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       }
     }
 
-    "tulkitsee erillishaku parametrin" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "tulkitsee erillishaku parametrin" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
       t._3.get(sessionId) returns Some(crudSession)
       t._2.storeValinnantuloksetAndIlmoittautumiset(
         valintatapajonoOid,
@@ -277,14 +277,14 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
 
 
   "GET /auth/valinnan-tulos/hakemus/" in {
-    "palauttaa 401, jos sessiokeksi puuttuu" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa 401, jos sessiokeksi puuttuu" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
       get(t._1, Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders - "Cookie") {
         status must_== 401
         body must_== "{\"error\":\"Unauthenticated: No session found\"}"
       }
     }
 
-    "palauttaa 401, jos sessio ei ole voimassa" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa 401, jos sessio ei ole voimassa" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
       t._3.get(sessionId) returns None
       get(t._1, Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders) {
         status must_== 401
@@ -292,7 +292,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       }
     }
 
-    "palauttaa 403, jos käyttäjällä ei ole lukuoikeuksia" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa 403, jos käyttäjällä ei ole lukuoikeuksia" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
       t._3.get(sessionId) returns Some(unauthorizedSession)
       get(t._1, Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders) {
         status must_== 403
@@ -300,7 +300,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       }
     }
 
-    "palauttaa 200 ja tyhjän taulukon jos hakemuksen tuloksia ei löydy" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa 200 ja tyhjän taulukon jos hakemuksen tuloksia ei löydy" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
       t._3.get(sessionId) returns Some(readSession)
       t._2.getValinnantuloksetForHakemus(HakemusOid("1"), auditInfo(readSession)) returns None
       get(t._1+"/hakemus/", Iterable("hakemusOid" -> "1"), defaultHeaders) {
@@ -309,12 +309,22 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       }
     }
 
-    "palauttaa 200 ja hakemuksen tulokset hakemus-oidilla haettaessa" in { t: (String, ValinnantulosService, SessionRepository) =>
+    "palauttaa 200 ja hakemuksen tulokset hakemus-oidilla haettaessa" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
       t._3.get(sessionId) returns Some(readSession)
       t._2.getValinnantuloksetForHakemus(hakemusOid, auditInfo(readSession)) returns Some((Instant.now(), Set(valinnantulosWithHistoria)))
       get(t._1+"/hakemus/", Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders) {
         status must_== 200
         parse(body).extract[List[ValinnantulosWithTilahistoria]].toString().trim().replace("\r","") must_== List(valinnantulosWithHistoria.copy(valinnantulos = valinnantulos.copy(vastaanottoDeadlineMennyt = Some(true)))).toString().trim().replace("\r","")
+      }
+    }
+
+    "palauttaa 200 ja hakemuksen tulokset hakemus-oidilla haettaessa, deadline ei vielä mennyt" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
+      t._3.get(sessionId) returns Some(readSession)
+      t._2.getValinnantuloksetForHakemus(hakemusOid, auditInfo(readSession)) returns Some((Instant.now(), Set(valinnantulosWithHistoria)))
+      t._4.haeVastaanotonAikarajaTiedot(any(), any(), any()) returns Set(VastaanottoAikarajaMennyt(hakemusOid, mennyt = false, None))
+      get(t._1+"/hakemus/", Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders) {
+        status must_== 200
+        parse(body).extract[List[ValinnantulosWithTilahistoria]].toString().trim().replace("\r","") must_== List(valinnantulosWithHistoria.copy(valinnantulos = valinnantulos.copy(vastaanottoDeadlineMennyt = Some(false)))).toString().trim().replace("\r","")
       }
     }
   }
