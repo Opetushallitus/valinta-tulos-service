@@ -2,7 +2,6 @@ package fi.vm.sade.valintatulosservice.config
 
 import fi.vm.sade.security.mock.MockSecurityContext
 import fi.vm.sade.security.{ProductionSecurityContext, SecurityContext}
-import fi.vm.sade.utils.cas.CasClient
 import fi.vm.sade.utils.config.{ApplicationSettingsLoader, ConfigTemplateProcessor}
 import fi.vm.sade.utils.mongo.EmbeddedMongo
 import fi.vm.sade.utils.slf4j.Logging
@@ -251,13 +250,7 @@ object VtsAppConfig extends Logging {
 
   trait CasSecurity extends VtsAppConfig {
     lazy val securityContext: SecurityContext = {
-      val casClient = new CasClient(
-        settings.securitySettings.casUrl,
-        SimpleHttp1Client(blazeDefaultConfig),
-        settings.callerId
-      )
       new ProductionSecurityContext(
-        casClient,
         settings.securitySettings.casServiceIdentifier,
         settings.securitySettings.requiredRoles.map(Role(_)).toSet,
         settings.securitySettings.casValidateServiceTicketTimeout

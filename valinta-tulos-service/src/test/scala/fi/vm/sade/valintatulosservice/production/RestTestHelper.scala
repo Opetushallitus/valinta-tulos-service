@@ -1,61 +1,74 @@
 package fi.vm.sade.valintatulosservice.production
 
-import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasClient, CasParams}
-import fi.vm.sade.utils.http.DefaultHttpRequest
-import org.http4s.client.Client
-import org.http4s.{Method, Request, Uri}
+import fi.vm.sade.javautils.nio.cas.{CasClient, CasClientBuilder}
+import fi.vm.sade.security.ScalaCasConfig
+import org.asynchttpclient.{RequestBuilder, Response}
 import org.json4s.DefaultFormats
 import org.json4s.native.JsonMethods.parse
 
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.Duration
 import scalaj.http.{Http, HttpOptions}
-import scalaz.concurrent.Task
+import scala.compat.java8.FutureConverters.toScala
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Await
 
 trait RestTestHelper {
   val casUserNew = System.getProperty("cas_user_new")
   val casPasswordNew = System.getProperty("cas_password_new")
   val casUserOld = System.getProperty("cas_user_old")
   val casPasswordOld = System.getProperty("cas_password_old")
-  def casUrlOld:String
+  def casUrlOld: String
+  def casUrlNew: String
 
-  lazy val vanhaSijoitteluCasClient = createCasClientForOldData("/sijoittelu-service")
+  lazy val vanhaSijoitteluCasClient = CasClientBuilder.build(ScalaCasConfig(
+    casUserOld,
+    casPasswordOld,
+    casUrlOld,
+    "/sijoittelu-service",
+    "RestTestHelper",
+    "RestTestHelper",
+    "/j_spring_cas_security_check",
+    "JSESSIONID"
+  ))
+
+  lazy val uusiCasClient = CasClientBuilder.build(ScalaCasConfig(
+    casUserNew,
+    casPasswordNew,
+    casUrlNew,
+    "/valinta-tulos-service",
+    "RestTestHelper",
+    "RestTestHelper",
+    "/auth/login",
+    "session"
+  ))
 
   implicit val formats = DefaultFormats
 
   protected def getOld(uriString: String): String = {
-    vanhaSijoitteluCasClient.fetch(Request(method = Method.GET, uri = createUri(uriString))) {
-      case r if 200 == r.status.code => r.as[String]
-      case r => Task.fail(new RuntimeException(s"$uriString => ${r.toString}"))
-    }.run
-  }
-
-  protected def createUri(uriString:String): Uri = Uri.fromString(uriString).getOrElse(throw new RuntimeException(s"Invalid uri"))
-
-  protected def createCasClientForOldData(target:String): Client = {
-    val casParams = CasParams(target, casUserOld, casPasswordOld)
-    CasAuthenticatingClient(
-      casClient = new CasClient(casUrlOld, org.http4s.client.blaze.defaultClient, "vts-test-caller-id"),
-      casParams = casParams,
-      serviceClient = org.http4s.client.blaze.defaultClient,
-      clientCallerId = "RestTestHelper",
-      sessionCookieName = "JSESSIONID"
-    )
+    val request = new RequestBuilder().setMethod("GET").setUrl(uriString).build()
+    val result = toScala(vanhaSijoitteluCasClient.execute(request)).map {
+      case r if r.getStatusCode == 200 => parse(r.getResponseBodyAsStream).extract[String]
+      case r => throw new RuntimeException(s"$uriString => ${r.toString}")
+    }
+    Await.result(result, Duration(1, TimeUnit.MINUTES))
   }
 
   protected def get[T](fetch:() => String)(implicit m: Manifest[T]): T = parse(fetch()).extract[T]
 
-  protected def getNew(url: String, vtsSessionCookie: String): String = {
-    val (statusCode, responseHeaders, result) =
-      new DefaultHttpRequest(Http(url)
-        .method("GET")
-        .options(Seq(HttpOptions.connTimeout(10000), HttpOptions.readTimeout(120000)))
-        .header("Content-Type", "application/json")
-        .header("Cookie", s"session=$vtsSessionCookie")
-      ).responseWithHeaders()
-    if (statusCode != 200) {
-      throw new RuntimeException(s"Got status $statusCode from $url with headers $responseHeaders and body $result")
+  protected def getNew(url: String): String = {
+    val request = new RequestBuilder()
+      .setMethod("GET")
+      .addHeader("Content-Type", "application/json")
+      .build()
+    val result = toScala(uusiCasClient.execute(request)).map {
+      case r if r.getStatusCode == 200 => r.getResponseBody
+      case r =>
+        throw new RuntimeException(s"Got status ${r.getStatusCode} from $url with body ${r.getResponseBody}")
     }
-    result
+    Await.result(result, Duration(1, TimeUnit.MINUTES))
   }
+
 }
 
 case class Sijoitteluajo(sijoitteluajoId:Long, hakuOid:String, startMils:Long, endMils:Long, hakukohteet:List[Hakukohde])

@@ -1,7 +1,6 @@
 package fi.vm.sade.valintatulosservice.testenvironment
 
 import java.io.File
-import fi.vm.sade.utils.cas.CasClient
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain.Hakemuksentulos
 import fi.vm.sade.valintatulosservice.koodisto.{KoodistoService, RemoteKoodistoService}
