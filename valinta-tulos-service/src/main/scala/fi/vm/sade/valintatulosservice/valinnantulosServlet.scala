@@ -8,6 +8,7 @@ import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, IlmoittautumisTila, Vali
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetailsService
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
+import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HyvaksymiskirjePatch, SessionRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra._
@@ -51,6 +52,7 @@ trait ValinnantulosServletBase extends VtsServletBase {
 
 class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
                            val valintatulosService: ValintatulosService,
+                           val hakuService: HakuService,
                            val sessionRepository: SessionRepository,
                            appConfig: VtsAppConfig)
                           (implicit val swagger: Swagger)
@@ -91,6 +93,16 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
       })
   }
 
+  private val mapDecorateValinnantulosDeadlines = (tulos: ValinnantulosWithTilahistoria) => {
+    hakuService.getHakukohde(tulos.valinnantulos.hakukohdeOid) match {
+      case Right(hakukohde) =>
+        tulos.copy(valinnantulos = decorateValinnantuloksetWithDeadlines(hakukohde.hakuOid, hakukohde.oid, Set(tulos.valinnantulos)).head)
+      case Left(t) =>
+        logger.warn(s"Could not find hakukohde with ${tulos.valinnantulos.hakukohdeOid}", t)
+        tulos
+    }
+  }
+
   val valinnantuloksetHakemukselleSwagger: OperationBuilder = (apiOperation[List[ValinnantulosWithTilahistoria]]("valinnantuloksetHakemukselle")
     summary "Valinnantulos yksittäiselle hakemukselle"
     parameter queryParam[String]("hakemusOid").description("Hakemuksen OID")
@@ -107,7 +119,8 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     val hakemusOid = parseHakemusOid.fold(throw _, x => x)
     valinnantulosService.getValinnantuloksetForHakemus(hakemusOid, auditInfo) match {
       case Some((lastModified, valinnantulokset)) =>
-        Ok(body = valinnantulokset, headers = Map(appConfig.settings.headerLastModified -> createLastModifiedHeader(lastModified)))
+        val decoratedValinnantulokset = valinnantulokset.map(mapDecorateValinnantulosDeadlines)
+        Ok(body = decoratedValinnantulokset, headers = Map(appConfig.settings.headerLastModified -> createLastModifiedHeader(lastModified)))
       case None =>
         Ok(body = List.empty)
     }
@@ -130,7 +143,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     if (hakemusOids.isEmpty || hakemusOids.size > 5000) {
       BadRequest("Minimum of 1 and maximum of 5000 hakemusOids at a time.")
     } else {
-      valinnantulosService.getValinnantuloksetForHakemukset(hakemusOids, auditInfo)
+      valinnantulosService.getValinnantuloksetForHakemukset(hakemusOids, auditInfo).map(mapDecorateValinnantulosDeadlines)
     }
   }
 
