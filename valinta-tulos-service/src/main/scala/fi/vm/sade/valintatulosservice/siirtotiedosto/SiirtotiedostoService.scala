@@ -1,54 +1,74 @@
 package fi.vm.sade.valintatulosservice.siirtotiedosto
 
 import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{SiirtotiedostoIlmoittautuminen, SiirtotiedostoPagingParams, SiirtotiedostoVastaanotto}
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SiirtotiedostoRepository, SijoitteluRepository, ValinnantulosRepository}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, Valinnantulos, ValintatapajonoRecord}
+import fi.vm.sade.valintatulosservice.config.SiirtotiedostoConfig
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{SiirtotiedostoIlmoittautuminen, SiirtotiedostoPagingParams, SiirtotiedostoValinnantulos, SiirtotiedostoVastaanotto}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.SiirtotiedostoRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.ValintatapajonoRecord
 
 import scala.annotation.tailrec
-class SiirtotiedostoService(siirtotiedostoRepository: SiirtotiedostoRepository, valinnantulosRepository: ValinnantulosRepository) extends Logging {
 
-  //Todo, actually save.
-  def saveSiirtotiedosto(params: SiirtotiedostoPagingParams) = {
-    logger.info(s"Saving siirtotiedosto... $params")
-  }
-
-  private def ilmoittautumisetSize = 50000
-
-  private def vastaanototSize = 50000
-
-  private def valintatapajonotSize = 50000
-
+class SiirtotiedostoService(siirtotiedostoRepository: SiirtotiedostoRepository, siirtotiedostoClient: SiirtotiedostoPalveluClient, config: SiirtotiedostoConfig) extends Logging {
 
   @tailrec
-  private def saveInSiirtotiedostoPaged[T](params: SiirtotiedostoPagingParams, pageFun: SiirtotiedostoPagingParams => List[T]): Option[Exception] = {
-    val pageResults = pageFun(params)
+  private def saveInSiirtotiedostoPaged[T](params: SiirtotiedostoPagingParams, pageFunction: SiirtotiedostoPagingParams => List[T]): Option[Exception] = {
+    val pageResults = pageFunction(params)
     if (pageResults.isEmpty) {
       None
     } else {
-      saveSiirtotiedosto(params)
-      saveInSiirtotiedostoPaged(params.copy(offset = params.offset + pageResults.size), pageFun)
+      siirtotiedostoClient.saveSiirtotiedosto[T](params.start, params.end, params.tyyppi, pageResults)
+      saveInSiirtotiedostoPaged(params.copy(offset = params.offset + pageResults.size), pageFunction)
     }
   }
 
-  def muodostaJaTallennaSiirtotiedostot(start: String, end: String): Map[HakukohdeOid, Set[Valinnantulos]] = {
-    val hakukohteet = siirtotiedostoRepository.getChangedHakukohdeoidsForValinnantulokses(start, end)
+  private def formSiirtotiedosto[T](params: SiirtotiedostoPagingParams, pageFunction: SiirtotiedostoPagingParams => List[T]): Option[Exception] = {
+    try {
+      saveInSiirtotiedostoPaged(params, pageFunction)
+      None
+    } catch {
+      case e: Exception =>
+        logger.error(s"Virhe muodostettaessa siirtotiedostoa parametreilla $params:", e)
+        Some(e)
+    }
+  }
+
+  def muodostaJaTallennaSiirtotiedostot(start: String, end: String): Boolean = {
+    val hakukohteet = siirtotiedostoRepository.getChangedHakukohdeoidsForValinnantulokset(start, end)
     logger.info(s"Saatiin ${hakukohteet.size} muuttunutta hakukohdetta välille $start - $end")
 
-    val tulokset = hakukohteet.take(10).map(hakukohde => hakukohde ->
-      valinnantulosRepository.runBlocking(valinnantulosRepository.getValinnantuloksetForHakukohde(hakukohde))).toMap
-    //val jonotResult = saveValintatapajonotPaged(start, end, 0, 10000)
-    logger.info(s"Saatiin tuloksia hakukohteille, eka: ${tulokset.take(1)}")
+    val hakukohdeResults: Iterator[Option[Exception]] = hakukohteet.grouped(config.hakukohdeGroupSize).map(hakukohdeOids => {
+      try {
+        logger.info(s"Haetaan ja tallennetaan tulokset ${hakukohdeOids.size} hakukohteelle")
+        val tulokset = siirtotiedostoRepository.getSiirtotiedostoValinnantuloksetForHakukohteet(hakukohdeOids)
+        logger.info(s"Saatiin ${tulokset.size} tulosta ${hakukohdeOids.size} hakukohdeOidille")
+        siirtotiedostoClient.saveSiirtotiedosto[SiirtotiedostoValinnantulos](start, end, "hmm?", tulokset)
+        None
+      } catch {
+        case e: Exception => logger.error("Jotain meni vikaan hakukohteiden tulosten haussa siirtotiedostoa varten:", e)
+          Some(e)
+      }})
 
-    val vastaanototResult = saveInSiirtotiedostoPaged[SiirtotiedostoVastaanotto](SiirtotiedostoPagingParams("vastaanotto", start, end, 0, vastaanototSize),
+    //val hakukohdeErrors = hakukohdeResults.filter(_.isDefined).map(_.get).foreach(e => logger.info("error: ", e))
+    val hakukohdeResult = hakukohdeResults.find(_.isDefined)
+
+    val vastaanototResult = formSiirtotiedosto[SiirtotiedostoVastaanotto](
+      SiirtotiedostoPagingParams("vastaanotto", start, end, 0, config.vastaanototSize),
       params => siirtotiedostoRepository.getVastaanototPage(params))
-    val ilmoittautumisetResult = saveInSiirtotiedostoPaged[SiirtotiedostoIlmoittautuminen](SiirtotiedostoPagingParams("ilmoittautuminen", start, end, 0, ilmoittautumisetSize),
+    val ilmoittautumisetResult = formSiirtotiedosto[SiirtotiedostoIlmoittautuminen](
+      SiirtotiedostoPagingParams("ilmoittautuminen", start, end, 0, config.ilmoittautumisetSize),
       params => siirtotiedostoRepository.getIlmoittautumisetPage(params))
-    val valintatapajonotResult = saveInSiirtotiedostoPaged[ValintatapajonoRecord](SiirtotiedostoPagingParams("valintatapajono", start, end, 0, valintatapajonotSize),
+    val valintatapajonotResult = formSiirtotiedosto[ValintatapajonoRecord](
+      SiirtotiedostoPagingParams("valintatapajono", start, end, 0, config.valintatapajonotSize),
       params => siirtotiedostoRepository.getValintatapajonotPage(params))
+    val combinedResult = vastaanototResult.isEmpty && ilmoittautumisetResult.isEmpty&& valintatapajonotResult.isEmpty && hakukohdeResult.isEmpty
+    val combinedError =
+      hakukohdeResult
+        .orElse(vastaanototResult)
+        .orElse(ilmoittautumisetResult)
+        .orElse(valintatapajonotResult)
+        .orElse(vastaanototResult)
 
-    //Todo, ei tarvitse palauttaa muuta kuin mahdollinen virhe, muuten riittää että tarvittavat tiedot on tallennettu s3:seen.
-    tulokset
+    logger.info(s"Siirtotiedosto success: $combinedResult for $start - $end. $combinedError")
+    combinedResult
   }
 }
