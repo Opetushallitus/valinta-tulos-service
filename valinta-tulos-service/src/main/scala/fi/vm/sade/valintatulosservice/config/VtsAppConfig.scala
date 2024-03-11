@@ -43,6 +43,7 @@ object VtsAppConfig extends Logging {
       case "templated" => new LocalTestingWithTemplatedVars
       case "dev" => new Dev
       case "dev-embdb" => new Dev_EmbeddedDB
+      case "dev-stubbed" => new Dev_StubbedDeps
       case "it" => new IT
       case "it-externalHakemus" => new IT_externalHakemus
       case name => throw new IllegalArgumentException("Unknown value for valintatulos.profile: " + name);
@@ -67,7 +68,7 @@ object VtsAppConfig extends Logging {
   /**
    * Dev profile, uses local (prerun) mongo db
    */
-  class Dev extends VtsAppConfig with TemplatedProps with CasSecurity with StubbedExternalDeps {
+  class Dev extends VtsAppConfig with TemplatedProps with CasSecurity {
     def templateAttributesURL = getClass.getResource("/oph-configuration/dev-vars.yml")
     override val ophUrlProperties: OphUrlProperties = {
       val ps = new DevOphUrlProperties(propertiesFile)
@@ -79,6 +80,8 @@ object VtsAppConfig extends Logging {
     override lazy val settings = loadSettings
       .withOverride(("hakemus.mongodb.uri", "mongodb://localhost:27017"))
   }
+
+  class Dev_StubbedDeps extends Dev with StubbedExternalDeps
 
   /**
    * Dev profile with embedded mongo and Postgres

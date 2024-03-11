@@ -4,7 +4,6 @@ import java.util.concurrent.atomic.AtomicReference
 import javax.servlet.http.HttpServletResponse
 
 import fi.vm.sade.auditlog.Audit
-import fi.vm.sade.utils.cas.CasClient.SessionCookie
 import fi.vm.sade.utils.http.DefaultHttpRequest
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
@@ -22,7 +21,7 @@ class KelaHealthCheckServlet(val audit: Audit, val sessionRepository: SessionRep
   get("/") {
     val hetu: String = appConfig.settings.securitySettings.kelaVastaanototTestihetu
 
-    var vtsSessionCookie: SessionCookie = authenticate()
+    var vtsSessionCookie: String = authenticate()
     var kelaHealthCheckResponse: KelaHealthCheckResponse = doRequest(hetu, vtsSessionCookie)
 
     if (kelaHealthCheckResponse.statusCode == HttpServletResponse.SC_UNAUTHORIZED) {
@@ -51,7 +50,7 @@ class KelaHealthCheckServlet(val audit: Audit, val sessionRepository: SessionRep
     }
   }
 
-  private def doRequest(hetu: String, vtsSessionCookie: SessionCookie): KelaHealthCheckResponse = {
+  private def doRequest(hetu: String, vtsSessionCookie: String): KelaHealthCheckResponse = {
     val (statusCode, responseHeaders, result) =
       new DefaultHttpRequest(Http(appConfig.settings.securitySettings.casServiceIdentifier + "/cas/kela/vastaanotot/henkilo")
         .method("POST")
@@ -63,7 +62,7 @@ class KelaHealthCheckServlet(val audit: Audit, val sessionRepository: SessionRep
     KelaHealthCheckResponse(statusCode, responseHeaders, result)
   }
 
-  private def authenticate(): SessionCookie = {
+  private def authenticate(): String = {
     KelaHealthCheckSessionCookieHolder.synchronized {
       if (KelaHealthCheckSessionCookieHolder.hasSessionCookie) {
         logger.info("Returned existing session cookie")

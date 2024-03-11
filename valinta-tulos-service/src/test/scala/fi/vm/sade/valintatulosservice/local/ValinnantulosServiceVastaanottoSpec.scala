@@ -412,7 +412,7 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
 
   val audit = mock[Audit]
 
-  lazy val hakuService = HakuService(appConfig, null, ohjausparametritService, OrganisaatioService(appConfig), null)
+  lazy val hakuService = HakuService(appConfig, ohjausparametritService, OrganisaatioService(appConfig), null)
   lazy val koodistoService = new StubbedKoodistoService()
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, true)

@@ -10,7 +10,9 @@ import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtures
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid}
+import org.json4s.JsonAST.JObject
 import org.json4s.Formats
+import org.json4s.native.Serialization.write
 import org.scalatra.ScalatraServlet
 import org.scalatra.json.JacksonJsonSupport
 
@@ -59,7 +61,7 @@ class FixtureServlet(valintarekisteriDb: ValintarekisteriDb)(implicit val appCon
 
   post("/oppijanumerorekisteri/henkilot") {
     contentType = formats("json")
-    org.json4s.DefaultWriters.mapWriter[Henkilo](Henkilo.henkiloWriter).write(HenkilotFixture.fixture.map(h => h.oid.toString -> h).toMap)
+    write(JObject(HenkilotFixture.fixture.map(h => h.oid.toString -> Henkilo.toJson(h))))
   }
 
   get("/kayttooikeus/userdetails/:username") {

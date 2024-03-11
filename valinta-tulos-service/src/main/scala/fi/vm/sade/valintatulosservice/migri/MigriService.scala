@@ -46,7 +46,10 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
       val errorString: String = s"Error fetching hakijas for oid(s): $hakijaOids found. Cause: $e"
       logger.warn(errorString, e)
       throw new RuntimeException(errorString)
-    }, henkilot => parseForeignHakijat(henkilot))
+    }, henkilot => {
+      logger.info(s"Before filtering for foreign people: ${henkilot.size} results for ${hakijaOids.size} oids.")
+      parseForeignHakijat(henkilot)
+    })
   }
 
   def getMigriHenkilotForHetus(hetus: Set[String]): Set[MigriHakija] = {
@@ -54,7 +57,10 @@ class MigriService(hakemusRepository: HakemusRepository, hakuService: HakuServic
       val errorString: String = s"Error fetching hakijas for hetu(s): $hetus found. Cause: $e"
       logger.warn(errorString, e)
       throw new RuntimeException(errorString)
-    }, henkilot => parseForeignHakijat(henkilot))
+    }, henkilot => {
+      logger.info(s"Before filtering for foreign people: ${henkilot.size} results for ${hetus.size} hetua.")
+      parseForeignHakijat(henkilot)
+    })
   }
 
   private def tuloksetToMigriHakemukset(tulokset: Set[ValinnantulosWithTilahistoria], auditInfo: AuditInfo): Set[MigriHakemus] = {

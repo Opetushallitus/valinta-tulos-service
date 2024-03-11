@@ -2,7 +2,7 @@ package fi.vm.sade.security
 
 import java.util.UUID
 
-import fi.vm.sade.utils.cas.CasLogout
+import fi.vm.sade.javautils.nio.cas.CasLogout
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.security.{ServiceTicket, Session}
 import org.json4s.DefaultFormats
@@ -10,6 +10,7 @@ import org.scalatra._
 import org.scalatra.json.JacksonJsonSupport
 
 import scala.util.control.NonFatal
+import scala.compat.java8.OptionConverters._
 
 class CasLogin(casUrl: String, cas: CasSessionService) extends ScalatraServlet with JacksonJsonSupport with Logging {
 
@@ -49,7 +50,10 @@ class CasLogin(casUrl: String, cas: CasSessionService) extends ScalatraServlet w
 
   post("/") {
     params.get("logoutRequest").toRight(new IllegalArgumentException("Not 'logoutRequest' parameter given"))
-      .right.flatMap(request => CasLogout.parseTicketFromLogoutRequest(request).toRight(new RuntimeException(s"Failed to parse CAS logout request $request")))
+      .right.flatMap(request => {
+        val ticket: Option[String] = new CasLogout().parseTicketFromLogoutRequest(request).asScala
+        ticket.toRight(new IllegalArgumentException(s"Failed to parse CAS logout request $request"))
+      })
       .right.flatMap(ticket => cas.deleteSession(ServiceTicket(ticket))) match {
       case Right(_) => NoContent()
       case Left(t) => throw t

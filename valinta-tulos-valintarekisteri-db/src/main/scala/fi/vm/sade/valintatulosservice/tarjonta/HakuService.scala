@@ -1,7 +1,8 @@
 package fi.vm.sade.valintatulosservice.tarjonta
 
 import fi.vm.sade.utils.Timer
-import fi.vm.sade.utils.cas.{CasAuthenticatingClient, CasClient, CasParams}
+import fi.vm.sade.javautils.nio.cas.{CasClient, CasClientBuilder}
+import fi.vm.sade.security.ScalaCasConfig
 import fi.vm.sade.utils.http.DefaultHttpClient
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.MonadHelper
@@ -11,20 +12,19 @@ import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.organisaatio.{Organisaatio, OrganisaatioService, Organisaatiot}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import org.http4s.Method.GET
-import org.http4s.client.blaze.SimpleHttp1Client
-import org.http4s.json4s.native.jsonExtract
-import org.http4s.{Request, Uri}
+import org.asynchttpclient.{RequestBuilder, Response}
 import org.json4s.JsonAST.{JInt, JObject, JString}
 import org.json4s.jackson.JsonMethods._
 import org.json4s.{CustomSerializer, DefaultFormats, Formats, MappingException}
 import scalaj.http.HttpOptions
-import scalaz.concurrent.Task
 
 import java.util
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.HOURS
 import scala.collection.JavaConverters._
+import scala.compat.java8.FutureConverters.toScala
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
@@ -109,12 +109,12 @@ trait HakuService {
 }
 
 object HakuService {
-  def apply(appConfig: AppConfig, casClient: CasClient, ohjausparametritService: OhjausparametritService, organisaatioService: OrganisaatioService, koodistoService: KoodistoService): HakuService = {
+  def apply(appConfig: AppConfig, ohjausparametritService: OhjausparametritService, organisaatioService: OrganisaatioService, koodistoService: KoodistoService): HakuService = {
     if (appConfig.isInstanceOf[StubbedExternalDeps]) {
       HakuFixtures.config = appConfig
       HakuFixtures
     } else {
-      new CachedHakuService(new TarjontaHakuService(appConfig), new KoutaHakuService(appConfig, casClient, ohjausparametritService, organisaatioService, koodistoService), appConfig)
+      new CachedHakuService(new TarjontaHakuService(appConfig), new KoutaHakuService(appConfig, ohjausparametritService, organisaatioService, koodistoService), appConfig)
     }
   }
 }
@@ -517,7 +517,6 @@ case class KoutaHakukohde(oid: String,
 }
 
 class KoutaHakuService(config: AppConfig,
-                       casClient: CasClient,
                        ohjausparametritService: OhjausparametritService,
                        organisaatioService: OrganisaatioService,
                        koodistoService: KoodistoService) extends HakuService with Logging {
@@ -548,19 +547,16 @@ class KoutaHakuService(config: AppConfig,
     lifetimeSeconds = Duration(1, HOURS).toSeconds,
     maxSize = config.settings.koutaHakuServiceSingleEntityCacheSize)
 
-
-  private val client = CasAuthenticatingClient(
-    casClient = casClient,
-    casParams = CasParams(
-      config.ophUrlProperties.url("kouta-internal.service"),
-      "auth/login",
-      config.settings.koutaUsername,
-      config.settings.koutaPassword
-    ),
-    serviceClient = SimpleHttp1Client(config.blazeDefaultConfig),
-    clientCallerId = config.settings.callerId,
-    sessionCookieName = "session"
-  )
+  private val client = CasClientBuilder.build(ScalaCasConfig(
+    config.settings.koutaUsername,
+    config.settings.koutaPassword,
+    config.ophUrlProperties.url("cas.service"),
+    config.ophUrlProperties.url("kouta-internal.service"),
+    config.settings.callerId,
+    config.settings.callerId,
+    "/auth/login",
+    "session"
+  ))
 
   def getKoutaHakuCached(oid: HakuOid): Either[Throwable, KoutaHaku] = hakuSingleCache(oid)
   def getKoutaHakukohdeCached(oid: HakukohdeOid): Either[Throwable, KoutaHakukohde] = hakukohdeSingleCache(oid)
@@ -669,22 +665,23 @@ class KoutaHakuService(config: AppConfig,
   }
 
   private def fetch[T](url: String)(implicit manifest: Manifest[T]): Either[Throwable, T] = {
-    Uri.fromString(url).flatMap(uri => client.fetch(Request(method = GET, uri = uri)) {
-      case r if r.status.code == 200 =>
-        r.as[T](jsonExtract[T])
-          .handleWith {
-            case t => r.bodyAsText.runLog
-              .map(_.mkString)
-              .flatMap(body => Task.fail(new IllegalStateException(s"Parsing result $body of GET $url failed", t)))
-          }
-      case r if r.status.code == 404 =>
-        r.bodyAsText.runLog
-          .map(_.mkString)
-          .flatMap(body => Task.fail(new IllegalArgumentException(s"GET $url failed with status 404: $body")))
+    val req = new RequestBuilder().setMethod("GET").setUrl(url).build()
+    val result = toScala(client.execute(req)).map {
+      case r if r.getStatusCode == 200 =>
+        parse(r.getResponseBodyAsStream).extract[T]
       case r =>
-        r.bodyAsText.runLog
-          .map(_.mkString)
-          .flatMap(body => Task.fail(new RuntimeException(s"GET $url failed with status ${r.status.code}: $body")))
-    }.unsafePerformSyncAttemptFor(Duration(1, TimeUnit.MINUTES))).toEither
+        val message = s"GET $url failed with status ${r.getStatusCode}: ${r.getResponseBody}"
+        if (r.getStatusCode == 404) {
+          throw new IllegalArgumentException(message)
+        } else {
+          throw new RuntimeException(message)
+        }
+    }
+
+    try {
+      Right(Await.result(result, Duration(1, TimeUnit.MINUTES)))
+    } catch {
+      case e: Throwable => Left(e)
+    }
   }
 }

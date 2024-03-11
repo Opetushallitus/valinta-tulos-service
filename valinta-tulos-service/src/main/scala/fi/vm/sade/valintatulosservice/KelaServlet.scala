@@ -36,7 +36,8 @@ class KelaServlet(audit: Audit, kelaService: KelaService, val sessionRepository:
     .parameter(bodyParam[String]("henkilotunnus").description("Henkilötunnus").required)
     .parameter(queryParam[String]("alkuaika").description("Henkilön vastaanottotietojen alkuaika").optional)
     .tags("kela")
-    post("/vastaanotot/henkilo", operation(kelaVastaanottoSwagger)) {
+
+  post("/vastaanotot/henkilo", operation(kelaVastaanottoSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.KELA_READ)
     val credentials: AuditInfo = auditInfo
