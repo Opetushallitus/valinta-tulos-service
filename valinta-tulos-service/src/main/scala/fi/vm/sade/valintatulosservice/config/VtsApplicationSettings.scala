@@ -10,6 +10,13 @@ import org.apache.commons.lang3.BooleanUtils
 
 import scala.concurrent.duration.Duration
 
+case class SiirtotiedostoConfig(aws_region: String,
+                                s3_bucket: String,
+                                ilmoittautumisetSize: Int,
+                                vastaanototSize: Int,
+                                valintatapajonotSize: Int,
+                                hakukohdeGroupSize: Int)
+
 case class VtsApplicationSettings(config: Config) extends ApplicationSettings(config) {
   val omatsivutUrlEn = withConfig(_.getString("omatsivut.en"))
   val omatsivutUrlFi = withConfig(_.getString("omatsivut.fi"))
@@ -52,6 +59,15 @@ case class VtsApplicationSettings(config: Config) extends ApplicationSettings(co
   val ataruHakemusEnricherHakukohdeCacheMaxSize: Long = 6000
 
   val emailerCronString: String = withConfig(_.getString("valinta-tulos-service.emailer.cron.string"))
+
+  val siirtotiedostoConfig = SiirtotiedostoConfig(
+    aws_region = withConfig(_.getString("valinta-tulos-service.siirtotiedosto.aws-region")),
+    s3_bucket = withConfig(_.getString("valinta-tulos-service.siirtotiedosto.s3-bucket")),
+    ilmoittautumisetSize = withConfig(_.getString("valinta-tulos-service.siirtotiedosto.ilmoittautumiset_page_size")).toInt,
+    vastaanototSize = withConfig(_.getString("valinta-tulos-service.siirtotiedosto.vastaanotot_page_size")).toInt,
+    valintatapajonotSize = withConfig(_.getString("valinta-tulos-service.siirtotiedosto.valintatapajonot_page_size")).toInt,
+    hakukohdeGroupSize = withConfig(_.getString("valinta-tulos-service.siirtotiedosto.hakukohde_group_size")).toInt
+  )
 }
 
 object VtsApplicationSettingsParser extends fi.vm.sade.utils.config.ApplicationSettingsParser[VtsApplicationSettings] {

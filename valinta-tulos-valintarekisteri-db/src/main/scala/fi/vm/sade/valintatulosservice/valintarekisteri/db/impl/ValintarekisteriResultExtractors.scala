@@ -145,7 +145,8 @@ trait ValintarekisteriResultExtractors {
     selite = r.nextString(),
     deletedAt = r.nextStringOption(),
     deletedBy = r.nextStringOption(),
-    deletedSelite = r.nextStringOption()))
+    deletedSelite = r.nextStringOption()
+  ))
 
   protected implicit val getSiirtotiedostoIlmoittautuminenResult = GetResult(r => SiirtotiedostoIlmoittautuminen(
     henkilo = r.nextString(),
@@ -153,7 +154,8 @@ trait ValintarekisteriResultExtractors {
     tila = r.nextString,
     ilmoittaja = r.nextString(),
     selite = r.nextString,
-    timestamp = r.nextString))
+    timestamp = r.nextString
+  ))
 
   protected implicit val getHakemuksetForValintatapajonosResult = GetResult(r => HakemusRecord(
     hakijaOid = r.nextStringOption,
@@ -223,6 +225,26 @@ trait ValintarekisteriResultExtractors {
     ilmoittautumistila = r.nextStringOption.map(SijoitteluajonIlmoittautumistila(_)).getOrElse(EiTehty),
     valinnantilanViimeisinMuutos = parseOffsetDateTime(r),
     vastaanotonViimeisinMuutos = parseOffsetDateTime(r)
+  ))
+
+  protected implicit val getSiirtotiedostoValinnantulosResult: GetResult[SiirtotiedostoValinnantulos] = GetResult(r => SiirtotiedostoValinnantulos(
+    hakukohdeOid = HakukohdeOid(r.nextString),
+    valintatapajonoOid = ValintatapajonoOid(r.nextString),
+    hakemusOid = HakemusOid(r.nextString),
+    henkiloOid = HenkiloOid(r.nextString),
+    valinnantila = r.nextString,
+    ehdollisestiHyvaksyttavissa = r.nextBooleanOption,
+    ehdollisenHyvaksymisenEhtoKoodi = r.nextStringOption(),
+    ehdollisenHyvaksymisenEhtoFI = r.nextStringOption(),
+    ehdollisenHyvaksymisenEhtoSV = r.nextStringOption(),
+    ehdollisenHyvaksymisenEhtoEN = r.nextStringOption(),
+    valinnantilanKuvauksenTekstiFI = r.nextStringOption(),
+    valinnantilanKuvauksenTekstiSV = r.nextStringOption(),
+    valinnantilanKuvauksenTekstiEN = r.nextStringOption(),
+    julkaistavissa = r.nextBooleanOption,
+    hyvaksyttyVarasijalta = r.nextBooleanOption,
+    hyvaksyPeruuntunut = r.nextBooleanOption,
+    valinnantilanViimeisinMuutos = r.nextString()
   ))
 
   protected implicit val getVastaanottoMuutosResult: GetResult[(ValintatuloksenTila, OffsetDateTime,
