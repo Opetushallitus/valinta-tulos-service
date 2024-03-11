@@ -37,6 +37,7 @@
         <morphia.version>1.2.1</morphia.version>
         <postgresql.version>42.7.1</postgresql.version>
         <scala-cas_2.11.version>2.2.3-SNAPSHOT</scala-cas_2.11.version>
+        <dokumenttipalvelu.version>6.12-SNAPSHOT</dokumenttipalvelu.version>
         <scala.version>2.11.12</scala.version>
         <scala-logging_2.11.version>3.1.0</scala-logging_2.11.version>
         <scala-parser-combinators_2.11.version>1.0.4</scala-parser-combinators_2.11.version>
@@ -532,6 +533,11 @@
                 <groupId>io.netty</groupId>
                 <artifactId>netty-handler</artifactId>
                 <version>4.1.60.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>fi.vm.sade.dokumenttipalvelu</groupId>
+                <artifactId>dokumenttipalvelu</artifactId>
+                <version>${dokumenttipalvelu.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

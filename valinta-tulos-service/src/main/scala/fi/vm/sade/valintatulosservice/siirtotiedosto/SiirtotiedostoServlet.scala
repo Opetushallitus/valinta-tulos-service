@@ -26,9 +26,9 @@ class SiirtotiedostoServlet(siirtotiedostoService: SiirtotiedostoService)(implic
     val end = params("end")
     logger.info(s"Muodostetaan siirtotiedosto, $start - $end")
     val result = siirtotiedostoService.muodostaJaTallennaSiirtotiedostot(start, end)
-    logger.info(s"Tiedosto muodostettu, size ${result.keySet.size}")
+    logger.info(s"Tiedosto muodostettu, result: $result")
     try {
-      Ok(result.values)
+      Ok("Success:" + result)
     } catch {
       case e: Exception =>
         logger.error("häh", e)
