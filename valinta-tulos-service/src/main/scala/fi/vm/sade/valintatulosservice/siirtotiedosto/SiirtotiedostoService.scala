@@ -16,7 +16,7 @@ class SiirtotiedostoService(siirtotiedostoRepository: SiirtotiedostoRepository, 
     if (pageResults.isEmpty) {
       None
     } else {
-      siirtotiedostoClient.saveSiirtotiedosto[T](params.start, params.end, params.tyyppi, pageResults)
+      siirtotiedostoClient.saveSiirtotiedosto[T](params.tyyppi, pageResults)
       saveInSiirtotiedostoPaged(params.copy(offset = params.offset + pageResults.size), pageFunction)
     }
   }
@@ -41,7 +41,7 @@ class SiirtotiedostoService(siirtotiedostoRepository: SiirtotiedostoRepository, 
         logger.info(s"Haetaan ja tallennetaan tulokset ${hakukohdeOids.size} hakukohteelle")
         val tulokset = siirtotiedostoRepository.getSiirtotiedostoValinnantuloksetForHakukohteet(hakukohdeOids)
         logger.info(s"Saatiin ${tulokset.size} tulosta ${hakukohdeOids.size} hakukohdeOidille")
-        siirtotiedostoClient.saveSiirtotiedosto[SiirtotiedostoValinnantulos](start, end, "hmm?", tulokset)
+        siirtotiedostoClient.saveSiirtotiedosto[SiirtotiedostoValinnantulos]("valinnantulokset", tulokset)
         None
       } catch {
         case e: Exception => logger.error("Jotain meni vikaan hakukohteiden tulosten haussa siirtotiedostoa varten:", e)
@@ -52,13 +52,13 @@ class SiirtotiedostoService(siirtotiedostoRepository: SiirtotiedostoRepository, 
     val hakukohdeResult = hakukohdeResults.find(_.isDefined)
 
     val vastaanototResult = formSiirtotiedosto[SiirtotiedostoVastaanotto](
-      SiirtotiedostoPagingParams("vastaanotto", start, end, 0, config.vastaanototSize),
+      SiirtotiedostoPagingParams("vastaanotot", start, end, 0, config.vastaanototSize),
       params => siirtotiedostoRepository.getVastaanototPage(params))
     val ilmoittautumisetResult = formSiirtotiedosto[SiirtotiedostoIlmoittautuminen](
-      SiirtotiedostoPagingParams("ilmoittautuminen", start, end, 0, config.ilmoittautumisetSize),
+      SiirtotiedostoPagingParams("ilmoittautumiset", start, end, 0, config.ilmoittautumisetSize),
       params => siirtotiedostoRepository.getIlmoittautumisetPage(params))
     val valintatapajonotResult = formSiirtotiedosto[ValintatapajonoRecord](
-      SiirtotiedostoPagingParams("valintatapajono", start, end, 0, config.valintatapajonotSize),
+      SiirtotiedostoPagingParams("valintatapajonot", start, end, 0, config.valintatapajonotSize),
       params => siirtotiedostoRepository.getValintatapajonotPage(params))
     val combinedResult = vastaanototResult.isEmpty && ilmoittautumisetResult.isEmpty&& valintatapajonotResult.isEmpty && hakukohdeResult.isEmpty
     val combinedError =
