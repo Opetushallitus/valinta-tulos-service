@@ -19,7 +19,7 @@ import fi.vm.sade.valintatulosservice.ohjausparametrit.{CachedOhjausparametritSe
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.security.Role
-import fi.vm.sade.valintatulosservice.siirtotiedosto.{SiirtotiedostoServlet, SiirtotiedostoService}
+import fi.vm.sade.valintatulosservice.siirtotiedosto.{SiirtotiedostoPalveluClient, SiirtotiedostoService, SiirtotiedostoServlet}
 import fi.vm.sade.valintatulosservice.sijoittelu._
 import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtures
 import fi.vm.sade.valintatulosservice.streamingresults.{HakemustenTulosHakuLock, StreamingValintatulosService}
@@ -85,6 +85,8 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing)
     lazy val sijoitteluService = new SijoitteluService(valintarekisteriDb, authorizer, hakuService, audit)
 
+    lazy val siirtotiedostoClient = new SiirtotiedostoPalveluClient(appConfig.settings.siirtotiedostoConfig.aws_region, appConfig.settings.siirtotiedostoConfig.s3_bucket)
+
     lazy val valintarekisteriValintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
     lazy val valintarekisteriRaportointiService = new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintarekisteriValintatulosDao)
     lazy val valintarekisteriSijoittelunTulosClient = new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb)
@@ -104,7 +106,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, valintatulosService, valintarekisteriDb, cachedOhjausparametritService, sijoittelutulosService, hakemusRepository, valintarekisteriDb)
     lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService, valintarekisteriDb, valintarekisteriDb)
     lazy val hakukohderyhmaService = new HakukohderyhmaService(appConfig)
-    lazy val siirtotiedostoService = new SiirtotiedostoService(valintarekisteriDb, valintarekisteriDb)
+    lazy val siirtotiedostoService = new SiirtotiedostoService(valintarekisteriDb, siirtotiedostoClient, appConfig.settings.siirtotiedostoConfig)
 
     lazy val authorizer = new OrganizationHierarchyAuthorizer(appConfig, hakukohderyhmaService)
     lazy val yhdenPaikanSaannos = new YhdenPaikanSaannos(hakuService, valintarekisteriDb)
