@@ -73,7 +73,7 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
                 full join deleted_vastaanotot dv on v.deleted = dv.id
                     where (greatest(v.timestamp, dv.timestamp) >= ${params.start}::timestamptz)
                     and (greatest(v.timestamp, dv.timestamp) <= ${params.end}::timestamptz)
-                order by deleted desc limit ${params.pageSize} offset ${params.offset};""".as[SiirtotiedostoVastaanotto]).toList
+                order by greatest(v.timestamp, dv.timestamp) desc limit ${params.pageSize} offset ${params.offset};""".as[SiirtotiedostoVastaanotto]).toList
     }
   }
 
@@ -113,7 +113,7 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
               where
                   lower(sa.system_time) >= ${params.start}::timestamptz
                   and lower(sa.system_time) <= ${params.end}::timestamptz
-              order by v.prioriteetti
+              order by lower(sa.system_time) desc
                   limit ${params.pageSize}
                   offset ${params.offset}
               """.as[ValintatapajonoRecord]).toList
