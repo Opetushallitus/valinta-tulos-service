@@ -24,10 +24,9 @@ class SiirtotiedostoPalveluClient(region: String, bucket: String) extends Loggin
         logger.info(s"Saving siirtotiedosto... output: $output")
         siirtotiedostoPalvelu
           .saveSiirtotiedosto(
-            "todo_add_formatted_time",
-            "",
             "valintarekisteri",
             contentType,
+            "",
             new ByteArrayInputStream(write(content).getBytes()),
             saveRetryCount).key
       } else {
