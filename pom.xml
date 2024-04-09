@@ -36,7 +36,6 @@
         <mongo-java-driver.version>3.4.2</mongo-java-driver.version>
         <morphia.version>1.2.1</morphia.version>
         <postgresql.version>42.7.1</postgresql.version>
-        <scala-cas_2.11.version>2.2.3-SNAPSHOT</scala-cas_2.11.version>
         <scala.version>2.11.12</scala.version>
         <scala-logging_2.11.version>3.1.0</scala-logging_2.11.version>
         <scala-parser-combinators_2.11.version>1.0.4</scala-parser-combinators_2.11.version>
@@ -142,11 +141,6 @@
                 <groupId>fi.vm.sade.sijoittelu</groupId>
                 <artifactId>sijoittelu-algoritmi-domain</artifactId>
                 <version>${sijoittelu.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>fi.vm.sade</groupId>
-                <artifactId>scala-cas_2.11</artifactId>
-                <version>${scala-cas_2.11.version}</version>
             </dependency>
             <dependency>
                 <groupId>fi.vm.sade</groupId>

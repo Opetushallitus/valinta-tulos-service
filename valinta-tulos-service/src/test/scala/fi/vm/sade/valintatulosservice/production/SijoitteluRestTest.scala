@@ -2,7 +2,6 @@ package fi.vm.sade.valintatulosservice.production
 
 import java.io.File
 
-import fi.vm.sade.security.VtsAuthenticatingClient
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import org.apache.commons.io.FileUtils
@@ -24,6 +23,7 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
   private val newHost = "http://localhost:8097"
 
   override val casUrlOld: String = oldHost + "/cas"
+  override val casUrlNew: String = newHost + "/cas"
 
   /* Hakuoideja
      "1.2.246.562.29.75203638285" - Kevään 2016 kk-yhteishaku
@@ -44,9 +44,6 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
   "New sijoittelu (valintarekisteri) and old sijoittelu (sijoitteluDb)" should {
     "contain same information" in {
 
-      val vtsClient = new VtsAuthenticatingClient(casHost, newHost + "/valinta-tulos-service", "auth/login", casUserNew, casPasswordNew, BlazeClientConfig.defaultConfig, "vts-test-caller-id")
-      val vtsSessionCookie = vtsClient.getVtsSession(newHost)
-
       hakuOidsToTest.foreach { oid =>
         info(s"*** Tarkistetaan haku $oid")
         compareOldAndNewSijoitteluResults(oid)
@@ -55,7 +52,7 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
 
       def compareOldAndNewSijoitteluResults(hakuOid: String) = {
         val uusiSijoittelu: Sijoitteluajo = time("Create uusi sijoittelu") {
-          get[Sijoitteluajo](() => getNewSijoittelu(hakuOid, vtsSessionCookie))
+          get[Sijoitteluajo](() => getNewSijoittelu(hakuOid))
         }
         val vanhaSijoittelu = time("Create vanha sijoittelu") {
           createVanhaSijoitteluajo(hakuOid)
@@ -217,9 +214,9 @@ class SijoitteluRestTest extends Specification with MatcherMacros with Logging w
   private def getSijoitteluajo(hakuOid: String): String = getOld(s"$oldHost/sijoittelu-service/resources/sijoittelu/$hakuOid/sijoitteluajo/latest")
   private def getHakukohde(hakuOid: String, hakukohdeOid: String) = () => getOld(s"$oldHost/sijoittelu-service/resources/sijoittelu/$hakuOid/sijoitteluajo/latest/hakukohde/$hakukohdeOid")
 
-  private def getNewSijoittelu(hakuOid: String, vtsSessionCookie: String) = {
+  private def getNewSijoittelu(hakuOid: String) = {
     val url = newHost + s"/valinta-tulos-service/auth/sijoittelu/$hakuOid/sijoitteluajo/latest"
-    val result = time("Uuden sijoittelun haku") { getNew(url, vtsSessionCookie)}
+    val result = time("Uuden sijoittelun haku") { getNew(url) }
     fileForStoringNewResponse.foreach { f =>
       info(s"Tallennetaan uuden APIn vastaus (${result.size} tavua) tiedostoon $f")
       FileUtils.writeStringToFile(new File(f), result)

@@ -11,7 +11,7 @@ import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusRepository, HakuAppRepository}
 import fi.vm.sade.valintatulosservice.hakukohderyhmat.HakukohderyhmaService
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetailsService
-import fi.vm.sade.valintatulosservice.kela.{KelaService, VtsKelaAuthenticationClient}
+import fi.vm.sade.valintatulosservice.kela.KelaService
 import fi.vm.sade.valintatulosservice.koodisto.{CachedKoodistoService, KoodistoService, RemoteKoodistoService, StubbedKoodistoService}
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
 import fi.vm.sade.valintatulosservice.migri.MigriService
@@ -138,6 +138,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new CasLogin(
         appConfig.settings.securitySettings.casUrl,
         new CasSessionService(
+          appConfig,
           appConfig.securityContext,
           appConfig.securityContext.casServiceIdentifier + "/auth/login",
           userDetailsService,
@@ -161,6 +162,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new NoAuthSijoitteluServlet(sijoitteluService), "/sijoittelu", "sijoittelu")
 
       val casSessionService = new CasSessionService(
+        appConfig,
         appConfig.securityContext,
         appConfig.securityContext.casServiceIdentifier,
         userDetailsService,
@@ -183,7 +185,6 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         "/cas/haku", "cas/haku")
       context.mount(new KelaServlet(audit, new KelaService(HakijaResolver(appConfig), hakuService, valintarekisteriDb), valintarekisteriDb), "/cas/kela", "cas/kela")
       context.mount(new MigriServlet(audit, new MigriService(hakemusRepository, hakuService, valinnantulosService, oppijanumerorekisteriService, valintarekisteriDb, lukuvuosimaksuService, HakijaResolver(appConfig)), valintarekisteriDb), "/cas/migri", "cas/migri")
-      context.mount(new KelaHealthCheckServlet(audit, valintarekisteriDb, appConfig, new VtsKelaAuthenticationClient(appConfig)), "/health-check/kela", "health-check/kela")
 
       val valintaesitysService = new ValintaesitysService(hakuService, authorizer, valintarekisteriDb, valintarekisteriDb, audit)
 
