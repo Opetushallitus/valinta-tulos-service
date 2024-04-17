@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice.oppijanumerorekisteri
 
 import fi.vm.sade.javautils.nio.cas.{CasClient, CasClientBuilder}
 import fi.vm.sade.security.ScalaCasConfig
+import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakijaOid
@@ -67,7 +68,7 @@ object Henkilo extends JsonFormats {
   }
 }
 
-class OppijanumerorekisteriService(appConfig: VtsAppConfig) extends JsonFormats {
+class OppijanumerorekisteriService(appConfig: VtsAppConfig) extends JsonFormats with Logging {
   private val retryCodes = Set(new Integer(401),new Integer(302)).asJava
   private val client: CasClient =
     appConfig.securityContext.javaCasClient.getOrElse(
@@ -88,7 +89,9 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) extends JsonFormats 
         (result, chunk) => result ++ henkilotChunk(chunk)
       })
     } catch {
-      case e: Throwable => Left(e)
+      case e: Throwable =>
+        logger.error(s"Virhe henkilöiden ($oids) hakemisessa oideilla oppijanumerorekisteristä", e);
+        Left(e)
     }
   }
 
@@ -98,7 +101,9 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) extends JsonFormats 
         (result, chunk) => result ++ henkilotChunkHetus(chunk)
       })
     } catch {
-      case e: Throwable => Left(e)
+      case e: Throwable =>
+        logger.error(s"Virhe henkilöiden ($hetus) hakemisessa hetuillaoppijanumerorekisteristä", e);
+        Left(e)
     }
   }
 
