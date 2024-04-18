@@ -117,7 +117,7 @@ class OppijanumerorekisteriService(appConfig: VtsAppConfig) extends JsonFormats 
 
     val result = toScala(client.executeAndRetryWithCleanSessionOnStatusCodes(req, retryCodes)).map {
       case r if r.getStatusCode == 200 =>
-        parse(r.getResponseBodyAsStream).children.map(Henkilo.fromJson).map(h => h.oid -> h).toMap
+        parse(r.getResponseBodyAsStream).extract[Map[String, JValue]].map { case (oid, henkiloJson) => HakijaOid(oid) -> Henkilo.fromJson(henkiloJson) }
       case r =>
         throw new RuntimeException(s"Failed to get henkilöt $oids: ${r.toString()}")
     }
