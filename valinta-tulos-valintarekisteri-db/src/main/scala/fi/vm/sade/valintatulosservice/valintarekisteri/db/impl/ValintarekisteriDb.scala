@@ -5,6 +5,8 @@ import fi.vm.sade.utils.Timer
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhtoRepositoryImpl
 import org.apache.commons.lang3.builder.ToStringBuilder
 import org.flywaydb.core.Flyway
+import org.flywaydb.core.api.Location
+import org.flywaydb.core.api.configuration.FluentConfiguration
 import slick.jdbc.PostgresProfile.api._
 
 case class DbConfig(url: String,
@@ -16,7 +18,8 @@ case class DbConfig(url: String,
                     queueSize: Option[Int],
                     registerMbeans: Option[Boolean],
                     initializationFailTimeout: Option[Long],
-                    leakDetectionThresholdMillis: Option[Long])
+                    leakDetectionThresholdMillis: Option[Long],
+                    flywayDisabled: Option[Boolean])
 
 class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends ValintarekisteriRepository
   with VastaanottoRepositoryImpl
@@ -36,11 +39,20 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
   with HyvaksynnanEhtoRepositoryImpl {
 
   logger.info(s"Database configuration: ${config.copy(password = Some("***"))}")
-  val flyway = new Flyway()
-  flyway.setDataSource(config.url, config.user.orNull, config.password.orNull)
-  flyway.setOutOfOrder(true)
-  flyway.setLocations("db/migration-vts")
-  Timer.timed("Flyway migration") { flyway.migrate() }
+  if (!config.flywayDisabled.getOrElse(false)) {
+    val m: FluentConfiguration = Flyway.configure
+      .dataSource(
+        config.url,
+        config.user.orNull,
+        config.password.orNull
+      )
+      .outOfOrder(true)
+      .locations("db/migration-vts")
+
+    Timer.timed("Flyway migration") {
+      m.load().migrate().migrationsExecuted
+    }
+  }
 
   val hikariConfig: HikariConfig = {
     val c = new HikariConfig()
@@ -67,6 +79,6 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
   }
   if(isItProfile) {
     logger.warn("alter table public.schema_version owner to oph")
-    runBlocking(sqlu"""alter table public.schema_version owner to oph""")
+    runBlocking(sqlu"""alter table public.flyway_schema_history owner to oph""")
   }
 }
