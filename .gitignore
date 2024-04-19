@@ -21,3 +21,4 @@ target/
 /scripts/cookies.txt
 valintarekisteri-it-db
 .opintopolku-local/
+.DS_Store
