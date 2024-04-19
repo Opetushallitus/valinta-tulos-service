@@ -42,7 +42,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          mvn -B clean package
+          mvn -B clean package --settings settings.xml
       - uses: actions/cache@v2
         id: restore-build
         with:
@@ -126,4 +126,4 @@ jobs:
         run: |
           git clone https://github.com/Opetushallitus/ci-tools.git
           source ci-tools/common/setup-tools.sh
-          mvn deploy -B -pl fi.vm.sade:valinta-tulos-service-parent,valinta-tulos-valintarekisteri-db,valinta-tulos-service -DskipTests --settings ci-tools/common/maven-settings.xml
+          mvn deploy -B -pl fi.vm.sade:valinta-tulos-service-parent,valinta-tulos-valintarekisteri-db,valinta-tulos-service -DskipTests --settings settings.xml
