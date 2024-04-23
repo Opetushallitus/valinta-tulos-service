@@ -9,10 +9,11 @@ on:
 permissions:
   id-token: write
   contents: read
+  packages: write
 
 jobs:
   test-and-build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
