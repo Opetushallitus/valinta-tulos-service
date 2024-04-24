@@ -88,7 +88,7 @@ jobs:
     with:
       application: valinta-tulos-henkiloviite-synchronizer
       base-image: baseimage-fatjar-openjdk11:master
-      configfolder: valinta-tulos-henkiloviite-synchronizer/target/classes/oph-configuration
+      configfolder: valinta-tulos-henkiloviite-synchronizer/src/main/resources/oph-configuration
       jarfile: valinta-tulos-henkiloviite-synchronizer
       jarfolder: .
       download-artifact: true
