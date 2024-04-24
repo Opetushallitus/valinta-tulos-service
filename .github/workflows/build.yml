@@ -78,6 +78,7 @@ jobs:
       jarfolder: .
       type: war
       download-artifact: true
+      download-artifact-name: valinta-tulos-service.war
     secrets:
       AWS_UTILITY_ROLE_ARN: ${{ secrets.AWS_OPH_UTILITY_ROLE_ARN }}
 
@@ -91,6 +92,7 @@ jobs:
       jarfile: valinta-tulos-henkiloviite-synchronizer.jar
       jarfolder: .
       download-artifact: true
+      download-artifact-name: valinta-tulos-henkiloviite-synchronizer.jar
     secrets:
       AWS_UTILITY_ROLE_ARN: ${{ secrets.AWS_OPH_UTILITY_ROLE_ARN }}
 
@@ -104,10 +106,9 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: |
-            target
-            valinta-tulos-henkiloviite-synchronizer/target
-            valinta-tulos-service/target
-            valinta-tulos-valintarekisteri-db/target
+            valinta-tulos-henkiloviite-synchronizer/target/valinta-tulos-henkiloviite-synchronizer*
+            valinta-tulos-service/target/valinta-tulos-service-*
+            valinta-tulos-valintarekisteri-db/target/valinta-tulos-valintarekisteri-db-*
           key: ${{ github.sha }}
 
       - name: Set up JDK 11
