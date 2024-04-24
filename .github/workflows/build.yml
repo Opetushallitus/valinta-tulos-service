@@ -75,7 +75,7 @@ jobs:
       base-image: baseimage-war-openjdk11:master
       configfolder: valinta-tulos-service/src/main/resources/oph-configuration
       jarfile: valinta-tulos-service.war
-      jarfolder: valinta-tulos-service/target
+      jarfolder: .
       type: war
       download-artifact: true
     secrets:
@@ -89,7 +89,7 @@ jobs:
       base-image: baseimage-fatjar-openjdk11:master
       configfolder: valinta-tulos-henkiloviite-synchronizer/target/classes/oph-configuration
       jarfile: valinta-tulos-henkiloviite-synchronizer.jar
-      jarfolder: valinta-tulos-henkiloviite-synchronizer/target
+      jarfolder: .
       download-artifact: true
     secrets:
       AWS_UTILITY_ROLE_ARN: ${{ secrets.AWS_OPH_UTILITY_ROLE_ARN }}
