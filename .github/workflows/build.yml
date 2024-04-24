@@ -57,10 +57,13 @@ jobs:
           key: ${{ github.sha }}
       - uses: actions/upload-artifact@v4
         with:
-          path: |
-            valinta-tulos-henkiloviite-synchronizer/target/valinta-tulos-henkiloviite-synchronizer*
-            valinta-tulos-service/target/valinta-tulos-service-*
-            valinta-tulos-valintarekisteri-db/target/valinta-tulos-valintarekisteri-db-*
+          path: valinta-tulos-service/target/valinta-tulos-service-*.war
+          name: valinta-tulos-service.war
+          overwrite: true
+      - uses: actions/upload-artifact@v4
+        with:
+          path: valinta-tulos-henkiloviite-synchronizer/target/valinta-tulos-henkiloviite-synchronizer-*-dependencies.jar
+          name: valinta-tulos-henkiloviite-synchronizer.jar
           overwrite: true
 
 
@@ -71,7 +74,7 @@ jobs:
       application: valinta-tulos-service
       base-image: baseimage-war-openjdk11:master
       configfolder: valinta-tulos-service/src/main/resources/oph-configuration
-      jarfile: valinta-tulos-service-*.war
+      jarfile: valinta-tulos-service.war
       jarfolder: valinta-tulos-service/target
       type: war
       download-artifact: true
@@ -85,7 +88,7 @@ jobs:
       application: valinta-tulos-henkiloviite-synchronizer
       base-image: baseimage-fatjar-openjdk11:master
       configfolder: valinta-tulos-henkiloviite-synchronizer/target/classes/oph-configuration
-      jarfile: valinta-tulos-henkiloviite-synchronizer-*-jar-with-dependencies.jar
+      jarfile: valinta-tulos-henkiloviite-synchronizer.jar
       jarfolder: valinta-tulos-henkiloviite-synchronizer/target
       download-artifact: true
     secrets:
