@@ -48,14 +48,21 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           mvn -B clean package --settings settings.xml
-      - uses: actions/cache/save@v4
+      - uses: actions/cache@v4
         with:
           path: |
-            target
-            valinta-tulos-henkiloviite-synchronizer/target
-            valinta-tulos-service/target
-            valinta-tulos-valintarekisteri-db/target
+            valinta-tulos-henkiloviite-synchronizer/target/valinta-tulos-henkiloviite-synchronizer*
+            valinta-tulos-service/target/valinta-tulos-service-*
+            valinta-tulos-valintarekisteri-db/target/valinta-tulos-valintarekisteri-db-*
           key: ${{ github.sha }}
+      - uses: actions/upload-artifact@v4
+        with:
+          path: |
+            valinta-tulos-henkiloviite-synchronizer/target/valinta-tulos-henkiloviite-synchronizer*
+            valinta-tulos-service/target/valinta-tulos-service-*
+            valinta-tulos-valintarekisteri-db/target/valinta-tulos-valintarekisteri-db-*
+          overwrite: true
+
 
   deploy-valinta-tulos-service-container:
     needs: test-and-build
@@ -67,6 +74,7 @@ jobs:
       jarfile: valinta-tulos-service-*.war
       jarfolder: valinta-tulos-service/target
       type: war
+      download-artifact: true
     secrets:
       AWS_UTILITY_ROLE_ARN: ${{ secrets.AWS_OPH_UTILITY_ROLE_ARN }}
 
@@ -79,6 +87,7 @@ jobs:
       configfolder: valinta-tulos-henkiloviite-synchronizer/target/classes/oph-configuration
       jarfile: valinta-tulos-henkiloviite-synchronizer-*-jar-with-dependencies.jar
       jarfolder: valinta-tulos-henkiloviite-synchronizer/target
+      download-artifact: true
     secrets:
       AWS_UTILITY_ROLE_ARN: ${{ secrets.AWS_OPH_UTILITY_ROLE_ARN }}
 
