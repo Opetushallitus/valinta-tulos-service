@@ -63,7 +63,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           path: valinta-tulos-henkiloviite-synchronizer/target/valinta-tulos-henkiloviite-synchronizer-*-dependencies.jar
-          name: valinta-tulos-henkiloviite-synchronizer.jar
+          name: valinta-tulos-henkiloviite-synchronizer-*.jar
           overwrite: true
 
 
@@ -74,7 +74,7 @@ jobs:
       application: valinta-tulos-service
       base-image: baseimage-war-openjdk11:master
       configfolder: valinta-tulos-service/src/main/resources/oph-configuration
-      jarfile: valinta-tulos-service.war
+      jarfile: valinta-tulos-service-*.war
       jarfolder: .
       type: war
       download-artifact: true
