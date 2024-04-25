@@ -224,48 +224,21 @@
                 <version>${plugin.exec-maven-plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>buildversion properties</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>${project.basedir}/set_buildversion_properties.sh</executable>
-                            <arguments>
-                                <argument>
-                                    ${project.build.outputDirectory}/oph-configuration/valinta-tulos-henkiloviite-synchronizer.properties.template
-                                </argument>
-                                <argument>${project.version}</argument>
-                            </arguments>
-                        </configuration>
+                    <id>run_local</id>
+                    <goals>
+                        <goal>java</goal>
+                    </goals>
+                    <configuration>
+                        <mainClass>fi.vm.sade.valintatulosservice.HenkiloviiteSynchronizerAppRunner</mainClass>
+                        <classpathScope>test</classpathScope>
+                        <systemProperties>
+                        <systemProperty>
+                            <key>henkiloviite.properties</key>
+                            <value>src/test/resources/pallero.properties</value>
+                        </systemProperty>
+                        </systemProperties>
+                    </configuration>
                     </execution>
-                    <execution>
-                        <id>deploy zip</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>${project.basedir}/build_deploy_zip.sh</executable>
-                            <workingDirectory>${project.basedir}</workingDirectory>
-                        </configuration>
-                    </execution>
-		    <execution>
-			<id>run_local</id>
-			<goals>
-			    <goal>java</goal>
-			</goals>
-			<configuration>
-			    <mainClass>fi.vm.sade.valintatulosservice.HenkiloviiteSynchronizerAppRunner</mainClass>
-			    <classpathScope>test</classpathScope>
-			    <systemProperties>
-				<systemProperty>
-				    <key>henkiloviite.properties</key>
-				    <value>src/test/resources/pallero.properties</value>
-				</systemProperty>
-			    </systemProperties>
-			</configuration>
-		    </execution>
                 </executions>
             </plugin>
         </plugins>
