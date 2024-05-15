@@ -20,7 +20,7 @@ object HenkiloviiteSynchronizerApp {
     val db = new HenkiloviiteDb(config.db)
     val synchronizer = new HenkiloviiteSynchronizer(henkiloviiteClient, db)
     val servlet = new HenkiloviiteSynchronizerServlet(synchronizer, config.scheduler.intervalHours)
-    val buildversionServlet = new BuildversionServlet(config.buildversion)
+    val buildversionServlet = new BuildversionServlet()
 
     val server = new Server()
     val http = new ServerConnector(server)
