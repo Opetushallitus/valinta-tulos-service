@@ -85,7 +85,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing)
     lazy val sijoitteluService = new SijoitteluService(valintarekisteriDb, authorizer, hakuService, audit)
 
-    lazy val siirtotiedostoClient = new SiirtotiedostoPalveluClient(appConfig.settings.siirtotiedostoConfig.aws_region, appConfig.settings.siirtotiedostoConfig.s3_bucket)
+    lazy val siirtotiedostoClient = new SiirtotiedostoPalveluClient(appConfig.settings.siirtotiedostoConfig)
 
     lazy val valintarekisteriValintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
     lazy val valintarekisteriRaportointiService = new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintarekisteriValintatulosDao)

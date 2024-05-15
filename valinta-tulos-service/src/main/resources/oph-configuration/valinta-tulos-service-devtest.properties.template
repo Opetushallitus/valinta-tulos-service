@@ -122,3 +122,12 @@ valinta-tulos-service.blaze.request-timeout={{ valintatulosservice_blaze_request
 
 # Swagger
 valinta-tulos-service.swagger=https\://{{host_virkailija}}/valinta-tulos-service/swagger/swagger.json
+
+# Siirtotiedosto
+valinta-tulos-service.siirtotiedosto.aws-region={{ aws_region | default('eu-west-1') }}
+valinta-tulos-service.siirtotiedosto.s3-bucket={{ ovara_siirtotiedosto_s3_bucket | default('not-a-real-bucket') }}
+valinta-tulos-service.siirtotiedosto.s3.target-role-arn = {{ ovara_siirtotiedosto_s3_target_role_arn | default('no-role-set')}}
+valinta-tulos-service.siirtotiedosto.ilmoittautumiset_page_size={{ valintatulosservice_siirtotiedosto_ilmoittautumiset_page_size | default('10000') }}
+valinta-tulos-service.siirtotiedosto.valintatapajonot_page_size={{ valintatulosservice_siirtotiedosto_valintatapajonot_page_size | default('10000') }}
+valinta-tulos-service.siirtotiedosto.vastaanotot_page_size={{ valintatulosservice_siirtotiedosto_vastaanotot_page_size | default('10000') }}
+valinta-tulos-service.siirtotiedosto.hakukohde_group_size={{ valintatulosservice_siirtotiedosto_hakukohde_group_size | default('500') }}
