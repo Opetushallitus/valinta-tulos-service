@@ -15,7 +15,7 @@
     </modules>
 
     <properties>
-        <apache.httpclient.version>4.5.2</apache.httpclient.version>
+        <apache.httpclient.version>4.5.13</apache.httpclient.version>
         <auditlogger.version>8.3.0-SNAPSHOT</auditlogger.version>
         <casbah_2.11.version>3.1.0</casbah_2.11.version>
         <commons-lang.version>2.6</commons-lang.version>
@@ -538,6 +538,11 @@
                 <groupId>fi.vm.sade.dokumenttipalvelu</groupId>
                 <artifactId>dokumenttipalvelu</artifactId>
                 <version>${dokumenttipalvelu.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>1.15</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
