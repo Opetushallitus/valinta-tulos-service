@@ -5,12 +5,13 @@ import fi.vm.sade.valinta.dokumenttipalvelu.SiirtotiedostoPalvelu
 import org.json4s.{DefaultFormats, Formats}
 import org.json4s.jackson.Serialization.{write, writePretty}
 import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.config.SiirtotiedostoConfig
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Oids
 
 import java.io.ByteArrayInputStream
 
-class SiirtotiedostoPalveluClient(region: String, bucket: String) extends Logging {
-  lazy val siirtotiedostoPalvelu = new SiirtotiedostoPalvelu(region, bucket)
+class SiirtotiedostoPalveluClient(config: SiirtotiedostoConfig) extends Logging {
+  lazy val siirtotiedostoPalvelu = new SiirtotiedostoPalvelu(config.aws_region, config.s3_bucket, config.role_arn)
   val saveRetryCount = 2
 
   implicit val formats: Formats = DefaultFormats ++ Oids.getSerializers()
