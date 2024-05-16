@@ -1,7 +1,9 @@
 package fi.vm.sade.valintatulosservice.siirtotiedosto
 
-import fi.vm.sade.valintatulosservice.{VastaanottoService, VtsServletBase}
+import fi.vm.sade.valintatulosservice.{Authenticated, CasAuthenticatedServlet, VastaanottoService, VtsServletBase}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.security.Role
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijanVastaanottoAction, HakijanVastaanottoDto, HakukohdeOid}
 import org.json4s
 import org.json4s.JsonAST.{JField, JString, JValue}
@@ -13,8 +15,11 @@ import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 
 import scala.util.Try
 
-class SiirtotiedostoServlet(siirtotiedostoService: SiirtotiedostoService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
+class SiirtotiedostoServlet(siirtotiedostoService: SiirtotiedostoService, db: SessionRepository)
+                           (implicit val swagger: Swagger, appConfig: VtsAppConfig)
+  extends VtsServletBase with CasAuthenticatedServlet {
   override protected def applicationDescription: String = "Siirtotiedostojen luonnin REST API"
+  override val sessionRepository: SessionRepository = db
 
   val muodostaSiirtotiedostoSwagger: OperationBuilder = (apiOperation[Unit]("muodostaSiirtotiedosto")
     summary "Muodosta siirtotiedosto hakukohteiden valinnantuloksista aikavälillä"
@@ -22,6 +27,8 @@ class SiirtotiedostoServlet(siirtotiedostoService: SiirtotiedostoService)(implic
     parameter queryParam[String]("end").description("Lopun aikaleima")
     tags "siirtotiedosto")
   get("/muodosta", operation(muodostaSiirtotiedostoSwagger)) {
+    implicit val authenticated: Authenticated = authenticate
+    authorize(Role.SIJOITTELU_CRUD)
     val start = params("start") //timestamp tz
     val end = params("end")
     logger.info(s"Muodostetaan siirtotiedosto, $start - $end")
