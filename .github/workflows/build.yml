@@ -54,6 +54,7 @@ jobs:
             valinta-tulos-henkiloviite-synchronizer/target
             valinta-tulos-service/target
             valinta-tulos-valintarekisteri-db/target
+            valinta-tulos-ovara/target
           key: ${{ github.sha }}
       - uses: actions/upload-artifact@v4
         with:
@@ -64,6 +65,11 @@ jobs:
         with:
           path: valinta-tulos-henkiloviite-synchronizer/target/valinta-tulos-henkiloviite-synchronizer-*-dependencies.jar
           name: valinta-tulos-henkiloviite-synchronizer.jar
+          overwrite: true
+      - uses: actions/upload-artifact@v4
+        with:
+          path: valinta-tulos-ovara/target/valinta-tulos-ovara-*-jar-with-dependencies.jar
+          name: valinta-tulos-ovara.jar
           overwrite: true
 
 
@@ -93,6 +99,20 @@ jobs:
       jarfolder: .
       download-artifact: true
       download-artifact-name: valinta-tulos-henkiloviite-synchronizer.jar
+    secrets:
+      AWS_UTILITY_ROLE_ARN: ${{ secrets.AWS_OPH_UTILITY_ROLE_ARN }}
+
+  deploy-valinta-tulos-ovara-container:
+    needs: test-and-build
+    uses: Opetushallitus/.github/.github/workflows/push-scan-java-ecr.yml@main
+    with:
+      application: valinta-tulos-ovara
+      base-image: baseimage-fatjar-openjdk11:master
+      configfolder: valinta-tulos-ovara/src/main/resources/oph-configuration
+      jarfile: valinta-tulos-ovara
+      jarfolder: .
+      download-artifact: true
+      download-artifact-name: valinta-tulos-ovara.jar
     secrets:
       AWS_UTILITY_ROLE_ARN: ${{ secrets.AWS_OPH_UTILITY_ROLE_ARN }}
 
