@@ -109,6 +109,7 @@ jobs:
             valinta-tulos-henkiloviite-synchronizer/target
             valinta-tulos-service/target
             valinta-tulos-valintarekisteri-db/target
+            valinta-tulos-ovara/target
           key: ${{ github.sha }}
 
       - name: Set up JDK 11
@@ -127,4 +128,4 @@ jobs:
         run: |
           git clone https://github.com/Opetushallitus/ci-tools.git
           source ci-tools/common/setup-tools.sh
-          mvn deploy -B -pl fi.vm.sade:valinta-tulos-service-parent,valinta-tulos-valintarekisteri-db,valinta-tulos-service -DskipTests --settings settings.xml
+          mvn deploy -B -pl fi.vm.sade:valinta-tulos-service-parent,valinta-tulos-valintarekisteri-db,valinta-tulos-service,valinta-tulos-ovara -DskipTests --settings settings.xml

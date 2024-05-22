@@ -2,21 +2,15 @@ package fi.vm.sade.valintatulosservice.config
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.HOURS
-
 import com.typesafe.config.Config
 import fi.vm.sade.utils.config.MongoConfig
 import fi.vm.sade.valintatulosservice.SecuritySettings
+import fi.vm.sade.valintatulosservice.ovara.config.SiirtotiedostoConfig
 import org.apache.commons.lang3.BooleanUtils
 
 import scala.concurrent.duration.Duration
 
-case class SiirtotiedostoConfig(aws_region: String,
-                                s3_bucket: String,
-                                role_arn: String,
-                                ilmoittautumisetSize: Int,
-                                vastaanototSize: Int,
-                                valintatapajonotSize: Int,
-                                hakukohdeGroupSize: Int)
+
 
 case class VtsApplicationSettings(config: Config) extends ApplicationSettings(config) {
   val omatsivutUrlEn = withConfig(_.getString("omatsivut.en"))
