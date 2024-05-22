@@ -12,6 +12,7 @@
         <module>valinta-tulos-service</module>
         <module>valinta-tulos-henkiloviite-synchronizer</module>
         <module>valinta-tulos-valintarekisteri-db</module>
+        <module>valinta-tulos-ovara</module>
     </modules>
 
     <properties>
@@ -52,6 +53,7 @@
         <specs2_2.11.version>4.9.4</specs2_2.11.version>
         <spring.version>5.1.5.RELEASE</spring.version>
         <typesafe.config.version>1.2.1</typesafe.config.version>
+        <netty.version>4.1.94.Final</netty.version>
 
         <!-- Old duplicate versions -->
         <FIXME.plugin.maven-surefire-plugin.version>2.13</FIXME.plugin.maven-surefire-plugin.version>
@@ -532,7 +534,37 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-handler</artifactId>
-                <version>4.1.60.Final</version>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-common</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-unix-common</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-http</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-buffer</artifactId>
+                <version>${netty.version}</version>
             </dependency>
             <dependency>
                 <groupId>fi.vm.sade.dokumenttipalvelu</groupId>
@@ -543,6 +575,11 @@
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
                 <version>1.15</version>
+            </dependency>
+            <dependency>
+                <groupId>org.reactivestreams</groupId>
+                <artifactId>reactive-streams</artifactId>
+                <version>1.0.4</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -19,7 +19,7 @@ import fi.vm.sade.valintatulosservice.ohjausparametrit.{CachedOhjausparametritSe
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.security.Role
-import fi.vm.sade.valintatulosservice.siirtotiedosto.{SiirtotiedostoPalveluClient, SiirtotiedostoService, SiirtotiedostoServlet}
+import fi.vm.sade.valintatulosservice.ovara.{SiirtotiedostoPalveluClient, SiirtotiedostoService, SiirtotiedostoServlet}
 import fi.vm.sade.valintatulosservice.sijoittelu._
 import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtures
 import fi.vm.sade.valintatulosservice.streamingresults.{HakemustenTulosHakuLock, StreamingValintatulosService}
@@ -29,7 +29,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
-import fi.vm.sade.valintatulosservice.vastaanottomeili.{EmailerServlet, _}
+import fi.vm.sade.valintatulosservice.vastaanottomeili._
 import org.scalatra._
 import org.slf4j.LoggerFactory
 
