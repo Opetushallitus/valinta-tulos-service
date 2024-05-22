@@ -233,6 +233,16 @@ trait ValintarekisteriResultExtractors {
     valinnantilanViimeisinMuutos = r.nextString()
   ))
 
+  protected implicit val getSiirtotiedostoProcessInfoResult: GetResult[SiirtotiedostoProcessInfo] = GetResult(r => SiirtotiedostoProcessInfo(
+    id = r.nextString(),
+    windowStart = r.nextString(),
+    windowEnd = r.nextString(),
+    runStart = r.nextString(),
+    runEnd = r.nextStringOption().getOrElse("not ended"),//fixme :)
+    runFinished = r.nextBoolean(),
+    errorMessage = r.nextStringOption()
+  ))
+
   protected implicit val getVastaanottoMuutosResult: GetResult[(ValintatuloksenTila, OffsetDateTime,
     Option[Long], Option[String], Option[String], Option[OffsetDateTime])] = GetResult(r => (
     VastaanottoAction(r.nextString).valintatuloksenTila,

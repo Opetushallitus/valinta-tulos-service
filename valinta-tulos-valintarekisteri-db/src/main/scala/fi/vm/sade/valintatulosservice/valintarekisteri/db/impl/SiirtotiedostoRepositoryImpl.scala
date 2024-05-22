@@ -25,7 +25,9 @@ case class SiirtotiedostoIlmoittautuminen(henkilo: String,
                                           selite: String,
                                           timestamp: String)
 
-case class SiirtotiedostoPagingParams(tyyppi: String,
+case class SiirtotiedostoPagingParams(executionId: String,
+                                      fileNumber: Int,
+                                      tyyppi: String,
                                       start: String,
                                       end: String,
                                       offset: Long,
@@ -49,7 +51,35 @@ case class SiirtotiedostoValinnantulos(hakukohdeOid: HakukohdeOid,
                                        hyvaksyPeruuntunut: Option[Boolean],
                                        valinnantilanViimeisinMuutos: String)
 
+case class SiirtotiedostoProcessInfo(id: String,
+                                     windowStart: String,
+                                     windowEnd: String,
+                                     runStart: String, //postgres-kannan aikaleima siltä hetkeltä, kun sieltä on haettu tieto
+                                     runEnd: String, //postgres-now() siltä hetkeltä kun merkattiin
+                                     runFinished: Boolean,
+                                     errorMessage: Option[String])
+
 trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with ValintarekisteriRepository {
+
+  def getLatestProcessInfo(): Option[SiirtotiedostoProcessInfo] = {
+    //Todo, otetaan tässä huomioon ehkä id:n lisäksi myös viimeisin window_end -aikaleima tai ainakin varoitetaan, jos matalammalla id:llä on myöhäisempi window_end?
+    //Periaatteessa niin ei pitäisi kyllä tapahtua, jos aikaikkunat liikkuvat aina eteenpäin eikä useampaa siirtotiedostoja muodostavaa konttia käynnistetä samanaikaisesti
+    timed(s"Getting latest process info", 100) {
+      runBlocking(
+        sql"""select id, window_start, window_end, run_start, run_end, success, error_message from siirtotiedosto order by id desc limit 1""".as[SiirtotiedostoProcessInfo].headOption
+      )
+    }
+  }
+
+  def persistProcessInfo(processInfo: SiirtotiedostoProcessInfo): Option[Int] = {
+    timed(s"Persisting process info $processInfo", 100) {
+      runBlocking(
+        sql"""insert into siirtotiedosto(window_start, window_end, run_start, run_end, success, error_message)
+             values (${processInfo.windowStart}, ${processInfo.windowEnd}, ${processInfo.runStart}, now(), ${processInfo.runFinished}, ${processInfo.errorMessage.getOrElse("")}) returning id""".as[Int].headOption
+      )
+    }
+  }
+
   override def getChangedHakukohdeoidsForValinnantulokset(s: String, e: String): List[HakukohdeOid] = {
     timed(s"Getting changed hakukohdeoids between $s and $e", 100) {
       runBlocking(
