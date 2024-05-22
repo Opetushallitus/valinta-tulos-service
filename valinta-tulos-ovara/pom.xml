@@ -33,6 +33,7 @@
             <groupId>fi.vm.sade</groupId>
             <artifactId>valinta-tulos-service</artifactId>
             <version>${project.version}</version>
+            <type>war</type>
             <exclusions>
                 <exclusion>
                     <groupId>io.swagger</groupId>
