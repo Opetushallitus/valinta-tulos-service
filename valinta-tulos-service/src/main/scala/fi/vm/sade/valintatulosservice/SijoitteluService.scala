@@ -44,6 +44,22 @@ class SijoitteluService(val sijoitteluRepository: SijoitteluRepository with Haki
     }).fold( t => throw t, r => r)
   }
 
+  def getHakukohdeSummaryBySijoittelu(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid, session: Session, auditInfo: AuditInfo): List[SijoitteluSummaryRecord] = {
+    audit.log(auditInfo.user, SijoittelunHakukohteenYhteenvedonLuku,
+      new Target.Builder()
+        .setField("hakuoid", hakuOid.toString)
+        .setField("hakukohdeOid", hakukohdeOid.toString)
+        .build(),
+      new Changes.Builder().build()
+    )
+    (for {
+      tarjonta <- hakuService.getHakukohde(hakukohdeOid).right
+      _ <- authorizer.checkAccessWithHakukohderyhmat(session, tarjonta.organisaatioOiditAuktorisointiin, Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD), hakukohdeOid).right
+    } yield {
+      sijoitteluRepository.getLatestSijoitteluSummary(hakuOid, hakukohdeOid)
+    }).fold(t => throw t, r => r)
+  }
+
   def getHakemusBySijoitteluajo(hakuOid: HakuOid, sijoitteluajoId: String, hakemusOid: HakemusOid, auditInfo: AuditInfo): HakijaDTO = {
     audit.log(auditInfo.user, HakemuksenLuku,
       new Target.Builder()

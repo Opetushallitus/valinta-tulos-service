@@ -37,6 +37,13 @@ case class SijoitteluajoRecord(sijoitteluajoId:Long, hakuOid: HakuOid, startMils
   }
 }
 
+case class SijoitteluSummaryRecord(valintatapajonoOid: ValintatapajonoOid, valintatapajonoNimi: String,
+                                   sijoittelunKayttamatAloituspaikat: Int, aloituspaikat: Int,
+                                   hyvaksytyt: Int, ehdollisestiVastaanottaneet: Int, paikanVastaanottaneet: Int,
+                                   varasijoilla: Int, alinHyvaksyttyPistemaara: Double,
+                                   ehdollisestiHyvaksytyt: Int, peruneet: Int) {
+}
+
 case class HakijaRecord(hakemusOid: HakemusOid, hakijaOid: String) {
   def dto(hakutoiveet:List[HakutoiveDTO]): HakijaDTO = {
     val hakijaDTO = new HakijaDTO

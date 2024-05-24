@@ -86,6 +86,19 @@ trait ValintarekisteriResultExtractors {
     startMils = r.nextTimestamp.getTime,
     endMils = r.nextTimestamp.getTime))
 
+  protected implicit val getSijoitteluSummaryRecord = GetResult(r => SijoitteluSummaryRecord(
+    valintatapajonoOid = ValintatapajonoOid(r.nextString),
+    valintatapajonoNimi = r.nextString,
+    sijoittelunKayttamatAloituspaikat = r.nextInt,
+    aloituspaikat = r.nextInt,
+    hyvaksytyt = r.nextInt,
+    ehdollisestiVastaanottaneet = r.nextInt,
+    paikanVastaanottaneet = r.nextInt,
+    varasijoilla = r.nextInt,
+    alinHyvaksyttyPistemaara = r.nextInt,
+    ehdollisestiHyvaksytyt = r.nextInt,
+    peruneet = r.nextInt))
+
   protected implicit val getSijoitteluajoHakukohteetResult = GetResult(r => SijoittelunHakukohdeRecord(
     sijoitteluajoId = r.nextLong,
     oid = HakukohdeOid(r.nextString),

@@ -74,4 +74,27 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
         NotFound(Map("error" -> e.getMessage))
     }
   }
+
+  get("/yhteenveto/:hakuOid/hakukohde/:hakukohdeOid") {
+    implicit val authenticated = authenticate
+    val ai: AuditInfo = auditInfo
+    val hakuOid = HakuOid(params("hakuOid"))
+    val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
+    val hakukohde = hakuService.getHakukohde(hakukohdeOid).fold(throw _, h => h)
+
+    authorizer.checkAccessWithHakukohderyhmat(ai.session._2, hakukohde.organisaatioOiditAuktorisointiin,
+      Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD), hakukohdeOid).fold(throw _, x => x)
+    try {
+      val futureSijoittelunTulokset: Future[List[SijoitteluSummaryRecord]] = Future { sijoitteluService.getHakukohdeSummaryBySijoittelu(hakuOid, hakukohdeOid, authenticated.session, ai) }
+
+      val resultJson = for {
+        sijoittelunTulokset <- futureSijoittelunTulokset
+      } yield {
+        JsonFormats.formatJson(sijoittelunTulokset)
+      }
+
+      val rtt = Await.result(resultJson, Duration(1, TimeUnit.MINUTES))
+      Ok(rtt)
+    }
+  }
 }
