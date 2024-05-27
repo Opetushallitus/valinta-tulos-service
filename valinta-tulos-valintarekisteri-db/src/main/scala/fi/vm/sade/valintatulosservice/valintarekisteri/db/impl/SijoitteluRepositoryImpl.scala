@@ -95,7 +95,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
           where js.hakukohde_oid = vtj.hakukohde_oid
           and js.valintatapajono_oid = vtj.oid
           and js.hyvaksytty_harkinnanvaraisesti is true
-        ) as harkinnanvaraiset
+        ) as harkinnanvaraiset on true
         where vtj.hakukohde_oid = ${hakukohdeOid}
         and vtj.sijoitteluajo_id = (select max(id) from sijoitteluajot where haku_oid = ${hakuOid})""".as[SijoitteluSummaryRecord]).toList
     }
