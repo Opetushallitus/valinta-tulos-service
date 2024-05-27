@@ -37,7 +37,8 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
         varasijoilla.value as varasijoilla,
         vtj.alin_hyvaksytty_pistemaara as alinHyvaksyttyPistemaara,
         ehdollisesti_hyvaksytyt.value as ehdollisestiHyvaksytyt,
-        peruneet.value as peruneet
+        peruneet.value as peruneet,
+        harkinnanvaraiset.value as harkinnanvaraisestiHyvaksytty
         from valintatapajonot vtj
         left join lateral (
           select count(vt.*) as value
@@ -88,6 +89,13 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
             and vt.valintatapajono_oid = vtj.oid
             and v.action = 'Peru'
         ) as peruneet on true
+        left join lateral (
+          select count(*) as value
+          from jonosijat js
+          where js.hakukohde_oid = vtj.hakukohde_oid
+          and js.valintatapajono_oid = vtj.oid
+          and js.hyvaksytty_harkinnanvaraisesti is true
+        ) as harkinnanvaraiset
         where vtj.hakukohde_oid = ${hakukohdeOid}
         and vtj.sijoitteluajo_id = (select max(id) from sijoitteluajot where haku_oid = ${hakuOid})""".as[SijoitteluSummaryRecord]).toList
     }

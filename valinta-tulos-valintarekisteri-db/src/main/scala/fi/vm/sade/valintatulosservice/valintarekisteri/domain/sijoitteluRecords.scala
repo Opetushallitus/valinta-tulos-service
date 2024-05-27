@@ -41,7 +41,7 @@ case class SijoitteluSummaryRecord(valintatapajonoOid: ValintatapajonoOid, valin
                                    sijoittelunKayttamatAloituspaikat: Int, aloituspaikat: Int,
                                    hyvaksytyt: Int, ehdollisestiVastaanottaneet: Int, paikanVastaanottaneet: Int,
                                    varasijoilla: Int, alinHyvaksyttyPistemaara: Double,
-                                   ehdollisestiHyvaksytyt: Int, peruneet: Int) {
+                                   ehdollisestiHyvaksytyt: Int, peruneet: Int, hyvaksyttyHarkinnanvaraisesti: Int) {
 }
 
 case class HakijaRecord(hakemusOid: HakemusOid, hakijaOid: String) {

@@ -97,7 +97,8 @@ trait ValintarekisteriResultExtractors {
     varasijoilla = r.nextInt,
     alinHyvaksyttyPistemaara = r.nextInt,
     ehdollisestiHyvaksytyt = r.nextInt,
-    peruneet = r.nextInt))
+    peruneet = r.nextInt,
+    hyvaksyttyHarkinnanvaraisesti = r.nextInt))
 
   protected implicit val getSijoitteluajoHakukohteetResult = GetResult(r => SijoittelunHakukohdeRecord(
     sijoitteluajoId = r.nextLong,
