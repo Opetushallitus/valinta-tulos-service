@@ -24,6 +24,10 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
           where haku_oid = ${hakuOid}""".as[Option[Long]].map(_.head)
   }
 
+  /*
+    Tarvittaessa alla olevaa kyselyä voi nopeuttaa useimmille hakukohteille jättämällä harkinnanvaraisuustiedon pois.
+    Harkinnanvaraisuustieto koskee vain toisen asteen yhteishakua.
+   */
   override def getLatestSijoitteluSummary(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): List[SijoitteluSummaryRecord] =
     timed(s"Sijoitten yhteenvedon haku hakukohteelle $hakukohdeOid", 100) {
       runBlocking(
