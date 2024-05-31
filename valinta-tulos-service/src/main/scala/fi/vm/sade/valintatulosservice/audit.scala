@@ -62,6 +62,10 @@ case object SijoittelunHakukohteenLuku extends Operation {
   def name: String = "SIJOITTELUN_HAKUKOHTEEN_LUKU"
 }
 
+case object SijoittelunHakukohteenYhteenvedonLuku extends Operation {
+  def name: String = "SIJOITTELUN_HAKUKOHTEEN_YHTEENVEDON_LUKU"
+}
+
 case object SijoitteluAjonLuku extends Operation {
   def name: String = "SIJOITTELUAJON_LUKU"
 }

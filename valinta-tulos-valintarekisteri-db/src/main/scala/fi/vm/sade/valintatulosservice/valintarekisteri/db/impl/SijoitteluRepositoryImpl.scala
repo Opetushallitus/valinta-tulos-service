@@ -24,6 +24,86 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
           where haku_oid = ${hakuOid}""".as[Option[Long]].map(_.head)
   }
 
+  /*
+    Tarvittaessa alla olevaa kyselyä voi nopeuttaa useimmille hakukohteille jättämällä harkinnanvaraisuustiedon pois.
+    Harkinnanvaraisuustieto koskee vain toisen asteen yhteishakua.
+   */
+  override def getLatestSijoitteluSummary(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): List[SijoitteluSummaryRecord] =
+    timed(s"Sijoitten yhteenvedon haku hakukohteelle $hakukohdeOid", 100) {
+      runBlocking(
+      sql"""select vtj.oid as valintatapajonoOid,
+        vtj.nimi as valintatapajonoNimi,
+        vtj.aloituspaikat as sijoittelunKayttamatAloituspaikat,
+        vtj.alkuperaiset_aloituspaikat as aloituspaikat,
+        hyvaksytyt.value as hyvaksytyt,
+        ehdollisesti_vastaanottaneet.value as ehdollisestiVastaanottaneet,
+        paikan_vastaanottaneet.value as paikanVastaanottaneet,
+        varasijoilla.value as varasijoilla,
+        vtj.alin_hyvaksytty_pistemaara as alinHyvaksyttyPistemaara,
+        ehdollisesti_hyvaksytyt.value as ehdollisestiHyvaksytyt,
+        peruneet.value as peruneet,
+        harkinnanvaraiset.value as harkinnanvaraisestiHyvaksytty
+        from valintatapajonot vtj
+        left join lateral (
+          select count(vt.*) as value
+            from valinnantilat vt
+            where vt.hakukohde_oid = vtj.hakukohde_oid
+        and vt.valintatapajono_oid = vtj.oid
+        and vt.tila in ('Hyvaksytty', 'VarasijaltaHyvaksytty')
+        ) as hyvaksytyt on true
+        left join lateral (
+          select count(vt.*) as value
+            from valinnantilat vt
+            join vastaanotot v on v.hakukohde = vt.hakukohde_oid and v.deleted is null
+            where vt.hakukohde_oid = vtj.hakukohde_oid
+            and vt.valintatapajono_oid = vtj.oid
+            and vt.tila in ('Hyvaksytty', 'VarasijaltaHyvaksytty')
+        and v.action = 'VastaanotaEhdollisesti'
+        ) as ehdollisesti_vastaanottaneet on true
+        left join lateral (
+          select count(*) as value
+            from valinnantilat vt
+            join vastaanotot v on v.hakukohde = vt.hakukohde_oid and vt.henkilo_oid = v.henkilo and v.deleted is null
+            where vt.hakukohde_oid = vtj.hakukohde_oid
+            and vt.valintatapajono_oid = vtj.oid
+            and vt.tila in ('Hyvaksytty', 'VarasijaltaHyvaksytty')
+        and v.action in ('VastaanotaEhdollisesti', 'VastaanotaSitovasti')
+        ) as paikan_vastaanottaneet on true
+        left join lateral (
+          select count(vt.*) as value
+            from valinnantilat vt
+            where vt.hakukohde_oid = vtj.hakukohde_oid
+        and vt.valintatapajono_oid = vtj.oid
+        and vt.tila = 'Varalla'
+        ) as varasijoilla on true
+        left join lateral (
+          select count(vtu.*) as value
+            from valinnantulokset vtu
+            join valinnantilat vt on vtu.valintatapajono_oid = vt.valintatapajono_oid and vtu.hakemus_oid = vt.hakemus_oid and vtu.hakukohde_oid = vt.hakukohde_oid
+            where vt.hakukohde_oid = vtj.hakukohde_oid
+            and vt.valintatapajono_oid = vtj.oid
+            and vtu.ehdollisesti_hyvaksyttavissa
+            and vt.tila in ('Hyvaksytty', 'VarasijaltaHyvaksytty')
+        ) as ehdollisesti_hyvaksytyt on true
+        left join lateral (
+          select count(*) as value
+            from valinnantilat vt
+            join vastaanotot v on v.hakukohde = vt.hakukohde_oid and vt.henkilo_oid = v.henkilo and v.deleted is null
+            where vt.hakukohde_oid = vtj.hakukohde_oid
+            and vt.valintatapajono_oid = vtj.oid
+            and v.action = 'Peru'
+        ) as peruneet on true
+        left join lateral (
+          select count(*) as value
+          from jonosijat js
+          where js.hakukohde_oid = vtj.hakukohde_oid
+          and js.valintatapajono_oid = vtj.oid
+          and js.hyvaksytty_harkinnanvaraisesti is true
+        ) as harkinnanvaraiset on true
+        where vtj.hakukohde_oid = ${hakukohdeOid}
+        and vtj.sijoitteluajo_id = (select max(id) from sijoitteluajot where haku_oid = ${hakuOid})""".as[SijoitteluSummaryRecord]).toList
+    }
+
   override def getSijoitteluajo(sijoitteluajoId: Long): Option[SijoitteluajoRecord] =
     timed(s"Sijoitteluajon $sijoitteluajoId haku", 100) {
       runBlocking(
