@@ -53,6 +53,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
+            <version>${slf4j-api.version}</version>
         </dependency>
     </dependencies>
     <build>
@@ -83,29 +84,12 @@
                 <version>${plugin.maven-surefire-plugin.version}</version>
             </plugin>-->
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>${plugin.exec-maven-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>siirtotiedosto_app</id>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
-                        <configuration>
-                            <mainClass>fi.vm.sade.valintatulosovara.SiirtotiedostoApp</mainClass>
-                            <classpathScope>test</classpathScope>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>${plugin.maven-assembly-plugin.version}</version>
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>fi.vm.sade.valintatulosovara.SiirtotiedostoApp</mainClass>
+                            <mainClass>fi.vm.sade.valintatulosservice.ovara.SiirtotiedostoApp</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

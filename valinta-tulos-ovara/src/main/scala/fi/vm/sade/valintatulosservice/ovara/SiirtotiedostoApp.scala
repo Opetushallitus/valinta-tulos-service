@@ -1,9 +1,8 @@
-package fi.vm.sade.valintatulosovara
+package fi.vm.sade.valintatulosservice.ovara
 
 import org.slf4j.{Logger, LoggerFactory}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.{IT, VtsAppConfig}
-import fi.vm.sade.valintatulosservice.ovara.{SiirtotiedostoPalveluClient, SiirtotiedostoService}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SiirtotiedostoRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{ValintarekisteriDb}
 
