@@ -20,6 +20,7 @@ import java.net.URL
 object VtsAppConfig extends Logging {
   def getProfileProperty() = System.getProperty("valintatulos.profile", "default")
   private val propertiesFile = "/oph-configuration/valinta-tulos-service-oph.properties"
+  private val propertiesFileOvara = "/oph-configuration/valinta-tulos-ovara-oph.properties"
   private implicit val settingsParser = VtsApplicationSettingsParser
   private val embeddedMongoPortChooser = new PortFromSystemPropertyOrFindFree("valintatulos.embeddedmongo.port")
   private val itPostgresPortChooser = new PortFromSystemPropertyOrFindFree("valintatulos.it.postgres.port")
@@ -46,6 +47,7 @@ object VtsAppConfig extends Logging {
       case "dev-stubbed" => new Dev_StubbedDeps
       case "it" => new IT
       case "it-externalHakemus" => new IT_externalHakemus
+      case "ovara" => new Ovara
       case name => throw new IllegalArgumentException("Unknown value for valintatulos.profile: " + name);
     }
   }
@@ -55,6 +57,13 @@ object VtsAppConfig extends Logging {
    */
   class Default extends VtsAppConfig with ExternalProps with CasSecurity {
     override val ophUrlProperties = new ProdOphUrlProperties(propertiesFile)
+  }
+
+  class Ovara extends VtsAppConfig with ExternalOvaraProps {
+    override val ophUrlProperties = new ProdOphUrlProperties(propertiesFileOvara)
+
+    //Security contextia ei oikeasti tarvita, koska sovellus lukee vain omaa kantaansa.
+    override def securityContext: SecurityContext = ???
   }
 
   /**
@@ -168,6 +177,12 @@ object VtsAppConfig extends Logging {
 
   trait ExternalProps {
     def configFile = System.getProperty("user.home") + "/oph-configuration/valinta-tulos-service.properties"
+    lazy val settings = ApplicationSettingsLoader.loadSettings(configFile)
+  }
+
+  trait ExternalOvaraProps {
+    def configFile = System.getProperty("user.home") + "/oph-configuration/valinta-tulos-ovara.properties"
+
     lazy val settings = ApplicationSettingsLoader.loadSettings(configFile)
   }
 
