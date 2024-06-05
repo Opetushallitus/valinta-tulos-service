@@ -69,7 +69,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           path: valinta-tulos-ovara/target/valinta-tulos-ovara-*-jar-with-dependencies.jar
-          name: valinta-tulos-ovara.jar
+          name: ovara-valinta-tulos.jar
           overwrite: true
 
 
@@ -106,7 +106,7 @@ jobs:
     needs: test-and-build
     uses: Opetushallitus/.github/.github/workflows/push-scan-java-ecr.yml@main
     with:
-      application: valinta-tulos-ovara
+      application: ovara-valinta-tulos
       base-image: baseimage-fatjar-openjdk11:master
       configfolder: valinta-tulos-ovara/src/main/resources/oph-configuration
       jarfile: valinta-tulos-ovara
