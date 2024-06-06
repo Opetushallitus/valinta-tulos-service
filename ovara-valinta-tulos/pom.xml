@@ -7,17 +7,13 @@
         <artifactId>valinta-tulos-service-parent</artifactId>
         <version>8.1.0-SNAPSHOT</version>
     </parent>
-    <artifactId>valinta-tulos-ovara</artifactId>
+    <artifactId>ovara-valinta-tulos</artifactId>
     <packaging>jar</packaging>
-    <description>valinta-tulos-tulos-ovara</description>
-    <name>valinta-tulos-tulos-ovara</name>
+    <description>ovara-valinta-tulos</description>
+    <name>ovara-valinta-tulos</name>
     <organization>
         <name>fi.vm.sade</name>
     </organization>
-    <dependencyManagement>
-        <dependencies>
-        </dependencies>
-    </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>org.scala-lang</groupId>
@@ -38,7 +34,8 @@
             <groupId>fi.vm.sade</groupId>
             <artifactId>valinta-tulos-service</artifactId>
             <version>${project.version}</version>
-            <type>war</type>
+            <classifier>classes</classifier>
+            <type>jar</type>
             <exclusions>
                 <exclusion>
                     <groupId>io.swagger</groupId>
@@ -58,7 +55,7 @@
     </dependencies>
     <build>
         <plugins>
-            <!--<plugin>
+            <plugin>
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
                 <version>${plugin.scala-maven-plugin.version}</version>
@@ -79,17 +76,12 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>${plugin.maven-surefire-plugin.version}</version>
-            </plugin>-->
-            <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>${plugin.maven-assembly-plugin.version}</version>
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>fi.vm.sade.valintatulosservice.ovara.SiirtotiedostoApp</mainClass>
+                            <mainClass>fi.vm.sade.valintatulosservice.ovara.ajastus.SiirtotiedostoApp</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

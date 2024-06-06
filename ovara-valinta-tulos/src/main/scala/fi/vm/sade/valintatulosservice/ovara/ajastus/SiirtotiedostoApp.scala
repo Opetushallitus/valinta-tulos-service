@@ -1,10 +1,12 @@
-package fi.vm.sade.valintatulosservice.ovara
+package fi.vm.sade.valintatulosservice.ovara.ajastus
 
 import org.slf4j.{Logger, LoggerFactory}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.{IT, VtsAppConfig}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SiirtotiedostoRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{ValintarekisteriDb}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.ovara
+import fi.vm.sade.valintatulosservice.ovara.{SiirtotiedostoPalveluClient, SiirtotiedostoService}
 
 object SiirtotiedostoApp {
   private val logger: Logger = LoggerFactory.getLogger(SiirtotiedostoApp.getClass)
