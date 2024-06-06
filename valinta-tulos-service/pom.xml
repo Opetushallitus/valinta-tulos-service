@@ -555,6 +555,7 @@
                 <version>${plugin.maven-war-plugin.version}</version>
                 <configuration>
                     <packagingExcludes>WEB-INF/lib//javax.servlet-api-*.jar</packagingExcludes>
+                    <attachClasses>true</attachClasses>
                 </configuration>
             </plugin>
             <plugin>
