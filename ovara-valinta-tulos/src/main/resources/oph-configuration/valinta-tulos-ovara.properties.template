@@ -33,18 +33,123 @@ valinta-tulos-service.siirtotiedosto.hakukohde_group_size={{ valintatulosservice
 # TODO Arvot tästä alaspäin eivät ole ovaralle tarpeellisia, mutta ovat väliaikaisesti täällä että SiirtotiedostoApp voi käyttää suoraan vts:n konffeja.
 # Jonkinlaisella konffirefaktoroinnilla näistä pääsee eroon.
 
+host.virkailija={{host_virkailija}}
+host.oppija={{host_oppija}}
+host.haku={{host_haku}}
+host.haku.sv={{host_haku_sv}}
+host.haku.en={{host_haku_en}}
+host.alb={{host_alb}}
+valinta-tulos-service.ohjausparametrit.url=https\://{{host_virkailija}}/ohjausparametrit-service/api/v1/rest/parametri
+valinta-tulos-service.ilmoittautuminen.enabled={{valintatulosservice_ilmoittautuminen_enabled}}
+
+valinta-tulos-service.streaming.hakukohde.concurrency={{valintatulosservice_streaming_hakukohde_concurrency | default('10') }}
+valinta-tulos-service.streaming.lock.timeout.seconds={{valintatulosservice_streaming_lock_timeout_seconds | default('600') }}
+valinta-tulos-service.streaming.lock.queue.limit={{valintatulosservice_streaming_lock_queue_limit | default('10')}}
+valinta-tulos-service.ataru-hakemus-enricher-hakukohde-cache.ttl.seconds={{valintatulosservice_ataru_hakemus_enricher_hakukohde_cache_ttl_seconds | default('3600') }}
+
+#SIJOITTELU-SERVICE
+sijoittelu-service.rest.url=https://{{host_virkailija}}/sijoittelu-service
+valinta-tulos-service.parseleniently.sijoitteluajontulos={{valintatulosservice_parseleniently_sijoitteluajontulos}}
+sijoittelu-service.hakukohdeCache.populate=false
+sijoittelu-service.hakukohdeDao.batchSize=300
+sijoittelu-service.saveSijoitteluToValintarekisteri={{sijoitteluservice_save_sijoittelu_to_valintarekisteri}}
+
+# HAKEMUKSET
+hakemus.mongodb.dbname=hakulomake
+hakemus.mongodb.uri=mongodb://{{mongodb_hakemus_auth}}@{{mongodb_hakemus_host}}:{{mongodb_hakemus_port}}
+
 # TARJONTA
-tarjonta-service.url=https://virkailija.testiopintopolku/tarjonta-service
-valinta-tulos-service.parseleniently.tarjonta=false
-valinta-tulos-service.cas.username=notneeded
-valinta-tulos-service.cas.password=notneeded
+tarjonta-service.url=https://{{host_virkailija}}/tarjonta-service
+valinta-tulos-service.parseleniently.tarjonta={{valintatulosservice_parseleniently_tarjonta}}
 
 valinta-tulos-service.kohdejoukot.korkeakoulu={{valintatulosservice_kohdejoukot_korkeakoulu | default('haunkohdejoukko_12')}}
 valinta-tulos-service.kohdejoukot.toinen-aste={{valintatulosservice_kohdejoukot_toinenaste | default('haunkohdejoukko_11,haunkohdejoukko_17,haunkohdejoukko_20,haunkohdejoukko_23,haunkohdejoukko_24')}}
 valinta-tulos-service.kohdejoukon-tarkenteet.amkope={{valintatulosservice_kohdejoukontarkenteet_amkope | default('haunkohdejoukontarkenne_2,haunkohdejoukontarkenne_4,haunkohdejoukontarkenne_5,haunkohdejoukontarkenne_6')}}
 
+# CAS
+cas.url={{cas_url}}
+valinta-tulos-service.cas.service=https://{{host_virkailija}}/valinta-tulos-service
+valinta-tulos-service.cas.username=not_configured
+valinta-tulos-service.cas.password=not_configured
+cas.service.organisaatio-service=https://{{host_virkailija}}/organisaatio-service
+cas.service.valintaperusteet-service=https://{{host_virkailija}}/valintaperusteet-service
+root.organisaatio.oid=1.2.246.562.10.00000000001
+valinta-tulos-service.cas.kela.username=not_configured
+valinta-tulos-service.cas.kela.password=not_configured
+valinta-tulos-service.cas.validate-service-ticket.timeout.seconds={{ valintatulosservice_cas_validate_service_ticket_timeout_seconds | default('1') }}
+valinta-tulos-service.kela.vastaanotot.testihetu={{vts_kela_vastaanotot_testihetu}}
+
+# VALINTAREKISTERI
+valinta-tulos-service.valintarekisteri.db.url=jdbc:postgresql://{{host_postgresql_valintarekisteri}}/valintarekisteri
+valinta-tulos-service.valintarekisteri.db.user={{postgres_app_user}}
+valinta-tulos-service.valintarekisteri.db.password={{host_postgresql_valintarekisteri_app_password}}
+valinta-tulos-service.valintarekisteri.db.connectionPool=HikariCP
+valinta-tulos-service.valintarekisteri.db.numThreads=10
+valinta-tulos-service.valintarekisteri.db.maxConnections=50
+valinta-tulos-service.valintarekisteri.db.minConnections=10
+valinta-tulos-service.valintarekisteri.db.queueSize=10000
+valinta-tulos-service.valintarekisteri.db.registerMbeans=true
+valinta-tulos-service.valintarekisteri.db.initializationFailTimeout=1000
+valinta-tulos-service.valintarekisteri.db.timeout=20 seconds
+valinta-tulos-service.valintarekisteri.db.leakDetectionThresholdMillis=1800000
+valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids=1000000
+valinta-tulos-service.valintarekisteri.use-sijoittelu-mongo=true
+
+# MailPoller
+valinta-tulos-service.mail-poller.concurrency={{valintatulosservice_mail_poller_concurrency | default('1') }}
+valinta-tulos-service.mail-poller.resultless.hakukohde.hours={{valintatulosservice_mail_poller_resultless_hakukohde_hours | default('23') }}
+valinta-tulos-service.mail-poller.hakemus.recheck.hours={{valintatulosservice_mail_poller_hakemus_recheck_hours | default('24') }}
+
+# Valintarekisteri flag
+valinta-tulos-service.read-from-valintarekisteri={{read_from_valintarekisteri}}
+
+# Valintarekisterin migraatio
+valinta-tulos-service.haku-app-url=https://{{host_virkailija}}/haku-app
+valinta-tulos-service.authentication-service-url=https://{{host_virkailija}}/authentication-service
+valinta-tulos-service.scheduled-migration.start-hour=17
+valinta-tulos-service.scheduled-delete-sijoitteluajo.start-hour=23
+valinta-tulos-service.scheduled-delete-sijoitteluajo.limit={{ valintarekisteri_scheduled_sijoitteluajo_delete_limit | default('20') }}
+valinta-tulos-service.scheduled-migration.end-hour=7
+
+# KELA
+valinta-tulos-service.kela.url=https://asiointi.kela.fi/go_app/EArtApplication?reitti=oph
+
+# Oppijan tunnistus
+oppijan-tunnistus-service.url=https://{{host_virkailija}}/oppijan-tunnistus/api/v1/only_token
+
+# Omatsivut
+omatsivut.fi=https://{{host_haku}}/omatsivut/hakutoiveidenMuokkaus.html#/token/
+omatsivut.en=https://{{host_haku_en}}/omatsivut/hakutoiveidenMuokkaus.html#/token/
+omatsivut.sv=https://{{host_haku_sv}}/omatsivut/hakutoiveidenMuokkaus.html#/token/
+omatsivut.oili.hetutonUrl={{oili_hetuton_url}}
+
+
+## Valinta-tulos-emailer
+
+# AJASTUS
+valinta-tulos-service.emailer.cron.string={{ valintatulosservice_emailer_cron_string | default('0 05 7,19 * * ?') }}
+
+# CAS
+ryhmasahkoposti.cas.service=https://{{host_virkailija}}/ryhmasahkoposti-service/
+ryhmasahkoposti.cas.username=not_configured
+ryhmasahkoposti.cas.password=not_configured
+
+# RYHMÄSÄHKÖPOSTI
+ryhmasahkoposti.service.batch.size={{ email_batch_size | default('5') }}
+ryhmasahkoposti.service.email.url=https://{{host_virkailija}}/ryhmasahkoposti-service/email
+
+# Valintatulokset
+valinta-tulos-service.batch.size={{ vt_batch_size | default('5') }}
+valinta-tulos-service.batch.limit.minutes={{ valinta_tulos_email_batch_limit_minutes | default('5') }}
+
+# HTTP-Headerit
+valinta-tulos-service.header.last.modified={{ valintatulosservice_header_last_modified | default('X-Last-Modified') }}
+valinta-tulos-service.header.if.unmodified.since={{ valintatulosservice_if_unmodified_since | default('X-If-Unmodified-Since') }}
+
+# Blaze
 valinta-tulos-service.blaze.response-header-timeout={{ valintatulosservice_blaze_response_header_timeout | default('10') }}
 valinta-tulos-service.blaze.idle-timeout={{ valintatulosservice_blaze_idle_timeout | default('60') }}
 valinta-tulos-service.blaze.request-timeout={{ valintatulosservice_blaze_request_timeout | default('3600') }}
 
-
+# Swagger
+valinta-tulos-service.swagger=https\://{{host_virkailija}}/valinta-tulos-service/swagger/swagger.json
