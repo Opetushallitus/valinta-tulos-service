@@ -29,3 +29,22 @@ valinta-tulos-service.siirtotiedosto.ilmoittautumiset_page_size={{ valintatuloss
 valinta-tulos-service.siirtotiedosto.valintatapajonot_page_size={{ valintatulosservice_siirtotiedosto_valintatapajonot_page_size | default('10000') }}
 valinta-tulos-service.siirtotiedosto.vastaanotot_page_size={{ valintatulosservice_siirtotiedosto_vastaanotot_page_size | default('10000') }}
 valinta-tulos-service.siirtotiedosto.hakukohde_group_size={{ valintatulosservice_siirtotiedosto_hakukohde_group_size | default('500') }}
+
+# TODO Arvot tästä alaspäin eivät ole ovaralle tarpeellisia, mutta ovat väliaikaisesti täällä että SiirtotiedostoApp voi käyttää suoraan vts:n konffeja.
+# Jonkinlaisella konffirefaktoroinnilla näistä pääsee eroon.
+
+# TARJONTA
+tarjonta-service.url=https://virkailija.testiopintopolku/tarjonta-service
+valinta-tulos-service.parseleniently.tarjonta=false
+valinta-tulos-service.cas.username=notneeded
+valinta-tulos-service.cas.password=notneeded
+
+valinta-tulos-service.kohdejoukot.korkeakoulu={{valintatulosservice_kohdejoukot_korkeakoulu | default('haunkohdejoukko_12')}}
+valinta-tulos-service.kohdejoukot.toinen-aste={{valintatulosservice_kohdejoukot_toinenaste | default('haunkohdejoukko_11,haunkohdejoukko_17,haunkohdejoukko_20,haunkohdejoukko_23,haunkohdejoukko_24')}}
+valinta-tulos-service.kohdejoukon-tarkenteet.amkope={{valintatulosservice_kohdejoukontarkenteet_amkope | default('haunkohdejoukontarkenne_2,haunkohdejoukontarkenne_4,haunkohdejoukontarkenne_5,haunkohdejoukontarkenne_6')}}
+
+valinta-tulos-service.blaze.response-header-timeout={{ valintatulosservice_blaze_response_header_timeout | default('10') }}
+valinta-tulos-service.blaze.idle-timeout={{ valintatulosservice_blaze_idle_timeout | default('60') }}
+valinta-tulos-service.blaze.request-timeout={{ valintatulosservice_blaze_request_timeout | default('3600') }}
+
+
