@@ -24,6 +24,8 @@
             <groupId>fi.vm.sade</groupId>
             <artifactId>valinta-tulos-valintarekisteri-db</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>fi.vm.sade.dokumenttipalvelu</groupId>
@@ -46,6 +48,11 @@
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j-api.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
