@@ -3,6 +3,8 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SiirtotiedostoRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, HenkiloOid, ValintatapajonoOid, ValintatapajonoRecord}
+import org.json4s.{DefaultFormats, Formats}
+import org.json4s.native.Serialization.write
 import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -51,31 +53,47 @@ case class SiirtotiedostoValinnantulos(hakukohdeOid: HakukohdeOid,
                                        hyvaksyPeruuntunut: Option[Boolean],
                                        valinnantilanViimeisinMuutos: String)
 
-case class SiirtotiedostoProcessInfo(id: String,
-                                     windowStart: String,
-                                     windowEnd: String,
-                                     runStart: String, //postgres-kannan aikaleima siltä hetkeltä, kun sieltä on haettu tieto
-                                     runEnd: String, //postgres-now() siltä hetkeltä kun merkattiin
-                                     runFinished: Boolean,
-                                     errorMessage: Option[String])
+case class SiirtotiedostoProcessInfo(entityTotals: Map[String, Long])
+
+case class SiirtotiedostoProcess(id: Long,
+                                 executionId: String,
+                                 windowStart: String,
+                                 windowEnd: String,
+                                 runStart: String, //postgres-kannan aikaleima siltä hetkeltä, kun sieltä on haettu tieto
+                                 runEnd: Option[String], //postgres-now() siltä hetkeltä kun merkattiin
+                                 info: SiirtotiedostoProcessInfo,
+                                 finishedSuccessfully: Boolean,
+                                 errorMessage: Option[String])
 
 trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with ValintarekisteriRepository {
 
-  def getLatestProcessInfo(): Option[SiirtotiedostoProcessInfo] = {
+  implicit val formats: Formats = DefaultFormats
+
+  def getLatestProcessInfo(): Option[SiirtotiedostoProcess] = {
     //Todo, otetaan tässä huomioon ehkä id:n lisäksi myös viimeisin window_end -aikaleima tai ainakin varoitetaan, jos matalammalla id:llä on myöhäisempi window_end?
     //Periaatteessa niin ei pitäisi kyllä tapahtua, jos aikaikkunat liikkuvat aina eteenpäin eikä useampaa siirtotiedostoja muodostavaa konttia käynnistetä samanaikaisesti
     timed(s"Getting latest process info", 100) {
       runBlocking(
-        sql"""select id, window_start, window_end, run_start, run_end, success, error_message from siirtotiedosto order by id desc limit 1""".as[SiirtotiedostoProcessInfo].headOption
+        sql"""select id, uuid, window_start, window_end, run_start, run_end, info, success, error_message from siirtotiedostot order by id desc limit 1""".as[SiirtotiedostoProcess].headOption
+      )
+    }
+  }
+  //2024-05-22 13:05:33.068712 +00:00
+  def createNewProcess(executionId: String, windowStart: String, windowEnd: String): Option[SiirtotiedostoProcess] = {
+    timed(s"Persisting new process info for executionId $executionId, window $windowStart - $windowEnd", 100) {
+      runBlocking(
+        sql"""insert into siirtotiedostot(id, uuid, window_start, window_end, run_start, run_end, info, success, error_message)
+             values (default, $executionId, $windowStart, $windowEnd, now(), null, '{"entityTotals": {}}'::jsonb, false, '')
+             returning *""".as[SiirtotiedostoProcess].headOption
       )
     }
   }
 
-  def persistProcessInfo(processInfo: SiirtotiedostoProcessInfo): Option[Int] = {
-    timed(s"Persisting process info $processInfo", 100) {
+  def persistFinishedProcess(process: SiirtotiedostoProcess) = {
+    timed(s"Saving process results for id ${process.id}: $process", 100) {
       runBlocking(
-        sql"""insert into siirtotiedosto(window_start, window_end, run_start, run_end, success, error_message)
-             values (${processInfo.windowStart}, ${processInfo.windowEnd}, ${processInfo.runStart}, now(), ${processInfo.runFinished}, ${processInfo.errorMessage.getOrElse("")}) returning id""".as[Int].headOption
+        sql"""update siirtotiedostot set run_end = now(), info = ${write(process.info)}::jsonb, error_message = ${process.errorMessage}
+                       where id = ${process.id} returning *""".as[SiirtotiedostoProcess].headOption
       )
     }
   }
