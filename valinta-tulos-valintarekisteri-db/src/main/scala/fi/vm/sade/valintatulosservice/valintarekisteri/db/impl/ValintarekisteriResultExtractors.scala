@@ -3,11 +3,11 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 import java.sql.JDBCType
 import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
 import java.util.UUID
-
 import fi.vm.sade.sijoittelu.domain.Valintatapajono.JonosijaTieto
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoAction, VastaanottoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import org.json4s.jackson.Serialization.read
 import org.json4s.native.JsonMethods
 import org.json4s.{DefaultFormats, Formats}
 import slick.jdbc.{GetResult, PositionedParameters, PositionedResult, SetParameter}
@@ -247,13 +247,15 @@ trait ValintarekisteriResultExtractors {
     valinnantilanViimeisinMuutos = r.nextString()
   ))
 
-  protected implicit val getSiirtotiedostoProcessInfoResult: GetResult[SiirtotiedostoProcessInfo] = GetResult(r => SiirtotiedostoProcessInfo(
-    id = r.nextString(),
+  protected implicit val getSiirtotiedostoProcessInfoResult: GetResult[SiirtotiedostoProcess] = GetResult(r => SiirtotiedostoProcess(
+    id = r.nextLong(),
+    executionId = r.nextString(),
     windowStart = r.nextString(),
     windowEnd = r.nextString(),
     runStart = r.nextString(),
-    runEnd = r.nextStringOption().getOrElse("not ended"),//fixme :)
-    runFinished = r.nextBoolean(),
+    runEnd = r.nextStringOption(),
+    info = r.nextStringOption().map(read[SiirtotiedostoProcessInfo]).getOrElse(SiirtotiedostoProcessInfo(Map.empty)),
+    finishedSuccessfully = r.nextBoolean(),
     errorMessage = r.nextStringOption()
   ))
 

@@ -4,9 +4,12 @@ import fi.vm.sade.valintatulosservice.{Authenticated, CasAuthenticatedServlet, V
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{SiirtotiedostoProcess, SiirtotiedostoProcessInfo}
 import org.scalatra.{BadRequest, Ok}
-import org.scalatra.swagger.{Swagger}
+import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
+
+import java.util.UUID
 
 class SiirtotiedostoServlet(siirtotiedostoService: SiirtotiedostoService, db: SessionRepository)
                            (implicit val swagger: Swagger)
@@ -26,7 +29,8 @@ class SiirtotiedostoServlet(siirtotiedostoService: SiirtotiedostoService, db: Se
     val start = params("start") //timestamp tz
     val end = params("end")
     logger.info(s"Muodostetaan siirtotiedosto, $start - $end")
-    val result = siirtotiedostoService.muodostaJaTallennaSiirtotiedostot(start, end)
+    val sp = SiirtotiedostoProcess(0, UUID.randomUUID().toString, start, end, "foo", None, SiirtotiedostoProcessInfo(entityTotals = Map.empty), finishedSuccessfully = false, None)
+    val result = siirtotiedostoService.muodostaJaTallennaSiirtotiedostot(sp)
     logger.info(s"Tiedosto muodostettu, result: $result")
       Ok("Success:" + result)
     } catch {
