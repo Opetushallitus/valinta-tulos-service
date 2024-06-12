@@ -92,7 +92,11 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
   def persistFinishedProcess(process: SiirtotiedostoProcess) = {
     timed(s"Saving process results for id ${process.id}: $process", 100) {
       runBlocking(
-        sql"""update siirtotiedostot set run_end = now(), info = ${write(process.info)}::jsonb, error_message = ${process.errorMessage}
+        sql"""update siirtotiedostot set
+                           run_end = now(),
+                           info = ${write(process.info)}::jsonb,
+                           success = ${process.finishedSuccessfully},
+                           error_message = ${process.errorMessage}
                        where id = ${process.id} returning *""".as[SiirtotiedostoProcess].headOption
       )
     }
