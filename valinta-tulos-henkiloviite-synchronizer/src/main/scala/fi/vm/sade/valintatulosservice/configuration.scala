@@ -13,11 +13,9 @@ case class DbConfiguration(user: Option[String], password: Option[String], url: 
 case class AuthenticationConfiguration(url: Uri, cas: CasConfiguration)
 case class CasConfiguration(user: String, password: String, host: String, service: String)
 case class SchedulerConfiguration(startHour: Option[Long], intervalHours: Option[Long])
-case class Buildversion(version: String, branch: String, commit: String, timestamp: String)
 case class Configuration(port: Int,
                          idleTimeoutSeconds: Long,
                          accessLogConfigPath: String,
-                         buildversion: Buildversion,
                          db: DbConfiguration,
                          authentication: AuthenticationConfiguration,
                          scheduler: SchedulerConfiguration)
@@ -38,19 +36,9 @@ object Configuration {
       getInt(properties, "henkiloviite.port"),
       getLong(properties, "henkiloviite.idle_timeout_seconds"),
       getString(properties, "logback.access"),
-      readBuildversion(properties),
       readDb(properties),
       readAuthentication(properties),
       readScheduler(properties)
-    )
-  }
-
-  def readBuildversion(properties: Properties): Buildversion = {
-    Buildversion(
-      getString(properties, "henkiloviite.buildversion.version"),
-      getString(properties, "henkiloviite.buildversion.branch"),
-      getString(properties, "henkiloviite.buildversion.commit"),
-      getString(properties, "henkiloviite.buildversion.timestamp")
     )
   }
 
