@@ -70,7 +70,7 @@ class SiirtotiedostoService(siirtotiedostoRepository: SiirtotiedostoRepository, 
           logger.info(s"($executionId) Haetaan ja tallennetaan tulokset ${hakukohdeOids.size} hakukohteelle")
           val tulokset = siirtotiedostoRepository.getSiirtotiedostoValinnantuloksetForHakukohteet(hakukohdeOids)
           logger.info(s"($executionId) Saatiin ${tulokset.size} tulosta ${hakukohdeOids.size} hakukohdeOidille")
-          siirtotiedostoClient.saveSiirtotiedosto[SiirtotiedostoValinnantulos]("valinnantulokset", tulokset, executionId, hakukohdeFileCounter)
+          siirtotiedostoClient.saveSiirtotiedosto[SiirtotiedostoValinnantulos]("valinnantulos", tulokset, executionId, hakukohdeFileCounter)
           hakukohdeFileCounter += 1
           Right(tulokset.size.toLong)
         } catch {
@@ -79,18 +79,18 @@ class SiirtotiedostoService(siirtotiedostoRepository: SiirtotiedostoRepository, 
         }
       }).toSeq
 
-      val baseParams = SiirtotiedostoPagingParams(executionId, 1, "vastaanotot", siirtotiedostoProcess.windowStart, siirtotiedostoProcess.windowEnd, 0, config.vastaanototSize)
+      val baseParams = SiirtotiedostoPagingParams(executionId, 1, "", siirtotiedostoProcess.windowStart, siirtotiedostoProcess.windowEnd, 0, config.vastaanototSize)
 
-      val valinnantulosCount = ("valinnantulokset", hakukohdeResults.map(_.fold(e => throw e, count => count)).sum)
+      val valinnantulosCount = ("valinnantulos", hakukohdeResults.map(_.fold(e => throw e, count => count)).sum)
       val vastaanototCount = formSiirtotiedosto[SiirtotiedostoVastaanotto](
-        baseParams.copy(tyyppi = "vastaanotot", pageSize = config.vastaanototSize),
-        params => siirtotiedostoRepository.getVastaanototPage(params)).fold(e => throw e, n => ("vastaanotot", n))
+        baseParams.copy(tyyppi = "vastaanotto", pageSize = config.vastaanototSize),
+        params => siirtotiedostoRepository.getVastaanototPage(params)).fold(e => throw e, n => ("vastaanotto", n))
       val ilmoittautumisetCount = formSiirtotiedosto[SiirtotiedostoIlmoittautuminen](
-        baseParams.copy(tyyppi = "ilmoittautumiset", pageSize = config.ilmoittautumisetSize),
-        params => siirtotiedostoRepository.getIlmoittautumisetPage(params)).fold(e => throw e, n => ("ilmoittautumiset", n))
+        baseParams.copy(tyyppi = "ilmoittautuminen", pageSize = config.ilmoittautumisetSize),
+        params => siirtotiedostoRepository.getIlmoittautumisetPage(params)).fold(e => throw e, n => ("ilmoittautuminen", n))
       val valintatapajonotCount = formSiirtotiedosto[ValintatapajonoRecord](
-        baseParams.copy(tyyppi = "valintatapajonot", pageSize = config.valintatapajonotSize),
-        params => siirtotiedostoRepository.getValintatapajonotPage(params)).fold(e => throw e, n => ("valintatapajonot", n))
+        baseParams.copy(tyyppi = "valintatapajono", pageSize = config.valintatapajonotSize),
+        params => siirtotiedostoRepository.getValintatapajonotPage(params)).fold(e => throw e, n => ("valintatapajono", n))
 
       val entityCounts: Map[String, Long] = Seq(valinnantulosCount, vastaanototCount, ilmoittautumisetCount, valintatapajonotCount).toMap
 
