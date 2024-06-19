@@ -37,7 +37,7 @@
         <morphia.version>1.2.1</morphia.version>
         <postgresql.version>42.7.1</postgresql.version>
         <scala-cas_2.11.version>2.2.3-SNAPSHOT</scala-cas_2.11.version>
-        <scala.version>2.11.12</scala.version>
+        <scala.version>2.13.14</scala.version>
         <scala-logging_2.11.version>3.1.0</scala-logging_2.11.version>
         <scala-parser-combinators_2.11.version>1.0.4</scala-parser-combinators_2.11.version>
         <scala-xml_2.11.version>1.0.5</scala-xml_2.11.version>
