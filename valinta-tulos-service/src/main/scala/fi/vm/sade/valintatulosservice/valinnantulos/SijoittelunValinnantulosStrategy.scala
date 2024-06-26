@@ -98,9 +98,9 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
       def validateHyvaksyttyVarasijalta() = (uusi.hyvaksyttyVarasijalta, uusi.valinnantila) match {
         case (None, _) | (vanha.hyvaksyttyVarasijalta, _) => Right()
-        case (Some(true), Varalla) if (allowOphUpdate(session) || allowMusiikkiUpdate(session, tarjoajaOids)) => Right()
+        case (Some(true), Varalla) if (allowOphUpdate(session) || allowMusiikkiUpdate(session, tarjoajaOids) || allowVarasijaUpdate(session, tarjoajaOids)) => Right()
         case (Some(true), x) if x != Varalla => Left(ValinnantulosUpdateStatus(409, s"Ei voida hyväksyä varasijalta", uusi.valintatapajonoOid, uusi.hakemusOid))
-        case (Some(false), _) if (allowOphUpdate(session) || allowMusiikkiUpdate(session, tarjoajaOids)) => Right()
+        case (Some(false), _) if (allowOphUpdate(session) || allowMusiikkiUpdate(session, tarjoajaOids) || allowVarasijaUpdate(session, tarjoajaOids)) => Right()
         case (_, _) => Left(ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä varasijalta", uusi.valintatapajonoOid, uusi.hakemusOid))
       }
 
@@ -133,6 +133,9 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
       def allowMusiikkiUpdate(session: Session, tarjoajaOids: Set[String]) =
         authorizer.checkAccessWithHakukohderyhmat(session, tarjoajaOids, Set(Role.VALINTAKAYTTAJA_MUSIIKKIALA), hakukohdeOid).isRight
+
+      def allowVarasijaUpdate(session: Session, tarjoajaOids: Set[String]) =
+        authorizer.checkAccessWithHakukohderyhmat(session, tarjoajaOids, Set(Role.VALINTAKAYTTAJA_VARASIJAHYVAKSYNTA), hakukohdeOid).isRight
 
       validateMuutos().fold(
         e => DBIO.successful(Left(e)),
