@@ -231,7 +231,7 @@ trait ValintarekisteriResultExtractors {
     hakukohdeOid = HakukohdeOid(r.nextString),
     valintatapajonoOid = ValintatapajonoOid(r.nextString),
     hakemusOid = HakemusOid(r.nextString),
-    henkiloOid = HenkiloOid(r.nextString),
+    henkiloOid = HakijaOid(r.nextString),
     valinnantila = r.nextString,
     ehdollisestiHyvaksyttavissa = r.nextBooleanOption,
     ehdollisenHyvaksymisenEhtoKoodi = r.nextStringOption(),
