@@ -29,7 +29,7 @@ class SiirtotiedostoServlet(siirtotiedostoService: SiirtotiedostoService, db: Se
     val start = params("start") //timestamp tz
     val end = params("end")
     logger.info(s"Muodostetaan siirtotiedosto, $start - $end")
-    val sp = SiirtotiedostoProcess(0, UUID.randomUUID().toString, start, end, "foo", None, SiirtotiedostoProcessInfo(entityTotals = Map.empty), finishedSuccessfully = false, None)
+    val sp = SiirtotiedostoProcess(0, UUID.randomUUID().toString, start, end, SiirtotiedostoUtil.nowFormatted(), None, SiirtotiedostoProcessInfo(entityTotals = Map.empty), finishedSuccessfully = false, None)
     val result = siirtotiedostoService.muodostaJaTallennaSiirtotiedostot(sp)
     logger.info(s"Tiedosto muodostettu, result: $result")
       Ok("Success:" + result)

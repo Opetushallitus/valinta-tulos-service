@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.ovara
 
 import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.ovara.SiirtotiedostoUtil.nowFormatted
 import fi.vm.sade.valintatulosservice.ovara.config.SiirtotiedostoConfig
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{SiirtotiedostoIlmoittautuminen, SiirtotiedostoPagingParams, SiirtotiedostoProcess, SiirtotiedostoProcessInfo, SiirtotiedostoValinnantulos, SiirtotiedostoVastaanotto}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SiirtotiedostoRepository
@@ -34,8 +35,6 @@ class SiirtotiedostoService(siirtotiedostoRepository: SiirtotiedostoRepository, 
     }
   }
 
-  val sdFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS XXX")
-
   def muodostaSeuraavaSiirtotiedosto = {
     val executionId = UUID.randomUUID().toString
     val latestProcessInfo: Option[SiirtotiedostoProcess] = siirtotiedostoRepository.getLatestProcessInfo
@@ -47,7 +46,7 @@ class SiirtotiedostoService(siirtotiedostoRepository: SiirtotiedostoRepository, 
       case None => "1970-01-01 00:00:00.000000 +00:00" //fixme ehkä, vai onko ok hakea "kaikki"?
     }
 
-    val windowEnd = sdFormat.format(new Date(System.currentTimeMillis()))
+    val windowEnd = SiirtotiedostoUtil.nowFormatted()
 
     val newProcessInfo = siirtotiedostoRepository.createNewProcess(executionId, windowStart, windowEnd)
     logger.info(s"Luotiin ja persistoitiin tieto luodusta: $newProcessInfo")
