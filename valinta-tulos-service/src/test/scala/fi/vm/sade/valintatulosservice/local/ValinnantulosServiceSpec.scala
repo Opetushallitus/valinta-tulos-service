@@ -187,7 +187,20 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo) mustEqual List()
       there was one(valinnantulosRepository).updateValinnantuloksenOhjaus(valinnantulokset(0).getValinnantuloksenOhjaus(session.personOid, "Virkailijan tallennus"), Some(lastModified))
     }
-
+    "no authorization to change hyvaksyVarasijalta" in new Mocks with Korkeakouluhaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
+      val session1 = CasSession(ServiceTicket("myFakeTicket"), "1.2.246.562.24.1", Set(Role.SIJOITTELU_CRUD, Role.VALINTAKAYTTAJA_VARASIJAHYVAKSYNTA))
+      authorizer.checkAccessWithHakukohderyhmat(session, Set(tarjoajaOid), Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD), hakukohdeOid) returns Right(())
+      authorizer.checkAccessWithHakukohderyhmat(session, Set(tarjoajaOid), Set(Role.VALINTAKAYTTAJA_MUSIIKKIALA), hakukohdeOid) returns Left(new AuthorizationFailedException("error"))
+      authorizer.checkAccessWithHakukohderyhmat(session, Set(tarjoajaOid), Set(Role.VALINTAKAYTTAJA_VARASIJAHYVAKSYNTA), hakukohdeOid) returns Left(new AuthorizationFailedException("error"))
+      authorizer.checkAccess(any[Session], any[String], any[Set[Role]]) returns Right(())
+      valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set(valinnantulosA.copy(valinnantila = Varalla)))
+      yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(Set(valinnantulosA.copy(valinnantila = Varalla)))
+      valinnantulosRepository.updateValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]]) returns DBIO.successful(())
+      val valinnantulokset = List(valinnantulosA.copy(valinnantila = Varalla, hyvaksyttyVarasijalta = Some(true)))
+      service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid, valinnantulokset, Some(lastModified), auditInfo) mustEqual List(
+        ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia hyväksyä varasijalta", valintatapajonoOid, hakemusOidA))
+      there was no (valinnantulosRepository).updateValinnantuloksenOhjaus(valinnantulokset(0).getValinnantuloksenOhjaus(session.personOid, "Virkailijan tallennus"), Some(lastModified))
+    }
     "no authorization to change julkaistavissa but valintaesitys is hyväksyttävissä" in new Mocks with ToisenAsteenHaku with SuccessfulVastaanotto with NoConflictingVastaanotto with ValintaesitysHyvaksyttavissa {
       authorizer.checkAccessWithHakukohderyhmat(session, Set(tarjoajaOid), Set(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD), hakukohdeOid) returns Right(())
       authorizer.checkAccess(session, rootOrganisaatioOid, Set(Role.SIJOITTELU_CRUD)) returns Left(new AuthorizationFailedException("error"))
