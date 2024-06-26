@@ -18,7 +18,7 @@ class SiirtotiedostoServlet(siirtotiedostoService: SiirtotiedostoService, db: Se
   override val sessionRepository: SessionRepository = db
 
   val muodostaSiirtotiedostoSwagger: OperationBuilder = (apiOperation[Unit]("muodostaSiirtotiedosto")
-    summary "Muodosta siirtotiedosto hakukohteiden valinnantuloksista aikavälillä"
+    summary "Muodosta siirtotiedosto aikavälillä muuttuneista valinnantuloksista, vastaanotoista, ilmoittautumisista ja valintatapajonoista"
     parameter queryParam[String]("start").description("Alun aikaleima")
     parameter queryParam[String]("end").description("Lopun aikaleima")
     tags "siirtotiedosto")
