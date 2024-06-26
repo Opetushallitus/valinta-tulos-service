@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SiirtotiedostoRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, HenkiloOid, ValintatapajonoOid, ValintatapajonoRecord}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijaOid, HakukohdeOid, ValintatapajonoOid, ValintatapajonoRecord}
 import org.json4s.{DefaultFormats, Formats}
 import org.json4s.native.Serialization.write
 import slick.jdbc.PostgresProfile.api._
@@ -38,7 +38,7 @@ case class SiirtotiedostoPagingParams(executionId: String,
 case class SiirtotiedostoValinnantulos(hakukohdeOid: HakukohdeOid,
                                        valintatapajonoOid: ValintatapajonoOid,
                                        hakemusOid: HakemusOid,
-                                       henkiloOid: HenkiloOid,
+                                       henkiloOid: HakijaOid,
                                        valinnantila: String,
                                        ehdollisestiHyvaksyttavissa: Option[Boolean],
                                        ehdollisenHyvaksymisenEhtoKoodi: Option[String],
