@@ -9,8 +9,8 @@ import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-case class SiirtotiedostoVastaanotto(henkilo: String,
-                                     hakukohde: HakukohdeOid,
+case class SiirtotiedostoVastaanotto(henkiloOid: String,
+                                     hakukohdeOid: HakukohdeOid,
                                      ilmoittaja: String,
                                      timestamp: String,
                                      action: String,
@@ -20,8 +20,8 @@ case class SiirtotiedostoVastaanotto(henkilo: String,
                                      deletedBy: Option[String],
                                      deletedSelite: Option[String])
 
-case class SiirtotiedostoIlmoittautuminen(henkilo: String,
-                                          hakukohde: HakukohdeOid,
+case class SiirtotiedostoIlmoittautuminen(henkiloOid: String,
+                                          hakukohdeOid: HakukohdeOid,
                                           tila: String,
                                           ilmoittaja: String,
                                           selite: String,

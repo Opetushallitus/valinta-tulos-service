@@ -136,8 +136,8 @@ trait ValintarekisteriResultExtractors {
     }))
 
   protected implicit val getSiirtotiedostoVastaanottoResult = GetResult(r => SiirtotiedostoVastaanotto(
-    henkilo = r.nextString(),
-    hakukohde = HakukohdeOid(r.nextString()),
+    henkiloOid = r.nextString(),
+    hakukohdeOid = HakukohdeOid(r.nextString()),
     ilmoittaja = r.nextString(),
     timestamp = r.nextString(),
     action = r.nextString(),
@@ -149,8 +149,8 @@ trait ValintarekisteriResultExtractors {
   ))
 
   protected implicit val getSiirtotiedostoIlmoittautuminenResult = GetResult(r => SiirtotiedostoIlmoittautuminen(
-    henkilo = r.nextString(),
-    hakukohde = HakukohdeOid(r.nextString()),
+    henkiloOid = r.nextString(),
+    hakukohdeOid = HakukohdeOid(r.nextString()),
     tila = r.nextString,
     ilmoittaja = r.nextString(),
     selite = r.nextString,
