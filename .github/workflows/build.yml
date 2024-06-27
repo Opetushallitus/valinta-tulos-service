@@ -54,6 +54,7 @@ jobs:
             valinta-tulos-henkiloviite-synchronizer/target
             valinta-tulos-service/target
             valinta-tulos-valintarekisteri-db/target
+            ovara-valinta-tulos/target
           key: ${{ github.sha }}
       - uses: actions/upload-artifact@v4
         with:
@@ -64,6 +65,11 @@ jobs:
         with:
           path: valinta-tulos-henkiloviite-synchronizer/target/valinta-tulos-henkiloviite-synchronizer-*-dependencies.jar
           name: valinta-tulos-henkiloviite-synchronizer.jar
+          overwrite: true
+      - uses: actions/upload-artifact@v4
+        with:
+          path: ovara-valinta-tulos/target/ovara-valinta-tulos-*-jar-with-dependencies.jar
+          name: ovara-valinta-tulos.jar
           overwrite: true
 
 
@@ -96,6 +102,20 @@ jobs:
     secrets:
       AWS_UTILITY_ROLE_ARN: ${{ secrets.AWS_OPH_UTILITY_ROLE_ARN }}
 
+  deploy-ovara-valinta-tulos-container:
+    needs: test-and-build
+    uses: Opetushallitus/.github/.github/workflows/push-scan-java-ecr.yml@main
+    with:
+      application: ovara-valinta-tulos
+      base-image: baseimage-fatjar-openjdk11:master
+      configfolder: ovara-valinta-tulos/src/main/resources/oph-configuration
+      jarfile: ovara-valinta-tulos
+      jarfolder: .
+      download-artifact: true
+      download-artifact-name: ovara-valinta-tulos.jar
+    secrets:
+      AWS_UTILITY_ROLE_ARN: ${{ secrets.AWS_OPH_UTILITY_ROLE_ARN }}
+
   deploy-jar-library:
     needs: test-and-build
     runs-on: ubuntu-latest
@@ -109,6 +129,7 @@ jobs:
             valinta-tulos-henkiloviite-synchronizer/target
             valinta-tulos-service/target
             valinta-tulos-valintarekisteri-db/target
+            ovara-valinta-tulos/target
           key: ${{ github.sha }}
 
       - name: Set up JDK 11
@@ -127,4 +148,4 @@ jobs:
         run: |
           git clone https://github.com/Opetushallitus/ci-tools.git
           source ci-tools/common/setup-tools.sh
-          mvn deploy -B -pl fi.vm.sade:valinta-tulos-service-parent,valinta-tulos-valintarekisteri-db,valinta-tulos-service -DskipTests --settings settings.xml
+          mvn deploy -B -pl fi.vm.sade:valinta-tulos-service-parent,valinta-tulos-valintarekisteri-db,valinta-tulos-service,ovara-valinta-tulos -DskipTests --settings settings.xml

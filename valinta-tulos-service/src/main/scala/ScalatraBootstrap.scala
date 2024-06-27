@@ -19,6 +19,7 @@ import fi.vm.sade.valintatulosservice.ohjausparametrit.{CachedOhjausparametritSe
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.security.Role
+import fi.vm.sade.valintatulosservice.ovara.{SiirtotiedostoPalveluClient, SiirtotiedostoService, SiirtotiedostoServlet}
 import fi.vm.sade.valintatulosservice.sijoittelu._
 import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtures
 import fi.vm.sade.valintatulosservice.streamingresults.{HakemustenTulosHakuLock, StreamingValintatulosService}
@@ -28,7 +29,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
-import fi.vm.sade.valintatulosservice.vastaanottomeili.{EmailerServlet, _}
+import fi.vm.sade.valintatulosservice.vastaanottomeili._
 import org.scalatra._
 import org.slf4j.LoggerFactory
 
@@ -84,6 +85,8 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, appConfig.settings.lenientTarjontaDataParsing)
     lazy val sijoitteluService = new SijoitteluService(valintarekisteriDb, authorizer, hakuService, audit)
 
+    lazy val siirtotiedostoClient = new SiirtotiedostoPalveluClient(appConfig.settings.siirtotiedostoConfig)
+
     lazy val valintarekisteriValintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
     lazy val valintarekisteriRaportointiService = new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintarekisteriValintatulosDao)
     lazy val valintarekisteriSijoittelunTulosClient = new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb)
@@ -103,6 +106,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, valintatulosService, valintarekisteriDb, cachedOhjausparametritService, sijoittelutulosService, hakemusRepository, valintarekisteriDb)
     lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService, valintarekisteriDb, valintarekisteriDb)
     lazy val hakukohderyhmaService = new HakukohderyhmaService(appConfig)
+    lazy val siirtotiedostoService = new SiirtotiedostoService(valintarekisteriDb, siirtotiedostoClient, appConfig.settings.siirtotiedostoConfig)
 
     lazy val authorizer = new OrganizationHierarchyAuthorizer(appConfig, hakukohderyhmaService)
     lazy val yhdenPaikanSaannos = new YhdenPaikanSaannos(hakuService, valintarekisteriDb)
@@ -159,6 +163,8 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new HakijanVastaanottoServlet(vastaanottoService), "/vastaanotto", "vastaanotto")
       context.mount(new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, userDetailsService, appConfig), "/erillishaku/valinnan-tulos", "erillishaku/valinnan-tulos")
       context.mount(new NoAuthSijoitteluServlet(sijoitteluService), "/sijoittelu", "sijoittelu")
+
+      context.mount(new SiirtotiedostoServlet(siirtotiedostoService, valintarekisteriDb), "/cas/siirtotiedosto", "siirtotiedosto")
 
       val casSessionService = new CasSessionService(
         appConfig.securityContext,

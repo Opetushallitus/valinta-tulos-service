@@ -12,10 +12,11 @@
         <module>valinta-tulos-service</module>
         <module>valinta-tulos-henkiloviite-synchronizer</module>
         <module>valinta-tulos-valintarekisteri-db</module>
+        <module>ovara-valinta-tulos</module>
     </modules>
 
     <properties>
-        <apache.httpclient.version>4.5.2</apache.httpclient.version>
+        <apache.httpclient.version>4.5.13</apache.httpclient.version>
         <auditlogger.version>8.3.0-SNAPSHOT</auditlogger.version>
         <casbah_2.11.version>3.1.0</casbah_2.11.version>
         <commons-lang.version>2.6</commons-lang.version>
@@ -37,6 +38,7 @@
         <morphia.version>1.2.1</morphia.version>
         <postgresql.version>42.7.2</postgresql.version>
         <scala-cas_2.11.version>2.2.3-SNAPSHOT</scala-cas_2.11.version>
+        <dokumenttipalvelu.version>6.12-SNAPSHOT</dokumenttipalvelu.version>
         <scala.version>2.11.12</scala.version>
         <scala-logging_2.11.version>3.1.0</scala-logging_2.11.version>
         <scala-parser-combinators_2.11.version>1.0.4</scala-parser-combinators_2.11.version>
@@ -51,6 +53,7 @@
         <specs2_2.11.version>4.9.4</specs2_2.11.version>
         <spring.version>5.3.37</spring.version>
         <typesafe.config.version>1.2.1</typesafe.config.version>
+        <netty.version>4.1.94.Final</netty.version>
 
         <!-- Old duplicate versions -->
         <FIXME.plugin.maven-surefire-plugin.version>2.13</FIXME.plugin.maven-surefire-plugin.version>
@@ -62,12 +65,18 @@
         <plugin.maven-enforcer-plugin.version>3.0.0-M3</plugin.maven-enforcer-plugin.version>
         <plugin.maven-jar-plugin.version>3.0.2</plugin.maven-jar-plugin.version>
         <plugin.maven-surefire-plugin.version>2.19.1</plugin.maven-surefire-plugin.version>
-        <plugin.maven-war-plugin.version>2.6</plugin.maven-war-plugin.version>
+        <plugin.maven-war-plugin.version>3.4.0</plugin.maven-war-plugin.version>
         <plugin.scala-maven-plugin.version>3.3.3</plugin.scala-maven-plugin.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>fi.vm.sade</groupId>
+                <artifactId>valinta-tulos-service</artifactId>
+                <version>${project.version}</version>
+                <type>war</type>
+            </dependency>
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
@@ -531,7 +540,52 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-handler</artifactId>
-                <version>4.1.60.Final</version>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-common</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-unix-common</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-http</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-buffer</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fi.vm.sade.dokumenttipalvelu</groupId>
+                <artifactId>dokumenttipalvelu</artifactId>
+                <version>${dokumenttipalvelu.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>1.15</version>
+            </dependency>
+            <dependency>
+                <groupId>org.reactivestreams</groupId>
+                <artifactId>reactive-streams</artifactId>
+                <version>1.0.4</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
