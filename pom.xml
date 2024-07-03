@@ -478,8 +478,8 @@
             </dependency>
             <dependency>
                 <groupId>fi.vm.sade.java-utils</groupId>
-                <artifactId>java-cas</artifactId>
-                <version>0.5.0-SNAPSHOT</version>
+                <artifactId>java-cas-refactored</artifactId>
+                <version>1.2.1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>org.javassist</groupId>
