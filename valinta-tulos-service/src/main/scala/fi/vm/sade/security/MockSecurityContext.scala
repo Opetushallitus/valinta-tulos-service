@@ -3,8 +3,7 @@ package fi.vm.sade.security.mock
 import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.security.{SecurityContext, ScalaCasConfig}
-import fi.vm.sade.javautils.nio.cas.{CasClient => JCasClient}
-import fi.vm.sade.javautils.nio.cas.impl.{CasClientImpl, CasSessionFetcher, CompletableFutureStore}
+import fi.vm.sade.javautils.nio.cas.impl.{CasClientImpl, CasSessionFetcher}
 import fi.vm.sade.utils.cas._
 import fi.vm.sade.utils.cas.CasClient._
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetails
@@ -27,8 +26,8 @@ class MockSecurityContext(val casServiceIdentifier: String, val requiredRoles: S
       new CasSessionFetcher(
         casConfig,
         httpClient,
-        new CompletableFutureStore(0),
-        new CompletableFutureStore(0)) {
+        Duration(20, TimeUnit.MINUTES).toMillis,
+        Duration(2, TimeUnit.SECONDS).toMillis) {
 
         override def fetchSessionToken(): CompletableFuture[String] =
           CompletableFuture.completedFuture("session-token-from-mock-context")
