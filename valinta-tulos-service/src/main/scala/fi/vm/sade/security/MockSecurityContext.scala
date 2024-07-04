@@ -3,8 +3,7 @@ package fi.vm.sade.security.mock
 import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.security.{SecurityContext, ScalaCasConfig}
-import fi.vm.sade.javautils.nio.cas.{CasClient => JCasClient}
-import fi.vm.sade.javautils.nio.cas.impl.{CasClientImpl, CasSessionFetcher, CompletableFutureStore}
+import fi.vm.sade.javautils.nio.cas.impl.{CasClientImpl, CasSessionFetcher}
 import fi.vm.sade.utils.cas._
 import fi.vm.sade.utils.cas.CasClient._
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetails
