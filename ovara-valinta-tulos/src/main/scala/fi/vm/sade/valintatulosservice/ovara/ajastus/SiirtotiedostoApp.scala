@@ -12,7 +12,7 @@ object SiirtotiedostoApp {
 
   def main(args: Array[String]): Unit = {
     logger.info(s"Hello, ovara world!")
-    println(s"Hello, ovara world!")
+
     val appConfig: VtsAppConfig = VtsAppConfig.fromString("ovara")
     appConfig.start
     val siirtotiedostoConfig = appConfig.settings.siirtotiedostoConfig

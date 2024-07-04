@@ -5,9 +5,9 @@ create table if not exists siirtotiedostot (
                                              window_end varchar not null,
                                              run_start timestamp with time zone,
                                              run_end timestamp with time zone,
-                                             info jsonb, --ainakin tilastot tiedostoihin päätyneistä entiteettimääristä tyypeittäin, {"counts": {"tyyppi1": 300, "tyyppi2": 13}}
+                                             info jsonb, --ainakin tilastot tiedostoihin päätyneistä entiteettimääristä tyypeittäin, {"entityTotals": {"tyyppi1": 300, "tyyppi2": 13}}
                                              success boolean,
-                                             error_message varchar, -- Tyhjä string, jos mikään ei mennyt vikaan
+                                             error_message varchar,
                                              PRIMARY KEY (id)
 );
 
