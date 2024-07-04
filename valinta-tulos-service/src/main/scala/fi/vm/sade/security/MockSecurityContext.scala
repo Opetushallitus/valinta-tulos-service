@@ -27,8 +27,8 @@ class MockSecurityContext(val casServiceIdentifier: String, val requiredRoles: S
       new CasSessionFetcher(
         casConfig,
         httpClient,
-        new CompletableFutureStore(0),
-        new CompletableFutureStore(0)) {
+        Duration(20, TimeUnit.MINUTES).toMillis,
+        Duration(2, TimeUnit.SECONDS).toMillis) {
 
         override def fetchSessionToken(): CompletableFuture[String] =
           CompletableFuture.completedFuture("session-token-from-mock-context")
