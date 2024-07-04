@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.config
 
 import fi.vm.sade.groupemailer.{GroupEmailComponent, GroupEmailService}
-import fi.vm.sade.valintatulosservice.config.EmailerRegistry.StubbedGroupEmail
+import EmailerRegistry.StubbedGroupEmail
 import fi.vm.sade.valintatulosservice.vastaanottomeili.{Mailer, MailerComponent}
 
 

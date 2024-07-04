@@ -1,4 +1,5 @@
 package fi.vm.sade.valintatulosservice
+
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 
 object SharedJetty {

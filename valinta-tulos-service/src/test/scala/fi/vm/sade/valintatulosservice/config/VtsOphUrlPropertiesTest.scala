@@ -2,8 +2,8 @@ package fi.vm.sade.valintatulosservice.config
 
 import scala.collection.JavaConversions._
 import scala.collection.Set
-
-import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import VtsAppConfig.VtsAppConfig
+import VtsAppConfig.VtsAppConfig
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner

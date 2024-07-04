@@ -4,7 +4,7 @@ import java.io.File
 import java.nio.file.Files
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.utils.tcp.{PortChooser, PortFromSystemPropertyOrFindFree}
-import fi.vm.sade.valintatulosservice.config.TempDbUtils.tryTimes
+import TempDbUtils.tryTimes
 import org.apache.commons.io.FileUtils
 
 import scala.sys.process.stringToProcess

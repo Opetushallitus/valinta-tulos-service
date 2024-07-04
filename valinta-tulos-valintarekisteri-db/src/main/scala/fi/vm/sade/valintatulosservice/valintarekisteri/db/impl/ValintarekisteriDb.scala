@@ -36,7 +36,8 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
   with HakijaRepositoryImpl
   with DeleteSijoitteluRepositoryImpl
   with ValinnanTilanKuvausRepositoryImpl
-  with HyvaksynnanEhtoRepositoryImpl {
+  with HyvaksynnanEhtoRepositoryImpl
+  with SiirtotiedostoRepositoryImpl {
 
   logger.info(s"Database configuration: ${config.copy(password = Some("***"))}")
   if (!config.flywayDisabled.getOrElse(false)) {
