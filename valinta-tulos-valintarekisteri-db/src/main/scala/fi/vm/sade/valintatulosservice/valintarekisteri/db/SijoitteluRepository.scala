@@ -25,6 +25,8 @@ trait SijoitteluRepository extends PerformanceLogger { this:Logging =>
         .getOrElse(DBIO.failed(new IllegalArgumentException(s"Väärän tyyppinen sijoitteluajon ID: $sijoitteluajoId")))
   }
 
+  def getLatestSijoitteluSummary(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): List[SijoitteluSummaryRecord]
+
   def getSijoitteluajo(sijoitteluajoId:Long): Option[SijoitteluajoRecord]
   def getSijoitteluajonHakukohteet(sijoitteluajoId:Long): List[SijoittelunHakukohdeRecord]
   def getSijoitteluajonHakukohdeOidit(sijoitteluajoId:Long): List[HakukohdeOid]

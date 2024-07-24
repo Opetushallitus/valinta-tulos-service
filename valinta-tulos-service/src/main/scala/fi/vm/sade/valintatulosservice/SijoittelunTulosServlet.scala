@@ -10,6 +10,7 @@ import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{Hyvaksymiskirje, SessionRepository, Valintaesitys}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.scalatra.swagger.Swagger
+import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.{NotFound, Ok}
 
 import java.util.concurrent.{Executors, TimeUnit}
@@ -32,7 +33,13 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
 
   val gson = new GsonBuilder().create()
 
-  get("/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakukohde/:hakukohdeOid") {
+  lazy val getSijoittelunTulosSwagger: OperationBuilder = (apiOperation[Unit]("getSijoittelunTulosSwagger")
+    summary "Hakee sijoittelun tulostiedot."
+    parameter pathParam[String]("hakuOid").description("Haun yksilöllinen tunniste")
+    parameter pathParam[String]("sijoitteluajoId").description("Sijoitteluajon yksilöllinen tunniste, tai 'latest' avainsana.")
+    parameter pathParam[String]("hakukohdeOid").description("Hakukohteen yksilöllinen tunniste")
+    tags "sijoittelu")
+  get("/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakukohde/:hakukohdeOid", operation(getSijoittelunTulosSwagger)) {
     implicit val authenticated = authenticate
     val ai: AuditInfo = auditInfo
     val hakuOid = HakuOid(params("hakuOid"))
@@ -73,5 +80,31 @@ class SijoittelunTulosServlet(val valintatulosService: ValintatulosService,
       case e: NotFoundException =>
         NotFound(Map("error" -> e.getMessage))
     }
+  }
+
+  lazy val getSijoittelunTuloksenYhteenVetoSwagger: OperationBuilder = (apiOperation[Unit]("getSijoittelunYhteenvedonTulosSwagger")
+    summary "Hakee viimeisimmän sijoittelun tuloksen yhteenvedon."
+    parameter pathParam[String]("hakuOid").description("Haun yksilöllinen tunniste")
+    parameter pathParam[String]("hakukohdeOid").description("Hakukohteen yksilöllinen tunniste")
+    tags "sijoittelu")
+  get("/yhteenveto/:hakuOid/hakukohde/:hakukohdeOid", operation(getSijoittelunTuloksenYhteenVetoSwagger)) {
+    implicit val authenticated = authenticate
+    val ai: AuditInfo = auditInfo
+    val hakuOid = HakuOid(params("hakuOid"))
+    val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
+    val hakukohde = hakuService.getHakukohde(hakukohdeOid).fold(throw _, h => h)
+
+    authorizer.checkAccessWithHakukohderyhmat(ai.session._2, hakukohde.organisaatioOiditAuktorisointiin,
+      Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD), hakukohdeOid).fold(throw _, x => x)
+    val futureSijoittelunTulokset: Future[List[SijoitteluSummaryRecord]] = Future { sijoitteluService.getHakukohdeSummaryBySijoittelu(hakuOid, hakukohdeOid, authenticated.session, ai) }
+
+    val resultJson = for {
+      sijoittelunTulokset <- futureSijoittelunTulokset
+    } yield {
+      JsonFormats.formatJson(sijoittelunTulokset)
+    }
+
+    val rtt = Await.result(resultJson, Duration(1, TimeUnit.MINUTES))
+    Ok(rtt)
   }
 }
