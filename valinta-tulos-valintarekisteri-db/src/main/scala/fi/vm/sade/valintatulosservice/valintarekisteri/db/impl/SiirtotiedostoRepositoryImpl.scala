@@ -69,15 +69,14 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
 
   implicit val formats: Formats = DefaultFormats
 
-  def getLatestProcessInfo(): Option[SiirtotiedostoProcess] = {
-    //Todo, otetaan tässä huomioon ehkä id:n lisäksi myös viimeisin window_end -aikaleima tai ainakin varoitetaan, jos matalammalla id:llä on myöhäisempi window_end?
-    //Periaatteessa niin ei pitäisi kyllä tapahtua, jos aikaikkunat liikkuvat aina eteenpäin eikä useampaa siirtotiedostoja muodostavaa konttia käynnistetä samanaikaisesti
+  def getLatestSuccessfulProcessInfo(): Option[SiirtotiedostoProcess] = {
     timed(s"Getting latest process info", 100) {
       runBlocking(
-        sql"""select id, uuid, window_start, window_end, run_start, run_end, info, success, error_message from siirtotiedostot order by id desc limit 1""".as[SiirtotiedostoProcess].headOption
+        sql"""select id, uuid, window_start, window_end, run_start, run_end, info, success, error_message from siirtotiedostot where success order by id desc limit 1""".as[SiirtotiedostoProcess].headOption
       )
     }
   }
+
   //2024-05-22 13:05:33.068712 +00:00
   def createNewProcess(executionId: String, windowStart: String, windowEnd: String): Option[SiirtotiedostoProcess] = {
     timed(s"Persisting new process info for executionId $executionId, window $windowStart - $windowEnd", 100) {

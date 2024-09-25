@@ -37,13 +37,12 @@ class SiirtotiedostoService(siirtotiedostoRepository: SiirtotiedostoRepository, 
 
   def muodostaSeuraavaSiirtotiedosto = {
     val executionId = UUID.randomUUID().toString
-    val latestProcessInfo: Option[SiirtotiedostoProcess] = siirtotiedostoRepository.getLatestProcessInfo
-    logger.info(s"Haettiin tieto edellisestä siirtotiedostoprosessista: $latestProcessInfo")
+    val latestProcessInfo: Option[SiirtotiedostoProcess] = siirtotiedostoRepository.getLatestSuccessfulProcessInfo
+    logger.info(s"Haettiin tieto edellisestä onnistuneesta siirtotiedostoprosessista: $latestProcessInfo")
 
     val windowStart = latestProcessInfo match {
       case Some(processInfo) if processInfo.finishedSuccessfully => processInfo.windowEnd
-      case Some(processInfo) => processInfo.windowStart //retry previous
-      case None => "1970-01-01 00:00:00.000000 +00:00" //fixme ehkä, vai onko ok hakea "kaikki"?
+      case _ => throw new RuntimeException("Edellistä onnistunutta SiirtotiedostoProsessia ei löytynyt")
     }
 
     val windowEnd = SiirtotiedostoUtil.nowFormatted()

@@ -6,7 +6,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, Ilm
 
 trait SiirtotiedostoRepository {
 
-  def getLatestProcessInfo: Option[SiirtotiedostoProcess]
+  def getLatestSuccessfulProcessInfo: Option[SiirtotiedostoProcess]
 
   def createNewProcess(executionId: String, windowStart: String, windowEnd: String): Option[SiirtotiedostoProcess]
 
