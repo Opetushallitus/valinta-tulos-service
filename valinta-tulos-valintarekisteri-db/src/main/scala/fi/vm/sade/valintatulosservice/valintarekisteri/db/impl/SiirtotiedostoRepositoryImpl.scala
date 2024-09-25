@@ -77,7 +77,6 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
     }
   }
 
-  //2024-05-22 13:05:33.068712 +00:00
   def createNewProcess(executionId: String, windowStart: String, windowEnd: String): Option[SiirtotiedostoProcess] = {
     timed(s"Persisting new process info for executionId $executionId, window $windowStart - $windowEnd", 100) {
       runBlocking(

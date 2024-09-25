@@ -30,7 +30,7 @@ valinta-tulos-service.siirtotiedosto.valintatapajonot_page_size={{ valintatuloss
 valinta-tulos-service.siirtotiedosto.vastaanotot_page_size={{ valintatulosservice_siirtotiedosto_vastaanotot_page_size | default('10000') }}
 valinta-tulos-service.siirtotiedosto.hakukohde_group_size={{ valintatulosservice_siirtotiedosto_hakukohde_group_size | default('500') }}
 
-# TODO Arvot tästä alaspäin eivät ole ovaralle tarpeellisia, mutta ovat väliaikaisesti täällä että SiirtotiedostoApp voi käyttää suoraan vts:n konffeja.
+# Arvot tästä alaspäin eivät ole ovaralle tarpeellisia, mutta ovat täällä että SiirtotiedostoApp voi käyttää suoraan vts:n konffeja.
 # Jonkinlaisella konffirefaktoroinnilla näistä pääsee eroon.
 
 host.virkailija={{host_virkailija}}
