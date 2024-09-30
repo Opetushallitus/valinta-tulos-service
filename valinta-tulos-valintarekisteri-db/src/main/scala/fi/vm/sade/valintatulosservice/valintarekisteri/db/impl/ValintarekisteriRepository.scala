@@ -4,7 +4,6 @@ import java.sql.Timestamp
 import java.time.Instant
 import java.util.ConcurrentModificationException
 import java.util.concurrent.TimeUnit
-
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import org.postgresql.util.PSQLException
@@ -15,7 +14,7 @@ import slick.jdbc.PostgresProfile.backend.Database
 import slick.jdbc.TransactionIsolation.Serializable
 
 import scala.concurrent.Await
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, MILLISECONDS}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
@@ -41,13 +40,18 @@ trait ValintarekisteriRepository extends ValintarekisteriResultExtractors with L
       timeout + Duration(1, TimeUnit.SECONDS)
     )
   }
-  def runBlockingTransactionally[R](operations: DBIO[R], timeout: Duration = Duration(20, TimeUnit.SECONDS)): Either[Throwable, R] = { //  // TODO put these 3–4 different default timeouts behind common, configurable value
+  def runBlockingTransactionally[R](operations: DBIO[R], timeout: Duration = Duration(20, TimeUnit.SECONDS), retries: Int = 10, wait: Duration = Duration(5, MILLISECONDS)): Either[Throwable, R] = { //  // TODO put these 3–4 different default timeouts behind common, configurable value
     val SERIALIZATION_VIOLATION = "40001"
     try {
       Right(runBlocking(operations.transactionally.withTransactionIsolation(Serializable), timeout))
     } catch {
       case e: PSQLException if e.getSQLState == SERIALIZATION_VIOLATION =>
-        Left(new ConcurrentModificationException(s"Operation(s) failed because of an concurrent action.", e))
+        if (retries > 0) {
+          Thread.sleep(wait.toMillis)
+          runBlockingTransactionally(operations, timeout, retries - 1, wait + wait)
+        } else {
+          Left(new ConcurrentModificationException(s"Operation(s) failed because of an concurrent action.", e))
+        }
       case NonFatal(e) => Left(e)
     }
   }

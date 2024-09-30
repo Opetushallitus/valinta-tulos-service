@@ -45,6 +45,6 @@ trait RunBlockingMock { this: Mockito =>
 
   def mockRunBlocking(repository:ValintarekisteriRepository): OngoingStubbing[Either[Throwable, Any]] = {
     repository.runBlocking(any[DBIO[Any]], any[Duration]) answers ((x: Any) => answerRun(x).fold(throw _, x => x))
-    repository.runBlockingTransactionally(any[DBIO[Any]], any[Duration]) answers ((x: Any) => answerRun(x))
+    repository.runBlockingTransactionally(any[DBIO[Any]], any[Duration], any[Int], any[Duration]) answers ((x: Any) => answerRun(x))
   }
 }
