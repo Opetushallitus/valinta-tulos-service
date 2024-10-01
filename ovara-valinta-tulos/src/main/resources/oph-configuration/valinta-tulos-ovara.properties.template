@@ -4,13 +4,41 @@
 # Tämä tiedosto toimii pohjana oph-configuration/valinta-tulos-service.properties -tiedostolle,
 # joka asettaa Tomcatin ympäristökohtaiset arvot.
 #
+
+# VALINTAREKISTERI
+valinta-tulos-service.valintarekisteri.db.url=jdbc:postgresql://{{host_postgresql_valintarekisteri}}/valintarekisteri
+valinta-tulos-service.valintarekisteri.db.user={{postgres_app_user}}
+valinta-tulos-service.valintarekisteri.db.password={{host_postgresql_valintarekisteri_app_password}}
+valinta-tulos-service.valintarekisteri.db.connectionPool=HikariCP
+valinta-tulos-service.valintarekisteri.db.numThreads=10
+valinta-tulos-service.valintarekisteri.db.maxConnections=50
+valinta-tulos-service.valintarekisteri.db.minConnections=10
+valinta-tulos-service.valintarekisteri.db.queueSize=10000
+valinta-tulos-service.valintarekisteri.db.registerMbeans=true
+valinta-tulos-service.valintarekisteri.db.initializationFailTimeout=1000
+valinta-tulos-service.valintarekisteri.db.timeout=20 seconds
+valinta-tulos-service.valintarekisteri.db.leakDetectionThresholdMillis=1800000
+valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids=1000000
+valinta-tulos-service.valintarekisteri.use-sijoittelu-mongo=true
+
+# Siirtotiedosto
+valinta-tulos-service.siirtotiedosto.aws-region={{ aws_region | default('eu-west-1') }}
+valinta-tulos-service.siirtotiedosto.s3-bucket={{ ovara_siirtotiedosto_s3_bucket | default('not-a-real-bucket') }}
+valinta-tulos-service.siirtotiedosto.s3.target-role-arn = {{ ovara_siirtotiedosto_s3_target_role_arn | default('no-role-set')}}
+valinta-tulos-service.siirtotiedosto.ilmoittautumiset_page_size={{ valintatulosservice_siirtotiedosto_ilmoittautumiset_page_size | default('10000') }}
+valinta-tulos-service.siirtotiedosto.valintatapajonot_page_size={{ valintatulosservice_siirtotiedosto_valintatapajonot_page_size | default('10000') }}
+valinta-tulos-service.siirtotiedosto.vastaanotot_page_size={{ valintatulosservice_siirtotiedosto_vastaanotot_page_size | default('10000') }}
+valinta-tulos-service.siirtotiedosto.hakukohde_group_size={{ valintatulosservice_siirtotiedosto_hakukohde_group_size | default('500') }}
+
+# Arvot tästä alaspäin eivät ole ovaralle tarpeellisia, mutta ovat täällä että SiirtotiedostoApp voi käyttää suoraan vts:n konffeja.
+# Jonkinlaisella konffirefaktoroinnilla näistä pääsee eroon.
+
 host.virkailija={{host_virkailija}}
 host.oppija={{host_oppija}}
 host.haku={{host_haku}}
 host.haku.sv={{host_haku_sv}}
 host.haku.en={{host_haku_en}}
 host.alb={{host_alb}}
-
 valinta-tulos-service.ohjausparametrit.url=https\://{{host_virkailija}}/ohjausparametrit-service/api/v1/rest/parametri
 valinta-tulos-service.ilmoittautuminen.enabled={{valintatulosservice_ilmoittautuminen_enabled}}
 
@@ -24,6 +52,7 @@ sijoittelu-service.rest.url=https://{{host_virkailija}}/sijoittelu-service
 valinta-tulos-service.parseleniently.sijoitteluajontulos={{valintatulosservice_parseleniently_sijoitteluajontulos}}
 sijoittelu-service.hakukohdeCache.populate=false
 sijoittelu-service.hakukohdeDao.batchSize=300
+sijoittelu-service.saveSijoitteluToValintarekisteri={{sijoitteluservice_save_sijoittelu_to_valintarekisteri}}
 
 # HAKEMUKSET
 hakemus.mongodb.dbname=hakulomake
@@ -40,13 +69,13 @@ valinta-tulos-service.kohdejoukon-tarkenteet.amkope={{valintatulosservice_kohdej
 # CAS
 cas.url={{cas_url}}
 valinta-tulos-service.cas.service=https://{{host_virkailija}}/valinta-tulos-service
-valinta-tulos-service.cas.username={{omatsivut_haku_app_username}}
-valinta-tulos-service.cas.password={{omatsivut_haku_app_password}}
+valinta-tulos-service.cas.username=not_configured
+valinta-tulos-service.cas.password=not_configured
 cas.service.organisaatio-service=https://{{host_virkailija}}/organisaatio-service
 cas.service.valintaperusteet-service=https://{{host_virkailija}}/valintaperusteet-service
 root.organisaatio.oid=1.2.246.562.10.00000000001
-valinta-tulos-service.cas.kela.username={{cas_vts_kela_read_username}}
-valinta-tulos-service.cas.kela.password={{cas_vts_kela_read_password}}
+valinta-tulos-service.cas.kela.username=not_configured
+valinta-tulos-service.cas.kela.password=not_configured
 valinta-tulos-service.cas.validate-service-ticket.timeout.seconds={{ valintatulosservice_cas_validate_service_ticket_timeout_seconds | default('1') }}
 valinta-tulos-service.kela.vastaanotot.testihetu={{vts_kela_vastaanotot_testihetu}}
 
@@ -55,7 +84,9 @@ valinta-tulos-service.valintarekisteri.db.url=jdbc:postgresql://{{host_postgresq
 valinta-tulos-service.valintarekisteri.db.user={{postgres_app_user}}
 valinta-tulos-service.valintarekisteri.db.password={{host_postgresql_valintarekisteri_app_password}}
 valinta-tulos-service.valintarekisteri.db.connectionPool=HikariCP
-valinta-tulos-service.valintarekisteri.db.numThreads=20
+valinta-tulos-service.valintarekisteri.db.numThreads=10
+valinta-tulos-service.valintarekisteri.db.maxConnections=50
+valinta-tulos-service.valintarekisteri.db.minConnections=10
 valinta-tulos-service.valintarekisteri.db.queueSize=10000
 valinta-tulos-service.valintarekisteri.db.registerMbeans=true
 valinta-tulos-service.valintarekisteri.db.initializationFailTimeout=1000
@@ -64,21 +95,21 @@ valinta-tulos-service.valintarekisteri.db.leakDetectionThresholdMillis=1800000
 valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids=1000000
 valinta-tulos-service.valintarekisteri.use-sijoittelu-mongo=true
 
+# MailPoller
+valinta-tulos-service.mail-poller.concurrency={{valintatulosservice_mail_poller_concurrency | default('1') }}
+valinta-tulos-service.mail-poller.resultless.hakukohde.hours={{valintatulosservice_mail_poller_resultless_hakukohde_hours | default('23') }}
+valinta-tulos-service.mail-poller.hakemus.recheck.hours={{valintatulosservice_mail_poller_hakemus_recheck_hours | default('24') }}
+
 # Valintarekisteri flag
 valinta-tulos-service.read-from-valintarekisteri={{read_from_valintarekisteri}}
 
 # Valintarekisterin migraatio
 valinta-tulos-service.haku-app-url=https://{{host_virkailija}}/haku-app
 valinta-tulos-service.authentication-service-url=https://{{host_virkailija}}/authentication-service
-valinta-tulos-service.scheduled-migration.start-hour=23
+valinta-tulos-service.scheduled-migration.start-hour=17
 valinta-tulos-service.scheduled-delete-sijoitteluajo.start-hour=23
-valinta-tulos-service.scheduled-delete-sijoitteluajo.limit=20
+valinta-tulos-service.scheduled-delete-sijoitteluajo.limit={{ valintarekisteri_scheduled_sijoitteluajo_delete_limit | default('20') }}
 valinta-tulos-service.scheduled-migration.end-hour=7
-
-# MailPoller
-valinta-tulos-service.mail-poller.concurrency={{valintatulosservice_mail_poller_concurrency | default('1') }}
-valinta-tulos-service.mail-poller.resultless.hakukohde.hours={{valintatulosservice_mail_poller_resultless_hakukohde_hours | default('1') }}
-valinta-tulos-service.mail-poller.hakemus.recheck.hours={{valintatulosservice_mail_poller_hakemus_recheck_hours | default('24') }}
 
 # KELA
 valinta-tulos-service.kela.url=https://asiointi.kela.fi/go_app/EArtApplication?reitti=oph
@@ -100,8 +131,8 @@ valinta-tulos-service.emailer.cron.string={{ valintatulosservice_emailer_cron_st
 
 # CAS
 ryhmasahkoposti.cas.service=https://{{host_virkailija}}/ryhmasahkoposti-service/
-ryhmasahkoposti.cas.username={{ ryhmasahkoposti_app_username_to_vtemailer }}
-ryhmasahkoposti.cas.password={{ ryhmasahkoposti_app_password_to_vtemailer }}
+ryhmasahkoposti.cas.username=not_configured
+ryhmasahkoposti.cas.password=not_configured
 
 # RYHMÄSÄHKÖPOSTI
 ryhmasahkoposti.service.batch.size={{ email_batch_size | default('5') }}
@@ -122,12 +153,3 @@ valinta-tulos-service.blaze.request-timeout={{ valintatulosservice_blaze_request
 
 # Swagger
 valinta-tulos-service.swagger=https\://{{host_virkailija}}/valinta-tulos-service/swagger/swagger.json
-
-# Siirtotiedosto
-valinta-tulos-service.siirtotiedosto.aws-region={{ aws_region | default('eu-west-1') }}
-valinta-tulos-service.siirtotiedosto.s3-bucket={{ ovara_siirtotiedosto_s3_bucket | default('not-a-real-bucket') }}
-valinta-tulos-service.siirtotiedosto.s3.target-role-arn = {{ ovara_siirtotiedosto_s3_target_role_arn | default('no-role-set')}}
-valinta-tulos-service.siirtotiedosto.ilmoittautumiset_page_size={{ valintatulosservice_siirtotiedosto_ilmoittautumiset_page_size | default('10000') }}
-valinta-tulos-service.siirtotiedosto.valintatapajonot_page_size={{ valintatulosservice_siirtotiedosto_valintatapajonot_page_size | default('10000') }}
-valinta-tulos-service.siirtotiedosto.vastaanotot_page_size={{ valintatulosservice_siirtotiedosto_vastaanotot_page_size | default('10000') }}
-valinta-tulos-service.siirtotiedosto.hakukohde_group_size={{ valintatulosservice_siirtotiedosto_hakukohde_group_size | default('500') }}

@@ -3,11 +3,11 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 import java.sql.JDBCType
 import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
 import java.util.UUID
-
 import fi.vm.sade.sijoittelu.domain.Valintatapajono.JonosijaTieto
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoAction, VastaanottoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import org.json4s.jackson.Serialization.read
 import org.json4s.native.JsonMethods
 import org.json4s.{DefaultFormats, Formats}
 import slick.jdbc.{GetResult, PositionedParameters, PositionedResult, SetParameter}
@@ -135,6 +135,28 @@ trait ValintarekisteriResultExtractors {
       new JonosijaTieto(jonoSija, r.nextInt(), Valinnantila(r.nextString()).valinnantila, JsonMethods.parse(r.nextString()).extract[Seq[String]].asJava)
     }))
 
+  protected implicit val getSiirtotiedostoVastaanottoResult = GetResult(r => SiirtotiedostoVastaanotto(
+    henkiloOid = r.nextString(),
+    hakukohdeOid = HakukohdeOid(r.nextString()),
+    ilmoittaja = r.nextString(),
+    timestamp = r.nextString(),
+    action = r.nextString(),
+    id = r.nextInt(),
+    selite = r.nextString(),
+    deletedAt = r.nextStringOption(),
+    deletedBy = r.nextStringOption(),
+    deletedSelite = r.nextStringOption()
+  ))
+
+  protected implicit val getSiirtotiedostoIlmoittautuminenResult = GetResult(r => SiirtotiedostoIlmoittautuminen(
+    henkiloOid = r.nextString(),
+    hakukohdeOid = HakukohdeOid(r.nextString()),
+    tila = r.nextString,
+    ilmoittaja = r.nextString(),
+    selite = r.nextString,
+    timestamp = r.nextString
+  ))
+
   protected implicit val getHakemuksetForValintatapajonosResult = GetResult(r => HakemusRecord(
     hakijaOid = r.nextStringOption,
     hakemusOid = HakemusOid(r.nextString),
@@ -203,6 +225,38 @@ trait ValintarekisteriResultExtractors {
     ilmoittautumistila = r.nextStringOption.map(SijoitteluajonIlmoittautumistila(_)).getOrElse(EiTehty),
     valinnantilanViimeisinMuutos = parseOffsetDateTime(r),
     vastaanotonViimeisinMuutos = parseOffsetDateTime(r)
+  ))
+
+  protected implicit val getSiirtotiedostoValinnantulosResult: GetResult[SiirtotiedostoValinnantulos] = GetResult(r => SiirtotiedostoValinnantulos(
+    hakukohdeOid = HakukohdeOid(r.nextString),
+    valintatapajonoOid = ValintatapajonoOid(r.nextString),
+    hakemusOid = HakemusOid(r.nextString),
+    henkiloOid = HakijaOid(r.nextString),
+    valinnantila = r.nextString,
+    ehdollisestiHyvaksyttavissa = r.nextBooleanOption,
+    ehdollisenHyvaksymisenEhtoKoodi = r.nextStringOption(),
+    ehdollisenHyvaksymisenEhtoFI = r.nextStringOption(),
+    ehdollisenHyvaksymisenEhtoSV = r.nextStringOption(),
+    ehdollisenHyvaksymisenEhtoEN = r.nextStringOption(),
+    valinnantilanKuvauksenTekstiFI = r.nextStringOption(),
+    valinnantilanKuvauksenTekstiSV = r.nextStringOption(),
+    valinnantilanKuvauksenTekstiEN = r.nextStringOption(),
+    julkaistavissa = r.nextBooleanOption,
+    hyvaksyttyVarasijalta = r.nextBooleanOption,
+    hyvaksyPeruuntunut = r.nextBooleanOption,
+    valinnantilanViimeisinMuutos = r.nextString()
+  ))
+
+  protected implicit val getSiirtotiedostoProcessInfoResult: GetResult[SiirtotiedostoProcess] = GetResult(r => SiirtotiedostoProcess(
+    id = r.nextLong(),
+    executionId = r.nextString(),
+    windowStart = r.nextString(),
+    windowEnd = r.nextString(),
+    runStart = r.nextString(),
+    runEnd = r.nextStringOption(),
+    info = r.nextStringOption().map(read[SiirtotiedostoProcessInfo]).getOrElse(SiirtotiedostoProcessInfo(Map.empty)),
+    finishedSuccessfully = r.nextBoolean(),
+    errorMessage = r.nextStringOption()
   ))
 
   protected implicit val getVastaanottoMuutosResult: GetResult[(ValintatuloksenTila, OffsetDateTime,

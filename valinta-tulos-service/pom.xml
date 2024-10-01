@@ -112,7 +112,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
+        <dependency>
+            <groupId>fi.vm.sade.dokumenttipalvelu</groupId>
+            <artifactId>dokumenttipalvelu</artifactId>
+            <version>6.12-SNAPSHOT</version>
+        </dependency>
         <dependency>
             <groupId>io.swagger</groupId>
             <artifactId>swagger-parser</artifactId>
@@ -485,6 +489,10 @@
                     <groupId>commons-collections</groupId>
                     <artifactId>commons-collections</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -553,6 +561,7 @@
                 <version>${plugin.maven-war-plugin.version}</version>
                 <configuration>
                     <packagingExcludes>WEB-INF/lib//javax.servlet-api-*.jar</packagingExcludes>
+                    <attachClasses>true</attachClasses>
                 </configuration>
             </plugin>
             <plugin>
