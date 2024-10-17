@@ -247,6 +247,22 @@ trait ValintarekisteriResultExtractors {
     valinnantilanViimeisinMuutos = r.nextString()
   ))
 
+  protected implicit val getSiirtotiedostoJonosijaResult: GetResult[SiirtotiedostoJonosija] = GetResult(r => SiirtotiedostoJonosija(
+    valintatapajonoOid = ValintatapajonoOid(r.nextString),
+    hakemusOid = HakemusOid(r.nextString),
+    hakukohdeOid = HakukohdeOid(r.nextString),
+    prioriteetti = r.nextInt(),
+    jonosija = r.nextInt(),
+    varasijanNumero = r.nextIntOption(),
+    onkoMuuttunutViimeSijoittelussa = r.nextBoolean(),
+    pisteet = r.nextDoubleOption(),
+    tasasijaJonosija = r.nextInt(),
+    hyvaksyttyHarkinnanvaraisesti = r.nextBoolean(),
+    siirtynytToisestaValintatapajonosta = r.nextBoolean(),
+    sijoitteluajoId = r.nextLong(),
+    tila = r.nextString()
+  ))
+
   protected implicit val getSiirtotiedostoProcessInfoResult: GetResult[SiirtotiedostoProcess] = GetResult(r => SiirtotiedostoProcess(
     id = r.nextLong(),
     executionId = r.nextString(),

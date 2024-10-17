@@ -53,6 +53,21 @@ case class SiirtotiedostoValinnantulos(hakukohdeOid: HakukohdeOid,
                                        hyvaksyPeruuntunut: Option[Boolean],
                                        valinnantilanViimeisinMuutos: String)
 
+case class SiirtotiedostoJonosija(valintatapajonoOid: ValintatapajonoOid,
+                                  hakemusOid: HakemusOid,
+                                  hakukohdeOid: HakukohdeOid,
+                                  prioriteetti: Int,
+                                  jonosija: Int,
+                                  varasijanNumero: Option[Int],
+                                  onkoMuuttunutViimeSijoittelussa: Boolean,
+                                  pisteet: Option[Double],
+                                  tasasijaJonosija: Int,
+                                  hyvaksyttyHarkinnanvaraisesti: Boolean,
+                                  siirtynytToisestaValintatapajonosta: Boolean,
+                                  sijoitteluajoId: Long,
+                                  tila: String //Pitääkö tää muuntaa myös joksikin valinnantilaksi tms?
+                                 )
+
 case class SiirtotiedostoProcessInfo(entityTotals: Map[String, Long])
 
 case class SiirtotiedostoProcess(id: Long,
@@ -167,6 +182,37 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
                   limit ${params.pageSize}
                   offset ${params.offset}
               """.as[ValintatapajonoRecord]).toList
+    }
+  }
+
+  override def getJonosijatPage(params: SiirtotiedostoPagingParams): List[SiirtotiedostoJonosija] = {
+    timed(s"Jonosijojen haku parametreilla $params", 100) {
+      runBlocking(
+        sql"""select
+                  valintatapajono_oid,
+                  hakemus_oid,
+                  hakukohde_oid,
+                  prioriteetti,
+                  jonosija,
+                  varasijan_numero,
+                  onko_muuttunut_viime_sijoittelussa,
+                  pisteet,
+                  tasasijajonosija,
+                  hyvaksytty_harkinnanvaraisesti,
+                  siirtynyt_toisesta_valintatapajonosta,
+                  sijoitteluajo_id,
+                  hakukohde_oid,
+                  tila,
+                  lower(sa.system_time)
+                from jonosijat js
+                join sijoitteluajot sa on sa.id = js.sijoitteluajo_id
+              where
+                  lower(sa.system_time) >= ${params.start}::timestamptz
+                  and lower(sa.system_time) <= ${params.end}::timestamptz
+              order by lower(sa.system_time) desc
+                  limit ${params.pageSize}
+                  offset ${params.offset}
+              """.as[SiirtotiedostoJonosija]).toList
     }
   }
 

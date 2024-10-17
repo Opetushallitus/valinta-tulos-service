@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.ovara
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.ovara.SiirtotiedostoUtil.nowFormatted
 import fi.vm.sade.valintatulosservice.ovara.config.SiirtotiedostoConfig
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{SiirtotiedostoIlmoittautuminen, SiirtotiedostoPagingParams, SiirtotiedostoProcess, SiirtotiedostoProcessInfo, SiirtotiedostoValinnantulos, SiirtotiedostoVastaanotto}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{SiirtotiedostoIlmoittautuminen, SiirtotiedostoJonosija, SiirtotiedostoPagingParams, SiirtotiedostoProcess, SiirtotiedostoProcessInfo, SiirtotiedostoValinnantulos, SiirtotiedostoVastaanotto}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SiirtotiedostoRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.ValintatapajonoRecord
 
@@ -89,8 +89,11 @@ class SiirtotiedostoService(siirtotiedostoRepository: SiirtotiedostoRepository, 
       val valintatapajonotCount = formSiirtotiedosto[ValintatapajonoRecord](
         baseParams.copy(tyyppi = "valintatapajono", pageSize = config.valintatapajonotSize),
         params => siirtotiedostoRepository.getValintatapajonotPage(params)).fold(e => throw e, n => ("valintatapajono", n))
+      val jonosijatCount = formSiirtotiedosto[SiirtotiedostoJonosija](
+        baseParams.copy(tyyppi = "jonosija", pageSize = config.valintatapajonotSize),//fixme size
+        params => siirtotiedostoRepository.getJonosijatPage(params)).fold(e => throw e, n => ("jonosija", n))
 
-      val entityCounts: Map[String, Long] = Seq(valinnantulosCount, vastaanototCount, ilmoittautumisetCount, valintatapajonotCount).toMap
+      val entityCounts: Map[String, Long] = Seq(valinnantulosCount, vastaanototCount, ilmoittautumisetCount, valintatapajonotCount, jonosijatCount).toMap
 
       val result = siirtotiedostoProcess.copy(info = SiirtotiedostoProcessInfo(entityTotals = entityCounts), finishedSuccessfully = true)
       logger.info(s"($executionId) Siirtotiedosto final results: $result")
