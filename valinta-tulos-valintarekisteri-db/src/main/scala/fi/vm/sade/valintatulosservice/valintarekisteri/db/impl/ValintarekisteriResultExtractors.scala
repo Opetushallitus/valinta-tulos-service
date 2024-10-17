@@ -140,7 +140,7 @@ trait ValintarekisteriResultExtractors {
     hakukohdeOid = HakukohdeOid(r.nextString()),
     ilmoittaja = r.nextString(),
     timestamp = r.nextString(),
-    action = r.nextString(),
+    action = VastaanottoAction(r.nextString()),
     id = r.nextInt(),
     selite = r.nextString(),
     deletedAt = r.nextStringOption(),
@@ -151,7 +151,7 @@ trait ValintarekisteriResultExtractors {
   protected implicit val getSiirtotiedostoIlmoittautuminenResult = GetResult(r => SiirtotiedostoIlmoittautuminen(
     henkiloOid = r.nextString(),
     hakukohdeOid = HakukohdeOid(r.nextString()),
-    tila = r.nextString,
+    tila = SijoitteluajonIlmoittautumistila(r.nextString),
     ilmoittaja = r.nextString(),
     selite = r.nextString,
     timestamp = r.nextString
@@ -232,7 +232,7 @@ trait ValintarekisteriResultExtractors {
     valintatapajonoOid = ValintatapajonoOid(r.nextString),
     hakemusOid = HakemusOid(r.nextString),
     henkiloOid = HakijaOid(r.nextString),
-    valinnantila = r.nextString,
+    valinnantila = Valinnantila(r.nextString),
     ehdollisestiHyvaksyttavissa = r.nextBooleanOption,
     ehdollisenHyvaksymisenEhtoKoodi = r.nextStringOption(),
     ehdollisenHyvaksymisenEhtoFI = r.nextStringOption(),

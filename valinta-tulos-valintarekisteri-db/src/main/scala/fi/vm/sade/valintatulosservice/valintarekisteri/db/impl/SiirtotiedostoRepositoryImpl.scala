@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SiirtotiedostoRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijaOid, HakukohdeOid, ValintatapajonoOid, ValintatapajonoRecord}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijaOid, HakukohdeOid, SijoitteluajonIlmoittautumistila, Valinnantila, ValintatapajonoOid, ValintatapajonoRecord, VastaanottoAction}
 import org.json4s.{DefaultFormats, Formats}
 import org.json4s.native.Serialization.write
 import slick.jdbc.PostgresProfile.api._
@@ -13,7 +13,7 @@ case class SiirtotiedostoVastaanotto(henkiloOid: String,
                                      hakukohdeOid: HakukohdeOid,
                                      ilmoittaja: String,
                                      timestamp: String,
-                                     action: String,
+                                     action: VastaanottoAction,
                                      id: Int,
                                      selite: String,
                                      deletedAt: Option[String],
@@ -22,7 +22,7 @@ case class SiirtotiedostoVastaanotto(henkiloOid: String,
 
 case class SiirtotiedostoIlmoittautuminen(henkiloOid: String,
                                           hakukohdeOid: HakukohdeOid,
-                                          tila: String,
+                                          tila: SijoitteluajonIlmoittautumistila,
                                           ilmoittaja: String,
                                           selite: String,
                                           timestamp: String)
@@ -39,7 +39,7 @@ case class SiirtotiedostoValinnantulos(hakukohdeOid: HakukohdeOid,
                                        valintatapajonoOid: ValintatapajonoOid,
                                        hakemusOid: HakemusOid,
                                        henkiloOid: HakijaOid,
-                                       valinnantila: String,
+                                       valinnantila: Valinnantila,
                                        ehdollisestiHyvaksyttavissa: Option[Boolean],
                                        ehdollisenHyvaksymisenEhtoKoodi: Option[String],
                                        ehdollisenHyvaksymisenEhtoFI: Option[String],
