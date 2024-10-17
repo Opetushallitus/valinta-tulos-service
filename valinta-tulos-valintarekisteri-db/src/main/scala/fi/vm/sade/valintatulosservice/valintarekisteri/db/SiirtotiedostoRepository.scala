@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{SiirtotiedostoIlmoittautuminen, SiirtotiedostoPagingParams, SiirtotiedostoProcess, SiirtotiedostoValinnantulos, SiirtotiedostoVastaanotto}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{SiirtotiedostoIlmoittautuminen, SiirtotiedostoJonosija, SiirtotiedostoPagingParams, SiirtotiedostoProcess, SiirtotiedostoValinnantulos, SiirtotiedostoVastaanotto}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, Ilmoittautuminen, ValintatapajonoRecord}
 
 
@@ -21,4 +21,6 @@ trait SiirtotiedostoRepository {
   def getIlmoittautumisetPage(params: SiirtotiedostoPagingParams): List[SiirtotiedostoIlmoittautuminen]
 
   def getValintatapajonotPage(params: SiirtotiedostoPagingParams): List[ValintatapajonoRecord]
+
+  def getJonosijatPage(params: SiirtotiedostoPagingParams): List[SiirtotiedostoJonosija]
 }
