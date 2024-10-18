@@ -115,7 +115,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
     if (hakemusOids.isEmpty) {
       Set.empty
     } else {
-      val tulokset: Seq[Valinnantulos] = Timer.timed("Hakemuksien ${hakemusOids} valinnan tulosten haku") {
+      val tulokset: Seq[Valinnantulos] = Timer.timed(s"Hakemuksien ${hakemusOids} valinnan tulosten haku") {
         valinnantulosRepository.getValinnantuloksetForHakemukses(hakemusOids)
       }
       val hakukohteet = Timer.timed(s"Hakemuksien ${hakemusOids} tuloksiin liittyvien hakukohteiden haku") {
@@ -142,7 +142,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
       val tuloksetIlmanHistoriatietoa =  Timer.timed("Hakemuksien ${hakemusOids} hakemuksen YPS-tietojen haku") {
         yhdenPaikanSaannos.getYpsTuloksetForManyHakemukses(yps_ja_ilman._1).fold(throw _, x => x) ++ yps_ja_ilman._2.map(t => t._1)
       }
-      val tilaHistoriat = Timer.timed("Hakemuksien ${hakemusOids} tilahistorioiden haku") {
+      val tilaHistoriat = Timer.timed(s"Hakemuksien ${hakemusOids} tilahistorioiden haku") {
         valinnantulosRepository.getHakemustenTilahistoriat(hakemusOids).groupBy(r => (r.hakemusOid, r.valintatapajonoOid))
       }
       tuloksetIlmanHistoriatietoa.map(tulos => ValinnantulosWithTilahistoria(tulos, tilaHistoriat.getOrElse((tulos.hakemusOid, tulos.valintatapajonoOid), List.empty)))
