@@ -68,6 +68,15 @@ case class SiirtotiedostoJonosija(valintatapajonoOid: ValintatapajonoOid,
                                   tila: String //Pitääkö tää muuntaa myös joksikin valinnantilaksi tms?
                                  )
 
+case class SiirtotiedostoHyvaksyttyJulkaistuHakutoive(
+                                           henkilo: String,
+                                           hakukohde: String,
+                                           hyvaksyttyJaJulkaistu: String, //timestamp
+                                           ilmoittaja: String,
+                                           selite: String,
+                                           systemTime: String
+                                           )
+
 case class SiirtotiedostoProcessInfo(entityTotals: Map[String, Long])
 
 case class SiirtotiedostoProcess(id: Long,
@@ -213,6 +222,27 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
                   limit ${params.pageSize}
                   offset ${params.offset}
               """.as[SiirtotiedostoJonosija]).toList
+    }
+  }
+
+  override def getHyvaksyttyJulkaistuHakutoivePage(params: SiirtotiedostoPagingParams): List[SiirtotiedostoHyvaksyttyJulkaistuHakutoive] = {
+    timed(s"Hyväksyttyjen ja julkaistujen hakutoiveiden haku parametreilla $params", 100) {
+      runBlocking(
+        sql"""select
+                  henkilo,
+                  hakukohde,
+                  hyvaksyttyJaJulkaistu,
+                  ilmoittaja,
+                  selite,
+                  lower(systemTime)
+                from hyvaksytyt_ja_julkaistut_hakutoiveet hjh
+              where
+                  lower(hjh.system_time) >= ${params.start}::timestamptz
+                  and lower(hjh.system_time) <= ${params.end}::timestamptz
+              order by lower(hjh.system_time) desc
+                  limit ${params.pageSize}
+                  offset ${params.offset}
+              """.as[SiirtotiedostoHyvaksyttyJulkaistuHakutoive]).toList
     }
   }
 
