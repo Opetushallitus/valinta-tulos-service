@@ -263,6 +263,15 @@ trait ValintarekisteriResultExtractors {
     tila = r.nextString()
   ))
 
+  protected implicit val getSiirtotiedostoHyvaksyttyJulkaistuHakutoiveResult: GetResult[SiirtotiedostoHyvaksyttyJulkaistuHakutoive] = GetResult(r => SiirtotiedostoHyvaksyttyJulkaistuHakutoive(
+    henkilo = r.nextString(),
+    hakukohde = r.nextString(),
+    hyvaksyttyJaJulkaistu = r.nextString(),
+    ilmoittaja = r.nextString(),
+    selite = r.nextString(),
+    systemTime = r.nextString()
+  ))
+
   protected implicit val getSiirtotiedostoProcessInfoResult: GetResult[SiirtotiedostoProcess] = GetResult(r => SiirtotiedostoProcess(
     id = r.nextLong(),
     executionId = r.nextString(),
