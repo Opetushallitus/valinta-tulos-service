@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
+import fi.vm.sade.sijoittelu.domain.Valintatapajono.JonosijaTieto
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SiirtotiedostoRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijaOid, HakukohdeOid, SijoitteluajonIlmoittautumistila, Valinnantila, ValintatapajonoOid, ValintatapajonoRecord, VastaanottoAction}
@@ -7,6 +8,7 @@ import org.json4s.{DefaultFormats, Formats}
 import org.json4s.native.Serialization.write
 import slick.jdbc.PostgresProfile.api._
 
+import java.util.Date
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class SiirtotiedostoVastaanotto(henkiloOid: String,
@@ -53,6 +55,28 @@ case class SiirtotiedostoValinnantulos(hakukohdeOid: HakukohdeOid,
                                        hyvaksyPeruuntunut: Option[Boolean],
                                        valinnantilanViimeisinMuutos: String)
 
+case class SiirtotiedostoValintatapajonoRecord(tasasijasaanto: String,
+                                               oid: ValintatapajonoOid,
+                                               nimi: String,
+                                               prioriteetti: Int,
+                                               aloituspaikat: Option[Int],
+                                               alkuperaisetAloituspaikat: Option[Int],
+                                               alinHyvaksyttyPistemaara: BigDecimal,
+                                               eiVarasijatayttoa: Boolean,
+                                               kaikkiEhdonTayttavatHyvaksytaan: Boolean,
+                                               poissaOlevaTaytto: Boolean,
+                                               valintaesitysHyvaksytty: Option[Boolean], hakeneet: Int,
+                                               varasijat: Option[Int],
+                                               varasijanTayttoPaivat: Option[Int],
+                                               varasijojaKaytetaanAlkaen: Option[Date],
+                                               varasijojaKaytetaanAsti: Option[Date],
+                                               tayttoJono: Option[String],
+                                               sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa: Boolean,
+                                               hakukohdeOid: HakukohdeOid,
+                                               sivssnovSijoittelunVarasijataytonRajoitus: Option[JonosijaTieto] = None,
+                                               systemTime: String)
+
+
 case class SiirtotiedostoJonosija(valintatapajonoOid: ValintatapajonoOid,
                                   hakemusOid: HakemusOid,
                                   hakukohdeOid: HakukohdeOid,
@@ -65,13 +89,14 @@ case class SiirtotiedostoJonosija(valintatapajonoOid: ValintatapajonoOid,
                                   hyvaksyttyHarkinnanvaraisesti: Boolean,
                                   siirtynytToisestaValintatapajonosta: Boolean,
                                   sijoitteluajoId: Long,
-                                  tila: String //Pitääkö tää muuntaa myös joksikin valinnantilaksi tms?
+                                  tila: String, //Pitääkö tää muuntaa myös joksikin valinnantilaksi tms?
+                                  systemTime: String
                                  )
 
 case class SiirtotiedostoLukuvuosimaksu(
                                        personOid: String,
                                        hakukohdeOid: String,
-                                       maksuntila: String, //todo Tsekkaa mahdollinen muunnos
+                                       maksuntila: String,
                                        muokkaaja: String,
                                        luotu: String, //timestamp
                                        systemTime: String
@@ -160,7 +185,7 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
     }
   }
 
-  override def getValintatapajonotPage(params: SiirtotiedostoPagingParams): List[ValintatapajonoRecord] = {
+  override def getValintatapajonotPage(params: SiirtotiedostoPagingParams): List[SiirtotiedostoValintatapajonoRecord] = {
     timed(s"Valintatapajonojen haku parametreilla $params", 100) {
       runBlocking(
         sql"""select
@@ -182,6 +207,7 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
                   v.tayttojono,
                   v.sijoiteltu_ilman_varasijasaantoja_niiden_ollessa_voimassa,
                   v.hakukohde_oid,
+                  lower(sa.system_time),
                   ssav.jonosija,
                   ssav.tasasijajonosija,
                   ssav.tila,
@@ -199,7 +225,7 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
               order by lower(sa.system_time) desc
                   limit ${params.pageSize}
                   offset ${params.offset}
-              """.as[ValintatapajonoRecord]).toList
+              """.as[SiirtotiedostoValintatapajonoRecord]).toList
     }
   }
 
@@ -219,7 +245,6 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
                   hyvaksytty_harkinnanvaraisesti,
                   siirtynyt_toisesta_valintatapajonosta,
                   sijoitteluajo_id,
-                  hakukohde_oid,
                   tila,
                   lower(sa.system_time)
                 from jonosijat js
