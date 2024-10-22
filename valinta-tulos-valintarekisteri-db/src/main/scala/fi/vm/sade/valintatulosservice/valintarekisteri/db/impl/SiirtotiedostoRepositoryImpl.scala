@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 import fi.vm.sade.sijoittelu.domain.Valintatapajono.JonosijaTieto
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SiirtotiedostoRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijaOid, HakukohdeOid, SijoitteluajonIlmoittautumistila, Valinnantila, ValintatapajonoOid, ValintatapajonoRecord, VastaanottoAction}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijaOid, HakukohdeOid, SijoitteluajonIlmoittautumistila, Valinnantila, ValintatapajonoOid, VastaanottoAction}
 import org.json4s.{DefaultFormats, Formats}
 import org.json4s.native.Serialization.write
 import slick.jdbc.PostgresProfile.api._
@@ -88,28 +88,23 @@ case class SiirtotiedostoJonosija(valintatapajonoOid: ValintatapajonoOid,
                                   tasasijaJonosija: Int,
                                   hyvaksyttyHarkinnanvaraisesti: Boolean,
                                   siirtynytToisestaValintatapajonosta: Boolean,
-                                  sijoitteluajoId: Long,
-                                  tila: String, //Pitääkö tää muuntaa myös joksikin valinnantilaksi tms?
-                                  systemTime: String
-                                 )
+                                  sijoitteluajoId: String,
+                                  tila: String,
+                                  systemTime: String)
 
-case class SiirtotiedostoLukuvuosimaksu(
-                                       personOid: String,
-                                       hakukohdeOid: String,
-                                       maksuntila: String,
-                                       muokkaaja: String,
-                                       luotu: String, //timestamp
-                                       systemTime: String
-                                       )
+case class SiirtotiedostoLukuvuosimaksu(personOid: String,
+                                        hakukohdeOid: String,
+                                        maksuntila: String,
+                                        muokkaaja: String,
+                                        luotu: String, //timestamp
+                                        systemTime: String)
 
-case class SiirtotiedostoHyvaksyttyJulkaistuHakutoive(
-                                           henkilo: String,
-                                           hakukohde: String,
-                                           hyvaksyttyJaJulkaistu: String, //timestamp
-                                           ilmoittaja: String,
-                                           selite: String,
-                                           systemTime: String
-                                           )
+case class SiirtotiedostoHyvaksyttyJulkaistuHakutoive(henkiloOid: String,
+                                                      hakukohdeOid: String,
+                                                      hyvaksyttyJaJulkaistu: String, //timestamp
+                                                      ilmoittaja: String,
+                                                      selite: String,
+                                                      systemTime: String)
 
 case class SiirtotiedostoProcessInfo(entityTotals: Map[String, Long])
 

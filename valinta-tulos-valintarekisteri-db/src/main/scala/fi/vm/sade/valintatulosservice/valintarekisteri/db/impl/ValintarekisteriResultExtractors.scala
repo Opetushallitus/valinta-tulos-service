@@ -285,14 +285,14 @@ trait ValintarekisteriResultExtractors {
     tasasijaJonosija = r.nextInt(),
     hyvaksyttyHarkinnanvaraisesti = r.nextBoolean(),
     siirtynytToisestaValintatapajonosta = r.nextBoolean(),
-    sijoitteluajoId = r.nextLong(),
+    sijoitteluajoId = r.nextString(),
     tila = r.nextString(),
     systemTime = r.nextString()
   ))
 
   protected implicit val getSiirtotiedostoHyvaksyttyJulkaistuHakutoiveResult: GetResult[SiirtotiedostoHyvaksyttyJulkaistuHakutoive] = GetResult(r => SiirtotiedostoHyvaksyttyJulkaistuHakutoive(
-    henkilo = r.nextString(),
-    hakukohde = r.nextString(),
+    henkiloOid = r.nextString(),
+    hakukohdeOid = r.nextString(),
     hyvaksyttyJaJulkaistu = r.nextString(),
     ilmoittaja = r.nextString(),
     selite = r.nextString(),
