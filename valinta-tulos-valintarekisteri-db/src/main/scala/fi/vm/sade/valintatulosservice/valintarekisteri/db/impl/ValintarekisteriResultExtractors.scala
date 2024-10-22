@@ -135,6 +135,32 @@ trait ValintarekisteriResultExtractors {
       new JonosijaTieto(jonoSija, r.nextInt(), Valinnantila(r.nextString()).valinnantila, JsonMethods.parse(r.nextString()).extract[Seq[String]].asJava)
     }))
 
+  protected implicit val getSiirtotiedostoValintatapajonotResult = GetResult(r => SiirtotiedostoValintatapajonoRecord(
+    tasasijasaanto = r.nextString,
+    oid = ValintatapajonoOid(r.nextString),
+    nimi = r.nextString,
+    prioriteetti = r.nextInt,
+    aloituspaikat = r.nextIntOption,
+    alkuperaisetAloituspaikat = r.nextIntOption,
+    alinHyvaksyttyPistemaara = r.nextBigDecimal,
+    eiVarasijatayttoa = r.nextBoolean,
+    kaikkiEhdonTayttavatHyvaksytaan = r.nextBoolean,
+    poissaOlevaTaytto = r.nextBoolean,
+    valintaesitysHyvaksytty = r.nextBooleanOption,
+    hakeneet = 0,
+    varasijat = r.nextIntOption,
+    varasijanTayttoPaivat = r.nextIntOption,
+    varasijojaKaytetaanAlkaen = r.nextTimestampOption,
+    varasijojaKaytetaanAsti = r.nextTimestampOption,
+    tayttoJono = r.nextStringOption,
+    sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa = r.nextBoolean(),
+    hakukohdeOid = HakukohdeOid(r.nextString),
+    systemTime = r.nextString(),
+    sivssnovSijoittelunVarasijataytonRajoitus = r.nextIntOption().map { jonoSija =>
+      new JonosijaTieto(jonoSija, r.nextInt(), Valinnantila(r.nextString()).valinnantila, JsonMethods.parse(r.nextString()).extract[Seq[String]].asJava)
+    }
+  ))
+
   protected implicit val getSiirtotiedostoVastaanottoResult = GetResult(r => SiirtotiedostoVastaanotto(
     henkiloOid = r.nextString(),
     hakukohdeOid = HakukohdeOid(r.nextString()),
@@ -260,7 +286,8 @@ trait ValintarekisteriResultExtractors {
     hyvaksyttyHarkinnanvaraisesti = r.nextBoolean(),
     siirtynytToisestaValintatapajonosta = r.nextBoolean(),
     sijoitteluajoId = r.nextLong(),
-    tila = r.nextString()
+    tila = r.nextString(),
+    systemTime = r.nextString()
   ))
 
   protected implicit val getSiirtotiedostoHyvaksyttyJulkaistuHakutoiveResult: GetResult[SiirtotiedostoHyvaksyttyJulkaistuHakutoive] = GetResult(r => SiirtotiedostoHyvaksyttyJulkaistuHakutoive(
