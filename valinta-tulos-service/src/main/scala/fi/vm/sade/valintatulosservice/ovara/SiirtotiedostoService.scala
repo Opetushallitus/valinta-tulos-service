@@ -90,13 +90,13 @@ class SiirtotiedostoService(siirtotiedostoRepository: SiirtotiedostoRepository, 
         baseParams.copy(tyyppi = "valintatapajono", pageSize = config.valintatapajonotSize),
         params => siirtotiedostoRepository.getValintatapajonotPage(params)).fold(e => throw e, n => ("valintatapajono", n))
       val jonosijatCount = formSiirtotiedosto[SiirtotiedostoJonosija](
-        baseParams.copy(tyyppi = "jonosija", pageSize = config.valintatapajonotSize),//fixme size
+        baseParams.copy(tyyppi = "jonosija", pageSize = config.jonosijatSize),
         params => siirtotiedostoRepository.getJonosijatPage(params)).fold(e => throw e, n => ("jonosija", n))
       val hyvaksytytJulkaistutHakutoiveetCount = formSiirtotiedosto[SiirtotiedostoHyvaksyttyJulkaistuHakutoive](
-        baseParams.copy(tyyppi = "hyvaksyttyjulkaistuhakutoive", pageSize = config.valintatapajonotSize),//fixme size
+        baseParams.copy(tyyppi = "hyvaksyttyjulkaistuhakutoive", pageSize = config.hyvaksytytJulkaistutSize),
         params => siirtotiedostoRepository.getHyvaksyttyJulkaistuHakutoivePage(params)).fold(e => throw e, n => ("hyvaksyttyjulkaistuhakutoive", n))
       val lukuvuosimaksutCount = formSiirtotiedosto[SiirtotiedostoLukuvuosimaksu](
-        baseParams.copy(tyyppi = "lukuvuosimaksu", pageSize = config.valintatapajonotSize),//fixme size
+        baseParams.copy(tyyppi = "lukuvuosimaksu", pageSize = config.lukuvuosimaksutSize),
         params => siirtotiedostoRepository.getLukuvuosimaksuPage(params)).fold(e => throw e, n => ("lukuvuosimaksu", n))
 
       val entityCounts: Map[String, Long] = Seq(valinnantulosCount,
