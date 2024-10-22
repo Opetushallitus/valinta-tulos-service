@@ -240,10 +240,10 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
         sql"""select
                   henkilo,
                   hakukohde,
-                  hyvaksyttyJaJulkaistu,
+                  hyvaksytty_ja_Julkaistu,
                   ilmoittaja,
                   selite,
-                  lower(systemTime)
+                  lower(system_time)
                 from hyvaksytyt_ja_julkaistut_hakutoiveet hjh
               where
                   lower(hjh.system_time) >= ${params.start}::timestamptz
@@ -264,7 +264,7 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
                   maksuntila,
                   muokkaaja,
                   luotu,
-                  lower(systemTime)
+                  lower(system_time)
                 from lukuvuosimaksut lvm
               where
                   lower(lvm.system_time) >= ${params.start}::timestamptz
