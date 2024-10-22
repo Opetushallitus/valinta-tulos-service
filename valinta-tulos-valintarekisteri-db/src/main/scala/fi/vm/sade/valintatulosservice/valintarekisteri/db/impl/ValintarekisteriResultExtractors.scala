@@ -272,6 +272,15 @@ trait ValintarekisteriResultExtractors {
     systemTime = r.nextString()
   ))
 
+  protected implicit val getSiirtotiedostoLukuvuosimaksuResult: GetResult[SiirtotiedostoLukuvuosimaksu] = GetResult(r => SiirtotiedostoLukuvuosimaksu(
+    personOid = r.nextString(),
+    hakukohdeOid = r.nextString(),
+    maksuntila = r.nextString(),
+    muokkaaja = r.nextString(),
+    luotu = r.nextString(),
+    systemTime = r.nextString()
+  ))
+
   protected implicit val getSiirtotiedostoProcessInfoResult: GetResult[SiirtotiedostoProcess] = GetResult(r => SiirtotiedostoProcess(
     id = r.nextLong(),
     executionId = r.nextString(),
