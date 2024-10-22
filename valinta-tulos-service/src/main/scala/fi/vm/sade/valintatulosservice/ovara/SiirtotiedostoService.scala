@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.ovara
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.ovara.SiirtotiedostoUtil.nowFormatted
 import fi.vm.sade.valintatulosservice.ovara.config.SiirtotiedostoConfig
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{SiirtotiedostoIlmoittautuminen, SiirtotiedostoJonosija, SiirtotiedostoPagingParams, SiirtotiedostoProcess, SiirtotiedostoProcessInfo, SiirtotiedostoValinnantulos, SiirtotiedostoVastaanotto}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{SiirtotiedostoHyvaksyttyJulkaistuHakutoive, SiirtotiedostoIlmoittautuminen, SiirtotiedostoJonosija, SiirtotiedostoLukuvuosimaksu, SiirtotiedostoPagingParams, SiirtotiedostoProcess, SiirtotiedostoProcessInfo, SiirtotiedostoValinnantulos, SiirtotiedostoVastaanotto}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SiirtotiedostoRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.ValintatapajonoRecord
 
@@ -92,8 +92,21 @@ class SiirtotiedostoService(siirtotiedostoRepository: SiirtotiedostoRepository, 
       val jonosijatCount = formSiirtotiedosto[SiirtotiedostoJonosija](
         baseParams.copy(tyyppi = "jonosija", pageSize = config.valintatapajonotSize),//fixme size
         params => siirtotiedostoRepository.getJonosijatPage(params)).fold(e => throw e, n => ("jonosija", n))
+      val hyvaksytytJulkaistutHakutoiveetCount = formSiirtotiedosto[SiirtotiedostoHyvaksyttyJulkaistuHakutoive](
+        baseParams.copy(tyyppi = "hyvaksyttyjulkaistuhakutoive", pageSize = config.valintatapajonotSize),//fixme size
+        params => siirtotiedostoRepository.getHyvaksyttyJulkaistuHakutoivePage(params)).fold(e => throw e, n => ("hyvaksyttyjulkaistuhakutoive", n))
+      val lukuvuosimaksutCount = formSiirtotiedosto[SiirtotiedostoLukuvuosimaksu](
+        baseParams.copy(tyyppi = "lukuvuosimaksu", pageSize = config.valintatapajonotSize),//fixme size
+        params => siirtotiedostoRepository.getLukuvuosimaksuPage(params)).fold(e => throw e, n => ("lukuvuosimaksu", n))
 
-      val entityCounts: Map[String, Long] = Seq(valinnantulosCount, vastaanototCount, ilmoittautumisetCount, valintatapajonotCount, jonosijatCount).toMap
+      val entityCounts: Map[String, Long] = Seq(valinnantulosCount,
+                                                vastaanototCount,
+                                                ilmoittautumisetCount,
+                                                valintatapajonotCount,
+                                                jonosijatCount,
+                                                hyvaksytytJulkaistutHakutoiveetCount,
+                                                lukuvuosimaksutCount)
+                                                .toMap
 
       val result = siirtotiedostoProcess.copy(info = SiirtotiedostoProcessInfo(entityTotals = entityCounts), finishedSuccessfully = true)
       logger.info(s"($executionId) Siirtotiedosto final results: $result")

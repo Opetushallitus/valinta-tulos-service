@@ -68,6 +68,15 @@ case class SiirtotiedostoJonosija(valintatapajonoOid: ValintatapajonoOid,
                                   tila: String //Pitääkö tää muuntaa myös joksikin valinnantilaksi tms?
                                  )
 
+case class SiirtotiedostoLukuvuosimaksu(
+                                       personOid: String,
+                                       hakukohdeOid: String,
+                                       maksuntila: String, //todo Tsekkaa mahdollinen muunnos
+                                       muokkaaja: String,
+                                       luotu: String, //timestamp
+                                       systemTime: String
+                                       )
+
 case class SiirtotiedostoHyvaksyttyJulkaistuHakutoive(
                                            henkilo: String,
                                            hakukohde: String,
@@ -243,6 +252,27 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
                   limit ${params.pageSize}
                   offset ${params.offset}
               """.as[SiirtotiedostoHyvaksyttyJulkaistuHakutoive]).toList
+    }
+  }
+
+  override def getLukuvuosimaksuPage(params: SiirtotiedostoPagingParams): List[SiirtotiedostoLukuvuosimaksu] = {
+    timed(s"Hyväksyttyjen ja julkaistujen hakutoiveiden haku parametreilla $params", 100) {
+      runBlocking(
+        sql"""select
+                  personoid,
+                  hakukohdeoid,
+                  maksuntila,
+                  muokkaaja,
+                  luotu,
+                  lower(systemTime)
+                from lukuvuosimaksut lvm
+              where
+                  lower(lvm.system_time) >= ${params.start}::timestamptz
+                  and lower(lvm.system_time) <= ${params.end}::timestamptz
+              order by lower(lvm.system_time) desc
+                  limit ${params.pageSize}
+                  offset ${params.offset}
+              """.as[SiirtotiedostoLukuvuosimaksu]).toList
     }
   }
 
