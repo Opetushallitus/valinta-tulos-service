@@ -61,6 +61,9 @@ case class VtsApplicationSettings(config: Config) extends ApplicationSettings(co
     s3_bucket = withConfig(_.getString("valinta-tulos-service.siirtotiedosto.s3-bucket")),
     role_arn = withConfig(_.getString("valinta-tulos-service.siirtotiedosto.s3.target-role-arn")),
     ilmoittautumisetSize = withConfig(_.getString("valinta-tulos-service.siirtotiedosto.ilmoittautumiset_page_size")).toInt,
+    jonosijatSize = withConfig(_.getString("valinta-tulos-service.siirtotiedosto.jonosijat_page_size")).toInt,
+    hyvaksytytJulkaistutSize = withConfig(_.getString("valinta-tulos-service.siirtotiedosto.hyvaksytytjulkaistuthakutoiveet_page_size")).toInt,
+    lukuvuosimaksutSize = withConfig(_.getString("valinta-tulos-service.siirtotiedosto.lukuvuosimaksut_page_size")).toInt,
     vastaanototSize = withConfig(_.getString("valinta-tulos-service.siirtotiedosto.vastaanotot_page_size")).toInt,
     valintatapajonotSize = withConfig(_.getString("valinta-tulos-service.siirtotiedosto.valintatapajonot_page_size")).toInt,
     hakukohdeGroupSize = withConfig(_.getString("valinta-tulos-service.siirtotiedosto.hakukohde_group_size")).toInt

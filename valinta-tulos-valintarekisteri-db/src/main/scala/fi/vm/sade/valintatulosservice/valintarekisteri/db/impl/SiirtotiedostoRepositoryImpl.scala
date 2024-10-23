@@ -1,19 +1,21 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
+import fi.vm.sade.sijoittelu.domain.Valintatapajono.JonosijaTieto
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SiirtotiedostoRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijaOid, HakukohdeOid, ValintatapajonoOid, ValintatapajonoRecord}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijaOid, HakukohdeOid, SijoitteluajonIlmoittautumistila, Valinnantila, ValintatapajonoOid, VastaanottoAction}
 import org.json4s.{DefaultFormats, Formats}
 import org.json4s.native.Serialization.write
 import slick.jdbc.PostgresProfile.api._
 
+import java.util.Date
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class SiirtotiedostoVastaanotto(henkiloOid: String,
                                      hakukohdeOid: HakukohdeOid,
                                      ilmoittaja: String,
                                      timestamp: String,
-                                     action: String,
+                                     action: VastaanottoAction,
                                      id: Int,
                                      selite: String,
                                      deletedAt: Option[String],
@@ -22,7 +24,7 @@ case class SiirtotiedostoVastaanotto(henkiloOid: String,
 
 case class SiirtotiedostoIlmoittautuminen(henkiloOid: String,
                                           hakukohdeOid: HakukohdeOid,
-                                          tila: String,
+                                          tila: SijoitteluajonIlmoittautumistila,
                                           ilmoittaja: String,
                                           selite: String,
                                           timestamp: String)
@@ -39,7 +41,7 @@ case class SiirtotiedostoValinnantulos(hakukohdeOid: HakukohdeOid,
                                        valintatapajonoOid: ValintatapajonoOid,
                                        hakemusOid: HakemusOid,
                                        henkiloOid: HakijaOid,
-                                       valinnantila: String,
+                                       valinnantila: Valinnantila,
                                        ehdollisestiHyvaksyttavissa: Option[Boolean],
                                        ehdollisenHyvaksymisenEhtoKoodi: Option[String],
                                        ehdollisenHyvaksymisenEhtoFI: Option[String],
@@ -52,6 +54,57 @@ case class SiirtotiedostoValinnantulos(hakukohdeOid: HakukohdeOid,
                                        hyvaksyttyVarasijalta: Option[Boolean],
                                        hyvaksyPeruuntunut: Option[Boolean],
                                        valinnantilanViimeisinMuutos: String)
+
+case class SiirtotiedostoValintatapajonoRecord(tasasijasaanto: String,
+                                               oid: ValintatapajonoOid,
+                                               nimi: String,
+                                               prioriteetti: Int,
+                                               aloituspaikat: Option[Int],
+                                               alkuperaisetAloituspaikat: Option[Int],
+                                               alinHyvaksyttyPistemaara: BigDecimal,
+                                               eiVarasijatayttoa: Boolean,
+                                               kaikkiEhdonTayttavatHyvaksytaan: Boolean,
+                                               poissaOlevaTaytto: Boolean,
+                                               valintaesitysHyvaksytty: Option[Boolean], hakeneet: Int,
+                                               varasijat: Option[Int],
+                                               varasijanTayttoPaivat: Option[Int],
+                                               varasijojaKaytetaanAlkaen: Option[Date],
+                                               varasijojaKaytetaanAsti: Option[Date],
+                                               tayttoJono: Option[String],
+                                               sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa: Boolean,
+                                               hakukohdeOid: HakukohdeOid,
+                                               sivssnovSijoittelunVarasijataytonRajoitus: Option[JonosijaTieto] = None,
+                                               systemTime: String)
+
+
+case class SiirtotiedostoJonosija(valintatapajonoOid: ValintatapajonoOid,
+                                  hakemusOid: HakemusOid,
+                                  hakukohdeOid: HakukohdeOid,
+                                  prioriteetti: Int,
+                                  jonosija: Int,
+                                  varasijanNumero: Option[Int],
+                                  onkoMuuttunutViimeSijoittelussa: Boolean,
+                                  pisteet: Option[Double],
+                                  tasasijaJonosija: Int,
+                                  hyvaksyttyHarkinnanvaraisesti: Boolean,
+                                  siirtynytToisestaValintatapajonosta: Boolean,
+                                  sijoitteluajoId: String,
+                                  tila: String,
+                                  systemTime: String)
+
+case class SiirtotiedostoLukuvuosimaksu(personOid: String,
+                                        hakukohdeOid: String,
+                                        maksuntila: String,
+                                        muokkaaja: String,
+                                        luotu: String, //timestamp
+                                        systemTime: String)
+
+case class SiirtotiedostoHyvaksyttyJulkaistuHakutoive(henkiloOid: String,
+                                                      hakukohdeOid: String,
+                                                      hyvaksyttyJaJulkaistu: String, //timestamp
+                                                      ilmoittaja: String,
+                                                      selite: String,
+                                                      systemTime: String)
 
 case class SiirtotiedostoProcessInfo(entityTotals: Map[String, Long])
 
@@ -127,7 +180,7 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
     }
   }
 
-  override def getValintatapajonotPage(params: SiirtotiedostoPagingParams): List[ValintatapajonoRecord] = {
+  override def getValintatapajonotPage(params: SiirtotiedostoPagingParams): List[SiirtotiedostoValintatapajonoRecord] = {
     timed(s"Valintatapajonojen haku parametreilla $params", 100) {
       runBlocking(
         sql"""select
@@ -149,6 +202,7 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
                   v.tayttojono,
                   v.sijoiteltu_ilman_varasijasaantoja_niiden_ollessa_voimassa,
                   v.hakukohde_oid,
+                  lower(sa.system_time),
                   ssav.jonosija,
                   ssav.tasasijajonosija,
                   ssav.tila,
@@ -166,7 +220,79 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
               order by lower(sa.system_time) desc
                   limit ${params.pageSize}
                   offset ${params.offset}
-              """.as[ValintatapajonoRecord]).toList
+              """.as[SiirtotiedostoValintatapajonoRecord]).toList
+    }
+  }
+
+  override def getJonosijatPage(params: SiirtotiedostoPagingParams): List[SiirtotiedostoJonosija] = {
+    timed(s"Jonosijojen haku parametreilla $params", 100) {
+      runBlocking(
+        sql"""select
+                  valintatapajono_oid,
+                  hakemus_oid,
+                  hakukohde_oid,
+                  prioriteetti,
+                  jonosija,
+                  varasijan_numero,
+                  onko_muuttunut_viime_sijoittelussa,
+                  pisteet,
+                  tasasijajonosija,
+                  hyvaksytty_harkinnanvaraisesti,
+                  siirtynyt_toisesta_valintatapajonosta,
+                  sijoitteluajo_id,
+                  tila,
+                  lower(sa.system_time)
+                from jonosijat js
+                join sijoitteluajot sa on sa.id = js.sijoitteluajo_id
+              where
+                  lower(sa.system_time) >= ${params.start}::timestamptz
+                  and lower(sa.system_time) <= ${params.end}::timestamptz
+              order by lower(sa.system_time) desc
+                  limit ${params.pageSize}
+                  offset ${params.offset}
+              """.as[SiirtotiedostoJonosija]).toList
+    }
+  }
+
+  override def getHyvaksyttyJulkaistuHakutoivePage(params: SiirtotiedostoPagingParams): List[SiirtotiedostoHyvaksyttyJulkaistuHakutoive] = {
+    timed(s"Hyväksyttyjen ja julkaistujen hakutoiveiden haku parametreilla $params", 100) {
+      runBlocking(
+        sql"""select
+                  henkilo,
+                  hakukohde,
+                  hyvaksytty_ja_Julkaistu,
+                  ilmoittaja,
+                  selite,
+                  lower(system_time)
+                from hyvaksytyt_ja_julkaistut_hakutoiveet hjh
+              where
+                  lower(hjh.system_time) >= ${params.start}::timestamptz
+                  and lower(hjh.system_time) <= ${params.end}::timestamptz
+              order by lower(hjh.system_time) desc
+                  limit ${params.pageSize}
+                  offset ${params.offset}
+              """.as[SiirtotiedostoHyvaksyttyJulkaistuHakutoive]).toList
+    }
+  }
+
+  override def getLukuvuosimaksuPage(params: SiirtotiedostoPagingParams): List[SiirtotiedostoLukuvuosimaksu] = {
+    timed(s"Hyväksyttyjen ja julkaistujen hakutoiveiden haku parametreilla $params", 100) {
+      runBlocking(
+        sql"""select
+                  personoid,
+                  hakukohdeoid,
+                  maksuntila,
+                  muokkaaja,
+                  luotu,
+                  lower(system_time)
+                from lukuvuosimaksut lvm
+              where
+                  lower(lvm.system_time) >= ${params.start}::timestamptz
+                  and lower(lvm.system_time) <= ${params.end}::timestamptz
+              order by lower(lvm.system_time) desc
+                  limit ${params.pageSize}
+                  offset ${params.offset}
+              """.as[SiirtotiedostoLukuvuosimaksu]).toList
     }
   }
 

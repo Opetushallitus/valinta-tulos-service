@@ -6,4 +6,7 @@ case class SiirtotiedostoConfig(aws_region: String,
                                 ilmoittautumisetSize: Int,
                                 vastaanototSize: Int,
                                 valintatapajonotSize: Int,
+                                jonosijatSize: Int,
+                                hyvaksytytJulkaistutSize: Int,
+                                lukuvuosimaksutSize: Int,
                                 hakukohdeGroupSize: Int)
