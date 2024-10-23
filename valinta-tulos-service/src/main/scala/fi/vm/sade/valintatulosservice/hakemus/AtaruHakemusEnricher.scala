@@ -23,8 +23,8 @@ class AtaruHakemusEnricher(config: VtsAppConfig,
     val henkiloOidCount = ataruHakemukset.map(h => h.henkiloOid).distinct
     val hakukohdeOidCount = ataruHakemukset.flatMap(h => h.hakukohdeOids).distinct
     for {
-      henkilot <- timed(s"Ataru: Henkilöiden tietojen hakeminen ONR:stä (henkilöiden määrä: $henkiloOidCount)", 1000)(henkilot(ataruHakemukset).right)
-      hakutoiveet <- timed(s"Ataru: Hakukohteiden tietojen hakeminen Kouta-internalista (hakukohteiden määrä: $hakukohdeOidCount)", 1000)(hakutoiveet(ataruHakemukset).right)
+      henkilot <- timed(s"Ataru: Henkilöiden tietojen hakeminen ONR:stä (henkilöiden määrä: $henkiloOidCount)", 1)(henkilot(ataruHakemukset).right)
+      hakutoiveet <- timed(s"Ataru: Hakukohteiden tietojen hakeminen Kouta-internalista (hakukohteiden määrä: $hakukohdeOidCount)", 1)(hakutoiveet(ataruHakemukset).right)
     } yield ataruHakemukset.map(hakemus => toHakemus(henkilot, hakutoiveet, hakemus))
   }
 
