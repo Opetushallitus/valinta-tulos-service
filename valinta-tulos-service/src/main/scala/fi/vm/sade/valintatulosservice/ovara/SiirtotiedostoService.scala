@@ -20,8 +20,8 @@ class SiirtotiedostoService(siirtotiedostoRepository: SiirtotiedostoRepository, 
     if (pageResults.isEmpty) {
       Right(params.offset)
     } else {
-      siirtotiedostoClient.saveSiirtotiedosto[T](params.tyyppi, pageResults, params.executionId, 1)
-      saveInSiirtotiedostoPaged(params.copy(offset = params.offset + pageResults.size), pageFunction)
+      siirtotiedostoClient.saveSiirtotiedosto[T](params.tyyppi, pageResults, params.executionId, params.fileNumber)
+      saveInSiirtotiedostoPaged(params.copy(offset = params.offset + pageResults.size, fileNumber = params.fileNumber + 1), pageFunction)
     }
   }
 
