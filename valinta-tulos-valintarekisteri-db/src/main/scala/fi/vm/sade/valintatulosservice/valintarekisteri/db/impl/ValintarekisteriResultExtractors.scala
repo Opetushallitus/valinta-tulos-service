@@ -135,12 +135,38 @@ trait ValintarekisteriResultExtractors {
       new JonosijaTieto(jonoSija, r.nextInt(), Valinnantila(r.nextString()).valinnantila, JsonMethods.parse(r.nextString()).extract[Seq[String]].asJava)
     }))
 
+  protected implicit val getSiirtotiedostoValintatapajonotResult = GetResult(r => SiirtotiedostoValintatapajonoRecord(
+    tasasijasaanto = r.nextString,
+    oid = ValintatapajonoOid(r.nextString),
+    nimi = r.nextString,
+    prioriteetti = r.nextInt,
+    aloituspaikat = r.nextIntOption,
+    alkuperaisetAloituspaikat = r.nextIntOption,
+    alinHyvaksyttyPistemaara = r.nextBigDecimal,
+    eiVarasijatayttoa = r.nextBoolean,
+    kaikkiEhdonTayttavatHyvaksytaan = r.nextBoolean,
+    poissaOlevaTaytto = r.nextBoolean,
+    valintaesitysHyvaksytty = r.nextBooleanOption,
+    hakeneet = 0,
+    varasijat = r.nextIntOption,
+    varasijanTayttoPaivat = r.nextIntOption,
+    varasijojaKaytetaanAlkaen = r.nextTimestampOption,
+    varasijojaKaytetaanAsti = r.nextTimestampOption,
+    tayttoJono = r.nextStringOption,
+    sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa = r.nextBoolean(),
+    hakukohdeOid = HakukohdeOid(r.nextString),
+    systemTime = r.nextString(),
+    sivssnovSijoittelunVarasijataytonRajoitus = r.nextIntOption().map { jonoSija =>
+      new JonosijaTieto(jonoSija, r.nextInt(), Valinnantila(r.nextString()).valinnantila, JsonMethods.parse(r.nextString()).extract[Seq[String]].asJava)
+    }
+  ))
+
   protected implicit val getSiirtotiedostoVastaanottoResult = GetResult(r => SiirtotiedostoVastaanotto(
     henkiloOid = r.nextString(),
     hakukohdeOid = HakukohdeOid(r.nextString()),
     ilmoittaja = r.nextString(),
     timestamp = r.nextString(),
-    action = r.nextString(),
+    action = VastaanottoAction(r.nextString()),
     id = r.nextInt(),
     selite = r.nextString(),
     deletedAt = r.nextStringOption(),
@@ -151,7 +177,7 @@ trait ValintarekisteriResultExtractors {
   protected implicit val getSiirtotiedostoIlmoittautuminenResult = GetResult(r => SiirtotiedostoIlmoittautuminen(
     henkiloOid = r.nextString(),
     hakukohdeOid = HakukohdeOid(r.nextString()),
-    tila = r.nextString,
+    tila = SijoitteluajonIlmoittautumistila(r.nextString),
     ilmoittaja = r.nextString(),
     selite = r.nextString,
     timestamp = r.nextString
@@ -232,7 +258,7 @@ trait ValintarekisteriResultExtractors {
     valintatapajonoOid = ValintatapajonoOid(r.nextString),
     hakemusOid = HakemusOid(r.nextString),
     henkiloOid = HakijaOid(r.nextString),
-    valinnantila = r.nextString,
+    valinnantila = Valinnantila(r.nextString),
     ehdollisestiHyvaksyttavissa = r.nextBooleanOption,
     ehdollisenHyvaksymisenEhtoKoodi = r.nextStringOption(),
     ehdollisenHyvaksymisenEhtoFI = r.nextStringOption(),
@@ -245,6 +271,41 @@ trait ValintarekisteriResultExtractors {
     hyvaksyttyVarasijalta = r.nextBooleanOption,
     hyvaksyPeruuntunut = r.nextBooleanOption,
     valinnantilanViimeisinMuutos = r.nextString()
+  ))
+
+  protected implicit val getSiirtotiedostoJonosijaResult: GetResult[SiirtotiedostoJonosija] = GetResult(r => SiirtotiedostoJonosija(
+    valintatapajonoOid = ValintatapajonoOid(r.nextString),
+    hakemusOid = HakemusOid(r.nextString),
+    hakukohdeOid = HakukohdeOid(r.nextString),
+    prioriteetti = r.nextInt(),
+    jonosija = r.nextInt(),
+    varasijanNumero = r.nextIntOption(),
+    onkoMuuttunutViimeSijoittelussa = r.nextBoolean(),
+    pisteet = r.nextDoubleOption(),
+    tasasijaJonosija = r.nextInt(),
+    hyvaksyttyHarkinnanvaraisesti = r.nextBoolean(),
+    siirtynytToisestaValintatapajonosta = r.nextBoolean(),
+    sijoitteluajoId = r.nextString(),
+    tila = r.nextString(),
+    systemTime = r.nextString()
+  ))
+
+  protected implicit val getSiirtotiedostoHyvaksyttyJulkaistuHakutoiveResult: GetResult[SiirtotiedostoHyvaksyttyJulkaistuHakutoive] = GetResult(r => SiirtotiedostoHyvaksyttyJulkaistuHakutoive(
+    henkiloOid = r.nextString(),
+    hakukohdeOid = r.nextString(),
+    hyvaksyttyJaJulkaistu = r.nextString(),
+    ilmoittaja = r.nextString(),
+    selite = r.nextString(),
+    systemTime = r.nextString()
+  ))
+
+  protected implicit val getSiirtotiedostoLukuvuosimaksuResult: GetResult[SiirtotiedostoLukuvuosimaksu] = GetResult(r => SiirtotiedostoLukuvuosimaksu(
+    personOid = r.nextString(),
+    hakukohdeOid = r.nextString(),
+    maksuntila = r.nextString(),
+    muokkaaja = r.nextString(),
+    luotu = r.nextString(),
+    systemTime = r.nextString()
   ))
 
   protected implicit val getSiirtotiedostoProcessInfoResult: GetResult[SiirtotiedostoProcess] = GetResult(r => SiirtotiedostoProcess(

@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.ovara
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.ovara.SiirtotiedostoUtil.nowFormatted
 import fi.vm.sade.valintatulosservice.ovara.config.SiirtotiedostoConfig
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{SiirtotiedostoIlmoittautuminen, SiirtotiedostoPagingParams, SiirtotiedostoProcess, SiirtotiedostoProcessInfo, SiirtotiedostoValinnantulos, SiirtotiedostoVastaanotto}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{SiirtotiedostoHyvaksyttyJulkaistuHakutoive, SiirtotiedostoIlmoittautuminen, SiirtotiedostoJonosija, SiirtotiedostoLukuvuosimaksu, SiirtotiedostoPagingParams, SiirtotiedostoProcess, SiirtotiedostoProcessInfo, SiirtotiedostoValinnantulos, SiirtotiedostoValintatapajonoRecord, SiirtotiedostoVastaanotto}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SiirtotiedostoRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.ValintatapajonoRecord
 
@@ -20,8 +20,8 @@ class SiirtotiedostoService(siirtotiedostoRepository: SiirtotiedostoRepository, 
     if (pageResults.isEmpty) {
       Right(params.offset)
     } else {
-      siirtotiedostoClient.saveSiirtotiedosto[T](params.tyyppi, pageResults, params.executionId, 1)
-      saveInSiirtotiedostoPaged(params.copy(offset = params.offset + pageResults.size), pageFunction)
+      siirtotiedostoClient.saveSiirtotiedosto[T](params.tyyppi, pageResults, params.executionId, params.fileNumber)
+      saveInSiirtotiedostoPaged(params.copy(offset = params.offset + pageResults.size, fileNumber = params.fileNumber + 1), pageFunction)
     }
   }
 
@@ -86,11 +86,27 @@ class SiirtotiedostoService(siirtotiedostoRepository: SiirtotiedostoRepository, 
       val ilmoittautumisetCount = formSiirtotiedosto[SiirtotiedostoIlmoittautuminen](
         baseParams.copy(tyyppi = "ilmoittautuminen", pageSize = config.ilmoittautumisetSize),
         params => siirtotiedostoRepository.getIlmoittautumisetPage(params)).fold(e => throw e, n => ("ilmoittautuminen", n))
-      val valintatapajonotCount = formSiirtotiedosto[ValintatapajonoRecord](
+      val valintatapajonotCount = formSiirtotiedosto[SiirtotiedostoValintatapajonoRecord](
         baseParams.copy(tyyppi = "valintatapajono", pageSize = config.valintatapajonotSize),
         params => siirtotiedostoRepository.getValintatapajonotPage(params)).fold(e => throw e, n => ("valintatapajono", n))
+      val jonosijatCount = formSiirtotiedosto[SiirtotiedostoJonosija](
+        baseParams.copy(tyyppi = "jonosija", pageSize = config.jonosijatSize),
+        params => siirtotiedostoRepository.getJonosijatPage(params)).fold(e => throw e, n => ("jonosija", n))
+      val hyvaksytytJulkaistutHakutoiveetCount = formSiirtotiedosto[SiirtotiedostoHyvaksyttyJulkaistuHakutoive](
+        baseParams.copy(tyyppi = "hyvaksyttyjulkaistuhakutoive", pageSize = config.hyvaksytytJulkaistutSize),
+        params => siirtotiedostoRepository.getHyvaksyttyJulkaistuHakutoivePage(params)).fold(e => throw e, n => ("hyvaksyttyjulkaistuhakutoive", n))
+      val lukuvuosimaksutCount = formSiirtotiedosto[SiirtotiedostoLukuvuosimaksu](
+        baseParams.copy(tyyppi = "lukuvuosimaksu", pageSize = config.lukuvuosimaksutSize),
+        params => siirtotiedostoRepository.getLukuvuosimaksuPage(params)).fold(e => throw e, n => ("lukuvuosimaksu", n))
 
-      val entityCounts: Map[String, Long] = Seq(valinnantulosCount, vastaanototCount, ilmoittautumisetCount, valintatapajonotCount).toMap
+      val entityCounts: Map[String, Long] = Seq(valinnantulosCount,
+                                                vastaanototCount,
+                                                ilmoittautumisetCount,
+                                                valintatapajonotCount,
+                                                jonosijatCount,
+                                                hyvaksytytJulkaistutHakutoiveetCount,
+                                                lukuvuosimaksutCount)
+                                                .toMap
 
       val result = siirtotiedostoProcess.copy(info = SiirtotiedostoProcessInfo(entityTotals = entityCounts), finishedSuccessfully = true)
       logger.info(s"($executionId) Siirtotiedosto final results: $result")
