@@ -60,7 +60,7 @@ class ValintarekisteriForSijoitteluSpec extends Specification with ITSetup with 
   "Sijoitteluajo should be stored in transaction" in {
     val wrapper = loadSijoitteluFromFixture("valintatapajono_hakijaryhma_pistetiedot", "sijoittelu/")
     wrapper.hakukohteet(0).getValintatapajonot.get(0).getHakemukset.get(0).setHakemusOid(null)
-    (valintarekisteri.tallennaSijoittelu(wrapper.sijoitteluajo, wrapper.hakukohteet.asJava, wrapper.valintatulokset.asJava) must throwA[Exception]).message must contain("null value in column \"hakemus_oid\" violates not-null constraint")
+    (valintarekisteri.tallennaSijoittelu(wrapper.sijoitteluajo, wrapper.hakukohteet.asJava, wrapper.valintatulokset.asJava) must throwA[Exception]).message must contain("null value in column \"hakemus_oid\" of relation \"jonosijat\" violates not-null constraint")
     findSijoitteluajo(wrapper.sijoitteluajo.getSijoitteluajoId) mustEqual None
   }
   "Unknown sijoitteluajo cannot be found" in {

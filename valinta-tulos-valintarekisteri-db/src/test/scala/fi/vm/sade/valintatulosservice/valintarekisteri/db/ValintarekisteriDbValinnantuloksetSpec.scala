@@ -27,7 +27,8 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
   val hakemusOid = HakemusOid("hakemusOid")
   val muokkaaja = "muokkaaja"
   val selite = "selite"
-  val muutos = OffsetDateTime.now(ZoneId.of("Europe/Helsinki"))
+  val muutos = OffsetDateTime.now(ZoneId.of("Europe/Helsinki")).withNano(0)
+  val nanotime = muutos.getNano
   val valinnantilanTallennus = ValinnantilanTallennus(
     hakemusOid, valintatapajonoOid, hakukohdeOid, henkiloOid, Hyvaksytty, muokkaaja)
   val valinnantuloksenOhjaus = ValinnantuloksenOhjaus(
