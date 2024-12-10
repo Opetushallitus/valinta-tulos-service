@@ -78,7 +78,7 @@ jobs:
     uses: Opetushallitus/.github/.github/workflows/push-scan-java-ecr.yml@main
     with:
       application: valinta-tulos-service
-      base-image: baseimage-war-openjdk21:master
+      base-image: baseimage-war-tomcat9-openjdk21:master
       configfolder: valinta-tulos-service/src/main/resources/oph-configuration
       jarfile: valinta-tulos-service
       jarfolder: .
