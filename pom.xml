@@ -58,7 +58,7 @@
         <!-- Old duplicate versions -->
         <FIXME.plugin.maven-surefire-plugin.version>2.13</FIXME.plugin.maven-surefire-plugin.version>
 
-        <enforce.java.version>[11,)</enforce.java.version>
+        <enforce.java.version>[21,)</enforce.java.version>
 
         <plugin.exec-maven-plugin.version>1.6.0</plugin.exec-maven-plugin.version>
         <plugin.maven-assembly-plugin.version>2.6</plugin.maven-assembly-plugin.version>
