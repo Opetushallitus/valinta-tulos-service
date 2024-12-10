@@ -1,12 +1,10 @@
 package fi.vm.sade.valintatulosservice.sijoittelu
 
 import java.util.Collections.sort
-
 import fi.vm.sade.sijoittelu.domain.SijoitteluAjo
 import fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.VARASIJALTA_HYVAKSYTTY
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationObject, KevytHakijaDTO}
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, ValintatuloksenTila}
-import fi.vm.sade.sijoittelu.tulos.service.impl.comparators.HakijaDTOComparator
 import fi.vm.sade.utils.Timer.timed
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, SijoitteluRepository, ValinnantulosRepository}
@@ -14,6 +12,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, Hakukohd
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.SijoitteluajonHakijat
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.SijoitteluajonHakijat.ValinnantuloksetGrouped
 
+import java.util.Comparator
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
 
@@ -135,7 +134,10 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
       }
     }
 
-    sort(hakijat, new HakijaDTOComparator)
+    val hakijaDTOComparator: Comparator[HakijaDTO] = new Comparator[HakijaDTO] {
+      override def compare(o1: HakijaDTO, o2: HakijaDTO): Int = o1.getHakemusOid().compareTo(o2.getHakemusOid())
+    }
+    sort(hakijat, hakijaDTOComparator)
     val paginationObject: HakijaPaginationObject = new HakijaPaginationObject
     val result: java.util.List[HakijaDTO] = new java.util.ArrayList[HakijaDTO]
     import scala.collection.JavaConversions._
