@@ -32,8 +32,18 @@ object VastaanottoUtils {
         DateTimeZone.forOffsetMillis(Math.toIntExact(TimeUnit.SECONDS.toMillis(d.getOffset.getTotalSeconds)))
       ))
       haunValintaesitysHyvaksyttavissa = ohjausparametrit.valintaesitysHyvaksyttavissa.getOrElse(new DateTime(0))
-      buffer <- bufferOption
+      buffer <- bufferOption.map(b => b + Math.max(0, bufferModifier(viimeisinMuutos, deadline)))
     } yield max(viimeisinMuutos, haunValintaesitysHyvaksyttavissa).plusDays(buffer).withZone(DateTimeZone.forID("Europe/Helsinki")).withTime(deadline.getHourOfDay, deadline.getMinuteOfHour, deadline.getSecondOfMinute, deadline.getMillisOfSecond)
+  }
+
+  private def bufferModifier(viimeisinMuutos: DateTime, deadline: DateTime): Int = {
+    if (viimeisinMuutos.getHourOfDay == deadline.getHourOfDay) {
+      if (viimeisinMuutos.getMinuteOfHour == deadline.getMinuteOfHour) {
+        return Integer.signum(viimeisinMuutos.getSecondOfMinute - deadline.getSecondOfMinute)
+      }
+      return Integer.signum(viimeisinMuutos.getMinuteOfHour - deadline.getMinuteOfHour)
+    }
+    Integer.signum(viimeisinMuutos.getHourOfDay - deadline.getHourOfDay)
   }
 
   private def max(d1: DateTime, d2: DateTime): DateTime = if(d1.isAfter(d2)) d1 else d2
