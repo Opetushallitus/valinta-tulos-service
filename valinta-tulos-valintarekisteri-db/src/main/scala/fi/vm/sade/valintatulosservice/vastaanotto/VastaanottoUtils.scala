@@ -32,18 +32,23 @@ object VastaanottoUtils {
         DateTimeZone.forOffsetMillis(Math.toIntExact(TimeUnit.SECONDS.toMillis(d.getOffset.getTotalSeconds)))
       ))
       haunValintaesitysHyvaksyttavissa = ohjausparametrit.valintaesitysHyvaksyttavissa.getOrElse(new DateTime(0))
-      buffer <- bufferOption.map(b => b + Math.max(0, bufferModifier(viimeisinMuutos, deadline)))
+      buffer <- bufferOption.map(b => b + bufferModifier(viimeisinMuutos, deadline))
     } yield max(viimeisinMuutos, haunValintaesitysHyvaksyttavissa).plusDays(buffer).withZone(DateTimeZone.forID("Europe/Helsinki")).withTime(deadline.getHourOfDay, deadline.getMinuteOfHour, deadline.getSecondOfMinute, deadline.getMillisOfSecond)
   }
 
+  //Palauttaa 1 jos viimeisimmän muutoksen kellonaika on ollut ennen eräpäivän kellonaikaa, 0 muussa tapauksessa
   private def bufferModifier(viimeisinMuutos: DateTime, deadline: DateTime): Int = {
+    var modifier: Int = 0
     if (viimeisinMuutos.getHourOfDay == deadline.getHourOfDay) {
       if (viimeisinMuutos.getMinuteOfHour == deadline.getMinuteOfHour) {
-        return Integer.signum(viimeisinMuutos.getSecondOfMinute - deadline.getSecondOfMinute)
+        modifier = Integer.signum(viimeisinMuutos.getSecondOfMinute - deadline.getSecondOfMinute)
+      } else {
+        modifier = Integer.signum(viimeisinMuutos.getMinuteOfHour - deadline.getMinuteOfHour)
       }
-      return Integer.signum(viimeisinMuutos.getMinuteOfHour - deadline.getMinuteOfHour)
+    } else {
+      modifier = Integer.signum(viimeisinMuutos.getHourOfDay - deadline.getHourOfDay)
     }
-    Integer.signum(viimeisinMuutos.getHourOfDay - deadline.getHourOfDay)
+    Math.max(0, modifier)
   }
 
   private def max(d1: DateTime, d2: DateTime): DateTime = if(d1.isAfter(d2)) d1 else d2
