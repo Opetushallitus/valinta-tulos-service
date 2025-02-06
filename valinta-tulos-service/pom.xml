@@ -23,11 +23,6 @@
                 <version>1.1.0.Final</version>
             </dependency>
             <dependency>
-                <groupId>com.google.code.gson</groupId>
-                <artifactId>gson</artifactId>
-                <version>${gson.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>fi.vm.sade</groupId>
                 <artifactId>scala-cas_2.11</artifactId>
                 <version>${scala-cas_2.11.version}</version>
@@ -115,7 +110,6 @@
         <dependency>
             <groupId>fi.vm.sade.dokumenttipalvelu</groupId>
             <artifactId>dokumenttipalvelu</artifactId>
-            <version>6.12-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.swagger</groupId>
