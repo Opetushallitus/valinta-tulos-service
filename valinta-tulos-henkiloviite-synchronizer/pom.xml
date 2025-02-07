@@ -110,7 +110,6 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-access</artifactId>
-            <version>${logback-access.version}</version>
         </dependency>
         <dependency>
             <groupId>org.specs2</groupId>
