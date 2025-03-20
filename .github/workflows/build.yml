@@ -26,15 +26,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Set up JDK 11
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '11'
-          distribution: 'corretto'
+          java-version: '21'
+          distribution: 'temurin'
 
-      - uses: szenius/set-timezone@v1.2
-        with:
-          timezoneLinux: "Europe/Helsinki"
+      - name: Set timezone to Europe/Helsinki
+        run: |
+          sudo timedatectl set-timezone Europe/Helsinki
+          echo "Europe/Helsinki" | sudo tee /etc/timezone
 
       - name: Build Valintarekisteri Docker container
         run: |
@@ -78,7 +79,7 @@ jobs:
     uses: Opetushallitus/.github/.github/workflows/push-scan-java-ecr.yml@main
     with:
       application: valinta-tulos-service
-      base-image: baseimage-war-openjdk11:master
+      base-image: baseimage-war-tomcat9-openjdk21:master
       configfolder: valinta-tulos-service/src/main/resources/oph-configuration
       jarfile: valinta-tulos-service
       jarfolder: .
@@ -93,7 +94,7 @@ jobs:
     uses: Opetushallitus/.github/.github/workflows/push-scan-java-ecr.yml@main
     with:
       application: valinta-tulos-henkiloviite-synchronizer
-      base-image: baseimage-fatjar-openjdk11:master
+      base-image: baseimage-fatjar-openjdk21:master
       configfolder: valinta-tulos-henkiloviite-synchronizer/src/main/resources/oph-configuration
       jarfile: valinta-tulos-henkiloviite-synchronizer
       jarfolder: .
@@ -107,7 +108,7 @@ jobs:
     uses: Opetushallitus/.github/.github/workflows/push-scan-java-ecr.yml@main
     with:
       application: ovara-valinta-tulos
-      base-image: baseimage-fatjar-openjdk11:master
+      base-image: baseimage-fatjar-openjdk21:master
       configfolder: ovara-valinta-tulos/src/main/resources/oph-configuration
       jarfile: ovara-valinta-tulos
       jarfolder: .
@@ -132,11 +133,11 @@ jobs:
             ovara-valinta-tulos/target
           key: ${{ github.sha }}
 
-      - name: Set up JDK 11
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '11'
-          distribution: 'corretto'
+          java-version: '21'
+          distribution: 'temurin'
 
       - name: Deploy jar library
         if: github.ref == 'refs/heads/master'

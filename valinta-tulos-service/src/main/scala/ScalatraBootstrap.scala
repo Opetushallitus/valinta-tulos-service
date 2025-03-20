@@ -163,6 +163,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new HakijanVastaanottoServlet(vastaanottoService), "/vastaanotto", "vastaanotto")
       context.mount(new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, userDetailsService, appConfig), "/erillishaku/valinnan-tulos", "erillishaku/valinnan-tulos")
       context.mount(new NoAuthSijoitteluServlet(sijoitteluService), "/sijoittelu", "sijoittelu")
+      context.mount(new NoAuthHyvaksynnanEhtoServlet(valintarekisteriDb), "/hyvaksynnan-ehto", "hyvaksynnan-ehto")
 
       context.mount(new SiirtotiedostoServlet(siirtotiedostoService, valintarekisteriDb), "/cas/siirtotiedosto", "siirtotiedosto")
 
