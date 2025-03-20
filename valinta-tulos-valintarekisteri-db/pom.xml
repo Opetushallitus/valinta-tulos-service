@@ -5,7 +5,7 @@
     <parent>
         <groupId>fi.vm.sade</groupId>
         <artifactId>valinta-tulos-service-parent</artifactId>
-        <version>8.1.0-SNAPSHOT</version>
+        <version>8.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>valinta-tulos-valintarekisteri-db</artifactId>
     <packaging>jar</packaging>
@@ -177,7 +177,7 @@
                         <exclude>**/*Spec.java</exclude>
                         <exclude>**/*Test.java</exclude>
                     </includes>
-                    <argLine>-Xms512M -Xmx1G -XX:MaxPermSize=512M -DJAVA11_HOME=${env.JAVA11_HOME}</argLine>
+                    <argLine>-Xms512M -Xmx1G --add-opens=java.base/java.time=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED</argLine>
                     <systemProperties>
                         <valintatulos.profile>it</valintatulos.profile>
                     </systemProperties>
