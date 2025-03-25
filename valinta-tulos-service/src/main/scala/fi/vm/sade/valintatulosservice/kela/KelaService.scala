@@ -30,7 +30,7 @@ class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, vali
   private def convertToVastaanotto(vastaanotto: VastaanottoRecord): Option[fi.vm.sade.valintatulosservice.kela.Vastaanotto] = {
     for {
       hakukohde <- hakuService.getHakukohdeKela(vastaanotto.hakukohdeOid).fold(throw _, h => h)
-      kela <- KelaKoulutus(hakukohde.koulutuslaajuusarvot)
+      kela <- KelaKoulutus(hakukohde.koulutuslaajuusarvot, hakukohde.koulutuksenAlkamiskausi)
     } yield fi.vm.sade.valintatulosservice.kela.Vastaanotto(
       organisaatio = hakukohde.tarjoajaOid,
       oppilaitos = hakukohde.oppilaitoskoodi,

@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.tarjonta
 
 import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Kausi, Syksy}
 
 import scala.collection.immutable
 import scala.util.Try
@@ -91,15 +92,27 @@ private object ErillinenYlempiKKTutkinto {
   }
 }
 private object LääketieteenLisensiaatti {
-  def apply(laajuus: Option[String]) = {
+  def apply(laajuus: Option[String], koulutuksenAlkamiskausi: Option[Kausi]) = {
     val (laajuus1, laajuus2) = KelaKoulutus.asLaajuus1AndLaajuus2(laajuus)
-    KelaKoulutus(tutkinnontaso = Some("070"), tutkinnonlaajuus1 = laajuus1, tutkinnonlaajuus2 = laajuus2)
+    // 1.8.2025 tai sen jälkeen alkaneiden lääketieteen lisensiaatin ja hammaslääketieteen lisensiaatin tasokoodiksi 060 (alempi + ylempi)
+    if (koulutuksenAlkamiskausi.isDefined &&
+        (koulutuksenAlkamiskausi.get == Syksy(2025) || koulutuksenAlkamiskausi.get.year > 2025)) {
+      KelaKoulutus(tutkinnontaso = Some("060"), tutkinnonlaajuus1 = laajuus1, tutkinnonlaajuus2 = laajuus2)
+    } else {
+      KelaKoulutus(tutkinnontaso = Some("070"), tutkinnonlaajuus1 = laajuus1, tutkinnonlaajuus2 = laajuus2)
+    }
   }
 }
 private object HammaslääketieteenLisensiaatti {
-  def apply(laajuus: Option[String]) = {
+  def apply(laajuus: Option[String], koulutuksenAlkamiskausi: Option[Kausi]) = {
     val (laajuus1, laajuus2) = KelaKoulutus.asLaajuus1AndLaajuus2(laajuus)
-    KelaKoulutus(tutkinnontaso = Some("071"), tutkinnonlaajuus1 = laajuus1, tutkinnonlaajuus2 = laajuus2)
+    // 1.8.2025 tai sen jälkeen alkaneiden lääketieteen lisensiaatin ja hammaslääketieteen lisensiaatin tasokoodiksi 060 (alempi + ylempi)
+    if (koulutuksenAlkamiskausi.isDefined &&
+        (koulutuksenAlkamiskausi.get == Syksy(2025) || koulutuksenAlkamiskausi.get.year > 2025)) {
+      KelaKoulutus(tutkinnontaso = Some("060"), tutkinnonlaajuus1 = laajuus1, tutkinnonlaajuus2 = laajuus2)
+    } else {
+      KelaKoulutus(tutkinnontaso = Some("071"), tutkinnonlaajuus1 = laajuus1, tutkinnonlaajuus2 = laajuus2)
+    }
   }
 }
 private trait Taso {
@@ -154,8 +167,7 @@ object KelaKoulutus extends Logging {
     }
   }
 
-
-  def apply(ks: Seq[KoulutusLaajuusarvo]): Option[KelaKoulutus] = {
+  def apply(ks: Seq[KoulutusLaajuusarvo], koulutuksenAlkamiskausi: Option[Kausi]): Option[KelaKoulutus] = {
     val tasot = ks.flatMap(toTaso)
 
     val (alemmat, ylemmät, lääkis, hammas, telma, valma, eat, at, apt, lukio, muut, tuva, opistovuosi) = separate(tasot)
@@ -188,8 +200,8 @@ object KelaKoulutus extends Logging {
       case (None, Some(Ylempi(laajuus)), None, None, None, None, None, None, None, None, _, None, None) => Some(ErillinenYlempiKKTutkinto(laajuus))
       case (Some(alempi), Some(ylempi), None, None, None, None, None, None, None, None, _, None, None) => Some(AlempiYlempiKKTutkinto(alempi, ylempi))
       case (Some(Alempi(laajuus)), None, None, None, None, None, None, None, None, None, _, None, None) => Some(AlempiKKTutkinto(laajuus))
-      case (None, None, Some(Lääkis(laajuus)), None, None, None, None, None, None, None, _, None, None) => Some(LääketieteenLisensiaatti(laajuus))
-      case (None, None, None, Some(Hammas(laajuus)), None, None, None, None, None, None, _, None, None) => Some(HammaslääketieteenLisensiaatti(laajuus))
+      case (None, None, Some(Lääkis(laajuus)), None, None, None, None, None, None, None, _, None, None) => Some(LääketieteenLisensiaatti(laajuus, koulutuksenAlkamiskausi))
+      case (None, None, None, Some(Hammas(laajuus)), None, None, None, None, None, None, _, None, None) => Some(HammaslääketieteenLisensiaatti(laajuus, koulutuksenAlkamiskausi))
       case (None, None, None, None, Some(Telma(laajuus)), None, None, None, None, None, _, None, None) => Some(TelmaKoulutus(laajuus))
       case (None, None, None, None, None, Some(Valma(laajuus)), None, None, None, None, _, None, None) => Some(ValmaKoulutus(laajuus))
       case (None, None, None, None, None, None, Some(Erikoisammatti(laajuus)), None, None, None, _, None, None) => Some(Erikoisammattitutkinto(laajuus))
