@@ -64,6 +64,11 @@ jobs:
           overwrite: true
       - uses: actions/upload-artifact@v4
         with:
+          path: valinta-tulos-service/target/valinta-tulos-service-*-classes.jar
+          name: valinta-tulos-service.jar
+          overwrite: true
+      - uses: actions/upload-artifact@v4
+        with:
           path: valinta-tulos-henkiloviite-synchronizer/target/valinta-tulos-henkiloviite-synchronizer-*-dependencies.jar
           name: valinta-tulos-henkiloviite-synchronizer.jar
           overwrite: true
