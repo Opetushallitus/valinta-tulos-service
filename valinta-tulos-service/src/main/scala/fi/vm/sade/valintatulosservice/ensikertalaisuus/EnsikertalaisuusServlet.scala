@@ -16,7 +16,7 @@ class EnsikertalaisuusServlet(ensikertalaisuusRepository: EnsikertalaisuusReposi
   override implicit val jsonFormats: Formats = EnsikertalaisuusServlet.ensikertalaisuusJsonFormats
 
   def henkiloOid(oid: String): String = {
-    require(oid.startsWith("1.2.246.562.24."), "Illegal henkilo oid")
+    require(oid.startsWith("1.2.246.562.24.") || oid.startsWith("1.2.246.562.98."), "Illegal henkilo oid")
     oid
   }
 
