@@ -77,12 +77,12 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
         and vt.tila = 'Varalla'
         ) as varasijoilla on true
         left join lateral (
-          select count(vtu.*) as value
-            from valinnantulokset vtu
-            join valinnantilat vt on vtu.valintatapajono_oid = vt.valintatapajono_oid and vtu.hakemus_oid = vt.hakemus_oid and vtu.hakukohde_oid = vt.hakukohde_oid
+          select count(ehe.*) as value
+            from ehdollisen_hyvaksynnan_ehto ehe
+            join valinnantilat vt on ehe.valintatapajono_oid = vt.valintatapajono_oid and ehe.hakemus_oid = vt.hakemus_oid and ehe.hakukohde_oid = vt.hakukohde_oid
             where vt.hakukohde_oid = vtj.hakukohde_oid
             and vt.valintatapajono_oid = vtj.oid
-            and vtu.ehdollisesti_hyvaksyttavissa
+            and ehe.ehdollisen_hyvaksymisen_ehto_koodi is not null
             and vt.tila in ('Hyvaksytty', 'VarasijaltaHyvaksytty')
         ) as ehdollisesti_hyvaksytyt on true
         left join lateral (
