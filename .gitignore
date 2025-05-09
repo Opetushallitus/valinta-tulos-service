@@ -22,3 +22,6 @@ target/
 valintarekisteri-it-db
 .opintopolku-local/
 .DS_Store
+.bloop/
+.metals/
+.vscode/
