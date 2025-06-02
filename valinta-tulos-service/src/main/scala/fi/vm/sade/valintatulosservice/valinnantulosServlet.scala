@@ -126,6 +126,17 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     }
   }
 
+  val julkaisemattomatValinnantuloksetHaulleSwagger: OperationBuilder = (apiOperation[Set[HakukohdeOid]]("julkaisemattomatHakukohteetHaulle")
+    summary "Julkaisemattomat hakukohteet haulle"
+    parameter queryParam[String]("hakuOid").description("Haun tunniste (OID)")
+    tags "valinnan-tulos")
+  get("/haku/:hakuoid/julkaisemattot-hakukohteet", operation(julkaisemattomatValinnantuloksetHaulleSwagger)) {
+    contentType = formats("json")
+    implicit val authenticated = authenticate
+    val hakuOid = parseHakuOid.fold(throw _, x => x)
+    Ok(valinnantulosService.getJulkaisemattomatHakukohteetHaulle(hakuOid))
+  }
+
   val valinnantuloksetHakemuksilleSwagger: OperationBuilder = (apiOperation[List[ValinnantulosWithTilahistoria]]("valinnantuloksetHakemuksille")
     summary "Valinnantulos usealle hakemukselle kerralla"
     parameter bodyParam[Set[String]]("hakemusOids").description("Hakemuksien OIDit")

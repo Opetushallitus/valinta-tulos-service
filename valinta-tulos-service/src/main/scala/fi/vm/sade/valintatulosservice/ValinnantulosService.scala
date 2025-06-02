@@ -54,6 +54,10 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
     r
   }
 
+  def getJulkaisemattomatHakukohteetHaulle(hakuOid: HakuOid): Set[HakukohdeOid] = {
+    valinnantulosRepository.getHaunJulkaisemattomatHakukohteet(hakuOid)
+  }
+
   def getValinnantuloksetForHakukohde(hakukohdeOid: HakukohdeOid, auditInfo: AuditInfo): Option[(Instant, Set[Valinnantulos])] = {
     val r = valinnantulosRepository.getValinnantuloksetAndLastModifiedDateForHakukohde(hakukohdeOid).map(t => {
       (t._1, yhdenPaikanSaannos(t._2).fold(throw _, x => x))
