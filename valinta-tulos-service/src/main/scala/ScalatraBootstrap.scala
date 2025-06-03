@@ -117,11 +117,11 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         cachedOhjausparametritService,
         hakukohdeRecordService,
         appConfig.valintaPerusteetService,
-        vastaanottoService,
         yhdenPaikanSaannos,
         appConfig,
         audit,
       hakemusRepository)
+    lazy val valintojenToteuttaminenService = new ValintojenToteuttaminenService(valintarekisteriDb)
     lazy val userDetailsService = new KayttooikeusUserDetailsService(appConfig)
     lazy val hyvaksymiskirjeService = new HyvaksymiskirjeService(valintarekisteriDb, hakuService, audit, authorizer)
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
@@ -197,6 +197,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new ValinnantulosServlet(valinnantulosService, valintatulosService, hakuService, valintarekisteriDb, appConfig), "/auth/valinnan-tulos", "auth/valinnan-tulos")
       context.mount(new SijoitteluServlet(sijoitteluService, valintarekisteriDb), "/auth/sijoittelu", "auth/sijoittelu")
       context.mount(new SijoittelunTulosServlet(valintatulosService, valintaesitysService, valinnantulosService, hyvaksymiskirjeService, lukuvuosimaksuService, hakuService, authorizer, sijoitteluService, valintarekisteriDb), "/auth/sijoitteluntulos", "auth/sijoitteluntulos")
+      context.mount(new ValintojenToteuttaminenServlet(valintojenToteuttaminenService, valintarekisteriDb), "/auth/valintojen-toteuttaminen", "/auth/valintojen-toteuttaminen")
       context.mount(new HyvaksymiskirjeServlet(hyvaksymiskirjeService, valintarekisteriDb), "/auth/hyvaksymiskirje", "auth/hyvaksymiskirje")
       context.mount(new LukuvuosimaksuServletWithCAS(lukuvuosimaksuService, valintarekisteriDb, hakuService, authorizer), "/auth/lukuvuosimaksu", "auth/lukuvuosimaksu")
       context.mount(handler = new MuutoshistoriaServlet(valinnantulosService, valintarekisteriDb), urlPattern = "/auth/muutoshistoria", name = "auth/muutoshistoria")

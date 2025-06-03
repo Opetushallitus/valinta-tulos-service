@@ -15,7 +15,7 @@ import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintaperusteet.ValintaPerusteetServiceMock
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhtoRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnanTilanKuvausRepository, ValinnantulosRepository, VastaanottoEvent}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, SijoitteluRepository, ValinnanTilanKuvausRepository, ValinnantulosRepository, VastaanottoEvent}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import org.joda.time.DateTime
@@ -456,7 +456,6 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       ohjausparametritService,
       hakukohdeRecordService,
       valintaPerusteetService,
-      vastaanottoService,
       yhdenPaikanSaannos,
       appConfig,
       audit,

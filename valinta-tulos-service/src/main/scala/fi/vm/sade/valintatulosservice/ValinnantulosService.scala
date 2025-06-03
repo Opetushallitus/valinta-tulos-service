@@ -33,7 +33,6 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
                            val ohjausparametritService: OhjausparametritService,
                            val hakukohdeRecordService: HakukohdeRecordService,
                            val valintaPerusteetService: ValintaPerusteetService,
-                           vastaanottoService: VastaanottoService,
                            yhdenPaikanSaannos: YhdenPaikanSaannos,
                            val appConfig: VtsAppConfig,
                            val audit: Audit,
@@ -52,10 +51,6 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
       new Changes.Builder().build()
     )
     r
-  }
-
-  def getJulkaisemattomatHakukohteetHaulle(hakuOid: HakuOid): Set[HakukohdeOid] = {
-    valinnantulosRepository.getHaunJulkaisemattomatHakukohteet(hakuOid)
   }
 
   def getValinnantuloksetForHakukohde(hakukohdeOid: HakukohdeOid, auditInfo: AuditInfo): Option[(Instant, Set[Valinnantulos])] = {

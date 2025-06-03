@@ -63,4 +63,6 @@ trait SijoitteluRepository extends PerformanceLogger { this:Logging =>
   def isJonoSijoiteltuByOid(jonoOid: ValintatapajonoOid): Boolean
 
   def deleteSijoitteluResultsForHakemusInHakukohde(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Unit
+
+  def getHaunSijoittelemattomatHakukohteet(hakuOid: HakuOid): Set[HakukohdeOid]
 }

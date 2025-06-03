@@ -413,6 +413,15 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
               where hakijaryhma_oid = ${hakijaryhmaOid} and sijoitteluajo_id = ${sijoitteluajoId} and hyvaksytty_hakijaryhmasta = TRUE""".as[HakemusOid]).toList
     }
 
+  override def getHaunSijoittelemattomatHakukohteet(hakuOid: HakuOid): Set[HakukohdeOid] = {
+    runBlocking(sql"""select distinct hk.hakukohde_oid
+        from hakukohteet hk
+        left join sijoitteluajon_hakukohteet shk on hk.hakukohde_oid = shk.hakukohde_oid
+        where hk.haku_oid = ${hakuOid}
+        and shk is null
+         """.as[HakukohdeOid]).toSet
+  }
+
   override def isJonoSijoiteltuByOid(jonoOid: ValintatapajonoOid): Boolean = {
     val exists: Boolean = timed(s"getValintatapajonoByOidAndHaku", 100) {
       runBlocking(sql"""

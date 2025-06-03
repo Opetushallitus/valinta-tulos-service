@@ -876,10 +876,10 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
 
   override def getHaunJulkaisemattomatHakukohteet(hakuOid: HakuOid): Set[HakukohdeOid] = {
     runBlocking(sql"""select distinct hk.hakukohde_oid
-          from valinnantulos vts
-          join hakukohteet hk on hk.hakukohde_oid = vts.hakukohde
+          from hakukohteet hk
+          left join valinnantulokset vts on hk.hakukohde_oid = vts.hakukohde_oid
           where hk.haku_oid = ${hakuOid}
-            and vts.julkaistavissa = false
+            and (vts is null or vts.julkaistavissa = false)
       """.as[HakukohdeOid]).toSet
   }
 

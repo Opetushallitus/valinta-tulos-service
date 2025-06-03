@@ -33,10 +33,11 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
   get("/", operation(puuttuvatTuloksetHaulleSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_CRUD_OPH)
+    val hakuOid = parseHakuOid.fold(throw _, x => x);
     val builder= new Target.Builder()
-      .setField("hakuoid", parseHakuOid.toString)
+      .setField("hakuoid", hakuOid.toString)
     audit.log(auditInfo.user, PuuttuvienTulostenLuku, builder.build(), new Changes.Builder().build())
-    Ok(puuttuvatTuloksetService.kokoaPuuttuvatTulokset(parseHakuOid))
+    Ok(puuttuvatTuloksetService.kokoaPuuttuvatTulokset(hakuOid))
   }
 
   val puuttuvatTuloksetHauilleTaustallaSwagger: OperationBuilder = (apiOperation[TaustapaivityksenTila]("puuttuvien tulosten haku taustalla")
@@ -73,10 +74,11 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
   get("/haku/:hakuOid", operation(haunPuuttuvatSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.SIJOITTELU_CRUD_OPH)
+    val hakuOid = parseHakuOid.fold(throw _, x => x);
     val builder= new Target.Builder()
-      .setField("hakuoid", parseHakuOid.toString)
+      .setField("hakuoid", hakuOid.toString)
     audit.log(auditInfo.user, PuuttuvienTulostenLuku, builder.build(), new Changes.Builder().build())
-    Ok(puuttuvatTuloksetService.findMissingResultsByOrganisation(HakuOid(params("hakuOid"))))
+    Ok(puuttuvatTuloksetService.findMissingResultsByOrganisation(hakuOid))
   }
 
   val paivitaKaikkiSwagger : OperationBuilder = (apiOperation[TaustapaivityksenTila]("Käynnistetään puuttuvien tuloksien haku kaikille hauille")
@@ -105,8 +107,5 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
     audit.log(auditInfo.user, PuuttuvienTulostenTaustapaivityksenTilanLuku, builder.build(), new Changes.Builder().build())
     Ok(puuttuvatTuloksetService.haeTaustapaivityksenTila)
   }
-
-  private def parseHakuOid: HakuOid = HakuOid(params.getOrElse("hakuOid",
-    throw new IllegalArgumentException("URL-parametri hakuOid on pakollinen.")))
 
 }
