@@ -23,7 +23,7 @@ class ValintojenToteuttaminenServlet(val valintojenToteuttaminenService: Valinto
     implicit val authenticated: Authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.ATARU_KEVYT_VALINTA_READ, Role.SIJOITTELU_CRUD, Role.SIJOITTELU_READ_UPDATE)
     val hakuOid = parseHakuOid.fold(throw _, x => x)
-    Ok(valintojenToteuttaminenService.getJulkaisemattomatTaiSijoittelemattotHakukohteetHaulle(hakuOid))
+    Ok(valintojenToteuttaminenService.getJulkaisemattomatTaiSijoittelemattomatHakukohteetHaulle(hakuOid))
   }
 }
 
