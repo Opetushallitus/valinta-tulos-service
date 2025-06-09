@@ -18,11 +18,7 @@ trait HyvaksynnanEhtoRepositoryImpl extends HyvaksynnanEhtoRepository {
                  en,
                  lower(system_time)
           from hyvaksynnan_ehto_hakukohteessa
-          where hakukohde_oid = $hakukohdeOid and
-                not exists (select 1
-                            from valinnantilat
-                            where hakemus_oid = hyvaksynnan_ehto_hakukohteessa.hakemus_oid and
-                                  hakukohde_oid = hyvaksynnan_ehto_hakukohteessa.hakukohde_oid)
+          where hakukohde_oid = $hakukohdeOid
       """.as[(HakemusOid, String, String, String, String, Option[Instant])].map(_.map {
       case (hakemusOid, koodi, fi, sv, en, Some(lastModified)) =>
         (hakemusOid, HyvaksynnanEhto(koodi, fi, sv, en), lastModified)
