@@ -95,7 +95,7 @@ trait ValintarekisteriResultExtractors {
     ehdollisestiVastaanottaneet = r.nextInt,
     paikanVastaanottaneet = r.nextInt,
     varasijoilla = r.nextInt,
-    alinHyvaksyttyPistemaara = r.nextInt,
+    alinHyvaksyttyPistemaara = r.nextBigDecimal,
     ehdollisestiHyvaksytyt = r.nextInt,
     peruneet = r.nextInt,
     hyvaksyttyHarkinnanvaraisesti = r.nextInt))
