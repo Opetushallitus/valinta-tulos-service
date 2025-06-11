@@ -40,7 +40,7 @@ case class SijoitteluajoRecord(sijoitteluajoId:Long, hakuOid: HakuOid, startMils
 case class SijoitteluSummaryRecord(valintatapajonoOid: ValintatapajonoOid, valintatapajonoNimi: String,
                                    sijoittelunKayttamatAloituspaikat: Int, aloituspaikat: Int,
                                    hyvaksytyt: Int, ehdollisestiVastaanottaneet: Int, paikanVastaanottaneet: Int,
-                                   varasijoilla: Int, alinHyvaksyttyPistemaara: Double,
+                                   varasijoilla: Int, alinHyvaksyttyPistemaara: BigDecimal,
                                    ehdollisestiHyvaksytyt: Int, peruneet: Int, hyvaksyttyHarkinnanvaraisesti: Int) {
 }
 
