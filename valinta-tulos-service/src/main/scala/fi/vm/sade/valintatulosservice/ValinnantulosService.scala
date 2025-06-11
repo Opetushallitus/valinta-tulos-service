@@ -33,7 +33,6 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
                            val ohjausparametritService: OhjausparametritService,
                            val hakukohdeRecordService: HakukohdeRecordService,
                            val valintaPerusteetService: ValintaPerusteetService,
-                           vastaanottoService: VastaanottoService,
                            yhdenPaikanSaannos: YhdenPaikanSaannos,
                            val appConfig: VtsAppConfig,
                            val audit: Audit,

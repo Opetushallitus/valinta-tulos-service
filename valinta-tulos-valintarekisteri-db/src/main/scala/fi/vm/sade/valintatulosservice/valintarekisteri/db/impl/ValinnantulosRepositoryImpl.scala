@@ -874,6 +874,15 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       .transactionally
   }
 
+  override def getHaunJulkaisemattomatHakukohteet(hakuOid: HakuOid): Set[HakukohdeOid] = {
+    runBlocking(sql"""select distinct hk.hakukohde_oid
+          from hakukohteet hk
+          left join valinnantulokset vts on hk.hakukohde_oid = vts.hakukohde_oid
+          where hk.haku_oid = ${hakuOid}
+            and (vts is null or vts.julkaistavissa = false)
+      """.as[HakukohdeOid]).toSet
+  }
+
   private def deleteTilatKuvaukset(hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid): DBIO[Unit] = {
     sqlu"""delete from tilat_kuvaukset
           where hakukohde_oid = $hakukohdeOid

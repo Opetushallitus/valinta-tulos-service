@@ -4,12 +4,11 @@ import java.text.ParseException
 import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.time.format.DateTimeFormatter
 import java.util.ConcurrentModificationException
-
 import fi.vm.sade.security.{AuthenticationFailedException, AuthorizationFailedException}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.json.JsonFormats.writeJavaObjectToOutputStream
 import fi.vm.sade.valintatulosservice.json.{JsonFormats, StreamingFailureException}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakukohdeOid, ValintatapajonoOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 import org.json4s.MappingException
 import org.scalatra._
 import org.scalatra.json.JacksonJsonSupport
@@ -110,6 +109,10 @@ trait VtsServletBase extends ScalatraServlet with Logging with JacksonJsonSuppor
 
   protected def parseHakemusOid: Either[Throwable, HakemusOid] = {
     params.get("hakemusOid").fold[Either[Throwable, HakemusOid]](Left(new NoSuchElementException("URL parametri hakemusOid on pakollinen.")))(s => Right(HakemusOid(s)))
+  }
+
+  protected def parseHakuOid: Either[Throwable, HakuOid] = {
+    params.get("hakuOid").fold[Either[Throwable, HakuOid]](Left(new NoSuchElementException("URL parametri hakuOid on pakollinen.")))(s => Right(HakuOid(s)))
   }
 
   protected def parseHakukohdeOid: Either[Throwable, HakukohdeOid] = {

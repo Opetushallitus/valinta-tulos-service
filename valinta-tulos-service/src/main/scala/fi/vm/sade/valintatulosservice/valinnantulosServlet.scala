@@ -72,7 +72,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
   }))
   get("/", operation(valinnantulosSwagger)) {
     contentType = formats("json")
-    implicit val authenticated = authenticate
+    implicit val authenticated: Authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
     parseValintatapajonoOid.right.map(valinnantulosService.getValinnantuloksetForValintatapajono(_, auditInfo))
       .left.flatMap(_ => parseHakukohdeOid.right.map(valinnantulosService.getValinnantuloksetForHakukohde(_, auditInfo)))
@@ -115,7 +115,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
   }))
   get("/hakemus/", operation(valinnantuloksetHakemukselleSwagger)) {
     contentType = formats("json")
-    implicit val authenticated = authenticate
+    implicit val authenticated: Authenticated = authenticate
     val hakemusOid = parseHakemusOid.fold(throw _, x => x)
     valinnantulosService.getValinnantuloksetForHakemus(hakemusOid, auditInfo) match {
       case Some((lastModified, valinnantulokset)) =>
@@ -138,7 +138,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
   }))
   post("/hakemus/", operation(valinnantuloksetHakemuksilleSwagger)) {
     contentType = formats("json")
-    implicit val authenticated = authenticate
+    implicit val authenticated: Authenticated = authenticate
     val hakemusOids = parsedBody.extract[Set[HakemusOid]]
     if (hakemusOids.isEmpty || hakemusOids.size > 5000) {
       BadRequest("Minimum of 1 and maximum of 5000 hakemusOids at a time.")
@@ -161,7 +161,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
   }))
   patch("/:valintatapajonoOid", operation(valinnantulosMuutosSwagger)) {
     contentType = formats("json")
-    implicit val authenticated = authenticate
+    implicit val authenticated: Authenticated = authenticate
     authorize(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD, Role.ATARU_KEVYT_VALINTA_CRUD)
     val valintatapajonoOid = parseValintatapajonoOid.fold(throw _, x => x)
     val ifUnmodifiedSince: Instant = getIfUnmodifiedSince(appConfig)
