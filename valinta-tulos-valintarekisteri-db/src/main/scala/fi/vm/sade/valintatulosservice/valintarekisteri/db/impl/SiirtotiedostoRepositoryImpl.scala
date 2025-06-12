@@ -176,7 +176,7 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
                 full join deleted_vastaanotot dv on v.deleted = dv.id
                     where (greatest(v.timestamp, dv.timestamp) >= ${params.start}::timestamptz)
                     and (greatest(v.timestamp, dv.timestamp) <= ${params.end}::timestamptz)
-                order by greatest(v.timestamp, dv.timestamp) desc limit ${params.pageSize} offset ${params.offset};""".as[SiirtotiedostoVastaanotto]).toList
+                order by greatest(v.timestamp, dv.timestamp) desc, v.id, dv.id limit ${params.pageSize} offset ${params.offset};""".as[SiirtotiedostoVastaanotto]).toList
     }
   }
 
@@ -217,7 +217,7 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
               where
                   lower(sa.system_time) >= ${params.start}::timestamptz
                   and lower(sa.system_time) <= ${params.end}::timestamptz
-              order by lower(sa.system_time) desc
+              order by lower(sa.system_time) desc, v.oid
                   limit ${params.pageSize}
                   offset ${params.offset}
               """.as[SiirtotiedostoValintatapajonoRecord]).toList
@@ -247,7 +247,7 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
               where
                   lower(sa.system_time) >= ${params.start}::timestamptz
                   and lower(sa.system_time) <= ${params.end}::timestamptz
-              order by lower(sa.system_time) desc
+              order by lower(sa.system_time) desc, valintatapajono_oid, jonosija, tasasijajonosija
                   limit ${params.pageSize}
                   offset ${params.offset}
               """.as[SiirtotiedostoJonosija]).toList
@@ -268,7 +268,7 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
               where
                   lower(hjh.system_time) >= ${params.start}::timestamptz
                   and lower(hjh.system_time) <= ${params.end}::timestamptz
-              order by lower(hjh.system_time) desc
+              order by lower(hjh.system_time) desc, hakukohde, henkilo
                   limit ${params.pageSize}
                   offset ${params.offset}
               """.as[SiirtotiedostoHyvaksyttyJulkaistuHakutoive]).toList
@@ -289,7 +289,7 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
               where
                   lower(lvm.system_time) >= ${params.start}::timestamptz
                   and lower(lvm.system_time) <= ${params.end}::timestamptz
-              order by lower(lvm.system_time) desc
+              order by lower(lvm.system_time) desc, lvm.hakukohdeoid, lvm.personoid
                   limit ${params.pageSize}
                   offset ${params.offset}
               """.as[SiirtotiedostoLukuvuosimaksu]).toList
@@ -303,7 +303,7 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
                 from ilmoittautumiset
                     where (lower(system_time) >= ${params.start}::timestamptz)
                     and (lower(system_time) <= ${params.end}::timestamptz)
-                order by lower(system_time) desc limit ${params.pageSize} offset ${params.offset};""".as[SiirtotiedostoIlmoittautuminen]).toList
+                order by lower(system_time) desc, hakukohde, henkilo limit ${params.pageSize} offset ${params.offset};""".as[SiirtotiedostoIlmoittautuminen]).toList
     }
   }
 
