@@ -6,7 +6,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, Hakukohd
 class ValintojenToteuttaminenService (val repository: ValinnantulosRepository
     with SijoitteluRepository) {
 
-    def getJulkaisemattomatTaiSijoittelemattotHakukohteetHaulle(hakuOid: HakuOid): HaunHakukohdeTiedot = {
+    def getJulkaisemattomatTaiSijoittelemattomatHakukohteetHaulle(hakuOid: HakuOid): HaunHakukohdeTiedot = {
       val julkaisemattomat = repository.getHaunJulkaisemattomatHakukohteet(hakuOid)
       val sijoittelemattomat = repository.getHaunSijoittelemattomatHakukohteet(hakuOid)
       val hakukohdeTiedot = (julkaisemattomat ++ sijoittelemattomat).map(hk =>
