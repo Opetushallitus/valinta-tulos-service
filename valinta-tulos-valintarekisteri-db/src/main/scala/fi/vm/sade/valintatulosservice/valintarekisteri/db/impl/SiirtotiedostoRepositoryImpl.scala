@@ -173,7 +173,7 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
       runBlocking(
         sql"""select henkilo, hakukohde, ilmoittaja, v.timestamp, action, v.id, v.selite, dv.timestamp, dv.poistaja, dv.selite
                 from vastaanotot v
-                full join deleted_vastaanotot dv on v.deleted = dv.id
+                left join deleted_vastaanotot dv on v.deleted = dv.id
                     where (greatest(v.timestamp, dv.timestamp) >= ${params.start}::timestamptz)
                     and (greatest(v.timestamp, dv.timestamp) <= ${params.end}::timestamptz)
                 order by greatest(v.timestamp, dv.timestamp) desc, v.id, dv.id limit ${params.pageSize} offset ${params.offset};""".as[SiirtotiedostoVastaanotto]).toList
