@@ -1,9 +1,8 @@
 package fi.vm.sade.valintatulosservice.vastaanottomeili
 
-import fi.vm.sade.groupemailer.{EmailData, EmailMessage, EmailRecipient, GroupEmailComponent, Recipient}
-import fi.vm.sade.valintatulosservice.config.EmailerConfigComponent
+import fi.vm.sade.groupemailer.{EmailData, EmailMessage, EmailRecipient, GroupEmailComponent}
 import fi.vm.sade.valintatulosservice.logging.Logging
-import fi.vm.sade.valintatulosservice.ryhmasahkoposti.VTRecipient
+import fi.vm.sade.valintatulosservice.config.EmailerConfigComponent
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy.LahetysSyy
 
@@ -89,10 +88,8 @@ trait MailerComponent {
     }
 
     private def sendBatch(batch: List[Ilmoitus], language: String, lahetysSyy: LahetysSyy): List[String] = {
-      val recipients: List[Recipient] = batch.map(VTRecipient(_, language))
-
       val batchLogString: Int => String = index =>
-        s"(Language=$language LahetysSyy=$lahetysSyy BatchSize=$index/${recipients.size})"
+        s"(Language=$language LahetysSyy=$lahetysSyy BatchSize=$index/${batch.size})"
 
       logger.info(s"Starting to send batch. ${batchLogString(0)}")
 
