@@ -91,10 +91,8 @@ trait MailerComponent {
     }
 
     private def sendBatch(batch: List[Ilmoitus], language: String, lahetysSyy: LahetysSyy): List[String] = {
-      val recipients: List[Recipient] = batch.map(VTRecipient(_, language))
-
       val batchLogString: Int => String = index =>
-        s"(Language=$language LahetysSyy=$lahetysSyy BatchSize=$index/${recipients.size})"
+        s"(Language=$language LahetysSyy=$lahetysSyy BatchSize=$index/${batch.size})"
 
       logger.info(s"Starting to send batch. ${batchLogString(0)}")
 
