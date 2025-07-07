@@ -24,7 +24,8 @@ case class Hakukohde(
   vastaanottotila: Vastaanottotila,
   ehdollisestiHyvaksyttavissa: Boolean,
   hakukohteenNimet: Map[String, String],
-  tarjoajaNimet: Map[String, String]
+  tarjoajaNimet: Map[String, String],
+  organisaatioOiditAuktorisointiin: Set[String]
 )
 
 case class Haku(

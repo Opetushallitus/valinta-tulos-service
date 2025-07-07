@@ -71,7 +71,8 @@ class MailDecorator(hakuService: HakuService,
             hakukohdeMailStatus.vastaanottotila,
             hakukohdeMailStatus.ehdollisestiHyvaksyttavissa,
             hakukohde.hakukohteenNimet,
-            hakukohde.tarjoajaNimet)
+            hakukohde.tarjoajaNimet,
+            hakukohde.organisaatioOiditAuktorisointiin)
           case Left(e) =>
             val msg = "Hakukohteen" + hakukohdeMailStatus.hakukohdeOid + " hakua ei löydy, oid: " + hakukohde.hakuOid
             logger.error(msg, e)
