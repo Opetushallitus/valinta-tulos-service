@@ -103,9 +103,8 @@ ryhmasahkoposti.cas.service=https://{{host_virkailija}}/ryhmasahkoposti-service/
 ryhmasahkoposti.cas.username={{ ryhmasahkoposti_app_username_to_vtemailer }}
 ryhmasahkoposti.cas.password={{ ryhmasahkoposti_app_password_to_vtemailer }}
 
-# RYHMÄSÄHKÖPOSTI
-ryhmasahkoposti.service.batch.size={{ email_batch_size | default('5') }}
-ryhmasahkoposti.service.email.url=https://{{host_virkailija}}/ryhmasahkoposti-service/email
+# Viestinvälitys
+valinta-tulos-service.viestinvalitys.endpoint={{viestinvalityspalvelu_url}}
 
 # Valintatulokset
 valinta-tulos-service.batch.size={{ vt_batch_size | default('5') }}

@@ -1,19 +1,29 @@
 package fi.vm.sade.valintatulosservice.config
 
-import fi.vm.sade.groupemailer.{GroupEmailComponent, GroupEmailService}
-import EmailerRegistry.StubbedGroupEmail
-import fi.vm.sade.valintatulosservice.vastaanottomeili.{Mailer, MailerComponent}
+import fi.oph.viestinvalitys.{ClientBuilder, ViestinvalitysClient}
+import fi.vm.sade.valintatulosservice.config.EmailerRegistry.StubbedViestinvalitys
+import fi.vm.sade.valintatulosservice.vastaanottomeili.{FakeViestinvalitysClient, Mailer, MailerComponent}
 
 
-trait Components extends GroupEmailComponent with MailerComponent with EmailerConfigComponent {
+trait Components extends MailerComponent with EmailerConfigComponent {
   val settings: EmailerConfig
 
-  private def configureGroupEmailService: GroupEmailService = this match {
-    case _: StubbedGroupEmail => new FakeGroupEmailService
-    case _ => new RemoteGroupEmailService(settings, "valinta-tulos-emailer")
+  private def actualClient: ViestinvalitysClient = {
+    ClientBuilder.viestinvalitysClientBuilder()
+      .withEndpoint(settings.viestinvalitysEndpoint)
+      .withUsername(settings.securitySettings.casUsername)
+      .withPassword(settings.securitySettings.casPassword)
+      .withCasEndpoint(settings.securitySettings.casUrl)
+      .withCallerId(settings.callerId)
+      .build()
   }
 
-  override val groupEmailService: GroupEmailService = configureGroupEmailService
+  private def configureViestinvalitysClient: ViestinvalitysClient = this match {
+    case _: StubbedViestinvalitys => new FakeViestinvalitysClient
+    case _ => actualClient
+  }
+
+  val viestinvalitysClient: ViestinvalitysClient = configureViestinvalitysClient
 
   override val mailer: Mailer = new MailerImpl
 }
