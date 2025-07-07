@@ -28,21 +28,16 @@ object EmailerRegistry extends Logging {
   /**
     * IT (integration test) profiles.
     */
-  class IT(val mailPoller: MailPoller, val mailDecorator: MailDecorator) extends EmailerRegistry with StubbedGroupEmail {
+  class IT(val mailPoller: MailPoller, val mailDecorator: MailDecorator) extends EmailerRegistry with StubbedViestinvalitys {
     logger.info("Using template variables from " + templateAttributesFile)
     lazy val settings: EmailerConfig = loadSettings
 
     def loadSettings: EmailerConfig = ConfigTemplateProcessor.createSettings("valinta-tulos-service", templateAttributesFile)(EmailerConfigParser())
 
     def templateAttributesFile = "src/main/resources/oph-configuration/dev-vars.yml"
-
-    def lastEmailSize(): Int = groupEmailService match {
-      case x: FakeGroupEmailService => x.getLastEmailSize
-      case _ => throw new IllegalAccessError("getLastEmailSize error")
-    }
   }
 
-  trait StubbedGroupEmail
+  trait StubbedViestinvalitys
 
   trait EmailerRegistry extends Components {
     val settings: EmailerConfig
