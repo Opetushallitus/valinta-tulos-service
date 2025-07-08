@@ -23,6 +23,16 @@
                 <version>1.1.0.Final</version>
             </dependency>
             <dependency>
+                <groupId>javax.activation</groupId>
+                <artifactId>activation</artifactId>
+                <version>1.1.1</version>
+            </dependency>
+            <dependency>
+                <groupId>fi.oph.viestinvalitys</groupId>
+                <artifactId>kirjasto</artifactId>
+                <version>1.1.6-SNAPSHOT</version>
+            </dependency>
+            <dependency>
                 <groupId>fi.vm.sade</groupId>
                 <artifactId>scala-cas_2.11</artifactId>
                 <version>${scala-cas_2.11.version}</version>
@@ -226,6 +236,10 @@
             <groupId>fi.vm.sade</groupId>
             <artifactId>scala-properties_2.11</artifactId>
             <version>1.0.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>fi.oph.viestinvalitys</groupId>
+            <artifactId>kirjasto</artifactId>
         </dependency>
         <dependency>
             <groupId>fi.vm.sade</groupId>
@@ -501,10 +515,6 @@
             </exclusions>
         </dependency>
 
-        <dependency>
-            <groupId>fi.vm.sade</groupId>
-            <artifactId>scala-group-emailer_2.11</artifactId>
-        </dependency>
         <dependency>
             <groupId>com.github.kagkarlsson</groupId>
             <artifactId>db-scheduler</artifactId>

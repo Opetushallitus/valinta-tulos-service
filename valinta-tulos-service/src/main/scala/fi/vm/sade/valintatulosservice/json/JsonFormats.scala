@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.json
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import fi.vm.sade.utils.json4s.GenericJsonFormats
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
@@ -11,7 +12,7 @@ import org.json4s.ext.EnumNameSerializer
 
 object JsonFormats {
   private val enumSerializers = List(new EnumNameSerializer(Vastaanotettavuustila), new EnumNameSerializer(Valintatila))
-  val customSerializers = enumSerializers ++ List(
+  private val customSerializers = enumSerializers ++ List(
     new EnsikertalaisuusSerializer,
     new VastaanottoActionSerializer,
     new VirkailijanVastaanottoActionSerializer,
@@ -40,7 +41,8 @@ object JsonFormats {
     org.json4s.jackson.Serialization.write(found)(jsonFormats)
   }
 
-  def javaObjectToJsonString(x: Object): String = new ObjectMapper().writeValueAsString(x)
+  def javaObjectToJsonString(x: Object): String =
+    new ObjectMapper().registerModule(new Jdk8Module()).writeValueAsString(x)
 
   def writeJavaObjectToOutputStream(x: Object, s:java.io.OutputStream): Unit = new ObjectMapper().writeValue(s, x)
 }
