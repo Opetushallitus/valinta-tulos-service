@@ -20,7 +20,7 @@
         <auditlogger.version>8.3.0-SNAPSHOT</auditlogger.version>
         <casbah_2.11.version>3.1.0</casbah_2.11.version>
         <commons-lang.version>2.6</commons-lang.version>
-        <commons-lang3.version>3.3.2</commons-lang3.version>
+        <commons-lang3.version>3.18.0</commons-lang3.version>
         <flyway-core.version>9.22.0</flyway-core.version>
         <guava.version>18.0</guava.version>
         <scaffeine.version>3.1.0</scaffeine.version>
@@ -43,7 +43,7 @@
         <scala-parser-combinators_2.11.version>1.0.4</scala-parser-combinators_2.11.version>
         <scala-xml_2.11.version>1.0.5</scala-xml_2.11.version>
         <scalaj-http_2.11.version>2.4.2</scalaj-http_2.11.version>
-        <scalatra_2.11.version>2.6.3</scalatra_2.11.version>
+        <scalatra_2.11.version>2.7.1</scalatra_2.11.version>
         <scalaz-stream_2.11.version>0.8.6a</scalaz-stream_2.11.version> <!-- required by specs2 3.5 -->
         <scalaz_2.11.version>7.2.17</scalaz_2.11.version>
         <sijoittelu.version>10.0.0-SNAPSHOT</sijoittelu.version>
