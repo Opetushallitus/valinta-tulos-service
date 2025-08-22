@@ -357,11 +357,11 @@
                 <artifactId>http4s-client_2.11</artifactId>
                 <version>${http4s_2.11.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.http4s</groupId>
-                <artifactId>http4s-blaze-core_2.11</artifactId>
-                <version>0.14.5</version>
-            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>org.http4s</groupId>-->
+<!--                <artifactId>http4s-blaze-core_2.11</artifactId>-->
+<!--                <version>0.14.18</version>-->
+<!--            </dependency>-->
             <dependency>
                 <groupId>org.http4s</groupId>
                 <artifactId>http4s-blaze-client_2.11</artifactId>
@@ -380,7 +380,7 @@
             <dependency>
                 <groupId>org.http4s</groupId>
                 <artifactId>blaze-http_2.11</artifactId>
-                <version>0.12.11</version>
+                <version>0.14.18</version>
             </dependency>
             <dependency>
                 <groupId>org.http4s</groupId>
