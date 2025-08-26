@@ -55,7 +55,7 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
           select count(v.*) as value
             from vastaanotot v
             join valinnantilat vt on v.henkilo = vt.henkilo_oid and v.hakukohde = vt.hakukohde_oid
-            where v.hakukohde_oid = vtj.hakukohde_oid
+            where v.hakukohde = vtj.hakukohde_oid
             and vt.valintatapajono_oid = vtj.oid
             and vt.tila in ('Hyvaksytty', 'VarasijaltaHyvaksytty')
             and v.deleted is null
