@@ -89,15 +89,8 @@
             <version>${scala-cas_2.11.version}</version>
         </dependency>
 	<dependency>
-	    <groupId>fi.vm.sade.java-utils</groupId>
+	    <groupId>opiskelijavalinnat-utils.java-utils</groupId>
         <artifactId>java-cas</artifactId>
-        <version>1.2.1-SNAPSHOT</version>
-	    <exclusions>
-		    <exclusion>
-		        <groupId>org.slf4j</groupId>
-		        <artifactId>slf4j-simple</artifactId>
-		    </exclusion>
-	    </exclusions>
 	</dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
