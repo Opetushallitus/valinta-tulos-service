@@ -53,12 +53,13 @@ trait SijoitteluRepositoryImpl extends SijoitteluRepository with Valintarekister
         ) as hyvaksytyt on true
         left join lateral (
           select count(v.*) as value
-            from valinnantilat vt
-            join vastaanotot v on v.hakukohde = vt.hakukohde_oid and v.deleted is null
-            where vt.hakukohde_oid = vtj.hakukohde_oid
+            from vastaanotot v
+            join valinnantilat vt on v.henkilo = vt.henkilo_oid and v.hakukohde = vt.hakukohde_oid
+            where v.hakukohde_oid = vtj.hakukohde_oid
             and vt.valintatapajono_oid = vtj.oid
             and vt.tila in ('Hyvaksytty', 'VarasijaltaHyvaksytty')
-          and v.action = 'VastaanotaEhdollisesti'
+            and v.deleted is null
+            and v.action = 'VastaanotaEhdollisesti'
         ) as ehdollisesti_vastaanottaneet on true
         left join lateral (
           select count(*) as value
