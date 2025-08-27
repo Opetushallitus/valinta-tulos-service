@@ -23,11 +23,6 @@
                 <version>1.1.0.Final</version>
             </dependency>
             <dependency>
-                <groupId>fi.vm.sade</groupId>
-                <artifactId>scala-cas_2.11</artifactId>
-                <version>${scala-cas_2.11.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>commons-beanutils</groupId>
                 <artifactId>commons-beanutils</artifactId>
                 <version>${commons-beanutils.version}</version>
@@ -254,10 +249,6 @@
         <dependency>
             <groupId>org.http4s</groupId>
             <artifactId>blaze-http_2.11</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>fi.vm.sade</groupId>
-            <artifactId>scala-cas_2.11</artifactId>
         </dependency>
         <dependency>
             <groupId>com.typesafe.slick</groupId>

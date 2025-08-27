@@ -87,11 +87,6 @@
             <artifactId>http4s-json4s-native_2.11</artifactId>
             <version>${http4s_2.11.version}</version>
         </dependency>
-        <dependency>
-            <groupId>fi.vm.sade</groupId>
-            <artifactId>scala-cas_2.11</artifactId>
-            <version>${scala-cas_2.11.version}</version>
-        </dependency>
 	<dependency>
 	    <groupId>fi.vm.sade.java-utils</groupId>
         <artifactId>java-cas</artifactId>
