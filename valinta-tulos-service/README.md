@@ -186,13 +186,9 @@ cloud-base$ ./aws/config.py pallero -p ./aws/environments/pallero/ get-secret -k
 
 ### Urleja
 
-(FIXME: Osittain vanhentunut, ja mitä "Luokka" ja "Reppu" tarkoittavat?)
 Urleja lokaaliin testaukseen eri konfiguraatioilla
 
 ```
-Luokka: http://localhost:8097/valinta-tulos-service/haku/1.2.246.562.29.92478804245/hakemus/1.2.246.562.11.00000441369
-Reppu (plain): http://localhost:8097/valinta-tulos-service/haku/1.2.246.562.5.2014022413473526465435/hakemus/1.2.246.562.11.00000442406
-Reppu (CAS, korvaa tiketti uudella): http://localhost:8097/valinta-tulos-service/cas/haku/1.2.246.562.5.2014022413473526465435/hakemus/1.2.246.562.11.00000442406?ticket=mock-ticket-https://itest-virkailija.oph.ware.fi/valinta-tulos-service-testuser
 Hyväksymisviestien lähetys: curl -X POST -i -b scripts/cookies.txt http://localhost:8097/valinta-tulos-service/auth/emailer/run/haku/1.2.246.562.5.2013080813081926341928
 QA: https://virkailija.testiopintopolku.fi/valinta-tulos-service/haku/1.2.246.562.29.173465377510/hakemus/1.2.246.562.11.00001021871
 QA (CAS, korvaa tiketti uudella): https://virkailija.testiopintopolku.fi/valinta-tulos-service/cas/haku/1.2.246.562.29.173465377510/hakemus/1.2.246.562.11.00001021871?ticket=mock-ticket-https://virkailija.testiopintopolku.fi/valinta-tulos-service-testuser

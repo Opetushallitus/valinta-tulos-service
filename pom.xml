@@ -56,7 +56,7 @@
         <spring.version>5.3.37</spring.version>
         <typesafe.config.version>1.2.1</typesafe.config.version>
         <netty.version>4.1.118.Final</netty.version>
-        <java-cas.version>1.2.3-SNAPSHOT</java-cas.version>
+        <java-cas.version>1.2.4-SNAPSHOT</java-cas.version>
 
         <!-- Old duplicate versions -->
         <FIXME.plugin.maven-surefire-plugin.version>2.13</FIXME.plugin.maven-surefire-plugin.version>
@@ -209,6 +209,11 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-log4j12</artifactId>
+                <version>${slf4j-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple</artifactId>
                 <version>${slf4j-api.version}</version>
             </dependency>
             <dependency>
@@ -526,7 +531,7 @@
                 <version>0.14.3</version>
             </dependency>
             <dependency>
-                <groupId>fi.vm.sade.java-utils</groupId>
+                <groupId>opiskelijavalinnat-utils.java-utils</groupId>
                 <artifactId>java-cas</artifactId>
                 <version>${java-cas.version}</version>
             </dependency>
@@ -644,7 +649,7 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-codec-http2</artifactId>
-                <version>4.1.124.Final</version>
+                <version>4.1.100.Final</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>

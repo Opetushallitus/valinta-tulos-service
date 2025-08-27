@@ -33,15 +33,8 @@
                 <version>${commons-logging.version}</version>
             </dependency>
             <dependency>
-                <groupId>fi.vm.sade.java-utils</groupId>
+                <groupId>opiskelijavalinnat-utils.java-utils</groupId>
                 <artifactId>java-cas</artifactId>
-                <version>${java-cas.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-simple</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>
