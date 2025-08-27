@@ -9,7 +9,6 @@ import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.utils.tcp.{PortChecker, PortFromSystemPropertyOrFindFree}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusFixtures
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetails
-import fi.vm.sade.valintatulosservice.ohjausparametrit._
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintaperusteet.{ValintaPerusteetServiceImpl, ValintaPerusteetServiceMock}
 import org.http4s.client.blaze.{BlazeClientConfig, SimpleHttp1Client}
