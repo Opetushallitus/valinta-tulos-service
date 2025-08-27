@@ -13,7 +13,6 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{Valintarekisteri
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, SijoitteluRepository, StoreSijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, SijoitteluWrapper}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
-import org.http4s.client.blaze.SimpleHttp1Client
 
 import scala.collection.JavaConverters._
 

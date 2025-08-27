@@ -34,7 +34,11 @@
             <dependency>
                 <groupId>org.http4s</groupId>
                 <artifactId>http4s-blaze-core_2.11</artifactId>
-                <version>${http4s_2.11.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-logging</groupId>
+                <artifactId>commons-logging</artifactId>
+                <version>${commons-logging.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -83,15 +87,10 @@
             <artifactId>http4s-json4s-native_2.11</artifactId>
             <version>${http4s_2.11.version}</version>
         </dependency>
-        <dependency>
-            <groupId>fi.vm.sade</groupId>
-            <artifactId>scala-cas_2.11</artifactId>
-            <version>${scala-cas_2.11.version}</version>
-        </dependency>
 	<dependency>
 	    <groupId>fi.vm.sade.java-utils</groupId>
         <artifactId>java-cas</artifactId>
-        <version>1.2.1-SNAPSHOT</version>
+        <version>${java-cas.version}</version>
 	    <exclusions>
 		    <exclusion>
 		        <groupId>org.slf4j</groupId>

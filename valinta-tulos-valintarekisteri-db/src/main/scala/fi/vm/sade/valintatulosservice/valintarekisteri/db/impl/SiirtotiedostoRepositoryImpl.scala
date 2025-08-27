@@ -164,6 +164,14 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
                 select distinct vtj.hakukohde_oid from valintatapajonot vtj join sijoitteluajot sa on sa.id = vtj.sijoitteluajo_id
                   where lower(sa.system_time) >= $s::timestamptz
                   and lower(sa.system_time) <= $e::timestamptz
+              union all
+                select distinct ehe.hakukohde_oid from ehdollisen_hyvaksynnan_ehto ehe
+                  where lower(ehe.system_time) >= $s::timestamptz
+                  and lower(ehe.system_time) <= $e::timestamptz
+              union all
+                select distinct ehh.hakukohde_oid from ehdollisen_hyvaksynnan_ehto_history ehh
+                  where lower(ehh.system_time) >= $s::timestamptz
+                  and lower(ehh.system_time) <= $e::timestamptz
               """.as[HakukohdeOid]).toList
     }
   }
