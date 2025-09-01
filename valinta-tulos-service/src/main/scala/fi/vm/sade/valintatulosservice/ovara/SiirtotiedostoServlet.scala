@@ -19,8 +19,8 @@ class SiirtotiedostoServlet(siirtotiedostoService: SiirtotiedostoService, db: Se
 
   val muodostaSiirtotiedostoSwagger: OperationBuilder = (apiOperation[Unit]("muodostaSiirtotiedosto")
     summary "Muodosta siirtotiedosto aikavälillä muuttuneista valinnantuloksista, vastaanotoista, ilmoittautumisista ja valintatapajonoista"
-    parameter queryParam[String]("start").description("Alun aikaleima")
-    parameter queryParam[String]("end").description("Lopun aikaleima")
+    parameter queryParam[String]("start").description("Alun aikaleima muodossa yyyy-MM-ddTHH:mm:ss")
+    parameter queryParam[String]("end").description("Lopun aikaleima muodossa yyyy-MM-ddTHH:mm:ss")
     tags "siirtotiedosto")
   get("/muodosta", operation(muodostaSiirtotiedostoSwagger)) {
     implicit val authenticated: Authenticated = authenticate
