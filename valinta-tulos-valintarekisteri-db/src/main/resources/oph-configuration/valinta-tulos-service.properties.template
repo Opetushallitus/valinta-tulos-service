@@ -79,11 +79,6 @@ omatsivut.en=https://{{host_haku_en}}/omatsivut/hakutoiveidenMuokkaus.html#/toke
 omatsivut.sv=https://{{host_haku_sv}}/omatsivut/hakutoiveidenMuokkaus.html#/token/
 omatsivut.oili.hetutonUrl={{oili_hetuton_url}}
 
-# Blaze
-valinta-tulos-service.blaze.response-header-timeout={{ valintatulosservice_blaze_response_header_timeout | default('10') }}
-valinta-tulos-service.blaze.idle-timeout={{ valintatulosservice_blaze_idle_timeout | default('60') }}
-valinta-tulos-service.blaze.request-timeout={{ valintatulosservice_blaze_request_timeout | default('3600') }}
-
 #Hakukohderyhmapalvelu
 hakukohderyhmapalvelu.service=https://{{host_virkailija}}/hakukohderyhmapalvelu
 hakukohderyhmapalvelu.hakukohderyhmat=https://{{host_virkailija}}/hakukohderyhmapalvelu/api/hakukohde/$1/hakukohderyhmat

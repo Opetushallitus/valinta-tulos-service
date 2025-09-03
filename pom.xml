@@ -27,8 +27,6 @@
         <guava.version>18.0</guava.version>
         <scaffeine.version>3.1.0</scaffeine.version>
         <hamcrest.version>1.3</hamcrest.version>
-        <!-- uudempi http4s versio tuo rikkovia muutoksia cas clientien luontiin -->
-        <http4s_2.11.version>0.16.6a</http4s_2.11.version>
         <jackson.version>2.18.2</jackson.version>
         <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
         <jetty.version>9.4.58.v20250814</jetty.version>
@@ -345,36 +343,6 @@
                 <groupId>org.json4s</groupId>
                 <artifactId>json4s-scalap_2.11</artifactId>
                 <version>${json4s_2.11.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.http4s</groupId>
-                <artifactId>http4s-client_2.11</artifactId>
-                <version>${http4s_2.11.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.http4s</groupId>
-                <artifactId>http4s-blaze-client_2.11</artifactId>
-                <version>${http4s_2.11.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.http4s</groupId>
-                <artifactId>http4s-json4s-native_2.11</artifactId>
-                <version>${http4s_2.11.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.http4s</groupId>
-                <artifactId>http4s-core_2.11</artifactId>
-                <version>${http4s_2.11.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.http4s</groupId>
-                <artifactId>blaze-http_2.11</artifactId>
-                <version>0.12.11</version>
-            </dependency>
-            <dependency>
-                <groupId>org.http4s</groupId>
-                <artifactId>http4s-websocket_2.11</artifactId>
-                <version>0.1.6</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>

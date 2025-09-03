@@ -1,15 +1,13 @@
 package fi.vm.sade.valintatulosservice.config
 
-import java.nio.file.Paths
-
 import fi.vm.sade.properties.OphProperties
 import fi.vm.sade.utils.slf4j.Logging
-import org.http4s.client.blaze.BlazeClientConfig
+
+import java.nio.file.Paths
 
 trait AppConfig {
   def settings: ApplicationSettings
   def ophUrlProperties: OphUrlProperties
-  def blazeDefaultConfig: BlazeClientConfig
 }
 
 protected[config] class DevOphUrlProperties(propertiesFile:String) extends OphUrlProperties(propertiesFile, false, Some("localhost"))

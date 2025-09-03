@@ -1,12 +1,8 @@
 package fi.vm.sade.valintatulosservice.config
 
-import java.util.concurrent.TimeUnit
-
 import com.typesafe.config.Config
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.DbConfig
 import org.apache.commons.lang3.BooleanUtils
-
-import scala.concurrent.duration.Duration
 
 abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.config.ApplicationSettings(config) {
 
@@ -34,10 +30,6 @@ abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.conf
   val kohdejoukotKorkeakoulu: List[String] = config.getString("valinta-tulos-service.kohdejoukot.korkeakoulu").split(",").toList
   val kohdejoukotToinenAste: List[String] = config.getString("valinta-tulos-service.kohdejoukot.toinen-aste").split(",").toList
   val kohdejoukonTarkenteetAmkOpe: List[String] = config.getString("valinta-tulos-service.kohdejoukon-tarkenteet.amkope").split(",").toList
-
-  val blazeResponseHeaderTimeout: Duration = Duration(withConfig(_.getLong("valinta-tulos-service.blaze.response-header-timeout")), TimeUnit.SECONDS)
-  val blazeIdleTimeout: Duration = Duration(withConfig(_.getLong("valinta-tulos-service.blaze.idle-timeout")), TimeUnit.SECONDS)
-  val requestTimeout: Duration = Duration(withConfig(_.getLong("valinta-tulos-service.blaze.request-timeout")), TimeUnit.SECONDS)
 
   protected def withConfig[T](operation: Config => T): T = {
     try {

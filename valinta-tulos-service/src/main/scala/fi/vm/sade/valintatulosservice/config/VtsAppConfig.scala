@@ -10,7 +10,6 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusFixtures
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetails
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintaperusteet.{ValintaPerusteetServiceImpl, ValintaPerusteetServiceMock}
-import org.http4s.client.blaze.{BlazeClientConfig, SimpleHttp1Client}
 
 import java.io.File
 import java.net.URL
@@ -243,11 +242,6 @@ object VtsAppConfig extends Logging {
 
     def securityContext: SecurityContext
 
-    override def blazeDefaultConfig: BlazeClientConfig = BlazeClientConfig.defaultConfig.copy(
-      responseHeaderTimeout = settings.blazeResponseHeaderTimeout,
-      idleTimeout = settings.blazeIdleTimeout,
-      requestTimeout = settings.requestTimeout
-    )
   }
 
   trait MockSecurity extends VtsAppConfig {

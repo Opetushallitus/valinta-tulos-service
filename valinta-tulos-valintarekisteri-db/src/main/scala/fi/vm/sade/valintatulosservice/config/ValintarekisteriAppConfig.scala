@@ -1,12 +1,11 @@
 package fi.vm.sade.valintatulosservice.config
 
-import java.net.URL
-
 import com.typesafe.config.{Config, ConfigFactory}
 import fi.vm.sade.utils.config.{ApplicationSettingsLoader, ConfigTemplateProcessor}
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.utils.tcp.PortFromSystemPropertyOrFindFree
-import org.http4s.client.blaze.BlazeClientConfig
+
+import java.net.URL
 
 object ValintarekisteriAppConfig extends Logging {
   private val propertiesFile = "/oph-configuration/valinta-tulos-valintarekisteri-db-oph.properties"
@@ -66,12 +65,6 @@ object ValintarekisteriAppConfig extends Logging {
     override def settings: ValintarekisteriApplicationSettings
 
     def properties: Map[String, String] = settings.toProperties
-
-    override def blazeDefaultConfig: BlazeClientConfig = BlazeClientConfig.defaultConfig.copy(
-      responseHeaderTimeout = settings.blazeResponseHeaderTimeout,
-      idleTimeout = settings.blazeIdleTimeout,
-      requestTimeout = settings.requestTimeout
-    )
   }
 }
 

@@ -2,7 +2,6 @@ package fi.vm.sade.valintatulosservice.production
 
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
-import org.http4s.client.blaze.BlazeClientConfig
 import org.junit.Ignore
 import org.junit.runner.RunWith
 import org.specs2.matcher.MatcherMacros

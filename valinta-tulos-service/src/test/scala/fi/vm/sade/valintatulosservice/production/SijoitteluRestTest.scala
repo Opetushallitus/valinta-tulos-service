@@ -1,17 +1,15 @@
 package fi.vm.sade.valintatulosservice.production
 
-import java.io.File
-
 import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import org.apache.commons.io.FileUtils
-import org.http4s.client.blaze.BlazeClientConfig
 import org.junit.Ignore
 import org.junit.runner.RunWith
 import org.specs2.matcher.MatcherMacros
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 
+import java.io.File
 import scala.language.experimental.macros
 
 @Ignore
