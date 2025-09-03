@@ -1,20 +1,16 @@
 package fi.vm.sade.security
 
-import java.util.UUID
-
-import fi.vm.sade.javautils.nio.cas.{CasClient, CasClientBuilder}
-import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.javautils.nio.cas.CasClientBuilder
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.kayttooikeus.{KayttooikeusUserDetails, KayttooikeusUserDetailsService}
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.security.{CasSession, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
-import scalaz.concurrent.Task
 
+import java.util.UUID
 import scala.compat.java8.FutureConverters.toScala
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Await
 import scala.util.{Failure, Success, Try}
-import scala.util.control.NonFatal
 
 class CasSessionService(appConfig: VtsAppConfig, securityContext: SecurityContext, val serviceIdentifier: String, userDetailsService: KayttooikeusUserDetailsService, sessionRepository: SessionRepository) extends Logging {
 

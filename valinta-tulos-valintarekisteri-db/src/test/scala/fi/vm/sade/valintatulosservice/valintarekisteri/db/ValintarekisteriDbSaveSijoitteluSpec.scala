@@ -1,13 +1,8 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
-import java.sql.Timestamp
-import java.text.SimpleDateFormat
-import java.util.Date
-
 import fi.vm.sade.sijoittelu.domain.HakemuksenTila.HYVAKSYTTY
 import fi.vm.sade.sijoittelu.domain.Valintatapajono.JonosijaTieto
 import fi.vm.sade.sijoittelu.domain.{HakemuksenTila, Valintatapajono}
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhto
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -19,11 +14,14 @@ import org.specs2.specification.BeforeAfterEach
 import slick.jdbc.GetResult
 import slick.jdbc.PostgresProfile.api.actionBasedSQLInterpolation
 
+import java.sql.Timestamp
+import java.text.SimpleDateFormat
+import java.util.Date
 import scala.collection.JavaConverters._
 
 @RunWith(classOf[JUnitRunner])
 class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterEach
-  with Logging with PerformanceLogger {
+  with PerformanceLogger {
   sequential
   private val hakuOid = "1.2.246.561.29.00000000001"
 

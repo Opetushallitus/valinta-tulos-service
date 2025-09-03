@@ -1,15 +1,13 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db
 
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.dbio.DBIO
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Try
 
-import scala.concurrent.ExecutionContext.Implicits.global
-
-trait SijoitteluRepository extends PerformanceLogger { this:Logging =>
+trait SijoitteluRepository extends PerformanceLogger {
 
   def getLatestSijoitteluajoId(hakuOid: HakuOid): DBIO[Option[Long]]
 

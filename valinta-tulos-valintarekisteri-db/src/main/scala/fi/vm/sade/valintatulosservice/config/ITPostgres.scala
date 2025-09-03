@@ -1,11 +1,8 @@
 package fi.vm.sade.valintatulosservice.config
 
-import java.io.File
-import java.nio.file.Files
-import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.utils.tcp.{PortChooser, PortFromSystemPropertyOrFindFree}
-import TempDbUtils.tryTimes
-import org.apache.commons.io.FileUtils
+import fi.vm.sade.valintatulosservice.logging.Logging
+import fi.vm.sade.utils.tcp.PortChooser
+import fi.vm.sade.valintatulosservice.config.TempDbUtils.tryTimes
 
 import scala.sys.process.stringToProcess
 

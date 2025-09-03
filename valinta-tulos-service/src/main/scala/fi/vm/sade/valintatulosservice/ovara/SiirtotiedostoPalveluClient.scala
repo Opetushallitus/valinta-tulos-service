@@ -2,12 +2,12 @@ package fi.vm.sade.valintatulosservice.ovara
 
 
 import fi.vm.sade.valinta.dokumenttipalvelu.SiirtotiedostoPalvelu
-import org.json4s.{DefaultFormats, Formats}
-import org.json4s.jackson.Serialization.{write, writePretty}
-import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.{IlmoittautumistilaSerializer, ValinnantilaSerializer, VastaanottoActionSerializer}
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.ovara.config.SiirtotiedostoConfig
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Oids
+import fi.vm.sade.valintatulosservice.{IlmoittautumistilaSerializer, ValinnantilaSerializer, VastaanottoActionSerializer}
+import org.json4s.jackson.Serialization.{write, writePretty}
+import org.json4s.{DefaultFormats, Formats}
 
 import java.io.ByteArrayInputStream
 

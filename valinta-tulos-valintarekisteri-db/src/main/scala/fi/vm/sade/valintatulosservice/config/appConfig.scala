@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.config
 
 import fi.vm.sade.properties.OphProperties
-import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.logging.Logging
 
 import java.nio.file.Paths
 

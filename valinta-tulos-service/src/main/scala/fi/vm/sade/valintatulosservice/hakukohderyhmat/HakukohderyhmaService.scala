@@ -2,13 +2,13 @@ package fi.vm.sade.valintatulosservice.hakukohderyhmat
 
 import fi.vm.sade.javautils.nio.cas.{CasClient, CasClientBuilder}
 import fi.vm.sade.security.ScalaCasConfig
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, HakukohderyhmaOid}
 import org.asynchttpclient.{RequestBuilder, Response}
 import org.json4s.jackson.JsonMethods._
 
-import java.util.concurrent.{CompletableFuture}
+import java.util.concurrent.CompletableFuture
 import scala.compat.java8.FutureConverters.toScala
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

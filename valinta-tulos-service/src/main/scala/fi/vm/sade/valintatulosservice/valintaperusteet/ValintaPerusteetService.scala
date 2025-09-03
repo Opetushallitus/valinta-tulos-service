@@ -1,22 +1,20 @@
 package fi.vm.sade.valintatulosservice.valintaperusteet
 
-import fi.vm.sade.javautils.nio.cas.{CasClient, CasClientBuilder}
+import fi.vm.sade.javautils.nio.cas.CasClientBuilder
 import fi.vm.sade.security.ScalaCasConfig
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuFixtures}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, NotFoundException, ValintatapajonoOid}
-import org.asynchttpclient.{RequestBuilder, Response}
-import org.json4s.native.JsonMethods.parse
-import org.json4s.native.Serialization.write
+import org.asynchttpclient.RequestBuilder
 import org.json4s.DefaultFormats
+import org.json4s.native.JsonMethods.parse
 
-import scalaz.concurrent.Task
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.Duration
 import scala.compat.java8.FutureConverters.toScala
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
 
 trait ValintaPerusteetService {
   def getKaytetaanValintalaskentaaFromValintatapajono(valintatapajonoOid: ValintatapajonoOid, haku: Haku, hakukohdeOid: HakukohdeOid): Either[Throwable, Boolean]

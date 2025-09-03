@@ -2,8 +2,8 @@ package fi.vm.sade.valintatulosservice.config
 
 import com.typesafe.config.{Config, ConfigFactory}
 import fi.vm.sade.utils.config.{ApplicationSettingsLoader, ConfigTemplateProcessor}
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.utils.tcp.PortFromSystemPropertyOrFindFree
+import fi.vm.sade.valintatulosservice.logging.Logging
 
 import java.net.URL
 

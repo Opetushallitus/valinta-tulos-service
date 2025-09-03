@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
-import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.logging.Logging
 import slick.dbio.{DBIO, Effect, NoStream}
 import slick.jdbc.PostgresProfile.api._
 import slick.sql.{SqlAction, SqlStreamingAction}

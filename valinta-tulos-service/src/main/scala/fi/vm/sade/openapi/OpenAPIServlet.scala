@@ -1,14 +1,13 @@
 package fi.vm.sade.openapi
 
-import com.typesafe.config.Config
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.{VtsServletBase, VtsSwaggerBase}
+import io.swagger.parser.OpenAPIParser
+import io.swagger.parser.models.ParseOptions
 import io.swagger.util.Json
 import org.scalatra.Ok
 import org.scalatra.swagger.Swagger
-import io.swagger.parser.OpenAPIParser
-import io.swagger.parser.models.ParseOptions
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 
 class OpenAPIServlet(config: VtsAppConfig)(implicit val swagger: Swagger) extends VtsServletBase with VtsSwaggerBase with Logging {

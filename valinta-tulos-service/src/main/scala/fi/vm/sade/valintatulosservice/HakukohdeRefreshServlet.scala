@@ -1,12 +1,11 @@
 package fi.vm.sade.valintatulosservice
 
-
 import java.util.Date
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.json.JsonFormats
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakukohdeRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, HakukohdeRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService

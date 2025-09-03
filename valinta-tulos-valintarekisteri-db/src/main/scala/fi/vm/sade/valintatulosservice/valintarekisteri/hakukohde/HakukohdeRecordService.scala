@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde
 
-import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.MonadHelper
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.HakukohdeRepository

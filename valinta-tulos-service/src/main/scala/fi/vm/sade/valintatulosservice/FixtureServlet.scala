@@ -1,17 +1,16 @@
 package fi.vm.sade.valintatulosservice
 
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemus, AtaruResponse}
 import fi.vm.sade.valintatulosservice.json.JsonFormats
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritFixtures
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.Henkilo
 import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtures
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 import org.json4s.JsonAST.JObject
-import org.json4s.Formats
 import org.json4s.native.Serialization.write
 import org.scalatra.ScalatraServlet
 import org.scalatra.json.JacksonJsonSupport

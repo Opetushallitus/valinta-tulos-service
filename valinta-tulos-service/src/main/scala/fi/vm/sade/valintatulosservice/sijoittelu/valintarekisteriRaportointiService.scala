@@ -1,17 +1,17 @@
 package fi.vm.sade.valintatulosservice.sijoittelu
 
-import java.util.Collections.sort
 import fi.vm.sade.sijoittelu.domain.SijoitteluAjo
 import fi.vm.sade.sijoittelu.tulos.dto.HakemuksenTila.VARASIJALTA_HYVAKSYTTY
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationObject, KevytHakijaDTO}
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, ValintatuloksenTila}
 import fi.vm.sade.utils.Timer.timed
-import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, SijoitteluRepository, ValinnantulosRepository}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, _}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, SyntheticSijoitteluAjoForHakusWithoutSijoittelu}
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.SijoitteluajonHakijat
 import fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu.SijoitteluajonHakijat.ValinnantuloksetGrouped
 
+import java.util.Collections.sort
 import java.util.Comparator
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
@@ -85,10 +85,7 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
       hakukohdeOids.getOrElse(List()).map(_.toString).asJava, toInteger(count), toInteger(index), new java.util.ArrayList(hakijat.asJava)) }
   }
 
-  private def toInteger(x:Option[Int]):java.lang.Integer = x match {
-    case Some(x) => new java.lang.Integer(x.toInt)
-    case None => null
-  }
+  private def toInteger(x: Option[Int]): Integer = x.map(Integer.valueOf).orNull
 
   override def getSijoitteluAjo(sijoitteluajoId: Long): Option[SijoitteluAjo] =
     repository.getSijoitteluajo(sijoitteluajoId).map(_.entity(repository.getSijoitteluajonHakukohdeOidit(sijoitteluajoId)))

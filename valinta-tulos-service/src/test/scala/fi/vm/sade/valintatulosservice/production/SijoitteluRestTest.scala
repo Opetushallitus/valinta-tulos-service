@@ -1,6 +1,5 @@
 package fi.vm.sade.valintatulosservice.production
 
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import org.apache.commons.io.FileUtils
 import org.junit.Ignore
@@ -14,7 +13,7 @@ import scala.language.experimental.macros
 
 @Ignore
 @RunWith(classOf[JUnitRunner])
-class SijoitteluRestTest extends Specification with MatcherMacros with Logging with PerformanceLogger with RestTestHelper {
+class SijoitteluRestTest extends Specification with MatcherMacros with PerformanceLogger with RestTestHelper {
   val oldHost = "https://virkailija.opintopolku.fi"
   val casHost = "https://testi.virkailija.opintopolku.fi"
   //private val newHost = "https://testi.virkailija.opintopolku.fi"

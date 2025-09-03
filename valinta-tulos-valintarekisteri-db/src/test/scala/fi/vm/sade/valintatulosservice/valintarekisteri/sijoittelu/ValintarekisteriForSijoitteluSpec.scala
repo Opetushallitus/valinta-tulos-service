@@ -1,8 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
 import fi.vm.sade.sijoittelu.domain._
-import fi.vm.sade.sijoittelu.tulos.dto.{SijoitteluDTO, SijoitteluajoDTO}
-import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.sijoittelu.tulos.dto.SijoitteluajoDTO
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
@@ -12,11 +11,9 @@ import org.specs2.runner.JUnitRunner
 import org.specs2.specification.BeforeAfterEach
 
 import scala.collection.JavaConverters._
-import scala.util.Try
-
 
 @RunWith(classOf[JUnitRunner])
-class ValintarekisteriForSijoitteluSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterEach with Logging with PerformanceLogger {
+class ValintarekisteriForSijoitteluSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterEach with PerformanceLogger {
   sequential
   step(appConfig.start)
   step(deleteAll())

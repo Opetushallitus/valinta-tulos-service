@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.ryhmasahkoposti
 
 import fi.vm.sade.groupemailer.{Recipient, Replacement}
-import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.vastaanottomeili.Ilmoitus
 import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy._
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}

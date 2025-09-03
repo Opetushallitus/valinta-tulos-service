@@ -1,16 +1,15 @@
 package fi.vm.sade.security
 
-import java.util.UUID
-
 import fi.vm.sade.javautils.nio.cas.CasLogout
-import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.security.{ServiceTicket, Session}
+import fi.vm.sade.valintatulosservice.logging.Logging
+import fi.vm.sade.valintatulosservice.security.ServiceTicket
 import org.json4s.DefaultFormats
 import org.scalatra._
 import org.scalatra.json.JacksonJsonSupport
 
-import scala.util.control.NonFatal
+import java.util.UUID
 import scala.compat.java8.OptionConverters._
+import scala.util.control.NonFatal
 
 class CasLogin(casUrl: String, cas: CasSessionService) extends ScalatraServlet with JacksonJsonSupport with Logging {
 

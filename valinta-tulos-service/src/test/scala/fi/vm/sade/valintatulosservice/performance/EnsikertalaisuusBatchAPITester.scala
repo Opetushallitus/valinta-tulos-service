@@ -1,21 +1,20 @@
 package fi.vm.sade.valintatulosservice.performance
 
-import java.util.concurrent.TimeUnit
-
 import fi.vm.sade.utils.http.{DefaultHttpClient, DefaultHttpRequest}
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.SharedJetty
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Ensikertalaisuus, HakuOid, HakukohdeOid, Kevat, YPSHakukohde}
 import org.json4s.jackson.Serialization
+import scalaj.http.Http
 import slick.jdbc.PostgresProfile.api._
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.Random
-import scalaj.http.Http
 
 object EnsikertalaisuusBatchAPITester extends App with Logging {
   implicit val formats = EnsikertalaisuusServlet.ensikertalaisuusJsonFormats

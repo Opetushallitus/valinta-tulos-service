@@ -1,7 +1,6 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
 import fi.vm.sade.utils.{MemoryTracker, Timer}
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{DbConfig, ValintarekisteriDb}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -10,15 +9,14 @@ import org.junit.Ignore
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
-
-import scala.util.{Failure, Success, Try}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.SijoitteluWrapper
 import org.specs2.specification.BeforeAfterEach
 import org.springframework.util.StopWatch
 
+import scala.util.{Failure, Success, Try}
+
 @RunWith(classOf[JUnitRunner])
 @Ignore
-class StoreSijoitteluPerformanceSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterEach with Logging with PerformanceLogger {
+class StoreSijoitteluPerformanceSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAfterEach with PerformanceLogger {
   sequential
   step(appConfig.start)
   step(deleteAll())

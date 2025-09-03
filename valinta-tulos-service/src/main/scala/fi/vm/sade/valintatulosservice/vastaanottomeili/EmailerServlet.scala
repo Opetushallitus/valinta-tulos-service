@@ -1,12 +1,11 @@
 package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
-import fi.vm.sade.valintatulosservice.{CasAuthenticatedServlet, VtsServletBase, VtsSwaggerBase, Authenticated, VastaanottosahkopostienLähetys}
+import fi.vm.sade.valintatulosservice.{Authenticated, CasAuthenticatedServlet, VastaanottosahkopostienLähetys, VtsServletBase, VtsSwaggerBase}
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
-import org.scalatra.swagger.{SwaggerSupport, _}
+import org.scalatra.swagger.{Swagger, SwaggerSupport}
 import org.scalatra.{ActionResult, InternalServerError, Ok}
 
 import scala.util.{Failure, Success}
@@ -15,7 +14,7 @@ import scala.util.{Failure, Success}
 class EmailerServlet(emailerService: EmailerService,
                      val sessionRepository: SessionRepository,
                      audit: Audit)(implicit val swagger: Swagger)
-  extends VtsServletBase with CasAuthenticatedServlet with EmailerSwagger with Logging {
+  extends VtsServletBase with CasAuthenticatedServlet with EmailerSwagger {
 
   post("/run", operation(postRunEmailerSwagger)) {
     logger.info("EmailerServlet POST /run called")

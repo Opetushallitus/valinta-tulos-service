@@ -1,6 +1,5 @@
 package fi.vm.sade.valintatulosservice.production
 
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import org.junit.Ignore
 import org.junit.runner.RunWith
@@ -12,7 +11,7 @@ import scala.language.experimental.macros
 
 @Ignore
 @RunWith(classOf[JUnitRunner])
-class SijoittelunOsatRestTest extends Specification with MatcherMacros with Logging with PerformanceLogger with RestTestHelper {
+class SijoittelunOsatRestTest extends Specification with MatcherMacros with PerformanceLogger with RestTestHelper {
   val casHost = "https://testi.virkailija.opintopolku.fi"
   val oldSijoitteluHost = casHost
   val vtsHost = "http://localhost:8097"

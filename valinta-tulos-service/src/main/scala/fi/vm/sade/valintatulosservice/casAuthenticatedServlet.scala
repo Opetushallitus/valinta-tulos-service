@@ -5,7 +5,7 @@ import java.util.UUID
 
 import fi.vm.sade.javautils.http.HttpServletRequestUtils
 import fi.vm.sade.security.{AuthenticationFailedException, AuthorizationFailedException}
-import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import org.scalatra._
