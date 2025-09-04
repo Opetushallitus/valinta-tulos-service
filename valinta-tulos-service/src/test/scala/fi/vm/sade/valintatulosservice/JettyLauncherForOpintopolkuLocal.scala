@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
-import fi.vm.sade.utils.tcp.PortChecker
+import fi.vm.sade.valintatulosservice.tcp.PortChecker
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.webapp.WebAppContext
 

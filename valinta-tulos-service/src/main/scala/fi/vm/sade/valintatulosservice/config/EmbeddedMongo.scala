@@ -6,7 +6,7 @@ import de.flapdoodle.embed.mongo.{Command, MongodStarter}
 import de.flapdoodle.embed.process.config.io.ProcessOutput
 import de.flapdoodle.embed.process.runtime.Network
 import fi.vm.sade.valintatulosservice.logging.Logging
-import fi.vm.sade.utils.tcp.{PortChecker, PortChooser}
+import fi.vm.sade.valintatulosservice.tcp.{PortChecker, PortChooser}
 
 object EmbeddedMongo extends Logging {
 

@@ -41,10 +41,6 @@
         </dependency>
         <dependency>
             <groupId>fi.vm.sade</groupId>
-            <artifactId>scala-tcp_2.11</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>fi.vm.sade</groupId>
             <artifactId>scala-properties_2.11</artifactId>
         </dependency>
         <dependency>

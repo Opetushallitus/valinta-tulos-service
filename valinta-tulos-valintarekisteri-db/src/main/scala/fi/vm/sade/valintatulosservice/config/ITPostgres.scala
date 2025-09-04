@@ -1,8 +1,8 @@
 package fi.vm.sade.valintatulosservice.config
 
-import fi.vm.sade.valintatulosservice.logging.Logging
-import fi.vm.sade.utils.tcp.PortChooser
 import fi.vm.sade.valintatulosservice.config.TempDbUtils.tryTimes
+import fi.vm.sade.valintatulosservice.logging.Logging
+import fi.vm.sade.valintatulosservice.tcp.PortChooser
 
 import scala.sys.process.stringToProcess
 
