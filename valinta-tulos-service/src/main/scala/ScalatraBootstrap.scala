@@ -30,8 +30,8 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.vastaanottomeili._
+import org.apache.log4j.LogManager
 import org.scalatra._
-import org.slf4j.LoggerFactory
 
 import java.util
 import javax.servlet.{DispatcherType, ServletContext}
@@ -44,7 +44,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
 
   override def init(context: ServletContext) {
     val auditLogger = new Logger {
-      private val logger = LoggerFactory.getLogger(classOf[Audit])
+      private val logger = LogManager.getLogger(classOf[Audit])
       override def log(msg: String): Unit = logger.info(msg)
     }
     val audit = new Audit(auditLogger, "valinta-tulos-service", ApplicationType.BACKEND)
