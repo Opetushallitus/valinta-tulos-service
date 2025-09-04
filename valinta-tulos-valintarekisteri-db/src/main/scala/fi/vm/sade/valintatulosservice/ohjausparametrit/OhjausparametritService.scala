@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.ohjausparametrit
 
-import fi.vm.sade.utils.http.DefaultHttpClient
 import fi.vm.sade.valintatulosservice.config.{AppConfig, Timer}
+import fi.vm.sade.valintatulosservice.http.DefaultHttpClient
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid

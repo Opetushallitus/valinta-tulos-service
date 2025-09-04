@@ -1,8 +1,8 @@
 package fi.vm.sade.valintatulosservice.kayttooikeus
 
 import fi.vm.sade.security.AuthenticationFailedException
-import fi.vm.sade.utils.http.DefaultHttpClient
 import fi.vm.sade.valintatulosservice.config.AppConfig
+import fi.vm.sade.valintatulosservice.http.DefaultHttpClient
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.security.Role
 import org.json4s.jackson.JsonMethods.parse

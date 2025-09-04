@@ -1,18 +1,15 @@
 package fi.vm.sade.valintatulosservice.organisaatio
 
-import fi.vm.sade.utils.http.DefaultHttpClient
-import fi.vm.sade.valintatulosservice.config.{AppConfig, StubbedExternalDeps}
+import fi.vm.sade.valintatulosservice.config.AppConfig
+import fi.vm.sade.valintatulosservice.http.DefaultHttpClient
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
-import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import org.json4s.jackson.JsonMethods._
-
-import scala.util.Try
-import scala.util.control.NonFatal
 import scalaj.http.HttpOptions
 
 import java.util.concurrent.TimeUnit.HOURS
-import scala.collection.JavaConversions._
 import scala.concurrent.duration.Duration
+import scala.util.Try
+import scala.util.control.NonFatal
 
 trait OrganisaatioService {
 
