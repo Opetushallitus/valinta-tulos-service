@@ -172,7 +172,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
   }
 
   def deleteHakemusMailEntriesForHakemus(hakemusOid: HakemusOid): Int = {
-    runBlockingTransactionally[Int](sqlu"""delete from viestit where hakemus_oid = ${hakemusOid}""") match {
+    runBlockingTransactionally[Int](sqlu"""delete from viestit where hakemus_oid = ${hakemusOid} and syy != 'SITOVAN_VASTAANOTON_ILMOITUS'""") match {
       case Right(n) =>
         n
       case Left(e) =>
@@ -182,7 +182,7 @@ trait MailPollerRepositoryImpl extends MailPollerRepository with Valintarekister
   }
 
   def deleteHakemusMailEntriesForHakukohde(hakukohdeOid: HakukohdeOid): Int = {
-    runBlockingTransactionally[Int](sqlu"""delete from viestit where hakukohde_oid = ${hakukohdeOid}""") match {
+    runBlockingTransactionally[Int](sqlu"""delete from viestit where hakukohde_oid = ${hakukohdeOid} and syy != 'SITOVAN_VASTAANOTON_ILMOITUS'""") match {
       case Right(n) =>
         n
       case Left(e) =>
