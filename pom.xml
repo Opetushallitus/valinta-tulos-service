@@ -158,9 +158,9 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>fi.vm.sade</groupId>
-                <artifactId>scala-properties_2.11</artifactId>
-                <version>1.0.1-SNAPSHOT</version>
+                <groupId>fi.vm.sade.java-utils</groupId>
+                <artifactId>java-properties</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <!-- Voi poistaa, kun muut scala-utils riippuvuudet ja scala-group-emailer on poistettu. -->
