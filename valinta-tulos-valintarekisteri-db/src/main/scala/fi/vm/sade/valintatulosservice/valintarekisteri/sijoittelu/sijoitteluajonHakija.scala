@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
 import fi.vm.sade.sijoittelu.domain.{SijoitteluAjo, ValintatuloksenTila}
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi._
-import fi.vm.sade.utils.Timer.timed
+import fi.vm.sade.valintatulosservice.config.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 

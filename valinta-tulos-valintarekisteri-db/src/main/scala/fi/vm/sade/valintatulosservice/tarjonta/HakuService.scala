@@ -2,10 +2,9 @@ package fi.vm.sade.valintatulosservice.tarjonta
 
 import fi.vm.sade.javautils.nio.cas.CasClientBuilder
 import fi.vm.sade.security.ScalaCasConfig
-import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.http.DefaultHttpClient
 import fi.vm.sade.valintatulosservice.MonadHelper
-import fi.vm.sade.valintatulosservice.config.{AppConfig, StubbedExternalDeps}
+import fi.vm.sade.valintatulosservice.config.{AppConfig, StubbedExternalDeps, Timer}
 import fi.vm.sade.valintatulosservice.koodisto.{Koodi, KoodistoService}
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize

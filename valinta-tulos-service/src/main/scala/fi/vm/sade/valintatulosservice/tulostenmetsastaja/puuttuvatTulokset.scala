@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.tulostenmetsastaja
 
 import fi.vm.sade.auditlog.Audit
-import fi.vm.sade.utils.Timer
+import fi.vm.sade.valintatulosservice.config.Timer
 import fi.vm.sade.valintatulosservice.hakemus.HakuAppRepository
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb

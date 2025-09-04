@@ -4,7 +4,7 @@ import fi.vm.sade.sijoittelu.domain.TilankuvauksenTarkenne.{PERUUNTUNUT_EI_VASTA
 import fi.vm.sade.sijoittelu.domain.{TilanKuvaukset, TilankuvauksenTarkenne, ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.sijoittelu.tulos.dto
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationObject, HakutoiveDTO}
-import fi.vm.sade.utils.Timer.timed
+import fi.vm.sade.valintatulosservice.config.Timer.timed
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain.Valintatila.{harkinnanvaraisesti_hyväksytty, hyväksytty, isHyväksytty, varasijalta_hyväksytty}
 import fi.vm.sade.valintatulosservice.domain._

@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import fi.vm.sade.oppijantunnistus.{OppijanTunnistus, OppijanTunnistusService}
-import fi.vm.sade.utils.Timer.timed
+import fi.vm.sade.valintatulosservice.config.Timer.timed
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.tarjonta

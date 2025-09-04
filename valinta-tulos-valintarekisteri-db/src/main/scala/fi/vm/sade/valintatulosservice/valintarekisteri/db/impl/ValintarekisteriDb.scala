@@ -1,11 +1,10 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
-import fi.vm.sade.utils.Timer
+import fi.vm.sade.valintatulosservice.config.Timer
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhtoRepositoryImpl
 import org.apache.commons.lang3.builder.ToStringBuilder
 import org.flywaydb.core.Flyway
-import org.flywaydb.core.api.Location
 import org.flywaydb.core.api.configuration.FluentConfiguration
 import slick.jdbc.PostgresProfile.api._
 

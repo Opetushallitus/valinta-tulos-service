@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.streamingresults
 
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
-import fi.vm.sade.utils.Timer.timed
+import fi.vm.sade.valintatulosservice.config.Timer.timed
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain.{Hakemuksentulos, Hakutoiveentulos}
 import fi.vm.sade.valintatulosservice.logging.Logging

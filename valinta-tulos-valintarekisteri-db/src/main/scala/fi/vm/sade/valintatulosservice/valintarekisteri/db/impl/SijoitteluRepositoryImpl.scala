@@ -1,16 +1,14 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
-import java.sql.Timestamp
-import java.util.concurrent.TimeUnit
-
-import fi.vm.sade.utils.Timer.timed
+import fi.vm.sade.valintatulosservice.config.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.slf4j.LoggerFactory
 import slick.dbio.DBIO
 import slick.jdbc.PostgresProfile.api._
 
-import scala.collection.immutable
+import java.sql.Timestamp
+import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 

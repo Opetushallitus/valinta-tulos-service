@@ -1,11 +1,11 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
 import fi.vm.sade.sijoittelu.domain.Valintatapajono.JonosijaTieto
-import fi.vm.sade.utils.Timer.timed
+import fi.vm.sade.valintatulosservice.config.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SiirtotiedostoRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijaOid, HakukohdeOid, SijoitteluajonIlmoittautumistila, Valinnantila, ValintatapajonoOid, VastaanottoAction}
-import org.json4s.{DefaultFormats, Formats}
 import org.json4s.native.Serialization.write
+import org.json4s.{DefaultFormats, Formats}
 import slick.jdbc.PostgresProfile.api._
 
 import java.util.Date

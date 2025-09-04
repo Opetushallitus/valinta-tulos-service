@@ -1,17 +1,15 @@
 package fi.vm.sade.valintatulosservice.ohjausparametrit
 
-import java.util.concurrent.TimeUnit
-
-import fi.vm.sade.utils.Timer
 import fi.vm.sade.utils.http.DefaultHttpClient
+import fi.vm.sade.valintatulosservice.config.{AppConfig, Timer}
 import fi.vm.sade.valintatulosservice.logging.Logging
-import fi.vm.sade.valintatulosservice.config.AppConfig
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 import org.joda.time.DateTime
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
 import scala.util.Try
 import scala.util.control.NonFatal

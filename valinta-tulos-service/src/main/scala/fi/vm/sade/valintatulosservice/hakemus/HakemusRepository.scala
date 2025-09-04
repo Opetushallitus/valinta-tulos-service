@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.hakemus
 
-import fi.vm.sade.utils.Timer.timed
+import fi.vm.sade.valintatulosservice.config.Timer.timed
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain.Hakemus
 import fi.vm.sade.valintatulosservice.logging.Logging

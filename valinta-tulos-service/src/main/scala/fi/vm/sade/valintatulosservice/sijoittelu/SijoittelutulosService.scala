@@ -1,11 +1,9 @@
 package fi.vm.sade.valintatulosservice.sijoittelu
 
-import java.time.OffsetDateTime
-import java.util.Date
 import fi.vm.sade.sijoittelu.domain.SijoitteluAjo
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi._
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, IlmoittautumisTila}
-import fi.vm.sade.utils.Timer
+import fi.vm.sade.valintatulosservice.config.Timer
 import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
@@ -17,9 +15,11 @@ import fi.vm.sade.valintatulosservice.{PersonOidFromHakemusResolver, Vastaanotto
 import org.apache.commons.lang.StringUtils
 import org.apache.commons.lang3.builder.ToStringBuilder
 import org.joda.time.DateTime
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.LoggerFactory
 import slick.dbio.DBIO
 
+import java.time.OffsetDateTime
+import java.util.Date
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiService,
