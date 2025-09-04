@@ -2,25 +2,23 @@ package fi.vm.sade.valintatulosservice.config
 
 import fi.vm.sade.valintatulosservice.config.TempDbUtils.tryTimes
 import fi.vm.sade.valintatulosservice.logging.Logging
-import fi.vm.sade.valintatulosservice.tcp.PortChooser
 
 import scala.sys.process.stringToProcess
 
-class ITPostgres(portChooser: PortChooser) extends Logging {
+class ITPostgres(val port: Int) extends Logging {
 
   private def postgresAlreadyRunning(): Boolean = {
     val alreadyRunning = System.getProperty("valintatulos.it.postgres.alreadyrunning")
-    (alreadyRunning != null && "true".equals(alreadyRunning))
+    alreadyRunning != null && "true".equals(alreadyRunning)
   }
 
-  val port = portChooser.chosenPort
-  val dbName        = "valintarekisteri"
-  val containerName = "valintarekisteri-postgres"
+  private val dbName = "valintarekisteri"
+  private val containerName = "valintarekisteri-postgres"
 
-  val startStopRetries             = 100
-  val startStopRetryIntervalMillis = 100
+  private val startStopRetries = 100
+  private val startStopRetryIntervalMillis = 100
 
-  def start() {
+  def start(): Unit = {
     if(!postgresAlreadyRunning) {
       try {
         if (!databaseIsRunning()) {
@@ -28,7 +26,7 @@ class ITPostgres(portChooser: PortChooser) extends Logging {
         }
       } finally {
         Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
-          override def run() {
+          override def run(): Unit = {
             stop()
           }
         }))
@@ -36,7 +34,7 @@ class ITPostgres(portChooser: PortChooser) extends Logging {
     }
   }
 
-  def stop() {
+  def stop(): Unit = {
     if(!postgresAlreadyRunning) {
       try {
         logger.info("Killing PostgreSQL container")
@@ -54,7 +52,7 @@ class ITPostgres(portChooser: PortChooser) extends Logging {
     ) == 0
   }
 
-  def startDatabaseContainer(): Unit = {
+  private def startDatabaseContainer(): Unit = {
     logger.info("Starting PostgreSQL container:")
     runBlocking(
       s"docker run --rm -d --name $containerName --env POSTGRES_PASSWORD=postgres -p $port:5432 valintarekisteri-postgres"

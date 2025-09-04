@@ -7,7 +7,6 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusFixtures
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetails
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.security.Role
-import fi.vm.sade.valintatulosservice.tcp.{PortChecker, PortFromSystemPropertyOrFindFree}
 import fi.vm.sade.valintatulosservice.valintaperusteet.{ValintaPerusteetServiceImpl, ValintaPerusteetServiceMock}
 
 import java.io.File
@@ -18,12 +17,11 @@ object VtsAppConfig extends Logging {
   private val propertiesFile = "/oph-configuration/valinta-tulos-service-oph.properties"
   private val propertiesFileOvara = "/oph-configuration/valinta-tulos-ovara-oph.properties"
   private implicit val settingsParser = VtsApplicationSettingsParser
-  private val embeddedMongoPortChooser = new PortFromSystemPropertyOrFindFree("valintatulos.embeddedmongo.port")
-  private val itPostgresPortChooser = new PortFromSystemPropertyOrFindFree("valintatulos.it.postgres.port")
-  lazy val organisaatioMockPort = PortChecker.findFreeLocalPort
-  lazy val vtsMockPort = PortChecker.findFreeLocalPort
-  lazy val valintaPerusteetMockPort = PortChecker.findFreeLocalPort
-  lazy val oppijanumeroMockPort = PortChecker.findFreeLocalPort
+  private lazy val embeddedMongoPort: Int = PortChecker.getPortFromSystemPropertyOrFindFree("valintatulos.embeddedmongo.port")
+  private lazy val itPostgresPort: Int = PortChecker.getPortFromSystemPropertyOrFindFree("valintatulos.it.postgres.port")
+  lazy val organisaatioMockPort: Int = PortChecker.findFreeLocalPort
+  lazy val vtsMockPort: Int = PortChecker.findFreeLocalPort
+  private lazy val valintaPerusteetMockPort = PortChecker.findFreeLocalPort
 
   def fromOptionalString(profile: Option[String]) = {
     fromString(profile.getOrElse(getProfileProperty))
@@ -105,8 +103,8 @@ object VtsAppConfig extends Logging {
     }
 
     override lazy val settings = loadSettings
-      .withOverride(("hakemus.mongodb.uri", "mongodb://localhost:" + embeddedMongoPortChooser.chosenPort))
-      .withOverride("valinta-tulos-service.valintarekisteri.db.url", s"jdbc:postgresql://localhost:${itPostgresPortChooser.chosenPort}/valintarekisteri")
+      .withOverride(("hakemus.mongodb.uri", "mongodb://localhost:" + embeddedMongoPort))
+      .withOverride("valinta-tulos-service.valintarekisteri.db.url", s"jdbc:postgresql://localhost:$itPostgresPort/valintarekisteri")
       .withOverride("valinta-tulos-service.valintarekisteri.db.user", "oph")
       .withOverride("valinta-tulos-service.valintarekisteri.db.password", "oph")
       .withOverride("valinta-tulos-service.valintarekisteri.db.maxConnections", "5")
@@ -132,9 +130,9 @@ object VtsAppConfig extends Logging {
     }
 
     override lazy val settings = loadSettings
-      .withOverride(("hakemus.mongodb.uri", "mongodb://localhost:" + embeddedMongoPortChooser.chosenPort))
+      .withOverride(("hakemus.mongodb.uri", "mongodb://localhost:" + embeddedMongoPort))
       .withOverride(("valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids", "100"))
-      .withOverride("valinta-tulos-service.valintarekisteri.db.url", s"jdbc:postgresql://localhost:${itPostgresPortChooser.chosenPort}/valintarekisteri")
+      .withOverride("valinta-tulos-service.valintarekisteri.db.url", s"jdbc:postgresql://localhost:$itPostgresPort/valintarekisteri")
       .withOverride("valinta-tulos-service.valintarekisteri.db.user", "oph")
       .withOverride("valinta-tulos-service.valintarekisteri.db.password", "oph")
       .withOverride("valinta-tulos-service.valintarekisteri.db.maxConnections", "5")
@@ -154,7 +152,7 @@ object VtsAppConfig extends Logging {
     override lazy val settings = loadSettings
       .withOverride("hakemus.mongodb.uri", "mongodb://localhost:" + System.getProperty("hakemus.embeddedmongo.port", "28018"))
       .withOverride(("valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids", "100"))
-      .withOverride("valinta-tulos-service.valintarekisteri.db.url", s"jdbc:postgresql://localhost:${itPostgresPortChooser.chosenPort}/valintarekisteri")
+      .withOverride("valinta-tulos-service.valintarekisteri.db.url", s"jdbc:postgresql://localhost:$itPostgresPort/valintarekisteri")
       .withOverride("valinta-tulos-service.valintarekisteri.db.user", "oph")
       .withOverride("valinta-tulos-service.valintarekisteri.db.password", "oph")
 
@@ -197,13 +195,13 @@ object VtsAppConfig extends Logging {
   }
 
   trait RunEmbeddedMongoAndPostgres extends TemplatedProps {
-    private lazy val itPostgres = new ITPostgres(itPostgresPortChooser)
+    private lazy val itPostgres = new ITPostgres(itPostgresPort)
 
     def startMongoAndPostgres {
 
       // Embedded MongoDB toimimaan ARM-arkkitehtuurin kanssa
       if(System.getProperty("os.arch") == "aarch64") System.setProperty("os.arch", "i686_64")
-      val mongo = EmbeddedMongo.start(embeddedMongoPortChooser)
+      val mongo = EmbeddedMongo.start(embeddedMongoPort)
 
       Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
         override def run() {
@@ -221,7 +219,7 @@ object VtsAppConfig extends Logging {
 
     protected def importFixturesToHakemusDatabase {
       val settings = loadSettings
-        .withOverride(("hakemus.mongodb.uri", "mongodb://localhost:" + embeddedMongoPortChooser.chosenPort))
+        .withOverride(("hakemus.mongodb.uri", "mongodb://localhost:" + embeddedMongoPort))
       HakemusFixtures()(settings).clear.importDefaultFixtures
     }
   }

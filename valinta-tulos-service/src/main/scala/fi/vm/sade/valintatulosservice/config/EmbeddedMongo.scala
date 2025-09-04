@@ -6,26 +6,16 @@ import de.flapdoodle.embed.mongo.{Command, MongodStarter}
 import de.flapdoodle.embed.process.config.io.ProcessOutput
 import de.flapdoodle.embed.process.runtime.Network
 import fi.vm.sade.valintatulosservice.logging.Logging
-import fi.vm.sade.valintatulosservice.tcp.{PortChecker, PortChooser}
 
 object EmbeddedMongo extends Logging {
 
-  def start(portChooser: PortChooser): Option[MongoServer] = {
-    if (PortChecker.isFreeLocalPort(portChooser.chosenPort)) {
-      logger.info("Starting embedded mongo on port " + portChooser.chosenPort)
-      Some(new MongoServer(portChooser.chosenPort))
+  def start(port: Int): Option[MongoServer] = {
+    if (PortChecker.isFreeLocalPort(port)) {
+      logger.info("Starting embedded mongo on port " + port)
+      Some(new MongoServer(port))
     } else {
-      logger.info("Not starting embedded mongo, seems to be running on port " + portChooser.chosenPort)
+      logger.info("Not starting embedded mongo, seems to be running on port " + port)
       None
-    }
-  }
-
-  def withEmbeddedMongo[T](portChooser: PortChooser)(f: => T): T = {
-    val mongoServer = start(portChooser)
-    try {
-      f
-    } finally {
-      mongoServer.foreach(_.stop())
     }
   }
 }

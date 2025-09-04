@@ -1,10 +1,9 @@
 package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import fi.vm.sade.oppijantunnistus.OppijanTunnistusService
-import fi.vm.sade.valintatulosservice.tcp.PortChecker
 import fi.vm.sade.valintatulosservice.ValintatulosService
 import fi.vm.sade.valintatulosservice.config.EmailerRegistry.{EmailerRegistry, IT}
-import fi.vm.sade.valintatulosservice.config.{EmailerRegistry, VtsApplicationSettings}
+import fi.vm.sade.valintatulosservice.config.{EmailerRegistry, PortChecker, VtsApplicationSettings}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
