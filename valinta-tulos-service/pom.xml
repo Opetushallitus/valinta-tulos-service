@@ -369,7 +369,6 @@
         <dependency>
             <groupId>org.scalaj</groupId>
             <artifactId>scalaj-http_2.11</artifactId>
-            <version>${scalaj-http_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>org.scalatra</groupId>

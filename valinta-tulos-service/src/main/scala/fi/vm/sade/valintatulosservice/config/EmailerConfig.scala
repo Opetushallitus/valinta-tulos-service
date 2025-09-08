@@ -12,7 +12,7 @@ case class EmailerConfig(config: Config) extends ApplicationSettings(config) {
   val viestinvalitysEndpoint: String = config.getString("valinta-tulos-service.viestinvalitys.endpoint")
 }
 
-case class EmailerConfigParser() extends fi.vm.sade.utils.config.ApplicationSettingsParser[EmailerConfig] {
+case class EmailerConfigParser() extends ApplicationSettingsParser[EmailerConfig] {
   override def parse(config: Config) = EmailerConfig(config)
 }
 

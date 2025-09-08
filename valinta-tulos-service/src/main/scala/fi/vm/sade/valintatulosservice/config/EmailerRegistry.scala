@@ -1,6 +1,5 @@
 package fi.vm.sade.valintatulosservice.config
 
-import fi.vm.sade.utils.config.{ApplicationSettingsLoader, ConfigTemplateProcessor}
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.vastaanottomeili.{MailDecorator, MailPoller}
 
