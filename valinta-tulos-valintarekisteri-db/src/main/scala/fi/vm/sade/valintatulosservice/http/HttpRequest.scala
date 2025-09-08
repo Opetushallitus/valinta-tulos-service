@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.http
 
-import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.logging.Logging
 import scalaj.http.HttpResponse
 
 import scala.collection.immutable.HashMap

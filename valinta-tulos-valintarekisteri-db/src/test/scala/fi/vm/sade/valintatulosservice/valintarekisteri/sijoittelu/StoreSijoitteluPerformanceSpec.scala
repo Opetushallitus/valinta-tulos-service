@@ -1,7 +1,8 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
-import fi.vm.sade.utils.{MemoryTracker, Timer}
+import fi.vm.sade.valintatulosservice.config.Timer
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
+import fi.vm.sade.valintatulosservice.utils.MemoryTracker
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{DbConfig, ValintarekisteriDb}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}

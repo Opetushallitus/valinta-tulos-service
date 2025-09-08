@@ -1,8 +1,7 @@
 package fi.vm.sade.valintatulosservice.hakemus
 
 import com.mongodb._
-import fi.vm.sade.utils.config.MongoConfig
-import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
+import fi.vm.sade.valintatulosservice.config.{MongoConfig, VtsApplicationSettings}
 import fi.vm.sade.valintatulosservice.mongo.MongoFactory
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
 import org.bson.types.ObjectId

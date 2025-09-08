@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.mongo
 
 import com.mongodb.casbah.{MongoClient, MongoClientURI, ReadPreference}
-import fi.vm.sade.utils.config.MongoConfig
+import fi.vm.sade.valintatulosservice.config.MongoConfig
 
 object MongoFactory {
 

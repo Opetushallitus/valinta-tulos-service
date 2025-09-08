@@ -1,8 +1,9 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
 import com.typesafe.config.Config
+import fi.vm.sade.valintatulosservice.config.{ApplicationSettingsParser, BaseApplicationSettings}
 
-case class ApplicationSettings(config: Config) extends fi.vm.sade.utils.config.ApplicationSettings(config) {
+case class ApplicationSettings(config: Config) extends BaseApplicationSettings(config) {
   val valintaRekisteriDbConfig = withConfig(_.getConfig("valinta-tulos-service.valintarekisteri.db"))
 
   private def withConfig[T](operation: Config => T): T = {
@@ -17,6 +18,6 @@ case class ApplicationSettings(config: Config) extends fi.vm.sade.utils.config.A
   }
 }
 
-object ApplicationSettingsParser extends fi.vm.sade.utils.config.ApplicationSettingsParser[ApplicationSettings] {
+object ApplicationSettingsParser extends ApplicationSettingsParser[ApplicationSettings] {
   override def parse(config: Config) = ApplicationSettings(config)
 }
