@@ -2,13 +2,12 @@ package fi.vm.sade.valintatulosservice.performance
 
 import fi.vm.sade.valintatulosservice.SharedJetty
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
-import fi.vm.sade.valintatulosservice.http.{DefaultHttpClient, DefaultHttpRequest}
+import fi.vm.sade.valintatulosservice.http.DefaultHttpClient
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, Kevat, YPSHakukohde}
 import org.json4s.jackson.Serialization
 import org.json4s.{DefaultFormats, JValue}
-import scalaj.http.Http
 
 
 object YhdenPaikanSaantoBatchAPITester extends App with Logging {
@@ -29,10 +28,8 @@ object YhdenPaikanSaantoBatchAPITester extends App with Logging {
   }
   println("...done inserting test data, let's make some requests...")
   var start = System.currentTimeMillis()
-  val (status, _, result) = new DefaultHttpRequest(Http(s"http://localhost:${SharedJetty.port}/valinta-tulos-service/virkailija/valintatulos/haku/1.2.246.562.5.2013080813081926341928")
-    .method("GET")
-    .options(DefaultHttpClient.defaultOptions)
-    .header("Content-Type", "application/json")).responseWithHeaders()
+  val url = s"http://localhost:${SharedJetty.port}/valinta-tulos-service/virkailija/valintatulos/haku/1.2.246.562.5.2013080813081926341928"
+  val result = DefaultHttpClient.getJson(url)("valinta-tulos-service").getResponseBody
   println(s"request took ${System.currentTimeMillis() - start} ms")
   start = System.currentTimeMillis()
   println(s"parsing response of size ${Serialization.read[List[Map[String, JValue]]](result).size} took ${System.currentTimeMillis() - start} ms")

@@ -74,15 +74,18 @@ class CachedOhjausparametritService(appConfig: AppConfig, ohjausparametritServic
 class RemoteOhjausparametritService(appConfig: AppConfig) extends OhjausparametritService with Logging {
   def fetch[T](url: String, parser: String => T): Either[Throwable, Option[T]] = {
     Timer.timed(s"Find parameters for url $url", 500) {
-      Try(DefaultHttpClient.httpGet(url)(appConfig.settings.callerId)
-        .responseWithHeaders match {
-        case (200, _, body) =>
-          Try(Right(Some(parser(body)))).recover {
-            case NonFatal(e) => Left(new IllegalStateException(s"Parsing result $body of GET $url failed", e))
-          }.get
-        case (404, _, _) => Right(None)
-        case (status, _, body) => Left(new RuntimeException(s"GET $url failed with $status: $body"))
-      }).recover {
+      Try {
+        val response = DefaultHttpClient.httpGet(url)(appConfig.settings.callerId)
+        val body = response.getResponseBody
+        response.getStatusCode match {
+          case 200 =>
+            Try(Right(Some(parser(body)))).recover {
+              case NonFatal(e) => Left(new IllegalStateException(s"Parsing result $body of GET $url failed", e))
+            }.get
+          case 404 => Right(None)
+          case status => Left(new RuntimeException(s"GET $url failed with $status: $body"))
+        }
+      }.recover {
         case NonFatal(e) => Left(new RuntimeException(s"GET $url failed", e))
       }.get
     }
@@ -125,4 +128,3 @@ object OhjausparametritParser {
     json.extractOpt[Long].map(new DateTime(_))
   }
 }
-
