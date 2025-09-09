@@ -3,12 +3,11 @@ package fi.vm.sade.valintatulosservice.performance
 import fi.vm.sade.valintatulosservice.SharedJetty
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
-import fi.vm.sade.valintatulosservice.http.{DefaultHttpClient, DefaultHttpRequest}
+import fi.vm.sade.valintatulosservice.http.DefaultHttpClient
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Ensikertalaisuus, HakuOid, HakukohdeOid, Kevat, YPSHakukohde}
 import org.json4s.jackson.Serialization
-import scalaj.http.Http
 import slick.jdbc.PostgresProfile.api._
 
 import java.util.concurrent.TimeUnit
@@ -34,11 +33,8 @@ object EnsikertalaisuusBatchAPITester extends App with Logging {
   for (_ <- 1.to(5)) {
     val fetchOids = Random.shuffle(oids.zipWithIndex.filter(t => (t._2 % 10) == 0).map(t => t._1))
     var start = System.currentTimeMillis()
-    val (_, _, result) = new DefaultHttpRequest(Http(s"http://localhost:${SharedJetty.port}/valinta-tulos-service/ensikertalaisuus?koulutuksenAlkamiskausi=2014K")
-      .method("POST")
-      .options(DefaultHttpClient.defaultOptions)
-      .header("Content-Type", "application/json")
-      .postData(Serialization.write(fetchOids))).responseWithHeaders()
+    val url = s"http://localhost:${SharedJetty.port}/valinta-tulos-service/ensikertalaisuus?koulutuksenAlkamiskausi=2014K"
+    val result = DefaultHttpClient.postJson(url, Serialization.write(fetchOids))("valinta-tulos-service").getResponseBody
     println(s"request of size ${fetchOids.size} took ${System.currentTimeMillis() - start} ms")
     start = System.currentTimeMillis()
     println(s"parsing response of size ${Serialization.read[List[Ensikertalaisuus]](result).size} took ${System.currentTimeMillis() - start} ms")

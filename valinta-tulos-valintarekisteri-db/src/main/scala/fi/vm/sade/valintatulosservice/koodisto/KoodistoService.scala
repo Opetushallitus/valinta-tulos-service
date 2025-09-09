@@ -5,7 +5,6 @@ import fi.vm.sade.valintatulosservice.http.DefaultHttpClient
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 import org.json4s.jackson.JsonMethods._
 import org.json4s.{DefaultFormats, Formats}
-import scalaj.http.HttpOptions
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
@@ -76,19 +75,18 @@ class RemoteKoodistoService(config: AppConfig) extends KoodistoService {
   }
 
   private def fetch[T](url: String)(implicit manifest: Manifest[T]): Either[Throwable, T] = {
-    Try(DefaultHttpClient.httpGet(
-      url,
-      HttpOptions.connTimeout(30000),
-      HttpOptions.readTimeout(120000)
-    )(config.settings.callerId)
-      .responseWithHeaders match {
-      case (200, _, resultString) =>
-        Try(Right(parse(resultString).extract[T])).recover {
-          case NonFatal(e) => Left(new IllegalStateException(s"Parsing result $resultString of GET $url failed", e))
-        }.get
-      case (responseCode, _, resultString) =>
-        Left(new RuntimeException(s"GET $url failed with status $responseCode: $resultString"))
-    }).recover {
+    Try {
+      val response = DefaultHttpClient.httpGet(url, 30000, 120000)(config.settings.callerId)
+      val resultString = response.getResponseBody
+      response.getStatusCode match {
+        case 200 =>
+          Try(Right(parse(resultString).extract[T])).recover {
+            case NonFatal(e) => Left(new IllegalStateException(s"Parsing result $resultString of GET $url failed", e))
+          }.get
+        case responseCode =>
+          Left(new RuntimeException(s"GET $url failed with status $responseCode: $resultString"))
+      }
+    }.recover {
       case NonFatal(e) => Left(new RuntimeException(s"GET $url failed", e))
     }.get
   }

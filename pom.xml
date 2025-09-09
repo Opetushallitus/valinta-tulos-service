@@ -41,7 +41,6 @@
         <scala.version>2.11.12</scala.version>
         <scala-parser-combinators_2.11.version>1.0.4</scala-parser-combinators_2.11.version>
         <scala-xml_2.11.version>1.0.5</scala-xml_2.11.version>
-        <scalaj-http_2.11.version>2.4.2</scalaj-http_2.11.version>
         <scalatra_2.11.version>2.6.3</scalatra_2.11.version>
         <scalaz-stream_2.11.version>0.8.6a</scalaz-stream_2.11.version> <!-- required by specs2 3.5 -->
         <scalaz_2.11.version>7.2.17</scalaz_2.11.version>
@@ -171,11 +170,6 @@
                 <groupId>com.typesafe.scala-logging</groupId>
                 <artifactId>scala-logging_2.11</artifactId>
                 <version>3.1.0</version>
-            </dependency>
-            <dependency>
-                <groupId>org.scalaj</groupId>
-                <artifactId>scalaj-http_2.11</artifactId>
-                <version>${scalaj-http_2.11.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.postgresql</groupId>
