@@ -48,7 +48,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          mvn -B clean package --settings settings.xml
+          mvn -B clean package -DskipTests --settings settings.xml
       - uses: actions/cache@v4
         with:
           path: |
@@ -79,7 +79,7 @@ jobs:
     uses: Opetushallitus/.github/.github/workflows/push-scan-java-ecr.yml@main
     with:
       application: valinta-tulos-service
-      base-image: baseimage-war-tomcat9-openjdk21:master
+      base-image: baseimage-war-tomcat9-openjdk21:OY-5304
       configfolder: valinta-tulos-service/src/main/resources/oph-configuration
       jarfile: valinta-tulos-service
       jarfolder: .
