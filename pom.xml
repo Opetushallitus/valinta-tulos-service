@@ -5,7 +5,7 @@
     <groupId>fi.vm.sade</groupId>
     <artifactId>valinta-tulos-service-parent</artifactId>
     <packaging>pom</packaging>
-    <version>8.3.2-SNAPSHOT</version>
+    <version>8.3.3-SNAPSHOT</version>
     <name>valinta-tulos-service-parent</name>
 
     <modules>
