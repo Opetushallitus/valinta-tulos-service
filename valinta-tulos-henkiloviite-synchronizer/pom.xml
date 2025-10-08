@@ -5,7 +5,7 @@
     <parent>
         <groupId>fi.vm.sade</groupId>
         <artifactId>valinta-tulos-service-parent</artifactId>
-        <version>8.3.2-SNAPSHOT</version>
+        <version>8.3.3-SNAPSHOT</version>
     </parent>
     <artifactId>valinta-tulos-henkiloviite-synchronizer</artifactId>
     <packaging>jar</packaging>
