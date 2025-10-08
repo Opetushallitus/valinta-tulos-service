@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.vastaanottomeili
 
-import fi.oph.viestinvalitys.ViestinvalitysClient
+import fi.oph.viestinvalitys.{ViestinvalitysClient, ViestinvalitysClientException}
 import fi.oph.viestinvalitys.vastaanotto.model.{Viesti, ViestinvalitysBuilder}
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.config.EmailerConfigComponent
@@ -26,25 +26,13 @@ trait MailerComponent {
   def mailDecorator: MailDecorator
 
   class MailerImpl extends Mailer with Logging {
-    val mailablesLimit: Int = settings.recipientBatchSize
-    val timeLimit: FiniteDuration = Duration(settings.recipientBatchLimitMinutes, MINUTES)
-
-    private val helper: MailerHelper = new MailerHelper
+    private val mailablesLimit: Int = settings.recipientBatchSize
+    private val timeLimit: FiniteDuration = Duration(settings.recipientBatchLimitMinutes, MINUTES)
 
     def sendMailFor(query: MailerQuery): List[String] = {
       logger.info(s"Start mail sending for query $query")
       forceResendIfAppropriate(query)
-
-      val lahetys = ViestinvalitysBuilder.lahetysBuilder()
-        .withOtsikko(query.toString)
-        .withLahettavaPalvelu("valinta-tulos-service")
-        .withLahettaja(Optional.empty(), "noreply@opintopolku.fi")
-        .withNormaaliPrioriteetti()
-        .withSailytysaika(2000) // About 5 and a half years
-        .build()
-      val lahetysTunniste: UUID = viestinvalitysClient.luoLahetys(lahetys).getLahetysTunniste
-
-      collectAndSend(query, 0, List.empty, lahetysTunniste)
+      collectAndSend(query, 0, List.empty, None)
     }
 
     private def forceResendIfAppropriate(query: MailerQuery): Unit = {
@@ -61,9 +49,9 @@ trait MailerComponent {
     }
 
     @tailrec
-    private def collectAndSend(query: MailerQuery, batchNr: Int, ids: List[String], lahetysTunniste: UUID): List[String] = {
-      def sendAndConfirm(currentBatch: List[Ilmoitus]): List[String] = {
-        helper.splitAndGroupIlmoitus(currentBatch).flatMap {
+    private def collectAndSend(query: MailerQuery, batchNr: Int, ids: List[String], lahetysTunniste: Option[UUID]): List[String] = {
+      def sendAndConfirm(currentBatch: List[Ilmoitus], lahetysTunniste: UUID): List[String] = {
+        MailerHelper.splitAndGroupIlmoitus(currentBatch).flatMap {
           case ((language, syy), ilmoitukset) => sendBatch(ilmoitukset, language.toLowerCase(), syy, lahetysTunniste)
         }.toList
       }
@@ -81,16 +69,17 @@ trait MailerComponent {
         logger.info("Last batch fetched, stopping")
         ids
       } else {
-        val idsToReturn = if (newBatch.isEmpty) {
+        if (newBatch.isEmpty) {
           logger.warn("Time limit for single batch retrieval exceeded and not found anything to send. Finding more mailables.")
-          ids
+          collectAndSend(query, batchNr + 1, ids, lahetysTunniste)
         } else {
           if (!newPollResult.isPollingComplete) {
             logger.warn("Time limit for single batch retrieval exceeded. Sending mails and finding more mailables.")
           }
-          ids ::: sendAndConfirm(newBatch)
+          val tunniste = lahetysTunniste.getOrElse(createLahetys(MailerHelper.lahetyksenOtsikko(query, newBatch)))
+          val idsToReturn = ids ::: sendAndConfirm(newBatch, tunniste)
+          collectAndSend(query, batchNr + 1, idsToReturn, Some(tunniste))
         }
-        collectAndSend(query, batchNr + 1, idsToReturn, lahetysTunniste)
       }
     }
 
@@ -110,6 +99,23 @@ trait MailerComponent {
         .distinct
         .foreach { case (kayttooikeus, oid) => builder.withKayttooikeus(kayttooikeus, oid) }
       builder.build()
+    }
+
+    private def createLahetys(otsikko: String): UUID = {
+      val lahetys = ViestinvalitysBuilder.lahetysBuilder()
+        .withOtsikko(otsikko)
+        .withLahettavaPalvelu("valinta-tulos-service")
+        .withLahettaja(Optional.empty(), "noreply@opintopolku.fi")
+        .withNormaaliPrioriteetti()
+        .withSailytysaika(2000) // About 5 and a half years
+        .build()
+      try {
+        viestinvalitysClient.luoLahetys(lahetys).getLahetysTunniste
+      } catch {
+        case e: ViestinvalitysClientException =>
+          logger.error(s"Creating a lähetys failed with status ${e.getStatus} and validation errors: ${e.getVirheet}")
+          throw e
+      }
     }
 
     private def asViesti(subject: String, templatePath: String, ilmoitus: Ilmoitus, lahetysSyy: LahetysSyy, lahetysTunniste: UUID): Viesti =
@@ -154,7 +160,15 @@ trait MailerComponent {
       try {
         Some(viestinvalitysClient.luoViesti(viesti).getViestiTunniste)
       } catch {
-        case e: Exception if retriesLeft > 0 =>
+        case e: ViestinvalitysClientException if retriesLeft > 0 =>
+          logger.warn(s"Creating a viesti failed with status ${e.getStatus} and validation errors: ${e.getVirheet}")
+          logger.warn(s"(Will retry) Exception when sending email ${viesti.getOtsikko}:", e)
+          sendWithRetry(viesti, retriesLeft - 1)
+        case e: ViestinvalitysClientException =>
+          logger.warn(s"Creating a viesti failed with status ${e.getStatus} and validation errors: ${e.getVirheet}")
+          logger.error(s"(No more retries) Exception when sending email ${viesti.getOtsikko}:", e)
+          None
+        case NonFatal(e) if retriesLeft > 0 =>
           logger.warn(s"(Will retry) Exception when sending email ${viesti.getOtsikko}:", e)
           sendWithRetry(viesti, retriesLeft - 1)
         case NonFatal(e) =>
