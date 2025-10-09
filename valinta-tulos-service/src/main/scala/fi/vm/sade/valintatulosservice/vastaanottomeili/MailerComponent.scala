@@ -104,7 +104,7 @@ trait MailerComponent {
     private def createLahetys(otsikko: String): UUID = {
       val lahetys = ViestinvalitysBuilder.lahetysBuilder()
         .withOtsikko(otsikko)
-        .withLahettavaPalvelu("valinta-tulos-service")
+        .withLahettavaPalvelu("valintatulosservice")
         .withLahettaja(Optional.empty(), "noreply@opintopolku.fi")
         .withNormaaliPrioriteetti()
         .withSailytysaika(2000) // About 5 and a half years
