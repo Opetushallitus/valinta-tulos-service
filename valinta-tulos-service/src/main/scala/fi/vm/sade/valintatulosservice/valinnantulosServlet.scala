@@ -1,13 +1,9 @@
 package fi.vm.sade.valintatulosservice
-import java.net.InetAddress
-import java.time.Instant
-import java.time.format.DateTimeFormatter
-import java.util.UUID
 import fi.vm.sade.security.AuthorizationFailedException
 import fi.vm.sade.sijoittelu.tulos.dto.{HakemuksenTila, IlmoittautumisTila, ValintatuloksenTila}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetailsService
-import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
+import fi.vm.sade.valintatulosservice.security.{AuditSession, Role, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HyvaksymiskirjePatch, SessionRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -15,7 +11,11 @@ import org.scalatra._
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 
-import scala.concurrent.{Await, ExecutionContext, Future}
+import java.net.InetAddress
+import java.time.Instant
+import java.time.format.DateTimeFormatter
+import java.util.UUID
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
 
 trait ValinnantulosServletBase extends VtsServletBase {
@@ -189,23 +189,18 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymisk
 
   private def getSession(auditSession: AuditSessionRequest): (UUID, Session) = (UUID.randomUUID(), getAuditSession(auditSession))
 
-  private def getAuditSession(s:AuditSessionRequest) = fi.vm.sade.valintatulosservice.security.AuditSession(s.personOid, s.roles.map(Role(_)).toSet)
+  private def getAuditSession(s:AuditSessionRequest) = AuditSession(s.personOid, s.roles.map(Role(_)).toSet)
 
   private def parseHyvaksymiskirjeet = params.get("hyvaksymiskirjeet").exists(_.equalsIgnoreCase("true"))
 
-  protected def getAuditInfo(uid:String, inetAddress:String, userAgent:String) = {
-    (for {
-      user <- userDetailsService.getUserByUsername(uid).right
-    } yield {
-      AuditInfo(
-        (UUID.randomUUID(), fi.vm.sade.valintatulosservice.security.AuditSession(user.oid, user.roles)),
-        InetAddress.getByName(inetAddress),
-        userAgent
-      )
-    }) match {
-      case Right(auditInfo) => auditInfo
-      case Left(failure) => throw failure
-    }
+  protected def getAuditInfo(uid: String, inetAddress: String, userAgent: String): AuditInfo = {
+    userDetailsService.getUserByUsername(uid).right
+      .map(user =>
+        AuditInfo(
+          (UUID.randomUUID(), AuditSession(user.oid, user.roles)),
+          InetAddress.getByName(inetAddress),
+          userAgent
+        )).fold(t => throw t, a => a)
   }
 
   val erillishaunValinnantulosMuutosSwagger: OperationBuilder = (apiOperation[Unit]("muokkaaValinnantulosta")

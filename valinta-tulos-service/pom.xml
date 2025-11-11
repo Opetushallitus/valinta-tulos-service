@@ -6,7 +6,7 @@
     <parent>
         <groupId>fi.vm.sade</groupId>
         <artifactId>valinta-tulos-service-parent</artifactId>
-        <version>8.3.3-SNAPSHOT</version>
+        <version>8.4.0-SNAPSHOT</version>
     </parent>
     <artifactId>valinta-tulos-service</artifactId>
     <packaging>war</packaging>
@@ -30,7 +30,7 @@
             <dependency>
                 <groupId>opiskelijavalinnat-utils.viestinvalitys</groupId>
                 <artifactId>kirjasto</artifactId>
-                <version>1.2.1-SNAPSHOT</version>
+                <version>1.2.3-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>commons-beanutils</groupId>

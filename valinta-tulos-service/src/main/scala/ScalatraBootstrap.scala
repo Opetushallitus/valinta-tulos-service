@@ -145,7 +145,6 @@ class ScalatraBootstrap extends LifeCycle with Logging {
           appConfig,
           appConfig.securityContext,
           appConfig.securityContext.casServiceIdentifier + "/auth/login",
-          userDetailsService,
           valintarekisteriDb
         )
       ), "/auth/login", "auth/login")
@@ -172,7 +171,6 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         appConfig,
         appConfig.securityContext,
         appConfig.securityContext.casServiceIdentifier,
-        userDetailsService,
         valintarekisteriDb
       )
 

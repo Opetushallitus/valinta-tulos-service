@@ -1,15 +1,16 @@
 package fi.vm.sade.valintatulosservice.config
 
+import fi.vm.sade.javautils.nio.cas.UserDetails
 import fi.vm.sade.security.mock.MockSecurityContext
 import fi.vm.sade.security.{ProductionSecurityContext, SecurityContext}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusFixtures
-import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetails
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintaperusteet.{ValintaPerusteetServiceImpl, ValintaPerusteetServiceMock}
 
 import java.io.File
 import java.net.URL
+import scala.collection.JavaConverters._
 
 object VtsAppConfig extends Logging {
   def getProfileProperty() = System.getProperty("valintatulos.profile", "default")
@@ -244,10 +245,7 @@ object VtsAppConfig extends Logging {
     lazy val securityContext: SecurityContext = {
       new MockSecurityContext(
         settings.securitySettings.casServiceIdentifier,
-        settings.securitySettings.requiredRoles.map(Role(_)).toSet,
-        Map("testuser" -> KayttooikeusUserDetails(settings.securitySettings.requiredRoles.map(role => Role(role)).toSet, "mockoid"),
-            "sijoitteluUser" -> KayttooikeusUserDetails(List("APP_VALINTATULOSSERVICE_CRUD", "APP_SIJOITTELU_CRUD", "APP_SIJOITTELU_CRUD_123.123.123.123").map(role => Role(role)).toSet, "1.2.840.113554.1.2.2")
-        )
+        settings.securitySettings.requiredRoles.map(Role(_)).toSet
       )
     }
   }
@@ -262,4 +260,3 @@ object VtsAppConfig extends Logging {
     }
   }
 }
-
