@@ -1,18 +1,22 @@
 package fi.vm.sade.security
 
-import fi.vm.sade.javautils.nio.cas.CasClientBuilder
+import fi.vm.sade.javautils.nio.cas.{CasClientBuilder, UserDetails}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.kayttooikeus.{KayttooikeusUserDetails, KayttooikeusUserDetailsService}
+import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetails
 import fi.vm.sade.valintatulosservice.logging.Logging
-import fi.vm.sade.valintatulosservice.security.{CasSession, ServiceTicket, Session}
+import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 
 import java.util.UUID
+import scala.collection.JavaConverters._
 import scala.compat.java8.FutureConverters.toScala
 import scala.concurrent.Await
 import scala.util.{Failure, Success, Try}
 
-class CasSessionService(appConfig: VtsAppConfig, securityContext: SecurityContext, val serviceIdentifier: String, userDetailsService: KayttooikeusUserDetailsService, sessionRepository: SessionRepository) extends Logging {
+class CasSessionService(appConfig: VtsAppConfig,
+                        securityContext: SecurityContext,
+                        val serviceIdentifier: String,
+                        sessionRepository: SessionRepository) extends Logging {
 
   private val casClient = securityContext.javaCasClient.getOrElse(
     CasClientBuilder.build(ScalaCasConfig(
@@ -22,16 +26,22 @@ class CasSessionService(appConfig: VtsAppConfig, securityContext: SecurityContex
       "", appConfig.settings.callerId, appConfig.settings.callerId, "", ""
     )))
 
-  private def validateServiceTicket(ticket: ServiceTicket): Either[Throwable, String] = {
+  private def validateServiceTicket(ticket: ServiceTicket): Either[Throwable, UserDetails] = {
     logger.info("validateServiceTicket: using timeout value: " + securityContext.validateServiceTicketTimeout)
     val ServiceTicket(s) = ticket
-    val result = toScala(casClient.validateServiceTicketWithVirkailijaUsername(serviceIdentifier, s))
+    val result = toScala(casClient.validateServiceTicketWithVirkailijaUserDetails(serviceIdentifier, s))
     try {
       Right(Await.result(result, securityContext.validateServiceTicketTimeout))
     } catch {
       case e: Throwable => Left(new AuthenticationFailedException(s"Failed to validate service ticket $s", e))
     }
   }
+
+  private def extractUserDetails(userDetails: UserDetails) =
+    KayttooikeusUserDetails(
+      userDetails.getRoles.asScala.map(a => Role(a.replace("ROLE_", ""))).toSet,
+      userDetails.getHenkiloOid
+    )
 
   private def storeSession(ticket: ServiceTicket, user: KayttooikeusUserDetails): Either[Throwable, (UUID, Session)] = {
 
@@ -44,7 +54,7 @@ class CasSessionService(appConfig: VtsAppConfig, securityContext: SecurityContex
   }
 
   private def createSession(ticket: ServiceTicket): Either[Throwable, (UUID, Session)] = {
-    validateServiceTicket(ticket).right.flatMap(userDetailsService.getUserByUsername).right.flatMap(storeSession(ticket, _))
+    validateServiceTicket(ticket).right.map(extractUserDetails).right.flatMap(storeSession(ticket, _))
   }
 
   private def getSession(id: UUID): Either[Throwable, (UUID, Session)] = {

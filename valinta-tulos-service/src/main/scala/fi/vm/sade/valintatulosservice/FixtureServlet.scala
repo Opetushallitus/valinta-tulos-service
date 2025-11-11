@@ -63,13 +63,6 @@ class FixtureServlet(valintarekisteriDb: ValintarekisteriDb)(implicit val appCon
     write(JObject(HenkilotFixture.fixture.map(h => h.oid.toString -> Henkilo.toJson(h))))
   }
 
-  get("/kayttooikeus/userdetails/:username") {
-    logger.info(s"handling with fixture user: " + params("username"))
-    contentType = formats("json")
-    "{\"username\": \"1.2.246.562.24.64735725450\",\"authorities\": [{\"authority\": \"ROLE_APP_VALINTATULOSSERVICE_CRUD\"}],\"accountNonExpired\": true,\"accountNonLocked\": true,\"credentialsNonExpired\": true,\"enabled\": true}"
-  }
-
-
   error {
     case e => {
       logger.error(request.getMethod + " " + requestPath, e);

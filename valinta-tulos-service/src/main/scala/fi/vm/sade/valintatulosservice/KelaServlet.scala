@@ -40,7 +40,6 @@ class KelaServlet(audit: Audit, kelaService: KelaService, val sessionRepository:
   post("/vastaanotot/henkilo", operation(kelaVastaanottoSwagger)) {
     implicit val authenticated = authenticate
     authorize(Role.KELA_READ)
-    val credentials: AuditInfo = auditInfo
     val builder= new Target.Builder()
       .setField("henkilotunnus", request.body)
     params.get("alkuaika").foreach(builder.setField("alkuaika",_))
