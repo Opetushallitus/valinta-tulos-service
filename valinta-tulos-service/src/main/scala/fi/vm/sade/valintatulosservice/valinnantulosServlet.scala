@@ -194,6 +194,7 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymisk
   private def parseHyvaksymiskirjeet = params.get("hyvaksymiskirjeet").exists(_.equalsIgnoreCase("true"))
 
   protected def getAuditInfo(uid: String, inetAddress: String, userAgent: String): AuditInfo = {
+    //TODO: replace
     userDetailsService.getUserByUsername(uid).right
       .map(user =>
         AuditInfo(
