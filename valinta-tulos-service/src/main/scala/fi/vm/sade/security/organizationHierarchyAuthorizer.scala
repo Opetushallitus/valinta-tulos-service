@@ -2,9 +2,9 @@ package fi.vm.sade.security
 
 import com.github.blemale.scaffeine.Scaffeine
 import fi.vm.sade.authorization.NotAuthorizedException
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.hakukohderyhmat.HakukohderyhmaService
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, HakukohderyhmaOid}
 

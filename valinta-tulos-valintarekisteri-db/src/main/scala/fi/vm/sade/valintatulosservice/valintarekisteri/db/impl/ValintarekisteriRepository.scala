@@ -1,10 +1,5 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
-import java.sql.Timestamp
-import java.time.Instant
-import java.util.ConcurrentModificationException
-import java.util.concurrent.TimeUnit
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.logging.PerformanceLogger
 import org.postgresql.util.PSQLException
 import org.springframework.util.ReflectionUtils
@@ -13,12 +8,15 @@ import slick.jdbc.PostgresProfile.api.jdbcActionExtensionMethods
 import slick.jdbc.PostgresProfile.backend.Database
 import slick.jdbc.TransactionIsolation.Serializable
 
+import java.sql.Timestamp
+import java.time.Instant
+import java.util.ConcurrentModificationException
+import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, MILLISECONDS}
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success, Try}
 
-trait ValintarekisteriRepository extends ValintarekisteriResultExtractors with Logging with PerformanceLogger {
+trait ValintarekisteriRepository extends ValintarekisteriResultExtractors with PerformanceLogger {
   type TilanViimeisinMuutos = Timestamp
   private val logSqlOfSomeQueries = false // For debugging only. Do NOT enable in production.
 

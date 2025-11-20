@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.production
 
-import fi.vm.sade.utils.http.DefaultHttpClient
+import fi.vm.sade.valintatulosservice.http.DefaultHttpClient
 import org.junit.Ignore
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification

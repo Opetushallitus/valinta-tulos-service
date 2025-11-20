@@ -1,19 +1,17 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
-import java.sql.Timestamp
-import java.util.Date
-
-import fi.vm.sade.utils.Timer.timed
-import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.config.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository.MailableCandidate
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.jdbc.PostgresProfile.api._
 
+import java.sql.Timestamp
+import java.util.Date
 import scala.concurrent.duration.Duration
 
 
-trait MailPollerRepositoryImpl extends MailPollerRepository with ValintarekisteriRepository with Logging {
+trait MailPollerRepositoryImpl extends MailPollerRepository with ValintarekisteriRepository {
 
   override def candidates(hakukohdeOid: HakukohdeOid,
                           ignoreEarlier: Boolean = false,

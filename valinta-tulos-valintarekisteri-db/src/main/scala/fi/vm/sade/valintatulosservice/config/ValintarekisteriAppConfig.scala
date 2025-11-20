@@ -1,17 +1,15 @@
 package fi.vm.sade.valintatulosservice.config
 
-import java.net.URL
-
 import com.typesafe.config.{Config, ConfigFactory}
 import fi.vm.sade.utils.config.{ApplicationSettingsLoader, ConfigTemplateProcessor}
-import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.utils.tcp.PortFromSystemPropertyOrFindFree
-import org.http4s.client.blaze.BlazeClientConfig
+import fi.vm.sade.valintatulosservice.logging.Logging
+
+import java.net.URL
 
 object ValintarekisteriAppConfig extends Logging {
   private val propertiesFile = "/oph-configuration/valinta-tulos-valintarekisteri-db-oph.properties"
   private implicit val settingsParser = ValintarekisteriApplicationSettingsParser
-  private val itPostgresPortChooser = new PortFromSystemPropertyOrFindFree("valintatulos.it.postgres.port")
+  private lazy val itPostgresPort: Int = PortChecker.getPortFromSystemPropertyOrFindFree("valintatulos.it.postgres.port")
 
   def getDefault() = new Default(ConfigFactory.load())
 
@@ -24,7 +22,7 @@ object ValintarekisteriAppConfig extends Logging {
 
   class IT extends ExampleTemplatedProps {
     override val ophUrlProperties = new DevOphUrlProperties(propertiesFile)
-    private lazy val itPostgres = new ITPostgres(itPostgresPortChooser)
+    private lazy val itPostgres = new ITPostgres(itPostgresPort)
 
     override def start {
 
@@ -33,7 +31,7 @@ object ValintarekisteriAppConfig extends Logging {
 
     override val settings = loadSettings
       .withOverride(("valinta-tulos-service.valintarekisteri.ensikertalaisuus.max.henkilo.oids", "100"))
-      .withOverride("valinta-tulos-service.valintarekisteri.db.url", s"jdbc:postgresql://localhost:${itPostgresPortChooser.chosenPort}/valintarekisteri")
+      .withOverride("valinta-tulos-service.valintarekisteri.db.url", s"jdbc:postgresql://localhost:$itPostgresPort/valintarekisteri")
       .withOverride("valinta-tulos-service.valintarekisteri.db.user", "oph")
       .withOverride("valinta-tulos-service.valintarekisteri.db.password", "oph")
   }
@@ -66,12 +64,6 @@ object ValintarekisteriAppConfig extends Logging {
     override def settings: ValintarekisteriApplicationSettings
 
     def properties: Map[String, String] = settings.toProperties
-
-    override def blazeDefaultConfig: BlazeClientConfig = BlazeClientConfig.defaultConfig.copy(
-      responseHeaderTimeout = settings.blazeResponseHeaderTimeout,
-      idleTimeout = settings.blazeIdleTimeout,
-      requestTimeout = settings.requestTimeout
-    )
   }
 }
 

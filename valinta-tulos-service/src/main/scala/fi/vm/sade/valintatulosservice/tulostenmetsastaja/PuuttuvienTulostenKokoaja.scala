@@ -1,16 +1,15 @@
 package fi.vm.sade.valintatulosservice.tulostenmetsastaja
 
-import java.net.URL
-
 import com.mongodb.casbah.Imports.{$and, MongoDBObject, _}
-import fi.vm.sade.utils.Timer
-import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.config.Timer
 import fi.vm.sade.valintatulosservice.domain.Hakemus
-import fi.vm.sade.valintatulosservice.hakemus.{DatabaseKeys, HakemusRepository, HakuAppRepository}
+import fi.vm.sade.valintatulosservice.hakemus.{DatabaseKeys, HakuAppRepository}
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.apache.commons.lang3.StringUtils
 
+import java.net.URL
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 

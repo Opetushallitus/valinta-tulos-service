@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.koodisto
 
-import fi.vm.sade.utils.http.DefaultHttpClient
 import fi.vm.sade.valintatulosservice.config.AppConfig
+import fi.vm.sade.valintatulosservice.http.DefaultHttpClient
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 import org.json4s.jackson.JsonMethods._
 import org.json4s.{DefaultFormats, Formats}

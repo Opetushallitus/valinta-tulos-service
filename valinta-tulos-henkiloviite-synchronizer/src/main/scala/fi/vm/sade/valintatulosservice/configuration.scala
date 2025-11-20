@@ -1,16 +1,14 @@
 package fi.vm.sade.valintatulosservice
 
 import java.io.FileInputStream
+import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.{Date, Properties}
-
-import org.http4s.Uri
-
 import scala.collection.JavaConversions._
 import scala.util.Try
 
 case class DbConfiguration(user: Option[String], password: Option[String], url: String)
-case class AuthenticationConfiguration(url: Uri, cas: CasConfiguration)
+case class AuthenticationConfiguration(url: URI, cas: CasConfiguration)
 case class CasConfiguration(user: String, password: String, host: String, service: String)
 case class SchedulerConfiguration(startHour: Option[Long], intervalHours: Option[Long])
 case class Configuration(port: Int,
@@ -83,9 +81,9 @@ object Configuration {
       .getOrElse(throw new RuntimeException(s"Invalid date $dateString in configuration $key"))
   }
 
-  private def getUri(properties: Properties, key: String): Uri = {
+  private def getUri(properties: Properties, key: String): URI = {
     val uriString = getString(properties, key)
-    Uri.fromString(uriString).toOption
+    Try(new URI(uriString)).toOption
       .getOrElse(throw new RuntimeException(s"Invalid URI $uriString in configuration $key"))
   }
 

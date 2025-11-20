@@ -1,14 +1,14 @@
 package fi.vm.sade.valintatulosservice.vastaanottomeili
 
-import java.util.Date
-
 import fi.vm.sade.oppijantunnistus.{OppijanTunnistus, OppijanTunnistusService}
-import fi.vm.sade.utils.Timer.timed
-import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.config.Timer.timed
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.tarjonta
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+
+import java.util.Date
 
 class HakukohdeNotFoundException(message: String) extends RuntimeException(message)
 

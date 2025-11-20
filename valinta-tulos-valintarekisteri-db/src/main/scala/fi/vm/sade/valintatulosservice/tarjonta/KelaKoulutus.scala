@@ -1,10 +1,7 @@
 package fi.vm.sade.valintatulosservice.tarjonta
 
-import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Kausi, Syksy}
-
-import scala.collection.immutable
-import scala.util.Try
 
 case class KelaKoulutus(val tutkinnontaso: Option[String],val tutkinnonlaajuus1: Option[String], val tutkinnonlaajuus2: Option[String]) extends KelaLaajuus with KelaTutkinnontaso
 

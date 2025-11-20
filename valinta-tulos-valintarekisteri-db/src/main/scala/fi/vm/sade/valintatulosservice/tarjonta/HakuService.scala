@@ -1,18 +1,17 @@
 package fi.vm.sade.valintatulosservice.tarjonta
 
-import fi.vm.sade.utils.Timer
-import fi.vm.sade.javautils.nio.cas.{CasClient, CasClientBuilder}
+import fi.vm.sade.javautils.nio.cas.CasClientBuilder
 import fi.vm.sade.security.ScalaCasConfig
-import fi.vm.sade.utils.http.DefaultHttpClient
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.MonadHelper
-import fi.vm.sade.valintatulosservice.config.{AppConfig, StubbedExternalDeps}
+import fi.vm.sade.valintatulosservice.config.{AppConfig, StubbedExternalDeps, Timer}
+import fi.vm.sade.valintatulosservice.http.DefaultHttpClient
 import fi.vm.sade.valintatulosservice.koodisto.{Koodi, KoodistoService}
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.organisaatio.{Organisaatio, OrganisaatioService, Organisaatiot}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import org.asynchttpclient.{RequestBuilder, Response}
+import org.asynchttpclient.RequestBuilder
 import org.json4s.JsonAST.{JInt, JObject, JString}
 import org.json4s.jackson.JsonMethods._
 import org.json4s.{CustomSerializer, DefaultFormats, Formats, MappingException}
@@ -23,8 +22,8 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.HOURS
 import scala.collection.JavaConverters._
 import scala.compat.java8.FutureConverters.toScala
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}

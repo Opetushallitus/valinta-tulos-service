@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit.SECONDS
 import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.{Semaphore, TimeUnit}
 
-import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.logging.Logging
 
 class HakemustenTulosHakuLock(queueLimit: Int, lockDuration: Int, lockDurationTimeUnit: TimeUnit = SECONDS) extends Logging {
   private val lockQueue: Semaphore = new Semaphore(queueLimit + 1)

@@ -1,11 +1,9 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 
-import java.util
 import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatulos}
-import fi.vm.sade.utils.Timer
-import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.config.{StubbedExternalDeps, ValintarekisteriAppConfig}
+import fi.vm.sade.valintatulosservice.config.{StubbedExternalDeps, Timer, ValintarekisteriAppConfig}
 import fi.vm.sade.valintatulosservice.koodisto.{CachedKoodistoService, RemoteKoodistoService}
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService, RemoteOhjausparametritService, StubbedOhjausparametritService}
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
@@ -14,6 +12,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepo
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, SijoitteluWrapper}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 
+import java.util
 import scala.collection.JavaConverters._
 
 class ValintarekisteriForSijoittelu(valintarekisteriDb: SijoitteluRepository with StoreSijoitteluRepository with ValinnantulosRepository with HakijaVastaanottoRepository,

@@ -1,19 +1,18 @@
 package fi.vm.sade.oppijantunnistus
 
-import java.util.concurrent.TimeUnit
-
 import fi.vm.sade.javautils.nio.cas.{CasClient, CasClientBuilder}
 import fi.vm.sade.security.ScalaCasConfig
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakemusOid
-import org.asynchttpclient.{RequestBuilder, Response}
+import org.asynchttpclient.RequestBuilder
 import org.json4s.native.JsonMethods.parse
-import org.json4s.native.Serialization.write
+
+import java.util.concurrent.TimeUnit
 import scala.compat.java8.FutureConverters.toScala
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
 

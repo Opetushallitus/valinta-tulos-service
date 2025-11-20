@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.migri
 
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.{Henkilo, OppijanumerorekisteriService}
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, HakukohdeMigri, MigriTarjontaHakukohdeNotImplementedException}

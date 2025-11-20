@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
-import fi.vm.sade.utils.Timer.timed
+import fi.vm.sade.valintatulosservice.config.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.postgresql.util.PSQLException

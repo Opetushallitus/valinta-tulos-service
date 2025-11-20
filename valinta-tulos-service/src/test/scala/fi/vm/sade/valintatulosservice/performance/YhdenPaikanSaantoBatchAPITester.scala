@@ -1,12 +1,11 @@
 package fi.vm.sade.valintatulosservice.performance
 
-import fi.vm.sade.utils.http.{DefaultHttpClient, DefaultHttpRequest}
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.SharedJetty
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, Kevat, YPSHakukohde}
-//import fi.vm.sade.valintatulosservice.generatedfixtures.{GeneratedFixture, SimpleGeneratedHakuFixture2}
+import fi.vm.sade.valintatulosservice.http.{DefaultHttpClient, DefaultHttpRequest}
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, Kevat, YPSHakukohde}
 import org.json4s.jackson.Serialization
 import org.json4s.{DefaultFormats, JValue}
 import scalaj.http.Http

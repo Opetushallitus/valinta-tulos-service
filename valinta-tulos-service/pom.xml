@@ -6,7 +6,7 @@
     <parent>
         <groupId>fi.vm.sade</groupId>
         <artifactId>valinta-tulos-service-parent</artifactId>
-        <version>8.3.0-SNAPSHOT</version>
+        <version>8.3.1-SNAPSHOT</version>
     </parent>
     <artifactId>valinta-tulos-service</artifactId>
     <packaging>war</packaging>
@@ -45,6 +45,10 @@
                 commons-collections
             </artifactId>
             <version>3.2.2</version>
+        </dependency>
+        <dependency>
+            <groupId>de.svenkubiak</groupId>
+            <artifactId>embedded-mongodb</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.velocity</groupId>
@@ -212,36 +216,10 @@
             <version>${scaffeine.version}</version>
         </dependency>
         <dependency>
-            <groupId>fi.vm.sade</groupId>
-            <artifactId>scala-json_2.11</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>fi.vm.sade</groupId>
-            <artifactId>scala-properties_2.11</artifactId>
-            <version>1.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>fi.vm.sade</groupId>
-            <artifactId>scala-mongo_2.11</artifactId>
-            <version>1.1.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>fi.vm.sade</groupId>
-            <artifactId>scala-tcp_2.11</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.scalaz.stream</groupId>
             <artifactId>scalaz-stream_2.11</artifactId>
             <version>${scalaz-stream_2.11.version}</version>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.http4s</groupId>
-            <artifactId>http4s-blaze-client_2.11</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.http4s</groupId>
-            <artifactId>blaze-http_2.11</artifactId>
         </dependency>
         <dependency>
             <groupId>com.typesafe.slick</groupId>
@@ -263,10 +241,6 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j-api.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.http4s</groupId>
-            <artifactId>http4s-json4s-native_2.11</artifactId>
         </dependency>
         <dependency>
             <groupId>fi.vm.sade</groupId>
@@ -352,21 +326,12 @@
             <version>${joda-time.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.http4s</groupId>
-            <artifactId>http4s-core_2.11</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-webapp</artifactId>
         </dependency>
         <dependency>
             <groupId>org.json4s</groupId>
             <artifactId>json4s-ast_2.11</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.scala-logging</groupId>
-            <artifactId>scala-logging_2.11</artifactId>
-            <version>${scala-logging_2.11.version}</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe</groupId>
@@ -382,10 +347,6 @@
             <groupId>org.mongodb</groupId>
             <artifactId>casbah-core_2.11</artifactId>
             <version>${casbah_2.11.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.http4s</groupId>
-            <artifactId>http4s-client_2.11</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

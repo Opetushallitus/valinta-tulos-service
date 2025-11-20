@@ -1,18 +1,15 @@
 package fi.vm.sade.valintatulosservice.vastaanottomeili
 
-import java.time.Instant
-
 import com.github.kagkarlsson.scheduler.Scheduler
 import com.github.kagkarlsson.scheduler.task._
 import com.github.kagkarlsson.scheduler.task.helper.Tasks
 import com.github.kagkarlsson.scheduler.task.schedule.{CronSchedule, Schedule}
-
-import fi.vm.sade.utils.Timer
-import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.config.EmailerConfigParser
 import fi.vm.sade.valintatulosservice.config.EmailerRegistry.EmailerRegistry
+import fi.vm.sade.valintatulosservice.config.{EmailerConfigParser, Timer}
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 
+import java.time.Instant
 import scala.util.{Failure, Success, Try}
 
 class EmailerService(registry: EmailerRegistry, db: ValintarekisteriDb, cronExpression: String) extends Logging {

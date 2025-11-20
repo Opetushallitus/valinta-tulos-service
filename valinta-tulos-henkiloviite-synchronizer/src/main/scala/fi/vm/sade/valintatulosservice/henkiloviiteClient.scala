@@ -1,22 +1,17 @@
 package fi.vm.sade.valintatulosservice
 
-import java.util.concurrent.TimeUnit
-
 import fi.vm.sade.javautils.nio.cas.{CasClient, CasClientBuilder}
 import fi.vm.sade.security.ScalaCasConfig
-import org.asynchttpclient.{RequestBuilder, Response}
+import org.asynchttpclient.RequestBuilder
 import org.json4s.native.JsonMethods.parse
-import org.json4s.DefaultReaders.{StringReader, arrayReader}
-import org.json4s.JsonAST.JValue
-import org.json4s.{Reader, Formats, DefaultFormats}
+import org.json4s.{DefaultFormats, Formats}
 import org.slf4j.LoggerFactory
-import org.http4s.Uri
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import java.net.URI
+import java.util.concurrent.TimeUnit
 import scala.compat.java8.FutureConverters.toScala
 import scala.concurrent.Await
-import scalaz.concurrent.Task
-import scalaz.{-\/, \/-}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
@@ -25,7 +20,7 @@ case class Duplicates(tyyppi: String)
 
 class HenkiloviiteClient(configuration: AuthenticationConfiguration) {
   val logger = LoggerFactory.getLogger(classOf[HenkiloviiteClient])
-  private val resourceUrl: Uri = configuration.url
+  private val resourceUrl: URI = configuration.url
   private val callerId = "1.2.246.562.10.00000000001.valinta-tulos-henkiloviite-synchronizer"
   private val client = createCasClient()  // order dep; needs to be last
 
@@ -33,7 +28,7 @@ class HenkiloviiteClient(configuration: AuthenticationConfiguration) {
     implicit val formats: Formats = DefaultFormats
     val request = new RequestBuilder()
       .setMethod("POST")
-      .setUrl(resourceUrl.renderString)
+      .setUrl(resourceUrl.toASCIIString)
       .addHeader("Content-type", "application/json")
       .setBody("{}")
       .build()

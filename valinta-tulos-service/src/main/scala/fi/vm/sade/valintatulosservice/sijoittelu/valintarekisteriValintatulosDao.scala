@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.sijoittelu
 
 import fi.vm.sade.sijoittelu.domain.Valintatulos
-import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ValinnantulosRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 

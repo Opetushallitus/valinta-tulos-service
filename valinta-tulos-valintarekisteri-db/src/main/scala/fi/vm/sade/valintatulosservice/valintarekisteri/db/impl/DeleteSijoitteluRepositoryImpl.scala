@@ -1,13 +1,12 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
-import java.util.concurrent.TimeUnit
-
-import fi.vm.sade.utils.Timer.timed
+import fi.vm.sade.valintatulosservice.config.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.DeleteSijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 import slick.dbio.DBIO
 import slick.jdbc.PostgresProfile.api._
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 

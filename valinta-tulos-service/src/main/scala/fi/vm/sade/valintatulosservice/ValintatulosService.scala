@@ -1,18 +1,16 @@
 package fi.vm.sade.valintatulosservice
 
-import java.time.Instant
-import java.util.Date
 import fi.vm.sade.sijoittelu.domain.TilankuvauksenTarkenne.{PERUUNTUNUT_EI_VASTAANOTTANUT_MAARAAIKANA, PERUUNTUNUT_VASTAANOTTANUT_TOISEN_PAIKAN_YHDEN_SAANNON_PAIKAN_PIIRISSA}
 import fi.vm.sade.sijoittelu.domain.{TilanKuvaukset, TilankuvauksenTarkenne, ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.sijoittelu.tulos.dto
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationObject, HakutoiveDTO}
-import fi.vm.sade.utils.Timer.timed
-import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.config.Timer.timed
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain.Valintatila.{harkinnanvaraisesti_hyväksytty, hyväksytty, isHyväksytty, varasijalta_hyväksytty}
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.koodisto.KoodistoService
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
 import fi.vm.sade.valintatulosservice.sijoittelu.{SijoittelutulosService, ValintarekisteriValintatulosDao}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService}
@@ -24,6 +22,8 @@ import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.ehdollinenVas
 import org.apache.commons.lang3.StringUtils
 import slick.dbio.DBIO
 
+import java.time.Instant
+import java.util.Date
 import scala.collection.JavaConverters._
 import scala.compat.java8.OptionConverters._
 

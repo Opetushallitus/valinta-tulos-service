@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
-import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{Hyvaksymiskirje, HyvaksymiskirjePatch, HyvaksymiskirjeRepository}

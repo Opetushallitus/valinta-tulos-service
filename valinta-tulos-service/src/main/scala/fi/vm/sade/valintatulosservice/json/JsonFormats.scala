@@ -1,17 +1,18 @@
 package fi.vm.sade.valintatulosservice.json
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import fi.vm.sade.utils.json4s.GenericJsonFormats
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusSerializer
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import org.json4s.Formats
-import org.json4s.ext.EnumNameSerializer
+import org.json4s.ext.{EnumNameSerializer, JodaTimeSerializers}
+import org.json4s.{DefaultFormats, Formats}
+
+import java.text.SimpleDateFormat
 
 object JsonFormats {
   private val enumSerializers = List(new EnumNameSerializer(Vastaanotettavuustila), new EnumNameSerializer(Valintatila))
-  val customSerializers = enumSerializers ++ List(
+  private val customSerializers = enumSerializers ++ List(
     new EnsikertalaisuusSerializer,
     new VastaanottoActionSerializer,
     new VirkailijanVastaanottoActionSerializer,
@@ -30,7 +31,16 @@ object JsonFormats {
     new HakijaOidSerializer,
     new EhdollisenHyvaksymisenEhtoSerializer
   )
-  val jsonFormats: Formats = (GenericJsonFormats.genericFormats ++ customSerializers)
+
+  private val genericFormats: Formats = new DefaultFormats {
+    override def dateFormatter: SimpleDateFormat = {
+      val format = super.dateFormatter
+      format.setTimeZone(DefaultFormats.UTC)
+      format
+    }
+  } ++ JodaTimeSerializers.all
+
+  val jsonFormats: Formats = (genericFormats ++ customSerializers)
     .addKeySerializers(List(
       new HakemusOidKeySerializer,
       new LanguageKeySerializer,

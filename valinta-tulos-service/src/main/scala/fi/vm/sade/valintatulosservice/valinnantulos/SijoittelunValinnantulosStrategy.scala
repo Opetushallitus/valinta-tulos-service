@@ -3,8 +3,8 @@ package fi.vm.sade.valintatulosservice.valinnantulos
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.security.OrganizationHierarchyAuthorizer
 import fi.vm.sade.sijoittelu.domain.{EhdollisenHyvaksymisenEhtoKoodi, ValintatuloksenTila}
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.security.{Role, Session}
 import fi.vm.sade.valintatulosservice.tarjonta.Haku

@@ -1,11 +1,10 @@
 package fi.vm.sade.valintatulosservice.valinnantulos
 
-import java.time.Instant
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.domain.{Hakemus, Henkilotiedot}
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhtoRepository
@@ -15,6 +14,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecord
 import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantuloksenLisays, ValinnantuloksenMuokkaus, ValinnantuloksenPoisto}
 import slick.dbio.DBIO
 
+import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,

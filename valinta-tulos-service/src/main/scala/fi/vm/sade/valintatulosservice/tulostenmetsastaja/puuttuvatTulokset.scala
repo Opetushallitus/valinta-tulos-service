@@ -1,18 +1,17 @@
 package fi.vm.sade.valintatulosservice.tulostenmetsastaja
 
-import java.net.URL
-import java.time.ZonedDateTime
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit.MINUTES
-
 import fi.vm.sade.auditlog.Audit
-import fi.vm.sade.utils.Timer
-import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.hakemus.{HakemusRepository, HakuAppRepository}
+import fi.vm.sade.valintatulosservice.config.Timer
+import fi.vm.sade.valintatulosservice.hakemus.HakuAppRepository
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.springframework.util.StopWatch
 
+import java.net.URL
+import java.time.ZonedDateTime
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit.MINUTES
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}

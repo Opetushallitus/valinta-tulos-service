@@ -1,9 +1,9 @@
 package fi.vm.sade.valintatulosservice.hakemus
 
-import fi.vm.sade.utils.Timer.timed
-import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.config.Timer.timed
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain.Hakemus
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
 
 class HakemusRepository(hakuAppRepository: HakuAppRepository,

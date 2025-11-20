@@ -6,8 +6,8 @@ import java.time.{ZoneId, ZonedDateTime}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MINUTES
 
-import fi.vm.sade.utils.slf4j.Logging
-import fi.vm.sade.valintatulosservice.hakemus.{HakemusRepository, HakuAppRepository}
+import fi.vm.sade.valintatulosservice.hakemus.HakuAppRepository
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, Kausi, TarjoajaOid}
 import slick.dbio.DBIO

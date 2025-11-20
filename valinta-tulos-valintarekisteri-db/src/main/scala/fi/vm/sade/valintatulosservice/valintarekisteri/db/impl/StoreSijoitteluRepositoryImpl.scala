@@ -1,11 +1,7 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 
-import java.sql.{PreparedStatement, SQLTimeoutException, Timestamp, Types}
-import java.util.Date
-import java.util.concurrent.TimeUnit
-
 import fi.vm.sade.sijoittelu.domain.{Hakukohde, SijoitteluAjo, Valintatapajono, Hakemus => SijoitteluHakemus, _}
-import fi.vm.sade.utils.Timer.timed
+import fi.vm.sade.valintatulosservice.config.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.StoreSijoitteluRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.JsonDSL._
@@ -13,6 +9,9 @@ import org.json4s.native.JsonMethods._
 import slick.dbio.DBIOAction
 import slick.jdbc.PostgresProfile.api._
 
+import java.sql.{PreparedStatement, SQLTimeoutException, Timestamp, Types}
+import java.util.Date
+import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters._
 import scala.concurrent.TimeoutException
 import scala.concurrent.duration.Duration

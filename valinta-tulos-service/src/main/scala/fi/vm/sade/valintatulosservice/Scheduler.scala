@@ -4,7 +4,7 @@ import java.util.Calendar
 import java.util.Calendar.{HOUR_OF_DAY, MINUTE, SECOND}
 import java.util.concurrent.{ScheduledThreadPoolExecutor, TimeUnit}
 
-import fi.vm.sade.utils.slf4j.Logging
+import fi.vm.sade.valintatulosservice.logging.Logging
 
 abstract class Scheduler extends Logging {
   val scheduledStartHour: Int

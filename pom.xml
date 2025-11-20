@@ -5,7 +5,7 @@
     <groupId>fi.vm.sade</groupId>
     <artifactId>valinta-tulos-service-parent</artifactId>
     <packaging>pom</packaging>
-    <version>8.3.0-SNAPSHOT</version>
+    <version>8.3.1-SNAPSHOT</version>
     <name>valinta-tulos-service-parent</name>
 
     <modules>
@@ -27,8 +27,6 @@
         <guava.version>18.0</guava.version>
         <scaffeine.version>3.1.0</scaffeine.version>
         <hamcrest.version>1.3</hamcrest.version>
-        <!-- uudempi http4s versio tuo rikkovia muutoksia cas clientien luontiin -->
-        <http4s_2.11.version>0.16.6a</http4s_2.11.version>
         <jackson.version>2.18.2</jackson.version>
         <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
         <jetty.version>9.4.58.v20250814</jetty.version>
@@ -39,10 +37,8 @@
         <mongo-java-driver.version>3.4.2</mongo-java-driver.version>
         <morphia.version>1.2.1</morphia.version>
         <postgresql.version>42.7.2</postgresql.version>
-        <scala-cas_2.11.version>2.2.3-SNAPSHOT</scala-cas_2.11.version>
         <dokumenttipalvelu.version>6.14-SNAPSHOT</dokumenttipalvelu.version>
         <scala.version>2.11.12</scala.version>
-        <scala-logging_2.11.version>3.1.0</scala-logging_2.11.version>
         <scala-parser-combinators_2.11.version>1.0.4</scala-parser-combinators_2.11.version>
         <scala-xml_2.11.version>1.0.5</scala-xml_2.11.version>
         <scalaj-http_2.11.version>2.4.2</scalaj-http_2.11.version>
@@ -162,29 +158,15 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>fi.vm.sade</groupId>
-                <artifactId>scala-cas_2.11</artifactId>
-                <version>${scala-cas_2.11.version}</version>
+                <groupId>fi.vm.sade.java-utils</groupId>
+                <artifactId>java-properties</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
-                <groupId>fi.vm.sade</groupId>
-                <artifactId>scala-json_2.11</artifactId>
-                <version>1.2.0-SNAPSHOT</version>
-            </dependency>
-            <dependency>
-                <groupId>fi.vm.sade</groupId>
-                <artifactId>scala-properties_2.11</artifactId>
-                <version>1.0.1-SNAPSHOT</version>
-            </dependency>
-            <dependency>
+                <!-- Voi poistaa, kun muut scala-utils riippuvuudet ja scala-group-emailer on poistettu. -->
                 <groupId>fi.vm.sade</groupId>
                 <artifactId>scala-logging_2.11</artifactId>
                 <version>1.3.0-SNAPSHOT</version>
-            </dependency>
-            <dependency>
-                <groupId>fi.vm.sade</groupId>
-                <artifactId>scala-tcp_2.11</artifactId>
-                <version>1.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>fi.vm.sade</groupId>
@@ -351,36 +333,6 @@
                 <groupId>org.json4s</groupId>
                 <artifactId>json4s-scalap_2.11</artifactId>
                 <version>${json4s_2.11.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.http4s</groupId>
-                <artifactId>http4s-client_2.11</artifactId>
-                <version>${http4s_2.11.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.http4s</groupId>
-                <artifactId>http4s-blaze-client_2.11</artifactId>
-                <version>${http4s_2.11.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.http4s</groupId>
-                <artifactId>http4s-json4s-native_2.11</artifactId>
-                <version>${http4s_2.11.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.http4s</groupId>
-                <artifactId>http4s-core_2.11</artifactId>
-                <version>${http4s_2.11.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.http4s</groupId>
-                <artifactId>blaze-http_2.11</artifactId>
-                <version>0.12.11</version>
-            </dependency>
-            <dependency>
-                <groupId>org.http4s</groupId>
-                <artifactId>http4s-websocket_2.11</artifactId>
-                <version>0.1.6</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>

@@ -2,7 +2,6 @@ import fi.vm.sade.auditlog.{ApplicationType, Audit, Logger}
 import fi.vm.sade.openapi.OpenAPIServlet
 import fi.vm.sade.oppijantunnistus.OppijanTunnistusService
 import fi.vm.sade.security._
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.config.EmailerRegistry.EmailerRegistry
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.{Dev, IT, VtsAppConfig}
@@ -11,15 +10,16 @@ import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusRepository, HakuAppRepository}
 import fi.vm.sade.valintatulosservice.hakukohderyhmat.HakukohderyhmaService
 import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetailsService
-import fi.vm.sade.valintatulosservice.kela.{KelaService, VtsKelaAuthenticationClient}
-import fi.vm.sade.valintatulosservice.koodisto.{CachedKoodistoService, KoodistoService, RemoteKoodistoService, StubbedKoodistoService}
+import fi.vm.sade.valintatulosservice.kela.KelaService
+import fi.vm.sade.valintatulosservice.koodisto.{CachedKoodistoService, RemoteKoodistoService, StubbedKoodistoService}
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
 import fi.vm.sade.valintatulosservice.migri.MigriService
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{CachedOhjausparametritService, RemoteOhjausparametritService, StubbedOhjausparametritService}
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
-import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.ovara.{SiirtotiedostoPalveluClient, SiirtotiedostoService, SiirtotiedostoServlet}
+import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.sijoittelu._
 import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtures
 import fi.vm.sade.valintatulosservice.streamingresults.{HakemustenTulosHakuLock, StreamingValintatulosService}
@@ -30,8 +30,8 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.vastaanottomeili._
+import org.apache.log4j.LogManager
 import org.scalatra._
-import org.slf4j.LoggerFactory
 
 import java.util
 import javax.servlet.{DispatcherType, ServletContext}
@@ -44,7 +44,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
 
   override def init(context: ServletContext) {
     val auditLogger = new Logger {
-      private val logger = LoggerFactory.getLogger(classOf[Audit])
+      private val logger = LogManager.getLogger(classOf[Audit])
       override def log(msg: String): Unit = logger.info(msg)
     }
     val audit = new Audit(auditLogger, "valinta-tulos-service", ApplicationType.BACKEND)
@@ -142,6 +142,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new CasLogin(
         appConfig.settings.securitySettings.casUrl,
         new CasSessionService(
+          appConfig,
           appConfig.securityContext,
           appConfig.securityContext.casServiceIdentifier + "/auth/login",
           userDetailsService,
@@ -168,6 +169,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new SiirtotiedostoServlet(siirtotiedostoService, valintarekisteriDb), "/cas/siirtotiedosto", "siirtotiedosto")
 
       val casSessionService = new CasSessionService(
+        appConfig,
         appConfig.securityContext,
         appConfig.securityContext.casServiceIdentifier,
         userDetailsService,
@@ -190,7 +192,6 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         "/cas/haku", "cas/haku")
       context.mount(new KelaServlet(audit, new KelaService(HakijaResolver(appConfig), hakuService, valintarekisteriDb), valintarekisteriDb), "/cas/kela", "cas/kela")
       context.mount(new MigriServlet(audit, new MigriService(hakemusRepository, hakuService, valinnantulosService, oppijanumerorekisteriService, valintarekisteriDb, lukuvuosimaksuService, HakijaResolver(appConfig)), valintarekisteriDb), "/cas/migri", "cas/migri")
-      context.mount(new KelaHealthCheckServlet(audit, valintarekisteriDb, appConfig, new VtsKelaAuthenticationClient(appConfig)), "/health-check/kela", "health-check/kela")
 
       val valintaesitysService = new ValintaesitysService(hakuService, authorizer, valintarekisteriDb, valintarekisteriDb, audit)
 

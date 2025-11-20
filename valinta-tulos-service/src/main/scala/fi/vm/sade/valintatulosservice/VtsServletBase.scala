@@ -1,19 +1,19 @@
 package fi.vm.sade.valintatulosservice
 
-import java.text.ParseException
-import java.time.{Instant, ZoneId, ZonedDateTime}
-import java.time.format.DateTimeFormatter
-import java.util.ConcurrentModificationException
 import fi.vm.sade.security.{AuthenticationFailedException, AuthorizationFailedException}
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.json.JsonFormats.writeJavaObjectToOutputStream
 import fi.vm.sade.valintatulosservice.json.{JsonFormats, StreamingFailureException}
+import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 import org.json4s.MappingException
 import org.scalatra._
 import org.scalatra.json.JacksonJsonSupport
 import org.scalatra.swagger.SwaggerSupport
 
+import java.text.ParseException
+import java.time.format.DateTimeFormatter
+import java.time.{Instant, ZoneId, ZonedDateTime}
+import java.util.ConcurrentModificationException
 import scala.util.{Failure, Success, Try}
 
 trait VtsServletBase extends ScalatraServlet with Logging with JacksonJsonSupport with JsonFormats with SwaggerSupport {

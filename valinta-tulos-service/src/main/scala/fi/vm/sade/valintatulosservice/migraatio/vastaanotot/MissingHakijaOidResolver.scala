@@ -1,28 +1,22 @@
 package fi.vm.sade.valintatulosservice.migraatio.vastaanotot
 
-import java.net.URLEncoder
-import java.util.concurrent.TimeUnit
-
 import fi.vm.sade.javautils.nio.cas.{CasClient, CasClientBuilder}
 import fi.vm.sade.security.ScalaCasConfig
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.config.StubbedExternalDeps
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
-import org.asynchttpclient.{RequestBuilder, Response}
-import org.json4s.native.JsonMethods.parse
-import org.json4s.native.Serialization.write
+import fi.vm.sade.valintatulosservice.logging.Logging
+import org.asynchttpclient.RequestBuilder
 import org.json4s.ParserUtil.ParseException
-import org.json4s.JsonAST.JValue
-import org.json4s._
+import org.json4s.native.JsonMethods.parse
 
-import scala.compat.java8.FutureConverters.toScala
+import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters._
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.compat.java8.FutureConverters.toScala
 import scala.concurrent.Await
-import scalaz.concurrent.Task
-import scalaz.{-\/, \/-}
-import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.{Duration, DurationInt}
+
 
 case class Henkilo(oidHenkilo: String, hetu: String, etunimet: String, sukunimi: String)
 

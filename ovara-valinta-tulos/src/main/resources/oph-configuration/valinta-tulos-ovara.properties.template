@@ -149,10 +149,5 @@ valinta-tulos-service.batch.limit.minutes={{ valinta_tulos_email_batch_limit_min
 valinta-tulos-service.header.last.modified={{ valintatulosservice_header_last_modified | default('X-Last-Modified') }}
 valinta-tulos-service.header.if.unmodified.since={{ valintatulosservice_if_unmodified_since | default('X-If-Unmodified-Since') }}
 
-# Blaze
-valinta-tulos-service.blaze.response-header-timeout={{ valintatulosservice_blaze_response_header_timeout | default('10') }}
-valinta-tulos-service.blaze.idle-timeout={{ valintatulosservice_blaze_idle_timeout | default('60') }}
-valinta-tulos-service.blaze.request-timeout={{ valintatulosservice_blaze_request_timeout | default('3600') }}
-
 # Swagger
 valinta-tulos-service.swagger=https\://{{host_virkailija}}/valinta-tulos-service/swagger/swagger.json

@@ -2,8 +2,6 @@ package fi.vm.sade.valintatulosservice.logging
 
 import java.util.concurrent.TimeUnit
 
-import fi.vm.sade.utils.slf4j.Logging
-
 trait PerformanceLogger extends Logging {
 
   //TODO: Make configurable
