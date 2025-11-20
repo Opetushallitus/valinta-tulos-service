@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.DbConfig
 import org.apache.commons.lang3.BooleanUtils
 
-abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.config.ApplicationSettings(config) {
+abstract class ApplicationSettings(config: Config) extends BaseApplicationSettings(config) {
 
   val callerId = "1.2.246.562.10.00000000001.valinta-tulos-service"
   val tarjontaUrl = withConfig(_.getString("tarjonta-service.url"))
@@ -36,7 +36,7 @@ abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.conf
       operation(config)
     } catch {
       case e: Throwable =>
-        System.err.println(s"Cannot instantiate ${classOf[ApplicationSettings]} : ${e.getMessage}")
+        System.err.println(s"Cannot instantiate ${classOf[BaseApplicationSettings]} : ${e.getMessage}")
         e.printStackTrace()
         throw e
     }
@@ -62,6 +62,6 @@ abstract class ApplicationSettings(config: Config) extends fi.vm.sade.utils.conf
 case class ValintarekisteriApplicationSettings(config: Config) extends ApplicationSettings(config) {
 }
 
-object ValintarekisteriApplicationSettingsParser extends fi.vm.sade.utils.config.ApplicationSettingsParser[ValintarekisteriApplicationSettings] {
+object ValintarekisteriApplicationSettingsParser extends ApplicationSettingsParser[ValintarekisteriApplicationSettings] {
   override def parse(config: Config) = ValintarekisteriApplicationSettings(config)
 }

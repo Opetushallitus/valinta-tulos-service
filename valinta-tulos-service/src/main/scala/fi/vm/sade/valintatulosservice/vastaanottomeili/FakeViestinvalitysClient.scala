@@ -2,8 +2,8 @@ package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import fi.oph.viestinvalitys.ViestinvalitysClient
 import fi.oph.viestinvalitys.vastaanotto.model.{Lahetys, Liite, LuoLahetysSuccessResponse, LuoLiiteSuccessResponse, LuoViestiSuccessResponse, VastaanottajaResponse, Viesti}
-import fi.vm.sade.utils.slf4j.Logging
 import fi.vm.sade.valintatulosservice.json.JsonFormats
+import fi.vm.sade.valintatulosservice.logging.Logging
 
 import java.util
 import java.util.{Optional, UUID}

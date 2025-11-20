@@ -5,7 +5,7 @@
     <parent>
         <groupId>fi.vm.sade</groupId>
         <artifactId>valinta-tulos-service-parent</artifactId>
-        <version>8.3.1-SNAPSHOT</version>
+        <version>8.3.3-SNAPSHOT</version>
     </parent>
     <artifactId>valinta-tulos-valintarekisteri-db</artifactId>
     <packaging>jar</packaging>
@@ -36,8 +36,20 @@
             <artifactId>java-cas</artifactId>
         </dependency>
         <dependency>
-            <groupId>fi.vm.sade</groupId>
-            <artifactId>scala-utils_2.11</artifactId>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.hubspot.jinjava</groupId>
+            <artifactId>jinjava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-reload4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.typesafe.scala-logging</groupId>
+            <artifactId>scala-logging_2.11</artifactId>
         </dependency>
         <dependency>
             <groupId>fi.vm.sade.java-utils</groupId>
@@ -70,7 +82,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.typesafe.slick</groupId>

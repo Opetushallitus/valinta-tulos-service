@@ -1,17 +1,16 @@
 package fi.vm.sade.valintatulosservice.production
 
-import fi.vm.sade.javautils.nio.cas.{CasClient, CasClientBuilder}
+import fi.vm.sade.javautils.nio.cas.CasClientBuilder
 import fi.vm.sade.security.ScalaCasConfig
-import org.asynchttpclient.{RequestBuilder, Response}
+import org.asynchttpclient.RequestBuilder
 import org.json4s.DefaultFormats
 import org.json4s.native.JsonMethods.parse
 
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.Duration
-import scalaj.http.{Http, HttpOptions}
 import scala.compat.java8.FutureConverters.toScala
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
 
 trait RestTestHelper {
   val casUserNew = System.getProperty("cas_user_new")
