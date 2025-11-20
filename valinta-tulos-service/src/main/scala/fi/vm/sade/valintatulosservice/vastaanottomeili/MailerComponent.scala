@@ -1,19 +1,23 @@
 package fi.vm.sade.valintatulosservice.vastaanottomeili
 
-import fi.vm.sade.groupemailer.{EmailData, EmailMessage, EmailRecipient, GroupEmailComponent, Recipient}
-import fi.vm.sade.valintatulosservice.config.EmailerConfigComponent
+import fi.oph.viestinvalitys.{ViestinvalitysClient, ViestinvalitysClientException}
+import fi.oph.viestinvalitys.vastaanotto.model.{Viesti, ViestinvalitysBuilder}
 import fi.vm.sade.valintatulosservice.logging.Logging
-import fi.vm.sade.valintatulosservice.ryhmasahkoposti.VTRecipient
+import fi.vm.sade.valintatulosservice.config.EmailerConfigComponent
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy.LahetysSyy
 
 import java.util.concurrent.TimeUnit.MINUTES
+import java.util.{Optional, UUID}
 import scala.annotation.tailrec
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
+import scala.util.control.NonFatal
 
 trait MailerComponent {
-  this: GroupEmailComponent with EmailerConfigComponent =>
+  this: EmailerConfigComponent =>
+
+  def viestinvalitysClient: ViestinvalitysClient
 
   def mailer: Mailer
 
@@ -22,22 +26,20 @@ trait MailerComponent {
   def mailDecorator: MailDecorator
 
   class MailerImpl extends Mailer with Logging {
-    val mailablesLimit: Int = settings.recipientBatchSize
-    val timeLimit = Duration(settings.recipientBatchLimitMinutes, MINUTES)
-
-    private val helper: MailerHelper = new MailerHelper
+    private val mailablesLimit: Int = settings.recipientBatchSize
+    private val timeLimit: FiniteDuration = Duration(settings.recipientBatchLimitMinutes, MINUTES)
 
     def sendMailFor(query: MailerQuery): List[String] = {
       logger.info(s"Start mail sending for query $query")
       forceResendIfAppropriate(query)
-      collectAndSend(query, 0, List.empty)
+      collectAndSend(query, 0, List.empty, None)
     }
 
     private def forceResendIfAppropriate(query: MailerQuery): Unit = {
       query match {
         case HakukohdeQuery(hakukohdeOid) =>
           mailPoller.deleteMailEntries(hakukohdeOid)
-        case ValintatapajonoQuery(hakukohdeOid, jonoOid) =>
+        case ValintatapajonoQuery(hakukohdeOid, _) =>
           mailPoller.deleteMailEntries(hakukohdeOid)
         case HakemusQuery(hakemusOid) =>
           mailPoller.deleteMailEntries(hakemusOid)
@@ -47,10 +49,10 @@ trait MailerComponent {
     }
 
     @tailrec
-    private def collectAndSend(query: MailerQuery, batchNr: Int, ids: List[String]): List[String] = {
-      def sendAndConfirm(currentBatch: List[Ilmoitus]): List[String] = {
-        helper.splitAndGroupIlmoitus(currentBatch).flatMap { case ((language, syy), ilmoitukset) =>
-          sendBatch(ilmoitukset, language.toLowerCase(), syy)
+    private def collectAndSend(query: MailerQuery, batchNr: Int, ids: List[String], lahetysTunniste: Option[UUID]): List[String] = {
+      def sendAndConfirm(currentBatch: List[Ilmoitus], lahetysTunniste: UUID): List[String] = {
+        MailerHelper.splitAndGroupIlmoitus(currentBatch).flatMap {
+          case ((language, syy), ilmoitukset) => sendBatch(ilmoitukset, language.toLowerCase(), syy, lahetysTunniste)
         }.toList
       }
 
@@ -67,46 +69,83 @@ trait MailerComponent {
         logger.info("Last batch fetched, stopping")
         ids
       } else {
-        val idsToReturn = if (newBatch.isEmpty) {
+        if (newBatch.isEmpty) {
           logger.warn("Time limit for single batch retrieval exceeded and not found anything to send. Finding more mailables.")
-          ids
+          collectAndSend(query, batchNr + 1, ids, lahetysTunniste)
         } else {
           if (!newPollResult.isPollingComplete) {
             logger.warn("Time limit for single batch retrieval exceeded. Sending mails and finding more mailables.")
           }
-          ids ::: sendAndConfirm(newBatch)
+          val tunniste = lahetysTunniste.getOrElse(createLahetys(MailerHelper.lahetyksenOtsikko(query, newBatch)))
+          val idsToReturn = ids ::: sendAndConfirm(newBatch, tunniste)
+          collectAndSend(query, batchNr + 1, idsToReturn, Some(tunniste))
         }
-        collectAndSend(query, batchNr + 1, idsToReturn)
       }
     }
 
-    private def asEmailData(subject: String, templateName: String, ilmoitus: Ilmoitus, lahetysSyy: LahetysSyy): EmailData = {
-      val body = VelocityEmailTemplate.render(templateName, EmailStructure(ilmoitus, lahetysSyy))
-      EmailData(
-        EmailMessage("omattiedot",
-          subject, body, html = true),
-        List(EmailRecipient(ilmoitus.email)))
+    private def kayttooikeudet(ilmoitus: Ilmoitus) = {
+      val builder = ViestinvalitysBuilder.kayttooikeusrajoituksetBuilder()
+        .withKayttooikeus("APP_VIESTINVALITYS_OPH_PAAKAYTTAJA", "1.2.246.562.10.00000000001")
+
+      val kayttooikeudet = Set(
+        "APP_VALINTOJENTOTEUTTAMINEN_CRUD",
+        "APP_VALINTOJENTOTEUTTAMINEN_READ_UPDATE",
+        "APP_VALINTOJENTOTEUTTAMINENKK_CRUD",
+        "APP_VALINTOJENTOTEUTTAMINENKK_READ_UPDATE")
+
+      ilmoitus.hakukohteet
+        .flatMap(_.organisaatioOiditAuktorisointiin)
+        .flatMap(oid => kayttooikeudet.map((_, oid)))
+        .distinct
+        .foreach { case (kayttooikeus, oid) => builder.withKayttooikeus(kayttooikeus, oid) }
+      builder.build()
     }
 
-    private def sendBatch(batch: List[Ilmoitus], language: String, lahetysSyy: LahetysSyy): List[String] = {
-      val recipients: List[Recipient] = batch.map(VTRecipient(_, language))
+    private def createLahetys(otsikko: String): UUID = {
+      val lahetys = ViestinvalitysBuilder.lahetysBuilder()
+        .withOtsikko(otsikko)
+        .withLahettavaPalvelu("valintatulosservice")
+        .withLahettaja(Optional.empty(), "noreply@opintopolku.fi")
+        .withNormaaliPrioriteetti()
+        .withSailytysaika(2000) // About 5 and a half years
+        .build()
+      try {
+        viestinvalitysClient.luoLahetys(lahetys).getLahetysTunniste
+      } catch {
+        case e: ViestinvalitysClientException =>
+          logger.error(s"Creating a lähetys failed with status ${e.getStatus} and validation errors: ${e.getVirheet}")
+          throw e
+      }
+    }
 
+    private def asViesti(subject: String, templatePath: String, ilmoitus: Ilmoitus, lahetysSyy: LahetysSyy, lahetysTunniste: UUID): Viesti =
+      ViestinvalitysBuilder.viestiBuilder()
+        .withOtsikko(subject)
+        .withHtmlSisalto(VelocityEmailTemplate.render(templatePath, EmailStructure(ilmoitus, lahetysSyy)))
+        .withKielet(ilmoitus.asiointikieli)
+        .withVastaanottajat(ViestinvalitysBuilder.vastaanottajatBuilder().withVastaanottaja(Optional.empty(), ilmoitus.email).build())
+        .withKayttooikeusRajoitukset(kayttooikeudet(ilmoitus))
+        .withMaskit(ilmoitus.secureLink.map { link =>
+          ViestinvalitysBuilder.maskitBuilder().withMaski(link, "***secure-link***").build()
+        }.getOrElse(ViestinvalitysBuilder.maskitBuilder().build()))
+        .withLahetysTunniste(lahetysTunniste.toString)
+        .build()
+
+    private def sendBatch(batch: List[Ilmoitus], language: String, lahetysSyy: LahetysSyy, lahetysTunniste: UUID): List[String] = {
       val batchLogString: Int => String = index =>
-        s"(Language=$language LahetysSyy=$lahetysSyy BatchSize=$index/${recipients.size})"
+        s"(Language=$language LahetysSyy=$lahetysSyy BatchSize=$index/${batch.size})"
 
       logger.info(s"Starting to send batch. ${batchLogString(0)}")
 
-      val results: Seq[Either[HakemusOid, String]] = batch.zipWithIndex.map {
-        case (ilmoitus, index) =>
-          sendIlmoitus(language, lahetysSyy, batchLogString, ilmoitus, index)
+      val results: Seq[Either[HakemusOid, UUID]] = batch.zipWithIndex.map {
+        case (ilmoitus, index) => sendIlmoitus(language, lahetysSyy, batchLogString, ilmoitus, index, lahetysTunniste)
       }
 
       val (fails, ids) = results.foldLeft(List.empty[HakemusOid], List.empty[String]) {
         (r, ret) =>
           val (fails: List[HakemusOid], ids: List[String]) = r
           ret match {
-            case Right(id) =>
-              (fails, id :: ids)
+            case Right(id) => (fails, id.toString :: ids)
             case Left(oid) =>
               (oid :: fails, ids)
           }
@@ -117,20 +156,28 @@ trait MailerComponent {
       ids
     }
 
-    private def sendWithRetry(data: EmailData, retriesLeft: Int = 1): Option[String] = {
+    private def sendWithRetry(viesti: Viesti, retriesLeft: Int = 1): Option[UUID] = {
       try {
-        groupEmailService.sendMailWithoutTemplate(data)
+        Some(viestinvalitysClient.luoViesti(viesti).getViestiTunniste)
       } catch {
-        case e: Exception if retriesLeft > 0 =>
-          logger.warn(s"(Will retry) Exception when sending email ${data.email.subject}:", e)
-          sendWithRetry(data, retriesLeft -1)
-        case e =>
-          logger.error(s"(No more retries) Exception when sending email ${data.email.subject}:", e)
+        case e: ViestinvalitysClientException if retriesLeft > 0 =>
+          logger.warn(s"Creating a viesti failed with status ${e.getStatus} and validation errors: ${e.getVirheet}")
+          logger.warn(s"(Will retry) Exception when sending email ${viesti.getOtsikko}:", e)
+          sendWithRetry(viesti, retriesLeft - 1)
+        case e: ViestinvalitysClientException =>
+          logger.warn(s"Creating a viesti failed with status ${e.getStatus} and validation errors: ${e.getVirheet}")
+          logger.error(s"(No more retries) Exception when sending email ${viesti.getOtsikko}:", e)
+          None
+        case NonFatal(e) if retriesLeft > 0 =>
+          logger.warn(s"(Will retry) Exception when sending email ${viesti.getOtsikko}:", e)
+          sendWithRetry(viesti, retriesLeft - 1)
+        case NonFatal(e) =>
+          logger.error(s"(No more retries) Exception when sending email ${viesti.getOtsikko}:", e)
           None
       }
     }
 
-    private def sendIlmoitus(language: String, lahetysSyy: LahetysSyy, batchLogString: Int => String, ilmoitus: Ilmoitus, index: Int): Either[HakemusOid, String] = {
+    private def sendIlmoitus(language: String, lahetysSyy: LahetysSyy, batchLogString: Int => String, ilmoitus: Ilmoitus, index: Int, lahetysTunniste: UUID): Either[HakemusOid, UUID] = {
       try {
         val hakemusOid = ilmoitus.hakemusOid
         val applicationPostfix = language match {
@@ -140,56 +187,31 @@ trait MailerComponent {
           case _ => ""
         }
 
-        val (templateName, subjectFi, subjectSv, subjectEn) = lahetysSyy match {
-          case LahetysSyy.vastaanottoilmoitusMuut =>
-            ("opiskelupaikka_vastaanotettavissa_email_muut",
-              s"Opiskelupaikka vastaanotettavissa Opintopolussa $applicationPostfix",
-              s"Studieplatsen kan tas emot i Studieinfo $applicationPostfix",
-              s"Offer of admission in Studyinfo $applicationPostfix")
-          case LahetysSyy.vastaanottoilmoitusKk =>
-            ("opiskelupaikka_vastaanotettavissa_email_kk",
-              s"Opiskelupaikka vastaanotettavissa Opintopolussa $applicationPostfix",
-              s"Studieplatsen kan tas emot i Studieinfo $applicationPostfix",
-              s"Offer of admission in Studyinfo $applicationPostfix")
-          case LahetysSyy.vastaanottoilmoitusKkTutkintoonJohtamaton =>
-            ("opiskelupaikka_vastaanotettavissa_email_kk_tutkintoon_johtamaton",
-              s"Opiskelupaikka vastaanotettavissa Opintopolussa $applicationPostfix",
-              s"Studieplatsen kan tas emot i Studieinfo $applicationPostfix",
-              s"Offer of admission in Studyinfo $applicationPostfix")
-          case LahetysSyy.vastaanottoilmoitus2aste =>
-            ("opiskelupaikka_vastaanotettavissa_email_2aste",
-              s"Opiskelupaikka vastaanotettavissa Opintopolussa $applicationPostfix",
-              s"Studieplatsen kan tas emot i Studieinfo $applicationPostfix",
-              s"Offer of admission in Studyinfo $applicationPostfix")
-          case LahetysSyy.vastaanottoilmoitus2asteEiYhteishaku =>
-            ("opiskelupaikka_vastaanotettavissa_email_2aste_ei_yhteishaku",
-              s"Opiskelupaikka vastaanotettavissa Opintopolussa $applicationPostfix",
-              s"Studieplatsen kan tas emot i Studieinfo $applicationPostfix",
-              s"Offer of admission in Studyinfo $applicationPostfix")
-          case LahetysSyy.ehdollisen_periytymisen_ilmoitus =>
-            ("ehdollisen_periytyminen_email",
-              s"Opintopolku: Tilannetietoa jonottamisesta $applicationPostfix",
-              s"Studieinfo: Information om köande $applicationPostfix",
-              s"Studyinfo: Information about the wait list $applicationPostfix")
-          case LahetysSyy.sitovan_vastaanoton_ilmoitus =>
-            ("sitova_vastaanotto_email",
-              s"Opintopolku: Paikan vastaanotto vahvistettu - ilmoittaudu opintoihin $applicationPostfix",
-              s"Studieinfo: Mottagandet av studieplatsen har bekräftats - anmäl dig till studierna $applicationPostfix",
-              s"Your study place has been confirmed - register for studies $applicationPostfix")
+        val templateName = lahetysSyy match {
+          case LahetysSyy.vastaanottoilmoitusMuut => "opiskelupaikka_vastaanotettavissa_email_muut"
+          case LahetysSyy.vastaanottoilmoitusKk => "opiskelupaikka_vastaanotettavissa_email_kk"
+          case LahetysSyy.vastaanottoilmoitusKkTutkintoonJohtamaton => "opiskelupaikka_vastaanotettavissa_email_kk_tutkintoon_johtamaton"
+          case LahetysSyy.vastaanottoilmoitus2aste => "opiskelupaikka_vastaanotettavissa_email_2aste"
+          case LahetysSyy.vastaanottoilmoitus2asteEiYhteishaku => "opiskelupaikka_vastaanotettavissa_email_2aste_ei_yhteishaku"
+          case LahetysSyy.ehdollisen_periytymisen_ilmoitus => "ehdollisen_periytyminen_email"
+          case LahetysSyy.sitovan_vastaanoton_ilmoitus => "sitova_vastaanotto_email"
         }
 
-        val data = asEmailData(
-          language match {
-            case "en" => subjectEn
-            case "sv" => subjectSv
-            case _ => subjectFi
-          },
-          s"email-templates/${templateName}_template_$language.html",
-          ilmoitus,
-          lahetysSyy
-        )
+        val subject = (lahetysSyy, language) match {
+          case (LahetysSyy.ehdollisen_periytymisen_ilmoitus, "en") => s"Studyinfo: Information about the wait list $applicationPostfix"
+          case (LahetysSyy.ehdollisen_periytymisen_ilmoitus, "sv") => s"Studieinfo: Information om köande $applicationPostfix"
+          case (LahetysSyy.ehdollisen_periytymisen_ilmoitus, _) => s"Opintopolku: Tilannetietoa jonottamisesta $applicationPostfix"
+          case (LahetysSyy.sitovan_vastaanoton_ilmoitus, "en") => s"Your study place has been confirmed - register for studies $applicationPostfix"
+          case (LahetysSyy.sitovan_vastaanoton_ilmoitus, "sv") => s"Studieinfo: Mottagandet av studieplatsen har bekräftats - anmäl dig till studierna $applicationPostfix"
+          case (LahetysSyy.sitovan_vastaanoton_ilmoitus, _) => s"Opintopolku: Paikan vastaanotto vahvistettu - ilmoittaudu opintoihin $applicationPostfix"
+          case (_, "en") => s"Offer of admission in Studyinfo $applicationPostfix"
+          case (_, "sv") => s"Studieplatsen kan tas emot i Studieinfo $applicationPostfix"
+          case (_, _) => s"Opiskelupaikka vastaanotettavissa Opintopolussa $applicationPostfix"
+        }
 
-        sendWithRetry(data) match {
+        val viesti = asViesti(subject, s"email-templates/${templateName}_template_$language.html", ilmoitus, lahetysSyy, lahetysTunniste)
+
+        sendWithRetry(viesti) match {
           case Some(id) =>
             logger.info(s"Successful response from group email service for batch sending ${batchLogString(index)}.")
             sendConfirmation(List(ilmoitus))

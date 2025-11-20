@@ -52,7 +52,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
               vastaanottotila = Vastaanottotila.kesken,
               ehdollisestiHyvaksyttavissa = false,
               hakukohteenNimet = hakukohdeNimetA,
-              tarjoajaNimet = tarjoajaNimetA
+              tarjoajaNimet = tarjoajaNimetA,
+              organisaatioOiditAuktorisointiin = Set(tarjoajaOidA)
             )
           ),
           haku = Haku(
@@ -91,7 +92,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
               vastaanottotila = Vastaanottotila.kesken,
               ehdollisestiHyvaksyttavissa = false,
               hakukohteenNimet = hakukohdeNimetA,
-              tarjoajaNimet = tarjoajaNimetA
+              tarjoajaNimet = tarjoajaNimetA,
+              organisaatioOiditAuktorisointiin = Set(tarjoajaOidA)
             )
           ),
           haku = Haku(
@@ -138,7 +140,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
               vastaanottotila = Vastaanottotila.ehdollisesti_vastaanottanut,
               ehdollisestiHyvaksyttavissa = false,
               hakukohteenNimet = hakukohdeNimetB,
-              tarjoajaNimet = tarjoajaNimetB
+              tarjoajaNimet = tarjoajaNimetB,
+              organisaatioOiditAuktorisointiin = Set(tarjoajaOidB, organisaatioRyhmaOidB)
             )
           ),
           haku = Haku(
@@ -185,7 +188,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
               vastaanottotila = Vastaanottotila.vastaanottanut,
               ehdollisestiHyvaksyttavissa = false,
               hakukohteenNimet = hakukohdeNimetC,
-              tarjoajaNimet = tarjoajaNimetC
+              tarjoajaNimet = tarjoajaNimetC,
+              organisaatioOiditAuktorisointiin = Set(tarjoajaOidC)
             )
           ),
           haku = Haku(
@@ -232,7 +236,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
               vastaanottotila = Vastaanottotila.vastaanottanut,
               ehdollisestiHyvaksyttavissa = false,
               hakukohteenNimet = hakukohdeNimetB,
-              tarjoajaNimet = tarjoajaNimetB
+              tarjoajaNimet = tarjoajaNimetB,
+              organisaatioOiditAuktorisointiin = Set(tarjoajaOidB, organisaatioRyhmaOidB)
             )
           ),
           haku = Haku(
@@ -279,7 +284,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
               vastaanottotila = Vastaanottotila.kesken,
               ehdollisestiHyvaksyttavissa = false,
               hakukohteenNimet = hakukohdeNimetA,
-              tarjoajaNimet = tarjoajaNimetA
+              tarjoajaNimet = tarjoajaNimetA,
+              organisaatioOiditAuktorisointiin = Set(tarjoajaOidA)
             )
           ),
           haku = Haku(
@@ -458,7 +464,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
               vastaanottotila = Vastaanottotila.kesken,
               ehdollisestiHyvaksyttavissa = false,
               hakukohteenNimet = hakukohdeNimetA,
-              tarjoajaNimet = tarjoajaNimetA
+              tarjoajaNimet = tarjoajaNimetA,
+              organisaatioOiditAuktorisointiin = Set(tarjoajaOidA)
             )
           ),
           haku = Haku(
@@ -514,6 +521,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       "sv" -> "tarjoaja_nimi_b_sv",
       "en" -> "tarjoaja_nimi_b_en"
     )
+    val organisaatioRyhmaOidB = "1.2.246.562.10.00000000004"
     val hakukohdeOidC = HakukohdeOid("1.2.246.562.20.00000000003")
     val hakukohdeNimetC = Map(
       "fi" -> "hakukohde_nimi_c_fi",
@@ -569,7 +577,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       oid = hakukohdeOidB,
       hakuOid = hakuOidA,
       tarjoajaOids = Set(tarjoajaOidB),
-      organisaatioRyhmaOids = Set(),
+      organisaatioRyhmaOids = Set(organisaatioRyhmaOidB),
       koulutusAsteTyyppi = "KORKEAKOULUTUS",
       hakukohteenNimet = hakukohdeNimetB,
       tarjoajaNimet = tarjoajaNimetB,
