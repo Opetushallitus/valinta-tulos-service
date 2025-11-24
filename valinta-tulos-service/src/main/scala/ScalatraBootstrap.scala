@@ -9,7 +9,6 @@ import fi.vm.sade.valintatulosservice.config.{EmailerRegistry, StubbedExternalDe
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusRepository, HakuAppRepository}
 import fi.vm.sade.valintatulosservice.hakukohderyhmat.HakukohderyhmaService
-import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetailsService
 import fi.vm.sade.valintatulosservice.kela.KelaService
 import fi.vm.sade.valintatulosservice.koodisto.{CachedKoodistoService, RemoteKoodistoService, StubbedKoodistoService}
 import fi.vm.sade.valintatulosservice.logging.Logging
@@ -122,7 +121,6 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         audit,
       hakemusRepository)
     lazy val valintojenToteuttaminenService = new ValintojenToteuttaminenService(valintarekisteriDb)
-    lazy val userDetailsService = new KayttooikeusUserDetailsService(appConfig)
     lazy val hyvaksymiskirjeService = new HyvaksymiskirjeService(valintarekisteriDb, hakuService, audit, authorizer)
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
     lazy val hakemustenTulosHakuLock: HakemustenTulosHakuLock = new HakemustenTulosHakuLock(appConfig.settings.hakuResultsLoadingLockQueueLimit, appConfig.settings.hakuResultsLoadingLockSeconds)
@@ -161,7 +159,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         "/haku", "haku")
       context.mount(new EnsikertalaisuusServlet(valintarekisteriDb, appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus", "ensikertalaisuus")
       context.mount(new HakijanVastaanottoServlet(vastaanottoService), "/vastaanotto", "vastaanotto")
-      context.mount(new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, userDetailsService, appConfig), "/erillishaku/valinnan-tulos", "erillishaku/valinnan-tulos")
+      context.mount(new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, valintarekisteriDb, appConfig), "/erillishaku/valinnan-tulos", "erillishaku/valinnan-tulos")
       context.mount(new NoAuthSijoitteluServlet(sijoitteluService), "/sijoittelu", "sijoittelu")
       context.mount(new NoAuthHyvaksynnanEhtoServlet(valintarekisteriDb), "/hyvaksynnan-ehto", "hyvaksynnan-ehto")
 

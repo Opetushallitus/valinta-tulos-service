@@ -2,7 +2,6 @@ package fi.vm.sade.security
 
 import fi.vm.sade.javautils.nio.cas.{CasClientBuilder, UserDetails}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
-import fi.vm.sade.valintatulosservice.kayttooikeus.KayttooikeusUserDetails
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket, Session}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
@@ -37,15 +36,9 @@ class CasSessionService(appConfig: VtsAppConfig,
     }
   }
 
-  private def extractUserDetails(userDetails: UserDetails) =
-    KayttooikeusUserDetails(
-      userDetails.getRoles.asScala.map(a => Role(a.replace("ROLE_", ""))).toSet,
-      userDetails.getHenkiloOid
-    )
-
-  private def storeSession(ticket: ServiceTicket, user: KayttooikeusUserDetails): Either[Throwable, (UUID, Session)] = {
-
-    val session = CasSession(ticket, user.oid, user.roles)
+  private def storeSession(ticket: ServiceTicket, user: UserDetails): Either[Throwable, (UUID, Session)] = {
+    val roles = user.getRoles.asScala.map(a => Role(a.replace("ROLE_", ""))).toSet
+    val session = CasSession(ticket, user.getHenkiloOid, roles)
     logger.debug("Storing to session:" + session.casTicket + " " + session.personOid + " " + session.roles)
     Try(sessionRepository.store(session)) match {
       case Success(id) => Right((id, session))
@@ -54,7 +47,7 @@ class CasSessionService(appConfig: VtsAppConfig,
   }
 
   private def createSession(ticket: ServiceTicket): Either[Throwable, (UUID, Session)] = {
-    validateServiceTicket(ticket).right.map(extractUserDetails).right.flatMap(storeSession(ticket, _))
+    validateServiceTicket(ticket).right.flatMap(storeSession(ticket, _))
   }
 
   private def getSession(id: UUID): Either[Throwable, (UUID, Session)] = {
