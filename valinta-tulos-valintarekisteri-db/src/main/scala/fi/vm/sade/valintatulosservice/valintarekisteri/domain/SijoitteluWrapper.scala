@@ -556,9 +556,9 @@ case class SijoitteluajonValinnantulosWrapper(valintatapajonoOid: Valintatapajon
                                               julkaistavissa: Boolean = false,
                                               hyvaksyttyVarasijalta: Boolean = false,
                                               hyvaksyPeruuntunut: Boolean = false,
-                                              ilmoittautumistila: Option[SijoitteluajonIlmoittautumistila],
-                                              logEntries: Option[List[LogEntry]],
-                                              mailStatus: ValintatulosMailStatus) {
+                                              ilmoittautumistila: Option[SijoitteluajonIlmoittautumistila] = None,
+                                              logEntries: Option[List[LogEntry]] = None,
+                                              mailStatus: ValintatulosMailStatus = new ValintatulosMailStatus) {
   val valintatulos: Valintatulos = {
     val valintatulos = new Valintatulos()
     valintatulos.setValintatapajonoOid(valintatapajonoOid.toString, "")
