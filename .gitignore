@@ -25,3 +25,4 @@ valintarekisteri-it-db
 .bloop/
 .metals/
 .vscode/
+.claude/

@@ -136,7 +136,7 @@ object Valintarekisteri extends Logging {
       (original - h.getHakijaryhmat.size) match {
         case x:Int if x > 0 => logger.info(s"Poistettiin $x hakijaryhmää, jotka viittasivat jonoihin, joita ei ollut " +
           s"kohteen ${h.getOid} sijoittelussa.")
-        case _ => Unit
+        case _ => ()
       }
     })
   }

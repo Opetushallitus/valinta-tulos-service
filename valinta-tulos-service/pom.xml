@@ -93,18 +93,18 @@
         </dependency>
         <dependency>
             <groupId>org.scalatra</groupId>
-            <artifactId>scalatra_2.11</artifactId>
-            <version>${scalatra_2.11.version}</version>
+            <artifactId>scalatra_2.13</artifactId>
+            <version>${scalatra.version}</version>
         </dependency>
         <dependency>
             <groupId>org.scalatra</groupId>
-            <artifactId>scalatra-json_2.11</artifactId>
-            <version>${scalatra_2.11.version}</version>
+            <artifactId>scalatra-json_2.13</artifactId>
+            <version>${scalatra.version}</version>
         </dependency>
         <dependency>
             <groupId>org.scalatra</groupId>
-            <artifactId>scalatra-swagger_2.11</artifactId>
-            <version>${scalatra_2.11.version}</version>
+            <artifactId>scalatra-swagger_2.13</artifactId>
+            <version>${scalatra.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>io.swagger</groupId>
@@ -135,31 +135,31 @@
         </dependency>
         <dependency>
             <groupId>org.json4s</groupId>
-            <artifactId>json4s-core_2.11</artifactId>
+            <artifactId>json4s-core_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.json4s</groupId>
-            <artifactId>json4s-scalap_2.11</artifactId>
+            <artifactId>json4s-scalap_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.typelevel</groupId>
-            <artifactId>jawn-json4s_2.11</artifactId>
+            <artifactId>jawn-json4s_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.specs2</groupId>
-            <artifactId>specs2-core_2.11</artifactId>
+            <artifactId>specs2-core_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.specs2</groupId>
-            <artifactId>specs2-junit_2.11</artifactId>
+            <artifactId>specs2-junit_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.specs2</groupId>
-            <artifactId>specs2-mock_2.11</artifactId>
+            <artifactId>specs2-mock_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.specs2</groupId>
-            <artifactId>specs2-matcher-extra_2.11</artifactId>
+            <artifactId>specs2-matcher-extra_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -220,7 +220,7 @@
         </dependency>
         <dependency>
             <groupId>com.github.blemale</groupId>
-            <artifactId>scaffeine_2.11</artifactId>
+            <artifactId>scaffeine_2.13</artifactId>
             <version>${scaffeine.version}</version>
         </dependency>
         <dependency>
@@ -228,15 +228,9 @@
             <artifactId>kirjasto</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.scalaz.stream</groupId>
-            <artifactId>scalaz-stream_2.11</artifactId>
-            <version>${scalaz-stream_2.11.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
             <groupId>com.typesafe.slick</groupId>
-            <artifactId>slick_2.11</artifactId>
-            <version>${slick_2.11.version}</version>
+            <artifactId>slick_2.13</artifactId>
+            <version>${slick.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.reactivestreams</groupId>
@@ -268,16 +262,15 @@
         </dependency>
         <dependency>
             <groupId>org.json4s</groupId>
-            <artifactId>json4s-ext_2.11</artifactId>
+            <artifactId>json4s-ext_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>casbah-commons_2.11</artifactId>
-            <version>${casbah_2.11.version}</version>
+            <groupId>org.mongodb.scala</groupId>
+            <artifactId>mongo-scala-driver_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>fi.vm.sade.sijoittelu</groupId>
@@ -290,8 +283,8 @@
         </dependency>
         <dependency>
             <groupId>org.scalatra</groupId>
-            <artifactId>scalatra-test_2.11</artifactId>
-            <version>${scalatra_2.11.version}</version>
+            <artifactId>scalatra-test_2.13</artifactId>
+            <version>${scalatra.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
@@ -308,7 +301,7 @@
         </dependency>
         <dependency>
             <groupId>org.scalaz</groupId>
-            <artifactId>scalaz-core_2.11</artifactId>
+            <artifactId>scalaz-core_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -317,20 +310,16 @@
         </dependency>
         <dependency>
             <groupId>org.scala-lang.modules</groupId>
-            <artifactId>scala-xml_2.11</artifactId>
-            <version>${scala-xml_2.11.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.scalaz</groupId>
-            <artifactId>scalaz-concurrent_2.11</artifactId>
+            <artifactId>scala-xml_2.13</artifactId>
+            <version>${scala-xml.version}</version>
         </dependency>
         <dependency>
             <groupId>org.clapper</groupId>
-            <artifactId>grizzled-slf4j_2.11</artifactId>
+            <artifactId>grizzled-slf4j_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.json4s</groupId>
-            <artifactId>json4s-jackson_2.11</artifactId>
+            <artifactId>json4s-jackson_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>joda-time</groupId>
@@ -343,7 +332,7 @@
         </dependency>
         <dependency>
             <groupId>org.json4s</groupId>
-            <artifactId>json4s-ast_2.11</artifactId>
+            <artifactId>json4s-ast_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>com.typesafe</groupId>
@@ -351,23 +340,13 @@
             <version>${typesafe.config.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>casbah-query_2.11</artifactId>
-            <version>${casbah_2.11.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>casbah-core_2.11</artifactId>
-            <version>${casbah_2.11.version}</version>
-        </dependency>
-        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
             <groupId>org.scalatra</groupId>
-            <artifactId>scalatra-common_2.11</artifactId>
-            <version>${scalatra_2.11.version}</version>
+            <artifactId>scalatra-common_2.13</artifactId>
+            <version>${scalatra.version}</version>
         </dependency>
         <dependency><!-- TODO REMOVE -->
             <groupId>commons-httpclient</groupId>
@@ -453,10 +432,6 @@
             <groupId>com.github.kagkarlsson</groupId>
             <artifactId>db-scheduler</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.tsers.zeison</groupId>
-            <artifactId>zeison_2.11</artifactId>
-        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -483,8 +458,6 @@
                 </executions>
                 <configuration>
                     <args>
-                        <arg>-Xmax-classfile-name</arg>
-                        <arg>140</arg>
                         <arg>-nobootcp</arg>
                     </args>
                     <recompileMode>incremental</recompileMode>
