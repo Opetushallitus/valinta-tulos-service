@@ -6,6 +6,8 @@ import fi.vm.sade.valintatulosservice.config.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaRepository, SijoitteluRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
+import scala.collection.parallel.CollectionConverters._
+
 object SijoitteluajonHakija {
   def dto(repository: HakijaRepository with SijoitteluRepository with ValinnantulosRepository,
           sijoitteluajoId:Option[Long],

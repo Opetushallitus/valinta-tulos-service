@@ -18,7 +18,6 @@ import scala.compat.java8.FutureConverters.toScala
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import scalaz.concurrent.Task
 
 case class AtaruHakemus(oid: HakemusOid,
                         hakuOid: HakuOid,

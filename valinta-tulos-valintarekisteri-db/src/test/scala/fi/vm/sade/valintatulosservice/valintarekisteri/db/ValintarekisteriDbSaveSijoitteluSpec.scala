@@ -82,7 +82,7 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       val updated = readTable("valinnantulokset").head
       val history = readTable("valinnantulokset_history").head
 
-      history.filterKeys(_ != "system_time") mustEqual original.filterKeys(_ != "system_time")
+      history.filterKeys(_ != "system_time").toMap mustEqual original.filterKeys(_ != "system_time").toMap
 
       history("system_time").asInstanceOf[String] mustEqual
         original("system_time").asInstanceOf[String].replace(")", "") +
@@ -103,7 +103,7 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       val updated = readTable("valinnantilat").head
       val history = readTable("valinnantilat_history").head
 
-      history.filterKeys(_ != "system_time") mustEqual original.filterKeys(_ != "system_time")
+      history.filterKeys(_ != "system_time").toMap mustEqual original.filterKeys(_ != "system_time").toMap
 
       history("system_time").asInstanceOf[String] mustEqual
         original("system_time").asInstanceOf[String].replace(")", "") +

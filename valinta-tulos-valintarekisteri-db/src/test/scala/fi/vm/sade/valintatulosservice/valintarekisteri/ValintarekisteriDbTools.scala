@@ -21,6 +21,7 @@ import slick.jdbc.PostgresProfile.api._
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable.IndexedSeq
+import scala.collection.parallel.CollectionConverters._
 
 trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
 
