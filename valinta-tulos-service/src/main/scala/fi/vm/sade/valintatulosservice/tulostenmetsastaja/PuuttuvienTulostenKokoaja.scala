@@ -1,6 +1,5 @@
 package fi.vm.sade.valintatulosservice.tulostenmetsastaja
 
-import com.mongodb.casbah.Imports.{$and, MongoDBObject, _}
 import fi.vm.sade.valintatulosservice.config.Timer
 import fi.vm.sade.valintatulosservice.domain.Hakemus
 import fi.vm.sade.valintatulosservice.hakemus.{DatabaseKeys, HakuAppRepository}
@@ -8,8 +7,10 @@ import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.apache.commons.lang3.StringUtils
+import org.bson.Document
 
 import java.net.URL
+import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -47,11 +48,11 @@ class PuuttuvienTulostenKokoaja(valintarekisteriDb: ValintarekisteriDb,
 
   private def hakemuksiltaLoytyvatHakutoiveet(hakuOid: HakuOid): Future[Iterator[HakutoiveTulosHakemuksella]] = {
     def findRelevantHakemuses: Iterator[Hakemus] = {
-      hakemusRepository.findHakemuksetByQuery(
-        $and(Seq(
-          MongoDBObject(DatabaseKeys.hakuOidKey -> hakuOid.toString),
-          DatabaseKeys.state $in hakemusStatesToInclude
-        )))
+      val query = new Document("$and", List(
+        new Document(DatabaseKeys.hakuOidKey, hakuOid.toString),
+        new Document(DatabaseKeys.state, new Document("$in", hakemusStatesToInclude.toList.asJava))
+      ).asJava)
+      hakemusRepository.findHakemuksetByQuery(query)
     }
     logger.info(s"Aletaan hakea hakutoiveita haun $hakuOid hakemuksilta, jotka ovat tiloissa ${hakemusStatesToInclude.mkString(", ")}...")
     Future(findRelevantHakemuses.flatMap {

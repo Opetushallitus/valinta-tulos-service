@@ -8,8 +8,7 @@ import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, Lukuvuosimaksu, Maksuntila}
-import org.json4s.DefaultFormats
-import org.json4s.ext.EnumNameSerializer
+import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.{InternalServerError, NoContent, Ok}
@@ -25,7 +24,7 @@ class LukuvuosimaksuServletWithCAS(lukuvuosimaksuService: LukuvuosimaksuService,
                                   (implicit val swagger: Swagger, appConfig: VtsAppConfig)
   extends VtsServletBase with CasAuthenticatedServlet {
 
-  implicit val defaultFormats = DefaultFormats + new EnumNameSerializer(Maksuntila)
+  implicit val defaultFormats: Formats = DefaultFormats + new LukuvuosimaksuMuutosSerializer + new Scala213EnumNameSerializer(Maksuntila)
 
   override protected def applicationDescription: String = "Lukuvuosimaksujen rajapinnat (CAS-autentikoitu)"
 

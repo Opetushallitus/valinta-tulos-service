@@ -7,13 +7,13 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriD
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.JsonAST.JArray
 import org.json4s.jackson.JsonMethods._
-import org.json4s.{DefaultFormats, JValue}
+import org.json4s.{DefaultFormats, Formats, JValue}
 import org.springframework.core.io.ClassPathResource
 import slick.jdbc.PostgresProfile.api.{actionBasedSQLInterpolation, _}
 
 case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends json4sCustomFormats {
 
-  implicit val formats = DefaultFormats ++ List(
+  implicit val formats: Formats = DefaultFormats ++ List(
     new NumberLongSerializer) ++ Oids.getSerializers()
 
   def importFixture(fixtureName: String,

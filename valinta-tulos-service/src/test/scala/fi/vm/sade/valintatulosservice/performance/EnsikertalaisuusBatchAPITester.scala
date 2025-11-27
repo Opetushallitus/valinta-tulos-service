@@ -7,6 +7,7 @@ import fi.vm.sade.valintatulosservice.http.DefaultHttpClient
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Ensikertalaisuus, HakuOid, HakukohdeOid, Kevat, YPSHakukohde}
+import org.json4s.Formats
 import org.json4s.jackson.Serialization
 import slick.jdbc.PostgresProfile.api._
 
@@ -16,8 +17,8 @@ import scala.concurrent.duration.Duration
 import scala.util.Random
 
 object EnsikertalaisuusBatchAPITester extends App with Logging {
-  implicit val formats = EnsikertalaisuusServlet.ensikertalaisuusJsonFormats
-  implicit val appConfig = new VtsAppConfig.IT
+  implicit val formats: Formats = EnsikertalaisuusServlet.ensikertalaisuusJsonFormats
+  implicit val appConfig: VtsAppConfig.IT = new VtsAppConfig.IT
   private val dbConfig = appConfig.settings.valintaRekisteriDbConfig
   val valintarekisteriDb = new ValintarekisteriDb(dbConfig.copy(maxConnections = Some(1), minConnections = Some(1)))
   SharedJetty.start

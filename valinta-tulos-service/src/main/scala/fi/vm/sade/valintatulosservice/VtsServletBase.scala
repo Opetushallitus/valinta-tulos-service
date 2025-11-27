@@ -25,8 +25,8 @@ trait VtsServletBase extends ScalatraServlet with Logging with JacksonJsonSuppor
   }
 
   after() {
-    if (!response.headers.contains("Cache-Control")) {
-      response.headers += ("Cache-Control" -> "no-store")
+    if (response.getHeader("Cache-Control") == null) {
+      response.setHeader("Cache-Control", "no-store")
     }
   }
 

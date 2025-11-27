@@ -8,7 +8,6 @@ import fi.vm.sade.valintatulosservice.lukuvuosimaksut.LukuvuosimaksuMuutos
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.{DefaultFormats, Formats}
-import org.json4s.ext.EnumNameSerializer
 import org.json4s.native.JsonParser
 import org.junit.runner.RunWith
 import org.mockserver.integration.ClientAndServer
@@ -19,7 +18,7 @@ import org.specs2.runner.JUnitRunner
 class LukuvuosimaksuServletSpec extends ServletSpecification with ValintarekisteriDbTools {
   override implicit val formats: Formats = DefaultFormats ++ List(new TasasijasaantoSerializer, new ValinnantilaSerializer,
     new DateSerializer, new TilankuvauksenTarkenneSerializer, new IlmoittautumistilaSerializer, new VastaanottoActionSerializer, new ValintatuloksenTilaSerializer,
-    new EnumNameSerializer(Maksuntila), new HakukohdeOidSerializer)
+    new LukuvuosimaksuSerializer, new LukuvuosimaksuMuutosSerializer, new Scala213EnumNameSerializer(Maksuntila), new HakukohdeOidSerializer)
 
   val organisaatioService: ClientAndServer = ClientAndServer.startClientAndServer(VtsAppConfig.organisaatioMockPort)
   organisaatioService.when(new HttpRequest().withPath(

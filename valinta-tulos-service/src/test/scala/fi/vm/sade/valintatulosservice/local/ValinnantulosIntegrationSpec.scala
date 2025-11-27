@@ -13,7 +13,7 @@ import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.apache.log4j.{LogManager, PatternLayout, WriterAppender}
-import org.json4s.DefaultFormats
+import org.json4s.{DefaultFormats, Formats}
 import org.json4s.native.JsonMethods._
 import org.json4s.native.Serialization._
 import org.junit.runner.RunWith
@@ -25,7 +25,7 @@ import org.specs2.specification.{AfterEach, BeforeEach}
 @RunWith(classOf[JUnitRunner])
 class ValinnantulosIntegrationSpec extends ServletSpecification with ValintarekisteriDbTools with BeforeEach with AfterEach {
 
-  override implicit val formats = DefaultFormats ++ List(
+  override implicit val formats: Formats = DefaultFormats ++ List(
     new NumberLongSerializer,
     new TasasijasaantoSerializer,
     new ValinnantilaSerializer,

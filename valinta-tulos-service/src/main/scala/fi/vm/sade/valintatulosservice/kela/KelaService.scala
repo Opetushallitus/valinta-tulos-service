@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 
 
 class KelaService(hakijaResolver: HakijaResolver, hakuService: HakuService, valintarekisteriService: VirkailijaVastaanottoRepository) {
-  private val fetchPersonTimeout = 5 seconds
+  private val fetchPersonTimeout = 5.seconds
 
   def fetchVastaanototForPersonWithHetu(hetu: String, alkaen: Option[Date]): Option[Henkilo] = {
     hakijaResolver.findPersonByHetu(hetu, fetchPersonTimeout).map(henkilo => {

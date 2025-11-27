@@ -234,7 +234,7 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
     statement.setInt(10, hakemus.getTasasijaJonosija)
     statement.setBoolean(11, hakemus.isHyvaksyttyHarkinnanvaraisesti)
     statement.setBoolean(12, hakemus.getSiirtynytToisestaValintatapajonosta)
-    statement.setString(13, Valinnantila(hakemus.getTila).toString)
+    statement.setString(13, Valinnantila.fromHakemuksenTila(hakemus.getTila).toString)
     statement.addBatch()
   }
 
@@ -293,7 +293,7 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
     valinnantulosStatement.setBoolean(4, valintatulos.getJulkaistavissa)
     valinnantulosStatement.setLong(5, sijoitteluajoId)
     valinnantulosStatement.setTimestamp(6, new java.sql.Timestamp(read))
-    valinnantulosStatement.setString(7, Valinnantila(hakemus.getTila).toString)
+    valinnantulosStatement.setString(7, Valinnantila.fromHakemuksenTila(hakemus.getTila).toString)
     valinnantulosStatement.addBatch()
   }
 
@@ -324,7 +324,7 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
     statement.setString(1, hakukohdeOid.toString)
     statement.setString(2, valintatapajonoOid.toString)
     statement.setString(3, hakemus.getHakemusOid)
-    statement.setString(4, Valinnantila(hakemus.getTila).toString)
+    statement.setString(4, Valinnantila.fromHakemuksenTila(hakemus.getTila).toString)
     statement.setTimestamp(5, new Timestamp(tilanViimeisinMuutos.getTime))
     statement.setLong(6, sijoitteluajoId)
     statement.setString(7, hakemus.getHakijaOid)
@@ -354,13 +354,13 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
       .sortWith(_.after(_))
       .headOption.getOrElse(new Date())
 
-    statement.setString(1, Valinnantila(hakemus.getTila).toString)
+    statement.setString(1, Valinnantila.fromHakemuksenTila(hakemus.getTila).toString)
     statement.setTimestamp(2, new Timestamp(tilanViimeisinMuutos.getTime))
     statement.setLong(3, sijoitteluajoId)
     statement.setString(4, hakemus.getHakemusOid)
     statement.setString(5, valintatapajonoOid.toString)
     statement.setString(6, hakukohdeOid.toString)
-    statement.setString(7, Valinnantila(hakemus.getTila).toString)
+    statement.setString(7, Valinnantila.fromHakemuksenTila(hakemus.getTila).toString)
 
     statement.addBatch()
   }
@@ -400,13 +400,13 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
   }
 
   private def insertSijoitteluajo(sijoitteluajo:SijoitteluAjo) = {
-    val SijoitteluajoWrapper(sijoitteluajoId, hakuOid, startMils, endMils) = SijoitteluajoWrapper(sijoitteluajo)
+    val SijoitteluajoWrapper(sijoitteluajoId, hakuOid, startMils, endMils) = SijoitteluajoWrapper.fromSijoitteluAjo(sijoitteluajo)
     sqlu"""insert into sijoitteluajot (id, haku_oid, "start", "end")
              values (${sijoitteluajoId}, ${hakuOid},${new Timestamp(startMils)},${new Timestamp(endMils)})"""
   }
 
   private def insertHakukohde(hakuOid: HakuOid, hakukohde: Hakukohde) = {
-    val SijoitteluajonHakukohdeWrapper(sijoitteluajoId, oid, kaikkiJonotSijoiteltu) = SijoitteluajonHakukohdeWrapper(hakukohde)
+    val SijoitteluajonHakukohdeWrapper(sijoitteluajoId, oid, kaikkiJonotSijoiteltu) = SijoitteluajonHakukohdeWrapper.fromHakukohde(hakukohde)
     sqlu"""insert into sijoitteluajon_hakukohteet (sijoitteluajo_id, haku_oid, hakukohde_oid, kaikki_jonot_sijoiteltu)
              values (${sijoitteluajoId}, ${hakuOid}, ${oid}, ${kaikkiJonotSijoiteltu})"""
   }
@@ -416,7 +416,7 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
     eiVarasijatayttoa, kaikkiEhdonTayttavatHyvaksytaan, poissaOlevaTaytto, varasijat, varasijaTayttoPaivat,
     varasijojaKaytetaanAlkaen, varasijojaTaytetaanAsti, tayttojono, alinHyvaksyttyPistemaara, _,
     sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa, sivssnovSijoittelunViimeistenVarallaolijoidenJonosija)
-    = SijoitteluajonValintatapajonoWrapper(valintatapajono)
+    = SijoitteluajonValintatapajonoWrapper.fromValintatapajono(valintatapajono)
 
     val varasijojaKaytetaanAlkaenTs:Option[Timestamp] = varasijojaKaytetaanAlkaen.flatMap(d => Option(new Timestamp(d.getTime)))
     val varasijojaTaytetaanAstiTs:Option[Timestamp] = varasijojaTaytetaanAsti.flatMap(d => Option(new Timestamp(d.getTime)))
@@ -489,7 +489,7 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
              ${hakukohdeOid},
              ${jonosijaTieto.jonosija},
              ${jonosijaTieto.tasasijaJonosija},
-             ${Valinnantila(jonosijaTieto.tila).toString}::valinnantila,
+             ${Valinnantila.fromHakemuksenTila(jonosijaTieto.tila).toString}::valinnantila,
              to_json(${hakemusOidsJson}::json)
          )"""
     }.getOrElse(DBIOAction.successful())
@@ -499,7 +499,7 @@ trait StoreSijoitteluRepositoryImpl extends StoreSijoitteluRepository with Valin
   private def insertHakijaryhma(sijoitteluajoId:Long, hakijaryhma:Hakijaryhma) = {
     val SijoitteluajonHakijaryhmaWrapper(oid, nimi, prioriteetti, kiintio, kaytaKaikki, tarkkaKiintio,
     kaytetaanRyhmaanKuuluvia, _, valintatapajonoOid, hakukohdeOid, hakijaryhmatyyppikoodiUri)
-    = SijoitteluajonHakijaryhmaWrapper(hakijaryhma)
+    = SijoitteluajonHakijaryhmaWrapper.fromHakijaryhma(hakijaryhma)
 
     sqlu"""insert into hakijaryhmat (oid, sijoitteluajo_id, hakukohde_oid, nimi, prioriteetti,
            kiintio, kayta_kaikki, tarkka_kiintio, kaytetaan_ryhmaan_kuuluvia,

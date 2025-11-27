@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
-import org.scalatra.swagger.{ApiInfo, Swagger}
+import org.scalatra.swagger.{ApiInfo, ContactInfo, LicenseInfo, Swagger}
 
 class ValintatulosSwagger extends Swagger(
 	Swagger.SpecVersion,
@@ -8,6 +8,5 @@ class ValintatulosSwagger extends Swagger(
     ApiInfo("valinta-tulos-service",
             "Valintojen tulospalvelu",
             "https://opintopolku.fi/wp/fi/opintopolku/tietoa-palvelusta/",
-            "verkkotoimitus_opintopolku@oph.fi",
-            "EUPL 1.1 or latest approved by the European Commission",
-            "http://www.osor.eu/eupl/"))
+            ContactInfo("OPH", "", "verkkotoimitus_opintopolku@oph.fi"),
+            LicenseInfo("EUPL 1.1 or latest approved by the European Commission", "http://www.osor.eu/eupl/")))

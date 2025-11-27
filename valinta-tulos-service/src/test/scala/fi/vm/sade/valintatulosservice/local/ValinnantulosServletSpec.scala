@@ -16,6 +16,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import java.util.Date
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuFixtures, HakuService}
+import org.json4s.Formats
 import org.json4s.jackson.Serialization._
 import org.json4s.native.JsonMethods._
 import org.junit.runner.RunWith
@@ -42,7 +43,7 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
     ServletTest.withServlet(this, servlet, (uri: String) => AsResult(f((uri, valinnantulosService, sessionRepository, valintatulosService))))
   }
 
-  private implicit val formats = JsonFormats.jsonFormats
+  private implicit val formats: Formats = JsonFormats.jsonFormats
 
   private val sessionId = UUID.randomUUID()
   private val unauthorizedSession = CasSession(ServiceTicket("ST"), "1.2.246.562.24.1", Set())

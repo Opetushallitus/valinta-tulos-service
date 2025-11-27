@@ -16,7 +16,7 @@ import slick.jdbc.PostgresProfile.api._
 class ValintarekisteriDbHyvaksynnanEhtoSpec extends Specification with ITSetup with ValintarekisteriDbTools with BeforeAll with BeforeEach with AfterAll {
   sequential
 
-  def beforeAll: Unit = {
+  def beforeAll(): Unit = {
     appConfig.start
   }
 
@@ -24,7 +24,7 @@ class ValintarekisteriDbHyvaksynnanEhtoSpec extends Specification with ITSetup w
     deleteAll()
   }
 
-  def afterAll: Unit = {
+  def afterAll(): Unit = {
     deleteAll()
   }
 

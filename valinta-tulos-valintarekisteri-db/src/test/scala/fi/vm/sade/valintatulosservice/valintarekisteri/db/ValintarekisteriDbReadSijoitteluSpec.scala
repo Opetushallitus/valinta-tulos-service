@@ -127,7 +127,7 @@ class ValintarekisteriDbReadSijoitteluSpec extends Specification with ITSetup wi
 
   case class HakemusInfoRecord(selite:String, tilanViimeisinMuutos:Timestamp)
 
-  private implicit val getHakemusInfoResult = GetResult(r => HakemusInfoRecord(r.nextString, r.nextTimestamp()))
+  private implicit val getHakemusInfoResult: GetResult[HakemusInfoRecord] = GetResult(r => HakemusInfoRecord(r.nextString, r.nextTimestamp()))
 
   def getHakemusInfo(hakemusOid: String): Option[HakemusInfoRecord] = {
     singleConnectionValintarekisteriDb.runBlocking(

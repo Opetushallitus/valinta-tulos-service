@@ -27,7 +27,7 @@ object OppijanTunnistusService {
 class RealOppijanTunnistusService(appConfig: VtsAppConfig) extends OppijanTunnistusService with Logging {
   private val vtsConfig: VtsApplicationSettings = appConfig.settings;
   import org.json4s._
-  implicit val formats = DefaultFormats
+  implicit val formats: Formats = DefaultFormats
   import org.json4s.jackson.Serialization.write
   private val client: CasClient = CasClientBuilder.build(ScalaCasConfig(
     appConfig.settings.securitySettings.casUsername,

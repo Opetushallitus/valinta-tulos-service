@@ -122,7 +122,7 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
 
   implicit val formats: Formats = DefaultFormats
 
-  def getLatestSuccessfulProcessInfo(): Option[SiirtotiedostoProcess] = {
+  def getLatestSuccessfulProcessInfo: Option[SiirtotiedostoProcess] = {
     timed(s"Getting latest process info", 100) {
       runBlocking(
         sql"""select id, uuid, window_start, window_end, run_start, run_end, info, success, error_message from siirtotiedostot where success order by id desc limit 1""".as[SiirtotiedostoProcess].headOption

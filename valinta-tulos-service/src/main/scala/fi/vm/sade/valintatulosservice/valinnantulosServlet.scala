@@ -230,7 +230,7 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService, hyvaksymisk
     Try(hyvaksymiskirjeService.updateHyvaksymiskirjeet(
       valinnantulokset.map(v => HyvaksymiskirjePatch(v.henkiloOid, v.hakukohdeOid, v.hyvaksymiskirjeLahetetty)).toSet, auditInfo)) match {
         case Failure(e) => logger.warn("Virhe hyväksymiskirjeiden lähetyspäivämäärien päivityksessä", e)
-        case x if x.isSuccess => Unit
+        case x if x.isSuccess => ()
     }
     Ok(storeValinnantulosResult)
   }

@@ -22,7 +22,7 @@ class HakemusRepositorySpec extends ITSpecification with ValintarekisteriDbTools
     new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService)
   )
 
-  override def afterAll = deleteAll()
+  override def afterAll(): Unit = deleteAll()
 
   "HakemusRepository" should {
     "palauttaa yksittäisen Hakemuksen" in {
