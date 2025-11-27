@@ -1,8 +1,6 @@
 package fi.vm.sade.valintatulosservice.config
 
-import scala.collection.JavaConversions._
-import scala.collection.Set
-import VtsAppConfig.VtsAppConfig
+import scala.collection.JavaConverters._
 import VtsAppConfig.VtsAppConfig
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
@@ -14,7 +12,7 @@ class VtsOphUrlPropertiesTest extends Specification {
     "resolve all" in {
       val appConfig: VtsAppConfig = new VtsAppConfig.IT
       val urlprops = appConfig.ophUrlProperties
-      val keys = urlprops.config.load().keySet().toSet
+      val keys = urlprops.config.load().keySet().asScala.toSet
       val fn = {
         keys.foreach(s => {
           urlprops.url(s.toString)

@@ -13,7 +13,7 @@ import scala.util.control.NonFatal
 
 class CasLogin(casUrl: String, cas: CasSessionService) extends ScalatraServlet with JacksonJsonSupport with Logging {
 
-  override protected implicit def jsonFormats = DefaultFormats
+  override protected implicit def jsonFormats: DefaultFormats.type = DefaultFormats
 
   error {
     case e: IllegalArgumentException =>

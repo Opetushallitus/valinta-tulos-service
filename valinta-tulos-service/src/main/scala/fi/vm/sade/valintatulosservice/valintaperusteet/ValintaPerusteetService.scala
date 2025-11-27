@@ -7,7 +7,7 @@ import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuFixtures}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, NotFoundException, ValintatapajonoOid}
 import org.asynchttpclient.RequestBuilder
-import org.json4s.DefaultFormats
+import org.json4s.{DefaultFormats, Formats}
 import org.json4s.native.JsonMethods.parse
 
 import java.util.concurrent.TimeUnit
@@ -32,7 +32,7 @@ class ValintaPerusteetServiceImpl(appConfig: VtsAppConfig) extends ValintaPerust
     "JSESSIONID"
   ))
 
-  implicit val formats = DefaultFormats
+  implicit val formats: Formats = DefaultFormats
 
   def getKaytetaanValintalaskentaaFromValintatapajono(
     valintatapajonoOid: ValintatapajonoOid,

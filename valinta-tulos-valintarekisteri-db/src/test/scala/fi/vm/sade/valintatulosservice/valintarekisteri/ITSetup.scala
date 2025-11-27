@@ -11,7 +11,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecord
 import slick.jdbc.{GetResult, PositionedParameters, SetParameter}
 
 trait ITSetup {
-  implicit val appConfig = new ValintarekisteriAppConfig.IT
+  implicit val appConfig: ValintarekisteriAppConfig.IT = new ValintarekisteriAppConfig.IT
   val dbConfig = appConfig.settings.valintaRekisteriDbConfig
 
   lazy val singleConnectionValintarekisteriDb = new ValintarekisteriDb(

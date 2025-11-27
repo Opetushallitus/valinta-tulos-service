@@ -6,8 +6,7 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.lukuvuosimaksut.LukuvuosimaksuMuutos
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, Lukuvuosimaksu, Maksuntila}
-import org.json4s.DefaultFormats
-import org.json4s.ext.EnumNameSerializer
+import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.swagger.Swagger
 import org.scalatra.{InternalServerError, NoContent, Ok}
 
@@ -18,7 +17,7 @@ class LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService: LukuvuosimaksuServi
                                   (implicit val swagger: Swagger, appConfig: VtsAppConfig)
   extends VtsServletBase with AuditInfoParameter {
 
-  implicit val vtsJsonFormats = JsonFormats.jsonFormats + new EnumNameSerializer(Maksuntila)
+  implicit val vtsJsonFormats: Formats = JsonFormats.jsonFormats + new Scala213EnumNameSerializer(Maksuntila)
 
   override protected def applicationDescription: String = "Lukuvuosimaksut unauthenticated REST API"
 

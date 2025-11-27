@@ -16,7 +16,7 @@ object VtsAppConfig extends Logging {
   def getProfileProperty() = System.getProperty("valintatulos.profile", "default")
   private val propertiesFile = "/oph-configuration/valinta-tulos-service-oph.properties"
   private val propertiesFileOvara = "/oph-configuration/valinta-tulos-ovara-oph.properties"
-  private implicit val settingsParser = VtsApplicationSettingsParser
+  private implicit val settingsParser: VtsApplicationSettingsParser.type = VtsApplicationSettingsParser
   private lazy val embeddedMongoPort: Int = PortChecker.getPortFromSystemPropertyOrFindFree("valintatulos.embeddedmongo.port")
   private lazy val itPostgresPort: Int = PortChecker.getPortFromSystemPropertyOrFindFree("valintatulos.it.postgres.port")
   lazy val organisaatioMockPort: Int = PortChecker.findFreeLocalPort

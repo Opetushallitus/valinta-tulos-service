@@ -3,20 +3,62 @@ package fi.vm.sade.valintatulosservice.json
 import java.util.Date
 import fi.vm.sade.valintatulosservice.domain.Valintatila.Valintatila
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila.Vastaanotettavuustila
-import fi.vm.sade.valintatulosservice.domain.{HakutoiveenIlmoittautumistila, HakutoiveenSijoittelunTilaTieto, Hakutoiveentulos, Ilmoittautumisaika}
+import fi.vm.sade.valintatulosservice.domain.{HakutoiveenIlmoittautumistila, HakutoiveenSijoittelunTilaTieto, Hakutoiveentulos, Ilmoittautumisaika, Valintatila, Vastaanotettavuustila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EhdollisenHyvaksymisenEhto, HakemusOid, HakukohdeOid, JonokohtainenTulostieto, ValintatapajonoOid}
 import org.json4s.Extraction._
-import org.json4s.JsonAST.JObject
+import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL._
 import org.json4s.{CustomSerializer, Formats}
+
+/**
+ * Custom serializer for JonokohtainenTulostieto to avoid json4s reflection issues with Scala 2.13 Enumerations.
+ */
+class JonokohtainenTulostietoSerializer extends CustomSerializer[JonokohtainenTulostieto]((formats: Formats) => ( {
+  case x: JObject =>
+    implicit val f = formats
+    JonokohtainenTulostieto(
+      oid = (x \ "oid").extract[ValintatapajonoOid],
+      nimi = (x \ "nimi").extract[String],
+      pisteet = (x \ "pisteet").extractOpt[BigDecimal],
+      alinHyvaksyttyPistemaara = (x \ "alinHyvaksyttyPistemaara").extractOpt[BigDecimal],
+      valintatila = Valintatila.withName((x \ "valintatila").extract[String]),
+      julkaistavissa = (x \ "julkaistavissa").extract[Boolean],
+      valintatapajonoPrioriteetti = (x \ "valintatapajonoPrioriteetti").extractOpt[Int],
+      tilanKuvaukset = (x \ "tilanKuvaukset").extractOpt[Map[String, String]],
+      ehdollisestiHyvaksyttavissa = (x \ "ehdollisestiHyvaksyttavissa").extract[Boolean],
+      ehdollisenHyvaksymisenEhto = (x \ "ehdollisenHyvaksymisenEhto").extractOpt[EhdollisenHyvaksymisenEhto],
+      varasijanumero = (x \ "varasijanumero").extractOpt[Int],
+      eiVarasijatayttoa = (x \ "eiVarasijatayttoa").extract[Boolean],
+      varasijat = (x \ "varasijat").extractOpt[Int],
+      varasijasaannotKaytossa = (x \ "varasijasaannotKaytossa").extract[Boolean]
+    )
+}, {
+  case t: JonokohtainenTulostieto =>
+    implicit val f = formats
+    ("oid" -> t.oid.toString) ~
+      ("nimi" -> t.nimi) ~
+      ("pisteet" -> t.pisteet) ~
+      ("alinHyvaksyttyPistemaara" -> t.alinHyvaksyttyPistemaara) ~
+      ("valintatila" -> t.valintatila.toString) ~
+      ("julkaistavissa" -> t.julkaistavissa) ~
+      ("valintatapajonoPrioriteetti" -> t.valintatapajonoPrioriteetti) ~
+      ("tilanKuvaukset" -> t.tilanKuvaukset) ~
+      ("ehdollisestiHyvaksyttavissa" -> t.ehdollisestiHyvaksyttavissa) ~
+      ("ehdollisenHyvaksymisenEhto" -> decompose(t.ehdollisenHyvaksymisenEhto)) ~
+      ("varasijanumero" -> t.varasijanumero) ~
+      ("eiVarasijatayttoa" -> t.eiVarasijatayttoa) ~
+      ("varasijat" -> t.varasijat) ~
+      ("varasijasaannotKaytossa" -> t.varasijasaannotKaytossa)
+}))
 
 
 class HakutoiveentulosSerializer extends CustomSerializer[Hakutoiveentulos]((formats: Formats) => ( {
   case x: JObject =>
     implicit val f = formats
-    val valintatila = (x \ "valintatila").extract[Valintatila]
+    // Extract enumerations as strings and convert manually to avoid json4s reflection issues with Scala 2.13 Enumerations
+    val valintatila = Valintatila.withName((x \ "valintatila").extract[String])
     val vastaanottotila = (x \ "vastaanottotila").extract[String]
-    val vastaanotettavuustila = (x \ "vastaanotettavuustila").extract[Vastaanotettavuustila]
+    val vastaanotettavuustila = Vastaanotettavuustila.withName((x \ "vastaanotettavuustila").extract[String])
     Hakutoiveentulos(
       hakukohdeOid = (x \ "hakukohdeOid").extract[HakukohdeOid],
       hakukohdeNimi = (x \ "hakukohdeNimi").extract[String],

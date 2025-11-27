@@ -67,8 +67,8 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
   // Real return type cannot be used because of unsupported scala enumerations: https://github.com/scalatra/scalatra/issues/343
   lazy val getHakemusSwagger: OperationBuilder = (apiOperation[Unit]("getHakemus")
     summary "Hae hakemuksen tulokset."
-    notes "Palauttaa tyyppiä Hakemuksentulos. Esim:\n" +
-      pretty(Extraction.decompose(exampleHakemuksenTulos))
+    description ("Palauttaa tyyppiä Hakemuksentulos. Esim:\n" +
+      pretty(Extraction.decompose(exampleHakemuksenTulos)))
     parameter pathParam[String]("hakuOid").description("Haun oid")
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid, jonka tulokset halutaan")
     tags swaggerGroupTag)
@@ -104,8 +104,8 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
 
   lazy val getHakemuksetSwagger: OperationBuilder = (apiOperation[Unit]("getHakemukset")
     summary "Hae haun kaikkien hakemusten tulokset. Palauttaa julkaistu tilaiset valintatulokset jo ennen haun tulosten julkaisupäivää."
-    notes "Palauttaa tyyppiä Seq[Hakemuksentulos]. Esim:\n" +
-      pretty(Extraction.decompose(Seq(exampleHakemuksenTulos)))
+    description ("Palauttaa tyyppiä Seq[Hakemuksentulos]. Esim:\n" +
+      pretty(Extraction.decompose(Seq(exampleHakemuksenTulos))))
     parameter pathParam[String]("hakuOid").description("Haun oid")
     tags swaggerGroupTag)
   get("/:hakuOid", operation(getHakemuksetSwagger)) {
@@ -125,8 +125,8 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
 
   lazy val getHakukohteenHakemuksetSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohteenHakemukset")
     summary "Hae hakukohteen kaikkien hakemusten tulokset."
-    notes "Palauttaa tyyppiä Seq[Hakemuksentulos]. Esim:\n" +
-    pretty(Extraction.decompose(Seq(exampleHakemuksenTulos)))
+    description ("Palauttaa tyyppiä Seq[Hakemuksentulos]. Esim:\n" +
+    pretty(Extraction.decompose(Seq(exampleHakemuksenTulos))))
     parameter pathParam[String]("hakuOid").description("Haun oid")
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid")
     tags swaggerGroupTag)
@@ -150,7 +150,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
   val postIlmoittautuminenSwagger: OperationBuilder = (apiOperation[Unit]("ilmoittaudu")
     summary "Tallenna hakukohteelle uusi ilmoittautumistila"
     // Real body param type cannot be used because of unsupported scala enumerations: https://github.com/scalatra/scalatra/issues/343
-    notes "Bodyssä tulee antaa tieto hakukohteen ilmoittautumistilan muutoksesta Ilmoittautuminen tyyppinä. Esim:\n" +
+    description ("Bodyssä tulee antaa tieto hakukohteen ilmoittautumistilan muutoksesta Ilmoittautuminen tyyppinä. Esim:\n" +
     pretty(Extraction.decompose(
       Ilmoittautuminen(
         HakukohdeOid("1.2.3.4"),
@@ -158,7 +158,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
         "henkilö: 5.5.5.5",
         "kuvaus mitä kautta muokkaus tehty"
       )
-    )) + ".\nMahdolliset ilmoittautumistilat: " + IlmoittautumisTila.values().toList.map(_.toString)
+    )) + ".\nMahdolliset ilmoittautumistilat: " + IlmoittautumisTila.values().toList.map(_.toString))
 
     parameter pathParam[String]("hakuOid").description("Haun oid")
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid, jonka vastaanottotilaa ollaan muokkaamassa")

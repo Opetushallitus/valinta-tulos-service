@@ -60,7 +60,7 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       assertTilanViimeisinMuutos("1.2.246.562.11.00004685599", dateFormat.parse("2016-10-12T04:11:20.526+0000"))
     }
   }
-  implicit val resultAsObjectMap = GetResult[Map[String,Object]] (
+  implicit val resultAsObjectMap: GetResult[Map[String, Object]] = GetResult[Map[String,Object]] (
     prs => (1 to prs.numColumns).map(_ => prs.rs.getMetaData.getColumnName(prs.currentPos+1) -> prs.nextString ).toMap )
   val hakemusOid = "1.2.246.562.11.00006926939"
   def readTable(table:String) = singleConnectionValintarekisteriDb.runBlocking(

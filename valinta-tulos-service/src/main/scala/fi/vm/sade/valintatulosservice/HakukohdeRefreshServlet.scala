@@ -15,8 +15,9 @@ import org.scalatra.json.JacksonJsonSupport
 import org.scalatra.swagger.{Swagger, SwaggerSupport}
 
 import scala.collection.parallel.{ForkJoinTaskSupport, ParSet}
+import scala.collection.parallel.CollectionConverters._
 import scala.concurrent.Future
-import scala.concurrent.forkjoin.ForkJoinPool
+import java.util.concurrent.ForkJoinPool
 
 case class Status(started: Date)
 

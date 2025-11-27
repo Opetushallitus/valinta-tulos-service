@@ -29,7 +29,7 @@ class CachedOrganisaatioService(realOrganisaatioService: RealOrganisaatioService
 
 class RealOrganisaatioService(appConfig:AppConfig) extends OrganisaatioService{
   import org.json4s._
-  implicit val formats = DefaultFormats
+  implicit val formats: Formats = DefaultFormats
 
   override def hae(oid: String): Either[Throwable, Organisaatiot] = {
     val url = appConfig.ophUrlProperties.url("organisaatio-service.organisaatio.hae.oid", oid)

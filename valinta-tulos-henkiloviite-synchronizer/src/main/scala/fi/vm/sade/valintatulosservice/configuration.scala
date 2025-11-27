@@ -4,7 +4,7 @@ import java.io.FileInputStream
 import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.{Date, Properties}
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.util.Try
 
 case class DbConfiguration(user: Option[String], password: Option[String], url: String)
@@ -24,7 +24,7 @@ object Configuration {
       case Some(configFile) =>
         val config = new Properties()
         config.load(new FileInputStream(configFile))
-        for (k <- System.getProperties.stringPropertyNames) {
+        for (k <- System.getProperties.stringPropertyNames.asScala) {
           config.setProperty(k, System.getProperty(k))
         }
         config

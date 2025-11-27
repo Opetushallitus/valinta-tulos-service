@@ -78,7 +78,7 @@ class VastaanottoService(hakuService: HakuService,
     (for {
       ((hakukohdeOid, hakuOid), vastaanottoEventDtos) <- vastaanotot.groupBy(v => (v.hakukohdeOid, v.hakuOid))
       haunValintatulokset = henkiloidenVastaanototHauissaByHakuOid(hakuOid)
-      hakukohteenValintatulokset: Map[String, Option[Valintatulos]] = haunValintatulokset.mapValues(_.find(_.getHakukohdeOid == hakukohdeOid.toString))
+      hakukohteenValintatulokset: Map[String, Option[Valintatulos]] = haunValintatulokset.view.mapValues(_.find(_.getHakukohdeOid == hakukohdeOid.toString)).toMap
       vastaanottoEventDto <- vastaanottoEventDtos if isPaivitys(vastaanottoEventDto, hakukohteenValintatulokset.get(vastaanottoEventDto.henkiloOid).flatten.map(_.getTila))
     } yield {
       VirkailijanVastaanotto(vastaanottoEventDto)

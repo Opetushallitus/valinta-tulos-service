@@ -5,6 +5,7 @@ import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiEnsikertalainen, EiKktutkintoonJohtavaHakukohde, Ensikertalainen, Ensikertalaisuus, HakuOid, HakukohdeOid, Kevat, YPSHakukohde}
 import org.joda.time.{DateTime, DateTimeZone}
+import org.json4s.Formats
 import org.json4s.jackson.Serialization._
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
@@ -14,7 +15,7 @@ import slick.jdbc.PostgresProfile.api._
 
 @RunWith(classOf[JUnitRunner])
 class EnsikertalaisuusServletSpec extends ServletSpecification with ValintarekisteriDbTools with After {
-  override implicit val formats = EnsikertalaisuusServlet.ensikertalaisuusJsonFormats
+  override implicit val formats: Formats = EnsikertalaisuusServlet.ensikertalaisuusJsonFormats
   val henkilo = "1.2.246.562.24.00000000001"
   val vastaanottamaton_henkilo = "1.2.246.562.24.00000000002"
   val vanha_henkilo = "1.2.246.562.24.00000000003"

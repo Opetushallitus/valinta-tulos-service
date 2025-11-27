@@ -224,7 +224,7 @@ class ValintarekisteriForSijoitteluSpec extends Specification with ITSetup with 
   private def updateTila(tila:HakemuksenTila, aika:Long, hakemus:Hakemus) = {
     hakemus.setTila(tila)
     val newTilahistoria = new java.util.ArrayList(hakemus.getTilaHistoria)
-    val valinnantila = Valinnantila(tila)
+    val valinnantila = Valinnantila.fromHakemuksenTila(tila)
     newTilahistoria.add(TilahistoriaWrapper(valinnantila, new java.util.Date(aika)).tilahistoria)
     hakemus.setTilaHistoria(newTilahistoria)
   }

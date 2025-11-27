@@ -7,7 +7,7 @@ import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 @RunWith(classOf[JUnitRunner])
 class JonoFinderSpec extends Specification {
@@ -21,7 +21,7 @@ class JonoFinderSpec extends Specification {
     "handle case one 'jono'" in {
       val hakutoive = new HakutoiveDTO()
       val jono1 = jonoWithTila(HakemuksenTila.HARKINNANVARAISESTI_HYVAKSYTTY, None)
-      hakutoive.setHakutoiveenValintatapajonot(List(jono1))
+      hakutoive.setHakutoiveenValintatapajonot(List(jono1).asJava)
       JonoFinder.järjestäJonotPrioriteetinMukaan(hakutoive).headOption must_== Some(jono1)
     }
     "head 'jono' should be last possible 'jono' with same priority" in {
@@ -29,11 +29,11 @@ class JonoFinderSpec extends Specification {
       val hakutoive = new HakutoiveDTO()
 
       val jono1 = jonoWithTila(HakemuksenTila.HYLATTY, None)
-      jono1.setTilanKuvaukset(Map("FI" -> "EKA"))
+      jono1.setTilanKuvaukset(Map("FI" -> "EKA").asJava)
       val jono2 = jonoWithTila(HakemuksenTila.HYLATTY, None)
-      jono2.setTilanKuvaukset(Map("FI" -> "TOKA"))
+      jono2.setTilanKuvaukset(Map("FI" -> "TOKA").asJava)
 
-      hakutoive.setHakutoiveenValintatapajonot(List(jono1, jono2))
+      hakutoive.setHakutoiveenValintatapajonot(List(jono1, jono2).asJava)
 
       val outJono = JonoFinder.järjestäJonotPrioriteetinMukaan(hakutoive).headOption
 
@@ -48,12 +48,12 @@ class JonoFinderSpec extends Specification {
       val jono2 = jonoWithTila(HakemuksenTila.VARALLA, Some(5))
       val jono3 = jonoWithTila(HakemuksenTila.VARALLA, Some(7))
 
-      hakutoive.setHakutoiveenValintatapajonot(List(jono1, jono2, jono3))
+      hakutoive.setHakutoiveenValintatapajonot(List(jono1, jono2, jono3).asJava)
 
       val actual = JonoFinder.järjestäJonotPrioriteetinMukaan(hakutoive)
       actual.head must_== jono2
-      actual.get(1) must_== jono3
-      actual.get(2) must_== jono1
+      actual(1) must_== jono3
+      actual(2) must_== jono1
 
     }
   }

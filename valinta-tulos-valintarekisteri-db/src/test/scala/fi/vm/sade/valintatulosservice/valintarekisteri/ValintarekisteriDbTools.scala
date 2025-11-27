@@ -10,7 +10,7 @@ import fi.vm.sade.valintatulosservice.json4sCustomFormats
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Tasasijasaanto, _}
-import org.json4s.DefaultFormats
+import org.json4s.{DefaultFormats, Formats}
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods._
 import org.specs2.matcher.MatchResult
@@ -30,7 +30,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
   def createTestSession(roles:Set[Role] = Set(Role.SIJOITTELU_CRUD, Role(s"${Role.SIJOITTELU_CRUD.s}_1.2.246.562.10.39804091914"))) =
     singleConnectionValintarekisteriDb.store(CasSession(ServiceTicket("myFakeTicket"), "1.2.246.562.24.1", roles)).toString
 
-  implicit val formats = DefaultFormats ++ List(
+  implicit val formats: Formats = DefaultFormats ++ List(
     new NumberLongSerializer,
     new TasasijasaantoSerializer,
     new ValinnantilaSerializer,
@@ -358,7 +358,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
     valintatapajonot
   }
 
-  private implicit val getSijoitteluajonHakijaryhmaResult = GetResult(r => {
+  private implicit val getSijoitteluajonHakijaryhmaResult: GetResult[Hakijaryhma] = GetResult(r => {
     SijoitteluajonHakijaryhmaWrapper(oid = r.nextString,
       nimi = r.nextString,
       prioriteetti = r.nextInt,
@@ -490,25 +490,25 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
   def assertSijoittelu(wrapper:SijoitteluWrapper): MatchResult[Any] = {
     val stored: Option[SijoitteluAjo] = findSijoitteluajo(wrapper.sijoitteluajo.getSijoitteluajoId)
     stored.isDefined must beTrue
-    SijoitteluajoWrapper(stored.get) mustEqual SijoitteluajoWrapper(wrapper.sijoitteluajo)
+    SijoitteluajoWrapper.fromSijoitteluAjo(stored.get) mustEqual SijoitteluajoWrapper.fromSijoitteluAjo(wrapper.sijoitteluajo)
     val storedHakukohteet: Seq[Hakukohde] = findSijoitteluajonHakukohteet(stored.get.getSijoitteluajoId)
     wrapper.hakukohteet.foreach(hakukohde => {
       val storedHakukohde = storedHakukohteet.find(_.getOid.equals(hakukohde.getOid))
       storedHakukohde.isDefined must beTrue
-      SijoitteluajonHakukohdeWrapper(hakukohde) mustEqual SijoitteluajonHakukohdeWrapper(storedHakukohde.get)
+      SijoitteluajonHakukohdeWrapper.fromHakukohde(hakukohde) mustEqual SijoitteluajonHakukohdeWrapper.fromHakukohde(storedHakukohde.get)
       val storedValintatapajonot = findHakukohteenValintatapajonot(hakukohde.getOid)
       import scala.collection.JavaConverters._
       hakukohde.getValintatapajonot.asScala.toList.foreach(valintatapajono => {
         val storedValintatapajono = storedValintatapajonot.find(_.getOid.equals(valintatapajono.getOid))
         storedValintatapajono.isDefined must beTrue
         storedValintatapajono.get.getSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa mustEqual valintatapajono.getSijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa
-        SijoitteluajonValintatapajonoWrapper(valintatapajono) mustEqual SijoitteluajonValintatapajonoWrapper(storedValintatapajono.get)
+        SijoitteluajonValintatapajonoWrapper.fromValintatapajono(valintatapajono) mustEqual SijoitteluajonValintatapajonoWrapper.fromValintatapajono(storedValintatapajono.get)
         val storedJonosijat = findValintatapajononJonosijat(valintatapajono.getOid)
         valintatapajono.getHakemukset.asScala.toList.foreach(hakemus => {
           val storedJonosija = storedJonosijat.find(_.getHakemusOid.equals(hakemus.getHakemusOid))
           storedJonosija.isDefined must beTrue
-          val jonosijaWrapper = SijoitteluajonHakemusWrapper(storedJonosija.get)
-          val hakemusWrapper = SijoitteluajonHakemusWrapper(hakemus).copy(tilaHistoria = List())
+          val jonosijaWrapper = SijoitteluajonHakemusWrapper.fromHakemus(storedJonosija.get)
+          val hakemusWrapper = SijoitteluajonHakemusWrapper.fromHakemus(hakemus).copy(tilaHistoria = List())
           hakemusWrapper mustEqual jonosijaWrapper
 
           val jonosijanTilankuvaukset = findJonosijanTilaAndtilankuvaukset(hakemus.getHakemusOid, wrapper.sijoitteluajo.getSijoitteluajoId, valintatapajono.getOid)
@@ -524,7 +524,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
         storedHakijaryhma.get.getHakemusOid.addAll(findHakijaryhmanHakemukset(hakijaryhma.getOid).asJava)
         def createSortedHakijaryhmaWrapper(hakijaryhma:Hakijaryhma) = {
           java.util.Collections.sort(hakijaryhma.getHakemusOid)
-          SijoitteluajonHakijaryhmaWrapper(hakijaryhma)
+          SijoitteluajonHakijaryhmaWrapper.fromHakijaryhma(hakijaryhma)
         }
         createSortedHakijaryhmaWrapper(hakijaryhma) mustEqual createSortedHakijaryhmaWrapper(storedHakijaryhma.get)
       })

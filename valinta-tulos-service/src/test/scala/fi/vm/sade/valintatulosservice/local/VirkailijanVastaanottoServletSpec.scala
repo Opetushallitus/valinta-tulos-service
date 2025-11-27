@@ -9,6 +9,7 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.VastaanottoRecord
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import org.json4s.Formats
 import org.json4s.JsonAST.JObject
 import org.json4s.native.JsonMethods._
 import org.junit.runner.RunWith
@@ -33,7 +34,7 @@ class VirkailijanVastaanottoServletSpec extends Specification with EmbeddedJetty
     ServletTest.withServlet(this, servlet, (uri: String) => AsResult(f((uri, valintatulosService, vastaanottoService))))
   }
 
-  private implicit val formats = JsonFormats.jsonFormats
+  private implicit val formats: Formats = JsonFormats.jsonFormats
 
   "GET /virkailija/vastaanotot/haku/:hakuOid" in {
     "palauttaa 200 ja vastaanottorecordeja, jos löytyy YPSn piirissä olevia vastaanottoja" in { t: (String, ValintatulosService, VastaanottoService) =>

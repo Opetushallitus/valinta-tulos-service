@@ -16,9 +16,10 @@ import fi.vm.sade.valintatulosservice.{ValintatulosService, tarjonta}
 
 import scala.annotation.tailrec
 import scala.collection.parallel.ForkJoinTaskSupport
+import scala.collection.parallel.CollectionConverters._
 import scala.collection.parallel.immutable.ParSeq
 import scala.concurrent.duration.Duration
-import scala.concurrent.forkjoin.ForkJoinPool
+import java.util.concurrent.ForkJoinPool
 
 class MailPoller(mailPollerRepository: MailPollerRepository,
                  valintatulosService: ValintatulosService,
