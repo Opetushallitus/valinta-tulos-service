@@ -6,14 +6,14 @@ import fi.vm.sade.valintatulosservice.domain.Valintatila
 import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakijanHakutoive, HakutoiveenValinnantulos, Valinnantulos}
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 object JonoFinder {
   def kaikkiJonotJulkaistu(hakutoive: KevytHakutoiveDTO): Boolean = {
-    !hakutoive.getHakutoiveenValintatapajonot.exists(!_.isJulkaistavissa)
+    !hakutoive.getHakutoiveenValintatapajonot.asScala.exists(!_.isJulkaistavissa)
   }
   def kaikkiJonotJulkaistu(hakutoive: HakutoiveDTO): Boolean = {
-    !hakutoive.getHakutoiveenValintatapajonot.exists(!_.isJulkaistavissa)
+    !hakutoive.getHakutoiveenValintatapajonot.asScala.exists(!_.isJulkaistavissa)
   }
 
   def merkitseväJono(hakutoive: KevytHakutoiveDTO) : Option[KevytHakutoiveenValintatapajonoDTO] = {
@@ -32,7 +32,7 @@ object JonoFinder {
       }
     }
 
-    val jonot = hakutoive.getHakutoiveenValintatapajonot.toList
+    val jonot = hakutoive.getHakutoiveenValintatapajonot.asScala.toList
     val jonotWithNullPrioriteettiCount: Int = jonot.count(_.getPrioriteetti == null)
     if (jonotWithNullPrioriteettiCount != 0 && jonotWithNullPrioriteettiCount != jonot.size) {
       throw new RuntimeException(s"Hakukohteella ${hakutoive.getHakukohdeOid} oli sekä nullin että ei-nullin " +
@@ -65,7 +65,7 @@ object JonoFinder {
         }
       }
     }
-    hakutoive.getHakutoiveenValintatapajonot.toList.sorted(ordering)
+    hakutoive.getHakutoiveenValintatapajonot.asScala.toList.sorted(ordering)
   }
 
   def merkitseväJono(valinnantulokset: List[HakijanHakutoive]): Option[HakijanHakutoive] = {

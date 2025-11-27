@@ -13,10 +13,10 @@ import org.json4s.JValue
 import org.json4s.JsonAST.JArray
 import org.json4s.jackson.Serialization
 import org.json4s.native.JsonMethods
+import org.json4s.jackson.JsonMethods.{parse => jacksonParse, pretty}
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 import org.springframework.core.io.ClassPathResource
-import org.tsers.zeison.Zeison
 
 @RunWith(classOf[JUnitRunner])
 class ValintaTulosServletSpec extends ServletSpecification {
@@ -28,7 +28,7 @@ class ValintaTulosServletSpec extends ServletSpecification {
   val ataruHenkilo2 = Henkilo(HakijaOid("ataru-tyyppi2"), None, Some("Ataru2"), None, None, None, None)
 
   private def prettify(json: String) = {
-    Zeison.renderPretty(Zeison.parse(json))
+    pretty(jacksonParse(json))
   }
 
   private def assertJson(expected: String, actual: String) = {

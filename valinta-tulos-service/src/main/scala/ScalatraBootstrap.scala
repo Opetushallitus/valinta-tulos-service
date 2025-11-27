@@ -38,7 +38,7 @@ import javax.servlet.{DispatcherType, ServletContext}
 
 class ScalatraBootstrap extends LifeCycle with Logging {
 
-  implicit val swagger = new ValintatulosSwagger
+  implicit val swagger: ValintatulosSwagger = new ValintatulosSwagger
 
   var globalConfig: Option[VtsAppConfig] = None
 

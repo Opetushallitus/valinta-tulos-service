@@ -6,18 +6,21 @@ import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusSerializer
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import org.json4s.ext.{EnumNameSerializer, JodaTimeSerializers}
+import org.json4s.ext.JodaTimeSerializers
 import org.json4s.{DefaultFormats, Formats}
 
 import java.text.SimpleDateFormat
 
 object JsonFormats {
   private val objectMapper: ObjectMapper = new ObjectMapper().registerModule(new Jdk8Module())
-  private val enumSerializers = List(new EnumNameSerializer(Vastaanotettavuustila), new EnumNameSerializer(Valintatila))
+  private val enumSerializers = List(new Scala213EnumNameSerializer(Vastaanotettavuustila), new Scala213EnumNameSerializer(Valintatila))
   private val customSerializers = enumSerializers ++ List(
     new EnsikertalaisuusSerializer,
     new VastaanottoActionSerializer,
     new VirkailijanVastaanottoActionSerializer,
+    new LukuvuosimaksuMuutosSerializer,
+    new LukuvuosimaksuSerializer,
+    new JonokohtainenTulostietoSerializer,
     new HakutoiveentulosSerializer,
     new IlmoittautumistilaSerializer,
     new ValinnantilaSerializer,

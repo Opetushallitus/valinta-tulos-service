@@ -15,6 +15,7 @@ import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{Hyvaksymiskirje, HyvaksymiskirjePatch}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiTehty, HakemusOid, HakukohdeOid, Hylatty, Valinnantulos, ValinnantulosUpdateStatus, ValintatapajonoOid}
 import fi.vm.sade.valintatulosservice.{AuditInfo, AuditSessionRequest, ErillishakuServlet, HyvaksymiskirjeService, ITSetup, ValinnantulosRequest, ValinnantulosService}
+import org.json4s.Formats
 import org.json4s.jackson.Serialization.write
 import org.json4s.native.JsonMethods.parse
 import org.junit.runner.RunWith
@@ -40,7 +41,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
     ServletTest.withServlet(this, servlet, (uri: String) => AsResult(f((uri, valinnantulosService, hyvaksymiskirjeService, userDetailsService))))
   }
 
-  private implicit val formats = JsonFormats.jsonFormats
+  private implicit val formats: Formats = JsonFormats.jsonFormats
 
   private val uid = "kkayttaja"
   private val kayttajaOid = "1.2.246.562.24.1"

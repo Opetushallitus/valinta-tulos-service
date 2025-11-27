@@ -17,7 +17,7 @@ import scala.collection.JavaConverters._
 trait ValintarekisteriResultExtractors {
   private implicit val jsonFormats: Formats = DefaultFormats
 
-  protected implicit val getVastaanottoResult = GetResult(r => VastaanottoRecord(
+  protected implicit val getVastaanottoResult: GetResult[VastaanottoRecord] = GetResult(r => VastaanottoRecord(
     henkiloOid = r.nextString,
     hakuOid = HakuOid(r.nextString),
     hakukohdeOid = HakukohdeOid(r.nextString),
@@ -25,7 +25,7 @@ trait ValintarekisteriResultExtractors {
     ilmoittaja = r.nextString,
     timestamp = r.nextTimestamp))
 
-  protected implicit val getHakukohdeResult = GetResult(r => {
+  protected implicit val getHakukohdeResult: GetResult[HakukohdeRecord] = GetResult(r => {
     val oid = HakukohdeOid(r.nextString)
     val hakuOid = HakuOid(r.nextString)
     val yhdenPaikanSaantoVoimassa = r.nextBoolean
@@ -37,17 +37,17 @@ trait ValintarekisteriResultExtractors {
     }
   })
 
-  protected implicit val getHakijaResult = GetResult(r => HakijaRecord(
+  protected implicit val getHakijaResult: GetResult[HakijaRecord] = GetResult(r => HakijaRecord(
     hakemusOid = HakemusOid(r.nextString),
     hakijaOid = r.nextString))
 
-  protected implicit val getHakutoiveResult = GetResult(r => HakutoiveRecord(
+  protected implicit val getHakutoiveResult: GetResult[HakutoiveRecord] = GetResult(r => HakutoiveRecord(
     hakemusOid = HakemusOid(r.nextString),
     hakutoive = r.nextIntOption,
     hakukohdeOid = HakukohdeOid(r.nextString),
     kaikkiJonotsijoiteltu = r.nextBooleanOption))
 
-  protected implicit val getHakutoiveenValintatapajonoResult = GetResult(r => HakutoiveenValintatapajonoRecord(
+  protected implicit val getHakutoiveenValintatapajonoResult: GetResult[HakutoiveenValintatapajonoRecord] = GetResult(r => HakutoiveenValintatapajonoRecord(
     hakemusOid = HakemusOid(r.nextString),
     hakukohdeOid = HakukohdeOid(r.nextString),
     valintatapajonoPrioriteetti = r.nextInt,
@@ -70,7 +70,7 @@ trait ValintarekisteriResultExtractors {
     sijoiteltuIlmanVarasijasaantojaNiidenOllessaVoimassa = r.nextBoolean
   ))
 
-  protected implicit val getHakutoiveenHakijaryhmaResult = GetResult(r => HakutoiveenHakijaryhmaRecord(
+  protected implicit val getHakutoiveenHakijaryhmaResult: GetResult[HakutoiveenHakijaryhmaRecord] = GetResult(r => HakutoiveenHakijaryhmaRecord(
     oid = r.nextString,
     nimi = r.nextString,
     hakukohdeOid = HakukohdeOid(r.nextString),
@@ -80,13 +80,13 @@ trait ValintarekisteriResultExtractors {
     hakijaryhmaTyyppikoodiUri = r.nextStringOption
   ))
 
-  protected implicit val getSijoitteluajoResult = GetResult(r => SijoitteluajoRecord(
+  protected implicit val getSijoitteluajoResult: GetResult[SijoitteluajoRecord] = GetResult(r => SijoitteluajoRecord(
     sijoitteluajoId = r.nextLong,
     hakuOid = HakuOid(r.nextString),
     startMils = r.nextTimestamp.getTime,
     endMils = r.nextTimestamp.getTime))
 
-  protected implicit val getSijoitteluSummaryRecord = GetResult(r => SijoitteluSummaryRecord(
+  protected implicit val getSijoitteluSummaryRecord: GetResult[SijoitteluSummaryRecord] = GetResult(r => SijoitteluSummaryRecord(
     valintatapajonoOid = ValintatapajonoOid(r.nextString),
     valintatapajonoNimi = r.nextString,
     sijoittelunKayttamatAloituspaikat = r.nextInt,
@@ -100,18 +100,18 @@ trait ValintarekisteriResultExtractors {
     peruneet = r.nextInt,
     hyvaksyttyHarkinnanvaraisesti = r.nextInt))
 
-  protected implicit val getSijoitteluajoHakukohteetResult = GetResult(r => SijoittelunHakukohdeRecord(
+  protected implicit val getSijoitteluajoHakukohteetResult: GetResult[SijoittelunHakukohdeRecord] = GetResult(r => SijoittelunHakukohdeRecord(
     sijoitteluajoId = r.nextLong,
     oid = HakukohdeOid(r.nextString),
     kaikkiJonotsijoiteltu = r.nextBoolean))
 
-  protected implicit val getJononAlimmatPisteet = GetResult(r => JononAlimmatPisteet(
+  protected implicit val getJononAlimmatPisteet: GetResult[JononAlimmatPisteet] = GetResult(r => JononAlimmatPisteet(
     valintatapajonoOid = ValintatapajonoOid(r.nextString),
     hakukohdeOid = HakukohdeOid(r.nextString),
     alinHyvaksyttyPistemaara = r.nextDouble,
     sijoitteluajoId = r.nextLong))
 
-  protected implicit val getValintatapajonotResult = GetResult(r => ValintatapajonoRecord(
+  protected implicit val getValintatapajonotResult: GetResult[ValintatapajonoRecord] = GetResult(r => ValintatapajonoRecord(
     tasasijasaanto = r.nextString,
     oid = ValintatapajonoOid(r.nextString),
     nimi = r.nextString,
@@ -135,7 +135,7 @@ trait ValintarekisteriResultExtractors {
       new JonosijaTieto(jonoSija, r.nextInt(), Valinnantila(r.nextString()).valinnantila, JsonMethods.parse(r.nextString()).extract[Seq[String]].asJava)
     }))
 
-  protected implicit val getSiirtotiedostoValintatapajonotResult = GetResult(r => SiirtotiedostoValintatapajonoRecord(
+  protected implicit val getSiirtotiedostoValintatapajonotResult: GetResult[SiirtotiedostoValintatapajonoRecord] = GetResult(r => SiirtotiedostoValintatapajonoRecord(
     tasasijasaanto = r.nextString,
     oid = ValintatapajonoOid(r.nextString),
     nimi = r.nextString,
@@ -161,7 +161,7 @@ trait ValintarekisteriResultExtractors {
     }
   ))
 
-  protected implicit val getSiirtotiedostoVastaanottoResult = GetResult(r => SiirtotiedostoVastaanotto(
+  protected implicit val getSiirtotiedostoVastaanottoResult: GetResult[SiirtotiedostoVastaanotto] = GetResult(r => SiirtotiedostoVastaanotto(
     henkiloOid = r.nextString(),
     hakukohdeOid = HakukohdeOid(r.nextString()),
     ilmoittaja = r.nextString(),
@@ -174,7 +174,7 @@ trait ValintarekisteriResultExtractors {
     deletedSelite = r.nextStringOption()
   ))
 
-  protected implicit val getSiirtotiedostoIlmoittautuminenResult = GetResult(r => SiirtotiedostoIlmoittautuminen(
+  protected implicit val getSiirtotiedostoIlmoittautuminenResult: GetResult[SiirtotiedostoIlmoittautuminen] = GetResult(r => SiirtotiedostoIlmoittautuminen(
     henkiloOid = r.nextString(),
     hakukohdeOid = HakukohdeOid(r.nextString()),
     tila = SijoitteluajonIlmoittautumistila(r.nextString),
@@ -183,7 +183,7 @@ trait ValintarekisteriResultExtractors {
     timestamp = r.nextString
   ))
 
-  protected implicit val getHakemuksetForValintatapajonosResult = GetResult(r => HakemusRecord(
+  protected implicit val getHakemuksetForValintatapajonosResult: GetResult[HakemusRecord] = GetResult(r => HakemusRecord(
     hakijaOid = r.nextStringOption,
     hakemusOid = HakemusOid(r.nextString),
     pisteet = r.nextBigDecimalOption,
@@ -199,17 +199,17 @@ trait ValintarekisteriResultExtractors {
     siirtynytToisestaValintatapaJonosta = r.nextBoolean,
     valintatapajonoOid = ValintatapajonoOid(r.nextString)))
 
-  protected implicit val getHakemuksenTilahistoriaResult = GetResult(r => TilaHistoriaRecord(
+  protected implicit val getHakemuksenTilahistoriaResult: GetResult[TilaHistoriaRecord] = GetResult(r => TilaHistoriaRecord(
     valintatapajonoOid = ValintatapajonoOid(r.nextString),
     hakemusOid = HakemusOid(r.nextString),
     tila = Valinnantila(r.nextString),
     luotu = r.nextTimestamp))
 
-  protected implicit val getHyvaksyttyValinnanTilaResult = GetResult(r => HyvaksyttyValinnanTila(
+  protected implicit val getHyvaksyttyValinnanTilaResult: GetResult[HyvaksyttyValinnanTila] = GetResult(r => HyvaksyttyValinnanTila(
     hakemusOid = HakemusOid(r.nextString),
     hakukohdeOid = HakukohdeOid(r.nextString)))
 
-  protected implicit val getHakijaryhmatResult = GetResult(r => HakijaryhmaRecord(
+  protected implicit val getHakijaryhmatResult: GetResult[HakijaryhmaRecord] = GetResult(r => HakijaryhmaRecord(
     prioriteetti = r.nextInt,
     oid = r.nextString,
     nimi = r.nextString,
@@ -222,7 +222,7 @@ trait ValintarekisteriResultExtractors {
     valintatapajonoOid = r.nextStringOption.map(ValintatapajonoOid),
     hakijaryhmatyyppikoodiUri = r.nextString))
 
-  protected implicit val getTilankuvauksetResult = GetResult(r => TilankuvausRecord(
+  protected implicit val getTilankuvauksetResult: GetResult[TilankuvausRecord] = GetResult(r => TilankuvausRecord(
     hash = r.nextInt,
     tilankuvauksenTarkenne = ValinnantilanTarkenne(r.nextString),
     textFi = r.nextStringOption,

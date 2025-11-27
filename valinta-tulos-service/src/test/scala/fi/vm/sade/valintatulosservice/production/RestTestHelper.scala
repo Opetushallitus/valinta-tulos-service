@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.production
 import fi.vm.sade.javautils.nio.cas.CasClientBuilder
 import fi.vm.sade.security.ScalaCasConfig
 import org.asynchttpclient.RequestBuilder
-import org.json4s.DefaultFormats
+import org.json4s.{DefaultFormats, Formats}
 import org.json4s.native.JsonMethods.parse
 
 import java.util.concurrent.TimeUnit
@@ -42,7 +42,7 @@ trait RestTestHelper {
     "session"
   ))
 
-  implicit val formats = DefaultFormats
+  implicit val formats: Formats = DefaultFormats
 
   protected def getOld(uriString: String): String = {
     val request = new RequestBuilder().setMethod("GET").setUrl(uriString).build()

@@ -49,7 +49,7 @@
         </dependency>
         <dependency>
             <groupId>com.typesafe.scala-logging</groupId>
-            <artifactId>scala-logging_2.11</artifactId>
+            <artifactId>scala-logging_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>fi.vm.sade.java-utils</groupId>
@@ -65,7 +65,7 @@
         </dependency>
         <dependency>
             <groupId>org.specs2</groupId>
-            <artifactId>specs2-core_2.11</artifactId>
+            <artifactId>specs2-core_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.reactivestreams</groupId>
@@ -73,11 +73,11 @@
         </dependency>
         <dependency>
             <groupId>org.specs2</groupId>
-            <artifactId>specs2-junit_2.11</artifactId>
+            <artifactId>specs2-junit_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.specs2</groupId>
-            <artifactId>specs2-mock_2.11</artifactId>
+            <artifactId>specs2-mock_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
@@ -85,7 +85,7 @@
         </dependency>
         <dependency>
             <groupId>com.typesafe.slick</groupId>
-            <artifactId>slick_2.11</artifactId>
+            <artifactId>slick_2.13</artifactId>
 	    <exclusions>
 		<exclusion>
 		    <groupId>org.reactivestreams</groupId>
@@ -115,19 +115,23 @@
         </dependency>
         <dependency>
             <groupId>org.json4s</groupId>
-            <artifactId>json4s-jackson_2.11</artifactId>
+            <artifactId>json4s-jackson_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.json4s</groupId>
-            <artifactId>json4s-native_2.11</artifactId>
+            <artifactId>json4s-native_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>com.typesafe.slick</groupId>
-            <artifactId>slick-hikaricp_2.11</artifactId>
+            <artifactId>slick-hikaricp_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.scala-lang.modules</groupId>
-            <artifactId>scala-java8-compat_2.11</artifactId>
+            <artifactId>scala-java8-compat_2.13</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.scala-lang.modules</groupId>
+            <artifactId>scala-parallel-collections_2.13</artifactId>
         </dependency>
     </dependencies>
     <build>
@@ -146,8 +150,6 @@
                 </executions>
                 <configuration>
                     <args>
-                        <arg>-Xmax-classfile-name</arg>
-                        <arg>140</arg>
                         <arg>-nobootcp</arg>
                     </args>
                 </configuration>

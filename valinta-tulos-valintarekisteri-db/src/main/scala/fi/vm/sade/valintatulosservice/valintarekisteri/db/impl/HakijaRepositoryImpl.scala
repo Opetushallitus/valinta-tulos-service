@@ -132,7 +132,7 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
                sh.sijoitteluajo_id = j.sijoitteluajo_id
           where j.sijoitteluajo_id = ${sijoitteluajoId} and
                 j.hakemus_oid in (#$inParameter)""".as[HakutoiveRecord]
-    ).map(hr => hr.hakemusOid -> hr).groupBy(_._1).mapValues(_.map(_._2).toList)
+    ).map(hr => hr.hakemusOid -> hr).groupBy(_._1).view.mapValues(_.map(_._2).toList).toMap
   }
 
   override def getHakukohteenHakemuksienHakutoiveetSijoittelussa(hakukohdeOid: HakukohdeOid, sijoitteluajoId:Long): List[HakutoiveRecord] =
@@ -274,7 +274,7 @@ trait HakijaRepositoryImpl extends HakijaRepository with ValintarekisteriReposit
                tk.hakukohde_oid = j.hakukohde_oid
           where j.sijoitteluajo_id = ${sijoitteluajoId} and
                 j.hakemus_oid in (#$inParameter)""".as[HakutoiveenValintatapajonoRecord]
-    ).map(hvr => hvr.hakemusOid -> hvr).groupBy(_._1).mapValues(_.map(_._2).toList)
+    ).map(hvr => hvr.hakemusOid -> hvr).groupBy(_._1).view.mapValues(_.map(_._2).toList).toMap
   }
 
   override def getHakukohteenHakemuksienValintatapajonotSijoittelussa(hakukohdeOid: HakukohdeOid, sijoitteluajoId:Long): List[HakutoiveenValintatapajonoRecord] =

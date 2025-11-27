@@ -28,7 +28,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
                              sijoittelunTulosClient: ValintarekisteriSijoittelunTulosClient) {
   import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.laskeVastaanottoDeadline
 
-  import scala.collection.JavaConversions._
+  import scala.collection.JavaConverters._
 
   private val logger = LoggerFactory.getLogger(classOf[SijoittelutulosService])
 
@@ -92,7 +92,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     for {
       latestSijoitteluajoId <- valintarekisteriDb.runBlocking(valintarekisteriDb.getLatestSijoitteluajoId(hakuOid))
     } yield {
-      val valinnantuloksetByHakemusOids: Map[HakemusOid, List[Valinnantulos]] = valintarekisteriDb.getValinnantuloksetForHakemukses(hakemusOids).map(vt => vt.hakemusOid -> vt).groupBy(_._1).mapValues(_.map(_._2).toList)
+      val valinnantuloksetByHakemusOids: Map[HakemusOid, List[Valinnantulos]] = valintarekisteriDb.getValinnantuloksetForHakemukses(hakemusOids).map(vt => vt.hakemusOid -> vt).groupBy(_._1).view.mapValues(_.map(_._2).toList).toMap
       if(valinnantuloksetByHakemusOids.isEmpty) {
         logger.info("Hakemuksille ei löytynyt haussa " + hakuOid + " Valpas-palvelun tarvitsemaa tietoja. Lopetetaan hakeminen")
         return List.empty
@@ -226,7 +226,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
   }
 
   private def getPisteetForJono(jono: HakutoiveenValintatapajonoRecord): Option[BigDecimal] = {
-    if (jono.pisteet.exists(p => p.intValue() == (-1 * jono.jonosija))) None else jono.pisteet
+    if (jono.pisteet.exists(p => p.intValue == (-1 * jono.jonosija))) None else jono.pisteet
   }
 
   private def jonokohtainenTulostieto(merkitsevaValinnantulos: Option[Valinnantulos],
@@ -356,11 +356,11 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
                                         ohjausparametrit: Ohjausparametrit,
                                         hyvaksyttyJulkaistuDates: Map[HakukohdeOid, OffsetDateTime],
                                         vastaanottoRecord: Set[VastaanottoRecord]): HakemuksenSijoitteluntulos = {
-    val hakutoiveidenYhteenvedot = hakija.getHakutoiveet.toList.map { hakutoive: KevytHakutoiveDTO =>
+    val hakutoiveidenYhteenvedot = hakija.getHakutoiveet.asScala.toList.map { hakutoive: KevytHakutoiveDTO =>
       val vastaanotto = vastaanottoRecord.find(v => v.hakukohdeOid.toString == hakutoive.getHakukohdeOid)
       val jono = JonoFinder.merkitseväJono(hakutoive).getOrElse {
         throw new IllegalStateException(s"Ei löydy merkitsevää jonoa hakemuksen ${hakija.getHakemusOid} hakutoiveelle ${hakutoive.getHakukohdeOid} . " +
-          s"Kaikki jonot (${hakutoive.getHakutoiveenValintatapajonot.size} kpl): ${hakutoive.getHakutoiveenValintatapajonot.map(ToStringBuilder.reflectionToString)}")
+          s"Kaikki jonot (${hakutoive.getHakutoiveenValintatapajonot.size} kpl): ${hakutoive.getHakutoiveenValintatapajonot.asScala.map(ToStringBuilder.reflectionToString)}")
       }
       val valintatila = jononValintatila(jono, hakutoive)
 
@@ -395,7 +395,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
         ehdollisenHyvaksymisenEhtoFI = Option(jono.getEhdollisenHyvaksymisenEhtoFI),
         ehdollisenHyvaksymisenEhtoSV = Option(jono.getEhdollisenHyvaksymisenEhtoSV),
         ehdollisenHyvaksymisenEhtoEN = Option(jono.getEhdollisenHyvaksymisenEhtoEN),
-        jono.getTilanKuvaukset.toMap,
+        jono.getTilanKuvaukset.asScala.toMap,
         pisteet,
         jonokohtaisetTulostiedot = List()
       )
@@ -518,7 +518,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
         }
 
         def calculateLateness(hakijaDto: KevytHakijaDTO): VastaanottoAikarajaMennyt = {
-          val hakutoiveDtoOfThisHakukohde: Option[KevytHakutoiveDTO] = hakijaDto.getHakutoiveet.toList.find(_.getHakukohdeOid == hakukohdeOid.toString)
+          val hakutoiveDtoOfThisHakukohde: Option[KevytHakutoiveDTO] = hakijaDto.getHakutoiveet.asScala.toList.find(_.getHakukohdeOid == hakukohdeOid.toString)
           val vastaanottoDeadline: Option[DateTime] = hakutoiveDtoOfThisHakukohde.flatMap { hakutoive: KevytHakutoiveDTO =>
             laskeVastaanottoDeadline(ohjausparametrit, hyvaksyttyJaJulkaistuDates.get(hakijaDto.getHakijaOid))
           }

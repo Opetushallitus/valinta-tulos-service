@@ -10,7 +10,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriD
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
 
 trait ITSetup {
-  implicit val appConfig = new VtsAppConfig.IT
+  implicit val appConfig: VtsAppConfig.IT = new VtsAppConfig.IT
   val dbConfig = appConfig.settings.valintaRekisteriDbConfig
 
   lazy val singleConnectionValintarekisteriDb = new ValintarekisteriDb(

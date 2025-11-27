@@ -12,7 +12,7 @@ import scala.util.control.NonFatal
 
 class KayttooikeusUserDetailsService(appConfig:AppConfig) extends Logging {
   import org.json4s._
-  implicit val formats = DefaultFormats
+  implicit val formats: Formats = DefaultFormats
 
   def getUserByUsername(username: String): Either[Throwable, KayttooikeusUserDetails] = {
     val url = appConfig.ophUrlProperties.url("kayttooikeus-service.userDetails.byUsername", username)

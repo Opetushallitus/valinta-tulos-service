@@ -105,12 +105,11 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
       var isPartOfHakukohdeList = false
       var isHyvaksytty = false
       var isVastaanottanut = false
-      import scala.collection.JavaConversions._
-      for (hakutoiveDTO <- hakija.getHakutoiveet) {
+      import scala.collection.JavaConverters._
+      for (hakutoiveDTO <- hakija.getHakutoiveet.asScala) {
         if (hakukohdeOids != null && hakukohdeOids.contains(hakutoiveDTO.getHakukohdeOid)) isPartOfHakukohdeList = true
         if (hakutoiveDTO.getVastaanottotieto eq ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI) isVastaanottanut = true
-        import scala.collection.JavaConversions._
-        for (valintatapajono <- hakutoiveDTO.getHakutoiveenValintatapajonot) {
+        for (valintatapajono <- hakutoiveDTO.getHakutoiveenValintatapajonot.asScala) {
           if ((valintatapajono.getTila eq HakemuksenTila.HYVAKSYTTY) || (valintatapajono.getTila eq VARASIJALTA_HYVAKSYTTY)) isHyvaksytty = true
         }
       }
@@ -137,8 +136,8 @@ class ValintarekisteriRaportointiServiceImpl(repository: HakijaRepository with S
     sort(hakijat, hakijaDTOComparator)
     val paginationObject: HakijaPaginationObject = new HakijaPaginationObject
     val result: java.util.List[HakijaDTO] = new java.util.ArrayList[HakijaDTO]
-    import scala.collection.JavaConversions._
-    for (hakija <- hakijat) {
+    import scala.collection.JavaConverters._
+    for (hakija <- hakijat.asScala) {
       if (filter(hakija)) result.add(hakija)
     }
     paginationObject.setTotalCount(result.size)

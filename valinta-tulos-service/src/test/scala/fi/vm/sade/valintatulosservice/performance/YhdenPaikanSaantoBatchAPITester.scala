@@ -7,12 +7,12 @@ import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, Kevat, YPSHakukohde}
 import org.json4s.jackson.Serialization
-import org.json4s.{DefaultFormats, JValue}
+import org.json4s.{DefaultFormats, Formats, JValue}
 
 
 object YhdenPaikanSaantoBatchAPITester extends App with Logging {
-  implicit val formats = DefaultFormats
-  implicit val appConfig = new VtsAppConfig.IT
+  implicit val formats: Formats = DefaultFormats
+  implicit val appConfig: VtsAppConfig.IT = new VtsAppConfig.IT
   private val dbConfig = appConfig.settings.valintaRekisteriDbConfig
   lazy val valintarekisteriDb: ValintarekisteriDb = new ValintarekisteriDb(
     dbConfig.copy(maxConnections = Some(1), minConnections = Some(1)))

@@ -545,7 +545,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
 
         ylemmanToiveenTulos.jonokohtaisetTulostiedot.size must_== 2
         ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.valintatila must_== Valintatila.varalla
-        ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.tilanKuvaukset must beSome(Map())
+        ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.tilanKuvaukset must beSome(Map.empty[String, String])
         ylemmanToiveenTulos.jonokohtaisetTulostiedot(1).valintatila must_== Valintatila.kesken
         ylemmanToiveenTulos.jonokohtaisetTulostiedot(1).tilanKuvaukset must beNone
 
@@ -614,7 +614,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
 
         ylemmanToiveenTulos.jonokohtaisetTulostiedot.size must_== 2
         ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.valintatila must_== Valintatila.varalla
-        ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.tilanKuvaukset must beSome(Map())
+        ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.tilanKuvaukset must beSome(Map.empty[String, String])
         ylemmanToiveenTulos.jonokohtaisetTulostiedot(1).valintatila must_== Valintatila.kesken
         ylemmanToiveenTulos.jonokohtaisetTulostiedot(1).tilanKuvaukset must beNone
 
@@ -688,7 +688,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
 
         ylemmanToiveenTulos.jonokohtaisetTulostiedot.size must_== 2
         ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.valintatila must_== Valintatila.varalla
-        ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.tilanKuvaukset must beSome(Map())
+        ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.tilanKuvaukset must beSome(Map.empty[String, String])
         ylemmanToiveenTulos.jonokohtaisetTulostiedot(1).valintatila must_== Valintatila.kesken
         ylemmanToiveenTulos.jonokohtaisetTulostiedot(1).tilanKuvaukset must beNone
 
@@ -775,7 +775,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
 
       ylemmanToiveenTulos.jonokohtaisetTulostiedot.size must_== 2
       ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.valintatila must_== Valintatila.varalla
-      ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.tilanKuvaukset must beSome(Map())
+      ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.tilanKuvaukset must beSome(Map.empty[String, String])
       ylemmanToiveenTulos.jonokohtaisetTulostiedot(1).valintatila must_== Valintatila.kesken
       ylemmanToiveenTulos.jonokohtaisetTulostiedot(1).tilanKuvaukset must beNone
 
@@ -853,7 +853,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
 
       ylemmanToiveenTulos.jonokohtaisetTulostiedot.size must_== 2
       ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.valintatila must_== Valintatila.varalla
-      ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.tilanKuvaukset must beSome(Map())
+      ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.tilanKuvaukset must beSome(Map.empty[String, String])
       ylemmanToiveenTulos.jonokohtaisetTulostiedot(1).valintatila must_== Valintatila.kesken
       ylemmanToiveenTulos.jonokohtaisetTulostiedot(1).tilanKuvaukset must beNone
 
@@ -931,7 +931,7 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
 
       ylemmanToiveenTulos.jonokohtaisetTulostiedot.size must_== 2
       ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.valintatila must_== Valintatila.varalla
-      ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.tilanKuvaukset must beSome(Map())
+      ylemmanToiveenTulos.jonokohtaisetTulostiedot.head.tilanKuvaukset must beSome(Map.empty[String, String])
       ylemmanToiveenTulos.jonokohtaisetTulostiedot(1).valintatila must_== Valintatila.kesken
       ylemmanToiveenTulos.jonokohtaisetTulostiedot(1).tilanKuvaukset must beNone
 

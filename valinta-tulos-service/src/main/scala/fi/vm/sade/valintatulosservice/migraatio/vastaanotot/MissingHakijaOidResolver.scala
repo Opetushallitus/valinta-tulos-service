@@ -21,7 +21,7 @@ import scala.concurrent.duration.{Duration, DurationInt}
 case class Henkilo(oidHenkilo: String, hetu: String, etunimet: String, sukunimi: String)
 
 trait HakijaResolver {
-  def findPersonByHetu(hetu: String, timeout: Duration = 60 seconds): Option[Henkilo]
+  def findPersonByHetu(hetu: String, timeout: Duration = 60.seconds): Option[Henkilo]
 }
 
 object HakijaResolver {
@@ -47,7 +47,7 @@ class MissingHakijaOidResolver(appConfig: VtsAppConfig) extends JsonFormats with
   case class HakemusHenkilo(personOid: Option[String], hetu: Option[String], etunimet: String, sukunimi: String, kutsumanimet: String,
                             syntymaaika: String, aidinkieli: Option[String], sukupuoli: Option[String])
 
-  override def findPersonByHetu(hetu: String, timeout: Duration = 60 seconds): Option[Henkilo] = {
+  override def findPersonByHetu(hetu: String, timeout: Duration = 60.seconds): Option[Henkilo] = {
     val requestUri = appConfig.ophUrlProperties.url("oppijanumerorekisteri-service.henkiloPerusByHetu", hetu)
     val req = new RequestBuilder()
       .setUrl(requestUri)

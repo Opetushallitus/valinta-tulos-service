@@ -7,7 +7,7 @@ import fi.vm.sade.sijoittelu.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
 
 object SijoitteluFixtureCreator {
-  import collection.JavaConversions._
+  import scala.collection.JavaConverters._
 
 
   def newHakemus(hakemusOid: HakemusOid, hakijaOid: String, hakutoiveIndex: Int, hakemuksenTila: HakemuksenTila): Hakemus = {
@@ -33,7 +33,7 @@ object SijoitteluFixtureCreator {
     jono.setNimi("testijono")
     jono.setPrioriteetti(0)
     jono.setAloituspaikat(3)
-    jono.setHakemukset(new util.ArrayList(hakemukset))
+    jono.setHakemukset(new util.ArrayList(hakemukset.asJava))
     jono
   }
 
@@ -43,7 +43,7 @@ object SijoitteluFixtureCreator {
     hakukohde.setOid(hakukohdeOid.toString)
     hakukohde.setTarjoajaOid(tarjoajaOid)
     hakukohde.setKaikkiJonotSijoiteltu(kaikkiJonotSijoiteltu)
-    hakukohde.setValintatapajonot(jonot)
+    hakukohde.setValintatapajonot(jonot.asJava)
     hakukohde
   }
 
@@ -70,7 +70,7 @@ object SijoitteluFixtureCreator {
       val item = new HakukohdeItem()
       item.setOid(hakukohdeOid.toString)
       item
-    })
+    }.asJava)
 
     val sijoittelu = new Sijoittelu()
     sijoittelu.setHakuOid(hakuOid.toString)

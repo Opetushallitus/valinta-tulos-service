@@ -1,10 +1,15 @@
 package fi.vm.sade.valintatulosservice.hakemus
 
-import com.mongodb._
+import com.mongodb.MongoBulkWriteException
+import com.mongodb.client.model.{InsertOneModel, WriteModel}
 import fi.vm.sade.valintatulosservice.config.{MongoConfig, VtsApplicationSettings}
 import fi.vm.sade.valintatulosservice.mongo.MongoFactory
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid}
+import org.bson.Document
 import org.bson.types.ObjectId
+
+import java.util
+import scala.collection.JavaConverters._
 
 class HakemusFixtures(config: MongoConfig) {
   lazy val db = MongoFactory.createDB(config)
@@ -13,7 +18,7 @@ class HakemusFixtures(config: MongoConfig) {
     throw new IllegalArgumentException("HakemusFixtureImporter can only be used with IT profile")
 
   def clear = {
-    db.getCollection("application").remove(new BasicDBObject())
+    db.getCollection("application").remove(new Document())
     this
   }
 
@@ -24,65 +29,59 @@ class HakemusFixtures(config: MongoConfig) {
 
   def importFixture(fixtureName: String): HakemusFixtures = {
     val filename = "fixtures/hakemus/" + fixtureName + ".json"
-    val data: DBObject = MongoMockData.readJson(filename)
-    insertData(db.underlying, data)
+    val data: Document = MongoMockData.readJson(filename)
+    insertData(data)
     this
   }
 
-  private def insertData(db: DB, data: DBObject) {
-    import scala.collection.JavaConversions._
-    for (collection <- data.keySet) {
-      val collectionData: BasicDBList = data.get(collection).asInstanceOf[BasicDBList]
-      val c: DBCollection = db.getCollection(collection)
-      import scala.collection.JavaConversions._
-      for (dataObject <- collectionData) {
-        val dbObject: DBObject = dataObject.asInstanceOf[DBObject]
-        val id: AnyRef = dbObject.get("_id")
-        c.insert(dbObject)
+  private def insertData(data: Document): Unit = {
+    for (collection <- data.keySet.asScala) {
+      val collectionData = data.get(collection, classOf[util.List[Document]])
+      val c = db.underlying.getCollection(collection)
+      for (dataObject <- collectionData.asScala) {
+        c.insertOne(dataObject)
       }
     }
   }
 
-  private var builder:BulkWriteOperation = null
+  private var bulkOperations: util.List[WriteModel[Document]] = _
 
-  def startBulkOperationInsert() = {
-    builder = db.underlying.getCollection("application").initializeUnorderedBulkOperation
+  def startBulkOperationInsert(): Unit = {
+    bulkOperations = new util.ArrayList[WriteModel[Document]]()
   }
 
-  def importTemplateFixture(hakemus: HakemusFixture) = {
-    val currentTemplateObject = MongoMockData.readJson("fixtures/hakemus/hakemus-template.json").asInstanceOf[BasicDBObject]
+  def importTemplateFixture(hakemus: HakemusFixture): Unit = {
+    val currentTemplateObject = MongoMockData.readJson("fixtures/hakemus/hakemus-template.json")
     currentTemplateObject.put("_id", new ObjectId())
     currentTemplateObject.put("oid", hakemus.hakemusOid.toString)
     currentTemplateObject.put("applicationSystemId", hakemus.hakuOid.toString)
     currentTemplateObject.put("personOid", hakemus.hakemusOid.toString)
-    val hakutoiveetDbObject = currentTemplateObject.get("answers").asInstanceOf[BasicDBObject].get("hakutoiveet").asInstanceOf[BasicDBObject]
+    val hakutoiveetDbObject = currentTemplateObject.get("answers", classOf[Document]).get("hakutoiveet", classOf[Document])
     val hakutoiveetMetaDbList = currentTemplateObject
-      .get("authorizationMeta").asInstanceOf[BasicDBObject]
-      .get("applicationPreferences").asInstanceOf[BasicDBList]
+      .get("authorizationMeta", classOf[Document])
+      .get("applicationPreferences", classOf[util.List[Document]])
 
     hakemus.hakutoiveet.foreach { hakutoive =>
       hakutoiveetDbObject.put("preference" + hakutoive.index + "-Koulutus-id", hakutoive.hakukohdeOid.toString)
       hakutoiveetDbObject.put("preference" + hakutoive.index + "-Opetuspiste-id", hakutoive.tarjoajaOid)
-      hakutoiveetMetaDbList.add(BasicDBObjectBuilder.start()
-        .add("ordinal", hakutoive.index)
-        .push("preferenceData")
-        .add("Koulutus-id", hakutoive.hakukohdeOid.toString)
-        .add("Opetuspiste-id", hakutoive.tarjoajaOid)
-        .pop()
-        .get())
+      val preferenceData = new Document()
+        .append("Koulutus-id", hakutoive.hakukohdeOid.toString)
+        .append("Opetuspiste-id", hakutoive.tarjoajaOid)
+      val metaEntry = new Document()
+        .append("ordinal", hakutoive.index)
+        .append("preferenceData", preferenceData)
+      hakutoiveetMetaDbList.add(metaEntry)
     }
-    builder.insert(currentTemplateObject)
+    bulkOperations.add(new InsertOneModel[Document](currentTemplateObject))
   }
 
-  def commitBulkOperationInsert = {
-    import scala.collection.JavaConverters._
+  def commitBulkOperationInsert: Unit = {
     try {
-      builder.execute(WriteConcern.UNACKNOWLEDGED)
+      db.underlying.getCollection("application").bulkWrite(bulkOperations)
     } catch {
-      case e:BulkWriteException => {
+      case e: MongoBulkWriteException =>
         e.printStackTrace()
-        for(error <- e.getWriteErrors.asScala) println(error.getMessage)
-      }
+        for (error <- e.getWriteErrors.asScala) println(error.getMessage)
     }
   }
 }
@@ -98,18 +97,18 @@ object HakemusFixtures {
 object MongoMockData {
   import org.springframework.core.io.ClassPathResource
   import org.apache.commons.io.IOUtils
-  import java.io.StringWriter
-  import java.io.IOException
-  import com.mongodb.util.JSON
 
-  def readJson(path:String):DBObject = {
+  import java.io.{IOException, StringWriter}
+  import java.nio.charset.StandardCharsets
+
+  def readJson(path: String): Document = {
     val writer = new StringWriter()
     try {
-      IOUtils.copy(new ClassPathResource(path).getInputStream, writer)
+      IOUtils.copy(new ClassPathResource(path).getInputStream, writer, StandardCharsets.UTF_8)
     } catch {
-      case ioe:IOException => throw new RuntimeException(ioe)
+      case ioe: IOException => throw new RuntimeException(ioe)
     }
-    JSON.parse(writer.toString()).asInstanceOf[DBObject]
+    Document.parse(writer.toString)
   }
 }
 
