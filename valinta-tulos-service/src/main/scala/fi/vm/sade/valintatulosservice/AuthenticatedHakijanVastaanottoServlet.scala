@@ -1,16 +1,11 @@
 package fi.vm.sade.valintatulosservice
 
-import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijanVastaanottoAction, HakijanVastaanottoDto, HakukohdeOid}
 import fi.vm.sade.valintatulosservice.vastaanotto.HakijanVastaanottoActionSerializer
-import org.json4s.JsonAST.{JField, JString, JValue}
 import org.json4s._
-import org.json4s.jackson.compactJson
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
-
-import scala.util.Try
 
 class AuthenticatedHakijanVastaanottoServlet(vastaanottoService: VastaanottoService, val sessionRepository: SessionRepository)
                                             (implicit val swagger: Swagger) extends VtsServletBase with CasAuthenticatedServlet {
@@ -24,7 +19,7 @@ class AuthenticatedHakijanVastaanottoServlet(vastaanottoService: VastaanottoServ
     name = classOf[HakijanVastaanottoAction].getSimpleName,
     properties = List("action" -> ModelProperty(`type` = DataType.String, required = true, allowableValues = AllowableValues(HakijanVastaanottoAction.values))))
 
-  val postVastaanottoSwagger: OperationBuilder = (apiOperation[Unit]("postVastaanotto")
+  val postVastaanottoSwagger: OperationBuilder = (apiOperation[Unit]("authPostVastaanotto")
     summary "Tallenna hakemuksen hakutoiveelle uusi vastaanottotila"
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid")
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid")

@@ -35,11 +35,11 @@ object VirkailijanVastaanotto {
   }
 }
 
-sealed trait VastaanottoAction {
+trait VastaanottoAction {
   def valintatuloksenTila: ValintatuloksenTila
 }
 
-sealed trait HakijanVastaanottoAction extends VastaanottoAction
+trait HakijanVastaanottoAction extends VastaanottoAction
 
 sealed trait VirkailijanVastaanottoAction extends VastaanottoAction
 
