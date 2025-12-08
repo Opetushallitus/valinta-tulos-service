@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
+import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijanVastaanottoAction, HakijanVastaanottoDto, HakukohdeOid}
 import fi.vm.sade.valintatulosservice.vastaanotto.HakijanVastaanottoActionSerializer
@@ -26,7 +27,8 @@ class AuthenticatedHakijanVastaanottoServlet(vastaanottoService: VastaanottoServ
     parameter bodyParam(hakijanVastaanottoActionModel)
     tags "vastaanotto")
   post("/hakemus/:hakemusOid/hakukohde/:hakukohdeOid", operation(postVastaanottoSwagger)) {
-
+    implicit val authenticated = authenticate
+    authorize(Role.VALINTATULOSSERVICE_CRUD)
     val hakemusOid = HakemusOid(params("hakemusOid"))
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     val action = parsedBody.extract[HakijanVastaanottoAction]
