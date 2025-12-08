@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
+import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijanVastaanottoAction, HakijanVastaanottoDto, HakukohdeOid}
@@ -8,7 +9,7 @@ import org.json4s._
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 
-class AuthenticatedHakijanVastaanottoServlet(vastaanottoService: VastaanottoService, val sessionRepository: SessionRepository)
+class AuthenticatedHakijanVastaanottoServlet(vastaanottoService: VastaanottoService, val sessionRepository: SessionRepository, audit: Audit)
                                             (implicit val swagger: Swagger) extends VtsServletBase with CasAuthenticatedServlet {
 
   override protected def applicationDescription: String = "Opiskelupaikan vastaanoton autentikoitu REST API"
@@ -27,12 +28,15 @@ class AuthenticatedHakijanVastaanottoServlet(vastaanottoService: VastaanottoServ
     parameter bodyParam(hakijanVastaanottoActionModel)
     tags "vastaanotto")
   post("/hakemus/:hakemusOid/hakukohde/:hakukohdeOid", operation(postVastaanottoSwagger)) {
-    implicit val authenticated = authenticate
+    implicit val authenticated: Authenticated = authenticate
     authorize(Role.VALINTATULOSSERVICE_CRUD)
     val hakemusOid = HakemusOid(params("hakemusOid"))
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     val action = parsedBody.extract[HakijanVastaanottoAction]
-
+    val builder = new Target.Builder()
+      .setField("vastaanottoAction", action.toString)
+    audit.log(auditInfo.user, VastaanottotiedonMuokkaus, builder.build(), new Changes.Builder().build())
+    
     vastaanottoService.vastaanotaHakijana(HakijanVastaanottoDto(hakemusOid, hakukohdeOid, action))
       .left.foreach(e => throw e)
   }
