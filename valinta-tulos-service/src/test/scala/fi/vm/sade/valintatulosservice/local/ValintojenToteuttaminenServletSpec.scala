@@ -53,5 +53,5 @@ class ValintojenToteuttaminenServletSpec extends ServletSpecification with Valin
     }
   }
 
-  step(deleteAll)
+  step(deleteAll())
 }
