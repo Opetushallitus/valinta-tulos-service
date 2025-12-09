@@ -29,7 +29,7 @@ class AuthenticatedHakijanVastaanottoServlet(vastaanottoService: VastaanottoServ
     tags "vastaanotto")
   post("/hakemus/:hakemusOid/hakukohde/:hakukohdeOid", operation(postVastaanottoSwagger)) {
     implicit val authenticated: Authenticated = authenticate
-    authorize(Role.VALINTATULOSSERVICE_CRUD)
+    authorize(Role.VALINTATULOSSERVICE_CRUD_OPH)
     val hakemusOid = HakemusOid(params("hakemusOid"))
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     val action = parsedBody.extract[HakijanVastaanottoAction]

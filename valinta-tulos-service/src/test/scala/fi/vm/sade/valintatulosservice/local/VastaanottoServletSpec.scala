@@ -68,7 +68,7 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
 
   "POST /auth/vastaanotto" should {
 
-    lazy val testSession: String = createTestSession(roles = Set(Role.VALINTATULOSSERVICE_CRUD))
+    lazy val testSession: String = createTestSession(roles = Set(Role.VALINTATULOSSERVICE_CRUD_OPH))
     lazy val authHeaders = Map("Cookie" -> s"session=${testSession}")
 
     "vaatii autentikoinnin" in {
@@ -81,8 +81,8 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
 
     "vaatii autorisoinnin" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")
-      lazy val testSessionWithInadequateCredentials: String = createTestSession(roles = Set(Role.SIJOITTELU_CRUD))
-      lazy val headers = Map("Cookie" -> s"session=${testSessionWithInadequateCredentials}")
+      val testSessionWithInadequateCredentials: String = createTestSession(roles = Set(Role.SIJOITTELU_CRUD, Role.VALINTATULOSSERVICE_CRUD))
+      val headers = Map("Cookie" -> s"session=${testSessionWithInadequateCredentials}")
 
       vastaanotaAuthenticated("VastaanotaSitovasti", headers = headers) {
         status must_== 403
