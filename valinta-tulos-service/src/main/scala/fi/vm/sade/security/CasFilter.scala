@@ -9,7 +9,7 @@ import org.scalatra.json._
 import org.scalatra.{CookieOptions, InternalServerError, ScalatraFilter, Unauthorized, Forbidden}
 
 /**
- * Filter that verifies CAS service ticket and checks user permissions from Käyttöoikeuspalvelu.
+ * Filter that verifies CAS service tickets.
  *
  * @param requiredRoles         Required roles.
  */
