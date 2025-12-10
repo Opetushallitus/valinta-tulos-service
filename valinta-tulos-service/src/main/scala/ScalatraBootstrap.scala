@@ -204,6 +204,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new PuuttuvienTulostenMetsastajaServlet(audit, valintarekisteriDb, hakuAppRepository, appConfig.properties("host.virkailija")), "/auth/puuttuvat", "auth/puuttuvat")
       context.mount(new HyvaksynnanEhtoServlet(valintarekisteriDb, hakuService, hakemusRepository, authorizer, audit, valintarekisteriDb), "/auth/hyvaksynnan-ehto", "auth/hyvaksynnan-ehto")
       context.mount(new HyvaksynnanEhtoMuutoshistoriaServlet(valintarekisteriDb, hakuService, hakemusRepository, authorizer, audit, valintarekisteriDb), "/auth/hyvaksynnan-ehto-muutoshistoria", "auth/hyvaksynnan-ehto-muutoshistoria")
+      context.mount(new AuthenticatedHakijanVastaanottoServlet(vastaanottoService, valintarekisteriDb, audit), "/auth/vastaanotto", "/auth/vastaanotto")
 
       lazy val mailPollerRepository: MailPollerRepository = valintarekisteriDb
       lazy val mailPoller: MailPoller = new MailPoller(mailPollerRepository, valintatulosService, hakuService, hakemusRepository, cachedOhjausparametritService, appConfig.settings)
