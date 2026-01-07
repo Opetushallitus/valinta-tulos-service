@@ -199,7 +199,7 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService,
   post("/:valintatapajonoOid", operation(erillishaunValinnantulosMuutosSwagger)) {
     contentType = formats("json")
     implicit val authenticated: Authenticated = authenticate
-    authorize(Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
+    authorize(Role.SIJOITTELU_CRUD_OPH)
     val valintatapajonoOid = parseValintatapajonoOid.fold(throw _, x => x)
     val ifUnmodifiedSince: Option[Instant] = parseIfUnmodifiedSince(appConfig)
     val valinnantulokset = parsedBody.extract[ValinnantulosRequest].valinnantulokset
@@ -226,7 +226,7 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService,
   get("/:valintatapajonoOid", operation(erillishaunValinnantulosSwagger)) {
     contentType = formats("json")
     implicit val authenticated: Authenticated = authenticate
-    authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
+    authorize(Role.SIJOITTELU_CRUD_OPH)
     val valintatapajonoOid = parseValintatapajonoOid.fold(throw _, x => x)
 
     valinnantulosService.getValinnantuloksetForValintatapajono(valintatapajonoOid, auditInfo) match {

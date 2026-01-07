@@ -4,7 +4,6 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
 import java.util.UUID
-
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.utils.ServletTest
 import fi.vm.sade.valintatulosservice.json.JsonFormats
@@ -12,6 +11,7 @@ import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{Hyvaksymiskirje, HyvaksymiskirjePatch, SessionRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiTehty, HakemusOid, HakukohdeOid, Hylatty, Valinnantulos, ValinnantulosUpdateStatus, ValintatapajonoOid}
 import fi.vm.sade.valintatulosservice.{AuditInfo, ErillishakuServlet, HyvaksymiskirjeService, ITSetup, ValinnantulosRequest, ValinnantulosService}
+import org.json4s.Formats
 import org.json4s.jackson.Serialization.write
 import org.json4s.native.JsonMethods.parse
 import org.junit.runner.RunWith
@@ -37,7 +37,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
     ServletTest.withServlet(this, servlet, (uri: String) => AsResult(f((uri, valinnantulosService, hyvaksymiskirjeService, sessionRepository))))
   }
 
-  private implicit val formats = JsonFormats.jsonFormats
+  private implicit val formats: Formats = JsonFormats.jsonFormats
 
   private val kayttajaOid = "1.2.246.562.24.1"
   private val sessionId = UUID.fromString("b96db27a-c9db-11f0-af2e-06fac2790884")
@@ -45,9 +45,8 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
   private val ifUnmodifiedSince = DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant(now, ZoneId.of("GMT")))
   private val sessionParameter = Iterable("session" -> sessionId.toString)
   private val sessionCookies = Map("Cookie" -> s"session=$sessionId")
-  private val unauthorizedSession = CasSession(ServiceTicket("ticket"), kayttajaOid, Set())
-  private val readSession = CasSession(ServiceTicket("ticket"), kayttajaOid, Set(Role.SIJOITTELU_READ))
-  private val crudSession = CasSession(ServiceTicket("ticket"), kayttajaOid, Set(Role.SIJOITTELU_CRUD))
+  private val crudSession = CasSession(ServiceTicket("ticket"), kayttajaOid, Set(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD))
+  private val ophCrudSession = CasSession(ServiceTicket("ticket"), kayttajaOid, Set(Role.SIJOITTELU_CRUD_OPH))
   private val hakukohdeOid = HakukohdeOid("1.2.246.562.20.26643418986")
   private val valintatapajonoOid = ValintatapajonoOid("14538080612623056182813241345174")
   private val hakemusOid = HakemusOid("1.2.246.562.11.00006169123")
@@ -95,8 +94,8 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
       }
     }
 
-    "palauttaa 403, jos käyttäjällä ei ole lukuoikeuksia" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, SessionRepository) =>
-      t._4.get(sessionId) returns Some(unauthorizedSession)
+    "palauttaa 403, jos käyttäjällä ei ole OPH:n CRUD-oikeuksia" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, SessionRepository) =>
+      t._4.get(sessionId) returns Some(crudSession)
       get(
         s"${t._1}/${valintatapajonoOid.toString}",
         Iterable(),
@@ -108,7 +107,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
     }
 
     "palauttaa 200 ja tyhjän taulukon jos valinnan tuloksia ei löydy" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, SessionRepository) =>
-      t._4.get(any()) returns Some(readSession)
+      t._4.get(any()) returns Some(ophCrudSession)
       t._2.getValinnantuloksetForValintatapajono(any[ValintatapajonoOid], any[AuditInfo]) returns None
       get(
         s"${t._1}/1",
@@ -121,7 +120,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
     }
 
     "palauttaa 200 ja valintatapajonon valinnan tulokset valintatapajono-oidilla haettaessa" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, SessionRepository) =>
-      t._4.get(any()) returns Some(readSession)
+      t._4.get(any()) returns Some(ophCrudSession)
       t._2.getValinnantuloksetForValintatapajono(any[ValintatapajonoOid], any[AuditInfo]) returns Some((now, Set(valinnantulos)))
       get(
         s"${t._1}/${valintatapajonoOid.toString}",
@@ -135,7 +134,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
 
     "palauttaa hyväksymiskirjeiden tiedot pyydettäessä" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, SessionRepository) =>
       val hyvaksymiskirjeLahetetty = OffsetDateTime.now
-      t._4.get(any()) returns Some(readSession)
+      t._4.get(any()) returns Some(ophCrudSession)
       t._2.getValinnantuloksetForValintatapajono(any[ValintatapajonoOid], any[AuditInfo]) returns Some((now, Set(valinnantulos)))
       t._3.getHyvaksymiskirjeet(any[HakukohdeOid], any[AuditInfo]) returns Set(Hyvaksymiskirje(
         valinnantulos.henkiloOid,
@@ -154,7 +153,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
 
     "palauttaa " + appConfig.settings.headerLastModified + " otsakkeen jossa viimeisintä muutoshetkeä seuraava tasasekuntti" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, SessionRepository) =>
       val lastModified = DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.ofInstant(now.plusSeconds(1), ZoneId.of("GMT")))
-      t._4.get(any()) returns Some(readSession)
+      t._4.get(any()) returns Some(ophCrudSession)
       t._2.getValinnantuloksetForValintatapajono(any[ValintatapajonoOid], any[AuditInfo]) returns Some((now, Set(valinnantulos)))
       get(
         s"${t._1}/${valintatapajonoOid.toString}",
@@ -191,8 +190,8 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
       }
     }
 
-    "palauttaa 403, jos käyttäjällä ei ole kirjoitusoikeuksi" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, SessionRepository) =>
-      t._4.get(sessionId) returns Some(unauthorizedSession)
+    "palauttaa 403, jos käyttäjällä ei ole OPH:n CRUD-oikeuksia" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, SessionRepository) =>
+      t._4.get(sessionId) returns Some(crudSession)
       post(
         s"${t._1}/${valintatapajonoOid.toString}",
         write(ValinnantulosRequest(List(valinnantulos))).getBytes("UTF-8"),
@@ -204,7 +203,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
     }
 
     "palauttaa 200 ja tyhjän taulukon jos päivitys onnistui" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, SessionRepository) =>
-      t._4.get(sessionId) returns Some(crudSession)
+      t._4.get(sessionId) returns Some(ophCrudSession)
       t._2.storeValinnantuloksetAndIlmoittautumiset(any[ValintatapajonoOid], any[List[Valinnantulos]], any[Option[Instant]], any[AuditInfo]) returns List.empty
       post(
         s"${t._1}/${valintatapajonoOid.toString}",
@@ -224,7 +223,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
         valinnantulos.hakemusOid
       )
       t._2.storeValinnantuloksetAndIlmoittautumiset(any[ValintatapajonoOid], any[List[Valinnantulos]], any[Option[Instant]], any[AuditInfo]) returns List(virhe)
-      t._4.get(sessionId) returns Some(crudSession)
+      t._4.get(sessionId) returns Some(ophCrudSession)
       post(
         s"${t._1}/${valintatapajonoOid.toString}",
         write(ValinnantulosRequest(List(valinnantulos))).getBytes("UTF-8"),
@@ -238,7 +237,7 @@ class ErillishakuServletSpec extends Specification with EmbeddedJettyContainer w
     "palauttaa 200 jos hyväksymiskirjeiden tietojen päivitys epäonnistui" in { t: (String, ValinnantulosService, HyvaksymiskirjeService, SessionRepository) =>
       t._2.storeValinnantuloksetAndIlmoittautumiset(any[ValintatapajonoOid], any[List[Valinnantulos]], any[Option[Instant]], any[AuditInfo]) returns List.empty
       t._3.updateHyvaksymiskirjeet(any[Set[HyvaksymiskirjePatch]], any[AuditInfo]) throws new RuntimeException("error")
-      t._4.get(sessionId) returns Some(crudSession)
+      t._4.get(sessionId) returns Some(ophCrudSession)
       post(
         s"${t._1}/${valintatapajonoOid.toString}",
         write(ValinnantulosRequest(List(valinnantulos))).getBytes("UTF-8"),
