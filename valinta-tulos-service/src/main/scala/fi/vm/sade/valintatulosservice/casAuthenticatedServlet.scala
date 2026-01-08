@@ -15,9 +15,11 @@ trait CasAuthenticatedServlet { this:ScalatraServlet with Logging =>
   def sessionRepository: SessionRepository
 
   protected def authenticate: Authenticated = {
-    Authenticated.tupled(cookies.get("session").orElse(Option(request.getAttribute("session")).map(_.toString))
-      .map(UUID.fromString).flatMap(id => sessionRepository.get(id).map((id, _)))
-      .getOrElse(throw new AuthenticationFailedException("No session found")))
+    cookies.get("session")
+      .orElse(Option(request.getAttribute("session")).map(_.toString))
+      .map(UUID.fromString)
+      .flatMap(id => sessionRepository.get(id).map(session => Authenticated(id, session)))
+      .getOrElse(throw new AuthenticationFailedException("No session found"))
   }
 
   def authorize(roles:Role*)(implicit authenticated: Authenticated) = {

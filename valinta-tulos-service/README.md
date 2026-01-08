@@ -52,11 +52,6 @@ testien datafixtureilla:
 
 `mvn test-compile exec:java@local_jetty -Dvalintatulos.profile=dev-embdb -Dvtemailer.profile=it`
 
-Kun käytetään aitoja integraatioita, on huomattava, että kayttooikeus-servicen pääsy on rajattu IP:n
-perusteella, joten se näkyy vain VPN:llä (tai AWS:sta).  Käynnistä siis VPN, jos haluat
-sisäänkirjautumisten toimivan: CasLogin etsii käyttäjän tietoja kayttooikeus-servicestä onnistuneen
-service ticketin validoinnin jälkeen.
-
 ### Käynnistä IntelliJ IDEA:sta
 
 Tuo projekti IDEA:aan ja varmista, että siinä käytetään Java 8 JDK:ta.
@@ -162,7 +157,6 @@ autentikointi yrittää hakea käyttäjän tiedot ja se epäonnistuu, kun mockit
 kuin VTS luulee.
 
 Esimerkki siitä, miten autentikointi tehdään aidolla CAS-palvelulla, on näissä skripteissä:
- - käynnistä VPN, jotta valinta-tulos-service saa yhteyden kayttooikeus-serviceen
  - aja palvelu default- tai dev-embdb-profiililla (default pitää konfiguroida itse)
  - ../scripts/create-cas-tgt.sh
  - ../scripts/create-vts-session.sh

@@ -121,7 +121,6 @@ object VtsAppConfig extends Logging {
       val ps = new DevOphUrlProperties(propertiesFile)
       ps.addOverride("ataru-service.applications", s"http://localhost:$vtsMockPort/valinta-tulos-service/util/ataru/applications")
       ps.addOverride("oppijanumerorekisteri-service.henkilotByOids", s"http://localhost:$vtsMockPort/valinta-tulos-service/util/oppijanumerorekisteri/henkilot")
-      ps.addOverride("kayttooikeus-service.userDetails.byUsername", "http://localhost:" + vtsMockPort + "/valinta-tulos-service/util/kayttooikeus/userdetails/$1")
       ps
     }
 
