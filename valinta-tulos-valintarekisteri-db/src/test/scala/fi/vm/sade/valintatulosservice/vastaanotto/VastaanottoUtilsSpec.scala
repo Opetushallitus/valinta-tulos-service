@@ -10,8 +10,8 @@ import java.time.{OffsetDateTime, ZoneId, ZoneOffset, ZonedDateTime}
 class VastaanottoUtilsSpec extends Specification {
 
   private def getOhjausparametrit: Ohjausparametrit = {
-    val vastaanottoaikataulu = Vastaanottoaikataulu(Option(ZonedDateTime.of(2024,11,11,12,0,0,0, ZoneId.systemDefault())), Option(7))
-    val valintaEsitysHyvaksyttavissa = Option(ZonedDateTime.of(2024, 11, 9, 12, 0, 0, 0, ZoneId.systemDefault()))
+    val vastaanottoaikataulu = Vastaanottoaikataulu(Option(ZonedDateTime.of(2024,11,11,12,0,0,0, ZoneId.of("Europe/Helsinki"))), Option(7))
+    val valintaEsitysHyvaksyttavissa = Option(ZonedDateTime.of(2024, 11, 9, 12, 0, 0, 0, ZoneId.of("Europe/Helsinki")))
     new Ohjausparametrit(vastaanottoaikataulu, None, None, None, None, None, valintaEsitysHyvaksyttavissa, false, true, true)
   }
 

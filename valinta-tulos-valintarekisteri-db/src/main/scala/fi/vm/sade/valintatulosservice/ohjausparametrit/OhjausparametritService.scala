@@ -125,6 +125,6 @@ object OhjausparametritParser {
   }
 
   private def parseDateTime(json: JValue): Option[ZonedDateTime] = {
-    json.extractOpt[Long].map(millis => ZonedDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneId.systemDefault()))
+    json.extractOpt[Long].map(millis => ZonedDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneId.of("Europe/Helsinki")))
   }
 }
