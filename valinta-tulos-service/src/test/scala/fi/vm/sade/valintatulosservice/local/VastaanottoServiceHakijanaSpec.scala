@@ -31,7 +31,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
   val personOid: String = "1.2.246.562.24.14229104472"
   val valintatapajonoOid: String = "2013080813081926341928"
   val selite: String = "Testimuokkaus"
-  val ilmoittautumisaikaPaattyy2030: Ilmoittautumisaika = Ilmoittautumisaika(None, Some(ZonedDateTime.of(2030, 1, 10, 23, 59, 59, 999000000, ZoneId.systemDefault())))
+  val ilmoittautumisaikaPaattyy2030: Ilmoittautumisaika = Ilmoittautumisaika(None, Some(ZonedDateTime.of(2030, 1, 10, 23, 59, 59, 999000000, ZoneId.of("Europe/Helsinki"))))
 
   def kaikkienHakutyyppienTestit(hakuFixture: HakuOid) = {
     "vastaanota hyväksytty julkaistu tulos" in {

@@ -32,7 +32,7 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
   val personOid: String = "1.2.246.562.24.14229104472"
   val valintatapajonoOid = ValintatapajonoOid("2013080813081926341928")
   val selite: String = "Testimuokkaus"
-  val ilmoittautumisaikaPaattyy2100: Ilmoittautumisaika = Ilmoittautumisaika(None, Some(ZonedDateTime.of(2100, 1, 10, 23, 59, 59, 999000000, java.time.ZoneId.systemDefault())))
+  val ilmoittautumisaikaPaattyy2100: Ilmoittautumisaika = Ilmoittautumisaika(None, Some(ZonedDateTime.of(2100, 1, 10, 23, 59, 59, 999000000, java.time.ZoneId.of("Europe/Helsinki"))))
 
   "vastaanotaVirkailijana" in {
     "vastaanota sitovasti yksi hakija" in {

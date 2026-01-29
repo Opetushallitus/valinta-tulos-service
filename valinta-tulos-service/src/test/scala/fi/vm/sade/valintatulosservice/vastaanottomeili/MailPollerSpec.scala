@@ -675,7 +675,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakemusOid = hakemusOidA,
       hakijaOid = hakijaOidA,
       aikataulu = Vastaanottoaikataulu(
-        deadlineA.map(d => ZonedDateTime.ofInstant(d.toInstant, java.time.ZoneId.systemDefault())),
+        deadlineA.map(d => ZonedDateTime.ofInstant(d.toInstant, java.time.ZoneId.of("Europe/Helsinki"))),
         vastaanottoBufferA
       ),
       hakutoiveet = List(Hakutoiveentulos(
@@ -729,7 +729,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakemusOid = hakemusOidB,
       hakijaOid = hakijaOidB,
       aikataulu = Vastaanottoaikataulu(
-        deadlineA.map(d => ZonedDateTime.ofInstant(d.toInstant, java.time.ZoneId.systemDefault())),
+        deadlineA.map(d => ZonedDateTime.ofInstant(d.toInstant, java.time.ZoneId.of("Europe/Helsinki"))),
         vastaanottoBufferA
       ),
       hakutoiveet = List(Hakutoiveentulos(
@@ -783,7 +783,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakemusOid = hakemusOidC,
       hakijaOid = hakijaOidC,
       aikataulu = Vastaanottoaikataulu(
-        deadlineA.map(d => ZonedDateTime.ofInstant(d.toInstant, java.time.ZoneId.systemDefault())),
+        deadlineA.map(d => ZonedDateTime.ofInstant(d.toInstant, java.time.ZoneId.of("Europe/Helsinki"))),
         vastaanottoBufferA
       ),
       hakutoiveet = List(
@@ -928,7 +928,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakemusOid = hakemusOidC,
       hakijaOid = hakijaOidC,
       aikataulu = Vastaanottoaikataulu(
-        deadlineA.map(d => ZonedDateTime.ofInstant(d.toInstant, java.time.ZoneId.systemDefault())),
+        deadlineA.map(d => ZonedDateTime.ofInstant(d.toInstant, java.time.ZoneId.of("Europe/Helsinki"))),
         vastaanottoBufferA
       ),
       hakutoiveet = List(
@@ -1073,7 +1073,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakemusOid = hakemusOidC,
       hakijaOid = hakijaOidC,
       aikataulu = Vastaanottoaikataulu(
-        deadlineA.map(d => ZonedDateTime.ofInstant(d.toInstant, java.time.ZoneId.systemDefault())),
+        deadlineA.map(d => ZonedDateTime.ofInstant(d.toInstant, java.time.ZoneId.of("Europe/Helsinki"))),
         vastaanottoBufferA
       ),
       hakutoiveet = List(
