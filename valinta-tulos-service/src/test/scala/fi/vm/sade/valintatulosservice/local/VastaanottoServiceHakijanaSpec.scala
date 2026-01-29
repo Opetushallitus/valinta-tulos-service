@@ -14,8 +14,9 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriD
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
-import org.joda.time.{DateTime, LocalDate}
 import org.junit.runner.RunWith
+
+import java.time.{LocalDate, ZoneId, ZonedDateTime}
 import org.specs2.execute.{FailureException, Result}
 import org.specs2.matcher.ThrownMessages
 import org.specs2.runner.JUnitRunner
@@ -30,7 +31,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
   val personOid: String = "1.2.246.562.24.14229104472"
   val valintatapajonoOid: String = "2013080813081926341928"
   val selite: String = "Testimuokkaus"
-  val ilmoittautumisaikaPaattyy2030: Ilmoittautumisaika = Ilmoittautumisaika(None, Some(new DateTime(2030, 1, 10, 23, 59, 59, 999)))
+  val ilmoittautumisaikaPaattyy2030: Ilmoittautumisaika = Ilmoittautumisaika(None, Some(ZonedDateTime.of(2030, 1, 10, 23, 59, 59, 999000000, ZoneId.systemDefault())))
 
   def kaikkienHakutyyppienTestit(hakuFixture: HakuOid) = {
     "vastaanota hyväksytty julkaistu tulos" in {
@@ -152,13 +153,13 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
           useFixture("hyvaksytty-ilmoitettu.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
           vastaanota(hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.perunut)
           hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.perunut
-          expectFailure(Some("""Hakutoive 1.2.246.562.5.72607738902 ei ole ilmoittauduttavissa: ilmoittautumisaika: {"loppu":"2030-01-10T21:59:59Z"}, ilmoittautumistila: EI_TEHTY, valintatila: PERUNUT, vastaanottotila: PERUNUT"""))
+          expectFailure(Some("""Hakutoive 1.2.246.562.5.72607738902 ei ole ilmoittauduttavissa: ilmoittautumisaika: {"loppu":"2030-01-10T23:59:59.999+02:00"}, ilmoittautumistila: EI_TEHTY, valintatila: PERUNUT, vastaanottotila: PERUNUT"""))
             {ilmoittaudu(hakemusOid, vastaanotettavissaHakuKohdeOid, LasnaKokoLukuvuosi, muokkaaja, selite)}
         }
 
         "ilmoittautuminen ilman vastaanottoa" in {
           useFixture("hyvaksytty-ilmoitettu.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-          expectFailure(Some("""Hakutoive 1.2.246.562.5.72607738902 ei ole ilmoittauduttavissa: ilmoittautumisaika: {"loppu":"2030-01-10T21:59:59Z"}, ilmoittautumistila: EI_TEHTY, valintatila: HYVAKSYTTY, vastaanottotila: KESKEN"""))
+          expectFailure(Some("""Hakutoive 1.2.246.562.5.72607738902 ei ole ilmoittauduttavissa: ilmoittautumisaika: {"loppu":"2030-01-10T23:59:59.999+02:00"}, ilmoittautumistila: EI_TEHTY, valintatila: HYVAKSYTTY, vastaanottotila: KESKEN"""))
             {ilmoittaudu(hakemusOid, vastaanotettavissaHakuKohdeOid, LasnaKokoLukuvuosi, muokkaaja, selite)}
         }
 
@@ -169,7 +170,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
           ilmoittaudu(hakemusOid, vastaanotettavissaHakuKohdeOid, LasnaKokoLukuvuosi, muokkaaja, selite)
           hakemuksenTulos.hakutoiveet(0).ilmoittautumistila.ilmoittautumistila must_== LasnaKokoLukuvuosi
           hakemuksenTulos.hakutoiveet(0).ilmoittautumistila.ilmoittauduttavissa must_== false
-          expectFailure(Some("""Hakutoive 1.2.246.562.5.72607738902 ei ole ilmoittauduttavissa: ilmoittautumisaika: {"loppu":"2030-01-10T21:59:59Z"}, ilmoittautumistila: LASNA_KOKO_LUKUVUOSI, valintatila: HYVAKSYTTY, vastaanottotila: VASTAANOTTANUT_SITOVASTI"""))
+          expectFailure(Some("""Hakutoive 1.2.246.562.5.72607738902 ei ole ilmoittauduttavissa: ilmoittautumisaika: {"loppu":"2030-01-10T23:59:59.999+02:00"}, ilmoittautumistila: LASNA_KOKO_LUKUVUOSI, valintatila: HYVAKSYTTY, vastaanottotila: VASTAANOTTANUT_SITOVASTI"""))
             {ilmoittaudu(hakemusOid, vastaanotettavissaHakuKohdeOid, LasnaKokoLukuvuosi, muokkaaja, selite)}
         }
       }
@@ -423,7 +424,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
         hakemuksenTulos.hakutoiveet(0).ilmoittautumisenAikaleima.get.getTime must be ~ (System.currentTimeMillis() +/- 2000)
       }
       "onnistuu ja tarjotaan oilia, jos vastaanottanut hetuton" in {
-        if (new LocalDate().isBefore(new LocalDate(2017, 6, 5))) {
+        if (LocalDate.now().isBefore(LocalDate.of(2017, 6, 5))) {
           "happy_holidays" mustEqual "happy_holidays"
         } else {
           useFixture("hyvaksytty-vastaanottanut.json", hakuFixture = hakuFixture, hakemusFixtures = List("00000441369-no-hetu"), yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
@@ -441,7 +442,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
         expectFailure{ilmoittaudu(hakemusOid, "1.2.246.562.5.16303028779", LasnaKokoLukuvuosi, muokkaaja, selite)}
       }
       "onnistuu viime hetkeen asti" in {
-        withFixedDateTime(ilmoittautumisaikaPaattyy2030.loppu.get.minusMinutes(1).getMillis) {
+        withFixedDateTime(ilmoittautumisaikaPaattyy2030.loppu.get.minusMinutes(1).toInstant.toEpochMilli) {
           useFixture("hyvaksytty-vastaanottanut.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
           hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
           hakemuksenTulos.hakutoiveet(0).ilmoittautumistila.ilmoittauduttavissa must_== true
@@ -452,7 +453,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
         }
       }
       "ei onnistu päättymisen jälkeen" in {
-        withFixedDateTime(ilmoittautumisaikaPaattyy2030.loppu.get.plusMinutes(1).getMillis) {
+        withFixedDateTime(ilmoittautumisaikaPaattyy2030.loppu.get.plusMinutes(1).toInstant.toEpochMilli) {
           useFixture("hyvaksytty-vastaanottanut.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
           hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
           hakemuksenTulos.hakutoiveet(0).ilmoittautumistila.ilmoittauduttavissa must_== false

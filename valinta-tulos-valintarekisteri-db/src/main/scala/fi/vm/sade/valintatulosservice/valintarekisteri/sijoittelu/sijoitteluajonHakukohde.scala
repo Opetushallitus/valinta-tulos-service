@@ -6,9 +6,8 @@ import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, SijoitteluRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.laskeVastaanottoDeadline
-import org.joda.time.DateTime
 
-import java.time.OffsetDateTime
+import java.time.{OffsetDateTime, ZonedDateTime}
 import java.util
 
 class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, val sijoitteluajoId: Long, val hakukohdeOid:HakukohdeOid) {
@@ -93,7 +92,7 @@ class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository w
   def getVastaanOttoDeadline(h: HakemusRecord,
                              ohj: Ohjausparametrit,
                              hyvaksyttyJaJulkaistuDates: Map[String, Map[HakukohdeOid, OffsetDateTime]],
-                             hakemuksenHakukohde: HakukohdeOid): Option[DateTime] = {
+                             hakemuksenHakukohde: HakukohdeOid): Option[ZonedDateTime] = {
     val hyvaksyttyJaJulkaistuDate = h.hakijaOid.flatMap(hakijaOid => hyvaksyttyJaJulkaistuDates.get(hakijaOid)
       .flatMap(hyvaksyttyJaJulkaistuDateByHakukohde => hyvaksyttyJaJulkaistuDateByHakukohde.get(hakemuksenHakukohde)))
     if (hyvaksyttyJaJulkaistuDate.isDefined) {

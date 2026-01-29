@@ -14,7 +14,7 @@ class OhjausparametritIntegrationTest extends Specification {
       val response: Either[Throwable, Ohjausparametrit] = new RemoteOhjausparametritService(new IT_sysprops).ohjausparametrit(HakuOid("1.2.246.562.29.52925694235"))
       val parametri: Ohjausparametrit = response.right.get
       parametri.ilmoittautuminenPaattyy must beNone
-      parametri.vastaanottoaikataulu.vastaanottoEnd.get.getMillis must_== 1500033600000L
+      parametri.vastaanottoaikataulu.vastaanottoEnd.get.toInstant.toEpochMilli must_== 1500033600000L
     }
   }
 

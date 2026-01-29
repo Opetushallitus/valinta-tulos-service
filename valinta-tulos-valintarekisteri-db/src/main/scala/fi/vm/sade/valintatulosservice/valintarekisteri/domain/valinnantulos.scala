@@ -1,11 +1,10 @@
 package fi.vm.sade.valintatulosservice.valintarekisteri.domain
 
-import java.time.{Instant, OffsetDateTime}
+import java.time.{Instant, OffsetDateTime, ZonedDateTime}
 import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhto
-import org.joda.time.DateTime
 
 case class ValinnantulosUpdateStatus(status: Int, message: String, valintatapajonoOid: ValintatapajonoOid, hakemusOid: HakemusOid)
 
@@ -40,7 +39,7 @@ case class Valinnantulos(hakukohdeOid: HakukohdeOid,
                          valinnantilanViimeisinMuutos: Option[OffsetDateTime] = None,
                          vastaanotonViimeisinMuutos: Option[OffsetDateTime] = None,
                          vastaanottoDeadlineMennyt: Option[Boolean] = None,
-                         vastaanottoDeadline: Option[DateTime] = None) {
+                         vastaanottoDeadline: Option[ZonedDateTime] = None) {
 
   def isHyvaksytty = Hyvaksytty == valinnantila || VarasijaltaHyvaksytty == valinnantila
 

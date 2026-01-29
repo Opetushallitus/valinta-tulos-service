@@ -23,6 +23,8 @@ import org.apache.commons.lang3.StringUtils
 import slick.dbio.DBIO
 
 import java.time.Instant
+
+// ClockHolder is used for testable time
 import java.util.Date
 import scala.collection.JavaConverters._
 import scala.compat.java8.OptionConverters._
@@ -647,7 +649,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
   }
 
   private def asetaKelaURL(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
-    val hakukierrosEiOlePäättynyt = !ohjausparametrit.hakukierrosPaattyy.exists(_.isBeforeNow())
+    val hakukierrosEiOlePäättynyt = !ohjausparametrit.hakukierrosPaattyy.exists(_.toInstant.isBefore(ClockHolder.instant()))
     val näytetäänSiirryKelaanURL = ohjausparametrit.naytetaankoSiirryKelaanURL
     val näytetäänKelaURL = if (hakukierrosEiOlePäättynyt && näytetäänSiirryKelaanURL && haku.sallittuKohdejoukkoKelaLinkille) Some(appConfig.settings.kelaURL) else None
 
@@ -681,7 +683,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
   }
 
   private def asetaShowMigriURL(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
-    val hakukierrosEiOlePäättynyt = !ohjausparametrit.hakukierrosPaattyy.exists(_.isBeforeNow())
+    val hakukierrosEiOlePäättynyt = !ohjausparametrit.hakukierrosPaattyy.exists(_.toInstant.isBefore(ClockHolder.instant()))
     val hakijaOnEuTaiEtaKansalainen = isEuTaiEtaKansalainen(hakemus.henkilotiedot.kansalaisuudet)
     val showMigriURL = if (hakukierrosEiOlePäättynyt && !hakijaOnEuTaiEtaKansalainen) Some(true) else Some(false)
 

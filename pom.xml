@@ -220,16 +220,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.joda</groupId>
-                <artifactId>joda-convert</artifactId>
-                <version>1.8.1</version>
-            </dependency>
-            <dependency>
-                <groupId>joda-time</groupId>
-                <artifactId>joda-time</artifactId>
-                <version>${joda-time.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.mongodb</groupId>
                 <artifactId>mongo-java-driver</artifactId>
                 <version>${mongo-java-driver.version}</version>
@@ -343,6 +333,16 @@
                 <groupId>org.json4s</groupId>
                 <artifactId>json4s-ext_2.13</artifactId>
                 <version>${json4s.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>joda-time</groupId>
+                        <artifactId>joda-time</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.joda</groupId>
+                        <artifactId>joda-convert</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.json4s</groupId>
@@ -597,6 +597,12 @@
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-access</artifactId>
                 <version>${logback-access.version}</version>
+            </dependency>
+            <!-- joda-time is required at runtime by Casbah MongoDB driver -->
+            <dependency>
+                <groupId>joda-time</groupId>
+                <artifactId>joda-time</artifactId>
+                <version>2.9.5</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

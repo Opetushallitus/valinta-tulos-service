@@ -8,8 +8,9 @@ import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.Henkilo
 import fi.vm.sade.valintatulosservice.production.Hakija
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import org.joda.time.{DateTime, DateTimeZone}
 import org.json4s.JValue
+
+import java.time.{ZoneId, ZonedDateTime}
 import org.json4s.JsonAST.JArray
 import org.json4s.jackson.Serialization
 import org.json4s.native.JsonMethods
@@ -313,7 +314,7 @@ class ValintaTulosServletSpec extends ServletSpecification {
 
           get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
             val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
-            tulos.hakutoiveet.head.ilmoittautumistila must_== HakutoiveenIlmoittautumistila(Ilmoittautumisaika(None, Some(new DateTime(2030, 1, 10, 21, 59, 59, DateTimeZone.UTC))), None, LasnaKokoLukuvuosi, false)
+            tulos.hakutoiveet.head.ilmoittautumistila must_== HakutoiveenIlmoittautumistila(Ilmoittautumisaika(None, Some(ZonedDateTime.of(2030, 1, 10, 23, 59, 59, 999000000, ZoneId.of("Europe/Helsinki")))), None, LasnaKokoLukuvuosi, false)
             tulos.hakutoiveet.head.ilmoittautumisenAikaleima.get.getTime() must be ~ (System.currentTimeMillis() +/- 2000)
           }
         }

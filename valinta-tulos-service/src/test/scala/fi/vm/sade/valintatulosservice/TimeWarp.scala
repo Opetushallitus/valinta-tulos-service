@@ -1,8 +1,21 @@
 package fi.vm.sade.valintatulosservice
 
 import java.text.SimpleDateFormat
+import java.time.{Clock, Instant, ZoneId, ZonedDateTime}
 
-import org.joda.time.DateTimeUtils
+object TimeWarp {
+  def clock: Clock = ClockHolder.clock
+
+  def now(): ZonedDateTime = ClockHolder.now()
+
+  def setFixedTime(millis: Long): Unit = {
+    ClockHolder.setClock(Clock.fixed(Instant.ofEpochMilli(millis), ZoneId.systemDefault()))
+  }
+
+  def resetTime(): Unit = {
+    ClockHolder.resetClock()
+  }
+}
 
 trait TimeWarp {
   def parseDate(dateTime: String) = {
@@ -18,12 +31,12 @@ trait TimeWarp {
   }
 
   def withFixedDateTime[T](millis: Long)(f: => T) = {
-    DateTimeUtils.setCurrentMillisFixed(millis)
+    TimeWarp.setFixedTime(millis)
     try {
       f
     }
     finally {
-      DateTimeUtils.setCurrentMillisSystem
+      TimeWarp.resetTime()
     }
   }
 }

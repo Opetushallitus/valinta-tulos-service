@@ -6,6 +6,7 @@ import fi.vm.sade.valintatulosservice.hakemus.HakuAppRepository
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import fi.vm.sade.valintatulosservice.ClockHolder
 import org.springframework.util.StopWatch
 
 import java.net.URL
@@ -61,7 +62,7 @@ class PuuttuvatTuloksetService(valintarekisteriDb: ValintarekisteriDb, hakemusRe
         dao.saveNewTaustapaivityksenTila(hakuOids.size)
       case TaustapaivityksenTila(_, _, valmistui: Some[ZonedDateTime], _) =>
         dao.saveNewTaustapaivityksenTila(hakuOids.size)
-      case t@TaustapaivityksenTila(_, kaynnistetty, None, _) if kaynnistetty.exists(_.isBefore(ZonedDateTime.now().minusDays(1))) =>
+      case t@TaustapaivityksenTila(_, kaynnistetty, None, _) if kaynnistetty.exists(_.isBefore(ClockHolder.now().minusDays(1))) =>
         logger.warn(s"Kannasta löytyi tieto epäilyttävän vanhasta kesken olevasta päivityksestä, ei välitetä siitä: $t")
         dao.saveNewTaustapaivityksenTila(hakuOids.size)
       case t@TaustapaivityksenTila(_, Some(kaynnistetty), None, existingHakuCount) =>

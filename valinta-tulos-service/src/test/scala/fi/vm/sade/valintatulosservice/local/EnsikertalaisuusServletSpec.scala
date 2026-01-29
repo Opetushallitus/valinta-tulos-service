@@ -4,9 +4,11 @@ import fi.vm.sade.valintatulosservice.ServletSpecification
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiEnsikertalainen, EiKktutkintoonJohtavaHakukohde, Ensikertalainen, Ensikertalaisuus, HakuOid, HakukohdeOid, Kevat, YPSHakukohde}
-import org.joda.time.{DateTime, DateTimeZone}
 import org.json4s.Formats
 import org.json4s.jackson.Serialization._
+
+import java.time.{ZoneId, ZonedDateTime}
+import java.util.Date
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.After
@@ -25,8 +27,8 @@ class EnsikertalaisuusServletSpec extends ServletSpecification with Valintarekis
   val vanha_tarjoaja = "1.2.246.562.10.00000000001"
   val haku = "1.2.246.561.29.00000000001"
   val koulutus = "1.2.246.561.21.00000000001"
-  val timestamp = new DateTime(2014, 7, 1, 16, 0, 10, DateTimeZone.forID("Europe/Helsinki"))
-  val vanha_timestamp = new DateTime(2014, 6, 19, 16, 0, 10, DateTimeZone.forID("Europe/Helsinki"))
+  val timestamp = ZonedDateTime.of(2014, 7, 1, 16, 0, 10, 0, ZoneId.of("Europe/Helsinki"))
+  val vanha_timestamp = ZonedDateTime.of(2014, 6, 19, 16, 0, 10, 0, ZoneId.of("Europe/Helsinki"))
 
   step(deleteAll())
   step({
@@ -35,14 +37,14 @@ class EnsikertalaisuusServletSpec extends ServletSpecification with Valintarekis
     singleConnectionValintarekisteriDb.runBlocking(DBIOAction.seq(
           sqlu"""insert into vastaanotot
                  (henkilo, hakukohde, action, ilmoittaja, "timestamp", selite)
-                 values ($henkilo, $hakukohdekk, 'VastaanotaSitovasti'::vastaanotto_action, 'ilmoittaja', ${new java.sql.Timestamp(timestamp.getMillis)}, 'testiselite')""",
+                 values ($henkilo, $hakukohdekk, 'VastaanotaSitovasti'::vastaanotto_action, 'ilmoittaja', ${new java.sql.Timestamp(timestamp.toInstant.toEpochMilli)}, 'testiselite')""",
           sqlu"""insert into vastaanotot
                      (henkilo, hakukohde, action, ilmoittaja, "timestamp", selite)
-                     values ($henkilo, $hakukohde2aste, 'VastaanotaSitovasti'::vastaanotto_action, 'ilmoittaja', ${new java.sql.Timestamp(timestamp.minusYears(1).getMillis)}, 'testiselite')""",
+                     values ($henkilo, $hakukohde2aste, 'VastaanotaSitovasti'::vastaanotto_action, 'ilmoittaja', ${new java.sql.Timestamp(timestamp.minusYears(1).toInstant.toEpochMilli)}, 'testiselite')""",
           sqlu"""insert into vanhat_vastaanotot (henkilo, hakukohde, tarjoaja, koulutuksen_alkamiskausi, kk_tutkintoon_johtava, ilmoittaja, "timestamp")
-                 values ($henkilo, $vanha_hakukohde, $vanha_tarjoaja, '2014S', true, 'KAYTTAJA', ${new java.sql.Timestamp(vanha_timestamp.getMillis)})""",
+                 values ($henkilo, $vanha_hakukohde, $vanha_tarjoaja, '2014S', true, 'KAYTTAJA', ${new java.sql.Timestamp(vanha_timestamp.toInstant.toEpochMilli)})""",
           sqlu"""insert into vanhat_vastaanotot (henkilo, hakukohde, tarjoaja, koulutuksen_alkamiskausi, kk_tutkintoon_johtava, ilmoittaja, "timestamp")
-                 values ($vanha_henkilo, $vanha_hakukohde, $vanha_tarjoaja, '2014S', true, 'KAYTTAJA', ${new java.sql.Timestamp(vanha_timestamp.getMillis)})"""
+                 values ($vanha_henkilo, $vanha_hakukohde, $vanha_tarjoaja, '2014S', true, 'KAYTTAJA', ${new java.sql.Timestamp(vanha_timestamp.toInstant.toEpochMilli)})"""
         ).transactionally)
   })
 
@@ -56,7 +58,7 @@ class EnsikertalaisuusServletSpec extends ServletSpecification with Valintarekis
     "return EiEnsikertalainen" in {
       get("ensikertalaisuus/1.2.246.562.24.00000000001", Map("koulutuksenAlkamiskausi" -> "2015K"), Map("Content-Type" -> "application/json")) {
         body mustEqual """{"personOid":"1.2.246.562.24.00000000001","paattyi":"2014-07-01T13:00:10Z"}"""
-        read[EiEnsikertalainen](body) mustEqual EiEnsikertalainen(henkilo, timestamp.toDate)
+        read[EiEnsikertalainen](body) mustEqual EiEnsikertalainen(henkilo, Date.from(timestamp.toInstant))
       }
     }
 
@@ -68,7 +70,7 @@ class EnsikertalaisuusServletSpec extends ServletSpecification with Valintarekis
 
     "return EiEnsikertalainen based on vanhat_vastaanotot" in {
       get("ensikertalaisuus/1.2.246.562.24.00000000001", Map("koulutuksenAlkamiskausi" -> "2014K"), Map("Content-Type" -> "application/json")) {
-        read[Ensikertalaisuus](body) mustEqual EiEnsikertalainen(henkilo, vanha_timestamp.toDate)
+        read[Ensikertalaisuus](body) mustEqual EiEnsikertalainen(henkilo, Date.from(vanha_timestamp.toInstant))
       }
     }
 
@@ -126,7 +128,7 @@ class EnsikertalaisuusServletSpec extends ServletSpecification with Valintarekis
       postJSON("ensikertalaisuus?koulutuksenAlkamiskausi=2015K", write(personOidsToQuery), Map()) {
         val ensikertalaisuuses = read[Seq[Ensikertalaisuus]](body).sortBy(_.personOid)
         ensikertalaisuuses must have size 3
-        ensikertalaisuuses.head mustEqual EiEnsikertalainen(henkilo, timestamp.toDate)
+        ensikertalaisuuses.head mustEqual EiEnsikertalainen(henkilo, Date.from(timestamp.toInstant))
         ensikertalaisuuses(1) mustEqual Ensikertalainen(vastaanottamaton_henkilo)
         ensikertalaisuuses(2) mustEqual Ensikertalainen(vanha_henkilo)
       }
@@ -137,9 +139,9 @@ class EnsikertalaisuusServletSpec extends ServletSpecification with Valintarekis
       postJSON("ensikertalaisuus?koulutuksenAlkamiskausi=2014K", write(personOidsToQuery), Map()) {
         val ensikertalaisuuses = read[Seq[Ensikertalaisuus]](body).sortBy(_.personOid)
         ensikertalaisuuses must have size 3
-        ensikertalaisuuses.head mustEqual EiEnsikertalainen(henkilo, vanha_timestamp.toDate)
+        ensikertalaisuuses.head mustEqual EiEnsikertalainen(henkilo, Date.from(vanha_timestamp.toInstant))
         ensikertalaisuuses(1) mustEqual Ensikertalainen(vastaanottamaton_henkilo)
-        ensikertalaisuuses(2) mustEqual EiEnsikertalainen(vanha_henkilo, vanha_timestamp.toDate)
+        ensikertalaisuuses(2) mustEqual EiEnsikertalainen(vanha_henkilo, Date.from(vanha_timestamp.toInstant))
       }
     }
 
