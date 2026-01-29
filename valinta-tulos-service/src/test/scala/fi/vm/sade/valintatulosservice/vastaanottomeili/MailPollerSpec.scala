@@ -9,8 +9,9 @@ import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, YhdenPaikanSaanto}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.{ValintatulosService, tarjonta}
-import org.joda.time.DateTime
 import org.junit.runner.RunWith
+
+import java.time.ZonedDateTime
 import org.specs2.matcher.MustThrownExpectations
 import org.specs2.mock.Mockito
 import org.specs2.mock.mockito.MockitoMatchers
@@ -71,12 +72,12 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         hakuService.getHakukohde(hakukohdeOidA) returns Right(tarjontaHakukohdeA)
         hakuService.getHakukohdeOids(hakuOidA) returns Right(Seq(hakukohdeOidA))
         mailPollerRepository.candidates(hakukohdeOidA, recheckIntervalHours = 0) returns Set((hakemusOidB, hakukohdeOidA, None, true))
-        var hakukierrosPaattyy = DateTime.now().plusDays(1)
+        var hakukierrosPaattyy = ZonedDateTime.now().plusDays(1)
         ohjausparametritService.ohjausparametrit(hakuOidA) returns Right(Ohjausparametrit(Vastaanottoaikataulu(None, None), None, None, Some(hakukierrosPaattyy), None, None, None, false, false, false))
         mailPollerRepository.lastChecked(hakukohdeOidA) returns None
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidA) returns Iterator(hakemusB)
         valintatulosService.hakemuksentulos(hakemusB) returns Some(hakemuksentulosB)
-        oppijanTunnistusService.luoSecureLink(hakijaOidB, hakemusOidB, emailB, asiointikieliA, Some(hakukierrosPaattyy.getMillis)) returns Right(OppijanTunnistus(secureLinkA))
+        oppijanTunnistusService.luoSecureLink(hakijaOidB, hakemusOidB, emailB, asiointikieliA, Some(hakukierrosPaattyy.toInstant.toEpochMilli)) returns Right(OppijanTunnistus(secureLinkA))
         service.pollForAllMailables(mailDecorator, 1, oneMinute).mailables mustEqual List(Ilmoitus(
           hakemusOid = hakemusOidB,
           hakijaOid = hakijaOidB,
@@ -674,7 +675,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakemusOid = hakemusOidA,
       hakijaOid = hakijaOidA,
       aikataulu = Vastaanottoaikataulu(
-        deadlineA.map(new DateTime(_)),
+        deadlineA.map(d => ZonedDateTime.ofInstant(d.toInstant, java.time.ZoneId.systemDefault())),
         vastaanottoBufferA
       ),
       hakutoiveet = List(Hakutoiveentulos(
@@ -728,7 +729,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakemusOid = hakemusOidB,
       hakijaOid = hakijaOidB,
       aikataulu = Vastaanottoaikataulu(
-        deadlineA.map(new DateTime(_)),
+        deadlineA.map(d => ZonedDateTime.ofInstant(d.toInstant, java.time.ZoneId.systemDefault())),
         vastaanottoBufferA
       ),
       hakutoiveet = List(Hakutoiveentulos(
@@ -782,7 +783,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakemusOid = hakemusOidC,
       hakijaOid = hakijaOidC,
       aikataulu = Vastaanottoaikataulu(
-        deadlineA.map(new DateTime(_)),
+        deadlineA.map(d => ZonedDateTime.ofInstant(d.toInstant, java.time.ZoneId.systemDefault())),
         vastaanottoBufferA
       ),
       hakutoiveet = List(
@@ -927,7 +928,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakemusOid = hakemusOidC,
       hakijaOid = hakijaOidC,
       aikataulu = Vastaanottoaikataulu(
-        deadlineA.map(new DateTime(_)),
+        deadlineA.map(d => ZonedDateTime.ofInstant(d.toInstant, java.time.ZoneId.systemDefault())),
         vastaanottoBufferA
       ),
       hakutoiveet = List(
@@ -1072,7 +1073,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakemusOid = hakemusOidC,
       hakijaOid = hakijaOidC,
       aikataulu = Vastaanottoaikataulu(
-        deadlineA.map(new DateTime(_)),
+        deadlineA.map(d => ZonedDateTime.ofInstant(d.toInstant, java.time.ZoneId.systemDefault())),
         vastaanottoBufferA
       ),
       hakutoiveet = List(

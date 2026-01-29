@@ -167,7 +167,7 @@ class LukuvuosimaksuSerializer extends CustomSerializer[Lukuvuosimaksu]((formats
  * json4s EnumNameSerializer uses reflection that doesn't work with Scala 2.13's Enumeration implementation.
  * This version uses TypeInfo to properly match the enumeration type.
  */
-class Scala213EnumNameSerializer[E <: Enumeration: ClassTag](enumeration: E)
+class EnumNameSerializer[E <: Enumeration: ClassTag](enumeration: E)
   extends Serializer[E#Value] {
 
   private val EnumerationClass = implicitly[ClassTag[E]].runtimeClass

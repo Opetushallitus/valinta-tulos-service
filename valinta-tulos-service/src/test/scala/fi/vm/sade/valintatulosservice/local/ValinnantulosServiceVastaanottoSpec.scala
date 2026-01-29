@@ -18,8 +18,9 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriD
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
-import org.joda.time.DateTime
 import org.junit.runner.RunWith
+
+import java.time.ZonedDateTime
 import org.specs2.execute.{FailureException, Result}
 import org.specs2.matcher.ThrownMessages
 import org.specs2.mock.mockito.{MockitoMatchers, MockitoStubs}
@@ -404,7 +405,7 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
     None,
     None,
     None,
-    Some(DateTime.now().plusDays(2)),
+    Some(ZonedDateTime.now().plusDays(2)),
     true,
     false,
     false

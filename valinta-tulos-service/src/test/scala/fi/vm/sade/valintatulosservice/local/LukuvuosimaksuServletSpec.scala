@@ -18,7 +18,7 @@ import org.specs2.runner.JUnitRunner
 class LukuvuosimaksuServletSpec extends ServletSpecification with ValintarekisteriDbTools {
   override implicit val formats: Formats = DefaultFormats ++ List(new TasasijasaantoSerializer, new ValinnantilaSerializer,
     new DateSerializer, new TilankuvauksenTarkenneSerializer, new IlmoittautumistilaSerializer, new VastaanottoActionSerializer, new ValintatuloksenTilaSerializer,
-    new LukuvuosimaksuSerializer, new LukuvuosimaksuMuutosSerializer, new Scala213EnumNameSerializer(Maksuntila), new HakukohdeOidSerializer)
+    new LukuvuosimaksuSerializer, new LukuvuosimaksuMuutosSerializer, new EnumNameSerializer(Maksuntila), new HakukohdeOidSerializer)
 
   val organisaatioService: ClientAndServer = ClientAndServer.startClientAndServer(VtsAppConfig.organisaatioMockPort)
   organisaatioService.when(new HttpRequest().withPath(
