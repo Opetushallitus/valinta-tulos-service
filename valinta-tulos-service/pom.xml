@@ -278,6 +278,16 @@
             <groupId>org.mongodb</groupId>
             <artifactId>casbah-commons_2.11</artifactId>
             <version>${casbah_2.11.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>joda-time</groupId>
+                    <artifactId>joda-time</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.joda</groupId>
+                    <artifactId>joda-convert</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>fi.vm.sade.sijoittelu</groupId>
@@ -333,11 +343,6 @@
             <artifactId>json4s-jackson_2.11</artifactId>
         </dependency>
         <dependency>
-            <groupId>joda-time</groupId>
-            <artifactId>joda-time</artifactId>
-            <version>${joda-time.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-webapp</artifactId>
         </dependency>
@@ -354,11 +359,31 @@
             <groupId>org.mongodb</groupId>
             <artifactId>casbah-query_2.11</artifactId>
             <version>${casbah_2.11.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>joda-time</groupId>
+                    <artifactId>joda-time</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.joda</groupId>
+                    <artifactId>joda-convert</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>casbah-core_2.11</artifactId>
             <version>${casbah_2.11.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>joda-time</groupId>
+                    <artifactId>joda-time</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.joda</groupId>
+                    <artifactId>joda-convert</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -456,6 +481,11 @@
         <dependency>
             <groupId>org.tsers.zeison</groupId>
             <artifactId>zeison_2.11</artifactId>
+        </dependency>
+        <!-- joda-time is required at runtime by Casbah MongoDB driver -->
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
         </dependency>
     </dependencies>
     <build>

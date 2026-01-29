@@ -15,8 +15,9 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriD
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
 import javax.servlet.http.HttpServletResponse
-import org.joda.time.DateTime
 import org.json4s.Extraction
+
+import java.time.ZonedDateTime
 import org.json4s.jackson.Serialization.read
 import org.scalatra._
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
@@ -40,7 +41,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     HakuOid("2.2.2.2"),
     HakemusOid("4.3.2.1"),
     "1.3.3.1",
-    Vastaanottoaikataulu(Some(new DateTime()), Some(14)),
+    Vastaanottoaikataulu(Some(ZonedDateTime.now()), Some(14)),
     List(
       Hakutoiveentulos.julkaistavaVersioSijoittelunTuloksesta(ilmoittautumisenAikaleima,
         HakutoiveenSijoitteluntulos.kesken(HakukohdeOid("1.2.3.4"), "4.4.4.4"),
@@ -58,7 +59,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
           koulutuksenAlkamiskausi = Some(Kausi("2016S")),
           yhdenPaikanSaanto = YhdenPaikanSaanto(voimassa = false, ""),
           nimi = Map("kieli_fi" -> "Haun nimi")),
-        Ohjausparametrit(Vastaanottoaikataulu(None, None), Some(DateTime.now().plusDays(10)), Some(DateTime.now().plusDays(30)), Some(DateTime.now().plusDays(60)), None, None, None, true, true, true),
+        Ohjausparametrit(Vastaanottoaikataulu(None, None), Some(ZonedDateTime.now().plusDays(10)), Some(ZonedDateTime.now().plusDays(30)), Some(ZonedDateTime.now().plusDays(60)), None, None, None, true, true, true),
         hasHetu = true
       )
     )

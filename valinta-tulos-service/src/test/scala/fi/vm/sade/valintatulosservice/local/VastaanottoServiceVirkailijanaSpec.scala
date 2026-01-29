@@ -13,8 +13,9 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriD
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
-import org.joda.time.DateTime
 import org.junit.runner.RunWith
+
+import java.time.ZonedDateTime
 import org.specs2.execute.{FailureException, Result}
 import org.specs2.matcher.ThrownMessages
 import org.specs2.runner.JUnitRunner
@@ -31,7 +32,7 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
   val personOid: String = "1.2.246.562.24.14229104472"
   val valintatapajonoOid = ValintatapajonoOid("2013080813081926341928")
   val selite: String = "Testimuokkaus"
-  val ilmoittautumisaikaPaattyy2100: Ilmoittautumisaika = Ilmoittautumisaika(None, Some(new DateTime(2100, 1, 10, 23, 59, 59, 999)))
+  val ilmoittautumisaikaPaattyy2100: Ilmoittautumisaika = Ilmoittautumisaika(None, Some(ZonedDateTime.of(2100, 1, 10, 23, 59, 59, 999000000, java.time.ZoneId.systemDefault())))
 
   "vastaanotaVirkailijana" in {
     "vastaanota sitovasti yksi hakija" in {

@@ -18,7 +18,6 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksytta
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, SijoitteluRepository, ValinnanTilanKuvausRepository, ValinnantulosRepository, VastaanottoEvent}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
-import org.joda.time.DateTime
 import org.junit.runner.RunWith
 import org.specs2.matcher.MustThrownExpectations
 import org.specs2.mock.Mockito
@@ -29,6 +28,7 @@ import org.specs2.specification.Scope
 import slick.dbio.DBIO
 
 import java.net.InetAddress
+import java.time.ZonedDateTime
 import java.time.{Instant, ZonedDateTime}
 import java.util.UUID
 
@@ -573,7 +573,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       None,
       None,
       None,
-      Some(DateTime.now().plusDays(2)),
+      Some(ZonedDateTime.now().plusDays(2)),
       true,
       false,
       false
@@ -588,7 +588,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       None,
       None,
       None,
-      Some(DateTime.now().minusDays(2)),
+      Some(ZonedDateTime.now().minusDays(2)),
       true,
       false,
       false

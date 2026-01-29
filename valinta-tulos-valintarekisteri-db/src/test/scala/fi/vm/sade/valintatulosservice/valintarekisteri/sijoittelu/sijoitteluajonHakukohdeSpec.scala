@@ -3,12 +3,11 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.sijoittelu
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, Vastaanottoaikataulu}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, SijoitteluRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakemusRecord, HakukohdeOid, ValintatapajonoOid}
-import org.joda.time.DateTime
 import org.specs2.mock.Mockito
 import org.specs2.mock.Mockito.theStubbed
 import org.specs2.mutable.Specification
 
-import java.time.OffsetDateTime
+import java.time.{OffsetDateTime, ZonedDateTime}
 
 class sijoitteluajonHakukohdeSpec extends Specification {
 
@@ -21,7 +20,7 @@ class sijoitteluajonHakukohdeSpec extends Specification {
     None, false, false, valintatapajonoOid)
 
   private val hyvaksyttyJaJulkaistuDates = Map(hakijaOid -> Map(hakukohde -> OffsetDateTime.now()))
-  private val ohj = new Ohjausparametrit(new Vastaanottoaikataulu(Some(new DateTime()), Some(0)), None,
+  private val ohj = new Ohjausparametrit(new Vastaanottoaikataulu(Some(ZonedDateTime.now()), Some(0)), None,
     None, None, None, None, None, false, false, false)
   private val repoMock = Mockito.mock[SijoitteluRepository with HakijaVastaanottoRepository]
   repoMock.getSijoitteluajonHakijaryhmat(100) returns List.empty

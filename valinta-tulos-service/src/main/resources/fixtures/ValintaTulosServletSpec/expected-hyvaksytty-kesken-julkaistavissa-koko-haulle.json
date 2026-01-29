@@ -4,7 +4,7 @@
     "hakemusOid": "1.2.246.562.11.00000441369",
     "hakijaOid": "1.2.246.562.24.14229104472",
     "aikataulu": {
-      "vastaanottoEnd": "2030-01-10T10:00:00Z",
+      "vastaanottoEnd": "2030-01-10T12:00:00+02:00",
       "vastaanottoBufferDays": 14
     },
     "hakutoiveet": [
@@ -18,7 +18,7 @@
         "vastaanottotila": "KESKEN",
         "ilmoittautumistila": {
           "ilmoittautumisaika": {
-            "loppu": "2030-01-10T21:59:59Z"
+            "loppu": "2030-01-10T23:59:59.999+02:00"
           },
           "ilmoittautumistapa": {
             "nimi": {
@@ -55,7 +55,7 @@
         "vastaanottotila": "KESKEN",
         "ilmoittautumistila": {
           "ilmoittautumisaika": {
-            "loppu": "2030-01-10T21:59:59Z"
+            "loppu": "2030-01-10T23:59:59.999+02:00"
           },
           "ilmoittautumistapa": {
             "nimi": {
@@ -81,7 +81,7 @@
     "hakemusOid": "1.2.246.562.11.00000441370",
     "hakijaOid": "1.2.246.562.24.14229104472",
     "aikataulu": {
-      "vastaanottoEnd": "2030-01-10T10:00:00Z",
+      "vastaanottoEnd": "2030-01-10T12:00:00+02:00",
       "vastaanottoBufferDays": 14
     },
     "hakutoiveet": [
@@ -95,7 +95,7 @@
         "vastaanottotila": "KESKEN",
         "ilmoittautumistila": {
           "ilmoittautumisaika": {
-            "loppu": "2030-01-10T21:59:59Z"
+            "loppu": "2030-01-10T23:59:59.999+02:00"
           },
           "ilmoittautumistapa": {
             "nimi": {
@@ -124,7 +124,7 @@
         "vastaanottotila": "KESKEN",
         "ilmoittautumistila": {
           "ilmoittautumisaika": {
-            "loppu": "2030-01-10T21:59:59Z"
+            "loppu": "2030-01-10T23:59:59.999+02:00"
           },
           "ilmoittautumistapa": {
             "nimi": {
@@ -150,7 +150,7 @@
     "hakemusOid": "1.2.246.562.11.00000441371",
     "hakijaOid": "1.2.246.562.24.14229104472",
     "aikataulu": {
-      "vastaanottoEnd": "2030-01-10T10:00:00Z",
+      "vastaanottoEnd": "2030-01-10T12:00:00+02:00",
       "vastaanottoBufferDays": 14
     },
     "hakutoiveet": [
@@ -164,7 +164,7 @@
         "vastaanottotila": "KESKEN",
         "ilmoittautumistila": {
           "ilmoittautumisaika": {
-            "loppu": "2030-01-10T21:59:59Z"
+            "loppu": "2030-01-10T23:59:59.999+02:00"
           },
           "ilmoittautumistapa": {
             "nimi": {
@@ -193,7 +193,7 @@
         "vastaanottotila": "KESKEN",
         "ilmoittautumistila": {
           "ilmoittautumisaika": {
-            "loppu": "2030-01-10T21:59:59Z"
+            "loppu": "2030-01-10T23:59:59.999+02:00"
           },
           "ilmoittautumistapa": {
             "nimi": {

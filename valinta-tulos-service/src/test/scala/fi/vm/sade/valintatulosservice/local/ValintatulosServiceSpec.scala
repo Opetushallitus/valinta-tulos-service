@@ -17,8 +17,9 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Va
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.{ITSpecification, TimeWarp, ValintatulosService}
-import org.joda.time.DateTime
 import org.junit.runner.RunWith
+
+import java.time.{OffsetDateTime, ZonedDateTime}
 import org.specs2.runner.JUnitRunner
 import slick.jdbc.PostgresProfile.api._
 import slick.sql.SqlAction
@@ -1229,8 +1230,8 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           "varasijojen käsittelypäivämäärät näytetään" in {
             // HYVÄKSYTTY KESKEN true
             useFixture("hyvaksytty-ylempi-varalla.json", hakuFixture = hakuFixture)
-            getHakutoive("1.2.246.562.5.16303028779").varasijojaKaytetaanAlkaen.get.getTime must_== new DateTime("2014-08-01T16:00:00.000Z").toDate.getTime
-            getHakutoive("1.2.246.562.5.16303028779").varasijojaTaytetaanAsti.get.getTime must_== new DateTime("2014-08-31T16:00:00.000Z").toDate.getTime
+            getHakutoive("1.2.246.562.5.16303028779").varasijojaKaytetaanAlkaen.get.getTime must_== OffsetDateTime.parse("2014-08-01T16:00:00.000Z").toInstant.toEpochMilli
+            getHakutoive("1.2.246.562.5.16303028779").varasijojaTaytetaanAsti.get.getTime must_== OffsetDateTime.parse("2014-08-31T16:00:00.000Z").toInstant.toEpochMilli
           }
 
           "Valintatulos kesken" in {

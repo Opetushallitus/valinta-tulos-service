@@ -6,7 +6,7 @@ import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusSerializer
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import org.json4s.ext.{EnumNameSerializer, JodaTimeSerializers}
+import org.json4s.ext.EnumNameSerializer
 import org.json4s.{DefaultFormats, Formats}
 
 import java.text.SimpleDateFormat
@@ -40,7 +40,7 @@ object JsonFormats {
       format.setTimeZone(DefaultFormats.UTC)
       format
     }
-  } ++ JodaTimeSerializers.all
+  }
 
   val jsonFormats: Formats = (genericFormats ++ customSerializers)
     .addKeySerializers(List(

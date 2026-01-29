@@ -1,5 +1,5 @@
 package fi.vm.sade.valintatulosservice.ohjausparametrit
 
-import org.joda.time.DateTime
+import java.time.ZonedDateTime
 
-case class Vastaanottoaikataulu(vastaanottoEnd: Option[DateTime], vastaanottoBufferDays: Option[Int])
+case class Vastaanottoaikataulu(vastaanottoEnd: Option[ZonedDateTime], vastaanottoBufferDays: Option[Int])
