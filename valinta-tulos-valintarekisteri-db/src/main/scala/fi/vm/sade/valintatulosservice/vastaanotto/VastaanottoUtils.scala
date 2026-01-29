@@ -31,7 +31,7 @@ object VastaanottoUtils {
       viimeisinMuutos <- hakutoiveenHyvaksyttyJaJulkaistuOption.map(d =>
         ZonedDateTime.ofInstant(d.toInstant, ZoneOffset.ofTotalSeconds(d.getOffset.getTotalSeconds))
       )
-      haunValintaesitysHyvaksyttavissa = ohjausparametrit.valintaesitysHyvaksyttavissa.getOrElse(ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.systemDefault()))
+      haunValintaesitysHyvaksyttavissa = ohjausparametrit.valintaesitysHyvaksyttavissa.getOrElse(ZonedDateTime.ofInstant(Instant.EPOCH, helsinkiZone))
       buffer <- bufferOption.map(b => b + bufferModifier(viimeisinMuutos, deadline))
     } yield max(viimeisinMuutos, haunValintaesitysHyvaksyttavissa)
       .plusDays(buffer)

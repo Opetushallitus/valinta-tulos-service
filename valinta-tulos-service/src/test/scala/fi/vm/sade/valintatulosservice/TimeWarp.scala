@@ -9,7 +9,7 @@ object TimeWarp {
   def now(): ZonedDateTime = ClockHolder.now()
 
   def setFixedTime(millis: Long): Unit = {
-    ClockHolder.setClock(Clock.fixed(Instant.ofEpochMilli(millis), ZoneId.systemDefault()))
+    ClockHolder.setClock(Clock.fixed(Instant.ofEpochMilli(millis), ZoneId.of("Europe/Helsinki")))
   }
 
   def resetTime(): Unit = {
