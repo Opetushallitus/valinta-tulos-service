@@ -9,6 +9,8 @@ import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 
+import java.time.{Clock, ZoneId}
+
 @RunWith(classOf[JUnitRunner])
 class HakutoiveenIlmoittautumistilaSpec extends Specification {
   val vastaanottanut = {
@@ -34,7 +36,8 @@ class HakutoiveenIlmoittautumistilaSpec extends Specification {
           yhdenPaikanSaanto = YhdenPaikanSaanto(false, ""),
           nimi = Map("kieli_fi" -> "Haun nimi")),
         Ohjausparametrit.empty,
-        hasHetu = true)
+        hasHetu = true,
+        Clock.system(ZoneId.of("Europe/Helsinki")))
       it.ilmoittauduttavissa must_== true
     }
 
@@ -56,7 +59,8 @@ class HakutoiveenIlmoittautumistilaSpec extends Specification {
           yhdenPaikanSaanto = YhdenPaikanSaanto(false, ""),
           nimi = Map("kieli_fi" -> "Haun nimi")),
         Ohjausparametrit.empty,
-        hasHetu = false)
+        hasHetu = false,
+        Clock.system(ZoneId.of("Europe/Helsinki")))
       it.ilmoittauduttavissa must_== false
     }
   }

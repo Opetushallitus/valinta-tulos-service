@@ -22,9 +22,7 @@ import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.ehdollinenVas
 import org.apache.commons.lang3.StringUtils
 import slick.dbio.DBIO
 
-import java.time.Instant
-
-// ClockHolder is used for testable time
+import java.time.{Clock, Instant}
 import java.util.Date
 import scala.collection.JavaConverters._
 import scala.compat.java8.OptionConverters._
@@ -38,18 +36,8 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
                           hakijaVastaanottoRepository: HakijaVastaanottoRepository,
                           hakukohdeRecordService: HakukohdeRecordService,
                           valintatulosDao: ValintarekisteriValintatulosDao,
-                          koodistoService: KoodistoService)(implicit appConfig: VtsAppConfig) extends Logging {
-  def this(valinnantulosRepository: ValinnantulosRepository,
-           sijoittelutulosService: SijoittelutulosService,
-           hakemusRepository: HakemusRepository,
-           virkailijaVastaanottoRepository: VirkailijaVastaanottoRepository,
-           ohjausparametritService: OhjausparametritService,
-           hakuService: HakuService,
-           hakijaVastaanottoRepository: HakijaVastaanottoRepository,
-           hakukohdeRecordService: HakukohdeRecordService,
-           valintatulosDao: ValintarekisteriValintatulosDao,
-           koodistoService: KoodistoService)(implicit appConfig: VtsAppConfig) =
-    this(valinnantulosRepository, sijoittelutulosService, ohjausparametritService, hakemusRepository, virkailijaVastaanottoRepository, hakuService, hakijaVastaanottoRepository, hakukohdeRecordService, valintatulosDao, koodistoService)
+                          koodistoService: KoodistoService,
+                          clock: Clock)(implicit appConfig: VtsAppConfig) extends Logging {
 
   def haunKoulutuksenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid: HakuOid) : Set[VastaanottoRecord] = {
     (for {
@@ -542,7 +530,8 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         haku,
         ohjausparametrit,
         checkJulkaisuAikaParametri,
-        hasHetu
+        hasHetu,
+        clock
       )
     }
 
@@ -649,7 +638,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
   }
 
   private def asetaKelaURL(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
-    val hakukierrosEiOlePäättynyt = !ohjausparametrit.hakukierrosPaattyy.exists(_.toInstant.isBefore(ClockHolder.instant()))
+    val hakukierrosEiOlePäättynyt = !ohjausparametrit.hakukierrosPaattyy.exists(_.toInstant.isBefore(clock.instant()))
     val näytetäänSiirryKelaanURL = ohjausparametrit.naytetaankoSiirryKelaanURL
     val näytetäänKelaURL = if (hakukierrosEiOlePäättynyt && näytetäänSiirryKelaanURL && haku.sallittuKohdejoukkoKelaLinkille) Some(appConfig.settings.kelaURL) else None
 
@@ -683,7 +672,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
   }
 
   private def asetaShowMigriURL(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
-    val hakukierrosEiOlePäättynyt = !ohjausparametrit.hakukierrosPaattyy.exists(_.toInstant.isBefore(ClockHolder.instant()))
+    val hakukierrosEiOlePäättynyt = !ohjausparametrit.hakukierrosPaattyy.exists(_.toInstant.isBefore(clock.instant()))
     val hakijaOnEuTaiEtaKansalainen = isEuTaiEtaKansalainen(hakemus.henkilotiedot.kansalaisuudet)
     val showMigriURL = if (hakukierrosEiOlePäättynyt && !hakijaOnEuTaiEtaKansalainen) Some(true) else Some(false)
 
@@ -838,7 +827,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
           logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja valintatila > peruuntunut, ei vastaanotettavissa {}", index)
           tulos.copy(valintatila = Valintatila.peruuntunut, vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa)
         } else if (index == firstHyvaksyttyUnderFirstVarallaAndNoPeruttuInBetween) {
-          if (ehdollinenVastaanottoMahdollista(ohjausparametrit)) {
+          if (ehdollinenVastaanottoMahdollista(ohjausparametrit, clock)) {
             logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja vastaanotettavuustila > vastaanotettavissa_ehdollisesti {}", index)
             // Ehdollinen vastaanotto mahdollista
             tulos.copy(vastaanotettavuustila = Vastaanotettavuustila.vastaanotettavissa_ehdollisesti)
@@ -1029,7 +1018,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
 
   private def näytäVarasijaltaHyväksytytHyväksyttyinäJosVarasijasäännötEiVoimassa(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
     tulokset.map {
-      case tulos if tulos.valintatila == Valintatila.varasijalta_hyväksytty && !ehdollinenVastaanottoMahdollista(ohjausparametrit) =>
+      case tulos if tulos.valintatila == Valintatila.varasijalta_hyväksytty && !ehdollinenVastaanottoMahdollista(ohjausparametrit, clock) =>
         logger.debug("näytäVarasijaltaHyväksytytHyväksyttyinäJosVarasijasäännötEiVoimassa valintatila > hyväksytty")
         tulos.copy(valintatila = Valintatila.hyväksytty, tilanKuvaukset = Map.empty)
       case tulos =>

@@ -8,12 +8,15 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakutoiveenValinnantulos
 import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.{ehdollinenVastaanottoMahdollista}
 import slick.dbio.{DBIO}
+
+import java.time.Clock
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class SijoittelunVastaanottoValidator(val haku: Haku,
                                      val hakukohdeOid: HakukohdeOid,
                                      val ohjausparametrit: Ohjausparametrit,
-                                     val valinnantulosRepository: ValinnantulosRepository with HakijaVastaanottoRepository)
+                                     val valinnantulosRepository: ValinnantulosRepository with HakijaVastaanottoRepository,
+                                     val clock: Clock)
   extends VastaanottoValidator {
 
   override def onkoEhdollisestiVastaanotettavissa(uusi: Valinnantulos): DBIO[Boolean] =
@@ -51,7 +54,7 @@ class SijoittelunVastaanottoValidator(val haku: Haku,
 
       val ehdollinenVastaanotettavuus = findHakutoiveenValinnantulos(toive => toive.valintatapajonoOid == uusi.valintatapajonoOid).exists(vastaanotettavaHakutoive => {
         val sovellaKorkeakouluSääntöjä = haku.korkeakoulu && haku.sijoitteluJaPriorisointi
-        val ehdollinenVastaanottoSallittu = ehdollinenVastaanottoMahdollista(ohjausparametrit)
+        val ehdollinenVastaanottoSallittu = ehdollinenVastaanottoMahdollista(ohjausparametrit, clock)
         val hakutoiveOnEhdollisestiVastaanotettavissa = ehdollisestiVastaanotettavaHakutoive.exists(_ == vastaanotettavaHakutoive.hakutoive)
 
         sovellaKorkeakouluSääntöjä && ehdollinenVastaanottoSallittu && hakutoiveOnEhdollisestiVastaanotettavissa && julkaistavissa(uusi)

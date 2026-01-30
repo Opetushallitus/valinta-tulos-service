@@ -12,6 +12,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepo
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, SijoitteluWrapper}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 
+import java.time.{Clock, ZoneId}
 import java.util
 import scala.collection.JavaConverters._
 
@@ -60,7 +61,8 @@ class ValintarekisteriForSijoittelu(valintarekisteriDb: SijoitteluRepository wit
 
   override def getSijoitteluajonHakukohteet(sijoitteluajoId:Long, hakuOid: String): java.util.List[Hakukohde] = {
     val ohjausparametrit = findOhjausparametritFromOhjausparametritService(HakuOid(hakuOid))
-    new SijoitteluajonHakukohteet(valintarekisteriDb, sijoitteluajoId, Option(HakuOid(hakuOid))).entity(Option(ohjausparametrit))
+    val clock = Clock.system(ZoneId.of("Europe/Helsinki"))
+    new SijoitteluajonHakukohteet(valintarekisteriDb, sijoitteluajoId, Option(HakuOid(hakuOid))).entity(Option(ohjausparametrit), clock)
   }
 }
 
@@ -107,7 +109,8 @@ abstract class Valintarekisteri(valintarekisteriDb:SijoitteluRepository with Sto
   }
 
   def getSijoitteluajonHakukohteet(sijoitteluajoId:Long, hakuOid: String): java.util.List[Hakukohde] = {
-    new SijoitteluajonHakukohteet(valintarekisteriDb, sijoitteluajoId, Option.empty).entity(Option.empty)
+    val clock = Clock.system(ZoneId.of("Europe/Helsinki"))
+    new SijoitteluajonHakukohteet(valintarekisteriDb, sijoitteluajoId, Option.empty).entity(Option.empty, clock)
   }
 
   def getValintatulokset(hakuOid: String): java.util.List[Valintatulos] = {
@@ -116,7 +119,8 @@ abstract class Valintarekisteri(valintarekisteriDb:SijoitteluRepository with Sto
   }
 
   def getHakukohdeForSijoitteluajo(sijoitteluajoId:Long, hakukohdeOid:String) = {
-    new SijoitteluajonHakukohde(valintarekisteriDb, sijoitteluajoId, HakukohdeOid(hakukohdeOid)).entity()
+    val clock = Clock.system(ZoneId.of("Europe/Helsinki"))
+    new SijoitteluajonHakukohde(valintarekisteriDb, sijoitteluajoId, HakukohdeOid(hakukohdeOid)).entity(clock)
   }
 }
 

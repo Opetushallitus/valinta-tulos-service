@@ -6,11 +6,10 @@ import fi.vm.sade.valintatulosservice.hakemus.HakuAppRepository
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import fi.vm.sade.valintatulosservice.ClockHolder
 import org.springframework.util.StopWatch
 
 import java.net.URL
-import java.time.ZonedDateTime
+import java.time.{Clock, ZonedDateTime}
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit.MINUTES
 import scala.concurrent.duration.Duration
@@ -48,7 +47,7 @@ case class HakutoiveTulosRekisterissa(hakemusOid: HakemusOid, hakutoiveOid: Haku
 
 case class TaustapaivityksenTila(kaynnistettiin: Boolean, kaynnistetty: Option[ZonedDateTime], valmistui: Option[ZonedDateTime], hakujenMaara: Option[Int])
 
-class PuuttuvatTuloksetService(valintarekisteriDb: ValintarekisteriDb, hakemusRepository: HakuAppRepository, virkailijaBaseUrl: String, audit: Audit) extends Logging {
+class PuuttuvatTuloksetService(valintarekisteriDb: ValintarekisteriDb, hakemusRepository: HakuAppRepository, virkailijaBaseUrl: String, audit: Audit, clock: Clock) extends Logging {
   private val hakukohdeLinkCreator = new SijoittelunTuloksetLinkCreator(virkailijaBaseUrl)
   private val dao = new PuuttuvatTuloksetDao(valintarekisteriDb, hakemusRepository, hakukohdeLinkCreator)
   private val puuttuvienTulostenKokoaja = new PuuttuvienTulostenKokoaja(valintarekisteriDb, hakemusRepository, hakukohdeLinkCreator)
@@ -62,7 +61,7 @@ class PuuttuvatTuloksetService(valintarekisteriDb: ValintarekisteriDb, hakemusRe
         dao.saveNewTaustapaivityksenTila(hakuOids.size)
       case TaustapaivityksenTila(_, _, valmistui: Some[ZonedDateTime], _) =>
         dao.saveNewTaustapaivityksenTila(hakuOids.size)
-      case t@TaustapaivityksenTila(_, kaynnistetty, None, _) if kaynnistetty.exists(_.isBefore(ClockHolder.now().minusDays(1))) =>
+      case t@TaustapaivityksenTila(_, kaynnistetty, None, _) if kaynnistetty.exists(_.isBefore(ZonedDateTime.now(clock).minusDays(1))) =>
         logger.warn(s"Kannasta löytyi tieto epäilyttävän vanhasta kesken olevasta päivityksestä, ei välitetä siitä: $t")
         dao.saveNewTaustapaivityksenTila(hakuOids.size)
       case t@TaustapaivityksenTila(_, Some(kaynnistetty), None, existingHakuCount) =>

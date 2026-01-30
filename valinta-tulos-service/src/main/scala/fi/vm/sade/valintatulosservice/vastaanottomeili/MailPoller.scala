@@ -12,8 +12,9 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository.MailableCandidate
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import fi.vm.sade.valintatulosservice.{ClockHolder, ValintatulosService, tarjonta}
+import fi.vm.sade.valintatulosservice.{ValintatulosService, tarjonta}
 
+import java.time.Clock
 import scala.annotation.tailrec
 import scala.collection.parallel.ForkJoinTaskSupport
 import scala.collection.parallel.CollectionConverters._
@@ -26,7 +27,8 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
                  hakuService: HakuService,
                  hakemusRepository: HakemusRepository,
                  ohjausparameteritService: OhjausparametritService,
-                 vtsApplicationSettings: VtsApplicationSettings) extends Logging {
+                 vtsApplicationSettings: VtsApplicationSettings,
+                 clock: Clock) extends Logging {
 
   private val pollConcurrency: Int = vtsApplicationSettings.mailPollerConcurrency
   private val pollerTaskSupport = new ForkJoinTaskSupport(new ForkJoinPool(pollConcurrency))
@@ -137,10 +139,10 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
           case Right(ohjausparametrit) if ohjausparametrit.hakukierrosPaattyy.isEmpty =>
             logger.warn(s"Pudotetaan haku ${haku.oid} koska hakukierros päättyy ei asetettu")
             false
-          case Right(Ohjausparametrit(_, _, _, Some(hakukierrosPaattyy), _, _, _, _, _, _)) if hakukierrosPaattyy.toInstant.isBefore(ClockHolder.instant()) =>
+          case Right(Ohjausparametrit(_, _, _, Some(hakukierrosPaattyy), _, _, _, _, _, _)) if hakukierrosPaattyy.toInstant.isBefore(clock.instant()) =>
             logger.debug(s"Pudotetaan haku ${haku.oid} koska hakukierros päättynyt $hakukierrosPaattyy")
             false
-          case Right(Ohjausparametrit(_, _, _, _, Some(tulostenJulkistusAlkaa), _, _, _, _, _)) if tulostenJulkistusAlkaa.toInstant.isAfter(ClockHolder.instant()) =>
+          case Right(Ohjausparametrit(_, _, _, _, Some(tulostenJulkistusAlkaa), _, _, _, _, _)) if tulostenJulkistusAlkaa.toInstant.isAfter(clock.instant()) =>
             logger.info(s"Pudotetaan haku ${haku.oid} koska tulosten julkistus alkaa $tulostenJulkistusAlkaa")
             false
           case Left(e) =>

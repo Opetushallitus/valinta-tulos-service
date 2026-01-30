@@ -4,16 +4,25 @@ import java.text.SimpleDateFormat
 import java.time.{Clock, Instant, ZoneId, ZonedDateTime}
 
 object TimeWarp {
-  def clock: Clock = ClockHolder.clock
+  private val defaultZone: ZoneId = ZoneId.of("Europe/Helsinki")
+  private val systemClock: Clock = Clock.system(defaultZone)
+  @volatile private var currentClock: Clock = systemClock
 
-  def now(): ZonedDateTime = ClockHolder.now()
+  // A delegating clock that always goes through the mutable currentClock, so it picks up time changes
+  val clock: Clock = new Clock {
+    override def getZone: ZoneId = currentClock.getZone
+    override def withZone(zone: ZoneId): Clock = currentClock.withZone(zone)
+    override def instant(): Instant = currentClock.instant()
+  }
+
+  def now(): ZonedDateTime = ZonedDateTime.now(currentClock)
 
   def setFixedTime(millis: Long): Unit = {
-    ClockHolder.setClock(Clock.fixed(Instant.ofEpochMilli(millis), ZoneId.of("Europe/Helsinki")))
+    currentClock = Clock.fixed(Instant.ofEpochMilli(millis), defaultZone)
   }
 
   def resetTime(): Unit = {
-    ClockHolder.resetClock()
+    currentClock = systemClock
   }
 }
 

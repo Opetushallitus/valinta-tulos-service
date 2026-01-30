@@ -1,16 +1,15 @@
 package fi.vm.sade.valintatulosservice.vastaanotto
 
-import java.time.{Instant, OffsetDateTime, ZoneId, ZoneOffset, ZonedDateTime}
+import java.time.{Clock, Instant, OffsetDateTime, ZoneId, ZoneOffset, ZonedDateTime}
 
-import fi.vm.sade.valintatulosservice.ClockHolder
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, Vastaanottoaikataulu}
 
 object VastaanottoUtils {
 
   private val helsinkiZone = ZoneId.of("Europe/Helsinki")
 
-  def ehdollinenVastaanottoMahdollista(ohjausparametrit: Ohjausparametrit): Boolean = {
-    val now: ZonedDateTime = ClockHolder.now()
+  def ehdollinenVastaanottoMahdollista(ohjausparametrit: Ohjausparametrit, clock: Clock): Boolean = {
+    val now: ZonedDateTime = ZonedDateTime.now(clock)
     val varasijaSaannotVoimassa = ohjausparametrit.varasijaSaannotAstuvatVoimaan.forall(_.isBefore(now))
     val kaikkiJonotSijoittelussa = ohjausparametrit.kaikkiJonotSijoittelussa.forall(_.isBefore(now))
     varasijaSaannotVoimassa && kaikkiJonotSijoittelussa

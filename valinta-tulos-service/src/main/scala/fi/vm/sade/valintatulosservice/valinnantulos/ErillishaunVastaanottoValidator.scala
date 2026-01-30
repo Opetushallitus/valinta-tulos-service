@@ -7,10 +7,13 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepo
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakukohdeOid, Valinnantulos}
 import slick.dbio.DBIO
 
+import java.time.Clock
+
 class ErillishaunVastaanottoValidator(val haku: Haku,
                                       val hakukohdeOid: HakukohdeOid,
                                       val ohjausparametrit: Ohjausparametrit,
-                                      val valinnantulosRepository: ValinnantulosRepository with HakijaVastaanottoRepository)
+                                      val valinnantulosRepository: ValinnantulosRepository with HakijaVastaanottoRepository,
+                                      val clock: Clock)
   extends VastaanottoValidator with Logging {
 
   def onkoEhdollisestiVastaanotettavissa(valinnantulos: Valinnantulos) = DBIO.successful(false)

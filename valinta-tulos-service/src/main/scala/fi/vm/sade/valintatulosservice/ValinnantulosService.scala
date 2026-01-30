@@ -18,7 +18,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import slick.dbio._
 
-import java.time.Instant
+import java.time.{Clock, Instant}
 import java.util.ConcurrentModificationException
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
@@ -36,7 +36,8 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
                            yhdenPaikanSaannos: YhdenPaikanSaannos,
                            val appConfig: VtsAppConfig,
                            val audit: Audit,
-                           val hakemusRepository: HakemusRepository) extends Logging {
+                           val hakemusRepository: HakemusRepository,
+                           val clock: Clock) extends Logging {
   def getMuutoshistoriaForHakemusWithoutAuditInfo(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[Muutos] = {
     valinnantulosRepository.getMuutoshistoriaForHakemus(hakemusOid, valintatapajonoOid)
   }
@@ -210,7 +211,8 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
           hakukohdeRecordService,
           ifUnmodifiedSince,
           audit,
-          hakemusRepository
+          hakemusRepository,
+          clock
         )
       } else {
         new SijoittelunValinnantulosStrategy(
@@ -223,7 +225,8 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
           appConfig,
           valinnantulosRepository,
           ifUnmodifiedSince.getOrElse(throw new IllegalArgumentException(appConfig.settings.headerIfUnmodifiedSince + " on pakollinen otsake valinnantulosten tallennukselle")),
-          audit
+          audit,
+          clock
         )
       }
       validateAndSaveValinnantuloksetInTransaction(valintatapajonoOid, hakukohde, strategy, valinnantulokset)
