@@ -28,8 +28,7 @@ import org.specs2.specification.Scope
 import slick.dbio.DBIO
 
 import java.net.InetAddress
-import java.time.ZonedDateTime
-import java.time.{Instant, ZonedDateTime}
+import java.time.{Clock, Instant, ZoneId, ZonedDateTime}
 import java.util.UUID
 
 @RunWith(classOf[JUnitRunner])
@@ -459,7 +458,8 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       yhdenPaikanSaannos,
       appConfig,
       audit,
-      hakemusRepository
+      hakemusRepository,
+      Clock.system(ZoneId.of("Europe/Helsinki"))
     )
   }
 

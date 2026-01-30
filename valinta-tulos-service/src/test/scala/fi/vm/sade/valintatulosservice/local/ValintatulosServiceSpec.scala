@@ -81,13 +81,13 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
   lazy val valintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
   lazy val sijoittelunTulosClient = new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb)
   lazy val raportointiService = new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintatulosDao)
-  lazy val sijoittelutulosService = new SijoittelutulosService(raportointiService, ohjausparametritService, valintarekisteriDb, sijoittelunTulosClient)
+  lazy val sijoittelutulosService = new SijoittelutulosService(raportointiService, ohjausparametritService, valintarekisteriDb, sijoittelunTulosClient, TimeWarp.clock)
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, true)
   lazy val hakijaDtoClient = new ValintarekisteriHakijaDTOClientImpl(raportointiService, sijoittelunTulosClient, valintarekisteriDb)
   lazy val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
   lazy val hakemusRepository = new HakemusRepository(new HakuAppRepository(), new AtaruHakemusRepository(appConfig), new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService))
-  lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, hakemusRepository, valintarekisteriDb,
-    ohjausparametritService, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, koodistoService)
+  lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, ohjausparametritService, hakemusRepository, valintarekisteriDb,
+    hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, koodistoService, TimeWarp.clock)
 
   val hakuOid = HakuOid("1.2.246.562.5.2013080813081926341928")
   val sijoitteluAjoId: String = "latest"

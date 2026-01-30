@@ -17,7 +17,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import javax.servlet.http.HttpServletResponse
 import org.json4s.Extraction
 
-import java.time.ZonedDateTime
+import java.time.{Clock, ZoneId, ZonedDateTime}
 import org.json4s.jackson.Serialization.read
 import org.scalatra._
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
@@ -60,7 +60,8 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
           yhdenPaikanSaanto = YhdenPaikanSaanto(voimassa = false, ""),
           nimi = Map("kieli_fi" -> "Haun nimi")),
         Ohjausparametrit(Vastaanottoaikataulu(None, None), Some(ZonedDateTime.now().plusDays(10)), Some(ZonedDateTime.now().plusDays(30)), Some(ZonedDateTime.now().plusDays(60)), None, None, None, true, true, true),
-        hasHetu = true
+        hasHetu = true,
+        clock = Clock.system(ZoneId.of("Europe/Helsinki"))
       )
     )
   )

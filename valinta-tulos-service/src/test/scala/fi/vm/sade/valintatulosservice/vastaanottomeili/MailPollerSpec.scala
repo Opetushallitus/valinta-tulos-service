@@ -11,7 +11,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.{ValintatulosService, tarjonta}
 import org.junit.runner.RunWith
 
-import java.time.ZonedDateTime
+import java.time.{Clock, ZoneId, ZonedDateTime}
 import org.specs2.matcher.MustThrownExpectations
 import org.specs2.mock.Mockito
 import org.specs2.mock.mockito.MockitoMatchers
@@ -1235,7 +1235,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakuService,
       hakemusRepository,
       ohjausparametritService,
-      vtsApplicationSettings
+      vtsApplicationSettings,
+      Clock.system(ZoneId.of("Europe/Helsinki"))
     )
 
     mailPollerRepository.findHakukohdeOidsCheckedRecently(any[Duration]) returns Set.empty

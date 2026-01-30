@@ -14,7 +14,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecord
 import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantuloksenLisays, ValinnantuloksenMuokkaus, ValinnantuloksenPoisto}
 import slick.dbio.DBIO
 
-import java.time.Instant
+import java.time.{Clock, Instant}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
@@ -28,11 +28,12 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
                                        hakukohdeRecordService: HakukohdeRecordService,
                                        ifUnmodifiedSince: Option[Instant],
                                        audit: Audit,
-                                       hakemusRepository: HakemusRepository) extends ValinnantulosStrategy with Logging {
+                                       hakemusRepository: HakemusRepository,
+                                       clock: Clock) extends ValinnantulosStrategy with Logging {
   private val session = auditInfo.session._2
 
   lazy val hakukohdeRecord: Either[Throwable, HakukohdeRecord] = hakukohdeRecordService.getHakukohdeRecord(hakukohdeOid)
-  lazy val vastaanottoValidator = new ErillishaunVastaanottoValidator(haku, hakukohdeOid, ohjausparametrit, valinnantulosRepository)
+  lazy val vastaanottoValidator = new ErillishaunVastaanottoValidator(haku, hakukohdeOid, ohjausparametrit, valinnantulosRepository, clock)
 
   def hasChange(uusi:Valinnantulos, vanha:Valinnantulos) = uusi.hasChanged(vanha) || uusi.poistettava.getOrElse(false)
 

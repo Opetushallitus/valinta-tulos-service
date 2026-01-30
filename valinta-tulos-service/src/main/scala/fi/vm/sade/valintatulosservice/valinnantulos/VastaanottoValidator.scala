@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.valinnantulos
 
 import java.text.SimpleDateFormat
-import java.time.OffsetDateTime
+import java.time.{Clock, OffsetDateTime}
 import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
@@ -10,7 +10,6 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepo
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.laskeVastaanottoDeadline
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
-import fi.vm.sade.valintatulosservice.ClockHolder
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,6 +19,7 @@ trait VastaanottoValidator {
   val hakukohdeOid: HakukohdeOid
   val valinnantulosRepository: ValinnantulosRepository with HakijaVastaanottoRepository
   val ohjausparametrit: Ohjausparametrit
+  def clock: Clock
 
   val sitovaTaiEhdollinenVastaanotto: Seq[ValintatuloksenTila] = List(ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
   val keskenTaiVastaanottanutToisenPaikan: Seq[ValintatuloksenTila] = List(ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN, ValintatuloksenTila.KESKEN)
@@ -30,7 +30,7 @@ trait VastaanottoValidator {
   def right = DBIO.successful(Right(()))
   def julkaistavissa(valinnantulos: Valinnantulos):Boolean = valinnantulos.julkaistavissa.exists(_ == true) && tuloksetJulkaistavissa
 
-  lazy val tuloksetJulkaistavissa = ohjausparametrit.tulostenJulkistusAlkaa.forall(_.toInstant.isBefore(ClockHolder.instant()))
+  lazy val tuloksetJulkaistavissa = ohjausparametrit.tulostenJulkistusAlkaa.forall(_.toInstant.isBefore(clock.instant()))
 
   def onkoEhdollisestiVastaanotettavissa(valinnantulos: Valinnantulos): DBIO[Boolean]
 

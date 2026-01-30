@@ -14,6 +14,8 @@ import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.{ActionResult, Forbidden, Found, Ok}
 
+import java.time.{Clock, ZoneId}
+
 class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
                                           valintarekisteriDb: ValintarekisteriDb,
                                           hakemusRepository: HakuAppRepository,
@@ -24,7 +26,7 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
   override val applicationDescription = "REST API puuttuvien tuloksien etsimiseen"
   override val sessionRepository: SessionRepository = valintarekisteriDb
 
-  private val puuttuvatTuloksetService = new PuuttuvatTuloksetService(valintarekisteriDb, hakemusRepository, virkailijaBaseUrl, audit)
+  private val puuttuvatTuloksetService = new PuuttuvatTuloksetService(valintarekisteriDb, hakemusRepository, virkailijaBaseUrl, audit, Clock.system(ZoneId.of("Europe/Helsinki")))
 
   val puuttuvatTuloksetHaulleSwagger: OperationBuilder = (apiOperation[HaunPuuttuvat[HakukohteenPuuttuvat]]("puuttuvien tulosten haku")
     summary "Etsi sellaiset hakemuksilta löytyvät hakutoiveet, joille ei löydy tulosta valintarekisteristä"

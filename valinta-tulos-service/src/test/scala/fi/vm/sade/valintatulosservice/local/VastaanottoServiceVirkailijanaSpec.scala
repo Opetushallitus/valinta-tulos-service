@@ -409,7 +409,7 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, true)
   lazy val sijoittelutulosService = new SijoittelutulosService(new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintatulosDao), ohjausparametritService,
-    valintarekisteriDb, new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb))
+    valintarekisteriDb, new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb), TimeWarp.clock)
   lazy val valintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
   lazy val sijoittelunTulosClient = new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb)
   lazy val raportointiService = new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintatulosDao)
@@ -419,8 +419,8 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
     override def getHakemukset(query: HakemuksetQuery): Either[Throwable, AtaruResponse] = Right(AtaruResponse(List.empty, None))
   }
   lazy val hakemusRepository = new HakemusRepository(new HakuAppRepository(), ataruHakemusRepository, new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService))
-  lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, hakemusRepository, valintarekisteriDb,
-    ohjausparametritService, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, koodistoService)
+  lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, ohjausparametritService, hakemusRepository, valintarekisteriDb,
+    hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, koodistoService, TimeWarp.clock)
   lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, valintatulosService,
     valintarekisteriDb, ohjausparametritService, sijoittelutulosService, hakemusRepository, valintarekisteriDb)
   lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService,

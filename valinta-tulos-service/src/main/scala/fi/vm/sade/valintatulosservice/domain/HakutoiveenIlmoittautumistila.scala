@@ -1,12 +1,11 @@
 package fi.vm.sade.valintatulosservice.domain
 
-import fi.vm.sade.valintatulosservice.ClockHolder
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.tarjonta.Haku
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiTehty, SijoitteluajonIlmoittautumistila, Vastaanottotila}
 
-import java.time.{Instant, ZoneId, ZonedDateTime}
+import java.time.{Clock, Instant, ZoneId, ZonedDateTime}
 
 case class HakutoiveenIlmoittautumistila(
   ilmoittautumisaika: Ilmoittautumisaika,
@@ -16,8 +15,8 @@ case class HakutoiveenIlmoittautumistila(
 )
 
 case class Ilmoittautumisaika(alku: Option[ZonedDateTime], loppu: Option[ZonedDateTime]) {
-  def aktiivinen = {
-    val now = ClockHolder.now()
+  def aktiivinen(clock: Clock): Boolean = {
+    val now = ZonedDateTime.now(clock)
     now.isAfter(alku.getOrElse(now.minusYears(100))) &&
     now.isBefore(loppu.getOrElse(now.plusYears(100)))
   }
@@ -35,7 +34,8 @@ object HakutoiveenIlmoittautumistila {
   def getIlmoittautumistila(sijoitteluTila: HakutoiveenSijoitteluntulos,
                             haku: Haku,
                             ohjausparametrit: Ohjausparametrit,
-                            hasHetu: Boolean)(implicit appConfig: VtsAppConfig): HakutoiveenIlmoittautumistila = {
+                            hasHetu: Boolean,
+                            clock: Clock)(implicit appConfig: VtsAppConfig): HakutoiveenIlmoittautumistila = {
     val ilmoittautumistapa = if(haku.korkeakoulu) {
       if (hasHetu) {
         Some(oiliHetullinen)
@@ -47,7 +47,7 @@ object HakutoiveenIlmoittautumistila {
       None
     }
     val ilmottautumisaika = Ilmoittautumisaika(None, ohjausparametrit.ilmoittautuminenPaattyy.map(_.withHour(23).withMinute(59).withSecond(59).withNano(999000000)))
-    val ilmottauduttavissa = appConfig.settings.ilmoittautuminenEnabled && sijoitteluTila.vastaanottotila == Vastaanottotila.vastaanottanut && ilmottautumisaika.aktiivinen && sijoitteluTila.ilmoittautumistila == EiTehty
+    val ilmottauduttavissa = appConfig.settings.ilmoittautuminenEnabled && sijoitteluTila.vastaanottotila == Vastaanottotila.vastaanottanut && ilmottautumisaika.aktiivinen(clock) && sijoitteluTila.ilmoittautumistila == EiTehty
     HakutoiveenIlmoittautumistila(ilmottautumisaika, ilmoittautumistapa, sijoitteluTila.ilmoittautumistila, ilmottauduttavissa)
   }
 }
