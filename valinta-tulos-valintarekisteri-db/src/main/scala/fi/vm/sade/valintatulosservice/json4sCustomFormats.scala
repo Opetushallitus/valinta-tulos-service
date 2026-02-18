@@ -1,46 +1,32 @@
 package fi.vm.sade.valintatulosservice
 
-import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatterBuilder
-import java.time.temporal.ChronoField
 import java.util.Date
-
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Tasasijasaanto, Valinnantila, ValinnantilanTarkenne}
 import org.json4s.CustomSerializer
 import org.json4s.JsonAST.{JField, JObject, JString}
 
-/**
-  * Created by heikki.honkanen on 23/05/2017.
-  */
-object json4sCustomFormats {
-  import java.time.format.DateTimeFormatter
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatterBuilder
+import java.time.temporal.ChronoField
 
-  // Formatters for different timezone offset formats
-  private val formatters = List(
-    DateTimeFormatter.ISO_OFFSET_DATE_TIME, // Handles 2016-08-15T12:00:00.000Z and 2016-08-15T12:00:00.000+00:00
+trait json4sCustomFormats {
+  private val jsonDateFormatter =
     new DateTimeFormatterBuilder()
       .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
       .optionalStart()
       .appendFraction(ChronoField.MILLI_OF_SECOND, 0, 3, true)
       .optionalEnd()
-      .appendOffset("+HHmm", "+0000") // Handles 2016-10-25T12:00:00.000+0000
+      .appendOffset("+HHmm", "Z")
       .toFormatter()
-  )
 
-  def parseDateTime(dateValue: String): OffsetDateTime = {
-    var lastException: Exception = null
-    for (formatter <- formatters) {
-      try {
-        return OffsetDateTime.parse(dateValue, formatter)
-      } catch {
-        case e: Exception => lastException = e
-      }
-    }
-    throw lastException
-  }
-}
+  /** Handles dates formatted as one of:
+   * - 2016-10-12T04:11:19.328+0000
+   * - 2016-05-24T09:02:36.637Z
+   * - 2026-02-18T07:39:11Z
+   */
+  def parseDateTime(dateValue: String): OffsetDateTime =
+    OffsetDateTime.parse(dateValue, jsonDateFormatter)
 
-trait json4sCustomFormats {
   class NumberLongSerializer extends CustomSerializer[Long](format => ( {
     case JObject(List(JField("$numberLong", JString(longValue)))) => longValue.toLong
   }, {
@@ -49,9 +35,9 @@ trait json4sCustomFormats {
 
   class DateSerializer extends  CustomSerializer[Date](format => ({
     case JObject(List(JField("$date", JString(dateValue)))) =>
-      Date.from(json4sCustomFormats.parseDateTime(dateValue).toInstant)
+      Date.from(parseDateTime(dateValue).toInstant)
     case JString(dateValue) =>
-      Date.from(json4sCustomFormats.parseDateTime(dateValue).toInstant)
+      Date.from(parseDateTime(dateValue).toInstant)
   }, {
     case x: Date => JObject(List(JField("$date", JString("" + x))))
   }))

@@ -2,11 +2,12 @@ package fi.vm.sade.valintatulosservice.local
 
 import fi.vm.sade.sijoittelu.domain.TilankuvauksenTarkenne.{PERUUNTUNUT_HYVAKSYTTY_TOISESSA_JONOSSA, PERUUNTUNUT_HYVAKSYTTY_YLEMMALLE_HAKUTOIVEELLE}
 import fi.vm.sade.sijoittelu.domain.{TilanKuvaukset, TilankuvauksenTarkenne, ValintatuloksenTila, Valintatulos}
+import fi.vm.sade.valintatulosservice.TestTimeUtil.parseDate
 import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila.Vastaanotettavuustila
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusRepository, HakuAppRepository}
-import fi.vm.sade.valintatulosservice.koodisto.{KoodistoService, StubbedKoodistoService}
+import fi.vm.sade.valintatulosservice.koodisto.StubbedKoodistoService
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{OhjausparametritFixtures, StubbedOhjausparametritService}
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
@@ -16,10 +17,10 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriD
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
-import fi.vm.sade.valintatulosservice.{ITSpecification, TimeWarp, ValintatulosService}
+import fi.vm.sade.valintatulosservice.{ITSpecification, TestTimeUtil, ValintatulosService}
 import org.junit.runner.RunWith
 
-import java.time.{OffsetDateTime, ZonedDateTime}
+import java.time.OffsetDateTime
 import org.specs2.runner.JUnitRunner
 import slick.jdbc.PostgresProfile.api._
 import slick.sql.SqlAction
@@ -28,7 +29,7 @@ import scala.collection.JavaConverters._
 import scala.compat.java8.OptionConverters._
 
 @RunWith(classOf[JUnitRunner])
-class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
+class ValintatulosServiceSpec extends ITSpecification {
 
   "ValintaTulosService" should {
 
@@ -74,6 +75,8 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
 
   step(valintarekisteriDb.db.shutdown)
 
+  private lazy val mockTimeUtil = TestTimeUtil()
+
   lazy val ohjausparametritService = new StubbedOhjausparametritService()
   lazy val koodistoService = new StubbedKoodistoService()
   lazy val hakuService = HakuService(appConfig, ohjausparametritService, OrganisaatioService(appConfig), null)
@@ -81,13 +84,13 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
   lazy val valintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
   lazy val sijoittelunTulosClient = new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb)
   lazy val raportointiService = new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintatulosDao)
-  lazy val sijoittelutulosService = new SijoittelutulosService(raportointiService, ohjausparametritService, valintarekisteriDb, sijoittelunTulosClient, TimeWarp.clock)
+  lazy val sijoittelutulosService = new SijoittelutulosService(raportointiService, ohjausparametritService, valintarekisteriDb, sijoittelunTulosClient, mockTimeUtil)
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, true)
   lazy val hakijaDtoClient = new ValintarekisteriHakijaDTOClientImpl(raportointiService, sijoittelunTulosClient, valintarekisteriDb)
   lazy val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
   lazy val hakemusRepository = new HakemusRepository(new HakuAppRepository(), new AtaruHakemusRepository(appConfig), new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService))
   lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, ohjausparametritService, hakemusRepository, valintarekisteriDb,
-    hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, koodistoService, TimeWarp.clock)
+    hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, koodistoService, mockTimeUtil)
 
   val hakuOid = HakuOid("1.2.246.562.5.2013080813081926341928")
   val sijoitteluAjoId: String = "latest"
@@ -1125,10 +1128,10 @@ class ValintatulosServiceSpec extends ITSpecification with TimeWarp {
           }
 
           "vastaanoton deadline näytetään" in {
-            withFixedDateTime("26.11.2014 12:00") {
+            mockTimeUtil.withFixedDateTime("26.11.2014 12:00") {
               // HYVÄKSYTTY, PERUUNTUNUT KESKEN true
               useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = hakuFixture)
-              getHakutoive("1.2.246.562.5.72607738902").vastaanottoDeadline must_== Some(parseDate("10.1.2030 12:00"))
+              getHakutoive("1.2.246.562.5.72607738902").vastaanottoDeadline must_== Some(TestTimeUtil.parseDate("10.1.2030 12:00"))
             }
           }
 

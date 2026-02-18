@@ -11,13 +11,13 @@ import fi.vm.sade.valintatulosservice.sijoittelu.JonoFinder.kaikkiJonotJulkaistu
 import fi.vm.sade.valintatulosservice.valintarekisteri.db._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import fi.vm.sade.valintatulosservice.{PersonOidFromHakemusResolver, VastaanottoAikarajaMennyt}
+import fi.vm.sade.valintatulosservice.{PersonOidFromHakemusResolver, TimeUtil, VastaanottoAikarajaMennyt}
 import org.apache.commons.lang.StringUtils
 import org.apache.commons.lang3.builder.ToStringBuilder
 import org.slf4j.LoggerFactory
 import slick.dbio.DBIO
 
-import java.time.{Clock, Instant, OffsetDateTime, ZonedDateTime}
+import java.time.{OffsetDateTime, ZonedDateTime}
 import java.util.Date
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -25,7 +25,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
                              ohjausparametritService: OhjausparametritService,
                              valintarekisteriDb: HakijaRepository with HakijaVastaanottoRepository with SijoitteluRepository with ValinnantulosRepository,
                              sijoittelunTulosClient: ValintarekisteriSijoittelunTulosClient,
-                             clock: Clock) {
+                             timeUtil: TimeUtil) {
   import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.laskeVastaanottoDeadline
 
   import scala.collection.JavaConverters._
@@ -493,7 +493,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
     val deadline = laskeVastaanottoDeadline(ohjausparametrit, hakutoiveenHyvaksyttyJaJulkaistuDate)
     vastaanottotilaVainViimeisimmanVastaanottoActioninPerusteella(vastaanotto) match {
       case Vastaanottotila.kesken if Valintatila.isHyväksytty(valintatila) || valintatila == Valintatila.perunut =>
-        if (deadline.exists(_.toInstant.isBefore(clock.instant())) && !vastaanotettavuusVirkailijana) {
+        if (deadline.exists(timeUtil.isBeforeNow) && !vastaanotettavuusVirkailijana) {
           (Vastaanottotila.ei_vastaanotettu_määräaikana, deadline)
         } else {
           (Vastaanottotila.kesken, deadline)
@@ -522,7 +522,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
           val vastaanottoDeadline: Option[ZonedDateTime] = hakutoiveDtoOfThisHakukohde.flatMap { hakutoive: KevytHakutoiveDTO =>
             laskeVastaanottoDeadline(ohjausparametrit, hyvaksyttyJaJulkaistuDates.get(hakijaDto.getHakijaOid))
           }
-          val isLate: Boolean = vastaanottoDeadline.exists(ZonedDateTime.now(clock).isAfter)
+          val isLate: Boolean = vastaanottoDeadline.exists(timeUtil.nowIsAfter)
           VastaanottoAikarajaMennyt(HakemusOid(hakijaDto.getHakemusOid), isLate, vastaanottoDeadline)
         }
         queriedHakijasForHakukohde().map(calculateLateness).toSet

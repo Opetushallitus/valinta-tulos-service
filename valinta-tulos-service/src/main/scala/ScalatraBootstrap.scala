@@ -32,7 +32,6 @@ import fi.vm.sade.valintatulosservice.vastaanottomeili._
 import org.apache.log4j.LogManager
 import org.scalatra._
 
-import java.time.{Clock, ZoneId}
 import java.util
 import javax.servlet.{DispatcherType, ServletContext}
 
@@ -62,7 +61,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       SijoitteluFixtures(valintarekisteriDb).importFixture("yksi-lisajono.json")
     }
 
-    lazy val clock: Clock = Clock.system(ZoneId.of("Europe/Helsinki"))
+    lazy val timeUtil: TimeUtil = TimeUtil()
     lazy val organisaatioService = OrganisaatioService(appConfig)
     lazy val koodistoService = if (appConfig.isInstanceOf[StubbedExternalDeps]) {
       new StubbedKoodistoService
@@ -96,13 +95,13 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         valintarekisteriValintatulosDao,
         valintarekisteriSijoittelunTulosClient,
         new ValintarekisteriHakijaDTOClientImpl(valintarekisteriRaportointiService, valintarekisteriSijoittelunTulosClient, valintarekisteriDb))
-    lazy val sijoittelutulosService = new SijoittelutulosService(raportointiService, cachedOhjausparametritService, valintarekisteriDb, sijoittelunTulosClient, clock)
+    lazy val sijoittelutulosService = new SijoittelutulosService(raportointiService, cachedOhjausparametritService, valintarekisteriDb, sijoittelunTulosClient, timeUtil)
     lazy val hakuAppRepository = new HakuAppRepository()
     lazy val ataruHakemusRepository = new AtaruHakemusRepository(appConfig)
     lazy val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
     lazy val ataruHakemusTarjontaEnricher = new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService)
     lazy val hakemusRepository = new HakemusRepository(hakuAppRepository, ataruHakemusRepository, ataruHakemusTarjontaEnricher)
-    lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, cachedOhjausparametritService, hakemusRepository, valintarekisteriDb, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, koodistoService, clock)(appConfig)
+    lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, cachedOhjausparametritService, hakemusRepository, valintarekisteriDb, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, koodistoService, timeUtil)(appConfig)
     lazy val streamingValintatulosService = new StreamingValintatulosService(valintatulosService, valintarekisteriDb, hakijaDTOClient)(appConfig)
     lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, valintatulosService, valintarekisteriDb, cachedOhjausparametritService, sijoittelutulosService, hakemusRepository, valintarekisteriDb)
     lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService, valintarekisteriDb, valintarekisteriDb)
@@ -122,7 +121,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         appConfig,
         audit,
         hakemusRepository,
-        clock)
+        timeUtil)
     lazy val valintojenToteuttaminenService = new ValintojenToteuttaminenService(valintarekisteriDb)
     lazy val hyvaksymiskirjeService = new HyvaksymiskirjeService(valintarekisteriDb, hakuService, audit, authorizer)
     lazy val lukuvuosimaksuService = new LukuvuosimaksuService(valintarekisteriDb, audit)
@@ -208,7 +207,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new AuthenticatedHakijanVastaanottoServlet(vastaanottoService, valintarekisteriDb, audit), "/auth/vastaanotto", "/auth/vastaanotto")
 
       lazy val mailPollerRepository: MailPollerRepository = valintarekisteriDb
-      lazy val mailPoller: MailPoller = new MailPoller(mailPollerRepository, valintatulosService, hakuService, hakemusRepository, cachedOhjausparametritService, appConfig.settings, clock)
+      lazy val mailPoller: MailPoller = new MailPoller(mailPollerRepository, valintatulosService, hakuService, hakemusRepository, cachedOhjausparametritService, appConfig.settings, timeUtil)
       lazy val mailDecorator: MailDecorator = new MailDecorator(hakuService, oppijanTunnistusService, cachedOhjausparametritService)
       context.mount(new PublicEmailStatusServlet(mailPoller, valintarekisteriDb, audit), "/auth/vastaanottoposti", "auth/vastaanottoposti")
 

@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.local
 
-import fi.vm.sade.valintatulosservice.ServletSpecification
+import fi.vm.sade.valintatulosservice.{ServletSpecification, TimeUtil}
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiEnsikertalainen, EiKktutkintoonJohtavaHakukohde, Ensikertalainen, Ensikertalaisuus, HakuOid, HakukohdeOid, Kevat, YPSHakukohde}
@@ -27,8 +27,8 @@ class EnsikertalaisuusServletSpec extends ServletSpecification with Valintarekis
   val vanha_tarjoaja = "1.2.246.562.10.00000000001"
   val haku = "1.2.246.561.29.00000000001"
   val koulutus = "1.2.246.561.21.00000000001"
-  val timestamp = ZonedDateTime.of(2014, 7, 1, 16, 0, 10, 0, ZoneId.of("Europe/Helsinki"))
-  val vanha_timestamp = ZonedDateTime.of(2014, 6, 19, 16, 0, 10, 0, ZoneId.of("Europe/Helsinki"))
+  val timestamp = ZonedDateTime.of(2014, 7, 1, 16, 0, 10, 0, TimeUtil.timezoneFi)
+  val vanha_timestamp = ZonedDateTime.of(2014, 6, 19, 16, 0, 10, 0, TimeUtil.timezoneFi)
 
   step(deleteAll())
   step({

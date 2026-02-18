@@ -22,7 +22,7 @@ import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.ehdollinenVas
 import org.apache.commons.lang3.StringUtils
 import slick.dbio.DBIO
 
-import java.time.{Clock, Instant}
+import java.time.Instant
 import java.util.Date
 import scala.collection.JavaConverters._
 import scala.compat.java8.OptionConverters._
@@ -37,7 +37,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
                           hakukohdeRecordService: HakukohdeRecordService,
                           valintatulosDao: ValintarekisteriValintatulosDao,
                           koodistoService: KoodistoService,
-                          clock: Clock)(implicit appConfig: VtsAppConfig) extends Logging {
+                          timeUtil: TimeUtil)(implicit appConfig: VtsAppConfig) extends Logging {
 
   def haunKoulutuksenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid: HakuOid) : Set[VastaanottoRecord] = {
     (for {
@@ -531,7 +531,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         ohjausparametrit,
         checkJulkaisuAikaParametri,
         hasHetu,
-        clock
+        timeUtil
       )
     }
 
@@ -638,7 +638,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
   }
 
   private def asetaKelaURL(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
-    val hakukierrosEiOlePäättynyt = !ohjausparametrit.hakukierrosPaattyy.exists(_.toInstant.isBefore(clock.instant()))
+    val hakukierrosEiOlePäättynyt = !ohjausparametrit.hakukierrosPaattyy.exists(timeUtil.isBeforeNow)
     val näytetäänSiirryKelaanURL = ohjausparametrit.naytetaankoSiirryKelaanURL
     val näytetäänKelaURL = if (hakukierrosEiOlePäättynyt && näytetäänSiirryKelaanURL && haku.sallittuKohdejoukkoKelaLinkille) Some(appConfig.settings.kelaURL) else None
 
@@ -672,7 +672,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
   }
 
   private def asetaShowMigriURL(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
-    val hakukierrosEiOlePäättynyt = !ohjausparametrit.hakukierrosPaattyy.exists(_.toInstant.isBefore(clock.instant()))
+    val hakukierrosEiOlePäättynyt = !ohjausparametrit.hakukierrosPaattyy.exists(timeUtil.isBeforeNow)
     val hakijaOnEuTaiEtaKansalainen = isEuTaiEtaKansalainen(hakemus.henkilotiedot.kansalaisuudet)
     val showMigriURL = if (hakukierrosEiOlePäättynyt && !hakijaOnEuTaiEtaKansalainen) Some(true) else Some(false)
 
@@ -827,7 +827,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
           logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja valintatila > peruuntunut, ei vastaanotettavissa {}", index)
           tulos.copy(valintatila = Valintatila.peruuntunut, vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa)
         } else if (index == firstHyvaksyttyUnderFirstVarallaAndNoPeruttuInBetween) {
-          if (ehdollinenVastaanottoMahdollista(ohjausparametrit, clock)) {
+          if (ehdollinenVastaanottoMahdollista(ohjausparametrit, timeUtil.currentDateTime)) {
             logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja vastaanotettavuustila > vastaanotettavissa_ehdollisesti {}", index)
             // Ehdollinen vastaanotto mahdollista
             tulos.copy(vastaanotettavuustila = Vastaanotettavuustila.vastaanotettavissa_ehdollisesti)
@@ -1018,7 +1018,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
 
   private def näytäVarasijaltaHyväksytytHyväksyttyinäJosVarasijasäännötEiVoimassa(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
     tulokset.map {
-      case tulos if tulos.valintatila == Valintatila.varasijalta_hyväksytty && !ehdollinenVastaanottoMahdollista(ohjausparametrit, clock) =>
+      case tulos if tulos.valintatila == Valintatila.varasijalta_hyväksytty && !ehdollinenVastaanottoMahdollista(ohjausparametrit, timeUtil.currentDateTime) =>
         logger.debug("näytäVarasijaltaHyväksytytHyväksyttyinäJosVarasijasäännötEiVoimassa valintatila > hyväksytty")
         tulos.copy(valintatila = Valintatila.hyväksytty, tilanKuvaukset = Map.empty)
       case tulos =>
