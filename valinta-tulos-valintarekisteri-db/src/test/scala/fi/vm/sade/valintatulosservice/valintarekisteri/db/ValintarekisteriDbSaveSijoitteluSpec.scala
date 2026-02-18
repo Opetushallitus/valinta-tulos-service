@@ -117,6 +117,8 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       def readJulkaistavissa() = singleConnectionValintarekisteriDb.runBlocking(
         sql"""select julkaistavissa from valinnantulokset where hakemus_oid = '1.2.246.562.11.00000441369' order by valintatapajono_oid desc""".as[Boolean]).toList
 
+      readJulkaistavissa() mustEqual List()
+
       def startNewSijoittelu(wrapper:SijoitteluWrapper) = {
         val sijoitteluajoId = System.currentTimeMillis
         wrapper.sijoitteluajo.setStartMils(System.currentTimeMillis)

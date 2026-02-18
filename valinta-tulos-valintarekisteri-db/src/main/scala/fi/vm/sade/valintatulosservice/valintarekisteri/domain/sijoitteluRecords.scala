@@ -7,7 +7,7 @@ import fi.vm.sade.sijoittelu.domain.{HakemuksenTila => _, IlmoittautumisTila => 
 import fi.vm.sade.sijoittelu.tulos.dto.{ValintatuloksenTila, _}
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakutoiveDTO, HakutoiveenValintatapajonoDTO, KevytHakijaDTO, KevytHakutoiveDTO, KevytHakutoiveenValintatapajonoDTO, HakijaryhmaDTO => HakutoiveenHakijaryhmaDTO}
 
-import java.time.{Clock, ZonedDateTime}
+import java.time.ZonedDateTime
 import scala.collection.JavaConverters._
 import scala.compat.java8.OptionConverters._
 
@@ -404,10 +404,9 @@ case class HakemusRecord(hakijaOid:Option[String], hakemusOid: HakemusOid, piste
   def entity(hakijaryhmaOids:Set[String],
              tilankuvaus: Option[TilankuvausRecord],
              tilahistoria:List[TilaHistoria],
-             vastaanottoDeadline: Option[ZonedDateTime],
-             clock: Clock): Hakemus = {
+             vastaanottoDeadline: Option[ZonedDateTime]): Hakemus = {
 
-    val isLate: Boolean = vastaanottoDeadline.exists(ZonedDateTime.now(clock).isAfter)
+    val isLate: Boolean = vastaanottoDeadline.exists(ZonedDateTime.now().isAfter)
     val hakemus = new Hakemus
     hakijaOid.foreach(hakemus.setHakijaOid)
     hakemus.setHakemusOid(hakemusOid.toString)

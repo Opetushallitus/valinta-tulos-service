@@ -1,17 +1,19 @@
 package fi.vm.sade.valintatulosservice.vastaanotto
 
+import fi.vm.sade.valintatulosservice.TimeUtil
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, Vastaanottoaikataulu}
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
+
 import java.time.{OffsetDateTime, ZoneId, ZoneOffset, ZonedDateTime}
 
 @RunWith(classOf[JUnitRunner])
 class VastaanottoUtilsSpec extends Specification {
 
   private def getOhjausparametrit: Ohjausparametrit = {
-    val vastaanottoaikataulu = Vastaanottoaikataulu(Option(ZonedDateTime.of(2024,11,11,12,0,0,0, ZoneId.of("Europe/Helsinki"))), Option(7))
-    val valintaEsitysHyvaksyttavissa = Option(ZonedDateTime.of(2024, 11, 9, 12, 0, 0, 0, ZoneId.of("Europe/Helsinki")))
+    val vastaanottoaikataulu = Vastaanottoaikataulu(Option(ZonedDateTime.of(2024, 11, 11, 12, 0, 0, 0, TimeUtil.timezoneFi)), Option(7))
+    val valintaEsitysHyvaksyttavissa = Option(ZonedDateTime.of(2024, 11, 9, 12, 0, 0, 0, TimeUtil.timezoneFi))
     new Ohjausparametrit(vastaanottoaikataulu, None, None, None, None, None, valintaEsitysHyvaksyttavissa, false, true, true)
   }
 

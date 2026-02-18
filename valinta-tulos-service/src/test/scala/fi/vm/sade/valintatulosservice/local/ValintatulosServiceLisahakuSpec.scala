@@ -4,7 +4,7 @@ import fi.vm.sade.valintatulosservice.domain.Valintatila._
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila.Vastaanotettavuustila
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusRepository, HakuAppRepository}
-import fi.vm.sade.valintatulosservice.koodisto.{KoodistoService, StubbedKoodistoService}
+import fi.vm.sade.valintatulosservice.koodisto.StubbedKoodistoService
 import fi.vm.sade.valintatulosservice.ohjausparametrit.StubbedOhjausparametritService
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
@@ -14,12 +14,12 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriD
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
-import fi.vm.sade.valintatulosservice.{ITSpecification, TimeWarp, ValintatulosService}
+import fi.vm.sade.valintatulosservice.{ITSpecification, TimeUtil, ValintatulosService}
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
-class ValintatulosServiceLisahakuSpec extends ITSpecification with TimeWarp {
+class ValintatulosServiceLisahakuSpec extends ITSpecification {
 
   "ValintaTulosService" should {
 
@@ -80,13 +80,13 @@ class ValintatulosServiceLisahakuSpec extends ITSpecification with TimeWarp {
   lazy val valintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
   lazy val sijoittelunTulosClient = new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb)
   lazy val raportointiService = new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintatulosDao)
-  lazy val sijoittelutulosService = new SijoittelutulosService(raportointiService, ohjausparametritService, valintarekisteriDb, sijoittelunTulosClient, TimeWarp.clock)
+  lazy val sijoittelutulosService = new SijoittelutulosService(raportointiService, ohjausparametritService, valintarekisteriDb, sijoittelunTulosClient, TimeUtil())
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, true)
   lazy val hakijaDtoClient = new ValintarekisteriHakijaDTOClientImpl(raportointiService, sijoittelunTulosClient, valintarekisteriDb)
   lazy val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
   lazy val hakemusRepository = new HakemusRepository(new HakuAppRepository(), new AtaruHakemusRepository(appConfig), new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService))
   lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, ohjausparametritService, hakemusRepository, valintarekisteriDb,
-    hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, koodistoService, TimeWarp.clock)
+    hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, koodistoService, TimeUtil())
 
   val hakuOid = HakuOid("korkeakoulu-lisahaku1")
   val hakemusOid = HakemusOid("1.2.246.562.11.00000878230")
@@ -101,4 +101,3 @@ class ValintatulosServiceLisahakuSpec extends ITSpecification with TimeWarp {
     (hakuToive.valintatila,hakuToive.vastaanottotila, hakuToive.vastaanotettavuustila, hakuToive.julkaistavissa) must_== (expectedTila, vastaanottoTila, vastaanotettavuustila, julkaistavissa)
   }
 }
-

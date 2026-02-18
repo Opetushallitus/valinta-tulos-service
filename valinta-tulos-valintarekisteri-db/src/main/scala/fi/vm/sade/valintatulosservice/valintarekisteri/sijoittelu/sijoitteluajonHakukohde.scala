@@ -7,7 +7,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepo
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.laskeVastaanottoDeadline
 
-import java.time.{Clock, OffsetDateTime, ZonedDateTime}
+import java.time.{OffsetDateTime, ZonedDateTime}
 import java.util
 
 class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, val sijoitteluajoId: Long, val hakukohdeOid:HakukohdeOid) {
@@ -51,7 +51,7 @@ class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, va
     )
   }
 
-  def entity(clock: Clock) = {
+  def entity() = {
     hakukohde.entity(
       valintatapajonot.map(v => v.entity(
         hakemukset.getOrElse(v.oid, List()).map(h =>
@@ -59,8 +59,7 @@ class SijoitteluajonHakukohde(val sijoitteluRepository: SijoitteluRepository, va
             hakijaryhmatJoistaHakemuksetOnHyvaksytty(h.hakemusOid),
             tilankuvaukset.get(h.tilankuvausHash),
             tilahistoriat.getOrElse(h.valintatapajonoOid, Map()).getOrElse(h.hakemusOid, List()).map(_.entity),
-            Option.empty,
-            clock
+            Option.empty
           )
         )
       )),
@@ -103,7 +102,7 @@ class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository w
     }
   }
 
-  def entity(ohjausparametrit: Option[Ohjausparametrit], clock: Clock): util.List[Hakukohde] = {
+  def entity(ohjausparametrit: Option[Ohjausparametrit]): util.List[Hakukohde] = {
     val hakemukset = sijoitteluajonHakemukset.map(h => {
       val hakemuksenHakukohde = hakukohdeForHakemus(h, valintatapajonot)
       val vastaanottoDeadline = ohjausparametrit.map(ohj => getVastaanOttoDeadline(h, ohj, hyvaksyttyJaJulkaistuDates, hakemuksenHakukohde))
@@ -113,8 +112,7 @@ class SijoitteluajonHakukohteet(val sijoitteluRepository: SijoitteluRepository w
         hakijaryhmatJoistaHakemuksetOnHyvaksytty.getOrElse(h.hakemusOid, Set()),
         tilankuvaukset.get(h.tilankuvausHash),
         tilahistoriat.getOrElse((h.hakemusOid, h.valintatapajonoOid), List()).map(_.entity).sortBy(_.getLuotu.getTime),
-        vastaanottoDeadline,
-        clock
+        vastaanottoDeadline
       ))
     }).groupBy(_._1).mapValues(_.map(_._2))
 

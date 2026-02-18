@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice.local
 
+import fi.vm.sade.valintatulosservice.TimeUtil
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
@@ -8,8 +9,6 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, Hakukohd
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
-
-import java.time.{Clock, ZoneId}
 
 @RunWith(classOf[JUnitRunner])
 class HakutoiveenIlmoittautumistilaSpec extends Specification {
@@ -37,7 +36,7 @@ class HakutoiveenIlmoittautumistilaSpec extends Specification {
           nimi = Map("kieli_fi" -> "Haun nimi")),
         Ohjausparametrit.empty,
         hasHetu = true,
-        Clock.system(ZoneId.of("Europe/Helsinki")))
+        TimeUtil())
       it.ilmoittauduttavissa must_== true
     }
 
@@ -60,7 +59,7 @@ class HakutoiveenIlmoittautumistilaSpec extends Specification {
           nimi = Map("kieli_fi" -> "Haun nimi")),
         Ohjausparametrit.empty,
         hasHetu = false,
-        Clock.system(ZoneId.of("Europe/Helsinki")))
+        TimeUtil())
       it.ilmoittauduttavissa must_== false
     }
   }

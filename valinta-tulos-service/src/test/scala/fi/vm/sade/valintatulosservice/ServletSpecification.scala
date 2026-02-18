@@ -6,7 +6,7 @@ import org.scalatra.test.HttpComponentsClient
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAll
 
-trait ServletSpecification extends Specification with ITSetup with TimeWarp with BeforeAll {
+trait ServletSpecification extends Specification with ITSetup with BeforeAll {
   sequential
 
   def baseUrl = "http://localhost:" + SharedJetty.port + "/valinta-tulos-service"
@@ -69,4 +69,3 @@ trait ServletSpecification extends Specification with ITSetup with TimeWarp with
   def body: String = httpComponentsClient.body
   def status: Int = httpComponentsClient.status
 }
-

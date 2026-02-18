@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.tulostenmetsastaja
 
 import java.net.URL
 import java.sql.Timestamp
-import java.time.{ZoneId, ZonedDateTime}
+import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MINUTES
 
@@ -10,6 +10,7 @@ import fi.vm.sade.valintatulosservice.hakemus.HakuAppRepository
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, Kausi, TarjoajaOid}
+import fi.vm.sade.valintatulosservice.TimeUtil
 import slick.dbio.DBIO
 import slick.jdbc.GetResult
 import slick.jdbc.PostgresProfile.api._
@@ -140,6 +141,6 @@ class PuuttuvatTuloksetDao(valintarekisteriDb: ValintarekisteriDb,
   }
 
   private def timestampToZonedDateTime(timestamp: Timestamp): ZonedDateTime = {
-    timestamp.toLocalDateTime.atZone(ZoneId.of("Europe/Helsinki"))
+    timestamp.toLocalDateTime.atZone(TimeUtil.timezoneFi)
   }
 }

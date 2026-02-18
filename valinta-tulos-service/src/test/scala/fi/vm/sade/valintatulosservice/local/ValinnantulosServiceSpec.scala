@@ -15,7 +15,7 @@ import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.valintaperusteet.ValintaPerusteetServiceMock
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhtoRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, SijoitteluRepository, ValinnanTilanKuvausRepository, ValinnantulosRepository, VastaanottoEvent}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnanTilanKuvausRepository, ValinnantulosRepository, VastaanottoEvent}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import org.junit.runner.RunWith
@@ -28,7 +28,7 @@ import org.specs2.specification.Scope
 import slick.dbio.DBIO
 
 import java.net.InetAddress
-import java.time.{Clock, Instant, ZoneId, ZonedDateTime}
+import java.time.{Instant, ZonedDateTime}
 import java.util.UUID
 
 @RunWith(classOf[JUnitRunner])
@@ -459,7 +459,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       appConfig,
       audit,
       hakemusRepository,
-      Clock.system(ZoneId.of("Europe/Helsinki"))
+      TimeUtil()
     )
   }
 

@@ -8,10 +8,10 @@ import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, Ohjaus
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, YhdenPaikanSaanto}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import fi.vm.sade.valintatulosservice.{ValintatulosService, tarjonta}
+import fi.vm.sade.valintatulosservice.{TimeUtil, ValintatulosService, tarjonta}
 import org.junit.runner.RunWith
 
-import java.time.{Clock, ZoneId, ZonedDateTime}
+import java.time.{ZoneId, ZonedDateTime}
 import org.specs2.matcher.MustThrownExpectations
 import org.specs2.mock.Mockito
 import org.specs2.mock.mockito.MockitoMatchers
@@ -675,7 +675,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakemusOid = hakemusOidA,
       hakijaOid = hakijaOidA,
       aikataulu = Vastaanottoaikataulu(
-        deadlineA.map(d => ZonedDateTime.ofInstant(d.toInstant, java.time.ZoneId.of("Europe/Helsinki"))),
+        deadlineA.map(TimeUtil.utilDateToZonedDateTime),
         vastaanottoBufferA
       ),
       hakutoiveet = List(Hakutoiveentulos(
@@ -729,7 +729,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakemusOid = hakemusOidB,
       hakijaOid = hakijaOidB,
       aikataulu = Vastaanottoaikataulu(
-        deadlineA.map(d => ZonedDateTime.ofInstant(d.toInstant, java.time.ZoneId.of("Europe/Helsinki"))),
+        deadlineA.map(TimeUtil.utilDateToZonedDateTime),
         vastaanottoBufferA
       ),
       hakutoiveet = List(Hakutoiveentulos(
@@ -783,7 +783,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakemusOid = hakemusOidC,
       hakijaOid = hakijaOidC,
       aikataulu = Vastaanottoaikataulu(
-        deadlineA.map(d => ZonedDateTime.ofInstant(d.toInstant, java.time.ZoneId.of("Europe/Helsinki"))),
+        deadlineA.map(TimeUtil.utilDateToZonedDateTime),
         vastaanottoBufferA
       ),
       hakutoiveet = List(
@@ -928,7 +928,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakemusOid = hakemusOidC,
       hakijaOid = hakijaOidC,
       aikataulu = Vastaanottoaikataulu(
-        deadlineA.map(d => ZonedDateTime.ofInstant(d.toInstant, java.time.ZoneId.of("Europe/Helsinki"))),
+        deadlineA.map(TimeUtil.utilDateToZonedDateTime),
         vastaanottoBufferA
       ),
       hakutoiveet = List(
@@ -1073,7 +1073,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakemusOid = hakemusOidC,
       hakijaOid = hakijaOidC,
       aikataulu = Vastaanottoaikataulu(
-        deadlineA.map(d => ZonedDateTime.ofInstant(d.toInstant, java.time.ZoneId.of("Europe/Helsinki"))),
+        deadlineA.map(TimeUtil.utilDateToZonedDateTime),
         vastaanottoBufferA
       ),
       hakutoiveet = List(
@@ -1236,7 +1236,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
       hakemusRepository,
       ohjausparametritService,
       vtsApplicationSettings,
-      Clock.system(ZoneId.of("Europe/Helsinki"))
+      TimeUtil()
     )
 
     mailPollerRepository.findHakukohdeOidsCheckedRecently(any[Duration]) returns Set.empty
