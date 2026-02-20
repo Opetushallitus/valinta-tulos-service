@@ -7,7 +7,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiEnsikertalainen
 import org.json4s.Formats
 import org.json4s.jackson.Serialization._
 
-import java.time.{ZoneId, ZonedDateTime}
+import java.time.ZonedDateTime
 import java.util.Date
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner

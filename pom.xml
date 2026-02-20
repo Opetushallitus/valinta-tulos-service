@@ -592,16 +592,10 @@
 
             <!-- Versioristiriidat -->
             <dependency>
-                <!-- org.json4s:json4s-ext_2.11:3.5.3 vs org.mongodb:casbah-commons_2.11:3.1.0 vs org.mock-server:mockserver-netty:3.10.4 -->
+                <!-- org.json4s:json4s-ext_2.13:4.0.7 vs org.mock-server:mockserver-netty:3.10.4 -->
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
-                <version>2.9.5</version>
-            </dependency>
-            <dependency>
-                <!-- org.json4s:json4s-ext_2.11:3.5.3 vs org.mongodb:casbah-commons_2.11:3.1.0 -->
-                <groupId>org.joda</groupId>
-                <artifactId>joda-convert</artifactId>
-                <version>1.8.1</version>
+                <version>2.10.14</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
