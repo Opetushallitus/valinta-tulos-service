@@ -1,7 +1,8 @@
 package fi.vm.sade.valintatulosservice.domain
 
+import fi.vm.sade.valintatulosservice.TimeUtil
+
 import java.util.Date
-import fi.vm.sade.valintatulosservice.ClockHolder
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain.Valintatila.Valintatila
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila.Vastaanotettavuustila
@@ -103,8 +104,9 @@ object Hakutoiveentulos {
                                              haku: Haku,
                                              ohjausparametrit: Ohjausparametrit,
                                              checkJulkaisuAikaParametri: Boolean = true,
-                                             hasHetu: Boolean)(implicit appConfig: VtsAppConfig): Hakutoiveentulos = {
-    val saaJulkaista: Boolean = !checkJulkaisuAikaParametri || ohjausparametrit.tulostenJulkistusAlkaa.forall(_.toInstant.isBefore(ClockHolder.instant()))
+                                             hasHetu: Boolean,
+                                             timeUtil: TimeUtil)(implicit appConfig: VtsAppConfig): Hakutoiveentulos = {
+    val saaJulkaista = !checkJulkaisuAikaParametri || ohjausparametrit.tulostenJulkistusAlkaa.forall(timeUtil.isBeforeNow)
     val tarjoajaOid = if (tulos.tarjoajaOid != null) tulos.tarjoajaOid else hakutoive.tarjoajaOid
     val hyvaksyttyJaJulkaistuDate = tulos.hyvaksyttyJaJulkaistuDate.map(d => Date.from(d.toInstant()))
 
@@ -117,7 +119,7 @@ object Hakutoiveentulos {
       tulos.valintatila,
       tulos.vastaanottotila,
       tulos.vastaanotonIlmoittaja,
-      HakutoiveenIlmoittautumistila.getIlmoittautumistila(tulos, haku, ohjausparametrit, hasHetu),
+      HakutoiveenIlmoittautumistila.getIlmoittautumistila(tulos, haku, ohjausparametrit, hasHetu, timeUtil),
       ilmoittautumisenAikaleima,
       tulos.vastaanotettavuustila,
       tulos.vastaanottoDeadline,

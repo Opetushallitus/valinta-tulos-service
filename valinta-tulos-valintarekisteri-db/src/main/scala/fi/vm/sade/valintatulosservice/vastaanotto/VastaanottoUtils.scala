@@ -1,16 +1,13 @@
 package fi.vm.sade.valintatulosservice.vastaanotto
 
-import java.time.{Instant, OffsetDateTime, ZoneId, ZoneOffset, ZonedDateTime}
-
-import fi.vm.sade.valintatulosservice.ClockHolder
+import fi.vm.sade.valintatulosservice.TimeUtil
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, Vastaanottoaikataulu}
+
+import java.time.{Instant, OffsetDateTime, ZoneOffset, ZonedDateTime}
 
 object VastaanottoUtils {
 
-  private val helsinkiZone = ZoneId.of("Europe/Helsinki")
-
-  def ehdollinenVastaanottoMahdollista(ohjausparametrit: Ohjausparametrit): Boolean = {
-    val now: ZonedDateTime = ClockHolder.now()
+  def ehdollinenVastaanottoMahdollista(ohjausparametrit: Ohjausparametrit, now: ZonedDateTime): Boolean = {
     val varasijaSaannotVoimassa = ohjausparametrit.varasijaSaannotAstuvatVoimaan.forall(_.isBefore(now))
     val kaikkiJonotSijoittelussa = ohjausparametrit.kaikkiJonotSijoittelussa.forall(_.isBefore(now))
     varasijaSaannotVoimassa && kaikkiJonotSijoittelussa
@@ -31,11 +28,11 @@ object VastaanottoUtils {
       viimeisinMuutos <- hakutoiveenHyvaksyttyJaJulkaistuOption.map(d =>
         ZonedDateTime.ofInstant(d.toInstant, ZoneOffset.ofTotalSeconds(d.getOffset.getTotalSeconds))
       )
-      haunValintaesitysHyvaksyttavissa = ohjausparametrit.valintaesitysHyvaksyttavissa.getOrElse(ZonedDateTime.ofInstant(Instant.EPOCH, helsinkiZone))
+      haunValintaesitysHyvaksyttavissa = ohjausparametrit.valintaesitysHyvaksyttavissa.getOrElse(ZonedDateTime.ofInstant(Instant.EPOCH, TimeUtil.timezoneFi))
       buffer <- bufferOption.map(b => b + bufferModifier(viimeisinMuutos, deadline))
     } yield max(viimeisinMuutos, haunValintaesitysHyvaksyttavissa)
       .plusDays(buffer)
-      .withZoneSameInstant(helsinkiZone)
+      .withZoneSameInstant(TimeUtil.timezoneFi)
       .withHour(deadline.getHour)
       .withMinute(deadline.getMinute)
       .withSecond(deadline.getSecond)

@@ -11,7 +11,7 @@ import fi.vm.sade.valintatulosservice.tarjonta.Haku
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.ehdollisestihyvaksyttavissa.HyvaksynnanEhtoRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import fi.vm.sade.valintatulosservice.{AuditInfo, ClockHolder, ValinnantuloksenMuokkaus}
+import fi.vm.sade.valintatulosservice.{AuditInfo, TimeUtil, ValinnantuloksenMuokkaus}
 import slick.dbio.DBIO
 
 import java.time.Instant
@@ -27,10 +27,11 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
                                          with HakijaVastaanottoRepository
                                          with HyvaksynnanEhtoRepository,
                                        ifUnmodifiedSince: Instant,
-                                       audit: Audit) extends ValinnantulosStrategy with Logging {
+                                       audit: Audit,
+                                       timeUtil: TimeUtil) extends ValinnantulosStrategy with Logging {
   private val session = auditInfo.session._2
 
-  lazy val vastaanottoValidator = new SijoittelunVastaanottoValidator(haku, hakukohdeOid, ohjausparametrit, valinnantulosRepository)
+  lazy val vastaanottoValidator = new SijoittelunVastaanottoValidator(haku, hakukohdeOid, ohjausparametrit, valinnantulosRepository, timeUtil)
 
   def hasChange(uusi:Valinnantulos, vanha:Valinnantulos) = (uusi.hasChanged(vanha) || uusi.hasOhjausChanged(vanha) || uusi.hasEhdollisenHyvaksynnanEhtoChanged(vanha))
 
@@ -77,7 +78,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
       def allowJulkaistavissaUpdate(): Either[ValinnantulosUpdateStatus, Unit] = {
         (haku, ohjausparametrit) match {
           case (h, _) if h.korkeakoulu => Right()
-          case (_, o) if o.valintaesitysHyvaksyttavissa.exists(_.toInstant.isBefore(ClockHolder.instant())) => Right()
+          case (_, o) if o.valintaesitysHyvaksyttavissa.exists(timeUtil.isBeforeNow) => Right()
           case (_, _) => authorizer.checkAccess(session, appConfig.settings.rootOrganisaatioOid, Set(Role.SIJOITTELU_CRUD)).left.map(_ =>
             ValinnantulosUpdateStatus(401, s"Käyttäjällä ${session.personOid} ei ole oikeuksia julkaista valinnantulosta", uusi.valintatapajonoOid, uusi.hakemusOid)
           )

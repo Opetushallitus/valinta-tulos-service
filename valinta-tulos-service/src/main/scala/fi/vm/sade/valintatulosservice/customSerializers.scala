@@ -66,9 +66,9 @@ class OffsetDateTimeSerializer extends CustomSerializer[OffsetDateTime]((_: Form
 
 class ZonedDateTimeSerializer extends CustomSerializer[ZonedDateTime]((_: Formats) => {
   ({
-    case json: JString => ZonedDateTime.from(DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(json.s)).withZoneSameInstant(ZoneId.of("Europe/Helsinki"))
+    case json: JString => ZonedDateTime.from(DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(json.s)).withZoneSameInstant(TimeUtil.timezoneFi)
   }, {
-    case d: ZonedDateTime => JString(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(d.withZoneSameInstant(ZoneId.of("Europe/Helsinki"))))
+    case d: ZonedDateTime => JString(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(d.withZoneSameInstant(TimeUtil.timezoneFi)))
   })
 })
 
@@ -76,7 +76,7 @@ class InstantSerializer extends CustomSerializer[Instant]((_: Formats) => {
   ({
     case json: JString => Instant.from(DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(json.s))
   }, {
-    case i: Instant => JString(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(i.truncatedTo(ChronoUnit.SECONDS).atZone(ZoneId.of("Europe/Helsinki"))))
+    case i: Instant => JString(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(i.truncatedTo(ChronoUnit.SECONDS).atZone(TimeUtil.timezoneFi)))
   })
 })
 

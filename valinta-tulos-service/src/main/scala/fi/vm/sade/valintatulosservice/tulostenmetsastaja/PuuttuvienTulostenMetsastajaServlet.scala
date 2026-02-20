@@ -1,8 +1,7 @@
 package fi.vm.sade.valintatulosservice.tulostenmetsastaja
 
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
-import fi.vm.sade.security.AuthorizationFailedException
-import fi.vm.sade.valintatulosservice.hakemus.{HakemusRepository, HakuAppRepository}
+import fi.vm.sade.valintatulosservice.hakemus.HakuAppRepository
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
@@ -12,7 +11,8 @@ import fi.vm.sade.valintatulosservice._
 import org.json4s.Formats
 import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
-import org.scalatra.{ActionResult, Forbidden, Found, Ok}
+import org.scalatra.Ok
+
 
 class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
                                           valintarekisteriDb: ValintarekisteriDb,
@@ -24,7 +24,7 @@ class PuuttuvienTulostenMetsastajaServlet(audit: Audit,
   override val applicationDescription = "REST API puuttuvien tuloksien etsimiseen"
   override val sessionRepository: SessionRepository = valintarekisteriDb
 
-  private val puuttuvatTuloksetService = new PuuttuvatTuloksetService(valintarekisteriDb, hakemusRepository, virkailijaBaseUrl, audit)
+  private val puuttuvatTuloksetService = new PuuttuvatTuloksetService(valintarekisteriDb, hakemusRepository, virkailijaBaseUrl, TimeUtil())
 
   val puuttuvatTuloksetHaulleSwagger: OperationBuilder = (apiOperation[HaunPuuttuvat[HakukohteenPuuttuvat]]("puuttuvien tulosten haku")
     summary "Etsi sellaiset hakemuksilta löytyvät hakutoiveet, joille ei löydy tulosta valintarekisteristä"

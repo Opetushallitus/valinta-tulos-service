@@ -6,7 +6,6 @@ import fi.vm.sade.sijoittelu.domain.Valintatapajono.JonosijaTieto
 import fi.vm.sade.sijoittelu.domain.{HakemuksenTila => _, IlmoittautumisTila => _, _}
 import fi.vm.sade.sijoittelu.tulos.dto.{ValintatuloksenTila, _}
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakutoiveDTO, HakutoiveenValintatapajonoDTO, KevytHakijaDTO, KevytHakutoiveDTO, KevytHakutoiveenValintatapajonoDTO, HakijaryhmaDTO => HakutoiveenHakijaryhmaDTO}
-import fi.vm.sade.valintatulosservice.ClockHolder
 
 import java.time.ZonedDateTime
 import scala.collection.JavaConverters._
@@ -407,7 +406,7 @@ case class HakemusRecord(hakijaOid:Option[String], hakemusOid: HakemusOid, piste
              tilahistoria:List[TilaHistoria],
              vastaanottoDeadline: Option[ZonedDateTime]): Hakemus = {
 
-    val isLate: Boolean = vastaanottoDeadline.exists(ClockHolder.now().isAfter)
+    val isLate: Boolean = vastaanottoDeadline.exists(ZonedDateTime.now().isAfter)
     val hakemus = new Hakemus
     hakijaOid.foreach(hakemus.setHakijaOid)
     hakemus.setHakemusOid(hakemusOid.toString)

@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice.local
 
+import fi.vm.sade.valintatulosservice.TimeUtil
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
@@ -34,7 +35,8 @@ class HakutoiveenIlmoittautumistilaSpec extends Specification {
           yhdenPaikanSaanto = YhdenPaikanSaanto(false, ""),
           nimi = Map("kieli_fi" -> "Haun nimi")),
         Ohjausparametrit.empty,
-        hasHetu = true)
+        hasHetu = true,
+        TimeUtil())
       it.ilmoittauduttavissa must_== true
     }
 
@@ -56,7 +58,8 @@ class HakutoiveenIlmoittautumistilaSpec extends Specification {
           yhdenPaikanSaanto = YhdenPaikanSaanto(false, ""),
           nimi = Map("kieli_fi" -> "Haun nimi")),
         Ohjausparametrit.empty,
-        hasHetu = false)
+        hasHetu = false,
+        TimeUtil())
       it.ilmoittauduttavissa must_== false
     }
   }

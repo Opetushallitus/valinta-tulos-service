@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.local
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus._
-import fi.vm.sade.valintatulosservice.koodisto.{KoodistoService, StubbedKoodistoService}
+import fi.vm.sade.valintatulosservice.koodisto.StubbedKoodistoService
 import fi.vm.sade.valintatulosservice.ohjausparametrit.StubbedOhjausparametritService
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
@@ -14,16 +14,15 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Va
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import org.junit.runner.RunWith
-
-import java.time.ZonedDateTime
 import org.specs2.execute.{FailureException, Result}
 import org.specs2.matcher.ThrownMessages
 import org.specs2.runner.JUnitRunner
 
+import java.time.ZonedDateTime
 import scala.util.{Failure, Success, Try}
 
 @RunWith(classOf[JUnitRunner])
-class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp with ThrownMessages {
+class VastaanottoServiceVirkailijanaSpec extends ITSpecification with ThrownMessages {
   val hakuOid = HakuOid("1.2.246.562.5.2013080813081926341928")
   val hakukohdeOid = HakukohdeOid("1.2.246.562.5.16303028779")
   val vastaanotettavissaHakuKohdeOid = HakukohdeOid("1.2.246.562.5.72607738902")
@@ -32,7 +31,7 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
   val personOid: String = "1.2.246.562.24.14229104472"
   val valintatapajonoOid = ValintatapajonoOid("2013080813081926341928")
   val selite: String = "Testimuokkaus"
-  val ilmoittautumisaikaPaattyy2100: Ilmoittautumisaika = Ilmoittautumisaika(None, Some(ZonedDateTime.of(2100, 1, 10, 23, 59, 59, 999000000, java.time.ZoneId.of("Europe/Helsinki"))))
+  val ilmoittautumisaikaPaattyy2100: Ilmoittautumisaika = Ilmoittautumisaika(None, Some(ZonedDateTime.of(2100, 1, 10, 23, 59, 59, 999000000, TimeUtil.timezoneFi)))
 
   "vastaanotaVirkailijana" in {
     "vastaanota sitovasti yksi hakija" in {
@@ -409,7 +408,7 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, true)
   lazy val sijoittelutulosService = new SijoittelutulosService(new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintatulosDao), ohjausparametritService,
-    valintarekisteriDb, new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb))
+    valintarekisteriDb, new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb), TimeUtil())
   lazy val valintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
   lazy val sijoittelunTulosClient = new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb)
   lazy val raportointiService = new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintatulosDao)
@@ -419,8 +418,8 @@ class VastaanottoServiceVirkailijanaSpec extends ITSpecification with TimeWarp w
     override def getHakemukset(query: HakemuksetQuery): Either[Throwable, AtaruResponse] = Right(AtaruResponse(List.empty, None))
   }
   lazy val hakemusRepository = new HakemusRepository(new HakuAppRepository(), ataruHakemusRepository, new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService))
-  lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, hakemusRepository, valintarekisteriDb,
-    ohjausparametritService, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, koodistoService)
+  lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, ohjausparametritService, hakemusRepository, valintarekisteriDb,
+    hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, koodistoService, TimeUtil())
   lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, valintatulosService,
     valintarekisteriDb, ohjausparametritService, sijoittelutulosService, hakemusRepository, valintarekisteriDb)
   lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService,

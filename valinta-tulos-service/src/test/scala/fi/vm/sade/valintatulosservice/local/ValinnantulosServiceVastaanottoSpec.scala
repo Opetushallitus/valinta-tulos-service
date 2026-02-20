@@ -32,7 +32,7 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 @RunWith(classOf[JUnitRunner])
-class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp with ThrownMessages with MockitoMatchers with MockitoStubs {
+class ValinnantulosServiceVastaanottoSpec extends ITSpecification with ThrownMessages with MockitoMatchers with MockitoStubs {
   val hakuOid = HakuOid("1.2.246.562.5.2013080813081926341928")
   val hakukohdeOid = HakukohdeOid("1.2.246.562.5.16303028779")
   val hakemusOid = HakemusOid("1.2.246.562.11.00000441369")
@@ -419,15 +419,15 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, true)
   private val valintaPerusteetServiceMock = new ValintaPerusteetServiceMock
   lazy val sijoittelutulosService = new SijoittelutulosService(new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintatulosDao), ohjausparametritService,
-    valintarekisteriDb, new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb))
+    valintarekisteriDb, new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb), TimeUtil())
   lazy val valintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
   lazy val sijoittelunTulosClient = new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb)
   lazy val raportointiService = new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintatulosDao)
   lazy val hakijaDtoClient = new ValintarekisteriHakijaDTOClientImpl(raportointiService, sijoittelunTulosClient, valintarekisteriDb)
   lazy val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
   lazy val hakemusRepository = new HakemusRepository(new HakuAppRepository(), new AtaruHakemusRepository(appConfig), new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService))
-  lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, hakemusRepository, valintarekisteriDb,
-    ohjausparametritService, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, koodistoService)(appConfig)
+  lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, ohjausparametritService, hakemusRepository, valintarekisteriDb,
+    hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, koodistoService, TimeUtil())(appConfig)
   lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, valintatulosService,
     valintarekisteriDb, ohjausparametritService, sijoittelutulosService, hakemusRepository, valintarekisteriDb)
   lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService,
@@ -435,7 +435,7 @@ class ValinnantulosServiceVastaanottoSpec extends ITSpecification with TimeWarp 
   lazy val yhdenPaikanSaannos = new YhdenPaikanSaannos(hakuService, valintarekisteriDb)
 
   lazy val valinnantulosService = new ValinnantulosService(valintarekisteriDb, authorizer, hakuService, ohjausparametritService,
-    hakukohdeRecordService, valintaPerusteetServiceMock, yhdenPaikanSaannos, appConfig, audit, hakemusRepository)
+    hakukohdeRecordService, valintaPerusteetServiceMock, yhdenPaikanSaannos, appConfig, audit, hakemusRepository, TimeUtil())
 
   private def expectFailure[T](block: => T): Result = expectFailure[T](None)(block)
 
