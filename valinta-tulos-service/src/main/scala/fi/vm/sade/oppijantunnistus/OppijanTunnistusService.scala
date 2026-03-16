@@ -44,9 +44,9 @@ class RealOppijanTunnistusService(appConfig: VtsAppConfig) extends OppijanTunnis
     logger.info(s"Creating secure link: hakemusOid=${hakemusOid}, email=${email}. lang=${lang}, expires=${expires}")
     val url = vtsConfig.oppijanTunnistusUrl
     val callbackUrl = lang.toLowerCase match {
-      case "en" => vtsConfig.omatsivutUrlEn
-      case "sv" => vtsConfig.omatsivutUrlSv
-      case _ => vtsConfig.omatsivutUrlFi
+      case "en" => vtsConfig.omaOpiskelijavalintaUrlEn
+      case "sv" => vtsConfig.omaOpiskelijavalintaUrlSv
+      case _ => vtsConfig.omaOpiskelijavalintaUrlFi
     }
     val oppijanTunnistusBody = OppijanTunnistusCreate(callbackUrl, email, lang, expires, Metadata(hakemusOid.s, personOid))
     fetch(url, oppijanTunnistusBody) match {
