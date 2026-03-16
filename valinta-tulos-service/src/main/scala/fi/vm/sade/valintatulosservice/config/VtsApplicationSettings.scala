@@ -10,9 +10,9 @@ import java.util.concurrent.TimeUnit.HOURS
 import scala.concurrent.duration.Duration
 
 case class VtsApplicationSettings(config: Config) extends ApplicationSettings(config) {
-  val omatsivutUrlEn = withConfig(_.getString("omatsivut.en"))
-  val omatsivutUrlFi = withConfig(_.getString("omatsivut.fi"))
-  val omatsivutUrlSv = withConfig(_.getString("omatsivut.sv"))
+  val omaOpiskelijavalintaUrlFi = withConfig(_.getString("oma-opiskelijavalinta.url.fi"))
+  val omaOpiskelijavalintaUrlEn = withConfig(_.getString("oma-opiskelijavalinta.url.en"))
+  val omaOpiskelijavalintaUrlSv = withConfig(_.getString("oma-opiskelijavalinta.url.sv"))
   val oppijanTunnistusUrl = withConfig(_.getString("oppijan-tunnistus-service.url"))
   val swaggerPath = withConfig(_.getString("valinta-tulos-service.swagger"))
   val hakemusMongoConfig: MongoConfig = getMongoConfig(config.getConfig("hakemus.mongodb"))
