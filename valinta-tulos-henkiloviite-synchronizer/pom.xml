@@ -31,7 +31,7 @@
         </dependency>
 	<dependency>
 	    <groupId>org.scala-lang.modules</groupId>
-	    <artifactId>scala-java8-compat_2.11</artifactId>
+	    <artifactId>scala-java8-compat_2.13</artifactId>
 	    <version>1.0.2</version>
 	</dependency>
         <dependency>
@@ -46,18 +46,11 @@
         </dependency>
         <dependency>
             <groupId>org.scalaz</groupId>
-            <artifactId>scalaz-core_2.11</artifactId>
-            <version>${scalaz_2.11.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.scalaz</groupId>
-            <artifactId>scalaz-concurrent_2.11</artifactId>
-            <version>${scalaz_2.11.version}</version>
+            <artifactId>scalaz-core_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.json4s</groupId>
-            <artifactId>json4s-core_2.11</artifactId>
-            <version>${json4s_2.11.version}</version>
+            <artifactId>json4s-core_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>opiskelijavalinnat-utils</groupId>
@@ -77,16 +70,15 @@
         </dependency>
         <dependency>
             <groupId>org.specs2</groupId>
-            <artifactId>specs2-core_2.11</artifactId>
+            <artifactId>specs2-core_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.specs2</groupId>
-            <artifactId>specs2-junit_2.11</artifactId>
+            <artifactId>specs2-junit_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.json4s</groupId>
-            <artifactId>json4s-ast_2.11</artifactId>
-            <version>${json4s_2.11.version}</version>
+            <artifactId>json4s-ast_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
@@ -94,7 +86,7 @@
         </dependency>
         <dependency>
             <groupId>org.specs2</groupId>
-            <artifactId>specs2-matcher_2.11</artifactId>
+            <artifactId>specs2-matcher_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -102,11 +94,11 @@
         </dependency>
         <dependency>
             <groupId>org.json4s</groupId>
-            <artifactId>json4s-native_2.11</artifactId>
+            <artifactId>json4s-native_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>org.specs2</groupId>
-            <artifactId>specs2-common_2.11</artifactId>
+            <artifactId>specs2-common_2.13</artifactId>
         </dependency>
         <dependency>
             <groupId>fi.vm.sade.java-utils</groupId>
@@ -139,8 +131,6 @@
                 </executions>
                 <configuration>
                     <args>
-                        <arg>-Xmax-classfile-name</arg>
-                        <arg>140</arg>
                         <arg>-nobootcp</arg>
                     </args>
                 </configuration>

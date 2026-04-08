@@ -53,7 +53,7 @@ trait EnsikertalaisuusSwagger extends VtsSwaggerBase { this: SwaggerSupport =>
 
   val getEnsikertalaisuusSwagger: OperationBuilder = apiOperation[Ensikertalaisuus]("getEnsikertalaisuus")
     .summary("Hae ensikertalaisuus-tiedon vastaanotto-osuus")
-    .notes("Ei pidä käyttää sellaisenaan, vain ainoastaan suoritusrekisterin kautta. Rajapinta palauttaa joko pelkän " +
+    .description("Ei pidä käyttää sellaisenaan, vain ainoastaan suoritusrekisterin kautta. Rajapinta palauttaa joko pelkän " +
       "henkilo oidin tai henkilo oidin ja päivämäärän, jolloin ensikertalaisuus päättyi.")
     .parameter(pathParam[String]("henkiloOid").description("Henkilön oid").required)
     .parameter(queryParam[String]("koulutuksenAlkamiskausi")
@@ -64,7 +64,7 @@ trait EnsikertalaisuusSwagger extends VtsSwaggerBase { this: SwaggerSupport =>
 
   val getVastaanottoHistoriaSwagger: OperationBuilder = apiOperation[VastaanottoHistoria]("getVastaanottoHistoria")
     .summary("Hae henkilön kk vastaanotto historia")
-    .notes("Palauttaa vain korkeakoulupaikkojen vastaanotot.")
+    .description("Palauttaa vain korkeakoulupaikkojen vastaanotot.")
     .parameter(pathParam[String]("henkiloOid").description("Henkilön oid").required)
     .tags("ensikertalaisuus")
     .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
@@ -72,7 +72,7 @@ trait EnsikertalaisuusSwagger extends VtsSwaggerBase { this: SwaggerSupport =>
 
   val postEnsikertalaisuusSwagger: OperationBuilder = apiOperation[Seq[Ensikertalaisuus]]("getEnsikertalaisuus")
     .summary("Hae ensikertalaisuus-tiedon vastaanotto-osuus")
-    .notes("Ei pidä käyttää sellaisenaan, vain ainoastaan suoritusrekisterin kautta. Rajapinta palauttaa setin ensikertalaisuus-objekteja.")
+    .description("Ei pidä käyttää sellaisenaan, vain ainoastaan suoritusrekisterin kautta. Rajapinta palauttaa setin ensikertalaisuus-objekteja.")
     .parameter(bodyParam[Seq[String]]("henkiloOids")
       .description("Henkilöiden oidit json-sekvenssinä, enintään 10000 oidia yhdessä pyynnössä").required)
     .parameter(queryParam[String]("koulutuksenAlkamiskausi")

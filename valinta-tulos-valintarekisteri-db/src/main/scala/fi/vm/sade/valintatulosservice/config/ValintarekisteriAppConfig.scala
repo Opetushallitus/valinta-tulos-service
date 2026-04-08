@@ -7,7 +7,7 @@ import java.net.URL
 
 object ValintarekisteriAppConfig extends Logging {
   private val propertiesFile = "/oph-configuration/valinta-tulos-valintarekisteri-db-oph.properties"
-  private implicit val settingsParser = ValintarekisteriApplicationSettingsParser
+  private implicit val settingsParser: ValintarekisteriApplicationSettingsParser.type = ValintarekisteriApplicationSettingsParser
   private lazy val itPostgresPort: Int = PortChecker.getPortFromSystemPropertyOrFindFree("valintatulos.it.postgres.port")
 
   def getDefault() = new Default(ConfigFactory.load())

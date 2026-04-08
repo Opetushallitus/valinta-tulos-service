@@ -384,7 +384,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
     mockRunBlocking(valinnantulosRepository)
 
     val authorizer = mock[OrganizationHierarchyAuthorizer]
-    implicit val appConfig = mock[VtsAppConfig]
+    implicit val appConfig: VtsAppConfig = mock[VtsAppConfig]
     val hakuService = mock[HakuService]
     val ohjausparametritService = mock[OhjausparametritService]
     val audit = mock[Audit]

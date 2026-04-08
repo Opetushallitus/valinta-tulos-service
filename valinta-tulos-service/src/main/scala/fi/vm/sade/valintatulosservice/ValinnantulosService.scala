@@ -249,7 +249,7 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
         logger.error(s"""Kaikkien valinnantulosten tallennus valintatapajonolle ${valintatapajonoOid} epäonnistui""", t)
         throw t
       }
-      case Right(valinnantulosErrorStatuses) => valinnantulosErrorStatuses.map(_.left.toOption) flatten
+      case Right(valinnantulosErrorStatuses) => valinnantulosErrorStatuses.map(_.left.toOption).flatten
     }
   }
 

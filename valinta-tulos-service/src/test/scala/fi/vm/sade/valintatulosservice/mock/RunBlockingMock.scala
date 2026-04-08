@@ -35,7 +35,7 @@ trait RunBlockingMock { this: Mockito =>
       case Left(t) => Right(scala.util.Failure(t))
       case Right(r) => Right(scala.util.Success(r))
     }
-    case x if x.isInstanceOf[SynchronousDatabaseAction[_, _, _, _]] => mockRun(x.nonFusedEquivalentAction)
+    case x if x.isInstanceOf[SynchronousDatabaseAction[_, _, _, _, _]] => mockRun(x.nonFusedEquivalentAction)
     case FailedAction(actions) => throw new RuntimeException("FailedAction not implemented in mock")
     case NamedAction(actions, _) => throw new RuntimeException("NamedAction not implemented in mock")
     case CleanUpAction(actions, _, _, _) => throw new RuntimeException("ClenUpAction not implemented in mock")

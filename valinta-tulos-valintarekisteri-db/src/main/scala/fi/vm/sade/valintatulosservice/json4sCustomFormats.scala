@@ -33,7 +33,7 @@ trait json4sCustomFormats {
   }))
 
   class ValinnantilaSerializer extends CustomSerializer[Valinnantila](format => ( {
-    case JString(tilaValue) => Valinnantila(fi.vm.sade.sijoittelu.domain.HakemuksenTila.valueOf(tilaValue))
+    case JString(tilaValue) => Valinnantila.fromHakemuksenTila(fi.vm.sade.sijoittelu.domain.HakemuksenTila.valueOf(tilaValue))
   }, {
     case x: Valinnantila => JString(x.valinnantila.toString)
   }))

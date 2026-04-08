@@ -20,9 +20,9 @@ object ApplicationSettingsLoader extends Logging {
 abstract class BaseApplicationSettings(config: Config) {
 
   def toProperties: Map[String, String] = {
-    import scala.collection.JavaConversions._
+    import scala.jdk.CollectionConverters._
 
-    val keys = config.entrySet().toList.map(_.getKey)
+    val keys = config.entrySet().asScala.toList.map(_.getKey)
     keys.map { key =>
       (key, config.getString(key))
     }.toMap

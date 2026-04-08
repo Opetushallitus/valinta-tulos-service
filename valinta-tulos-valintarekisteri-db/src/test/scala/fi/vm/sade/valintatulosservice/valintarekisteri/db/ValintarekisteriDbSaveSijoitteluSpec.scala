@@ -60,7 +60,7 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       assertTilanViimeisinMuutos("1.2.246.562.11.00004685599", dateFormat.parse("2016-10-12T04:11:20.526+0000"))
     }
   }
-  implicit val resultAsObjectMap = GetResult[Map[String,Object]] (
+  implicit val resultAsObjectMap: GetResult[Map[String, Object]] = GetResult[Map[String,Object]] (
     prs => (1 to prs.numColumns).map(_ => prs.rs.getMetaData.getColumnName(prs.currentPos+1) -> prs.nextString ).toMap )
   val hakemusOid = "1.2.246.562.11.00006926939"
   def readTable(table:String) = singleConnectionValintarekisteriDb.runBlocking(
@@ -82,7 +82,7 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       val updated = readTable("valinnantulokset").head
       val history = readTable("valinnantulokset_history").head
 
-      history.filterKeys(_ != "system_time") mustEqual original.filterKeys(_ != "system_time")
+      history.filterKeys(_ != "system_time").toMap mustEqual original.filterKeys(_ != "system_time").toMap
 
       history("system_time").asInstanceOf[String] mustEqual
         original("system_time").asInstanceOf[String].replace(")", "") +
@@ -103,7 +103,7 @@ class ValintarekisteriDbSaveSijoitteluSpec extends Specification with ITSetup wi
       val updated = readTable("valinnantilat").head
       val history = readTable("valinnantilat_history").head
 
-      history.filterKeys(_ != "system_time") mustEqual original.filterKeys(_ != "system_time")
+      history.filterKeys(_ != "system_time").toMap mustEqual original.filterKeys(_ != "system_time").toMap
 
       history("system_time").asInstanceOf[String] mustEqual
         original("system_time").asInstanceOf[String].replace(")", "") +

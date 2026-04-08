@@ -23,7 +23,7 @@ import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.{BeforeAfterAll, ForEach}
 import org.springframework.core.io.ClassPathResource
-import org.tsers.zeison.Zeison
+import org.json4s.jackson.JsonMethods.{parse => jacksonParse, pretty}
 
 import java.util.{Date, UUID}
 
@@ -196,7 +196,7 @@ class MigriServletSpec extends Specification with EmbeddedJettyContainer with Ht
 
 
   private def prettify(json: String) = {
-    Zeison.renderPretty(Zeison.parse(json))
+    pretty(jacksonParse(json))
   }
 
   private def assertJson(expected: String, actual: String) = {

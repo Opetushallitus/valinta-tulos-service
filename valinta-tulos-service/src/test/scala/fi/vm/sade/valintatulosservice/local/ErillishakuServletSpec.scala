@@ -11,6 +11,7 @@ import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{Hyvaksymiskirje, HyvaksymiskirjePatch, SessionRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiTehty, HakemusOid, HakukohdeOid, Hylatty, Valinnantulos, ValinnantulosUpdateStatus, ValintatapajonoOid}
 import fi.vm.sade.valintatulosservice.{AuditInfo, ErillishakuServlet, HyvaksymiskirjeService, ITSetup, ValinnantulosRequest, ValinnantulosService}
+
 import org.json4s.Formats
 import org.json4s.jackson.Serialization.write
 import org.json4s.native.JsonMethods.parse

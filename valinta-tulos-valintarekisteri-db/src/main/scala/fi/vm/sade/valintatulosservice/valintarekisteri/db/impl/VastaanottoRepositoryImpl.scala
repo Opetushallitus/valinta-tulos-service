@@ -139,7 +139,7 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
           from newest_vastaanotto_events
           where haku_oid = ${hakuOid} and
                 henkilo in (#$inParameter)""".as[VastaanottoRecord]
-    ).map(vr => vr.henkiloOid -> vr).groupBy(_._1).mapValues(_.map(_._2).toSet)
+    ).map(vr => vr.henkiloOid -> vr).groupBy(_._1).view.mapValues(_.map(_._2).toSet).toMap
   }
 
   override def findHenkilonVastaanotot(personOid: String, alkuaika: Option[Date] = None): Set[VastaanottoRecord] = {
@@ -298,7 +298,7 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
             from hyvaksytyt_ja_julkaistut_hakutoiveet
             join henkiloviitteet on hyvaksytyt_ja_julkaistut_hakutoiveet.henkilo = henkiloviitteet.linked_oid
             where henkiloviitteet.person_oid in (#$inParameter)""".as[(HenkiloOid, HakukohdeOid, OffsetDateTime)])
-      .map(x => x._1 -> (x._2, x._3)).groupBy(_._1).mapValues(_.map(_._2).toMap)
+      .map(x => x._1 -> (x._2, x._3)).groupBy(_._1).view.mapValues(_.map(_._2).toMap).toMap
   }
 
   override def findHyvaksyttyJulkaistuDatesForHaku(hakuOid: HakuOid): Map[HenkiloOid, Map[HakukohdeOid, OffsetDateTime]] =

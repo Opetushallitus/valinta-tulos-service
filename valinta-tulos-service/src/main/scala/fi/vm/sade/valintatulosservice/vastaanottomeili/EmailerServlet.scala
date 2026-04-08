@@ -88,14 +88,14 @@ trait EmailerSwagger extends VtsSwaggerBase { this: SwaggerSupport =>
 
   val postRunEmailerSwagger: OperationBuilder = apiOperation[Unit]("postRunEmailer")
     .summary("Aja sähköpostien lähetys")
-    .notes("Vastaanottosähköpostien manuaalinen lähetys. Ajetaan myös automaattisesti määrättyinä kellonaikoina.")
+    .description("Vastaanottosähköpostien manuaalinen lähetys. Ajetaan myös automaattisesti määrättyinä kellonaikoina.")
     .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
     .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
 
 
   val postRunEmailerForHakuSwagger: OperationBuilder = apiOperation[Unit]("postRunEmailerForHaku")
     .summary("Aja sähköpostien lähetys haulle")
-    .notes("Vastaanottosähköpostien manuaalinen lähetys yhdelle haulle.")
+    .description("Vastaanottosähköpostien manuaalinen lähetys yhdelle haulle.")
     .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
     .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
     .parameter(pathParam[String]("hakuOid").description("Haun oid"))
@@ -103,7 +103,7 @@ trait EmailerSwagger extends VtsSwaggerBase { this: SwaggerSupport =>
 
   val postRunEmailerForHakukohdeSwagger: OperationBuilder = apiOperation[Unit]("postRunEmailerForHakukohde")
     .summary("Aja sähköpostien lähetys hakukohteelle")
-    .notes("Vastaanottosähköpostien manuaalinen lähetys yhdelle hakukohteelle.")
+    .description("Vastaanottosähköpostien manuaalinen lähetys yhdelle hakukohteelle.")
     .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
     .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
     .parameter(pathParam[String]("hakukohdeOid").description("Hakukohteen oid"))
@@ -111,7 +111,7 @@ trait EmailerSwagger extends VtsSwaggerBase { this: SwaggerSupport =>
 
   val postRunEmailerForHakemusSwagger: OperationBuilder = apiOperation[Unit]("postRunEmailerForHakemus")
     .summary("Aja sähköpostien lähetys hakemukselle")
-    .notes("Vastaanottosähköpostien manuaalinen lähetys yhdelle hakemukselle.")
+    .description("Vastaanottosähköpostien manuaalinen lähetys yhdelle hakemukselle.")
     .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
     .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
     .consumes("application/json")
@@ -120,7 +120,7 @@ trait EmailerSwagger extends VtsSwaggerBase { this: SwaggerSupport =>
 
   val postRunEmailerForValintatapajonoSwagger: OperationBuilder = apiOperation[Unit]("postRunEmailerForValintatapajono")
     .summary("Aja sähköpostien lähetys valintatapajonolle")
-    .notes("Vastaanottosähköpostien manuaalinen lähetys yhdelle valintatapajonolle.")
+    .description("Vastaanottosähköpostien manuaalinen lähetys yhdelle valintatapajonolle.")
     .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
     .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
     .consumes("application/json")

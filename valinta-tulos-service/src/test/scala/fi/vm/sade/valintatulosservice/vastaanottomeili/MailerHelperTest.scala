@@ -99,7 +99,7 @@ class MailerHelperTest extends Specification {
 
       "use Swedish name of Haku when Finnish isn't available" in {
         val query = HakuQuery(hakuOid)
-        val ilmoitusWithoutFinnish = ilmoitus.copy(haku = haku.copy(nimi = haunNimet.filterKeys(_ != "fi")))
+        val ilmoitusWithoutFinnish = ilmoitus.copy(haku = haku.copy(nimi = haunNimet.view.filterKeys(_ != "fi").toMap))
 
         val result = MailerHelper.lahetyksenOtsikko(query, List(ilmoitusWithoutFinnish))
 
@@ -108,7 +108,7 @@ class MailerHelperTest extends Specification {
 
       "use English name of Haku when Finnish and Swedish aren't available" in {
         val query = HakuQuery(hakuOid)
-        val ilmoitusWithoutFinnish = ilmoitus.copy(haku = haku.copy(nimi = haunNimet.filterKeys(_=="en")))
+        val ilmoitusWithoutFinnish = ilmoitus.copy(haku = haku.copy(nimi = haunNimet.view.filterKeys(_=="en").toMap))
 
         val result = MailerHelper.lahetyksenOtsikko(query, List(ilmoitusWithoutFinnish))
 

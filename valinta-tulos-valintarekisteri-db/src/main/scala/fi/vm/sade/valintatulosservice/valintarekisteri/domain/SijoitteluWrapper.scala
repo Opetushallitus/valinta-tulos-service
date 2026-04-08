@@ -105,7 +105,7 @@ case class SijoitteluajoWrapper(sijoitteluajoId: Long,
 }
 
 object SijoitteluajoWrapper {
-  def apply(sijoitteluAjo: SijoitteluAjo): SijoitteluajoWrapper = {
+  def fromSijoitteluAjo(sijoitteluAjo: SijoitteluAjo): SijoitteluajoWrapper = {
     SijoitteluajoWrapper(
       sijoitteluAjo.getSijoitteluajoId,
       HakuOid(sijoitteluAjo.getHakuOid),
@@ -127,7 +127,7 @@ case class SijoitteluajonHakukohdeWrapper(sijoitteluajoId: Long, oid: HakukohdeO
 }
 
 object SijoitteluajonHakukohdeWrapper {
-  def apply(hakukohde: Hakukohde): SijoitteluajonHakukohdeWrapper = {
+  def fromHakukohde(hakukohde: Hakukohde): SijoitteluajonHakukohdeWrapper = {
     SijoitteluajonHakukohdeWrapper(hakukohde.getSijoitteluajoId, HakukohdeOid(hakukohde.getOid), hakukohde.isKaikkiJonotSijoiteltu)
   }
 }
@@ -212,7 +212,7 @@ case class SijoitteluajonValintatapajonoWrapper(
 }
 
 object SijoitteluajonValintatapajonoWrapper extends OptionConverter {
-  def apply(valintatapajono: Valintatapajono): SijoitteluajonValintatapajonoWrapper = {
+  def fromValintatapajono(valintatapajono: Valintatapajono): SijoitteluajonValintatapajonoWrapper = {
     SijoitteluajonValintatapajonoWrapper(
       ValintatapajonoOid(valintatapajono.getOid()),
       valintatapajono.getNimi(),
@@ -283,7 +283,7 @@ object Valinnantila {
     throw new IllegalArgumentException(s"Unknown valinnantila '$value', expected one of $values")
   })
 
-  def apply(valinnantila: HakemuksenTila) = valinnantila match {
+  def fromHakemuksenTila(valinnantila: HakemuksenTila): Valinnantila = valinnantila match {
     case HakemuksenTila.HYLATTY => Hylatty
     case HakemuksenTila.HYVAKSYTTY => Hyvaksytty
     case HakemuksenTila.PERUNUT => Perunut
@@ -443,7 +443,7 @@ object SijoitteluajonHakemusWrapper extends OptionConverter {
 
   import scala.collection.JavaConverters._
 
-  def apply(hakemus: SijoitteluHakemus): SijoitteluajonHakemusWrapper = {
+  def fromHakemus(hakemus: SijoitteluHakemus): SijoitteluajonHakemusWrapper = {
     SijoitteluajonHakemusWrapper(
       HakemusOid(hakemus.getHakemusOid),
       convert[javaString, String](hakemus.getHakijaOid, string),
@@ -455,11 +455,11 @@ object SijoitteluajonHakemusWrapper extends OptionConverter {
       hakemus.getTasasijaJonosija,
       hakemus.isHyvaksyttyHarkinnanvaraisesti,
       hakemus.getSiirtynytToisestaValintatapajonosta,
-      Valinnantila(hakemus.getTila),
+      Valinnantila.fromHakemuksenTila(hakemus.getTila),
       Some(hakemus.getTilanKuvaukset.asScala.toMap),
       ValinnantilanTarkenne.getValinnantilanTarkenne(hakemus.getTilankuvauksenTarkenne),
       hakemus.getHyvaksyttyHakijaryhmista.asScala.toSet,
-      hakemus.getTilaHistoria.asScala.map(TilahistoriaWrapper(_)).toList
+      hakemus.getTilaHistoria.asScala.map(TilahistoriaWrapper.fromTilaHistoria(_)).toList
     )
   }
 }
@@ -474,9 +474,9 @@ case class TilahistoriaWrapper(tila: Valinnantila, luotu: Date) {
 }
 
 object TilahistoriaWrapper {
-  def apply(tilahistoria: TilaHistoria): TilahistoriaWrapper = {
+  def fromTilaHistoria(tilahistoria: TilaHistoria): TilahistoriaWrapper = {
     TilahistoriaWrapper(
-      Valinnantila(tilahistoria.getTila),
+      Valinnantila.fromHakemuksenTila(tilahistoria.getTila),
       tilahistoria.getLuotu
     )
   }
@@ -556,9 +556,9 @@ case class SijoitteluajonValinnantulosWrapper(valintatapajonoOid: Valintatapajon
                                               julkaistavissa: Boolean = false,
                                               hyvaksyttyVarasijalta: Boolean = false,
                                               hyvaksyPeruuntunut: Boolean = false,
-                                              ilmoittautumistila: Option[SijoitteluajonIlmoittautumistila],
-                                              logEntries: Option[List[LogEntry]],
-                                              mailStatus: ValintatulosMailStatus) {
+                                              ilmoittautumistila: Option[SijoitteluajonIlmoittautumistila] = None,
+                                              logEntries: Option[List[LogEntry]] = None,
+                                              mailStatus: ValintatulosMailStatus = new ValintatulosMailStatus) {
   val valintatulos: Valintatulos = {
     val valintatulos = new Valintatulos()
     valintatulos.setValintatapajonoOid(valintatapajonoOid.toString, "")
@@ -576,7 +576,7 @@ case class SijoitteluajonValinnantulosWrapper(valintatapajonoOid: Valintatapajon
 }
 
 object SijoitteluajonValinnantulosWrapper extends OptionConverter {
-  def apply(valintatulos: Valintatulos): SijoitteluajonValinnantulosWrapper = SijoitteluajonValinnantulosWrapper(
+  def fromValintatulos(valintatulos: Valintatulos): SijoitteluajonValinnantulosWrapper = SijoitteluajonValinnantulosWrapper(
     ValintatapajonoOid(valintatulos.getValintatapajonoOid),
     HakemusOid(valintatulos.getHakemusOid),
     HakukohdeOid(valintatulos.getHakukohdeOid),
@@ -602,7 +602,7 @@ case class LogEntryWrapper(luotu: Date, muokkaaja: String, muutos: String, selit
 }
 
 object LogEntryWrapper extends OptionConverter {
-  def apply(entry: LogEntry): LogEntryWrapper = LogEntryWrapper(
+  def fromLogEntry(entry: LogEntry): LogEntryWrapper = LogEntryWrapper(
     entry.getLuotu,
     entry.getMuokkaaja,
     entry.getMuutos,
@@ -622,7 +622,7 @@ case class MailStatusWrapper(previousCheck: Option[Date], sent: Option[Date], do
 }
 
 object MailStatusWrapper extends OptionConverter {
-  def apply(status: ValintatulosMailStatus): MailStatusWrapper = MailStatusWrapper(
+  def fromMailStatus(status: ValintatulosMailStatus): MailStatusWrapper = MailStatusWrapper(
     Option(status.previousCheck),
     Option(status.sent),
     Option(status.done),
@@ -665,7 +665,7 @@ object SijoitteluajonHakijaryhmaWrapper extends OptionConverter {
 
   import scala.collection.JavaConverters._
 
-  def apply(hakijaryhma: Hakijaryhma): SijoitteluajonHakijaryhmaWrapper = {
+  def fromHakijaryhma(hakijaryhma: Hakijaryhma): SijoitteluajonHakijaryhmaWrapper = {
     SijoitteluajonHakijaryhmaWrapper(
       hakijaryhma.getOid,
       hakijaryhma.getNimi,

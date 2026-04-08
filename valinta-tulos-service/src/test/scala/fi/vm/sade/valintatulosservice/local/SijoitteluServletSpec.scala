@@ -5,7 +5,7 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOidSerializer, HakuOidSerializer, HakukohdeOidSerializer, ValintatapajonoOidSerializer}
-import org.json4s.{DefaultFormats, JArray}
+import org.json4s.{DefaultFormats, Formats, JArray}
 import org.json4s.jackson.JsonMethods
 import org.junit.runner.RunWith
 import org.mockserver.integration.ClientAndServer
@@ -15,7 +15,7 @@ import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class SijoitteluServletSpec extends ServletSpecification with ValintarekisteriDbTools {
-  override implicit val formats = DefaultFormats ++ List(
+  override implicit val formats: Formats = DefaultFormats ++ List(
     new NumberLongSerializer,
     new TasasijasaantoSerializer,
     new ValinnantilaSerializer,

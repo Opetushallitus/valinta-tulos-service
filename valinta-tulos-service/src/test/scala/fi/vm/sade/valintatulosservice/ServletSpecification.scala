@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.valintatulosservice.hakemus.HakemusFixtures
 import fi.vm.sade.valintatulosservice.json.JsonFormats
+import org.json4s.Formats
 import org.scalatra.test.HttpComponentsClient
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAll
@@ -10,7 +11,7 @@ trait ServletSpecification extends Specification with ITSetup with TimeWarp with
   sequential
 
   def baseUrl = "http://localhost:" + SharedJetty.port + "/valinta-tulos-service"
-  implicit def formats = JsonFormats.jsonFormats
+  implicit def formats: Formats = JsonFormats.jsonFormats
   override lazy val hakemusFixtureImporter = HakemusFixtures()(appConfig.settings)
 
   protected val httpComponentsClient = new HttpComponentsClient {

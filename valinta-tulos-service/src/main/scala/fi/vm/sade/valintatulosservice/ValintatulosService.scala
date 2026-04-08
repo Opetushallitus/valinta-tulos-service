@@ -85,7 +85,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       } yield {
         val ilmoittautumisenAikaleimat = timed(s"Ilmoittautumisten aikaleimojen haku haulle $hakuOid", 1000) {
           valinnantulosRepository.runBlocking(valinnantulosRepository.getIlmoittautumisenAikaleimat(hakuOid))
-            .groupBy(_._1).mapValues(i => i.map(t => (t._2, t._3)))
+            .groupBy(_._1).view.mapValues(i => i.map(t => (t._2, t._3))).toMap
         }
         val hakemusToHenkilo: Map[String, List[HakemusOidAndHenkiloOid]] = hakemukset.groupBy(_.hakemusOid)
         val tulokset: List[HakemuksenSijoitteluntulos] = sijoittelutulosService.tuloksetForValpas(hakuOid, hakemukset, ohjausparametrit, vastaanotettavuusVirkailijana = false)
@@ -166,7 +166,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         }).toMap
         val ilmoittautumisenAikaleimat = timed(s"Ilmoittautumisten aikaleimojen haku haulle $hakuOid", 1000) {
           valinnantulosRepository.runBlocking(valinnantulosRepository.getIlmoittautumisenAikaleimat(hakuOid))
-            .groupBy(_._1).mapValues(i => i.map(t => (t._2, t._3)))
+            .groupBy(_._1).view.mapValues(i => i.map(t => (t._2, t._3))).toMap
         }
         val ohjausparametrit = sijoittelutulosService.findOhjausparametritFromOhjausparametritService(hakuOid)
         val tulokset = valinnantulosRepository.runBlocking(DBIO.sequence(hakemusOids.map(oid => sijoittelutulosService.tulosHakijana(haku.oid, oid, hakijaOidByHakemusOid(oid), ohjausparametrit)).toSeq))
@@ -214,7 +214,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         }).toMap
         ilmoittautumisenAikaleimat = timed(s"Ilmoittautumisten aikaleimojen haku haulle $hakuOid", 1000) {
           valinnantulosRepository.runBlocking(valinnantulosRepository.getIlmoittautumisenAikaleimat(hakuOid))
-            .groupBy(_._1).mapValues(i => i.map(t => (t._2, t._3)))
+            .groupBy(_._1).view.mapValues(i => i.map(t => (t._2, t._3))).toMap
         }
       } yield {
         logger.info(s"Esitiedot haettu, haetaan tulokset haulle $hakuOid")
@@ -259,7 +259,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         }).toMap
         val ilmoittautumisenAikaleimat = timed(s"Ilmoittautumisten aikaleimojen haku haulle $hakuOid", 1000) {
           valinnantulosRepository.runBlocking(valinnantulosRepository.getIlmoittautumisenAikaleimat(hakuOid))
-            .groupBy(_._1).mapValues(i => i.map(t => (t._2, t._3)))
+            .groupBy(_._1).view.mapValues(i => i.map(t => (t._2, t._3))).toMap
         }
         fetchTulokset(
           haku,
@@ -439,7 +439,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
   }
 
   private def mapHakemustenTuloksetByHakemusOid(hakemustenTulokset:Iterator[Hakemuksentulos]):Map[HakemusOid, Hakemuksentulos] = {
-    hakemustenTulokset.toList.groupBy(_.hakemusOid).mapValues(_.head)
+    hakemustenTulokset.toList.groupBy(_.hakemusOid).view.mapValues(_.head).toMap
   }
 
   private def setValintatuloksetTilat(valintatulokset: Seq[Valintatulos],

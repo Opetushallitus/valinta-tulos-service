@@ -12,7 +12,8 @@ import fi.vm.sade.valintatulosservice.{ValintatulosService, ValintatulosUtil}
 
 import scala.collection.JavaConverters._
 import scala.collection.parallel.ForkJoinTaskSupport
-import scala.concurrent.forkjoin.ForkJoinPool
+import scala.collection.parallel.CollectionConverters._
+import java.util.concurrent.ForkJoinPool
 
 class StreamingValintatulosService(valintatulosService: ValintatulosService,
                                    virkailijaVastaanottoRepository: VirkailijaVastaanottoRepository,
