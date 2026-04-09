@@ -146,9 +146,11 @@ class HyvaksynnanEhtoServlet(hyvaksynnanEhtoRepository: HyvaksynnanEhtoRepositor
 
     response match {
       case Nil => Ok(body = Map.empty)
-      case ehdot => Ok(
-        body = ehdot.groupBy(_._2).mapValues(_.map(t => t._1 -> t._3).toMap),
-        headers = Map("Last-Modified" -> createLastModifiedHeader(ehdot.map(_._4).max)))
+      case ehdot => {
+        Ok(
+          body = ehdot.groupBy(_._2).mapValues(_.map(t => t._1 -> t._3).toMap).toMap,
+          headers = Map("Last-Modified" -> createLastModifiedHeader(ehdot.map(_._4).max)))
+      }
     }
   }
 
