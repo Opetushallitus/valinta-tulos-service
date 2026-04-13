@@ -33,7 +33,7 @@ class MailDecorator(hakuService: HakuService,
             val haunOhjausparametrit: Option[Ohjausparametrit] = timed(s"Ohjausparametrien hakeminen hakuoidilla ${status.hakuOid}", 50) {
               fetchOhjausparametrit(status.hakuOid)
             }
-            val hakukierrosPaattyy: Option[Long] = haunOhjausparametrit.flatMap(_.hakukierrosPaattyy.map(_.getMillis))
+            val hakukierrosPaattyy: Option[Long] = haunOhjausparametrit.flatMap(_.hakukierrosPaattyy.map(_.toInstant.toEpochMilli))
             oppijanTunnistusService.luoSecureLink(status.hakijaOid, status.hakemusOid, status.email, status.asiointikieli, hakukierrosPaattyy) match {
               case Right(OppijanTunnistus(securelink)) =>
                 Some(ilmoitus.copy(secureLink = Some(securelink)))

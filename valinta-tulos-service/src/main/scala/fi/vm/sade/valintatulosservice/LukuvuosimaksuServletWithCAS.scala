@@ -24,7 +24,7 @@ class LukuvuosimaksuServletWithCAS(lukuvuosimaksuService: LukuvuosimaksuService,
                                   (implicit val swagger: Swagger, appConfig: VtsAppConfig)
   extends VtsServletBase with CasAuthenticatedServlet {
 
-  implicit val defaultFormats: Formats = DefaultFormats + new LukuvuosimaksuMuutosSerializer + new Scala213EnumNameSerializer(Maksuntila)
+  implicit val defaultFormats: Formats = DefaultFormats + new LukuvuosimaksuMuutosSerializer + new EnumNameSerializer(Maksuntila)
 
   override protected def applicationDescription: String = "Lukuvuosimaksujen rajapinnat (CAS-autentikoitu)"
 

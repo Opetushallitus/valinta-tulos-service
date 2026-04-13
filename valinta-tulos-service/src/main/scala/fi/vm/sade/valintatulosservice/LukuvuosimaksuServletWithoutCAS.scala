@@ -17,7 +17,7 @@ class LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService: LukuvuosimaksuServi
                                   (implicit val swagger: Swagger, appConfig: VtsAppConfig)
   extends VtsServletBase with AuditInfoParameter {
 
-  implicit val vtsJsonFormats: Formats = JsonFormats.jsonFormats + new Scala213EnumNameSerializer(Maksuntila)
+  implicit val vtsJsonFormats: Formats = JsonFormats.jsonFormats + new EnumNameSerializer(Maksuntila)
 
   override protected def applicationDescription: String = "Lukuvuosimaksut unauthenticated REST API"
 

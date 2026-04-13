@@ -1,16 +1,32 @@
 package fi.vm.sade.valintatulosservice
 
 import java.util.Date
-
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Tasasijasaanto, Valinnantila, ValinnantilanTarkenne}
-import org.joda.time.DateTime
 import org.json4s.CustomSerializer
 import org.json4s.JsonAST.{JField, JObject, JString}
 
-/**
-  * Created by heikki.honkanen on 23/05/2017.
-  */
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatterBuilder
+import java.time.temporal.ChronoField
+
 trait json4sCustomFormats {
+  private val jsonDateFormatter =
+    new DateTimeFormatterBuilder()
+      .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
+      .optionalStart()
+      .appendFraction(ChronoField.MILLI_OF_SECOND, 0, 3, true)
+      .optionalEnd()
+      .appendOffset("+HHmm", "Z")
+      .toFormatter()
+
+  /** Handles dates formatted as one of:
+   * - 2016-10-12T04:11:19.328+0000
+   * - 2016-05-24T09:02:36.637Z
+   * - 2026-02-18T07:39:11Z
+   */
+  def parseDateTime(dateValue: String): OffsetDateTime =
+    OffsetDateTime.parse(dateValue, jsonDateFormatter)
+
   class NumberLongSerializer extends CustomSerializer[Long](format => ( {
     case JObject(List(JField("$numberLong", JString(longValue)))) => longValue.toLong
   }, {
@@ -19,9 +35,9 @@ trait json4sCustomFormats {
 
   class DateSerializer extends  CustomSerializer[Date](format => ({
     case JObject(List(JField("$date", JString(dateValue)))) =>
-      new DateTime(dateValue).toDate
+      Date.from(parseDateTime(dateValue).toInstant)
     case JString(dateValue) =>
-      new DateTime(dateValue).toDate
+      Date.from(parseDateTime(dateValue).toInstant)
   }, {
     case x: Date => JObject(List(JField("$date", JString("" + x))))
   }))

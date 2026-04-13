@@ -44,7 +44,6 @@ object EmailStructure {
   }
   private val LOG : org.slf4j.Logger = LoggerFactory.getLogger(classOf[EmailStructure])
 
-  private val timezone = ZoneId.of("Europe/Helsinki")
   private val deadlineFormatFi = new SimpleDateFormat("d.M.yyyy 'klo' HH:mm")
   private val deadlineFormatSv = new SimpleDateFormat("d.M.yyyy 'kl.' HH:mm")
   private val deadlineFormatEn = new SimpleDateFormat("MMM. d, yyyy 'at' hh:mm a z", Locale.ENGLISH)
