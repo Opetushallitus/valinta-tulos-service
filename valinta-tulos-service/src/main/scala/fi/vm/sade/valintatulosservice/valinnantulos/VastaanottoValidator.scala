@@ -5,6 +5,7 @@ import java.time.OffsetDateTime
 import java.util.Date
 
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
+import fi.vm.sade.valintatulosservice.TimeUtil
 import fi.vm.sade.valintatulosservice.ohjausparametrit.Ohjausparametrit
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -19,6 +20,7 @@ trait VastaanottoValidator {
   val hakukohdeOid: HakukohdeOid
   val valinnantulosRepository: ValinnantulosRepository with HakijaVastaanottoRepository
   val ohjausparametrit: Ohjausparametrit
+  def timeUtil: TimeUtil
 
   val sitovaTaiEhdollinenVastaanotto: Seq[ValintatuloksenTila] = List(ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
   val keskenTaiVastaanottanutToisenPaikan: Seq[ValintatuloksenTila] = List(ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN, ValintatuloksenTila.KESKEN)
@@ -29,7 +31,7 @@ trait VastaanottoValidator {
   def right = DBIO.successful(Right(()))
   def julkaistavissa(valinnantulos: Valinnantulos):Boolean = valinnantulos.julkaistavissa.exists(_ == true) && tuloksetJulkaistavissa
 
-  lazy val tuloksetJulkaistavissa = ohjausparametrit.tulostenJulkistusAlkaa.forall(_.isBeforeNow())
+  lazy val tuloksetJulkaistavissa = ohjausparametrit.tulostenJulkistusAlkaa.forall(timeUtil.isBeforeNow)
 
   def onkoEhdollisestiVastaanotettavissa(valinnantulos: Valinnantulos): DBIO[Boolean]
 
@@ -39,7 +41,7 @@ trait VastaanottoValidator {
     def hakijanHyvaksyttyJaJulkaistuDate() = valinnantulosRepository.findHyvaksyttyJaJulkaistuDateForHenkiloAndHakukohdeDBIO(valinnantulos.henkiloOid, hakukohdeOid)
       .flatMap(hyvaksyttyJaJulkaistu => DBIO.successful(hyvaksyttyJaJulkaistu.orElse( if(ollaankoHyvaksymassaJaJulkaisemassa()) Some(OffsetDateTime.now()) else None )))
 
-    hakijanHyvaksyttyJaJulkaistuDate().flatMap(hyvaksyttyJaJulkaistu => laskeVastaanottoDeadline(ohjausparametrit, hyvaksyttyJaJulkaistu).map(_.toDate) match {
+    hakijanHyvaksyttyJaJulkaistuDate().flatMap(hyvaksyttyJaJulkaistu => laskeVastaanottoDeadline(ohjausparametrit, hyvaksyttyJaJulkaistu).map(d => Date.from(d.toInstant)) match {
       case deadline if deadline.exists(_.after(new Date())) => error(valinnantulos,
         s"""Hakijakohtaista määräaikaa ${new SimpleDateFormat("dd-MM-yyyy").format(deadline)}
               kohteella ${hakukohdeOid} : ${valinnantulos.vastaanottotila} ei ole vielä ohitettu.""")

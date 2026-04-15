@@ -3,9 +3,9 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db
 import java.sql.{JDBCType, Timestamp}
 import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
 import java.util.ConcurrentModificationException
-
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila.{EHDOLLISESTI_VASTAANOTTANUT, VASTAANOTTANUT_SITOVASTI}
+import fi.vm.sade.valintatulosservice.TimeUtil
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Hyvaksymiskirje => Kirje, _}
 import fi.vm.sade.valintatulosservice.valintarekisteri.{ITSetup, ValintarekisteriDbTools}
 import org.junit.runner.RunWith
@@ -27,7 +27,7 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
   val hakemusOid = HakemusOid("hakemusOid")
   val muokkaaja = "muokkaaja"
   val selite = "selite"
-  val muutos = OffsetDateTime.now(ZoneId.of("Europe/Helsinki")).withNano(0)
+  val muutos = OffsetDateTime.now(TimeUtil.timezoneFi).withNano(0)
   val nanotime = muutos.getNano
   val valinnantilanTallennus = ValinnantilanTallennus(
     hakemusOid, valintatapajonoOid, hakukohdeOid, henkiloOid, Hyvaksytty, muokkaaja)

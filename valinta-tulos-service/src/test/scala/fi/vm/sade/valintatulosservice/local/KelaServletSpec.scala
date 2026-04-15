@@ -12,7 +12,7 @@ import org.specs2.runner.JUnitRunner
 class KelaServletSpec extends ServletSpecification with ValintarekisteriDbTools {
   override implicit val formats: Formats = DefaultFormats ++ List(new TasasijasaantoSerializer, new ValinnantilaSerializer,
     new DateSerializer, new TilankuvauksenTarkenneSerializer, new IlmoittautumistilaSerializer, new VastaanottoActionSerializer, new ValintatuloksenTilaSerializer,
-    new Scala213EnumNameSerializer(Maksuntila))
+    new EnumNameSerializer(Maksuntila))
   lazy val testSession = createTestSession(Set(Role.KELA_READ))
   lazy val headers = Map("Cookie" -> s"session=${testSession}", "Content-type" -> "text/plain")
 

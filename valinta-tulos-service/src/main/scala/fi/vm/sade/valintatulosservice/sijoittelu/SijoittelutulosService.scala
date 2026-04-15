@@ -11,21 +11,21 @@ import fi.vm.sade.valintatulosservice.sijoittelu.JonoFinder.kaikkiJonotJulkaistu
 import fi.vm.sade.valintatulosservice.valintarekisteri.db._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-import fi.vm.sade.valintatulosservice.{PersonOidFromHakemusResolver, VastaanottoAikarajaMennyt}
+import fi.vm.sade.valintatulosservice.{PersonOidFromHakemusResolver, TimeUtil, VastaanottoAikarajaMennyt}
 import org.apache.commons.lang.StringUtils
 import org.apache.commons.lang3.builder.ToStringBuilder
-import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 import slick.dbio.DBIO
 
-import java.time.OffsetDateTime
+import java.time.{OffsetDateTime, ZonedDateTime}
 import java.util.Date
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiService,
                              ohjausparametritService: OhjausparametritService,
                              valintarekisteriDb: HakijaRepository with HakijaVastaanottoRepository with SijoitteluRepository with ValinnantulosRepository,
-                             sijoittelunTulosClient: ValintarekisteriSijoittelunTulosClient) {
+                             sijoittelunTulosClient: ValintarekisteriSijoittelunTulosClient,
+                             timeUtil: TimeUtil) {
   import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.laskeVastaanottoDeadline
 
   import scala.collection.JavaConverters._
@@ -202,7 +202,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
       merkitsevaValinnantulos.map(_.valintatapajonoOid).orElse(merkitsevaValintatapajono.map(_.valintatapajonoOid)).get,
       hakijanTilat = hakijanTilat,
       virkailijanTilat = virkailijanTilat,
-      vastaanottoDeadline.map(_.toDate),
+      vastaanottoDeadline.map(d => Date.from(d.toInstant)),
       merkitsevaValinnantulos.map(_.ilmoittautumistila).getOrElse(EiTehty),
       viimeisinHakemuksenTilanMuutos = merkitsevaValinnantulos.flatMap(_.valinnantilanViimeisinMuutos).map(odt => Date.from(odt.toInstant)),
       viimeisinValintatuloksenMuutos = merkitsevaValinnantulos.flatMap(_.vastaanotonViimeisinMuutos).map(odt => Date.from(odt.toInstant)),
@@ -380,7 +380,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
         ValintatapajonoOid(jono.getValintatapajonoOid),
         hakijanTilat = hakijanTilat,
         virkailijanTilat = virkailijanTilat,
-        vastaanottoDeadline.map(_.toDate),
+        vastaanottoDeadline.map(d => Date.from(d.toInstant)),
         SijoitteluajonIlmoittautumistila(Option(jono.getIlmoittautumisTila).getOrElse(IlmoittautumisTila.EI_TEHTY)),
         viimeisinHakemuksenTilanMuutos = Option(jono.getHakemuksenTilanViimeisinMuutos),
         viimeisinValintatuloksenMuutos = Option(jono.getValintatuloksenViimeisinMuutos),
@@ -416,7 +416,7 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
                                              vastaanotto: Option[VastaanottoRecord],
                                              ohjausparametrit: Ohjausparametrit,
                                              hakutoiveenHyvaksyttyJaJulkaistuDate: Option[OffsetDateTime],
-                                             vastaanotettavuusVirkailijana: Boolean):(HakutoiveenSijoittelunTilaTieto, Option[DateTime]) = {
+                                             vastaanotettavuusVirkailijana: Boolean):(HakutoiveenSijoittelunTilaTieto, Option[ZonedDateTime]) = {
     val ( vastaanottotila, vastaanottoDeadline ) = laskeVastaanottotila(valintatila, vastaanotto, ohjausparametrit, hakutoiveenHyvaksyttyJaJulkaistuDate, vastaanotettavuusVirkailijana)
     val uusiValintatila = vastaanottotilanVaikutusValintatilaan(valintatila, vastaanottotila, merkitsevaJono = true)
     val vastaanotettavuustila: Vastaanotettavuustila.Value = laskeVastaanotettavuustila(valintatila, vastaanottotila)
@@ -489,11 +489,11 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
                                    vastaanotto: Option[VastaanottoRecord],
                                    ohjausparametrit: Ohjausparametrit,
                                    hakutoiveenHyvaksyttyJaJulkaistuDate: Option[OffsetDateTime],
-                                   vastaanotettavuusVirkailijana: Boolean = false): ( Vastaanottotila, Option[DateTime] ) = {
+                                   vastaanotettavuusVirkailijana: Boolean = false): ( Vastaanottotila, Option[ZonedDateTime] ) = {
     val deadline = laskeVastaanottoDeadline(ohjausparametrit, hakutoiveenHyvaksyttyJaJulkaistuDate)
     vastaanottotilaVainViimeisimmanVastaanottoActioninPerusteella(vastaanotto) match {
       case Vastaanottotila.kesken if Valintatila.isHyväksytty(valintatila) || valintatila == Valintatila.perunut =>
-        if (deadline.exists(_.isBeforeNow) && !vastaanotettavuusVirkailijana) {
+        if (deadline.exists(timeUtil.isBeforeNow) && !vastaanotettavuusVirkailijana) {
           (Vastaanottotila.ei_vastaanotettu_määräaikana, deadline)
         } else {
           (Vastaanottotila.kesken, deadline)
@@ -519,10 +519,10 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
 
         def calculateLateness(hakijaDto: KevytHakijaDTO): VastaanottoAikarajaMennyt = {
           val hakutoiveDtoOfThisHakukohde: Option[KevytHakutoiveDTO] = hakijaDto.getHakutoiveet.asScala.toList.find(_.getHakukohdeOid == hakukohdeOid.toString)
-          val vastaanottoDeadline: Option[DateTime] = hakutoiveDtoOfThisHakukohde.flatMap { hakutoive: KevytHakutoiveDTO =>
+          val vastaanottoDeadline: Option[ZonedDateTime] = hakutoiveDtoOfThisHakukohde.flatMap { hakutoive: KevytHakutoiveDTO =>
             laskeVastaanottoDeadline(ohjausparametrit, hyvaksyttyJaJulkaistuDates.get(hakijaDto.getHakijaOid))
           }
-          val isLate: Boolean = vastaanottoDeadline.exists(new DateTime().isAfter)
+          val isLate: Boolean = vastaanottoDeadline.exists(timeUtil.nowIsAfter)
           VastaanottoAikarajaMennyt(HakemusOid(hakijaDto.getHakemusOid), isLate, vastaanottoDeadline)
         }
         queriedHakijasForHakukohde().map(calculateLateness).toSet

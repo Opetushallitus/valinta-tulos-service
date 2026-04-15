@@ -4,7 +4,7 @@ import fi.vm.sade.sijoittelu.domain.{ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemusEnricher, AtaruHakemusRepository, HakemusRepository, HakuAppRepository}
-import fi.vm.sade.valintatulosservice.koodisto.{KoodistoService, StubbedKoodistoService}
+import fi.vm.sade.valintatulosservice.koodisto.StubbedKoodistoService
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{OhjausparametritFixtures, StubbedOhjausparametritService}
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
@@ -14,14 +14,15 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriD
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
-import org.joda.time.{DateTime, LocalDate}
 import org.junit.runner.RunWith
 import org.specs2.execute.{FailureException, Result}
 import org.specs2.matcher.ThrownMessages
 import org.specs2.runner.JUnitRunner
 
+import java.time.{LocalDate, ZoneId, ZonedDateTime}
+
 @RunWith(classOf[JUnitRunner])
-class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with ThrownMessages {
+class VastaanottoServiceHakijanaSpec extends ITSpecification with ThrownMessages {
   val hakuOid: String = "1.2.246.562.5.2013080813081926341928"
   val hakukohdeOid: String = "1.2.246.562.5.16303028779"
   val vastaanotettavissaHakuKohdeOid = "1.2.246.562.5.72607738902"
@@ -30,7 +31,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
   val personOid: String = "1.2.246.562.24.14229104472"
   val valintatapajonoOid: String = "2013080813081926341928"
   val selite: String = "Testimuokkaus"
-  val ilmoittautumisaikaPaattyy2030: Ilmoittautumisaika = Ilmoittautumisaika(None, Some(new DateTime(2030, 1, 10, 23, 59, 59, 999)))
+  val ilmoittautumisaikaPaattyy2030: Ilmoittautumisaika = Ilmoittautumisaika(None, Some(ZonedDateTime.of(2030, 1, 10, 23, 59, 59, 999000000, TimeUtil.timezoneFi)))
 
   def kaikkienHakutyyppienTestit(hakuFixture: HakuOid) = {
     "vastaanota hyväksytty julkaistu tulos" in {
@@ -83,7 +84,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
     "vastaanoton aikataulu" in {
       "vastaanotto onnistuu jos viimeisin valintatuloksen muutos on bufferin sisään" in {
         useFixture("hyvaksytty-kesken-julkaistavissa.json", ohjausparametritFixture = "vastaanotto-loppunut", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-        withFixedDateTime("9.9.2014 12:00") {
+        mockTimeUtil.withFixedDateTime("9.9.2014 12:00") {
           hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.kesken
           hakemuksenTulos.hakutoiveet(0).vastaanotettavuustila  must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
           vastaanota(hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.vastaanottanut)
@@ -93,7 +94,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
 
       "vastaanotto ei onnistu jos ei bufferia annettu ollenkaan, vaikka vastaanotto samana päivänä kuin muutos" in {
         useFixture("hyvaksytty-varasijalta-kesken-julkaistavissa.json", ohjausparametritFixture = "ei-vastaanotto-bufferia", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-        withFixedDateTime("02.9.2014 17:00") {
+        mockTimeUtil.withFixedDateTime("02.9.2014 17:00") {
           hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.ei_vastaanotettu_määräaikana
           hakemuksenTulos.hakutoiveet(0).vastaanotettavuustila  must_== Vastaanotettavuustila.ei_vastaanotettavissa
           expectFailure {
@@ -104,7 +105,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
 
       "vastaanotto onnistuu jos viimeisin hakemuksen tilan muutos on bufferin sisään" in {
         useFixture("hyvaksytty-varasijalta-kesken-julkaistavissa.json", ohjausparametritFixture = "vastaanotto-loppunut", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-        withFixedDateTime("16.9.2014 12:00") {
+        mockTimeUtil.withFixedDateTime("16.9.2014 12:00") {
           hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.kesken
           hakemuksenTulos.hakutoiveet(0).vastaanotettavuustila  must_== Vastaanotettavuustila.vastaanotettavissa_sitovasti
           vastaanota(hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.vastaanottanut)
@@ -114,7 +115,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
 
       "vastaanotto ei onnistu jos viimeisin hakemuksen tilan muutos ei ole bufferin sisään" in {
         useFixture("hyvaksytty-varasijalta-kesken-julkaistavissa.json", ohjausparametritFixture = "vastaanotto-loppunut", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-        withFixedDateTime("17.9.2014 12:01") {
+        mockTimeUtil.withFixedDateTime("17.9.2014 12:01") {
           hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.ei_vastaanotettu_määräaikana
           hakemuksenTulos.hakutoiveet(0).vastaanotettavuustila  must_== Vastaanotettavuustila.ei_vastaanotettavissa
           expectFailure {
@@ -125,7 +126,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
 
       "vastaanotto ei onnistu deadlinen jälkeen jos vastaanottobufferia ei ole annettu" in {
         useFixture("hyvaksytty-kesken-julkaistavissa.json", ohjausparametritFixture = "ei-vastaanotto-bufferia", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-        withFixedDateTime("2.9.2014 12:01") {
+        mockTimeUtil.withFixedDateTime("2.9.2014 12:01") {
           hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.ei_vastaanotettu_määräaikana
           hakemuksenTulos.hakutoiveet(0).vastaanotettavuustila  must_== Vastaanotettavuustila.ei_vastaanotettavissa
           expectFailure {
@@ -136,7 +137,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
 
       "vastaanotto ei onnistu jos viimeisin valintatuloksen muutos on bufferin jälkeen" in {
         useFixture("hyvaksytty-kesken-julkaistavissa.json", ohjausparametritFixture = "vastaanotto-loppunut", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-        withFixedDateTime("10.9.2014 12:01") {
+        mockTimeUtil.withFixedDateTime("10.9.2014 12:01") {
           hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.ei_vastaanotettu_määräaikana
           hakemuksenTulos.hakutoiveet(0).vastaanotettavuustila  must_== Vastaanotettavuustila.ei_vastaanotettavissa
           expectFailure {
@@ -152,13 +153,13 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
           useFixture("hyvaksytty-ilmoitettu.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
           vastaanota(hakemusOid, vastaanotettavissaHakuKohdeOid, Vastaanottotila.perunut)
           hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.perunut
-          expectFailure(Some("""Hakutoive 1.2.246.562.5.72607738902 ei ole ilmoittauduttavissa: ilmoittautumisaika: {"loppu":"2030-01-10T21:59:59Z"}, ilmoittautumistila: EI_TEHTY, valintatila: PERUNUT, vastaanottotila: PERUNUT"""))
+          expectFailure(Some("""Hakutoive 1.2.246.562.5.72607738902 ei ole ilmoittauduttavissa: ilmoittautumisaika: {"loppu":"2030-01-10T23:59:59.999+02:00"}, ilmoittautumistila: EI_TEHTY, valintatila: PERUNUT, vastaanottotila: PERUNUT"""))
             {ilmoittaudu(hakemusOid, vastaanotettavissaHakuKohdeOid, LasnaKokoLukuvuosi, muokkaaja, selite)}
         }
 
         "ilmoittautuminen ilman vastaanottoa" in {
           useFixture("hyvaksytty-ilmoitettu.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
-          expectFailure(Some("""Hakutoive 1.2.246.562.5.72607738902 ei ole ilmoittauduttavissa: ilmoittautumisaika: {"loppu":"2030-01-10T21:59:59Z"}, ilmoittautumistila: EI_TEHTY, valintatila: HYVAKSYTTY, vastaanottotila: KESKEN"""))
+          expectFailure(Some("""Hakutoive 1.2.246.562.5.72607738902 ei ole ilmoittauduttavissa: ilmoittautumisaika: {"loppu":"2030-01-10T23:59:59.999+02:00"}, ilmoittautumistila: EI_TEHTY, valintatila: HYVAKSYTTY, vastaanottotila: KESKEN"""))
             {ilmoittaudu(hakemusOid, vastaanotettavissaHakuKohdeOid, LasnaKokoLukuvuosi, muokkaaja, selite)}
         }
 
@@ -169,7 +170,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
           ilmoittaudu(hakemusOid, vastaanotettavissaHakuKohdeOid, LasnaKokoLukuvuosi, muokkaaja, selite)
           hakemuksenTulos.hakutoiveet(0).ilmoittautumistila.ilmoittautumistila must_== LasnaKokoLukuvuosi
           hakemuksenTulos.hakutoiveet(0).ilmoittautumistila.ilmoittauduttavissa must_== false
-          expectFailure(Some("""Hakutoive 1.2.246.562.5.72607738902 ei ole ilmoittauduttavissa: ilmoittautumisaika: {"loppu":"2030-01-10T21:59:59Z"}, ilmoittautumistila: LASNA_KOKO_LUKUVUOSI, valintatila: HYVAKSYTTY, vastaanottotila: VASTAANOTTANUT_SITOVASTI"""))
+          expectFailure(Some("""Hakutoive 1.2.246.562.5.72607738902 ei ole ilmoittauduttavissa: ilmoittautumisaika: {"loppu":"2030-01-10T23:59:59.999+02:00"}, ilmoittautumistila: LASNA_KOKO_LUKUVUOSI, valintatila: HYVAKSYTTY, vastaanottotila: VASTAANOTTANUT_SITOVASTI"""))
             {ilmoittaudu(hakemusOid, vastaanotettavissaHakuKohdeOid, LasnaKokoLukuvuosi, muokkaaja, selite)}
         }
       }
@@ -423,7 +424,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
         hakemuksenTulos.hakutoiveet(0).ilmoittautumisenAikaleima.get.getTime must be ~ (System.currentTimeMillis() +/- 2000)
       }
       "onnistuu ja tarjotaan oilia, jos vastaanottanut hetuton" in {
-        if (new LocalDate().isBefore(new LocalDate(2017, 6, 5))) {
+        if (LocalDate.now().isBefore(LocalDate.of(2017, 6, 5))) {
           "happy_holidays" mustEqual "happy_holidays"
         } else {
           useFixture("hyvaksytty-vastaanottanut.json", hakuFixture = hakuFixture, hakemusFixtures = List("00000441369-no-hetu"), yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
@@ -441,7 +442,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
         expectFailure{ilmoittaudu(hakemusOid, "1.2.246.562.5.16303028779", LasnaKokoLukuvuosi, muokkaaja, selite)}
       }
       "onnistuu viime hetkeen asti" in {
-        withFixedDateTime(ilmoittautumisaikaPaattyy2030.loppu.get.minusMinutes(1).getMillis) {
+        mockTimeUtil.withFixedDateTime(ilmoittautumisaikaPaattyy2030.loppu.get.minusMinutes(1)) {
           useFixture("hyvaksytty-vastaanottanut.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
           hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
           hakemuksenTulos.hakutoiveet(0).ilmoittautumistila.ilmoittauduttavissa must_== true
@@ -452,7 +453,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
         }
       }
       "ei onnistu päättymisen jälkeen" in {
-        withFixedDateTime(ilmoittautumisaikaPaattyy2030.loppu.get.plusMinutes(1).getMillis) {
+        mockTimeUtil.withFixedDateTime(ilmoittautumisaikaPaattyy2030.loppu.get.plusMinutes(1)) {
           useFixture("hyvaksytty-vastaanottanut.json", hakuFixture = hakuFixture, yhdenPaikanSaantoVoimassa = true, kktutkintoonJohtava = true)
           hakemuksenTulos.hakutoiveet(0).vastaanottotila must_== Vastaanottotila.vastaanottanut
           hakemuksenTulos.hakutoiveet(0).ilmoittautumistila.ilmoittauduttavissa must_== false
@@ -572,6 +573,7 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
   step(valintarekisteriDb.db.shutdown)
 
   private lazy val valintatulosDao = new ValintarekisteriValintatulosDaoImpl(valintarekisteriDb)
+  private lazy val mockTimeUtil = TestTimeUtil()
 
   lazy val ohjausparametritService = new StubbedOhjausparametritService()
   lazy val koodistoService = new StubbedKoodistoService()
@@ -579,14 +581,14 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
   lazy val hakukohdeRecordService = new HakukohdeRecordService(hakuService, valintarekisteriDb, true)
   lazy val sijoittelutulosService = new SijoittelutulosService(new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintatulosDao),
-    ohjausparametritService, valintarekisteriDb, new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb))
+    ohjausparametritService, valintarekisteriDb, new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb), mockTimeUtil)
   lazy val sijoittelunTulosClient = new ValintarekisteriSijoittelunTulosClientImpl(valintarekisteriDb)
   lazy val raportointiService = new ValintarekisteriRaportointiServiceImpl(valintarekisteriDb, valintatulosDao)
   lazy val hakijaDtoClient = new ValintarekisteriHakijaDTOClientImpl(raportointiService, sijoittelunTulosClient, valintarekisteriDb)
   lazy val oppijanumerorekisteriService = new OppijanumerorekisteriService(appConfig)
   lazy val hakemusRepository = new HakemusRepository(new HakuAppRepository(), new AtaruHakemusRepository(appConfig), new AtaruHakemusEnricher(appConfig, hakuService, oppijanumerorekisteriService))
-  lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, hakemusRepository, valintarekisteriDb,
-    ohjausparametritService, hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, koodistoService)
+  lazy val valintatulosService = new ValintatulosService(valintarekisteriDb, sijoittelutulosService, ohjausparametritService, hakemusRepository, valintarekisteriDb,
+    hakuService, valintarekisteriDb, hakukohdeRecordService, valintatulosDao, koodistoService, mockTimeUtil)
   lazy val vastaanottoService = new VastaanottoService(hakuService, hakukohdeRecordService, valintatulosService,
     valintarekisteriDb, ohjausparametritService, sijoittelutulosService, hakemusRepository, valintarekisteriDb)
   lazy val ilmoittautumisService = new IlmoittautumisService(valintatulosService,

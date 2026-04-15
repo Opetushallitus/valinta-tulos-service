@@ -12,7 +12,7 @@ kaksi palvelua:
 - sijoittelu
   - tallentaa sijoittelun tulokset (kuka sai minkäkin paikan) suoraan
     valintarekisteriin
-  - katso ValintarekisteriForSijoittelu nähdäksesi, mitä toimintoja
+  - katso ValintarekisteriService nähdäksesi, mitä toimintoja
     sijoittelu käyttää
 
 Testaus

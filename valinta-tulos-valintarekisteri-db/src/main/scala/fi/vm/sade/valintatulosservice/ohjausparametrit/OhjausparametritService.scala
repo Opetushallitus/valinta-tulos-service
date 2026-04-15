@@ -1,26 +1,27 @@
 package fi.vm.sade.valintatulosservice.ohjausparametrit
 
+import fi.vm.sade.valintatulosservice.TimeUtil
 import fi.vm.sade.valintatulosservice.config.{AppConfig, Timer}
 import fi.vm.sade.valintatulosservice.http.DefaultHttpClient
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.memoize.TTLOptionalMemoize
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.HakuOid
-import org.joda.time.DateTime
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 
+import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
 import scala.util.Try
 import scala.util.control.NonFatal
 
 case class Ohjausparametrit(vastaanottoaikataulu: Vastaanottoaikataulu,
-                            varasijaSaannotAstuvatVoimaan: Option[DateTime],
-                            ilmoittautuminenPaattyy: Option[DateTime],
-                            hakukierrosPaattyy: Option[DateTime],
-                            tulostenJulkistusAlkaa: Option[DateTime],
-                            kaikkiJonotSijoittelussa: Option[DateTime],
-                            valintaesitysHyvaksyttavissa: Option[DateTime],
+                            varasijaSaannotAstuvatVoimaan: Option[ZonedDateTime],
+                            ilmoittautuminenPaattyy: Option[ZonedDateTime],
+                            hakukierrosPaattyy: Option[ZonedDateTime],
+                            tulostenJulkistusAlkaa: Option[ZonedDateTime],
+                            kaikkiJonotSijoittelussa: Option[ZonedDateTime],
+                            valintaesitysHyvaksyttavissa: Option[ZonedDateTime],
                             naytetaankoSiirryKelaanURL: Boolean,
                             sijoittelu: Boolean,
                             jarjestetytHakutoiveet: Boolean)
@@ -124,7 +125,7 @@ object OhjausparametritParser {
       jarjestetytHakutoiveet = (json \ "jarjestetytHakutoiveet").extractOrElse(false))
   }
 
-  private def parseDateTime(json: JValue): Option[DateTime] = {
-    json.extractOpt[Long].map(new DateTime(_))
+  private def parseDateTime(json: JValue): Option[ZonedDateTime] = {
+    json.extractOpt[Long].map(TimeUtil.epochMillisToZonedDateTime)
   }
 }
