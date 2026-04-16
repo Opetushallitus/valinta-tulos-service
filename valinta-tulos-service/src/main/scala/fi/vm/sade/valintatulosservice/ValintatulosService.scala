@@ -549,7 +549,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
       .map(piilotaKuvauksetEiJulkaistuiltaValintatapajonoilta)
       .map(piilotaVarasijanumeroJonoiltaJosValintatilaEiVaralla)
       .map(merkitseValintatapajonotPeruuntuneeksiKunEiVastaanottanutMääräaikaanMennessä)
-      .map(piilotaEhdollisenHyväksymisenEhdotJonoiltaKunEiEhdollisestiHyväksytty)
+      .map(piilotaEhdollisenHyväksymisenEhdotJonoiltaKunEiEhdollisestiHyväksyttyTaiVaralla)
       .map(muutaJonojenPeruuntumistenSyytHakukohteissaJoissaOnHyväksyttyTulos)
       .map(asetaShowMigriURL)
       .tulokset
@@ -557,13 +557,14 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     Hakemuksentulos(haku.oid, h.oid, sijoitteluTulos.hakijaOid.getOrElse(h.henkiloOid), ohjausparametrit.vastaanottoaikataulu, lopullisetTulokset)
   }
 
-  private def piilotaEhdollisenHyväksymisenEhdotJonoiltaKunEiEhdollisestiHyväksytty(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
+  private def piilotaEhdollisenHyväksymisenEhdotJonoiltaKunEiEhdollisestiHyväksyttyTaiVaralla(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
     tulokset.map {
       tulos =>
         tulos.copy(
           jonokohtaisetTulostiedot = tulos.jonokohtaisetTulostiedot.map {
             jonokohtainenTulostieto =>
-              if (jonokohtainenTulostieto.julkaistavissa && Valintatila.isHyväksytty(jonokohtainenTulostieto.valintatila)) {
+              if (jonokohtainenTulostieto.julkaistavissa && (Valintatila.isHyväksytty(jonokohtainenTulostieto.valintatila)
+                  || jonokohtainenTulostieto.valintatila.equals(Valintatila.varalla))) {
                 jonokohtainenTulostieto
               } else {
                 jonokohtainenTulostieto.copy(
