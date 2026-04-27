@@ -36,7 +36,8 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
                            yhdenPaikanSaannos: YhdenPaikanSaannos,
                            val appConfig: VtsAppConfig,
                            val audit: Audit,
-                           val hakemusRepository: HakemusRepository) extends Logging {
+                           val hakemusRepository: HakemusRepository,
+                           val timeUtil: TimeUtil) extends Logging {
   def getMuutoshistoriaForHakemusWithoutAuditInfo(hakemusOid: HakemusOid, valintatapajonoOid: ValintatapajonoOid): List[Muutos] = {
     valinnantulosRepository.getMuutoshistoriaForHakemus(hakemusOid, valintatapajonoOid)
   }
@@ -210,7 +211,8 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
           hakukohdeRecordService,
           ifUnmodifiedSince,
           audit,
-          hakemusRepository
+          hakemusRepository,
+          timeUtil
         )
       } else {
         new SijoittelunValinnantulosStrategy(
@@ -223,7 +225,8 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
           appConfig,
           valinnantulosRepository,
           ifUnmodifiedSince.getOrElse(throw new IllegalArgumentException(appConfig.settings.headerIfUnmodifiedSince + " on pakollinen otsake valinnantulosten tallennukselle")),
-          audit
+          audit,
+          timeUtil
         )
       }
       validateAndSaveValinnantuloksetInTransaction(valintatapajonoOid, hakukohde, strategy, valinnantulokset)

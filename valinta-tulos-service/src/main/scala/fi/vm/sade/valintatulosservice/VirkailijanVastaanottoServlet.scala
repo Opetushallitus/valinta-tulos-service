@@ -5,8 +5,9 @@ import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.json.JsonFormats.javaObjectToJsonString
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.VastaanottoRecord
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, PriorAcceptanceException, ValintatapajonoOid, VastaanottoEventDto, Vastaanottotila}
-import org.joda.time.DateTime
 import org.json4s.jackson.Serialization._
+
+import java.time.ZonedDateTime
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 import org.scalatra.{Forbidden, Ok}
@@ -155,5 +156,5 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
 
 case class Result(status: Int, message: Option[String])
 case class VastaanottoResult(henkiloOid: String, hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, result: Result)
-case class VastaanottoAikarajaMennyt(hakemusOid: HakemusOid, mennyt: Boolean, vastaanottoDeadline: Option[DateTime])
+case class VastaanottoAikarajaMennyt(hakemusOid: HakemusOid, mennyt: Boolean, vastaanottoDeadline: Option[ZonedDateTime])
 case class TilaHakijalle(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, valintatapajonoOid: ValintatapajonoOid, tilaHakijalle: String)

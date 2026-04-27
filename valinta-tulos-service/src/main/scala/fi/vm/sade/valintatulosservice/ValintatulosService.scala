@@ -36,18 +36,8 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
                           hakijaVastaanottoRepository: HakijaVastaanottoRepository,
                           hakukohdeRecordService: HakukohdeRecordService,
                           valintatulosDao: ValintarekisteriValintatulosDao,
-                          koodistoService: KoodistoService)(implicit appConfig: VtsAppConfig) extends Logging {
-  def this(valinnantulosRepository: ValinnantulosRepository,
-           sijoittelutulosService: SijoittelutulosService,
-           hakemusRepository: HakemusRepository,
-           virkailijaVastaanottoRepository: VirkailijaVastaanottoRepository,
-           ohjausparametritService: OhjausparametritService,
-           hakuService: HakuService,
-           hakijaVastaanottoRepository: HakijaVastaanottoRepository,
-           hakukohdeRecordService: HakukohdeRecordService,
-           valintatulosDao: ValintarekisteriValintatulosDao,
-           koodistoService: KoodistoService)(implicit appConfig: VtsAppConfig) =
-    this(valinnantulosRepository, sijoittelutulosService, ohjausparametritService, hakemusRepository, virkailijaVastaanottoRepository, hakuService, hakijaVastaanottoRepository, hakukohdeRecordService, valintatulosDao, koodistoService)
+                          koodistoService: KoodistoService,
+                          timeUtil: TimeUtil)(implicit appConfig: VtsAppConfig) extends Logging {
 
   def haunKoulutuksenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid: HakuOid) : Set[VastaanottoRecord] = {
     (for {
@@ -540,7 +530,8 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         haku,
         ohjausparametrit,
         checkJulkaisuAikaParametri,
-        hasHetu
+        hasHetu,
+        timeUtil
       )
     }
 
@@ -648,7 +639,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
   }
 
   private def asetaKelaURL(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
-    val hakukierrosEiOlePäättynyt = !ohjausparametrit.hakukierrosPaattyy.exists(_.isBeforeNow())
+    val hakukierrosEiOlePäättynyt = !ohjausparametrit.hakukierrosPaattyy.exists(timeUtil.isBeforeNow)
     val näytetäänSiirryKelaanURL = ohjausparametrit.naytetaankoSiirryKelaanURL
     val näytetäänKelaURL = if (hakukierrosEiOlePäättynyt && näytetäänSiirryKelaanURL && haku.sallittuKohdejoukkoKelaLinkille) Some(appConfig.settings.kelaURL) else None
 
@@ -682,7 +673,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
   }
 
   private def asetaShowMigriURL(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit): List[Hakutoiveentulos] = {
-    val hakukierrosEiOlePäättynyt = !ohjausparametrit.hakukierrosPaattyy.exists(_.isBeforeNow())
+    val hakukierrosEiOlePäättynyt = !ohjausparametrit.hakukierrosPaattyy.exists(timeUtil.isBeforeNow)
     val hakijaOnEuTaiEtaKansalainen = isEuTaiEtaKansalainen(hakemus.henkilotiedot.kansalaisuudet)
     val showMigriURL = if (hakukierrosEiOlePäättynyt && !hakijaOnEuTaiEtaKansalainen) Some(true) else Some(false)
 
@@ -837,7 +828,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
           logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja valintatila > peruuntunut, ei vastaanotettavissa {}", index)
           tulos.copy(valintatila = Valintatila.peruuntunut, vastaanotettavuustila = Vastaanotettavuustila.ei_vastaanotettavissa)
         } else if (index == firstHyvaksyttyUnderFirstVarallaAndNoPeruttuInBetween) {
-          if (ehdollinenVastaanottoMahdollista(ohjausparametrit)) {
+          if (ehdollinenVastaanottoMahdollista(ohjausparametrit, timeUtil.currentDateTime)) {
             logger.debug("sovellaSijoitteluaKayttanvaKorkeakouluhaunSaantoja vastaanotettavuustila > vastaanotettavissa_ehdollisesti {}", index)
             // Ehdollinen vastaanotto mahdollista
             tulos.copy(vastaanotettavuustila = Vastaanotettavuustila.vastaanotettavissa_ehdollisesti)
@@ -1028,7 +1019,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
 
   private def näytäVarasijaltaHyväksytytHyväksyttyinäJosVarasijasäännötEiVoimassa(hakemus: Hakemus, tulokset: List[Hakutoiveentulos], haku: Haku, ohjausparametrit: Ohjausparametrit) = {
     tulokset.map {
-      case tulos if tulos.valintatila == Valintatila.varasijalta_hyväksytty && !ehdollinenVastaanottoMahdollista(ohjausparametrit) =>
+      case tulos if tulos.valintatila == Valintatila.varasijalta_hyväksytty && !ehdollinenVastaanottoMahdollista(ohjausparametrit, timeUtil.currentDateTime) =>
         logger.debug("näytäVarasijaltaHyväksytytHyväksyttyinäJosVarasijasäännötEiVoimassa valintatila > hyväksytty")
         tulos.copy(valintatila = Valintatila.hyväksytty, tilanKuvaukset = Map.empty)
       case tulos =>

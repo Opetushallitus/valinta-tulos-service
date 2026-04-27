@@ -5,6 +5,7 @@ import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
 import java.util.UUID
 import fi.vm.sade.sijoittelu.domain.Valintatapajono.JonosijaTieto
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
+import fi.vm.sade.valintatulosservice.TimeUtil
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{VastaanottoAction, VastaanottoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.jackson.Serialization.read
@@ -360,7 +361,7 @@ trait ValintarekisteriResultExtractors {
   private def parseOffsetDateTime(r:PositionedResult):Option[OffsetDateTime] = {
     val d = r.rs.getObject(r.currentPos + 1, classOf[OffsetDateTime])
     r.skip
-    Option(d).map(d => OffsetDateTime.ofInstant(d.toInstant, ZoneId.of("Europe/Helsinki")))
+    Option(d).map(TimeUtil.inFinnishTimezone)
   }
 
   protected implicit val getOffsetDateTime: GetResult[OffsetDateTime] = GetResult(r => {
@@ -374,12 +375,12 @@ trait ValintarekisteriResultExtractors {
   protected implicit val getZonedDateTime: GetResult[ZonedDateTime] = GetResult(r => {
     val d = r.rs.getObject(r.currentPos + 1, classOf[OffsetDateTime])
     r.skip
-    d.atZoneSameInstant(ZoneId.of("Europe/Helsinki"))
+    d.atZoneSameInstant(TimeUtil.timezoneFi)
   })
 
   protected implicit val getZonedDateTimeOption: GetResult[Option[ZonedDateTime]] = GetResult(r => {
     val d = r.rs.getObject(r.currentPos + 1, classOf[OffsetDateTime])
-    Option(d).map(_.atZoneSameInstant(ZoneId.of("Europe/Helsinki")))
+    Option(d).map(_.atZoneSameInstant(TimeUtil.timezoneFi))
   })
 
   implicit val getHakuOid: GetResult[HakuOid] = GetResult(r => {
@@ -460,7 +461,7 @@ trait ValintarekisteriResultExtractors {
 
   implicit object SetInstant extends SetParameter[Instant] {
     def apply(v: Instant, pp: PositionedParameters): Unit = {
-      pp.setObject(OffsetDateTime.ofInstant(v, ZoneId.of("Europe/Helsinki")), JDBCType.TIMESTAMP_WITH_TIMEZONE.getVendorTypeNumber)
+      pp.setObject(OffsetDateTime.ofInstant(v, TimeUtil.timezoneFi), JDBCType.TIMESTAMP_WITH_TIMEZONE.getVendorTypeNumber)
     }
   }
 
