@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice.hakemus
 
+import java.time.OffsetDateTime
 import java.util.concurrent.TimeUnit
 
 import fi.vm.sade.javautils.nio.cas.{CasClient, CasClientBuilder}
@@ -25,7 +26,12 @@ case class AtaruHakemus(oid: HakemusOid,
                         henkiloOid: HakijaOid,
                         asiointikieli: String,
                         email: String,
-                        paymentObligations: Map[String, String])
+                        paymentObligations: Map[String, String],
+                        jattoAjanhetki: Option[OffsetDateTime] = None,
+                        lahiosoite: Option[String] = None,
+                        postinumero: Option[String] = None,
+                        postitoimipaikka: Option[String] = None,
+                        puhelinnumero: Option[String] = None)
 
 case class AtaruResponse(applications: List[AtaruHakemus], offset: Option[String])
 
@@ -46,8 +52,8 @@ case class WithHakukohdeOid(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid, offset
   override def withOffset(newOffset: Option[String]): HakemuksetQuery = this.copy(offset = newOffset)
 }
 
-case class WithHakemusOids(hakemusOids: List[HakemusOid], offset: Option[String]) extends HakemuksetQuery {
-  override val postData: JObject = ("hakemusOids" -> hakemusOids.map(_.s)) ~ offset.fold(JObject())("offset" -> _)
+case class WithHakemusOids(hakemusOids: List[HakemusOid], offset: Option[String], includeYhteystiedot: Boolean = false) extends HakemuksetQuery {
+  override val postData: JObject = ("hakemusOids" -> hakemusOids.map(_.s)) ~ ("includeYhteystiedot" -> includeYhteystiedot) ~ offset.fold(JObject())("offset" -> _)
 
   override def withOffset(newOffset: Option[String]): HakemuksetQuery = this.copy(offset = newOffset)
 }
