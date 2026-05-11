@@ -14,6 +14,7 @@ import fi.vm.sade.valintatulosservice.koodisto.{CachedKoodistoService, RemoteKoo
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.migraatio.vastaanotot.HakijaResolver
 import fi.vm.sade.valintatulosservice.migri.MigriService
+import fi.vm.sade.valintatulosservice.oili.OiliService
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{CachedOhjausparametritService, RemoteOhjausparametritService, StubbedOhjausparametritService}
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.OppijanumerorekisteriService
 import fi.vm.sade.valintatulosservice.organisaatio.OrganisaatioService
@@ -188,6 +189,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         "/cas/haku", "cas/haku")
       context.mount(new KelaServlet(audit, new KelaService(HakijaResolver(appConfig), hakuService, valintarekisteriDb), valintarekisteriDb), "/cas/kela", "cas/kela")
       context.mount(new MigriServlet(audit, new MigriService(hakemusRepository, hakuService, valinnantulosService, oppijanumerorekisteriService, valintarekisteriDb, lukuvuosimaksuService, HakijaResolver(appConfig)), valintarekisteriDb), "/cas/migri", "cas/migri")
+      context.mount(new OiliServlet(audit, new OiliService(ataruHakemusRepository, hakuService, valinnantulosService, oppijanumerorekisteriService, valintarekisteriDb, cachedOhjausparametritService), valintarekisteriDb), "/cas/oili", "cas/oili")
 
       val valintaesitysService = new ValintaesitysService(hakuService, authorizer, valintarekisteriDb, valintarekisteriDb, audit)
 
