@@ -13,6 +13,8 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantulosService}
 import org.joda.time.DateTime
 
+import java.time.OffsetDateTime
+
 class OiliService(hakemusRepository: AtaruHakemusRepository,
                   hakuService: HakuService,
                   valinnantulosService: ValinnantulosService,
@@ -54,11 +56,20 @@ class OiliService(hakemusRepository: AtaruHakemusRepository,
           etunimet = henkilo.etunimet,
           kutsumanimi = henkilo.kutsumanimi,
           henkilotunnus = henkilo.hetu.map(_.toString),
-          asiointikieli = henkilo.asiointiKieli,
+          asiointikieli = resolveAsiointikieli(henkilo, ataruByOid),
           hakemukset = hakemukset
         ))
       }
     }
+  }
+
+  private def resolveAsiointikieli(henkilo: Henkilo, ataruByOid: Map[HakemusOid, AtaruHakemus]): Option[String] = {
+    henkilo.asiointiKieli.filter(_.nonEmpty).orElse(
+      ataruByOid.values.toList
+        .sortBy(_.jattoAjanhetki)(Ordering[Option[OffsetDateTime]].reverse)
+        .map(_.asiointikieli)
+        .find(_.nonEmpty)
+    )
   }
 
   private def fetchAtaruHakemukset(hakemusOids: Set[HakemusOid]): Map[HakemusOid, AtaruHakemus] = {
