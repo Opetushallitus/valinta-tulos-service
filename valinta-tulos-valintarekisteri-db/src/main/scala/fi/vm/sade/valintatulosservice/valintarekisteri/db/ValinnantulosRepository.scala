@@ -103,5 +103,7 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
 
   def getHakijanHyvaksytValinnantilat(hakijaOid: HakijaOid): Set[HyvaksyttyValinnanTila]
 
+  def getHakijanVastaanotetutValinnantilat(hakijaOid: HakijaOid): Set[HyvaksyttyValinnanTila]
+
   def getHaunJulkaisemattomatHakukohteet(hakuOid: HakuOid): Set[HakukohdeOid]
 }
