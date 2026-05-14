@@ -26,12 +26,12 @@ class OiliService(hakemusRepository: AtaruHakemusRepository,
     ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI,
     ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT)
 
-  def getOiliHakijatByOids(hakijaOids: Set[HakijaOid], auditInfo: AuditInfo): List[OiliHakija] = {
-    val henkiloMap = oppijanumerorekisteriService.henkilot(hakijaOids).fold(
-      e => throw new RuntimeException(s"OILI: ONR-haku epäonnistui oideille $hakijaOids", e),
+  def getOiliHakija(hakijaOid: HakijaOid, auditInfo: AuditInfo): Option[OiliHakija] = {
+    val henkiloMap = oppijanumerorekisteriService.henkilot(Set(hakijaOid)).fold(
+      e => throw new RuntimeException(s"OILI: ONR-haku epäonnistui oidille $hakijaOid", e),
       identity
     )
-    hakijaOids.toList.flatMap(oid => buildOiliHakija(oid, henkiloMap.get(oid), auditInfo))
+    buildOiliHakija(hakijaOid, henkiloMap.get(hakijaOid), auditInfo)
   }
 
   private def buildOiliHakija(oid: HakijaOid, henkiloOpt: Option[Henkilo], auditInfo: AuditInfo): Option[OiliHakija] = {
