@@ -61,28 +61,20 @@ class OiliServletSpec extends Specification with EmbeddedJettyContainer with Htt
   private val hakijaOid = HakijaOid("1.2.246.562.24.51986460849")
   private val henkilo = Henkilo(hakijaOid, None, None, Some("Sukunimi"), Some("Etunimet"), None, None)
 
-  "POST /cas/oili/hakemukset/henkilo-oidit" in {
+  "GET /cas/oili/ilmoittautuja/:henkiloOid" in {
     "palauttaa 403 jos ei OILI_READ-roolia" in { t: (String, OiliService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, AtaruHakemusRepository, OhjausparametritService) =>
       t._3.get(any()) returns Some(sessionWithoutOili)
-      post(t._1 + "/hakemukset/henkilo-oidit", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
+      get(t._1 + s"/ilmoittautuja/${hakijaOid.toString}", Seq.empty, headers) {
         status must_== 403
       }
     }
 
-    "palauttaa 400 jos pyynnössä ei ole yhtään oppijanumeroa" in { t: (String, OiliService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, AtaruHakemusRepository, OhjausparametritService) =>
-      t._3.get(any()) returns Some(oiliSession)
-      post(t._1 + "/hakemukset/henkilo-oidit", "[]".getBytes("UTF-8"), headers) {
-        status must_== 400
-      }
-    }
-
-    "palauttaa tyhjän listan kun henkilöllä ei ole vastaanotettuja paikkoja" in { t: (String, OiliService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, AtaruHakemusRepository, OhjausparametritService) =>
+    "palauttaa 404 kun henkilöllä ei ole vastaanotettuja paikkoja" in { t: (String, OiliService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, AtaruHakemusRepository, OhjausparametritService) =>
       t._3.get(any()) returns Some(oiliSession)
       t._4.henkilot(Set(hakijaOid)) returns Right(Map(hakijaOid -> henkilo))
       t._5.getHakijanVastaanotetutValinnantilat(hakijaOid) returns Set.empty[HyvaksyttyValinnanTila]
-      post(t._1 + "/hakemukset/henkilo-oidit", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
-        status must_== 200
-        body must_== "[]"
+      get(t._1 + s"/ilmoittautuja/${hakijaOid.toString}", Seq.empty, headers) {
+        status must_== 404
       }
     }
 
@@ -115,7 +107,7 @@ class OiliServletSpec extends Specification with EmbeddedJettyContainer with Htt
       t._7.getHaku(hakuOid) returns Right(hakuFixture(hakuOid))
       t._9.ohjausparametrit(hakuOid) returns Right(Ohjausparametrit.empty)
 
-      post(t._1 + "/hakemukset/henkilo-oidit", "[\"1.2.246.562.24.51986460849\"]".getBytes("UTF-8"), headers) {
+      get(t._1 + s"/ilmoittautuja/${hakijaOid.toString}", Seq.empty, headers) {
         status must_== 200
         body must contain("\"asiointikieli\":\"sv\"")
       }
