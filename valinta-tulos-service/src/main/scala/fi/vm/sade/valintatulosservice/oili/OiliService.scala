@@ -46,7 +46,13 @@ class OiliService(hakemusRepository: AtaruHakemusRepository,
           .filter(t => vastaanotonTilatHyvaksytaan.contains(t.valinnantulos.vastaanottotila))
           .groupBy(_.valinnantulos.hakemusOid)
 
-        val hakemukset = ataruByOid.values.toList.map(buildOiliHakemus(_, tuloksetByHakemus))
+        val hakuOidit: Set[HakuOid] = ataruByOid.values.map(_.hakuOid).toSet
+        val hakuAktiivinenByOid: Map[HakuOid, Boolean] =
+          hakuOidit.map(oid => oid -> isHakuAktiivinen(oid)).toMap
+
+        val hakemukset = ataruByOid.values.toList
+          .filter(a => hakuAktiivinenByOid.getOrElse(a.hakuOid, false))
+          .map(buildOiliHakemus(_, tuloksetByHakemus))
           .filter(_.hakukohteet.nonEmpty)
 
         if (hakemukset.isEmpty) None
@@ -168,4 +174,13 @@ class OiliService(hakemusRepository: AtaruHakemusRepository,
       o => Ilmoittautumisaika(None, o.ilmoittautuminenPaattyy.map(new DateTime(_).withTime(23, 59, 59, 999))).aktiivinen
     )
   }
+
+  private def isHakuAktiivinen(hakuOid: HakuOid): Boolean =
+    ohjausparametritService.ohjausparametrit(hakuOid).fold(
+      e => {
+        logger.warn(s"OILI: ohjausparametrien haku epäonnistui haulle $hakuOid, sivuutetaan: ${e.getMessage}")
+        false
+      },
+      o => o.hakukierrosPaattyy.exists(!_.isBeforeNow)
+    )
 }

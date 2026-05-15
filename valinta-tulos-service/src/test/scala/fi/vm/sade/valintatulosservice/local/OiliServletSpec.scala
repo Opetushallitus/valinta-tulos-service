@@ -13,6 +13,7 @@ import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, HakuService, HakukohdeOili, YhdenPaikanSaanto}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SessionRepository, ValinnantulosRepository}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import org.joda.time.DateTime
 import org.junit.runner.RunWith
 import org.scalatra.swagger.Swagger
 import org.scalatra.test.{EmbeddedJettyContainer, HttpComponentsClient}
@@ -105,14 +106,83 @@ class OiliServletSpec extends Specification with EmbeddedJettyContainer with Htt
       t._7.getHakukohdeOili(hakukohdeOid1) returns Right(hakukohdeOiliFixture(hakukohdeOid1, hakuOid))
       t._7.getHakukohdeOili(hakukohdeOid2) returns Right(hakukohdeOiliFixture(hakukohdeOid2, hakuOid))
       t._7.getHaku(hakuOid) returns Right(hakuFixture(hakuOid))
-      t._9.ohjausparametrit(hakuOid) returns Right(Ohjausparametrit.empty)
+      t._9.ohjausparametrit(hakuOid) returns Right(aktiivinenOhjausparametrit)
 
       get(t._1 + s"/ilmoittautuja/${hakijaOid.toString}", Seq.empty, headers) {
         status must_== 200
         body must contain("\"asiointikieli\":\"sv\"")
       }
     }
+
+    "palauttaa 404 kun haun hakukierros on päättynyt" in { t: (String, OiliService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, AtaruHakemusRepository, OhjausparametritService) =>
+      val hakemusOid = HakemusOid("1.2.246.562.11.00000000001")
+      val hakukohdeOid = HakukohdeOid("1.2.246.562.20.00000000001")
+      val hakuOid = HakuOid("1.2.246.562.29.00000000001")
+
+      t._3.get(any()) returns Some(oiliSession)
+      t._4.henkilot(Set(hakijaOid)) returns Right(Map(hakijaOid -> henkilo))
+      t._5.getHakijanVastaanotetutValinnantilat(hakijaOid) returns Set(
+        HyvaksyttyValinnanTila(hakemusOid, hakukohdeOid)
+      )
+      t._8.getHakemukset(any[WithHakemusOids]()) returns Right(AtaruResponse(
+        List(ataruHakemusFixture(hakemusOid, hakuOid, hakukohdeOid, asiointikieli = "fi", jattoAjanhetki = None)),
+        None
+      ))
+      t._6.getValinnantuloksetForHakemukset(any[Set[HakemusOid]], any[AuditInfo]) returns
+        Set(valinnantulosFixture(hakemusOid, hakukohdeOid))
+      t._7.getHakukohdeOili(hakukohdeOid) returns Right(hakukohdeOiliFixture(hakukohdeOid, hakuOid))
+      t._7.getHaku(hakuOid) returns Right(hakuFixture(hakuOid))
+      t._9.ohjausparametrit(hakuOid) returns Right(paattynytOhjausparametrit)
+
+      get(t._1 + s"/ilmoittautuja/${hakijaOid.toString}", Seq.empty, headers) {
+        status must_== 404
+      }
+    }
+
+    "suodattaa pois hakemukset, joiden haun hakukierros on päättynyt" in { t: (String, OiliService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, AtaruHakemusRepository, OhjausparametritService) =>
+      val aktiivinenHakemusOid = HakemusOid("1.2.246.562.11.00000000001")
+      val paattynytHakemusOid = HakemusOid("1.2.246.562.11.00000000002")
+      val aktiivinenHakukohdeOid = HakukohdeOid("1.2.246.562.20.00000000001")
+      val paattynytHakukohdeOid = HakukohdeOid("1.2.246.562.20.00000000002")
+      val aktiivinenHakuOid = HakuOid("1.2.246.562.29.00000000001")
+      val paattynytHakuOid = HakuOid("1.2.246.562.29.00000000002")
+
+      t._3.get(any()) returns Some(oiliSession)
+      t._4.henkilot(Set(hakijaOid)) returns Right(Map(hakijaOid -> henkilo))
+      t._5.getHakijanVastaanotetutValinnantilat(hakijaOid) returns Set(
+        HyvaksyttyValinnanTila(aktiivinenHakemusOid, aktiivinenHakukohdeOid),
+        HyvaksyttyValinnanTila(paattynytHakemusOid, paattynytHakukohdeOid)
+      )
+      t._8.getHakemukset(any[WithHakemusOids]()) returns Right(AtaruResponse(List(
+        ataruHakemusFixture(aktiivinenHakemusOid, aktiivinenHakuOid, aktiivinenHakukohdeOid,
+          asiointikieli = "fi", jattoAjanhetki = None),
+        ataruHakemusFixture(paattynytHakemusOid, paattynytHakuOid, paattynytHakukohdeOid,
+          asiointikieli = "fi", jattoAjanhetki = None)
+      ), None))
+      t._6.getValinnantuloksetForHakemukset(any[Set[HakemusOid]], any[AuditInfo]) returns Set(
+        valinnantulosFixture(aktiivinenHakemusOid, aktiivinenHakukohdeOid),
+        valinnantulosFixture(paattynytHakemusOid, paattynytHakukohdeOid)
+      )
+      t._7.getHakukohdeOili(aktiivinenHakukohdeOid) returns Right(hakukohdeOiliFixture(aktiivinenHakukohdeOid, aktiivinenHakuOid))
+      t._7.getHakukohdeOili(paattynytHakukohdeOid) returns Right(hakukohdeOiliFixture(paattynytHakukohdeOid, paattynytHakuOid))
+      t._7.getHaku(aktiivinenHakuOid) returns Right(hakuFixture(aktiivinenHakuOid))
+      t._7.getHaku(paattynytHakuOid) returns Right(hakuFixture(paattynytHakuOid))
+      t._9.ohjausparametrit(aktiivinenHakuOid) returns Right(aktiivinenOhjausparametrit)
+      t._9.ohjausparametrit(paattynytHakuOid) returns Right(paattynytOhjausparametrit)
+
+      get(t._1 + s"/ilmoittautuja/${hakijaOid.toString}", Seq.empty, headers) {
+        status must_== 200
+        body must contain(aktiivinenHakemusOid.toString)
+        body must not(contain(paattynytHakemusOid.toString))
+      }
+    }
   }
+
+  private val aktiivinenOhjausparametrit: Ohjausparametrit =
+    Ohjausparametrit.empty.copy(hakukierrosPaattyy = Some(DateTime.now.plusYears(1)))
+
+  private val paattynytOhjausparametrit: Ohjausparametrit =
+    Ohjausparametrit.empty.copy(hakukierrosPaattyy = Some(DateTime.now.minusDays(1)))
 
   private def ataruHakemusFixture(hakemusOid: HakemusOid, hakuOid: HakuOid, hakukohdeOid: HakukohdeOid,
                                   asiointikieli: String, jattoAjanhetki: Option[OffsetDateTime]): AtaruHakemus =
