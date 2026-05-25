@@ -224,6 +224,9 @@ class VastaanottoService(hakuService: HakuService,
     } yield ()
   }
 
+  def tallennaPaatettavatOpiskeluOikeudet(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, oikeudet: List[PaatettavaOpiskeluOikeus]) = {
+  }
+
   private def findHakutoive(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Either[Throwable, Unit] = {
     for {
       hakemus <- valintatulosService.hakemuksentulos(hakemusOid).toRight(new IllegalArgumentException(s"Hakemusta $hakemusOid ei löydy")).right

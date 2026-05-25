@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijanVastaanottoAction, HakijanVastaanottoDto, HakukohdeOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EnrichedHakijanVastaanottoAction, HakemusOid, HakijanVastaanottoAction, HakijanVastaanottoDto, HakukohdeOid}
 import fi.vm.sade.valintatulosservice.vastaanotto.HakijanVastaanottoActionSerializer
 import org.json4s._
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
@@ -17,9 +17,13 @@ class AuthenticatedHakijanVastaanottoServlet(vastaanottoService: VastaanottoServ
   private implicit val jsonFormatsForHakija: Formats = jsonFormats ++ List(new HakijanVastaanottoActionSerializer)
 
   private val hakijanVastaanottoActionModel = Model(
-    id = classOf[HakijanVastaanottoAction].getSimpleName,
-    name = classOf[HakijanVastaanottoAction].getSimpleName,
-    properties = List("action" -> ModelProperty(`type` = DataType.String, required = true, allowableValues = AllowableValues(HakijanVastaanottoAction.values))))
+    id = classOf[EnrichedHakijanVastaanottoAction].getSimpleName,
+    name = classOf[EnrichedHakijanVastaanottoAction].getSimpleName,
+    properties = List(
+      "action" -> ModelProperty(`type` = DataType.String, required = true, allowableValues = AllowableValues(HakijanVastaanottoAction.values)),
+      "paatettavatOpiskeluOikeudet" -> ModelProperty(`type` = DataType.Void, required = false)
+    ))
+  registerModel(hakijanVastaanottoActionModel)
 
   val postVastaanottoSwagger: OperationBuilder = (apiOperation[Unit]("authPostVastaanotto")
     summary "Tallenna hakemuksen hakutoiveelle uusi vastaanottotila"
@@ -32,13 +36,16 @@ class AuthenticatedHakijanVastaanottoServlet(vastaanottoService: VastaanottoServ
     authorize(Role.VALINTATULOSSERVICE_CRUD_OPH)
     val hakemusOid = HakemusOid(params("hakemusOid"))
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
-    val action = parsedBody.extract[HakijanVastaanottoAction]
+    val body = parsedBody.extract[EnrichedHakijanVastaanottoAction]
+    val action = body.action
     val builder = new Target.Builder()
       .setField("vastaanottoAction", action.toString)
     audit.log(auditInfo.user, VastaanottotiedonMuokkaus, builder.build(), new Changes.Builder().build())
     
-    vastaanottoService.vastaanotaHakijana(HakijanVastaanottoDto(hakemusOid, hakukohdeOid, action))
-      .left.foreach(e => throw e)
+    vastaanottoService.vastaanotaHakijana(HakijanVastaanottoDto(hakemusOid, hakukohdeOid, HakijanVastaanottoAction(body.action.toString))).fold(
+      e => throw e,
+      _ => vastaanottoService.tallennaPaatettavatOpiskeluOikeudet(hakemusOid, hakukohdeOid, body.paatettavatOpiskeluOikeudet)
+    )
   }
 
 }

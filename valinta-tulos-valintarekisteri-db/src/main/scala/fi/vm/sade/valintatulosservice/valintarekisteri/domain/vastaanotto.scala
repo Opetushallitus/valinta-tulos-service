@@ -41,6 +41,21 @@ trait VastaanottoAction {
 
 trait HakijanVastaanottoAction extends VastaanottoAction
 
+case class TranslatedName(fi: String, sv: String, en: String)
+
+case class PaatettavaOpiskeluOikeus(
+  virtaOpiskeluOikeusId: String,
+  organisaatioOid: String,
+  organisaatioNimi: TranslatedName,
+  virtaNimi: TranslatedName,
+  supaNimi: TranslatedName
+)
+
+trait EnrichedHakijanVastaanottoAction {
+  def action: ValintatuloksenTila
+  def paatettavatOpiskeluOikeudet: List[PaatettavaOpiskeluOikeus]
+}
+
 sealed trait VirkailijanVastaanottoAction extends VastaanottoAction
 
 case object Peru extends VirkailijanVastaanottoAction with HakijanVastaanottoAction {
