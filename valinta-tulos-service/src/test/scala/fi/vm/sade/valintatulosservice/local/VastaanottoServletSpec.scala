@@ -1,11 +1,13 @@
 package fi.vm.sade.valintatulosservice.local
 
+import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
 import fi.vm.sade.valintatulosservice.ServletSpecification
 import fi.vm.sade.valintatulosservice.domain.{Hakemuksentulos, Valintatila}
 import fi.vm.sade.valintatulosservice.json.JsonFormats
+import fi.vm.sade.valintatulosservice.json.JsonFormats.javaObjectToJsonString
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOidSerializer, HakuOidSerializer, HakukohdeOidSerializer, ValintatapajonoOidSerializer, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EnrichedHakijanVastaanottoAction, HakemusOidSerializer, HakijanVastaanottoAction, HakuOidSerializer, HakukohdeOidSerializer, Peru, ValintatapajonoOidSerializer, VastaanotaEhdollisesti, VastaanotaSitovasti, Vastaanottotila}
 import org.json4s.{DefaultFormats, Formats}
 import org.json4s.jackson.Serialization
 import org.junit.runner.RunWith
@@ -74,7 +76,7 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
     "vaatii autentikoinnin" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")
 
-      vastaanotaAuthenticated("VastaanotaSitovasti") {
+      vastaanotaAuthenticated(VastaanotaSitovasti) {
         status must_== 401
       }
     }
@@ -84,7 +86,7 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
       val testSessionWithInadequateCredentials: String = createTestSession(roles = Set(Role.SIJOITTELU_CRUD, Role.VALINTATULOSSERVICE_CRUD))
       val headers = Map("Cookie" -> s"session=${testSessionWithInadequateCredentials}")
 
-      vastaanotaAuthenticated("VastaanotaSitovasti", headers = headers) {
+      vastaanotaAuthenticated(VastaanotaSitovasti, headers = headers) {
         status must_== 403
       }
     }
@@ -92,7 +94,7 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
     "vastaanottaa opiskelupaikan" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")
 
-      vastaanotaAuthenticated("VastaanotaSitovasti", headers = authHeaders) {
+      vastaanotaAuthenticated(VastaanotaSitovasti, headers = authHeaders) {
         status must_== 200
 
         get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
@@ -107,7 +109,7 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
     "peruu opiskelupaikan" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")
 
-      vastaanotaAuthenticated("Peru", headers = authHeaders) {
+      vastaanotaAuthenticated(Peru, headers = authHeaders) {
         status must_== 200
 
         get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
@@ -122,7 +124,7 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
     "vastaanottaa ehdollisesti" in {
       useFixture("hyvaksytty-ylempi-varalla.json")
 
-      vastaanotaAuthenticated("VastaanotaEhdollisesti", hakukohde = "1.2.246.562.5.16303028779", headers = authHeaders) {
+      vastaanotaAuthenticated(VastaanotaEhdollisesti, hakukohde = "1.2.246.562.5.16303028779", headers = authHeaders) {
         status must_== 200
 
         get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
@@ -145,9 +147,10 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
     }
   }
 
-  def vastaanotaAuthenticated[T](action: String, hakukohde: String = "1.2.246.562.5.72607738902", hakemusOid: String = "1.2.246.562.11.00000441369", headers: Map[String, String] = Map.empty)(block: => T): T = {
+  def vastaanotaAuthenticated[T](action: HakijanVastaanottoAction, hakukohde: String = "1.2.246.562.5.72607738902", hakemusOid: String = "1.2.246.562.11.00000441369", headers: Map[String, String] = Map.empty)(block: => T): T = {
+    val vastaanotto = javaObjectToJsonString(EnrichedHakijanVastaanottoAction(action = action, paatettavatOpiskeluOikeudet = List.empty))
     postJSON(s"""auth/vastaanotto/hakemus/$hakemusOid/hakukohde/$hakukohde""",
-      s"""{"action":"$action"}""", headers) {
+      vastaanotto, headers) {
       block
     }
   }

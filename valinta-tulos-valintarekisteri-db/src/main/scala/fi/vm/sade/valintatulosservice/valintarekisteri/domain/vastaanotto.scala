@@ -51,10 +51,7 @@ case class PaatettavaOpiskeluOikeus(
   supaNimi: TranslatedName
 )
 
-trait EnrichedHakijanVastaanottoAction {
-  def action: ValintatuloksenTila
-  def paatettavatOpiskeluOikeudet: List[PaatettavaOpiskeluOikeus]
-}
+case class EnrichedHakijanVastaanottoAction(action: HakijanVastaanottoAction, paatettavatOpiskeluOikeudet: List[PaatettavaOpiskeluOikeus])
 
 sealed trait VirkailijanVastaanottoAction extends VastaanottoAction
 
