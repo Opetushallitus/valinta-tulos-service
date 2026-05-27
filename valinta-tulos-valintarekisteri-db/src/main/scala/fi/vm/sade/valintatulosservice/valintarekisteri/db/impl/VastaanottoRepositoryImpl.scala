@@ -218,15 +218,13 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
   }
 
   override def storePaatetettavatOpiskeluOikeudet(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid, oikeudet: String): Unit = {
-    runAsSerialized(2, Duration(10, TimeUnit.MILLISECONDS), s"Storing paatettavat opiskeluoikeudet hakemukselle $hakemusOid ja hakukohteelle $hakukohdeOid",
-      tallennaPaatettavatOpiskeluOikeudet(henkiloOid, hakukohdeOid, hakemusOid, oikeudet)
-    )
+    runBlocking(tallennaPaatettavatOpiskeluOikeudet(henkiloOid, hakukohdeOid, hakemusOid, oikeudet))
   }
 
   private def tallennaPaatettavatOpiskeluOikeudet(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid, oikeudet: String): DBIO[Unit] = {
-    sqlu"""insert into paatettavat_opiskeluoikeudet (henkilo_oid, hakukohde_oid, hakemus_oid, oikeudet, vastaanotto_id)
-              values($henkiloOid, $hakukohdeOid, $hakemusOid, $oikeudet::json,
-              select vo.id from vastaanotto vo where vo.henkilo = $henkiloOid and vo.hakukohde = $hakukohdeOid and vo.deleted is null)""".andThen(DBIO.successful())
+    sqlu"""insert into paatettavat_opiskeluoikeudet (henkilo_oid, hakukohde_oid, hakemus_oid, paatettavat_oikeudet, vastaanotto_id)
+              values($henkiloOid, $hakukohdeOid, $hakemusOid, $oikeudet::json, (select vo.id from vastaanotot vo where vo.henkilo = $henkiloOid and vo.hakukohde = $hakukohdeOid and vo.deleted is null))"""
+      .andThen(DBIO.successful())
   }
 
   private def tallennaVastaanottoTapahtumaAction(vastaanottoEvent: VastaanottoEvent, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {

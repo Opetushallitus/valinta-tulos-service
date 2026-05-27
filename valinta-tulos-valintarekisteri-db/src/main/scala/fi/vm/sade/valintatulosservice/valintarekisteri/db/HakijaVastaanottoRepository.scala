@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db
 import java.time.{Instant, OffsetDateTime}
 import java.util.Date
 import java.util.concurrent.TimeUnit
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, Kausi, PaatettavaOpiskeluOikeus}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, Kausi}
 import slick.dbio.DBIO
 
 import scala.concurrent.duration.Duration
