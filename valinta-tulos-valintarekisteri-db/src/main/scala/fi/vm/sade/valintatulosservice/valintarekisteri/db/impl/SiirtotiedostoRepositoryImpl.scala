@@ -156,10 +156,15 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
   override def getChangedHakukohdeoidsForValinnantulokset(s: String, e: String): List[HakukohdeOid] = {
     timed(s"Getting changed hakukohdeoids between $s and $e", 100) {
       runBlocking(
-        sql"""select distinct hakukohde_oid
-                from valinnantilat vt
-                where lower(system_time) >= $s::timestamptz
-                and lower(system_time) <= $e::timestamptz
+        sql"""select distinct vti.hakukohde_oid
+                from valinnantilat vti
+                where lower(vti.system_time) >= $s::timestamptz
+                and lower(vti.system_time) <= $e::timestamptz
+              union all
+                select distinct vtu.hakukohde_oid
+                  from valinnantulokset vtu
+                  where lower(vtu.system_time) >= $s::timestamptz
+                  and lower(vtu.system_time) <= $e::timestamptz
               union all
                 select distinct vtj.hakukohde_oid from valintatapajonot vtj join sijoitteluajot sa on sa.id = vtj.sijoitteluajo_id
                   where lower(sa.system_time) >= $s::timestamptz
