@@ -53,7 +53,8 @@ case class SiirtotiedostoValinnantulos(hakukohdeOid: HakukohdeOid,
                                        julkaistavissa: Option[Boolean],
                                        hyvaksyttyVarasijalta: Option[Boolean],
                                        hyvaksyPeruuntunut: Option[Boolean],
-                                       valinnantilanViimeisinMuutos: String)
+                                       valinnantilanViimeisinMuutos: String,
+                                       muokattu: String)
 
 case class SiirtotiedostoValintatapajonoRecord(tasasijasaanto: String,
                                                oid: ValintatapajonoOid,
@@ -339,7 +340,13 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
                 tu.julkaistavissa,
                 tu.hyvaksytty_varasijalta,
                 tu.hyvaksy_peruuntunut,
-                ti.tilan_viimeisin_muutos
+                ti.tilan_viimeisin_muutos,
+                greatest(
+                  case when upper(ti.system_time) is null then lower(ti.system_time) else upper(ti.system_time) end,
+                  case when upper(eh.system_time) is null then lower(eh.system_time) else upper(eh.system_time) end,
+                  case when upper(tu.system_time) is null then lower(tu.system_time) else upper(tu.system_time) end,
+                  case when upper(tk.system_time) is null then lower(tk.system_time) else upper(tk.system_time) end
+                ) as muokattu
             from valinnantilat as ti
             left join ehdollisen_hyvaksynnan_ehto as eh on eh.hakemus_oid = ti.hakemus_oid
                 and eh.valintatapajono_oid = ti.valintatapajono_oid
