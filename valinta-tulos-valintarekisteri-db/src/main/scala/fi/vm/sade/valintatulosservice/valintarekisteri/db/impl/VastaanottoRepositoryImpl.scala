@@ -222,8 +222,13 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
   }
 
   private def tallennaPaatettavatOpiskeluOikeudet(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid, oikeudet: String): DBIO[Unit] = {
-    sqlu"""insert into paatettavat_opiskeluoikeudet (henkilo_oid, hakukohde_oid, hakemus_oid, paatettavat_oikeudet, vastaanotto_id)
-              values($henkiloOid, $hakukohdeOid, $hakemusOid, $oikeudet::json, (select vo.id from vastaanotot vo where vo.henkilo = $henkiloOid and vo.hakukohde = $hakukohdeOid and vo.deleted is null))"""
+    sqlu"""insert into paatettavat_opiskeluoikeudet (henkilo_oid, hakukohde_oid, hakemus_oid, paatettavat_oikeudet)
+              values($henkiloOid, $hakukohdeOid, $hakemusOid, $oikeudet::json)
+            on conflict on constraint paatettavat_opiskeluoikeudet_pkey do update set
+              paatettavat_oikeudet = $oikeudet::json
+            where paatettavat_opiskeluoikeudet.henkilo_oid = $henkiloOid
+              and paatettavat_opiskeluoikeudet.hakukohde_oid = $hakukohdeOid
+              and paatettavat_opiskeluoikeudet.hakemus_oid = $hakemusOid"""
       .andThen(DBIO.successful())
   }
 

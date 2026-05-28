@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.auditlog.{Audit, Changes, Target}
 import fi.vm.sade.valintatulosservice.security.Role
+import fi.vm.sade.valintatulosservice.valinnantulos.VastaanottoValidator.sitovaTaiEhdollinenVastaanotto
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EnrichedHakijanVastaanottoAction, HakemusOid, HakijanVastaanottoAction, HakijanVastaanottoDto, HakukohdeOid, PaatettavaOpiskeluOikeus}
 import org.json4s.JsonAST.{JField, JObject, JString}
@@ -55,9 +56,9 @@ class AuthenticatedHakijanVastaanottoServlet(vastaanottoService: VastaanottoServ
       .setField("vastaanottoAction", body.action.toString)
     audit.log(auditInfo.user, VastaanottotiedonMuokkaus, builder.build(), new Changes.Builder().build())
     
-    vastaanottoService.vastaanotaHakijana(HakijanVastaanottoDto(hakemusOid, hakukohdeOid, HakijanVastaanottoAction(body.action.toString))).fold(
+    vastaanottoService.vastaanotaHakijana(HakijanVastaanottoDto(hakemusOid, hakukohdeOid, body.action)).fold(
       e => throw e,
-      _ => if (oikeudet.nonEmpty) {
+      _ => if (sitovaTaiEhdollinenVastaanotto.contains(body.action.valintatuloksenTila)) {
         logger.info(s"Tallennetaan päätettävät opiskeluoikeudet vastaanotolle: hakemusOid $hakemusOid, hakukohdeOid, $hakukohdeOid, oikeudet $oikeudet")
         vastaanottoService.tallennaPaatettavatOpiskeluOikeudet(hakemusOid, hakukohdeOid, Serialization.write(oikeudet))
       }
