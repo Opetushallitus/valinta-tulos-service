@@ -5,8 +5,8 @@ import fi.vm.sade.valintatulosservice.domain.{Hakemuksentulos, Valintatila}
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOidSerializer, HakuOidSerializer, HakukohdeOidSerializer, ValintatapajonoOidSerializer, Vastaanottotila}
-import org.json4s.{DefaultFormats, Formats}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila
+import org.json4s.Formats
 import org.json4s.jackson.Serialization
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
@@ -15,6 +15,28 @@ import org.specs2.runner.JUnitRunner
 class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriDbTools {
 
   override implicit val formats: Formats = JsonFormats.jsonFormats
+
+  val opiskeluOikeudet = """[
+                       	  {
+                            "virtaOpiskeluOikeusId": "02507_2600544",
+                            "organisaatioOid": "1.2.246.562.10.38429345754",
+                            "organisaatioNimi": {
+                              "fi": "Satakunnan ammattikorkeakoulu",
+                              "sv": "Satakunnan ammattikorkeakoulu",
+                              "en": "Satakunta University of Applied Sciences SAMK"
+                            },
+                            "virtaNimi": {
+                              "fi": "Hyvinvoinnin uudistuva asiantuntijuus ja johtaminen",
+                              "sv": "",
+                              "en": "Evolving expertise and leadership in welfare"
+                            },
+                            "supaNimi": {
+                              "fi": "Sairaanhoitaja (ylempi AMK)",
+                              "sv": "Sjukskötare (högre YH)",
+                              "en": "Master of Health Care (UAS), Registered Nurse"
+                            }
+                       	  }
+                       ]""".stripMargin
 
   "POST /vastaanotto" should {
     "vastaanottaa opiskelupaikan" in {
@@ -136,7 +158,56 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
         }
       }
     }
-  }
+
+    "vastaanottaa ja tallentaa päättyvät opiskeluoikeudet" in {
+      useFixture("hyvaksytty-kesken-julkaistavissa.json")
+
+      vastaanotaAuthenticated("VastaanotaSitovasti", headers = authHeaders, paatettavatOpiskeluOikeudet = opiskeluOikeudet) {
+        status must_== 200
+
+        get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
+          val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
+          tulos.hakutoiveet.head.vastaanottotila must_== Vastaanottotila.vastaanottanut
+          tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.isDefined must beTrue
+        }
+      }
+
+      val oikeudet = findVastaanotonPaatettavatOpiskeluOikeudet("1.2.246.562.5.72607738902", "1.2.246.562.11.00000441369")
+      oikeudet.size must_== 1
+      val oikeus = oikeudet.head
+      oikeus.organisaatioNimi.fi must_== "Satakunnan ammattikorkeakoulu"
+      oikeus.organisaatioOid must_== "1.2.246.562.10.38429345754"
+      oikeus.virtaNimi.fi must_== "Hyvinvoinnin uudistuva asiantuntijuus ja johtaminen"
+      oikeus.supaNimi.fi must_== "Sairaanhoitaja (ylempi AMK)"
+    }
+
+    "vastaanottaa uudelleen päättyvillä opiskeluoikeuksilla" in {
+      useFixture("hyvaksytty-ylempi-varalla.json")
+
+      vastaanotaAuthenticated("VastaanotaEhdollisesti", hakukohde = "1.2.246.562.5.16303028779", headers = authHeaders, paatettavatOpiskeluOikeudet = opiskeluOikeudet) {
+        status must_== 200
+
+        get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
+          val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
+          tulos.hakutoiveet.head.vastaanottotila must_== "KESKEN"
+          tulos.hakutoiveet.last.vastaanottotila must_== "EHDOLLISESTI_VASTAANOTTANUT"
+        }
+      }
+
+      vastaanotaAuthenticated("VastaanotaSitovasti", hakukohde = "1.2.246.562.5.16303028779", headers = authHeaders) {
+        status must_== 200
+
+        get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
+          val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
+          tulos.hakutoiveet.head.vastaanottotila must_== "KESKEN"
+          tulos.hakutoiveet.last.vastaanottotila must_== "VASTAANOTTANUT_SITOVASTI"
+        }
+      }
+
+      val oikeudet = findVastaanotonPaatettavatOpiskeluOikeudet("1.2.246.562.5.16303028779", "1.2.246.562.11.00000441369")
+      oikeudet.size must_== 0
+    }
+}
 
   def vastaanota[T](action: String, hakukohde: String = "1.2.246.562.5.72607738902", personOid: String = "1.2.246.562.24.14229104472", hakemusOid: String = "1.2.246.562.11.00000441369")(block: => T): T = {
     postJSON(s"""vastaanotto/henkilo/$personOid/hakemus/$hakemusOid/hakukohde/$hakukohde""",
@@ -145,9 +216,9 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
     }
   }
 
-  def vastaanotaAuthenticated[T](action: String, hakukohde: String = "1.2.246.562.5.72607738902", hakemusOid: String = "1.2.246.562.11.00000441369", headers: Map[String, String] = Map.empty)(block: => T): T = {
+  def vastaanotaAuthenticated[T](action: String, hakukohde: String = "1.2.246.562.5.72607738902", hakemusOid: String = "1.2.246.562.11.00000441369", headers: Map[String, String] = Map.empty, paatettavatOpiskeluOikeudet: String = "[]": String)(block: => T): T = {
     postJSON(s"""auth/vastaanotto/hakemus/$hakemusOid/hakukohde/$hakukohde""",
-      s"""{"action":"$action"}""", headers) {
+      s"""{"action":"$action", "paatettavatOpiskeluOikeudet": $paatettavatOpiskeluOikeudet}""", headers) {
       block
     }
   }

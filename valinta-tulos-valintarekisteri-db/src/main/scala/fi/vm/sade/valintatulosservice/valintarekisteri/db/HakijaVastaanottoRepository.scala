@@ -3,8 +3,7 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db
 import java.time.{Instant, OffsetDateTime}
 import java.util.Date
 import java.util.concurrent.TimeUnit
-
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid, Kausi}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, Kausi}
 import slick.dbio.DBIO
 
 import scala.concurrent.duration.Duration
@@ -23,6 +22,7 @@ trait HakijaVastaanottoRepository {
   def store(vastaanottoEvents: List[VastaanottoEvent], postCondition: DBIO[_]): Either[Throwable, Unit]
   def store(vastaanottoEvent: VastaanottoEvent, vastaanottoDate: Date): Unit
   def runAsSerialized[T](retries: Int, wait: Duration, description: String, action: DBIO[T]): Either[Throwable, T]
+  def storePaatetettavatOpiskeluOikeudet(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid, oikeudet: String): Unit
 
   def findHyvaksyttyJulkaistuDatesForHenkilo(henkiloOid: HenkiloOid): DBIO[Map[HakukohdeOid, OffsetDateTime]]
   def findHyvaksyttyJulkaistuDatesForHenkilos(henkiloOids: Set[HenkiloOid]): Map[HenkiloOid, Map[HakukohdeOid, OffsetDateTime]]
