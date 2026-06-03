@@ -53,7 +53,8 @@ case class SiirtotiedostoValinnantulos(hakukohdeOid: HakukohdeOid,
                                        julkaistavissa: Option[Boolean],
                                        hyvaksyttyVarasijalta: Option[Boolean],
                                        hyvaksyPeruuntunut: Option[Boolean],
-                                       valinnantilanViimeisinMuutos: String)
+                                       valinnantilanViimeisinMuutos: String,
+                                       muokattu: String)
 
 case class SiirtotiedostoValintatapajonoRecord(tasasijasaanto: String,
                                                oid: ValintatapajonoOid,
@@ -156,10 +157,15 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
   override def getChangedHakukohdeoidsForValinnantulokset(s: String, e: String): List[HakukohdeOid] = {
     timed(s"Getting changed hakukohdeoids between $s and $e", 100) {
       runBlocking(
-        sql"""select distinct hakukohde_oid
-                from valinnantilat vt
-                where lower(system_time) >= $s::timestamptz
-                and lower(system_time) <= $e::timestamptz
+        sql"""select distinct vti.hakukohde_oid
+                from valinnantilat vti
+                where lower(vti.system_time) >= $s::timestamptz
+                and lower(vti.system_time) <= $e::timestamptz
+              union all
+                select distinct vtu.hakukohde_oid
+                  from valinnantulokset vtu
+                  where lower(vtu.system_time) >= $s::timestamptz
+                  and lower(vtu.system_time) <= $e::timestamptz
               union all
                 select distinct vtj.hakukohde_oid from valintatapajonot vtj join sijoitteluajot sa on sa.id = vtj.sijoitteluajo_id
                   where lower(sa.system_time) >= $s::timestamptz
@@ -334,7 +340,13 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
                 tu.julkaistavissa,
                 tu.hyvaksytty_varasijalta,
                 tu.hyvaksy_peruuntunut,
-                ti.tilan_viimeisin_muutos
+                ti.tilan_viimeisin_muutos,
+                greatest(
+                  case when upper(ti.system_time) is null then lower(ti.system_time) else upper(ti.system_time) end,
+                  case when upper(eh.system_time) is null then lower(eh.system_time) else upper(eh.system_time) end,
+                  case when upper(tu.system_time) is null then lower(tu.system_time) else upper(tu.system_time) end,
+                  case when upper(tk.system_time) is null then lower(tk.system_time) else upper(tk.system_time) end
+                ) as muokattu
             from valinnantilat as ti
             left join ehdollisen_hyvaksynnan_ehto as eh on eh.hakemus_oid = ti.hakemus_oid
                 and eh.valintatapajono_oid = ti.valintatapajono_oid

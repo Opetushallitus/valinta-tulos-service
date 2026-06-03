@@ -270,7 +270,8 @@ trait ValintarekisteriResultExtractors {
     julkaistavissa = r.nextBooleanOption,
     hyvaksyttyVarasijalta = r.nextBooleanOption,
     hyvaksyPeruuntunut = r.nextBooleanOption,
-    valinnantilanViimeisinMuutos = r.nextString()
+    valinnantilanViimeisinMuutos = r.nextString(),
+    muokattu = r.nextString()
   ))
 
   protected implicit val getSiirtotiedostoJonosijaResult: GetResult[SiirtotiedostoJonosija] = GetResult(r => SiirtotiedostoJonosija(
