@@ -155,6 +155,17 @@ object HakuFixtures extends HakuService with JsonHakuService {
     }
   }
 
+  override def getHakukohdeOili(oid: HakukohdeOid): Either[Throwable, HakukohdeOili] = {
+    val hakuOid = hakuOids.head
+    Right(HakukohdeOili(
+      oid = oid,
+      hakuOid = hakuOid,
+      jarjestyspaikkaOid = "1.2.246.562.10.72985435253",
+      toteutusOid = "1.2.246.562.17.00000000000000000001",
+      koulutusKoodiUrit = List("koulutus_371101#1")
+    ))
+  }
+
   override def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]] = Right(List(
     "1.2.246.562.14.2013120515524070995659",
     "1.2.246.562.14.2014022408541751568934",
