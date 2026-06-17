@@ -4,7 +4,7 @@ import java.util.Date
 import fi.vm.sade.valintatulosservice.domain.Valintatila.Valintatila
 import fi.vm.sade.valintatulosservice.domain.Vastaanotettavuustila.Vastaanotettavuustila
 import fi.vm.sade.valintatulosservice.domain.{HakutoiveenIlmoittautumistila, HakutoiveenSijoittelunTilaTieto, Hakutoiveentulos, Ilmoittautumisaika, Valintatila, Vastaanotettavuustila}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EhdollisenHyvaksymisenEhto, HakemusOid, HakukohdeOid, JonokohtainenTulostieto, ValintatapajonoOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EhdollisenHyvaksymisenEhto, HakemusOid, HakukohdeOid, JonokohtainenTulostieto, PaatettavaOpiskeluOikeus, ValintatapajonoOid}
 import org.json4s.Extraction._
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL._
@@ -88,7 +88,8 @@ class HakutoiveentulosSerializer extends CustomSerializer[Hakutoiveentulos]((for
       tilanKuvaukset = (x \ "tilanKuvaukset").extract[Map[String, String]],
       pisteet = (x \ "pisteet").extractOpt[BigDecimal],
       virkailijanTilat = HakutoiveenSijoittelunTilaTieto(valintatila, vastaanottotila, None, vastaanotettavuustila),
-      jonokohtaisetTulostiedot = (x \ "jonokohtaisetTulostiedot").extract[List[JonokohtainenTulostieto]]
+      jonokohtaisetTulostiedot = (x \ "jonokohtaisetTulostiedot").extract[List[JonokohtainenTulostieto]],
+      naytetytPaatettavatOpiskeluoikeudet = (x \ "naytetytPaatettavatOpiskeluoikeudet").extract[List[PaatettavaOpiskeluOikeus]]
     )
   }, {
   case tulos: Hakutoiveentulos =>
@@ -119,7 +120,8 @@ class HakutoiveentulosSerializer extends CustomSerializer[Hakutoiveentulos]((for
       ("kelaURL" -> tulos.kelaURL) ~
       ("showMigriURL" -> tulos.showMigriURL) ~
       ("pisteet" -> tulos.pisteet) ~
-      ("jonokohtaisetTulostiedot" -> decompose(tulos.jonokohtaisetTulostiedot))
+      ("jonokohtaisetTulostiedot" -> decompose(tulos.jonokohtaisetTulostiedot)) ~
+      ("naytetytPaatettavatOpiskeluoikeudet" -> decompose(tulos.naytetytPaatettavatOpiskeluoikeudet))
 }
   )
 )

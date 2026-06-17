@@ -81,7 +81,8 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
       sqlu"truncate table ehdollisen_hyvaksynnan_ehto cascade",
       sqlu"truncate table ehdollisen_hyvaksynnan_ehto_history cascade",
       sqlu"truncate table hyvaksynnan_ehto_hakukohteessa cascade",
-      sqlu"truncate table hyvaksynnan_ehto_hakukohteessa_history cascade"
+      sqlu"truncate table hyvaksynnan_ehto_hakukohteessa_history cascade",
+      sqlu"truncate table paatettavat_opiskeluoikeudet cascade"
       ).transactionally)
   }
 
@@ -399,6 +400,11 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
       sql"""select paatettavat_oikeudet::json from paatettavat_opiskeluoikeudet
            where hakukohde_oid = $hakukohdeOid and hakemus_oid = $hakemusOid""".as[Seq[PaatettavaOpiskeluOikeus]]
     ).head
+  }
+
+  def lisaaNaytetytPaatettavatOpiskeluoikeudet(hakukohdeOid: String, hakemusOid: String, henkiloOid: String, oikeudet: String): Unit = {
+    singleConnectionValintarekisteriDb.runBlocking(sqlu"""insert into paatettavat_opiskeluoikeudet (henkilo_oid, hakukohde_oid, hakemus_oid, paatettavat_oikeudet)
+              values($henkiloOid, $hakukohdeOid, $hakemusOid, $oikeudet::json)""")
   }
 
   implicit val getHakemuksetForValintatapajonosResult: GetResult[HakemusRecord] = GetResult(r => HakemusRecord(
