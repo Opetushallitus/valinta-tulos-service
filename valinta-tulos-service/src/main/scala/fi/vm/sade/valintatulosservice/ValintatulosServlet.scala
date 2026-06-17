@@ -16,7 +16,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
 import javax.servlet.http.HttpServletResponse
 import org.joda.time.DateTime
-import org.json4s.Extraction
+import org.json4s.{DefaultFormats, Extraction, Formats}
 import org.json4s.jackson.Serialization.read
 import org.scalatra._
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
@@ -35,6 +35,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
                                    swaggerGroupTag: String)
                                   (implicit val swagger: Swagger,
                                    appConfig: VtsAppConfig) extends VtsServletBase {
+
   val ilmoittautumisenAikaleima: Option[Date] = Option(new Date())
   lazy val exampleHakemuksenTulos = Hakemuksentulos(
     HakuOid("2.2.2.2"),
@@ -76,9 +77,27 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     val hakemusOidString = params("hakemusOid")
     auditLog(Map("hakuOid" -> params("hakuOid"), "hakemusOid" -> hakemusOidString), HakemuksenLuku)
     valintatulosService.hakemuksentulos(HakemusOid(hakemusOidString)) match {
-      case Some(tulos) => tulos
+      case Some(tulos) => {
+        try {
+          val oikeudetMap = valintatulosService.haePaattyneetOpiskeluoikeudet(tulos)
+          tulosWithOikeudet(tulos, oikeudetMap)
+        } catch {
+          case e: Exception =>
+            logger.error(s"Virhe haettaessa näytettyjä päättyneitä opiskeluoikeuksia hakemukselle $hakemusOidString. Palautetaan tulokset.", e)
+            tulos
+        }
+      }
       case _ => NotFound("error" -> "Not found")
     }
+  }
+
+  private def tulosWithOikeudet(tulos: Hakemuksentulos, oikeudetMap: Map[Hakutoiveentulos, Option[String]]): Hakemuksentulos = {
+    val toiveet: List[Hakutoiveentulos] = oikeudetMap.toList.map { case (toive, oikeudet) =>
+      val parsitutOikeudet = oikeudet.map(o => parse(o).extract[List[PaatettavaOpiskeluOikeus]])
+        .getOrElse(List.empty)
+      toive.copy(naytetytPaatettavatOpiskeluoikeudet = parsitutOikeudet)
+    }
+    tulos.copy(hakutoiveet = toiveet)
   }
 
   lazy val getValintatuloksetByHakemuksetSwagger: OperationBuilder = (apiOperation[Unit]("getValintatuloksetByHakemukset")

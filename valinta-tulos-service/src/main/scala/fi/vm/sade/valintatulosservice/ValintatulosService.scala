@@ -1,5 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
+import fi.vm.sade.oppijantunnistus.OppijanTunnistus
 import fi.vm.sade.sijoittelu.domain.TilankuvauksenTarkenne.{PERUUNTUNUT_EI_VASTAANOTTANUT_MAARAAIKANA, PERUUNTUNUT_VASTAANOTTANUT_TOISEN_PAIKAN_YHDEN_SAANNON_PAIKAN_PIIRISSA}
 import fi.vm.sade.sijoittelu.domain.{TilanKuvaukset, TilankuvauksenTarkenne, ValintatuloksenTila, Valintatulos}
 import fi.vm.sade.sijoittelu.tulos.dto
@@ -20,6 +21,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.vastaanotto.VastaanottoUtils.ehdollinenVastaanottoMahdollista
 import org.apache.commons.lang3.StringUtils
+import org.json4s.native.JsonMethods.parse
 import slick.dbio.DBIO
 
 import java.time.Instant
@@ -139,7 +141,7 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
         () => List(h).iterator,
         _ => Seq(tulos),
         vastaanottoKaudella = vastaanototKausilla.get,
-        ilmoittautumisenAikaleimat = ilmoittautumisenAikaleimat
+        ilmoittautumisenAikaleimat = ilmoittautumisenAikaleimat,
       ).toSeq.headOption
     } yield hakemus
   }
@@ -345,6 +347,15 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
 
   def haeVastaanotonAikarajaTiedot(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid, hakemusOids: Set[HakemusOid]): Set[VastaanottoAikarajaMennyt] = {
     sijoittelutulosService.haeVastaanotonAikarajaTiedot(hakuOid, hakukohdeOid, hakemusOids)
+  }
+
+  def haePaattyneetOpiskeluoikeudet(tulos: Hakemuksentulos): Map[Hakutoiveentulos, Option[String]] = {
+    tulos.hakutoiveet
+      .map(hk => {
+        val oikeudet = hakijaVastaanottoRepository.runBlocking(hakijaVastaanottoRepository.
+          findHakemuksenVastaanotonPaatettavatOpiskeluOikeudet(tulos.hakemusOid, hk.hakukohdeOid))
+        (hk, oikeudet)
+      }).toMap
   }
 
   private def findTuloksetForHakemustulos(hakemuksenTulos: Hakemuksentulos): List[Valintatulos] = {
