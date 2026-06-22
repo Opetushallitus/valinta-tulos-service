@@ -3,8 +3,10 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 import fi.vm.sade.valintatulosservice.config.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import org.json4s.jackson.Serialization.read
 import org.postgresql.util.PSQLException
 import slick.dbio.DBIO
+import slick.jdbc.GetResult
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.TransactionIsolation.Serializable
 
@@ -219,6 +221,11 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
 
   override def storePaatetettavatOpiskeluOikeudet(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid, oikeudet: String): Unit = {
     runBlocking(tallennaPaatettavatOpiskeluOikeudet(henkiloOid, hakukohdeOid, hakemusOid, oikeudet))
+  }
+
+  override def findHakemuksenVastaanotonPaatettavatOpiskeluOikeudet(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): DBIO[Option[String]] = {
+    sql"""select paatettavat_oikeudet::json from paatettavat_opiskeluoikeudet
+           where hakukohde_oid = $hakukohdeOid and hakemus_oid = $hakemusOid""".as[String].headOption
   }
 
   private def tallennaPaatettavatOpiskeluOikeudet(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid, oikeudet: String): DBIO[Unit] = {

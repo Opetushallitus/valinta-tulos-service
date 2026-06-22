@@ -6,7 +6,6 @@ import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain._
-import fi.vm.sade.valintatulosservice.json.JsonFormats.javaObjectToJsonString
 import fi.vm.sade.valintatulosservice.json.{JsonFormats, JsonStreamWriter, StreamingFailureException}
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, Vastaanottoaikataulu}
 import fi.vm.sade.valintatulosservice.streamingresults.{HakemustenTulosHakuLock, StreamingValintatulosService}
@@ -35,6 +34,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
                                    swaggerGroupTag: String)
                                   (implicit val swagger: Swagger,
                                    appConfig: VtsAppConfig) extends VtsServletBase {
+
   val ilmoittautumisenAikaleima: Option[Date] = Option(new Date())
   lazy val exampleHakemuksenTulos = Hakemuksentulos(
     HakuOid("2.2.2.2"),
@@ -76,9 +76,27 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     val hakemusOidString = params("hakemusOid")
     auditLog(Map("hakuOid" -> params("hakuOid"), "hakemusOid" -> hakemusOidString), HakemuksenLuku)
     valintatulosService.hakemuksentulos(HakemusOid(hakemusOidString)) match {
-      case Some(tulos) => tulos
+      case Some(tulos) => {
+        try {
+          val oikeudetMap = valintatulosService.haePaattyneetOpiskeluoikeudet(tulos)
+          tulosWithOikeudet(tulos, oikeudetMap)
+        } catch {
+          case e: Exception =>
+            logger.error(s"Virhe haettaessa näytettyjä päättyneitä opiskeluoikeuksia hakemukselle $hakemusOidString. Palautetaan tulokset.", e)
+            tulos
+        }
+      }
       case _ => NotFound("error" -> "Not found")
     }
+  }
+
+  private def tulosWithOikeudet(tulos: Hakemuksentulos, oikeudetMap: Map[Hakutoiveentulos, Option[String]]): Hakemuksentulos = {
+    val toiveet: List[Hakutoiveentulos] = oikeudetMap.toList.map { case (toive, oikeudet) =>
+      val parsitutOikeudet = oikeudet.map(o => parse(o).extract[List[PaatettavaOpiskeluOikeus]])
+        .getOrElse(List.empty)
+      toive.copy(naytetytPaatettavatOpiskeluoikeudet = parsitutOikeudet)
+    }
+    tulos.copy(hakutoiveet = toiveet)
   }
 
   lazy val getValintatuloksetByHakemuksetSwagger: OperationBuilder = (apiOperation[Unit]("getValintatuloksetByHakemukset")
