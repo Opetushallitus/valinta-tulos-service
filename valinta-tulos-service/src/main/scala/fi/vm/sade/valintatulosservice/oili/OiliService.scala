@@ -155,7 +155,7 @@ class OiliService(hakemusRepository: AtaruHakemusRepository,
         logger.warn(s"OILI: haun $hakuOid haku epäonnistui: ${e.getMessage}")
         (None, None)
       },
-      haku => haku.koulutuksenAlkamiskausi match {
+      haku => haku.hakukausi match {
         case Some(Kevat(vuosi)) => (Some(vuosi.toString), Some("K"))
         case Some(Syksy(vuosi)) => (Some(vuosi.toString), Some("S"))
         case _ => (None, None)
