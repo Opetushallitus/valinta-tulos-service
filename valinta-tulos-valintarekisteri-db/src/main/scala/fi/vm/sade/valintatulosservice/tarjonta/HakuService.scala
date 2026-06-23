@@ -40,7 +40,8 @@ case class Haku(oid: HakuOid,
                 sisältyvätHaut: Set[String],
                 koulutuksenAlkamiskausi: Option[Kausi],
                 yhdenPaikanSaanto: YhdenPaikanSaanto,
-                nimi: Map[String, String]) {
+                nimi: Map[String, String],
+                hakukausi: Option[Kausi] = None) {
 
   val sijoitteluJaPriorisointi = käyttääSijoittelua && käyttääHakutoiveidenPriorisointia
 }
@@ -187,7 +188,8 @@ protected trait JsonHakuService {
       sisältyvätHaut = haku.sisaltyvatHaut,
       koulutuksenAlkamiskausi = kausi,
       yhdenPaikanSaanto = haku.yhdenPaikanSaanto,
-      nimi = haku.nimi)
+      nimi = haku.nimi,
+      hakukausi = Kausi.fromUri(haku.hakukausiUri, haku.hakukausiVuosi))
   }
 }
 
@@ -255,6 +257,8 @@ private case class HakuTarjonnassa(oid: HakuOid,
                                    kohdejoukonTarkenne: Option[String],
                                    koulutuksenAlkamisVuosi: Option[Int],
                                    koulutuksenAlkamiskausiUri: Option[String],
+                                   hakukausiVuosi: Option[Int],
+                                   hakukausiUri: Option[String],
                                    sijoittelu: Boolean,
                                    usePriority: Boolean,
                                    parentHakuOid: Option[String],
@@ -385,6 +389,8 @@ case class KoutaHaku(oid: String,
                      kohdejoukkoKoodiUri: String,
                      kohdejoukonTarkenneKoodiUri: Option[String],
                      hakutapaKoodiUri: String,
+                     hakuvuosi: Option[Int],
+                     hakukausi: Option[String],
                      metadata: KoutaHakuMetadata) {
   def getKausiAndVuosi(metadata: KoutaHakuMetadata): (Option[String], Option[String]) = {
     val kausiUri = metadata.koulutuksenAlkamiskausi.flatMap(ak => ak.koulutuksenAlkamiskausi.map(ak => ak.koodiUri))
@@ -415,7 +421,8 @@ case class KoutaHaku(oid: String,
       sisältyvätHaut = Set.empty,
       koulutuksenAlkamiskausi = alkamiskausi,
       yhdenPaikanSaanto = YhdenPaikanSaanto(voimassa = false, syy = "Yhden paikan sääntö Kouta:ssa aina hakukohdekohtainen"),
-      nimi = nimi.map { case (lang, text) => ("kieli_" + lang) -> text })
+      nimi = nimi.map { case (lang, text) => ("kieli_" + lang) -> text },
+      hakukausi = Kausi.fromUri(hakukausi, hakuvuosi))
   }
 }
 

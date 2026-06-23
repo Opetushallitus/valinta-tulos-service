@@ -111,6 +111,11 @@ class OiliServletSpec extends Specification with EmbeddedJettyContainer with Htt
         body must contain("\"koulutuskoodiUrit\":")
         body must contain("\"ilmoittautumisenTila\":")
         body must contain("\"hakutoiveenNumero\":1")
+        // hakuvuosi/hakukausi palautetaan haun hakukaudesta (kevät 2026),
+        // EI koulutuksen alkamiskaudesta (syksy 2026)
+        body must contain("\"hakuvuosi\":\"2026\"")
+        body must contain("\"hakukausi\":\"K\"")
+        body must not(contain("\"hakukausi\":\"S\""))
       }
     }
 
@@ -301,8 +306,11 @@ class OiliServletSpec extends Specification with EmbeddedJettyContainer with Htt
       käyttääHakutoiveidenPriorisointia = true,
       varsinaisenHaunOid = None,
       sisältyvätHaut = Set.empty,
+      // Koulutuksen alkamiskausi (syksy) eroaa tarkoituksella haun hakukaudesta (kevät),
+      // jotta testi varmistaa että OILI palauttaa haun hakukauden eikä koulutuksen alkamiskautta.
       koulutuksenAlkamiskausi = Some(Syksy(2026)),
       yhdenPaikanSaanto = YhdenPaikanSaanto(voimassa = false, syy = ""),
-      nimi = Map.empty
+      nimi = Map.empty,
+      hakukausi = Some(Kevat(2026))
     )
 }
