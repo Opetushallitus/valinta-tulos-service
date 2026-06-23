@@ -111,11 +111,10 @@ class OiliServletSpec extends Specification with EmbeddedJettyContainer with Htt
         body must contain("\"koulutuskoodiUrit\":")
         body must contain("\"ilmoittautumisenTila\":")
         body must contain("\"hakutoiveenNumero\":1")
-        // hakuvuosi/hakukausi palautetaan haun hakukaudesta (kevät 2026),
+        // hakuvuosi palautetaan haun hakukaudesta (kevät 2026),
         // EI koulutuksen alkamiskaudesta (syksy 2026)
         body must contain("\"hakuvuosi\":\"2026\"")
-        body must contain("\"hakukausi\":\"K\"")
-        body must not(contain("\"hakukausi\":\"S\""))
+        body must not(contain("\"hakukausi\""))
       }
     }
 
