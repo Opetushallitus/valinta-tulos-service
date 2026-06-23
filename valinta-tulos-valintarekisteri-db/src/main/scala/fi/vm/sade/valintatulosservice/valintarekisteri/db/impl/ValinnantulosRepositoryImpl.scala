@@ -949,20 +949,16 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             """.as[HyvaksyttyValinnanTila]).toSet
     }
 
-  override def getHakijanVastaanotetutValinnantilat(hakijaOid: HakijaOid): Set[HyvaksyttyValinnanTila] =
-    timed(s"Hakijan $hakijaOid vastaanottamien hakemusoidien haku", 100) {
+  override def getHakijanHakemusOidit(hakijaOid: HakijaOid): Set[HakemusOid] =
+    timed(s"Hakijan $hakijaOid kaikkien hakemusoidien haku", 100) {
       runBlocking(
-        sql"""select distinct vt.hakemus_oid, vt.hakukohde_oid
-            from vastaanotot v
-            join valinnantilat vt on vt.henkilo_oid = v.henkilo
-                and vt.hakukohde_oid = v.hakukohde
-            where v.deleted is null
-                and v.action in ('VastaanotaSitovasti', 'VastaanotaEhdollisesti')
-                and (v.henkilo = $hakijaOid
-                     or v.henkilo in (
-                         select linked_oid from henkiloviitteet where person_oid = $hakijaOid
-                     ))
-            """.as[HyvaksyttyValinnanTila]).toSet
+        sql"""select distinct hakemus_oid
+            from valinnantilat
+            where henkilo_oid = $hakijaOid
+                or henkilo_oid in (
+                    select linked_oid from henkiloviitteet where person_oid = $hakijaOid
+                )
+            """.as[HakemusOid]).toSet
     }
 
   private def formMuutoshistoria[A, B](muutokset: Iterable[(A, B, KentanMuutos)]): List[(A, B, KentanMuutos)] = muutokset.headOption match {

@@ -25,13 +25,14 @@ case class OiliHakemus(jattoAjanhetki: Option[OffsetDateTime],
 case class OiliHakukohde(jarjestyspaikkaOid: String,
                          hakukohdeOid: String,
                          toteutusOid: String,
-                         koulutuskoodiUri: List[String],
+                         koulutuskoodiUrit: List[String],
+                         hakutoiveenNumero: Option[Int],
                          valinnanTila: Option[String],
                          vastaanotonTila: Option[String],
                          onkoIlmoittauduttavissa: Boolean,
                          ehdollisestiHyvaksytty: Boolean,
                          ehdollisestiHyvaksyttySyy: Option[String],
                          ehdollisestiHyvaksyttyMuuKuvaus: Option[Kielistetty],
-                         ilmoittautuminen: Option[String])
+                         ilmoittautumisenTila: Option[String])
 
 case class Kielistetty(fi: Option[String], sv: Option[String], en: Option[String])

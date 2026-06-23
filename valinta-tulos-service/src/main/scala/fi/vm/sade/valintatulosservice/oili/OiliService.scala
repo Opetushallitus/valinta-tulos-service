@@ -22,10 +22,6 @@ class OiliService(hakemusRepository: AtaruHakemusRepository,
                   valinnantulosRepository: ValinnantulosRepository,
                   ohjausparametritService: OhjausparametritService)(implicit appConfig: VtsAppConfig) extends Logging {
 
-  private val vastaanotonTilatHyvaksytaan: Set[ValintatuloksenTila] = Set(
-    ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI,
-    ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT)
-
   def getOiliHakija(hakijaOid: HakijaOid, auditInfo: AuditInfo): Option[OiliHakija] = {
     val henkiloMap = oppijanumerorekisteriService.henkilot(Set(hakijaOid)).fold(
       e => throw new RuntimeException(s"OILI: ONR-haku epäonnistui oidille $hakijaOid", e),
@@ -36,14 +32,12 @@ class OiliService(hakemusRepository: AtaruHakemusRepository,
 
   private def buildOiliHakija(oid: HakijaOid, henkiloOpt: Option[Henkilo], auditInfo: AuditInfo): Option[OiliHakija] = {
     henkiloOpt.flatMap { henkilo =>
-      val vastaanotetut = valinnantulosRepository.getHakijanVastaanotetutValinnantilat(oid)
-      if (vastaanotetut.isEmpty) None
+      val hakemusOids = valinnantulosRepository.getHakijanHakemusOidit(oid)
+      if (hakemusOids.isEmpty) None
       else {
-        val hakemusOids = vastaanotetut.map(_.hakemusOid)
         val ataruByOid = fetchAtaruHakemukset(hakemusOids)
         val tuloksetByHakemus = valinnantulosService
           .getValinnantuloksetForHakemukset(hakemusOids, auditInfo)
-          .filter(t => vastaanotonTilatHyvaksytaan.contains(t.valinnantulos.vastaanottotila))
           .groupBy(_.valinnantulos.hakemusOid)
 
         val hakuOidit: Set[HakuOid] = ataruByOid.values.map(_.hakuOid).toSet
@@ -93,7 +87,7 @@ class OiliService(hakemusRepository: AtaruHakemusRepository,
   private def buildOiliHakemus(ataru: AtaruHakemus,
                                 tuloksetByHakemus: Map[HakemusOid, Set[ValinnantulosWithTilahistoria]]): OiliHakemus = {
     val tulokset = tuloksetByHakemus.getOrElse(ataru.oid, Set.empty)
-    val hakukohteet = tulokset.toList.flatMap(t => buildOiliHakukohde(t, ataru.hakuOid))
+    val hakukohteet = tulokset.toList.flatMap(t => buildOiliHakukohde(t, ataru))
     val (hakuvuosi, hakukausi) = hakuvuosiJaKausi(ataru.hakuOid)
     OiliHakemus(
       jattoAjanhetki = ataru.jattoAjanhetki,
@@ -110,7 +104,7 @@ class OiliService(hakemusRepository: AtaruHakemusRepository,
     )
   }
 
-  private def buildOiliHakukohde(tulos: ValinnantulosWithTilahistoria, hakuOid: HakuOid): Option[OiliHakukohde] = {
+  private def buildOiliHakukohde(tulos: ValinnantulosWithTilahistoria, ataru: AtaruHakemus): Option[OiliHakukohde] = {
     val v = tulos.valinnantulos
     getHakukohdeOili(v.hakukohdeOid).map { hakukohde =>
       val ehdollisesti = v.ehdollisestiHyvaksyttavissa.getOrElse(false)
@@ -123,14 +117,18 @@ class OiliService(hakemusRepository: AtaruHakemusRepository,
         jarjestyspaikkaOid = hakukohde.jarjestyspaikkaOid,
         hakukohdeOid = v.hakukohdeOid.toString,
         toteutusOid = hakukohde.toteutusOid,
-        koulutuskoodiUri = hakukohde.koulutusKoodiUrit,
+        koulutuskoodiUrit = hakukohde.koulutusKoodiUrit,
+        hakutoiveenNumero = ataru.hakukohdeOids.indexOf(v.hakukohdeOid) match {
+          case -1 => None
+          case i => Some(i + 1)
+        },
         valinnanTila = Some(v.valinnantila.valinnantila.name()),
         vastaanotonTila = Some(v.vastaanottotila.name()),
-        onkoIlmoittauduttavissa = isIlmoittauduttavissa(v, hakuOid),
+        onkoIlmoittauduttavissa = isIlmoittauduttavissa(v, ataru.hakuOid),
         ehdollisestiHyvaksytty = ehdollisesti,
         ehdollisestiHyvaksyttySyy = if (ehdollisesti) v.ehdollisenHyvaksymisenEhtoKoodi else None,
         ehdollisestiHyvaksyttyMuuKuvaus = muuKuvaus,
-        ilmoittautuminen = Some(v.ilmoittautumistila.ilmoittautumistila.name())
+        ilmoittautumisenTila = Some(v.ilmoittautumistila.ilmoittautumistila.name())
       )
     }
   }
