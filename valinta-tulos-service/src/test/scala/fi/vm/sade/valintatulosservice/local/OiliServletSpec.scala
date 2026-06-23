@@ -70,10 +70,10 @@ class OiliServletSpec extends Specification with EmbeddedJettyContainer with Htt
       }
     }
 
-    "palauttaa 404 kun henkilöllä ei ole vastaanotettuja paikkoja" in { t: (String, OiliService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, AtaruHakemusRepository, OhjausparametritService) =>
+    "palauttaa 404 kun henkilöllä ei ole hakemuksia" in { t: (String, OiliService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, AtaruHakemusRepository, OhjausparametritService) =>
       t._3.get(any()) returns Some(oiliSession)
       t._4.henkilot(Set(hakijaOid)) returns Right(Map(hakijaOid -> henkilo))
-      t._5.getHakijanVastaanotetutValinnantilat(hakijaOid) returns Set.empty[HyvaksyttyValinnanTila]
+      t._5.getHakijanHakemusOidit(hakijaOid) returns Set.empty[HakemusOid]
       get(t._1 + s"/ilmoittautuja/${hakijaOid.toString}", Seq.empty, headers) {
         status must_== 404
       }
@@ -88,10 +88,7 @@ class OiliServletSpec extends Specification with EmbeddedJettyContainer with Htt
 
       t._3.get(any()) returns Some(oiliSession)
       t._4.henkilot(Set(hakijaOid)) returns Right(Map(hakijaOid -> henkilo))
-      t._5.getHakijanVastaanotetutValinnantilat(hakijaOid) returns Set(
-        HyvaksyttyValinnanTila(hakemusOid1, hakukohdeOid1),
-        HyvaksyttyValinnanTila(hakemusOid2, hakukohdeOid2)
-      )
+      t._5.getHakijanHakemusOidit(hakijaOid) returns Set(hakemusOid1, hakemusOid2)
 
       val olderHakemus = ataruHakemusFixture(hakemusOid1, hakuOid, hakukohdeOid1,
         asiointikieli = "fi", jattoAjanhetki = Some(OffsetDateTime.parse("2026-01-01T12:00:00Z")))
@@ -111,6 +108,71 @@ class OiliServletSpec extends Specification with EmbeddedJettyContainer with Htt
       get(t._1 + s"/ilmoittautuja/${hakijaOid.toString}", Seq.empty, headers) {
         status must_== 200
         body must contain("\"asiointikieli\":\"sv\"")
+        body must contain("\"koulutuskoodiUrit\":")
+        body must contain("\"ilmoittautumisenTila\":")
+        body must contain("\"hakutoiveenNumero\":1")
+      }
+    }
+
+    "asettaa hakutoiveenNumeron hakukohteen prioriteetin mukaan" in { t: (String, OiliService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, AtaruHakemusRepository, OhjausparametritService) =>
+      val hakemusOid = HakemusOid("1.2.246.562.11.00000000001")
+      val ekaHakukohdeOid = HakukohdeOid("1.2.246.562.20.00000000001")
+      val tokaHakukohdeOid = HakukohdeOid("1.2.246.562.20.00000000002")
+      val hakuOid = HakuOid("1.2.246.562.29.00000000001")
+
+      t._3.get(any()) returns Some(oiliSession)
+      t._4.henkilot(Set(hakijaOid)) returns Right(Map(hakijaOid -> henkilo))
+      t._5.getHakijanHakemusOidit(hakijaOid) returns Set(hakemusOid)
+      // Hakija on hakenut hakukohteisiin järjestyksessä [toka, eka] -> toka = hakutoive 1, eka = hakutoive 2
+      t._8.getHakemukset(any[WithHakemusOids]()) returns Right(AtaruResponse(List(
+        ataruHakemusFixture(hakemusOid, hakuOid, tokaHakukohdeOid, asiointikieli = "fi", jattoAjanhetki = None)
+          .copy(hakukohdeOids = List(tokaHakukohdeOid, ekaHakukohdeOid))
+      ), None))
+      t._6.getValinnantuloksetForHakemukset(any[Set[HakemusOid]], any[AuditInfo]) returns Set(
+        valinnantulosFixture(hakemusOid, ekaHakukohdeOid),
+        valinnantulosFixture(hakemusOid, tokaHakukohdeOid)
+      )
+      t._7.getHakukohdeOili(ekaHakukohdeOid) returns Right(hakukohdeOiliFixture(ekaHakukohdeOid, hakuOid))
+      t._7.getHakukohdeOili(tokaHakukohdeOid) returns Right(hakukohdeOiliFixture(tokaHakukohdeOid, hakuOid))
+      t._7.getHaku(hakuOid) returns Right(hakuFixture(hakuOid))
+      t._9.ohjausparametrit(hakuOid) returns Right(aktiivinenOhjausparametrit)
+
+      get(t._1 + s"/ilmoittautuja/${hakijaOid.toString}", Seq.empty, headers) {
+        status must_== 200
+        body must contain("\"hakukohdeOid\":\"" + tokaHakukohdeOid.toString + "\",\"toteutusOid\":\"1.2.246.562.17.00000000001\",\"koulutuskoodiUrit\":[\"koulutus_371101#1\"],\"hakutoiveenNumero\":1")
+        body must contain("\"hakukohdeOid\":\"" + ekaHakukohdeOid.toString + "\",\"toteutusOid\":\"1.2.246.562.17.00000000001\",\"koulutuskoodiUrit\":[\"koulutus_371101#1\"],\"hakutoiveenNumero\":2")
+      }
+    }
+
+    "palauttaa kaikki hakutoiveet myös ilman vastaanottoa" in { t: (String, OiliService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, AtaruHakemusRepository, OhjausparametritService) =>
+      val hakemusOid = HakemusOid("1.2.246.562.11.00000000001")
+      val hyvaksyttyHakukohdeOid = HakukohdeOid("1.2.246.562.20.00000000001")
+      val hylattyHakukohdeOid = HakukohdeOid("1.2.246.562.20.00000000002")
+      val hakuOid = HakuOid("1.2.246.562.29.00000000001")
+
+      t._3.get(any()) returns Some(oiliSession)
+      t._4.henkilot(Set(hakijaOid)) returns Right(Map(hakijaOid -> henkilo))
+      t._5.getHakijanHakemusOidit(hakijaOid) returns Set(hakemusOid)
+      t._8.getHakemukset(any[WithHakemusOids]()) returns Right(AtaruResponse(List(
+        ataruHakemusFixture(hakemusOid, hakuOid, hyvaksyttyHakukohdeOid, asiointikieli = "fi", jattoAjanhetki = None)
+          .copy(hakukohdeOids = List(hyvaksyttyHakukohdeOid, hylattyHakukohdeOid))
+      ), None))
+      t._6.getValinnantuloksetForHakemukset(any[Set[HakemusOid]], any[AuditInfo]) returns Set(
+        valinnantulosFixture(hakemusOid, hyvaksyttyHakukohdeOid),
+        valinnantulosFixture(hakemusOid, hylattyHakukohdeOid,
+          valinnantila = Hylatty, vastaanottotila = ValintatuloksenTila.KESKEN)
+      )
+      t._7.getHakukohdeOili(hyvaksyttyHakukohdeOid) returns Right(hakukohdeOiliFixture(hyvaksyttyHakukohdeOid, hakuOid))
+      t._7.getHakukohdeOili(hylattyHakukohdeOid) returns Right(hakukohdeOiliFixture(hylattyHakukohdeOid, hakuOid))
+      t._7.getHaku(hakuOid) returns Right(hakuFixture(hakuOid))
+      t._9.ohjausparametrit(hakuOid) returns Right(aktiivinenOhjausparametrit)
+
+      get(t._1 + s"/ilmoittautuja/${hakijaOid.toString}", Seq.empty, headers) {
+        status must_== 200
+        // hyväksytty ja vastaanotettu hakutoive
+        body must contain("\"valinnanTila\":\"HYVAKSYTTY\",\"vastaanotonTila\":\"VASTAANOTTANUT_SITOVASTI\"")
+        // hylätty hakutoive jota ei ole vastaanotettu palautetaan nyt myös
+        body must contain("\"valinnanTila\":\"HYLATTY\",\"vastaanotonTila\":\"KESKEN\",\"onkoIlmoittauduttavissa\":false")
       }
     }
 
@@ -121,9 +183,7 @@ class OiliServletSpec extends Specification with EmbeddedJettyContainer with Htt
 
       t._3.get(any()) returns Some(oiliSession)
       t._4.henkilot(Set(hakijaOid)) returns Right(Map(hakijaOid -> henkilo))
-      t._5.getHakijanVastaanotetutValinnantilat(hakijaOid) returns Set(
-        HyvaksyttyValinnanTila(hakemusOid, hakukohdeOid)
-      )
+      t._5.getHakijanHakemusOidit(hakijaOid) returns Set(hakemusOid)
       t._8.getHakemukset(any[WithHakemusOids]()) returns Right(AtaruResponse(
         List(ataruHakemusFixture(hakemusOid, hakuOid, hakukohdeOid, asiointikieli = "fi", jattoAjanhetki = None)),
         None
@@ -149,10 +209,7 @@ class OiliServletSpec extends Specification with EmbeddedJettyContainer with Htt
 
       t._3.get(any()) returns Some(oiliSession)
       t._4.henkilot(Set(hakijaOid)) returns Right(Map(hakijaOid -> henkilo))
-      t._5.getHakijanVastaanotetutValinnantilat(hakijaOid) returns Set(
-        HyvaksyttyValinnanTila(aktiivinenHakemusOid, aktiivinenHakukohdeOid),
-        HyvaksyttyValinnanTila(paattynytHakemusOid, paattynytHakukohdeOid)
-      )
+      t._5.getHakijanHakemusOidit(hakijaOid) returns Set(aktiivinenHakemusOid, paattynytHakemusOid)
       t._8.getHakemukset(any[WithHakemusOids]()) returns Right(AtaruResponse(List(
         ataruHakemusFixture(aktiivinenHakemusOid, aktiivinenHakuOid, aktiivinenHakukohdeOid,
           asiointikieli = "fi", jattoAjanhetki = None),
@@ -197,14 +254,16 @@ class OiliServletSpec extends Specification with EmbeddedJettyContainer with Htt
       jattoAjanhetki = jattoAjanhetki
     )
 
-  private def valinnantulosFixture(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): ValinnantulosWithTilahistoria =
+  private def valinnantulosFixture(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid,
+                                   valinnantila: Valinnantila = Hyvaksytty,
+                                   vastaanottotila: ValintatuloksenTila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI): ValinnantulosWithTilahistoria =
     ValinnantulosWithTilahistoria(
       Valinnantulos(
         hakukohdeOid = hakukohdeOid,
         valintatapajonoOid = ValintatapajonoOid("1.2.246.562.20.00000000099"),
         hakemusOid = hakemusOid,
         henkiloOid = hakijaOid.toString,
-        valinnantila = Hyvaksytty,
+        valinnantila = valinnantila,
         ehdollisestiHyvaksyttavissa = Some(false),
         ehdollisenHyvaksymisenEhtoKoodi = None,
         ehdollisenHyvaksymisenEhtoFI = None,
@@ -216,7 +275,7 @@ class OiliServletSpec extends Specification with EmbeddedJettyContainer with Htt
         julkaistavissa = Some(true),
         hyvaksyttyVarasijalta = Some(false),
         hyvaksyPeruuntunut = Some(false),
-        vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI,
+        vastaanottotila = vastaanottotila,
         ilmoittautumistila = EiTehty
       ),
       List.empty
