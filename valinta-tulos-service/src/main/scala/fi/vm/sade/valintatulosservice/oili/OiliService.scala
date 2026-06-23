@@ -88,13 +88,11 @@ class OiliService(hakemusRepository: AtaruHakemusRepository,
                                 tuloksetByHakemus: Map[HakemusOid, Set[ValinnantulosWithTilahistoria]]): OiliHakemus = {
     val tulokset = tuloksetByHakemus.getOrElse(ataru.oid, Set.empty)
     val hakukohteet = tulokset.toList.flatMap(t => buildOiliHakukohde(t, ataru))
-    val (hakuvuosi, hakukausi) = hakuvuosiJaKausi(ataru.hakuOid)
     OiliHakemus(
       jattoAjanhetki = ataru.jattoAjanhetki,
       hakemusOid = ataru.oid.toString,
       hakuOid = ataru.hakuOid.toString,
-      hakuvuosi = hakuvuosi,
-      hakukausi = hakukausi,
+      hakuvuosi = hakuvuosi(ataru.hakuOid),
       lahiosoite = ataru.lahiosoite,
       postinumero = ataru.postinumero,
       postitoimipaikka = ataru.postitoimipaikka,
@@ -149,17 +147,13 @@ class OiliService(hakemusRepository: AtaruHakemusRepository,
     }
   }
 
-  private def hakuvuosiJaKausi(hakuOid: HakuOid): (Option[String], Option[String]) = {
+  private def hakuvuosi(hakuOid: HakuOid): Option[String] = {
     hakuService.getHaku(hakuOid).fold(
       e => {
         logger.warn(s"OILI: haun $hakuOid haku epäonnistui: ${e.getMessage}")
-        (None, None)
+        None
       },
-      haku => haku.koulutuksenAlkamiskausi match {
-        case Some(Kevat(vuosi)) => (Some(vuosi.toString), Some("K"))
-        case Some(Syksy(vuosi)) => (Some(vuosi.toString), Some("S"))
-        case _ => (None, None)
-      }
+      _.hakukausi.map(_.year.toString)
     )
   }
 
