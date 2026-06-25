@@ -128,6 +128,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidB) returns Iterator(hakemusC)
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidC) returns Iterator(hakemusC)
         valintatulosService.hakemuksentulos(hakemusC) returns Some(hakemuksentulosC)
+        suoritusService.getAndStorePaatettavatOpiskeluOikeudet(HakijaOid(hakijaOidC), hakuOidA, hakukohdeOidB, hakemusOidC) returns List.empty
         service.pollForAllMailables(mailDecorator, 1, oneMinute).mailables mustEqual List(Ilmoitus(
           hakemusOid = hakemusOidC,
           hakijaOid = hakijaOidC,
@@ -177,6 +178,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidB) returns Iterator(hakemusC)
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidC) returns Iterator(hakemusC)
         valintatulosService.hakemuksentulos(hakemusC) returns Some(hakemuksentulosD)
+        suoritusService.getAndStorePaatettavatOpiskeluOikeudet(HakijaOid(hakijaOidC), hakuOidA, hakukohdeOidC, hakemusOidC) returns List.empty
         service.pollForAllMailables(mailDecorator, 1, oneMinute).mailables mustEqual List(Ilmoitus(
           hakemusOid = hakemusOidC,
           hakijaOid = hakijaOidC,
@@ -226,6 +228,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidB) returns Iterator(hakemusC)
         hakemusRepository.findHakemuksetByHakukohde(hakuOidA, hakukohdeOidC) returns Iterator(hakemusC)
         valintatulosService.hakemuksentulos(hakemusC) returns Some(hakemuksentulosE)
+        suoritusService.getAndStorePaatettavatOpiskeluOikeudet(HakijaOid(hakijaOidC), hakuOidA, hakukohdeOidB, hakemusOidC) returns List.empty
         service.pollForAllMailables(mailDecorator, 1, oneMinute).mailables mustEqual List(Ilmoitus(
           hakemusOid = hakemusOidC,
           hakijaOid = hakijaOidC,
