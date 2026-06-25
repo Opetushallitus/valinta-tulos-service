@@ -5,6 +5,7 @@ import fi.vm.sade.valintatulosservice.config.VtsApplicationSettings
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService, Vastaanottoaikataulu}
+import fi.vm.sade.valintatulosservice.suorituspalvelu.SuorituspalveluService
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, YhdenPaikanSaanto}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -53,7 +54,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
               ehdollisestiHyvaksyttavissa = false,
               hakukohteenNimet = hakukohdeNimetA,
               tarjoajaNimet = tarjoajaNimetA,
-              organisaatioOiditAuktorisointiin = Set(tarjoajaOidA)
+              organisaatioOiditAuktorisointiin = Set(tarjoajaOidA),
+              paatettavatOpiskeluoikeudet = List.empty
             )
           ),
           haku = Haku(
@@ -93,7 +95,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
               ehdollisestiHyvaksyttavissa = false,
               hakukohteenNimet = hakukohdeNimetA,
               tarjoajaNimet = tarjoajaNimetA,
-              organisaatioOiditAuktorisointiin = Set(tarjoajaOidA)
+              organisaatioOiditAuktorisointiin = Set(tarjoajaOidA),
+              paatettavatOpiskeluoikeudet = List.empty
             )
           ),
           haku = Haku(
@@ -141,7 +144,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
               ehdollisestiHyvaksyttavissa = false,
               hakukohteenNimet = hakukohdeNimetB,
               tarjoajaNimet = tarjoajaNimetB,
-              organisaatioOiditAuktorisointiin = Set(tarjoajaOidB, organisaatioRyhmaOidB)
+              organisaatioOiditAuktorisointiin = Set(tarjoajaOidB, organisaatioRyhmaOidB),
+              paatettavatOpiskeluoikeudet = List.empty
             )
           ),
           haku = Haku(
@@ -189,7 +193,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
               ehdollisestiHyvaksyttavissa = false,
               hakukohteenNimet = hakukohdeNimetC,
               tarjoajaNimet = tarjoajaNimetC,
-              organisaatioOiditAuktorisointiin = Set(tarjoajaOidC)
+              organisaatioOiditAuktorisointiin = Set(tarjoajaOidC),
+              paatettavatOpiskeluoikeudet = List.empty
             )
           ),
           haku = Haku(
@@ -237,7 +242,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
               ehdollisestiHyvaksyttavissa = false,
               hakukohteenNimet = hakukohdeNimetB,
               tarjoajaNimet = tarjoajaNimetB,
-              organisaatioOiditAuktorisointiin = Set(tarjoajaOidB, organisaatioRyhmaOidB)
+              organisaatioOiditAuktorisointiin = Set(tarjoajaOidB, organisaatioRyhmaOidB),
+              paatettavatOpiskeluoikeudet = List.empty
             )
           ),
           haku = Haku(
@@ -285,7 +291,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
               ehdollisestiHyvaksyttavissa = false,
               hakukohteenNimet = hakukohdeNimetA,
               tarjoajaNimet = tarjoajaNimetA,
-              organisaatioOiditAuktorisointiin = Set(tarjoajaOidA)
+              organisaatioOiditAuktorisointiin = Set(tarjoajaOidA),
+              paatettavatOpiskeluoikeudet = List.empty
             )
           ),
           haku = Haku(
@@ -465,7 +472,8 @@ class MailPollerSpec extends Specification with MockitoMatchers {
               ehdollisestiHyvaksyttavissa = false,
               hakukohteenNimet = hakukohdeNimetA,
               tarjoajaNimet = tarjoajaNimetA,
-              organisaatioOiditAuktorisointiin = Set(tarjoajaOidA)
+              organisaatioOiditAuktorisointiin = Set(tarjoajaOidA),
+              paatettavatOpiskeluoikeudet = List.empty
             )
           ),
           haku = Haku(
@@ -1220,13 +1228,15 @@ class MailPollerSpec extends Specification with MockitoMatchers {
     val hakemusRepository: HakemusRepository = mock[HakemusRepository]
     val ohjausparametritService: OhjausparametritService = mock[OhjausparametritService]
     val vtsApplicationSettings: VtsApplicationSettings = mock[VtsApplicationSettings]
+    val suoritusService: SuorituspalveluService = mock[SuorituspalveluService]
 
     vtsApplicationSettings.mailPollerConcurrency returns 2
 
     val mailDecorator = new MailDecorator(
       hakuService,
       oppijanTunnistusService,
-      ohjausparametritService
+      ohjausparametritService,
+      suoritusService
     )
     val service = new MailPoller(
       mailPollerRepository,

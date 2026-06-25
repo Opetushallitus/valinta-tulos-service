@@ -54,13 +54,15 @@ class MailDecorator(hakuService: HakuService,
       }
   }
 
-  def toHakukohde(hakukohdeMailStatus: HakukohdeMailStatus, hakijaOid: HakijaOid, hakemusOid: HakemusOid): Hakukohde = {
+  def reasonsToMailShouldIncludePaatettavatOpiskeluOikeudet: Set[MailReason] = Set(EhdollisenPeriytymisenIlmoitus, SitovanVastaanotonIlmoitus)
+
+  def toHakukohde(hakukohdeMailStatus: HakukohdeMailStatus, hakijaOid: String, hakemusOid: HakemusOid): Hakukohde = {
     hakuService.getHakukohde(hakukohdeMailStatus.hakukohdeOid) match {
       case Right(hakukohde) =>
         hakuService.getHaku(hakukohde.hakuOid) match {
           case Right(haku) =>
-            val paatettavatOikeudet = if (hakukohdeMailStatus.reasonToMail.exists(r => r.equals(EhdollisenPeriytymisenIlmoitus)))
-              suorituspalveluService.getAndStorePaatettavatOpiskeluOikeudet(hakijaOid, hakukohde.hakuOid, hakukohde.oid, hakemusOid)
+            val paatettavatOikeudet = if (hakukohdeMailStatus.reasonToMail.exists(r => reasonsToMailShouldIncludePaatettavatOpiskeluOikeudet.contains(r)))
+              suorituspalveluService.getAndStorePaatettavatOpiskeluOikeudet(HakijaOid(hakijaOid), hakukohde.hakuOid, hakukohde.oid, hakemusOid)
               else List.empty
             Hakukohde(hakukohdeMailStatus.hakukohdeOid,
             hakukohdeMailStatus.reasonToMail match {

@@ -12,6 +12,26 @@
 <p>The confirmation of the study place $hakukohde has been verified. You can no longer get accepted to any of your higher preference study options.</p>
 <p>Remember to register for your studies. You can access the enrollment service for higher education institutions through the My Studyinfo -service:
     <a href="https://studyinfo.fi/oma-opiskelijavalinta/">My Studyinfo</a></p>
+
+#if($hakijallaPaatettaviaOpiskeluoikeuksia)
+<p>Your previous study rights will terminate</p>
+
+<p>A higher education student can only have one study right leading to a degree of the same or lower level at a time.
+    By accepting the study place, the following study rights will end: </p>
+
+<ul>
+    #foreach( $oikeus in $paatettavatOpiskeluoikeudet )
+    <li>
+        <p>$oikeus.organisaatioNimi</p>
+        <p>$oikeus.supaNimi</p>
+        #if($oikeus.naytaVirtaNimi)
+        <p>$oikeus.virtaNimi</p>
+        #end
+    </li>
+    #end
+</ul>
+#end
+
 <p>Do not reply to this message - it has been sent automatically</p>
 </body>
 

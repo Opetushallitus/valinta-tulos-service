@@ -13,6 +13,27 @@
 <p>Paikan vastaanottosi hakukohteeseen $hakukohde on vahvistettu. Et voi enää tulla hyväksytyksi ylempiin hakutoiveisiin.</p>
 <p>Muista ilmoittautua opintoihin. Voit siirtyä korkeakoulun ilmoittautumispalveluun suoraan Oma Opintopolku -palvelusta:
     <a href="https://opintopolku.fi/oma-opiskelijavalinta/">Kirjaudu opintopolkuun</a></p>
+
+#if($hakijallaPaatettaviaOpiskeluoikeuksia)
+
+<p>Aiemmat opiskeluoikeutesi päättyvät</p>
+
+<p>Korkeakouluopiskelijalla voi olla kerrallaan vain yksi saman tai alemman tasoiseen tutkintoon johtava opiskeluoikeus.
+    Opiskelupaikan vastaanoton myötä seuraavat opiskeluoikeutesi päättyvät: </p>
+
+<ul>
+    #foreach( $oikeus in $paatettavatOpiskeluoikeudet )
+    <li>
+        <p>$oikeus.organisaatioNimi</p>
+        <p>$oikeus.supaNimi</p>
+        #if($oikeus.naytaVirtaNimi)
+        <p>$oikeus.virtaNimi</p>
+        #end
+    </li>
+    #end
+</ul>
+#end
+
 <p>Älä vastaa tähän viestiin - viesti on lähetetty automaattisesti</p>
 </body>
 
