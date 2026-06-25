@@ -14,6 +14,23 @@
 <p>Om du ännu blir godkänd till något högre ansökningsönskemål, kommer mottagandet igen att flyttas uppåt.
     Om du inte blir godkänd till något högre ansökningsmål, kommer mottagandet av studieplatsen att gälla det nuvarande ansökningsönskemålet: $hakukohde.</p>
 
+<p>Dina tidigare studierätter avslutas</p>
+
+<p>En högskolestuderande kan samtidigt ha endast en studierätt som leder till en examen på samma eller lägre nivå.
+    I och med att du tar emot studieplatsen upphör följande studierätter: </p>
+
+<ul>
+    #foreach( $oikeus in $paatettavatOpiskeluoikeudet )
+    <li>
+        <p>$oikeus.organisaatioNimi</p>
+        <p>$oikeus.supaNimi</p>
+        #if($oikeus.naytaVirtaNimi)
+        <p>$oikeus.virtaNimi</p>
+        #end
+    </li>
+    #end
+</ul>
+
 <p>Svara inte på detta meddelande - meddelandet har skickats automatiskt</p>
 
 </body>

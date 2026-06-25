@@ -16,13 +16,20 @@
 
 #if($hakijallaPaatettaviaOpiskeluoikeuksia)
 
-<ul type="disc">
+<p>Aiemmat opiskeluoikeutesi päättyvät</p>
+
+<p>Korkeakouluopiskelijalla voi olla kerrallaan vain yksi saman tai alemman tasoiseen tutkintoon johtava opiskeluoikeus.
+    Opiskelupaikan vastaanoton myötä seuraavat opiskeluoikeutesi päättyvät: </p>
+
+<ul>
 #foreach( $oikeus in $paatettavatOpiskeluoikeudet )
-    <p>$oikeus.organisaatioNimi</p>
-    <p>$oikeus.supaNimi</p>
-    #if($oikeus.naytaVirtaNimi)
-    <p>$oikeus.virtaNimi</p>
-    #end
+    <li>
+        <p>$oikeus.organisaatioNimi</p>
+        <p>$oikeus.supaNimi</p>
+        #if($oikeus.naytaVirtaNimi)
+        <p>$oikeus.virtaNimi</p>
+        #end
+    </li>
 #end
 </ul>
 #end

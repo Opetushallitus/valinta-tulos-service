@@ -34,7 +34,7 @@ case class EmailStructure(etunimi: String,
                           securelink: Option[String],
                           deadline: Option[String],
                           hakukohteet: List[EmailHakukohde],
-                          paatettavatOikeudet: Option[PaatettavatOikeudet])
+                          paatettavatOpiskeluoikeudet: Option[PaatettavatOikeudet])
 
 object EmailStructure {
 
@@ -98,7 +98,7 @@ object EmailStructure {
       etunimi = ilmoitus.etunimi,
       haunNimi = ilmoitus.haku.nimi.getAny(lang, "fi", "sv", "en"),
       deadline = formattedDeadline,
-      paatettavatOikeudet = paatettavatOikeudet)
+      paatettavatOpiskeluoikeudet = paatettavatOikeudet)
   }
 
   private def mapPaatettavatOikeudet(oikeudet: List[PaatettavaOpiskeluOikeus], lang: String): PaatettavatOikeudet = {
