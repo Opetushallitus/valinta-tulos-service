@@ -4,17 +4,20 @@ import fi.vm.sade.javautils.nio.cas.CasClientBuilder
 import fi.vm.sade.security.ScalaCasConfig
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakijaOid, HakuOid, HakukohdeOid, PaatettavaOpiskeluOikeus}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijaOid, HakuOid, HakukohdeOid, PaatettavaOpiskeluOikeus}
 import fi.vm.sade.valintatulosservice.logging.Logging
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import org.asynchttpclient.RequestBuilder
 import org.json4s.native.JsonMethods.parse
+import org.json4s.native.Serialization
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import java.util.concurrent.TimeUnit
 import scala.compat.java8.FutureConverters.toScala
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-class SuorituspalveluService(config: VtsAppConfig) extends JsonFormats with Logging {
+class SuorituspalveluService(config: VtsAppConfig, db: ValintarekisteriDb) extends JsonFormats with Logging {
 
   private val client = CasClientBuilder.build(ScalaCasConfig(
     config.settings.securitySettings.casUsername,
@@ -40,6 +43,14 @@ class SuorituspalveluService(config: VtsAppConfig) extends JsonFormats with Logg
       case Right(o) =>
         o
     }
+  }
+
+  def getAndStorePaatettavatOpiskeluOikeudet(hakijaOid: HakijaOid, hakuOid: HakuOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid): List[PaatettavaOpiskeluOikeus] = {
+    val oikeudet = getPaatettavatOpiskeluOikeudet(hakijaOid, hakuOid, hakukohdeOid)
+    if (oikeudet.nonEmpty) {
+      db.storePaatetettavatOpiskeluOikeudet(hakijaOid.toString, hakukohdeOid, hakemusOid, Serialization.write(oikeudet))
+    }
+    oikeudet
   }
 
   private def fetchOikeudet(url: String): Either[Throwable, List[PaatettavaOpiskeluOikeus]] = {

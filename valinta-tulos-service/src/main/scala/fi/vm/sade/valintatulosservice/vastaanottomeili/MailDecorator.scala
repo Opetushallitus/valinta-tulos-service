@@ -27,7 +27,7 @@ class MailDecorator(hakuService: HakuService,
           val tarjontaHaku = timed(s"Tarjontahaun hakeminen hakuoidilla ${status.hakuOid}", 50) {
             fetchHaku(status.hakuOid)
           }
-          val ilmoitus = Ilmoitus(status.hakemusOid, status.hakijaOid, None, status.asiointikieli, status.kutsumanimi, status.email, deadline, mailables.map(toHakukohde(_, status.hakijaOid)), toHaku(tarjontaHaku))
+          val ilmoitus = Ilmoitus(status.hakemusOid, status.hakijaOid, None, status.asiointikieli, status.kutsumanimi, status.email, deadline, mailables.map(toHakukohde(_, status.hakijaOid, status.hakemusOid)), toHaku(tarjontaHaku))
 
           if (status.hasHetu && !tarjontaHaku.toinenAste) {
             Some(ilmoitus)
@@ -54,13 +54,13 @@ class MailDecorator(hakuService: HakuService,
       }
   }
 
-  def toHakukohde(hakukohdeMailStatus: HakukohdeMailStatus, hakijaOid: HakijaOid): Hakukohde = {
+  def toHakukohde(hakukohdeMailStatus: HakukohdeMailStatus, hakijaOid: HakijaOid, hakemusOid: HakemusOid): Hakukohde = {
     hakuService.getHakukohde(hakukohdeMailStatus.hakukohdeOid) match {
       case Right(hakukohde) =>
         hakuService.getHaku(hakukohde.hakuOid) match {
           case Right(haku) =>
             val paatettavatOikeudet = if (hakukohdeMailStatus.reasonToMail.exists(r => r.equals(EhdollisenPeriytymisenIlmoitus)))
-              suorituspalveluService.getPaatettavatOpiskeluOikeudet(hakijaOid, hakukohde.hakuOid, hakukohde.oid)
+              suorituspalveluService.getAndStorePaatettavatOpiskeluOikeudet(hakijaOid, hakukohde.hakuOid, hakukohde.oid, hakemusOid)
               else List.empty
             Hakukohde(hakukohdeMailStatus.hakukohdeOid,
             hakukohdeMailStatus.reasonToMail match {
