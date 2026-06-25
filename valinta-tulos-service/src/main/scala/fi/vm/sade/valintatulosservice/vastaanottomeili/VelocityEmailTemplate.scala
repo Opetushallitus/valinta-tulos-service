@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import fi.vm.sade.valintatulosservice.json.JsonFormats.jsonFormats
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, PaatettavaOpiskeluOikeus, TranslatedName, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy.{LahetysSyy, ehdollisen_periytymisen_ilmoitus}
 import org.apache.velocity.VelocityContext
 import org.apache.velocity.app.VelocityEngine
@@ -23,15 +23,18 @@ import scala.language.implicitConversions
 
 case class EmailHakukohde(nimi: String, tarjoaja: String)
 
+case class OpiskeluOikeus(organisaatioNimi: String, supaNimi: String, virtaNimi: String, naytaVirtaNimi: Boolean)
+
+case class PaatettavatOikeudet(hakijallaPaatettaviaOpiskeluoikeuksia: Boolean,
+                               paatettavatOikeudet: List[OpiskeluOikeus])
+
 case class EmailStructure(etunimi: String,
                           haunNimi: String,
                           hakukohde: Option[String],
                           securelink: Option[String],
                           deadline: Option[String],
-                          hakukohteet: List[EmailHakukohde]) {
-
-
-}
+                          hakukohteet: List[EmailHakukohde],
+                          paatettavatOikeudet: Option[PaatettavatOikeudet])
 
 object EmailStructure {
 
@@ -73,6 +76,10 @@ object EmailStructure {
       ". LahetysSyy was " + lahetysSyy + " and there was " + ilmoitus.hakukohteet.size + "hakukohtees")
 
     LOG.warn(s"DEBUG ${ilmoitus.hakemusOid} hakukohteenNimet ${ilmoitus.hakukohteet.map(_.hakukohteenNimet)} ja haunNimi ")
+
+    val paatettavatOikeudet: Option[PaatettavatOikeudet] = ilmoitus.hakukohteet.find(hk => hk.paatettavatOpiskeluoikeudet.nonEmpty)
+      .map(hk => mapPaatettavatOikeudet(hk.paatettavatOpiskeluoikeudet, lang))
+
     EmailStructure(
       hakukohde =
         if(isValidVastaanottoIlmoitus)
@@ -90,7 +97,49 @@ object EmailStructure {
       securelink = ilmoitus.secureLink,
       etunimi = ilmoitus.etunimi,
       haunNimi = ilmoitus.haku.nimi.getAny(lang, "fi", "sv", "en"),
-      deadline = formattedDeadline)
+      deadline = formattedDeadline,
+      paatettavatOikeudet = paatettavatOikeudet)
+  }
+
+  private def mapPaatettavatOikeudet(oikeudet: List[PaatettavaOpiskeluOikeus], lang: String): PaatettavatOikeudet = {
+    PaatettavatOikeudet(oikeudet.nonEmpty, oikeudet.map(mapPaatettavaOikeus(_, lang)))
+  }
+
+  private def mapPaatettavaOikeus(oikeus: PaatettavaOpiskeluOikeus, lang: String): OpiskeluOikeus = {
+    val virtaNimi = getMatchingTranslation(oikeus.virtaNimi, lang)
+    OpiskeluOikeus(
+      organisaatioNimi = getMatchingTranslation(oikeus.organisaatioNimi, lang),
+      supaNimi = getMatchingTranslation(oikeus.supaNimi, lang),
+      virtaNimi = virtaNimi,
+      naytaVirtaNimi = virtaNimi.nonEmpty)
+  }
+
+  private def getMatchingTranslation(translatedName: TranslatedName, lang: String): String = {
+    val translation = lang match {
+      case "fi" =>
+        translatedName.fi
+      case "sv" =>
+        translatedName.sv
+      case "en" =>
+        translatedName.en
+    }
+    (translation.isBlank, lang) match {
+      case (false, _) =>
+        translation
+      case (_, "fi") if translatedName.en.nonEmpty =>
+        translatedName.en
+      case (_, "fi") if translatedName.sv.nonEmpty =>
+        translatedName.sv
+      case (_, "en") if translatedName.fi.nonEmpty =>
+        translatedName.fi
+      case (_, "en") if translatedName.sv.nonEmpty =>
+        translatedName.sv
+      case (_, "sv") if translatedName.fi.nonEmpty =>
+        translatedName.fi
+      case (_, "sv") if translatedName.en.nonEmpty =>
+        translatedName.en
+      case _ => ""
+    }
   }
 }
 

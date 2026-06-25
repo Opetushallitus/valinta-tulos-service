@@ -22,6 +22,7 @@ import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.sijoittelu._
 import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtures
 import fi.vm.sade.valintatulosservice.streamingresults.{HakemustenTulosHakuLock, StreamingValintatulosService}
+import fi.vm.sade.valintatulosservice.suorituspalvelu.SuorituspalveluService
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.tulostenmetsastaja.PuuttuvienTulostenMetsastajaServlet
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
@@ -204,9 +205,11 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new HyvaksynnanEhtoMuutoshistoriaServlet(valintarekisteriDb, hakuService, hakemusRepository, authorizer, audit, valintarekisteriDb), "/auth/hyvaksynnan-ehto-muutoshistoria", "auth/hyvaksynnan-ehto-muutoshistoria")
       context.mount(new AuthenticatedHakijanVastaanottoServlet(vastaanottoService, valintarekisteriDb, audit), "/auth/vastaanotto", "/auth/vastaanotto")
 
+      lazy val suorituspalveluService: SuorituspalveluService = new SuorituspalveluService(appConfig)
+
       lazy val mailPollerRepository: MailPollerRepository = valintarekisteriDb
       lazy val mailPoller: MailPoller = new MailPoller(mailPollerRepository, valintatulosService, hakuService, hakemusRepository, cachedOhjausparametritService, appConfig.settings)
-      lazy val mailDecorator: MailDecorator = new MailDecorator(hakuService, oppijanTunnistusService, cachedOhjausparametritService)
+      lazy val mailDecorator: MailDecorator = new MailDecorator(hakuService, oppijanTunnistusService, cachedOhjausparametritService, suorituspalveluService)
       context.mount(new PublicEmailStatusServlet(mailPoller, valintarekisteriDb, audit), "/auth/vastaanottoposti", "auth/vastaanottoposti")
 
       val registry: EmailerRegistry = EmailerRegistry.fromString(Option(System.getProperty("vtemailer.profile")).getOrElse(if (appConfig.isInstanceOf[IT]) "it" else "default"))(mailPoller, mailDecorator)
