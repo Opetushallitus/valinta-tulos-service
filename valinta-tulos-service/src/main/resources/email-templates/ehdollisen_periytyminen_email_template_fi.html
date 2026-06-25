@@ -14,6 +14,19 @@
 <p>Jos sinut hyväksytään vielä ylemmällä sijalla olevaan hakutoiveeseen, paikan vastaanotto siirtyy jälleen.
     Jos sinua ei enää hyväksytä ylemmälle hakutoiveelle, paikan vastaanotto jää koskemaan nykyistä paikkaa: $hakukohde.</p>
 
+#if($hakijallaPaatettaviaOpiskeluoikeuksia)
+
+<ul type="disc">
+#foreach( $oikeus in $paatettavatOpiskeluoikeudet )
+    <p>$oikeus.organisaatioNimi</p>
+    <p>$oikeus.supaNimi</p>
+    #if($oikeus.naytaVirtaNimi)
+    <p>$oikeus.virtaNimi</p>
+    #end
+#end
+</ul>
+#end
+
 <p>Älä vastaa tähän viestiin - viesti on lähetetty automaattisesti</p>
 
 </body>
