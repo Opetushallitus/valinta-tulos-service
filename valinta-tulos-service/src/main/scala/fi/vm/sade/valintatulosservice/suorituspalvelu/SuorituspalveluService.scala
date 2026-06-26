@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice.suorituspalvelu
 
-import fi.vm.sade.javautils.nio.cas.CasClientBuilder
+import fi.vm.sade.javautils.nio.cas.{CasClient, CasClientBuilder}
 import fi.vm.sade.security.ScalaCasConfig
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
@@ -17,18 +17,7 @@ import scala.compat.java8.FutureConverters.toScala
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-class SuorituspalveluService(config: VtsAppConfig, db: ValintarekisteriDb) extends JsonFormats with Logging {
-
-  private val client = CasClientBuilder.build(ScalaCasConfig(
-    config.settings.securitySettings.casUsername,
-    config.settings.securitySettings.casPassword,
-    config.settings.securitySettings.casUrl,
-    config.ophUrlProperties.url("url-suorituspalvelu"),
-    config.settings.callerId,
-    config.settings.callerId,
-    "/api/login/j_spring_cas_security_check",
-    "JSESSIONID"
-  ))
+class SuorituspalveluService(config: VtsAppConfig, client: CasClient, db: ValintarekisteriDb) extends JsonFormats with Logging {
 
   def getPaatettavatOpiskeluOikeudet(hakijaOid: HakijaOid, hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): List[PaatettavaOpiskeluOikeus] = {
     logger.info(s"Haetaan päättyvät opiskeluoikeudet hakijalle $hakijaOid, haulle $hakuOid, hakukohteelle $hakukohdeOid")
@@ -57,7 +46,7 @@ class SuorituspalveluService(config: VtsAppConfig, db: ValintarekisteriDb) exten
     val req = new RequestBuilder().setMethod("GET").setUrl(url).build()
     val result = toScala(client.execute(req)).map {
       case r if r.getStatusCode == 200 =>
-        Right(parse(r.getResponseBodyAsStream).extract[List[PaatettavaOpiskeluOikeus]])
+        Right(parse(r.getResponseBody).extract[List[PaatettavaOpiskeluOikeus]])
       case r =>
         val message = s"GET $url failed with status ${r.getStatusCode}: ${r.getResponseBody}"
         if (r.getStatusCode == 404) {

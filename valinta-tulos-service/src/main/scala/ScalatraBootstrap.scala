@@ -1,4 +1,5 @@
 import fi.vm.sade.auditlog.{ApplicationType, Audit, Logger}
+import fi.vm.sade.javautils.nio.cas.{CasClient, CasClientBuilder}
 import fi.vm.sade.openapi.OpenAPIServlet
 import fi.vm.sade.oppijantunnistus.OppijanTunnistusService
 import fi.vm.sade.security._
@@ -205,7 +206,17 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new HyvaksynnanEhtoMuutoshistoriaServlet(valintarekisteriDb, hakuService, hakemusRepository, authorizer, audit, valintarekisteriDb), "/auth/hyvaksynnan-ehto-muutoshistoria", "auth/hyvaksynnan-ehto-muutoshistoria")
       context.mount(new AuthenticatedHakijanVastaanottoServlet(vastaanottoService, valintarekisteriDb, audit), "/auth/vastaanotto", "/auth/vastaanotto")
 
-      lazy val suorituspalveluService: SuorituspalveluService = new SuorituspalveluService(appConfig, valintarekisteriDb)
+      val supaClient: CasClient = CasClientBuilder.build(ScalaCasConfig(
+        appConfig.settings.securitySettings.casUsername,
+        appConfig.settings.securitySettings.casPassword,
+        appConfig.settings.securitySettings.casUrl,
+        appConfig.ophUrlProperties.url("url-suorituspalvelu"),
+        appConfig.settings.callerId,
+        appConfig.settings.callerId,
+        "/api/login/j_spring_cas_security_check",
+        "JSESSIONID"
+      ))
+      lazy val suorituspalveluService: SuorituspalveluService = new SuorituspalveluService(appConfig, supaClient, valintarekisteriDb)
 
       lazy val mailPollerRepository: MailPollerRepository = valintarekisteriDb
       lazy val mailPoller: MailPoller = new MailPoller(mailPollerRepository, valintatulosService, hakuService, hakemusRepository, cachedOhjausparametritService, appConfig.settings)
