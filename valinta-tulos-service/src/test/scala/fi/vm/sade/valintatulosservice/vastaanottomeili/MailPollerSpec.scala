@@ -66,7 +66,9 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         ))
         there was one (mailPollerRepository).markAsToBeSent(Set((hakemusOidA, hakukohdeOidA, Vastaanottoilmoitus)))
         there was no (oppijanTunnistusService).luoSecureLink(any[String], any[HakemusOid], any[String], any[String], any[Option[Long]])
+        there was no (suoritusService).getAndStorePaatettavatOpiskeluOikeudet(any[HakijaOid], any[HakuOid], any[HakukohdeOid], any[HakemusOid])
       }
+
       "Ilmoitus vastaanotettavasta paikasta secure linkillä jos hetuton hakija" in new Mocks {
         hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
         hakuService.getHaku(hakuOidA) returns Right(tarjontaHakuA)
@@ -106,7 +108,9 @@ class MailPollerSpec extends Specification with MockitoMatchers {
           )
         ))
         there was one (mailPollerRepository).markAsToBeSent(Set((hakemusOidB, hakukohdeOidA, Vastaanottoilmoitus)))
+        there was no (suoritusService).getAndStorePaatettavatOpiskeluOikeudet(any[HakijaOid], any[HakuOid], any[HakukohdeOid], any[HakemusOid])
       }
+
       "Ilmoitus ehdollisen vastaanoton siirtymisestä ylempään hakutoiveeseen" in new Mocks {
         hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
         hakuService.getHaku(hakuOidA) returns Right(tarjontaHakuA)
@@ -156,7 +160,9 @@ class MailPollerSpec extends Specification with MockitoMatchers {
           )
         ))
         there was one (mailPollerRepository).markAsToBeSent(Set((hakemusOidC, hakukohdeOidB, EhdollisenPeriytymisenIlmoitus)))
+        there was one (suoritusService).getAndStorePaatettavatOpiskeluOikeudet(HakijaOid(hakijaOidC), hakuOidA, hakukohdeOidB, hakemusOidC)
       }
+
       "Ilmoitus ehdollisen vastaanoton muuttumisesta sitovaksi sen siirtyessä ylimpään hakutoiveeseen" in new Mocks {
         hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
         hakuService.getHaku(hakuOidA) returns Right(tarjontaHakuA)
@@ -206,7 +212,9 @@ class MailPollerSpec extends Specification with MockitoMatchers {
           )
         ))
         there was one (mailPollerRepository).markAsToBeSent(Set((hakemusOidC, hakukohdeOidC, SitovanVastaanotonIlmoitus)))
+        there was one (suoritusService).getAndStorePaatettavatOpiskeluOikeudet(HakijaOid(hakijaOidC), hakuOidA, hakukohdeOidC, hakemusOidC)
       }
+
       "Ilmoitus ehdollisen vastaanoton muuttumisesta sitovaksi ylimmän hakutoiveen peruuntuessa" in new Mocks {
         hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
         hakuService.getHaku(hakuOidA) returns Right(tarjontaHakuA)
@@ -256,7 +264,9 @@ class MailPollerSpec extends Specification with MockitoMatchers {
           )
         ))
         there was one (mailPollerRepository).markAsToBeSent(Set((hakemusOidC, hakukohdeOidB, SitovanVastaanotonIlmoitus)))
+        there was one (suoritusService).getAndStorePaatettavatOpiskeluOikeudet(HakijaOid(hakijaOidC), hakuOidA, hakukohdeOidB, hakemusOidC)
       }
+
       "Ei uutta ilmoitusta vastaanotettavasta paikasta" in new Mocks {
         hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
         hakuService.getHaku(hakuOidA) returns Right(tarjontaHakuA)
@@ -268,7 +278,9 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         valintatulosService.hakemuksentulos(hakemusA) returns Some(hakemuksentulosA)
         service.pollForAllMailables(mailDecorator, 1, oneMinute).mailables mustEqual Nil
         there was one (mailPollerRepository).markAsToBeSent(Set.empty)
+        there was no (suoritusService).getAndStorePaatettavatOpiskeluOikeudet(any[HakijaOid], any[HakuOid], any[HakukohdeOid], any[HakemusOid])
       }
+
       "Uusi ilmoitus vastaanotettavasta paikasta jos viesti.lahetetty false" in new Mocks {
         hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
         hakuService.getHaku(hakuOidA) returns Right(tarjontaHakuA)
@@ -305,7 +317,9 @@ class MailPollerSpec extends Specification with MockitoMatchers {
           )
         ))
         there was one (mailPollerRepository).markAsToBeSent(Set((hakemusOidA, hakukohdeOidA, Vastaanottoilmoitus)))
+        there was no (suoritusService).getAndStorePaatettavatOpiskeluOikeudet(any[HakijaOid], any[HakuOid], any[HakukohdeOid], any[HakemusOid])
       }
+
       "Ei uutta ilmoitusta ehdollisen vastaanoton siirtymisestä ylempään hakutoiveeseen" in new Mocks {
         hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
         hakuService.getHaku(hakuOidA) returns Right(tarjontaHakuA)
@@ -330,6 +344,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         service.pollForAllMailables(mailDecorator, 1, oneMinute).mailables mustEqual Nil
         there was three (mailPollerRepository).markAsToBeSent(Set.empty)
       }
+
       "Ei uutta ilmoitusta ehdollisen vastaanoton muuttumisesta sitovaksi sen siirtyessä ylimpään hakutoiveeseen" in new Mocks {
         hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
         hakuService.getHaku(hakuOidA) returns Right(tarjontaHakuA)
@@ -353,7 +368,9 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         valintatulosService.hakemuksentulos(hakemusC) returns Some(hakemuksentulosD)
         service.pollForAllMailables(mailDecorator, 1, oneMinute).mailables mustEqual Nil
         there was three (mailPollerRepository).markAsToBeSent(Set.empty)
+        there was no (suoritusService).getAndStorePaatettavatOpiskeluOikeudet(any[HakijaOid], any[HakuOid], any[HakukohdeOid], any[HakemusOid])
       }
+
       "Ei uutta ilmoitusta ehdollisen vastaanoton muuttumisesta sitovaksi ylimmän hakutoiveen peruuntuessa" in new Mocks {
         hakuService.kaikkiJulkaistutHaut returns Right(List(tarjontaHakuA))
         hakuService.getHaku(hakuOidA) returns Right(tarjontaHakuA)
@@ -377,6 +394,7 @@ class MailPollerSpec extends Specification with MockitoMatchers {
         valintatulosService.hakemuksentulos(hakemusC) returns Some(hakemuksentulosE)
         service.pollForAllMailables(mailDecorator, 1, oneMinute).mailables mustEqual Nil
         there was three (mailPollerRepository).markAsToBeSent(Set.empty)
+        there was no (suoritusService).getAndStorePaatettavatOpiskeluOikeudet(any[HakijaOid], any[HakuOid], any[HakukohdeOid], any[HakemusOid])
       }
 
       "Ei ilmoitusta, jos kutsumanimi puuttuu" in new Mocks {

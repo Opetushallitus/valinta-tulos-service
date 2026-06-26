@@ -1,6 +1,7 @@
 package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import fi.vm.sade.valintatulosservice.json.JsonFormats.jsonFormats
+import fi.vm.sade.valintatulosservice.lokalisointi.TranslationUtil.getMatchingTranslation
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, PaatettavaOpiskeluOikeus, TranslatedName, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy.{LahetysSyy, ehdollisen_periytymisen_ilmoitus}
 import org.apache.velocity.VelocityContext
@@ -45,7 +46,8 @@ object EmailStructure {
       s.flatMap(ss => m.get(ss).orElse(m.get(s"kieli_$ss"))).find(_.nonEmpty)
         .getOrElse("-")
   }
-  private val LOG : org.slf4j.Logger = LoggerFactory.getLogger(classOf[EmailStructure])
+
+  private val LOG: org.slf4j.Logger = LoggerFactory.getLogger(classOf[EmailStructure])
 
   private val timezone = ZoneId.of("Europe/Helsinki")
   private val deadlineFormatFi = new SimpleDateFormat("d.M.yyyy 'klo' HH:mm")
@@ -69,7 +71,7 @@ object EmailStructure {
       case "fi" => ilmoitus.deadline.map(deadlineFormatFi.format)
       case "sv" => ilmoitus.deadline.map(deadlineFormatSv.format)
       case "en" => ilmoitus.deadline.map(deadlineFormatEn.format)
-      case _ => throw new IllegalArgumentException ("Tuntematon asiointikieli. Hakemus: " + ilmoitus.hakemusOid + ",  asiointikieli:  " + ilmoitus.asiointikieli)
+      case _ => throw new IllegalArgumentException("Tuntematon asiointikieli. Hakemus: " + ilmoitus.hakemusOid + ",  asiointikieli:  " + ilmoitus.asiointikieli)
     }
 
     if (!(isValidVastaanottoIlmoitus || isValidPaikkaVastaanotettavissaIlmoitus)) throw new IllegalArgumentException("Failed to add hakukohde information to recipient. Hakemus " + ilmoitus.hakemusOid +
@@ -82,13 +84,13 @@ object EmailStructure {
 
     EmailStructure(
       hakukohde =
-        if(isValidVastaanottoIlmoitus)
+        if (isValidVastaanottoIlmoitus)
           Some(ilmoitus.hakukohteet.head.hakukohteenNimet.getAny(lang, "fi", "sv", "en")
-          .concat(" / ")
-          .concat(ilmoitus.hakukohteet.head.tarjoajaNimet.getAny(lang, "fi", "sv", "en")))
+            .concat(" / ")
+            .concat(ilmoitus.hakukohteet.head.tarjoajaNimet.getAny(lang, "fi", "sv", "en")))
         else None,
       hakukohteet =
-        if(isValidPaikkaVastaanotettavissaIlmoitus)
+        if (isValidPaikkaVastaanotettavissaIlmoitus)
           ilmoitus.hakukohteet
             .map(hk => EmailHakukohde(
               hk.hakukohteenNimet.getAny(lang, "fi", "sv", "en"),
@@ -112,34 +114,6 @@ object EmailStructure {
       supaNimi = getMatchingTranslation(oikeus.supaNimi, lang),
       virtaNimi = virtaNimi,
       naytaVirtaNimi = virtaNimi.nonEmpty)
-  }
-
-  private def getMatchingTranslation(translatedName: TranslatedName, lang: String): String = {
-    val translation = lang match {
-      case "fi" =>
-        translatedName.fi
-      case "sv" =>
-        translatedName.sv
-      case "en" =>
-        translatedName.en
-    }
-    (translation.isBlank, lang) match {
-      case (false, _) =>
-        translation
-      case (_, "fi") if translatedName.en.nonEmpty =>
-        translatedName.en
-      case (_, "fi") if translatedName.sv.nonEmpty =>
-        translatedName.sv
-      case (_, "en") if translatedName.fi.nonEmpty =>
-        translatedName.fi
-      case (_, "en") if translatedName.sv.nonEmpty =>
-        translatedName.sv
-      case (_, "sv") if translatedName.fi.nonEmpty =>
-        translatedName.fi
-      case (_, "sv") if translatedName.en.nonEmpty =>
-        translatedName.en
-      case _ => ""
-    }
   }
 }
 
