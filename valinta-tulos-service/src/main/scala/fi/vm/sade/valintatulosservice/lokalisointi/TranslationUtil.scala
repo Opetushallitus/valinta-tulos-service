@@ -5,30 +5,14 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.TranslatedName
 object TranslationUtil {
 
   def getMatchingTranslation(translatedName: TranslatedName, lang: String): String = {
-    val translation = lang match {
+    val translationLookup = lang match {
       case "fi" =>
-        translatedName.fi
+        List(translatedName.fi, translatedName.en, translatedName.sv)
       case "sv" =>
-        translatedName.sv
+        List(translatedName.sv, translatedName.fi, translatedName.en)
       case "en" =>
-        translatedName.en
+        List(translatedName.en, translatedName.fi, translatedName.sv)
     }
-    (translation == null || translation.isBlank, lang) match {
-      case (false, _) =>
-        translation
-      case (_, "fi") if translatedName.en != null && translatedName.en.nonEmpty =>
-        translatedName.en
-      case (_, "fi") if translatedName.sv != null && translatedName.sv.nonEmpty =>
-        translatedName.sv
-      case (_, "en") if translatedName.fi != null && translatedName.fi.nonEmpty =>
-        translatedName.fi
-      case (_, "en") if translatedName.sv != null && translatedName.sv.nonEmpty =>
-        translatedName.sv
-      case (_, "sv") if translatedName.fi != null && translatedName.fi.nonEmpty =>
-        translatedName.fi
-      case (_, "sv") if translatedName.en != null && translatedName.en.nonEmpty =>
-        translatedName.en
-      case _ => ""
-    }
+    translationLookup.find(t => t != null && !t.isBlank).getOrElse("")
   }
 }
