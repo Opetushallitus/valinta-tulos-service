@@ -16,7 +16,7 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
 
   override implicit val formats: Formats = JsonFormats.jsonFormats
 
-  val opiskeluOikeudet = """[
+  val opiskeluOikeudet: String = """[
                        	  {
                             "virtaOpiskeluOikeusId": "02507_2600544",
                             "organisaatioOid": "1.2.246.562.10.38429345754",

@@ -8,6 +8,7 @@ import fi.vm.sade.valintatulosservice.config.{EmailerRegistry, PortChecker, VtsA
 import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
+import fi.vm.sade.valintatulosservice.suorituspalvelu.SuorituspalveluService
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, Vastaanottotila}
@@ -33,13 +34,15 @@ class SmokeTest extends Specification with HttpComponentsClient with Mockito wit
   val hakemusRepository: HakemusRepository = mock[HakemusRepository]
   val ohjausparametritService: OhjausparametritService = mock[OhjausparametritService]
   val vtsApplicationSettings: VtsApplicationSettings = mock[VtsApplicationSettings]
+  val suoritusService: SuorituspalveluService = mock[SuorituspalveluService]
 
   vtsApplicationSettings.mailPollerConcurrency returns 2
 
   private val mailDecorator = new MailDecorator(
     hakuService,
     oppijanTunnistusService,
-    ohjausparametritService
+    ohjausparametritService,
+    suoritusService
   )
 
   mailPollerRepository.findHakukohdeOidsCheckedRecently(any[Duration]) returns Set.empty
@@ -51,7 +54,8 @@ class SmokeTest extends Specification with HttpComponentsClient with Mockito wit
     ehdollisestiHyvaksyttavissa = false,
     hakukohteenNimet = Map("fi" -> "hakukohteen_nimi"),
     tarjoajaNimet = Map("fi" -> "tarjoajan_nimi"),
-    organisaatioOiditAuktorisointiin = Set()
+    organisaatioOiditAuktorisointiin = Set(),
+    paatettavatOpiskeluoikeudet = List()
   )
 
   private val defaultIlmoitus = Ilmoitus(

@@ -210,7 +210,7 @@ class MailPoller(mailPollerRepository: MailPollerRepository,
       acc
     } else {
       val mailablesNeeded = totalMailablesWanted - acc.size
-      var hakukohteesToProcessOnThisIteration = Math.min(Math.max(mailablesNeeded / 10, 1), hakukohdeOids.size)
+      val hakukohteesToProcessOnThisIteration = Math.min(Math.max(mailablesNeeded / 10, 1), hakukohdeOids.size)
       val (toPoll, rest) = hakukohdeOids.splitAt(hakukohteesToProcessOnThisIteration)
       toPoll.tasksupport = hakukohdeOids.tasksupport
       rest.tasksupport = hakukohdeOids.tasksupport
