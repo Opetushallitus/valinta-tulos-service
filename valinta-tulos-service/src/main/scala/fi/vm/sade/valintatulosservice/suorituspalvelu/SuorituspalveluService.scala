@@ -37,7 +37,7 @@ class SuorituspalveluService(config: VtsAppConfig, client: CasClient, db: Valint
   def getAndStorePaatettavatOpiskeluOikeudet(hakijaOid: HakijaOid, hakuOid: HakuOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid): List[PaatettavaOpiskeluOikeus] = {
     val oikeudet = getPaatettavatOpiskeluOikeudet(hakijaOid, hakuOid, hakukohdeOid)
     if (oikeudet.nonEmpty) {
-      db.storePaatetettavatOpiskeluOikeudet(hakijaOid.toString, hakukohdeOid, hakemusOid, Serialization.write(oikeudet))
+      db.storePaatetettavatOpiskeluOikeudet(hakijaOid.toString, hakukohdeOid, hakemusOid, null, Serialization.write(oikeudet))
     }
     oikeudet
   }
