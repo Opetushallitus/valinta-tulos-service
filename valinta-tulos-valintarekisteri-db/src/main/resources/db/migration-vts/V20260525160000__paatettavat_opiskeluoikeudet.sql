@@ -2,18 +2,18 @@ CREATE TABLE IF NOT EXISTS yhden_opiskeluoikeuden_saados (
     henkilo_oid VARCHAR(50) NOT NULL,
     hakemus_oid VARCHAR(50) NOT NULL,
     hakukohde_oid VARCHAR(50) NOT NULL,
-    paatelty_aloitus_pvm timestamp DEFAULT NULL,
+    paatelty_aloitus_pvm VARCHAR(50) DEFAULT NULL,
     paatettavat_oikeudet JSON NOT NULL,
     transaction_id bigint not null default txid_current(),
     system_time tstzrange not null default tstzrange(now(), null, '[)'),
-    CONSTRAINT paatettavat_opiskeluoikeudet_pkey PRIMARY KEY (hakemus_oid, hakukohde_oid)
+    CONSTRAINT yhden_opiskeluoikeuden_saados_pkey PRIMARY KEY (hakemus_oid, hakukohde_oid)
 );
 
 COMMENT ON TABLE yhden_opiskeluoikeuden_saados IS 'Hakijalle vastaanottaessa näytetyt päätettävät opiskeluoikeudet sekä siihen liittyvät tiedot';
 COMMENT ON COLUMN yhden_opiskeluoikeuden_saados.henkilo_oid IS 'Henkilö';
 COMMENT ON COLUMN yhden_opiskeluoikeuden_saados.hakemus_oid IS 'Hakemus';
 COMMENT ON COLUMN yhden_opiskeluoikeuden_saados.hakukohde_oid IS 'Hakukohde';
-COMMENT ON COLUMN yhden_opiskeluoikeuden_saados.paatelty_aloitus_pvm IS 'Vastaanotetun hakutoiveen päätelty aloituspäivämäärä';
+COMMENT ON COLUMN yhden_opiskeluoikeuden_saados.paatelty_aloitus_pvm IS 'Vastaanotetun hakutoiveen päätelty aloituspäivämäärä tai null jos päättely epäonnistui';
 COMMENT ON COLUMN yhden_opiskeluoikeuden_saados.paatettavat_oikeudet IS 'Päätettävät opiskeluoikeudet';
 
 CREATE TABLE IF NOT EXISTS yhden_opiskeluoikeuden_saados_history (LIKE yhden_opiskeluoikeuden_saados);
