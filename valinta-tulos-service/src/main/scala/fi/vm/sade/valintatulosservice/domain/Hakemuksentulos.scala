@@ -51,7 +51,8 @@ case class Hakutoiveentulos(hakukohdeOid: HakukohdeOid,
                             virkailijanTilat: HakutoiveenSijoittelunTilaTieto,
                             kelaURL: Option[String] = None,
                             showMigriURL: Option[Boolean] = None,
-                            jonokohtaisetTulostiedot: List[JonokohtainenTulostieto]
+                            jonokohtaisetTulostiedot: List[JonokohtainenTulostieto],
+                            naytetytPaatettavatOpiskeluoikeudet: List[PaatettavaOpiskeluOikeus] = List.empty
                             ) {
   def toKesken = {
     copy(

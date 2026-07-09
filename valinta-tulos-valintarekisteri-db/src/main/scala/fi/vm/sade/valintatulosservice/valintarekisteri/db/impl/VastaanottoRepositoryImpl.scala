@@ -3,8 +3,10 @@ package fi.vm.sade.valintatulosservice.valintarekisteri.db.impl
 import fi.vm.sade.valintatulosservice.config.Timer.timed
 import fi.vm.sade.valintatulosservice.valintarekisteri.db._
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
+import org.json4s.jackson.Serialization.read
 import org.postgresql.util.PSQLException
 import slick.dbio.DBIO
+import slick.jdbc.GetResult
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.TransactionIsolation.Serializable
 
@@ -217,26 +219,44 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
     case _ => tallennaVastaanottoTapahtumaAction(vastaanottoEvent, ifUnmodifiedSince)
   }
 
+  override def storePaatetettavatOpiskeluOikeudet(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid, oikeudet: String): Unit = {
+    runBlocking(tallennaPaatettavatOpiskeluOikeudet(henkiloOid, hakukohdeOid, hakemusOid, oikeudet))
+  }
+
+  override def findHakemuksenVastaanotonPaatettavatOpiskeluOikeudet(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): DBIO[Option[String]] = {
+    sql"""select paatettavat_oikeudet::json from paatettavat_opiskeluoikeudet
+           where hakukohde_oid = $hakukohdeOid and hakemus_oid = $hakemusOid""".as[String].headOption
+  }
+
+  private def tallennaPaatettavatOpiskeluOikeudet(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid, oikeudet: String): DBIO[Unit] = {
+    sqlu"""insert into paatettavat_opiskeluoikeudet (henkilo_oid, hakukohde_oid, hakemus_oid, paatettavat_oikeudet)
+              values($henkiloOid, $hakukohdeOid, $hakemusOid, $oikeudet::json)
+            on conflict on constraint paatettavat_opiskeluoikeudet_pkey do update set
+              paatettavat_oikeudet = $oikeudet::json
+            where paatettavat_opiskeluoikeudet.henkilo_oid = $henkiloOid
+              and paatettavat_opiskeluoikeudet.hakukohde_oid = $hakukohdeOid
+              and paatettavat_opiskeluoikeudet.hakemus_oid = $hakemusOid"""
+      .andThen(DBIO.successful())
+  }
+
   private def tallennaVastaanottoTapahtumaAction(vastaanottoEvent: VastaanottoEvent, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
     val VastaanottoEvent(henkiloOid, _, hakukohdeOid, action, ilmoittaja, selite) = vastaanottoEvent
-      val deleteVastaanotto = sqlu"""update vastaanotot set deleted = overriden_vastaanotto_deleted_id()
-                                     where (henkilo = ${henkiloOid}
-                                     or henkilo in (select linked_oid from henkiloviitteet where person_oid = ${henkiloOid}))
-                                        and hakukohde = ${hakukohdeOid}
-                                        and deleted is null
-                                        and (${ifUnmodifiedSince}::timestamptz is null
-                                        or vastaanotot.timestamp < ${ifUnmodifiedSince})"""
+    val deleteVastaanotto = sqlu"""update vastaanotot set deleted = overriden_vastaanotto_deleted_id()
+                                   where (henkilo = ${henkiloOid}
+                                   or henkilo in (select linked_oid from henkiloviitteet where person_oid = ${henkiloOid}))
+                                      and hakukohde = ${hakukohdeOid}
+                                      and deleted is null
+                                      and (${ifUnmodifiedSince}::timestamptz is null
+                                      or vastaanotot.timestamp < ${ifUnmodifiedSince})"""
 
-      val insertVastaanotto = sqlu"""insert into vastaanotot (hakukohde, henkilo, action, ilmoittaja, selite)
-                           values ($hakukohdeOid, $henkiloOid, ${action.toString}::vastaanotto_action, $ilmoittaja, $selite)"""
-      deleteVastaanotto.andThen(insertVastaanotto).flatMap {
-        case 0 =>
-          DBIO.failed(new ConcurrentModificationException(s"Vastaanottoa $vastaanottoEvent ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
-        case n =>
-          DBIO.successful(())
-      }
-
-
+    val insertVastaanotto = sqlu"""insert into vastaanotot (hakukohde, henkilo, action, ilmoittaja, selite)
+                         values ($hakukohdeOid, $henkiloOid, ${action.toString}::vastaanotto_action, $ilmoittaja, $selite)"""
+    deleteVastaanotto.andThen(insertVastaanotto).flatMap {
+      case 0 =>
+        DBIO.failed(new ConcurrentModificationException(s"Vastaanottoa $vastaanottoEvent ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
+      case n =>
+        DBIO.successful(())
+    }
   }
 
   private def kumoaVastaanottotapahtumatAction(vastaanottoEvent: VastaanottoEvent, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {

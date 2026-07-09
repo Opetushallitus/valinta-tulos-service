@@ -224,6 +224,14 @@ class VastaanottoService(hakuService: HakuService,
     } yield ()
   }
 
+  def tallennaPaatettavatOpiskeluOikeudet(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, oikeudet: String): Unit = {
+    try {
+      hakemusRepository.findHakemus(hakemusOid).map(hakemus => hakijaVastaanottoRepository.storePaatetettavatOpiskeluOikeudet(hakemus.henkiloOid, hakukohdeOid, hakemusOid, oikeudet))
+    } catch {
+      case e: Exception => logger.warn(s"Hakijalle näytettyjen päätettävien opiskeluoikeuksien tallennus epäonnistui hakemukselle $hakemusOid ja hakukohteelle $hakukohdeOid", e)
+    }
+  }
+
   private def findHakutoive(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Either[Throwable, Unit] = {
     for {
       hakemus <- valintatulosService.hakemuksentulos(hakemusOid).toRight(new IllegalArgumentException(s"Hakemusta $hakemusOid ei löydy")).right

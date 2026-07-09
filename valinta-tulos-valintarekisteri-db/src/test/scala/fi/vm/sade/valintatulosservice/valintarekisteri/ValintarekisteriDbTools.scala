@@ -2,7 +2,6 @@ package fi.vm.sade.valintatulosservice.valintarekisteri
 
 import java.text.SimpleDateFormat
 import java.util.Date
-
 import fi.vm.sade.sijoittelu.domain.Valintatapajono.JonosijaTieto
 import fi.vm.sade.sijoittelu.domain._
 import fi.vm.sade.sijoittelu.tulos.dto.SijoitteluajoDTO
@@ -10,6 +9,7 @@ import fi.vm.sade.valintatulosservice.json4sCustomFormats
 import fi.vm.sade.valintatulosservice.security.{CasSession, Role, ServiceTicket}
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Tasasijasaanto, _}
+import org.json4s.jackson.Serialization.read
 import org.json4s.{DefaultFormats, Formats}
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods._
@@ -81,7 +81,8 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
       sqlu"truncate table ehdollisen_hyvaksynnan_ehto cascade",
       sqlu"truncate table ehdollisen_hyvaksynnan_ehto_history cascade",
       sqlu"truncate table hyvaksynnan_ehto_hakukohteessa cascade",
-      sqlu"truncate table hyvaksynnan_ehto_hakukohteessa_history cascade"
+      sqlu"truncate table hyvaksynnan_ehto_hakukohteessa_history cascade",
+      sqlu"truncate table paatettavat_opiskeluoikeudet cascade"
       ).transactionally)
   }
 
@@ -388,6 +389,22 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
             inner join hakijaryhmat h ON hh.hakijaryhma_oid = h.oid and hh.sijoitteluajo_id = h.sijoitteluajo_id
             where h.oid = ${hakijaryhmaOid}""".as[String]
     )
+  }
+
+  private implicit val getPaatettavatOpiskeluOikeudetResult: GetResult[Seq[PaatettavaOpiskeluOikeus]] = GetResult(r => {
+    read[Seq[PaatettavaOpiskeluOikeus]](r.nextString())
+  })
+
+  def findVastaanotonPaatettavatOpiskeluOikeudet(hakukohdeOid: String, hakemusOid: String): Seq[PaatettavaOpiskeluOikeus] = {
+    singleConnectionValintarekisteriDb.runBlocking(
+      sql"""select paatettavat_oikeudet::json from paatettavat_opiskeluoikeudet
+           where hakukohde_oid = $hakukohdeOid and hakemus_oid = $hakemusOid""".as[Seq[PaatettavaOpiskeluOikeus]]
+    ).head
+  }
+
+  def lisaaNaytetytPaatettavatOpiskeluoikeudet(hakukohdeOid: String, hakemusOid: String, henkiloOid: String, oikeudet: String): Unit = {
+    singleConnectionValintarekisteriDb.runBlocking(sqlu"""insert into paatettavat_opiskeluoikeudet (henkilo_oid, hakukohde_oid, hakemus_oid, paatettavat_oikeudet)
+              values($henkiloOid, $hakukohdeOid, $hakemusOid, $oikeudet::json)""")
   }
 
   implicit val getHakemuksetForValintatapajonosResult: GetResult[HakemusRecord] = GetResult(r => HakemusRecord(

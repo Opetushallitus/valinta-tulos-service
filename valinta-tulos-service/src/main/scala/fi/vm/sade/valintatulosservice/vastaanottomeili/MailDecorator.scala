@@ -4,6 +4,7 @@ import fi.vm.sade.oppijantunnistus.{OppijanTunnistus, OppijanTunnistusService}
 import fi.vm.sade.valintatulosservice.config.Timer.timed
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, OhjausparametritService}
+import fi.vm.sade.valintatulosservice.suorituspalvelu.SuorituspalveluService
 import fi.vm.sade.valintatulosservice.tarjonta
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -16,7 +17,8 @@ class HakuNotFoundException(message: String) extends RuntimeException(message)
 
 class MailDecorator(hakuService: HakuService,
                     oppijanTunnistusService: OppijanTunnistusService,
-                    ohjausparametritService: OhjausparametritService) extends Logging {
+                    ohjausparametritService: OhjausparametritService,
+                    suorituspalveluService: SuorituspalveluService) extends Logging {
   def statusToMail(status: HakemusMailStatus): Option[Ilmoitus] = {
       if (status.anyMailToBeSent) {
         try {
@@ -25,7 +27,7 @@ class MailDecorator(hakuService: HakuService,
           val tarjontaHaku = timed(s"Tarjontahaun hakeminen hakuoidilla ${status.hakuOid}", 50) {
             fetchHaku(status.hakuOid)
           }
-          val ilmoitus = Ilmoitus(status.hakemusOid, status.hakijaOid, None, status.asiointikieli, status.kutsumanimi, status.email, deadline, mailables.map(toHakukohde), toHaku(tarjontaHaku))
+          val ilmoitus = Ilmoitus(status.hakemusOid, status.hakijaOid, None, status.asiointikieli, status.kutsumanimi, status.email, deadline, mailables.map(toHakukohde(_, status.hakijaOid, status.hakemusOid)), toHaku(tarjontaHaku))
 
           if (status.hasHetu && !tarjontaHaku.toinenAste) {
             Some(ilmoitus)
@@ -52,11 +54,17 @@ class MailDecorator(hakuService: HakuService,
       }
   }
 
-  def toHakukohde(hakukohdeMailStatus: HakukohdeMailStatus): Hakukohde = {
+  def reasonsToMailShouldIncludePaatettavatOpiskeluOikeudet: Set[MailReason] = Set(EhdollisenPeriytymisenIlmoitus, SitovanVastaanotonIlmoitus)
+
+  def toHakukohde(hakukohdeMailStatus: HakukohdeMailStatus, hakijaOid: String, hakemusOid: HakemusOid): Hakukohde = {
     hakuService.getHakukohde(hakukohdeMailStatus.hakukohdeOid) match {
       case Right(hakukohde) =>
         hakuService.getHaku(hakukohde.hakuOid) match {
-          case Right(haku) => Hakukohde(hakukohdeMailStatus.hakukohdeOid,
+          case Right(haku) =>
+            val paatettavatOikeudet = if (hakukohdeMailStatus.reasonToMail.exists(r => reasonsToMailShouldIncludePaatettavatOpiskeluOikeudet.contains(r)))
+              suorituspalveluService.getAndStorePaatettavatOpiskeluOikeudet(HakijaOid(hakijaOid), hakukohde.hakuOid, hakukohde.oid, hakemusOid)
+              else List.empty
+            Hakukohde(hakukohdeMailStatus.hakukohdeOid,
             hakukohdeMailStatus.reasonToMail match {
               case Some(Vastaanottoilmoitus) if haku.korkeakoulu && hakukohde.tutkintoonJohtava => LahetysSyy.vastaanottoilmoitusKk
               case Some(Vastaanottoilmoitus) if haku.korkeakoulu && !hakukohde.tutkintoonJohtava => LahetysSyy.vastaanottoilmoitusKkTutkintoonJohtamaton
@@ -72,7 +80,8 @@ class MailDecorator(hakuService: HakuService,
             hakukohdeMailStatus.ehdollisestiHyvaksyttavissa,
             hakukohde.hakukohteenNimet,
             hakukohde.tarjoajaNimet,
-            hakukohde.organisaatioOiditAuktorisointiin)
+            hakukohde.organisaatioOiditAuktorisointiin,
+            paatettavatOikeudet)
           case Left(e) =>
             val msg = "Hakukohteen" + hakukohdeMailStatus.hakukohdeOid + " hakua ei löydy, oid: " + hakukohde.hakuOid
             logger.error(msg, e)

@@ -63,7 +63,7 @@ class MailerHelperTest extends Specification {
     val hakemusOid = HakemusOid("hakemus-oid")
     val haunNimet = Map(("fi", "Haku"), ("sv", "Haku-sv"), ("en", "Haku-en"))
     val hakukohteenNimet = Map(("fi", "Hakukohde"), ("sv", "Hakukohde-sv"), ("en", "Hakukohde-en"))
-    val hakukohde = Hakukohde(hakukohdeOid, LahetysSyy.vastaanottoilmoitusMuut, Vastaanottotila.kesken, false,hakukohteenNimet, Map.empty, Set.empty)
+    val hakukohde = Hakukohde(hakukohdeOid, LahetysSyy.vastaanottoilmoitusMuut, Vastaanottotila.kesken, false,hakukohteenNimet, Map.empty, Set.empty, List.empty)
     val haku = Haku(hakuOid, haunNimet, false)
     val ilmoitus = Ilmoitus(hakemusOid, "hakija-oid", None, "fi", "etunimi", "email", None, List(hakukohde), haku)
 
@@ -166,7 +166,7 @@ class MailerHelperTest extends Specification {
 
   def getDummyIlmoitus(hakukohteidenLahetysSyyt: List[LahetysSyy]): Ilmoitus = {
     vastaanottomeili.Ilmoitus(null, null, None, FI, null, null, null,
-      hakukohteidenLahetysSyyt.map(Hakukohde(null, _, null, true, Map.empty, Map.empty, Set.empty)),
+      hakukohteidenLahetysSyyt.map(Hakukohde(null, _, null, true, Map.empty, Map.empty, Set.empty, List.empty)),
       null)
   }
 

@@ -14,13 +14,16 @@ import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
+object VastaanottoValidator {
+  val sitovaTaiEhdollinenVastaanotto: Seq[ValintatuloksenTila] = List(ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
+}
+
 trait VastaanottoValidator {
   val haku: Haku
   val hakukohdeOid: HakukohdeOid
   val valinnantulosRepository: ValinnantulosRepository with HakijaVastaanottoRepository
   val ohjausparametrit: Ohjausparametrit
 
-  val sitovaTaiEhdollinenVastaanotto: Seq[ValintatuloksenTila] = List(ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT, ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI)
   val keskenTaiVastaanottanutToisenPaikan: Seq[ValintatuloksenTila] = List(ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN, ValintatuloksenTila.KESKEN)
   val keskenTaiEhdollisestiVastaanottanut: Seq[ValintatuloksenTila] = List(ValintatuloksenTila.KESKEN, ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT)
   val virkailijanHyvaksytytTilat: Seq[Valinnantila] = List(Perunut, Peruutettu, Hyvaksytty, VarasijaltaHyvaksytty)
@@ -57,7 +60,7 @@ trait VastaanottoValidator {
       case (ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN, x) if keskenTaiVastaanottanutToisenPaikan.contains(x) => right
       case (ValintatuloksenTila.OTTANUT_VASTAAN_TOISEN_PAIKAN, x) => left(s"Hakija on vastaanottanut toisen paikan")
       case (_, ValintatuloksenTila.EI_VASTAANOTETTU_MAARA_AIKANA) => tarkistaVastaanottoDeadline(uusi)
-      case (_, u) if !sitovaTaiEhdollinenVastaanotto.contains(u) => right
+      case (_, u) if !VastaanottoValidator.sitovaTaiEhdollinenVastaanotto.contains(u) => right
       case (v, u) if v == u => right
       case (_, ValintatuloksenTila.EHDOLLISESTI_VASTAANOTTANUT) => onkoEhdollisestiVastaanotettavissa(uusi).flatMap(ehdollisestiVastaanotettavissa => ehdollisestiVastaanotettavissa match {
         case false => left(s"Hakutoivetta ei voi ottaa ehdollisesti vastaan")
