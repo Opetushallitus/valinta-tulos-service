@@ -104,7 +104,8 @@ class SiirtotiedostoService(siirtotiedostoRepository: SiirtotiedostoRepository, 
                                                 valintatapajonotCount,
                                                 jonosijatCount,
                                                 hyvaksytytJulkaistutHakutoiveetCount,
-                                                lukuvuosimaksutCount)
+                                                lukuvuosimaksutCount,
+                                                yosCount)
                                                 .toMap
 
       val result = siirtotiedostoProcess.copy(info = SiirtotiedostoProcessInfo(entityTotals = entityCounts), finishedSuccessfully = true)

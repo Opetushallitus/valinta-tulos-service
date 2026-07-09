@@ -44,7 +44,6 @@ insert into yhden_opiskeluoikeuden_saados_history (
      old.hakemus_oid,
      old.hakukohde_oid,
      old.paatelty_aloitus_pvm,
-     old.paatelty_opiskeluoikeuden_lopetus_pvm,
      old.paatettavat_oikeudet,
      old.transaction_id,
      tstzrange(lower(old.system_time), now(), '[)')
