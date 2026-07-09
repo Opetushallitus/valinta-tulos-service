@@ -6,7 +6,8 @@ import fi.vm.sade.valintatulosservice.hakemus.HakemusRepository
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.ohjausparametrit.OhjausparametritService
 import fi.vm.sade.valintatulosservice.sijoittelu.SijoittelutulosService
-import fi.vm.sade.valintatulosservice.tarjonta.HakuService
+import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde}
+import fi.vm.sade.valintatulosservice.utils.TimeUtils
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository, VastaanottoEvent, VastaanottoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila.Vastaanottotila
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
@@ -14,6 +15,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecord
 import slick.dbio.DBIO
 
 import java.text.SimpleDateFormat
+import java.time.ZonedDateTime
 import java.util.Date
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -224,12 +226,38 @@ class VastaanottoService(hakuService: HakuService,
     } yield ()
   }
 
-  def tallennaPaatettavatOpiskeluOikeudet(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, alkupvm: String, loppupvm: String, oikeudet: String): Unit = {
-    try {
-      hakemusRepository.findHakemus(hakemusOid).map(hakemus => hakijaVastaanottoRepository.storePaatetettavatOpiskeluOikeudet(hakemus.henkiloOid, hakukohdeOid, hakemusOid, alkupvm, loppupvm, oikeudet))
-    } catch {
-      case e: Exception => logger.warn(s"Hakijalle näytettyjen päätettävien opiskeluoikeuksien tallennus epäonnistui hakemukselle $hakemusOid ja hakukohteelle $hakukohdeOid", e)
-    }
+  def tallennaPaatettavatOpiskeluOikeudet(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid, oikeudet: String): Unit = {
+    hakuService.getHakukohde(hakukohdeOid).fold {
+      e => logger.warn(s"Hakukohdetta $hakukohdeOid ei saatu haettua tallennettaessa päätettäviä opiskeluoikeuksia hakemukselle $hakemusOid", e)
+    }, {
+      hakukohde => {
+      val alkuPvm = getPaateltyAloitusajankohta(hakukohde)
+      try {
+        hakemusRepository.findHakemus(hakemusOid).map(hakemus => hakijaVastaanottoRepository.storePaatetettavatOpiskeluOikeudet(hakemus.henkiloOid, hakukohdeOid, hakemusOid, new Date(), oikeudet))
+      } catch {
+        case e: Exception => logger.warn(s"Hakijalle näytettyjen päätettävien opiskeluoikeuksien tallennus epäonnistui hakemukselle $hakemusOid ja hakukohteelle $hakukohdeOid", e)
+      }
+    })
+  }
+
+  private def getPaateltyAloitusajankohta(hakukohde: Hakukohde): Date = {
+    hakukohde.paateltyAlkamisajankohta.map(ajankohta =>
+    (ajankohta.pvm, ajankohta.pvm.isBlank, ajankohta.henkilokohtainenSuunnitelma) match {
+      case (_, true, false) =>
+        logger.warn(
+          s"Hakukohteelle ${hakukohde.oid} ei ole aseteltu päättymispäivämäärää ja se ei ole myöskään henkilökohtaisen suunnitelman mukainen"
+        )
+        None
+      case (pvm, false, false) =>
+        if (TimeUtils.isNowAfter(pvm)) {
+          Some(TimeUtils.KOUTA_DATE_FORMATTER.format(ZonedDateTime.now(TimeUtils.ZONE_FINLAND).minusDays(1)))
+        } else {
+          Some(pvm)
+        }
+      case (_, _, true) =>
+        Some(TimeUtils.KOUTA_DATE_FORMATTER.format(ZonedDateTime.now(TimeUtils.ZONE_FINLAND).minusDays(1)))
+      }
+    }.orNull
   }
 
   private def findHakutoive(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Either[Throwable, Unit] = {
@@ -278,8 +306,7 @@ class VastaanottoService(hakuService: HakuService,
     } yield hakutoive._1
   }
 
-  private def tarkistaHakutoiveenVastaanotettavuusVirkailijana(vastaanotto: VirkailijanVastaanotto,
-                                                               hakutoive: Hakutoiveentulos,
+  private def tarkistaHakutoiveenVastaanotettavuusVirkailijana(vastaanotto: VirkailijanVastaanotto, hakutoive: Hakutoiveentulos,
                                                                maybeAiempiVastaanottoKaudella: Option[VastaanottoRecord]): Either[Throwable, Unit] = vastaanotto.action match {
     case VastaanotaEhdollisesti if hakutoive.vastaanotettavuustila != Vastaanotettavuustila.vastaanotettavissa_ehdollisesti =>
       Left(new IllegalArgumentException("Hakutoivetta ei voi ottaa ehdollisesti vastaan"))

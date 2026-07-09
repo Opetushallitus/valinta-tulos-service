@@ -16,12 +16,10 @@ class AuthenticatedHakijanVastaanottoActionSerializer extends CustomSerializer[E
     case x: JObject =>
       EnrichedHakijanVastaanottoAction(
         action = HakijanVastaanottoAction((x \ "action").extract[String](formats, manifest[String])),
-        alkupvm = (x \ "alkupvm").extract[String](formats, manifest[String]),
-        loppupvm = (x \ "loppupvm").extract[String](formats, manifest[String]),
         paatettavatOpiskeluOikeudet = (x \ "paatettavatOpiskeluOikeudet").extract[List[PaatettavaOpiskeluOikeus]](formats, manifest[List[PaatettavaOpiskeluOikeus]])
       )
   }, {
-    case x: EnrichedHakijanVastaanottoAction => JObject(JField("action", JString(x.action.toString)), JField("alkupvm", JString(x.alkupvm)), JField("loppupvm", JString(x.loppupvm)), JField("paatettavatOpiskeluOikeudet", JArray(x.paatettavatOpiskeluOikeudet.map(o => JString(o.toString)))))
+    case x: EnrichedHakijanVastaanottoAction => JObject(JField("action", JString(x.action.toString)), JField("paatettavatOpiskeluOikeudet", JArray(x.paatettavatOpiskeluOikeudet.map(o => JString(o.toString)))))
   })
 })
 
@@ -62,7 +60,7 @@ class AuthenticatedHakijanVastaanottoServlet(vastaanottoService: VastaanottoServ
       e => throw e,
       _ => if (sitovaTaiEhdollinenVastaanotto.contains(body.action.valintatuloksenTila)) {
         logger.info(s"Tallennetaan päätettävät opiskeluoikeudet vastaanotolle: hakemusOid $hakemusOid, hakukohdeOid, $hakukohdeOid, oikeudet $oikeudet")
-        vastaanottoService.tallennaPaatettavatOpiskeluOikeudet(hakemusOid, hakukohdeOid, body.alkupvm, body.loppupvm, Serialization.write(oikeudet))
+        vastaanottoService.tallennaPaatettavatOpiskeluOikeudet(hakemusOid, hakukohdeOid, Serialization.write(oikeudet))
       }
     )
   }

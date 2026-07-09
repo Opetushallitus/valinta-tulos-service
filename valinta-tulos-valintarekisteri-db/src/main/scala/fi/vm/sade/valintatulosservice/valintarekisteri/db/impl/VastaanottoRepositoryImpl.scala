@@ -231,7 +231,7 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
 
   private def tallennaPaatettavatOpiskeluOikeudet(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid, alkupvm: Date, oikeudet: String): DBIO[Unit] = {
     sqlu"""insert into yhden_opiskeluoikeuden_saados (henkilo_oid, hakukohde_oid, hakemus_oid, paatelty_aloitus_pvm, paatettavat_oikeudet)
-              values($henkiloOid, $hakukohdeOid, $hakemusOid, $alkupvm, $oikeudet::json)
+              values($henkiloOid, $hakukohdeOid, $hakemusOid, ${new java.sql.Timestamp(alkupvm.getTime)}, $oikeudet::json)
             on conflict on constraint paatettavat_opiskeluoikeudet_pkey do update set
               paatettavat_oikeudet = $oikeudet::json,
               paatelty_aloitus_pvm = ${new java.sql.Timestamp(alkupvm.getTime)}

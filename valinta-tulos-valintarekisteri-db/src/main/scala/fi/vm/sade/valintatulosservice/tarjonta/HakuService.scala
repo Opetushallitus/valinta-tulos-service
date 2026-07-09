@@ -45,7 +45,7 @@ case class Haku(oid: HakuOid,
   val sijoitteluJaPriorisointi = käyttääSijoittelua && käyttääHakutoiveidenPriorisointia
 }
 
-
+case class PaateltyAlkamisajankohta(pvm: String, henkilokohtainenSuunnitelma: Boolean)
 
 case class Hakukohde(oid: HakukohdeOid,
                      hakuOid: HakuOid,
@@ -58,7 +58,9 @@ case class Hakukohde(oid: HakukohdeOid,
                      koulutuksenAlkamiskausiUri: Option[String],
                      koulutuksenAlkamisvuosi: Option[Int],
                      organisaatioRyhmaOids: Set[String],
-                     hakukohteenNimiUri: Option[String] = None) {
+                     hakukohteenNimiUri: Option[String] = None,
+                     paateltyAlkamisajankohta: Option[PaateltyAlkamisajankohta] = None
+                    ) {
   def kkTutkintoonJohtava: Boolean = kkHakukohde && tutkintoonJohtava
   def kkHakukohde: Boolean = koulutusAsteTyyppi == "KORKEAKOULUTUS"
 
@@ -434,7 +436,8 @@ case class KoutaHakukohde(oid: String,
                           tila: String,
                           toteutusOid: String,
                           yhdenPaikanSaanto: YhdenPaikanSaanto,
-                          paateltyAlkamiskausi: Option[PaateltyAlkamiskausi]) {
+                          paateltyAlkamiskausi: Option[PaateltyAlkamiskausi],
+                          paateltyAlkamisajankohta: Option[PaateltyAlkamisajankohta]) {
 
   def toHakukohde(koulutus: KoutaKoulutus,
                   tarjoaja: Organisaatio): Hakukohde = {
@@ -449,7 +452,8 @@ case class KoutaHakukohde(oid: String,
       tutkintoonJohtava = koulutus.johtaaTutkintoon,
       koulutuksenAlkamiskausiUri = paateltyAlkamiskausi.map(ak => ak.kausiUri),
       koulutuksenAlkamisvuosi = paateltyAlkamiskausi.map(ak => Integer.parseInt(ak.vuosi)),
-      organisaatioRyhmaOids = Set.empty // FIXME
+      organisaatioRyhmaOids = Set.empty,
+      paateltyAlkamisajankohta = paateltyAlkamisajankohta
     )
   }
 

@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS yhden_opiskeluoikeuden_saados (
     henkilo_oid VARCHAR(50) NOT NULL,
     hakemus_oid VARCHAR(50) NOT NULL,
     hakukohde_oid VARCHAR(50) NOT NULL,
-    paatelty_aloitus_pvm timestamp NOT NULL,
+    paatelty_aloitus_pvm timestamp DEFAULT NULL,
     paatettavat_oikeudet JSON NOT NULL,
     transaction_id bigint not null default txid_current(),
     system_time tstzrange not null default tstzrange(now(), null, '[)'),
