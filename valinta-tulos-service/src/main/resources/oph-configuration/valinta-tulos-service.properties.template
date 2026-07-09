@@ -131,3 +131,4 @@ valinta-tulos-service.siirtotiedosto.lukuvuosimaksut_page_size={{ valintatulosse
 valinta-tulos-service.siirtotiedosto.valintatapajonot_page_size={{ valintatulosservice_siirtotiedosto_valintatapajonot_page_size | default('10000') }}
 valinta-tulos-service.siirtotiedosto.vastaanotot_page_size={{ valintatulosservice_siirtotiedosto_vastaanotot_page_size | default('10000') }}
 valinta-tulos-service.siirtotiedosto.hakukohde_group_size={{ valintatulosservice_siirtotiedosto_hakukohde_group_size | default('500') }}
+valinta-tulos-service.siirtotiedosto.yos_size={{ valintatulosservice_siirtotiedosto_yos_size | default('5000') }}
