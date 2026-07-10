@@ -99,14 +99,8 @@ case class SiirtotiedostoLukuvuosimaksu(personOid: String,
                                         luotu: String, //timestamp
                                         systemTime: String)
 
-case class SiirtotiedostoTranslatedName(fi: String, sv: String, en: String)
-
 case class SiirtotiedostoPaatettavaOpiskeluOikeus(
                                      virtaOpiskeluOikeusId: String,
-                                     organisaatioOid: String,
-                                     organisaatioNimi: SiirtotiedostoTranslatedName,
-                                     virtaNimi: SiirtotiedostoTranslatedName,
-                                     supaNimi: SiirtotiedostoTranslatedName
                                    )
 
 case class SiirtotiedostoYos(henkiloOid: String,

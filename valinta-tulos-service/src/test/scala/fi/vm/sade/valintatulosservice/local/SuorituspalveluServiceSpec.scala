@@ -3,6 +3,7 @@ package fi.vm.sade.valintatulosservice.local
 import fi.vm.sade.javautils.nio.cas.CasClient
 import fi.vm.sade.valintatulosservice.ITSpecification
 import fi.vm.sade.valintatulosservice.suorituspalvelu.SuorituspalveluService
+import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde, PaateltyAlkamisajankohta}
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijaOid, HakuOid, HakukohdeOid}
@@ -44,9 +45,11 @@ class SuorituspalveluServiceSpec extends ITSpecification with ValintarekisteriDb
 
   val response: Response = Mockito.mock[Response]
 
+  val hakuService: HakuService = Mockito.mock[HakuService]
+
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
 
-  lazy val suoritusService = new SuorituspalveluService(appConfig, client, valintarekisteriDb)
+  lazy val suoritusService = new SuorituspalveluService(appConfig, hakuService, client, valintarekisteriDb)
 
   override def afterAll(): Unit = deleteAll()
 
@@ -65,6 +68,24 @@ class SuorituspalveluServiceSpec extends ITSpecification with ValintarekisteriDb
     }
 
     "palauttaa ja tallentaa päätetyt opiskeluoikeudet" in {
+      when(hakuService.getHakukohde(HakukohdeOid("1.2.246.562.5.72607738902"))).thenReturn(Right(Hakukohde(
+        oid = HakukohdeOid("1.2.246.562.5.72607738902"),
+        hakuOid = null,
+        tarjoajaOids = null,
+        koulutusAsteTyyppi = null,
+        hakukohteenNimet = Map.empty,
+        tarjoajaNimet = Map.empty,
+        yhdenPaikanSaanto = null,
+        tutkintoonJohtava = true,
+        koulutuksenAlkamiskausiUri = null,
+        koulutuksenAlkamisvuosi = Some(2027),
+        organisaatioRyhmaOids = Set.empty,
+        hakukohteenNimiUri = null,
+        paateltyAlkamisajankohta = Some(PaateltyAlkamisajankohta(
+          pvm = "2027-02-05",
+          henkilokohtainenSuunnitelma = false
+        ))
+      )))
       when(response.getStatusCode).thenReturn(200)
       when(response.getResponseBody).thenReturn(opiskeluOikeudet)
       when(client.execute(any())).thenReturn(CompletableFuture.completedFuture(response))
