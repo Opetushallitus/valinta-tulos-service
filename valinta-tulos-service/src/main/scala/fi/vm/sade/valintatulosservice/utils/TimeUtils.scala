@@ -1,6 +1,8 @@
 package fi.vm.sade.valintatulosservice.utils
 
-import java.time.{LocalDate, LocalDateTime, ZoneId}
+import fi.vm.sade.valintatulosservice.tarjonta.Hakukohde
+
+import java.time.{LocalDate, LocalDateTime, ZoneId, ZonedDateTime}
 import java.time.format.DateTimeFormatter
 
 object TimeUtils {
@@ -24,5 +26,21 @@ object TimeUtils {
       val time = LocalDateTime.parse(timeStr, KOUTA_DATETIME_FORMATTER)
       now.isAfter(time)
     }
+  }
+
+  def getPaateltyAloitusajankohta(hakukohde: Hakukohde): String = {
+    hakukohde.paateltyAlkamisajankohta.flatMap(ajankohta =>
+      (ajankohta.pvm, ajankohta.pvm.isBlank, ajankohta.henkilokohtainenSuunnitelma) match {
+        case (_, true, false) =>
+          None
+        case (pvm, false, false) =>
+          if (TimeUtils.isNowAfter(pvm)) {
+            Some(TimeUtils.KOUTA_DATE_FORMATTER.format(ZonedDateTime.now(TimeUtils.ZONE_FINLAND)))
+          } else {
+            Some(pvm)
+          }
+        case (_, _, true) =>
+          Some(TimeUtils.KOUTA_DATE_FORMATTER.format(ZonedDateTime.now(TimeUtils.ZONE_FINLAND)))
+      }).orNull
   }
 }

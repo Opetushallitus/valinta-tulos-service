@@ -6,6 +6,8 @@ import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijaOid, HakuOid, HakukohdeOid, PaatettavaOpiskeluOikeus}
 import fi.vm.sade.valintatulosservice.logging.Logging
+import fi.vm.sade.valintatulosservice.tarjonta.HakuService
+import fi.vm.sade.valintatulosservice.utils.TimeUtils
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import org.asynchttpclient.RequestBuilder
 import org.json4s.native.JsonMethods.parse
@@ -17,7 +19,7 @@ import scala.compat.java8.FutureConverters.toScala
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-class SuorituspalveluService(config: VtsAppConfig, client: CasClient, db: ValintarekisteriDb) extends JsonFormats with Logging {
+class SuorituspalveluService(config: VtsAppConfig, hakuService: HakuService, client: CasClient, db: ValintarekisteriDb) extends JsonFormats with Logging {
 
   def getPaatettavatOpiskeluOikeudet(hakijaOid: HakijaOid, hakuOid: HakuOid, hakukohdeOid: HakukohdeOid): List[PaatettavaOpiskeluOikeus] = {
     logger.info(s"Haetaan päättyvät opiskeluoikeudet hakijalle $hakijaOid, haulle $hakuOid, hakukohteelle $hakukohdeOid")
@@ -35,11 +37,24 @@ class SuorituspalveluService(config: VtsAppConfig, client: CasClient, db: Valint
   }
 
   def getAndStorePaatettavatOpiskeluOikeudet(hakijaOid: HakijaOid, hakuOid: HakuOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid): List[PaatettavaOpiskeluOikeus] = {
-    val oikeudet = getPaatettavatOpiskeluOikeudet(hakijaOid, hakuOid, hakukohdeOid)
-    if (oikeudet.nonEmpty) {
-      db.storePaatetettavatOpiskeluOikeudet(hakijaOid.toString, hakukohdeOid, hakemusOid, null, Serialization.write(oikeudet))
-    }
-    oikeudet
+    hakuService.getHakukohde(hakukohdeOid).fold(
+      e => {
+        logger.warn(s"Hakukohdetta $hakukohdeOid ei saatu haettua hakiessa päätettäviä opiskeluoikeuksia hakemukselle $hakemusOid", e)
+        List.empty
+      }, hakukohde => {
+        val oikeudet = getPaatettavatOpiskeluOikeudet(hakijaOid, hakuOid, hakukohdeOid)
+        if (oikeudet.nonEmpty) {
+          val alkuPvm = TimeUtils.getPaateltyAloitusajankohta(hakukohde)
+          if (alkuPvm == null) {
+            logger.warn(
+              s"Hakukohteelle ${hakukohde.oid} ei pystytty päättelemään aloitusajankohtaa"
+            )
+          }
+          db.storePaatetettavatOpiskeluOikeudet(hakijaOid.toString, hakukohdeOid, hakemusOid, null, Serialization.write(oikeudet))
+        }
+        oikeudet
+      }
+    )
   }
 
   private def fetchOikeudet(url: String): Either[Throwable, List[PaatettavaOpiskeluOikeus]] = {

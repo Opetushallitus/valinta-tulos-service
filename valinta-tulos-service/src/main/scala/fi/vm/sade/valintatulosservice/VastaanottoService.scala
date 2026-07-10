@@ -230,32 +230,18 @@ class VastaanottoService(hakuService: HakuService,
     hakuService.getHakukohde(hakukohdeOid).fold(
       e => logger.warn(s"Hakukohdetta $hakukohdeOid ei saatu haettua tallennettaessa päätettäviä opiskeluoikeuksia hakemukselle $hakemusOid", e),
       hakukohde => {
-      val alkuPvm = getPaateltyAloitusajankohta(hakukohde)
+      val alkuPvm = TimeUtils.getPaateltyAloitusajankohta(hakukohde)
+      if (alkuPvm == null) {
+        logger.warn(
+          s"Hakukohteelle ${hakukohde.oid} ei pystytty päättelemään aloitusajankohtaa"
+        )
+      }
       try {
         hakemusRepository.findHakemus(hakemusOid).map(hakemus => hakijaVastaanottoRepository.storePaatetettavatOpiskeluOikeudet(hakemus.henkiloOid, hakukohdeOid, hakemusOid, alkuPvm, oikeudet))
       } catch {
         case e: Exception => logger.warn(s"Hakijalle näytettyjen päätettävien opiskeluoikeuksien tallennus epäonnistui hakemukselle $hakemusOid ja hakukohteelle $hakukohdeOid", e)
       }
     })
-  }
-
-  private def getPaateltyAloitusajankohta(hakukohde: Hakukohde): String = {
-    hakukohde.paateltyAlkamisajankohta.flatMap(ajankohta =>
-    (ajankohta.pvm, ajankohta.pvm.isBlank, ajankohta.henkilokohtainenSuunnitelma) match {
-      case (_, true, false) =>
-        logger.warn(
-          s"Hakukohteelle ${hakukohde.oid} ei ole aseteltu päättymispäivämäärää ja se ei ole myöskään henkilökohtaisen suunnitelman mukainen"
-        )
-        None
-      case (pvm, false, false) =>
-        if (TimeUtils.isNowAfter(pvm)) {
-          Some(TimeUtils.KOUTA_DATE_FORMATTER.format(ZonedDateTime.now(TimeUtils.ZONE_FINLAND)))
-        } else {
-          Some(pvm)
-        }
-      case (_, _, true) =>
-        Some(TimeUtils.KOUTA_DATE_FORMATTER.format(ZonedDateTime.now(TimeUtils.ZONE_FINLAND)))
-    }).orNull
   }
 
   private def findHakutoive(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): Either[Throwable, Unit] = {
