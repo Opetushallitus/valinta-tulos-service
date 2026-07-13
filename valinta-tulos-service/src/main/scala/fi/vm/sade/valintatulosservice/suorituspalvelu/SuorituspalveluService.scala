@@ -50,7 +50,7 @@ class SuorituspalveluService(config: VtsAppConfig, hakuService: HakuService, cli
               s"Hakukohteelle ${hakukohde.oid} ei pystytty päättelemään aloitusajankohtaa"
             )
           }
-          db.storePaatetettavatOpiskeluOikeudet(hakijaOid.toString, hakukohdeOid, hakemusOid, null, Serialization.write(oikeudet))
+          db.storePaatetettavatOpiskeluOikeudet(hakijaOid.toString, hakukohdeOid, hakemusOid, alkuPvm, Serialization.write(oikeudet))
         }
         oikeudet
       }
