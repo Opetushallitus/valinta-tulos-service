@@ -5,16 +5,27 @@ import fi.vm.sade.valintatulosservice.domain.{Hakemuksentulos, Valintatila}
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{SiirtotiedostoPagingParams, SiirtotiedostoRepositoryImpl, ValintarekisteriDb}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila
 import org.json4s.Formats
 import org.json4s.jackson.Serialization
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 
+import java.time.LocalDate
+import javax.sql.DataSource
+
 @RunWith(classOf[JUnitRunner])
 class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriDbTools {
 
   override implicit val formats: Formats = JsonFormats.jsonFormats
+
+  lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
+
+  lazy val siirtotiedostoRepository = new SiirtotiedostoRepositoryImpl {
+    override val dataSource: DataSource = valintarekisteriDb.dataSource
+    override val db = valintarekisteriDb.db
+  }
 
   val opiskeluOikeudet: String = """[
                        	  {
@@ -179,6 +190,15 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
       oikeus.organisaatioOid must_== "1.2.246.562.10.38429345754"
       oikeus.virtaNimi.fi must_== "Hyvinvoinnin uudistuva asiantuntijuus ja johtaminen"
       oikeus.supaNimi.fi must_== "Sairaanhoitaja (ylempi AMK)"
+
+      val yostiedot = siirtotiedostoRepository.getYosPage(SiirtotiedostoPagingParams("testId", 0, "tyyppi", LocalDate.now().minusDays(1).toString, LocalDate.now().plusDays(1).toString, 0, 1))
+      yostiedot.size must_== 1
+      yostiedot.head.henkiloOid must_== "1.2.246.562.24.14229104472"
+      yostiedot.head.hakukohdeOid must_== "1.2.246.562.5.72607738902"
+      yostiedot.head.hakemusOid must_== "1.2.246.562.11.00000441369"
+      yostiedot.head.paateltyAloitusPvm must_== "2027-05-20"
+      yostiedot.head.paatettavatOikeudet.size must_== 1
+      yostiedot.head.paatettavatOikeudet.head.virtaOpiskeluOikeusId must_== "02507_2600544"
     }
 
     "vastaanottaa uudelleen päättyvillä opiskeluoikeuksilla" in {

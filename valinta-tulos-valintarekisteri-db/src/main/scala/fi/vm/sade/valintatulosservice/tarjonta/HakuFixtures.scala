@@ -151,7 +151,8 @@ object HakuFixtures extends HakuService with JsonHakuService {
         true,
         Some("kausi_k#1"),
         Some(2016),
-        organisaatioRyhmaOids = Set()))
+        organisaatioRyhmaOids = Set(),
+        paateltyAlkamisajankohta = Some(PaateltyAlkamisajankohta("2027-05-20", false))))
     }
   }
 

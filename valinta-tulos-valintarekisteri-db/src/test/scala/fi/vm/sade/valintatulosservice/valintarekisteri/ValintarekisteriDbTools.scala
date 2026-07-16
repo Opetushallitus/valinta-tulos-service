@@ -82,7 +82,7 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
       sqlu"truncate table ehdollisen_hyvaksynnan_ehto_history cascade",
       sqlu"truncate table hyvaksynnan_ehto_hakukohteessa cascade",
       sqlu"truncate table hyvaksynnan_ehto_hakukohteessa_history cascade",
-      sqlu"truncate table paatettavat_opiskeluoikeudet cascade"
+      sqlu"truncate table yhden_opiskeluoikeuden_saados cascade"
       ).transactionally)
   }
 
@@ -397,13 +397,13 @@ trait ValintarekisteriDbTools extends Specification  with json4sCustomFormats {
 
   def findVastaanotonPaatettavatOpiskeluOikeudet(hakukohdeOid: String, hakemusOid: String): Seq[PaatettavaOpiskeluOikeus] = {
     singleConnectionValintarekisteriDb.runBlocking(
-      sql"""select paatettavat_oikeudet::json from paatettavat_opiskeluoikeudet
+      sql"""select paatettavat_oikeudet::json from yhden_opiskeluoikeuden_saados
            where hakukohde_oid = $hakukohdeOid and hakemus_oid = $hakemusOid""".as[Seq[PaatettavaOpiskeluOikeus]]
     ).head
   }
 
   def lisaaNaytetytPaatettavatOpiskeluoikeudet(hakukohdeOid: String, hakemusOid: String, henkiloOid: String, oikeudet: String): Unit = {
-    singleConnectionValintarekisteriDb.runBlocking(sqlu"""insert into paatettavat_opiskeluoikeudet (henkilo_oid, hakukohde_oid, hakemus_oid, paatettavat_oikeudet)
+    singleConnectionValintarekisteriDb.runBlocking(sqlu"""insert into yhden_opiskeluoikeuden_saados (henkilo_oid, hakukohde_oid, hakemus_oid, paatettavat_oikeudet)
               values($henkiloOid, $hakukohdeOid, $hakemusOid, $oikeudet::json)""")
   }
 

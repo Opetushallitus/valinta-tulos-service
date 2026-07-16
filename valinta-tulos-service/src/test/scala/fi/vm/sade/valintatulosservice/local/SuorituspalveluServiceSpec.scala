@@ -3,8 +3,9 @@ package fi.vm.sade.valintatulosservice.local
 import fi.vm.sade.javautils.nio.cas.CasClient
 import fi.vm.sade.valintatulosservice.ITSpecification
 import fi.vm.sade.valintatulosservice.suorituspalvelu.SuorituspalveluService
+import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde, PaateltyAlkamisajankohta}
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{SiirtotiedostoPagingParams, SiirtotiedostoRepositoryImpl, ValintarekisteriDb}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijaOid, HakuOid, HakukohdeOid}
 import org.asynchttpclient.Response
 import org.junit.runner.RunWith
@@ -13,7 +14,9 @@ import org.mockito.Mockito.when
 import org.specs2.mock.Mockito
 import org.specs2.runner.JUnitRunner
 
+import java.time.LocalDate
 import java.util.concurrent.CompletableFuture
+import javax.sql.DataSource
 
 @RunWith(classOf[JUnitRunner])
 class SuorituspalveluServiceSpec extends ITSpecification with ValintarekisteriDbTools {
@@ -44,9 +47,16 @@ class SuorituspalveluServiceSpec extends ITSpecification with ValintarekisteriDb
 
   val response: Response = Mockito.mock[Response]
 
+  val hakuService: HakuService = Mockito.mock[HakuService]
+
   lazy val valintarekisteriDb = new ValintarekisteriDb(appConfig.settings.valintaRekisteriDbConfig)
 
-  lazy val suoritusService = new SuorituspalveluService(appConfig, client, valintarekisteriDb)
+  lazy val suoritusService = new SuorituspalveluService(appConfig, hakuService, client, valintarekisteriDb)
+
+  lazy val siirtotiedostoRepository = new SiirtotiedostoRepositoryImpl {
+    override val dataSource: DataSource = valintarekisteriDb.dataSource
+    override val db = valintarekisteriDb.db
+  }
 
   override def afterAll(): Unit = deleteAll()
 
@@ -65,6 +75,24 @@ class SuorituspalveluServiceSpec extends ITSpecification with ValintarekisteriDb
     }
 
     "palauttaa ja tallentaa päätetyt opiskeluoikeudet" in {
+      when(hakuService.getHakukohde(HakukohdeOid("1.2.246.562.5.72607738902"))).thenReturn(Right(Hakukohde(
+        oid = HakukohdeOid("1.2.246.562.5.72607738902"),
+        hakuOid = null,
+        tarjoajaOids = null,
+        koulutusAsteTyyppi = null,
+        hakukohteenNimet = Map.empty,
+        tarjoajaNimet = Map.empty,
+        yhdenPaikanSaanto = null,
+        tutkintoonJohtava = true,
+        koulutuksenAlkamiskausiUri = null,
+        koulutuksenAlkamisvuosi = Some(2027),
+        organisaatioRyhmaOids = Set.empty,
+        hakukohteenNimiUri = null,
+        paateltyAlkamisajankohta = Some(PaateltyAlkamisajankohta(
+          pvm = "2027-02-05",
+          henkilokohtainenSuunnitelma = false
+        ))
+      )))
       when(response.getStatusCode).thenReturn(200)
       when(response.getResponseBody).thenReturn(opiskeluOikeudet)
       when(client.execute(any())).thenReturn(CompletableFuture.completedFuture(response))
@@ -86,6 +114,42 @@ class SuorituspalveluServiceSpec extends ITSpecification with ValintarekisteriDb
       oikeusDb.organisaatioOid must_== "1.2.246.562.10.38429345754"
       oikeusDb.virtaNimi.fi must_== "Hyvinvoinnin uudistuva asiantuntijuus ja johtaminen"
       oikeusDb.supaNimi.fi must_== "Sairaanhoitaja (ylempi AMK)"
+    }
+
+    "siirtotiedosto reposta saa oikeudet paatellyllä aloitusajalla" in {
+      when(hakuService.getHakukohde(HakukohdeOid("1.2.246.562.5.72607738902"))).thenReturn(Right(Hakukohde(
+        oid = HakukohdeOid("1.2.246.562.5.72607738902"),
+        hakuOid = null,
+        tarjoajaOids = null,
+        koulutusAsteTyyppi = null,
+        hakukohteenNimet = Map.empty,
+        tarjoajaNimet = Map.empty,
+        yhdenPaikanSaanto = null,
+        tutkintoonJohtava = true,
+        koulutuksenAlkamiskausiUri = null,
+        koulutuksenAlkamisvuosi = Some(2027),
+        organisaatioRyhmaOids = Set.empty,
+        hakukohteenNimiUri = null,
+        paateltyAlkamisajankohta = Some(PaateltyAlkamisajankohta(
+          pvm = "2027-02-05",
+          henkilokohtainenSuunnitelma = false
+        ))
+      )))
+      when(response.getStatusCode).thenReturn(200)
+      when(response.getResponseBody).thenReturn(opiskeluOikeudet)
+      when(client.execute(any())).thenReturn(CompletableFuture.completedFuture(response))
+      suoritusService.getAndStorePaatettavatOpiskeluOikeudet(HakijaOid("123"),
+        HakuOid("321"),
+        HakukohdeOid("1.2.246.562.5.72607738902"),
+        HakemusOid("1.2.246.562.11.00000441369"))
+      val yostiedot = siirtotiedostoRepository.getYosPage(SiirtotiedostoPagingParams("testId", 0, "tyyppi", LocalDate.now().minusDays(1).toString, LocalDate.now().plusDays(1).toString, 0, 1))
+      yostiedot.size must_== 1
+      yostiedot.head.henkiloOid must_== "123"
+      yostiedot.head.hakukohdeOid must_== "1.2.246.562.5.72607738902"
+      yostiedot.head.hakemusOid must_== "1.2.246.562.11.00000441369"
+      yostiedot.head.paateltyAloitusPvm must_== "2027-02-05"
+      yostiedot.head.paatettavatOikeudet.size must_== 1
+      yostiedot.head.paatettavatOikeudet.head.virtaOpiskeluOikeusId must_== "02507_2600544"
     }
   }
 }
