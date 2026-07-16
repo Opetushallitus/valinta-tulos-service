@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.ovara
 import fi.vm.sade.valintatulosservice.logging.Logging
 import fi.vm.sade.valintatulosservice.ovara.config.SiirtotiedostoConfig
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.SiirtotiedostoRepository
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{SiirtotiedostoHyvaksyttyJulkaistuHakutoive, SiirtotiedostoIlmoittautuminen, SiirtotiedostoJonosija, SiirtotiedostoLukuvuosimaksu, SiirtotiedostoPagingParams, SiirtotiedostoProcess, SiirtotiedostoProcessInfo, SiirtotiedostoValinnantulos, SiirtotiedostoValintatapajonoRecord, SiirtotiedostoVastaanotto}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{SiirtotiedostoHyvaksyttyJulkaistuHakutoive, SiirtotiedostoIlmoittautuminen, SiirtotiedostoJonosija, SiirtotiedostoLukuvuosimaksu, SiirtotiedostoPagingParams, SiirtotiedostoProcess, SiirtotiedostoProcessInfo, SiirtotiedostoValinnantulos, SiirtotiedostoValintatapajonoRecord, SiirtotiedostoVastaanotto, SiirtotiedostoYos}
 
 import java.util.UUID
 import scala.annotation.tailrec
@@ -94,6 +94,9 @@ class SiirtotiedostoService(siirtotiedostoRepository: SiirtotiedostoRepository, 
       val lukuvuosimaksutCount = formSiirtotiedosto[SiirtotiedostoLukuvuosimaksu](
         baseParams.copy(tyyppi = "lukuvuosimaksu", pageSize = config.lukuvuosimaksutSize),
         params => siirtotiedostoRepository.getLukuvuosimaksuPage(params)).fold(e => throw e, n => ("lukuvuosimaksu", n))
+      val yosCount = formSiirtotiedosto[SiirtotiedostoYos](
+        baseParams.copy(tyyppi = "yhdenopiskeluoikeudensaados", pageSize = config.yosSize),
+        params => siirtotiedostoRepository.getYosPage(params)).fold(e => throw e, n => ("yhdenopiskeluoikeudensaados", n))
 
       val entityCounts: Map[String, Long] = Seq(valinnantulosCount,
                                                 vastaanototCount,
@@ -101,7 +104,8 @@ class SiirtotiedostoService(siirtotiedostoRepository: SiirtotiedostoRepository, 
                                                 valintatapajonotCount,
                                                 jonosijatCount,
                                                 hyvaksytytJulkaistutHakutoiveetCount,
-                                                lukuvuosimaksutCount)
+                                                lukuvuosimaksutCount,
+                                                yosCount)
                                                 .toMap
 
       val result = siirtotiedostoProcess.copy(info = SiirtotiedostoProcessInfo(entityTotals = entityCounts), finishedSuccessfully = true)

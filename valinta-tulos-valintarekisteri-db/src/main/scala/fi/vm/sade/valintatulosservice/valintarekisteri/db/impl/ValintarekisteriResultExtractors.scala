@@ -183,6 +183,15 @@ trait ValintarekisteriResultExtractors {
     timestamp = r.nextString
   ))
 
+  protected implicit val getSiirtotiedostoYosResult: GetResult[SiirtotiedostoYos] = GetResult(r => SiirtotiedostoYos(
+    henkiloOid = r.nextString(),
+    hakemusOid = r.nextString(),
+    hakukohdeOid = r.nextString(),
+    paateltyAloitusPvm = r.nextString(),
+    paatettavatOikeudet = JsonMethods.parse(r.nextString()).extract[List[SiirtotiedostoPaatettavaOpiskeluOikeus]],
+    systemTime = r.nextString()
+  ))
+
   protected implicit val getHakemuksetForValintatapajonosResult: GetResult[HakemusRecord] = GetResult(r => HakemusRecord(
     hakijaOid = r.nextStringOption,
     hakemusOid = HakemusOid(r.nextString),

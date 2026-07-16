@@ -10,8 +10,9 @@ import slick.jdbc.GetResult
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.TransactionIsolation.Serializable
 
+import java.sql
 import java.time.format.DateTimeFormatter
-import java.time.{Instant, OffsetDateTime, ZoneId, ZonedDateTime}
+import java.time.{Instant, LocalDate, OffsetDateTime, ZoneId, ZonedDateTime}
 import java.util.concurrent.TimeUnit
 import java.util.{ConcurrentModificationException, Date}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -219,23 +220,24 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
     case _ => tallennaVastaanottoTapahtumaAction(vastaanottoEvent, ifUnmodifiedSince)
   }
 
-  override def storePaatetettavatOpiskeluOikeudet(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid, oikeudet: String): Unit = {
-    runBlocking(tallennaPaatettavatOpiskeluOikeudet(henkiloOid, hakukohdeOid, hakemusOid, oikeudet))
+  override def storePaatetettavatOpiskeluOikeudet(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid, alkupvm: String, oikeudet: String): Unit = {
+    runBlocking(tallennaPaatettavatOpiskeluOikeudet(henkiloOid, hakukohdeOid, hakemusOid, alkupvm, oikeudet))
   }
 
   override def findHakemuksenVastaanotonPaatettavatOpiskeluOikeudet(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): DBIO[Option[String]] = {
-    sql"""select paatettavat_oikeudet::json from paatettavat_opiskeluoikeudet
+    sql"""select paatettavat_oikeudet::json from yhden_opiskeluoikeuden_saados
            where hakukohde_oid = $hakukohdeOid and hakemus_oid = $hakemusOid""".as[String].headOption
   }
 
-  private def tallennaPaatettavatOpiskeluOikeudet(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid, oikeudet: String): DBIO[Unit] = {
-    sqlu"""insert into paatettavat_opiskeluoikeudet (henkilo_oid, hakukohde_oid, hakemus_oid, paatettavat_oikeudet)
-              values($henkiloOid, $hakukohdeOid, $hakemusOid, $oikeudet::json)
-            on conflict on constraint paatettavat_opiskeluoikeudet_pkey do update set
-              paatettavat_oikeudet = $oikeudet::json
-            where paatettavat_opiskeluoikeudet.henkilo_oid = $henkiloOid
-              and paatettavat_opiskeluoikeudet.hakukohde_oid = $hakukohdeOid
-              and paatettavat_opiskeluoikeudet.hakemus_oid = $hakemusOid"""
+  private def tallennaPaatettavatOpiskeluOikeudet(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid, alkupvm: String, oikeudet: String): DBIO[Unit] = {
+    sqlu"""insert into yhden_opiskeluoikeuden_saados (henkilo_oid, hakukohde_oid, hakemus_oid, paatelty_aloitus_pvm, paatettavat_oikeudet)
+              values($henkiloOid, $hakukohdeOid, $hakemusOid, $alkupvm, $oikeudet::json)
+            on conflict on constraint yhden_opiskeluoikeuden_saados_pkey do update set
+              paatettavat_oikeudet = $oikeudet::json,
+              paatelty_aloitus_pvm = $alkupvm
+            where yhden_opiskeluoikeuden_saados.henkilo_oid = $henkiloOid
+              and yhden_opiskeluoikeuden_saados.hakukohde_oid = $hakukohdeOid
+              and yhden_opiskeluoikeuden_saados.hakemus_oid = $hakemusOid"""
       .andThen(DBIO.successful())
   }
 

@@ -9,4 +9,5 @@ case class SiirtotiedostoConfig(aws_region: String,
                                 jonosijatSize: Int,
                                 hyvaksytytJulkaistutSize: Int,
                                 lukuvuosimaksutSize: Int,
-                                hakukohdeGroupSize: Int)
+                                hakukohdeGroupSize: Int,
+                                yosSize: Int)

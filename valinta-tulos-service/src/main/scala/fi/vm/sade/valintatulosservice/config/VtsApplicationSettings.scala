@@ -63,7 +63,8 @@ case class VtsApplicationSettings(config: Config) extends ApplicationSettings(co
     lukuvuosimaksutSize = withConfig(_.getString("valinta-tulos-service.siirtotiedosto.lukuvuosimaksut_page_size")).toInt,
     vastaanototSize = withConfig(_.getString("valinta-tulos-service.siirtotiedosto.vastaanotot_page_size")).toInt,
     valintatapajonotSize = withConfig(_.getString("valinta-tulos-service.siirtotiedosto.valintatapajonot_page_size")).toInt,
-    hakukohdeGroupSize = withConfig(_.getString("valinta-tulos-service.siirtotiedosto.hakukohde_group_size")).toInt
+    hakukohdeGroupSize = withConfig(_.getString("valinta-tulos-service.siirtotiedosto.hakukohde_group_size")).toInt,
+    yosSize = withConfig(_.getString("valinta-tulos-service.siirtotiedosto.yos_size")).toInt
   )
 }
 

@@ -218,7 +218,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         "/api/login/j_spring_cas_security_check",
         "JSESSIONID"
       ))
-      lazy val suorituspalveluService: SuorituspalveluService = new SuorituspalveluService(appConfig, supaClient, valintarekisteriDb)
+      lazy val suorituspalveluService: SuorituspalveluService = new SuorituspalveluService(appConfig, hakuService, supaClient, valintarekisteriDb)
 
       lazy val mailPollerRepository: MailPollerRepository = valintarekisteriDb
       lazy val mailPoller: MailPoller = new MailPoller(mailPollerRepository, valintatulosService, hakuService, hakemusRepository, cachedOhjausparametritService, appConfig.settings)

@@ -100,6 +100,17 @@ case class SiirtotiedostoLukuvuosimaksu(personOid: String,
                                         luotu: String, //timestamp
                                         systemTime: String)
 
+case class SiirtotiedostoPaatettavaOpiskeluOikeus(
+                                     virtaOpiskeluOikeusId: String,
+                                   )
+
+case class SiirtotiedostoYos(henkiloOid: String,
+                             hakemusOid: String,
+                             hakukohdeOid: String,
+                             paateltyAloitusPvm: String,
+                             paatettavatOikeudet: List[SiirtotiedostoPaatettavaOpiskeluOikeus],
+                             systemTime: String)
+
 case class SiirtotiedostoHyvaksyttyJulkaistuHakutoive(henkiloOid: String,
                                                       hakukohdeOid: String,
                                                       hyvaksyttyJaJulkaistu: String, //timestamp
@@ -360,6 +371,19 @@ trait SiirtotiedostoRepositoryImpl extends SiirtotiedostoRepository with Valinta
               on tk.tilankuvaus_hash = vk.hash
             where ti.hakukohde_oid in(#$inParam)
         """.as[SiirtotiedostoValinnantulos].map(_.toSet.toSeq))
+    }
+  }
+
+  override def getYosPage(params: SiirtotiedostoPagingParams): List[SiirtotiedostoYos] = {
+    timed(s"Getting yos for params $params", 100) {
+      runBlocking(
+        sql"""select henkilo_oid, hakemus_oid, hakukohde_oid, paatelty_aloitus_pvm, paatettavat_oikeudet::json, lower(system_time)
+                from yhden_opiskeluoikeuden_saados
+                    where (lower(system_time) >= ${params.start}::timestamptz)
+                    and (lower(system_time) <= ${params.end}::timestamptz)
+                order by lower(system_time) desc, hakukohde_oid, hakemus_oid
+                limit ${params.pageSize}
+                offset ${params.offset};""".as[SiirtotiedostoYos]).toList
     }
   }
 }
