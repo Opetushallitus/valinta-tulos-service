@@ -30,7 +30,7 @@ object TimeUtils {
 
   def getPaateltyAloitusajankohta(hakukohde: Hakukohde): String = {
     hakukohde.paateltyAlkamisajankohta.flatMap(ajankohta =>
-      (ajankohta.pvm, ajankohta.pvm.isBlank, ajankohta.henkilokohtainenSuunnitelma) match {
+      (ajankohta.pvm, ajankohta.pvm == null || ajankohta.pvm.isBlank, ajankohta.henkilokohtainenSuunnitelma) match {
         case (_, true, false) =>
           None
         case (pvm, false, false) =>
