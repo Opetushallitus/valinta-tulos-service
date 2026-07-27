@@ -148,7 +148,6 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       ), "/auth/login", "auth/login")
 
       context.mount(new VirkailijanVastaanottoServlet(valintatulosService, vastaanottoService), "/virkailija", "virkailija")
-      context.mount(new LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService), "/lukuvuosimaksu", "lukuvuosimaksu")
       context.mount(handler = new MuutoshistoriaServlet(valinnantulosService, valintarekisteriDb, skipAuditForServiceCall = true), urlPattern = "/muutoshistoria", name = "muutoshistoria")
       context.mount(new PrivateValintatulosServlet(valintatulosService,
         streamingValintatulosService,

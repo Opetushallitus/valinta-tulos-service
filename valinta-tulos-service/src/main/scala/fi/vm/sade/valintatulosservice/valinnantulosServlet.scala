@@ -178,7 +178,7 @@ class ErillishakuServlet(valinnantulosService: ValinnantulosService,
                          hyvaksymiskirjeService: HyvaksymiskirjeService,
                          val sessionRepository: SessionRepository,
                          appConfig: VtsAppConfig)
-  (implicit val swagger: Swagger) extends ValinnantulosServletBase with CasAuthenticatedServlet with AuditInfoParameter  {
+  (implicit val swagger: Swagger) extends ValinnantulosServletBase with CasAuthenticatedServlet {
 
   override val applicationDescription = "Erillishaun valinnantuloksen REST API"
 

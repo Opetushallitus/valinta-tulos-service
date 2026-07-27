@@ -20,17 +20,6 @@ class LukuvuosimaksuService(lukuvuosimaksuRepository: LukuvuosimaksuRepository,
     filterRelevantMaksusOfEachperson(result)
   }
 
-  def getLukuvuosimaksut(hakukohdeOids: Set[HakukohdeOid], auditInfo: AuditInfo): Seq[Lukuvuosimaksu] = {
-    val result = lukuvuosimaksuRepository.getLukuvuosimaksus(hakukohdeOids)
-    audit.log(auditInfo.user, LukuvuosimaksujenLuku,
-      new Target.Builder()
-        .setField("hakukohde", hakukohdeOids.mkString(","))
-        .build(),
-      new Changes.Builder().build()
-    )
-    filterRelevantMaksusOfEachperson(result)
-  }
-
   def getLukuvuosimaksuByHakijaAndHakukohde(hakijaOid: HakijaOid, hakukohdeOid: HakukohdeOid, auditInfo: AuditInfo): Option[Lukuvuosimaksu] = {
     audit.log(auditInfo.user, LukuvuosimaksujenLuku,
       new Target.Builder()
@@ -49,7 +38,7 @@ class LukuvuosimaksuService(lukuvuosimaksuRepository: LukuvuosimaksuRepository,
       .map(l => l.head).toList
   }
 
-  def updateLukuvuosimaksut(lukuvuosimaksut: List[Lukuvuosimaksu], auditInfo: AuditInfo) = {
+  def updateLukuvuosimaksut(lukuvuosimaksut: List[Lukuvuosimaksu], auditInfo: AuditInfo): Unit = {
     lukuvuosimaksuRepository.update(lukuvuosimaksut)
     lukuvuosimaksut.foreach(m => {
       audit.log(auditInfo.user, LukuvuosimaksujenMuokkaus,
