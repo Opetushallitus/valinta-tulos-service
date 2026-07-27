@@ -39,10 +39,10 @@ class ValintaTulosServletSpec extends ServletSpecification {
     scala.io.Source.fromInputStream(new ClassPathResource("fixtures/ValintaTulosServletSpec/" + filename).getInputStream).mkString
   }
 
-  "GET /haku/:hakuId/hakemus/:hakemusId" should {
+  "GET /cas/haku/:hakuId/hakemus/:hakemusId" should {
     "palauttaa ehdollisesti hyväksytyn ei-julkaistun hakukohteen valintatulokset" in {
       useFixture("hyvaksytty-ehdollisesti-kesken-ei-julkaistavissa.json")
-      get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
+      get("cas/haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369", ticketHeader) {
         status must_== 200
         assertJson(
           jsonFromClasspath("expected-hyvaksytty-ehdollisesti-kesken-ei-julkaistavissa.json"),
@@ -56,14 +56,14 @@ class ValintaTulosServletSpec extends ServletSpecification {
       val ataruHenkilot = List(ataruHenkilo1, ataruHenkilo2)
       useFixture("ei-tuloksia.json", hakemusFixtures = List.empty, hakuFixture = HakuOid("ataru-haku"),
         ataruHakemusFixture = ataruHakemukset, ataruHenkiloFixture = ataruHenkilot)
-      get("haku/1.2.246.562.29.37061034627/hakemus/1.2.246.562.11.00000000000000000005") {
+      get("cas/haku/1.2.246.562.29.37061034627/hakemus/1.2.246.562.11.00000000000000000005", ticketHeader) {
         status must_== 200
       }
     }
 
     "palauttaa julkaistun valintatuloksen" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")
-      get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
+      get("cas/haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369", ticketHeader) {
         status must_== 200
         assertJson(
           jsonFromClasspath("expected-hyvaksytty-kesken-julkaistavissa.json"),
@@ -75,19 +75,18 @@ class ValintaTulosServletSpec extends ServletSpecification {
     "palauttaa ei-julkaistun hyvaksytyn valintatuloksen, joka ei ole julkaistavissa, KESKEN-tilaisena, vaikka haun vastaanottopvm olisi mennyt" in {
       useFixture("hyvaksytty-kesken-ei-julkaistavissa.json", ohjausparametritFixture = "vastaanotto-loppunut")
 
-      get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
+      get("cas/haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369", ticketHeader) {
         status must_== 200
         assertJson(
           jsonFromClasspath("expected-hyvaksytty-kesken-ei-julkaistavissa.json"),
           body
         )
       }
-
     }
 
     "palauttaa ehdollisesti hyväksytyn valintatuloksen" in {
       useFixture("hyvaksytty-ehdollisesti-kesken-julkaistavissa.json")
-      get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
+      get("cas/haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369", ticketHeader) {
         status must_== 200
         assertJson(
           jsonFromClasspath("expected-hyvaksytty-ehdollisesti-kesken-julkaistavissa.json"),
@@ -98,7 +97,7 @@ class ValintaTulosServletSpec extends ServletSpecification {
 
     "palauttaa ehdollisesti hyväksytyn syyn valintatuloksen" in {
       useFixture("hyvaksytty-ehdollisesti-syy-kesken-julkaistavissa.json")
-      get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
+      get("cas/haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369", ticketHeader) {
         status must_== 200
         assertJson(
           jsonFromClasspath("expected-hyvaksytty-ehdollisesti-syy-kesken-julkaistavissa.json"),
@@ -110,7 +109,7 @@ class ValintaTulosServletSpec extends ServletSpecification {
     "kun hakemusta ei löydy" in {
       "404" in {
         useFixture("hyvaksytty-ehdollisesti-syy-kesken-julkaistavissa.json")
-        get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.LOLLERSTRÖM") {
+        get("cas/haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.LOLLERSTRÖM", ticketHeader) {
           body must_== """{"error":"Not found"}"""
           status must_== 404
         }
@@ -120,7 +119,7 @@ class ValintaTulosServletSpec extends ServletSpecification {
     "palauttaa ataru-hakemuksen valintatuloksen" in {
       useFixture("ei-tuloksia.json", hakemusFixtures = List.empty, hakuFixture = HakuOid("ataru-haku"),
         ataruHakemusFixture = List(ataruHakemus1), ataruHenkiloFixture = List(ataruHenkilo1))
-      get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000000000000000005") {
+      get("cas/haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000000000000000005", ticketHeader) {
         status must_== 200
         assertJson(
           jsonFromClasspath("expected-ei-tuloksia.json"),
@@ -128,25 +127,18 @@ class ValintaTulosServletSpec extends ServletSpecification {
         )
       }
     }
-  }
 
-  "GET /cas/haku/:hakuId/hakemus/:hakemusId" should {
     "estää pääsyn ilman tikettiä" in {
       get("cas/haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000000000000000005") {
         status must_== 401
       }
     }
-    "mahdolistaa pääsyn validilla tiketillä" in {
-      get("cas/haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000000000000000005", ("ticket", getTicket)) {
-        status must_== 200
-      }
-    }
   }
 
-  "GET /haku/:hakuOid" should {
+  "GET /cas/haku/:hakuOid" should {
     "palauttaa koko haun valintatulokset" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")
-      get("haku/1.2.246.562.5.2013080813081926341928") {
+      get("cas/haku/1.2.246.562.5.2013080813081926341928", ticketHeader) {
         status must_== 200
         assertJson(
           jsonFromClasspath("expected-hyvaksytty-kesken-julkaistavissa-koko-haulle.json"),
@@ -158,7 +150,7 @@ class ValintaTulosServletSpec extends ServletSpecification {
     "kun hakua ei löydy" in {
       "404" in {
         HakuFixtures.useFixture(HakuOid("notfound"))
-        get("haku/1.2.246.562.5.foo") {
+        get("cas/haku/1.2.246.562.5.foo", ticketHeader) {
           status must_== 404
           body must_== """{"error":"Not found"}"""
         }
@@ -166,27 +158,27 @@ class ValintaTulosServletSpec extends ServletSpecification {
     }
   }
 
-  "GET /haku/:hakuOid/sijoitteluAjo/:sijoitteluAjoId/hakemukset" should {
+  "GET /cas/haku/:hakuOid/sijoitteluAjo/:sijoitteluAjoId/hakemukset" should {
     "palauttaa haun sijoitteluajon hakemusten tulokset vastaanottotiloineen" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")
 
-      get("haku/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset") {
+      get("cas/haku/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset", ticketHeader) {
         val bodyJson = JsonMethods.parse(body)
         val tulos: List[Hakija] = (bodyJson \ "results").extract[List[Hakija]]
 
-        tulos.head.hakutoiveet.head.vastaanottotieto must_== Some(Vastaanottotila.kesken)
+        tulos.head.hakutoiveet.head.vastaanottotieto must beSome(Vastaanottotila.kesken)
         status must_== 200
       }
 
       vastaanota("VastaanotaSitovasti") {
-        get("haku/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset") {
+        get("cas/haku/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset", ticketHeader) {
           val bodyJson = JsonMethods.parse(body)
           (bodyJson \ "totalCount").extract[Int] must_== 1
           stringInJson(bodyJson, "hakijaOid") must_== "1.2.246.562.24.14229104472"
           stringInJson(bodyJson, "hakemusOid") must_== "1.2.246.562.11.00000441369"
 
           val tulos: List[Hakija] = (bodyJson \ "results").extract[List[Hakija]]
-          tulos.head.hakutoiveet.head.vastaanottotieto must_== Some(Vastaanottotila.vastaanottanut)
+          tulos.head.hakutoiveet.head.vastaanottotieto must beSome(Vastaanottotila.vastaanottanut)
           status must_== 200
         }
       }
@@ -195,7 +187,7 @@ class ValintaTulosServletSpec extends ServletSpecification {
     "kun haku ei löydy" in {
       "200 tyhjien tulosten kanssa" in {
         HakuFixtures.useFixture(HakuOid("notfound"))
-        get("haku/1.2.246.562.5.foo/sijoitteluajo/latest/hakemukset") {
+        get("cas/haku/1.2.246.562.5.foo/sijoitteluajo/latest/hakemukset", ticketHeader) {
           body must_== """{"totalCount":0,"results":[]}"""
           status must_== 200
         }
@@ -203,10 +195,10 @@ class ValintaTulosServletSpec extends ServletSpecification {
     }
   }
 
-  "GET /haku/streaming/:hakuOid/sijoitteluAjo/:sijoitteluAjoId/hakemukset" should {
+  "GET /cas/haku/streaming/:hakuOid/sijoitteluAjo/:sijoitteluAjoId/hakemukset" should {
 
     def checkData() = {
-      get("haku/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset") {
+      get("cas/haku/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset", ticketHeader) {
         val bodyJson = JsonMethods.parse(body)
         (bodyJson \ "totalCount").extract[Int] must_== 1
         stringInJson(bodyJson, "vastaanottotieto") must_== "KESKEN"
@@ -226,7 +218,8 @@ class ValintaTulosServletSpec extends ServletSpecification {
       checkData()
 
       vastaanota("VastaanotaSitovasti") {
-        get("haku/streaming/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset") {
+        get("cas/haku/streaming/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset", ticketHeader) {
+          status must_== 200
           val streamedJson = JsonMethods.parse(body)
           stringInJson(streamedJson, "hakijaOid") must_== "1.2.246.562.24.14229104472"
           stringInJson(streamedJson, "hakemusOid") must_== "1.2.246.562.11.00000441369"
@@ -236,7 +229,6 @@ class ValintaTulosServletSpec extends ServletSpecification {
           valintatapajonot.arr.size must_== 2
           List(stringInJson(valintatapajonot.arr(0), "valintatapajonoOid"), stringInJson(valintatapajonot.arr(1), "valintatapajonoOid")) diff
             List("14090336922663576781797489829886", "14090336922663576781797489829887") must_== List()
-          status must_== 200
         }
       }
     }
@@ -248,7 +240,8 @@ class ValintaTulosServletSpec extends ServletSpecification {
       checkData()
 
       vastaanota("VastaanotaSitovasti") {
-        get("haku/streaming/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset?vainMerkitsevaJono=true") {
+        get("cas/haku/streaming/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset", "vainMerkitsevaJono" -> "true", ticketHeader) {
+          status must_== 200
           val streamedJson = JsonMethods.parse(body)
           stringInJson(streamedJson, "hakijaOid") must_== "1.2.246.562.24.14229104472"
           stringInJson(streamedJson, "hakemusOid") must_== "1.2.246.562.11.00000441369"
@@ -256,7 +249,6 @@ class ValintaTulosServletSpec extends ServletSpecification {
           (streamedJson \\ "hakutoiveet").asInstanceOf[JArray].arr.size must_== 1
           (streamedJson \\ "hakutoiveenValintatapajonot").asInstanceOf[JArray].arr.size must_== 1
           stringInJson(streamedJson, "valintatapajonoOid") must_== "14090336922663576781797489829886"
-          status must_== 200
         }
       }
     }
@@ -267,7 +259,8 @@ class ValintaTulosServletSpec extends ServletSpecification {
 
       checkData()
 
-      get("haku/streaming/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset?vainMerkitsevaJono=true") {
+      get("cas/haku/streaming/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset", "vainMerkitsevaJono" -> "true", ticketHeader) {
+        status must_== 200
         val streamedJson = JsonMethods.parse(body)
         stringInJson(streamedJson, "hakijaOid") must_== "1.2.246.562.24.14229104472"
         stringInJson(streamedJson, "hakemusOid") must_== "1.2.246.562.11.00000441369"
@@ -275,21 +268,20 @@ class ValintaTulosServletSpec extends ServletSpecification {
         (streamedJson \\ "hakutoiveet").asInstanceOf[JArray].arr.size must_== 1
         (streamedJson \\ "hakutoiveenValintatapajonot").asInstanceOf[JArray].arr.size must_== 1
         stringInJson(streamedJson, "valintatapajonoOid") must_== "14090336922663576781797489829886"
-        status must_== 200
       }
     }
 
     "palauttaa haun hakukohteiden hakemusten tulokset vain merkitsevälle jonolle" in {
-
       useFixture("hyvaksytty-kesken-julkaistavissa-korjattu.json")
 
       checkData()
 
       vastaanota("VastaanotaSitovasti") {
         val hakukohdeOidsInPostBody = "[\"1.2.246.562.5.72607738902\"]".getBytes("UTF-8")
-        post("haku/streaming/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset?vainMerkitsevaJono=true",
+        post(s"cas/haku/streaming/1.2.246.562.5.2013080813081926341928/sijoitteluajo/latest/hakemukset?vainMerkitsevaJono=true",
           hakukohdeOidsInPostBody,
-          headers = Map("Content-type" -> "application/json")) {
+          headers = Map("Content-type" -> "application/json", ticketHeader)) {
+            status must_== 200
             val streamedJson = JsonMethods.parse(body)
             stringInJson(streamedJson, "hakijaOid") must_== "1.2.246.562.24.14229104472"
             stringInJson(streamedJson, "hakemusOid") must_== "1.2.246.562.11.00000441369"
@@ -297,24 +289,23 @@ class ValintaTulosServletSpec extends ServletSpecification {
             (streamedJson \\ "hakutoiveet").asInstanceOf[JArray].arr.size must_== 1
             (streamedJson \\ "hakutoiveenValintatapajonot").asInstanceOf[JArray].arr.size must_== 1
             stringInJson(streamedJson, "valintatapajonoOid") must_== "14090336922663576781797489829886"
-            status must_== 200
         }
       }
     }
   }
 
-  "POST /haku/:hakuId/hakemus/:hakemusId/ilmoittaudu" should {
+  "POST /cas/haku/:hakuId/hakemus/:hakemusId/ilmoittaudu" should {
     "merkitsee ilmoittautuneeksi" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")
 
       vastaanota("VastaanotaSitovasti") {
-        ilmoittaudu("LASNA_KOKO_LUKUVUOSI") {
+        ilmoittaudu("LASNA_KOKO_LUKUVUOSI", ticketHeaders) {
           status must_== 200
 
-          get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
+          get("cas/haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369", ticketHeader) {
             val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
             tulos.hakutoiveet.head.ilmoittautumistila must_== HakutoiveenIlmoittautumistila(Ilmoittautumisaika(None, Some(new DateTime(2030, 1, 10, 21, 59, 59, DateTimeZone.UTC))), None, LasnaKokoLukuvuosi, false)
-            tulos.hakutoiveet.head.ilmoittautumisenAikaleima.get.getTime() must be ~ (System.currentTimeMillis() +/- 2000)
+            tulos.hakutoiveet.head.ilmoittautumisenAikaleima.get.getTime must be ~ (System.currentTimeMillis() +/- 2000)
           }
         }
       }
@@ -323,58 +314,50 @@ class ValintaTulosServletSpec extends ServletSpecification {
     "hyväksyy ilmoittautumisen vain jos vastaanotettu ja ilmoittauduttavissa" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")
 
-      ilmoittaudu("LASNA_KOKO_LUKUVUOSI") {
+      ilmoittaudu("LASNA_KOKO_LUKUVUOSI", ticketHeaders) {
+        status must_== 400
         assertJson(
           jsonFromClasspath("expected-hyvaksytty-kesken-julkaistavissa-ilmoittautumisen-merkitsemiselle.json"),
           body
         )
-        status must_== 400
       }
     }
 
     "raportoi virheellisen pyynnön" in {
-      postJSON("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369/ilmoittaudu",
-        ("oops")) {
-        body must startWith("{\"error\":\"No usable value for hakukohdeOid")
+      postJSON("cas/haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369/ilmoittaudu",
+        "oops",
+        ticketHeaders) {
         status must_== 400
+        body must startWith("{\"error\":\"No usable value for hakukohdeOid")
       }
     }
 
     "raportoi puuttuvan/väärän content-typen" in {
-      ilmoittaudu("LASNA_KOKO_LUKUVUOSI", headers = Map(("Content-type" -> "application/xml"))) {
-        body must startWith("{\"error\":\"Only application/json accepted")
+      ilmoittaudu("LASNA_KOKO_LUKUVUOSI", headers = Map("Content-type" -> "application/xml", ticketHeader)) {
         status must_== 415
+        body must startWith("{\"error\":\"Only application/json accepted")
       }
     }
-  }
 
-  "POST /cas/haku/:hakuId/hakemus/:hakemusId/ilmoittaudu" should {
+
     "estää pääsyn ilman tikettiä" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")
 
-      ilmoittaudu("LASNA_KOKO_LUKUVUOSI", juuri = "cas/haku") {
+      ilmoittaudu("LASNA_KOKO_LUKUVUOSI") {
         status must_== 401
         body must_== """{"error":"Authentication failed: No credentials given"}"""
       }
     }
-
-    "toimii tiketillä" in {
-      vastaanota("VastaanotaSitovasti") {
-        ilmoittaudu("LASNA_KOKO_LUKUVUOSI", juuri = "cas/haku", headers = Map("ticket" -> getTicket)) {
-          status must_== 200
-        }
-      }
-    }
   }
 
-  "POST /haku/:hakuId/hakemus/:hakemusId/vastaanota" should {
+  "POST /cas/haku/:hakuId/hakemus/:hakemusId/vastaanota" should {
     "vastaanottaa opiskelupaikan" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")
 
       vastaanota("VastaanotaSitovasti") {
         status must_== 200
 
-        get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
+        get("cas/haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369", ticketHeader) {
           val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
           tulos.hakutoiveet.head.vastaanottotila must_== Vastaanottotila.vastaanottanut
           tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.isDefined must beTrue
@@ -388,11 +371,11 @@ class ValintaTulosServletSpec extends ServletSpecification {
       vastaanota("Peru") {
         status must_== 200
 
-        get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
+        get("cas/haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369", ticketHeader) {
           val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
           tulos.hakutoiveet.head.vastaanottotila.toString must_== "PERUNUT"
           tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.isDefined must beTrue
-          tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.get.getTime() must be ~ (System.currentTimeMillis() +/- 2000)
+          tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.get.getTime must be ~ (System.currentTimeMillis() +/- 2000)
         }
       }
     }
@@ -403,24 +386,24 @@ class ValintaTulosServletSpec extends ServletSpecification {
       vastaanota("VastaanotaEhdollisesti", hakukohde = "1.2.246.562.5.16303028779") {
         status must_== 200
 
-        get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
+        get("cas/haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369", ticketHeader) {
           val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
           tulos.hakutoiveet.head.valintatila must_== Valintatila.varalla
           tulos.hakutoiveet.head.vastaanottotila.toString must_== "KESKEN"
           tulos.hakutoiveet.last.vastaanottotila.toString must_== "EHDOLLISESTI_VASTAANOTTANUT"
           val muutosAika = tulos.hakutoiveet.last.viimeisinValintatuloksenMuutos.get
           tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos must beNone
-          muutosAika.getTime() must be ~ (System.currentTimeMillis() +/- 2000)
+          muutosAika.getTime must be ~ (System.currentTimeMillis() +/- 2000)
         }
       }
     }
   }
 
-  "GET /haku/:hakuOid/ilmanHyvaksyntaa" should {
+  "GET /cas/haku/:hakuOid/ilmanHyvaksyntaa" should {
     "palauttaa oikeat hylkäyksen syyt" in {
       useFixture("hylatty-peruste-viimeisesta-jonosta.json")
       val hakuOid = "1.2.246.562.5.2013080813081926341928"
-      get(s"haku/$hakuOid/ilmanHyvaksyntaa") {
+      get(s"cas/haku/$hakuOid/ilmanHyvaksyntaa", ticketHeader) {
         status must_== 200
         val streamedJson = JsonMethods.parse(body)
 
@@ -432,11 +415,11 @@ class ValintaTulosServletSpec extends ServletSpecification {
     }
   }
 
-  "GET /haku/:hakuOid/hyvaksytyt" should {
+  "GET /cas/haku/:hakuOid/hyvaksytyt" should {
     "palauttaa hyvaksytyt hakemukset" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")
       val hakuOid = "1.2.246.562.5.2013080813081926341928"
-      get(s"haku/$hakuOid/hyvaksytyt") {
+      get(s"cas/haku/$hakuOid/hyvaksytyt", ticketHeader) {
         status must_== 200
         val responseJson = JsonMethods.parse(body)
 
@@ -447,25 +430,25 @@ class ValintaTulosServletSpec extends ServletSpecification {
     }
   }
 
-
-  def vastaanota[T](action: String, hakukohde: String = "1.2.246.562.5.72607738902", personOid: String = "1.2.246.562.24.14229104472", hakemusOid: String = "1.2.246.562.11.00000441369")(block: => T) = {
-    postJSON(s"""vastaanotto/henkilo/$personOid/hakemus/$hakemusOid/hakukohde/$hakukohde""",
+  private def vastaanota[T](action: String, hakukohde: String = "1.2.246.562.5.72607738902", personOid: String = "1.2.246.562.24.14229104472", hakemusOid: String = "1.2.246.562.11.00000441369")(block: => T) = {
+    postJSON(s"vastaanotto/henkilo/$personOid/hakemus/$hakemusOid/hakukohde/$hakukohde",
       s"""{"action":"$action"}""") {
       block
     }
   }
 
-  def ilmoittaudu[T](tila: String, juuri:String = "haku", headers: Map[String, String] = Map.empty)(block: => T) = {
-    postJSON(juuri + "/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369/ilmoittaudu",
+  private def ilmoittaudu[T](tila: String , headers: Map[String, String] = Map.empty)(block: => T) = {
+    postJSON(s"cas/haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369/ilmoittaudu",
       """{"hakukohdeOid":"1.2.246.562.5.72607738902","tila":""""+tila+"""","muokkaaja":"OILI","selite":"Testimuokkaus"}""", headers) {
       block
     }
   }
 
-  def getTicket = {
-    val ticket = MockSecurityContext.ticketFor(appConfig.settings.securitySettings.casServiceIdentifier, "testuser")
-    ticket
-  }
+  private def getTicket: String = MockSecurityContext.ticketFor(appConfig.settings.securitySettings.casServiceIdentifier, "testuser")
+
+  private def ticketHeader: (String, String) = "ticket" -> getTicket
+
+  private def ticketHeaders: Map[String, String] = Map("ticket" -> getTicket)
 
   private def stringInJson(json: JValue, fieldName: String): String = try {
     (json \\ fieldName).extract[String]

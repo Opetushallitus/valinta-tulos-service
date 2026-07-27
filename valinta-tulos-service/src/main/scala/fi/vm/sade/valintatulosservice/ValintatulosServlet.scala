@@ -6,12 +6,10 @@ import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain._
-import fi.vm.sade.valintatulosservice.json.JsonFormats.javaObjectToJsonString
 import fi.vm.sade.valintatulosservice.json.{JsonFormats, JsonStreamWriter, StreamingFailureException}
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, Vastaanottoaikataulu}
 import fi.vm.sade.valintatulosservice.streamingresults.{HakemustenTulosHakuLock, StreamingValintatulosService}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, YhdenPaikanSaanto}
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
 import javax.servlet.http.HttpServletResponse
@@ -24,19 +22,16 @@ import org.scalatra.swagger._
 
 import scala.util.Try
 
-
-
 abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
                                    streamingValintatulosService: StreamingValintatulosService,
                                    vastaanottoService: VastaanottoService,
                                    ilmoittautumisService: IlmoittautumisService,
-                                   valintarekisteriDb: ValintarekisteriDb,
                                    hakemustenTulosHakuLock: HakemustenTulosHakuLock,
                                    swaggerGroupTag: String)
                                   (implicit val swagger: Swagger,
                                    appConfig: VtsAppConfig) extends VtsServletBase {
-  val ilmoittautumisenAikaleima: Option[Date] = Option(new Date())
-  lazy val exampleHakemuksenTulos = Hakemuksentulos(
+  private val ilmoittautumisenAikaleima: Option[Date] = Option(new Date())
+  private lazy val exampleHakemuksenTulos = Hakemuksentulos(
     HakuOid("2.2.2.2"),
     HakemusOid("4.3.2.1"),
     "1.3.3.1",
@@ -65,7 +60,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
   )
 
   // Real return type cannot be used because of unsupported scala enumerations: https://github.com/scalatra/scalatra/issues/343
-  lazy val getHakemusSwagger: OperationBuilder = (apiOperation[Unit]("getHakemus")
+  private lazy val getHakemusSwagger: OperationBuilder = (apiOperation[Unit]("getHakemus")
     summary "Hae hakemuksen tulokset."
     description ("Palauttaa tyyppiä Hakemuksentulos. Esim:\n" +
       pretty(Extraction.decompose(exampleHakemuksenTulos)))
@@ -81,7 +76,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     }
   }
 
-  lazy val getValintatuloksetByHakemuksetSwagger: OperationBuilder = (apiOperation[Unit]("getValintatuloksetByHakemukset")
+  private lazy val getValintatuloksetByHakemuksetSwagger: OperationBuilder = (apiOperation[Unit]("getValintatuloksetByHakemukset")
     summary "Hakee hakemuksen valintatulokset hakemuksille"
     parameter bodyParam[Set[String]]("hakemusOids").description("Kiinnostavien hakemusten oidit")
     tags swaggerGroupTag)
@@ -90,7 +85,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     Ok(valintatulosService.hakemuksentulos(hakemusOids))
   }
 
-  lazy val getValintatuloksetByHakemuksetForValpasSwagger: OperationBuilder = (apiOperation[Unit]("getValintatuloksetByHakemuksetForValpas")
+  private lazy val getValintatuloksetByHakemuksetForValpasSwagger: OperationBuilder = (apiOperation[Unit]("getValintatuloksetByHakemuksetForValpas")
     summary "Hakee hakemuksien valintatulokset Valpas-palvelua varten"
     parameter bodyParam[ValpasValinnantuloksetKysely]("hakemusOids").description("Kiinnostavien hakemusten henkilo-oidit ja vastaavat hakemusoidit")
     parameter pathParam[String]("hakuOid").description("Haun oid")
@@ -98,11 +93,11 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
   post("/hakemukset/valpas/:hakuOid", operation(getValintatuloksetByHakemuksetForValpasSwagger)) {
     val henkiloOidToHakemukset = read[ValpasValinnantuloksetKysely](request.body)
     val hakuOid: HakuOid = HakuOid(params("hakuOid"))
-    logger.info(s"Haetaan hakemuksen tiedot haulle ${hakuOid} valintarekisteri Valpas-palvelua varten")
+    logger.info(s"Haetaan hakemuksen tiedot haulle $hakuOid valintarekisteri Valpas-palvelua varten")
     Ok(valintatulosService.valpasHakemuksienTulokset(hakuOid, henkiloOidToHakemukset))
   }
 
-  lazy val getHakemuksetSwagger: OperationBuilder = (apiOperation[Unit]("getHakemukset")
+  private lazy val getHakemuksetSwagger: OperationBuilder = (apiOperation[Unit]("getHakemukset")
     summary "Hae haun kaikkien hakemusten tulokset. Palauttaa julkaistu tilaiset valintatulokset jo ennen haun tulosten julkaisupäivää."
     description ("Palauttaa tyyppiä Seq[Hakemuksentulos]. Esim:\n" +
       pretty(Extraction.decompose(Seq(exampleHakemuksenTulos))))
@@ -120,10 +115,10 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     val hakuOidString = params("hakuOid")
     val hakukohdeOidString = params("hakukohdeOid")
     auditLog(Map("hakuOid" -> hakuOidString, "hakukohdeOid" -> hakukohdeOidString), HakemuksenLuku)
-    serveStreamingResults({ valintatulosService.hakemustenTulosByHakukohde(HakuOid(hakuOidString), HakukohdeOid(hakukohdeOidString)).right.toOption })
+    serveStreamingResults({ valintatulosService.hakemustenTulosByHakukohde(HakuOid(hakuOidString), HakukohdeOid(hakukohdeOidString)).toOption })
   }
 
-  lazy val getHakukohteenHakemuksetSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohteenHakemukset")
+  private lazy val getHakukohteenHakemuksetSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohteenHakemukset")
     summary "Hae hakukohteen kaikkien hakemusten tulokset."
     description ("Palauttaa tyyppiä Seq[Hakemuksentulos]. Esim:\n" +
     pretty(Extraction.decompose(Seq(exampleHakemuksenTulos))))
@@ -131,7 +126,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid")
     tags swaggerGroupTag)
 
-  lazy val getHakukohteenVastaanotettavuusSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohteenHakemukset")
+  private lazy val getHakukohteenVastaanotettavuusSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohteenHakemukset")
     summary "Palauttaa 200 jos hakutoive vastaanotettavissa, 403 ja virheviestin jos henkilöllä estävä aikaisempi vastaanotto"
     parameter pathParam[String]("hakuOid").description("Haun oid")
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid")
@@ -142,12 +137,12 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     val hakukohdeOidString = params("hakukohdeOid")
     auditLog(Map("hakemusOid" -> hakemusOidString, "hakukohdeOid" -> hakukohdeOidString), HakemuksenLuku)
     Try(vastaanottoService.tarkistaVastaanotettavuus(HakemusOid(hakemusOidString), HakukohdeOid(hakukohdeOidString)))
-      .map((_) => Ok())
+      .map(_ => Ok())
       .recover({ case pae:PriorAcceptanceException => Forbidden("error" -> pae.getMessage) })
       .get
   }
 
-  val postIlmoittautuminenSwagger: OperationBuilder = (apiOperation[Unit]("ilmoittaudu")
+  private val postIlmoittautuminenSwagger: OperationBuilder = (apiOperation[Unit]("ilmoittaudu")
     summary "Tallenna hakukohteelle uusi ilmoittautumistila"
     // Real body param type cannot be used because of unsupported scala enumerations: https://github.com/scalatra/scalatra/issues/343
     description ("Bodyssä tulee antaa tieto hakukohteen ilmoittautumistilan muutoksesta Ilmoittautuminen tyyppinä. Esim:\n" +
@@ -200,7 +195,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     Ok(JsonFormats.javaObjectToJsonString(hakijaPaginationObject))
   }
 
-  lazy val getHakukohteenKaikkiHakijatSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohteenKaikkiHakijatSwagger")
+  private lazy val getHakukohteenKaikkiHakijatSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohteenKaikkiHakijatSwagger")
     summary """Listaus haun hakukohteen kaikista hakijoista"""
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid").required
@@ -220,7 +215,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     Ok(JsonFormats.javaObjectToJsonString(hakijaPaginationObject))
   }
 
-  lazy val getHaunIlmanHyvaksyntaaSwagger: OperationBuilder = (apiOperation[Unit]("getHaunIlmanHyvaksyntaaSwagger")
+  private lazy val getHaunIlmanHyvaksyntaaSwagger: OperationBuilder = (apiOperation[Unit]("getHaunIlmanHyvaksyntaaSwagger")
     summary """Listaus haun hakijoista, joilla ei ole koulutuspaikkaa (ilman hyväksyntää)"""
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     tags swaggerGroupTag)
@@ -238,7 +233,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     streamOk(hakijaPaginationObject)
   }
 
-  lazy val getHaunHyvaksytytSwagger: OperationBuilder = (apiOperation[Unit]("getHaunHyvaksytytSwagger")
+  private lazy val getHaunHyvaksytytSwagger: OperationBuilder = (apiOperation[Unit]("getHaunHyvaksytytSwagger")
     summary """Listaus haun hyväksytyistä hakijoista"""
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid").required
@@ -258,7 +253,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     Ok(JsonFormats.javaObjectToJsonString(hakijaPaginationObject))
   }
 
-  lazy val getHakukohteenHyvaksytytSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohteenHyvaksytytSwagger")
+  private lazy val getHakukohteenHyvaksytytSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohteenHyvaksytytSwagger")
     summary """Listaus haun hakukohteen hyväksytyistä hakijoista"""
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid").required
@@ -278,7 +273,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     Ok(JsonFormats.javaObjectToJsonString(hakijaPaginationObject))
   }
 
-  lazy val getHakemuksenSijoitteluajonTulosSwagger: OperationBuilder = (apiOperation[Unit]("getHakemuksenSijoitteluajonTulosSwagger")
+  private lazy val getHakemuksenSijoitteluajonTulosSwagger: OperationBuilder = (apiOperation[Unit]("getHakemuksenSijoitteluajonTulosSwagger")
     summary """Näyttää yksittäisen hakemuksen kaikki hakutoiveet ja tiedot kaikista valintatapajonoista"""
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     parameter pathParam[String]("sijoitteluajoId").description("""Sijoitteluajon id tai "latest"""").required
@@ -295,7 +290,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     }
   }
 
-  lazy val getStreamingHaunSijoitteluajonTuloksetSwagger: OperationBuilder = (apiOperation[Unit]("getStreamingHaunSijoitteluajonTuloksetSwagger")
+  private lazy val getStreamingHaunSijoitteluajonTuloksetSwagger: OperationBuilder = (apiOperation[Unit]("getStreamingHaunSijoitteluajonTuloksetSwagger")
     summary """Streamaava listaus hakemuksien/hakijoiden listaukseen. Yksityiskohtainen listaus kaikista hakutoiveista ja niiden valintatapajonoista"""
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     parameter pathParam[String]("sijoitteluajoId").description("""Sijoitteluajon id tai "latest"""").required
@@ -304,13 +299,13 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
   get("/streaming/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakemukset", operation(getStreamingHaunSijoitteluajonTuloksetSwagger)) {
     val hakuOid = HakuOid(params("hakuOid"))
     val sijoitteluajoId = params("sijoitteluajoId")
-    val vainMerkitsevaJono = params.get("vainMerkitsevaJono").map(_.toBoolean).getOrElse(false)
+    val vainMerkitsevaJono = params.get("vainMerkitsevaJono").exists(_.toBoolean)
 
     writeSijoittelunTuloksetStreamingToResponse(
       response, hakuOid, w => streamingValintatulosService.streamSijoittelunTuloksetOfWholeHaku(hakuOid, sijoitteluajoId, w, vainMerkitsevaJono))
   }
 
-  lazy val postStreamingHaunSijoitteluajonHakukohteidenTuloksetSwagger: OperationBuilder = (apiOperation[Unit]("postStreamingHaunSijoitteluajonHakukohteidenTuloksetSwagger")
+  private lazy val postStreamingHaunSijoitteluajonHakukohteidenTuloksetSwagger: OperationBuilder = (apiOperation[Unit]("postStreamingHaunSijoitteluajonHakukohteidenTuloksetSwagger")
     summary """Streamaava listaus annettujen hakukohteiden hakemuksien/hakijoiden listaukseen. Yksityiskohtainen listaus kaikista annettuihin hakukohdeoideihin kohdistuneista hakutoiveista ja niiden valintatapajonoista"""
     parameter pathParam[String]("hakuOid").description("Haun oid").required
     parameter pathParam[String]("sijoitteluajoId").description("""Sijoitteluajon id tai "latest"""").required

@@ -1,12 +1,13 @@
 package fi.vm.sade.valintatulosservice.local
 
+import fi.vm.sade.security.mock.MockSecurityContext
 import fi.vm.sade.valintatulosservice.ServletSpecification
 import fi.vm.sade.valintatulosservice.domain.{Hakemuksentulos, Valintatila}
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOidSerializer, HakuOidSerializer, HakukohdeOidSerializer, ValintatapajonoOidSerializer, Vastaanottotila}
-import org.json4s.{DefaultFormats, Formats}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila
+import org.json4s.Formats
 import org.json4s.jackson.Serialization
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
@@ -23,8 +24,7 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
       vastaanota("VastaanotaSitovasti") {
         status must_== 200
 
-        get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
-          val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
+        withTulos { tulos =>
           tulos.hakutoiveet.head.vastaanottotila must_== Vastaanottotila.vastaanottanut
           tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.isDefined must beTrue
           tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.get.getTime must be ~ (System.currentTimeMillis() +/- 4000)
@@ -38,8 +38,7 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
       vastaanota("Peru") {
         status must_== 200
 
-        get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
-          val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
+        withTulos { tulos =>
           tulos.hakutoiveet.head.vastaanottotila must_== "PERUNUT"
           tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.isDefined must beTrue
           tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.get.getTime must be ~ (System.currentTimeMillis() +/- 4000)
@@ -53,8 +52,7 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
       vastaanota("VastaanotaEhdollisesti", hakukohde = "1.2.246.562.5.16303028779") {
         status must_== 200
 
-        get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
-          val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
+        withTulos { tulos =>
           tulos.hakutoiveet.head.valintatila must_== Valintatila.varalla
           tulos.hakutoiveet.head.vastaanottotila must_== "KESKEN"
           tulos.hakutoiveet.last.vastaanottotila must_== "EHDOLLISESTI_VASTAANOTTANUT"
@@ -69,7 +67,7 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
   "POST /auth/vastaanotto" should {
 
     lazy val testSession: String = createTestSession(roles = Set(Role.VALINTATULOSSERVICE_CRUD_OPH))
-    lazy val authHeaders = Map("Cookie" -> s"session=${testSession}")
+    lazy val authHeaders = Map("Cookie" -> s"session=$testSession")
 
     "vaatii autentikoinnin" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")
@@ -82,7 +80,7 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
     "vaatii autorisoinnin" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")
       val testSessionWithInadequateCredentials: String = createTestSession(roles = Set(Role.SIJOITTELU_CRUD, Role.VALINTATULOSSERVICE_CRUD))
-      val headers = Map("Cookie" -> s"session=${testSessionWithInadequateCredentials}")
+      val headers = Map("Cookie" -> s"session=$testSessionWithInadequateCredentials")
 
       vastaanotaAuthenticated("VastaanotaSitovasti", headers = headers) {
         status must_== 403
@@ -95,8 +93,7 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
       vastaanotaAuthenticated("VastaanotaSitovasti", headers = authHeaders) {
         status must_== 200
 
-        get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
-          val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
+        withTulos { tulos =>
           tulos.hakutoiveet.head.vastaanottotila must_== Vastaanottotila.vastaanottanut
           tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.isDefined must beTrue
           tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.get.getTime must be ~ (System.currentTimeMillis() +/- 4000)
@@ -110,8 +107,7 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
       vastaanotaAuthenticated("Peru", headers = authHeaders) {
         status must_== 200
 
-        get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
-          val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
+        withTulos { tulos =>
           tulos.hakutoiveet.head.vastaanottotila must_== "PERUNUT"
           tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.isDefined must beTrue
           tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.get.getTime must be ~ (System.currentTimeMillis() +/- 4000)
@@ -125,8 +121,7 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
       vastaanotaAuthenticated("VastaanotaEhdollisesti", hakukohde = "1.2.246.562.5.16303028779", headers = authHeaders) {
         status must_== 200
 
-        get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
-          val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
+        withTulos { tulos =>
           tulos.hakutoiveet.head.valintatila must_== Valintatila.varalla
           tulos.hakutoiveet.head.vastaanottotila must_== "KESKEN"
           tulos.hakutoiveet.last.vastaanottotila must_== "EHDOLLISESTI_VASTAANOTTANUT"
@@ -149,6 +144,15 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
     postJSON(s"""auth/vastaanotto/hakemus/$hakemusOid/hakukohde/$hakukohde""",
       s"""{"action":"$action"}""", headers) {
       block
+    }
+  }
+
+  private def withTulos[T](f: Hakemuksentulos => T): T = {
+    val ticket = MockSecurityContext.ticketFor(appConfig.settings.securitySettings.casServiceIdentifier, "testuser")
+    get("cas/haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369", "ticket" -> ticket) {
+      status must_== 200
+      val tulos = Serialization.read[Hakemuksentulos](body)
+      f(tulos)
     }
   }
 }

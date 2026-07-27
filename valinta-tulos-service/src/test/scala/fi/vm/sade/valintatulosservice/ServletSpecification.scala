@@ -70,4 +70,3 @@ trait ServletSpecification extends Specification with ITSetup with TimeWarp with
   def body: String = httpComponentsClient.body
   def status: Int = httpComponentsClient.status
 }
-

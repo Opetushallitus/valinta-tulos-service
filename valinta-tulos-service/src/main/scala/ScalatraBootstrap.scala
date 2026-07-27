@@ -149,13 +149,6 @@ class ScalatraBootstrap extends LifeCycle with Logging {
 
       context.mount(new VirkailijanVastaanottoServlet(valintatulosService, vastaanottoService), "/virkailija", "virkailija")
       context.mount(handler = new MuutoshistoriaServlet(valinnantulosService, valintarekisteriDb, skipAuditForServiceCall = true), urlPattern = "/muutoshistoria", name = "muutoshistoria")
-      context.mount(new PrivateValintatulosServlet(valintatulosService,
-        streamingValintatulosService,
-        vastaanottoService,
-        ilmoittautumisService,
-        valintarekisteriDb,
-        hakemustenTulosHakuLock),
-        "/haku", "haku")
       context.mount(new EnsikertalaisuusServlet(valintarekisteriDb, appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus", "ensikertalaisuus")
       context.mount(new HakijanVastaanottoServlet(vastaanottoService), "/vastaanotto", "vastaanotto")
       context.mount(new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, valintarekisteriDb, appConfig), "/erillishaku/valinnan-tulos", "erillishaku/valinnan-tulos")
@@ -178,7 +171,6 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         streamingValintatulosService,
         vastaanottoService,
         ilmoittautumisService,
-        valintarekisteriDb,
         valintarekisteriDb,
         hakemustenTulosHakuLock
       ),
