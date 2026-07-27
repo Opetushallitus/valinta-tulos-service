@@ -1,7 +1,7 @@
 package fi.vm.sade.valintatulosservice
 
 import java.util.Date
-import fi.vm.sade.auditlog.Operation
+import fi.vm.sade.auditlog.{Audit, Changes, Operation, Target}
 import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
@@ -10,6 +10,7 @@ import fi.vm.sade.valintatulosservice.json.{JsonFormats, JsonStreamWriter, Strea
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, Vastaanottoaikataulu}
 import fi.vm.sade.valintatulosservice.streamingresults.{HakemustenTulosHakuLock, StreamingValintatulosService}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, YhdenPaikanSaanto}
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 
 import javax.servlet.http.HttpServletResponse
@@ -22,14 +23,18 @@ import org.scalatra.swagger._
 
 import scala.util.Try
 
-abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
-                                   streamingValintatulosService: StreamingValintatulosService,
-                                   vastaanottoService: VastaanottoService,
-                                   ilmoittautumisService: IlmoittautumisService,
-                                   hakemustenTulosHakuLock: HakemustenTulosHakuLock,
-                                   swaggerGroupTag: String)
-                                  (implicit val swagger: Swagger,
-                                   appConfig: VtsAppConfig) extends VtsServletBase {
+class ValintatulosServlet(audit: Audit,
+                          valintatulosService: ValintatulosService,
+                          streamingValintatulosService: StreamingValintatulosService,
+                          vastaanottoService: VastaanottoService,
+                          ilmoittautumisService: IlmoittautumisService,
+                          val sessionRepository: SessionRepository,
+                          hakemustenTulosHakuLock: HakemustenTulosHakuLock)
+                         (implicit val swagger: Swagger,
+                          appConfig: VtsAppConfig) extends VtsServletBase with CasAuthenticatedServlet {
+  override val applicationDescription = "Julkinen valintatulosten REST API"
+  private val swaggerGroupTag  = "valintatulos-public"
+
   private val ilmoittautumisenAikaleima: Option[Date] = Option(new Date())
   private lazy val exampleHakemuksenTulos = Hakemuksentulos(
     HakuOid("2.2.2.2"),
@@ -365,6 +370,28 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     }
   }
 
-  def auditLog(auditParams: Map[String, String], auditOperation: Operation): Unit
-  def auditLogChanged(auditParams: Map[String, String], auditOperation: Operation, auditParamsAdded: Map[String, String], changeOperation: String): Unit
+  private def auditLog(auditParams: Map[String, String], auditOperation: Operation): Unit = {
+    implicit val authenticated: Authenticated = authenticate
+    val builder = new Target.Builder()
+    auditParams.foreach(p => builder.setField(p._1, p._2))
+    audit.log(auditInfo.user, auditOperation, builder.build(), new Changes.Builder().build())
+  }
+
+  private def auditLogChanged(auditParams: Map[String, String], auditOperation: Operation, changedParams: Map[String, String], changeOperation: String): Unit = {
+    implicit val authenticated: Authenticated = authenticate
+    val builder = new Target.Builder()
+    auditParams.foreach(p => builder.setField(p._1, p._2))
+    val changesBuilder = new Changes.Builder()
+
+    if (changeOperation.equals("added")) {
+      changedParams.foreach(p => changesBuilder.added(p._1, p._2))
+    } else if (changeOperation.equals("removed")) {
+      changedParams.foreach(p => changesBuilder.removed(p._1, p._2))
+    } else {
+      changedParams.foreach(p => changesBuilder.updated(p._1, None.toString, p._2))
+    }
+    changedParams.foreach(p => changesBuilder.added(p._1, p._2))
+    audit.log(auditInfo.user, auditOperation, builder.build(), changesBuilder.build())
+  }
+
 }
