@@ -8,8 +8,7 @@ import org.scalatra.swagger.Swagger
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 
 class MuutoshistoriaServlet(valinnantulosService: ValinnantulosService,
-                            val sessionRepository: SessionRepository,
-                            val skipAuditForServiceCall: Boolean = false)
+                            val sessionRepository: SessionRepository)
                            (implicit val swagger: Swagger)
   extends VtsServletBase with CasAuthenticatedServlet {
 
@@ -24,12 +23,8 @@ class MuutoshistoriaServlet(valinnantulosService: ValinnantulosService,
     contentType = formats("json")
     val hakemusOid = parseHakemusOid.fold(throw _, o => o)
     val valintatapajonoOid = parseValintatapajonoOid.fold(throw _, o => o)
-    if (skipAuditForServiceCall) {
-      Ok(valinnantulosService.getMuutoshistoriaForHakemusWithoutAuditInfo(hakemusOid, valintatapajonoOid))
-    } else {
-      implicit val authenticated = authenticate
-      authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
-      Ok(valinnantulosService.getMuutoshistoriaForHakemus(hakemusOid, valintatapajonoOid, auditInfo))
-    }
+    implicit val authenticated: Authenticated = authenticate
+    authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
+    Ok(valinnantulosService.getMuutoshistoriaForHakemus(hakemusOid, valintatapajonoOid, auditInfo))
   }
 }

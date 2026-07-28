@@ -137,8 +137,8 @@ localhostiin tekee niistä vaikeat käyttää.
 
 VTS:ssä on monta eri tapaa tunnistaa käyttäjä:
  1. ei tarvitse autentikoitua
-   - `/virkistys/*`, `/swagger/*`, `/virkailija/*`, `/lukuvuosimaksu/*`, `/muutoshistoria/*`,
-     `/haku/*`, `/ensikertalaisuus/*`, `/vastaanotto/*`, `/sijoittelu/*`, `/health-check/*`
+   - `/virkistys/*`, `/swagger/*`, `/virkailija/*`,
+     `/ensikertalaisuus/*`, `/vastaanotto/*`, `/health-check/*`
    - nämä on tuotannossa suojattu [palomuurilla](./kaytto-palomuurin-ulkopuolelta.md)
  2. CAS-tunnistuksella _tai_ sessiolla
    - `/auth/login`, `/cas/haku/*`, `/cas/kela/*`
