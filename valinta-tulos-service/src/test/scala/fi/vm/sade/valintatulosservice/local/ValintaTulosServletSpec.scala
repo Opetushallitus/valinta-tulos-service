@@ -4,28 +4,36 @@ import fi.vm.sade.security.mock.MockSecurityContext
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.AtaruHakemus
+import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.Henkilo
 import fi.vm.sade.valintatulosservice.production.Hakija
+import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
+import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.joda.time.{DateTime, DateTimeZone}
-import org.json4s.JValue
 import org.json4s.JsonAST.JArray
+import org.json4s.jackson.JsonMethods.{pretty, parse => jacksonParse}
 import org.json4s.jackson.Serialization
 import org.json4s.native.JsonMethods
-import org.json4s.jackson.JsonMethods.{parse => jacksonParse, pretty}
+import org.json4s.{Formats, JValue}
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 import org.springframework.core.io.ClassPathResource
 
 @RunWith(classOf[JUnitRunner])
-class ValintaTulosServletSpec extends ServletSpecification {
+class ValintaTulosServletSpec extends ServletSpecification with ValintarekisteriDbTools {
+
+  override implicit val formats: Formats = JsonFormats.jsonFormats
+
   val ataruHakemus1 = AtaruHakemus(HakemusOid("1.2.246.562.11.00000000000000000005"),
     HakuOid("1.2.246.562.29.37061034627"), List(HakukohdeOid("1.2.246.562.20.14875157126")), HakijaOid("ataru-tyyppi"), "fi", "test@example.com", Map("1.2.246.562.20.14875157126" -> "NOT_CHECKED"))
   val ataruHakemus2 = AtaruHakemus(HakemusOid("1.2.246.562.11.00000000000000000006"),
     HakuOid("1.2.246.562.29.37061034627"), List(HakukohdeOid("1.2.246.562.20.14875157126"), HakukohdeOid("1.2.246.562.20.27958725015")), HakijaOid("ataru-tyyppi2"), "fi", "test@example.com", Map("1.2.246.562.20.27958725015" -> "NOT_CHECKED"))
   val ataruHenkilo1 = Henkilo(HakijaOid("ataru-tyyppi"), None, Some("Ataru"), None, None, None, None)
   val ataruHenkilo2 = Henkilo(HakijaOid("ataru-tyyppi2"), None, Some("Ataru2"), None, None, None, None)
+
+  lazy val testSession: String = createTestSession(Set(Role.VALINTATULOSSERVICE_CRUD_OPH))
 
   private def prettify(json: String) = {
     pretty(jacksonParse(json))
@@ -430,9 +438,11 @@ class ValintaTulosServletSpec extends ServletSpecification {
     }
   }
 
-  private def vastaanota[T](action: String, hakukohde: String = "1.2.246.562.5.72607738902", personOid: String = "1.2.246.562.24.14229104472", hakemusOid: String = "1.2.246.562.11.00000441369")(block: => T) = {
-    postJSON(s"vastaanotto/henkilo/$personOid/hakemus/$hakemusOid/hakukohde/$hakukohde",
-      s"""{"action":"$action"}""") {
+  private def vastaanota[T](action: String, hakukohde: String = "1.2.246.562.5.72607738902", hakemusOid: String = "1.2.246.562.11.00000441369")(block: => T): T = {
+    postJSON(s"auth/vastaanotto/hakemus/$hakemusOid/hakukohde/$hakukohde",
+      s"""{"action":"$action"}""", Map("Cookie" -> s"session=$testSession")
+    ) {
+      status must_== 200
       block
     }
   }
