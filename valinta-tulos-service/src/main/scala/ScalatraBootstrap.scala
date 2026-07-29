@@ -130,8 +130,6 @@ class ScalatraBootstrap extends LifeCycle with Logging {
 
     mountBasicVts()
 
-    context.mount(new HakukohdeRefreshServlet(valintarekisteriDb, hakukohdeRecordService), "/virkistys")
-
     context.mount(new OpenAPIServlet(appConfig), "/swagger/open-api", "openapi")
     context.mount(new SwaggerServlet, "/swagger/*", "swagger")
 

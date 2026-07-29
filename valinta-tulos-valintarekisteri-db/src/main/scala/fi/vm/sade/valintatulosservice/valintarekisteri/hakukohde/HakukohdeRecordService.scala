@@ -34,38 +34,6 @@ class HakukohdeRecordService(hakuService: HakuService, hakukohdeRepository: Haku
     }
   }
 
-  def refreshHakukohdeRecord(oid: HakukohdeOid): Boolean = {
-    refreshHakukohdeRecord(oid, (_, fresh) => hakukohdeRepository.updateHakukohde(fresh))
-  }
-
-  def refreshHakukohdeRecordDryRun(oid: HakukohdeOid): Boolean = {
-    refreshHakukohdeRecord(oid, _ != _)
-  }
-
-  private def refreshHakukohdeRecord(oid: HakukohdeOid, update: (HakukohdeRecord, HakukohdeRecord) => Boolean): Boolean = {
-    val old = hakukohdeRepository.findHakukohde(oid).get
-    val vastaanottoja = hakukohdeRepository.hakukohteessaVastaanottoja(oid)
-    fetchHakukohdeDetails(oid) match {
-      case Right(fresh) =>
-        if (update(old, fresh)) {
-          if (vastaanottoja) {
-            logger.warn(s"Updated hakukohde from $old to $fresh. Hakukohde had vastaanottos.")
-          } else {
-            logger.info(s"Updated hakukohde from $old to $fresh.")
-          }
-          true
-        } else {
-          false
-        }
-      case Left(t) if vastaanottoja =>
-        logger.error(s"Updating hakukohde $oid failed. Hakukohde had vastaanottos.", t)
-        false
-      case Left(t) =>
-        logger.warn(s"Updating hakukohde $oid failed.", t)
-        false
-    }
-  }
-
   private def fetchAndStoreHakukohdeDetails(oid: HakukohdeOid, hakuOid: Option[HakuOid] = None): Either[Throwable, HakukohdeRecord] = {
     logger.info(s"fetchAndStoreHakukohdeDetails for $oid in haku $hakuOid")
     val fresh = fetchHakukohdeDetails(oid)
