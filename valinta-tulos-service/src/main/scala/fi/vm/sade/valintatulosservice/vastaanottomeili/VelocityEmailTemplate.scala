@@ -1,7 +1,8 @@
 package fi.vm.sade.valintatulosservice.vastaanottomeili
 
 import fi.vm.sade.valintatulosservice.json.JsonFormats.jsonFormats
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, Vastaanottotila}
+import fi.vm.sade.valintatulosservice.lokalisointi.TranslationUtil.getMatchingTranslation
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, PaatettavaOpiskeluOikeus, TranslatedName, Vastaanottotila}
 import fi.vm.sade.valintatulosservice.vastaanottomeili.LahetysSyy.{LahetysSyy, ehdollisen_periytymisen_ilmoitus}
 import org.apache.velocity.VelocityContext
 import org.apache.velocity.app.VelocityEngine
@@ -23,15 +24,18 @@ import scala.language.implicitConversions
 
 case class EmailHakukohde(nimi: String, tarjoaja: String)
 
+case class OpiskeluOikeus(organisaatioNimi: String, supaNimi: String, virtaNimi: String, naytaVirtaNimi: Boolean)
+
+case class PaatettavatOikeudet(hakijallaPaatettaviaOpiskeluoikeuksia: Boolean,
+                               paatettavatOikeudet: List[OpiskeluOikeus])
+
 case class EmailStructure(etunimi: String,
                           haunNimi: String,
                           hakukohde: Option[String],
                           securelink: Option[String],
                           deadline: Option[String],
-                          hakukohteet: List[EmailHakukohde]) {
-
-
-}
+                          hakukohteet: List[EmailHakukohde],
+                          paatettavatOpiskeluoikeudet: Option[PaatettavatOikeudet])
 
 object EmailStructure {
 
@@ -42,7 +46,8 @@ object EmailStructure {
       s.flatMap(ss => m.get(ss).orElse(m.get(s"kieli_$ss"))).find(_.nonEmpty)
         .getOrElse("-")
   }
-  private val LOG : org.slf4j.Logger = LoggerFactory.getLogger(classOf[EmailStructure])
+
+  private val LOG: org.slf4j.Logger = LoggerFactory.getLogger(classOf[EmailStructure])
 
   private val timezone = ZoneId.of("Europe/Helsinki")
   private val deadlineFormatFi = new SimpleDateFormat("d.M.yyyy 'klo' HH:mm")
@@ -66,22 +71,26 @@ object EmailStructure {
       case "fi" => ilmoitus.deadline.map(deadlineFormatFi.format)
       case "sv" => ilmoitus.deadline.map(deadlineFormatSv.format)
       case "en" => ilmoitus.deadline.map(deadlineFormatEn.format)
-      case _ => throw new IllegalArgumentException ("Tuntematon asiointikieli. Hakemus: " + ilmoitus.hakemusOid + ",  asiointikieli:  " + ilmoitus.asiointikieli)
+      case _ => throw new IllegalArgumentException("Tuntematon asiointikieli. Hakemus: " + ilmoitus.hakemusOid + ",  asiointikieli:  " + ilmoitus.asiointikieli)
     }
 
     if (!(isValidVastaanottoIlmoitus || isValidPaikkaVastaanotettavissaIlmoitus)) throw new IllegalArgumentException("Failed to add hakukohde information to recipient. Hakemus " + ilmoitus.hakemusOid +
       ". LahetysSyy was " + lahetysSyy + " and there was " + ilmoitus.hakukohteet.size + "hakukohtees")
 
     LOG.warn(s"DEBUG ${ilmoitus.hakemusOid} hakukohteenNimet ${ilmoitus.hakukohteet.map(_.hakukohteenNimet)} ja haunNimi ")
+
+    val paatettavatOikeudet: Option[PaatettavatOikeudet] = ilmoitus.hakukohteet.find(hk => hk.paatettavatOpiskeluoikeudet.nonEmpty)
+      .map(hk => mapPaatettavatOikeudet(hk.paatettavatOpiskeluoikeudet, lang))
+
     EmailStructure(
       hakukohde =
-        if(isValidVastaanottoIlmoitus)
+        if (isValidVastaanottoIlmoitus)
           Some(ilmoitus.hakukohteet.head.hakukohteenNimet.getAny(lang, "fi", "sv", "en")
-          .concat(" / ")
-          .concat(ilmoitus.hakukohteet.head.tarjoajaNimet.getAny(lang, "fi", "sv", "en")))
+            .concat(" / ")
+            .concat(ilmoitus.hakukohteet.head.tarjoajaNimet.getAny(lang, "fi", "sv", "en")))
         else None,
       hakukohteet =
-        if(isValidPaikkaVastaanotettavissaIlmoitus)
+        if (isValidPaikkaVastaanotettavissaIlmoitus)
           ilmoitus.hakukohteet
             .map(hk => EmailHakukohde(
               hk.hakukohteenNimet.getAny(lang, "fi", "sv", "en"),
@@ -90,7 +99,21 @@ object EmailStructure {
       securelink = ilmoitus.secureLink,
       etunimi = ilmoitus.etunimi,
       haunNimi = ilmoitus.haku.nimi.getAny(lang, "fi", "sv", "en"),
-      deadline = formattedDeadline)
+      deadline = formattedDeadline,
+      paatettavatOpiskeluoikeudet = paatettavatOikeudet)
+  }
+
+  private def mapPaatettavatOikeudet(oikeudet: List[PaatettavaOpiskeluOikeus], lang: String): PaatettavatOikeudet = {
+    PaatettavatOikeudet(oikeudet.nonEmpty, oikeudet.map(mapPaatettavaOikeus(_, lang)))
+  }
+
+  private def mapPaatettavaOikeus(oikeus: PaatettavaOpiskeluOikeus, lang: String): OpiskeluOikeus = {
+    val virtaNimi = getMatchingTranslation(oikeus.virtaNimi, lang)
+    OpiskeluOikeus(
+      organisaatioNimi = getMatchingTranslation(oikeus.organisaatioNimi, lang),
+      supaNimi = getMatchingTranslation(oikeus.supaNimi, lang),
+      virtaNimi = virtaNimi,
+      naytaVirtaNimi = virtaNimi.nonEmpty)
   }
 }
 

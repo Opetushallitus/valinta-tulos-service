@@ -4,28 +4,55 @@ import fi.vm.sade.security.mock.MockSecurityContext
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.hakemus.AtaruHakemus
+import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.Henkilo
 import fi.vm.sade.valintatulosservice.production.Hakija
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.joda.time.{DateTime, DateTimeZone}
-import org.json4s.JValue
+import org.json4s.{Formats, JValue}
 import org.json4s.JsonAST.JArray
 import org.json4s.jackson.Serialization
 import org.json4s.native.JsonMethods
-import org.json4s.jackson.JsonMethods.{parse => jacksonParse, pretty}
+import org.json4s.jackson.JsonMethods.{pretty, parse => jacksonParse}
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 import org.springframework.core.io.ClassPathResource
+import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
 
 @RunWith(classOf[JUnitRunner])
-class ValintaTulosServletSpec extends ServletSpecification {
-  val ataruHakemus1 = AtaruHakemus(HakemusOid("1.2.246.562.11.00000000000000000005"),
+class ValintaTulosServletSpec extends ServletSpecification with ValintarekisteriDbTools {
+
+  override implicit val formats: Formats = JsonFormats.jsonFormats
+
+  val ataruHakemus1: AtaruHakemus = AtaruHakemus(HakemusOid("1.2.246.562.11.00000000000000000005"),
     HakuOid("1.2.246.562.29.37061034627"), List(HakukohdeOid("1.2.246.562.20.14875157126")), HakijaOid("ataru-tyyppi"), "fi", "test@example.com", Map("1.2.246.562.20.14875157126" -> "NOT_CHECKED"))
-  val ataruHakemus2 = AtaruHakemus(HakemusOid("1.2.246.562.11.00000000000000000006"),
+  val ataruHakemus2: AtaruHakemus = AtaruHakemus(HakemusOid("1.2.246.562.11.00000000000000000006"),
     HakuOid("1.2.246.562.29.37061034627"), List(HakukohdeOid("1.2.246.562.20.14875157126"), HakukohdeOid("1.2.246.562.20.27958725015")), HakijaOid("ataru-tyyppi2"), "fi", "test@example.com", Map("1.2.246.562.20.27958725015" -> "NOT_CHECKED"))
-  val ataruHenkilo1 = Henkilo(HakijaOid("ataru-tyyppi"), None, Some("Ataru"), None, None, None, None)
-  val ataruHenkilo2 = Henkilo(HakijaOid("ataru-tyyppi2"), None, Some("Ataru2"), None, None, None, None)
+  val ataruHenkilo1: Henkilo = Henkilo(HakijaOid("ataru-tyyppi"), None, Some("Ataru"), None, None, None, None)
+  val ataruHenkilo2: Henkilo = Henkilo(HakijaOid("ataru-tyyppi2"), None, Some("Ataru2"), None, None, None, None)
+
+  val opiskeluOikeudet: String = """[
+                       	  {
+                            "virtaOpiskeluOikeusId": "02507_2600544",
+                            "organisaatioOid": "1.2.246.562.10.38429345754",
+                            "organisaatioNimi": {
+                              "fi": "Satakunnan ammattikorkeakoulu",
+                              "sv": "Satakunnan ammattikorkeakoulu",
+                              "en": "Satakunta University of Applied Sciences SAMK"
+                            },
+                            "virtaNimi": {
+                              "fi": "Hyvinvoinnin uudistuva asiantuntijuus ja johtaminen",
+                              "sv": "",
+                              "en": "Evolving expertise and leadership in welfare"
+                            },
+                            "supaNimi": {
+                              "fi": "Sairaanhoitaja (ylempi AMK)",
+                              "sv": "Sjukskötare (högre YH)",
+                              "en": "Master of Health Care (UAS), Registered Nurse"
+                            }
+                       	  }
+                       ]""".stripMargin
 
   private def prettify(json: String) = {
     pretty(jacksonParse(json))
@@ -93,6 +120,24 @@ class ValintaTulosServletSpec extends ServletSpecification {
           jsonFromClasspath("expected-hyvaksytty-ehdollisesti-kesken-julkaistavissa.json"),
           body
         )
+      }
+    }
+
+    "palauttaa naytetyt paatetyt opiskeluoikeudet" in {
+      lisaaNaytetytPaatettavatOpiskeluoikeudet("1.2.246.562.5.72607738902", "1.2.246.562.11.00000441369", "1.2.246.562.24.14229104472", opiskeluOikeudet)
+      useFixture("hyvaksytty-ehdollisesti-kesken-julkaistavissa.json")
+
+      get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
+        status must_== 200
+        val tulos: Hakemuksentulos = JsonMethods.parse(body).extract[Hakemuksentulos]
+        val oikeudet = tulos.hakutoiveet.find(hk => hk.hakukohdeOid.equals(HakukohdeOid("1.2.246.562.5.72607738902"))).get.naytetytPaatettavatOpiskeluoikeudet
+        oikeudet.size must_== 1
+        deleteAll()
+        val oikeus = oikeudet.head
+        oikeus.organisaatioNimi.fi must_== "Satakunnan ammattikorkeakoulu"
+        oikeus.organisaatioOid must_== "1.2.246.562.10.38429345754"
+        oikeus.virtaNimi.fi must_== "Hyvinvoinnin uudistuva asiantuntijuus ja johtaminen"
+        oikeus.supaNimi.fi must_== "Sairaanhoitaja (ylempi AMK)"
       }
     }
 

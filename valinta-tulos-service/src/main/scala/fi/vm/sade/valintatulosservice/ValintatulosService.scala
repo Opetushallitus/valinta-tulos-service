@@ -347,6 +347,15 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     sijoittelutulosService.haeVastaanotonAikarajaTiedot(hakuOid, hakukohdeOid, hakemusOids)
   }
 
+  def haePaattyneetOpiskeluoikeudet(tulos: Hakemuksentulos): Map[Hakutoiveentulos, Option[String]] = {
+    tulos.hakutoiveet
+      .map(hk => {
+        val oikeudet = hakijaVastaanottoRepository.runBlocking(hakijaVastaanottoRepository.
+          findHakemuksenVastaanotonPaatettavatOpiskeluOikeudet(tulos.hakemusOid, hk.hakukohdeOid))
+        (hk, oikeudet)
+      }).toMap
+  }
+
   private def findTuloksetForHakemustulos(hakemuksenTulos: Hakemuksentulos): List[Valintatulos] = {
     val hakemusOid = hakemuksenTulos.hakemusOid
     val hakuOid = hakemuksenTulos.hakuOid

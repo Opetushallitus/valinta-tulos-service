@@ -67,7 +67,8 @@
           "eiVarasijatayttoa": false,
           "varasijasaannotKaytossa": false
         }
-      ]
+      ],
+      "naytetytPaatettavatOpiskeluoikeudet": []
     },
     {
       "hakukohdeOid": "1.2.246.562.5.16303028779",
@@ -96,7 +97,8 @@
       "julkaistavissa": false,
       "ehdollisestiHyvaksyttavissa": false,
       "tilanKuvaukset": {},
-      "jonokohtaisetTulostiedot": []
+      "jonokohtaisetTulostiedot": [],
+      "naytetytPaatettavatOpiskeluoikeudet": []
     }
   ]
 }

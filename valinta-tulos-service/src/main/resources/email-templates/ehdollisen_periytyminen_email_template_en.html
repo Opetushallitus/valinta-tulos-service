@@ -13,6 +13,26 @@
     You have now been accepted to a higher preference study place, and the new study place has been automatically confirmed: $hakukohde</p>
 If you get accepted to another study place with higher preference, the higher study place will again be automatically confirmed.
 <p>If you are not accepted to any of your higher preference study options, the confirmation for this study place will remain valid: $hakukohde</p>
+
+#if($hakijallaPaatettaviaOpiskeluoikeuksia)
+<p>Your previous study rights will terminate</p>
+
+<p>A higher education student can only have one study right leading to a degree of the same or lower level at a time.
+    By accepting the study place, the following study rights will end: </p>
+
+<ul>
+    #foreach( $oikeus in $paatettavatOpiskeluoikeudet )
+    <li>
+        <p>$oikeus.organisaatioNimi</p>
+        <p>$oikeus.supaNimi</p>
+        #if($oikeus.naytaVirtaNimi)
+        <p>$oikeus.virtaNimi</p>
+        #end
+    </li>
+    #end
+</ul>
+#end
+
 <p>Do not reply to this message - it has been sent automatically</p>
 
 </body>

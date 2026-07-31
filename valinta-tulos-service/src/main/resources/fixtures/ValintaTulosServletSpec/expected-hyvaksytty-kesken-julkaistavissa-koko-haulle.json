@@ -43,7 +43,8 @@
         "tilanKuvaukset": {},
         "showMigriURL": true,
         "pisteet": 4.0,
-        "jonokohtaisetTulostiedot": []
+        "jonokohtaisetTulostiedot": [],
+        "naytetytPaatettavatOpiskeluoikeudet": []
       },
       {
         "hakukohdeOid": "1.2.246.562.5.16303028779",
@@ -72,7 +73,8 @@
         "julkaistavissa": false,
         "ehdollisestiHyvaksyttavissa": false,
         "tilanKuvaukset": {},
-        "jonokohtaisetTulostiedot": []
+        "jonokohtaisetTulostiedot": [],
+        "naytetytPaatettavatOpiskeluoikeudet": []
       }
     ]
   },
@@ -112,7 +114,8 @@
         "julkaistavissa": false,
         "ehdollisestiHyvaksyttavissa": false,
         "tilanKuvaukset": {},
-        "jonokohtaisetTulostiedot": []
+        "jonokohtaisetTulostiedot": [],
+        "naytetytPaatettavatOpiskeluoikeudet": []
       },
       {
         "hakukohdeOid": "1.2.246.562.20.83060182827",
@@ -141,7 +144,8 @@
         "julkaistavissa": false,
         "ehdollisestiHyvaksyttavissa": false,
         "tilanKuvaukset": {},
-        "jonokohtaisetTulostiedot": []
+        "jonokohtaisetTulostiedot": [],
+        "naytetytPaatettavatOpiskeluoikeudet": []
       }
     ]
   },
@@ -181,7 +185,8 @@
         "julkaistavissa": false,
         "ehdollisestiHyvaksyttavissa": false,
         "tilanKuvaukset": {},
-        "jonokohtaisetTulostiedot": []
+        "jonokohtaisetTulostiedot": [],
+        "naytetytPaatettavatOpiskeluoikeudet": []
       },
       {
         "hakukohdeOid": "1.2.246.562.20.83060182827",
@@ -210,7 +215,8 @@
         "julkaistavissa": false,
         "ehdollisestiHyvaksyttavissa": false,
         "tilanKuvaukset": {},
-        "jonokohtaisetTulostiedot": []
+        "jonokohtaisetTulostiedot": [],
+        "naytetytPaatettavatOpiskeluoikeudet": []
       }
     ]
   }
