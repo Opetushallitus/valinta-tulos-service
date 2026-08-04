@@ -30,16 +30,16 @@ object TimeUtils {
 
   def getPaateltyAloitusajankohta(hakukohde: Hakukohde): String = {
     hakukohde.paateltyAlkamisajankohta.flatMap(ajankohta =>
-      (ajankohta.pvm, ajankohta.pvm == null || ajankohta.pvm.isBlank, ajankohta.henkilokohtainenSuunnitelma) match {
-        case (_, true, false) =>
+      (ajankohta.pvm, ajankohta.henkilokohtainenSuunnitelma) match {
+        case (None, false) =>
           None
-        case (pvm, false, false) =>
+        case (Some(pvm), false) =>
           if (TimeUtils.isNowAfter(pvm)) {
             Some(TimeUtils.KOUTA_DATE_FORMATTER.format(ZonedDateTime.now(TimeUtils.ZONE_FINLAND)))
           } else {
             Some(pvm)
           }
-        case (_, _, true) =>
+        case (_, true) =>
           Some(TimeUtils.KOUTA_DATE_FORMATTER.format(ZonedDateTime.now(TimeUtils.ZONE_FINLAND)))
       }).orNull
   }
