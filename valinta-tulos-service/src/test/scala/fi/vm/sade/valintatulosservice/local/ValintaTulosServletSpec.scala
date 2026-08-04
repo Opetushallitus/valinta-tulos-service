@@ -29,8 +29,22 @@ class ValintaTulosServletSpec extends ServletSpecification with Valintarekisteri
     HakuOid("1.2.246.562.29.37061034627"), List(HakukohdeOid("1.2.246.562.20.14875157126")), HakijaOid("ataru-tyyppi"), "fi", "test@example.com", Map("1.2.246.562.20.14875157126" -> "NOT_CHECKED"))
   val ataruHakemus2: AtaruHakemus = AtaruHakemus(HakemusOid("1.2.246.562.11.00000000000000000006"),
     HakuOid("1.2.246.562.29.37061034627"), List(HakukohdeOid("1.2.246.562.20.14875157126"), HakukohdeOid("1.2.246.562.20.27958725015")), HakijaOid("ataru-tyyppi2"), "fi", "test@example.com", Map("1.2.246.562.20.27958725015" -> "NOT_CHECKED"))
+  // Kuusi hakutoivetta tarkoituksella: Scalan immutable Map säilyttää lisäysjärjestyksen
+  // neljään alkioon asti (Map1-Map4), joten järjestysvirheet paljastuvat vasta tätä
+  // suuremmalla hakutoivemäärällä. Hakukohdeoidit eivät ole aakkosjärjestyksessä,
+  // jotta myöskään vahinkolajittelu ei mene läpi.
+  val kuusiHakutoivetta: List[HakukohdeOid] = List(
+    HakukohdeOid("1.2.246.562.20.00000000000000000603"),
+    HakukohdeOid("1.2.246.562.20.00000000000000000601"),
+    HakukohdeOid("1.2.246.562.20.00000000000000000606"),
+    HakukohdeOid("1.2.246.562.20.00000000000000000602"),
+    HakukohdeOid("1.2.246.562.20.00000000000000000605"),
+    HakukohdeOid("1.2.246.562.20.00000000000000000604"))
+  val ataruHakemus3: AtaruHakemus = AtaruHakemus(HakemusOid("1.2.246.562.11.00000000000000000007"),
+    HakuOid("1.2.246.562.29.37061034627"), kuusiHakutoivetta, HakijaOid("ataru-tyyppi3"), "fi", "test@example.com", Map.empty)
   val ataruHenkilo1: Henkilo = Henkilo(HakijaOid("ataru-tyyppi"), None, Some("Ataru"), None, None, None, None)
   val ataruHenkilo2: Henkilo = Henkilo(HakijaOid("ataru-tyyppi2"), None, Some("Ataru2"), None, None, None, None)
+  val ataruHenkilo3: Henkilo = Henkilo(HakijaOid("ataru-tyyppi3"), None, Some("Ataru3"), None, None, None, None)
 
   val opiskeluOikeudet: String = """[
                        	  {
@@ -138,6 +152,35 @@ class ValintaTulosServletSpec extends ServletSpecification with Valintarekisteri
         oikeus.organisaatioOid must_== "1.2.246.562.10.38429345754"
         oikeus.virtaNimi.fi must_== "Hyvinvoinnin uudistuva asiantuntijuus ja johtaminen"
         oikeus.supaNimi.fi must_== "Sairaanhoitaja (ylempi AMK)"
+      }
+    }
+
+    "palauttaa hakutoiveet hakemuksen mukaisessa jarjestyksessa" in {
+      useFixture("ei-tuloksia.json", hakemusFixtures = List.empty, hakuFixture = HakuOid("ataru-haku"),
+        ataruHakemusFixture = List(ataruHakemus3), ataruHenkiloFixture = List(ataruHenkilo3))
+
+      get("haku/1.2.246.562.29.37061034627/hakemus/1.2.246.562.11.00000000000000000007") {
+        status must_== 200
+        val tulos: Hakemuksentulos = JsonMethods.parse(body).extract[Hakemuksentulos]
+        tulos.hakutoiveet.map(_.hakukohdeOid) must_== kuusiHakutoivetta
+      }
+    }
+
+    "palauttaa hakutoiveet hakemuksen mukaisessa jarjestyksessa myos naytettyjen paatettavien opiskeluoikeuksien kanssa" in {
+      lisaaNaytetytPaatettavatOpiskeluoikeudet(kuusiHakutoivetta(4).toString,
+        "1.2.246.562.11.00000000000000000007", "ataru-tyyppi3", opiskeluOikeudet)
+      useFixture("ei-tuloksia.json", hakemusFixtures = List.empty, hakuFixture = HakuOid("ataru-haku"),
+        ataruHakemusFixture = List(ataruHakemus3), ataruHenkiloFixture = List(ataruHenkilo3))
+
+      get("haku/1.2.246.562.29.37061034627/hakemus/1.2.246.562.11.00000000000000000007") {
+        status must_== 200
+        val tulos: Hakemuksentulos = JsonMethods.parse(body).extract[Hakemuksentulos]
+        deleteAll()
+        tulos.hakutoiveet.map(_.hakukohdeOid) must_== kuusiHakutoivetta
+        // Oikeudet on tallennettu vain viidennelle hakutoiveelle, joten ne eivät saa
+        // päätyä muille hakutoiveille edes silloin kun järjestys muuttuisi.
+        tulos.hakutoiveet.count(_.naytetytPaatettavatOpiskeluoikeudet.nonEmpty) must_== 1
+        tulos.hakutoiveet(4).naytetytPaatettavatOpiskeluoikeudet.size must_== 1
       }
     }
 

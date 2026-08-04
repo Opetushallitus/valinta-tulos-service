@@ -347,13 +347,15 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
     sijoittelutulosService.haeVastaanotonAikarajaTiedot(hakuOid, hakukohdeOid, hakemusOids)
   }
 
-  def haePaattyneetOpiskeluoikeudet(tulos: Hakemuksentulos): Map[Hakutoiveentulos, Option[String]] = {
+  // Paluuarvo on 1:1 tulos.hakutoiveet-listan kanssa, myös järjestyksen osalta:
+  // hakutoiveen prioriteetti on pelkkä listan indeksi, joten järjestystä ei saa muuttaa.
+  def haePaattyneetOpiskeluoikeudet(tulos: Hakemuksentulos): List[(Hakutoiveentulos, Option[String])] = {
     tulos.hakutoiveet
       .map(hk => {
         val oikeudet = hakijaVastaanottoRepository.runBlocking(hakijaVastaanottoRepository.
           findHakemuksenVastaanotonPaatettavatOpiskeluOikeudet(tulos.hakemusOid, hk.hakukohdeOid))
         (hk, oikeudet)
-      }).toMap
+      })
   }
 
   private def findTuloksetForHakemustulos(hakemuksenTulos: Hakemuksentulos): List[Valintatulos] = {
