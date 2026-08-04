@@ -78,8 +78,8 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     valintatulosService.hakemuksentulos(HakemusOid(hakemusOidString)) match {
       case Some(tulos) => {
         try {
-          val oikeudetMap = valintatulosService.haePaattyneetOpiskeluoikeudet(tulos)
-          tulosWithOikeudet(tulos, oikeudetMap)
+          val oikeudet = valintatulosService.haePaattyneetOpiskeluoikeudet(tulos)
+          tulosWithOikeudet(tulos, oikeudet)
         } catch {
           case e: Exception =>
             logger.error(s"Virhe haettaessa näytettyjä päättyneitä opiskeluoikeuksia hakemukselle $hakemusOidString. Palautetaan tulokset.", e)
@@ -90,9 +90,9 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
     }
   }
 
-  private def tulosWithOikeudet(tulos: Hakemuksentulos, oikeudetMap: Map[Hakutoiveentulos, Option[String]]): Hakemuksentulos = {
-    val toiveet: List[Hakutoiveentulos] = oikeudetMap.toList.map { case (toive, oikeudet) =>
-      val parsitutOikeudet = oikeudet.map(o => parse(o).extract[List[PaatettavaOpiskeluOikeus]])
+  private def tulosWithOikeudet(tulos: Hakemuksentulos, oikeudet: List[(Hakutoiveentulos, Option[String])]): Hakemuksentulos = {
+    val toiveet: List[Hakutoiveentulos] = oikeudet.map { case (toive, toiveenOikeudet) =>
+      val parsitutOikeudet = toiveenOikeudet.map(o => parse(o).extract[List[PaatettavaOpiskeluOikeus]])
         .getOrElse(List.empty)
       toive.copy(naytetytPaatettavatOpiskeluoikeudet = parsitutOikeudet)
     }
