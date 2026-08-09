@@ -17,7 +17,7 @@
 
     <properties>
         <apache.httpclient.version>4.5.13</apache.httpclient.version>
-        <auditlogger.version>8.3.0-SNAPSHOT</auditlogger.version>
+        <auditlogger.version>9.2.7-SNAPSHOT</auditlogger.version>
         <mongo-scala-driver.version>5.2.0</mongo-scala-driver.version>
         <commons-beanutils.version>1.11.0</commons-beanutils.version>
         <commons-lang.version>2.6</commons-lang.version>
@@ -570,38 +570,8 @@
 
     <repositories>
         <repository>
-            <id>oph-sade-artifactory-snapshots</id>
-            <url>https://artifactory.opintopolku.fi/artifactory/oph-sade-snapshot-local</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </repository>
-        <repository>
             <id>github</id>
             <url>https://maven.pkg.github.com/Opetushallitus/packages</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </repository>
-        <repository>
-            <id>oph-sade-artifactory-releases</id>
-            <url>https://artifactory.opintopolku.fi/artifactory/oph-sade-release-local</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>ext-snapshot-local-artifactory-snapshots</id>
-            <url>https://artifactory.opintopolku.fi/artifactory/ext-snapshot-local</url>
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
