@@ -42,7 +42,8 @@ class AtaruHakemusEnricher(config: VtsAppConfig,
         hasHetu = henkilo.hetu.isDefined,
         henkilo.kansalaisuudet.getOrElse(List()),
         yksiloity = henkilo.yksiloity,
-        yksiloityVTJ = henkilo.yksiloityVTJ
+        yksiloityVTJ = henkilo.yksiloityVTJ,
+        yksiloityEidas = henkilo.yksiloityEidas
       ),
       maksuvelvollisuudet = hakemus.paymentObligations
     )
