@@ -38,13 +38,14 @@
         <mongodb-driver-sync.version>5.2.0</mongodb-driver-sync.version>
         <morphia.version>1.2.1</morphia.version>
         <postgresql.version>42.7.13</postgresql.version>
-        <dokumenttipalvelu.version>6.14-SNAPSHOT</dokumenttipalvelu.version>
+        <dokumenttipalvelu.version>6.16-SNAPSHOT</dokumenttipalvelu.version>
         <scala.version>2.13.18</scala.version>
         <scala-parser-combinators.version>2.4.0</scala-parser-combinators.version>
         <scala-xml.version>2.3.0</scala-xml.version>
         <scalatra.version>2.8.4</scalatra.version>
         <scalaz.version>7.3.8</scalaz.version>
-        <sijoittelu.version>10.0.0-SNAPSHOT</sijoittelu.version>
+        <sijoittelu.version>10.2.0-SNAPSHOT</sijoittelu.version>
+        <valintalaskenta.version>8.1-SNAPSHOT</valintalaskenta.version>
         <slf4j-api.version>2.0.13</slf4j-api.version>
         <slick.version>3.5.2</slick.version>
         <specs2.version>4.20.9</specs2.version>
@@ -164,6 +165,16 @@
                         <artifactId>springdoc-openapi-webmvc-core</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>fi.vm.sade.valintaperusteet</groupId>
+                <artifactId>valintalaskenta-laskenta-api</artifactId>
+                <version>${valintalaskenta.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fi.vm.sade.valintaperusteet</groupId>
+                <artifactId>valintaperusteet-api</artifactId>
+                <version>8.2-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>fi.vm.sade.java-utils</groupId>
@@ -565,6 +576,25 @@
                 <artifactId>logback-access</artifactId>
                 <version>${logback-access.version}</version>
             </dependency>
+
+            <!-- fi.vm.sade:valinta-tulos-valintarekisteri-db:8.6.0-SNAPSHOT vs fi.vm.sade.valintaperusteet:valintaperusteet-api:8.2-SNAPSHOT -->
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>2.3</version>
+            </dependency>
+            <!-- fi.vm.sade.valintaperusteet:valintaperusteet-api:8.2-SNAPSHOT vs opiskelijavalinnat-utils.viestinvalitys:kirjasto:1.3.0-SNAPSHOT -->
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-annotations-jakarta</artifactId>
+                <version>2.2.22</version>
+            </dependency>
+            <!-- fi.vm.sade.sijoittelu:sijoittelu-tulos-service:10.2.0-SNAPSHOT vs fi.vm.sade.valintaperusteet:valintaperusteet-api:8.2-SNAPSHOT -->
+            <dependency>
+                <groupId>jakarta.validation</groupId>
+                <artifactId>jakarta.validation-api</artifactId>
+                <version>3.1.1</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -580,14 +610,6 @@
             </releases>
         </repository>
         <repository>
-            <id>ScalazBintrayRepo</id>
-            <name>Scalaz Bintray Repo</name>
-            <url>https://dl.bintray.com/scalaz/releases/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </repository>
-        <repository>
             <id>central</id>
             <name>Maven Central</name>
             <url>https://repo.maven.apache.org/maven2</url>
@@ -595,6 +617,10 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
+        <!--
+            Riippuvuuksien POMit määrittelevät edelleen poistuneen Artifactoryn repositoryksi.
+            Ne id:t on ohjattu Github Packagesiin settings.xml:n <mirrors>-määrityksellä.
+        -->
     </repositories>
     <pluginRepositories>
         <pluginRepository>
