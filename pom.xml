@@ -58,7 +58,7 @@
 
         <plugin.exec-maven-plugin.version>1.6.0</plugin.exec-maven-plugin.version>
         <plugin.maven-assembly-plugin.version>2.6</plugin.maven-assembly-plugin.version>
-        <plugin.maven-enforcer-plugin.version>3.0.0-M3</plugin.maven-enforcer-plugin.version>
+        <plugin.maven-enforcer-plugin.version>3.5.0</plugin.maven-enforcer-plugin.version>
         <plugin.maven-jar-plugin.version>3.0.2</plugin.maven-jar-plugin.version>
         <plugin.maven-surefire-plugin.version>3.2.5</plugin.maven-surefire-plugin.version>
         <plugin.maven-war-plugin.version>3.4.0</plugin.maven-war-plugin.version>
@@ -164,6 +164,14 @@
                         <groupId>org.springdoc</groupId>
                         <artifactId>springdoc-openapi-webmvc-core</artifactId>
                     </exclusion>
+                    <!-- jakarta.servlet-api 4.x käyttää yhä javax.servlet-pakkausta, mutta Filter.init/destroy
+                         ovat siinä default-metodeja. Scalatra 2.8 on käännetty Servlet 3.1:tä vasten, joten
+                         ScalatraFilter-perintä ei käänny, jos tämä päätyy classpathille. Käytetään pelkkää
+                         javax.servlet:javax.servlet-api:${javax.servlet-api.version}. -->
+                    <exclusion>
+                        <groupId>jakarta.servlet</groupId>
+                        <artifactId>jakarta.servlet-api</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -175,6 +183,13 @@
                 <groupId>fi.vm.sade.valintaperusteet</groupId>
                 <artifactId>valintaperusteet-api</artifactId>
                 <version>8.2-SNAPSHOT</version>
+                <exclusions>
+                    <!-- Ks. selitys sijoittelu-algoritmi-domainin kohdalla. -->
+                    <exclusion>
+                        <groupId>jakarta.servlet</groupId>
+                        <artifactId>jakarta.servlet-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>fi.vm.sade.java-utils</groupId>
@@ -650,6 +665,13 @@
                                     <version>${enforce.java.version}</version>
                                 </requireJavaVersion>
                                 <dependencyConvergence/>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <exclude>jakarta.servlet:jakarta.servlet-api</exclude>
+                                        <exclude>javax.servlet:servlet-api</exclude>
+                                    </excludes>
+                                    <message>Scalatra 2.8 vaatii Servlet 3.1 -rajapinnan (javax.servlet:javax.servlet-api). Servlet 4.0 -rajapinta (jakarta.servlet:jakarta.servlet-api 4.x) käyttää samaa javax.servlet-pakkausta ja rikkoo ScalatraFilter-perinnän. Sulje se pois riippuvuuspuusta.</message>
+                                </bannedDependencies>
                             </rules>
                         </configuration>
                     </execution>

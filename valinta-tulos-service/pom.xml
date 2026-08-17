@@ -493,7 +493,7 @@
                 <artifactId>maven-war-plugin</artifactId>
                 <version>${plugin.maven-war-plugin.version}</version>
                 <configuration>
-                    <packagingExcludes>WEB-INF/lib//javax.servlet-api-*.jar</packagingExcludes>
+                    <packagingExcludes>WEB-INF/lib/javax.servlet-api-*.jar,WEB-INF/lib/jakarta.servlet-api-*.jar</packagingExcludes>
                     <attachClasses>true</attachClasses>
                 </configuration>
             </plugin>
