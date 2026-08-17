@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice
 
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit.{HOURS, MINUTES}
-import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
+import jakarta.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
 
 import scala.util.{Failure, Success}
 

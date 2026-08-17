@@ -16,6 +16,14 @@
     </organization>
     <dependencyManagement>
         <dependencies>
+            <!-- Pitää kaikki Jetty 12:n moduulit samassa versiossa. -->
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-bom</artifactId>
+                <version>${jetty12.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>commons-logging</groupId>
                 <artifactId>commons-logging</artifactId>
@@ -37,12 +45,13 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
-            <version>${jetty.version}</version>
+            <version>${jetty12.version}</version>
         </dependency>
+        <!-- EE10 = jakarta.servlet 6.0. Tuo mukanaan myös jetty-util-, jetty-http- ja jetty-io-kirjastot. -->
         <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-servlet</artifactId>
-            <version>${jetty.version}</version>
+            <groupId>org.eclipse.jetty.ee10</groupId>
+            <artifactId>jetty-ee10-servlet</artifactId>
+            <version>${jetty12.version}</version>
         </dependency>
         <dependency>
             <groupId>org.scalaz</groupId>
@@ -65,8 +74,9 @@
             <artifactId>slf4j-log4j12</artifactId>
         </dependency>
         <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-access</artifactId>
+            <groupId>ch.qos.logback.access</groupId>
+            <artifactId>logback-access-jetty12</artifactId>
+            <version>${logback-access-jetty12.version}</version>
         </dependency>
         <dependency>
             <groupId>org.specs2</groupId>
@@ -79,10 +89,6 @@
         <dependency>
             <groupId>org.json4s</groupId>
             <artifactId>json4s-ast_2.13</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.specs2</groupId>
@@ -104,11 +110,6 @@
             <groupId>fi.vm.sade.java-utils</groupId>
             <artifactId>httpclient</artifactId>
             <version>1.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-util</artifactId>
-            <version>${jetty.version}</version>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>

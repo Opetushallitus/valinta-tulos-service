@@ -29,11 +29,17 @@
         <hamcrest.version>1.3</hamcrest.version>
         <jackson.version>2.18.9</jackson.version>
         <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
+        <!-- Jetty 9.4 on viimeinen Servlet 3.1 -sarja, jota Scalatra 2.8 vaatii. Käytössä enää
+             valinta-tulos-servicen paikallisessa kehityskäynnistimessä (test-scope). -->
         <jetty.version>9.4.58.v20250814</jetty.version>
+        <!-- henkiloviite-synchronizerin upotettu palvelin. Jetty 9.4/10/11 ovat EOL eikä niihin ole julkaistu
+             korjauksia CVE-2026-2332:een ja CVE-2026-10050:een, joten käytössä on Jetty 12. -->
+        <jetty12.version>12.1.12</jetty12.version>
         <joda-time.version>2.5</joda-time.version>
         <json4s.version>4.0.7</json4s.version>
         <junit.version>4.12</junit.version>
         <logback-access.version>1.2.13</logback-access.version>
+        <logback-access-jetty12.version>2.0.15</logback-access-jetty12.version>
         <mongo-java-driver.version>3.4.2</mongo-java-driver.version>
         <mongodb-driver-sync.version>5.2.0</mongodb-driver-sync.version>
         <morphia.version>1.2.1</morphia.version>
@@ -42,6 +48,8 @@
         <scala.version>2.13.18</scala.version>
         <scala-parser-combinators.version>2.4.0</scala-parser-combinators.version>
         <scala-xml.version>2.3.0</scala-xml.version>
+        <!-- Scalatra 3 -päivitys on selvitetty, mutta se odottaa versiota 3.2.1: 3.2.0:n
+             swagger-reflektio kaatuu joda-time-kenttiin. Ks. README.md, "Scalatra 3 -päivitys". -->
         <scalatra.version>2.8.4</scalatra.version>
         <scalaz.version>7.3.8</scalaz.version>
         <sijoittelu.version>10.2.0-SNAPSHOT</sijoittelu.version>
@@ -172,6 +180,13 @@
                         <groupId>jakarta.servlet</groupId>
                         <artifactId>jakarta.servlet-api</artifactId>
                     </exclusion>
+                    <!-- Spring Boot/WebMVC-pohjainen Swagger UI -starter, jota mikään tässä repositoriossa ei käytä.
+                         Toi mukanaan spring-boot-, spring-webmvc- ja spring-web-kirjastot (Trivy: CVE-2025-22235,
+                         CVE-2026-40973, CVE-2024-38816, CVE-2024-38819, CVE-2026-41842, CVE-2026-41845). -->
+                    <exclusion>
+                        <groupId>org.springdoc</groupId>
+                        <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -184,10 +199,14 @@
                 <artifactId>valintaperusteet-api</artifactId>
                 <version>8.2-SNAPSHOT</version>
                 <exclusions>
-                    <!-- Ks. selitys sijoittelu-algoritmi-domainin kohdalla. -->
+                    <!-- Ks. selitykset sijoittelu-algoritmi-domainin kohdalla. -->
                     <exclusion>
                         <groupId>jakarta.servlet</groupId>
                         <artifactId>jakarta.servlet-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.springdoc</groupId>
+                        <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -236,16 +255,11 @@
                 <artifactId>log4s_2.13</artifactId>
                 <version>1.13.1</version>
             </dependency>
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-server</artifactId>
-                <version>${jetty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-webapp</artifactId>
-                <version>${jetty.version}</version>
-            </dependency>
+            <!-- Jettyn versiota ei hallinnoida täällä, koska moduulit käyttävät eri sarjoja:
+                 valinta-tulos-service ${jetty.version} (Servlet 3.1, vain test-scope) ja
+                 valinta-tulos-henkiloviite-synchronizer ${jetty12.version} (jetty-bom moduulin omassa
+                 dependencyManagementissa). Yhteinen hallinnointi pakottaisi Jetty 12:n transitiiviset
+                 riippuvuudet 9.4:ään ja kaataisi dependencyConvergencen. -->
             <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-core</artifactId>
@@ -665,12 +679,14 @@
                                     <version>${enforce.java.version}</version>
                                 </requireJavaVersion>
                                 <dependencyConvergence/>
+                                <!-- Ks. README.md, "Servlet-rajapintoja saa olla vain yksi per moduuli". -->
                                 <bannedDependencies>
                                     <excludes>
-                                        <exclude>jakarta.servlet:jakarta.servlet-api</exclude>
+                                        <exclude>jakarta.servlet:jakarta.servlet-api:[4.0,5.0)</exclude>
+                                        <exclude>org.eclipse.jetty.toolchain:jetty-servlet-api</exclude>
                                         <exclude>javax.servlet:servlet-api</exclude>
                                     </excludes>
-                                    <message>Scalatra 2.8 vaatii Servlet 3.1 -rajapinnan (javax.servlet:javax.servlet-api). Servlet 4.0 -rajapinta (jakarta.servlet:jakarta.servlet-api 4.x) käyttää samaa javax.servlet-pakkausta ja rikkoo ScalatraFilter-perinnän. Sulje se pois riippuvuuspuusta.</message>
+                                    <message>Scalatra 2.8 vaatii Servlet 3.1 -rajapinnan (javax.servlet:javax.servlet-api). Kielletyt artefaktit ovat Servlet 4.0 -rajapintoja javax.servlet-pakkauksessa: niissä Filter.init/destroy ovat default-metodeja, mikä rikkoo ScalatraFilter-perinnän. Sulje ne pois riippuvuuspuusta. (jakarta.servlet-api 6.x eli jakarta.servlet-pakkaus on sallittu, sitä käyttää henkiloviite-synchronizerin Jetty 12.)</message>
                                 </bannedDependencies>
                             </rules>
                         </configuration>
