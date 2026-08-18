@@ -40,7 +40,8 @@ case class Haku(oid: HakuOid,
                 sisältyvätHaut: Set[String],
                 koulutuksenAlkamiskausi: Option[Kausi],
                 yhdenPaikanSaanto: YhdenPaikanSaanto,
-                nimi: Map[String, String]) {
+                nimi: Map[String, String],
+                hakukausi: Option[Kausi] = None) {
 
   val sijoitteluJaPriorisointi = käyttääSijoittelua && käyttääHakutoiveidenPriorisointia
 }
@@ -96,12 +97,20 @@ case class HakukohdeKela(koulutuksenAlkamiskausi: Option[Kausi],
                          oppilaitoskoodi: String,
                          koulutuslaajuusarvot: Seq[KoulutusLaajuusarvo])
 
+case class HakukohdeOili(oid: HakukohdeOid,
+                         hakuOid: HakuOid,
+                         jarjestyspaikkaOid: String,
+                         toteutusOid: String,
+                         koulutusKoodiUrit: List[String])
+
 class MigriTarjontaHakukohdeNotImplementedException(message: String) extends RuntimeException(message)
+class OiliTarjontaHakukohdeNotImplementedException(message: String) extends RuntimeException(message)
 
 trait HakuService {
   def getHaku(oid: HakuOid): Either[Throwable, Haku]
   def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]]
   def getHakukohdeMigri(oid: HakukohdeOid): Either[Throwable, HakukohdeMigri]
+  def getHakukohdeOili(oid: HakukohdeOid): Either[Throwable, HakukohdeOili]
   def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde]
   def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[Hakukohde]]
   def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]]
@@ -179,7 +188,8 @@ protected trait JsonHakuService {
       sisältyvätHaut = haku.sisaltyvatHaut,
       koulutuksenAlkamiskausi = kausi,
       yhdenPaikanSaanto = haku.yhdenPaikanSaanto,
-      nimi = haku.nimi)
+      nimi = haku.nimi,
+      hakukausi = Kausi.fromUri(haku.hakukausiUri, haku.hakukausiVuosi))
   }
 }
 
@@ -212,6 +222,13 @@ class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, 
     }
   }
 
+  override def getHakukohdeOili(oid: HakukohdeOid): Either[Throwable, HakukohdeOili] = {
+    oid.toString match {
+      case hakukohdeOid if hakukohdeOid.length == KOUTA_OID_LENGTH => kouta.getHakukohdeOili(oid)
+      case _ => tarjonta.getHakukohdeOili(oid)
+    }
+  }
+
   override def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde] = {
     oid.toString match {
       case hakukohdeOid if hakukohdeOid.length == KOUTA_OID_LENGTH => kouta.getHakukohde(oid)
@@ -240,6 +257,8 @@ private case class HakuTarjonnassa(oid: HakuOid,
                                    kohdejoukonTarkenne: Option[String],
                                    koulutuksenAlkamisVuosi: Option[Int],
                                    koulutuksenAlkamiskausiUri: Option[String],
+                                   hakukausiVuosi: Option[Int],
+                                   hakukausiUri: Option[String],
                                    sijoittelu: Boolean,
                                    usePriority: Boolean,
                                    parentHakuOid: Option[String],
@@ -308,6 +327,10 @@ class TarjontaHakuService(config: AppConfig) extends HakuService with JsonHakuSe
     throw new MigriTarjontaHakukohdeNotImplementedException(s"Migri hakukohde from tarjonta not implemented, skipping. Hakukohdeoid: $hakukohdeOid.")
   }
 
+  def getHakukohdeOili(hakukohdeOid: HakukohdeOid): Either[Throwable, HakukohdeOili] = {
+    throw new OiliTarjontaHakukohdeNotImplementedException(s"Oili hakukohde from tarjonta not implemented, skipping. Hakukohdeoid: $hakukohdeOid.")
+  }
+
   def getHakukohde(hakukohdeOid: HakukohdeOid): Either[Throwable, Hakukohde] = {
     val hakukohdeUrl = config.ophUrlProperties.url(
       "tarjonta-service.hakukohde", hakukohdeOid, Map("populateAdditionalKomotoFields" -> true).asJava)
@@ -366,6 +389,8 @@ case class KoutaHaku(oid: String,
                      kohdejoukkoKoodiUri: String,
                      kohdejoukonTarkenneKoodiUri: Option[String],
                      hakutapaKoodiUri: String,
+                     hakuvuosi: Option[Int],
+                     hakukausi: Option[String],
                      metadata: KoutaHakuMetadata) {
   def getKausiAndVuosi(metadata: KoutaHakuMetadata): (Option[String], Option[String]) = {
     val kausiUri = metadata.koulutuksenAlkamiskausi.flatMap(ak => ak.koulutuksenAlkamiskausi.map(ak => ak.koodiUri))
@@ -396,7 +421,8 @@ case class KoutaHaku(oid: String,
       sisältyvätHaut = Set.empty,
       koulutuksenAlkamiskausi = alkamiskausi,
       yhdenPaikanSaanto = YhdenPaikanSaanto(voimassa = false, syy = "Yhden paikan sääntö Kouta:ssa aina hakukohdekohtainen"),
-      nimi = nimi.map { case (lang, text) => ("kieli_" + lang) -> text })
+      nimi = nimi.map { case (lang, text) => ("kieli_" + lang) -> text },
+      hakukausi = Kausi.fromUri(hakukausi, hakuvuosi))
   }
 }
 
@@ -601,6 +627,20 @@ class KoutaHakuService(config: AppConfig,
       koutaToteutus <- getKoutaToteutusCached(koutaHakukohde.toteutusOid).right
       tarjoajaorganisaatio <- getOrganisaatioCached(koutaHakukohde.tarjoaja).right
     } yield koutaHakukohde.toHakukohdeMigri(koutaHaku, koutaToteutus, tarjoajaorganisaatio)
+  }
+
+  def getHakukohdeOili(oid: HakukohdeOid): Either[Throwable, HakukohdeOili] = {
+    for {
+      koutaHakukohde <- getKoutaHakukohdeCached(oid).right
+      koutaToteutus <- getKoutaToteutusCached(koutaHakukohde.toteutusOid).right
+      koutaKoulutus <- getKoutaKoulutusCached(koutaToteutus.koulutusOid).right
+    } yield HakukohdeOili(
+      oid = HakukohdeOid(koutaHakukohde.oid),
+      hakuOid = HakuOid(koutaHakukohde.hakuOid),
+      jarjestyspaikkaOid = koutaHakukohde.tarjoaja,
+      toteutusOid = koutaToteutus.oid,
+      koulutusKoodiUrit = koutaKoulutus.koulutusKoodiUrit.toList
+    )
   }
 
   def getKoulutusKoodit(koulutusKoodiUrit: Set[String]): Either[Throwable, Set[Koodi]] = {

@@ -34,7 +34,8 @@ case class Henkilo(oid: HakijaOid,
                    kansalaisuudet: Option[List[String]],
                    syntymaaika: Option[String],
                    yksiloity: Option[Boolean] = None,
-                   yksiloityVTJ: Option[Boolean] = None)
+                   yksiloityVTJ: Option[Boolean] = None,
+                   asiointiKieli: Option[String] = None)
 
 object Henkilo extends JsonFormats {
 
@@ -49,7 +50,8 @@ object Henkilo extends JsonFormats {
       Option(kansalaisuusKoodit),
       (value \ "syntymaaika").extractOpt[String],
       Try((value \ "yksiloity").extract[Boolean]).toOption,
-      Try((value \ "yksiloityVTJ").extract[Boolean]).toOption
+      Try((value \ "yksiloityVTJ").extract[Boolean]).toOption,
+      (value \ "asiointiKieli" \ "kieliKoodi").extractOpt[String]
     )
   }
 
@@ -63,7 +65,8 @@ object Henkilo extends JsonFormats {
       "kansalaisuus" -> h.kansalaisuudet.map(k => k.asInstanceOf[JArray]).getOrElse(JNull),
       "syntymaaika" -> h.syntymaaika.map(JString).getOrElse(JNull),
       "yksiloity" -> h.yksiloity.map(b => JBool(b)).getOrElse(JNull),
-      "yksiloityVTJ" -> h.yksiloityVTJ.map(b => JBool(b)).getOrElse(JNull)
+      "yksiloityVTJ" -> h.yksiloityVTJ.map(b => JBool(b)).getOrElse(JNull),
+      "asiointiKieli" -> h.asiointiKieli.map(kc => JObject("kieliKoodi" -> JString(kc))).getOrElse(JNull)
     )
   }
 }
