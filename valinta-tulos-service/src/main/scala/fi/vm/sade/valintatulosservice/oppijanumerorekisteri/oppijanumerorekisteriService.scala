@@ -35,7 +35,8 @@ case class Henkilo(oid: HakijaOid,
                    syntymaaika: Option[String],
                    yksiloity: Option[Boolean] = None,
                    yksiloityVTJ: Option[Boolean] = None,
-                   asiointiKieli: Option[String] = None)
+                   asiointiKieli: Option[String] = None,
+                   yksiloityEidas: Option[Boolean] = None)
 
 object Henkilo extends JsonFormats {
 
@@ -51,7 +52,8 @@ object Henkilo extends JsonFormats {
       (value \ "syntymaaika").extractOpt[String],
       Try((value \ "yksiloity").extract[Boolean]).toOption,
       Try((value \ "yksiloityVTJ").extract[Boolean]).toOption,
-      (value \ "asiointiKieli" \ "kieliKoodi").extractOpt[String]
+      (value \ "asiointiKieli" \ "kieliKoodi").extractOpt[String],
+      Try((value \ "yksiloityEidas").extract[Boolean]).toOption
     )
   }
 
@@ -66,7 +68,8 @@ object Henkilo extends JsonFormats {
       "syntymaaika" -> h.syntymaaika.map(JString).getOrElse(JNull),
       "yksiloity" -> h.yksiloity.map(b => JBool(b)).getOrElse(JNull),
       "yksiloityVTJ" -> h.yksiloityVTJ.map(b => JBool(b)).getOrElse(JNull),
-      "asiointiKieli" -> h.asiointiKieli.map(kc => JObject("kieliKoodi" -> JString(kc))).getOrElse(JNull)
+      "asiointiKieli" -> h.asiointiKieli.map(kc => JObject("kieliKoodi" -> JString(kc))).getOrElse(JNull),
+      "yksiloityEidas" -> h.yksiloityEidas.map(b => JBool(b)).getOrElse(JNull)
     )
   }
 }
