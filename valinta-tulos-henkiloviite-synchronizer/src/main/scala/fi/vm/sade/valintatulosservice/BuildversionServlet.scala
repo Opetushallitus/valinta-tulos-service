@@ -1,6 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
-import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
+import jakarta.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
 
 class BuildversionServlet() extends HttpServlet {
   override def doGet(request: HttpServletRequest, response: HttpServletResponse): Unit = {

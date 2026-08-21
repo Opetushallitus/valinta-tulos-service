@@ -3,6 +3,20 @@
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
                       http://maven.apache.org/xsd/settings-1.0.0.xsd">
 
+    <!--
+        Artifactory (artifactory.opintopolku.fi) on poistettu käytöstä, mutta riippuvuuksien
+        omat POMit (valintalaskenta, sijoittelu, java-utils, viestinvälityspalvelu) määrittelevät
+        sen edelleen repositoryksi. Ohjataan kyseiset repository-id:t Github Packagesiin.
+    -->
+    <mirrors>
+        <mirror>
+            <id>github</id>
+            <name>Github Packages instead of decommissioned Artifactory</name>
+            <url>https://maven.pkg.github.com/opetushallitus/*</url>
+            <mirrorOf>oph-sade-artifactory,oph-sade-artifactory-snapshots,oph-sade-artifactory-releases,ext-snapshot-local-artifactory-snapshots,oph-nexus</mirrorOf>
+        </mirror>
+    </mirrors>
+
     <activeProfiles>
         <activeProfile>github</activeProfile>
     </activeProfiles>

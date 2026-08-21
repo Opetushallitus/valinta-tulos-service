@@ -5,7 +5,7 @@
     <groupId>fi.vm.sade</groupId>
     <artifactId>valinta-tulos-service-parent</artifactId>
     <packaging>pom</packaging>
-    <version>8.5.1-SNAPSHOT</version>
+    <version>8.6.0-SNAPSHOT</version>
     <name>valinta-tulos-service-parent</name>
 
     <modules>
@@ -17,47 +17,56 @@
 
     <properties>
         <apache.httpclient.version>4.5.13</apache.httpclient.version>
-        <auditlogger.version>8.3.0-SNAPSHOT</auditlogger.version>
+        <auditlogger.version>9.2.7-SNAPSHOT</auditlogger.version>
         <mongo-scala-driver.version>5.2.0</mongo-scala-driver.version>
         <commons-beanutils.version>1.11.0</commons-beanutils.version>
         <commons-lang.version>2.6</commons-lang.version>
-        <commons-lang3.version>3.3.2</commons-lang3.version>
+        <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-logging.version>1.3.5</commons-logging.version>
         <flyway-core.version>9.22.0</flyway-core.version>
         <guava.version>25.0-jre</guava.version>
         <scaffeine.version>5.3.0</scaffeine.version>
         <hamcrest.version>1.3</hamcrest.version>
-        <jackson.version>2.18.2</jackson.version>
+        <jackson.version>2.18.9</jackson.version>
         <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
+        <!-- Jetty 9.4 on viimeinen Servlet 3.1 -sarja, jota Scalatra 2.8 vaatii. Käytössä enää
+             valinta-tulos-servicen paikallisessa kehityskäynnistimessä (test-scope). -->
         <jetty.version>9.4.58.v20250814</jetty.version>
+        <!-- henkiloviite-synchronizerin upotettu palvelin. Jetty 9.4/10/11 ovat EOL eikä niihin ole julkaistu
+             korjauksia CVE-2026-2332:een ja CVE-2026-10050:een, joten käytössä on Jetty 12. -->
+        <jetty12.version>12.1.12</jetty12.version>
         <joda-time.version>2.5</joda-time.version>
         <json4s.version>4.0.7</json4s.version>
         <junit.version>4.12</junit.version>
         <logback-access.version>1.2.13</logback-access.version>
+        <logback-access-jetty12.version>2.0.15</logback-access-jetty12.version>
         <mongo-java-driver.version>3.4.2</mongo-java-driver.version>
         <mongodb-driver-sync.version>5.2.0</mongodb-driver-sync.version>
         <morphia.version>1.2.1</morphia.version>
-        <postgresql.version>42.7.2</postgresql.version>
-        <dokumenttipalvelu.version>6.14-SNAPSHOT</dokumenttipalvelu.version>
+        <postgresql.version>42.7.13</postgresql.version>
+        <dokumenttipalvelu.version>6.16-SNAPSHOT</dokumenttipalvelu.version>
         <scala.version>2.13.18</scala.version>
         <scala-parser-combinators.version>2.4.0</scala-parser-combinators.version>
         <scala-xml.version>2.3.0</scala-xml.version>
+        <!-- Scalatra 3 -päivitys on selvitetty, mutta se odottaa versiota 3.2.1: 3.2.0:n
+             swagger-reflektio kaatuu joda-time-kenttiin. Ks. README.md, "Scalatra 3 -päivitys". -->
         <scalatra.version>2.8.4</scalatra.version>
         <scalaz.version>7.3.8</scalaz.version>
-        <sijoittelu.version>10.0.0-SNAPSHOT</sijoittelu.version>
+        <sijoittelu.version>10.2.0-SNAPSHOT</sijoittelu.version>
+        <valintalaskenta.version>8.1-SNAPSHOT</valintalaskenta.version>
         <slf4j-api.version>2.0.13</slf4j-api.version>
         <slick.version>3.5.2</slick.version>
         <specs2.version>4.20.9</specs2.version>
-        <spring.version>6.2.11</spring.version>
+        <spring.version>6.2.19</spring.version>
         <typesafe.config.version>1.2.1</typesafe.config.version>
-        <netty.version>4.1.118.Final</netty.version>
-        <java-cas.version>2.0.0-SNAPSHOT</java-cas.version>
+        <netty.version>4.2.16.Final</netty.version>
+        <java-cas.version>2.3.0-OY-5723-SNAPSHOT</java-cas.version>
 
         <enforce.java.version>[21,)</enforce.java.version>
 
         <plugin.exec-maven-plugin.version>1.6.0</plugin.exec-maven-plugin.version>
         <plugin.maven-assembly-plugin.version>2.6</plugin.maven-assembly-plugin.version>
-        <plugin.maven-enforcer-plugin.version>3.0.0-M3</plugin.maven-enforcer-plugin.version>
+        <plugin.maven-enforcer-plugin.version>3.5.0</plugin.maven-enforcer-plugin.version>
         <plugin.maven-jar-plugin.version>3.0.2</plugin.maven-jar-plugin.version>
         <plugin.maven-surefire-plugin.version>3.2.5</plugin.maven-surefire-plugin.version>
         <plugin.maven-war-plugin.version>3.4.0</plugin.maven-war-plugin.version>
@@ -66,6 +75,13 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>${netty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>fi.vm.sade</groupId>
                 <artifactId>valinta-tulos-service</artifactId>
@@ -156,6 +172,42 @@
                         <groupId>org.springdoc</groupId>
                         <artifactId>springdoc-openapi-webmvc-core</artifactId>
                     </exclusion>
+                    <!-- jakarta.servlet-api 4.x käyttää yhä javax.servlet-pakkausta, mutta Filter.init/destroy
+                         ovat siinä default-metodeja. Scalatra 2.8 on käännetty Servlet 3.1:tä vasten, joten
+                         ScalatraFilter-perintä ei käänny, jos tämä päätyy classpathille. Käytetään pelkkää
+                         javax.servlet:javax.servlet-api:${javax.servlet-api.version}. -->
+                    <exclusion>
+                        <groupId>jakarta.servlet</groupId>
+                        <artifactId>jakarta.servlet-api</artifactId>
+                    </exclusion>
+                    <!-- Spring Boot/WebMVC-pohjainen Swagger UI -starter, jota mikään tässä repositoriossa ei käytä.
+                         Toi mukanaan spring-boot-, spring-webmvc- ja spring-web-kirjastot (Trivy: CVE-2025-22235,
+                         CVE-2026-40973, CVE-2024-38816, CVE-2024-38819, CVE-2026-41842, CVE-2026-41845). -->
+                    <exclusion>
+                        <groupId>org.springdoc</groupId>
+                        <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>fi.vm.sade.valintaperusteet</groupId>
+                <artifactId>valintalaskenta-laskenta-api</artifactId>
+                <version>${valintalaskenta.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fi.vm.sade.valintaperusteet</groupId>
+                <artifactId>valintaperusteet-api</artifactId>
+                <version>8.2-OY-5771-SNAPSHOT</version>
+                <exclusions>
+                    <!-- Ks. selitykset sijoittelu-algoritmi-domainin kohdalla. -->
+                    <exclusion>
+                        <groupId>jakarta.servlet</groupId>
+                        <artifactId>jakarta.servlet-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.springdoc</groupId>
+                        <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -203,16 +255,11 @@
                 <artifactId>log4s_2.13</artifactId>
                 <version>1.13.1</version>
             </dependency>
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-server</artifactId>
-                <version>${jetty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-webapp</artifactId>
-                <version>${jetty.version}</version>
-            </dependency>
+            <!-- Jettyn versiota ei hallinnoida täällä, koska moduulit käyttävät eri sarjoja:
+                 valinta-tulos-service ${jetty.version} (Servlet 3.1, vain test-scope) ja
+                 valinta-tulos-henkiloviite-synchronizer ${jetty12.version} (jetty-bom moduulin omassa
+                 dependencyManagementissa). Yhteinen hallinnointi pakottaisi Jetty 12:n transitiiviset
+                 riippuvuudet 9.4:ään ja kaataisi dependencyConvergencen. -->
             <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-core</artifactId>
@@ -521,42 +568,7 @@
             <dependency>
                 <groupId>com.hubspot.jinjava</groupId>
                 <artifactId>jinjava</artifactId>
-                <version>2.8.1</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-handler</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-common</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport-native-unix-common</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec-http</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-buffer</artifactId>
-                <version>${netty.version}</version>
+                <version>2.8.4</version>
             </dependency>
             <dependency>
                 <groupId>fi.vm.sade.dokumenttipalvelu</groupId>
@@ -584,11 +596,6 @@
                 <version>1.27.1</version>
             </dependency>
             <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec-http2</artifactId>
-                <version>4.1.124.Final</version>
-            </dependency>
-            <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
                 <version>4.4.16</version>
@@ -598,20 +605,29 @@
                 <artifactId>logback-access</artifactId>
                 <version>${logback-access.version}</version>
             </dependency>
+
+            <!-- fi.vm.sade:valinta-tulos-valintarekisteri-db:8.6.0-SNAPSHOT vs fi.vm.sade.valintaperusteet:valintaperusteet-api:8.2-SNAPSHOT -->
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>2.3</version>
+            </dependency>
+            <!-- fi.vm.sade.valintaperusteet:valintaperusteet-api:8.2-SNAPSHOT vs opiskelijavalinnat-utils.viestinvalitys:kirjasto:1.3.0-SNAPSHOT -->
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-annotations-jakarta</artifactId>
+                <version>2.2.22</version>
+            </dependency>
+            <!-- fi.vm.sade.sijoittelu:sijoittelu-tulos-service:10.2.0-SNAPSHOT vs fi.vm.sade.valintaperusteet:valintaperusteet-api:8.2-SNAPSHOT -->
+            <dependency>
+                <groupId>jakarta.validation</groupId>
+                <artifactId>jakarta.validation-api</artifactId>
+                <version>3.1.1</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <repositories>
-        <repository>
-            <id>oph-sade-artifactory-snapshots</id>
-            <url>https://artifactory.opintopolku.fi/artifactory/oph-sade-snapshot-local</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </repository>
         <repository>
             <id>github</id>
             <url>https://maven.pkg.github.com/Opetushallitus/packages</url>
@@ -623,34 +639,6 @@
             </releases>
         </repository>
         <repository>
-            <id>oph-sade-artifactory-releases</id>
-            <url>https://artifactory.opintopolku.fi/artifactory/oph-sade-release-local</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>ext-snapshot-local-artifactory-snapshots</id>
-            <url>https://artifactory.opintopolku.fi/artifactory/ext-snapshot-local</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </repository>
-        <repository>
-            <id>ScalazBintrayRepo</id>
-            <name>Scalaz Bintray Repo</name>
-            <url>https://dl.bintray.com/scalaz/releases/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </repository>
-        <repository>
             <id>central</id>
             <name>Maven Central</name>
             <url>https://repo.maven.apache.org/maven2</url>
@@ -658,6 +646,10 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
+        <!--
+            Riippuvuuksien POMit määrittelevät edelleen poistuneen Artifactoryn repositoryksi.
+            Ne id:t on ohjattu Github Packagesiin settings.xml:n <mirrors>-määrityksellä.
+        -->
     </repositories>
     <pluginRepositories>
         <pluginRepository>
@@ -687,6 +679,15 @@
                                     <version>${enforce.java.version}</version>
                                 </requireJavaVersion>
                                 <dependencyConvergence/>
+                                <!-- Ks. README.md, "Servlet-rajapintoja saa olla vain yksi per moduuli". -->
+                                <bannedDependencies>
+                                    <excludes>
+                                        <exclude>jakarta.servlet:jakarta.servlet-api:[4.0,5.0)</exclude>
+                                        <exclude>org.eclipse.jetty.toolchain:jetty-servlet-api</exclude>
+                                        <exclude>javax.servlet:servlet-api</exclude>
+                                    </excludes>
+                                    <message>Scalatra 2.8 vaatii Servlet 3.1 -rajapinnan (javax.servlet:javax.servlet-api). Kielletyt artefaktit ovat Servlet 4.0 -rajapintoja javax.servlet-pakkauksessa: niissä Filter.init/destroy ovat default-metodeja, mikä rikkoo ScalatraFilter-perinnän. Sulje ne pois riippuvuuspuusta. (jakarta.servlet-api 6.x eli jakarta.servlet-pakkaus on sallittu, sitä käyttää henkiloviite-synchronizerin Jetty 12.)</message>
+                                </bannedDependencies>
                             </rules>
                         </configuration>
                     </execution>
