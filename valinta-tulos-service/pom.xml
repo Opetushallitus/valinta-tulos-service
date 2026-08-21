@@ -6,7 +6,7 @@
     <parent>
         <groupId>fi.vm.sade</groupId>
         <artifactId>valinta-tulos-service-parent</artifactId>
-        <version>8.5.1-SNAPSHOT</version>
+        <version>8.6.0-SNAPSHOT</version>
     </parent>
     <artifactId>valinta-tulos-service</artifactId>
     <packaging>war</packaging>
@@ -30,7 +30,7 @@
             <dependency>
                 <groupId>opiskelijavalinnat-utils.viestinvalitys</groupId>
                 <artifactId>kirjasto</artifactId>
-                <version>1.2.3-SNAPSHOT</version>
+                <version>1.3.0-OY-5746-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>commons-beanutils</groupId>
@@ -292,10 +292,13 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
         </dependency>
+        <!-- Vain testien käytössä. Compile-scopessa tämä toi Jetty 9.4.43:n WAR:iin ja
+             ovara-valinta-tuloksen riippuvuuspuuhun. -->
         <dependency>
             <groupId>org.scalatra</groupId>
             <artifactId>scalatra-test_2.13</artifactId>
             <version>${scalatra.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
@@ -306,9 +309,18 @@
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
         </dependency>
+        <!-- Jettyä käytetään vain paikallisen kehitysympäristön käynnistimessä (JettyLauncher, ServletTest),
+             ei tuotannossa: WAR ajetaan Tomcatissa. Test-scope pitää Jettyn pois WAR:sta.
+
+             ÄLÄ POISTA näitä kahta määrittelyä: ne toimivat myös versiopinnauksena. scalatra-test 2.8.4 tuo
+             oman jetty-webappinsa (9.4.43.v20210629), ja koska nämä on määritelty suoraan (syvyys 1), Maven
+             valitsee näiden version koko Jetty-puulle. Ilman näitä testit putoaisivat vuoden 2021 Jettyyn.
+             Jetty 9.4 on viimeinen Servlet 3.1 -sarja eli ainoa, joka toimii Scalatra 2.8:n kanssa. -->
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
+            <version>${jetty.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.scalaz</groupId>
@@ -340,6 +352,8 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-webapp</artifactId>
+            <version>${jetty.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.json4s</groupId>
@@ -373,12 +387,12 @@
         <dependency>
             <groupId>fi.vm.sade.java-utils</groupId>
             <artifactId>java-auth</artifactId>
-            <version>0.3.0-SNAPSHOT</version>
+            <version>0.4.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>fi.vm.sade.java-utils</groupId>
             <artifactId>httpclient</artifactId>
-            <version>0.3.0-SNAPSHOT</version>
+            <version>1.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>fi.vm.sade</groupId>
@@ -493,7 +507,9 @@
                 <artifactId>maven-war-plugin</artifactId>
                 <version>${plugin.maven-war-plugin.version}</version>
                 <configuration>
-                    <packagingExcludes>WEB-INF/lib//javax.servlet-api-*.jar</packagingExcludes>
+                    <!-- Servlet-rajapinta tulee Tomcatilta; jar WEB-INF/libissä aiheuttaisi
+                         classloader-ongelmia. Ks. README.md, "WAR ei sisällä palvelinta". -->
+                    <packagingExcludes>WEB-INF/lib/javax.servlet-api-*.jar,WEB-INF/lib/jakarta.servlet-api-*.jar</packagingExcludes>
                     <attachClasses>true</attachClasses>
                 </configuration>
             </plugin>
