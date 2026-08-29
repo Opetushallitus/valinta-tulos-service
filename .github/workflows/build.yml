@@ -16,10 +16,10 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Cache local Maven repository
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -27,7 +27,7 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -49,7 +49,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           mvn -B clean package --settings settings.xml
-      - uses: actions/cache@v4
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             valinta-tulos-henkiloviite-synchronizer/target
@@ -57,17 +57,17 @@ jobs:
             valinta-tulos-valintarekisteri-db/target
             ovara-valinta-tulos/target
           key: ${{ github.sha }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           path: valinta-tulos-service/target/valinta-tulos-service-*.war
           name: valinta-tulos-service.war
           overwrite: true
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           path: valinta-tulos-henkiloviite-synchronizer/target/valinta-tulos-henkiloviite-synchronizer-*-dependencies.jar
           name: valinta-tulos-henkiloviite-synchronizer.jar
           overwrite: true
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           path: ovara-valinta-tulos/target/ovara-valinta-tulos-*-jar-with-dependencies.jar
           name: ovara-valinta-tulos.jar
@@ -76,7 +76,7 @@ jobs:
 
   deploy-valinta-tulos-service-container:
     needs: test-and-build
-    uses: Opetushallitus/.github/.github/workflows/push-scan-java-ecr.yml@main
+    uses: Opetushallitus/.github/.github/workflows/push-scan-java-ecr.yml@2f06269d5ac067ef17a76d2d5742db0b325e9a2e # main
     with:
       application: valinta-tulos-service
       base-image: baseimage-war-tomcat9-openjdk21:master
@@ -91,7 +91,7 @@ jobs:
 
   deploy-valinta-tulos-henkiloviite-synchronizer-container:
     needs: test-and-build
-    uses: Opetushallitus/.github/.github/workflows/push-scan-java-ecr.yml@main
+    uses: Opetushallitus/.github/.github/workflows/push-scan-java-ecr.yml@2f06269d5ac067ef17a76d2d5742db0b325e9a2e # main
     with:
       application: valinta-tulos-henkiloviite-synchronizer
       base-image: baseimage-fatjar-openjdk21:master
@@ -105,7 +105,7 @@ jobs:
 
   deploy-ovara-valinta-tulos-container:
     needs: test-and-build
-    uses: Opetushallitus/.github/.github/workflows/push-scan-java-ecr.yml@main
+    uses: Opetushallitus/.github/.github/workflows/push-scan-java-ecr.yml@2f06269d5ac067ef17a76d2d5742db0b325e9a2e # main
     with:
       application: ovara-valinta-tulos
       base-image: baseimage-fatjar-openjdk21:master
@@ -122,9 +122,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             valinta-tulos-henkiloviite-synchronizer/target
@@ -134,7 +134,7 @@ jobs:
           key: ${{ github.sha }}
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           java-version: '21'
           distribution: 'temurin'
