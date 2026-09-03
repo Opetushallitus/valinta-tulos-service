@@ -29,9 +29,9 @@ class LukuvuosimaksuServletWithCAS(lukuvuosimaksuService: LukuvuosimaksuService,
   override protected def applicationDescription: String = "Lukuvuosimaksujen rajapinnat (CAS-autentikoitu)"
 
   protected def authenticatedPersonOid: String = {
-    implicit val authenticated = authenticate
+    implicit val authenticated: Authenticated = authenticate
     authorize(Role.SIJOITTELU_READ, Role.SIJOITTELU_READ_UPDATE, Role.SIJOITTELU_CRUD)
-    authenticate.session.personOid
+    authenticated.session.personOid
   }
 
   val lukuvuosimaksutHakukohteelleSwagger: OperationBuilder = (apiOperation[List[LukuvuosimaksuForSwagger]]("HakukohteenLukuvuosimaksutietojenHakeminen")

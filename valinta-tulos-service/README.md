@@ -143,9 +143,7 @@ VTS:ssä on monta eri tapaa tunnistaa käyttäjä:
  2. CAS-tunnistuksella _tai_ sessiolla
    - `/auth/login`, `/cas/haku/*`, `/cas/kela/*`
  3. vain sessiolla joten pitää tehdä CAS-tunnistus jotain muuta endpointia vasten ensin
-   - `/cas/migri/*`, `/auth/*`
- 4. Antamalla oikean `uid`-parametrin
-   - `/erillishaku/valinnan-tulos/*`
+   - `/cas/migri/*`, `/auth/*`, `/erillishaku/valinnan-tulos/*`
 
 Eli jos haluaa käyttää 3. kohdan endpointeja, pitää (1) hakea TGT cas-palvelulta, (2) hakea ST
 cas-palvelulta TGT:llä, (3) kutsua jotain 2. kohdan endpointia ST:llä ja tallettaa istuntoeväste,
