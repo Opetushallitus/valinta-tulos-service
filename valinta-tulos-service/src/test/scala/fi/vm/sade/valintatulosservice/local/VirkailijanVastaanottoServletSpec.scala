@@ -10,7 +10,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SessionRepository, Va
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.Formats
 import org.json4s.JsonAST.JObject
-import org.json4s.native.JsonMethods._
+import org.json4s.native.JsonMethods.parse
 import org.junit.runner.RunWith
 import org.scalatra.swagger.Swagger
 import org.scalatra.test.{EmbeddedJettyContainer, HttpComponentsClient}
