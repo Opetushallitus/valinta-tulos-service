@@ -150,7 +150,7 @@ class LukuvuosimaksuServletSpec extends ServletSpecification with Valintarekiste
     }
 
     "palauttaa 204 kun maksut talletettu" in {
-      post(s"lukuvuosimaksu/write/${maksettavaKohde.s}", muutosAsJsonWithAuditSession(maksettu), headers(ophSession)) {
+      post(url, muutosAsJsonWithAuditSession(maksettu), headers(ophSession)) {
         status must_== 204
       }
     }
