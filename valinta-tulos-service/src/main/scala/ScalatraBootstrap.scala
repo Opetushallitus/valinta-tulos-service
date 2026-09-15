@@ -147,7 +147,6 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         )
       ), "/auth/login", "auth/login")
 
-      context.mount(new VirkailijanVastaanottoServletNoAuth(valintatulosService, vastaanottoService), "/virkailija", "virkailija")
       context.mount(new LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService), "/lukuvuosimaksu", "lukuvuosimaksu")
       context.mount(new PrivateValintatulosServlet(valintatulosService,
         streamingValintatulosService,
@@ -188,7 +187,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
 
       val valintaesitysService = new ValintaesitysService(hakuService, authorizer, valintarekisteriDb, valintarekisteriDb, audit)
 
-      context.mount(new VirkailijanVastaanottoServletCasAuth(valintatulosService, vastaanottoService, valintarekisteriDb), "/auth/virkailija", "virkailija")
+      context.mount(new VirkailijanVastaanottoServlet(valintatulosService, vastaanottoService, valintarekisteriDb), "/auth/virkailija", "virkailija")
       context.mount(new ValinnantulosServlet(valinnantulosService, valintatulosService, hakuService, valintarekisteriDb, appConfig), "/auth/valinnan-tulos", "auth/valinnan-tulos")
       context.mount(new SijoitteluServlet(sijoitteluService, valintarekisteriDb), "/auth/sijoittelu", "auth/sijoittelu")
       context.mount(new SijoittelunTulosServlet(valintatulosService, valintaesitysService, valinnantulosService, hyvaksymiskirjeService, lukuvuosimaksuService, hakuService, authorizer, sijoitteluService, valintarekisteriDb), "/auth/sijoitteluntulos", "auth/sijoitteluntulos")
