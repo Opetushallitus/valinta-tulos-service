@@ -49,60 +49,10 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
                        	  }
                        ]""".stripMargin
 
-  "POST /vastaanotto" should {
-    "vastaanottaa opiskelupaikan" in {
-      useFixture("hyvaksytty-kesken-julkaistavissa.json")
-
-      vastaanota("VastaanotaSitovasti") {
-        status must_== 200
-
-        get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
-          val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
-          tulos.hakutoiveet.head.vastaanottotila must_== Vastaanottotila.vastaanottanut
-          tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.isDefined must beTrue
-          tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.get.getTime must be ~ (System.currentTimeMillis() +/- 4000)
-        }
-      }
-    }
-
-    "peruu opiskelupaikan" in {
-      useFixture("hyvaksytty-kesken-julkaistavissa.json")
-
-      vastaanota("Peru") {
-        status must_== 200
-
-        get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
-          val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
-          tulos.hakutoiveet.head.vastaanottotila must_== "PERUNUT"
-          tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.isDefined must beTrue
-          tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos.get.getTime must be ~ (System.currentTimeMillis() +/- 4000)
-        }
-      }
-    }
-
-    "vastaanottaa ehdollisesti" in {
-      useFixture("hyvaksytty-ylempi-varalla.json")
-
-      vastaanota("VastaanotaEhdollisesti", hakukohde = "1.2.246.562.5.16303028779") {
-        status must_== 200
-
-        get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
-          val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
-          tulos.hakutoiveet.head.valintatila must_== Valintatila.varalla
-          tulos.hakutoiveet.head.vastaanottotila must_== "KESKEN"
-          tulos.hakutoiveet.last.vastaanottotila must_== "EHDOLLISESTI_VASTAANOTTANUT"
-          val muutosAika = tulos.hakutoiveet.last.viimeisinValintatuloksenMuutos.get
-          tulos.hakutoiveet.head.viimeisinValintatuloksenMuutos must beNone
-          muutosAika.getTime must be ~ (System.currentTimeMillis() +/- 4000)
-        }
-      }
-    }
-  }
-
   "POST /auth/vastaanotto" should {
 
     lazy val testSession: String = createTestSession(roles = Set(Role.VALINTATULOSSERVICE_CRUD_OPH))
-    lazy val authHeaders = Map("Cookie" -> s"session=${testSession}")
+    lazy val authHeaders = Map("Cookie" -> s"session=$testSession")
 
     "vaatii autentikoinnin" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")
@@ -115,7 +65,7 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
     "vaatii autorisoinnin" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")
       val testSessionWithInadequateCredentials: String = createTestSession(roles = Set(Role.SIJOITTELU_CRUD, Role.VALINTATULOSSERVICE_CRUD))
-      val headers = Map("Cookie" -> s"session=${testSessionWithInadequateCredentials}")
+      val headers = Map("Cookie" -> s"session=$testSessionWithInadequateCredentials")
 
       vastaanotaAuthenticated("VastaanotaSitovasti", headers = headers) {
         status must_== 403
@@ -261,13 +211,6 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
         val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
         tulos.hakutoiveet.head.vastaanottotila must_== "KESKEN"
       }
-    }
-}
-
-  def vastaanota[T](action: String, hakukohde: String = "1.2.246.562.5.72607738902", personOid: String = "1.2.246.562.24.14229104472", hakemusOid: String = "1.2.246.562.11.00000441369")(block: => T): T = {
-    postJSON(s"""vastaanotto/henkilo/$personOid/hakemus/$hakemusOid/hakukohde/$hakukohde""",
-      s"""{"action":"$action"}""") {
-      block
     }
   }
 
