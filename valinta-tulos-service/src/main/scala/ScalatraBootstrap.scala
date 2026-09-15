@@ -206,6 +206,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       context.mount(new HyvaksynnanEhtoServlet(valintarekisteriDb, hakuService, hakemusRepository, authorizer, audit, valintarekisteriDb), "/auth/hyvaksynnan-ehto", "auth/hyvaksynnan-ehto")
       context.mount(new HyvaksynnanEhtoMuutoshistoriaServlet(valintarekisteriDb, hakuService, hakemusRepository, authorizer, audit, valintarekisteriDb), "/auth/hyvaksynnan-ehto-muutoshistoria", "auth/hyvaksynnan-ehto-muutoshistoria")
       context.mount(new AuthenticatedHakijanVastaanottoServlet(vastaanottoService, valintarekisteriDb, audit), "/auth/vastaanotto", "/auth/vastaanotto")
+      context.mount(new AuthenticatedHakijanIlmoittautumisServlet(ilmoittautumisService, valintarekisteriDb, audit), "/auth/ilmoittautuminen", "/auth/ilmoittautuminen")
 
       val supaClient: CasClient = CasClientBuilder.build(ScalaCasConfig(
         appConfig.settings.securitySettings.casUsername,
