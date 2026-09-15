@@ -13,21 +13,8 @@ class NoAuthSijoitteluServlet(sijoitteluService: SijoitteluService)
 
   override protected def applicationDescription: String = "Sijoittelun REST API ilman autentikaatiota"
 
-  lazy val getHakukohdeBySijoitteluajoSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohdeBySijoitteluajoSwagger")
-    summary "Hakee hakukohteen tiedot tietyssa sijoitteluajossa."
-    parameter pathParam[String]("hakuOid").description("Haun yksilöllinen tunniste")
-    parameter pathParam[String]("sijoitteluajoId").description("Sijoitteluajon yksilöllinen tunniste, tai 'latest' avainsana.")
-    parameter pathParam[String]("hakukohdeOid").description("Hakukohteen yksilöllinen tunniste")
-    tags "sijoittelu-noauth")
-  get("/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakukohde/:hakukohdeOid", operation(getHakukohdeBySijoitteluajoSwagger)) {
-    val hakuOid = HakuOid(params("hakuOid"))
-    val sijoitteluajoId = params("sijoitteluajoId")
-    val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
-
-    wrapNotFound(() =>
-      Ok(JsonFormats.javaObjectToJsonString(sijoitteluService.getHakukohdeBySijoitteluajoWithoutAuthentication(hakuOid, sijoitteluajoId, hakukohdeOid))))
-  }
-
+  // TODO: Valintaperusteet-service kutsuu tätä. Se pitäisi vaihtaa käyttämään autentikoitua rajapintaa.
+  //       Sitten tämän koko servletin voi poistaa.
   lazy val sijoitteluajoExistsForHakuJonoSwaggerWithoutCas: OperationBuilder = (apiOperation[Unit]("sijoitteluajoExistsForHakuJonoSwaggerWithoutCas")
     summary "Kertoo onko valintatapajonolle suoritettu sijoittelua"
     parameter pathParam[String]("jonoOid").description("Valintatapajonon yksilöllinen tunniste")
