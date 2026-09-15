@@ -7,6 +7,7 @@ import fi.vm.sade.valintatulosservice.hakemus.AtaruHakemus
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.Henkilo
 import fi.vm.sade.valintatulosservice.production.Hakija
+import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.joda.time.{DateTime, DateTimeZone}
@@ -68,6 +69,8 @@ class ValintaTulosServletSpec extends ServletSpecification with Valintarekisteri
                        	  }
                        ]""".stripMargin
 
+  lazy val testSession: String = createTestSession(Set(Role.VALINTATULOSSERVICE_CRUD_OPH))
+
   private def prettify(json: String) = {
     pretty(jacksonParse(json))
   }
@@ -123,7 +126,6 @@ class ValintaTulosServletSpec extends ServletSpecification with Valintarekisteri
           body
         )
       }
-
     }
 
     "palauttaa ehdollisesti hyväksytyn valintatuloksen" in {
@@ -535,10 +537,13 @@ class ValintaTulosServletSpec extends ServletSpecification with Valintarekisteri
     }
   }
 
+  step(deleteAll())
 
-  def vastaanota[T](action: String, hakukohde: String = "1.2.246.562.5.72607738902", personOid: String = "1.2.246.562.24.14229104472", hakemusOid: String = "1.2.246.562.11.00000441369")(block: => T) = {
-    postJSON(s"""vastaanotto/henkilo/$personOid/hakemus/$hakemusOid/hakukohde/$hakukohde""",
-      s"""{"action":"$action"}""") {
+  private def vastaanota[T](action: String, hakukohde: String = "1.2.246.562.5.72607738902", hakemusOid: String = "1.2.246.562.11.00000441369")(block: => T): T = {
+    postJSON(s"auth/vastaanotto/hakemus/$hakemusOid/hakukohde/$hakukohde",
+      s"""{"action":"$action"}""", Map("Cookie" -> s"session=$testSession")
+    ) {
+      status must_== 200
       block
     }
   }
@@ -550,10 +555,8 @@ class ValintaTulosServletSpec extends ServletSpecification with Valintarekisteri
     }
   }
 
-  def getTicket = {
-    val ticket = MockSecurityContext.ticketFor(appConfig.settings.securitySettings.casServiceIdentifier, "testuser")
-    ticket
-  }
+  private def getTicket =
+    MockSecurityContext.ticketFor(appConfig.settings.securitySettings.casServiceIdentifier, "testuser")
 
   private def stringInJson(json: JValue, fieldName: String): String = try {
     (json \\ fieldName).extract[String]

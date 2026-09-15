@@ -159,7 +159,6 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         hakemustenTulosHakuLock),
         "/haku", "haku")
       context.mount(new EnsikertalaisuusServlet(valintarekisteriDb, appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus", "ensikertalaisuus")
-      context.mount(new HakijanVastaanottoServlet(vastaanottoService), "/vastaanotto", "vastaanotto")
       context.mount(new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, valintarekisteriDb, appConfig), "/erillishaku/valinnan-tulos", "erillishaku/valinnan-tulos")
       context.mount(new NoAuthSijoitteluServlet(sijoitteluService), "/sijoittelu", "sijoittelu")
 
