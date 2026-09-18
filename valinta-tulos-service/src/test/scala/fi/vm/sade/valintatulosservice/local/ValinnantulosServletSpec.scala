@@ -23,6 +23,7 @@ import org.junit.runner.RunWith
 import org.scalatra.swagger.Swagger
 import org.scalatra.test.{EmbeddedJettyContainer, HttpComponentsClient}
 import org.specs2.execute.AsResult
+import org.mockito.ArgumentMatchers.{eq => eqTo}
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
@@ -85,6 +86,30 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
 
   private val date = new Date()
   private val valinnantulosWithHistoria = ValinnantulosWithTilahistoria(valinnantulos, List(TilaHistoriaRecord(valintatapajonoOid, hakemusOid, valinnantulos.valinnantila, date)))
+
+  private val hakukohdeOid2 = HakukohdeOid("1.2.246.562.20.26643418987")
+  private val valintatapajonoOid2 = ValintatapajonoOid("14538080612623056182813241345175")
+  private val valintatapajonoOid3 = ValintatapajonoOid("14538080612623056182813241345176")
+  private val hakemusOid2 = HakemusOid("1.2.246.562.11.00006169124")
+
+  // Tayttaa oiditHakemuksilleJotkaTarvitsevatAikarajaMennytTiedon-ehdot: hyvaksytty, julkaistavissa,
+  // vastaanottotila KESKEN. Vain nailla tuloksilla takarajatietoa ylipaataan haetaan.
+  private val hyvaksyttyValinnantulos = valinnantulos.copy(
+    valinnantila = Hyvaksytty,
+    julkaistavissa = Some(true))
+  // Sama hakemus ja hakukohde, eri jono. Ei tayta ehtoja itse.
+  private val valinnantulosSamassaHakukohteessaToisessaJonossa = hyvaksyttyValinnantulos.copy(
+    valintatapajonoOid = valintatapajonoOid2,
+    valinnantila = Peruuntunut)
+  // Eri hakemus ja eri hakukohde. Ei tayta ehtoja.
+  private val valinnantulosToisessaHakukohteessa = valinnantulos.copy(
+    hakukohdeOid = hakukohdeOid2,
+    valintatapajonoOid = valintatapajonoOid3,
+    hakemusOid = hakemusOid2)
+
+  private def withHistoria(tulos: Valinnantulos) = ValinnantulosWithTilahistoria(
+    tulos,
+    List(TilaHistoriaRecord(tulos.valintatapajonoOid, tulos.hakemusOid, tulos.valinnantila, date)))
 
   "GET /auth/valinnan-tulos" in {
     "palauttaa 401, jos sessiokeksi puuttuu" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
@@ -326,6 +351,45 @@ class ValinnantulosServletSpec extends Specification with EmbeddedJettyContainer
       get(t._1+"/hakemus/", Iterable("hakemusOid" -> hakemusOid.toString), defaultHeaders) {
         status must_== 200
         parse(body).extract[List[ValinnantulosWithTilahistoria]].toString().trim().replace("\r","") must_== List(valinnantulosWithHistoria.copy(valinnantulos = valinnantulos.copy(vastaanottoDeadlineMennyt = Some(false)))).toString().trim().replace("\r","")
+      }
+    }
+  }
+
+  "POST /auth/valinnan-tulos/hakemus/" in {
+    "palauttaa 401, jos sessiokeksi puuttuu" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
+      post(t._1 + "/hakemus/", write(Set(hakemusOid)).getBytes("UTF-8"), defaultPatchHeaders - "Cookie") {
+        status must_== 401
+        body must_== "{\"error\":\"Unauthenticated: No session found\"}"
+      }
+    }
+
+    "hakee takarajatiedot kertaalleen hakukohdetta kohti ja liittaa ne oikeisiin tuloksiin" in { t: (String, ValinnantulosService, SessionRepository, ValintatulosService) =>
+      t._3.get(sessionId) returns Some(readSession)
+      val hakemusOids = Set(hakemusOid, hakemusOid2)
+      t._2.getValinnantuloksetForHakemukset(hakemusOids, auditInfo(readSession)) returns Set(
+        withHistoria(hyvaksyttyValinnantulos),
+        withHistoria(valinnantulosSamassaHakukohteessaToisessaJonossa),
+        withHistoria(valinnantulosToisessaHakukohteessa))
+      post(t._1 + "/hakemus/", write(hakemusOids).getBytes("UTF-8"), defaultPatchHeaders) {
+        status must_== 200
+        val tulokset = parse(body).extract[List[ValinnantulosWithTilahistoria]]
+        tulokset must have size 3
+        tulokset.map(tulos => (tulos.valinnantulos.hakukohdeOid,
+                               tulos.valinnantulos.valintatapajonoOid,
+                               tulos.valinnantulos.vastaanottoDeadlineMennyt)).toSet must_== Set(
+          (hakukohdeOid, valintatapajonoOid, Some(true)),
+          // HUOM tarkoituksellinen kayttaytymismuutos: takaraja liittyy hakemukseen, ei jonoon,
+          // joten saman hakemuksen ja hakukohteen peruuntunut jono saa tiedon myos. Aiemmin
+          // jokainen tulos haki takarajansa erikseen, jolloin tama jai tyhjaksi. Sama
+          // kayttaytyminen on aina ollut GET / -rajapinnassa, joka rikastaa koko hakukohteen.
+          (hakukohdeOid, valintatapajonoOid2, Some(true)),
+          (hakukohdeOid2, valintatapajonoOid3, None))
+        // Kolme tulosta kahdessa hakukohteessa => kaksi hakua, ei kolmea (N+1-regressio).
+        there were two(t._4).haeVastaanotonAikarajaTiedot(any(), any(), any())
+        // Takarajaa haetaan vain ehdot tayttaville hakemuksille: hakukohteesta 1 yhdelle,
+        // hakukohteesta 2 ei yhdellekaan.
+        there was one(t._4).haeVastaanotonAikarajaTiedot(any(), eqTo(hakukohdeOid), eqTo(Set(hakemusOid)))
+        there was one(t._4).haeVastaanotonAikarajaTiedot(any(), eqTo(hakukohdeOid2), eqTo(Set.empty[HakemusOid]))
       }
     }
   }
