@@ -504,28 +504,33 @@ class SijoittelutulosService(raportointiService: ValintarekisteriRaportointiServ
   }
 
   def haeVastaanotonAikarajaTiedot(hakuOid: HakuOid, hakukohdeOid: HakukohdeOid, hakemusOids: Set[HakemusOid]): Set[VastaanottoAikarajaMennyt] = {
-    findLatestSijoitteluAjo(hakuOid, Some(hakukohdeOid)) match {
-      case None => Set()
+    if (hakemusOids.isEmpty) {
+      // Ilman hakemusOideja koko hakukohteen lataaminen suodattuisi lopuksi tyhjaksi joukoksi.
+      return Set()
+    } else {
+      findLatestSijoitteluAjo(hakuOid, Some(hakukohdeOid)) match {
+        case None => Set()
 
-      case Some(sijoitteluAjo) =>
-        val ohjausparametrit = findOhjausparametritFromOhjausparametritService(hakuOid)
-        val hyvaksyttyJaJulkaistuDates = valintarekisteriDb.findHyvaksyttyJulkaistuDatesForHakukohde(hakukohdeOid)
-        def queriedHakijasForHakukohde() = {
-          val allHakijasForHakukohde = Timer.timed(s"Fetch hakemukset just for hakukohde $hakukohdeOid of haku $hakuOid", 1000) {
-            raportointiService.hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo, hakukohdeOid)
+        case Some(sijoitteluAjo) =>
+          val ohjausparametrit = findOhjausparametritFromOhjausparametritService(hakuOid)
+          val hyvaksyttyJaJulkaistuDates = valintarekisteriDb.findHyvaksyttyJulkaistuDatesForHakukohde(hakukohdeOid)
+          def queriedHakijasForHakukohde() = {
+            val allHakijasForHakukohde = Timer.timed(s"Fetch hakemukset just for hakukohde $hakukohdeOid of haku $hakuOid", 1000) {
+              raportointiService.hakemuksetVainHakukohteenTietojenKanssa(sijoitteluAjo, hakukohdeOid)
+            }
+            allHakijasForHakukohde.filter(hakijaDto => hakemusOids.contains(HakemusOid(hakijaDto.getHakemusOid)))
           }
-          allHakijasForHakukohde.filter(hakijaDto => hakemusOids.contains(HakemusOid(hakijaDto.getHakemusOid)))
-        }
 
-        def calculateLateness(hakijaDto: KevytHakijaDTO): VastaanottoAikarajaMennyt = {
-          val hakutoiveDtoOfThisHakukohde: Option[KevytHakutoiveDTO] = hakijaDto.getHakutoiveet.asScala.toList.find(_.getHakukohdeOid == hakukohdeOid.toString)
-          val vastaanottoDeadline: Option[DateTime] = hakutoiveDtoOfThisHakukohde.flatMap { hakutoive: KevytHakutoiveDTO =>
-            laskeVastaanottoDeadline(ohjausparametrit, hyvaksyttyJaJulkaistuDates.get(hakijaDto.getHakijaOid))
+          def calculateLateness(hakijaDto: KevytHakijaDTO): VastaanottoAikarajaMennyt = {
+            val hakutoiveDtoOfThisHakukohde: Option[KevytHakutoiveDTO] = hakijaDto.getHakutoiveet.asScala.toList.find(_.getHakukohdeOid == hakukohdeOid.toString)
+            val vastaanottoDeadline: Option[DateTime] = hakutoiveDtoOfThisHakukohde.flatMap { hakutoive: KevytHakutoiveDTO =>
+              laskeVastaanottoDeadline(ohjausparametrit, hyvaksyttyJaJulkaistuDates.get(hakijaDto.getHakijaOid))
+            }
+            val isLate: Boolean = vastaanottoDeadline.exists(new DateTime().isAfter)
+            VastaanottoAikarajaMennyt(HakemusOid(hakijaDto.getHakemusOid), isLate, vastaanottoDeadline)
           }
-          val isLate: Boolean = vastaanottoDeadline.exists(new DateTime().isAfter)
-          VastaanottoAikarajaMennyt(HakemusOid(hakijaDto.getHakemusOid), isLate, vastaanottoDeadline)
-        }
-        queriedHakijasForHakukohde().map(calculateLateness).toSet
+          queriedHakijasForHakukohde().map(calculateLateness).toSet
+      }
     }
   }
 

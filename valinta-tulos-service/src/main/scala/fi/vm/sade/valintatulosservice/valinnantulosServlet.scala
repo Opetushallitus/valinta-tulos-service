@@ -85,15 +85,34 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
       })
   }
 
-  private val mapDecorateValinnantulosDeadlines = (tulos: ValinnantulosWithTilahistoria) => {
-    hakuService.getHakukohde(tulos.valinnantulos.hakukohdeOid) match {
-      case Right(hakukohde) =>
-        tulos.copy(valinnantulos = decorateValinnantuloksetWithDeadlines(hakukohde.hakuOid, hakukohde.oid, Set(tulos.valinnantulos)).head)
-      case Left(t) =>
-        logger.warn(s"Could not find hakukohde with ${tulos.valinnantulos.hakukohdeOid}", t)
-        tulos
-    }
-  }
+  /**
+   * Rikastaa valinnantulokset vastaanoton takarajatiedoilla hakukohde kerrallaan.
+   *
+   * Aiemmin tama tehtiin tulos kerrallaan, jolloin jokainen tulos latasi koko hakukohteen
+   * hakijat ja valinnantulokset uudelleen (N+1). Takaraja lasketaan hakemuskohtaisesti, joten
+   * hakukohteittain ryhmittely tuottaa saman lopputuloksen huomattavasti pienemmalla
+   * kyselymaaralla.
+   */
+  private def decorateDeadlinesPerHakukohde(tulokset: Set[ValinnantulosWithTilahistoria]): Set[ValinnantulosWithTilahistoria] =
+    tulokset.groupBy(_.valinnantulos.hakukohdeOid).flatMap { case (hakukohdeOid, hakukohteenTulokset) =>
+      hakuService.getHakukohde(hakukohdeOid) match {
+        case Right(hakukohde) =>
+          val decorated: Map[(HakemusOid, ValintatapajonoOid), Valinnantulos] =
+            decorateValinnantuloksetWithDeadlines(
+              hakukohde.hakuOid,
+              hakukohde.oid,
+              hakukohteenTulokset.map(_.valinnantulos))
+              .map(valinnantulos => (valinnantulos.hakemusOid, valinnantulos.valintatapajonoOid) -> valinnantulos)
+              .toMap
+          hakukohteenTulokset.map(tulos =>
+            decorated
+              .get((tulos.valinnantulos.hakemusOid, tulos.valinnantulos.valintatapajonoOid))
+              .fold(tulos)(valinnantulos => tulos.copy(valinnantulos = valinnantulos)))
+        case Left(t) =>
+          logger.warn(s"Could not find hakukohde with $hakukohdeOid", t)
+          hakukohteenTulokset
+      }
+    }.toSet
 
   val valinnantuloksetHakemukselleSwagger: OperationBuilder = (apiOperation[List[ValinnantulosWithTilahistoria]]("valinnantuloksetHakemukselle")
     summary "Valinnantulos yksittäiselle hakemukselle"
@@ -111,7 +130,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     val hakemusOid = parseHakemusOid.fold(throw _, x => x)
     valinnantulosService.getValinnantuloksetForHakemus(hakemusOid, auditInfo) match {
       case Some((lastModified, valinnantulokset)) =>
-        val decoratedValinnantulokset = valinnantulokset.map(mapDecorateValinnantulosDeadlines)
+        val decoratedValinnantulokset = decorateDeadlinesPerHakukohde(valinnantulokset)
         Ok(body = decoratedValinnantulokset, headers = Map(appConfig.settings.headerLastModified -> createLastModifiedHeader(lastModified)))
       case None =>
         Ok(body = List.empty)
@@ -135,7 +154,7 @@ class ValinnantulosServlet(valinnantulosService: ValinnantulosService,
     if (hakemusOids.isEmpty || hakemusOids.size > 5000) {
       BadRequest("Minimum of 1 and maximum of 5000 hakemusOids at a time.")
     } else {
-      valinnantulosService.getValinnantuloksetForHakemukset(hakemusOids, auditInfo).map(mapDecorateValinnantulosDeadlines)
+      decorateDeadlinesPerHakukohde(valinnantulosService.getValinnantuloksetForHakemukset(hakemusOids, auditInfo))
     }
   }
 
