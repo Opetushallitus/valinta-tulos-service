@@ -148,13 +148,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
       ), "/auth/login", "auth/login")
 
       context.mount(new LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService), "/lukuvuosimaksu", "lukuvuosimaksu")
-      context.mount(new PrivateValintatulosServlet(valintatulosService,
-        streamingValintatulosService,
-        vastaanottoService,
-        ilmoittautumisService,
-        valintarekisteriDb,
-        hakemustenTulosHakuLock),
-        "/haku", "haku")
+      context.mount(new PrivateValintatulosServlet(valintatulosService, hakemustenTulosHakuLock), "/haku", "haku")
       context.mount(new EnsikertalaisuusServlet(valintarekisteriDb, appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus", "ensikertalaisuus")
       context.mount(new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, valintarekisteriDb, appConfig), "/erillishaku/valinnan-tulos", "erillishaku/valinnan-tulos")
 
@@ -171,12 +165,11 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/haku/*")
       context.addFilter("kelaCas", createCasFilter(casSessionService, Set.empty))
         .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/kela/*")
-      context.mount(new PublicValintatulosServlet(audit,
+      context.mount(new ValintatulosServlet(audit,
         valintatulosService,
         streamingValintatulosService,
         vastaanottoService,
         ilmoittautumisService,
-        valintarekisteriDb,
         valintarekisteriDb,
         hakemustenTulosHakuLock
       ),
