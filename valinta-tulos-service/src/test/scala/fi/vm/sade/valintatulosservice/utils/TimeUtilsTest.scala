@@ -16,25 +16,24 @@ class TimeUtilsTest extends Specification {
 
   "TimeUtils getPaateltyAloitusajankohta" should {
     "palauttaa nullin jos ei annettu pvm eikä henkilökohtainen suunnitelma" in {
-      TimeUtils.getPaateltyAloitusajankohta(createHakukohde(PaateltyAlkamisajankohta(pvm = "", henkilokohtainenSuunnitelma = false))) must beNull
-      TimeUtils.getPaateltyAloitusajankohta(createHakukohde(PaateltyAlkamisajankohta(pvm = null, henkilokohtainenSuunnitelma = false))) must beNull
+      TimeUtils.getPaateltyAloitusajankohta(createHakukohde(PaateltyAlkamisajankohta(pvm = None, henkilokohtainenSuunnitelma = false))) must beNull
     }
 
     "palauttaa nykyhetken henkilökohtaiselle suunnitelmalle" in {
-      val result = TimeUtils.getPaateltyAloitusajankohta(createHakukohde(PaateltyAlkamisajankohta(pvm = "2099-09-19", henkilokohtainenSuunnitelma = true)))
+      val result = TimeUtils.getPaateltyAloitusajankohta(createHakukohde(PaateltyAlkamisajankohta(pvm = Some("2099-09-19"), henkilokohtainenSuunnitelma = true)))
       val now = KOUTA_DATE_FORMATTER.format(LocalDate.now)
       result must_== now
     }
 
     "palauttaa nykyhetken päivämäärälle joka on menneisyydessä" in {
-      val result = TimeUtils.getPaateltyAloitusajankohta(createHakukohde(PaateltyAlkamisajankohta(pvm = "2026-07-15", henkilokohtainenSuunnitelma = false)))
+      val result = TimeUtils.getPaateltyAloitusajankohta(createHakukohde(PaateltyAlkamisajankohta(pvm = Some("2026-07-15"), henkilokohtainenSuunnitelma = false)))
       val now = KOUTA_DATE_FORMATTER.format(LocalDate.now)
       result must_== now
     }
 
     "palauttaa annetun päivämäärän kun se on tulevaisuudessa" in {
       val tomorrow = KOUTA_DATE_FORMATTER.format(LocalDate.now.plusDays(1))
-      val result = TimeUtils.getPaateltyAloitusajankohta(createHakukohde(PaateltyAlkamisajankohta(pvm = tomorrow, henkilokohtainenSuunnitelma = false)))
+      val result = TimeUtils.getPaateltyAloitusajankohta(createHakukohde(PaateltyAlkamisajankohta(pvm = Some(tomorrow), henkilokohtainenSuunnitelma = false)))
       result must_== tomorrow
     }
   }

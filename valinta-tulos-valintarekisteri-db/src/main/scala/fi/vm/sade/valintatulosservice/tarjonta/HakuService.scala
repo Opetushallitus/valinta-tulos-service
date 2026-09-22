@@ -45,7 +45,7 @@ case class Haku(oid: HakuOid,
   val sijoitteluJaPriorisointi = käyttääSijoittelua && käyttääHakutoiveidenPriorisointia
 }
 
-case class PaateltyAlkamisajankohta(pvm: String, henkilokohtainenSuunnitelma: Boolean)
+case class PaateltyAlkamisajankohta(pvm: Option[String], henkilokohtainenSuunnitelma: Boolean)
 
 case class Hakukohde(oid: HakukohdeOid,
                      hakuOid: HakuOid,
