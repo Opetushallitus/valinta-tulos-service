@@ -72,7 +72,7 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
                 and hk.koulutuksen_alkamiskausi = ${kausi.toKausiSpec}
                 and hk.yhden_paikan_saanto_voimassa
             join henkiloviitteet on vastaanotot.henkilo = henkiloviitteet.person_oid
-            join valinnantilat vt on vt.henkilo_oid = vastaanotot.henkilo
+            join valinnantilat vt on vt.henkilo_oid = henkiloviitteet.linked_oid
                 and vt.hakukohde_oid = vastaanotot.hakukohde
             where deleted is null
                 and action in ('VastaanotaSitovasti', 'VastaanotaEhdollisesti')
