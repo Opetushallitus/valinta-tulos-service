@@ -1,5 +1,11 @@
 name: Valinta-tulos-service
 
+# Empty in main. Set to a ticket id (e.g. "OY-1234") on a dev branch
+# to deploy under version <base-version>-<TICKET>-SNAPSHOT.
+# MUST be empty before merging to main.
+env:
+  DEV_BRANCH_DEPLOY: ''
+
 on:
   workflow_dispatch:
   push:
@@ -122,6 +128,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Refuse dev-only configuration on main
+        if: env.DEV_BRANCH_DEPLOY != '' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        run: |
+          echo "::error::DEV_BRANCH_DEPLOY is set to '${DEV_BRANCH_DEPLOY}' on main. Clear it before merging."
+          exit 1
+
       - uses: actions/checkout@v4
 
       - uses: actions/cache@v4
@@ -139,8 +151,16 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
+      - name: Rewrite artifact version with ticket id
+        if: env.DEV_BRANCH_DEPLOY != ''
+        run: |
+          CURRENT=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
+          NEW="${CURRENT%-SNAPSHOT}-${DEV_BRANCH_DEPLOY}-SNAPSHOT"
+          echo "Rewriting artefact version: $CURRENT -> $NEW"
+          mvn -B versions:set -DnewVersion="$NEW" -DgenerateBackupPoms=false -DprocessAllModules=true -DupdateMatchingVersions=true
+
       - name: Deploy jar library
-        if: github.ref == 'refs/heads/master'
+        if: success() && (env.DEV_BRANCH_DEPLOY != '' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch))
         shell: bash
         env:
           GITHUB_TOKEN: ${{ github.token }}

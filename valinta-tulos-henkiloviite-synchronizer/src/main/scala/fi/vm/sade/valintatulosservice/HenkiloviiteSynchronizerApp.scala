@@ -4,10 +4,10 @@ import java.util.Calendar
 import java.util.concurrent.{ScheduledThreadPoolExecutor, TimeUnit}
 
 import ch.qos.logback.access.jetty.RequestLogImpl
-import org.eclipse.jetty.server.handler.{ContextHandler, ContextHandlerCollection, RequestLogHandler, ResourceHandler}
+import org.eclipse.jetty.ee10.servlet.{ServletContextHandler, ServletHolder}
+import org.eclipse.jetty.server.handler.{ContextHandler, ContextHandlerCollection, ResourceHandler}
 import org.eclipse.jetty.server.{RequestLog, Server}
-import org.eclipse.jetty.servlet.{ServletContextHandler, ServletHolder}
-import org.eclipse.jetty.util.resource.Resource
+import org.eclipse.jetty.util.resource.ResourceFactory
 import org.slf4j.LoggerFactory
 import org.eclipse.jetty.server.ServerConnector
 
@@ -36,19 +36,17 @@ object HenkiloviiteSynchronizerApp {
     val resourceContext = new ContextHandler
     resourceContext.setContextPath("/valinta-tulos-henkiloviite-synchronizer/html")
     val resourceHandler = new ResourceHandler
-    resourceHandler.setDirectoriesListed(false)
-    resourceHandler.setBaseResource(Resource.newClassPathResource("fi/vm/sade/valintatulosservice/html"))
-    resourceHandler.setWelcomeFiles(Array("index.html"))
+    resourceHandler.setDirAllowed(false)
+    resourceHandler.setBaseResource(ResourceFactory.of(server).newClassLoaderResource("fi/vm/sade/valintatulosservice/html"))
+    resourceHandler.setWelcomeFiles("index.html")
     resourceContext.setHandler(resourceHandler)
 
     val rootContextHandlers = new ContextHandlerCollection
-    rootContextHandlers.setHandlers(Array(resourceContext, servletContext))
+    rootContextHandlers.setHandlers(resourceContext, servletContext)
 
-    val loggingHandlerWrapper = new RequestLogHandler()
-    loggingHandlerWrapper.setRequestLog(requestLog(config))
-    loggingHandlerWrapper.setHandler(rootContextHandlers)
-
-    server.setHandler(loggingHandlerWrapper)
+    // Jetty 12:ssa ei ole enää RequestLogHandleria, vaan pyyntöloki asetetaan suoraan palvelimelle.
+    server.setRequestLog(requestLog(config))
+    server.setHandler(rootContextHandlers)
 
     val synchronizerScheduler = startScheduledSynchronization(config.scheduler, synchronizer)
     Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
