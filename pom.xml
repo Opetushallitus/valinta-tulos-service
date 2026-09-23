@@ -60,7 +60,7 @@
         <spring.version>6.2.19</spring.version>
         <typesafe.config.version>1.2.1</typesafe.config.version>
         <netty.version>4.2.16.Final</netty.version>
-        <java-cas.version>2.3.0-SNAPSHOT</java-cas.version>
+        <java-cas.version>2.3.0-OY-5723-SNAPSHOT</java-cas.version>
 
         <enforce.java.version>[21,)</enforce.java.version>
 
@@ -197,7 +197,7 @@
             <dependency>
                 <groupId>fi.vm.sade.valintaperusteet</groupId>
                 <artifactId>valintaperusteet-api</artifactId>
-                <version>8.2-SNAPSHOT</version>
+                <version>8.2-OY-5771-SNAPSHOT</version>
                 <exclusions>
                     <!-- Ks. selitykset sijoittelu-algoritmi-domainin kohdalla. -->
                     <exclusion>
