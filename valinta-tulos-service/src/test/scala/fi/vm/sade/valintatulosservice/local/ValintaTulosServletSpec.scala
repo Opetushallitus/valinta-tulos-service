@@ -7,6 +7,7 @@ import fi.vm.sade.valintatulosservice.hakemus.AtaruHakemus
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.oppijanumerorekisteri.Henkilo
 import fi.vm.sade.valintatulosservice.production.Hakija
+import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.joda.time.{DateTime, DateTimeZone}
@@ -455,6 +456,53 @@ class ValintaTulosServletSpec extends ServletSpecification with Valintarekisteri
     }
   }
 
+  "POST /auth/ilmoittautuminen/hakemus/:hakemusOid/hakukohde/:hakukohdeOid" should {
+
+    lazy val testSession: String = createTestSession(roles = Set(Role.VALINTATULOSSERVICE_CRUD_OPH))
+    lazy val authHeaders = Map("Cookie" -> s"session=${testSession}")
+
+    "vaatii autentikoinnin" in {
+      useFixture("hyvaksytty-kesken-julkaistavissa.json")
+
+      ilmoittauduHakijana("LASNA_KOKO_LUKUVUOSI") {
+        status must_== 401
+      }
+    }
+
+    "vaatii autorisoinnin" in {
+      useFixture("hyvaksytty-kesken-julkaistavissa.json")
+      val testSessionWithInadequateCredentials: String = createTestSession(roles = Set(Role.SIJOITTELU_CRUD, Role.VALINTATULOSSERVICE_CRUD))
+      val headers = Map("Cookie" -> s"session=${testSessionWithInadequateCredentials}")
+
+      ilmoittauduHakijana("LASNA_KOKO_LUKUVUOSI", headers = headers) {
+        status must_== 403
+      }
+    }
+
+    "merkitsee ilmoittautuneeksi ilman muokkaajaa" in {
+      useFixture("hyvaksytty-kesken-julkaistavissa.json")
+
+      vastaanota("VastaanotaSitovasti") {
+        ilmoittauduHakijana("LASNA_KOKO_LUKUVUOSI", headers = authHeaders) {
+          status must_== 200
+
+          get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
+            val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
+            tulos.hakutoiveet.head.ilmoittautumistila must_== HakutoiveenIlmoittautumistila(Ilmoittautumisaika(None, Some(new DateTime(2030, 1, 10, 21, 59, 59, DateTimeZone.UTC))), None, LasnaKokoLukuvuosi, false)
+          }
+        }
+      }
+    }
+
+    "hyväksyy ilmoittautumisen vain jos vastaanotettu ja ilmoittauduttavissa" in {
+      useFixture("hyvaksytty-kesken-julkaistavissa.json")
+
+      ilmoittauduHakijana("LASNA_KOKO_LUKUVUOSI", headers = authHeaders) {
+        status must_== 400
+      }
+    }
+  }
+
   "POST /haku/:hakuId/hakemus/:hakemusId/vastaanota" should {
     "vastaanottaa opiskelupaikan" in {
       useFixture("hyvaksytty-kesken-julkaistavissa.json")
@@ -546,6 +594,13 @@ class ValintaTulosServletSpec extends ServletSpecification with Valintarekisteri
   def ilmoittaudu[T](tila: String, juuri:String = "haku", headers: Map[String, String] = Map.empty)(block: => T) = {
     postJSON(juuri + "/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369/ilmoittaudu",
       """{"hakukohdeOid":"1.2.246.562.5.72607738902","tila":""""+tila+"""","muokkaaja":"OILI","selite":"Testimuokkaus"}""", headers) {
+      block
+    }
+  }
+
+  def ilmoittauduHakijana[T](tila: String, headers: Map[String, String] = Map.empty)(block: => T) = {
+    postJSON("auth/ilmoittautuminen/hakemus/1.2.246.562.11.00000441369/hakukohde/1.2.246.562.5.72607738902",
+      """{"tila":""""+tila+"""","selite":"Testimuokkaus"}""", headers) {
       block
     }
   }
