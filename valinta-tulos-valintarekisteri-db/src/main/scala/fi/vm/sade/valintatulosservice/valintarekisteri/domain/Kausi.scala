@@ -15,6 +15,17 @@ case class Syksy(year: Int) extends Kausi {
 object Kausi {
   private val kausi = """(\d\d\d\d)(K|S)""".r
 
+  /**
+   * Rakentaa Kausi-arvon kausi-koodiUrista (esim. "kausi_k#1" / "kausi_s#1") ja vuodesta.
+   * Palauttaa Nonen jos kumpikin puuttuu tai koodiUria ei tunnisteta (ei heitä poikkeusta).
+   */
+  def fromUri(kausiUri: Option[String], vuosi: Option[Int]): Option[Kausi] =
+    (kausiUri, vuosi) match {
+      case (Some(uri), Some(v)) if uri.startsWith("kausi_k") => Some(Kevat(v))
+      case (Some(uri), Some(v)) if uri.startsWith("kausi_s") => Some(Syksy(v))
+      case _ => None
+    }
+
   def apply(kausiSpec: String): Kausi = kausiSpec match {
     case kausi(year, "K") => Kevat(Integer.parseInt(year))
     case kausi(year, "S") => Syksy(Integer.parseInt(year))
