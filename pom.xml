@@ -52,7 +52,7 @@
              swagger-reflektio kaatuu joda-time-kenttiin. Ks. README.md, "Scalatra 3 -päivitys". -->
         <scalatra.version>2.8.4</scalatra.version>
         <scalaz.version>7.3.8</scalaz.version>
-        <sijoittelu.version>10.2.0-SNAPSHOT</sijoittelu.version>
+        <sijoittelu.version>10.3.0-SNAPSHOT</sijoittelu.version>
         <valintalaskenta.version>8.1-SNAPSHOT</valintalaskenta.version>
         <slf4j-api.version>2.0.13</slf4j-api.version>
         <slick.version>3.5.2</slick.version>
