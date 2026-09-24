@@ -29,12 +29,6 @@ trait HakukohdeRepositoryImpl extends HakukohdeRepository with ValintarekisteriR
          """.as[HakukohdeRecord]).toSet
   }
 
-  override def all: Set[HakukohdeRecord] = {
-    runBlocking(
-      sql"""select hakukohde_oid, haku_oid, yhden_paikan_saanto_voimassa, kk_tutkintoon_johtava, koulutuksen_alkamiskausi
-            from hakukohteet""".as[HakukohdeRecord]).toSet
-  }
-
   override def findHakukohteet(hakukohdeOids: Set[HakukohdeOid]): Set[HakukohdeRecord] = hakukohdeOids match {
     case x if 0 == x.size => Set()
     case _ => {
@@ -134,9 +128,5 @@ trait HakukohdeRepositoryImpl extends HakukohdeRepository with ValintarekisteriR
                         kk_tutkintoon_johtava <> ${hakukohdeRecord.kktutkintoonJohtava} or
                         koulutuksen_alkamiskausi is distinct from ${koulutuksenAlkamiskausi.map(_.toKausiSpec)})""")
     ) == 1
-  }
-
-  override def hakukohteessaVastaanottoja(oid: HakukohdeOid): Boolean = {
-    runBlocking(sql"""select count(*) from newest_vastaanotot where hakukohde = ${oid}""".as[Int]).head > 0
   }
 }

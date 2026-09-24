@@ -38,37 +38,6 @@ class LukuvuosimaksuServletSpec extends ServletSpecification with Valintarekiste
 
   private def headers(auditSession: String): Map[String, String] = Map("Cookie" -> s"session=$auditSession", "Content-type" -> "application/json")
 
-  "Lukuvuosimaksu API without CAS should work" should {
-    "palauttaa 204 when POST with 'auditInfo'" in {
-      post(s"lukuvuosimaksu/write/1.2.3.200", muutosAsJsonWithAuditSession(vapautettu), httpHeaders) {
-        status must_== 204
-      }
-    }
-    "fail with 400 when calling without 'auditInfo'" in {
-      post(s"lukuvuosimaksu/write/1.2.3.200", muutosAsJson(vapautettu), httpHeaders) {
-        status must_== 400
-        (parse(body) \ "error").extract[String] must startWith("No usable value for auditSession")
-      }
-    }
-    "find lukuvuosimaksut by several hakukohde oids" in {
-      val maksettavaKohde = HakukohdeOid("1.2.3.200")
-      post(s"lukuvuosimaksu/write/${maksettavaKohde.s}", muutosAsJsonWithAuditSession(maksettu), httpHeaders) {
-        status must_== 204
-      }
-      post("lukuvuosimaksu/read", serialiseToJson(LukuvuosimaksuBulkReadRequest(List(maksettavaKohde, HakukohdeOid("1.2.3.300")), auditSession)), httpHeaders) {
-        val maksut = JsonParser.parse(body).extract[Seq[Lukuvuosimaksu]]
-        maksut must have size 1
-        val maksu = maksut.head
-        maksu.personOid must_== maksettu.personOid
-        maksu.maksuntila must_== maksettu.maksuntila
-        maksu.hakukohdeOid must_== maksettavaKohde
-        maksu.muokkaaja must_== auditSession.personOid
-        maksu.luotu.getTime must be_< (System.currentTimeMillis() + (60 * 1000))
-        status must_== 200
-      }
-    }
-  }
-
   "POST /auth/lukuvuosimaksu/read/bulk" should {
     val url = "auth/lukuvuosimaksu/read/bulk"
     "palauttaa 401 ilman sessiota" in {

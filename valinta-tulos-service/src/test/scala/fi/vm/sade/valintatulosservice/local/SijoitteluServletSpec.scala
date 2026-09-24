@@ -40,7 +40,7 @@ class SijoitteluServletSpec extends ServletSpecification with ValintarekisteriDb
     s"/organisaatio-service/rest/organisaatio/123.123.123.123/parentoids"
   )).respond(new HttpResponse().withStatusCode(200).withBody("1.2.246.562.10.00000000001/1.2.246.562.10.39804091914/123.123.123.123"))
 
-  "GET /sijoittelu/:hakuOid/sijoitteluajo/:sijoitteluajoOid" should {
+  "GET /auth/sijoittelu/:hakuOid/sijoitteluajo/:sijoitteluajoOid" should {
     "Hakee sijoittelun" in {
       get("auth/sijoittelu/1.2.246.562.29.75203638285/sijoitteluajo/1476936450191", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
         status must_== 200
@@ -48,9 +48,17 @@ class SijoitteluServletSpec extends ServletSpecification with ValintarekisteriDb
         body.startsWith("{\"sijoitteluajoId\":1476936450191,\"hakuOid\":\"1.2.246.562.29.75203638285\"") mustEqual true
       }
     }
+
+    "Palauttaa 401 ilman sessiota" in {
+      get("auth/sijoittelu/1.2.246.562.29.75203638285/sijoitteluajo/1476936450191", Seq.empty, Map.empty[String, String]) {
+        status must_== 401
+        body.isEmpty mustEqual false
+        body mustEqual """{"error":"Unauthenticated: No session found"}"""
+      }
+    }
   }
 
-  "GET /sijoittelu/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakemus/:hakemusOid" should {
+  "GET /auth/sijoittelu/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakemus/:hakemusOid" should {
     "Hakee hakemuksen tuloksen" in {
       get("auth/sijoittelu/1.2.246.562.29.75203638285/sijoitteluajo/1476936450191/hakemus/1.2.246.562.11.00004875684", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
         status must_== 200
@@ -58,6 +66,15 @@ class SijoitteluServletSpec extends ServletSpecification with ValintarekisteriDb
         (hakemusJson \ "hakemusOid").extract[String] mustEqual "1.2.246.562.11.00004875684"
       }
     }
+
+    "Palauttaa 401 ilman sessiota" in {
+      get("auth/sijoittelu/1.2.246.562.29.75203638285/sijoitteluajo/1476936450191/hakemus/1.2.246.562.11.00004875684", Seq.empty, Map.empty[String, String]) {
+        status must_== 401
+        body.isEmpty mustEqual false
+        body mustEqual """{"error":"Unauthenticated: No session found"}"""
+      }
+    }
+
   }
 
   "GET /auth/sijoittelu/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakukohde/:hakukohdeOid" should {
@@ -76,22 +93,26 @@ class SijoitteluServletSpec extends ServletSpecification with ValintarekisteriDb
         (valintatapajonot(0) \ "hakemukset").asInstanceOf[JArray].arr.size mustEqual 15
       }
     }
-  }
 
-  "GET /auth/sijoittelu/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakukohde/:hakukohdeOid olemattomalle haulle" should {
-    "Palauttaa 404 Not Found" in {
+    "Palauttaa 404 Not Found olemattomalle haulle" in {
       get("auth/sijoittelu/1.2.246.562.29.1111111111/sijoitteluajo/latest/hakukohde/1.2.246.562.20.26643418986", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
         status must_== 404
         body mustEqual """{"error":"Yhtään sijoitteluajoa ei löytynyt haulle 1.2.246.562.29.1111111111"}"""
       }
     }
-  }
 
-  "GET /auth/sijoittelu/:hakuOid/sijoitteluajo/:sijoitteluajoId/hakukohde/:hakukohdeOid olemattomalle hakukohteelle" should {
-    "Palauttaa 404 Not Found" in {
+    "Palauttaa 404 Not Found olemattomalle hakukohteelle" in {
       get("auth/sijoittelu/1.2.246.562.29.75203638285/sijoitteluajo/latest/hakukohde/1.2.246.562.20.1111", Seq.empty, Map("Cookie" -> s"session=${testSession}")) {
         status must_== 404
         body mustEqual """{"error":"Sijoitteluajolle 1476936450191 ei löydy hakukohdetta 1.2.246.562.20.1111"}"""
+      }
+    }
+
+    "Palauttaa 401 ilman sessiota" in {
+      get("auth/sijoittelu/1.2.246.562.29.75203638285/sijoitteluajo/1476936450191/hakukohde/1.2.246.562.20.26643418986", Seq.empty, Map.empty[String, String]) {
+        status must_== 401
+        body.isEmpty mustEqual false
+        body mustEqual """{"error":"Unauthenticated: No session found"}"""
       }
     }
   }

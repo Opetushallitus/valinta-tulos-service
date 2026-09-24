@@ -132,8 +132,6 @@ class ScalatraBootstrap extends LifeCycle with Logging {
 
     mountBasicVts()
 
-    context.mount(new HakukohdeRefreshServlet(valintarekisteriDb, hakukohdeRecordService), "/virkistys")
-
     context.mount(new OpenAPIServlet(appConfig), "/swagger/open-api", "openapi")
     context.mount(new SwaggerServlet, "/swagger/*", "swagger")
 
@@ -149,21 +147,10 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         )
       ), "/auth/login", "auth/login")
 
-      context.mount(new VirkailijanVastaanottoServletNoAuth(valintatulosService, vastaanottoService), "/virkailija", "virkailija")
       context.mount(new LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService), "/lukuvuosimaksu", "lukuvuosimaksu")
-      context.mount(handler = new MuutoshistoriaServlet(valinnantulosService, valintarekisteriDb, skipAuditForServiceCall = true), urlPattern = "/muutoshistoria", name = "muutoshistoria")
-      context.mount(new PrivateValintatulosServlet(valintatulosService,
-        streamingValintatulosService,
-        vastaanottoService,
-        ilmoittautumisService,
-        valintarekisteriDb,
-        hakemustenTulosHakuLock),
-        "/haku", "haku")
+      context.mount(new PrivateValintatulosServlet(valintatulosService, hakemustenTulosHakuLock), "/haku", "haku")
       context.mount(new EnsikertalaisuusServlet(valintarekisteriDb, appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus", "ensikertalaisuus")
-      context.mount(new HakijanVastaanottoServlet(vastaanottoService), "/vastaanotto", "vastaanotto")
       context.mount(new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, valintarekisteriDb, appConfig), "/erillishaku/valinnan-tulos", "erillishaku/valinnan-tulos")
-      context.mount(new NoAuthSijoitteluServlet(sijoitteluService), "/sijoittelu", "sijoittelu")
-      context.mount(new NoAuthHyvaksynnanEhtoServlet(valintarekisteriDb), "/hyvaksynnan-ehto", "hyvaksynnan-ehto")
 
       context.mount(new SiirtotiedostoServlet(siirtotiedostoService, valintarekisteriDb), "/cas/siirtotiedosto", "siirtotiedosto")
 
@@ -178,12 +165,11 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/haku/*")
       context.addFilter("kelaCas", createCasFilter(casSessionService, Set.empty))
         .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/kela/*")
-      context.mount(new PublicValintatulosServlet(audit,
+      context.mount(new ValintatulosServlet(audit,
         valintatulosService,
         streamingValintatulosService,
         vastaanottoService,
         ilmoittautumisService,
-        valintarekisteriDb,
         valintarekisteriDb,
         hakemustenTulosHakuLock
       ),
@@ -193,7 +179,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
 
       val valintaesitysService = new ValintaesitysService(hakuService, authorizer, valintarekisteriDb, valintarekisteriDb, audit)
 
-      context.mount(new VirkailijanVastaanottoServletCasAuth(valintatulosService, vastaanottoService, valintarekisteriDb), "/auth/virkailija", "virkailija")
+      context.mount(new VirkailijanVastaanottoServlet(valintatulosService, vastaanottoService, valintarekisteriDb), "/auth/virkailija", "auth/virkailija")
       context.mount(new ValinnantulosServlet(valinnantulosService, valintatulosService, hakuService, valintarekisteriDb, appConfig), "/auth/valinnan-tulos", "auth/valinnan-tulos")
       context.mount(new SijoitteluServlet(sijoitteluService, valintarekisteriDb), "/auth/sijoittelu", "auth/sijoittelu")
       context.mount(new SijoittelunTulosServlet(valintatulosService, valintaesitysService, valinnantulosService, hyvaksymiskirjeService, lukuvuosimaksuService, hakuService, authorizer, sijoitteluService, valintarekisteriDb), "/auth/sijoitteluntulos", "auth/sijoitteluntulos")
