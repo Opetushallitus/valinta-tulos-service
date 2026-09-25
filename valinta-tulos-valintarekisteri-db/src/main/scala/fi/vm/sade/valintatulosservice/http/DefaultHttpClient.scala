@@ -1,13 +1,13 @@
 package fi.vm.sade.valintatulosservice.http
 
-import org.asynchttpclient.Dsl.asyncHttpClient
+import org.asynchttpclient.Dsl.{asyncHttpClient, config}
 import org.asynchttpclient.{AsyncHttpClient, Response}
 
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 object DefaultHttpClient {
-  val client: AsyncHttpClient = asyncHttpClient()
+  val client: AsyncHttpClient = asyncHttpClient(config().setHttp2Enabled(false))
   private val defaultRequestTimeout: Int = 10000
   private val defaultReadTimeout: Int = 60000
 
