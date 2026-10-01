@@ -65,7 +65,7 @@
         <enforce.java.version>[21,)</enforce.java.version>
 
         <plugin.exec-maven-plugin.version>1.6.0</plugin.exec-maven-plugin.version>
-        <plugin.maven-assembly-plugin.version>2.6</plugin.maven-assembly-plugin.version>
+        <plugin.maven-assembly-plugin.version>3.7.1</plugin.maven-assembly-plugin.version>
         <plugin.maven-enforcer-plugin.version>3.5.0</plugin.maven-enforcer-plugin.version>
         <plugin.maven-jar-plugin.version>3.0.2</plugin.maven-jar-plugin.version>
         <plugin.maven-surefire-plugin.version>3.2.5</plugin.maven-surefire-plugin.version>
