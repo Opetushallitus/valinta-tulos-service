@@ -949,6 +949,18 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             """.as[HyvaksyttyValinnanTila]).toSet
     }
 
+  override def getHakijanHakemusOidit(hakijaOid: HakijaOid): Set[HakemusOid] =
+    timed(s"Hakijan $hakijaOid kaikkien hakemusoidien haku", 100) {
+      runBlocking(
+        sql"""select distinct hakemus_oid
+            from valinnantilat
+            where henkilo_oid = $hakijaOid
+                or henkilo_oid in (
+                    select linked_oid from henkiloviitteet where person_oid = $hakijaOid
+                )
+            """.as[HakemusOid]).toSet
+    }
+
   private def formMuutoshistoria[A, B](muutokset: Iterable[(A, B, KentanMuutos)]): List[(A, B, KentanMuutos)] = muutokset.headOption match {
     case Some(origin) =>
       muutokset.tail.foldLeft(List(origin)) {
