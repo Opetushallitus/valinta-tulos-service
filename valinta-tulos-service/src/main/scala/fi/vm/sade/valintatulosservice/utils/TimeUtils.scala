@@ -9,7 +9,7 @@ object TimeUtils {
 
   val ZONE_FINLAND: ZoneId                        = ZoneId.of("Europe/Helsinki")
   val KOUTA_DATETIME_FORMATTER: DateTimeFormatter = DateTimeFormatter
-    .ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+    .ofPattern("yyyy-MM-dd'T'HH:mm[:ss]")
     .withZone(ZONE_FINLAND)
 
   private val KOUTA_DATE_PATTERN = "yyyy-MM-dd"

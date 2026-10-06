@@ -230,13 +230,14 @@ class VastaanottoService(hakuService: HakuService,
     hakuService.getHakukohde(hakukohdeOid).fold(
       e => logger.warn(s"Hakukohdetta $hakukohdeOid ei saatu haettua tallennettaessa päätettäviä opiskeluoikeuksia hakemukselle $hakemusOid", e),
       hakukohde => {
-      val alkuPvm = TimeUtils.getPaateltyAloitusajankohta(hakukohde)
-      if (alkuPvm == null) {
-        logger.warn(
-          s"Hakukohteelle ${hakukohde.oid} ei pystytty päättelemään aloitusajankohtaa"
-        )
-      }
+      // Vastaanotto on jo tallennettu, joten virhe ei saa nousta hakijalle asti
       try {
+        val alkuPvm = TimeUtils.getPaateltyAloitusajankohta(hakukohde)
+        if (alkuPvm == null) {
+          logger.warn(
+            s"Hakukohteelle ${hakukohde.oid} ei pystytty päättelemään aloitusajankohtaa"
+          )
+        }
         hakemusRepository.findHakemus(hakemusOid).map(hakemus => hakijaVastaanottoRepository.storePaatetettavatOpiskeluOikeudet(hakemus.henkiloOid, hakukohdeOid, hakemusOid, alkuPvm, oikeudet))
       } catch {
         case e: Exception => logger.warn(s"Hakijalle näytettyjen päätettävien opiskeluoikeuksien tallennus epäonnistui hakemukselle $hakemusOid ja hakukohteelle $hakukohdeOid", e)

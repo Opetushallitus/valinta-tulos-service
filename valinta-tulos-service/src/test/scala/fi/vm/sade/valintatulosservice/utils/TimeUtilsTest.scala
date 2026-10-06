@@ -43,6 +43,7 @@ class TimeUtilsTest extends Specification {
     "palauttaa true jos aika on menneisyydessä" in {
       TimeUtils.isNowAfter("2026-07-15") must beTrue
       TimeUtils.isNowAfter("2026-07-15T12:55:45") must beTrue
+      TimeUtils.isNowAfter("2026-07-15T12:55") must beTrue
     }
 
     "palauttaa false jos aika täsmää" in {
@@ -52,6 +53,7 @@ class TimeUtilsTest extends Specification {
     "palauttaa false jos aika on tulevaisuudessa" in {
       TimeUtils.isNowAfter(KOUTA_DATE_FORMATTER.format(LocalDate.now.plusDays(1))) must beFalse
       TimeUtils.isNowAfter(KOUTA_DATETIME_FORMATTER.format(LocalDateTime.now.plusSeconds(1))) must beFalse
+      TimeUtils.isNowAfter("2099-10-19T09:00") must beFalse
     }
   }
 
