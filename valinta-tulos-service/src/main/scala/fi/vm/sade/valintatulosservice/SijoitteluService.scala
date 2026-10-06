@@ -16,10 +16,6 @@ class SijoitteluService(val sijoitteluRepository: SijoitteluRepository with Haki
                         hakuService: HakuService,
                         audit: Audit ) extends Logging {
 
-  def getHakukohdeBySijoitteluajoWithoutAuthentication(hakuOid: HakuOid, sijoitteluajoId: String, hakukohdeOid: HakukohdeOid): HakukohdeDTO = {
-    new SijoitteluajonHakukohde(sijoitteluRepository, sijoitteluRepository.runBlocking(sijoitteluRepository.getLatestSijoitteluajoId(sijoitteluajoId, hakuOid)), hakukohdeOid).dto()
-  }
-
   def getHakukohteidenAlimmatHyvaksytytPisteet(hakuOid: HakuOid): List[JononAlimmatPisteet] = {
     val sid = sijoitteluRepository.runBlocking(sijoitteluRepository.getLatestSijoitteluajoId("latest", hakuOid))
     logger.info(s"AHP Getting alimmat pisteet for sijoitteluajo $sid")

@@ -38,7 +38,7 @@ class VirkailijanVastaanottoServletSpec
     val valintatulosService: ValintatulosService = mock[ValintatulosService]
     val vastaanottoService: VastaanottoService = mock[VastaanottoService]
     val sessionRepository: SessionRepository = mock[SessionRepository]
-    val servlet = new VirkailijanVastaanottoServletCasAuth(valintatulosService, vastaanottoService, sessionRepository)(mock[Swagger], mock[VtsAppConfig])
+    val servlet = new VirkailijanVastaanottoServlet(valintatulosService, vastaanottoService, sessionRepository)(mock[Swagger], mock[VtsAppConfig])
     ServletTest.withServlet(this, servlet, (uri: String) => AsResult(f((uri, valintatulosService, vastaanottoService, sessionRepository))))
   }
 
