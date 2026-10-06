@@ -37,12 +37,18 @@ class TimeUtilsTest extends Specification {
       val result = TimeUtils.getPaateltyAloitusajankohta(createHakukohde(PaateltyAlkamisajankohta(pvm = tomorrow, henkilokohtainenSuunnitelma = false)))
       result must_== tomorrow
     }
+
+    "palauttaa annetun ajanhetken kun se on tulevaisuudessa ja ilman sekunteja" in {
+      val result = TimeUtils.getPaateltyAloitusajankohta(createHakukohde(PaateltyAlkamisajankohta(pvm = "2099-10-19T09:00", henkilokohtainenSuunnitelma = false)))
+      result must_== "2099-10-19T09:00"
+    }
   }
 
   "TimeUtils isNowAfter" should {
     "palauttaa true jos aika on menneisyydessä" in {
       TimeUtils.isNowAfter("2026-07-15") must beTrue
       TimeUtils.isNowAfter("2026-07-15T12:55:45") must beTrue
+      TimeUtils.isNowAfter("2026-07-15T12:55") must beTrue
     }
 
     "palauttaa false jos aika täsmää" in {
@@ -52,6 +58,7 @@ class TimeUtilsTest extends Specification {
     "palauttaa false jos aika on tulevaisuudessa" in {
       TimeUtils.isNowAfter(KOUTA_DATE_FORMATTER.format(LocalDate.now.plusDays(1))) must beFalse
       TimeUtils.isNowAfter(KOUTA_DATETIME_FORMATTER.format(LocalDateTime.now.plusSeconds(1))) must beFalse
+      TimeUtils.isNowAfter("2099-10-19T09:00") must beFalse
     }
   }
 
