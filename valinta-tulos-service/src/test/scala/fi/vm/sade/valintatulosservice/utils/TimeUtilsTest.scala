@@ -37,6 +37,11 @@ class TimeUtilsTest extends Specification {
       val result = TimeUtils.getPaateltyAloitusajankohta(createHakukohde(PaateltyAlkamisajankohta(pvm = tomorrow, henkilokohtainenSuunnitelma = false)))
       result must_== tomorrow
     }
+
+    "palauttaa annetun ajanhetken kun se on tulevaisuudessa ja ilman sekunteja" in {
+      val result = TimeUtils.getPaateltyAloitusajankohta(createHakukohde(PaateltyAlkamisajankohta(pvm = "2099-10-19T09:00", henkilokohtainenSuunnitelma = false)))
+      result must_== "2099-10-19T09:00"
+    }
   }
 
   "TimeUtils isNowAfter" should {
