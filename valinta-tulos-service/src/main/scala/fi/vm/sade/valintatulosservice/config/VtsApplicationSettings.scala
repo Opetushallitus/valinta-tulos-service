@@ -28,6 +28,8 @@ case class VtsApplicationSettings(config: Config) extends ApplicationSettings(co
   val scheduledMigrationStart = withConfig(_.getInt("valinta-tulos-service.scheduled-migration.start-hour"))
   val scheduledDeleteSijoitteluAjoStart = withConfig(_.getInt("valinta-tulos-service.scheduled-delete-sijoitteluajo.start-hour"))
   val scheduledDeleteSijoitteluAjoLimit = withConfig(_.getInt("valinta-tulos-service.scheduled-delete-sijoitteluajo.limit"))
+  val scheduledHakemusOidBackfillEnabled: Boolean = BooleanUtils.isTrue(withConfig(_.getBoolean("valinta-tulos-service.scheduled-hakemus-oid-backfill.enabled")))
+  val scheduledHakemusOidBackfillBatchSize: Int = withConfig(_.getInt("valinta-tulos-service.scheduled-hakemus-oid-backfill.batch-size"))
   val scheduledMigrationEnd = withConfig(_.getInt("valinta-tulos-service.scheduled-migration.end-hour"))
   val oiliHetutonUrl = withConfig(_.getString("omatsivut.oili.hetutonUrl"))
   val readFromValintarekisteri = BooleanUtils.isTrue(withConfig(_.getBoolean("valinta-tulos-service.read-from-valintarekisteri")))
