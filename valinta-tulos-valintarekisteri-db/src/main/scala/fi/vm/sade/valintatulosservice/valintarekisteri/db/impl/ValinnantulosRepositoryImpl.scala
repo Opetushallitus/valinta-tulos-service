@@ -267,6 +267,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               and tu.valintatapajono_oid = ti.valintatapajono_oid
           left join vastaanotot as v on v.hakukohde = ti.hakukohde_oid
               and v.henkilo = ti.henkilo_oid and v.deleted is null
+              and (v.hakemus_oid is null or v.hakemus_oid = ti.hakemus_oid)
           left join ilmoittautumiset as i on i.hakukohde = ti.hakukohde_oid
               and i.henkilo = ti.henkilo_oid
           left join tilat_kuvaukset tk
@@ -309,6 +310,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                 and tu.valintatapajono_oid = ti.valintatapajono_oid
             left join vastaanotot as v on v.hakukohde = ti.hakukohde_oid
                 and v.henkilo = ti.henkilo_oid and v.deleted is null
+                and (v.hakemus_oid is null or v.hakemus_oid = ti.hakemus_oid)
             left join ilmoittautumiset as i on i.hakukohde = ti.hakukohde_oid
                 and i.henkilo = ti.henkilo_oid
             left join tilat_kuvaukset tk
@@ -394,6 +396,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               and tu.valintatapajono_oid = ti.valintatapajono_oid
           left join vastaanotot as v on v.hakukohde = ti.hakukohde_oid
               and v.henkilo = ti.henkilo_oid and v.deleted is null
+              and (v.hakemus_oid is null or v.hakemus_oid = ti.hakemus_oid)
           left join ilmoittautumiset as i on i.hakukohde = ti.hakukohde_oid
               and i.henkilo = ti.henkilo_oid
           left join tilat_kuvaukset tk
@@ -438,6 +441,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
           left join vastaanotot as v on v.hakukohde = (select * from jonon_hakukohde)
               and v.henkilo = ti.henkilo_oid
               and v.deleted is null
+              and (v.hakemus_oid is null or v.hakemus_oid = ti.hakemus_oid)
           left join ilmoittautumiset as i on i.hakukohde = (select * from jonon_hakukohde)
               and i.henkilo = ti.henkilo_oid
           left join tilat_kuvaukset tk
@@ -496,6 +500,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
         and tu.hakukohde_oid = ti.hakukohde_oid
              left join vastaanotot as v on v.hakukohde = ti.hakukohde_oid and v.henkilo = ti.henkilo_oid and v.deleted is null
         and v.hakukohde = ti.hakukohde_oid
+        and (v.hakemus_oid is null or v.hakemus_oid = ti.hakemus_oid)
              left join ehdollisen_hyvaksynnan_ehto as eh on eh.valintatapajono_oid = ti.valintatapajono_oid and eh.hakemus_oid = ti.hakemus_oid
              left join ilmoittautumiset as i on i.henkilo = ti.henkilo_oid and i.hakukohde = ti.hakukohde_oid
              left join tilat_kuvaukset tk
@@ -527,6 +532,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             and tu.valintatapajono_oid = ti.valintatapajono_oid
           left join vastaanotot as v on v.hakukohde = ti.hakukohde_oid
             and v.henkilo = ti.henkilo_oid and v.deleted is null
+            and (v.hakemus_oid is null or v.hakemus_oid = ti.hakemus_oid)
           left join jonosijat js on ti.hakemus_oid = js.hakemus_oid
             and ti.valintatapajono_oid = js.valintatapajono_oid
           left join valintatapajonot jo on jo.sijoitteluajo_id = js.sijoitteluajo_id
