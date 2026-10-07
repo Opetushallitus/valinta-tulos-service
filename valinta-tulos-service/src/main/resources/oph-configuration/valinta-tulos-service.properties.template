@@ -80,6 +80,8 @@ valinta-tulos-service.authentication-service-url=https://{{host_virkailija}}/aut
 valinta-tulos-service.scheduled-migration.start-hour=17
 valinta-tulos-service.scheduled-delete-sijoitteluajo.start-hour=23
 valinta-tulos-service.scheduled-delete-sijoitteluajo.limit={{ valintarekisteri_scheduled_sijoitteluajo_delete_limit | default('20') }}
+valinta-tulos-service.scheduled-hakemus-oid-backfill.enabled={{ valintarekisteri_scheduled_hakemus_oid_backfill_enabled | default('true') }}
+valinta-tulos-service.scheduled-hakemus-oid-backfill.batch-size={{ valintarekisteri_scheduled_hakemus_oid_backfill_batch_size | default('1000') }}
 valinta-tulos-service.scheduled-migration.end-hour=7
 
 # KELA

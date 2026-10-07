@@ -131,6 +131,10 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     val sijoitteluajoDeleteScheduler = new SijoitteluajoDeleteScheduler(valintarekisteriDb, appConfig)
     sijoitteluajoDeleteScheduler.startScheduler()
 
+    if (appConfig.settings.scheduledHakemusOidBackfillEnabled) {
+      new VastaanottoHakemusOidBackfillScheduler(valintarekisteriDb, appConfig.settings.scheduledHakemusOidBackfillBatchSize).startScheduler()
+    }
+
     mountBasicVts()
 
     context.mount(new HakukohdeRefreshServlet(valintarekisteriDb, hakukohdeRecordService), "/virkistys")
