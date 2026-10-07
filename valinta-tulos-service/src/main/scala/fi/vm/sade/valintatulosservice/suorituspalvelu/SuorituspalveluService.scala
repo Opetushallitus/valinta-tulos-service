@@ -44,7 +44,13 @@ class SuorituspalveluService(config: VtsAppConfig, hakuService: HakuService, cli
       }, hakukohde => {
         val oikeudet = getPaatettavatOpiskeluOikeudet(hakijaOid, hakuOid, hakukohdeOid)
         if (oikeudet.nonEmpty) {
-          val alkuPvm = TimeUtils.getPaateltyAloitusajankohta(hakukohde)
+          val alkuPvm = try {
+            TimeUtils.getPaateltyAloitusajankohta(hakukohde)
+          } catch {
+            case e: Exception =>
+              logger.warn(s"Hakukohteen ${hakukohde.oid} aloitusajankohdan päättely epäonnistui", e)
+              null
+          }
           if (alkuPvm == null) {
             logger.warn(
               s"Hakukohteelle ${hakukohde.oid} ei pystytty päättelemään aloitusajankohtaa"
