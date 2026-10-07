@@ -81,6 +81,22 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
       henkiloOidsAndActionsFromDb.head mustEqual (henkiloOid, VastaanotaSitovasti.toString)
     }
 
+    "tallentaa vastaanoton hakemus oidin" in {
+      singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid, VastaanotaSitovasti, henkiloOid, "testiselite"))
+      val hakemusOidsFromDb = singleConnectionValintarekisteriDb.runBlocking(
+        sql"""select hakemus_oid from vastaanotot
+              where henkilo = $henkiloOid and hakukohde = $hakukohdeOid and deleted is null""".as[Option[String]])
+      hakemusOidsFromDb mustEqual Vector(Some(hakemusOid.toString))
+    }
+
+    "tallentaa hakemus oidin vastaanotolle, joka tallennetaan annetulla päivämäärällä" in {
+      singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid, VastaanotaSitovasti, henkiloOid, "testiselite"), new Date())
+      val hakemusOidsFromDb = singleConnectionValintarekisteriDb.runBlocking(
+        sql"""select hakemus_oid from vastaanotot
+              where henkilo = $henkiloOid and hakukohde = $hakukohdeOid and deleted is null""".as[Option[String]])
+      hakemusOidsFromDb mustEqual Vector(Some(hakemusOid.toString))
+    }
+
     "find vastaanotot rows of person for given haku" in {
       singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid, VastaanotaEhdollisesti, henkiloOid, "testiselite"))
       singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid, VastaanotaSitovasti, henkiloOid, "testiselite"))
