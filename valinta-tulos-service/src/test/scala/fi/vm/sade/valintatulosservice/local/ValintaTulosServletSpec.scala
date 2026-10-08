@@ -22,6 +22,13 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
 
 @RunWith(classOf[JUnitRunner])
 class ValintaTulosServletSpec extends ServletSpecification with ValintarekisteriDbTools {
+  // Fixture-import tyhjentää vain osan tauluista (ei esim. vastaanotot- ja yhden_opiskeluoikeuden_saados-tauluja), joten
+  // aloitetaan tyhjästä kannasta, jotta edellisen spekin jäljet eivät vaikuta tuloksiin testiluokkien ajojärjestyksestä riippumatta.
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    deleteAll()
+  }
+
 
   override implicit val formats: Formats = JsonFormats.jsonFormats
 

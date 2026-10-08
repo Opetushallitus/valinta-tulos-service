@@ -10,13 +10,18 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain.Vastaanottotila
 import org.json4s.Formats
 import org.json4s.jackson.Serialization
 import org.junit.runner.RunWith
+import org.specs2.specification.AfterAll
 import org.specs2.runner.JUnitRunner
 
 import java.time.LocalDate
 import javax.sql.DataSource
 
 @RunWith(classOf[JUnitRunner])
-class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriDbTools {
+class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriDbTools with AfterAll {
+  // Testit jättävät vastaanotot- ja yhden_opiskeluoikeuden_saados-tauluihin rivejä, joita fixture-import ei tyhjennä,
+  // joten siivotaan ne, jotta seuraavaksi ajettava spekki ei näe niitä.
+  override def afterAll(): Unit = deleteAll()
+
 
   override implicit val formats: Formats = JsonFormats.jsonFormats
 
