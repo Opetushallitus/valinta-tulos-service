@@ -17,7 +17,10 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
 
   def getIlmoittautumisenAikaleimat(hakuOid: HakuOid): DBIO[Iterable[(String, HakukohdeOid, Instant)]]
 
+  @deprecated("Käytä hakemusOid:n ottavaa ylikuormitusta. Poistettava yhdessä hakemus_oid-täyttöajon kanssa.", "8.6.1")
   def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
+
+  def storeIlmoittautuminen(henkiloOid: String, hakemusOid: HakemusOid, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant]): DBIO[Unit]
 
   def resetIlmoittautuminen(henkiloOid: String, hakukohdeOid: HakukohdeOid): DBIO[Unit]
 

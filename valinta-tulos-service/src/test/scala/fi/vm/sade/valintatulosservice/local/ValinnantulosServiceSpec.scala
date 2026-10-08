@@ -299,7 +299,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       there was one (valinnantulosRepository).storeValinnantuloksenOhjaus(valinnantulokset(0).getValinnantuloksenOhjaus(session.personOid, "Erillishaun tallennus"), Some(lastModified))
       there was one (valinnantulosRepository).setHyvaksyttyJaJulkaistavissa(valinnantulosA.hakemusOid, valintatapajonoOid, session.personOid, "Erillishaun tallennus")
       there was no (valinnantulosRepository).updateValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
-      there was no (valinnantulosRepository).storeIlmoittautuminen(any[String], any[Ilmoittautuminen], any[Option[Instant]])
+      there was no (valinnantulosRepository).storeIlmoittautuminen(any[String], any[HakemusOid], any[Ilmoittautuminen], any[Option[Instant]])
       there was no (valinnantulosRepository).storeValinnantila(any[ValinnantilanTallennus], any[Option[Instant]])
     }
     "no status for succesfully deleted valinnantulos" in new Mocks with Authorized with KorkeakouluErillishaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
@@ -323,7 +323,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       there was no (valinnantulosRepository).deleteHyvaksynnanEhtoValintatapajonossa(any[HakemusOid], any[ValintatapajonoOid], any[HakukohdeOid], any[Instant])
       there was no (valinnantulosRepository).updateValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
       there was no (valinnantulosRepository).storeValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
-      there was no (valinnantulosRepository).storeIlmoittautuminen(any[String], any[Ilmoittautuminen], any[Option[Instant]])
+      there was no (valinnantulosRepository).storeIlmoittautuminen(any[String], any[HakemusOid], any[Ilmoittautuminen], any[Option[Instant]])
       there was no (valinnantulosRepository).storeValinnantila(any[ValinnantilanTallennus], any[Option[Instant]])
     }
     "no status for succesfully created tila/valinnantulos/ilmoittautuminen" in new Mocks with Authorized with KorkeakouluErillishaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
@@ -343,7 +343,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
 
       hakukohdeRecordService.getHakukohdeRecord(any[HakukohdeOid]) returns Right(null)
       valinnantulosRepository.storeValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]]) returns DBIO.successful(())
-      valinnantulosRepository.storeIlmoittautuminen(any[String], any[Ilmoittautuminen], any[Option[Instant]]) returns DBIO.successful(())
+      valinnantulosRepository.storeIlmoittautuminen(any[String], any[HakemusOid], any[Ilmoittautuminen], any[Option[Instant]]) returns DBIO.successful(())
       valinnantulosRepository.storeValinnantila(any[ValinnantilanTallennus], any[Option[Instant]]) returns DBIO.successful(())
       valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(any[HakemusOid], any[ValintatapajonoOid], any[String], any[String]) returns DBIO.successful(())
       valinnantulosRepository.storeAction(any[VastaanottoEvent]) returns DBIO.successful(())
@@ -360,7 +360,7 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       there was no (valinnantulosRepository).updateValinnantuloksenOhjaus(any[ValinnantuloksenOhjaus], any[Option[Instant]])
       there was one (valinnantulosRepository).storeAction(any[VastaanottoEvent])
       there was one (valinnantulosRepository).storeValinnantuloksenOhjaus(erillishaunValinnantulos.getValinnantuloksenOhjaus(session.personOid, "Erillishaun tallennus"), Some(lastModified))
-      there was one (valinnantulosRepository).storeIlmoittautuminen(erillishaunValinnantulos.henkiloOid, Ilmoittautuminen(erillishaunValinnantulos.hakukohdeOid, erillishaunValinnantulos.ilmoittautumistila, session.personOid, "Erillishaun tallennus"), Some(lastModified))
+      there was one (valinnantulosRepository).storeIlmoittautuminen(erillishaunValinnantulos.henkiloOid, erillishaunValinnantulos.hakemusOid, Ilmoittautuminen(erillishaunValinnantulos.hakukohdeOid, erillishaunValinnantulos.ilmoittautumistila, session.personOid, "Erillishaun tallennus"), Some(lastModified))
       there was one (valinnantulosRepository).storeValinnantila(erillishaunValinnantulos.getValinnantilanTallennus(session.personOid), Some(lastModified))
       there was one (valinnantulosRepository).storeValinnanTilanKuvaus(
         argThat[HakukohdeOid, HakukohdeOid](be_==(erillishaunValinnantulos.hakukohdeOid)),

@@ -832,17 +832,27 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       """.as[(String, HakukohdeOid, Instant)]
   }
 
-  override def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
-    sqlu"""insert into ilmoittautumiset (henkilo, hakukohde, tila, ilmoittaja, selite)
+  override def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] =
+    storeIlmoittautuminenAction(henkiloOid, None, ilmoittautuminen, ifUnmodifiedSince)
+
+  override def storeIlmoittautuminen(henkiloOid: String, hakemusOid: HakemusOid, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] =
+    storeIlmoittautuminenAction(henkiloOid, Some(hakemusOid), ilmoittautuminen, ifUnmodifiedSince)
+
+  // Ilman hakemusOid:tä (kutsujat, jotka eivät sitä tiedä) rivin olemassa oleva hakemus_oid säilyy.
+  private def storeIlmoittautuminenAction(henkiloOid: String, hakemusOid: Option[HakemusOid], ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
+    sqlu"""insert into ilmoittautumiset (henkilo, hakukohde, hakemus_oid, tila, ilmoittaja, selite)
              values (${henkiloOid},
                      ${ilmoittautuminen.hakukohdeOid},
+                     ${hakemusOid.map(_.toString)},
                      ${ilmoittautuminen.tila.toString}::ilmoittautumistila,
                      ${ilmoittautuminen.muokkaaja},
                      ${ilmoittautuminen.selite})
              on conflict on constraint ilmoittautumiset_pkey do update
              set tila = excluded.tila,
+                 hakemus_oid = coalesce(excluded.hakemus_oid, ilmoittautumiset.hakemus_oid),
                  ilmoittaja = excluded.ilmoittaja,
                  selite = excluded.selite
+             -- saman tilan tallentaminen uudelleen ei täytä puuttuvaa hakemus_oid:tä, vain täyttöajo tekee sen
              where ilmoittautumiset.tila <> excluded.tila
                  and (${ifUnmodifiedSince}::timestamptz is null
                       or ilmoittautumiset.system_time @> ${ifUnmodifiedSince})""".flatMap {
