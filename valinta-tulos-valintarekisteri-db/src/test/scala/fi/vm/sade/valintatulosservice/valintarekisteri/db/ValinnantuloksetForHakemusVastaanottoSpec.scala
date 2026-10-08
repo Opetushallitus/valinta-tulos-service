@@ -48,6 +48,26 @@ class ValinnantuloksetForHakemusVastaanottoSpec extends Specification with ITSet
     }
   }
 
+  "getValinnantuloksetForHakemus ilmoittautuminen" should {
+    "näyttää ilmoittautumisen vain sille hakemukselle, jolle se on tehty, kun henkilöllä on kaksi hakemusta samaan hakukohteeseen" in {
+      insertValinnantila(hakemus1)
+      insertValinnantila(hakemus2)
+      db.runBlocking(db.storeIlmoittautuminen(henkilo, hakemus1, Ilmoittautuminen(hakukohde, Lasna, henkilo, "testi"), None))
+
+      ilmoittautumistila(hakemus1) mustEqual Lasna
+      ilmoittautumistila(hakemus2) mustEqual EiTehty
+    }
+
+    "näyttää ilmoittautumisen ilman hakemus oidia henkilön ja hakukohteen jokaiselle hakemukselle" in {
+      insertValinnantila(hakemus1)
+      insertValinnantila(hakemus2)
+      insertIlmoittautuminenWithoutHakemusOid()
+
+      ilmoittautumistila(hakemus1) mustEqual Lasna
+      ilmoittautumistila(hakemus2) mustEqual Lasna
+    }
+  }
+
   "getValinnantuloksetForHakemukses" should {
     "näyttää vastaanoton vain sille hakemukselle, jolle se on tehty, kun henkilöllä on kaksi hakemusta samaan hakukohteeseen" in {
       insertValinnantila(hakemus1)
@@ -72,6 +92,24 @@ class ValinnantuloksetForHakemusVastaanottoSpec extends Specification with ITSet
     }
   }
 
+  "getValinnantuloksetForHakemukses ilmoittautuminen" should {
+    "näyttää ilmoittautumisen vain sille hakemukselle, jolle se on tehty, kun henkilöllä on kaksi hakemusta samaan hakukohteeseen" in {
+      insertValinnantila(hakemus1)
+      insertValinnantila(hakemus2)
+      db.runBlocking(db.storeIlmoittautuminen(henkilo, hakemus1, Ilmoittautuminen(hakukohde, Lasna, henkilo, "testi"), None))
+
+      ilmoittautumistilatBatch(hakemus1, hakemus2) mustEqual Map(hakemus1 -> Lasna, hakemus2 -> EiTehty)
+    }
+
+    "näyttää ilmoittautumisen ilman hakemus oidia henkilön ja hakukohteen jokaiselle hakemukselle" in {
+      insertValinnantila(hakemus1)
+      insertValinnantila(hakemus2)
+      insertIlmoittautuminenWithoutHakemusOid()
+
+      ilmoittautumistilatBatch(hakemus1, hakemus2) mustEqual Map(hakemus1 -> Lasna, hakemus2 -> Lasna)
+    }
+  }
+
   private def insertValinnantila(hakemusOid: HakemusOid): Unit =
     db.runBlocking(
       sqlu"""insert into valinnantilat (hakukohde_oid, valintatapajono_oid, hakemus_oid, tila, tilan_viimeisin_muutos, ilmoittaja, henkilo_oid)
@@ -79,6 +117,17 @@ class ValinnantuloksetForHakemusVastaanottoSpec extends Specification with ITSet
 
   private def vastaanottotila(hakemusOid: HakemusOid): ValintatuloksenTila =
     db.runBlocking(db.getValinnantuloksetForHakemus(hakemusOid)).map(_.vastaanottotila).head
+
+  private def ilmoittautumistila(hakemusOid: HakemusOid): SijoitteluajonIlmoittautumistila =
+    db.runBlocking(db.getValinnantuloksetForHakemus(hakemusOid)).map(_.ilmoittautumistila).head
+
+  private def ilmoittautumistilatBatch(hakemusOids: HakemusOid*): Map[HakemusOid, SijoitteluajonIlmoittautumistila] =
+    db.getValinnantuloksetForHakemukses(hakemusOids.toSet).map(t => t.hakemusOid -> t.ilmoittautumistila).toMap
+
+  private def insertIlmoittautuminenWithoutHakemusOid(): Unit =
+    db.runBlocking(
+      sqlu"""insert into ilmoittautumiset (henkilo, hakukohde, tila, ilmoittaja, selite)
+             values ($henkilo, $hakukohde, 'Lasna'::ilmoittautumistila, $henkilo, 'vanha rivi')""")
 
   private def vastaanottotilatBatch(hakemusOids: HakemusOid*): Map[HakemusOid, ValintatuloksenTila] =
     db.getValinnantuloksetForHakemukses(hakemusOids.toSet).map(t => t.hakemusOid -> t.vastaanottotila).toMap
@@ -89,6 +138,8 @@ class ValinnantuloksetForHakemusVastaanottoSpec extends Specification with ITSet
 
   private def cleanUp(): Unit = db.runBlocking(DBIO.seq(
     sqlu"delete from vastaanotot",
+    sqlu"delete from ilmoittautumiset",
+    sqlu"delete from ilmoittautumiset_history",
     sqlu"delete from valinnantilat",
     sqlu"delete from valinnantilat_history"))
 }

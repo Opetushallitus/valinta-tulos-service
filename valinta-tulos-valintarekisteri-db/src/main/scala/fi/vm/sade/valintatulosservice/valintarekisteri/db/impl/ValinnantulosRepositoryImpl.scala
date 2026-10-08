@@ -270,6 +270,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               and (v.hakemus_oid is null or v.hakemus_oid = ti.hakemus_oid)
           left join ilmoittautumiset as i on i.hakukohde = ti.hakukohde_oid
               and i.henkilo = ti.henkilo_oid
+              and (i.hakemus_oid is null or i.hakemus_oid = ti.hakemus_oid)
           left join tilat_kuvaukset tk
             on ti.valintatapajono_oid = tk.valintatapajono_oid
               and ti.hakemus_oid = tk.hakemus_oid
@@ -313,6 +314,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                 and (v.hakemus_oid is null or v.hakemus_oid = ti.hakemus_oid)
             left join ilmoittautumiset as i on i.hakukohde = ti.hakukohde_oid
                 and i.henkilo = ti.henkilo_oid
+                and (i.hakemus_oid is null or i.hakemus_oid = ti.hakemus_oid)
             left join tilat_kuvaukset tk
               on ti.valintatapajono_oid = tk.valintatapajono_oid
                 and ti.hakemus_oid = tk.hakemus_oid
