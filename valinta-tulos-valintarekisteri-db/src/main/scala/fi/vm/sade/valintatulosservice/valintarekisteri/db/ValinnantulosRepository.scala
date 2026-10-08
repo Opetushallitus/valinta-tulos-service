@@ -7,6 +7,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriR
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import slick.dbio.DBIO
 
+import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
@@ -17,7 +18,14 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
 
   def getIlmoittautumisenAikaleimat(hakuOid: HakuOid): DBIO[Iterable[(String, HakukohdeOid, Instant)]]
 
+  @deprecated("Käytä hakemusOid:n ottavaa ylikuormitusta. Poistettava yhdessä hakemus_oid-täyttöajon kanssa.", "8.6.2")
   def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
+
+  // Oletustoteutus ei tallenna hakemus_oid:tä. Se on vain sitä varten, että kirjaston käyttäjien omat toteutukset
+  // kääntyvät päivityksen jälkeen; ValinnantulosRepositoryImpl ylikirjoittaa sen.
+  @nowarn("cat=deprecation")
+  def storeIlmoittautuminen(henkiloOid: String, hakemusOid: HakemusOid, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] =
+    storeIlmoittautuminen(henkiloOid, ilmoittautuminen, ifUnmodifiedSince)
 
   def resetIlmoittautuminen(henkiloOid: String, hakukohdeOid: HakukohdeOid): DBIO[Unit]
 
