@@ -132,7 +132,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     sijoitteluajoDeleteScheduler.startScheduler()
 
     if (appConfig.settings.scheduledHakemusOidBackfillEnabled) {
-      new VastaanottoHakemusOidBackfillScheduler(valintarekisteriDb, appConfig.settings.scheduledHakemusOidBackfillBatchSize).startScheduler()
+      new HakemusOidBackfillScheduler(valintarekisteriDb, appConfig.settings.scheduledHakemusOidBackfillBatchSize).startScheduler()
     }
 
     mountBasicVts()

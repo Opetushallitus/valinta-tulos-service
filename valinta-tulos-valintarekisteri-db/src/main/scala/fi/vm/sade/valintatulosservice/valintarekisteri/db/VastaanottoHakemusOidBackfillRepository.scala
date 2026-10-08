@@ -9,7 +9,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriR
  */
 case class HakemusOidBackfillResult(scanned: Int, resolved: Int, unresolved: Int)
 
-// Väliaikainen: poistettava yhdessä VastaanottoHakemusOidBackfillSchedulerin ja hakemus_oid_not_found-sarakkeen kanssa.
+// Väliaikainen: poistettava yhdessä HakemusOidBackfillSchedulerin ja hakemus_oid_not_found-sarakkeen kanssa.
 trait VastaanottoHakemusOidBackfillRepository extends ValintarekisteriRepository {
 
   /**
