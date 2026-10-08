@@ -37,7 +37,8 @@ class ValintarekisteriDb(config: DbConfig, isItProfile:Boolean = false) extends 
   with ValinnanTilanKuvausRepositoryImpl
   with HyvaksynnanEhtoRepositoryImpl
   with SiirtotiedostoRepositoryImpl
-  with VastaanottoHakemusOidBackfillRepositoryImpl {
+  with VastaanottoHakemusOidBackfillRepositoryImpl
+  with IlmoittautuminenHakemusOidBackfillRepositoryImpl {
 
   logger.info(s"Database configuration: ${config.copy(password = Some("***"))}")
   if (!config.flywayDisabled.getOrElse(false)) {
