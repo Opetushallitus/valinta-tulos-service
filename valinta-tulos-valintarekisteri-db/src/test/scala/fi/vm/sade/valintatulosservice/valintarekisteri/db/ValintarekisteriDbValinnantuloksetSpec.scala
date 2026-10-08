@@ -47,17 +47,17 @@ class ValintarekisteriDbValinnantuloksetSpec extends Specification with ITSetup 
 
   "ValintarekisteriDb" should {
     "store ilmoittautuminen" in {
-      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeIlmoittautuminen(henkiloOid, ilmoittautuminen))
+      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeIlmoittautuminen(henkiloOid, hakemusOid, ilmoittautuminen))
       singleConnectionValintarekisteriDb.runBlocking(sql"""select henkilo, selite from ilmoittautumiset""".as[(String, String)]).head must_== (henkiloOid, "selite")
     }
     "update ilmoittautuminen" in {
-      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeIlmoittautuminen(henkiloOid, ilmoittautuminen))
-      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeIlmoittautuminen(henkiloOid, ilmoittautuminen.copy(tila = PoissaSyksy, selite = "syksyn poissa")))
+      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeIlmoittautuminen(henkiloOid, hakemusOid, ilmoittautuminen))
+      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeIlmoittautuminen(henkiloOid, hakemusOid, ilmoittautuminen.copy(tila = PoissaSyksy, selite = "syksyn poissa")))
       singleConnectionValintarekisteriDb.runBlocking(sql"""select henkilo, selite from ilmoittautumiset""".as[(String, String)]).head must_== (henkiloOid, "syksyn poissa")
       singleConnectionValintarekisteriDb.runBlocking(sql"""select henkilo from ilmoittautumiset_history where selite = 'selite'""".as[String]).head must_== henkiloOid
     }
     "delete ilmoittautuminen" in {
-      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeIlmoittautuminen(henkiloOid, ilmoittautuminen))
+      singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.storeIlmoittautuminen(henkiloOid, hakemusOid, ilmoittautuminen))
       singleConnectionValintarekisteriDb.runBlocking(sql"""select henkilo, selite from ilmoittautumiset""".as[(String, String)]).head must_== (henkiloOid, "selite")
       singleConnectionValintarekisteriDb.runBlocking(sql"""select henkilo, selite from ilmoittautumiset""".as[(String, String)]).head must_== (henkiloOid, "selite")
       singleConnectionValintarekisteriDb.runBlocking(singleConnectionValintarekisteriDb.deleteIlmoittautuminen(henkiloOid, ilmoittautuminen))

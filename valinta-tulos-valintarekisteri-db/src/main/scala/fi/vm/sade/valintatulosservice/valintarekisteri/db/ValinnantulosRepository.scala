@@ -17,7 +17,7 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
 
   def getIlmoittautumisenAikaleimat(hakuOid: HakuOid): DBIO[Iterable[(String, HakukohdeOid, Instant)]]
 
-  def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
+  def storeIlmoittautuminen(henkiloOid: String, hakemusOid: HakemusOid, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
 
   def resetIlmoittautuminen(henkiloOid: String, hakukohdeOid: HakukohdeOid): DBIO[Unit]
 
