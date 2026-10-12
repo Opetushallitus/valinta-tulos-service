@@ -138,7 +138,8 @@ object HakuFixtures extends HakuService with JsonHakuService {
         true,
         Some("kausi_s#1"),
         Some(2017),
-        organisaatioRyhmaOids = Set()))
+        organisaatioRyhmaOids = Set(),
+        kuuluuYosinPiiriin = true))
     } else {
       Right(Hakukohde(
         oid,
@@ -152,7 +153,8 @@ object HakuFixtures extends HakuService with JsonHakuService {
         Some("kausi_k#1"),
         Some(2016),
         organisaatioRyhmaOids = Set(),
-        paateltyAlkamisajankohta = Some(PaateltyAlkamisajankohta("2027-05-20", false))))
+        paateltyAlkamisajankohta = Some(PaateltyAlkamisajankohta("2027-05-20", false)),
+        kuuluuYosinPiiriin = true))
     }
   }
 
