@@ -98,7 +98,7 @@ class OiliServletSpec extends Specification with EmbeddedJettyContainer with Htt
 
       val tulos1 = valinnantulosFixture(hakemusOid1, hakukohdeOid1)
       val tulos2 = valinnantulosFixture(hakemusOid2, hakukohdeOid2)
-      t._6.getValinnantuloksetForHakemukset(any[Set[HakemusOid]], any[AuditInfo]) returns Set(tulos1, tulos2)
+      t._6.getValinnantuloksetForHakemuksetIlmanOrganisaatiotarkistusta(any[Set[HakemusOid]], any[AuditInfo]) returns Set(tulos1, tulos2)
 
       t._7.getHakukohdeOili(hakukohdeOid1) returns Right(hakukohdeOiliFixture(hakukohdeOid1, hakuOid))
       t._7.getHakukohdeOili(hakukohdeOid2) returns Right(hakukohdeOiliFixture(hakukohdeOid2, hakuOid))
@@ -132,7 +132,7 @@ class OiliServletSpec extends Specification with EmbeddedJettyContainer with Htt
         ataruHakemusFixture(hakemusOid, hakuOid, tokaHakukohdeOid, asiointikieli = "fi", jattoAjanhetki = None)
           .copy(hakukohdeOids = List(tokaHakukohdeOid, ekaHakukohdeOid))
       ), None))
-      t._6.getValinnantuloksetForHakemukset(any[Set[HakemusOid]], any[AuditInfo]) returns Set(
+      t._6.getValinnantuloksetForHakemuksetIlmanOrganisaatiotarkistusta(any[Set[HakemusOid]], any[AuditInfo]) returns Set(
         valinnantulosFixture(hakemusOid, ekaHakukohdeOid),
         valinnantulosFixture(hakemusOid, tokaHakukohdeOid)
       )
@@ -161,7 +161,7 @@ class OiliServletSpec extends Specification with EmbeddedJettyContainer with Htt
         ataruHakemusFixture(hakemusOid, hakuOid, hyvaksyttyHakukohdeOid, asiointikieli = "fi", jattoAjanhetki = None)
           .copy(hakukohdeOids = List(hyvaksyttyHakukohdeOid, hylattyHakukohdeOid))
       ), None))
-      t._6.getValinnantuloksetForHakemukset(any[Set[HakemusOid]], any[AuditInfo]) returns Set(
+      t._6.getValinnantuloksetForHakemuksetIlmanOrganisaatiotarkistusta(any[Set[HakemusOid]], any[AuditInfo]) returns Set(
         valinnantulosFixture(hakemusOid, hyvaksyttyHakukohdeOid),
         valinnantulosFixture(hakemusOid, hylattyHakukohdeOid,
           valinnantila = Hylatty, vastaanottotila = ValintatuloksenTila.KESKEN)
@@ -192,7 +192,7 @@ class OiliServletSpec extends Specification with EmbeddedJettyContainer with Htt
         List(ataruHakemusFixture(hakemusOid, hakuOid, hakukohdeOid, asiointikieli = "fi", jattoAjanhetki = None)),
         None
       ))
-      t._6.getValinnantuloksetForHakemukset(any[Set[HakemusOid]], any[AuditInfo]) returns
+      t._6.getValinnantuloksetForHakemuksetIlmanOrganisaatiotarkistusta(any[Set[HakemusOid]], any[AuditInfo]) returns
         Set(valinnantulosFixture(hakemusOid, hakukohdeOid))
       t._7.getHakukohdeOili(hakukohdeOid) returns Right(hakukohdeOiliFixture(hakukohdeOid, hakuOid))
       t._7.getHaku(hakuOid) returns Right(hakuFixture(hakuOid))
@@ -220,7 +220,7 @@ class OiliServletSpec extends Specification with EmbeddedJettyContainer with Htt
         ataruHakemusFixture(paattynytHakemusOid, paattynytHakuOid, paattynytHakukohdeOid,
           asiointikieli = "fi", jattoAjanhetki = None)
       ), None))
-      t._6.getValinnantuloksetForHakemukset(any[Set[HakemusOid]], any[AuditInfo]) returns Set(
+      t._6.getValinnantuloksetForHakemuksetIlmanOrganisaatiotarkistusta(any[Set[HakemusOid]], any[AuditInfo]) returns Set(
         valinnantulosFixture(aktiivinenHakemusOid, aktiivinenHakukohdeOid),
         valinnantulosFixture(paattynytHakemusOid, paattynytHakukohdeOid)
       )
