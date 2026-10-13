@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice.local
 
 import fi.vm.sade.auditlog.Audit
 import fi.vm.sade.sijoittelu.domain.ValintatuloksenTila
+import fi.vm.sade.security.AuthorizationFailedException
 import fi.vm.sade.utils.ServletTest
 import fi.vm.sade.valintatulosservice._
 import fi.vm.sade.valintatulosservice.hakemus.{AtaruHakemus, AtaruHakemusRepository, AtaruResponse, WithHakemusOids}
@@ -65,6 +66,24 @@ class OiliServletSpec extends Specification with EmbeddedJettyContainer with Htt
   "GET /cas/oili/ilmoittautuja/:henkiloOid" in {
     "palauttaa 403 jos ei OILI_READ-roolia" in { t: (String, OiliService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, AtaruHakemusRepository, OhjausparametritService) =>
       t._3.get(any()) returns Some(sessionWithoutOili)
+      get(t._1 + s"/ilmoittautuja/${hakijaOid.toString}", Seq.empty, headers) {
+        status must_== 403
+      }
+    }
+
+    "palauttaa 403 kun oikeustarkistus epäonnistuu vasta kutsuketjun sisällä" in { t: (String, OiliService, SessionRepository, OppijanumerorekisteriService, ValinnantulosRepository, ValinnantulosService, HakuService, AtaruHakemusRepository, OhjausparametritService) =>
+      val hakemusOid = HakemusOid("1.2.246.562.11.00000000001")
+      val hakukohdeOid = HakukohdeOid("1.2.246.562.20.00000000001")
+      val hakuOid = HakuOid("1.2.246.562.29.00000000001")
+
+      t._3.get(any()) returns Some(oiliSession)
+      t._4.henkilot(Set(hakijaOid)) returns Right(Map(hakijaOid -> henkilo))
+      t._5.getHakijanHakemusOidit(hakijaOid) returns Set(hakemusOid)
+      t._8.getHakemukset(any[WithHakemusOids]()) returns Right(AtaruResponse(List(
+        ataruHakemusFixture(hakemusOid, hakuOid, hakukohdeOid, asiointikieli = "fi", jattoAjanhetki = None)), None))
+      t._6.getValinnantuloksetForHakemuksetIlmanOrganisaatiotarkistusta(any[Set[HakemusOid]], any[AuditInfo]) throws
+        new AuthorizationFailedException(s"User 1.2.246.562.24.1 has none of the roles in none of the organizations")
+
       get(t._1 + s"/ilmoittautuja/${hakijaOid.toString}", Seq.empty, headers) {
         status must_== 403
       }
