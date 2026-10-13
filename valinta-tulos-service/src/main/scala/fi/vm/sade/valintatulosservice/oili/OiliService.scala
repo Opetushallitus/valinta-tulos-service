@@ -37,7 +37,7 @@ class OiliService(hakemusRepository: AtaruHakemusRepository,
       else {
         val ataruByOid = fetchAtaruHakemukset(hakemusOids)
         val tuloksetByHakemus = valinnantulosService
-          .getValinnantuloksetForHakemukset(hakemusOids, auditInfo)
+          .getValinnantuloksetForHakemuksetIlmanOrganisaatiotarkistusta(hakemusOids, auditInfo)
           .groupBy(_.valinnantulos.hakemusOid)
 
         val hakuOidit: Set[HakuOid] = ataruByOid.values.map(_.hakuOid).toSet

@@ -106,7 +106,20 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
     })
   }
 
-  def getValinnantuloksetForHakemukset(hakemusOids: Set[HakemusOid], auditInfo: AuditInfo): Set[ValinnantulosWithTilahistoria] = {
+  def getValinnantuloksetForHakemukset(hakemusOids: Set[HakemusOid], auditInfo: AuditInfo): Set[ValinnantulosWithTilahistoria] =
+    getValinnantuloksetForHakemukset(hakemusOids, auditInfo, tarkistaOrganisaatio = true)
+
+  /**
+   * Palvelurajapintojen (esim. OILI) käyttöön: kutsuja on valtuutettu palvelukohtaisella roolilla koko maan
+   * laajuisesti, joten hakukohteen organisaatiokohtaista sijoitteluoikeutta ei tarkisteta. Kutsuvan servletin on
+   * tarkistettava käyttäjän rooli ennen tämän metodin kutsumista.
+   */
+  def getValinnantuloksetForHakemuksetIlmanOrganisaatiotarkistusta(hakemusOids: Set[HakemusOid], auditInfo: AuditInfo): Set[ValinnantulosWithTilahistoria] =
+    getValinnantuloksetForHakemukset(hakemusOids, auditInfo, tarkistaOrganisaatio = false)
+
+  private def getValinnantuloksetForHakemukset(hakemusOids: Set[HakemusOid],
+                                               auditInfo: AuditInfo,
+                                               tarkistaOrganisaatio: Boolean): Set[ValinnantulosWithTilahistoria] = {
     if (hakemusOids.isEmpty) {
       Set.empty
     } else {
@@ -118,16 +131,18 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
       }
       val tuloksetJaHakukohteet = tulokset.map(t => (t, hakukohteet.find(hk => hk.oid == t.hakukohdeOid)
         .getOrElse(throw new Exception(s"Hakukohdetta ${t.hakukohdeOid} ei löytynyt"))))
-      val roles = Set(
-        Role.SIJOITTELU_READ,
-        Role.SIJOITTELU_READ_UPDATE,
-        Role.SIJOITTELU_CRUD,
-        Role.ATARU_KEVYT_VALINTA_READ,
-        Role.ATARU_KEVYT_VALINTA_CRUD)
-      tuloksetJaHakukohteet.foreach(t => {
-        val orgOids: Set[String] = t._2.organisaatioOiditAuktorisointiin
-        authorizer.checkAccessWithHakukohderyhmat(auditInfo.session._2, orgOids, roles, t._2.oid).fold(throw _, x => x)
-      })
+      if (tarkistaOrganisaatio) {
+        val roles = Set(
+          Role.SIJOITTELU_READ,
+          Role.SIJOITTELU_READ_UPDATE,
+          Role.SIJOITTELU_CRUD,
+          Role.ATARU_KEVYT_VALINTA_READ,
+          Role.ATARU_KEVYT_VALINTA_CRUD)
+        tuloksetJaHakukohteet.foreach(t => {
+          val orgOids: Set[String] = t._2.organisaatioOiditAuktorisointiin
+          authorizer.checkAccessWithHakukohderyhmat(auditInfo.session._2, orgOids, roles, t._2.oid).fold(throw _, x => x)
+        })
+      }
       audit.log(auditInfo.user, ValinnantuloksenLuku,
         new Target.Builder().setField("hakemusOids", hakemusOids.toString).build(),
         new Changes.Builder().build()
