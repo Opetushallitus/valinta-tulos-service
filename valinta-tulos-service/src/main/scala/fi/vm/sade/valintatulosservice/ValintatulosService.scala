@@ -349,14 +349,29 @@ class ValintatulosService(valinnantulosRepository: ValinnantulosRepository,
 
   // Paluuarvo on 1:1 tulos.hakutoiveet-listan kanssa, myös järjestyksen osalta:
   // hakutoiveen prioriteetti on pelkkä listan indeksi, joten järjestystä ei saa muuttaa.
+  // Hakijalle näytettyjä päätettäviä opiskeluoikeuksia haetaan kannasta vain YOS-piiriin kuuluville hakukohteille.
   def haePaattyneetOpiskeluoikeudet(tulos: Hakemuksentulos): List[(Hakutoiveentulos, Option[String])] = {
     tulos.hakutoiveet
       .map(hk => {
-        val oikeudet = hakijaVastaanottoRepository.runBlocking(hakijaVastaanottoRepository.
-          findHakemuksenVastaanotonPaatettavatOpiskeluOikeudet(tulos.hakemusOid, hk.hakukohdeOid))
+        val oikeudet =
+          if (kuuluukoHakukohdeYosinPiiriin(hk.hakukohdeOid)) {
+            hakijaVastaanottoRepository.runBlocking(hakijaVastaanottoRepository.
+              findHakemuksenVastaanotonPaatettavatOpiskeluOikeudet(tulos.hakemusOid, hk.hakukohdeOid))
+          } else {
+            None
+          }
         (hk, oikeudet)
       })
   }
+
+  // Jos hakukohdetta ei saada haettua, haetaan opiskeluoikeudet kannasta varmuuden vuoksi.
+  private def kuuluukoHakukohdeYosinPiiriin(hakukohdeOid: HakukohdeOid): Boolean =
+    hakuService.getHakukohde(hakukohdeOid) match {
+      case Right(hakukohde) => hakukohde.kuuluuYosinPiiriin
+      case Left(e) =>
+        logger.warn(s"Hakukohteen $hakukohdeOid haku epäonnistui YOS-tarkistuksessa, haetaan päätettävät opiskeluoikeudet kannasta", e)
+        true
+    }
 
   private def findTuloksetForHakemustulos(hakemuksenTulos: Hakemuksentulos): List[Valintatulos] = {
     val hakemusOid = hakemuksenTulos.hakemusOid
