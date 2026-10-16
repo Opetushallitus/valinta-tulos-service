@@ -267,8 +267,10 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
               and tu.valintatapajono_oid = ti.valintatapajono_oid
           left join vastaanotot as v on v.hakukohde = ti.hakukohde_oid
               and v.henkilo = ti.henkilo_oid and v.deleted is null
+              and (v.hakemus_oid is null or v.hakemus_oid = ti.hakemus_oid)
           left join ilmoittautumiset as i on i.hakukohde = ti.hakukohde_oid
               and i.henkilo = ti.henkilo_oid
+              and (i.hakemus_oid is null or i.hakemus_oid = ti.hakemus_oid)
           left join tilat_kuvaukset tk
             on ti.valintatapajono_oid = tk.valintatapajono_oid
               and ti.hakemus_oid = tk.hakemus_oid
@@ -309,8 +311,10 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                 and tu.valintatapajono_oid = ti.valintatapajono_oid
             left join vastaanotot as v on v.hakukohde = ti.hakukohde_oid
                 and v.henkilo = ti.henkilo_oid and v.deleted is null
+                and (v.hakemus_oid is null or v.hakemus_oid = ti.hakemus_oid)
             left join ilmoittautumiset as i on i.hakukohde = ti.hakukohde_oid
                 and i.henkilo = ti.henkilo_oid
+                and (i.hakemus_oid is null or i.hakemus_oid = ti.hakemus_oid)
             left join tilat_kuvaukset tk
               on ti.valintatapajono_oid = tk.valintatapajono_oid
                 and ti.hakemus_oid = tk.hakemus_oid
@@ -830,17 +834,27 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
       """.as[(String, HakukohdeOid, Instant)]
   }
 
-  override def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] = {
-    sqlu"""insert into ilmoittautumiset (henkilo, hakukohde, tila, ilmoittaja, selite)
+  override def storeIlmoittautuminen(henkiloOid: String, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit] =
+    storeIlmoittautuminenAction(henkiloOid, None, ilmoittautuminen, ifUnmodifiedSince)
+
+  override def storeIlmoittautuminen(henkiloOid: String, hakemusOid: HakemusOid, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] =
+    storeIlmoittautuminenAction(henkiloOid, Some(hakemusOid), ilmoittautuminen, ifUnmodifiedSince)
+
+  // Ilman hakemusOid:tä (kutsujat, jotka eivät sitä tiedä) rivin olemassa oleva hakemus_oid säilyy.
+  private def storeIlmoittautuminenAction(henkiloOid: String, hakemusOid: Option[HakemusOid], ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
+    sqlu"""insert into ilmoittautumiset (henkilo, hakukohde, hakemus_oid, tila, ilmoittaja, selite)
              values (${henkiloOid},
                      ${ilmoittautuminen.hakukohdeOid},
+                     ${hakemusOid.map(_.toString)},
                      ${ilmoittautuminen.tila.toString}::ilmoittautumistila,
                      ${ilmoittautuminen.muokkaaja},
                      ${ilmoittautuminen.selite})
              on conflict on constraint ilmoittautumiset_pkey do update
              set tila = excluded.tila,
+                 hakemus_oid = coalesce(excluded.hakemus_oid, ilmoittautumiset.hakemus_oid),
                  ilmoittaja = excluded.ilmoittaja,
                  selite = excluded.selite
+             -- saman tilan tallentaminen uudelleen ei täytä puuttuvaa hakemus_oid:tä, vain täyttöajo tekee sen
              where ilmoittautumiset.tila <> excluded.tila
                  and (${ifUnmodifiedSince}::timestamptz is null
                       or ilmoittautumiset.system_time @> ${ifUnmodifiedSince})""".flatMap {
