@@ -60,7 +60,8 @@ case class Hakukohde(oid: HakukohdeOid,
                      koulutuksenAlkamisvuosi: Option[Int],
                      organisaatioRyhmaOids: Set[String],
                      hakukohteenNimiUri: Option[String] = None,
-                     paateltyAlkamisajankohta: Option[PaateltyAlkamisajankohta] = None
+                     paateltyAlkamisajankohta: Option[PaateltyAlkamisajankohta] = None,
+                     kuuluuYosinPiiriin: Boolean = false
                     ) {
   def kkTutkintoonJohtava: Boolean = kkHakukohde && tutkintoonJohtava
   def kkHakukohde: Boolean = koulutusAsteTyyppi == "KORKEAKOULUTUS"
@@ -463,7 +464,8 @@ case class KoutaHakukohde(oid: String,
                           toteutusOid: String,
                           yhdenPaikanSaanto: YhdenPaikanSaanto,
                           paateltyAlkamiskausi: Option[PaateltyAlkamiskausi],
-                          paateltyAlkamisajankohta: Option[PaateltyAlkamisajankohta]) {
+                          paateltyAlkamisajankohta: Option[PaateltyAlkamisajankohta],
+                          kuuluuYosinPiiriin: Option[Boolean] = None) {
 
   def toHakukohde(koulutus: KoutaKoulutus,
                   tarjoaja: Organisaatio): Hakukohde = {
@@ -479,7 +481,8 @@ case class KoutaHakukohde(oid: String,
       koulutuksenAlkamiskausiUri = paateltyAlkamiskausi.map(ak => ak.kausiUri),
       koulutuksenAlkamisvuosi = paateltyAlkamiskausi.map(ak => Integer.parseInt(ak.vuosi)),
       organisaatioRyhmaOids = Set.empty,
-      paateltyAlkamisajankohta = paateltyAlkamisajankohta
+      paateltyAlkamisajankohta = paateltyAlkamisajankohta,
+      kuuluuYosinPiiriin = kuuluuYosinPiiriin.getOrElse(false)
     )
   }
 
