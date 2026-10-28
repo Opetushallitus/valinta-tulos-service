@@ -182,7 +182,7 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
     }
     val updateIlmoittautuminen = if (uusi.ilmoittautumistila != vanha.ilmoittautumistila) {
       valinnantulosRepository.storeIlmoittautuminen(
-        vanha.henkiloOid, Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), Some(ifUnmodifiedSince))
+        vanha.henkiloOid, uusi.hakemusOid, Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), Some(ifUnmodifiedSince))
     } else {
       DBIO.successful(())
     }
