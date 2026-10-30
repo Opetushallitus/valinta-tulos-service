@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice
 import java.util.Date
 import fi.vm.sade.auditlog.Operation
 import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
-import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
+import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationObject}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.json.{JsonFormats, JsonStreamWriter, StreamingFailureException}
@@ -67,7 +67,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
   // Real return type cannot be used because of unsupported scala enumerations: https://github.com/scalatra/scalatra/issues/343
   lazy val getHakemusSwagger: OperationBuilder = (apiOperation[Unit]("getHakemus")
     summary "Hae hakemuksen tulokset."
-    description ("Palauttaa tyyppiä Hakemuksentulos. Esim:\n" +
+    description ("Palauttaa tyyppiä Hakemuksentulos. " + hakemuksenTuloksenOrganisaatiorajausKuvaus + "Esim:\n" +
       pretty(Extraction.decompose(exampleHakemuksenTulos)))
     parameter pathParam[String]("hakuOid").description("Haun oid")
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid, jonka tulokset halutaan")
@@ -75,7 +75,7 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
   get("/:hakuOid/hakemus/:hakemusOid", operation(getHakemusSwagger)) {
     val hakemusOidString = params("hakemusOid")
     auditLog(Map("hakuOid" -> params("hakuOid"), "hakemusOid" -> hakemusOidString), HakemuksenLuku)
-    valintatulosService.hakemuksentulos(HakemusOid(hakemusOidString)) match {
+    valintatulosService.hakemuksentulos(HakemusOid(hakemusOidString)).flatMap(tulos => rajaaOrganisaatioon(tulos)) match {
       case Some(tulos) => {
         try {
           val oikeudet = valintatulosService.haePaattyneetOpiskeluoikeudet(tulos)
@@ -258,8 +258,8 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
 
   lazy val getHaunHyvaksytytSwagger: OperationBuilder = (apiOperation[Unit]("getHaunHyvaksytytSwagger")
     summary """Listaus haun hyväksytyistä hakijoista"""
+    description hyvaksyttyjenListauksenOrganisaatiorajausKuvaus
     parameter pathParam[String]("hakuOid").description("Haun oid").required
-    parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid").required
     tags swaggerGroupTag)
   get("/:hakuOid/hyvaksytyt", operation(getHaunHyvaksytytSwagger)) {
     val hakuOidString = params("hakuOid")
@@ -271,10 +271,27 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
       hakukohdeOid = None,
       count = None,
       index = None)
+    val rajatut = rajaaOrganisaatioon(HakuOid(hakuOidString), hakijaPaginationObject, vainHyvaksytyt = true)
 
     auditLog(Map("hakuOid" -> hakuOidString), HakutietojenLuku)
-    Ok(JsonFormats.javaObjectToJsonString(hakijaPaginationObject))
+    Ok(JsonFormats.javaObjectToJsonString(rajatut))
   }
+
+  /**
+   * Rajaa haun laajuisen tuloslistauksen kutsujan organisaatioiden hakukohteisiin. Oletuksena ei rajata;
+   * autentikoidut aliluokat voivat ylikirjoittaa.
+   */
+  protected def rajaaOrganisaatioon(hakuOid: HakuOid, tulokset: HakijaPaginationObject, vainHyvaksytyt: Boolean): HakijaPaginationObject = tulokset
+
+  /**
+   * Rajaa yksittäisen hakemuksen tuloksen kutsujan organisaatioihin. Palauttaa None, jos yhtään hakutoivetta ei jää
+   * jäljelle, jolloin vastataan 404. Oletustoteutus ei rajaa; autentikoitu rajapinta ylikirjoittaa.
+   */
+  protected def rajaaOrganisaatioon(tulos: Hakemuksentulos): Option[Hakemuksentulos] = Some(tulos)
+
+  // Organisaatiorajauksen kuvaukset Swagger-dokumentaatioon; vain autentikoitu rajapinta rajaa.
+  protected def hyvaksyttyjenListauksenOrganisaatiorajausKuvaus: String = ""
+  protected def hakemuksenTuloksenOrganisaatiorajausKuvaus: String = ""
 
   lazy val getHakukohteenHyvaksytytSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohteenHyvaksytytSwagger")
     summary """Listaus haun hakukohteen hyväksytyistä hakijoista"""

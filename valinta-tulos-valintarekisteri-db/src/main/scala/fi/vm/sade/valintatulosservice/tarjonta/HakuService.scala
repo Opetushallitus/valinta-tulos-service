@@ -18,7 +18,7 @@ import org.json4s.{CustomSerializer, DefaultFormats, Formats, MappingException}
 
 import java.util
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeUnit.HOURS
+import java.util.concurrent.TimeUnit.{HOURS, MINUTES}
 import scala.collection.JavaConverters._
 import scala.compat.java8.FutureConverters.toScala
 import scala.concurrent.Await
@@ -114,6 +114,11 @@ trait HakuService {
   def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde]
   def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[Hakukohde]]
   def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]]
+  /**
+   * Haun hakukohteiden organisaatiot käyttöoikeustarkistuksia varten (tarjoajat ja organisaatioryhmät) hakukohteittain.
+   * Yksittäisen hakukohteen tietojen puuttuminen ei kaada hakua: tällainen hakukohde jää puuttumaan tuloksesta.
+   */
+  def getHaunHakukohteidenOrganisaatiotAuktorisointiin(hakuOid: HakuOid): Either[Throwable, Map[HakukohdeOid, Set[String]]]
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]]
 }
 
@@ -204,6 +209,17 @@ class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, 
     lifetimeSeconds = Duration(4, HOURS).toSeconds,
     maxSize = 1)
 
+  // Organisaatiorajaus tekee tämän haun jokaiselle rajatun kutsujan pyynnölle, myös yksittäisen hakemuksen tulokselle,
+  // joten välimuisti tasaa pyyntöryöpyt. Elinaika on lyhyt, koska Tarjonta-polku ohittaa hakukohteet, joiden haku
+  // epäonnistui, ja tällainen vajaa kartta evää ne hakukohteet rajatuilta kutsujilta välimuistin elinajan.
+  private val haunHakukohteidenOrganisaatiotCache = TTLOptionalMemoize.memoize[HakuOid, Map[HakukohdeOid, Set[String]]](
+    f = hakuOid => hakuOid match {
+      case hakuOid if hakuOid.toString.length == KOUTA_OID_LENGTH => kouta.getHaunHakukohteidenOrganisaatiotAuktorisointiin(hakuOid)
+      case _ => tarjonta.getHaunHakukohteidenOrganisaatiotAuktorisointiin(hakuOid)
+    },
+    lifetimeSeconds = Duration(10, MINUTES).toSeconds,
+    maxSize = config.settings.estimatedMaxActiveHakus)
+
   val KOUTA_OID_LENGTH = 35
 
   override def getHaku(oid: HakuOid): Either[Throwable, Haku] = hakuCache(oid)
@@ -246,6 +262,9 @@ class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, 
       case _ => tarjonta.getHakukohdeOids(hakuOid)
     }
   }
+
+  override def getHaunHakukohteidenOrganisaatiotAuktorisointiin(hakuOid: HakuOid): Either[Throwable, Map[HakukohdeOid, Set[String]]] =
+    haunHakukohteidenOrganisaatiotCache(hakuOid)
 
   override def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = kaikkiJulkaistutHautCache(())
 }
@@ -303,6 +322,16 @@ class TarjontaHakuService(config: AppConfig) extends HakuService with JsonHakuSe
   def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, List[Hakukohde]] = {
     MonadHelper.sequence(for {oid <- oids.toStream} yield getHakukohde(oid))
   }
+
+  def getHaunHakukohteidenOrganisaatiotAuktorisointiin(hakuOid: HakuOid): Either[Throwable, Map[HakukohdeOid, Set[String]]] = {
+    getHakukohdeOids(hakuOid).right.map(_.flatMap(oid => getHakukohde(oid) match {
+      case Right(hakukohde) => Some(hakukohde.oid -> hakukohde.organisaatioOiditAuktorisointiin)
+      case Left(e) =>
+        logger.warn(s"Haun $hakuOid hakukohteen $oid tietoja ei saatu tarjonnasta, hakukohde jätetään huomiotta organisaatiorajauksessa", e)
+        None
+    }).toMap)
+  }
+
   def getHakukohdeKela(hakukohdeOid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]] = {
     for {
       hakukohde <- getHakukohde(hakukohdeOid).right
@@ -666,6 +695,11 @@ class KoutaHakuService(config: AppConfig,
 
   def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]] = {
     getKoutaHaunHakukohteet(hakuOid).right.map(_.map(h => HakukohdeOid(h.oid)))
+  }
+
+  // Yksi hakukutsu riittää: tarjoaja tulee hakutuloksessa, eikä kouta-hakukohteilla ole organisaatioryhmiä (ks. toHakukohde)
+  def getHaunHakukohteidenOrganisaatiotAuktorisointiin(hakuOid: HakuOid): Either[Throwable, Map[HakukohdeOid, Set[String]]] = {
+    getKoutaHaunHakukohteet(hakuOid).right.map(_.map(h => HakukohdeOid(h.oid) -> Set(h.tarjoaja)).toMap)
   }
 
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = {

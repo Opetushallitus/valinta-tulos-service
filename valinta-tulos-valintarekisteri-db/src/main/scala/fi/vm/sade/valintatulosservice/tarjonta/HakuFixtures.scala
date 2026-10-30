@@ -167,6 +167,9 @@ object HakuFixtures extends HakuService with JsonHakuService {
     ))
   }
 
+  override def getHaunHakukohteidenOrganisaatiotAuktorisointiin(hakuOid: HakuOid): Either[Throwable, Map[HakukohdeOid, Set[String]]] =
+    getHakukohdeOids(hakuOid).right.flatMap(getHakukohdes).right.map(_.map(h => h.oid -> h.organisaatioOiditAuktorisointiin).toMap)
+
   override def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]] = Right(List(
     "1.2.246.562.14.2013120515524070995659",
     "1.2.246.562.14.2014022408541751568934",

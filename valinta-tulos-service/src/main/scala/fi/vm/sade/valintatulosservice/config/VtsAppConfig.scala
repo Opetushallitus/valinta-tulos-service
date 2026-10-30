@@ -121,6 +121,7 @@ object VtsAppConfig extends Logging {
       val ps = new DevOphUrlProperties(propertiesFile)
       ps.addOverride("ataru-service.applications", s"http://localhost:$vtsMockPort/valinta-tulos-service/util/ataru/applications")
       ps.addOverride("oppijanumerorekisteri-service.henkilotByOids", s"http://localhost:$vtsMockPort/valinta-tulos-service/util/oppijanumerorekisteri/henkilot")
+      ps.addOverride("organisaatio-service.organisaatio.hae.oid", s"http://localhost:$organisaatioMockPort/organisaatio-service/api/hierarkia/hae?oid=$$1")
       ps
     }
 
@@ -141,6 +142,7 @@ object VtsAppConfig extends Logging {
       .withOverride(("cas.url", s"https://itest-virkailija.oph.ware.fi/cas"))
       .withOverride(("valinta-tulos-service.cas.service", s"http://localhost:${vtsMockPort}/valinta-tulos-service"))
       .withOverride(("valinta-tulos-service.read-from-valintarekisteri", s"false"))
+      .withOverride(("valinta-tulos-service.cas-haku.organisaatiorajaus.enabled", "true"))
       .withOverride(("valinta-tulos-service.kela.vastaanotot.testihetu", s"090121-321C"))
   }
 
@@ -244,7 +246,8 @@ object VtsAppConfig extends Logging {
     lazy val securityContext: SecurityContext = {
       new MockSecurityContext(
         settings.securitySettings.casServiceIdentifier,
-        settings.securitySettings.requiredRoles.map(Role(_)).toSet
+        settings.securitySettings.requiredRoles.map(Role(_)).toSet,
+        settings.rootOrganisaatioOid
       )
     }
   }
