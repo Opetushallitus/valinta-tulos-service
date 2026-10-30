@@ -13,8 +13,8 @@ import org.mockserver.model.{HttpRequest, HttpResponse}
 import org.specs2.runner.JUnitRunner
 
 /**
- * GET /cas/haku/:hakuOid/hyvaksytyt rajataan kutsujan organisaatioiden hakukohteisiin.
- * HakuFixtures palauttaa kaikille hakukohteille tarjoajaksi 123.123.123.123.
+ * GET /cas/haku/:hakuOid/hyvaksytyt ja GET /cas/haku/:hakuOid/hakemus/:hakemusOid rajataan kutsujan organisaatioiden
+ * hakukohteisiin. HakuFixtures palauttaa kaikille hakukohteille tarjoajaksi 123.123.123.123.
  */
 @RunWith(classOf[JUnitRunner])
 class CasHakuOrganisaatiorajausServletSpec extends ServletSpecification with ValintarekisteriDbTools {
@@ -22,6 +22,11 @@ class CasHakuOrganisaatiorajausServletSpec extends ServletSpecification with Val
   override implicit val formats: Formats = JsonFormats.jsonFormats
 
   val hakuOid = "1.2.246.562.5.2013080813081926341928"
+  val hakemusOid = "1.2.246.562.11.00000441369"
+  // Hakemuksen ensimmäinen hakutoive kuuluu hakuun, toinen (1.2.246.562.20.83060182827) ei ole haun hakukohdelistalla
+  val osittainVierasHakemusOid = "1.2.246.562.11.00000441370"
+  val haunHakukohde = "1.2.246.562.5.72607738902"
+  val haulleTuntematonHakukohde = "1.2.246.562.20.83060182827"
   val tarjoaja = "123.123.123.123"
   val omaOrganisaatio = "1.2.246.562.10.111"
   val vierasOrganisaatio = "1.2.246.562.10.222"
@@ -75,6 +80,42 @@ class CasHakuOrganisaatiorajausServletSpec extends ServletSpecification with Val
     }
   }
 
+  "GET /cas/haku/:hakuOid/hakemus/:hakemusOid" should {
+    "palauttaa kaikki hakutoiveet juuriorganisaation oikeudella" in {
+      haeHakemus(juuriSessio) { hakukohteet =>
+        hakukohteet must have size greaterThan(1)
+      }
+    }
+
+    "palauttaa hakutoiveet, kun tarjoaja on käyttäjän aliorganisaatio" in {
+      val kaikki = haeHakemus(juuriSessio)(identity)
+      haeHakemus(omaSessio) { hakukohteet =>
+        hakukohteet must_== kaikki
+      }
+    }
+
+    "poistaa hakutoiveen, jonka hakukohteen organisaatioita ei tunneta, ja säilyttää muut" in {
+      haeHakemus(juuriSessio, osittainVierasHakemusOid) { hakukohteet =>
+        hakukohteet must_== List(haunHakukohde, haulleTuntematonHakukohde)
+      }
+      haeHakemus(omaSessio, osittainVierasHakemusOid) { hakukohteet =>
+        hakukohteet must_== List(haunHakukohde)
+      }
+    }
+
+    "vastaa 404, kun käyttäjän organisaatiolla ei ole hakemuksen hakukohteita" in {
+      get(s"cas/haku/$hakuOid/hakemus/$hakemusOid", Seq.empty, Map("Cookie" -> s"session=$vierasSessio")) {
+        status must_== 404
+      }
+    }
+
+    "vastaa 404, kun roolilla ei ole organisaatiota" in {
+      get(s"cas/haku/$hakuOid/hakemus/$hakemusOid", Seq.empty, Map("Cookie" -> s"session=$organisaatiotonSessio")) {
+        status must_== 404
+      }
+    }
+  }
+
   step(organisaatioService.stop())
   step(deleteAll)
 
@@ -83,6 +124,14 @@ class CasHakuOrganisaatiorajausServletSpec extends ServletSpecification with Val
       status must_== 200
       val json = JsonMethods.parse(body)
       tarkista((json \ "results" \ "hakemusOid").extract[List[String]], (json \ "totalCount").extract[Int])
+    }
+
+  private def haeHakemus[T](sessio: String, hakemus: String = hakemusOid)(tarkista: List[String] => T): T =
+    get(s"cas/haku/$hakuOid/hakemus/$hakemus", Seq.empty, Map("Cookie" -> s"session=$sessio")) {
+      status must_== 200
+      val json = JsonMethods.parse(body)
+      (json \ "hakemusOid").extract[String] must_== hakemus
+      tarkista((json \ "hakutoiveet" \ "hakukohdeOid").extract[List[String]])
     }
 
   private def org(oid: String, children: String*): String =

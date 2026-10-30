@@ -246,7 +246,8 @@ object VtsAppConfig extends Logging {
     lazy val securityContext: SecurityContext = {
       new MockSecurityContext(
         settings.securitySettings.casServiceIdentifier,
-        settings.securitySettings.requiredRoles.map(Role(_)).toSet
+        settings.securitySettings.requiredRoles.map(Role(_)).toSet,
+        settings.rootOrganisaatioOid
       )
     }
   }

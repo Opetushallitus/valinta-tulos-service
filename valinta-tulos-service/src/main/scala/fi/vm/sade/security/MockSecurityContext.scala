@@ -10,7 +10,11 @@ import java.util.concurrent.{CompletableFuture, TimeUnit}
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.{Duration, FiniteDuration, SECONDS}
 
-class MockSecurityContext(val casServiceIdentifier: String, val requiredRoles: Set[Role]) extends SecurityContext {
+/**
+ * Tikettikirjautuneelle testikäyttäjälle annetaan vaaditut roolit sekä ilman organisaatiota että juuriorganisaatioon
+ * liitettyinä, kuten OPH:n palvelukäyttäjillä tuotannossa, jotta organisaatiorajaus ei rajaa niiden tuloksia.
+ */
+class MockSecurityContext(val casServiceIdentifier: String, val requiredRoles: Set[Role], rootOrganisaatioOid: String) extends SecurityContext {
 
   val validateServiceTicketTimeout: FiniteDuration = Duration(1, SECONDS)
 
@@ -33,7 +37,8 @@ class MockSecurityContext(val casServiceIdentifier: String, val requiredRoles: S
       }) {
       override def validateServiceTicketWithVirkailijaUserDetails(service: String, ticket: String): CompletableFuture[UserDetails] = {
         if (ticket.startsWith(MockSecurityContext.ticketPrefix(service))) {
-          val user = new UserDetails("testuser", "1.2.246.562.24.64735725450", "", "", requiredRoles.map(_.s).asJava)
+          val roolit = requiredRoles.flatMap(r => Set(r.s, s"${r.s}_$rootOrganisaatioOid"))
+          val user = new UserDetails("testuser", "1.2.246.562.24.64735725450", "", "", roolit.asJava)
           CompletableFuture.completedFuture(user)
         } else {
           CompletableFuture.failedFuture(new RuntimeException("unrecognized ticket: " + ticket))

@@ -18,7 +18,7 @@ import org.json4s.{CustomSerializer, DefaultFormats, Formats, MappingException}
 
 import java.util
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeUnit.HOURS
+import java.util.concurrent.TimeUnit.{HOURS, MINUTES}
 import scala.collection.JavaConverters._
 import scala.compat.java8.FutureConverters.toScala
 import scala.concurrent.Await
@@ -209,6 +209,17 @@ class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, 
     lifetimeSeconds = Duration(4, HOURS).toSeconds,
     maxSize = 1)
 
+  // Organisaatiorajaus tekee tämän haun jokaiselle rajatun kutsujan pyynnölle, myös yksittäisen hakemuksen tulokselle,
+  // joten välimuisti tasaa pyyntöryöpyt. Elinaika on lyhyt, koska Tarjonta-polku ohittaa hakukohteet, joiden haku
+  // epäonnistui, ja tällainen vajaa kartta evää ne hakukohteet rajatuilta kutsujilta välimuistin elinajan.
+  private val haunHakukohteidenOrganisaatiotCache = TTLOptionalMemoize.memoize[HakuOid, Map[HakukohdeOid, Set[String]]](
+    f = hakuOid => hakuOid match {
+      case hakuOid if hakuOid.toString.length == KOUTA_OID_LENGTH => kouta.getHaunHakukohteidenOrganisaatiotAuktorisointiin(hakuOid)
+      case _ => tarjonta.getHaunHakukohteidenOrganisaatiotAuktorisointiin(hakuOid)
+    },
+    lifetimeSeconds = Duration(10, MINUTES).toSeconds,
+    maxSize = config.settings.estimatedMaxActiveHakus)
+
   val KOUTA_OID_LENGTH = 35
 
   override def getHaku(oid: HakuOid): Either[Throwable, Haku] = hakuCache(oid)
@@ -252,12 +263,8 @@ class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, 
     }
   }
 
-  override def getHaunHakukohteidenOrganisaatiotAuktorisointiin(hakuOid: HakuOid): Either[Throwable, Map[HakukohdeOid, Set[String]]] = {
-    hakuOid match {
-      case hakuOid if hakuOid.toString.length == KOUTA_OID_LENGTH => kouta.getHaunHakukohteidenOrganisaatiotAuktorisointiin(hakuOid)
-      case _ => tarjonta.getHaunHakukohteidenOrganisaatiotAuktorisointiin(hakuOid)
-    }
-  }
+  override def getHaunHakukohteidenOrganisaatiotAuktorisointiin(hakuOid: HakuOid): Either[Throwable, Map[HakukohdeOid, Set[String]]] =
+    haunHakukohteidenOrganisaatiotCache(hakuOid)
 
   override def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = kaikkiJulkaistutHautCache(())
 }
