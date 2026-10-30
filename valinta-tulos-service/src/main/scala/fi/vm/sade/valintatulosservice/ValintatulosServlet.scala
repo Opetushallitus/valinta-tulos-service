@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice
 import java.util.Date
 import fi.vm.sade.auditlog.Operation
 import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
-import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
+import fi.vm.sade.sijoittelu.tulos.dto.raportointi.{HakijaDTO, HakijaPaginationObject}
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.json.{JsonFormats, JsonStreamWriter, StreamingFailureException}
@@ -258,8 +258,11 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
 
   lazy val getHaunHyvaksytytSwagger: OperationBuilder = (apiOperation[Unit]("getHaunHyvaksytytSwagger")
     summary """Listaus haun hyväksytyistä hakijoista"""
+    description ("Autentikoidussa rajapinnassa listaus rajataan kutsujan organisaatioiden (aliorganisaatioineen) ja " +
+      "hakukohderyhmien hakukohteisiin: muiden organisaatioiden hakutoiveet poistetaan hakijoilta, ja hakija " +
+      "palautetaan vain, jos hänellä on hyväksyntä jäljelle jäävissä hakutoiveissa. Juuriorganisaation oikeudella " +
+      "listausta ei rajata.")
     parameter pathParam[String]("hakuOid").description("Haun oid").required
-    parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid").required
     tags swaggerGroupTag)
   get("/:hakuOid/hyvaksytyt", operation(getHaunHyvaksytytSwagger)) {
     val hakuOidString = params("hakuOid")
@@ -271,10 +274,17 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
       hakukohdeOid = None,
       count = None,
       index = None)
+    val rajatut = rajaaOrganisaatioon(HakuOid(hakuOidString), hakijaPaginationObject, vainHyvaksytyt = true)
 
     auditLog(Map("hakuOid" -> hakuOidString), HakutietojenLuku)
-    Ok(JsonFormats.javaObjectToJsonString(hakijaPaginationObject))
+    Ok(JsonFormats.javaObjectToJsonString(rajatut))
   }
+
+  /**
+   * Rajaa haun laajuisen tuloslistauksen kutsujan organisaatioiden hakukohteisiin. Oletuksena ei rajata;
+   * autentikoidut aliluokat voivat ylikirjoittaa.
+   */
+  protected def rajaaOrganisaatioon(hakuOid: HakuOid, tulokset: HakijaPaginationObject, vainHyvaksytyt: Boolean): HakijaPaginationObject = tulokset
 
   lazy val getHakukohteenHyvaksytytSwagger: OperationBuilder = (apiOperation[Unit]("getHakukohteenHyvaksytytSwagger")
     summary """Listaus haun hakukohteen hyväksytyistä hakijoista"""

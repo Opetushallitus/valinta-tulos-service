@@ -186,7 +186,9 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         ilmoittautumisService,
         valintarekisteriDb,
         valintarekisteriDb,
-        hakemustenTulosHakuLock
+        hakemustenTulosHakuLock,
+        hakuService,
+        new OrganisaatiorajausResolver(organisaatioService, authorizer, appConfig.settings.rootOrganisaatioOid)
       ),
         "/cas/haku", "cas/haku")
       context.mount(new KelaServlet(audit, new KelaService(HakijaResolver(appConfig), hakuService, valintarekisteriDb), valintarekisteriDb), "/cas/kela", "cas/kela")

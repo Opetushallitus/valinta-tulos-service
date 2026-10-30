@@ -114,6 +114,11 @@ trait HakuService {
   def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde]
   def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[Hakukohde]]
   def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]]
+  /**
+   * Haun hakukohteiden organisaatiot käyttöoikeustarkistuksia varten (tarjoajat ja organisaatioryhmät) hakukohteittain.
+   * Yksittäisen hakukohteen tietojen puuttuminen ei kaada hakua: tällainen hakukohde jää puuttumaan tuloksesta.
+   */
+  def getHaunHakukohteidenOrganisaatiotAuktorisointiin(hakuOid: HakuOid): Either[Throwable, Map[HakukohdeOid, Set[String]]]
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]]
 }
 
@@ -247,6 +252,13 @@ class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, 
     }
   }
 
+  override def getHaunHakukohteidenOrganisaatiotAuktorisointiin(hakuOid: HakuOid): Either[Throwable, Map[HakukohdeOid, Set[String]]] = {
+    hakuOid match {
+      case hakuOid if hakuOid.toString.length == KOUTA_OID_LENGTH => kouta.getHaunHakukohteidenOrganisaatiotAuktorisointiin(hakuOid)
+      case _ => tarjonta.getHaunHakukohteidenOrganisaatiotAuktorisointiin(hakuOid)
+    }
+  }
+
   override def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = kaikkiJulkaistutHautCache(())
 }
 
@@ -303,6 +315,16 @@ class TarjontaHakuService(config: AppConfig) extends HakuService with JsonHakuSe
   def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, List[Hakukohde]] = {
     MonadHelper.sequence(for {oid <- oids.toStream} yield getHakukohde(oid))
   }
+
+  def getHaunHakukohteidenOrganisaatiotAuktorisointiin(hakuOid: HakuOid): Either[Throwable, Map[HakukohdeOid, Set[String]]] = {
+    getHakukohdeOids(hakuOid).right.map(_.flatMap(oid => getHakukohde(oid) match {
+      case Right(hakukohde) => Some(hakukohde.oid -> hakukohde.organisaatioOiditAuktorisointiin)
+      case Left(e) =>
+        logger.warn(s"Haun $hakuOid hakukohteen $oid tietoja ei saatu tarjonnasta, hakukohde jätetään huomiotta organisaatiorajauksessa", e)
+        None
+    }).toMap)
+  }
+
   def getHakukohdeKela(hakukohdeOid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]] = {
     for {
       hakukohde <- getHakukohde(hakukohdeOid).right
@@ -666,6 +688,11 @@ class KoutaHakuService(config: AppConfig,
 
   def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]] = {
     getKoutaHaunHakukohteet(hakuOid).right.map(_.map(h => HakukohdeOid(h.oid)))
+  }
+
+  // Yksi hakukutsu riittää: tarjoaja tulee hakutuloksessa, eikä kouta-hakukohteilla ole organisaatioryhmiä (ks. toHakukohde)
+  def getHaunHakukohteidenOrganisaatiotAuktorisointiin(hakuOid: HakuOid): Either[Throwable, Map[HakukohdeOid, Set[String]]] = {
+    getKoutaHaunHakukohteet(hakuOid).right.map(_.map(h => HakukohdeOid(h.oid) -> Set(h.tarjoaja)).toMap)
   }
 
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = {

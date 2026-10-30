@@ -24,6 +24,18 @@ class OrganizationHierarchyAuthorizer(appConfig: VtsAppConfig, hakukohderyhmaSer
     .expireAfterWrite(Duration(10, TimeUnit.MINUTES))
     .buildAsync[HakukohderyhmaOid, Seq[HakukohdeOid]]()
 
+  /**
+   * Hakukohteet, joihin käyttäjällä on jokin annetuista rooleista hakukohderyhmän kautta.
+   */
+  def hakukohteetHakukohderyhmista(session: Session, roles: Set[Role]): scala.collection.immutable.Set[HakukohdeOid] = {
+    (getAuthorizedHakukohderyhmaOidsFromSession(session, roles) match {
+      case s: Set[HakukohderyhmaOid] if s.isEmpty => Set()
+      case oids => Await.result(
+        Future.sequence(oids.map(oid => getHakukohteet(oid))
+        ), Duration(10, TimeUnit.SECONDS)).flatten
+    }).toSet
+  }
+
   private def getAuthorizedHakukohderyhmaOidsFromSession(session: Session, authorizedRoles: Set[Role]): Set[HakukohderyhmaOid] = {
     session.roles.filter(sessionRole => sessionRole.getString.contains("1.2.246.562.28.") && authorizedRoles.exists(authorizedRole => sessionRole.getString.contains(authorizedRole.getString)))
       .map(role => {
@@ -35,24 +47,12 @@ class OrganizationHierarchyAuthorizer(appConfig: VtsAppConfig, hakukohderyhmaSer
 
   private def atLeastOneHakukohdeAuthorizedByHakukohderyhma(session: Session, hakukohteet: Set[HakukohdeOid], roles: Set[Role]): Boolean = {
     logger.warn(s"*** User ${session.personOid} had no rights from ordinary checkAccess for hakukohtees $hakukohteet, checking with hakukohderyhmat")
-    val authorizedHakukohtees: Set[HakukohdeOid] = getAuthorizedHakukohderyhmaOidsFromSession(session, roles) match {
-      case s: Set[HakukohderyhmaOid] if s.isEmpty => Set()
-      case oids => Await.result(
-        Future.sequence(oids.map(oid => getHakukohteet(oid))
-        ), Duration(10, TimeUnit.SECONDS)).flatten
-    }
-    (hakukohteet intersect authorizedHakukohtees).nonEmpty
+    (hakukohteet intersect hakukohteetHakukohderyhmista(session, roles)).nonEmpty
   }
 
   private def isAuthorizedByHakukohderyhmat(session: Session, hakukohdeOid: HakukohdeOid, roles: Set[Role]): Boolean = {
     logger.warn(s"User ${session.personOid} had no rights from ordinary checkAccess for hakukohde $hakukohdeOid, checking with hakukohderyhmat")
-    val hakukohdeOids: Set[HakukohdeOid] = getAuthorizedHakukohderyhmaOidsFromSession(session, roles) match {
-      case s: Set[HakukohderyhmaOid] if s.isEmpty => Set()
-      case oids => Await.result(
-        Future.sequence(oids.map(oid => getHakukohteet(oid))
-        ), Duration(10, TimeUnit.SECONDS)).flatten
-    }
-    hakukohdeOids contains hakukohdeOid
+    hakukohteetHakukohderyhmista(session, roles) contains hakukohdeOid
   }
 
   def checkAccess(session: Session, organisationOids: Set[String], roles: Set[Role]): Either[Throwable, Unit] = {

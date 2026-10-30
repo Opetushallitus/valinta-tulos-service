@@ -15,4 +15,17 @@ case class Organisaatiot(organisaatiot: Seq[Organisaatio]) {
 
 case class Organisaatio(oid: String, nimi: Map[String, String], oppilaitosKoodi: Option[String], organisaatiotyypit: List[String], status: String, children: Seq[Organisaatio]) {
   def isAktiivinenOppilaitos: Boolean = "AKTIIVINEN".equals(status) && organisaatiotyypit.exists(tyyppi => tyyppi.startsWith("organisaatiotyyppi_02"))
+
+  /**
+   * Tämän organisaation ja sen kaikkien aliorganisaatioiden oidit kaikilta tasoilta.
+   */
+  def kaikkiOidit: Set[String] = Organisaatio.kaikkiOidit(List(this), Set.empty)
+}
+
+object Organisaatio {
+  @tailrec
+  private def kaikkiOidit(organisaatiot: List[Organisaatio], acc: Set[String]): Set[String] = organisaatiot match {
+    case organisaatio :: tail => kaikkiOidit(tail ++ organisaatio.children, acc + organisaatio.oid)
+    case Nil => acc
+  }
 }

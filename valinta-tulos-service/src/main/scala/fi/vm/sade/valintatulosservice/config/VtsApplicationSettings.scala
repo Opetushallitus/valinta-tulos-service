@@ -31,6 +31,11 @@ case class VtsApplicationSettings(config: Config) extends ApplicationSettings(co
   val scheduledMigrationEnd = withConfig(_.getInt("valinta-tulos-service.scheduled-migration.end-hour"))
   val oiliHetutonUrl = withConfig(_.getString("omatsivut.oili.hetutonUrl"))
   val readFromValintarekisteri = BooleanUtils.isTrue(withConfig(_.getBoolean("valinta-tulos-service.read-from-valintarekisteri")))
+  // Puuttuva avain tulkitaan pois päältä olevaksi, jotta samaa asetustiedostoa käyttävät erillisajot (esim. ovara) eivät kaadu
+  val casHakuOrganisaatiorajausEnabled: Boolean = withConfig(c => {
+    val key = "valinta-tulos-service.cas-haku.organisaatiorajaus.enabled"
+    c.hasPath(key) && c.getBoolean(key)
+  })
   val ilmoittautuminenEnabled = {
     val value = config.getString("valinta-tulos-service.ilmoittautuminen.enabled")
     if(value.trim.length > 0) {

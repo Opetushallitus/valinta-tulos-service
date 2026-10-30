@@ -55,6 +55,9 @@ valinta-tulos-service.mail-poller.resultless.hakukohde.hours={{valintatulosservi
 # Valintarekisteri flag
 valinta-tulos-service.read-from-valintarekisteri={{read_from_valintarekisteri | default('true') }}
 
+# Rajataanko /cas/haku-rajapinnan haun laajuiset tuloslistaukset kutsujan organisaatioiden hakukohteisiin
+valinta-tulos-service.cas-haku.organisaatiorajaus.enabled={{cas_haku_organisaatiorajaus_enabled | default('false') }}
+
 # Valintarekisterin migraatio
 #valinta-tulos-service.haku-app-url=https://{{host_virkailija}}/haku-app
 #valinta-tulos-service.authentication-service-url=https://{{host_virkailija}}/authentication-service
