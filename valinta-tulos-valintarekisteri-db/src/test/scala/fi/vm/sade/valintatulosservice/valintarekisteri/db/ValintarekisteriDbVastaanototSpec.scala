@@ -128,6 +128,38 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
       runVastaanottoTest(henkiloOidA, henkiloOidB)
     }
 
+    "find yps vastaanotot when vastaanotto and valinnantulos are recorded under linked henkilo oids" in {
+      storeHenkiloviitteet()
+      val ypsHakemusOid = HakemusOid("1.2.246.562.99.00000000099")
+      val ypsValintatapajonoOid = ValintatapajonoOid("1.2.246.562.20.00000000099")
+      singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, ypsValintatapajonoOid, henkiloOidB, ypsHakemusOid, otherHakukohdeOidForHakuOid, VastaanotaSitovasti, henkiloOidB, "testiselite"))
+      singleConnectionValintarekisteriDb.runBlocking(
+        sqlu"""insert into valintaesitykset (hakukohde_oid, valintatapajono_oid, hyvaksytty)
+               values ($otherHakukohdeOidForHakuOid, $ypsValintatapajonoOid, null::timestamp with time zone)""")
+      singleConnectionValintarekisteriDb.runBlocking(
+        sqlu"""insert into valinnantilat (hakukohde_oid, valintatapajono_oid, hakemus_oid, henkilo_oid, tila, tilan_viimeisin_muutos, ilmoittaja)
+               values ($otherHakukohdeOidForHakuOid, $ypsValintatapajonoOid, $ypsHakemusOid, $henkiloOidA, 'Hyvaksytty'::valinnantila, now(), 'testiselite')""")
+      try {
+        val ypsVastaanotot = singleConnectionValintarekisteriDb.findYpsVastaanotot(Kausi("2015K"), Set(henkiloOidA))
+        ypsVastaanotot must have size 1
+        val (foundHakemusOid, foundHakukohde, foundVastaanotto) = ypsVastaanotot.head
+        foundHakemusOid must beEqualTo(ypsHakemusOid)
+        foundHakukohde.oid must beEqualTo(otherHakukohdeOidForHakuOid)
+        foundVastaanotto.henkiloOid must beEqualTo(henkiloOidA)
+        foundVastaanotto.action must beEqualTo(VastaanotaSitovasti)
+      } finally {
+        singleConnectionValintarekisteriDb.runBlocking(
+          sqlu"""delete from valinnantilat
+                 where hakukohde_oid = $otherHakukohdeOidForHakuOid
+                     and valintatapajono_oid = $ypsValintatapajonoOid
+                     and hakemus_oid = $ypsHakemusOid""")
+        singleConnectionValintarekisteriDb.runBlocking(
+          sqlu"""delete from valintaesitykset
+                 where hakukohde_oid = $otherHakukohdeOidForHakuOid
+                     and valintatapajono_oid = $ypsValintatapajonoOid""")
+      }
+    }
+
     "find vastaanotot rows of person affecting yhden paikan saanto" in {
       singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid, VastaanotaEhdollisesti, henkiloOid, "testiselite"))
       singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid, VastaanotaSitovasti, henkiloOid, "testiselite"))
