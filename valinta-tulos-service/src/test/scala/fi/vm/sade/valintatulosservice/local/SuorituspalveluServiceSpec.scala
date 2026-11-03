@@ -89,7 +89,7 @@ class SuorituspalveluServiceSpec extends ITSpecification with ValintarekisteriDb
         organisaatioRyhmaOids = Set.empty,
         hakukohteenNimiUri = null,
         paateltyAlkamisajankohta = Some(PaateltyAlkamisajankohta(
-          pvm = "2027-02-05",
+          pvm = Some("2027-02-05"),
           henkilokohtainenSuunnitelma = false
         ))
       )))
@@ -131,7 +131,7 @@ class SuorituspalveluServiceSpec extends ITSpecification with ValintarekisteriDb
         organisaatioRyhmaOids = Set.empty,
         hakukohteenNimiUri = null,
         paateltyAlkamisajankohta = Some(PaateltyAlkamisajankohta(
-          pvm = "2027-02-05",
+          pvm = Some("2027-02-05"),
           henkilokohtainenSuunnitelma = false
         ))
       )))
