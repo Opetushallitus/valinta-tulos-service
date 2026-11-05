@@ -175,9 +175,18 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         valintarekisteriDb
       )
 
-      context.addFilter("cas", createCasFilter(casSessionService, appConfig.securityContext.requiredRoles))
+      // Kaikki /cas/haku-rajapinnat vaativat roolin APP_VALINTATULOSSERVICE_CRUD. Hyväksyttyjen listaus, hakemuksen
+      // tulos ja ilmoittautuminen on tarkoitettu OPH:n palvelukäyttäjille (oma-opintopolku, Oili, ataru), joten ne
+      // vaativat lisäksi CRUD-oikeuden juuriorganisaatiossa. Muiden organisaatioiden CRUD-oikeus ei niihin riitä.
+      val ophRoles = Set(Role.VALINTATULOSSERVICE_CRUD_OPH)
+      val casHakuRoles = Seq(
+        "/cas/haku/*" -> Set(Role.VALINTATULOSSERVICE_CRUD),
+        "/cas/haku/:hakuOid/hyvaksytyt" -> ophRoles,
+        "/cas/haku/:hakuOid/hakemus/:hakemusOid" -> ophRoles,
+        "/cas/haku/:hakuOid/hakemus/:hakemusOid/ilmoittaudu" -> ophRoles)
+      context.addFilter("cas", createCasFilter(casSessionService, casHakuRoles))
         .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/haku/*")
-      context.addFilter("kelaCas", createCasFilter(casSessionService, Set.empty))
+      context.addFilter("kelaCas", createCasFilter(casSessionService, Seq.empty))
         .addMappingForUrlPatterns(util.EnumSet.allOf(classOf[DispatcherType]), true, "/cas/kela/*")
       context.mount(new PublicValintatulosServlet(audit,
         valintatulosService,
@@ -231,8 +240,8 @@ class ScalatraBootstrap extends LifeCycle with Logging {
     }
   }
 
-  def createCasFilter(casSessionService: CasSessionService, roles: Set[Role]): CasFilter =
-    new CasFilter(casSessionService, roles)
+  def createCasFilter(casSessionService: CasSessionService, roleRequirements: Seq[(String, Set[Role])]): CasFilter =
+    new CasFilter(casSessionService, roleRequirements)
 
 
   override def destroy(context: ServletContext) = {

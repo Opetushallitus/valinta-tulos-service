@@ -244,7 +244,8 @@ object VtsAppConfig extends Logging {
     lazy val securityContext: SecurityContext = {
       new MockSecurityContext(
         settings.securitySettings.casServiceIdentifier,
-        settings.securitySettings.requiredRoles.map(Role(_)).toSet
+        // Testikäyttäjällä on CRUD-oikeus juuriorganisaatiossa, kuten OPH:n palvelukäyttäjillä tuotannossa
+        grantedRoles = Set(Role.VALINTATULOSSERVICE_CRUD, Role.VALINTATULOSSERVICE_CRUD_OPH)
       )
     }
   }
@@ -253,7 +254,6 @@ object VtsAppConfig extends Logging {
     lazy val securityContext: SecurityContext = {
       new ProductionSecurityContext(
         settings.securitySettings.casServiceIdentifier,
-        settings.securitySettings.requiredRoles.map(Role(_)).toSet,
         settings.securitySettings.casValidateServiceTicketTimeout
       )
     }
