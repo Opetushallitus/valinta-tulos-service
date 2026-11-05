@@ -76,7 +76,7 @@ class CasSessionServiceSpec extends Specification with MockitoStubs {
     val sessionRepository: SessionRepository = mock[SessionRepository]
     val casClient: CasClient = mock[CasClient]
     val securityContext: SecurityContext = new ProductionSecurityContext(
-      service, Set(), Duration(1, TimeUnit.SECONDS)
+      service, Duration(1, TimeUnit.SECONDS)
     ) {
       override val javaCasClient = Some(casClient)
     }
