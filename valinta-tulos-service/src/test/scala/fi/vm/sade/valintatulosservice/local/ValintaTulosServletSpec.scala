@@ -145,8 +145,8 @@ class ValintaTulosServletSpec extends ServletSpecification with Valintarekisteri
     }
 
     "palauttaa naytetyt paatetyt opiskeluoikeudet" in {
-      lisaaNaytetytPaatettavatOpiskeluoikeudet("1.2.246.562.5.72607738902", "1.2.246.562.11.00000441369", "1.2.246.562.24.14229104472", opiskeluOikeudet)
       useFixture("hyvaksytty-ehdollisesti-kesken-julkaistavissa.json")
+      lisaaNaytetytPaatettavatOpiskeluoikeudet("1.2.246.562.5.72607738902", "1.2.246.562.11.00000441369", "1.2.246.562.24.14229104472", opiskeluOikeudet)
 
       get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
         status must_== 200
@@ -174,10 +174,10 @@ class ValintaTulosServletSpec extends ServletSpecification with Valintarekisteri
     }
 
     "palauttaa hakutoiveet hakemuksen mukaisessa jarjestyksessa myos naytettyjen paatettavien opiskeluoikeuksien kanssa" in {
-      lisaaNaytetytPaatettavatOpiskeluoikeudet(kuusiHakutoivetta(4).toString,
-        "1.2.246.562.11.00000000000000000007", "ataru-tyyppi3", opiskeluOikeudet)
       useFixture("ei-tuloksia.json", hakemusFixtures = List.empty, hakuFixture = HakuOid("ataru-haku"),
         ataruHakemusFixture = List(ataruHakemus3), ataruHenkiloFixture = List(ataruHenkilo3))
+      lisaaNaytetytPaatettavatOpiskeluoikeudet(kuusiHakutoivetta(4).toString,
+        "1.2.246.562.11.00000000000000000007", "ataru-tyyppi3", opiskeluOikeudet)
 
       get("haku/1.2.246.562.29.37061034627/hakemus/1.2.246.562.11.00000000000000000007") {
         status must_== 200
