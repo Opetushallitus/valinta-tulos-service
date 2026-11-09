@@ -1,6 +1,5 @@
 package fi.vm.sade.valintatulosservice
 
-import fi.vm.sade.sijoittelu.tulos.dto.SijoitteluajoDTO
 import fi.vm.sade.valintatulosservice.SijoitteluServlet.wrapNotFound
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.json.JsonFormats
@@ -10,9 +9,8 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
 import org.json4s.DefaultFormats
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
-import org.scalatra.{InternalServerError, NoContent, NotFound, Ok}
+import org.scalatra.{InternalServerError, NotFound, Ok}
 import org.json4s.native.Json
-import org.json4s.DefaultFormats
 
 import scala.util.{Failure, Success, Try}
 

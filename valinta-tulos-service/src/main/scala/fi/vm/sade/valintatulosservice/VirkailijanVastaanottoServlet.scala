@@ -3,7 +3,8 @@ package fi.vm.sade.valintatulosservice
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.domain._
 import fi.vm.sade.valintatulosservice.json.JsonFormats.javaObjectToJsonString
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.VastaanottoRecord
+import fi.vm.sade.valintatulosservice.security.Role
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.{SessionRepository, VastaanottoRecord}
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, PriorAcceptanceException, ValintatapajonoOid, VastaanottoEventDto, Vastaanottotila}
 import org.joda.time.DateTime
 import org.json4s.jackson.Serialization._
@@ -13,9 +14,19 @@ import org.scalatra.{Forbidden, Ok}
 
 import scala.jdk.CollectionConverters._
 
-abstract class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, vastaanottoService: VastaanottoService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
+class VirkailijanVastaanottoServlet(
+      valintatulosService: ValintatulosService,
+      vastaanottoService: VastaanottoService,
+      val sessionRepository: SessionRepository
+    )(implicit val swagger: Swagger, appConfig: VtsAppConfig)
+  extends VtsServletBase with CasAuthenticatedServlet {
 
-  def authorize(): Unit
+  override protected def applicationDescription: String = "Virkailijan vastaanottotietojen käsittely REST API"
+
+  def authorize(): Unit = {
+    implicit val authenticated: Authenticated = authenticate
+    authorize(Role.VALINTATULOSSERVICE_CRUD_OPH)
+  }
 
   val getVastaanottoTilatByHakukohdeSwagger: OperationBuilder = (apiOperation[Unit]("getVastaanottoTilatByHakukohde")
     summary "Hakee vastaanoton tilat hakukohteen hakijoille"
