@@ -19,6 +19,7 @@ import org.junit.runner.RunWith
 import org.specs2.execute.{FailureException, Result}
 import org.specs2.matcher.ThrownMessages
 import org.specs2.runner.JUnitRunner
+import slick.jdbc.PostgresProfile.api._
 
 @RunWith(classOf[JUnitRunner])
 class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with ThrownMessages {
@@ -566,6 +567,28 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
         ilmoittaudu(hakemusOid, "1.2.246.562.5.72607738902", LasnaKokoLukuvuosi, muokkaaja, selite)
         hakemuksenTulos.hakutoiveet(0).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2030, None, LasnaKokoLukuvuosi, false)
       }
+
+      "tallentaa virkailijan rajapinnasta annetun muokkaajan sellaisenaan" in {
+        useFixture("hyvaksytty-vastaanottanut.json", hakuFixture = hakuFixture)
+        val hakija = hakemuksenTulos.hakijaOid
+        ilmoittaudu(hakemusOid, vastaanotettavissaHakuKohdeOid, LasnaKokoLukuvuosi, muokkaaja, selite)
+        ilmoittajaKannassa(hakija, vastaanotettavissaHakuKohdeOid) must beSome(muokkaaja)
+      }
+
+      "hakijana tehtynä tallentaa muokkaajaksi hakemuksen henkilön" in {
+        useFixture("hyvaksytty-vastaanottanut.json", hakuFixture = hakuFixture)
+        val hakija = hakemuksenTulos.hakijaOid
+        ilmoittauduHakijana(hakemusOid, vastaanotettavissaHakuKohdeOid, LasnaKokoLukuvuosi, selite)
+        hakemuksenTulos.hakutoiveet(0).ilmoittautumistila must_== HakutoiveenIlmoittautumistila(ilmoittautumisaikaPaattyy2030, None, LasnaKokoLukuvuosi, false)
+        ilmoittajaKannassa(hakija, vastaanotettavissaHakuKohdeOid) must beSome(hakija)
+      }
+
+      "hakijana tehtynä ei onnistu, jos hakutoive ei ole ilmoittauduttavissa" in {
+        useFixture("hyvaksytty-kesken-julkaistavissa.json", hakuFixture = hakuFixture)
+        expectFailure {
+          ilmoittauduHakijana(hakemusOid, vastaanotettavissaHakuKohdeOid, LasnaKokoLukuvuosi, selite)
+        }
+      }
     }
   }
 
@@ -610,6 +633,16 @@ class VastaanottoServiceHakijanaSpec extends ITSpecification with TimeWarp with 
     ilmoittautumisService.ilmoittaudu(HakemusOid(hakemusOid), Ilmoittautuminen(HakukohdeOid(hakukohdeOid), tila, muokkaaja, selite))
     success
   }
+
+  private def ilmoittauduHakijana(hakemusOid: String, hakukohdeOid: String, tila: SijoitteluajonIlmoittautumistila, selite: String) = {
+    ilmoittautumisService.ilmoittauduHakijana(HakemusOid(hakemusOid), HakukohdeOid(hakukohdeOid), tila, selite)
+    success
+  }
+
+  private def ilmoittajaKannassa(henkiloOid: String, hakukohdeOid: String): Option[String] =
+    valintarekisteriDb.runBlocking(
+      sql"""select ilmoittaja from ilmoittautumiset
+            where henkilo = ${henkiloOid} and hakukohde = ${hakukohdeOid}""".as[String]).headOption
 
   private def expectFailure[T](block: => T): Result = expectFailure[T](None)(block)
 
