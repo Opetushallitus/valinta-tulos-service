@@ -190,6 +190,7 @@ case class SijoitteluFixtures(valintarekisteriDb: ValintarekisteriDb) extends js
       sqlu"truncate table lukuvuosimaksut cascade",
       sqlu"truncate table hyvaksytyt_ja_julkaistut_hakutoiveet cascade",
       sqlu"truncate table hyvaksytyt_ja_julkaistut_hakutoiveet_history cascade",
+      sqlu"truncate table yhden_opiskeluoikeuden_saados cascade",
       sqlu"truncate table viestit"
     ).transactionally)
   }
