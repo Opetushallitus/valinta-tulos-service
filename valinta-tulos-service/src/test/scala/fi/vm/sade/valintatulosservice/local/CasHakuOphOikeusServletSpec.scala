@@ -22,7 +22,6 @@ class CasHakuOphOikeusServletSpec extends ServletSpecification with Valintarekis
   val hakuOid = "1.2.246.562.5.2013080813081926341928"
   val hakemusOid = "1.2.246.562.11.00000441369"
   val hakukohdeOid = "1.2.246.562.5.72607738902"
-  val hakijaOid = "1.2.246.562.24.14229104472"
 
   lazy val ophSessio = createTestSession(Set(Role.VALINTATULOSSERVICE_CRUD, Role.VALINTATULOSSERVICE_CRUD_OPH))
   lazy val organisaatioSessio = createTestSession(Set(Role.VALINTATULOSSERVICE_CRUD, Role(s"${Role.VALINTATULOSSERVICE_CRUD.s}_1.2.246.562.10.111")))
@@ -68,7 +67,7 @@ class CasHakuOphOikeusServletSpec extends ServletSpecification with Valintarekis
       ilmoittaudu(pelkkaCrudSessio) { status must_== 403 }
     }
     "sallii ilmoittautumisen juuriorganisaation oikeudella" in {
-      postJSON(s"vastaanotto/henkilo/$hakijaOid/hakemus/$hakemusOid/hakukohde/$hakukohdeOid", """{"action":"VastaanotaSitovasti"}""") {
+      postJSON(s"auth/vastaanotto/hakemus/$hakemusOid/hakukohde/$hakukohdeOid", """{"action":"VastaanotaSitovasti"}""", otsakkeet(ophSessio)) {
         status must_== 200
       }
       ilmoittaudu(ophSessio) { status must_== 200 }
