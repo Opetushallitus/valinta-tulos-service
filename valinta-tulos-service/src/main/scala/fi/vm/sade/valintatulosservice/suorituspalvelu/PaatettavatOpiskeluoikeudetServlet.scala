@@ -6,7 +6,7 @@ import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.{Authenticated, CasAuthenticatedServlet, PaatettavienOpiskeluoikeuksienUudelleenpaattely, VtsServletBase}
 import org.json4s.jackson.Serialization
 import org.scalatra.Ok
-import org.scalatra.swagger.Swagger
+import org.scalatra.swagger.{DataType, ModelProperty, Swagger}
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 
 class PaatettavatOpiskeluoikeudetServlet(suorituspalveluService: SuorituspalveluService,
@@ -22,6 +22,12 @@ class PaatettavatOpiskeluoikeudetServlet(suorituspalveluService: Suorituspalvelu
     parameter queryParam[Boolean]("dryRun").defaultValue(false).description("Palauttaa päättelyn tuloksen tallentamatta sitä")
     parameter bodyParam[List[UudelleenpaattelynKohde]]("kohteet").description("Hakemus- ja hakukohdeparit")
     tags "paatettavat-opiskeluoikeudet")
+  // Oidit serialisoidaan merkkijonoina, joten reflektiolla muodostetut oid-mallit korvataan merkkijonolla
+  List("UudelleenpaattelynKohde", "UudelleenpaattelynTulos").foreach(malli =>
+    models.update(malli, models(malli).copy(properties = models(malli).properties.map {
+      case (kentta @ ("hakemusOid" | "hakukohdeOid"), mp) => (kentta, ModelProperty(DataType.String, mp.position, required = true))
+      case kentta => kentta
+    })))
   post("/uudelleenpaattely", operation(uudelleenpaattelySwagger)) {
     implicit val authenticated: Authenticated = authenticate
     authorize(Role.SIJOITTELU_CRUD_OPH)
