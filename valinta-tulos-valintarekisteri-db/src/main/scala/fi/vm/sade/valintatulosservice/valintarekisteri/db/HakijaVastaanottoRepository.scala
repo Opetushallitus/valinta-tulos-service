@@ -24,6 +24,8 @@ trait HakijaVastaanottoRepository {
   def runAsSerialized[T](retries: Int, wait: Duration, description: String, action: DBIO[T]): Either[Throwable, T]
   def findHakemuksenVastaanotonPaatettavatOpiskeluOikeudet(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): DBIO[Option[String]]
   def storePaatetettavatOpiskeluOikeudet(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid, alkupvm: String, oikeudet: String): Unit
+  def korvaaPaatettavatOpiskeluOikeudet(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid, alkupvm: String, oikeudet: String): Unit
+  def findSitovanTaiEhdollisenVastaanotonHenkilo(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): DBIO[Option[HenkiloOid]]
 
   def findHyvaksyttyJulkaistuDatesForHenkilo(henkiloOid: HenkiloOid): DBIO[Map[HakukohdeOid, OffsetDateTime]]
   def findHyvaksyttyJulkaistuDatesForHenkilos(henkiloOids: Set[HenkiloOid]): Map[HenkiloOid, Map[HakukohdeOid, OffsetDateTime]]
