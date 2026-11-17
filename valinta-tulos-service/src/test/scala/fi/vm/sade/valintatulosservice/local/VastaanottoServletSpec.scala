@@ -227,6 +227,41 @@ class VastaanottoServletSpec extends ServletSpecification with ValintarekisteriD
       val oikeudet = findVastaanotonPaatettavatOpiskeluOikeudet("1.2.246.562.5.16303028779", "1.2.246.562.11.00000441369")
       oikeudet.size must_== 0
     }
+
+    "vastaanottaa vaikka päätettävät opiskeluoikeudet ovat virheellisessä muodossa" in {
+      val virheellisetOikeudet = List(
+        """[{"virtaOpiskeluOikeusId": "02507_2600544", "organisaatioOid": "1.2.246.562.10.38429345754"}]""",
+        "{}",
+        "\"virhe\"")
+      forall(virheellisetOikeudet) { virheelliset =>
+        useFixture("hyvaksytty-kesken-julkaistavissa.json")
+
+        vastaanotaAuthenticated("VastaanotaSitovasti", headers = authHeaders, paatettavatOpiskeluOikeudet = virheelliset) {
+          status must_== 200
+
+          get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
+            val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
+            tulos.hakutoiveet.head.vastaanottotila must_== Vastaanottotila.vastaanottanut
+          }
+        }
+
+        findVastaanotonPaatettavatOpiskeluOikeudet("1.2.246.562.5.72607738902", "1.2.246.562.11.00000441369") must throwA[NoSuchElementException]
+      }
+    }
+
+    "ei vastaanota jos toiminto puuttuu" in {
+      useFixture("hyvaksytty-kesken-julkaistavissa.json")
+
+      postJSON("auth/vastaanotto/hakemus/1.2.246.562.11.00000441369/hakukohde/1.2.246.562.5.72607738902",
+        s"""{"paatettavatOpiskeluOikeudet": $opiskeluOikeudet}""", authHeaders) {
+        status must_== 400
+      }
+
+      get("haku/1.2.246.562.5.2013080813081926341928/hakemus/1.2.246.562.11.00000441369") {
+        val tulos: Hakemuksentulos = Serialization.read[Hakemuksentulos](body)
+        tulos.hakutoiveet.head.vastaanottotila must_== "KESKEN"
+      }
+    }
 }
 
   def vastaanota[T](action: String, hakukohde: String = "1.2.246.562.5.72607738902", personOid: String = "1.2.246.562.24.14229104472", hakemusOid: String = "1.2.246.562.11.00000441369")(block: => T): T = {

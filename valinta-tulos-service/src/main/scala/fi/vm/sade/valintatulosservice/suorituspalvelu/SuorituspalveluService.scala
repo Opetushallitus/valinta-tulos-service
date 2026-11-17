@@ -10,6 +10,7 @@ import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde}
 import fi.vm.sade.valintatulosservice.utils.TimeUtils
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
 import org.asynchttpclient.RequestBuilder
+import org.json4s.JArray
 import org.json4s.native.JsonMethods.parse
 import org.json4s.native.Serialization
 
@@ -146,7 +147,7 @@ class SuorituspalveluService(config: VtsAppConfig, hakuService: HakuService, cli
     val req = new RequestBuilder().setMethod("GET").setUrl(url).build()
     val result = toScala(client.execute(req)).map {
       case r if r.getStatusCode == 200 =>
-        Right(parse(r.getResponseBody).extract[List[PaatettavaOpiskeluOikeus]])
+        Right(parseOikeudet(r.getResponseBody))
       case r =>
         val message = s"GET $url failed with status ${r.getStatusCode}: ${r.getResponseBody}"
         if (r.getStatusCode == 404) {
@@ -160,6 +161,14 @@ class SuorituspalveluService(config: VtsAppConfig, hakuService: HakuService, cli
       Await.result(result, Duration(1, TimeUnit.MINUTES))
     } catch {
       case e: Throwable => Left(e)
+    }
+  }
+
+  // Puuttuvaa kenttää ei saa tulkita tyhjäksi listaksi, joten kenttä tarkistetaan ennen extractia
+  private def parseOikeudet(body: String): List[PaatettavaOpiskeluOikeus] = {
+    parse(body) \ "paatettavatOpiskeluOikeudet" match {
+      case oikeudet: JArray => oikeudet.extract[List[PaatettavaOpiskeluOikeus]]
+      case _ => throw new RuntimeException(s"Suorituspalvelun vastauksesta puuttuu paatettavatOpiskeluOikeudet: $body")
     }
   }
 }

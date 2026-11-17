@@ -6,7 +6,7 @@ import fi.vm.sade.valintatulosservice.suorituspalvelu.{SuorituspalveluService, U
 import fi.vm.sade.valintatulosservice.tarjonta.{HakuService, Hakukohde, PaateltyAlkamisajankohta}
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.{SiirtotiedostoPagingParams, SiirtotiedostoRepositoryImpl, ValintarekisteriDb}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijaOid, HakijanVastaanotto, HakuOid, HakukohdeOid, VastaanotaSitovasti}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakijaOid, HakijanVastaanotto, HakuOid, HakukohdeOid, PaatettavaOpiskeluOikeus, VastaanotaSitovasti}
 import org.asynchttpclient.Response
 import slick.jdbc.PostgresProfile.api._
 import org.junit.runner.RunWith
@@ -22,7 +22,8 @@ import javax.sql.DataSource
 @RunWith(classOf[JUnitRunner])
 class SuorituspalveluServiceSpec extends ITSpecification with ValintarekisteriDbTools {
 
-  val opiskeluOikeudet: String = """[
+  // Suorituspalvelun YosSuccessResponse
+  val opiskeluOikeudet: String = """{"paatettavatOpiskeluOikeudet": [
                        	  {
                             "virtaOpiskeluOikeusId": "02507_2600544",
                             "organisaatioOid": "1.2.246.562.10.38429345754",
@@ -42,7 +43,15 @@ class SuorituspalveluServiceSpec extends ITSpecification with ValintarekisteriDb
                               "en": "Master of Health Care (UAS), Registered Nurse"
                             }
                        	  }
-                       ]""".stripMargin
+                       ]}""".stripMargin
+
+  val eiOpiskeluOikeuksia: String = """{"paatettavatOpiskeluOikeudet": []}"""
+
+  def mockaaVastaus(status: Int, body: String): Unit = {
+    when(response.getStatusCode).thenReturn(status)
+    when(response.getResponseBody).thenReturn(body)
+    when(client.execute(any())).thenReturn(CompletableFuture.completedFuture(response))
+  }
 
   val client: CasClient = Mockito.mock[CasClient]
 
@@ -75,6 +84,27 @@ class SuorituspalveluServiceSpec extends ITSpecification with ValintarekisteriDb
       oikeus.virtaNimi.fi must_== "Hyvinvoinnin uudistuva asiantuntijuus ja johtaminen"
     }
 
+    "palauttaa tyhjän listan kun suorituspalvelu ei palauta päätettäviä opiskeluoikeuksia" in {
+      mockaaVastaus(200, eiOpiskeluOikeuksia)
+      suoritusService.haePaatettavatOpiskeluOikeudet(HakijaOid("123"), HakuOid("321"), HakukohdeOid("222")) must beRight(List.empty[PaatettavaOpiskeluOikeus])
+    }
+
+    "palauttaa virheen jos vastauksesta puuttuu päätettävät opiskeluoikeudet" in {
+      forall(List("{}", """[{"virtaOpiskeluOikeusId": "02507_2600544"}]""", "[]")) { body =>
+        mockaaVastaus(200, body)
+        suoritusService.haePaatettavatOpiskeluOikeudet(HakijaOid("123"), HakuOid("321"), HakukohdeOid("222")) must beLeft
+      }
+    }
+
+    "palauttaa virheen suorituspalvelun virhevastauksesta" in {
+      mockaaVastaus(500, """{"virhe": "VIRHE_PAATETTAVIEN_OPISKELUOIKEUKSIEN_HAUSSA", "viesti": "Virhe"}""")
+      suoritusService.haePaatettavatOpiskeluOikeudet(HakijaOid("123"), HakuOid("321"), HakukohdeOid("222")) must beLeft
+    }
+
+    "palauttaa sähköpostille tyhjän listan jos vastaus on virheellinen" in {
+      mockaaVastaus(200, "{}")
+      suoritusService.getPaatettavatOpiskeluOikeudet(HakijaOid("123"), HakuOid("321"), HakukohdeOid("222")) must beEmpty
+    }
     "palauttaa ja tallentaa päätetyt opiskeluoikeudet" in {
       when(hakuService.getHakukohde(HakukohdeOid("1.2.246.562.5.72607738902"))).thenReturn(Right(Hakukohde(
         oid = HakukohdeOid("1.2.246.562.5.72607738902"),
@@ -211,15 +241,13 @@ class SuorituspalveluServiceSpec extends ITSpecification with ValintarekisteriDb
       paateltyAlkamisajankohta = Some(PaateltyAlkamisajankohta(pvm = "2027-02-05", henkilokohtainenSuunnitelma = false)),
       kuuluuYosinPiiriin = kuuluuYosinPiiriin)
 
-    def alusta(vastaanotto: Boolean = true, kuuluuYosinPiiriin: Boolean = true, supaStatus: Int = 200): Unit = {
+    def alusta(vastaanotto: Boolean = true, kuuluuYosinPiiriin: Boolean = true, supaStatus: Int = 200, supaVastaus: String = opiskeluOikeudet): Unit = {
       sijoitteluFixtures.importFixture("hyvaksytty-kesken-julkaistavissa.json", clear = true)
       if (vastaanotto) {
         singleConnectionValintarekisteriDb.store(HakijanVastaanotto(henkiloOid, hakemusOid, hakukohdeOid, VastaanotaSitovasti))
       }
       when(hakuService.getHakukohde(hakukohdeOid)).thenReturn(Right(yosHakukohde(kuuluuYosinPiiriin)))
-      when(response.getStatusCode).thenReturn(supaStatus)
-      when(response.getResponseBody).thenReturn(if (supaStatus == 200) opiskeluOikeudet else "virhe")
-      when(client.execute(any())).thenReturn(CompletableFuture.completedFuture(response))
+      mockaaVastaus(supaStatus, supaVastaus)
     }
 
     // Historiataulua ei tyhjennetä testien välillä
@@ -275,11 +303,25 @@ class SuorituspalveluServiceSpec extends ITSpecification with ValintarekisteriDb
     }
 
     "ei muuta tallennettuja tietoja jos suorituspalvelun kutsu epäonnistuu" in {
-      alusta(supaStatus = 500)
+      alusta(supaStatus = 500, supaVastaus = """{"virhe": "VIRHE_PAATETTAVIEN_OPISKELUOIKEUKSIEN_HAUSSA", "viesti": "Virhe"}""")
       lisaaNaytetytPaatettavatOpiskeluoikeudet(hakukohdeOid.toString, hakemusOid.toString, henkiloOid, aiemmatOikeudet)
       val tulos = suoritusService.paatteleUudelleen(List(kohde), dryRun = false).head
       tulos.tila must_== UudelleenpaattelynTila.Virhe
       findVastaanotonPaatettavatOpiskeluOikeudet(hakukohdeOid.toString, hakemusOid.toString).map(_.virtaOpiskeluOikeusId) must_== Seq("vanha")
+    }
+
+    "ei muuta tallennettuja tietoja jos suorituspalvelun vastaus on virheellinen" in {
+      alusta(supaVastaus = "{}")
+      lisaaNaytetytPaatettavatOpiskeluoikeudet(hakukohdeOid.toString, hakemusOid.toString, henkiloOid, aiemmatOikeudet)
+      suoritusService.paatteleUudelleen(List(kohde), dryRun = false).head.tila must_== UudelleenpaattelynTila.Virhe
+      findVastaanotonPaatettavatOpiskeluOikeudet(hakukohdeOid.toString, hakemusOid.toString).map(_.virtaOpiskeluOikeusId) must_== Seq("vanha")
+    }
+
+    "ylikirjoittaa tyhjällä listalla kun suorituspalvelu ei palauta päätettäviä opiskeluoikeuksia" in {
+      alusta(supaVastaus = eiOpiskeluOikeuksia)
+      lisaaNaytetytPaatettavatOpiskeluoikeudet(hakukohdeOid.toString, hakemusOid.toString, henkiloOid, aiemmatOikeudet)
+      suoritusService.paatteleUudelleen(List(kohde), dryRun = false).head.tila must_== UudelleenpaattelynTila.Tallennettu
+      findVastaanotonPaatettavatOpiskeluOikeudet(hakukohdeOid.toString, hakemusOid.toString) must beEmpty
     }
 
     "ohittaa hakukohteen joka ei kuulu YOS:n piiriin" in {
