@@ -229,6 +229,26 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
            where hakukohde_oid = $hakukohdeOid and hakemus_oid = $hakemusOid""".as[String].headOption
   }
 
+  // Toisin kuin storePaatetettavatOpiskeluOikeudet, ylikirjoittaa rivin myös jos henkilö on vaihtunut (esim. henkilöiden yhdistäminen)
+  override def korvaaPaatettavatOpiskeluOikeudet(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid, alkupvm: String, oikeudet: String): Unit = {
+    runBlocking(
+      sqlu"""insert into yhden_opiskeluoikeuden_saados (henkilo_oid, hakukohde_oid, hakemus_oid, paatelty_aloitus_pvm, paatettavat_oikeudet)
+                values($henkiloOid, $hakukohdeOid, $hakemusOid, $alkupvm, $oikeudet::json)
+              on conflict on constraint yhden_opiskeluoikeuden_saados_pkey do update set
+                henkilo_oid = $henkiloOid,
+                paatettavat_oikeudet = $oikeudet::json,
+                paatelty_aloitus_pvm = $alkupvm""")
+  }
+
+  override def findSitovanTaiEhdollisenVastaanotonHenkilo(hakemusOid: HakemusOid, hakukohdeOid: HakukohdeOid): DBIO[Option[HenkiloOid]] = {
+    sql"""select distinct vt.henkilo_oid
+          from valinnantilat vt
+          join newest_vastaanotot nv on nv.henkilo = vt.henkilo_oid
+              and nv.hakukohde = vt.hakukohde_oid
+          where vt.hakemus_oid = $hakemusOid
+              and vt.hakukohde_oid = $hakukohdeOid""".as[HenkiloOid].headOption
+  }
+
   private def tallennaPaatettavatOpiskeluOikeudet(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid, alkupvm: String, oikeudet: String): DBIO[Unit] = {
     sqlu"""insert into yhden_opiskeluoikeuden_saados (henkilo_oid, hakukohde_oid, hakemus_oid, paatelty_aloitus_pvm, paatettavat_oikeudet)
               values($henkiloOid, $hakukohdeOid, $hakemusOid, $alkupvm, $oikeudet::json)
