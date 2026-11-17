@@ -12,7 +12,7 @@ import org.json4s.Formats
 import org.json4s.jackson.Serialization.write
 import org.json4s.native.JsonMethods.parse
 import org.junit.runner.RunWith
-import org.scalatra.swagger.Swagger
+import org.scalatra.swagger.{DataType, Swagger}
 import org.scalatra.test.{EmbeddedJettyContainer, HttpComponentsClient}
 import org.specs2.execute.AsResult
 import org.specs2.mock.Mockito
@@ -44,6 +44,17 @@ class PaatettavatOpiskeluoikeudetServletSpec extends Specification with Embedded
   private val kohde = UudelleenpaattelynKohde(HakemusOid("1.2.246.562.11.00000441369"), HakukohdeOid("1.2.246.562.5.72607738902"))
   private val tulos = UudelleenpaattelynTulos(kohde.hakemusOid, kohde.hakukohdeOid, UudelleenpaattelynTila.Tallennettu,
     aiemmat = None, paatellyt = Some(List.empty), paateltyAloitusPvm = Some("2027-02-05"))
+
+  "Swagger-dokumentaatio" in {
+    "kuvaa oidit merkkijonoina" in {
+      val servlet = new PaatettavatOpiskeluoikeudetServlet(mock[SuorituspalveluService], mock[SessionRepository], mock[Audit])(mock[Swagger])
+      forall(List("UudelleenpaattelynKohde", "UudelleenpaattelynTulos")) { malli =>
+        val kentat = servlet.models(malli).properties.toMap
+        kentat("hakemusOid").`type` must_== DataType.String
+        kentat("hakukohdeOid").`type` must_== DataType.String
+      }
+    }
+  }
 
   "POST /auth/paatettavat-opiskeluoikeudet/uudelleenpaattely" in {
     "palauttaa 401, jos kutsussa ei ole sessiota" in { t: (String, SuorituspalveluService, SessionRepository) =>
