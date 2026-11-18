@@ -24,7 +24,7 @@ import fi.vm.sade.valintatulosservice.security.Role
 import fi.vm.sade.valintatulosservice.sijoittelu._
 import fi.vm.sade.valintatulosservice.sijoittelu.fixture.SijoitteluFixtures
 import fi.vm.sade.valintatulosservice.streamingresults.{HakemustenTulosHakuLock, StreamingValintatulosService}
-import fi.vm.sade.valintatulosservice.suorituspalvelu.SuorituspalveluService
+import fi.vm.sade.valintatulosservice.suorituspalvelu.{PaatettavatOpiskeluoikeudetServlet, SuorituspalveluService}
 import fi.vm.sade.valintatulosservice.tarjonta.HakuService
 import fi.vm.sade.valintatulosservice.tulostenmetsastaja.PuuttuvienTulostenMetsastajaServlet
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
@@ -220,6 +220,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
         "JSESSIONID"
       ))
       lazy val suorituspalveluService: SuorituspalveluService = new SuorituspalveluService(appConfig, hakuService, supaClient, valintarekisteriDb)
+      context.mount(new PaatettavatOpiskeluoikeudetServlet(suorituspalveluService, valintarekisteriDb, audit), "/auth/paatettavat-opiskeluoikeudet", "auth/paatettavat-opiskeluoikeudet")
 
       lazy val mailPollerRepository: MailPollerRepository = valintarekisteriDb
       lazy val mailPoller: MailPoller = new MailPoller(mailPollerRepository, valintatulosService, hakuService, hakemusRepository, cachedOhjausparametritService, appConfig.settings)
