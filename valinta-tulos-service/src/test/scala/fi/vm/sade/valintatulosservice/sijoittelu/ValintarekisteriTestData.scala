@@ -112,7 +112,7 @@ trait ValintarekisteriTestData extends ValintarekisteriDbTools {
       singleConnectionValintarekisteriDb.runBlocking(DBIO.sequence(List(
         singleConnectionValintarekisteriDb.storeAction(VirkailijanVastaanotto(hakuOid, valinnantulos.valintatapajonoOid, valinnantulos.henkiloOid,
           valinnantulos.hakemusOid, valinnantulos.hakukohdeOid, VastaanotaSitovasti, "muokkaaja", "selite")),
-        singleConnectionValintarekisteriDb.storeIlmoittautuminen(valinnantulos.henkiloOid, Ilmoittautuminen(valinnantulos.hakukohdeOid, valinnantulos.ilmoittautumistila, "muokkaaja", "selite"))
+        singleConnectionValintarekisteriDb.storeIlmoittautuminen(valinnantulos.henkiloOid, valinnantulos.hakemusOid, Ilmoittautuminen(valinnantulos.hakukohdeOid, valinnantulos.ilmoittautumistila, "muokkaaja", "selite"))
       )))
     }
   }

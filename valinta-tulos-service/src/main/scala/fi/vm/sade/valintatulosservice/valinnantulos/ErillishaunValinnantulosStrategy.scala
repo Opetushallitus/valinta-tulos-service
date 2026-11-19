@@ -190,7 +190,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
           uusi.hakukohdeOid,
           _)),
         Option(uusi.ilmoittautumistila != EiTehty).collect { case true => valinnantulosRepository.storeIlmoittautuminen(
-          uusi.henkiloOid, Ilmoittautuminen(uusi.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), ifUnmodifiedSince)
+          uusi.henkiloOid, uusi.hakemusOid, Ilmoittautuminen(uusi.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), ifUnmodifiedSince)
         },
         Option(uusi.julkaistavissa.getOrElse(false) && uusi.isHyvaksytty).collect{
           case true => valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(uusi.hakemusOid, uusi.valintatapajonoOid, muokkaaja, selite)
@@ -226,7 +226,7 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
         },
         Option(uusi.ilmoittautumistila != vanha.ilmoittautumistila && !uusi.ohitaIlmoittautuminen.getOrElse(false)).collect {
           case true => valinnantulosRepository.storeIlmoittautuminen(
-            vanha.henkiloOid, Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), ifUnmodifiedSince)
+            vanha.henkiloOid, uusi.hakemusOid, Ilmoittautuminen(vanha.hakukohdeOid, uusi.ilmoittautumistila, muokkaaja, selite), ifUnmodifiedSince)
         },
         Option(uusi.julkaistavissa.getOrElse(false) && uusi.isHyvaksytty).collect{
           case true => valinnantulosRepository.setHyvaksyttyJaJulkaistavissa(uusi.hakemusOid, uusi.valintatapajonoOid, muokkaaja, selite)
