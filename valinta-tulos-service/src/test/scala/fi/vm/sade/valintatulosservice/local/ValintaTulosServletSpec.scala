@@ -139,6 +139,7 @@ class ValintaTulosServletSpec extends ServletSpecification with Valintarekisteri
     }
 
     "palauttaa naytetyt paatetyt opiskeluoikeudet" in {
+      // useFixture tyhjentää myös yhden_opiskeluoikeuden_saados-taulun, joten rivit lisätään vasta sen jälkeen
       useFixture("hyvaksytty-ehdollisesti-kesken-julkaistavissa.json")
       lisaaNaytetytPaatettavatOpiskeluoikeudet("1.2.246.562.5.72607738902", "1.2.246.562.11.00000441369", "1.2.246.562.24.14229104472", opiskeluOikeudet)
 
