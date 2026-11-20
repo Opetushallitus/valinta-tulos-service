@@ -72,6 +72,17 @@ class HakemusOidBackfillSchedulerSpec extends Specification with Mockito {
       there was no(repository).backfillIlmoittautuminenHakemusOidBatch(any[Int], any[Duration])
     }
 
+    "ei kaadu ja ajaa silti ilmoittautumisten erän, kun ratkaisemattomien rivien laskenta epäonnistuu" in new Fixture {
+      vastaanotot(Some(HakemusOidBackfillResult(0, 0, 0)))
+      repository.countUnresolvedVastaanotot() throws new RuntimeException("testi")
+      repository.countUnresolvedIlmoittautumiset() throws new RuntimeException("testi")
+
+      scheduler.runOnce() must not(throwA[Throwable])
+
+      there was one(repository).countUnresolvedVastaanotot()
+      there was one(repository).backfillIlmoittautuminenHakemusOidBatch(any[Int], any[Duration])
+    }
+
     "jatkaa ilmoittautumisten eriä, kun vastaanotot on saatu käsiteltyä" in new Fixture {
       repository.backfillHakemusOidBatch(any[Int], any[Duration]) returns
         Some(HakemusOidBackfillResult(batchSize, 10, 0)) thenReturns

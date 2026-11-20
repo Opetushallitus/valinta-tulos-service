@@ -173,6 +173,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             left join deleted_vastaanotot as vd on vd.id = v.deleted
             join valinnantilat as ti on ti.hakukohde_oid = v.hakukohde
                 and ti.henkilo_oid = v.henkilo
+                and (v.hakemus_oid is null or v.hakemus_oid = ti.hakemus_oid)
             where ti.valintatapajono_oid = ${valintatapajonoOid}
                 and ti.hakemus_oid = ${hakemusOid}
             order by v.timestamp asc

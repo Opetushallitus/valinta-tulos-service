@@ -51,9 +51,17 @@ class HakemusOidBackfillScheduler(repository: VastaanottoHakemusOidBackfillRepos
             s"marked ${r.unresolved} as unresolved")
         } else if (!caughtUp) {
           caughtUp = true
-          logger.info(s"$schedulerName/$name: caught up, nothing left to examine. ${countUnresolved()} rows are marked as unresolved.")
+          logCaughtUp()
         }
         result
+    }
+
+    // Laskenta on vain lokitusta varten, joten sen epäonnistuminen ei saa kaataa ajokertaa eikä muuttaa erän tulosta.
+    private def logCaughtUp(): Unit = Try(countUnresolved()) match {
+      case Success(count) =>
+        logger.info(s"$schedulerName/$name: caught up, nothing left to examine. $count rows are marked as unresolved.")
+      case Failure(e) =>
+        logger.warn(s"$schedulerName/$name: caught up, nothing left to examine. Counting unresolved rows failed.", e)
     }
   }
 
@@ -81,7 +89,13 @@ class HakemusOidBackfillScheduler(repository: VastaanottoHakemusOidBackfillRepos
   def startScheduler(): Unit = {
     logger.info(s"Starting $schedulerName scheduler with batch size $batchSize, once a minute")
     executor.scheduleWithFixedDelay(new Runnable {
-      override def run(): Unit = runOnce()
+      // ScheduledThreadPoolExecutor peruu kaikki myöhemmät ajot, jos yksikin ajokerta heittää poikkeuksen, eikä
+      // kirjoita siitä lokiin mitään. Siksi mikään ei saa karata täältä.
+      override def run(): Unit = try {
+        runOnce()
+      } catch {
+        case e: Throwable => logger.error(s"$schedulerName: run failed, will retry", e)
+      }
     }, 1, 1, TimeUnit.MINUTES)
     Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
       override def run(): Unit = {

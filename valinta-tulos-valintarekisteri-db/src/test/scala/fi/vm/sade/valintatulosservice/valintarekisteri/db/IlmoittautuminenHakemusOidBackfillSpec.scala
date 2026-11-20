@@ -295,4 +295,8 @@ class IlmoittautuminenHakemusOidBackfillSpec extends Specification with ITSetup 
     sqlu"delete from vastaanotot",
     sqlu"delete from valinnantilat",
     sqlu"delete from valinnantilat_history"))
+
+  // cleanUp ei poista alussa lisättyjä hakukohteet- ja valintaesitykset-rivejä, joten ne siivotaan lopuksi, etteivät
+  // ne näy myöhemmin ajettaville testeille
+  step(deleteAll())
 }

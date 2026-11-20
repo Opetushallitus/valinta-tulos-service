@@ -58,4 +58,8 @@ class ValintarekisteriDbIlmoittautuminenHakemusOidSpec extends Specification wit
   private def cleanUp(): Unit = db.runBlocking(DBIO.seq(
     sqlu"delete from ilmoittautumiset",
     sqlu"delete from ilmoittautumiset_history"))
+
+  // cleanUp ei poista alussa lisättyjä hakukohteet- ja valintaesitykset-rivejä, joten ne siivotaan lopuksi, etteivät
+  // ne näy myöhemmin ajettaville testeille
+  step(deleteAll())
 }

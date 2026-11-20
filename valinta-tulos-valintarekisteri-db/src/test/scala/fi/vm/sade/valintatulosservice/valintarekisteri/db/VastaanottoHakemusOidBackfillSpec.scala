@@ -99,6 +99,25 @@ class VastaanottoHakemusOidBackfillSpec extends Specification with ITSetup with 
       hakemusOidOf(id) must beSome(hakemus1)
     }
 
+    "jättää perumisen ratkaisematta, kun hakemuksia on useita, koska perunut hakemus ei ole enää hyväksytty" in {
+      // hakemus1 perui paikan ja siirtyi tilaan Perunut; ainoa yhä hyväksytty hakemus on väärä hakemus2
+      insertValinnantila(hakemus1, "Perunut")
+      insertValinnantila(hakemus2, "Hyvaksytty", tilanViimeisinMuutos = Some("2020-01-01T00:00:00Z"))
+      val id = insertVastaanotto(action = "Peru")
+
+      backfill(10) must beSome(HakemusOidBackfillResult(1, 0, 1))
+      hakemusOidOf(id) must beNone
+      notFoundMarkerOf(id) must beSome(true)
+    }
+
+    "täyttää perumisen, kun hakukohteessa on vain yksi hakemus" in {
+      insertValinnantila(hakemus1, "Perunut")
+      val id = insertVastaanotto(action = "Peru")
+
+      backfill(10) must beSome(HakemusOidBackfillResult(1, 1, 0))
+      hakemusOidOf(id) must beSome(hakemus1)
+    }
+
     "käyttää tilan_viimeisin_muutos-aikaa, kun valinnantila on tallennettu vastaanoton jälkeen" in {
       val id = insertVastaanotto(timestamp = Some("2020-06-01"))
       insertValinnantila(hakemus1, "Hyvaksytty", tilanViimeisinMuutos = Some("2020-01-01"))
@@ -233,10 +252,10 @@ class VastaanottoHakemusOidBackfillSpec extends Specification with ITSetup with 
     db.backfillHakemusOidBatch(batchSize, Duration.ZERO)
 
   private def insertVastaanotto(henkiloOid: String = henkilo, hakukohdeOid: String = hakukohde, hakemusOid: Option[String] = None,
-                               timestamp: Option[String] = None): Long =
+                               timestamp: Option[String] = None, action: String = "VastaanotaSitovasti"): Long =
     db.runBlocking(
       sql"""insert into vastaanotot (hakukohde, henkilo, hakemus_oid, action, ilmoittaja, selite, "timestamp")
-            values ($hakukohdeOid, $henkiloOid, $hakemusOid, 'VastaanotaSitovasti'::vastaanotto_action, $henkiloOid, 'testi',
+            values ($hakukohdeOid, $henkiloOid, $hakemusOid, $action::vastaanotto_action, $henkiloOid, 'testi',
                     coalesce($timestamp::timestamptz, now()))
             returning id""".as[Long].head)
 
@@ -269,4 +288,8 @@ class VastaanottoHakemusOidBackfillSpec extends Specification with ITSetup with 
     sqlu"delete from vastaanotot",
     sqlu"delete from valinnantilat",
     sqlu"delete from valinnantilat_history"))
+
+  // cleanUp ei poista alussa lisättyjä hakukohteet- ja valintaesitykset-rivejä, joten ne siivotaan lopuksi, etteivät
+  // ne näy myöhemmin ajettaville testeille
+  step(deleteAll())
 }

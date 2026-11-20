@@ -48,6 +48,9 @@ trait VastaanottoHakemusOidBackfillRepositoryImpl extends VastaanottoHakemusOidB
   //    hakemukset eivät estä täyttöä. Valinnantila katsotaan voimassa olevaksi, jos tilan_viimeisin_muutos on enintään
   //    vastaanoton aikaleima tai jos rivi oli tallennettu (system_time) jo silloin; jälkimmäinen kattaa samassa
   //    transaktiossa tehdyt kirjoitukset, joissa tilan_viimeisin_muutos on millisekunteja aikaleimaa myöhempi.
+  //    Sääntöä sovelletaan vain toimintoihin VastaanotaSitovasti ja VastaanotaEhdollisesti. Muut toiminnot (Peru,
+  //    Peruuta, MerkitseMyohastyneeksi) siirtävät myöhemmin juuri oman hakemuksensa pois hyväksytystä tilasta, jolloin
+  //    ainoaksi hyväksytyksi jäisi väärä hakemus. Täyttöajo ei korjaa jo asetettua arvoa, joten virhe jäisi pysyväksi.
   // Historiaversioita ei käytetä (valinnantilat_history-taulussa ei ole sopivaa indeksiä). Epäselvät ja
   // ratkaisemattomat rivit jäävät ilman hakemus_oid:tä.
   private def resolveHakemusOids(ids: Seq[Long]): DBIO[Int] = {
@@ -56,7 +59,8 @@ trait VastaanottoHakemusOidBackfillRepositoryImpl extends VastaanottoHakemusOidB
              -- r: erän jokaiselle vastaanotolle päätelty hakemus_oid, tai null jos yksikäsitteistä hakemusta ei löydy
              select b.id,
                     case when c.n_kaikki = 1 then c.hakemus_kaikki
-                         when c.n_voimassa = 1 then c.hakemus_voimassa
+                         when b.action in ('VastaanotaSitovasti', 'VastaanotaEhdollisesti') and c.n_voimassa = 1
+                           then c.hakemus_voimassa
                     end as hakemus_oid
              from vastaanotot b
              -- c: henkilön hakemukset hakukohteessa yhteensä (n_kaikki) ja niistä ne, joiden hyväksytty valinnantila

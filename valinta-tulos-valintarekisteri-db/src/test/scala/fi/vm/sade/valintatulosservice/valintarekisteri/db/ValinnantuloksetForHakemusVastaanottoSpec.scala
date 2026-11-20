@@ -230,6 +230,39 @@ class ValinnantuloksetForHakemusVastaanottoSpec extends Specification with ITSet
     }
   }
 
+  "getMuutoshistoriaForHakemus" should {
+    "näyttää vastaanoton muutoksen vain sille hakemukselle, jolle vastaanotto on tehty" in {
+      insertValinnantila(hakemus1)
+      insertValinnantila(hakemus2)
+      db.store(VirkailijanVastaanotto(hakuOid, jono, henkilo, hakemus1, hakukohde, VastaanotaSitovasti, henkilo, "testi"))
+
+      vastaanottoMuutokset(hakemus1) must have size 1
+      vastaanottoMuutokset(hakemus2) must beEmpty
+    }
+
+    "näyttää vastaanoton muutoksen ilman hakemus oidia henkilön ja hakukohteen jokaiselle hakemukselle" in {
+      insertValinnantila(hakemus1)
+      insertValinnantila(hakemus2)
+      insertVastaanottoWithoutHakemusOid()
+
+      vastaanottoMuutokset(hakemus1) must have size 1
+      vastaanottoMuutokset(hakemus2) must have size 1
+    }
+  }
+
+  "getLatestSijoitteluSummary" should {
+    // Varmistaa vain, että kysely on kelvollinen; yhteenvedon laskentaa ei testata, koska sijoitteluajoa ei ole
+    "palauttaa tyhjän yhteenvedon, kun hakukohteella ei ole sijoitteluajoa" in {
+      insertValinnantila(hakemus1)
+      insertVastaanottoWithoutHakemusOid()
+
+      db.getLatestSijoitteluSummary(hakuOid, hakukohde) must beEmpty
+    }
+  }
+
+  private def vastaanottoMuutokset(hakemusOid: HakemusOid): List[KentanMuutos] =
+    db.getMuutoshistoriaForHakemus(hakemusOid, jono).flatMap(_.changes).filter(_.field == "vastaanottotila")
+
   private def insertValinnantila(hakemusOid: HakemusOid): Unit =
     db.runBlocking(
       sqlu"""insert into valinnantilat (hakukohde_oid, valintatapajono_oid, hakemus_oid, tila, tilan_viimeisin_muutos, ilmoittaja, henkilo_oid)
@@ -273,4 +306,8 @@ class ValinnantuloksetForHakemusVastaanottoSpec extends Specification with ITSet
     sqlu"delete from ilmoittautumiset_history",
     sqlu"delete from valinnantilat",
     sqlu"delete from valinnantilat_history"))
+
+  // cleanUp ei poista alussa lisättyjä hakukohteet- ja valintaesitykset-rivejä, joten ne siivotaan lopuksi, etteivät
+  // ne näy myöhemmin ajettaville testeille
+  step(deleteAll())
 }
