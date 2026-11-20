@@ -4,7 +4,7 @@ import fi.vm.sade.security.{AuthenticationFailedException, AuthorizationFailedEx
 import fi.vm.sade.valintatulosservice.json.JsonFormats.writeJavaObjectToOutputStream
 import fi.vm.sade.valintatulosservice.json.{JsonFormats, StreamingFailureException}
 import fi.vm.sade.valintatulosservice.logging.Logging
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ValintatapajonoOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, HakuOid, HakukohdeOid, ToisenHakemuksenTulosException, ValintatapajonoOid}
 import org.json4s.MappingException
 import org.scalatra._
 import org.scalatra.json.JacksonJsonSupport
@@ -59,6 +59,9 @@ trait VtsServletBase extends ScalatraServlet with Logging with JacksonJsonSuppor
         case e: StreamingFailureException =>
           logger.error(errorDescription, e)
           InternalServerError(e.contentToInsertToBody)
+        case e: ToisenHakemuksenTulosException =>
+          logger.warn(errorDescription, e)
+          Conflict("error" -> e.getMessage)
         case e: ConcurrentModificationException =>
           logger.error(errorDescription, e)
           Conflict("error" -> ("Tietoihin on tehty samanaikaisia muutoksia, päivitä sivu ja yritä uudelleen (" + e.getMessage + ")"))

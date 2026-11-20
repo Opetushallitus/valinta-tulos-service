@@ -15,6 +15,8 @@ trait HakijaVastaanottoRepository {
   def findHenkilonVastaanototHaussa(henkiloOid: HenkiloOid, hakuOid: HakuOid): DBIO[Set[VastaanottoRecord]]
   def findHenkiloidenVastaanototHaussa(henkiloOids: Set[HenkiloOid], hakuOid: HakuOid): Map[HenkiloOid, Set[VastaanottoRecord]]
   def findHenkilonVastaanottoHakukohteeseen(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid): DBIO[Option[VastaanottoRecord]]
+  /** Hakemus, jolle henkilön voimassa oleva vastaanotto hakukohteeseen on tallennettu, jos se on muu kuin annettu hakemus. */
+  def findToisenHakemuksenVastaanotto(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid): DBIO[Option[HakemusOid]]
   def findYhdenPaikanSaannonPiirissaOlevatVastaanotot(henkiloOid: HenkiloOid, koulutuksenAlkamiskausi: Kausi): DBIO[Option[VastaanottoRecord]]
   def store(vastaanottoEvent: VastaanottoEvent): Unit
   def storeAction(vastaanottoEvent: VastaanottoEvent): DBIO[Unit]

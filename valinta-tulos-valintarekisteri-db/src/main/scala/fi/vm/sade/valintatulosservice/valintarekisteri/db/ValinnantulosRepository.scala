@@ -19,6 +19,9 @@ trait ValinnantulosRepository extends ValintarekisteriRepository {
 
   def storeIlmoittautuminen(henkiloOid: String, hakemusOid: HakemusOid, ilmoittautuminen: Ilmoittautuminen, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]
 
+  /** Hakemus, jolle henkilön ilmoittautuminen (muu kuin EiTehty) hakukohteeseen on tallennettu, jos se on muu kuin annettu hakemus. */
+  def findToisenHakemuksenIlmoittautuminen(henkiloOid: String, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid): DBIO[Option[HakemusOid]]
+
   def resetIlmoittautuminen(henkiloOid: String, hakukohdeOid: HakukohdeOid): DBIO[Unit]
 
   def storeValinnantuloksenOhjaus(ohjaus: ValinnantuloksenOhjaus, ifUnmodifiedSince: Option[Instant] = None): DBIO[Unit]

@@ -31,8 +31,9 @@ class ValintarekisteriDbIlmoittautuminenHakemusOidSpec extends Specification wit
       hakemusOidOfIlmoittautuminen() must beSome(hakemus1.toString)
     }
 
-    "vaihtaa hakemus oidin, kun toinen hakemus muuttaa tilaa" in {
+    "vaihtaa hakemus oidin, kun toinen hakemus ilmoittautuu ja edellisen hakemuksen ilmoittautuminen on tilassa EiTehty" in {
       db.runBlocking(db.storeIlmoittautuminen(henkilo, hakemus1, lasna, None))
+      db.runBlocking(db.storeIlmoittautuminen(henkilo, hakemus1, lasna.copy(tila = EiTehty), None))
       db.runBlocking(db.storeIlmoittautuminen(henkilo, hakemus2, lasna.copy(tila = PoissaSyksy), None))
 
       hakemusOidOfIlmoittautuminen() must beSome(hakemus2.toString)
@@ -40,7 +41,7 @@ class ValintarekisteriDbIlmoittautuminenHakemusOidSpec extends Specification wit
 
     "ei tallenna hakemus oidia historiatauluun" in {
       db.runBlocking(db.storeIlmoittautuminen(henkilo, hakemus1, lasna, None))
-      db.runBlocking(db.storeIlmoittautuminen(henkilo, hakemus2, lasna.copy(tila = PoissaSyksy), None))
+      db.runBlocking(db.storeIlmoittautuminen(henkilo, hakemus1, lasna.copy(tila = PoissaSyksy), None))
 
       db.runBlocking(sql"""select count(*) from ilmoittautumiset_history where henkilo = $henkilo""".as[Int].head) mustEqual 1
       db.runBlocking(sql"""select count(*) from information_schema.columns

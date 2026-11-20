@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice
 
 import fi.vm.sade.valintatulosservice.json.JsonFormats
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.{HakijaVastaanottoRepository, ValinnantulosRepository}
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, Ilmoittautuminen, VastaanotaSitovasti}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakemusOid, Ilmoittautuminen, ToisenHakemuksenTulosException, VastaanotaSitovasti}
 import org.json4s.jackson.Serialization
 import org.slf4j.LoggerFactory
 
@@ -31,9 +31,11 @@ class IlmoittautumisService(valintatulosService: ValintatulosService, hakijaVast
     }
 
     Try(valinnantulosRepository.runBlocking(valinnantulosRepository.storeIlmoittautuminen(hakemuksenTulos.hakijaOid, hakemusOid, ilmoittautuminen, None))).recover {
-      case e =>
+      // Muut virheet niellään kuten ennenkin. Jos ilmoittautuminen on jo henkilön toisella hakemuksella, mitään ei
+      // tallentunut eikä uudelleenyritys auta, joten virhe nousee kutsujalle (.get) eikä ilmoittautumista kerrota onnistuneeksi.
+      case e if !e.isInstanceOf[ToisenHakemuksenTulosException] =>
         logger.error(s"Hakijan ${hakemuksenTulos.hakijaOid} ilmoittautumista ei saatu SQL-kantaan!",e)
-    }
+    }.get
 
   }
 }

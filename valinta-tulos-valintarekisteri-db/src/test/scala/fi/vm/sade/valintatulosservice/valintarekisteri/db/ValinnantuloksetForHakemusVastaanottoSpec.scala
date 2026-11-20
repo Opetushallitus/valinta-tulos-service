@@ -230,6 +230,91 @@ class ValinnantuloksetForHakemusVastaanottoSpec extends Specification with ITSet
     }
   }
 
+  "vastaanoton tallennus" should {
+    "epäonnistuu, kun henkilön toisella hakemuksella on voimassa oleva vastaanotto samaan hakukohteeseen" in {
+      insertValinnantila(hakemus1)
+      insertValinnantila(hakemus2)
+      storeVastaanotto(hakemus1, VastaanotaSitovasti)
+
+      storeVastaanotto(hakemus2, Peru) must throwA[ToisenHakemuksenTulosException]
+      vastaanottotila(hakemus1) mustEqual ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI
+      vastaanottotila(hakemus2) mustEqual ValintatuloksenTila.KESKEN
+    }
+
+    "ei poista toisen hakemuksen vastaanottoa" in {
+      insertValinnantila(hakemus1)
+      insertValinnantila(hakemus2)
+      storeVastaanotto(hakemus1, VastaanotaSitovasti)
+
+      storeVastaanotto(hakemus2, Poista) must throwA[ToisenHakemuksenTulosException]
+      vastaanottotila(hakemus1) mustEqual ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI
+    }
+
+    "onnistuu, kun toisen hakemuksen vastaanotto on ensin poistettu" in {
+      insertValinnantila(hakemus1)
+      insertValinnantila(hakemus2)
+      storeVastaanotto(hakemus1, VastaanotaSitovasti)
+      storeVastaanotto(hakemus1, Poista)
+
+      storeVastaanotto(hakemus2, VastaanotaSitovasti)
+      vastaanottotila(hakemus1) mustEqual ValintatuloksenTila.KESKEN
+      vastaanottotila(hakemus2) mustEqual ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI
+    }
+
+    "korvaa saman hakemuksen vastaanoton ja vastaanoton, jolla ei ole hakemus oidia" in {
+      insertValinnantila(hakemus1)
+      insertValinnantila(hakemus2)
+      insertVastaanottoWithoutHakemusOid()
+
+      storeVastaanotto(hakemus2, VastaanotaEhdollisesti)
+      storeVastaanotto(hakemus2, VastaanotaSitovasti)
+      vastaanottotila(hakemus1) mustEqual ValintatuloksenTila.KESKEN
+      vastaanottotila(hakemus2) mustEqual ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI
+    }
+  }
+
+  "ilmoittautumisen tallennus" should {
+    "epäonnistuu, kun henkilön toisella hakemuksella on ilmoittautuminen samaan hakukohteeseen" in {
+      insertValinnantila(hakemus1)
+      insertValinnantila(hakemus2)
+      storeIlmoittautuminen(hakemus1, Lasna)
+
+      // sama tila: ennen korjausta tämä näkyi samanaikaisen muokkauksen virheenä
+      storeIlmoittautuminen(hakemus2, Lasna) must throwA[ToisenHakemuksenTulosException]
+      // eri tila: ennen korjausta tämä siirsi rivin toiselle hakemukselle
+      storeIlmoittautuminen(hakemus2, PoissaKokoLukuvuosi) must throwA[ToisenHakemuksenTulosException]
+      ilmoittautumistila(hakemus1) mustEqual Lasna
+      ilmoittautumistila(hakemus2) mustEqual EiTehty
+    }
+
+    "onnistuu, kun toisen hakemuksen ilmoittautuminen on ensin asetettu tilaan EiTehty" in {
+      insertValinnantila(hakemus1)
+      insertValinnantila(hakemus2)
+      storeIlmoittautuminen(hakemus1, Lasna)
+      storeIlmoittautuminen(hakemus1, EiTehty)
+
+      storeIlmoittautuminen(hakemus2, Lasna)
+      ilmoittautumistila(hakemus1) mustEqual EiTehty
+      ilmoittautumistila(hakemus2) mustEqual Lasna
+    }
+
+    "korvaa ilmoittautumisen, jolla ei ole hakemus oidia" in {
+      insertValinnantila(hakemus1)
+      insertValinnantila(hakemus2)
+      insertIlmoittautuminenWithoutHakemusOid()
+
+      storeIlmoittautuminen(hakemus2, PoissaKokoLukuvuosi)
+      ilmoittautumistila(hakemus2) mustEqual PoissaKokoLukuvuosi
+    }
+
+    "ilmoittaa saman hakemuksen saman tilan tallennuksen edelleen samanaikaisena muokkauksena" in {
+      insertValinnantila(hakemus1)
+      storeIlmoittautuminen(hakemus1, Lasna)
+
+      storeIlmoittautuminen(hakemus1, Lasna) must throwA[java.util.ConcurrentModificationException]
+    }
+  }
+
   "getMuutoshistoriaForHakemus" should {
     "näyttää vastaanoton muutoksen vain sille hakemukselle, jolle vastaanotto on tehty" in {
       insertValinnantila(hakemus1)
@@ -259,6 +344,12 @@ class ValinnantuloksetForHakemusVastaanottoSpec extends Specification with ITSet
       db.getLatestSijoitteluSummary(hakuOid, hakukohde) must beEmpty
     }
   }
+
+  private def storeVastaanotto(hakemusOid: HakemusOid, action: VirkailijanVastaanottoAction): Unit =
+    db.store(VirkailijanVastaanotto(hakuOid, jono, henkilo, hakemusOid, hakukohde, action, henkilo, "testi"))
+
+  private def storeIlmoittautuminen(hakemusOid: HakemusOid, tila: SijoitteluajonIlmoittautumistila): Unit =
+    db.runBlocking(db.storeIlmoittautuminen(henkilo, hakemusOid, Ilmoittautuminen(hakukohde, tila, henkilo, "testi"), None))
 
   private def vastaanottoMuutokset(hakemusOid: HakemusOid): List[KentanMuutos] =
     db.getMuutoshistoriaForHakemus(hakemusOid, jono).flatMap(_.changes).filter(_.field == "vastaanottotila")

@@ -84,6 +84,21 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
       there was one (valinnantulosRepository).storeAction(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, varasijaltaHyvaksytty.henkiloOid, varasijaltaHyvaksytty.hakemusOid, hakukohdeOid,
         VastaanotaSitovasti, session.personOid, "Virkailijan tallennus"), Some(lastModified))
     }
+    "status is 409 and nothing is stored if vastaanotto belongs to another hakemus of the same henkilo" in new Mocks with Authorized with Korkeakouluhaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
+      val hyvaksytty = valinnantulosA.copy(julkaistavissa = Some(true), valinnantila = Hyvaksytty)
+      val toinenHakemusOid = HakemusOid("1.2.246.562.11.99999999999")
+      valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set(hyvaksytty))
+      yhdenPaikanSaannos.ottanutVastaanToisenPaikanDBIO(any[Hakukohde], any[Set[Valinnantulos]]) returns DBIO.successful(Set(hyvaksytty))
+      valinnantulosRepository.findToisenHakemuksenVastaanotto(hyvaksytty.henkiloOid, hakukohdeOid, hyvaksytty.hakemusOid) returns DBIO.successful(Some(toinenHakemusOid))
+
+      val statuses = service.storeValinnantuloksetAndIlmoittautumiset(valintatapajonoOid,
+        List(hyvaksytty.copy(vastaanottotila = ValintatuloksenTila.VASTAANOTTANUT_SITOVASTI, ilmoittautumistila = Lasna)), Some(lastModified), auditInfo)
+
+      statuses.map(_.status) mustEqual List(409)
+      statuses.head.message must contain(toinenHakemusOid.toString)
+      there was no (valinnantulosRepository).storeAction(any[VastaanottoEvent], any[Option[Instant]])
+      there was no (valinnantulosRepository).storeIlmoittautuminen(any[String], any[HakemusOid], any[Ilmoittautuminen], any[Option[Instant]])
+    }
     "ehdollinen vastaanotto can be stored for varasijalta hyvaksytty" in new Mocks with Authorized with Korkeakouluhaku with SuccessfulVastaanotto with NoConflictingVastaanotto with TyhjatOhjausparametrit {
       val varasijaltaHyvaksytty = valinnantulosA.copy(julkaistavissa = Some(true), valinnantila = VarasijaltaHyvaksytty)
       valinnantulosRepository.getValinnantuloksetForValintatapajonoDBIO(valintatapajonoOid) returns DBIO.successful(Set(varasijaltaHyvaksytty))
@@ -382,6 +397,8 @@ class ValinnantulosServiceSpec extends Specification with MockitoMatchers with M
 
     val valinnantulosRepository = mock[Repository]
     mockRunBlocking(valinnantulosRepository)
+    valinnantulosRepository.findToisenHakemuksenVastaanotto(any[String], any[HakukohdeOid], any[HakemusOid]) returns DBIO.successful(None)
+    valinnantulosRepository.findToisenHakemuksenIlmoittautuminen(any[String], any[HakukohdeOid], any[HakemusOid]) returns DBIO.successful(None)
 
     val authorizer = mock[OrganizationHierarchyAuthorizer]
     implicit val appConfig: VtsAppConfig = mock[VtsAppConfig]

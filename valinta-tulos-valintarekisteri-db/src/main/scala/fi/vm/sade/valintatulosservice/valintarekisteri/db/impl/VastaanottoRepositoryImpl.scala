@@ -253,12 +253,35 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
 
     val insertVastaanotto = sqlu"""insert into vastaanotot (hakukohde, henkilo, hakemus_oid, action, ilmoittaja, selite)
                          values ($hakukohdeOid, $henkiloOid, $hakemusOid, ${action.toString}::vastaanotto_action, $ilmoittaja, $selite)"""
-    deleteVastaanotto.andThen(insertVastaanotto).flatMap {
+    failIfToisenHakemuksenVastaanotto(vastaanottoEvent).andThen(deleteVastaanotto).andThen(insertVastaanotto).flatMap {
       case 0 =>
         DBIO.failed(new ConcurrentModificationException(s"Vastaanottoa $vastaanottoEvent ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
       case n =>
         DBIO.successful(())
     }
+  }
+
+  // Vastaanoton tallennus ja poisto kohdistuvat henkilön kaikkiin voimassa oleviin vastaanottoihin hakukohteessa, joten
+  // ilman tätä tarkistusta toisen hakemuksen vastaanotto ylikirjoittuisi tai poistuisi huomaamatta. Linkitettyjen
+  // henkilöiden (henkiloviitteet) vastaanottoja ei tarkisteta: niiden ylikirjoitus toimii kuten ennenkin.
+  private def failIfToisenHakemuksenVastaanotto(vastaanottoEvent: VastaanottoEvent): DBIO[Unit] = {
+    val VastaanottoEvent(henkiloOid, hakemusOid, hakukohdeOid, _, _, _) = vastaanottoEvent
+    findToisenHakemuksenVastaanotto(henkiloOid, hakukohdeOid, hakemusOid).flatMap {
+      case Some(toinenHakemusOid) =>
+        DBIO.failed(ToisenHakemuksenTulosException(henkiloOid, hakukohdeOid, hakemusOid, toinenHakemusOid, ToisenHakemuksenTulosException.Vastaanotto))
+      case None => DBIO.successful(())
+    }
+  }
+
+  override def findToisenHakemuksenVastaanotto(henkiloOid: HenkiloOid, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid): DBIO[Option[HakemusOid]] = {
+    sql"""select hakemus_oid from vastaanotot
+          where henkilo = ${henkiloOid}
+            and hakukohde = ${hakukohdeOid}
+            and deleted is null
+            and hakemus_oid is not null
+            and hakemus_oid <> ${hakemusOid}
+          order by id desc
+          limit 1""".as[String].headOption.map(_.map(HakemusOid))
   }
 
   private def kumoaVastaanottotapahtumatAction(vastaanottoEvent: VastaanottoEvent, ifUnmodifiedSince: Option[Instant]): DBIO[Unit] = {
@@ -281,7 +304,7 @@ trait VastaanottoRepositoryImpl extends HakijaVastaanottoRepository with Virkail
                 and vastaanotot.deleted is null
                 and (${ifUnmodifiedSince}::timestamptz is null
                 or vastaanotot.timestamp < ${ifUnmodifiedSince})"""
-    insertDelete.andThen(updateVastaanotto).flatMap {
+    failIfToisenHakemuksenVastaanotto(vastaanottoEvent).andThen(insertDelete).andThen(updateVastaanotto).flatMap {
       case 0 =>
         DBIO.failed(new ConcurrentModificationException(s"Vastaanottoa $vastaanottoEvent ei voitu päivittää koska sitä ei ole tai joku oli muokannut sitä samanaikaisesti (${ifUnmodifiedSince})"))
       case n =>

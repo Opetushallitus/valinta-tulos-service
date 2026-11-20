@@ -282,6 +282,10 @@ class ValinnantulosService(val valinnantulosRepository: ValinnantulosRepository
         logger.warn(s"Valinnantuloksen $uusi tallennus epäonnistui", t)
         DBIO.successful(Left(ValinnantulosUpdateStatus(409, "Hakemus on muuttunut lukemisen jälkeen", uusi.valintatapajonoOid, uusi.hakemusOid)))
       }
+      case Failure(t: ToisenHakemuksenTulosException) => {
+        logger.warn(s"Valinnantuloksen $uusi tallennus epäonnistui", t)
+        DBIO.successful(Left(ValinnantulosUpdateStatus(409, t.getMessage, uusi.valintatapajonoOid, uusi.hakemusOid)))
+      }
       case Failure(t) => {
         logger.warn(s"Valinnantuloksen $uusi tallennus epäonnistui", t)
         DBIO.successful(Left(ValinnantulosUpdateStatus(500, s"Valinnantuloksen tallennus epäonnistui", uusi.valintatapajonoOid, uusi.hakemusOid)))

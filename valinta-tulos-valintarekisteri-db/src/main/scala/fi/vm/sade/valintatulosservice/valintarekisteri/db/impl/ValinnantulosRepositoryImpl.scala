@@ -857,11 +857,29 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
                  selite = excluded.selite
              -- saman tilan tallentaminen uudelleen ei täytä puuttuvaa hakemus_oid:tä, vain täyttöajo tekee sen
              where ilmoittautumiset.tila <> excluded.tila
+                 -- toisen hakemuksen ilmoittautumista ei ylikirjoiteta; EiTehty-rivi ei ole ilmoittautuminen, joten sen saa ottaa
+                 and (ilmoittautumiset.hakemus_oid is null
+                      or ilmoittautumiset.hakemus_oid = excluded.hakemus_oid
+                      or ilmoittautumiset.tila = 'EiTehty')
                  and (${ifUnmodifiedSince}::timestamptz is null
                       or ilmoittautumiset.system_time @> ${ifUnmodifiedSince})""".flatMap {
       case 1 => DBIO.successful(())
-      case _ => DBIO.failed(new ConcurrentModificationException(s"Ilmoittautumista $ilmoittautuminen ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
+      case _ => findToisenHakemuksenIlmoittautuminen(henkiloOid, ilmoittautuminen.hakukohdeOid, hakemusOid).flatMap {
+        case Some(toinenHakemusOid) =>
+          DBIO.failed(ToisenHakemuksenTulosException(henkiloOid, ilmoittautuminen.hakukohdeOid, hakemusOid, toinenHakemusOid, ToisenHakemuksenTulosException.Ilmoittautuminen))
+        case None =>
+          DBIO.failed(new ConcurrentModificationException(s"Ilmoittautumista $ilmoittautuminen ei voitu päivittää, koska joku oli muokannut sitä samanaikaisesti (${format(ifUnmodifiedSince)})"))
+      }
     }
+  }
+
+  override def findToisenHakemuksenIlmoittautuminen(henkiloOid: String, hakukohdeOid: HakukohdeOid, hakemusOid: HakemusOid): DBIO[Option[HakemusOid]] = {
+    sql"""select hakemus_oid from ilmoittautumiset
+          where henkilo = ${henkiloOid}
+            and hakukohde = ${hakukohdeOid}
+            and hakemus_oid is not null
+            and hakemus_oid <> ${hakemusOid}
+            and tila <> 'EiTehty'""".as[String].headOption.map(_.map(HakemusOid))
   }
 
   override def resetIlmoittautuminen(henkiloOid: String, hakukohdeOid: HakukohdeOid): DBIO[Unit] = {

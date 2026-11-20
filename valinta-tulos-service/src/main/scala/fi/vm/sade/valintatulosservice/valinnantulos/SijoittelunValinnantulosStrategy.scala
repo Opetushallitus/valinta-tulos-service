@@ -15,6 +15,7 @@ import fi.vm.sade.valintatulosservice.{AuditInfo, ValinnantuloksenMuokkaus}
 import slick.dbio.DBIO
 
 import java.time.Instant
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
                                        tarjoajaOids: Set[String],
@@ -139,7 +140,10 @@ class SijoittelunValinnantulosStrategy(auditInfo: AuditInfo,
 
       validateMuutos().fold(
         e => DBIO.successful(Left(e)),
-        _ => vastaanottoValidator.validateVastaanotto(uusi, vanhaOpt)
+        _ => ToisenHakemuksenTulosValidator.validate(valinnantulosRepository, uusi, vanhaOpt).flatMap {
+          case Left(e) => DBIO.successful(Left(e))
+          case Right(_) => vastaanottoValidator.validateVastaanotto(uusi, vanhaOpt)
+        }
       )
     }
   }

@@ -119,6 +119,7 @@ class VastaanottoService(hakuService: HakuService,
       } yield hakutoive) match {
         case Right(_) => createVastaanottoResult(200, None, vastaanotto)
         case Left(e: PriorAcceptanceException) => createVastaanottoResult(403, Some(e), vastaanotto)
+        case Left(e: ToisenHakemuksenTulosException) => createVastaanottoResult(409, Some(e), vastaanotto)
         case Left(e@(_: IllegalArgumentException | _: IllegalStateException)) => createVastaanottoResult(400, Some(e), vastaanotto)
         case Left(e) => createVastaanottoResult(500, Some(e), vastaanotto)
       }

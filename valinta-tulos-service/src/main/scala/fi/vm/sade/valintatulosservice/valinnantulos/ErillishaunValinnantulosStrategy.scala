@@ -159,7 +159,10 @@ class ErillishaunValinnantulosStrategy(auditInfo: AuditInfo,
 
     validateMuutos().fold(
       e => DBIO.successful(Left(e)),
-      _ => vastaanottoValidator.validateVastaanotto(uusi, vanha)
+      _ => ToisenHakemuksenTulosValidator.validate(valinnantulosRepository, uusi, vanha).flatMap {
+        case Left(e) => DBIO.successful(Left(e))
+        case Right(_) => vastaanottoValidator.validateVastaanotto(uusi, vanha)
+      }
     )
   }
 
