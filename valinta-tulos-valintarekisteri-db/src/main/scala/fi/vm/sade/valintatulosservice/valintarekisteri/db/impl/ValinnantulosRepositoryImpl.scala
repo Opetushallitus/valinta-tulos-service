@@ -196,6 +196,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             from ilmoittautumiset as i
             join valinnantilat as ti on ti.hakukohde_oid = i.hakukohde
                 and ti.henkilo_oid = i.henkilo
+                and (i.hakemus_oid is null or i.hakemus_oid = ti.hakemus_oid)
             where ti.valintatapajono_oid = ${valintatapajonoOid}
                 and ti.hakemus_oid = ${hakemusOid}
             union all
@@ -203,6 +204,7 @@ trait ValinnantulosRepositoryImpl extends ValinnantulosRepository with Valintare
             from ilmoittautumiset_history as i
             join valinnantilat as ti on ti.hakukohde_oid = i.hakukohde
                 and ti.henkilo_oid = i.henkilo
+                and (i.hakemus_oid is null or i.hakemus_oid = ti.hakemus_oid)
             where ti.valintatapajono_oid = ${valintatapajonoOid}
                 and ti.hakemus_oid = ${hakemusOid})
             order by ts asc

@@ -325,6 +325,27 @@ class ValinnantuloksetForHakemusVastaanottoSpec extends Specification with ITSet
       vastaanottoMuutokset(hakemus2) must beEmpty
     }
 
+    "näyttää ilmoittautumisen muutokset, myös historiasta, vain sille hakemukselle, jolle ilmoittautuminen on tehty" in {
+      insertValinnantila(hakemus1)
+      insertValinnantila(hakemus2)
+      storeIlmoittautuminen(hakemus1, Lasna)
+      storeIlmoittautuminen(hakemus1, EiTehty)
+      storeIlmoittautuminen(hakemus2, PoissaKokoLukuvuosi)
+
+      ilmoittautumisMuutokset(hakemus1).map(_.to) mustEqual List(Lasna, EiTehty)
+      ilmoittautumisMuutokset(hakemus2).map(_.to) mustEqual List(PoissaKokoLukuvuosi)
+    }
+
+    "näyttää ilmoittautumisen muutokset ilman hakemus oidia henkilön ja hakukohteen jokaiselle hakemukselle" in {
+      insertValinnantila(hakemus1)
+      insertValinnantila(hakemus2)
+      insertIlmoittautuminenWithoutHakemusOid()
+      storeIlmoittautuminen(hakemus2, PoissaKokoLukuvuosi)
+
+      ilmoittautumisMuutokset(hakemus1).map(_.to) mustEqual List(Lasna)
+      ilmoittautumisMuutokset(hakemus2).map(_.to) mustEqual List(Lasna, PoissaKokoLukuvuosi)
+    }
+
     "näyttää vastaanoton muutoksen ilman hakemus oidia henkilön ja hakukohteen jokaiselle hakemukselle" in {
       insertValinnantila(hakemus1)
       insertValinnantila(hakemus2)
@@ -350,6 +371,9 @@ class ValinnantuloksetForHakemusVastaanottoSpec extends Specification with ITSet
 
   private def storeIlmoittautuminen(hakemusOid: HakemusOid, tila: SijoitteluajonIlmoittautumistila): Unit =
     db.runBlocking(db.storeIlmoittautuminen(henkilo, hakemusOid, Ilmoittautuminen(hakukohde, tila, henkilo, "testi"), None))
+
+  private def ilmoittautumisMuutokset(hakemusOid: HakemusOid): List[KentanMuutos] =
+    db.getMuutoshistoriaForHakemus(hakemusOid, jono).sortBy(_.timestamp.toInstant).flatMap(_.changes).filter(_.field == "ilmoittautumistila")
 
   private def vastaanottoMuutokset(hakemusOid: HakemusOid): List[KentanMuutos] =
     db.getMuutoshistoriaForHakemus(hakemusOid, jono).flatMap(_.changes).filter(_.field == "vastaanottotila")
