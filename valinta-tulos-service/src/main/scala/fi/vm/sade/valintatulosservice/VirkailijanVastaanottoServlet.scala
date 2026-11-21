@@ -11,11 +11,11 @@ import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 import org.scalatra.{Forbidden, Ok}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
-class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, vastaanottoService: VastaanottoService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
+abstract class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, vastaanottoService: VastaanottoService)(implicit val swagger: Swagger, appConfig: VtsAppConfig) extends VtsServletBase {
 
-  override protected def applicationDescription: String = "Virkailijan vastaanottotietojen käsittely REST API"
+  def authorize(): Unit
 
   val getVastaanottoTilatByHakukohdeSwagger: OperationBuilder = (apiOperation[Unit]("getVastaanottoTilatByHakukohde")
     summary "Hakee vastaanoton tilat hakukohteen hakijoille"
@@ -23,6 +23,7 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid")
     tags "virkailija")
   get("/haku/:hakuOid/hakukohde/:hakukohdeOid", operation(getVastaanottoTilatByHakukohdeSwagger)) {
+    authorize()
 
     val hakuOid = HakuOid(params("hakuOid"))
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
@@ -45,6 +46,8 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
     parameter pathParam[String]("hakemusOid").description("Hakemuksen oid")
     tags "virkailija")
   get("/valintatulos/haku/:hakuOid/hakemus/:hakemusOid", operation(getValintatuloksetByHakemusSwagger)) {
+    authorize()
+
     val hakemusOid = HakemusOid(params("hakemusOid"))
     Ok(javaObjectToJsonString(valintatulosService.findValintaTuloksetForVirkailijaByHakemus(hakemusOid).asJava))
   }
@@ -55,6 +58,8 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid")
     tags "virkailija")
   get("/valintatulos/haku/:hakuOid/hakukohde/:hakukohdeOid", operation(getValintatuloksetByHakukohdeSwagger)) {
+    authorize()
+
     val hakuOid = HakuOid(params("hakuOid"))
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     Ok(javaObjectToJsonString(valintatulosService.findValintaTuloksetForVirkailija(hakuOid, hakukohdeOid).asJava))
@@ -66,6 +71,8 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
     parameter pathParam[String]("hakukohdeOid").description("Hakukohteen oid")
     tags "virkailija")
   get("/valintatulos/ilmanhakijantilaa/haku/:hakuOid/hakukohde/:hakukohdeOid", operation(getValintatuloksetWithoutTilaHakijalleByHakukohdeSwagger)) {
+    authorize()
+
     val hakuOid = HakuOid(params("hakuOid"))
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     Ok(javaObjectToJsonString(valintatulosService.findValintaTuloksetForVirkailijaWithoutTilaHakijalle(hakuOid, hakukohdeOid).asJava))
@@ -78,6 +85,8 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
     parameter bodyParam[Set[String]]("hakemusOids").description("Kiinnostavien hakemusten oidit")
     tags "virkailija")
   post("/myohastyneet/haku/:hakuOid/hakukohde/:hakukohdeOid", operation(postLatenessFlagsForApplicationsSwagger)) {
+    authorize()
+
     val hakuOid = HakuOid(params("hakuOid"))
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     val hakemusOids = read[Set[HakemusOid]](request.body)
@@ -92,6 +101,8 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
     parameter bodyParam[Set[String]]("hakemusOids").description("Kiinnostavien hakemusten oidit")
     tags "virkailija")
   post("/tilahakijalle/haku/:hakuOid/hakukohde/:hakukohdeOid/valintatapajono/:valintatapajonoOid", operation(postTilaHakijalleForApplicationsSwagger)) {
+    authorize()
+
     val hakuOid = HakuOid(params("hakuOid"))
     val hakukohdeOid = HakukohdeOid(params("hakukohdeOid"))
     val valintatapajonoOid = ValintatapajonoOid(params("valintatapajonoOid"))
@@ -104,6 +115,8 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
     parameter pathParam[String]("hakuOid").description("Haun oid")
     tags "virkailija")
   get("/valintatulos/haku/:hakuOid", operation(getValintatuloksetByHakuSwagger)) {
+    authorize()
+
     val hakuOid = HakuOid(params("hakuOid"))
     Ok(javaObjectToJsonString(valintatulosService.findValintaTuloksetForVirkailija(hakuOid).asJava))
   }
@@ -114,6 +127,8 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
       parameter pathParam[String]("hakuOid").description("Haun oid")
       tags "virkailija")
   get("/vastaanotot/haku/:hakuOid", operation(getHaunKoulutuksenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissaSwagger)) {
+    authorize()
+
     val hakuOid = HakuOid(params("hakuOid"))
     Ok(valintatulosService.haunKoulutuksenAlkamiskaudenVastaanototYhdenPaikanSaadoksenPiirissa(hakuOid).toList)
   }
@@ -138,6 +153,7 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
     parameter bodyParam[List[VastaanottoEventDto]]
     tags "virkailija")
   post("/vastaanotto", operation(postVirkailijanVastaanottoActionsSwagger)) {
+    authorize()
 
     val vastaanottoEvents = parsedBody.extract[List[VastaanottoEventDto]]
     vastaanottoService.vastaanotaVirkailijana(vastaanottoEvents)
@@ -148,6 +164,8 @@ class VirkailijanVastaanottoServlet(valintatulosService: ValintatulosService, va
     parameter bodyParam[List[VastaanottoEventDto]]
     tags "virkailija")
   post("/transactional-vastaanotto", operation(postTransactionalVirkailijanVastaanottoActionsSwagger)) {
+    authorize()
+
     val vastaanottoEvents = parsedBody.extract[List[VastaanottoEventDto]]
     vastaanottoService.vastaanotaVirkailijanaInTransaction(vastaanottoEvents).get
   }
