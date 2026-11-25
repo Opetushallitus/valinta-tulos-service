@@ -11,6 +11,8 @@ import org.json4s.jackson.Serialization.read
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 
+// TODO: Näitä endpointteja kutsutaan sekä Suresta että Supasta.
+//       Kun Sure on sammutettu, tähän rajapintaan pitäisi lisätä autentikointi, ja vaihtaa Supa käyttämään sitä.
 class EnsikertalaisuusServlet(ensikertalaisuusRepository: EnsikertalaisuusRepository, maxHenkiloOids: Int)(implicit val swagger: Swagger, appConfig: VtsAppConfig)
   extends VtsServletBase with EnsikertalaisuusSwagger {
   override implicit val jsonFormats: Formats = EnsikertalaisuusServlet.ensikertalaisuusJsonFormats
@@ -81,4 +83,3 @@ trait EnsikertalaisuusSwagger extends VtsSwaggerBase { this: SwaggerSupport =>
     .responseMessage(ModelResponseMessage(400, "Kuvaus virheellisestä pyynnöstä"))
     .responseMessage(ModelResponseMessage(500, "Virhe palvelussa"))
 }
-

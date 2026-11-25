@@ -1,7 +1,6 @@
 package fi.vm.sade.valintatulosservice
 
-import java.util.Date
-import fi.vm.sade.auditlog.Operation
+import fi.vm.sade.auditlog.{Audit, Changes, Operation, Target}
 import fi.vm.sade.sijoittelu.tulos.dto.IlmoittautumisTila
 import fi.vm.sade.sijoittelu.tulos.dto.raportointi.HakijaDTO
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
@@ -10,10 +9,8 @@ import fi.vm.sade.valintatulosservice.json.{JsonFormats, JsonStreamWriter, Strea
 import fi.vm.sade.valintatulosservice.ohjausparametrit.{Ohjausparametrit, Vastaanottoaikataulu}
 import fi.vm.sade.valintatulosservice.streamingresults.{HakemustenTulosHakuLock, StreamingValintatulosService}
 import fi.vm.sade.valintatulosservice.tarjonta.{Haku, YhdenPaikanSaanto}
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.valintarekisteri.db.SessionRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain._
-
-import javax.servlet.http.HttpServletResponse
 import org.joda.time.DateTime
 import org.json4s.Extraction
 import org.json4s.jackson.Serialization.read
@@ -21,19 +18,46 @@ import org.scalatra._
 import org.scalatra.swagger.SwaggerSupportSyntax.OperationBuilder
 import org.scalatra.swagger._
 
+import java.util.Date
+import javax.servlet.http.HttpServletResponse
 import scala.util.Try
 
+class ValintatulosServlet(audit: Audit,
+                          valintatulosService: ValintatulosService,
+                          streamingValintatulosService: StreamingValintatulosService,
+                          vastaanottoService: VastaanottoService,
+                          ilmoittautumisService: IlmoittautumisService,
+                          val sessionRepository: SessionRepository,
+                          hakemustenTulosHakuLock: HakemustenTulosHakuLock)
+                         (implicit val swagger: Swagger,
+                          appConfig: VtsAppConfig) extends VtsServletBase with CasAuthenticatedServlet {
+  protected val applicationDescription = "Julkinen valintatulosten REST API"
 
+  val swaggerGroupTag = "valintatulos-public"
 
-abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
-                                   streamingValintatulosService: StreamingValintatulosService,
-                                   vastaanottoService: VastaanottoService,
-                                   ilmoittautumisService: IlmoittautumisService,
-                                   valintarekisteriDb: ValintarekisteriDb,
-                                   hakemustenTulosHakuLock: HakemustenTulosHakuLock,
-                                   swaggerGroupTag: String)
-                                  (implicit val swagger: Swagger,
-                                   appConfig: VtsAppConfig) extends VtsServletBase {
+  def auditLog(auditParams: Map[String, String], auditOperation: Operation): Unit = {
+    implicit val authenticated: Authenticated = authenticate
+    val builder= new Target.Builder()
+    auditParams.foreach(p => builder.setField(p._1,p._2))
+    audit.log(auditInfo.user, auditOperation, builder.build(), new Changes.Builder().build())
+  }
+
+  def auditLogChanged(auditParams: Map[String, String], auditOperation: Operation, changedParams: Map[String, String], changeOperation: String): Unit = {
+    implicit val authenticated: Authenticated = authenticate
+    val builder = new Target.Builder()
+    auditParams.foreach(p => builder.setField(p._1,p._2))
+    val changesBuilder = new Changes.Builder()
+
+    if (changeOperation.equals("added")) {
+      changedParams.foreach(p => changesBuilder.added(p._1, p._2))
+    } else if (changeOperation.equals("removed")) {
+      changedParams.foreach(p => changesBuilder.removed(p._1, p._2))
+    } else {
+      changedParams.foreach(p => changesBuilder.updated(p._1, None.toString, p._2))
+    }
+    changedParams.foreach(p => changesBuilder.added(p._1, p._2))
+    audit.log(auditInfo.user, auditOperation, builder.build(), changesBuilder.build())
+  }
 
   val ilmoittautumisenAikaleima: Option[Date] = Option(new Date())
   lazy val exampleHakemuksenTulos = Hakemuksentulos(
@@ -387,7 +411,4 @@ abstract class ValintatulosServlet(valintatulosService: ValintatulosService,
         TooManyRequests(message)
     }
   }
-
-  def auditLog(auditParams: Map[String, String], auditOperation: Operation): Unit
-  def auditLogChanged(auditParams: Map[String, String], auditOperation: Operation, auditParamsAdded: Map[String, String], changeOperation: String): Unit
 }
