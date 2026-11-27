@@ -12,7 +12,22 @@ import scala.util.Try
 
 trait EnsikertalaisuusRepositoryImpl extends EnsikertalaisuusRepository with ValintarekisteriRepository {
 
-  override def findEnsikertalaisuus(personOid: String, koulutuksenAlkamisKausi: Kausi): Ensikertalaisuus = {
+  // Palauttaa SQL-ehdon, joka rajaa annetut hakukohteet pois, tai tyhjän jos ohitettavia ei ole.
+  // Oidit validoidaan, koska ne interpoloidaan kyselyyn sellaisenaan.
+  private def ohitettavatHakukohteetEhto(sarake: String, ohitettavatHakukohdeOidit: Set[HakukohdeOid]): String = {
+    val invalidOids = ohitettavatHakukohdeOidit.filterNot(_.valid)
+    if (invalidOids.nonEmpty) {
+      throw new IllegalArgumentException(s"${invalidOids.size} huonoa hakukohdeoidia: $invalidOids")
+    }
+    if (ohitettavatHakukohdeOidit.isEmpty) {
+      ""
+    } else {
+      s"and $sarake not in (${ohitettavatHakukohdeOidit.map(oid => s"'$oid'").mkString(",")})"
+    }
+  }
+
+  override def findEnsikertalaisuus(personOid: String, koulutuksenAlkamisKausi: Kausi, ohitettavatHakukohdeOidit: Set[HakukohdeOid]): Ensikertalaisuus = {
+    val ohitettavatEhto = ohitettavatHakukohteetEhto("newest_vastaanotot.hakukohde", ohitettavatHakukohdeOidit)
     val d = runBlocking(
       sql"""with old_vastaanotot as (
                 select "timestamp", koulutuksen_alkamiskausi from vanhat_vastaanotot
@@ -24,6 +39,7 @@ trait EnsikertalaisuusRepositoryImpl extends EnsikertalaisuusRepository with Val
             from (select "timestamp", koulutuksen_alkamiskausi from newest_vastaanotot
                   where newest_vastaanotot.henkilo = ${personOid}
                       and newest_vastaanotot.kk_tutkintoon_johtava
+                      #$ohitettavatEhto
                   union
                   select "timestamp", koulutuksen_alkamiskausi from old_vastaanotot) as all_vastaanotot
             where all_vastaanotot.koulutuksen_alkamiskausi >= ${koulutuksenAlkamisKausi.toKausiSpec}""".as[Option[java.sql.Timestamp]])
@@ -50,7 +66,8 @@ trait EnsikertalaisuusRepositoryImpl extends EnsikertalaisuusRepository with Val
     VastaanottoHistoria(newList, oldList)
   }
 
-  override def findEnsikertalaisuus(personOids: Set[String], koulutuksenAlkamisKausi: Kausi): Set[Ensikertalaisuus] = {
+  override def findEnsikertalaisuus(personOids: Set[String], koulutuksenAlkamisKausi: Kausi, ohitettavatHakukohdeOidit: Set[HakukohdeOid]): Set[Ensikertalaisuus] = {
+    val ohitettavatEhto = ohitettavatHakukohteetEhto("vastaanotot.hakukohde", ohitettavatHakukohdeOidit)
     val createTempTable = sqlu"create temporary table person_oids (oid varchar) on commit drop"
     val insertPersonOids = SimpleDBIO[Unit](jdbcActionContext => {
       var statement:Option[PreparedStatement] = None
@@ -79,6 +96,7 @@ trait EnsikertalaisuusRepositoryImpl extends EnsikertalaisuusRepository with Val
                     join query_oids on query_oids.alias_oid = vastaanotot.henkilo
                     join hakukohteet hk on hk.hakukohde_oid = vastaanotot.hakukohde
                 where hk.kk_tutkintoon_johtava and deleted is null
+                    #$ohitettavatEhto
                 order by query_oids.query_oid, hakukohde, id desc
             ),
             old_vastaanotot as (

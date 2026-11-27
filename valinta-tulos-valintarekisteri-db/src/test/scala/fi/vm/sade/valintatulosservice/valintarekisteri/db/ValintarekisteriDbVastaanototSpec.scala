@@ -223,24 +223,24 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
     "findEnsikertalaisuus" in {
       "tarkastelee vastaanottotiedon viimeisintä tilaa" in {
         singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid, VastaanotaSitovasti, henkiloOid, "testiselite"))
-        singleConnectionValintarekisteriDb.findEnsikertalaisuus(henkiloOid, Kevat(2015)) must beAnInstanceOf[EiEnsikertalainen]
+        singleConnectionValintarekisteriDb.findEnsikertalaisuus(henkiloOid, Kevat(2015), Set.empty[HakukohdeOid]) must beAnInstanceOf[EiEnsikertalainen]
         singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid, Peruuta, henkiloOid, "testiselite"))
-        singleConnectionValintarekisteriDb.findEnsikertalaisuus(henkiloOid, Kevat(2015)) must beEqualTo(Ensikertalainen(henkiloOid))
-        singleConnectionValintarekisteriDb.findEnsikertalaisuus(Set(henkiloOid), Kevat(2015)) must beEqualTo(Set(Ensikertalainen(henkiloOid)))
+        singleConnectionValintarekisteriDb.findEnsikertalaisuus(henkiloOid, Kevat(2015), Set.empty[HakukohdeOid]) must beEqualTo(Ensikertalainen(henkiloOid))
+        singleConnectionValintarekisteriDb.findEnsikertalaisuus(Set(henkiloOid), Kevat(2015), Set.empty[HakukohdeOid]) must beEqualTo(Set(Ensikertalainen(henkiloOid)))
       }
       "ei ota huomioon kumottuja vastaanottotietoja" in {
         singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid, VastaanotaSitovasti, henkiloOid, "testiselite"))
-        singleConnectionValintarekisteriDb.findEnsikertalaisuus(henkiloOid, Kevat(2015)) must beAnInstanceOf[EiEnsikertalainen]
+        singleConnectionValintarekisteriDb.findEnsikertalaisuus(henkiloOid, Kevat(2015), Set.empty[HakukohdeOid]) must beAnInstanceOf[EiEnsikertalainen]
         singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOid, hakemusOid, hakukohdeOid, Poista, henkiloOid, "testiselite"))
-        singleConnectionValintarekisteriDb.findEnsikertalaisuus(henkiloOid, Kevat(2015)) must beEqualTo(Ensikertalainen(henkiloOid))
-        singleConnectionValintarekisteriDb.findEnsikertalaisuus(Set(henkiloOid), Kevat(2015)) must beEqualTo(Set(Ensikertalainen(henkiloOid)))
+        singleConnectionValintarekisteriDb.findEnsikertalaisuus(henkiloOid, Kevat(2015), Set.empty[HakukohdeOid]) must beEqualTo(Ensikertalainen(henkiloOid))
+        singleConnectionValintarekisteriDb.findEnsikertalaisuus(Set(henkiloOid), Kevat(2015), Set.empty[HakukohdeOid]) must beEqualTo(Set(Ensikertalainen(henkiloOid)))
       }
       "ei ensikertalainen, jos sibling henkilöllä vastaanotto" in {
         storeHenkiloviitteet()
         singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOidA, hakemusOid, hakukohdeOid, VastaanotaSitovasti, henkiloOidA, "testiselite"))
         singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(otherHakuOid, valintatapajonoOid, henkiloOidB, HakemusOid(hakemusOid.toString + "1"), otherHakukohdeOid, Peru, henkiloOidB, "testiselite"))
-        singleConnectionValintarekisteriDb.findEnsikertalaisuus(henkiloOidC, Kevat(2015)) must beAnInstanceOf[EiEnsikertalainen]
-        val r = singleConnectionValintarekisteriDb.findEnsikertalaisuus(Set(henkiloOidB, henkiloOidC), Kevat(2015))
+        singleConnectionValintarekisteriDb.findEnsikertalaisuus(henkiloOidC, Kevat(2015), Set.empty[HakukohdeOid]) must beAnInstanceOf[EiEnsikertalainen]
+        val r = singleConnectionValintarekisteriDb.findEnsikertalaisuus(Set(henkiloOidB, henkiloOidC), Kevat(2015), Set.empty[HakukohdeOid])
         r must have size 2
         r.head must beAnInstanceOf[EiEnsikertalainen]
         r.tail.head must beAnInstanceOf[EiEnsikertalainen]
@@ -249,8 +249,8 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
         storeHenkiloviitteet()
         singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOidA, hakemusOid, hakukohdeOid, VastaanotaSitovasti, henkiloOidA, "testiselite"))
         singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(otherHakuOid, valintatapajonoOid, henkiloOidB, HakemusOid(hakemusOid.toString + "1"), otherHakukohdeOid, Peru, henkiloOidB, "testiselite"))
-        singleConnectionValintarekisteriDb.findEnsikertalaisuus(henkiloOidB, Kevat(2015)) must beAnInstanceOf[EiEnsikertalainen]
-        val r = singleConnectionValintarekisteriDb.findEnsikertalaisuus(Set(henkiloOidC, henkiloOidB), Kevat(2015))
+        singleConnectionValintarekisteriDb.findEnsikertalaisuus(henkiloOidB, Kevat(2015), Set.empty[HakukohdeOid]) must beAnInstanceOf[EiEnsikertalainen]
+        val r = singleConnectionValintarekisteriDb.findEnsikertalaisuus(Set(henkiloOidC, henkiloOidB), Kevat(2015), Set.empty[HakukohdeOid])
         r must have size 2
         r.head must beAnInstanceOf[EiEnsikertalainen]
         r.tail.head must beAnInstanceOf[EiEnsikertalainen]
@@ -259,8 +259,8 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
         storeHenkiloviitteet()
         singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(hakuOid, valintatapajonoOid, henkiloOidB, hakemusOid, hakukohdeOid, VastaanotaSitovasti, henkiloOidB, "testiselite"))
         singleConnectionValintarekisteriDb.store(VirkailijanVastaanotto(otherHakuOid, valintatapajonoOid, henkiloOidA, HakemusOid(hakemusOid.toString + "1"), otherHakukohdeOid, Peru, henkiloOidA, "testiselite"))
-        singleConnectionValintarekisteriDb.findEnsikertalaisuus(henkiloOidC, Kevat(2015)) must beAnInstanceOf[EiEnsikertalainen]
-        val r = singleConnectionValintarekisteriDb.findEnsikertalaisuus(Set(henkiloOidA, henkiloOidC), Kevat(2015))
+        singleConnectionValintarekisteriDb.findEnsikertalaisuus(henkiloOidC, Kevat(2015), Set.empty[HakukohdeOid]) must beAnInstanceOf[EiEnsikertalainen]
+        val r = singleConnectionValintarekisteriDb.findEnsikertalaisuus(Set(henkiloOidA, henkiloOidC), Kevat(2015), Set.empty[HakukohdeOid])
         r must have size 2
         r.head must beAnInstanceOf[EiEnsikertalainen]
         r.tail.head must beAnInstanceOf[EiEnsikertalainen]
@@ -271,7 +271,7 @@ class ValintarekisteriDbVastaanototSpec extends Specification with ITSetup with 
         singleConnectionValintarekisteriDb.runBlocking(
           sqlu"""insert into vanhat_vastaanotot (henkilo, hakukohde, tarjoaja, koulutuksen_alkamiskausi, kk_tutkintoon_johtava, ilmoittaja, timestamp)
                  values (${henkiloOidB}, ${hakukohdeOid}, 'testitarjoaja', '2000K', true, 'testiilmoittaja', ${now})""")
-        singleConnectionValintarekisteriDb.findEnsikertalaisuus(Set(henkiloOidA), Syksy(1999)) mustEqual Set(EiEnsikertalainen(henkiloOidA, now))
+        singleConnectionValintarekisteriDb.findEnsikertalaisuus(Set(henkiloOidA), Syksy(1999), Set.empty[HakukohdeOid]) mustEqual Set(EiEnsikertalainen(henkiloOidA, now))
       }
     }
 

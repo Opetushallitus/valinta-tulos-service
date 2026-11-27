@@ -2,7 +2,7 @@ package fi.vm.sade.valintatulosservice.tarjonta
 
 import java.io.InputStream
 
-import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{HakuOid, HakukohdeOid}
+import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Ensikertalaisuus, HakuOid, HakukohdeOid}
 import fi.vm.sade.valintatulosservice.MonadHelper
 import fi.vm.sade.valintatulosservice.config.AppConfig
 import org.json4s.jackson.JsonMethods._
@@ -17,6 +17,9 @@ object HakuFixtures extends HakuService with JsonHakuService {
   val toinenAsteErillishakuEiSijoittelua = HakuOid("toinen-aste-erillishaku-ei-sijoittelua")
   val korkeakouluErillishakuEiYhdenPaikanSaantoa = HakuOid("korkeakoulu-erillishaku-ei-yhden-paikan-saantoa")
   val ataruHaku = HakuOid("ataru-haku")
+
+  // Hakukohde, jonka fixture palauttaa ensikertalaisuuden poikkeustarjoajan (Ensikertalaisuus.poikkeusTarjoajaOids) hakukohteena
+  val ensikertalaisuusPoikkeusHakukohdeOid = HakukohdeOid("1.2.246.561.20.00000000099")
 
   private var hakuOids = List(defaultHakuOid)
   private var activeFixture = korkeakouluYhteishaku
@@ -51,6 +54,10 @@ object HakuFixtures extends HakuService with JsonHakuService {
 
   private def getFixtureAsStream(hakuOid: HakuOid) = {
     Option(getClass.getResourceAsStream("/fixtures/tarjonta/haku/" + hakuOid.toString + ".json"))
+  }
+
+  override def getTarjoajienHakukohdeOids(tarjoajaOids: Set[String]): Either[Throwable, Set[HakukohdeOid]] = {
+    Right(if (tarjoajaOids.exists(Ensikertalaisuus.poikkeusTarjoajaOids.contains)) Set(ensikertalaisuusPoikkeusHakukohdeOid) else Set.empty)
   }
 
   override def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = {

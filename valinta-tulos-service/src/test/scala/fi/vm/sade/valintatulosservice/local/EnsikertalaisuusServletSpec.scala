@@ -2,6 +2,7 @@ package fi.vm.sade.valintatulosservice.local
 
 import fi.vm.sade.valintatulosservice.ServletSpecification
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet
+import fi.vm.sade.valintatulosservice.tarjonta.HakuFixtures
 import fi.vm.sade.valintatulosservice.valintarekisteri.ValintarekisteriDbTools
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{EiEnsikertalainen, EiKktutkintoonJohtavaHakukohde, Ensikertalainen, Ensikertalaisuus, HakuOid, HakukohdeOid, Kevat, YPSHakukohde}
 import org.joda.time.{DateTime, DateTimeZone}
@@ -27,11 +28,17 @@ class EnsikertalaisuusServletSpec extends ServletSpecification with Valintarekis
   val koulutus = "1.2.246.561.21.00000000001"
   val timestamp = new DateTime(2014, 7, 1, 16, 0, 10, DateTimeZone.forID("Europe/Helsinki"))
   val vanha_timestamp = new DateTime(2014, 6, 19, 16, 0, 10, DateTimeZone.forID("Europe/Helsinki"))
+  // HakuFixtures palauttaa tämän ensikertalaisuuden poikkeustarjoajan hakukohteena
+  val poikkeus_hakukohde = HakuFixtures.ensikertalaisuusPoikkeusHakukohdeOid.toString
+  val poikkeus_henkilo = "1.2.246.562.24.00000000004"
+  val poikkeus_ja_kk_henkilo = "1.2.246.562.24.00000000005"
+  val poikkeus_timestamp = new DateTime(2014, 6, 25, 16, 0, 10, DateTimeZone.forID("Europe/Helsinki"))
 
   step(deleteAll())
   step({
     singleConnectionValintarekisteriDb.storeHakukohde(YPSHakukohde(HakukohdeOid(hakukohdekk), HakuOid(haku), Kevat(2015)))
     singleConnectionValintarekisteriDb.storeHakukohde(EiKktutkintoonJohtavaHakukohde(HakukohdeOid(hakukohde2aste), HakuOid(haku), Some(Kevat(2015))))
+    singleConnectionValintarekisteriDb.storeHakukohde(YPSHakukohde(HakukohdeOid(poikkeus_hakukohde), HakuOid(haku), Kevat(2015)))
     singleConnectionValintarekisteriDb.runBlocking(DBIOAction.seq(
           sqlu"""insert into vastaanotot
                  (henkilo, hakukohde, action, ilmoittaja, "timestamp", selite)
@@ -39,6 +46,15 @@ class EnsikertalaisuusServletSpec extends ServletSpecification with Valintarekis
           sqlu"""insert into vastaanotot
                      (henkilo, hakukohde, action, ilmoittaja, "timestamp", selite)
                      values ($henkilo, $hakukohde2aste, 'VastaanotaSitovasti'::vastaanotto_action, 'ilmoittaja', ${new java.sql.Timestamp(timestamp.minusYears(1).getMillis)}, 'testiselite')""",
+          sqlu"""insert into vastaanotot
+                 (henkilo, hakukohde, action, ilmoittaja, "timestamp", selite)
+                 values ($poikkeus_henkilo, $poikkeus_hakukohde, 'VastaanotaSitovasti'::vastaanotto_action, 'ilmoittaja', ${new java.sql.Timestamp(poikkeus_timestamp.getMillis)}, 'testiselite')""",
+          sqlu"""insert into vastaanotot
+                 (henkilo, hakukohde, action, ilmoittaja, "timestamp", selite)
+                 values ($poikkeus_ja_kk_henkilo, $poikkeus_hakukohde, 'VastaanotaSitovasti'::vastaanotto_action, 'ilmoittaja', ${new java.sql.Timestamp(poikkeus_timestamp.getMillis)}, 'testiselite')""",
+          sqlu"""insert into vastaanotot
+                 (henkilo, hakukohde, action, ilmoittaja, "timestamp", selite)
+                 values ($poikkeus_ja_kk_henkilo, $hakukohdekk, 'VastaanotaSitovasti'::vastaanotto_action, 'ilmoittaja', ${new java.sql.Timestamp(timestamp.getMillis)}, 'testiselite')""",
           sqlu"""insert into vanhat_vastaanotot (henkilo, hakukohde, tarjoaja, koulutuksen_alkamiskausi, kk_tutkintoon_johtava, ilmoittaja, "timestamp")
                  values ($henkilo, $vanha_hakukohde, $vanha_tarjoaja, '2014S', true, 'KAYTTAJA', ${new java.sql.Timestamp(vanha_timestamp.getMillis)})""",
           sqlu"""insert into vanhat_vastaanotot (henkilo, hakukohde, tarjoaja, koulutuksen_alkamiskausi, kk_tutkintoon_johtava, ilmoittaja, "timestamp")
@@ -69,6 +85,19 @@ class EnsikertalaisuusServletSpec extends ServletSpecification with Valintarekis
     "return EiEnsikertalainen based on vanhat_vastaanotot" in {
       get("ensikertalaisuus/1.2.246.562.24.00000000001", Map("koulutuksenAlkamiskausi" -> "2014K"), Map("Content-Type" -> "application/json")) {
         read[Ensikertalaisuus](body) mustEqual EiEnsikertalainen(henkilo, vanha_timestamp.toDate)
+      }
+    }
+
+    "return Ensikertalainen when the only vastaanotto is to a hakukohde of an exempt tarjoaja" in {
+      get(s"ensikertalaisuus/$poikkeus_henkilo", Map("koulutuksenAlkamiskausi" -> "2014K"), Map("Content-Type" -> "application/json")) {
+        status mustEqual 200
+        read[Ensikertalaisuus](body) mustEqual Ensikertalainen(poikkeus_henkilo)
+      }
+    }
+
+    "ignore the vastaanotto to a hakukohde of an exempt tarjoaja and use the other kk vastaanotto" in {
+      get(s"ensikertalaisuus/$poikkeus_ja_kk_henkilo", Map("koulutuksenAlkamiskausi" -> "2014K"), Map("Content-Type" -> "application/json")) {
+        read[Ensikertalaisuus](body) mustEqual EiEnsikertalainen(poikkeus_ja_kk_henkilo, timestamp.toDate)
       }
     }
 
@@ -107,6 +136,13 @@ class EnsikertalaisuusServletSpec extends ServletSpecification with Valintarekis
       }
     }
 
+    "still include the vastaanotto to a hakukohde of an exempt tarjoaja" in {
+      get(s"ensikertalaisuus/$poikkeus_henkilo/historia", Map(), Map("Content-Type" -> "application/json")) {
+        status mustEqual 200
+        body must contain(poikkeus_hakukohde)
+      }
+    }
+
     "return 400 Bad Request for invalid henkilo oid" in {
       get("ensikertalaisuus/foo/historia", Map(), Map("Content-Type" -> "application/json")) {
         status mustEqual 400
@@ -140,6 +176,17 @@ class EnsikertalaisuusServletSpec extends ServletSpecification with Valintarekis
         ensikertalaisuuses.head mustEqual EiEnsikertalainen(henkilo, vanha_timestamp.toDate)
         ensikertalaisuuses(1) mustEqual Ensikertalainen(vastaanottamaton_henkilo)
         ensikertalaisuuses(2) mustEqual EiEnsikertalainen(vanha_henkilo, vanha_timestamp.toDate)
+      }
+    }
+
+    "ignore vastaanotot to hakukohteet of an exempt tarjoaja" in {
+      val personOidsToQuery = Seq(poikkeus_henkilo, poikkeus_ja_kk_henkilo)
+      postJSON("ensikertalaisuus?koulutuksenAlkamiskausi=2014K", write(personOidsToQuery), Map()) {
+        status mustEqual 200
+        val ensikertalaisuuses = read[Seq[Ensikertalaisuus]](body).sortBy(_.personOid)
+        ensikertalaisuuses must have size 2
+        ensikertalaisuuses.head mustEqual Ensikertalainen(poikkeus_henkilo)
+        ensikertalaisuuses(1) mustEqual EiEnsikertalainen(poikkeus_ja_kk_henkilo, timestamp.toDate)
       }
     }
 

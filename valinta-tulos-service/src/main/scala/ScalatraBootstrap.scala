@@ -30,6 +30,7 @@ import fi.vm.sade.valintatulosservice.tulostenmetsastaja.PuuttuvienTulostenMetsa
 import fi.vm.sade.valintatulosservice.valintarekisteri.YhdenPaikanSaannos
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.MailPollerRepository
 import fi.vm.sade.valintatulosservice.valintarekisteri.db.impl.ValintarekisteriDb
+import fi.vm.sade.valintatulosservice.valintarekisteri.ensikertalaisuus.EnsikertalaisuusService
 import fi.vm.sade.valintatulosservice.valintarekisteri.hakukohde.HakukohdeRecordService
 import fi.vm.sade.valintatulosservice.vastaanottomeili._
 import org.apache.log4j.LogManager
@@ -150,7 +151,7 @@ class ScalatraBootstrap extends LifeCycle with Logging {
 
       context.mount(new LukuvuosimaksuServletWithoutCAS(lukuvuosimaksuService), "/lukuvuosimaksu", "lukuvuosimaksu")
       context.mount(new PrivateValintatulosServlet(valintatulosService, hakemustenTulosHakuLock), "/haku", "haku")
-      context.mount(new EnsikertalaisuusServlet(valintarekisteriDb, appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus", "ensikertalaisuus")
+      context.mount(new EnsikertalaisuusServlet(new EnsikertalaisuusService(valintarekisteriDb, hakuService), appConfig.settings.valintaRekisteriEnsikertalaisuusMaxPersonOids), "/ensikertalaisuus", "ensikertalaisuus")
       context.mount(new ErillishakuServlet(valinnantulosService, hyvaksymiskirjeService, valintarekisteriDb, appConfig), "/erillishaku/valinnan-tulos", "erillishaku/valinnan-tulos")
 
       context.mount(new SiirtotiedostoServlet(siirtotiedostoService, valintarekisteriDb), "/cas/siirtotiedosto", "siirtotiedosto")
