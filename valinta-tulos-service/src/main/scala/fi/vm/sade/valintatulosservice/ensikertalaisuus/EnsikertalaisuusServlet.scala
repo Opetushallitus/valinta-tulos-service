@@ -3,7 +3,7 @@ package fi.vm.sade.valintatulosservice.ensikertalaisuus
 import fi.vm.sade.valintatulosservice.config.VtsAppConfig.VtsAppConfig
 import fi.vm.sade.valintatulosservice.ensikertalaisuus.EnsikertalaisuusServlet._
 import fi.vm.sade.valintatulosservice.json.JsonFormats
-import fi.vm.sade.valintatulosservice.valintarekisteri.db.EnsikertalaisuusRepository
+import fi.vm.sade.valintatulosservice.valintarekisteri.ensikertalaisuus.EnsikertalaisuusService
 import fi.vm.sade.valintatulosservice.valintarekisteri.domain.{Ensikertalaisuus, Kausi, VastaanottoHistoria}
 import fi.vm.sade.valintatulosservice.{VtsServletBase, VtsSwaggerBase}
 import org.json4s.Formats
@@ -13,7 +13,7 @@ import org.scalatra.swagger._
 
 // TODO: Näitä endpointteja kutsutaan sekä Suresta että Supasta.
 //       Kun Sure on sammutettu, tähän rajapintaan pitäisi lisätä autentikointi, ja vaihtaa Supa käyttämään sitä.
-class EnsikertalaisuusServlet(ensikertalaisuusRepository: EnsikertalaisuusRepository, maxHenkiloOids: Int)(implicit val swagger: Swagger, appConfig: VtsAppConfig)
+class EnsikertalaisuusServlet(ensikertalaisuusService: EnsikertalaisuusService, maxHenkiloOids: Int)(implicit val swagger: Swagger, appConfig: VtsAppConfig)
   extends VtsServletBase with EnsikertalaisuusSwagger {
   override implicit val jsonFormats: Formats = EnsikertalaisuusServlet.ensikertalaisuusJsonFormats
 
@@ -23,18 +23,18 @@ class EnsikertalaisuusServlet(ensikertalaisuusRepository: EnsikertalaisuusReposi
   }
 
   get("/:henkilo", operation(getEnsikertalaisuusSwagger)) {
-    ensikertalaisuusRepository.findEnsikertalaisuus(henkiloOid(params("henkilo")), parseKausi(params("koulutuksenAlkamiskausi")))
+    ensikertalaisuusService.findEnsikertalaisuus(henkiloOid(params("henkilo")), parseKausi(params("koulutuksenAlkamiskausi")))
   }
 
   get("/:henkilo/historia", operation(getVastaanottoHistoriaSwagger)) {
-    ensikertalaisuusRepository.findVastaanottoHistory(henkiloOid(params("henkilo")))
+    ensikertalaisuusService.findVastaanottoHistory(henkiloOid(params("henkilo")))
   }
 
   post("/", operation(postEnsikertalaisuusSwagger)) {
     val henkilot = read[Set[String]](request.body).map(henkiloOid)
     if (henkilot.size > maxHenkiloOids) throw new IllegalArgumentException(s"Too many henkilo oids (limit is $maxHenkiloOids, got ${henkilot.size})")
 
-    ensikertalaisuusRepository.findEnsikertalaisuus(henkilot, parseKausi(params("koulutuksenAlkamiskausi")))
+    ensikertalaisuusService.findEnsikertalaisuus(henkilot, parseKausi(params("koulutuksenAlkamiskausi")))
   }
 }
 

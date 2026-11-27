@@ -115,6 +115,11 @@ trait HakuService {
   def getHakukohde(oid: HakukohdeOid): Either[Throwable, Hakukohde]
   def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, Seq[Hakukohde]]
   def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]]
+  /**
+   * Palauttaa annettujen organisaatioiden (ja niiden aliorganisaatioiden) järjestämien hakukohteiden oidit.
+   * Vain Koutan hakukohteet; vanhan tarjonnan hakukohteita ei palauteta.
+   */
+  def getTarjoajienHakukohdeOids(tarjoajaOids: Set[String]): Either[Throwable, Set[HakukohdeOid]]
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]]
 }
 
@@ -205,9 +210,18 @@ class CachedHakuService(tarjonta: TarjontaHakuService, kouta: KoutaHakuService, 
     lifetimeSeconds = Duration(4, HOURS).toSeconds,
     maxSize = 1)
 
+  private val tarjoajienHakukohdeOidsCache = TTLOptionalMemoize.memoize[Set[String], Set[HakukohdeOid]](
+    f = tarjoajaOids => kouta.getTarjoajienHakukohdeOids(tarjoajaOids),
+    lifetimeSeconds = Duration(1, HOURS).toSeconds,
+    maxSize = 10)
+
   val KOUTA_OID_LENGTH = 35
 
   override def getHaku(oid: HakuOid): Either[Throwable, Haku] = hakuCache(oid)
+
+  override def getTarjoajienHakukohdeOids(tarjoajaOids: Set[String]): Either[Throwable, Set[HakukohdeOid]] = {
+    if (tarjoajaOids.isEmpty) Right(Set.empty) else tarjoajienHakukohdeOidsCache(tarjoajaOids)
+  }
 
   override def getHakukohdeKela(oid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]] = {
     oid.toString match {
@@ -304,6 +318,11 @@ class TarjontaHakuService(config: AppConfig) extends HakuService with JsonHakuSe
   def getHakukohdes(oids: Seq[HakukohdeOid]): Either[Throwable, List[Hakukohde]] = {
     MonadHelper.sequence(for {oid <- oids.toStream} yield getHakukohde(oid))
   }
+
+  def getTarjoajienHakukohdeOids(tarjoajaOids: Set[String]): Either[Throwable, Set[HakukohdeOid]] = {
+    Left(new UnsupportedOperationException("Hakukohteiden haku tarjoajan perusteella vanhasta tarjonnasta ei ole tuettu"))
+  }
+
   def getHakukohdeKela(hakukohdeOid: HakukohdeOid): Either[Throwable, Option[HakukohdeKela]] = {
     for {
       hakukohde <- getHakukohde(hakukohdeOid).right
@@ -452,6 +471,9 @@ case class PaateltyAlkamiskausi(
                                  kausiUri: String,
                                  vuosi: String
                                )
+
+// Hakukohdehaun tuloksesta luetaan vain oid, jotta vanhojen hakukohteiden puuttuvat kentät eivät kaada hakua
+case class KoutaHakukohdeOid(oid: String)
 
 case class KoutaHakukohde(oid: String,
                           hakuOid: String,
@@ -669,6 +691,18 @@ class KoutaHakuService(config: AppConfig,
 
   def getHakukohdeOids(hakuOid: HakuOid): Either[Throwable, Seq[HakukohdeOid]] = {
     getKoutaHaunHakukohteet(hakuOid).right.map(_.map(h => HakukohdeOid(h.oid)))
+  }
+
+  def getTarjoajienHakukohdeOids(tarjoajaOids: Set[String]): Either[Throwable, Set[HakukohdeOid]] = {
+    if (tarjoajaOids.isEmpty) {
+      Right(Set.empty)
+    } else {
+      // Huom. parametria all=true ei saa antaa: se ohittaa tarjoajarajauksen.
+      val query = new util.HashMap[String, String]()
+      query.put("tarjoaja", tarjoajaOids.toSeq.sorted.mkString(","))
+      fetch[List[KoutaHakukohdeOid]](config.ophUrlProperties.url("kouta-internal.hakukohde.search", query)).right
+        .map(_.map(h => HakukohdeOid(h.oid)).toSet)
+    }
   }
 
   def kaikkiJulkaistutHaut: Either[Throwable, List[Haku]] = {

@@ -7,6 +7,10 @@ sealed trait Ensikertalaisuus {
 }
 
 object Ensikertalaisuus {
+  // Organisaatiot, joiden (ja joiden aliorganisaatioiden) hakukohteiden vastaanotot eivät päätä ensikertalaisuutta
+  val HOGSKOLAN_PA_ALAND_OID = "1.2.246.562.10.444626308710"
+  val poikkeusTarjoajaOids: Set[String] = Set(HOGSKOLAN_PA_ALAND_OID)
+
   def apply(personOid: String, paattyi: Option[Date]): Ensikertalaisuus = paattyi match {
     case Some(paattyiJo) => EiEnsikertalainen(personOid, paattyiJo)
     case None => Ensikertalainen(personOid)
